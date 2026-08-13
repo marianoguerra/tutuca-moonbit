@@ -26,4 +26,5 @@
     <span class="count" @text="$countLabel"></span>
     <span class="italic last-action" @show="truthy? .lastAction" @text=".lastAction"></span>
   </footer>
+  <div class="mt-2"><x render=".scope" @show="truthy? .hasScope"></x></div>
 </div>

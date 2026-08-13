@@ -1,4 +1,5 @@
-<div class="flex flex-col gap-2 max-w-xl bsky-thread">
+<div class="flex flex-col gap-2 max-w-xl bsky-feed">
+  <div class="text-sm font-bold title" @show="truthy? .hasTitle" @text=".title"></div>
   <div class="text-xs uppercase tracking-widest text-base-content/50 summary" @text="$summary"></div>
   <x render-each=".rows"></x>
   <p class="text-sm text-base-content/60 italic empty" @show="empty? .rows">No messages.</p>

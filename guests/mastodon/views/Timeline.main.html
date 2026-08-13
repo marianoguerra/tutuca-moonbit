@@ -8,4 +8,5 @@
   </header>
   <div class="divide-y divide-base-300 rounded-b-xl border-x border-b border-base-300 bg-base-100 rows" @hide=".isEmpty"><x render-each=".rows"></x></div>
   <p class="rounded-b-xl border-x border-b border-base-300 bg-base-100 px-4 py-6 text-center text-sm italic text-base-content/60 empty" @show=".isEmpty">Nothing here.</p>
+  <x render=".scope" @show="truthy? .hasScope"></x>
 </div>

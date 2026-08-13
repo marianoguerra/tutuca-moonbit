@@ -413,6 +413,17 @@ priv struct Message {
   compact : Bool
   edited : Bool
   pinned : Bool
+  /// The workspace archive link for this message, as whoever built the card
+  /// derived it.
+  ///
+  /// Shown and clickable, and still NOT an `href` — for the reason the header
+  /// gives about posted links, arriving here from the other direction. A
+  /// permalink is `https://<team>.slack.com/archives/…`, and the subdomain is
+  /// the workspace's: there is no origin a view can write as a literal, so
+  /// there is nothing for `cap-external-urls` to be spent on. Clicking it emits
+  /// `openLink`, exactly as a link segment does, and whoever is above decides
+  /// what opening it means.
+  permalink : String
 }
 
 ///|
@@ -440,6 +451,7 @@ impl DynComponent for Message with fn get_field(self, name) {
     "compact" => Some(@values.Value::Boolean(self.compact))
     "edited" => Some(@values.Value::Boolean(self.edited))
     "pinned" => Some(@values.Value::Boolean(self.pinned))
+    "permalink" => Some(@values.Value::Text(self.permalink))
     _ => None
   }
 }
@@ -559,7 +571,48 @@ impl DynComponent for Message with fn call_method(self, name, _args) {
     "hasChannel" =>
       @values.Value::Boolean(!self.compact && self.channel_name != "")
     "timeLabel" => @values.Value::Text(clock_of(self.created_at))
+    // The `ts`, drawn rather than only carried.
+    //
+    // It is the ARGUMENT every follow-up tool takes — read the thread, react,
+    // link — and it lived in a field no view mentioned, so a reader who wanted
+    // one had to retype it off the prose beside the card and get it wrong.
+    // Drawing it is the cheapest fix to the most expensive mistake this bundle
+    // was making.
+    "hasId" => @values.Value::Boolean(self.id != "")
+    "idTitle" =>
+      @values.Value::Text(
+        if self.id == "" {
+          ""
+        } else {
+          "ts \{self.id} — the timestamp every follow-up call takes"
+        },
+      )
+    "hasPermalink" => @values.Value::Boolean(self.permalink != "")
     _ => @values.Value::Nil
+  }
+}
+
+///|
+/// The permalink travels UP rather than being followed, the same way a link
+/// somebody posted does.
+///
+/// The two are the same case arrived at from opposite directions: a posted link
+/// points wherever its author chose, and a permalink points at a workspace whose
+/// subdomain is not known when the view is registered. Neither is an origin a
+/// view can write as a literal, so neither is an `href` an untrusted bundle may
+/// have — and both are perfectly good things to announce.
+impl DynComponent for Message with fn handle(self, bucket, name, _args) {
+  match (bucket, name) {
+    (INPUT, "openPermalink") => {
+      if self.permalink != "" {
+        @control.emit("openLink", [
+          @values.Value::Text(self.permalink),
+          @values.Value::Text("permalink"),
+        ])
+      }
+      Unchanged
+    }
+    _ => Unhandled
   }
 }
 
@@ -574,6 +627,7 @@ impl DynComponent for Message with fn with_field(self, name, v) {
     ("compact", @values.Value::Boolean(b)) => Some({ ..self, compact: b })
     ("edited", @values.Value::Boolean(b)) => Some({ ..self, edited: b })
     ("pinned", @values.Value::Boolean(b)) => Some({ ..self, pinned: b })
+    ("permalink", @values.Value::Text(s)) => Some({ ..self, permalink: s })
     // The child write-back path: a `Reaction` that counted itself up returns a
     // successor, and the host puts the whole list back through here.
     ("body", @values.Value::Instance(t)) => Some({ ..self, body: t })
@@ -603,6 +657,7 @@ fn make_message(args : Array[(String, @values.Value)]) -> &DynComponent {
     compact: as_bool(arg(args, "compact")),
     edited: as_bool(arg(args, "edited")),
     pinned: as_bool(arg(args, "pinned")),
+    permalink: as_text(arg(args, "permalink")),
   }
   m as &DynComponent
 }
@@ -629,6 +684,24 @@ priv struct Thread {
   root : UInt64
   replies : Array[UInt64]
   expanded : Bool
+  /// How many replies EXIST, which is not how many arrived.
+  ///
+  /// The two came apart the moment a channel history became a card:
+  /// `conversations.history` answers with roots carrying a `reply_count` and
+  /// never with the replies themselves, so every message became a thread with
+  /// "21 replies" written on it and nothing behind the caret. This field is what
+  /// the count means, and `replies.length()` is what is loaded — a thread that
+  /// was told nothing takes the second as the first, which is what a fully-read
+  /// thread already is.
+  reply_count : Int
+  /// Where the root lives, so a thread with unloaded replies can say the two
+  /// arguments that would load them.
+  ///
+  /// Kept HERE rather than read off the root `Message`, because a token is a
+  /// bridge handle and a parent holding one cannot read a field behind it — the
+  /// same constraint that makes `ChannelHistory` keep `haystack` and `times`.
+  channel_name : String
+  root_ts : String
 }
 
 ///|
@@ -637,8 +710,9 @@ impl DynComponent for Thread with fn get_field(self, name) {
     "root" => Some(@values.Value::Instance(self.root))
     "replies" => Some(instance_list(self.replies))
     "expanded" => Some(@values.Value::Boolean(self.expanded))
-    "replyCount" =>
-      Some(@values.Value::Number(self.replies.length().to_double()))
+    "replyCount" => Some(@values.Value::Number(self.reply_count.to_double()))
+    "channelName" => Some(@values.Value::Text(self.channel_name))
+    "rootTs" => Some(@values.Value::Text(self.root_ts))
     _ => None
   }
 }
@@ -646,13 +720,41 @@ impl DynComponent for Thread with fn get_field(self, name) {
 ///|
 impl DynComponent for Thread with fn call_method(self, name, _args) {
   match name {
+    // The caret is for replies that are HERE. A count with nothing behind it
+    // got one anyway until this split existed, and a caret that expands onto
+    // nothing is the dead end that sent a reader off to retype a timestamp.
     "hasReplies" => @values.Value::Boolean(!self.replies.is_empty())
+    "hasUnloadedReplies" =>
+      @values.Value::Boolean(self.replies.is_empty() && self.reply_count > 0)
     "replyLabel" => {
-      let n = self.replies.length()
       let caret = if self.expanded { "▾" } else { "▸" }
-      let noun = if n == 1 { "reply" } else { "replies" }
-      @values.Value::Text("\{caret} \{n} \{noun}")
+      let loaded = self.replies.length()
+      let noun = if self.reply_count == 1 { "reply" } else { "replies" }
+      // A page of a long thread says it is a page. Claiming "3 replies" for the
+      // three that arrived out of twenty-one is the same silence one level down.
+      if self.reply_count > loaded {
+        @values.Value::Text("\{caret} \{loaded} of \{self.reply_count} \{noun}")
+      } else {
+        @values.Value::Text("\{caret} \{loaded} \{noun}")
+      }
     }
+    "loadLabel" => {
+      let noun = if self.reply_count == 1 { "reply" } else { "replies" }
+      @values.Value::Text("\{self.reply_count} \{noun} — not loaded")
+    }
+    // What to call for them, spelled out with both arguments filled in. The
+    // whole failure this addresses is a reader who had the count and had to
+    // guess the timestamp; a card that CAN say it should say it.
+    "loadTitle" =>
+      @values.Value::Text(
+        if self.root_ts == "" {
+          "the replies were not fetched with this message"
+        } else if self.channel_name == "" {
+          "read them with ts=\{self.root_ts}"
+        } else {
+          "read them with channel=\{self.channel_name}, ts=\{self.root_ts}"
+        },
+      )
     _ => @values.Value::Nil
   }
 }
@@ -662,6 +764,18 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     (INPUT, "toggle") =>
       Changed({ ..self, expanded: !self.expanded } as &DynComponent)
+    // The replies are not here and this bundle cannot go and get them: it has
+    // no network, and the whole point of that is that it is checkable by
+    // looking. So it says which two arguments would, and whoever is above is
+    // the one that can make the call.
+    (INPUT, "openThread") => {
+      @control.emit("openThread", [
+        @values.Value::Text(self.channel_name),
+        @values.Value::Text(self.root_ts),
+        @values.Value::Number(self.reply_count.to_double()),
+      ])
+      Unchanged
+    }
     // What `ChannelHistory`'s expand-all/collapse-all reaches with
     // `control.send-at`: a receive rather than an input, because it is not
     // this component's own button that raised it.
@@ -682,6 +796,15 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
       Some({ ..self, expanded: b } as &DynComponent)
     ("root", @values.Value::Instance(t)) =>
       Some({ ..self, root: t } as &DynComponent)
+    ("replyCount", @values.Value::Number(n)) =>
+      Some({ ..self, reply_count: n.to_int() } as &DynComponent)
+    ("channelName", @values.Value::Text(s)) =>
+      Some({ ..self, channel_name: s } as &DynComponent)
+    ("rootTs", @values.Value::Text(s)) =>
+      Some({ ..self, root_ts: s } as &DynComponent)
+    // Writing the replies home does NOT move the count: how many exist is a
+    // fact about the conversation, and how many are on screen is a fact about
+    // this page of it.
     ("replies", _) =>
       match tokens_of(v) {
         Some(replies) => Some({ ..self, replies, } as &DynComponent)
@@ -693,17 +816,456 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
 
 ///|
 fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
+  // A reply is compact whatever the fixture says, the way `fromData` forced it
+  // in the original: "is this a reply" is a fact about POSITION, and the thread
+  // is the only one that knows it.
+  let replies = children("Message", arg(args, "replies"), extra=[
+    ("compact", @values.Value::Boolean(true)),
+  ])
+  let root_args = arg(args, "root")
   let t : Thread = {
-    root: child("Message", arg(args, "root")),
-    // A reply is compact whatever the fixture says, the way `fromData` forced
-    // it in the original: "is this a reply" is a fact about POSITION, and the
-    // thread is the only one that knows it.
-    replies: children("Message", arg(args, "replies"), extra=[
-      ("compact", @values.Value::Boolean(true)),
-    ]),
+    root: child("Message", root_args),
+    replies,
     expanded: as_bool(arg(args, "expanded"), default=true),
+    // Told, or taken from what arrived — which for a thread that was read whole
+    // is the same number.
+    reply_count: as_num(
+      arg(args, "replyCount"),
+      default=replies.length().to_double(),
+    ).to_int(),
+    // The root's own fields are the default, because they are the same fact and
+    // a caller writing the message should not have to write it twice. Read off
+    // the JSON while it is still JSON: once the root is a token, it is gone.
+    channel_name: match arg(args, "channelName") {
+      Some(@values.Value::Text(s)) => s
+      _ => root_text(root_args, "channelName")
+    },
+    root_ts: match arg(args, "rootTs") {
+      Some(@values.Value::Text(s)) => s
+      _ => root_text(root_args, "id")
+    },
   }
   t as &DynComponent
+}
+
+///|
+/// One string off the root message's own constructor JSON. `""` when the root
+/// arrived as an instance the caller built elsewhere — a token says nothing
+/// about what is behind it, and guessing would be worse than an empty label.
+fn root_text(root : @values.Value?, key : String) -> String {
+  match root {
+    Some(obj) => as_text(field_of(obj, key))
+    None => ""
+  }
+}
+
+// --- Scope: what the answer above it does NOT cover ------------------------
+
+///|
+/// The disclosure that an answer is partial.
+///
+/// Every read here answers from a token, and a token sees a SLICE of a
+/// workspace: the public channels, the private ones it was invited to, and the
+/// DMs belonging to whoever it is. Nothing in a list of results says which slice
+/// produced it, and that silence is the most dangerous thing these cards do —
+/// not because anything in them is wrong, but because "no results" and "no
+/// results in the part I can see" look identical, and only one of them means
+/// what it appears to mean.
+///
+/// It is not an error and not a warning. It is the sentence that turns a count
+/// into a claim someone can check, and it existed in the prose long before it
+/// existed here, which made the card the more confident of the two while being
+/// the less informed.
+///
+/// Its twin lives in the bluesky bundle with that protocol's vocabulary. The two
+/// are deliberately not one component: what a slack answer leaves out is
+/// conversations, and what an ATProto answer leaves out is pages of an index.
+priv struct Scope {
+  public_channels : Bool
+  private_channels : Bool
+  /// False by default, and that is a statement about these TOOLS rather than
+  /// about the token: `conversations.list` is asked for public and private
+  /// channels, so an `im` is never in the set, whatever the token could see.
+  dms : Bool
+  /// How many conversations were actually read. Negative for "nobody counted",
+  /// which is not the same as zero.
+  channels_scanned : Double
+  /// A cap stopped the scan before the data ran out. The single most important
+  /// field: the difference between "there is no more" and "I stopped looking".
+  truncated : Bool
+  /// What stopped it, in the caller's own words: `limit`, `max_search_channels`.
+  truncated_by : String
+  /// Anything else worth saying, in one sentence.
+  note : String
+}
+
+///|
+fn Scope::has_any(self : Scope) -> Bool {
+  self.truncated || !self.dms || self.note != "" || self.channels_scanned >= 0.0
+}
+
+///|
+impl DynComponent for Scope with fn get_field(self, name) {
+  match name {
+    "publicChannels" => Some(@values.Value::Boolean(self.public_channels))
+    "privateChannels" => Some(@values.Value::Boolean(self.private_channels))
+    "dms" => Some(@values.Value::Boolean(self.dms))
+    "channelsScanned" => Some(@values.Value::Number(self.channels_scanned))
+    "truncated" => Some(@values.Value::Boolean(self.truncated))
+    "truncatedBy" => Some(@values.Value::Text(self.truncated_by))
+    "note" => Some(@values.Value::Text(self.note))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for Scope with fn call_method(self, name, _args) {
+  match name {
+    "hasAny" => @values.Value::Boolean(self.has_any())
+    "kindsLabel" =>
+      @values.Value::Text(
+        if self.public_channels && self.private_channels {
+          "public channels, and the private ones this token is in"
+        } else if self.public_channels {
+          "public channels only"
+        } else if self.private_channels {
+          "private channels only"
+        } else {
+          "no channels"
+        },
+      )
+    "hasScanned" => @values.Value::Boolean(self.channels_scanned >= 0.0)
+    "scannedLabel" => {
+      let n = self.channels_scanned.to_int()
+      @values.Value::Text(
+        if n == 1 {
+          "1 conversation read"
+        } else {
+          "\{n} conversations read"
+        },
+      )
+    }
+    // The absence is the disclosure. A card that lists what it DID cover and
+    // says nothing about DMs reads as covering everything.
+    "hasDmNote" => @values.Value::Boolean(!self.dms)
+    "dmLabel" => @values.Value::Text("DMs and group DMs are never included")
+    "truncatedLabel" =>
+      @values.Value::Text(
+        if !self.truncated {
+          ""
+        } else if self.truncated_by == "" {
+          "stopped early — this is not the whole workspace"
+        } else {
+          "stopped at the \{self.truncated_by} cap — this is not the whole workspace"
+        },
+      )
+    "summary" => {
+      let parts : Array[String] = []
+      parts.push(
+        if self.public_channels && self.private_channels {
+          "public channels and the private channels this token is in"
+        } else if self.public_channels {
+          "public channels only"
+        } else if self.private_channels {
+          "private channels only"
+        } else {
+          "no channels"
+        },
+      )
+      if self.channels_scanned >= 0.0 {
+        parts.push("\{self.channels_scanned.to_int()} scanned")
+      }
+      if !self.dms {
+        parts.push("DMs and group DMs are never included")
+      }
+      if self.truncated {
+        parts.push(
+          if self.truncated_by == "" {
+            "stopped early, so this is not the whole workspace"
+          } else {
+            "stopped early at the \{self.truncated_by} cap, so this is not the whole workspace"
+          },
+        )
+      }
+      if self.note != "" {
+        parts.push(self.note)
+      }
+      @values.Value::Text("scope: " + parts.join("; "))
+    }
+    _ => @values.Value::Nil
+  }
+}
+
+///|
+impl DynComponent for Scope with fn with_field(self, name, v) {
+  let next : Scope? = match (name, v) {
+    ("publicChannels", @values.Value::Boolean(b)) =>
+      Some({ ..self, public_channels: b })
+    ("privateChannels", @values.Value::Boolean(b)) =>
+      Some({ ..self, private_channels: b })
+    ("dms", @values.Value::Boolean(b)) => Some({ ..self, dms: b })
+    ("channelsScanned", @values.Value::Number(n)) =>
+      Some({ ..self, channels_scanned: n })
+    ("truncated", @values.Value::Boolean(b)) => Some({ ..self, truncated: b })
+    ("truncatedBy", @values.Value::Text(s)) => Some({ ..self, truncated_by: s })
+    ("note", @values.Value::Text(s)) => Some({ ..self, note: s })
+    _ => None
+  }
+  match next {
+    Some(s) => Some(s as &DynComponent)
+    None => None
+  }
+}
+
+///|
+fn make_scope(args : Array[(String, @values.Value)]) -> &DynComponent {
+  let s : Scope = {
+    public_channels: as_bool(arg(args, "publicChannels"), default=true),
+    private_channels: as_bool(arg(args, "privateChannels")),
+    dms: as_bool(arg(args, "dms")),
+    // -1 rather than 0: an answer that counted nothing and an answer that read
+    // no conversations are different answers.
+    channels_scanned: as_num(arg(args, "channelsScanned"), default=-1.0),
+    truncated: as_bool(arg(args, "truncated")),
+    truncated_by: as_text(arg(args, "truncatedBy")),
+    note: as_text(arg(args, "note")),
+  }
+  s as &DynComponent
+}
+
+///|
+/// The `Scope` child a surface hangs under itself, and whether it has anything
+/// to say.
+///
+/// One is always built, even for an answer with no scope at all — an
+/// always-present child that draws nothing is simpler to reason about than an
+/// optional one. Whether to DRAW it comes back beside the token rather than out
+/// of the child, because a token is a bridge handle and a parent holding one
+/// cannot read a field behind it.
+fn scope_child(v : @values.Value?) -> (UInt64, Bool) {
+  match v {
+    Some(@values.Value::Map(_) as obj) =>
+      (@control.make_instance("Scope", args_of(obj)), true)
+    // Not "a scope with default values" — no scope at all. A card whose builder
+    // said nothing about coverage should not grow a coverage box out of
+    // defaults it was never given.
+    _ => (@control.make_instance("Scope", []), false)
+  }
+}
+
+// --- FileList: the files a search or a channel turned up -------------------
+
+///|
+/// One file's metadata, flattened for a row.
+///
+/// Metadata only, and that is the tool's limit rather than this component's: the
+/// slack package implements no binary transfer, so nothing anywhere in this
+/// bundle can hand anybody a file's contents. A row therefore says what the file
+/// IS and where it lives, and the link travels up like every other link here.
+priv struct FileRow {
+  id : String
+  label : String
+  mimetype : String
+  /// Bytes, as they arrived. Negative for a file that did not say.
+  size : Double
+  author : String
+  created_at : String
+  permalink : String
+}
+
+///|
+/// A file list, as one component rather than one component per row.
+///
+/// The other lists in this bundle are components of components because their
+/// rows CONTAIN a loop — a message has segments and reactions, and a view cannot
+/// iterate a value it found inside another iteration. A file row contains
+/// nothing, so it is an `@each` over flat records and the bundle stays five
+/// components deep instead of six.
+priv struct FileList {
+  /// What was being listed, for the header: a channel name, a user, `""` for
+  /// the whole workspace the token can see.
+  filter : String
+  files : Array[FileRow]
+  scope : UInt64
+  has_scope : Bool
+}
+
+///|
+fn file_row_of(v : @values.Value) -> FileRow {
+  let title = as_text(field_of(v, "title"))
+  let filename = as_text(field_of(v, "name"))
+  let id = as_text(field_of(v, "id"))
+  {
+    id,
+    // Slack's own order: a file's title is what somebody typed and its name is
+    // what the upload was called. Either beats the id, and the id beats blank.
+    label: if title != "" {
+      title
+    } else if filename != "" {
+      filename
+    } else {
+      id
+    },
+    mimetype: as_text(field_of(v, "mimetype")),
+    size: as_num(field_of(v, "size"), default=-1.0),
+    author: as_text(field_of(v, "author")),
+    created_at: as_text(field_of(v, "createdAt")),
+    permalink: as_text(field_of(v, "permalink")),
+  }
+}
+
+///|
+/// A byte count as somebody reads one. Integer arithmetic on the way down, so
+/// the label never depends on how a double prints.
+fn size_label(bytes : Double) -> String {
+  if bytes < 0.0 {
+    return ""
+  }
+  let n = bytes.to_int()
+  if n < 1024 {
+    return "\{n} B"
+  }
+  if n < 1024 * 1024 {
+    return "\{scaled_by(n, 1024)} KB"
+  }
+  if n < 1024 * 1024 * 1024 {
+    return "\{scaled_by(n, 1024 * 1024)} MB"
+  }
+  "\{scaled_by(n, 1024 * 1024 * 1024)} GB"
+}
+
+///|
+/// `n / unit` to one decimal, without a float in sight.
+fn scaled_by(n : Int, unit : Int) -> String {
+  let whole = n / unit
+  let tenth = n % unit * 10 / unit
+  if whole < 10 && tenth > 0 {
+    "\{whole}.\{tenth}"
+  } else {
+    "\{whole}"
+  }
+}
+
+///|
+impl DynComponent for FileList with fn get_field(self, name) {
+  match name {
+    "filter" => Some(@values.Value::Text(self.filter))
+    "files" => {
+      let h = @values.list_new()
+      for f in self.files {
+        let m = @values.map_new()
+        @values.map_set(m, "id", @values.Value::Text(f.id))
+        @values.map_set(m, "label", @values.Value::Text(f.label))
+        @values.map_set(m, "mimetype", @values.Value::Text(f.mimetype))
+        @values.map_set(m, "size", @values.Value::Number(f.size))
+        @values.map_set(m, "author", @values.Value::Text(f.author))
+        @values.map_set(m, "createdAt", @values.Value::Text(f.created_at))
+        @values.map_set(m, "permalink", @values.Value::Text(f.permalink))
+        @values.list_push(h, @values.Value::Map(m))
+      }
+      Some(@values.Value::List(h))
+    }
+    // What a ROW draws: everything already spelled the way it goes on screen, so
+    // the view stays a template and does no arithmetic.
+    "rows" => {
+      let h = @values.list_new()
+      for f in self.files {
+        let m = @values.map_new()
+        @values.map_set(m, "id", @values.Value::Text(f.id))
+        @values.map_set(m, "label", @values.Value::Text(f.label))
+        @values.map_set(m, "kind", @values.Value::Text(f.mimetype))
+        @values.map_set(m, "size", @values.Value::Text(size_label(f.size)))
+        @values.map_set(
+          m,
+          "by",
+          @values.Value::Text(if f.author == "" { "" } else { "@\{f.author}" }),
+        )
+        @values.map_set(m, "time", @values.Value::Text(clock_of(f.created_at)))
+        @values.map_set(m, "linked", @values.Value::Boolean(f.permalink != ""))
+        @values.map_set(m, "permalink", @values.Value::Text(f.permalink))
+        @values.list_push(h, @values.Value::Map(m))
+      }
+      Some(@values.Value::List(h))
+    }
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(@values.Value::Boolean(self.has_scope))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for FileList with fn call_method(self, name, _args) {
+  match name {
+    "title" =>
+      @values.Value::Text(
+        if self.filter == "" {
+          "Files"
+        } else {
+          "Files in \{self.filter}"
+        },
+      )
+    "countLabel" => {
+      let n = self.files.length()
+      @values.Value::Text(if n == 1 { "1 file" } else { "\{n} files" })
+    }
+    "isEmpty" => @values.Value::Boolean(self.files.is_empty())
+    // Said once, on the list rather than on every row: the bytes are not here,
+    // and a card that looked like it could open a file and could not would be
+    // worse than one that never suggested it.
+    "note" =>
+      @values.Value::Text("file contents are not available through this server")
+    _ => @values.Value::Nil
+  }
+}
+
+///|
+impl DynComponent for FileList with fn handle(self, bucket, name, args) {
+  match (bucket, name) {
+    // The row's index, not its url: `@key` is what a loop can hand a handler,
+    // and looking the row up here means the view never carries a link it might
+    // pass to the wrong component.
+    (INPUT, "openFile") => {
+      let at = as_num(args.get(0), default=-1.0).to_int()
+      if at >= 0 && at < self.files.length() {
+        let f = self.files[at]
+        if f.permalink != "" {
+          @control.emit("openLink", [
+            @values.Value::Text(f.permalink),
+            @values.Value::Text(f.label),
+          ])
+        }
+      }
+      Unchanged
+    }
+    _ => Unhandled
+  }
+}
+
+///|
+impl DynComponent for FileList with fn with_field(self, name, v) {
+  match (name, v) {
+    ("filter", @values.Value::Text(s)) =>
+      Some({ ..self, filter: s } as &DynComponent)
+    ("files", @values.Value::List(_)) =>
+      Some(
+        { ..self, files: as_items(Some(v)).map(file_row_of) } as &DynComponent,
+      )
+    ("scope", @values.Value::Instance(t)) =>
+      Some({ ..self, scope: t } as &DynComponent)
+    _ => None
+  }
+}
+
+///|
+fn make_file_list(args : Array[(String, @values.Value)]) -> &DynComponent {
+  let (scope, has_scope) = scope_child(arg(args, "scope"))
+  let f : FileList = {
+    filter: as_text(arg(args, "filter")),
+    files: as_items(arg(args, "files")).map(file_row_of),
+    scope,
+    has_scope,
+  }
+  f as &DynComponent
 }
 
 // --- ChannelHistory: one channel's conversations --------------------------
@@ -730,6 +1292,18 @@ priv struct ChannelHistory {
   /// point of the bubbles: a `Segment` five levels down said something, and
   /// the component that owns the page decided what it meant.
   last_action : String
+  /// The `Scope` child: which conversations this page was read from, and which
+  /// were never looked at.
+  ///
+  /// A channel card is honest about its own arithmetic — "11 of 40
+  /// conversations" is right there in `countLabel` — and said nothing at all
+  /// about the workspace those forty came out of. The prose beside it has said
+  /// it for releases, which made the card the more confident of the two while
+  /// being the less informed.
+  scope : UInt64
+  /// Whether that child has anything to disclose. Kept here for the reason
+  /// everything else in this struct is: a token cannot be read back.
+  has_scope : Bool
 }
 
 ///|
@@ -828,6 +1402,8 @@ impl DynComponent for ChannelHistory with fn get_field(self, name) {
     "loading" => Some(@values.Value::Boolean(self.loading))
     "error" => Some(@values.Value::Text(self.error))
     "lastAction" => Some(@values.Value::Text(self.last_action))
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(@values.Value::Boolean(self.has_scope))
     _ => None
   }
 }
@@ -901,6 +1477,25 @@ impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
       let verb = if on { "reacted" } else { "took back" }
       Changed({ ..self, last_action: "\{verb} \{emoji}" } as &DynComponent)
     }
+    // A thread with a count and no replies asked for them. This bundle has no
+    // network, so what it can do is say the call — with both arguments filled
+    // in, which is the whole difference between a dead end and a next step.
+    (BUBBLE, "openThread") => {
+      @control.stop_propagation()
+      let channel = as_text(args.get(0))
+      let ts = as_text(args.get(1))
+      Changed(
+        {
+          ..self,
+          last_action: if ts == "" {
+            "that message carries no timestamp to read replies by"
+          } else {
+            "read the replies: channel=\{channel}, ts=\{ts}"
+          },
+        }
+        as &DynComponent,
+      )
+    }
     _ => Unhandled
   }
 }
@@ -940,6 +1535,7 @@ impl DynComponent for ChannelHistory with fn with_field(self, name, v) {
       Some({ ..self, newest_first: b })
     ("loading", @values.Value::Boolean(b)) => Some({ ..self, loading: b })
     ("error", @values.Value::Text(s)) => Some({ ..self, error: s })
+    ("scope", @values.Value::Instance(t)) => Some({ ..self, scope: t })
     // What the host hands back is the list it was SHOWN — filtered and
     // ordered — so it goes home through `visible()`, which is the same
     // function that decided those positions in the first place. A length that
@@ -977,6 +1573,7 @@ fn make_channel_history(args : Array[(String, @values.Value)]) -> &DynComponent 
     times.push(thread_time(item))
     haystack.push(thread_text(item))
   }
+  let (scope, has_scope) = scope_child(arg(args, "scope"))
   let c : ChannelHistory = {
     channel: as_text(arg(args, "channel"), default="general"),
     topic: as_text(arg(args, "topic")),
@@ -989,6 +1586,8 @@ fn make_channel_history(args : Array[(String, @values.Value)]) -> &DynComponent 
     loading: as_bool(arg(args, "loading")),
     error: as_text(arg(args, "error")),
     last_action: "",
+    scope,
+    has_scope,
   }
   c as &DynComponent
 }
@@ -999,18 +1598,24 @@ fn make_channel_history(args : Array[(String, @values.Value)]) -> &DynComponent 
 /// Order matters only for a reader: the host resolves by name. It runs
 /// smallest-first, the way the components nest.
 ///
-/// No component persists. Five of the six hold nothing but their declared
-/// fields, so the host projects and rebuilds them from the schema; the sixth
+/// No component persists. Seven of the eight hold nothing but their declared
+/// fields, so the host projects and rebuilds them from the schema; the eighth
 /// (`ChannelHistory`) holds the parallel search arrays too, and it rebuilds
 /// them from `threads` in its constructor — which is the same answer, arrived
 /// at without a second copy of the field list.
+///
+/// `Scope` sits at the top with `Segment` because it is the same size of thing:
+/// a leaf that says one small true sentence, which two of the surfaces below
+/// hang under themselves.
 fn dyn_module() -> DynModule {
   module_def([
     dyn_comp("Segment", make_segment),
+    dyn_comp("Scope", make_scope),
     dyn_comp("RichText", make_rich_text),
     dyn_comp("Reaction", make_reaction),
     dyn_comp("Message", make_message),
     dyn_comp("Thread", make_thread),
+    dyn_comp("FileList", make_file_list),
     dyn_comp("ChannelHistory", make_channel_history),
   ])
 }

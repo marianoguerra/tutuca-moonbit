@@ -76,6 +76,7 @@ const values = {
 
 const text = (val) => ({ tag: 'text', val });
 const num = (val) => ({ tag: 'number', val });
+const bool = (val) => ({ tag: 'boolean', val });
 const list = (items) => ({ tag: 'list', val: put(items) });
 const map = (obj) => ({ tag: 'map', val: put(new Map(Object.entries(obj))) });
 
@@ -184,7 +185,7 @@ before(async () => {
   };
 });
 
-test('the static manifest declares three components and asks for one capability', { skip: !built }, () => {
+test('the static manifest declares five components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
   assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'blueskylib');
@@ -194,19 +195,38 @@ test('the static manifest declares three components and asks for one capability'
   // half of itself
   assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
   assert.match(m.capabilities[0].reason, /cdn\.bsky\.app/);
-  assert.deepEqual(m.components.map((c) => c.name), ['Post', 'Thread', 'Profile']);
+  assert.deepEqual(m.components.map((c) => c.name), ['Scope', 'Post', 'Feed', 'Thread', 'Profile']);
 
-  const [post, thread, profile] = m.components;
+  const byName = Object.fromEntries(m.components.map((c) => [c.name, c]));
+  const { Scope: scope, Post: post, Feed: feed, Thread: thread, Profile: profile } = byName;
   assert.deepEqual(post.fields.map((f) => f.name), [
     'uri', 'displayName', 'handle', 'text', 'createdAt', 'avatar', 'facets', 'images',
     'replyCount', 'repostCount', 'likeCount', 'liked', 'reposted',
     'depth', 'focus', 'foldable', 'folded', 'owned',
+    // why this message is in front of this reader, what a moderator said about
+    // it, and the three embeds that used to render as bare text
+    'repostedBy', 'pinned', 'labels', 'external', 'quote', 'video',
   ]);
   assert.deepEqual(post.bubbles, ['liked', 'unliked', 'reposted', 'unreposted', 'folded', 'unfolded']);
-  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus']);
+  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope']);
+  // a feed is a list and a thread is a conversation, so a feed declares no
+  // reply vocabulary at all — that is the whole reason it exists
+  // `title` first, the way the mastodon sibling's `Timeline` declares it: a feed is the one
+  // surface that cannot say what it is from its own contents
+  assert.deepEqual(feed.fields.map((f) => f.name), ['title', 'posts', 'scope']);
+  assert.deepEqual(scope.fields.map((f) => f.name), ['truncated', 'truncatedBy', 'more', 'notes']);
+  assert.deepEqual(profile.fields.map((f) => f.name).slice(-2), ['createdAt', 'pinnedPost']);
   // the thread's bubbles are the ones it HEARS from its rows
   assert.deepEqual(thread.bubbles, ['folded', 'unfolded', 'liked', 'unliked', 'reposted', 'unreposted']);
+  assert.deepEqual(feed.bubbles, ['liked', 'unliked', 'reposted', 'unreposted']);
   assert.deepEqual(profile.bubbles, ['followed', 'unfollowed', 'liked', 'unliked', 'reposted', 'unreposted']);
+  // a `scope` field is a plain record whose keys ARE the Scope component's own
+  // field names, so the two cannot drift without this failing
+  const scopeFields = new Set(scope.fields.map((f) => f.name));
+  for (const c of [feed, thread]) {
+    const args = JSON.parse(c.inits.map((i) => i.argsJson).find((j) => j.includes('"scope"')) ?? '{"scope":{}}');
+    for (const k of Object.keys(args.scope ?? {})) assert.ok(scopeFields.has(k), `${c.name}: scope.${k}`);
+  }
   // every component ships a fixture, so dropping the bundle shows something
   for (const c of m.components) assert.ok(c.inits.length >= 1);
   // and every fixture is JSON the host can actually read
@@ -554,4 +574,218 @@ test('a profile counts a follow on top of the number the record came with', { sk
   assert.deepEqual(rowField(withLike, 'liked'), [true, false]);
   assert.equal(p.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.match(p.callMethod('summary', []).val, /^Alice Alpha @alice\.bsky\.social — 12K followers/);
+});
+
+test('a profile says when it was created and what it pinned', { skip: !built }, () => {
+  const p = instance('Profile', [
+    ['handle', text('alice.bsky.social')],
+    ['createdAt', text('2023-05-14T09:31:00Z')],
+    ['pinnedPost', text('at://did:plc:alice/app.bsky.feed.post/3kaaa')],
+  ]);
+  // a date and not a duration: "3 years ago" needs a clock, and this bundle
+  // asks for no `cap-clock`
+  assert.equal(field(p, 'joinedLabel'), 'Joined 14 May 2023');
+  assert.equal(field(p, 'hasJoined'), true);
+  // the link the prose has always offered, now under the view's own origin
+  assert.equal(field(p, 'pinnedPath'), 'profile/alice.bsky.social/post/3kaaa');
+  assert.equal(field(p, 'hasPinned'), true);
+
+  // absent stays absent rather than becoming a link to nowhere
+  const bare = instance('Profile', [['handle', text('alice.bsky.social')]]);
+  assert.equal(field(bare, 'hasJoined'), false);
+  assert.equal(field(bare, 'hasPinned'), false);
+  assert.equal(field(bare, 'pinnedPath'), '');
+  // and a pinned ref that is not a post has no page to point at, so it offers
+  // none rather than one built out of a shrug
+  const listed = instance('Profile', [
+    ['handle', text('alice.bsky.social')],
+    ['pinnedPost', text('at://did:plc:alice/app.bsky.graph.list/3kaaa')],
+  ]);
+  assert.equal(field(listed, 'hasPinned'), false);
+});
+
+test('a post says who put it in front of you, and what a moderator said about it', { skip: !built }, () => {
+  const p = instance('Post', [
+    ['handle', text('carol.bsky.social')],
+    ['text', text('the write-up is out')],
+    ['repostedBy', text('alice.bsky.social')],
+    ['pinned', bool(true)],
+    ['labels', list([text('!warn'), text('spam')])],
+  ]);
+  // the attribution is a line ABOVE the card: the author is never rewritten,
+  // because the message is still the message
+  assert.equal(field(p, 'handle'), 'carol.bsky.social');
+  assert.equal(field(p, 'repostedBy'), 'alice.bsky.social');
+  assert.equal(field(p, 'repostLabel'), 'Reposted by @alice.bsky.social');
+  assert.equal(field(p, 'repostPath'), 'profile/alice.bsky.social');
+  assert.equal(field(p, 'viaRepost'), true);
+  assert.equal(field(p, 'hasAttribution'), true);
+
+  assert.deepEqual(field(p, 'labels'), ['!warn', 'spam']);
+  assert.equal(field(p, 'hasLabels'), true);
+  assert.equal(field(p, 'labelTitle'), 'labelled !warn, spam by a moderation service');
+
+  // a plain post says none of it, and draws no empty attribution strip
+  const plainPost = instance('Post', [['text', text('hi')]]);
+  assert.equal(field(plainPost, 'hasAttribution'), false);
+  assert.equal(field(plainPost, 'viaRepost'), false);
+  assert.equal(field(plainPost, 'hasLabels'), false);
+  assert.equal(field(plainPost, 'repostLabel'), '');
+
+  // labels also arrive in the shape the wire uses, so a host projecting the raw
+  // record does not have to flatten them first
+  const wire = instance('Post', [
+    ['labels', list([map({ val: text('porn'), src: text('did:plc:labeller') })])],
+  ]);
+  assert.deepEqual(field(wire, 'labels'), ['porn']);
+});
+
+test('the three embeds are read, and the two the poster chose are not links', { skip: !built }, () => {
+  const p = instance('Post', [
+    ['handle', text('carol.bsky.social')],
+    ['external', map({
+      uri: text('https://www.example.com/blog/post?utm=1'),
+      title: text('Dynamic components, end to end'),
+      description: text('what a bundle may reach'),
+      // the AppView re-hosts an unfurled thumbnail, so it lands on the origin
+      // the view already names
+      thumb: text('https://cdn.bsky.app/img/feed_thumbnail/plain/did/bafk1'),
+    })],
+  ]);
+  assert.equal(field(p, 'hasExternal'), true);
+  assert.equal(field(p, 'hasEmbed'), true);
+  // the host is a LABEL, and the full target is what the tooltip carries: no
+  // view can name an origin the person who posted it chose
+  assert.equal(field(p, 'externalHost'), 'example.com');
+  assert.equal(field(p, 'externalTarget'), 'https://www.example.com/blog/post?utm=1');
+  assert.equal(field(p, 'externalThumbPath'), 'img/feed_thumbnail/plain/did/bafk1');
+  // a thumbnail anywhere else is not drawn at all, which is the state a record
+  // with no thumbnail already has
+  const elsewhere = instance('Post', [
+    ['external', map({ uri: text('https://example.com/x'), thumb: text('https://cdn.bsky.app.attacker.test/x') })],
+  ]);
+  assert.equal(field(elsewhere, 'externalThumbPath'), '');
+  // and an unfurl with nowhere to point is not an embed
+  const nowhere = instance('Post', [['external', map({ title: text('orphan') })]]);
+  assert.equal(field(nowhere, 'hasExternal'), false);
+
+  const q = instance('Post', [
+    ['quote', map({
+      uri: text('at://did:plc:alice/app.bsky.feed.post/3kaaa'),
+      displayName: text('Alice Alpha'),
+      handle: text('alice.bsky.social'),
+      text: text('a component that cannot fetch'),
+      createdAt: text('2026-08-11T14:03:00Z'),
+    })],
+  ]);
+  assert.equal(field(q, 'hasQuote'), true);
+  assert.equal(field(q, 'quoteName'), 'Alice Alpha');
+  assert.equal(field(q, 'quoteHandleText'), '@alice.bsky.social');
+  assert.equal(field(q, 'quoteInitials'), 'AA');
+  assert.equal(field(q, 'quoteTime'), '11 Aug 2026, 14:03');
+  // a quote IS on bsky.app, so unlike the unfurl it gets a path the view can
+  // hang under its own literal origin
+  assert.equal(field(q, 'quotePermalinkPath'), 'profile/alice.bsky.social/post/3kaaa');
+  // a quote of a record that was deleted or blocked arrives empty, and an empty
+  // card would say a message is there when it is not
+  assert.equal(field(instance('Post', [['quote', map({})]]), 'hasQuote'), false);
+
+  const v = instance('Post', [
+    ['video', map({ thumb: text('https://cdn.bsky.app/img/thumb/plain/did/bafk2'), alt: text('a terminal') })],
+  ]);
+  assert.equal(field(v, 'hasVideo'), true);
+  assert.equal(field(v, 'videoThumbPath'), 'img/thumb/plain/did/bafk2');
+  assert.equal(field(v, 'videoAlt'), 'a terminal');
+  // no poster frame and no alt text is nothing this bundle can draw
+  assert.equal(field(instance('Post', [['video', map({})]]), 'hasVideo'), false);
+  // a post with none of the three says so once, which is what the view gates on
+  assert.equal(field(instance('Post', [['text', text('hi')]]), 'hasEmbed'), false);
+
+  // an embed round-trips: the host projects it and writes it back unchanged,
+  // and `nil` is the clear rather than a value nobody can read
+  const back = p.withField('external', p.getField('external'));
+  assert.equal(field(back, 'externalHost'), 'example.com');
+  assert.equal(field(p.withField('external', { tag: 'nil' }), 'hasExternal'), false);
+  // anything that is neither a record nor nil is refused, because emptying a
+  // field because a write could not be understood is the quiet kind of wrong
+  assert.equal(p.withField('external', text('https://example.com')), undefined);
+});
+
+test('a feed is a list, and says what the list left out', { skip: !built }, () => {
+  const f = instance('Feed', [
+    ['posts', list(CONVERSATION.slice(0, 3).map(message))],
+    ['scope', map({
+      truncated: bool(true),
+      truncatedBy: text('limit'),
+      more: bool(true),
+      notes: list([text('search indexes recent public posts only')]),
+    })],
+  ]);
+  // every row stands on its own: a feed has no reply structure to imply, which
+  // is the whole reason it is not a Thread
+  assert.deepEqual(rowField(f, 'name'), ['Alice', 'Bob', 'Alice']);
+  assert.deepEqual(rowField(f, 'rail').map((r) => r.length), [0, 0, 0]);
+  assert.deepEqual(rowField(f, 'foldable'), [0, 0, 0]);
+  assert.deepEqual(rowField(f, 'focus'), [false, false, false]);
+  assert.equal(f.callMethod('summary', []).val, '3 messages');
+  // no heading unless one was given: the summary line stands on its own
+  assert.equal(field(f, 'hasTitle'), false);
+  const titled = instance('Feed', [
+    ['title', text('@bsky.app — posts and replies')],
+    ['posts', list(CONVERSATION.slice(0, 1).map(message))],
+  ]);
+  assert.equal(field(titled, 'title'), '@bsky.app — posts and replies');
+  assert.equal(field(titled, 'hasTitle'), true);
+
+  // the scope is a child of its own, and the feed keeps whether it has anything
+  // to say — a token is a bridge handle, so a parent cannot read one back
+  assert.equal(field(f, 'hasScope'), true);
+  const s = child(f.getField('scope').val);
+  assert.equal(field(s, 'hasAny'), true);
+  assert.equal(field(s, 'truncatedLabel'), 'stopped at the limit cap — this is not everything');
+  assert.equal(field(s, 'moreLabel'), 'more pages were not read');
+  assert.deepEqual(field(s, 'notes'), ['search indexes recent public posts only']);
+  assert.match(s.callMethod('summary', []).val, /^scope: stopped at the limit cap; more pages unread;/);
+
+  // an answer with nothing to disclose still HAS a scope, and it draws nothing
+  const complete = instance('Feed', [['posts', list(CONVERSATION.slice(0, 1).map(message))]]);
+  assert.equal(field(complete, 'hasScope'), false);
+  assert.equal(field(child(complete.getField('scope').val), 'hasAny'), false);
+  assert.equal(child(complete.getField('scope').val).callMethod('summary', []).val, '');
+
+  // a row of a feed keeps its own like and the feed does not claim the bubble,
+  // the same way a profile's feed behaves
+  const liked = child(field(f, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  assert.deepEqual(rowField(writeRow(f, 0, liked), 'liked'), [true, false, false]);
+  assert.equal(f.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+
+  // rewriting the messages rebuilds the rows and keeps the scope: a new list is
+  // not a new claim about what was covered
+  const two = f.withField('posts', list(CONVERSATION.slice(0, 2).map(message)));
+  assert.deepEqual(rowField(two, 'name'), ['Alice', 'Bob']);
+  assert.equal(field(two, 'hasScope'), true);
+
+  // a feed summary counts what somebody else put in front of you
+  const mixed = instance('Feed', [
+    ['posts', list([
+      message({ uri: 'at://a/app.bsky.feed.post/1', displayName: 'Alice' }),
+      map({ uri: text('at://c/app.bsky.feed.post/9'), displayName: text('Carol'), repostedBy: text('alice.bsky.social') }),
+    ])],
+  ]);
+  assert.equal(mixed.callMethod('summary', []).val, '2 messages · 1 reposted in');
+  assert.deepEqual(rowField(mixed, 'repostLabel'), ['', 'Reposted by @alice.bsky.social']);
+});
+
+test('a thread carries a scope too, and keeps it across a rewrite', { skip: !built }, () => {
+  const t = instance('Thread', [
+    ['posts', list(CONVERSATION.map(message))],
+    ['scope', map({ truncated: bool(true), truncatedBy: text('depth') })],
+  ]);
+  assert.equal(field(t, 'hasScope'), true);
+  const s = child(t.getField('scope').val);
+  assert.equal(field(s, 'truncatedLabel'), 'stopped at the depth cap — this is not everything');
+  assert.equal(field(s, 'moreLabel'), '');
+  const two = t.withField('posts', list(CONVERSATION.slice(0, 2).map(message)));
+  assert.equal(field(two, 'hasScope'), true);
+  assert.equal(child(two.getField('scope').val), s);
 });

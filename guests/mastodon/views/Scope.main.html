@@ -1,0 +1,6 @@
+<div class="mt-2 flex max-w-xl flex-col gap-1 rounded-xl border border-base-300 bg-base-200/40 px-4 py-3 text-xs text-base-content/60 masto-scope" @show="truthy? .hasAny" :title="$summary">
+  <div class="font-medium uppercase tracking-widest text-base-content/50 scope-label">What this does not cover</div>
+  <div class="truncated" @show=".truncated" @text=".truncatedLabel"></div>
+  <div class="more" @show=".more" @text=".moreLabel"></div>
+  <div class="note" @each=".notes"><x text="@value"></x></div>
+</div>

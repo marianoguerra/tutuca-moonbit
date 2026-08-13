@@ -8,6 +8,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`guests/bluesky`, `guests/slack` and `guests/mastodon` say the things their
+  prose was already saying.** The bundles drew cards that looked more complete
+  than the text beside them, and in the same three ways.
+
+  **Why a message is in front of you.** `Post` takes `repostedBy` and `pinned`.
+  Without the first, a stranger's post drawn in an account's feed reads as
+  something that account wrote — the one wrong claim a reader cannot detect by
+  looking harder, and the one the prose has spelled `[reposted by @alice]` for
+  as long as there has been a feed. It is drawn as a line ABOVE the card:
+  rewriting the author to say it would attribute the post to the reposter.
+
+  **A feed is not a conversation.** New `blueskylib/Feed`: same rows, same
+  children, no reply vocabulary. A timeline, an author's posts and a page of
+  search results were all rendered by `Thread`, which drew them correctly for the
+  wrong reason — the rails and the fold button degraded to nothing, which is not
+  the same as meaning nothing.
+
+  **What the answer does not cover.** New `Scope` in all three bundles, hung
+  under `Feed` / `Thread` / `Timeline` and under `ChannelHistory` / `FileList`,
+  from a plain record whose keys are its own field names. It is not an error and
+  not a warning: it is the sentence that turns a count into a claim someone can
+  check, and it is what makes the card as honest as the text. `blueskylib`'s and
+  `mastodonlib`'s are field-for-field the same component, deliberately — a host
+  drawing both should not have to learn two spellings of "this is not
+  everything" — while `slacklib`'s differs because what a Slack answer leaves
+  out is conversations rather than pages of a feed.
+
+  Beside those: `Post` reads the three embeds that used to draw as bare text
+  (`external`, `quote`, `video`) and the `labels` it was dropping — the one
+  dropped field that was a safety question rather than a fidelity one. `Profile`
+  says when the account was created and what it pinned. `blueskylib/Feed` takes
+  a `title`, the way `mastodonlib/Timeline` already did: three flat messages
+  cannot say whether they came from a timeline, an author or a search, so
+  whoever asked for them is the one who says. `slacklib/Message` draws
+  its `ts` — the argument every follow-up call takes, which lived in a field no
+  view mentioned — and takes a `permalink` it shows and emits rather than
+  follows, since a workspace subdomain is not an origin a view can name.
+  `slacklib/Thread` tells `replyCount` (how many exist) apart from
+  `replies.length()` (how many arrived), so a collapsed row with twenty-one
+  replies and none loaded says so and names the call that would load them
+  instead of offering a caret that expands onto nothing. New
+  `slacklib/FileList`, for the file listing that had no card at all.
+
 - **`guests/mastodon` — the fediverse as a `tutuca:component` bundle: one post
   (`Status`), its poll (`Poll`), a conversation (`Thread`), a feed (`Timeline`)
   and an account (`Profile`), styled after mastodon.social/explore.** It is

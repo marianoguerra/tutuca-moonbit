@@ -75,6 +75,47 @@ priv struct Img {
 }
 
 ///|
+/// A link somebody attached, as the AppView unfurled it.
+///
+/// The `uri` is where the poster pointed, so it is a target and never a link:
+/// the same rule a link FACET follows, and for the same reason — no view can
+/// name an origin the person who wrote the message chose. The thumbnail is a
+/// different case, because the AppView re-hosts it: it arrives on the CDN this
+/// bundle's views already name, so `cdn_path` decides it like any other picture.
+priv struct Ext {
+  uri : String
+  title : String
+  description : String
+  /// The unfurled preview picture, as the full url the record carries.
+  thumb : String
+}
+
+///|
+/// The message a quote post is wrapped around.
+///
+/// Flat, and only what a quote card shows: a quote's OWN rich text would need a
+/// loop inside a loop, which a static view cannot do (the sequence an `@each`
+/// takes is a field path, not a loop binding). So the quoted text is drawn
+/// plain, with its permalink under it for whoever wants the real thing.
+priv struct Quote {
+  uri : String
+  display_name : String
+  handle : String
+  avatar : String
+  text : String
+  created_at : String
+}
+
+///|
+/// An attached video. There is no player here — a playlist is an `.m3u8` fetch
+/// this bundle has no way to make and no reason to be trusted with — so what a
+/// video is, is its poster frame on the CDN and its alt text.
+priv struct Vid {
+  thumb : String
+  alt : String
+}
+
+///|
 /// One message. `Post` holds one of these, `Thread` a flattened tree of them
 /// and `Profile` the account's recent ones, so the projection helpers below
 /// are written once and used by all three.
@@ -93,6 +134,31 @@ priv struct Msg {
   likes : Int
   /// Reply depth in a thread; 0 for a message standing on its own.
   depth : Int
+  /// Who put this message in front of this reader: the handle of the account
+  /// that reposted it, `""` when nobody did.
+  ///
+  /// A feed item and a post are not the same record, and this is the field where
+  /// that shows. Without it a stranger's post drawn in an account's feed reads as
+  /// something that account wrote — the one wrong claim a reader cannot detect by
+  /// looking harder. The author is NOT rewritten to say so: the message is still
+  /// the message, and the attribution is a line above the card.
+  reposted_by : String
+  /// Whether the feed it came from had it pinned to the top.
+  pinned : Bool
+  /// Moderation label values on the record (`porn`, `graphic-media`, `!warn`, …),
+  /// as the labellers set them.
+  ///
+  /// The one dropped field that is a safety question rather than a fidelity one:
+  /// a labelled message drawn with no indicator is a labelled message this reader
+  /// was not told about. Nothing here HIDES anything — that is the host's policy
+  /// to make and it needs the reader's own preferences to make it — but a card
+  /// that says which labels a record carries is a card that stopped being silent.
+  labels : Array[String]
+  /// An unfurled link, a quoted message and a video: the three embeds that were
+  /// text-only before, and between them most of what gets posted.
+  external : Ext?
+  quote : Quote?
+  video : Vid?
 }
 
 ///|
@@ -208,6 +274,91 @@ fn image_items_value(images : Array[Img]) -> @values.Value {
 }
 
 ///|
+fn bool_at(m : UInt64, key : String) -> Bool {
+  match @values.map_get(m, key) {
+    Some(@values.Value::Boolean(b)) => b
+    _ => false
+  }
+}
+
+///|
+/// A list of plain strings, which is what `labels` arrives as. A label that came
+/// as `{ "val": … }` — the shape the wire uses — is read from there too, so a
+/// host projecting the raw record does not have to flatten it first.
+fn strs_of(items : Array[@values.Value]) -> Array[String] {
+  let out : Array[String] = []
+  for v in items {
+    match v {
+      @values.Value::Text(s) => if s != "" { out.push(s) }
+      @values.Value::Map(m) => {
+        let val = str_at(m, "val")
+        if val != "" {
+          out.push(val)
+        }
+      }
+      _ => ()
+    }
+  }
+  out
+}
+
+///|
+/// The nested record under `key`, or `None` when the field is absent or is not a
+/// map. An embed that arrives as anything else is dropped rather than half-read.
+fn map_at(m : UInt64, key : String) -> UInt64? {
+  match @values.map_get(m, key) {
+    Some(@values.Value::Map(h)) => Some(h)
+    _ => None
+  }
+}
+
+///|
+/// An unfurled link. Dropped whole unless it points somewhere: a preview card
+/// with no target is a box a reader cannot act on.
+fn ext_of(m : UInt64) -> Ext? {
+  guard map_at(m, "external") is Some(h) else { return None }
+  let uri = str_at(h, "uri")
+  guard uri != "" else { return None }
+  Some({
+    uri,
+    title: str_at(h, "title"),
+    description: str_at(h, "description"),
+    thumb: str_at(h, "thumb"),
+  })
+}
+
+///|
+/// The quoted message. Kept when it has an author or something to say; a quote
+/// of a record that was deleted or blocked arrives empty, and drawing an empty
+/// card would say a message is there when it is not.
+fn quote_of(m : UInt64) -> Quote? {
+  guard map_at(m, "quote") is Some(h) else { return None }
+  let handle = str_at(h, "handle")
+  let display_name = str_at(h, "displayName")
+  let text = str_at(h, "text")
+  guard handle != "" || display_name != "" || text != "" else { return None }
+  Some({
+    uri: str_at(h, "uri"),
+    display_name,
+    handle,
+    avatar: str_at(h, "avatar"),
+    text,
+    created_at: str_at(h, "createdAt"),
+  })
+}
+
+///|
+/// The video. A record with neither a poster frame nor alt text has nothing this
+/// bundle can draw, so it is not a video as far as the card is concerned.
+fn video_of(m : UInt64) -> Vid? {
+  guard map_at(m, "video") is Some(h) else { return None }
+  let thumb = str_at(h, "thumb")
+  let alt = str_at(h, "alt")
+  guard thumb != "" || alt != "" else { return None }
+  Some({ thumb, alt })
+}
+
+///|
 /// One message out of the map a declared list field arrives as. Every key is
 /// optional: a record the host built from a form, or from JSON somebody typed,
 /// is missing most of them and still has to render.
@@ -228,6 +379,12 @@ fn msg_of(m : UInt64, depth? : Int = 0) -> Msg {
       Some(@values.Value::Number(n)) => n.to_int()
       _ => depth
     },
+    reposted_by: str_at(m, "repostedBy"),
+    pinned: bool_at(m, "pinned"),
+    labels: strs_of(items_at(m, "labels")),
+    external: ext_of(m),
+    quote: quote_of(m),
+    video: video_of(m),
   }
 }
 
@@ -303,7 +460,60 @@ fn msg_value(m : Msg) -> @values.Value {
     ("repostCount", vnum(m.reposts)),
     ("likeCount", vnum(m.likes)),
     ("depth", vnum(m.depth)),
+    ("repostedBy", vtext(m.reposted_by)),
+    ("pinned", @values.Value::Boolean(m.pinned)),
+    ("labels", labels_value(m.labels)),
+    ("external", ext_value(m.external)),
+    ("quote", quote_value(m.quote)),
+    ("video", video_value(m.video)),
   ])
+}
+
+///|
+fn labels_value(labels : Array[String]) -> @values.Value {
+  vlist(labels.map(vtext))
+}
+
+///|
+/// An embed back in the shape it arrived in. `Nil` for one that is not there,
+/// which is what the host writes back when it projects the field: a record with
+/// no video and a record whose video this bundle refused to read are the same
+/// record as far as anything downstream is concerned.
+fn ext_value(e : Ext?) -> @values.Value {
+  match e {
+    Some(e) =>
+      vmap([
+        ("uri", vtext(e.uri)),
+        ("title", vtext(e.title)),
+        ("description", vtext(e.description)),
+        ("thumb", vtext(e.thumb)),
+      ])
+    None => @values.Value::Nil
+  }
+}
+
+///|
+fn quote_value(q : Quote?) -> @values.Value {
+  match q {
+    Some(q) =>
+      vmap([
+        ("uri", vtext(q.uri)),
+        ("displayName", vtext(q.display_name)),
+        ("handle", vtext(q.handle)),
+        ("avatar", vtext(q.avatar)),
+        ("text", vtext(q.text)),
+        ("createdAt", vtext(q.created_at)),
+      ])
+    None => @values.Value::Nil
+  }
+}
+
+///|
+fn video_value(v : Vid?) -> @values.Value {
+  match v {
+    Some(v) => vmap([("thumb", vtext(v.thumb)), ("alt", vtext(v.alt))])
+    None => @values.Value::Nil
+  }
 }
 
 // ── rich text: facets over UTF-8 byte offsets ────────────────────────────────
@@ -589,6 +799,20 @@ fn time_label(iso : String) -> String {
 }
 
 ///|
+/// The same stamp with the clock taken off — "11 Aug 2026". What a join date is:
+/// nobody has ever wanted the minute an account was created.
+fn date_label(iso : String) -> String {
+  let full = time_label(iso)
+  let chars : Array[Char] = full.iter().collect()
+  for i in 0..<chars.length() {
+    if chars[i] == ',' {
+      return slice(chars, 0, i)
+    }
+  }
+  full
+}
+
+///|
 fn check_digits(chars : Array[Char], at : Array[Int]) -> Bool {
   for i in at {
     if i >= chars.length() || chars[i] < '0' || chars[i] > '9' {
@@ -654,6 +878,37 @@ fn permalink_path_of(uri : String, handle : String) -> String {
   }
   let who = if handle != "" { handle } else { parts[0] }
   "profile/\{who}/post/\{parts[2]}"
+}
+
+///|
+/// The host part of a url, without a `www.` nobody reads — what a link preview
+/// says it will take you to.
+///
+/// This is a LABEL and not a check. Deciding whether a url may be followed is
+/// `cdn_path`'s job and the view's, and neither of them ever sees this string:
+/// an unfurled link is drawn as text with its full target in the tooltip, so the
+/// worst a host written here can do is be read.
+fn host_of(url : String) -> String {
+  let rest = if url.has_prefix("https://") {
+    url[8:].to_owned()
+  } else if url.has_prefix("http://") {
+    url[7:].to_owned()
+  } else {
+    url
+  }
+  let buf = StringBuilder::new()
+  for c in rest.iter() {
+    if c == '/' || c == '?' || c == '#' {
+      break
+    }
+    buf.write_char(c)
+  }
+  let host = buf.to_string()
+  if host.has_prefix("www.") {
+    host[4:].to_owned()
+  } else {
+    host
+  }
 }
 
 ///|
@@ -742,6 +997,12 @@ impl DynComponent for Post with fn get_field(self, name) {
     "foldable" => Some(vnum(self.foldable))
     "folded" => Some(@values.Value::Boolean(self.folded))
     "owned" => Some(@values.Value::Boolean(self.owned))
+    "repostedBy" => Some(vtext(m.reposted_by))
+    "pinned" => Some(@values.Value::Boolean(m.pinned))
+    "labels" => Some(labels_value(m.labels))
+    "external" => Some(ext_value(m.external))
+    "quote" => Some(quote_value(m.quote))
+    "video" => Some(video_value(m.video))
     // and what the view reads instead: the projections, computed here so the
     // template stays a template
     "name" => Some(vtext(name_of(m)))
@@ -767,7 +1028,126 @@ impl DynComponent for Post with fn get_field(self, name) {
       Some(vlist(Array::make(if m.depth > 0 { m.depth } else { 0 }, vnum(0))))
     "foldLabel" =>
       Some(vtext(if self.folded { "+\{self.foldable}" } else { "−" }))
+    // Why this message is in front of this reader, drawn ABOVE the card rather
+    // than woven into it: the message is still the message, and the attribution
+    // is a fact about the feed it arrived in.
+    "hasAttribution" =>
+      Some(@values.Value::Boolean(m.reposted_by != "" || m.pinned))
+    "viaRepost" => Some(@values.Value::Boolean(m.reposted_by != ""))
+    "repostLabel" =>
+      Some(
+        vtext(
+          if m.reposted_by == "" {
+            ""
+          } else {
+            "Reposted by @\{m.reposted_by}"
+          },
+        ),
+      )
+    "repostPath" =>
+      Some(
+        vtext(if m.reposted_by == "" { "" } else { "profile/\{m.reposted_by}" }),
+      )
+    // Every label the record carries, named. Nothing is hidden and nothing is
+    // interpreted: which labels mean "blur this" depends on the reader's own
+    // preferences and on which labellers they subscribe to, neither of which is
+    // in this bundle's reach. Saying what is on the record is.
+    "hasLabels" => Some(@values.Value::Boolean(!m.labels.is_empty()))
+    "labelTitle" =>
+      Some(
+        vtext(
+          if m.labels.is_empty() {
+            ""
+          } else {
+            "labelled \{m.labels.join(", ")} by a moderation service"
+          },
+        ),
+      )
+    // The three embeds. Each is drawn only when the guest could read one, so a
+    // record with an embed shape nobody here knows is a record with no embed —
+    // the same state as a plain post, which already renders.
+    "hasEmbed" =>
+      Some(
+        @values.Value::Boolean(
+          m.external is Some(_) || m.quote is Some(_) || m.video is Some(_),
+        ),
+      )
+    "hasExternal" => Some(@values.Value::Boolean(m.external is Some(_)))
+    "externalTitle" => Some(vtext(ext_field(m.external, e => e.title)))
+    "externalDescription" =>
+      Some(vtext(ext_field(m.external, e => e.description)))
+    // Where it points, as the tooltip and as the line under the title. Never an
+    // href: the poster chose this origin, so no view can name it — the same
+    // split a link facet makes.
+    "externalTarget" => Some(vtext(ext_field(m.external, e => e.uri)))
+    "externalHost" => Some(vtext(ext_field(m.external, e => host_of(e.uri))))
+    // The preview picture is a different case, because the AppView re-hosts it:
+    // it arrives on the CDN the view already names, so it is drawn like any
+    // other picture and refused the same way.
+    "externalThumbPath" =>
+      Some(vtext(ext_field(m.external, e => cdn_path(e.thumb))))
+    "hasQuote" => Some(@values.Value::Boolean(m.quote is Some(_)))
+    "quoteName" =>
+      Some(
+        vtext(
+          quote_field(m.quote, q => display_name_or(q.display_name, q.handle)),
+        ),
+      )
+    "quoteHandleText" =>
+      Some(vtext(quote_field(m.quote, q => at_handle(q.handle))))
+    "quoteInitials" =>
+      Some(
+        vtext(quote_field(m.quote, q => initials_of(q.display_name, q.handle))),
+      )
+    "quoteAvatarPath" =>
+      Some(vtext(quote_field(m.quote, q => cdn_path(q.avatar))))
+    "quoteText" => Some(vtext(quote_field(m.quote, q => q.text)))
+    "quoteTime" =>
+      Some(vtext(quote_field(m.quote, q => time_label(q.created_at))))
+    "quotePermalink" =>
+      Some(vtext(quote_field(m.quote, q => permalink_of(q.uri, q.handle))))
+    "quotePermalinkPath" =>
+      Some(vtext(quote_field(m.quote, q => permalink_path_of(q.uri, q.handle))))
+    "hasVideo" => Some(@values.Value::Boolean(m.video is Some(_)))
+    "videoAlt" =>
+      Some(
+        vtext(
+          match m.video {
+            Some(v) => if v.alt == "" { "video" } else { v.alt }
+            None => ""
+          },
+        ),
+      )
+    "videoThumbPath" =>
+      Some(
+        vtext(
+          match m.video {
+            Some(v) => cdn_path(v.thumb)
+            None => ""
+          },
+        ),
+      )
     _ => None
+  }
+}
+
+///|
+/// One string off an embed that may not be there. `""` for absent, which is the
+/// state every view here already draws: the empty answer and the missing one
+/// look the same on the page, and `hasExternal` is what decides whether the block
+/// is there at all.
+fn ext_field(e : Ext?, pick : (Ext) -> String) -> String {
+  match e {
+    Some(e) => pick(e)
+    None => ""
+  }
+}
+
+///|
+fn quote_field(q : Quote?, pick : (Quote) -> String) -> String {
+  match q {
+    Some(q) => pick(q)
+    None => ""
   }
 }
 
@@ -890,8 +1270,51 @@ impl DynComponent for Post with fn with_field(self, name, v) {
       Some({ ..self, folded: b } as &DynComponent)
     ("owned", @values.Value::Boolean(b)) =>
       Some({ ..self, owned: b } as &DynComponent)
+    ("repostedBy", @values.Value::Text(s)) =>
+      Some({ ..self, msg: { ..m, reposted_by: s } } as &DynComponent)
+    ("pinned", @values.Value::Boolean(b)) =>
+      Some({ ..self, msg: { ..m, pinned: b } } as &DynComponent)
+    ("labels", @values.Value::List(h)) =>
+      Some(
+        { ..self, msg: { ..m, labels: strs_of(list_items(h)) } }
+        as &DynComponent,
+      )
+    // An embed is written whole or cleared whole. `Nil` is the clear, and it is
+    // the value `get_field` hands back for a record that has none — so a host
+    // that projects a plain post and writes it home leaves it plain. Anything
+    // that is neither is refused rather than read as a clear: emptying a field
+    // because a write could not be understood is the quiet kind of wrong.
+    ("external", @values.Value::Map(_)) =>
+      Some(
+        { ..self, msg: { ..m, external: ext_of(wrapped("external", v)) } }
+        as &DynComponent,
+      )
+    ("external", @values.Value::Nil) =>
+      Some({ ..self, msg: { ..m, external: None } } as &DynComponent)
+    ("quote", @values.Value::Map(_)) =>
+      Some(
+        { ..self, msg: { ..m, quote: quote_of(wrapped("quote", v)) } }
+        as &DynComponent,
+      )
+    ("quote", @values.Value::Nil) =>
+      Some({ ..self, msg: { ..m, quote: None } } as &DynComponent)
+    ("video", @values.Value::Map(_)) =>
+      Some(
+        { ..self, msg: { ..m, video: video_of(wrapped("video", v)) } }
+        as &DynComponent,
+      )
+    ("video", @values.Value::Nil) =>
+      Some({ ..self, msg: { ..m, video: None } } as &DynComponent)
     _ => None
   }
+}
+
+///|
+/// `v` under one key, as a map — the shape the `*_of` readers take.
+fn wrapped(key : String, v : @values.Value) -> UInt64 {
+  let h = @values.map_new()
+  @values.map_set(h, key, v)
+  h
 }
 
 ///|
@@ -909,6 +1332,12 @@ fn empty_msg() -> Msg {
     reposts: 0,
     likes: 0,
     depth: 0,
+    reposted_by: "",
+    pinned: false,
+    labels: [],
+    external: None,
+    quote: None,
+    video: None,
   }
 }
 
@@ -948,6 +1377,16 @@ fn make_post(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("foldable", @values.Value::Number(n)) => foldable = n.to_int()
       ("folded", @values.Value::Boolean(b)) => folded = b
       ("owned", @values.Value::Boolean(b)) => owned = b
+      ("repostedBy", @values.Value::Text(s)) => msg = { ..msg, reposted_by: s }
+      ("pinned", @values.Value::Boolean(b)) => msg = { ..msg, pinned: b }
+      ("labels", @values.Value::List(h)) =>
+        msg = { ..msg, labels: strs_of(list_items(h)) }
+      ("external", @values.Value::Map(_)) =>
+        msg = { ..msg, external: ext_of(wrapped("external", v)) }
+      ("quote", @values.Value::Map(_)) =>
+        msg = { ..msg, quote: quote_of(wrapped("quote", v)) }
+      ("video", @values.Value::Map(_)) =>
+        msg = { ..msg, video: video_of(wrapped("video", v)) }
       _ => ()
     }
   }
@@ -980,6 +1419,12 @@ fn child_args(
     ("repostCount", vnum(m.reposts)),
     ("likeCount", vnum(m.likes)),
     ("depth", vnum(m.depth)),
+    ("repostedBy", vtext(m.reposted_by)),
+    ("pinned", @values.Value::Boolean(m.pinned)),
+    ("labels", labels_value(m.labels)),
+    ("external", ext_value(m.external)),
+    ("quote", quote_value(m.quote)),
+    ("video", video_value(m.video)),
     ("focus", @values.Value::Boolean(focus)),
     ("foldable", vnum(foldable)),
     ("liked", @values.Value::Boolean(liked)),
@@ -989,6 +1434,176 @@ fn child_args(
     // reads to draw it smaller
     ("owned", @values.Value::Boolean(true)),
   ]
+}
+
+// ── Scope: what the answer above it does NOT cover ───────────────────────────
+
+///|
+/// The disclosure that an answer is partial.
+///
+/// A card is a claim, and until this component existed the claim was always
+/// "here is the feed" — never "here are the 25 the service handed over, out of a
+/// number nobody counted, from an index that only holds recent public posts".
+/// The prose beside a card has said that for releases; the card has not, so the
+/// card was the more confident of the two while being the less informed.
+///
+/// It is deliberately not an error and not a warning. Nothing here is wrong: a
+/// page is a page. What it turns a count into is a claim a reader can check,
+/// which is the only thing that makes the two halves of a dual answer agree.
+///
+/// Its twin lives in the slack bundle, with the vocabulary that bundle needs
+/// (public channels, private channels, DMs). This one carries what an ATProto
+/// read can honestly say: whether a cap stopped it, whether there is another
+/// page, and the sentences that name what an index does not hold.
+priv struct Scope {
+  /// A cap stopped this before the data ran out. The one field that matters
+  /// most: it is the difference between "there is no more" and "I stopped".
+  truncated : Bool
+  /// What stopped it, in the caller's words: `"limit"`, `"depth"`.
+  truncated_by : String
+  /// There is another page, and nobody asked for it.
+  more : Bool
+  /// What this answer does not cover, one sentence each. Free text because the
+  /// reasons are not a closed set — an index that only holds recent public
+  /// posts and a filter the service applied are both true and neither is a
+  /// boolean.
+  notes : Array[String]
+}
+
+///|
+impl DynComponent for Scope with fn get_field(self, name) {
+  match name {
+    "truncated" => Some(@values.Value::Boolean(self.truncated))
+    "truncatedBy" => Some(vtext(self.truncated_by))
+    "more" => Some(@values.Value::Boolean(self.more))
+    "notes" => Some(vlist(self.notes.map(vtext)))
+    // A scope with nothing to disclose draws nothing at all. That is not the
+    // same as a scope that is absent, and both are correct: the difference only
+    // matters to whoever built it.
+    "hasAny" =>
+      Some(
+        @values.Value::Boolean(
+          self.truncated || self.more || !self.notes.is_empty(),
+        ),
+      )
+    "truncatedLabel" =>
+      Some(
+        vtext(
+          if !self.truncated {
+            ""
+          } else if self.truncated_by == "" {
+            "stopped early — this is not everything"
+          } else {
+            "stopped at the \{self.truncated_by} cap — this is not everything"
+          },
+        ),
+      )
+    "moreLabel" =>
+      Some(vtext(if self.more { "more pages were not read" } else { "" }))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for Scope with fn call_method(self, name, _args) {
+  match name {
+    "summary" => {
+      let parts : Array[String] = []
+      if self.truncated {
+        parts.push(
+          if self.truncated_by == "" {
+            "stopped early"
+          } else {
+            "stopped at the \{self.truncated_by} cap"
+          },
+        )
+      }
+      if self.more {
+        parts.push("more pages unread")
+      }
+      for n in self.notes {
+        parts.push(n)
+      }
+      if parts.is_empty() {
+        vtext("")
+      } else {
+        vtext("scope: \{parts.join("; ")}")
+      }
+    }
+    _ => @values.Value::Nil
+  }
+}
+
+///|
+impl DynComponent for Scope with fn with_field(self, name, v) {
+  match (name, v) {
+    ("truncated", @values.Value::Boolean(b)) =>
+      Some({ ..self, truncated: b } as &DynComponent)
+    ("truncatedBy", @values.Value::Text(s)) =>
+      Some({ ..self, truncated_by: s } as &DynComponent)
+    ("more", @values.Value::Boolean(b)) =>
+      Some({ ..self, more: b } as &DynComponent)
+    ("notes", @values.Value::List(h)) =>
+      Some({ ..self, notes: strs_of(list_items(h)) } as &DynComponent)
+    _ => None
+  }
+}
+
+///|
+fn make_scope(args : Array[(String, @values.Value)]) -> &DynComponent {
+  let mut truncated = false
+  let mut truncated_by = ""
+  let mut more = false
+  let mut notes : Array[String] = []
+  for arg in args {
+    let (name, v) = arg
+    match (name, v) {
+      ("truncated", @values.Value::Boolean(b)) => truncated = b
+      ("truncatedBy", @values.Value::Text(s)) => truncated_by = s
+      ("more", @values.Value::Boolean(b)) => more = b
+      ("notes", @values.Value::List(h)) => notes = strs_of(list_items(h))
+      _ => ()
+    }
+  }
+  ({ truncated, truncated_by, more, notes } : Scope) as &DynComponent
+}
+
+///|
+/// The `Scope` child a surface hangs under itself, from whatever its `scope`
+/// field held.
+///
+/// One is always built, even for an answer with nothing to disclose. The keys of
+/// the record ARE the component's field names, so a host that writes plain JSON
+/// into `scope` gets the component it would have got by building one.
+///
+/// Whether it has anything to SAY comes back beside the token rather than out of
+/// the child, and that is the contract talking rather than a shortcut: a token is
+/// a bridge handle, and a parent holding one cannot read a field behind it. So
+/// the surface decides whether to draw the box from the record it was handed,
+/// and the child decides what goes in it.
+fn scope_child(v : @values.Value?) -> (UInt64, Bool) {
+  let args : Array[(String, @values.Value)] = []
+  let mut any = false
+  match v {
+    Some(@values.Value::Map(h)) =>
+      for k in @values.map_keys(h) {
+        match @values.map_get(h, k) {
+          Some(child) => {
+            args.push((k, child))
+            any = any ||
+              (match (k, child) {
+                ("truncated", @values.Value::Boolean(b)) => b
+                ("more", @values.Value::Boolean(b)) => b
+                ("notes", @values.Value::List(l)) => @values.list_len(l) > 0U
+                _ => false
+              })
+          }
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  (@control.make_instance("Scope", args), any)
 }
 
 // ── Thread: a reply tree, flattened, as a list of Posts ──────────────────────
@@ -1030,6 +1645,14 @@ priv struct Thread {
   /// could be handed them back — a workaround for a child in a list being unable
   /// to return a successor. The row keeps them now.
   collapsed : Array[String]
+  /// The `Scope` child: what this conversation does NOT show. A thread comes
+  /// back capped by a depth the caller chose and by one the service chose, and
+  /// the card said neither until this field existed.
+  scope : UInt64
+  /// Whether that child has anything to disclose, which is what the view gates
+  /// the box on. Kept here because a token cannot be read back — see
+  /// `scope_child`.
+  has_scope : Bool
 }
 
 ///|
@@ -1143,6 +1766,8 @@ impl DynComponent for Thread with fn get_field(self, name) {
     // declared
     "posts" => Some(vlist(self.posts.map(msg_value)))
     "focus" => Some(vtext(self.focus))
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(@values.Value::Boolean(self.has_scope))
     // derived: the child components the view renders, minus the folded-away
     "rows" =>
       Some(
@@ -1224,11 +1849,18 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
         focus: self.focus,
         children: [],
         collapsed: [],
+        // The scope is the ANSWER's, not the list's: a host writing new messages
+        // home is not making a new claim about what was covered, so the child it
+        // was handed stays. Rebuilding one here would also strand the old token.
+        scope: self.scope,
+        has_scope: self.has_scope,
       }
       Some(next.build_rows() as &DynComponent)
     }
     ("focus", @values.Value::Text(s)) =>
       Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
+    ("scope", @values.Value::Instance(t)) =>
+      Some({ ..self, scope: t } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the list it was SHOWN — `visible()` — so it goes
     // home through the same function that decided those positions. A length that
@@ -1259,16 +1891,149 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
 fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts : Array[Msg] = []
   let mut focus = ""
+  let mut scope_arg : @values.Value? = None
   for arg in args {
     let (name, v) = arg
     match (name, v) {
       // hot-swap migration hands the declared fields back as args
       ("posts", @values.Value::List(h)) => posts = msgs_of(h)
       ("focus", @values.Value::Text(s)) => focus = s
+      ("scope", _) => scope_arg = Some(v)
       _ => ()
     }
   }
-  ({ posts, focus, children: [], collapsed: [] } : Thread).build_rows()
+  let (scope, has_scope) = scope_child(scope_arg)
+  ({ posts, focus, children: [], collapsed: [], scope, has_scope } : Thread).build_rows()
+  as &DynComponent
+}
+
+// ── Feed: a list of messages that is not a conversation ──────────────────────
+
+///|
+/// A feed: a timeline, an author's posts, a page of search results.
+///
+/// It exists because `Thread` was doing this job and `Thread` is a conversation.
+/// Every message a feed carries arrives at depth 0 and nothing under it is a
+/// reply to anything above it, so a thread rendering it drew the right rows for
+/// the wrong reason — the rails and the fold button degraded to nothing, which
+/// is not the same as meaning nothing. A reader looking at a card cannot tell
+/// "these five messages happen to be flat" from "these five messages are a
+/// conversation that happens to be flat", and only one of those is true.
+///
+/// So: same rows, same children, no reply vocabulary at all. A row here is a
+/// `Post` at depth 0 with nothing foldable, and the only thing the feed adds is
+/// the `Scope` under it — because a feed is a PAGE of something larger far more
+/// often than a thread is.
+///
+/// Like `Profile`, it does not handle a row's `liked` / `reposted`: the row keeps
+/// its own answer, and the bubble is for whoever above can write a record.
+priv struct Feed {
+  /// What this list IS — "@bsky.app — posts and replies", `search: "wasm"`.
+  ///
+  /// A feed is the one surface here that cannot say what it is from its own
+  /// contents: a `Thread` is the conversation its focus is in and a `Profile` is
+  /// the account it names, but three flat messages are three flat messages
+  /// whether they came from a timeline, an author or a search. Whoever asked for
+  /// them is the only one who knows, so they are the one who says. Empty for a
+  /// list that would rather not, and the summary line stands on its own.
+  title : String
+  posts : Array[Msg]
+  /// One child `Post` per message, in `posts` order. No filtering — a feed shows
+  /// every row it has, which is what makes the write-back positions map straight
+  /// across where a thread's have to go back through `visible()`.
+  children : Array[UInt64]
+  scope : UInt64
+  has_scope : Bool
+}
+
+///|
+/// A message in a feed stands on its own: depth 0, nothing to fold, no focus.
+/// The reason it is in front of this reader — a repost, a pin — travels with the
+/// record and is drawn by the row.
+fn Feed::make_row(self : Feed, i : Int) -> UInt64 {
+  let m = self.posts[i]
+  @control.make_instance(
+    "Post",
+    child_args({ ..m, depth: 0 }, focus=false, foldable=0),
+  )
+}
+
+///|
+fn Feed::build_rows(self : Feed) -> Feed {
+  let children : Array[UInt64] = []
+  for i in 0..<self.posts.length() {
+    children.push(self.make_row(i))
+  }
+  { ..self, children, }
+}
+
+///|
+impl DynComponent for Feed with fn get_field(self, name) {
+  match name {
+    "title" => Some(vtext(self.title))
+    "hasTitle" => Some(@values.Value::Boolean(self.title != ""))
+    "posts" => Some(vlist(self.posts.map(msg_value)))
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(@values.Value::Boolean(self.has_scope))
+    "rows" => Some(vlist(self.children.map(t => @values.Value::Instance(t))))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for Feed with fn call_method(self, name, _args) {
+  match name {
+    "summary" => {
+      let n = self.posts.length()
+      let reposts = self.posts.iter().filter(m => m.reposted_by != "").count()
+      if reposts == 0 {
+        vtext(if n == 1 { "1 message" } else { "\{n} messages" })
+      } else {
+        vtext("\{n} messages · \{reposts} reposted in")
+      }
+    }
+    _ => @values.Value::Nil
+  }
+}
+
+///|
+impl DynComponent for Feed with fn with_field(self, name, v) {
+  match (name, v) {
+    ("title", @values.Value::Text(s)) =>
+      Some({ ..self, title: s } as &DynComponent)
+    ("posts", @values.Value::List(h)) =>
+      Some(({ ..self, posts: msgs_of(h) } : Feed).build_rows() as &DynComponent)
+    ("scope", @values.Value::Instance(t)) =>
+      Some({ ..self, scope: t } as &DynComponent)
+    // A row returned a successor and the host is writing the whole list home.
+    ("rows", _) =>
+      match tokens_of(v) {
+        Some(children) => {
+          guard children.length() == self.children.length() else { None }
+          Some({ ..self, children, } as &DynComponent)
+        }
+        None => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn make_feed(args : Array[(String, @values.Value)]) -> &DynComponent {
+  let mut title = ""
+  let mut posts : Array[Msg] = []
+  let mut scope_arg : @values.Value? = None
+  for arg in args {
+    let (name, v) = arg
+    match (name, v) {
+      ("title", @values.Value::Text(s)) => title = s
+      ("posts", @values.Value::List(h)) => posts = msgs_of(h)
+      ("scope", _) => scope_arg = Some(v)
+      _ => ()
+    }
+  }
+  let (scope, has_scope) = scope_child(scope_arg)
+  ({ title, posts, children: [], scope, has_scope } : Feed).build_rows()
   as &DynComponent
 }
 
@@ -1294,6 +2059,18 @@ priv struct Profile {
   following : Bool
   posts : Array[Msg]
   children : Array[UInt64]
+  /// When the account was created, as an ISO 8601 stamp. Drawn as a date and not
+  /// a duration, for the same reason a message's time is: "3 years ago" needs a
+  /// clock, and `cap-clock` is a capability this bundle does without.
+  created_at : String
+  /// The at:// uri of the message this account pinned to its profile, `""` for
+  /// none.
+  ///
+  /// The URI and not the message: `getProfiles` answers with a strong ref, so
+  /// the content is one more request away and this bundle makes none. What a
+  /// card can honestly offer is therefore the link — which is what the prose has
+  /// been offering for as long as the prose has existed.
+  pinned_post : String
 }
 
 ///|
@@ -1329,7 +2106,28 @@ impl DynComponent for Profile with fn get_field(self, name) {
     "postsCount" => Some(vnum(self.posts_count))
     "following" => Some(@values.Value::Boolean(self.following))
     "posts" => Some(vlist(self.posts.map(msg_value)))
+    "createdAt" => Some(vtext(self.created_at))
+    "pinnedPost" => Some(vtext(self.pinned_post))
     // derived
+    "joinedLabel" =>
+      Some(
+        vtext(
+          if self.created_at == "" {
+            ""
+          } else {
+            "Joined \{date_label(self.created_at)}"
+          },
+        ),
+      )
+    "hasJoined" => Some(@values.Value::Boolean(self.created_at != ""))
+    "pinnedPath" =>
+      Some(vtext(permalink_path_of(self.pinned_post, self.handle)))
+    "hasPinned" =>
+      Some(
+        @values.Value::Boolean(
+          permalink_path_of(self.pinned_post, self.handle) != "",
+        ),
+      )
     "name" => Some(vtext(display_name_or(self.display_name, self.handle)))
     "handleText" => Some(vtext(at_handle(self.handle)))
     "initials" => Some(vtext(initials_of(self.display_name, self.handle)))
@@ -1397,6 +2195,10 @@ impl DynComponent for Profile with fn with_field(self, name, v) {
       Some({ ..self, posts_count: n.to_int() } as &DynComponent)
     ("following", @values.Value::Boolean(b)) =>
       Some({ ..self, following: b } as &DynComponent)
+    ("createdAt", @values.Value::Text(s)) =>
+      Some({ ..self, created_at: s } as &DynComponent)
+    ("pinnedPost", @values.Value::Text(s)) =>
+      Some({ ..self, pinned_post: s } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
         ({ ..self, posts: msgs_of(h) } : Profile).build_rows() as &DynComponent,
@@ -1427,9 +2229,13 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts_count = 0
   let mut following = false
   let mut posts : Array[Msg] = []
+  let mut created_at = ""
+  let mut pinned_post = ""
   for arg in args {
     let (name, v) = arg
     match (name, v) {
+      ("createdAt", @values.Value::Text(s)) => created_at = s
+      ("pinnedPost", @values.Value::Text(s)) => pinned_post = s
       ("displayName", @values.Value::Text(s)) => display_name = s
       ("handle", @values.Value::Text(s)) => handle = s
       ("description", @values.Value::Text(s)) => description = s
@@ -1456,17 +2262,26 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       following,
       posts,
       children: [],
+      created_at,
+      pinned_post,
     } : Profile).build_rows()
   as &DynComponent
 }
 
 ///|
-/// None of the three persists: each one's state is exactly the fields it
-/// declares (plus child tokens, which are the host's), so the host projects and
-/// rebuilds them itself and a `persist` here would be that list written twice.
+/// None of the five persists: each one's state is exactly the fields it declares
+/// (plus child tokens, which are the host's), so the host projects and rebuilds
+/// them itself and a `persist` here would be that list written twice.
+///
+/// Smallest first, the way they nest: a `Scope` says what an answer left out, a
+/// `Post` is one message, and the three surfaces above them are the three shapes
+/// a bluesky read comes back in — a list (`Feed`), a conversation (`Thread`) and
+/// an account (`Profile`).
 fn dyn_module() -> DynModule {
   module_def([
+    dyn_comp("Scope", make_scope),
     dyn_comp("Post", make_post),
+    dyn_comp("Feed", make_feed),
     dyn_comp("Thread", make_thread),
     dyn_comp("Profile", make_profile),
   ])

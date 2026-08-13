@@ -165,7 +165,7 @@ before(async () => {
   };
 });
 
-test('the static manifest declares five components and asks for one capability', { skip: !built }, () => {
+test('the static manifest declares six components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
   assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'mastodonlib');
@@ -174,16 +174,19 @@ test('the static manifest declares five components and asks for one capability',
   assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
   assert.match(m.capabilities[0].reason, /files\.mastodon\.social/);
   assert.deepEqual(m.components.map((c) => c.name),
-    ['Status', 'Poll', 'Thread', 'Timeline', 'Profile']);
+    ['Scope', 'Status', 'Poll', 'Thread', 'Timeline', 'Profile']);
 
-  const [status, poll, thread, timeline, profile] = m.components;
+  const [scope, status, poll, thread, timeline, profile] = m.components;
   assert.deepEqual(status.bubbles, [
     'favourited', 'unfavourited', 'boosted', 'unboosted',
     'bookmarked', 'unbookmarked', 'replyTo', 'folded', 'unfolded',
   ]);
   assert.deepEqual(poll.bubbles, ['voted', 'unvoted']);
-  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus']);
-  assert.deepEqual(timeline.fields.map((f) => f.name), ['title', 'posts', 'query', 'mediaOnly']);
+  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope']);
+  assert.deepEqual(timeline.fields.map((f) => f.name), ['title', 'posts', 'query', 'mediaOnly', 'scope']);
+  // field-for-field the component the bluesky bundle has, and that is the point rather than a
+  // coincidence: a host drawing both should not learn two spellings of "this is not everything"
+  assert.deepEqual(scope.fields.map((f) => f.name), ['truncated', 'truncatedBy', 'more', 'notes']);
   assert.ok(profile.fields.some((f) => f.name === 'fields'));
   // every component ships a fixture, so dropping the bundle shows something,
   // and every fixture is JSON the host can actually read
@@ -682,4 +685,46 @@ test('a profile counts a follow on top of the number the record came with', { sk
   // and one with no pictures draws the initials, which is a state the view has
   assert.equal(field(locked, 'avatarPath'), '');
   assert.equal(field(locked, 'headerPath'), '');
+});
+
+test('a timeline and a thread each say what they do not cover', { skip: !built }, () => {
+  const t = instance('Timeline', {
+    title: 'Trending',
+    posts: CONVERSATION.slice(0, 2),
+    scope: {
+      more: true,
+      notes: ['this instance only holds posts it has federated'],
+    },
+  });
+  // the scope is a child of its own, and the timeline keeps whether it has
+  // anything to say — a token is a bridge handle, so a parent cannot read one back
+  assert.equal(field(t, 'hasScope'), true);
+  const s = child(t.getField('scope').val);
+  assert.equal(field(s, 'hasAny'), true);
+  assert.equal(field(s, 'moreLabel'), 'more pages were not read');
+  assert.equal(field(s, 'truncatedLabel'), '');
+  assert.deepEqual(field(s, 'notes'), ['this instance only holds posts it has federated']);
+  assert.match(s.callMethod('summary', []).val, /^scope: more pages unread; this instance/);
+
+  // an answer with nothing to disclose still HAS a scope, and it draws nothing
+  const quiet = instance('Timeline', { posts: CONVERSATION.slice(0, 1) });
+  assert.equal(field(quiet, 'hasScope'), false);
+  assert.equal(field(child(quiet.getField('scope').val), 'hasAny'), false);
+
+  // rewriting the posts rebuilds the rows and keeps the scope: a new list is not
+  // a new claim about what was covered
+  const one = t.withField('posts', value(CONVERSATION.slice(0, 1)));
+  assert.equal(field(one, 'hasScope'), true);
+  assert.equal(child(one.getField('scope').val), s);
+
+  // and a thread carries the same component, with the vocabulary a depth cap needs
+  const th = instance('Thread', {
+    posts: CONVERSATION,
+    scope: { truncated: true, truncatedBy: 'depth' },
+  });
+  assert.equal(field(th, 'hasScope'), true);
+  assert.equal(
+    field(child(th.getField('scope').val), 'truncatedLabel'),
+    'stopped at the depth cap — this is not everything',
+  );
 });

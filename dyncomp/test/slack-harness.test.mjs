@@ -139,7 +139,7 @@ before(async () => {
   );
 });
 
-test('the static manifest declares six nesting components', { skip: !built }, () => {
+test('the static manifest declares eight nesting components', { skip: !built }, () => {
   assert.equal(manifest.apiVersion, 6);
   assert.equal(manifest.moduleName, 'slacklib');
   // nothing ambient — no clock for the timestamps, no entropy for the ids —
@@ -147,7 +147,7 @@ test('the static manifest declares six nesting components', { skip: !built }, ()
   assert.deepEqual(manifest.capabilities.map((c) => c.cap), ['cap-external-urls']);
   assert.match(manifest.capabilities[0].reason, /slack-edge\.com/);
   assert.deepEqual(manifest.components.map((c) => c.name), [
-    'Segment', 'RichText', 'Reaction', 'Message', 'Thread', 'ChannelHistory',
+    'Segment', 'Scope', 'RichText', 'Reaction', 'Message', 'Thread', 'FileList', 'ChannelHistory',
   ]);
   // the nesting is declared, so a host can see the shape without loading it
   const ty = (comp, field) => {
@@ -157,6 +157,9 @@ test('the static manifest declares six nesting components', { skip: !built }, ()
   assert.equal(ty('Message', 'body').name, 'RichText');
   assert.equal(ty('Thread', 'root').name, 'Message');
   assert.equal(ty('ChannelHistory', 'threads').kind, 'ty-list');
+  // the two surfaces that disclose their own coverage hang the same component
+  assert.equal(ty('ChannelHistory', 'scope').name, 'Scope');
+  assert.equal(ty('FileList', 'scope').name, 'Scope');
   // and every `$name` the views call is declared, which is what keeps an
   // undeclared method from evaluating to Null and silently dropping an attr
   const declared = manifest.components.find((c) => c.name === 'ChannelHistory');
@@ -169,7 +172,18 @@ test('the static manifest declares six nesting components', { skip: !built }, ()
   assert.deepEqual(manifest.components.find((c) => c.name === 'Message').methods, [
     'initials', 'slackCdnPath', 'slackAvatarsPath', 'gravatarPath',
     'authorLabel', 'channelLabel', 'hasChannel', 'timeLabel',
+    // the timestamp a reader has to retype when it is not on screen, and the
+    // link this bundle can offer but never follow
+    'hasId', 'idTitle', 'hasPermalink',
   ]);
+  assert.deepEqual(manifest.components.find((c) => c.name === 'Thread').methods, [
+    'hasReplies', 'replyLabel', 'hasUnloadedReplies', 'loadLabel', 'loadTitle',
+  ]);
+  // `bubbles` is the bubble-bucket HANDLER surface, the way `receives` is:
+  // Segment EMITS openLink and declares none, and the one component that can
+  // decide what a link or an unfetched thread means declares all three
+  assert.deepEqual(manifest.components.find((c) => c.name === 'Segment').bubbles, []);
+  assert.deepEqual(declared.bubbles, ['openLink', 'reacted', 'openThread']);
 });
 
 test('a segment composes its classes from independent flags', { skip: !built }, () => {
@@ -429,6 +443,177 @@ test('the empty, loading and error inits are the states a host has to draw', { s
   const failed = make('ChannelHistory', initArgs('ChannelHistory', 'error'));
   assert.deepEqual(failed.callMethod('hasError', []), bool(true));
   assert.deepEqual(failed.callMethod('isEmpty', []), bool(false));
+});
+
+test('a message shows the timestamp every follow-up call takes', { skip: !built }, () => {
+  const m = make('Message', {
+    id: '1700000001.000001',
+    author: 'alice',
+    createdAt: '2026-06-23T09:12:00Z',
+    permalink: 'https://acme.slack.com/archives/C0123/p1700000001000001',
+  });
+  // it was always carried and never drawn, which is what sent a reader off to
+  // retype it off the prose and hit thread_not_found
+  assert.deepEqual(m.getField('id'), text('1700000001.000001'));
+  assert.deepEqual(m.callMethod('hasId', []), bool(true));
+  assert.match(m.callMethod('idTitle', []).val, /^ts 1700000001\.000001 —/);
+
+  // the permalink travels up rather than being followed: a workspace subdomain
+  // is not an origin a view can write as a literal, so there is no href to have
+  assert.deepEqual(m.callMethod('hasPermalink', []), bool(true));
+  dispatch(m, 'input', 'openPermalink', []);
+  assert.deepEqual(emitted, [{
+    kind: 'emit',
+    name: 'openLink',
+    args: [text('https://acme.slack.com/archives/C0123/p1700000001000001'), text('permalink')],
+  }]);
+
+  // a message with neither says neither, and offers no button to press
+  const bare = make('Message', { author: 'alice' });
+  assert.deepEqual(bare.callMethod('hasId', []), bool(false));
+  assert.deepEqual(bare.callMethod('hasPermalink', []), bool(false));
+  assert.deepEqual(bare.callMethod('idTitle', []), text(''));
+  dispatch(bare, 'input', 'openPermalink', []);
+  assert.deepEqual(emitted, []);
+});
+
+test('a counted thread with no replies says the call that would fetch them', { skip: !built }, () => {
+  // exactly what `conversations.history` gives a card: a root with a count and
+  // nothing behind it
+  const t = make('Thread', {
+    root: { id: '1700000001.000001', author: 'alice', channelName: 'general', body: ['about the migration'] },
+    expanded: false,
+    replyCount: 21,
+  });
+  assert.deepEqual(t.getField('replyCount'), num(21));
+  // the caret is for replies that are HERE, so it is not offered
+  assert.deepEqual(t.callMethod('hasReplies', []), bool(false));
+  assert.deepEqual(t.callMethod('hasUnloadedReplies', []), bool(true));
+  assert.deepEqual(t.callMethod('loadLabel', []), text('21 replies — not loaded'));
+  // both arguments, filled in — the difference between a dead end and a step
+  assert.deepEqual(
+    t.callMethod('loadTitle', []),
+    text('read them with channel=general, ts=1700000001.000001'),
+  );
+  // and they are taken off the root's own JSON, so a caller writes them once
+  assert.deepEqual(t.getField('channelName'), text('general'));
+  assert.deepEqual(t.getField('rootTs'), text('1700000001.000001'));
+
+  dispatch(t, 'input', 'openThread', []);
+  assert.deepEqual(emitted, [{
+    kind: 'emit',
+    name: 'openThread',
+    args: [text('general'), text('1700000001.000001'), num(21)],
+  }]);
+
+  // a page of a long thread says it is a page rather than claiming the three
+  // it was handed are all there are
+  const paged = make('Thread', {
+    root: { id: '1700000001.000001', author: 'alice' },
+    replies: [{ author: 'bob' }, { author: 'carol' }],
+    replyCount: 21,
+  });
+  assert.deepEqual(paged.callMethod('hasReplies', []), bool(true));
+  assert.deepEqual(paged.callMethod('hasUnloadedReplies', []), bool(false));
+  assert.deepEqual(paged.callMethod('replyLabel', []), text('▾ 2 of 21 replies'));
+
+  // a thread read whole takes the count from what arrived, which is the same
+  // number — nothing had to be told to it
+  const whole = make('Thread', {
+    root: { id: '1', author: 'alice' },
+    replies: [{ author: 'bob' }],
+  });
+  assert.deepEqual(whole.getField('replyCount'), num(1));
+  assert.deepEqual(whole.callMethod('replyLabel', []), text('▾ 1 reply'));
+  assert.deepEqual(whole.callMethod('hasUnloadedReplies', []), bool(false));
+
+  // writing the replies home does not move the count: how many exist is a fact
+  // about the conversation, and how many are on screen is a fact about this
+  // page of it
+  const swapped = paged.withField('replies', { tag: 'list', val: put([]) });
+  assert.deepEqual(swapped.getField('replyCount'), num(21));
+  assert.deepEqual(swapped.callMethod('hasUnloadedReplies', []), bool(true));
+  // and a list of plain data is refused rather than silently emptying the field
+  assert.equal(paged.withField('replies', toGuest([{ author: 'bob' }])), undefined);
+});
+
+test('a channel history says what it does not cover', { skip: !built }, () => {
+  const c = make('ChannelHistory', {
+    channel: 'general',
+    threads: [{ root: { id: '1700000001.000001', author: 'alice', channelName: 'general' }, replyCount: 21 }],
+    scope: { privateChannels: true, channelsScanned: 11, truncated: true, truncatedBy: 'max_search_channels' },
+  });
+  assert.deepEqual(c.getField('hasScope'), bool(true));
+  const s = childOf(c, 'scope');
+  assert.deepEqual(s.callMethod('hasAny', []), bool(true));
+  assert.deepEqual(
+    s.callMethod('kindsLabel', []),
+    text('public channels, and the private ones this token is in'),
+  );
+  assert.deepEqual(s.callMethod('scannedLabel', []), text('11 conversations read'));
+  // the absence is the disclosure: a card listing what it DID cover and saying
+  // nothing about DMs reads as covering everything
+  assert.deepEqual(s.callMethod('hasDmNote', []), bool(true));
+  assert.match(s.callMethod('truncatedLabel', []).val, /max_search_channels cap/);
+  assert.match(s.callMethod('summary', []).val, /^scope: public channels and the private/);
+
+  // a card whose builder said nothing about coverage does not grow a coverage
+  // box out of defaults it was never given
+  const quiet = make('ChannelHistory', { channel: 'general', threads: [] });
+  assert.deepEqual(quiet.getField('hasScope'), bool(false));
+
+  // and the thread's request for its unfetched replies stops here, because this
+  // is the component that can name the call
+  const t = childrenOf(c, 'threads')[0];
+  dispatch(t, 'input', 'openThread', []);
+  const next = dispatch(c, 'bubble', 'openThread', [text('general'), text('1700000001.000001'), num(21)]);
+  assert.ok(emitted.some((e) => e.kind === 'stopPropagation'));
+  assert.deepEqual(
+    next.getField('lastAction'),
+    text('read the replies: channel=general, ts=1700000001.000001'),
+  );
+});
+
+test('a file list is metadata, and says so', { skip: !built }, () => {
+  const f = make('FileList', initArgs('FileList', 'a channel’s files'));
+  assert.deepEqual(f.callMethod('title', []), text('Files in #incidents'));
+  assert.deepEqual(f.callMethod('countLabel', []), text('3 files'));
+  assert.deepEqual(f.callMethod('isEmpty', []), bool(false));
+  assert.match(f.callMethod('note', []).val, /contents are not available/);
+
+  const rows = arena.get(f.getField('rows').val).map((v) =>
+    Object.fromEntries([...arena.get(v.val)].map(([k, x]) => [k, x.val])));
+  // a title beats a filename, a filename beats an id, and every row says which
+  // it is by carrying the id beside the label
+  assert.deepEqual(rows.map((r) => r.label), [
+    'Postmortem: the 14 August outage', 'latency.png', 'raw-metrics.csv',
+  ]);
+  // one decimal only while it buys something: `17.9 KB` and `17 KB` are the
+  // same fact, and the second is the one a row has space for
+  assert.deepEqual(rows.map((r) => r.size), ['17 KB', '238 KB', '3 MB']);
+  assert.deepEqual(rows.map((r) => r.by), ['@alice', '@bob', '@carol']);
+  assert.deepEqual(rows.map((r) => r.time), ['09:12', '09:20', '10:02']);
+  // the third file has no permalink, so there is no link to offer for it
+  assert.deepEqual(rows.map((r) => r.linked), [true, true, false]);
+
+  // a row is opened by its POSITION, because `@key` is what a loop can hand a
+  // handler — the view never carries a url it might pass to the wrong component
+  dispatch(f, 'input', 'openFile', [num(1)]);
+  assert.deepEqual(emitted, [{
+    kind: 'emit',
+    name: 'openLink',
+    args: [text('https://acme.slack.com/files/U0124/F0124EFGH/latency.png'), text('latency.png')],
+  }]);
+  // a row with no link, and a position that is not a row, both do nothing
+  dispatch(f, 'input', 'openFile', [num(2)]);
+  assert.deepEqual(emitted, []);
+  dispatch(f, 'input', 'openFile', [num(9)]);
+  assert.deepEqual(emitted, []);
+
+  const empty = make('FileList', { files: [] });
+  assert.deepEqual(empty.callMethod('title', []), text('Files'));
+  assert.deepEqual(empty.callMethod('isEmpty', []), bool(true));
+  assert.deepEqual(empty.getField('hasScope'), bool(false));
 });
 
 test('every init in the manifest builds', { skip: !built }, () => {

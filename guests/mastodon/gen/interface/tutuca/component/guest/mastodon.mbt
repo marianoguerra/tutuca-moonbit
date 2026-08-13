@@ -1768,6 +1768,182 @@ fn with_id(set : Array[String], id : String, on : Bool) -> Array[String] {
   out
 }
 
+// ── Scope: what the answer above it does NOT cover ───────────────────────────
+
+///|
+/// The disclosure that an answer is partial.
+///
+/// A card is a claim, and a `Timeline` is almost never the whole of anything: a
+/// federated timeline is what THIS instance has seen, a tag feed is what it has
+/// federated, and every one of them is a page with a cap somebody chose. The
+/// prose beside a card can say that; the card could not, so the card was the
+/// more confident of the two while being the less informed.
+///
+/// It is deliberately not an error and not a warning. Nothing here is wrong: a
+/// page is a page. What it turns a count into is a claim a reader can check.
+///
+/// Field-for-field the same component the bluesky bundle has, and that is the
+/// point rather than a coincidence: a host drawing a mastodon card beside an
+/// ATProto one should not have to learn two spellings of "this is not
+/// everything". `slacklib`'s twin differs because what a slack answer leaves out
+/// is conversations rather than pages of a feed.
+priv struct Scope {
+  /// A cap stopped this before the data ran out. The one field that matters
+  /// most: it is the difference between "there is no more" and "I stopped".
+  truncated : Bool
+  /// What stopped it, in the caller's words: `"limit"`, `"depth"`.
+  truncated_by : String
+  /// There is another page, and nobody asked for it.
+  more : Bool
+  /// What this answer does not cover, one sentence each. Free text because the
+  /// reasons are not a closed set — an instance that only federates what someone
+  /// on it follows, and a filter the server applied, are both true and neither
+  /// is a boolean.
+  notes : Array[String]
+}
+
+///|
+/// A list of plain strings, which is what `notes` arrives as.
+fn strs_of(items : Array[@values.Value]) -> Array[String] {
+  let out : Array[String] = []
+  for v in items {
+    if v is @values.Value::Text(s) && s != "" {
+      out.push(s)
+    }
+  }
+  out
+}
+
+///|
+impl DynComponent for Scope with fn get_field(self, name) {
+  match name {
+    "truncated" => Some(vbool(self.truncated))
+    "truncatedBy" => Some(vtext(self.truncated_by))
+    "more" => Some(vbool(self.more))
+    "notes" => Some(vlist(self.notes.map(vtext)))
+    // A scope with nothing to disclose draws nothing at all. That is not the
+    // same as a scope that is absent, and both are correct: the difference only
+    // matters to whoever built it.
+    "hasAny" =>
+      Some(vbool(self.truncated || self.more || self.notes.length() > 0))
+    "truncatedLabel" =>
+      Some(
+        vtext(
+          if !self.truncated {
+            ""
+          } else if self.truncated_by == "" {
+            "stopped early — this is not everything"
+          } else {
+            "stopped at the \{self.truncated_by} cap — this is not everything"
+          },
+        ),
+      )
+    "moreLabel" =>
+      Some(vtext(if self.more { "more pages were not read" } else { "" }))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for Scope with fn call_method(self, name, _args) {
+  match name {
+    "summary" => {
+      let parts : Array[String] = []
+      if self.truncated {
+        parts.push(
+          if self.truncated_by == "" {
+            "stopped early"
+          } else {
+            "stopped at the \{self.truncated_by} cap"
+          },
+        )
+      }
+      if self.more {
+        parts.push("more pages unread")
+      }
+      for n in self.notes {
+        parts.push(n)
+      }
+      if parts.length() == 0 {
+        vtext("")
+      } else {
+        vtext("scope: \{parts.join("; ")}")
+      }
+    }
+    _ => @values.Value::Nil
+  }
+}
+
+///|
+impl DynComponent for Scope with fn with_field(self, name, v) {
+  match (name, v) {
+    ("truncated", @values.Value::Boolean(b)) =>
+      Some({ ..self, truncated: b } as &DynComponent)
+    ("truncatedBy", @values.Value::Text(s)) =>
+      Some({ ..self, truncated_by: s } as &DynComponent)
+    ("more", @values.Value::Boolean(b)) =>
+      Some({ ..self, more: b } as &DynComponent)
+    ("notes", @values.Value::List(h)) =>
+      Some({ ..self, notes: strs_of(list_items(h)) } as &DynComponent)
+    _ => None
+  }
+}
+
+///|
+fn make_scope(args : Array[(String, @values.Value)]) -> &DynComponent {
+  let mut truncated = false
+  let mut truncated_by = ""
+  let mut more = false
+  let mut notes : Array[String] = []
+  for arg in args {
+    let (name, v) = arg
+    match (name, v) {
+      ("truncated", @values.Value::Boolean(b)) => truncated = b
+      ("truncatedBy", @values.Value::Text(s)) => truncated_by = s
+      ("more", @values.Value::Boolean(b)) => more = b
+      ("notes", @values.Value::List(h)) => notes = strs_of(list_items(h))
+      _ => ()
+    }
+  }
+  ({ truncated, truncated_by, more, notes } : Scope) as &DynComponent
+}
+
+///|
+/// The `Scope` child a surface hangs under itself, and whether it has anything
+/// to say.
+///
+/// One is always built, even for an answer with nothing to disclose. The keys of
+/// the record ARE the component's field names, so a host that writes plain JSON
+/// into `scope` gets the component it would have got by building one.
+///
+/// Whether it has anything to SAY comes back beside the token rather than out of
+/// the child, and that is the contract talking rather than a shortcut: a token is
+/// a bridge handle, and a parent holding one cannot read a field behind it.
+fn scope_child(v : @values.Value?) -> (UInt64, Bool) {
+  let args : Array[(String, @values.Value)] = []
+  let mut any = false
+  match v {
+    Some(@values.Value::Map(h)) =>
+      for k in @values.map_keys(h) {
+        match @values.map_get(h, k) {
+          Some(child) => {
+            args.push((k, child))
+            any = any ||
+              (match (k, child) {
+                ("truncated", @values.Value::Boolean(b)) => b
+                ("more", @values.Value::Boolean(b)) => b
+                ("notes", @values.Value::List(l)) => @values.list_len(l) > 0U
+                _ => false
+              })
+          }
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  (@control.make_instance("Scope", args), any)
+}
+
 // ── Thread: a reply tree, flattened, as a list of Statuses ───────────────────
 
 ///|
@@ -1791,6 +1967,12 @@ priv struct Thread {
   /// above them is folded. The row keeps its own `folded` for its own glyph, and
   /// the two are different facts about the same click.
   collapsed : Array[String]
+  /// The `Scope` child: what this conversation does not show — the depth the
+  /// caller asked for, and the replies this instance has never federated.
+  scope : UInt64
+  /// Whether that child has anything to disclose, which is what the view gates
+  /// the box on. Kept here because a token cannot be read back.
+  has_scope : Bool
 }
 
 ///|
@@ -1897,6 +2079,8 @@ impl DynComponent for Thread with fn get_field(self, name) {
     // declared
     "posts" => Some(vlist(self.posts.map(toot_value)))
     "focus" => Some(vtext(self.focus))
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(vbool(self.has_scope))
     // derived: the child components the view renders, minus the folded-away
     "rows" => Some(rows_value(self.children, self.visible()))
     _ => None
@@ -1964,11 +2148,18 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
         focus: self.focus,
         children: [],
         collapsed: [],
+        // The scope is the ANSWER's, not the list's: a host writing new posts
+        // home is not making a new claim about what was covered, so the child it
+        // was handed stays. Rebuilding one here would also strand the old token.
+        scope: self.scope,
+        has_scope: self.has_scope,
       }
       Some(next.build_rows() as &DynComponent)
     }
     ("focus", @values.Value::Text(s)) =>
       Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
+    ("scope", @values.Value::Instance(t)) =>
+      Some({ ..self, scope: t } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the list it was SHOWN — `visible()` — so it goes
     // home through the same function that decided those positions.
@@ -1985,16 +2176,19 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
 fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts : Array[Toot] = []
   let mut focus = ""
+  let mut scope_arg : @values.Value? = None
   for arg in args {
     let (name, v) = arg
     match (name, v) {
       // hot-swap migration hands the declared fields back as args
       ("posts", @values.Value::List(h)) => posts = toots_of(h)
       ("focus", @values.Value::Text(s)) => focus = s
+      ("scope", _) => scope_arg = Some(v)
       _ => ()
     }
   }
-  ({ posts, focus, children: [], collapsed: [] } : Thread).build_rows()
+  let (scope, has_scope) = scope_child(scope_arg)
+  ({ posts, focus, children: [], collapsed: [], scope, has_scope } : Thread).build_rows()
   as &DynComponent
 }
 
@@ -2018,6 +2212,11 @@ priv struct Timeline {
   /// one filter that is not text.
   media_only : Bool
   children : Array[UInt64]
+  /// The `Scope` child: what this page does not cover. A timeline is almost
+  /// never the whole of anything — a federated one is what THIS instance has
+  /// seen — and the card said so nowhere until this field existed.
+  scope : UInt64
+  has_scope : Bool
 }
 
 ///|
@@ -2073,6 +2272,8 @@ impl DynComponent for Timeline with fn get_field(self, name) {
     "posts" => Some(vlist(self.posts.map(toot_value)))
     "query" => Some(vtext(self.query))
     "mediaOnly" => Some(vbool(self.media_only))
+    "scope" => Some(@values.Value::Instance(self.scope))
+    "hasScope" => Some(vbool(self.has_scope))
     // derived
     "rows" => Some(rows_value(self.children, self.visible()))
     "isEmpty" => Some(vbool(self.visible().length() == 0))
@@ -2139,6 +2340,8 @@ impl DynComponent for Timeline with fn with_field(self, name, v) {
       Some({ ..self, query: s } as &DynComponent)
     ("mediaOnly", @values.Value::Boolean(b)) =>
       Some({ ..self, media_only: b } as &DynComponent)
+    ("scope", @values.Value::Instance(t)) =>
+      Some({ ..self, scope: t } as &DynComponent)
     ("rows", _) =>
       match write_rows(self.children, self.visible(), v) {
         Some(children) => Some({ ..self, children, } as &DynComponent)
@@ -2154,6 +2357,7 @@ fn make_timeline(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts : Array[Toot] = []
   let mut query = ""
   let mut media_only = false
+  let mut scope_arg : @values.Value? = None
   for arg in args {
     let (name, v) = arg
     match (name, v) {
@@ -2161,10 +2365,14 @@ fn make_timeline(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("posts", @values.Value::List(h)) => posts = toots_of(h)
       ("query", @values.Value::Text(s)) => query = s
       ("mediaOnly", @values.Value::Boolean(b)) => media_only = b
+      ("scope", _) => scope_arg = Some(v)
       _ => ()
     }
   }
-  ({ title, posts, query, media_only, children: [] } : Timeline).build_rows()
+  let (scope, has_scope) = scope_child(scope_arg)
+  (
+    { title, posts, query, media_only, children: [], scope, has_scope } :
+    Timeline).build_rows()
   as &DynComponent
 }
 
@@ -2439,6 +2647,7 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
 /// them itself and a `persist` here would be that list written twice.
 fn dyn_module() -> DynModule {
   module_def([
+    dyn_comp("Scope", make_scope),
     dyn_comp("Status", make_status),
     dyn_comp("Poll", make_poll),
     dyn_comp("Thread", make_thread),

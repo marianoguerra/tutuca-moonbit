@@ -20,6 +20,10 @@
       <span class="follows"><span class="font-semibold" @text=".followsLabel"></span> <span class="text-base-content/60">following</span></span>
       <span class="posts"><span class="font-semibold" @text=".postsLabel"></span> <span class="text-base-content/60">posts</span></span>
     </div>
+    <div class="mt-2 flex gap-3 flex-wrap items-baseline text-xs text-base-content/60">
+      <span class="joined" @show="truthy? .hasJoined" :title=".createdAt" @text=".joinedLabel"></span>
+      <a class="hover:underline hover:text-sky-500 pinned-post" @show="truthy? .hasPinned" :href="$'https://bsky.app/{.pinnedPath}'" target="_blank" rel="noopener noreferrer" :title=".pinnedPost">Pinned post</a>
+    </div>
   </div>
   <div class="border-t border-base-300 bg-base-200/40 p-4 flex flex-col gap-2 feed" @hide="empty? .rows">
     <div class="text-xs uppercase tracking-widest text-base-content/50 recent-label">Recent</div>

@@ -1,8 +1,8 @@
 # slack — a chat conversation as a `tutuca:component` guest
 
-Six components that display a Slack-style conversation: one message, a thread,
-and a channel's history. It is a port of the Feeling-of-Computing conversations
-reader ([`at-foc/src/components.js`][foc]) onto the dynamic-component contract
+Eight components that display a Slack-style conversation: one message, a thread,
+a channel's history, a file listing, and what an answer left out. It is a port
+of the Feeling-of-Computing conversations reader ([`at-foc/src/components.js`][foc]) onto the dynamic-component contract
 ([`../../dyncomp/DESIGN.md`](../../dyncomp/DESIGN.md)).
 
 [foc]: https://github.com/marianoguerra/Feeling-of-Computing/blob/main/at-foc/src/components.js
@@ -18,15 +18,53 @@ exercise, and what the policy boundary did to the rest.
 | `RichText` | a body, as a flat list of `Segment`s |
 | `Reaction` | one emoji with its count; clicking toggles yours |
 | `Message` | who wrote it, when, its `RichText` body and its `Reaction`s. `compact` is what a reply looks like |
-| `Thread` | a root `Message` and its replies, foldable |
-| `ChannelHistory` | a channel's `Thread`s, with a filter box and an ordering toggle |
+| `Thread` | a root `Message` and its replies — foldable when they are here, and asking for them when they are not |
+| `ChannelHistory` | a channel's `Thread`s, with a filter box, an ordering toggle and a `Scope` |
+| `FileList` | the files a channel or a search turned up. Metadata only, and it says so |
+| `Scope` | what the answer above it covers, and what it never looked at |
+
+## The two things a card was quieter about than the text
+
+Both are cases where the prose beside a card had been saying something for
+releases and the card had not — which made the card the more confident of the
+two while being the less informed.
+
+**A count with nothing behind it.** `conversations.history` answers with thread
+roots carrying a `reply_count` and never with the replies, so every message in a
+channel card was a collapsed thread saying "21 replies" over an empty list. The
+caret expanded onto nothing. `Thread` now keeps `replyCount` — how many EXIST —
+apart from `replies.length()` — how many arrived — and the two states are drawn
+differently: a caret when they are here, and when they are not, a button that
+says `21 replies — not loaded` beside the two arguments that would load them
+(`channelName`, `rootTs`, both on the thread because a token is a bridge handle
+and a parent cannot read a field off the child it built). Clicking it emits
+`openThread`, which `ChannelHistory` catches and turns into
+`read the replies: channel=…, ts=…` in its footer. The `ts` is also drawn on
+every `Message` now, in the header beside the time: it is the argument every
+follow-up call takes, and it lived in a field no view mentioned.
+
+**A slice of a workspace, drawn as a workspace.** A token sees the public
+channels, the private ones it was invited to, and nobody's DMs. `Scope` is that
+sentence, as a component: which kinds were read, how many, whether a cap stopped
+the scan, and — the one that matters most — that DMs were never in the set at
+all. `ChannelHistory` and `FileList` each hang one under themselves and draw it
+only when there is something to disclose.
+
+**And a permalink that is shown, not followed.** `Message` takes one and draws
+it, and clicking it `emit`s `openLink` exactly as a link segment does. That is
+the same rule arrived at from the other direction: a permalink is
+`https://<team>.slack.com/archives/…`, and the subdomain belongs to the
+workspace, so there is no origin a view can write as a literal and nothing for
+`cap-external-urls` to be spent on. See the `href` section below.
 
 ## What it exercises: a DEEP tree of same-bundle children
 
 The other sample guests nest one level at most (`counter`'s `Pair` holds two
 `Counter`s). This one nests five: `ChannelHistory` → `Thread` → `Message` →
 `RichText` → `Segment`, and the whole tree is built by `control.make-instance`
-from ordinary JSON in one `init`.
+from ordinary JSON in one `init`. `Scope` hangs off the side of that at one
+level, from a plain record whose keys ARE its own field names — so a host that
+writes JSON into `scope` gets the component it would have got by building one.
 
 That works because the bridge's pending-children protocol drains recursively: a
 component may not be re-entered while a call into it is active, so a token is
@@ -107,15 +145,15 @@ DOES see, which is why only this one component needs it.
 
 ## The `inits` are the storybook
 
-Thirty named configurations across the six components — every `Segment` style,
+Thirty-five named configurations across the eight components — every `Segment` style,
 a mixed body, a reaction at three counts, a message as a root and as a reply, a
-thread expanded and folded, and a channel loaded / filtered / reversed / empty /
-loading / failed.
+thread expanded, folded, and counted-but-not-loaded, a file listing, two scopes,
+and a channel loaded / filtered / reversed / empty / loading / failed.
 
 They are not documentation of the storybook; they ARE it. `dyncomp/storybook`
 builds one card per `init` straight from the manifest, so `moon run --target
 native cmd/dev -- dyncomp-storybook` and opening `/dyncomp-storybook/` shows all
-thirty with no story file anywhere. Adding an `init` here adds a card there.
+of them with no story file anywhere. Adding an `init` here adds a card there.
 
 ## Build
 

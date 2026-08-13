@@ -15,6 +15,111 @@
   "stringEncoding": "utf16",
   "components": [
     {
+      "name": "Scope",
+      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an index that only holds part of the world. Not an error and not a warning \u2014 the sentence that turns a count into a claim a reader can check.",
+      "keywords": [
+        "scope",
+        "coverage",
+        "disclosure",
+        "partial",
+        "truncated",
+        "pagination"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "summary",
+          "doc": "Everything this scope discloses, as one line \u2014 the card's tooltip."
+        },
+        {
+          "name": "hasAny",
+          "doc": "Whether there is anything to disclose at all. A scope with nothing to say draws nothing."
+        },
+        {
+          "name": "truncatedLabel",
+          "doc": "What stopped the answer early, spelled out."
+        },
+        {
+          "name": "moreLabel",
+          "doc": "That another page existed and was not read."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Scope.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "truncated",
+          "ty": 0,
+          "doc": "A cap stopped this before the data ran out. The field that matters most: it is the difference between \"there is no more\" and \"I stopped looking\".",
+          "required": false
+        },
+        {
+          "name": "truncatedBy",
+          "ty": 1,
+          "doc": "What stopped it, in the caller's own words \u2014 `limit`, `depth`.",
+          "required": false
+        },
+        {
+          "name": "more",
+          "ty": 0,
+          "doc": "There is another page, and nobody asked for it.",
+          "required": false
+        },
+        {
+          "name": "notes",
+          "ty": 2,
+          "doc": "What this answer does not cover, one sentence each. Free text because the reasons are not a closed set: an index that only holds recent public posts and a filter the service applied are both true and neither is a boolean.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "summary"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "a search that stopped early",
+          "argsJson": "{\"truncated\": true, \"truncatedBy\": \"limit\", \"more\": true, \"notes\": [\"search indexes recent public posts only\", \"accounts that block this one are not in the index\"]}",
+          "doc": "The shape a partial answer takes: a cap, an unread page and two things the index itself does not hold."
+        },
+        {
+          "name": "a capped conversation",
+          "argsJson": "{\"truncated\": true, \"truncatedBy\": \"depth\", \"notes\": [\"replies deeper than the requested depth were not fetched\", \"deleted and blocked messages are named in the text, not drawn here\"]}",
+          "doc": "What a thread leaves out, which is where a card looks most complete and is least so."
+        }
+      ],
+      "style": ""
+    },
+    {
       "name": "Post",
       "doc": "One bluesky message: who wrote it, what it says (with its facets resolved), what it carries and how it was received. Also the row a Thread and a Profile are made of.",
       "keywords": [
@@ -74,6 +179,14 @@
         {
           "name": "owned",
           "doc": "Set by whoever builds a row; it draws smaller and sits inside their list."
+        },
+        {
+          "name": "repostLabel",
+          "doc": "Who put this message in front of this reader, spelled out."
+        },
+        {
+          "name": "labelTitle",
+          "doc": "Every label on the record, as one sentence \u2014 the chip row's tooltip."
         }
       ],
       "views": [
@@ -125,6 +238,31 @@
           "kind": "ty-bool",
           "items": [],
           "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "external",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "quote",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "video",
           "members": []
         }
       ],
@@ -243,6 +381,42 @@
           "ty": 6,
           "required": false,
           "doc": "Whether this message is a row inside a larger surface \u2014 a thread, a feed \u2014 rather than standing on its own. A row draws smaller. It keeps its own like / repost / fold either way."
+        },
+        {
+          "name": "repostedBy",
+          "ty": 0,
+          "doc": "The handle of the account that reposted this message into the feed it arrived in; empty when nobody did. Drawn as a line ABOVE the card \u2014 the author is never rewritten, because the message is still the message.",
+          "required": false
+        },
+        {
+          "name": "pinned",
+          "ty": 6,
+          "doc": "Whether the feed this arrived in had it pinned to the top.",
+          "required": false
+        },
+        {
+          "name": "labels",
+          "ty": 7,
+          "doc": "Moderation label values on the record (`porn`, `graphic-media`, `!warn`, \u2026), as the labellers set them. Named, never acted on: which labels mean \"hide this\" depends on the reader's own preferences and on which labellers they subscribe to, and neither is in this bundle's reach.",
+          "required": false
+        },
+        {
+          "name": "external",
+          "ty": 8,
+          "doc": "An unfurled link, as `{ uri, title, description, thumb }`. The uri is a target and never a link \u2014 the poster chose that origin, so no view can name it \u2014 while the thumbnail is re-hosted by the AppView and is drawn when it is on cdn.bsky.app.",
+          "required": false
+        },
+        {
+          "name": "quote",
+          "ty": 9,
+          "doc": "The quoted message, as `{ uri, displayName, handle, avatar, text, createdAt }`. Flat and plain: a quote's own rich text would need a loop inside a loop, which a static view cannot do, so its permalink is under it for whoever wants the real thing.",
+          "required": false
+        },
+        {
+          "name": "video",
+          "ty": 10,
+          "doc": "An attached video, as `{ thumb, alt }`. There is no player \u2014 a playlist is a fetch this bundle cannot make \u2014 so a video is its poster frame on the CDN and its alt text.",
+          "required": false
         }
       ],
       "receives": [],
@@ -271,6 +445,135 @@
           "name": "with pictures",
           "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}",
           "doc": "A real public record, fetched from the app.bsky API: an avatar and an image thumbnail, both on cdn.bsky.app, plus a permalink that goes somewhere."
+        },
+        {
+          "name": "reposted, with a link card",
+          "argsJson": "{\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3kfff\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"the write-up everyone kept asking for is finally out\", \"createdAt\": \"2026-08-12T08:40:00Z\", \"repostedBy\": \"alice.bsky.social\", \"external\": {\"uri\": \"https://tutuca.dev/blog/dynamic-components\", \"title\": \"Dynamic components, end to end\", \"description\": \"How an untrusted WebAssembly bundle draws a card in an app it has never met, and what it is allowed to reach while doing it.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:carol0000000000000000000/bafkreiexamplelinkcardthumbnail0000000000000000000000000\"}, \"replyCount\": 3, \"repostCount\": 41, \"likeCount\": 260}",
+          "doc": "Somebody else's post, in your feed because Alice reposted it \u2014 the attribution the card had no field for \u2014 with an unfurled link under the text."
+        },
+        {
+          "name": "a quote post, labelled",
+          "argsJson": "{\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kggg\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"this is the clearest statement of the problem I have read\", \"createdAt\": \"2026-08-12T11:05:00Z\", \"pinned\": true, \"labels\": [\"!warn\", \"spam\"], \"quote\": {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about\", \"createdAt\": \"2026-08-11T14:03:00Z\"}, \"replyCount\": 1, \"likeCount\": 88}",
+          "doc": "A pinned quote post carrying two labels \u2014 the three things a card used to draw as if they were not there."
+        },
+        {
+          "name": "a video, and no player",
+          "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mvvv\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"a sneak peek at what we have been building\", \"createdAt\": \"2026-08-12T16:20:00Z\", \"video\": {\"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\", \"alt\": \"a screen recording of a component being dropped into a running page\"}, \"replyCount\": 41, \"repostCount\": 180, \"likeCount\": 2400}",
+          "doc": "The post that drew as bare text before this bundle knew what `app.bsky.embed.video` was: the poster frame the CDN serves, its alt text, and no player \u2014 a playlist is a fetch this bundle cannot make."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "Feed",
+      "doc": "A list of messages that is not a conversation: a timeline, one account's posts, a page of search results. Each row is a Post standing on its own \u2014 no reply rails, nothing to fold \u2014 with a Scope under it saying what the page left out.",
+      "keywords": [
+        "bluesky",
+        "atproto",
+        "feed",
+        "timeline",
+        "search",
+        "listing",
+        "social"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "title",
+          "doc": "The heading, set by whoever built the list."
+        },
+        {
+          "name": "summary",
+          "doc": "How many messages there are, and how many of them somebody reposted in."
+        },
+        {
+          "name": "liked",
+          "doc": "A row was liked. The row keeps the flag; the bubble travels on, because only the component above can write to a PDS."
+        },
+        {
+          "name": "unliked",
+          "doc": "A row's like was taken back."
+        },
+        {
+          "name": "reposted",
+          "doc": "A row was reposted."
+        },
+        {
+          "name": "unreposted",
+          "doc": "A row's repost was taken back."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Feed.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "message",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
+          "members": []
+        },
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "title",
+          "ty": 3,
+          "doc": "What this list IS \u2014 \"@bsky.app \u2014 posts and replies\", `search: \"wasm\"`. A feed is the one surface here that cannot say what it is from its own contents: three flat messages are three flat messages whether they came from a timeline, an author or a search, so whoever asked for them is the one who says. Empty leaves the summary line standing on its own.",
+          "required": false
+        },
+        {
+          "name": "posts",
+          "ty": 1,
+          "doc": "The messages, in the order the service returned them. Same record shape a Thread's posts take, minus the reply structure: every row is at depth 0 because a feed is a list, and `repostedBy` / `pinned` say why each one is here.",
+          "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 2,
+          "doc": "What this page does not cover. Written as a plain record \u2014 the keys are the Scope component's own field names \u2014 and drawn only when there is something to disclose.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [
+        "liked",
+        "unliked",
+        "reposted",
+        "unreposted"
+      ],
+      "responses": [],
+      "methods": [
+        "summary"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "a timeline",
+          "argsJson": "{\"title\": \"Your timeline\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"pinned\": true, \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3kfff\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"the write-up everyone kept asking for is finally out\", \"createdAt\": \"2026-08-12T08:40:00Z\", \"repostedBy\": \"alice.bsky.social\", \"external\": {\"uri\": \"https://tutuca.dev/blog/dynamic-components\", \"title\": \"Dynamic components, end to end\", \"description\": \"How an untrusted WebAssembly bundle draws a card in an app it has never met.\"}, \"replyCount\": 3, \"repostCount\": 41, \"likeCount\": 260}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kggg\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"this is the clearest statement of the problem I have read\", \"createdAt\": \"2026-08-12T11:05:00Z\", \"labels\": [\"!warn\"], \"quote\": {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about\", \"createdAt\": \"2026-08-11T14:03:00Z\"}, \"replyCount\": 1, \"likeCount\": 88}], \"scope\": {\"truncated\": true, \"truncatedBy\": \"limit\", \"more\": true, \"notes\": [\"25 of an unknown total; the service does not say how many there are\"]}}",
+          "doc": "Three messages that are a list and not a conversation: one pinned, one reposted in by somebody you follow, one quoting a fourth \u2014 and a scope saying the page stopped at a cap."
         }
       ],
       "style": ""
@@ -342,6 +645,12 @@
           "items": [],
           "name": "",
           "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
+          "members": []
         }
       ],
       "fields": [
@@ -355,6 +664,12 @@
           "name": "focus",
           "ty": 2,
           "doc": "The uri of the message the thread is about; that row is marked. Empty for none. Writing it rebuilds the rows.",
+          "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 3,
+          "doc": "What this conversation does not show \u2014 the depth the caller asked for and the one the service applied. Written as a plain record whose keys are the Scope component's own field names.",
           "required": false
         }
       ],
@@ -378,6 +693,11 @@
           "name": "conversation",
           "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}]}",
           "doc": "A five-message conversation three levels deep, focused on its root."
+        },
+        {
+          "name": "a conversation that was cut short",
+          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no \\u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}], \"scope\": {\"truncated\": true, \"truncatedBy\": \"depth\", \"notes\": [\"replies deeper than the requested depth were not fetched\", \"deleted and blocked messages are named in the prose beside this card, not drawn in it\"]}}",
+          "doc": "The same five messages with the scope the card never used to carry: the depth cap that stopped the fetch, and the gaps the prose names and the card cannot."
         }
       ],
       "style": ""
@@ -430,6 +750,10 @@
         {
           "name": "unreposted",
           "doc": "A message's repost was taken back."
+        },
+        {
+          "name": "joinedLabel",
+          "doc": "When the account was created, as a date a person reads."
         }
       ],
       "views": [
@@ -534,6 +858,22 @@
           "ty": 4,
           "doc": "Its recent messages, in the same shape a Thread's posts take; each becomes a Post of its own, standing on its own (no depth, nothing to fold).",
           "required": false
+        },
+        {
+          "name": "createdAt",
+          "ty": 0,
+          "doc": "When the account was created, as an ISO 8601 stamp. Drawn as a date and not a duration: \"3 years ago\" needs a clock, and this bundle asks for no `cap-clock`.",
+          "required": false,
+          "constraint": {
+            "maxLen": 64,
+            "format": "date-time"
+          }
+        },
+        {
+          "name": "pinnedPost",
+          "ty": 0,
+          "doc": "The at:// uri of the message this account pinned to its profile. The uri and not the message: `getProfiles` answers with a strong ref, so the content is one more request away and this bundle makes none \u2014 what a card can honestly offer is the link.",
+          "required": false
         }
       ],
       "receives": [],
@@ -555,12 +895,12 @@
       "inits": [
         {
           "name": "alice",
-          "argsJson": "{\"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"description\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followsCount\": 312, \"postsCount\": 2870, \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kzzz\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about #wasm\", \"createdAt\": \"2026-08-09T09:15:00Z\", \"facets\": [{\"byteStart\": 99, \"byteEnd\": 104, \"kind\": \"tag\", \"value\": \"wasm\"}], \"replyCount\": 4, \"repostCount\": 9, \"likeCount\": 210}]}",
+          "argsJson": "{\"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"description\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followsCount\": 312, \"postsCount\": 2870, \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kzzz\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about #wasm\", \"createdAt\": \"2026-08-09T09:15:00Z\", \"facets\": [{\"byteStart\": 99, \"byteEnd\": 104, \"kind\": \"tag\", \"value\": \"wasm\"}], \"replyCount\": 4, \"repostCount\": 9, \"likeCount\": 210}], \"createdAt\": \"2023-05-14T09:31:00Z\", \"pinnedPost\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\"}",
           "doc": "An account with a description, six-figure counts and two recent messages."
         },
         {
           "name": "with pictures",
-          "argsJson": "{\"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"description\": \"official Bluesky account (check username\ud83d\udc46)\\n\\nBugs, feature requests, feedback: support@bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"banner\": \"https://cdn.bsky.app/img/banner/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreichzyovokfzmymz36p5jibbjrhsur6n7hjnzxrpbt5jaydp2szvna\", \"followersCount\": 34504327, \"followsCount\": 11, \"postsCount\": 806, \"posts\": [{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}, {\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mpok7nkjtc2o\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"wait a minute\", \"createdAt\": \"2026-07-02T17:21:51.498Z\", \"images\": [{\"alt\": \"two spidermen pointing at each other\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihlfz7eeyynraq3zqhozs4q3l3wabewbjevjb5jgophbtcjj7eijm\"}], \"replyCount\": 5, \"repostCount\": 3, \"likeCount\": 48}]}",
+          "argsJson": "{\"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"description\": \"official Bluesky account (check username\\ud83d\\udc46)\\n\\nBugs, feature requests, feedback: support@bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"banner\": \"https://cdn.bsky.app/img/banner/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreichzyovokfzmymz36p5jibbjrhsur6n7hjnzxrpbt5jaydp2szvna\", \"followersCount\": 34504327, \"followsCount\": 11, \"postsCount\": 806, \"posts\": [{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \\u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}, {\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mpok7nkjtc2o\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"wait a minute\", \"createdAt\": \"2026-07-02T17:21:51.498Z\", \"images\": [{\"alt\": \"two spidermen pointing at each other\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihlfz7eeyynraq3zqhozs4q3l3wabewbjevjb5jgophbtcjj7eijm\"}], \"replyCount\": 5, \"repostCount\": 3, \"likeCount\": 48}], \"createdAt\": \"2023-04-12T00:00:00Z\"}",
           "doc": "The same account the message came from, with its banner and its two most recent messages \u2014 the picture path end to end."
         }
       ],

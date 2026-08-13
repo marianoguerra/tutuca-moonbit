@@ -174,6 +174,151 @@
       "style": ""
     },
     {
+      "name": "Scope",
+      "doc": "What an answer covers and what it never looked at: which conversation kinds were read, how many, and whether a cap stopped it. Not an error and not a warning \u2014 the sentence that turns a count into a claim someone can check.",
+      "keywords": [
+        "scope",
+        "coverage",
+        "disclosure",
+        "partial",
+        "truncated",
+        "slack"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "hasAny",
+          "doc": "Whether there is anything to disclose at all."
+        },
+        {
+          "name": "kindsLabel",
+          "doc": "Which conversation kinds were searched."
+        },
+        {
+          "name": "hasScanned",
+          "doc": "Whether anybody counted the conversations that were read."
+        },
+        {
+          "name": "scannedLabel",
+          "doc": "How many were read."
+        },
+        {
+          "name": "hasDmNote",
+          "doc": "Whether to say that DMs were never in the set. The absence is the disclosure."
+        },
+        {
+          "name": "dmLabel",
+          "doc": "That DMs and group DMs are never included."
+        },
+        {
+          "name": "truncatedLabel",
+          "doc": "What stopped the scan early, spelled out."
+        },
+        {
+          "name": "summary",
+          "doc": "Everything this scope discloses, as one line \u2014 the card's tooltip."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Scope.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "publicChannels",
+          "ty": 0,
+          "doc": "Public channels were in the set.",
+          "required": false
+        },
+        {
+          "name": "privateChannels",
+          "ty": 0,
+          "doc": "The private channels this token was invited to were in the set.",
+          "required": false
+        },
+        {
+          "name": "dms",
+          "ty": 0,
+          "doc": "DMs and group DMs were in the set. False by default, and that is a statement about the tools rather than about the token: `conversations.list` is asked for public and private channels, so an `im` is never in the set whatever the token could have seen.",
+          "required": false
+        },
+        {
+          "name": "channelsScanned",
+          "ty": 1,
+          "doc": "How many conversations were actually read. Absent means nobody counted, which is not the same as zero.",
+          "required": false
+        },
+        {
+          "name": "truncated",
+          "ty": 0,
+          "doc": "A cap stopped the scan before the data ran out. The field that matters most: the difference between \"there is no more\" and \"I stopped looking\".",
+          "required": false
+        },
+        {
+          "name": "truncatedBy",
+          "ty": 2,
+          "doc": "What stopped it, in the caller's own words \u2014 `limit`, `max_search_channels`.",
+          "required": false
+        },
+        {
+          "name": "note",
+          "ty": 2,
+          "doc": "Anything else worth saying, in one sentence.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "hasAny",
+        "kindsLabel",
+        "hasScanned",
+        "scannedLabel",
+        "hasDmNote",
+        "dmLabel",
+        "truncatedLabel",
+        "summary"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "a search that stopped early",
+          "argsJson": "{\"privateChannels\": true, \"channelsScanned\": 11, \"truncated\": true, \"truncatedBy\": \"max_search_channels\"}",
+          "doc": "Eleven conversations out of a workspace nobody counted, DMs never in the set, and a cap that stopped the scan \u2014 the three facts a results card used to leave entirely to the prose."
+        },
+        {
+          "name": "one channel, read whole",
+          "argsJson": "{\"privateChannels\": false, \"channelsScanned\": 1}",
+          "doc": "The quiet case: nothing was truncated, and the only thing worth saying is the one thing that is always true."
+        }
+      ],
+      "style": ""
+    },
+    {
       "name": "RichText",
       "doc": "A message body: a flat list of styled segments, rendered as one run of text.",
       "keywords": [
@@ -373,6 +518,22 @@
         {
           "name": "timeLabel",
           "doc": "The clock time, sliced out of createdAt."
+        },
+        {
+          "name": "openPermalink",
+          "doc": "Ask for this message's permalink to be opened; emits `openLink` with the url. This bundle cannot navigate to a workspace it cannot name."
+        },
+        {
+          "name": "hasId",
+          "doc": "Whether there is a timestamp to show. The `ts` is the argument every follow-up call takes, so the card draws it rather than only carrying it."
+        },
+        {
+          "name": "idTitle",
+          "doc": "What the timestamp is for, spelled out."
+        },
+        {
+          "name": "hasPermalink",
+          "doc": "Whether there is a link to offer."
         }
       ],
       "views": [
@@ -477,6 +638,12 @@
           "ty": 4,
           "doc": "Show the pinned badge.",
           "required": false
+        },
+        {
+          "name": "permalink",
+          "ty": 0,
+          "doc": "The workspace archive link for this message. Shown and clickable, and still not an `href`: a permalink is `https://<team>.slack.com/archives/...` and the subdomain is the workspace's, so there is no origin a view can write as a literal. Clicking it emits `openLink`, exactly as a link segment does.",
+          "required": false
         }
       ],
       "receives": [],
@@ -490,7 +657,10 @@
         "authorLabel",
         "channelLabel",
         "hasChannel",
-        "timeLabel"
+        "timeLabel",
+        "hasId",
+        "idTitle",
+        "hasPermalink"
       ],
       "whens": [],
       "requests": [],
@@ -519,6 +689,11 @@
           "name": "empty",
           "argsJson": "{}",
           "doc": "Nobody, nothing \u2014 what an unfilled placeholder looks like."
+        },
+        {
+          "name": "with a timestamp and a link",
+          "argsJson": "{\"id\": \"1755253920.000100\", \"author\": \"alice\", \"channelName\": \"incidents\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"body\": [{\"text\": \"postmortem is up, \"}, {\"text\": \"read it here\", \"link\": true, \"url\": \"https://acme.slack.com/files/U0123/F0123ABCD\"}], \"permalink\": \"https://acme.slack.com/archives/C0123ABCD/p1755253920000100\", \"reactions\": [{\"emoji\": \"\\ud83d\\udc4c\", \"count\": 3}]}",
+          "doc": "The two things a message always carried and never drew: the `ts` every follow-up call takes, and the archive link \u2014 which is offered and still not followed, because a workspace subdomain is not an origin a view can name."
         }
       ],
       "style": ""
@@ -549,6 +724,22 @@
         {
           "name": "replyLabel",
           "doc": "The fold button's caret and count."
+        },
+        {
+          "name": "openThread",
+          "doc": "Ask for the replies that were counted but not fetched; emits `openThread` with the channel and the timestamp that would fetch them."
+        },
+        {
+          "name": "hasUnloadedReplies",
+          "doc": "There is a reply count and no replies behind it \u2014 the state a collapsed one-message thread is always in."
+        },
+        {
+          "name": "loadLabel",
+          "doc": "That the replies were counted and not loaded."
+        },
+        {
+          "name": "loadTitle",
+          "doc": "The two arguments that would load them, filled in."
         }
       ],
       "views": [
@@ -582,6 +773,12 @@
           "items": [],
           "name": "",
           "members": []
+        },
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
         }
       ],
       "fields": [
@@ -606,7 +803,19 @@
         {
           "name": "replyCount",
           "ty": 3,
-          "doc": "How many replies there are.",
+          "doc": "How many replies EXIST, which is not how many arrived. `conversations.history` answers with roots carrying a count and never with the replies themselves, so a card built from one has a number and nothing behind it. Absent, it is taken from the replies that did arrive \u2014 which for a thread read whole is the same number.",
+          "required": false
+        },
+        {
+          "name": "channelName",
+          "ty": 4,
+          "doc": "Which conversation the root is in, so a thread whose replies were not fetched can say the argument that would fetch them. Defaults to the root message's own `channelName`.",
+          "required": false
+        },
+        {
+          "name": "rootTs",
+          "ty": 4,
+          "doc": "The root's timestamp, for the same reason. Defaults to the root message's own `id`.",
           "required": false
         }
       ],
@@ -617,7 +826,10 @@
       "responses": [],
       "methods": [
         "hasReplies",
-        "replyLabel"
+        "replyLabel",
+        "hasUnloadedReplies",
+        "loadLabel",
+        "loadTitle"
       ],
       "whens": [],
       "requests": [],
@@ -636,6 +848,117 @@
           "name": "no-replies",
           "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}",
           "doc": "A root message nobody answered."
+        },
+        {
+          "name": "counted, and not loaded",
+          "argsJson": "{\"root\": {\"id\": \"1755253920.000100\", \"author\": \"alice\", \"channelName\": \"incidents\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"body\": [{\"text\": \"anyone else seeing the latency spike?\"}]}, \"expanded\": false, \"replyCount\": 21}",
+          "doc": "Exactly what `conversations.history` hands a card: a root with twenty-one replies counted and none of them fetched. The caret is not offered \u2014 there is nothing behind it \u2014 and what is offered instead is the call that would fetch them."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "FileList",
+      "doc": "The files a channel or a search turned up: what each one is, who uploaded it, and where it lives. Metadata only \u2014 nothing in this bundle can hand anybody a file's contents, and the card says so rather than looking as though it could.",
+      "keywords": [
+        "slack",
+        "files",
+        "attachments",
+        "uploads",
+        "listing"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "openFile",
+          "doc": "Ask for one row's permalink to be opened, by its position in the list; emits `openLink`."
+        },
+        {
+          "name": "title",
+          "doc": "What is being listed."
+        },
+        {
+          "name": "countLabel",
+          "doc": "How many files there are."
+        },
+        {
+          "name": "isEmpty",
+          "doc": "Whether there are none."
+        },
+        {
+          "name": "note",
+          "doc": "That the bytes are not available through this server."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/FileList.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "file",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "filter",
+          "ty": 0,
+          "doc": "What was being listed \u2014 a channel name, a person \u2014 for the header. Empty for whatever the token can see.",
+          "required": false
+        },
+        {
+          "name": "files",
+          "ty": 2,
+          "doc": "The files, each `{ id, name, title, mimetype, size, author, createdAt, permalink }`. A row's label is the title if there is one, the filename if there is not, and the id if there is neither.",
+          "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 3,
+          "doc": "What this listing covers. Same record shape a ChannelHistory's scope takes.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "title",
+        "countLabel",
+        "isEmpty",
+        "note"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "a channel\u2019s files",
+          "argsJson": "{\"filter\": \"#incidents\", \"files\": [{\"id\": \"F0123ABCD\", \"title\": \"Postmortem: the 14 August outage\", \"name\": \"postmortem-2026-08-14.md\", \"mimetype\": \"text/markdown\", \"size\": 18422, \"author\": \"alice\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"permalink\": \"https://acme.slack.com/files/U0123/F0123ABCD/postmortem-2026-08-14.md\"}, {\"id\": \"F0124EFGH\", \"name\": \"latency.png\", \"mimetype\": \"image/png\", \"size\": 244118, \"author\": \"bob\", \"createdAt\": \"2026-08-15T09:20:00Z\", \"permalink\": \"https://acme.slack.com/files/U0124/F0124EFGH/latency.png\"}, {\"id\": \"F0125IJKL\", \"name\": \"raw-metrics.csv\", \"mimetype\": \"text/csv\", \"size\": 3145728, \"author\": \"carol\", \"createdAt\": \"2026-08-15T10:02:00Z\"}], \"scope\": {\"privateChannels\": false, \"channelsScanned\": 1, \"note\": \"files uploaded to conversations this token is not in are not listed\"}}",
+          "doc": "Three files with a title, without one, and without a permalink \u2014 and a scope saying which uploads were never in the set."
         }
       ],
       "style": ""
@@ -700,6 +1023,10 @@
         {
           "name": "isEmpty",
           "doc": "Whether the empty-state line shows."
+        },
+        {
+          "name": "openThread",
+          "doc": "A thread asked for replies it was counted but not given. The channel history is the one that can say which call would fetch them, so it stops the bubble and says so in its footer."
         }
       ],
       "views": [
@@ -738,6 +1065,12 @@
           "kind": "ty-bool",
           "items": [],
           "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
           "members": []
         }
       ],
@@ -799,12 +1132,19 @@
           "ty": 0,
           "doc": "The last thing a child reported, shown in the footer.",
           "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 5,
+          "doc": "What this answer covers and what it never looked at. Written as a plain record whose keys are the Scope component's own field names; drawn only when there is something to disclose.",
+          "required": false
         }
       ],
       "receives": [],
       "bubbles": [
         "openLink",
-        "reacted"
+        "reacted",
+        "openThread"
       ],
       "responses": [],
       "methods": [
@@ -820,37 +1160,37 @@
       "inits": [
         {
           "name": "general",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}]}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [{\"expanded\": true, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \\u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\ud83c\\udf89\", \"count\": 4}, {\"emoji\": \"\\ud83d\\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \\u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\ude4f\", \"count\": 1}]}]}, {\"expanded\": false, \"root\": {\"id\": \"m2\", \"author\": \"Alan Turing\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T11:05:00Z\", \"pinned\": true, \"body\": [{\"text\": \"Reminder: the design review moved to \"}, {\"text\": \"Thursday\", \"bold\": true}, {\"text\": \". The old invite is \"}, {\"text\": \"cancelled\", \"strike\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\u2705\", \"count\": 7, \"reacted\": true}]}, \"replies\": [{\"id\": \"m2r1\", \"author\": \"Katherine Johnson\", \"avatar\": \"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\", \"createdAt\": \"2026-06-23T11:31:00Z\", \"body\": [{\"text\": \"Calendar updated, thanks.\"}], \"reactions\": []}]}, {\"expanded\": true, \"root\": {\"id\": \"m3\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"channelName\": \"general\", \"createdAt\": \"2026-06-22T16:40:00Z\", \"body\": [{\"text\": \"Docs for the new API are up at \"}, {\"text\": \"docs.example.com/api\", \"link\": true, \"url\": \"https://docs.example.com/api\"}, {\"text\": \" \\u2014 feedback welcome.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\udcda\", \"count\": 3}]}, \"replies\": []}], \"scope\": {\"privateChannels\": false, \"channelsScanned\": 1}}",
           "doc": "A morning in #general: three conversations, newest first."
         },
         {
           "name": "filtered",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}],\"query\":\"compiler\"}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [{\"expanded\": true, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \\u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\ud83c\\udf89\", \"count\": 4}, {\"emoji\": \"\\ud83d\\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \\u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\ude4f\", \"count\": 1}]}]}, {\"expanded\": false, \"root\": {\"id\": \"m2\", \"author\": \"Alan Turing\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T11:05:00Z\", \"pinned\": true, \"body\": [{\"text\": \"Reminder: the design review moved to \"}, {\"text\": \"Thursday\", \"bold\": true}, {\"text\": \". The old invite is \"}, {\"text\": \"cancelled\", \"strike\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\u2705\", \"count\": 7, \"reacted\": true}]}, \"replies\": [{\"id\": \"m2r1\", \"author\": \"Katherine Johnson\", \"avatar\": \"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\", \"createdAt\": \"2026-06-23T11:31:00Z\", \"body\": [{\"text\": \"Calendar updated, thanks.\"}], \"reactions\": []}]}, {\"expanded\": true, \"root\": {\"id\": \"m3\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"channelName\": \"general\", \"createdAt\": \"2026-06-22T16:40:00Z\", \"body\": [{\"text\": \"Docs for the new API are up at \"}, {\"text\": \"docs.example.com/api\", \"link\": true, \"url\": \"https://docs.example.com/api\"}, {\"text\": \" \\u2014 feedback welcome.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\udcda\", \"count\": 3}]}, \"replies\": []}], \"query\": \"compiler\", \"scope\": {\"privateChannels\": true, \"channelsScanned\": 11, \"truncated\": true, \"truncatedBy\": \"limit\", \"note\": \"this page is the first 25 messages, not the channel\"}}",
           "doc": "The same channel with the filter box already narrowing it."
         },
         {
           "name": "oldest-first",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}],\"newestFirst\":false}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [{\"expanded\": true, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \\u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\ud83c\\udf89\", \"count\": 4}, {\"emoji\": \"\\ud83d\\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \\u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\ude4f\", \"count\": 1}]}]}, {\"expanded\": false, \"root\": {\"id\": \"m2\", \"author\": \"Alan Turing\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T11:05:00Z\", \"pinned\": true, \"body\": [{\"text\": \"Reminder: the design review moved to \"}, {\"text\": \"Thursday\", \"bold\": true}, {\"text\": \". The old invite is \"}, {\"text\": \"cancelled\", \"strike\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\u2705\", \"count\": 7, \"reacted\": true}]}, \"replies\": [{\"id\": \"m2r1\", \"author\": \"Katherine Johnson\", \"avatar\": \"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\", \"createdAt\": \"2026-06-23T11:31:00Z\", \"body\": [{\"text\": \"Calendar updated, thanks.\"}], \"reactions\": []}]}, {\"expanded\": true, \"root\": {\"id\": \"m3\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"channelName\": \"general\", \"createdAt\": \"2026-06-22T16:40:00Z\", \"body\": [{\"text\": \"Docs for the new API are up at \"}, {\"text\": \"docs.example.com/api\", \"link\": true, \"url\": \"https://docs.example.com/api\"}, {\"text\": \" \\u2014 feedback welcome.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\udcda\", \"count\": 3}]}, \"replies\": []}], \"newestFirst\": false}",
           "doc": "The same channel, ordered the other way."
         },
         {
           "name": "collapsed",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":false,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}]}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [{\"expanded\": false, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \\u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\ud83c\\udf89\", \"count\": 4}, {\"emoji\": \"\\ud83d\\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \\u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\ude4f\", \"count\": 1}]}]}, {\"expanded\": false, \"root\": {\"id\": \"m2\", \"author\": \"Alan Turing\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T11:05:00Z\", \"pinned\": true, \"body\": [{\"text\": \"Reminder: the design review moved to \"}, {\"text\": \"Thursday\", \"bold\": true}, {\"text\": \". The old invite is \"}, {\"text\": \"cancelled\", \"strike\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\\u2705\", \"count\": 7, \"reacted\": true}]}, \"replies\": [{\"id\": \"m2r1\", \"author\": \"Katherine Johnson\", \"avatar\": \"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\", \"createdAt\": \"2026-06-23T11:31:00Z\", \"body\": [{\"text\": \"Calendar updated, thanks.\"}], \"reactions\": []}]}, {\"expanded\": false, \"root\": {\"id\": \"m3\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"channelName\": \"general\", \"createdAt\": \"2026-06-22T16:40:00Z\", \"body\": [{\"text\": \"Docs for the new API are up at \"}, {\"text\": \"docs.example.com/api\", \"link\": true, \"url\": \"https://docs.example.com/api\"}, {\"text\": \" \\u2014 feedback welcome.\"}], \"reactions\": [{\"emoji\": \"\\ud83d\\udcda\", \"count\": 3}]}, \"replies\": []}]}",
           "doc": "The same channel with every thread folded."
         },
         {
           "name": "empty",
-          "argsJson": "{\"channel\":\"random\",\"topic\":\"Anything goes\",\"memberCount\":12,\"threads\":[]}",
+          "argsJson": "{\"channel\": \"random\", \"topic\": \"Anything goes\", \"memberCount\": 12, \"threads\": []}",
           "doc": "A channel nobody has posted in."
         },
         {
           "name": "loading",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[],\"loading\":true}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [], \"loading\": true}",
           "doc": "History still on its way."
         },
         {
           "name": "error",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[],\"error\":\"channel history unavailable (HTTP 503)\"}",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [], \"error\": \"channel history unavailable (HTTP 503)\"}",
           "doc": "The history could not be fetched."
         }
       ],

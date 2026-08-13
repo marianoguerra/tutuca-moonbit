@@ -8,8 +8,10 @@
     <span class="msg-author font-semibold text-primary" @text="$authorLabel"></span>
     <span class="msg-channel badge badge-ghost badge-sm" @show="$hasChannel" @text="$channelLabel"></span>
     <span class="msg-time text-xs opacity-60" @text="$timeLabel"></span>
+    <span class="msg-ts font-mono text-xs opacity-40" @show="$hasId" :title="$idTitle" @text=".id"></span>
     <span class="msg-edited text-xs opacity-50 italic" @show=".edited">(edited)</span>
     <span class="msg-pinned badge badge-ghost badge-sm" @show=".pinned">pinned</span>
+    <button class="msg-permalink btn btn-ghost btn-xs whitespace-nowrap opacity-60" @show="$hasPermalink" @on.click="openPermalink" :title=".permalink">link</button>
   </div>
   <div class="msg-body mt-1"><x render=".body"></x></div>
   <div class="msg-reactions flex gap-1 flex-wrap mt-2" @hide="empty? .reactions"><x render-each=".reactions"></x></div>

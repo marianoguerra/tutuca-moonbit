@@ -3,6 +3,10 @@
   <div class="msg-foot mt-1" @show="$hasReplies">
     <button class="btn btn-ghost btn-xs whitespace-nowrap thread-toggle" @on.click="toggle" @text="$replyLabel"></button>
   </div>
+  <div class="msg-foot mt-1 flex items-center gap-2" @show="$hasUnloadedReplies">
+    <button class="btn btn-ghost btn-xs whitespace-nowrap thread-load" @on.click="openThread" :title="$loadTitle" @text="$loadLabel"></button>
+    <span class="text-xs opacity-50 thread-load-hint" @text="$loadTitle"></span>
+  </div>
   <div class="msg-replies mt-2 pl-3 border-l-2 border-base-300 flex flex-col gap-1" @show=".expanded">
     <x render-each=".replies"></x>
   </div>

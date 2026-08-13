@@ -1,8 +1,9 @@
 # mastodon — a `tutuca:component` guest
 
 Mastodon / fediverse content as a WebAssembly component: one post (`Status`),
-its poll (`Poll`), a conversation (`Thread`), a feed (`Timeline`) and an account
-(`Profile`), each rendering from plain Mastodon-shaped data. Styled after
+its poll (`Poll`), a conversation (`Thread`), a feed (`Timeline`), an account
+(`Profile`) and the disclosure that an answer is partial (`Scope`), each
+rendering from plain Mastodon-shaped data. Styled after
 [mastodon.social/explore](https://mastodon.social/explore) — the rounded-square
 avatar, the name over the `@user@server` handle, the visibility glyph beside the
 stamp, the reply / boost / favourite row, and the divided column they sit in.
@@ -12,7 +13,7 @@ toolchain pins and the Component Model gotchas — is identical to the counter
 guest and documented once, in [`../counter/README.md`](../counter/README.md).
 Only the component source differs:
 
-- `gen/interface/tutuca/component/guest/mastodon.mbt` — the five components and the factories
+- `gen/interface/tutuca/component/guest/mastodon.mbt` — the six components and the factories
 - `manifest.json` + `views/` — their declaration and the host-compiled templates
 
 ```sh
@@ -107,15 +108,16 @@ whole", and `value` is neither a network nor a CSS sink:
 Nothing had to be reopened for it. The rails are still there for the indent,
 where the platform really does have nothing to offer.
 
-## The five components
+## The six components
 
 | component | declared fields | persists |
 | --- | --- | --- |
 | `Status` | the record: author, `content` + `tags` / `mentions`, `media`, `poll`, the three counts, this reader's `favourited` / `reblogged` / `bookmarked` / `revealed`, and where it sits in a thread (`depth`, `focus`, `foldable`, `folded`, `owned`) | no |
 | `Poll` | `options`, the two counts, `expiresAt` / `expired` / `multiple` / `voted` / `ownVotes`, and the `statusId` it belongs to | no |
-| `Thread` | `posts` — the reply tree, FLAT, each post with a `depth` — and `focus` | no |
-| `Timeline` | `title`, `posts`, and the two filters (`query`, `mediaOnly`) | no |
+| `Thread` | `posts` — the reply tree, FLAT, each post with a `depth` — plus `focus` and a `scope` | no |
+| `Timeline` | `title`, `posts`, the two filters (`query`, `mediaOnly`) and a `scope` | no |
 | `Profile` | the account, its four columns, `locked` / `bot` / `following`, its metadata `fields`, and its recent `posts` | no |
+| `Scope` | what the answer above it does not cover: `truncated` / `truncatedBy`, `more`, and free-text `notes` | no |
 
 None of them persists: each one's state is exactly the fields it declares, so
 the host projects and rebuilds them itself (the other half of the contract the
@@ -164,6 +166,22 @@ who can:
 
 `Profile` has neither, so it keeps nothing: it does not handle those bubbles at
 all, and they carry on up.
+
+## A card that says what it does not cover
+
+`Scope` is the disclosure that an answer is partial — a cap that stopped it, a
+page nobody read, an instance that only holds what it has federated. That last
+one is why a fediverse reader needs it most: a federated timeline is what THIS
+server has seen, which is not the network, and a card that draws five posts with
+no note draws them as if they were five posts. `Timeline` and `Thread` each hang
+one under themselves, from a plain record whose keys are its own field names, and
+draw it only when there is something to disclose.
+
+It is field-for-field the component `guests/bluesky` has, and that is the point
+rather than a coincidence: a host drawing a mastodon card beside an ATProto one
+should not have to learn two spellings of "this is not everything". The slack
+bundle's twin differs, because what a Slack answer leaves out is conversations
+rather than pages of a feed.
 
 ## No clock, and no writes
 

@@ -2,18 +2,123 @@
   "manifestVersion": 1,
   "apiVersion": 6,
   "moduleName": "mastodonlib",
-  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data — no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
+  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data \u2014 no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
   "capabilities": [
     {
       "cap": "cap-external-urls",
-      "reason": "avatars, profile headers and attachment previews from files.mastodon.social — which serves a remote account's pictures too, under /cache/, because the server proxies what it federates — and profile / hashtag / permalink links to mastodon.social. Both origins are literals in the views; the records only ever supply the path."
+      "reason": "avatars, profile headers and attachment previews from files.mastodon.social \u2014 which serves a remote account's pictures too, under /cache/, because the server proxies what it federates \u2014 and profile / hashtag / permalink links to mastodon.social. Both origins are literals in the views; the records only ever supply the path."
     }
   ],
   "stringEncoding": "utf16",
   "components": [
+    {
+      "name": "Scope",
+      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an instance that only sees what it federates. Not an error and not a warning \u2014 the sentence that turns a count into a claim a reader can check.",
+      "keywords": [
+        "scope",
+        "coverage",
+        "disclosure",
+        "partial",
+        "truncated",
+        "federation"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "summary",
+          "doc": "Everything this scope discloses, as one line \u2014 the card's tooltip."
+        },
+        {
+          "name": "hasAny",
+          "doc": "Whether there is anything to disclose at all. A scope with nothing to say draws nothing."
+        },
+        {
+          "name": "truncatedLabel",
+          "doc": "What stopped the answer early, spelled out."
+        },
+        {
+          "name": "moreLabel",
+          "doc": "That another page existed and was not read."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Scope.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "truncated",
+          "ty": 0,
+          "doc": "A cap stopped this before the data ran out. The field that matters most: it is the difference between \"there is no more\" and \"I stopped looking\".",
+          "required": false
+        },
+        {
+          "name": "truncatedBy",
+          "ty": 1,
+          "doc": "What stopped it, in the caller's own words \u2014 `limit`, `depth`.",
+          "required": false
+        },
+        {
+          "name": "more",
+          "ty": 0,
+          "doc": "There is another page, and nobody asked for it.",
+          "required": false
+        },
+        {
+          "name": "notes",
+          "ty": 2,
+          "doc": "What this answer does not cover, one sentence each. Free text because the reasons are not a closed set: an instance that only federates what somebody on it follows, and a filter the server applied, are both true and neither is a boolean.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "summary"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "a federated timeline",
+          "argsJson": "{\"more\": true, \"notes\": [\"this instance only holds posts it has federated, which is what somebody here follows\", \"posts from servers it has defederated are not in the set at all\"]}",
+          "doc": "The disclosure a fediverse card most needs and had no field for: a timeline is what THIS instance has seen, which is not the network."
+        },
+        {
+          "name": "a conversation that was cut short",
+          "argsJson": "{\"truncated\": true, \"truncatedBy\": \"depth\", \"notes\": [\"replies on servers this one has not federated are not shown\"]}",
+          "doc": "What a thread leaves out, which is where a card looks most complete and is least so."
+        }
+      ],
+      "style": ""
+    },
     {
       "name": "Status",
       "doc": "One fediverse post: who wrote it, what it says (with its hashtags, mentions and links found and checked), what it carries and how it was received. Also the row a Thread, a Timeline and a Profile are made of.",
@@ -46,7 +151,7 @@
         },
         {
           "name": "reply",
-          "doc": "Answer this post. There is no composer here, so it is only the announcement — a `replyTo` bubble carrying the id."
+          "doc": "Answer this post. There is no composer here, so it is only the announcement \u2014 a `replyTo` bubble carrying the id."
         },
         {
           "name": "toggleFold",
@@ -90,7 +195,7 @@
         },
         {
           "name": "voted",
-          "doc": "A poll under this post was voted in. It passes straight through — only a component with a network can post a vote."
+          "doc": "A poll under this post was voted in. It passes straight through \u2014 only a component with a network can post a vote."
         },
         {
           "name": "unvoted",
@@ -110,7 +215,7 @@
         },
         {
           "name": "foldTitle",
-          "doc": "What the fold button will do, spelled out — its label is a glyph."
+          "doc": "What the fold button will do, spelled out \u2014 its label is a glyph."
         },
         {
           "name": "owned",
@@ -179,7 +284,7 @@
         {
           "name": "url",
           "ty": 0,
-          "doc": "The status's canonical url, as the record carries it. For a post from another server this is all there is — no view can name that origin — so it stays text.",
+          "doc": "The status's canonical url, as the record carries it. For a post from another server this is all there is \u2014 no view can name that origin \u2014 so it stays text.",
           "required": false
         },
         {
@@ -197,7 +302,7 @@
         {
           "name": "avatar",
           "ty": 0,
-          "doc": "The author's picture, as the full url the record carries. Drawn when it is on files.mastodon.social — the origin the view names, which a remote account's picture is on too, because the server proxies what it federates.",
+          "doc": "The author's picture, as the full url the record carries. Drawn when it is on files.mastodon.social \u2014 the origin the view names, which a remote account's picture is on too, because the server proxies what it federates.",
           "required": false
         },
         {
@@ -348,7 +453,7 @@
         {
           "name": "owned",
           "ty": 2,
-          "doc": "Whether this post is a row inside a larger surface — a thread, a feed — rather than standing on its own. A row draws smaller and borderless, inside the column that owns it.",
+          "doc": "Whether this post is a row inside a larger surface \u2014 a thread, a feed \u2014 rather than standing on its own. A row draws smaller and borderless, inside the column that owns it.",
           "required": false
         }
       ],
@@ -377,7 +482,7 @@
         {
           "name": "announcement",
           "argsJson": "{\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}",
-          "doc": "A real public record: seven hashtags the server resolved, and a link nobody here can follow — its origin belongs to whoever posted it, so it is shortened text with the whole url in the tooltip."
+          "doc": "A real public record: seven hashtags the server resolved, and a link nobody here can follow \u2014 its origin belongs to whoever posted it, so it is shortened text with the whole url in the tooltip."
         },
         {
           "name": "with pictures",
@@ -387,7 +492,7 @@
         {
           "name": "from another server",
           "argsJson": "{\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}",
-          "doc": "A post federated in from floss.social. Its pictures still draw — the server proxies them under /cache/ on the origin the views name — and its permalink does not, because that page is on floss.social."
+          "doc": "A post federated in from floss.social. Its pictures still draw \u2014 the server proxies them under /cache/ on the origin the views name \u2014 and its permalink does not, because that page is on floss.social."
         },
         {
           "name": "a poll behind a warning",
@@ -495,7 +600,7 @@
         {
           "name": "votersCount",
           "ty": 1,
-          "doc": "How many people voted — fewer than votesCount when the poll is multiple choice.",
+          "doc": "How many people voted \u2014 fewer than votesCount when the poll is multiple choice.",
           "required": false
         },
         {
@@ -573,7 +678,7 @@
       "messageDocs": [
         {
           "name": "folded",
-          "doc": "A row folded its replies away — the thread is what knows which rows those are, so it drops them and stops the bubble here."
+          "doc": "A row folded its replies away \u2014 the thread is what knows which rows those are, so it drops them and stops the bubble here."
         },
         {
           "name": "unfolded",
@@ -625,19 +730,31 @@
           "items": [],
           "name": "",
           "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
+          "members": []
         }
       ],
       "fields": [
         {
           "name": "posts",
           "ty": 1,
-          "doc": "The conversation in reading order, each post { id, url, acct, displayName, avatar, content, spoilerText, createdAt, visibility, tags, mentions, media, poll, repliesCount, reblogsCount, favouritesCount, depth } — depth being how deep in the reply tree it sits.",
+          "doc": "The conversation in reading order, each post { id, url, acct, displayName, avatar, content, spoilerText, createdAt, visibility, tags, mentions, media, poll, repliesCount, reblogsCount, favouritesCount, depth } \u2014 depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
           "name": "focus",
           "ty": 2,
           "doc": "The id of the post the thread is about; that row is marked. Empty for none. Writing it rebuilds the rows.",
+          "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 3,
+          "doc": "What this conversation does not show \u2014 the depth the caller asked for, and the replies this instance has never federated. Same record shape a Timeline's scope takes.",
           "required": false
         }
       ],
@@ -659,8 +776,13 @@
       "inits": [
         {
           "name": "conversation",
-          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}]}",
+          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}]}",
           "doc": "A five-post conversation three levels deep, focused on its root, and federated: two of the five are on another server, so two of the five permalinks are text."
+        },
+        {
+          "name": "a conversation that was cut short",
+          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \\u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}], \"scope\": {\"truncated\": true, \"truncatedBy\": \"depth\", \"notes\": [\"replies on servers this one has not federated are not shown\"]}}",
+          "doc": "The gaps a federated thread has and a card cannot draw: a depth cap, and the replies that live on servers this instance has never spoken to."
         }
       ],
       "style": ""
@@ -681,7 +803,7 @@
       "messageDocs": [
         {
           "name": "setQuery",
-          "doc": "Filter the column by what the reader typed — matched against the body, the content warning, the name and the handle."
+          "doc": "Filter the column by what the reader typed \u2014 matched against the body, the content warning, the name and the handle."
         },
         {
           "name": "clearQuery",
@@ -743,13 +865,19 @@
           "items": [],
           "name": "",
           "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Scope",
+          "members": []
         }
       ],
       "fields": [
         {
           "name": "title",
           "ty": 0,
-          "doc": "The heading over the column — \"Trending\", a hashtag, a server's name.",
+          "doc": "The heading over the column \u2014 \"Trending\", a hashtag, a server's name.",
           "required": false
         },
         {
@@ -771,6 +899,12 @@
           "name": "mediaOnly",
           "ty": 3,
           "doc": "Whether the column is showing only posts with pictures.",
+          "required": false
+        },
+        {
+          "name": "scope",
+          "ty": 4,
+          "doc": "What this page does not cover. Written as a plain record \u2014 the keys are the Scope component's own field names \u2014 and drawn only when there is something to disclose.",
           "required": false
         }
       ],
@@ -799,6 +933,11 @@
           "name": "media only",
           "argsJson": "{\"title\": \"Trending\", \"posts\": [{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}, {\"id\": \"117088936559529737\", \"url\": \"https://mastodon.social/@mcc/117088936559529737\", \"acct\": \"mcc\", \"displayName\": \"mcc\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/011/307/original/dana-andi-portrait-square.jpg\", \"content\": \"When Tom Scott is trying to flirt with you\", \"createdAt\": \"2026-08-13T15:36:24.515Z\", \"media\": [{\"description\": \"YouTube video by Tom Scott titled \\\"Want to see a hidden, suspended monorail?\\\". The caption shows Tom Scott wearing high-vis safety gear with a huge grin on his face.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/small/4fc8cb8ea334fead.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/original/4fc8cb8ea334fead.png\", \"type\": \"image\"}], \"repliesCount\": 7, \"reblogsCount\": 69, \"favouritesCount\": 160, \"boostedBy\": \"Prof. Sam Lawler\"}, {\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}, {\"id\": \"117088645298852906\", \"url\": \"https://mastodon.social/@sundogplanets/117088645298852906\", \"acct\": \"sundogplanets\", \"displayName\": \"Prof. Sam Lawler\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/108/194/428/751/240/116/original/f1eb397ab1659575.jpeg\", \"content\": \"Good morning from my cute animals.\\n\\nThe mama goats wanted to immediately head down to the eating pen after morning milking, but were caught by their giant-and-still-nursing babies, so they patiently chewed their cud and let their giant babies nurse. Looks hilarious!\", \"createdAt\": \"2026-08-13T14:22:20.242Z\", \"media\": [{\"description\": \"Four mama goats all lined up and waiting to walk through the gate to the grassy eating area, but all four of them have giant babies nursing underneath.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/small/3aebb8bb59cdd641.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/original/3aebb8bb59cdd641.png\", \"type\": \"image\"}, {\"description\": \"A stripey grey cat, appreciatively leaning in to scritches she's getting. She's in green grass with morning sunshine on her.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/small/1f6542def3cdb340.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/original/1f6542def3cdb340.png\", \"type\": \"image\"}], \"repliesCount\": 8, \"reblogsCount\": 106, \"favouritesCount\": 256}, {\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}], \"mediaOnly\": true}",
           "doc": "The same column with the media-only toggle already on, which is what a filter that does not rebuild its rows looks like."
+        },
+        {
+          "name": "trending, and what it is a page of",
+          "argsJson": "{\"title\": \"Trending\", \"posts\": [{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}, {\"id\": \"117088936559529737\", \"url\": \"https://mastodon.social/@mcc/117088936559529737\", \"acct\": \"mcc\", \"displayName\": \"mcc\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/011/307/original/dana-andi-portrait-square.jpg\", \"content\": \"When Tom Scott is trying to flirt with you\", \"createdAt\": \"2026-08-13T15:36:24.515Z\", \"media\": [{\"description\": \"YouTube video by Tom Scott titled \\\"Want to see a hidden, suspended monorail?\\\". The caption shows Tom Scott wearing high-vis safety gear with a huge grin on his face.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/small/4fc8cb8ea334fead.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/original/4fc8cb8ea334fead.png\", \"type\": \"image\"}], \"repliesCount\": 7, \"reblogsCount\": 69, \"favouritesCount\": 160, \"boostedBy\": \"Prof. Sam Lawler\"}, {\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}, {\"id\": \"117088645298852906\", \"url\": \"https://mastodon.social/@sundogplanets/117088645298852906\", \"acct\": \"sundogplanets\", \"displayName\": \"Prof. Sam Lawler\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/108/194/428/751/240/116/original/f1eb397ab1659575.jpeg\", \"content\": \"Good morning from my cute animals.\\n\\nThe mama goats wanted to immediately head down to the eating pen after morning milking, but were caught by their giant-and-still-nursing babies, so they patiently chewed their cud and let their giant babies nurse. Looks hilarious!\", \"createdAt\": \"2026-08-13T14:22:20.242Z\", \"media\": [{\"description\": \"Four mama goats all lined up and waiting to walk through the gate to the grassy eating area, but all four of them have giant babies nursing underneath.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/small/3aebb8bb59cdd641.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/original/3aebb8bb59cdd641.png\", \"type\": \"image\"}, {\"description\": \"A stripey grey cat, appreciatively leaning in to scritches she's getting. She's in green grass with morning sunshine on her.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/small/1f6542def3cdb340.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/original/1f6542def3cdb340.png\", \"type\": \"image\"}], \"repliesCount\": 8, \"reblogsCount\": 106, \"favouritesCount\": 256}, {\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}], \"scope\": {\"more\": true, \"notes\": [\"this instance only holds posts it has federated\"]}}",
+          "doc": "The same timeline with the scope the card never used to carry: a page of something with no total, out of a slice of the network this server happens to have seen."
         }
       ],
       "style": ""
@@ -834,7 +973,7 @@
         },
         {
           "name": "followLabel",
-          "doc": "What the follow button says right now — a locked account asks rather than follows."
+          "doc": "What the follow button says right now \u2014 a locked account asks rather than follows."
         },
         {
           "name": "favourited",
@@ -1011,11 +1150,11 @@
         {
           "name": "mastodon",
           "argsJson": "{\"displayName\": \"Mastodon\", \"acct\": \"Mastodon\", \"note\": \"Our mission is to connect the world through thriving online communities.\\n\\nThis is the primary account for the Mastodon project.\\n\\nFor technical software updates, follow @MastodonEngineering\\n\\nFor news and updates on the Mastodon servers that we operate (like this one!), follow @staff\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"header\": \"https://files.mastodon.social/accounts/headers/000/013/179/original/1375be116fbe0f1d.png\", \"followersCount\": 877054, \"followingCount\": 51, \"statusesCount\": 560, \"createdAt\": \"2016-11-23T00:00:00.000Z\", \"fields\": [{\"name\": \"Homepage\", \"value\": \"https://joinmastodon.org\", \"verified\": true}, {\"name\": \"Source Code\", \"value\": \"https://github.com/mastodon\", \"verified\": true}, {\"name\": \"Blog\", \"value\": \"https://blog.joinmastodon.org\", \"verified\": true}, {\"name\": \"Donate\", \"value\": \"https://joinmastodon.org/sponsors#donate\", \"verified\": true}], \"posts\": [{\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}]}",
-          "doc": "The real account, fetched from the public API: a header, an avatar, four verified metadata links and six-figure counts — the picture path end to end."
+          "doc": "The real account, fetched from the public API: a header, an avatar, four verified metadata links and six-figure counts \u2014 the picture path end to end."
         },
         {
           "name": "alice",
-          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}]}",
+          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}]}",
           "doc": "An account with no pictures at all, so the initials and the flat band are what shows, and locked, so the button asks instead of following."
         }
       ],
