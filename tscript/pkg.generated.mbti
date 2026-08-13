@@ -11,6 +11,10 @@ pub fn collection_method(String) -> Int?
 
 pub fn effect_min_arity(String) -> Int?
 
+pub fn escape_of(Char) -> Char?
+
+pub fn escaped_char(Char) -> Char?
+
 pub fn kind_word(DeclKind) -> String
 
 pub let no_span : Span
@@ -40,6 +44,8 @@ pub fn parse_token(String, ParseCtx) -> @core.Val?
 pub fn script_builtin(String) -> Int?
 
 pub fn script_builtin_names() -> Array[String]
+
+pub let target_bind : String
 
 pub fn tokenize(String) -> Array[Token]
 
@@ -210,6 +216,7 @@ pub(all) enum Stmt {
   SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
   SEffect(name~ : String, args~ : Array[Expr], span~ : Span)
   SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
+  SNew(ty~ : TyRef, span~ : Span)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Token {
@@ -221,6 +228,13 @@ pub(all) enum TplPart {
   TText(String)
   TExpr(Expr)
 } derive(Eq, @debug.Debug)
+
+pub(all) struct TyRef {
+  name : String
+  args : Array[TyRef]
+  span : Span
+} derive(Eq, @debug.Debug)
+pub fn TyRef::to_source(Self) -> String
 
 pub(all) enum UnOp {
   UNot

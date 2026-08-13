@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/tutucard"
 
 import {
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
@@ -28,6 +29,7 @@ pub(all) struct Card {
   component : @component.Component
   issues : Array[CardIssue]
   def : @statedef.StateDef?
+  macros : Map[String, @anode.Macro]
 }
 pub fn Card::initial(Self, fixture? : String) -> Map[String, @core.Value]
 
@@ -55,6 +57,7 @@ pub struct Deck {
   callables : Map[String, @tscript.Decl]
   alters : Map[String, @tscript.Decl]
   mutators : Map[String, (@component.FieldBox, Array[@core.Value]) -> @core.Value]
+  zero : ((@tscript.TyRef) -> @core.Value?)?
 }
 
 // Type aliases

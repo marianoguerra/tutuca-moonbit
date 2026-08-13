@@ -368,6 +368,17 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
     }
     return SIf(cond~, then_~, else_~, span=p.since(from))
   }
+  // `new Label` — the zero of a declared type, into `@cur`.
+  //
+  // A leading keyword is unambiguous here: a statement starts with `if`, an
+  // effect name, `.` or `@`, and never with a bare name of its own. The type
+  // is parsed as a NAME, since resolving it needs a schema this package does
+  // not see.
+  if p.peek() is TIdent("new") {
+    p.bump() |> ignore
+    let ty = parse_ty_ref(p)
+    return SNew(ty~, span=p.since(from))
+  }
   // An effect: a bare name the effect table knows.
   if p.peek() is TIdent(name) && effect_min_arity(name) is Some(min) {
     p.bump() |> ignore
@@ -457,6 +468,39 @@ fn parse_stmt_block(p : P) -> Array[Stmt] raise ScriptError {
   let ss = parse_stmts(p)
   p.expect(TRBrace, "`}` closing the branch")
   ss
+}
+
+// ---------------------------------------------------------------------------
+// Type references
+
+///|
+/// `Label`, `Array[String]`, `Map[String, Int]` — the `tutuca/state` spelling
+/// of a type, parsed as a name applied to names.
+///
+/// Every spelling the state block has is a name with arguments or without one,
+/// so this needs no table and cannot disagree with the one `statedef` keeps:
+/// whether `Frobnicator` is a type at all is answered where the schema is, and
+/// answered as a finding rather than as a parse error.
+fn parse_ty_ref(p : P) -> TyRef raise ScriptError {
+  let from = p.span()
+  let (name, name_span) = p.ident("a type name after `new`")
+  let args : Array[TyRef] = []
+  // Attached, like every other bracket in the language: `Array [String]` is a
+  // name and then something else, and saying so here beats a stray `[` landing
+  // in the next statement.
+  if p.peek() is TLBracket && !p.gap() {
+    p.bump() |> ignore
+    for ;; {
+      args.push(parse_ty_ref(p))
+      if p.peek() is TComma {
+        p.bump() |> ignore
+        continue
+      }
+      break
+    }
+    p.expect(TRBracket, "`]` closing the type arguments")
+  }
+  { name, args, span: if args.is_empty() { name_span } else { p.since(from) } }
 }
 
 // ---------------------------------------------------------------------------

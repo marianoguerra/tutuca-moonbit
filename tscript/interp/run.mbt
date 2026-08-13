@@ -43,11 +43,23 @@ pub fn run(body : Array[@tscript.Stmt], env : Env) -> Outcome {
   }
   let binds : Map[String, @tutuca.Value] = Map([])
   for k, v in env.binds {
-    binds[k] = v
+    // The target starts unset, whatever the caller was holding. A body builds
+    // its own values, and one that read a `@cur` left over from somewhere else
+    // would depend on who called it.
+    if k != @tscript.target_bind {
+      binds[k] = v
+    }
   }
   let effects : Array[Effect] = []
   let cur : Env = { ..env, state, binds }
   if exec(body, cur, effects, 0) {
+    // And it does not leave, either. The binds an `enrich` produces become a
+    // view's scope — `@name` in a template, replayed on every rebuild — so a
+    // target that stayed in the map would publish a workbench as a binding and
+    // let a card name something no compiled component can. It is withheld
+    // HERE, once, rather than filtered by each of the two callers that would
+    // otherwise have to remember.
+    binds.remove(@tscript.target_bind)
     { state: Some(state), effects, binds }
   } else {
     Outcome::nothing()
@@ -105,6 +117,16 @@ fn exec_one(
       write_place(place, next, env)
     }
     SEffect(name~, args~, ..) => effect(name, args, env, effects, depth)
+    SNew(ty~, ..) => {
+      // No resolver means no schema in hand, and a `new` whose type nobody can
+      // name is a body that did not finish. The checker is where an author is
+      // told why; here it is the same all-or-nothing every other refusal is.
+      guard env.zero is Some(zero) && zero(ty) is Some(v) else { return false }
+      // No copy: every mutation below is copy-on-write, so two `new`s of one
+      // type handing out the same zero cannot alias into each other.
+      env.binds[@tscript.target_bind] = v
+      true
+    }
     SIf(cond~, then_~, else_~, ..) => {
       guard eval(cond, env) is Some(c) else { return false }
       if c.is_truthy() {

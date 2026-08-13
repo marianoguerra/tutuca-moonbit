@@ -33,8 +33,9 @@ pub(all) struct Env {
   binds : Map[String, @core.Value]
   callables : Map[String, @tscript.Decl]
   schema : @core.SchemaInfo?
+  zero : ((@tscript.TyRef) -> @core.Value?)?
 }
-pub fn Env::of_state(Map[String, @core.Value], callables? : Map[String, @tscript.Decl], schema? : @core.SchemaInfo) -> Self
+pub fn Env::of_state(Map[String, @core.Value], callables? : Map[String, @tscript.Decl], schema? : @core.SchemaInfo, zero? : (@tscript.TyRef) -> @core.Value?) -> Self
 
 pub(all) struct Outcome {
   state : Map[String, @core.Value]?

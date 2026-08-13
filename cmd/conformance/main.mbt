@@ -305,6 +305,8 @@ fn rename_stmt(s : @tscript.Stmt, m : Map[String, String]) -> @tscript.Stmt {
       SMethod(place~, call~, args=args.map(a => rename_expr(a, m)), span~)
     SEffect(name~, args~, span~) =>
       SEffect(name~, args=args.map(a => rename_expr(a, m)), span~)
+    // A `new` names a TYPE, and the renaming here is of handler PARAMETERS.
+    SNew(..) => s
     SIf(cond~, then_~, else_~, span~) =>
       SIf(
         cond=rename_expr(cond, m),

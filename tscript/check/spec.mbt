@@ -41,6 +41,17 @@ pub(all) struct Surface {
 declare pub fn Surface::empty() -> Surface
 
 ///|
+/// The type a `new`'s reference names, or None when the schema declares none.
+///
+/// Here rather than in `tscript` because resolving a name needs a schema, and
+/// here rather than in each backend because the checker and the MoonBit
+/// emitter must agree about what `new Array[String]` is.
+declare pub fn resolve_ty_ref(
+  def : @statedef.StateDef,
+  t : @tscript.TyRef,
+) -> @statedef.StateTy?
+
+///|
 /// Check a block against a schema.
 ///
 /// Answers every finding rather than the first, in source order.

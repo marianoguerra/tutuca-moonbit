@@ -100,7 +100,38 @@ pub(all) enum Stmt {
   SEffect(name~ : String, args~ : Array[Expr], span~ : Span)
   /// `if cond { … } else { … }`.
   SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
+  /// `new Label`, `new Array[String]` — the zero of a declared type, and the
+  /// ACTIVE TARGET the statements under it fill in.
+  ///
+  /// A statement rather than an expression because the language has no
+  /// literals to fill one in with: a value is built by mutating it, so the
+  /// thing being built has to be somewhere a statement can name. `@cur` is
+  /// that somewhere, and `new` is what puts a value there.
+  SNew(ty~ : TyRef, span~ : Span)
 } derive(Debug, Eq)
+
+///|
+/// The name a `new` was applied to, in the `tutuca/state` spelling:
+/// `Label`, `Array[String]`, `Map[String, Int]`.
+///
+/// The NAME, not the type. Resolving it needs the `StateDef`, which this
+/// package does not see and should not — it ships to a browser twice over and
+/// carries nothing a parse does not need. `check`, `emit_mbt` and the card
+/// runtime each have one in hand and resolve it there.
+pub(all) struct TyRef {
+  name : String
+  /// `Array[String]`'s `String`. Empty for a name applied to nothing.
+  args : Array[TyRef]
+  span : Span
+} derive(Debug, Eq)
+
+///|
+/// The binding name `new` writes and the statements under it read: `@cur`.
+///
+/// Reserved, and named here rather than spelled in five packages, because the
+/// checker refuses to let an `enrich` bind it, the interpreter refuses to let
+/// it escape into a view, and both are talking about the same name.
+pub let target_bind : String = "cur"
 
 ///|
 /// What a place is rooted at.
@@ -261,6 +292,13 @@ declare pub fn Decl::to_source(self : Decl) -> String
 ///|
 /// Print an expression back as canonical source.
 declare pub fn Expr::to_source(self : Expr) -> String
+
+///|
+/// Print a type reference back as canonical source: `Map[String, Int]`.
+///
+/// The spelling matches `@statedef.StateTy::show_source`, so a finding about a
+/// `new` and a finding about a field can name the same type the same way.
+declare pub fn TyRef::to_source(self : TyRef) -> String
 
 ///|
 /// The mutating collection methods, receiver-first. Mirrors the

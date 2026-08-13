@@ -251,7 +251,7 @@ test "a binding is assignable only where bindings are produced" {
   assert_eq(codes("enrich rowInfo { @cls = 'row' }"), [])
   assert_eq(codes("enrichScope header { @title = .name }"), [])
   assert_eq(messages("on x { @cls = 'row' }"), [
-    "`@cls` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state",
+    "`@cls` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state, and `new` builds a value in `@cur`",
   ])
 }
 
@@ -361,4 +361,96 @@ test "a finding points at the thing it is about" {
   // `.coutn` starts at offset 9 — the block's own coordinates, which
   // `@viewfile.Block` rebases onto the file.
   assert_eq(fs[0].span, { start: 9, end_: 15 })
+}
+
+// -- new, and the target ----------------------------------------------------
+
+///|
+test "a new gives the target a type, so a field of it is checked" {
+  assert_eq(
+    codes("on x {\n  new Label\n  @cur.text = 'a'\n  .labels.push @cur\n}"),
+    [],
+  )
+  // The payoff for typing the target: `@cur.dnoe` reads exactly like
+  // `.labels[0].dnoe` does, because it goes through the same step walk.
+  assert_eq(messages("on x {\n  new Label\n  @cur.dnoe = 'a'\n}"), [
+    "`Label` has no field `dnoe`",
+  ])
+  assert_eq(messages("on x {\n  new Label\n  @cur.done = 'yes'\n}"), [
+    "this place is Bool, but the value is String",
+  ])
+}
+
+///|
+test "the target does not exist until a new makes one" {
+  assert_eq(messages("on x { .labels.push @cur }"), [
+    "`@cur` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
+  ])
+  // And the report is once, not once per step below it.
+  assert_eq(codes("on x { @cur.text = 'a' }"), ["NO_TARGET"])
+}
+
+///|
+test "a type the state does not declare is named, with the nearest one" {
+  assert_eq(messages("on x { new Labl }"), [
+    "`Labl` is not a type the Counter state declares — did you mean `Label`?",
+  ])
+  assert_eq(messages("on x { new Array[Widget] }"), [
+    "`Array[Widget]` is not a type the Counter state declares; declare it in the <script type=\"tutuca/state\"> block, or write a built-in type",
+  ])
+  // The built-in spellings the state block has, all of them legal here.
+  assert_eq(
+    codes(
+      "on x {\n  new Array[String]\n  new Map[String, Int]\n  new Set[String]\n  new Priority\n}",
+    ),
+    [],
+  )
+}
+
+///|
+test "a collection method on the target is checked against what it built" {
+  assert_eq(codes("on x {\n  new Array[String]\n  @cur.push 'a'\n}"), [])
+  assert_eq(messages("on x {\n  new Label\n  @cur.push 'a'\n}"), [
+    "`push` does not apply to Label",
+  ])
+}
+
+///|
+test "a target built in a branch is known only where both arms agree" {
+  // Same type on both sides: known below.
+  assert_eq(
+    codes(
+      "on x {\n  if .ok { new Label } else { new Label }\n  @cur.text = 'a'\n}",
+    ),
+    [],
+  )
+  // One arm only: nothing is there on the other path, so a read below reports.
+  assert_eq(
+    codes(
+      "on x {\n  if .ok { new Label } else { .count = 1 }\n  @cur.text = 'a'\n}",
+    ),
+    ["NO_TARGET"],
+  )
+  // Two different types: a target IS there, and its type is not knowable — so
+  // the field goes unchecked rather than misreported.
+  assert_eq(
+    codes(
+      "on x {\n  if .ok { new Label } else { new Array[String] }\n  @cur.dnoe = 'a'\n}",
+    ),
+    [],
+  )
+}
+
+///|
+test "the target is not a binding an enrich can publish" {
+  // It never reaches a view — the interpreter withholds it — so an enricher
+  // that assigned it would be writing into a workbench and calling it output.
+  assert_eq(messages("enrich row { @cur = 'x' }"), [
+    "`@cur` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
+  ])
+  // Building one and publishing something else is fine.
+  assert_eq(
+    codes("enrich row {\n  new Label\n  @cur.text = 'a'\n  @tag = @cur.text\n}"),
+    [],
+  )
 }

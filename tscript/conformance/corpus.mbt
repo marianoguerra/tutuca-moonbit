@@ -308,6 +308,62 @@ pub fn cases() -> Array[Case] {
       "go",
       after=Some(with_fields({ "name": Str("x") })),
     ),
+    // -- new, and the target -----------------------------------------------
+    on_case(
+      "a record is built and appended",
+      "on go {\n  new Label\n  @cur.text = 'z'\n  @cur.done = true\n  .labels.push @cur\n}",
+      "go",
+      after=Some(
+        with_fields({
+          "labels": List([
+            Map({ "text": Str("x"), "done": Bool(false) }),
+            Map({ "text": Str("y"), "done": Bool(false) }),
+            Map({ "text": Str("z"), "done": Bool(true) }),
+          ]),
+        }),
+      ),
+    ),
+    on_case(
+      "a field the build did not touch is the type's zero",
+      "on go {\n  new Label\n  .labels.push @cur\n}",
+      "go",
+      after=Some(
+        with_fields({
+          "labels": List([
+            Map({ "text": Str("x"), "done": Bool(false) }),
+            Map({ "text": Str("y"), "done": Bool(false) }),
+            Map({ "text": Str(""), "done": Bool(false) }),
+          ]),
+        }),
+      ),
+    ),
+    on_case(
+      "a second new starts over, and the first is not disturbed",
+      "on go {\n  new Label\n  @cur.text = 'p'\n  .labels.push @cur\n  new Label\n  @cur.text = 'q'\n  .labels.push @cur\n}",
+      "go",
+      after=Some(
+        with_fields({
+          "labels": List([
+            Map({ "text": Str("x"), "done": Bool(false) }),
+            Map({ "text": Str("y"), "done": Bool(false) }),
+            Map({ "text": Str("p"), "done": Bool(false) }),
+            Map({ "text": Str("q"), "done": Bool(false) }),
+          ]),
+        }),
+      ),
+    ),
+    on_case(
+      "a collection is built and assigned whole",
+      "on go {\n  new Array[String]\n  @cur.push 'p'\n  @cur.push 'q'\n  .items = @cur\n}",
+      "go",
+      after=Some(with_fields({ "items": List([Str("p"), Str("q")]) })),
+    ),
+    on_case(
+      "the target does not exist until a new makes one",
+      "on go { .labels.push @cur }",
+      "go",
+      after=None,
+    ),
     // -- expressions -------------------------------------------------------
     on_case(
       "and short-circuits, so the right-hand side is never evaluated",

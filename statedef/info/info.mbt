@@ -103,6 +103,36 @@ pub fn zero_of(
 }
 
 ///|
+/// The zero of a type a block's `new` names, or None when this schema declares
+/// no such type.
+///
+/// The two halves of a `new` meeting: `tscript` parses the NAME because it
+/// sees no schema, `statedef` resolves it because it is one, and `zero_of`
+/// answers what an author gets. The interpreter takes this as a function so it
+/// can stay free of both.
+pub fn zero_of_ref(
+  def : @statedef.StateDef,
+  t : @tscript.TyRef,
+) -> @tutuca.Value? {
+  guard resolve_ref(def, t) is Some(ty) else { return None }
+  Some(zero_of(def, ty))
+}
+
+///|
+/// The type a reference names, or None when it names none.
+fn resolve_ref(
+  def : @statedef.StateDef,
+  t : @tscript.TyRef,
+) -> @statedef.StateTy? {
+  let args : Array[@statedef.StateTy] = []
+  for a in t.args {
+    guard resolve_ref(def, a) is Some(r) else { return None }
+    args.push(r)
+  }
+  def.resolve_ty(t.name, args)
+}
+
+///|
 /// What a component's schema declares, as the runtime description an
 /// instance answers `obj_schema()` with.
 ///

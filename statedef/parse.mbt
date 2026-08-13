@@ -606,50 +606,13 @@ fn named(
   span : Span,
   env : Env,
 ) -> StateTy raise DefError {
+  // The argument-free spellings, from the table `StateDef::resolve_ty` reads
+  // too — one name, one meaning, in a schema and in a block's `new` alike.
+  if scalar_ty(name) is Some(t) {
+    arity(name, args, 0, span)
+    return t
+  }
   match name {
-    "Bool" => {
-      arity(name, args, 0, span)
-      TBool
-    }
-    // Width and signedness survive so decode can range-check, even though
-    // every one of them emits a MoonBit `Int`. `Int` is the one an author
-    // reaches for; the rest are there when a bound is meant.
-    "Int" => {
-      arity(name, args, 0, span)
-      TInt(width=32, signed=true)
-    }
-    "Int8" => {
-      arity(name, args, 0, span)
-      TInt(width=8, signed=true)
-    }
-    "Int16" => {
-      arity(name, args, 0, span)
-      TInt(width=16, signed=true)
-    }
-    "UInt" => {
-      arity(name, args, 0, span)
-      TInt(width=32, signed=false)
-    }
-    "UInt8" => {
-      arity(name, args, 0, span)
-      TInt(width=8, signed=false)
-    }
-    "UInt16" => {
-      arity(name, args, 0, span)
-      TInt(width=16, signed=false)
-    }
-    "Double" => {
-      arity(name, args, 0, span)
-      TFloat
-    }
-    "String" => {
-      arity(name, args, 0, span)
-      TText
-    }
-    "Any" => {
-      arity(name, args, 0, span)
-      TAny
-    }
     "Array" => {
       arity(name, args, 1, span)
       TList(resolve(args[0], env))

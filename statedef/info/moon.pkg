@@ -17,4 +17,8 @@
 import {
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/core" @tutuca,
+  // For `zero_of_ref`: the block language parses a `new`'s type as a NAME,
+  // since it sees no schema. This is where the two halves meet, and it is a
+  // leaf import — `tscript` depends on neither package.
+  "marianoguerra/tutuca/tscript",
 }

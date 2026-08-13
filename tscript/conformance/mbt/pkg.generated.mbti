@@ -13,7 +13,7 @@ pub fn case_name(Int) -> String?
 
 pub let corpus_common_style : String
 
-pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], compute? : (CorpusMethod) -> ((CorpusState, Array[@core.Value]) -> @core.Value)?, swap? : (CorpusInput) -> ((CorpusState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (CorpusWhen) -> ((CorpusState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich? : (CorpusEnrich) -> ((CorpusState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, enrich_scope? : (CorpusEnrichScope) -> ((CorpusState) -> Map[String, @core.Value])?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], compute? : (CorpusMethod) -> ((CorpusState, Array[@core.Value]) -> @core.Value)?, swap? : (CorpusInput) -> ((CorpusState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let corpus_global_style : String
 
@@ -24,17 +24,6 @@ pub fn value_case_name(Int) -> String?
 // Errors
 
 // Types and methods
-pub(all) enum CorpusEnrich {
-  V14Row
-  V15Row
-} derive(Eq, @debug.Debug)
-pub fn CorpusEnrich::name(Self) -> String
-
-pub(all) enum CorpusEnrichScope {
-  V16Info
-} derive(Eq, @debug.Debug)
-pub fn CorpusEnrichScope::name(Self) -> String
-
 pub(all) enum CorpusInput {
   Case0
   Case1
@@ -68,8 +57,13 @@ pub(all) enum CorpusInput {
   Case35
   Case36
   Case37
+  Case38
   Case39
   Case4
+  Case40
+  Case41
+  Case42
+  Case44
   Case5
   Case6
   Case7
@@ -86,21 +80,10 @@ pub(all) struct CorpusLabel {
 
 pub(all) enum CorpusMethod {
   Long
-  V0Summary
   V10Matches
   V11Matches
   V12Matches
   V13FirstOnly
-  V1Left
-  V2Over
-  V3Moved
-  V4Named
-  V5Named
-  V6IsAda
-  V7Over
-  V7Status
-  V8ContainsText
-  V9ContainsText
 } derive(Eq, @debug.Debug)
 pub fn CorpusMethod::name(Self) -> String
 
@@ -109,12 +92,13 @@ pub(all) enum CorpusMsg {
   Case12(Double)
   Case13(Double)
   Case14
-  Case15
-  Case16
-  Case17
-  Case29
+  Case19
+  Case20
+  Case21
+  Case22
   Case3
-  Case39(Double)
+  Case34
+  Case44(Double)
   Case7
   Case9
   Unknown(String, Array[@core.Value])
@@ -140,15 +124,6 @@ pub(all) struct CorpusState {
   page : Int
 }
 pub fn CorpusState::zero() -> Self
-
-pub(all) enum CorpusWhen {
-  V10Matches
-  V11Matches
-  V12Matches
-  V13FirstOnly
-  V5Named
-} derive(Eq, @debug.Debug)
-pub fn CorpusWhen::name(Self) -> String
 
 pub(all) struct Recorder {
   seen : Array[String]

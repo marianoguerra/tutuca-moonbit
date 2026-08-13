@@ -354,25 +354,23 @@ test "a card expands the macros its own file declares" {
   // scope the module registers — the same path a generated module's macros
   // take, rather than a second one for cards.
   let src =
-    (
-      #|<script type="tutuca/state">
-      #|  state { name : String, city : String }
-      #|</script>
-      #|
-      #|<template id="macro:field" data-label="'Field'">
-      #|  <label class="field">
-      #|    <span class="lbl" @text="^label"></span>
-      #|    <x:slot></x:slot>
-      #|  </label>
-      #|</template>
-      #|
-      #|<template id="Form">
-      #|  <div>
-      #|    <x:field label="Name"><input id="name" :value=".name"></x:field>
-      #|    <x:field><input id="city" :value=".city"></x:field>
-      #|  </div>
-      #|</template>
-    )
+    #|<script type="tutuca/state">
+    #|  state { name : String, city : String }
+    #|</script>
+    #|
+    #|<template id="macro:field" data-label="'Field'">
+    #|  <label class="field">
+    #|    <span class="lbl" @text="^label"></span>
+    #|    <x:slot></x:slot>
+    #|  </label>
+    #|</template>
+    #|
+    #|<template id="Form">
+    #|  <div>
+    #|    <x:field label="Name"><input id="name" :value=".name"></x:field>
+    #|    <x:field><input id="city" :value=".city"></x:field>
+    #|  </div>
+    #|</template>
   let h = mount_card(src, name="Form")
   // Two expansions: one that passed a label, one that took the declaration's
   // default — and each keeping the child it wrapped.
@@ -381,4 +379,3 @@ test "a card expands the macros its own file declares" {
   assert_eq(h.find_all("#name").length(), 1)
   h.destroy()
 }
-

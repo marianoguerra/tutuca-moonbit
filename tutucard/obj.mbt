@@ -32,6 +32,10 @@ pub struct Deck {
     String,
     (@component.FieldBox, Array[@tutuca.Value]) -> @tutuca.Value,
   ]
+  /// What a `new <Type>` builds, resolved against the card's own declarations.
+  /// None for a card with no state block, which can name no type and so builds
+  /// nothing — the checker is where an author reads why.
+  zero : ((@tscript.TyRef) -> @tutuca.Value?)?
 }
 
 ///|
@@ -64,14 +68,22 @@ fn CardObj::successor(
 
 ///|
 /// The environment a body runs in: this instance's fields, the block's
-/// callables, and the schema — which is consulted for exactly one thing, an
-/// integer field truncating on the way in.
+/// callables, the schema — which is consulted for exactly one thing, an
+/// integer field truncating on the way in — and what a `new` builds.
+///
+/// The bindings are NOT here: a handler is handed none, and the target a `new`
+/// makes is created and dropped inside `@interp.run`.
 fn CardObj::env(self : CardObj) -> @interp.Env {
-  @interp.Env::of_state(
+  let base = @interp.Env::of_state(
     self.fields,
     callables=self.deck.callables,
     schema=self.deck.schema,
   )
+  // A card with no `tutuca/state` block cannot name a type, so it cannot build
+  // one: `new` there is a transition that does not happen, and the checker is
+  // where the author reads why. A card WITH one resolves the name against its
+  // own declarations and nothing else.
+  { ..base, zero: self.deck.zero }
 }
 
 ///|
@@ -254,6 +266,12 @@ fn CardObj::alter_fn(self : CardObj, d : @tscript.Decl) -> @tutuca.Value {
                 // restores the first two right after this call, and the third
                 // it never puts in the map at all. Writing them back would be
                 // a card binding a name a compiled component does not.
+                //
+                // `@cur` is not in this list and must not be added: it never
+                // arrives, because `@interp.run` withholds the target from the
+                // binds it answers with. Both halves of this function publish
+                // to a view — this map is the row's scope and the value below
+                // is a scope frame's — so containing it there covers both.
                 if k != "key" && k != "value" && k != "iter" {
                   m[k] = v
                 }

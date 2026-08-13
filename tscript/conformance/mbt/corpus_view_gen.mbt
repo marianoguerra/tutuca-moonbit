@@ -233,8 +233,13 @@ pub(all) enum CorpusInput {
   Case35
   Case36
   Case37
+  Case38
   Case39
   Case4
+  Case40
+  Case41
+  Case42
+  Case44
   Case5
   Case6
   Case7
@@ -277,8 +282,13 @@ pub fn CorpusInput::name(self : CorpusInput) -> String {
     Case35 => "case35"
     Case36 => "case36"
     Case37 => "case37"
+    Case38 => "case38"
     Case39 => "case39"
     Case4 => "case4"
+    Case40 => "case40"
+    Case41 => "case41"
+    Case42 => "case42"
+    Case44 => "case44"
     Case5 => "case5"
     Case6 => "case6"
     Case7 => "case7"
@@ -322,8 +332,13 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
     "case35" => Some(Case35)
     "case36" => Some(Case36)
     "case37" => Some(Case37)
+    "case38" => Some(Case38)
     "case39" => Some(Case39)
     "case4" => Some(Case4)
+    "case40" => Some(Case40)
+    "case41" => Some(Case41)
+    "case42" => Some(Case42)
+    "case44" => Some(Case44)
     "case5" => Some(Case5)
     "case6" => Some(Case6)
     "case7" => Some(Case7)
@@ -339,7 +354,7 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
 /// handler added to corpus.html breaks every `match` over this type
 /// until it is handled.
 ///
-/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case18, case19, case20, case21, case22, case23, case24, case25, case26, case27, case28, case30, case31, case32, case33, case34, case35, case36, case37.
+/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case15, case16, case17, case18, case23, case24, case25, case26, case27, case28, case29, case30, case31, case32, case33, case35, case36, case37, case38, case39, case40, case41, case42.
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum CorpusMsg {
@@ -351,18 +366,20 @@ pub(all) enum CorpusMsg {
   Case13(Double)
   /// `@on.click="case14 …"`
   Case14
-  /// `@on.click="case15 …"`
-  Case15
-  /// `@on.click="case16 …"`
-  Case16
-  /// `@on.click="case17 …"`
-  Case17
-  /// `@on.click="case29 …"`
-  Case29
+  /// `@on.click="case19 …"`
+  Case19
+  /// `@on.click="case20 …"`
+  Case20
+  /// `@on.click="case21 …"`
+  Case21
+  /// `@on.click="case22 …"`
+  Case22
   /// `@on.click="case3 …"`
   Case3
-  /// `@on.click="case39 …"`
-  Case39(Double)
+  /// `@on.click="case34 …"`
+  Case34
+  /// `@on.click="case44 …"`
+  Case44(Double)
   /// `@on.click="case7 …"`
   Case7
   /// `@on.click="case9 …"`
@@ -383,12 +400,13 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
       ("case12", [Num(a0)]) => Case12(a0)
       ("case13", [Num(a0)]) => Case13(a0)
       ("case14", []) => Case14
-      ("case15", []) => Case15
-      ("case16", []) => Case16
-      ("case17", []) => Case17
-      ("case29", []) => Case29
+      ("case19", []) => Case19
+      ("case20", []) => Case20
+      ("case21", []) => Case21
+      ("case22", []) => Case22
       ("case3", []) => Case3
-      ("case39", [Num(a0)]) => Case39(a0)
+      ("case34", []) => Case34
+      ("case44", [Num(a0)]) => Case44(a0)
       ("case7", []) => Case7
       ("case9", []) => Case9
       _ => Unknown(name, args)
@@ -398,93 +416,26 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: v0_summary, v1_left, v2_over, v3_moved, v4_named, v5_named, v6_isAda, v7_over, v7_status, v8_containsText, v9_containsText.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum CorpusMethod {
   Long
-  V0Summary
   V10Matches
   V11Matches
   V12Matches
   V13FirstOnly
-  V1Left
-  V2Over
-  V3Moved
-  V4Named
-  V5Named
-  V6IsAda
-  V7Over
-  V7Status
-  V8ContainsText
-  V9ContainsText
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn CorpusMethod::name(self : CorpusMethod) -> String {
   match self {
     Long => "long"
-    V0Summary => "v0_summary"
     V10Matches => "v10_matches"
     V11Matches => "v11_matches"
     V12Matches => "v12_matches"
     V13FirstOnly => "v13_firstOnly"
-    V1Left => "v1_left"
-    V2Over => "v2_over"
-    V3Moved => "v3_moved"
-    V4Named => "v4_named"
-    V5Named => "v5_named"
-    V6IsAda => "v6_isAda"
-    V7Over => "v7_over"
-    V7Status => "v7_status"
-    V8ContainsText => "v8_containsText"
-    V9ContainsText => "v9_containsText"
-  }
-}
-
-///|
-/// Every `@when` handler the views name.
-pub(all) enum CorpusWhen {
-  V10Matches
-  V11Matches
-  V12Matches
-  V13FirstOnly
-  V5Named
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CorpusWhen::name(self : CorpusWhen) -> String {
-  match self {
-    V10Matches => "v10_matches"
-    V11Matches => "v11_matches"
-    V12Matches => "v12_matches"
-    V13FirstOnly => "v13_firstOnly"
-    V5Named => "v5_named"
-  }
-}
-
-///|
-/// Every `@enrich-with` handler named INSIDE an `@each`.
-pub(all) enum CorpusEnrich {
-  V14Row
-  V15Row
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CorpusEnrich::name(self : CorpusEnrich) -> String {
-  match self {
-    V14Row => "v14_row"
-    V15Row => "v15_row"
-  }
-}
-
-///|
-/// Every `@enrich-with` handler named with no `@each` around it.
-pub(all) enum CorpusEnrichScope {
-  V16Info
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CorpusEnrichScope::name(self : CorpusEnrichScope) -> String {
-  match self {
-    V16Info => "v16_info"
   }
 }
 
@@ -514,7 +465,8 @@ impl @component.Fields for CorpusState with fn schema() {
       "case16", "case17", "case18", "case19", "case2", "case20", "case21", "case22",
       "case23", "case24", "case25", "case26", "case27", "case28", "case29", "case3",
       "case30", "case31", "case32", "case33", "case34", "case35", "case36", "case37",
-      "case39", "case4", "case5", "case6", "case7", "case8", "case9",
+      "case38", "case39", "case4", "case40", "case41", "case42", "case44", "case5",
+      "case6", "case7", "case8", "case9",
     ],
     receives=["resetTo"],
     methods=[

@@ -439,3 +439,164 @@ test "a refusal carries the declaration's span, not the block's" {
   // that makes the span useful for pointing at a line.
   assert_true(e.refusals[0].span.start > 20)
 }
+
+// -- new, and the target ----------------------------------------------------
+
+///|
+/// A schema with records in it, which the shared one has no field for.
+fn rows_schema() -> String {
+  (
+    #|struct Label { text : String, done : Bool, tags : Array[String] }
+    #|state Card {
+    #|  labels : Array[Label]
+    #|  grid   : Array[Array[String]]
+    #|}
+    #|receive Card { Init }
+  )
+}
+
+///|
+/// The emitted body of the first arm, against the record schema.
+fn rows_body(block : String) -> String raise {
+  let e = @emit_mbt.emit(
+    @tscript.parse_script(block),
+    def_of(rows_schema()),
+    state_ty="CardState",
+    fn_name="card_inline_update",
+  )
+  let keep : Array[String] = []
+  let mut inside = false
+  for l in e.source.split("\n").map(l => l.to_owned()) {
+    if l.has_prefix("    Receive(") {
+      inside = true
+      continue
+    }
+    if inside {
+      if l == "    }" {
+        break
+      }
+      keep.push(l.trim(chars=" ").to_owned())
+    }
+  }
+  keep.join("\n")
+}
+
+///|
+/// Why the record-schema block's declarations were refused.
+fn rows_whys(block : String) -> Array[String] raise {
+  @emit_mbt.emit(
+    @tscript.parse_script(block),
+    def_of(rows_schema()),
+    state_ty="CardState",
+    fn_name="card_inline_update",
+  ).refusals.map(r => r.why)
+}
+
+///|
+test "a new is a let at the type's zero, and a write to it rebinds" {
+  // The annotation is load-bearing: `zero_expr` writes the record literal
+  // unqualified, because every other position it lands in has a type wanted.
+  assert_eq(
+    rows_body(
+      (
+        #|receive init {
+        #|  new Label
+        #|  @cur.text = 'Buy milk'
+        #|  @cur.done = true
+        #|  .labels.push @cur
+        #|}
+      ),
+    ),
+    (
+      #|let cur0 : CardLabel = { text: "", done: false, tags: [] }
+      #|let cur0 = { ..cur0, text: "Buy milk" }
+      #|let cur0 = { ..cur0, done: true }
+      #|let s = { ..s, labels: (s.labels + [cur0]) }
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+test "a collection method on the target works on the target" {
+  assert_eq(
+    rows_body(
+      (
+        #|receive init {
+        #|  new Array[String]
+        #|  @cur.push 'a'
+        #|  .grid.push @cur
+        #|}
+      ),
+    ),
+    (
+      #|let cur0 : Array[String] = []
+      #|let cur0 = (cur0 + ["a"])
+      #|let s = { ..s, grid: (s.grid + [cur0]) }
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+test "a path into the target is a record update, not a spine rebuild" {
+  // The write this backend refuses on `.a.b` is emittable here, and for one
+  // reason: the target is a local whose type is known at every step.
+  assert_eq(
+    rows_body("receive init {\n  new Label\n  @cur.tags.push 'x'\n}"),
+    (
+      #|let cur0 : CardLabel = { text: "", done: false, tags: [] }
+      #|let cur0 = { ..cur0, tags: (cur0.tags + ["x"]) }
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+test "two news in one body do not shadow each other" {
+  let src = rows_body(
+    (
+      #|receive init {
+      #|  new Label
+      #|  .labels.push @cur
+      #|  new Label
+      #|  .labels.push @cur
+      #|}
+    ),
+  )
+  assert_true(src.contains("let cur0 : CardLabel ="))
+  assert_true(src.contains("let cur1 : CardLabel ="))
+}
+
+///|
+test "the target a branch built does not outlive the branch" {
+  // A `let` inside the branch EXPRESSION does not escape it, so a `@cur` below
+  // is refused by name rather than emitted as a temporary out of scope.
+  assert_eq(
+    rows_whys(
+      (
+        #|receive init {
+        #|  if true { new Label } else { stop }
+        #|  .labels.push @cur
+        #|}
+      ),
+    ),
+    [
+      "`@cur` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
+    ],
+  )
+}
+
+///|
+test "a new of a type the state does not declare says so" {
+  assert_eq(rows_whys("receive init { new Widget }"), [
+    "`Widget` is not a type the state declares, so there is nothing to build",
+  ])
+}
+
+///|
+test "an index into the target is refused, as one into the state is" {
+  assert_eq(rows_whys("receive init {\n  new Label\n  @cur.tags[0] = 'x'\n}"), [
+    "writing through an index into `@cur` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+  ])
+}

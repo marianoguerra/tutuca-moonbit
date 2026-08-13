@@ -101,7 +101,17 @@ fn corpus_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("button", [@anode.eid(37)], [@anode.text("case37")]),
       @anode.text(" "),
-      @anode.h("button", [@anode.eid(38)], [@anode.text("case39")]),
+      @anode.h("button", [@anode.eid(38)], [@anode.text("case38")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(39)], [@anode.text("case39")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(40)], [@anode.text("case40")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(41)], [@anode.text("case41")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(42)], [@anode.text("case42")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(43)], [@anode.text("case44")]),
       @anode.text(" "),
       @anode.h("ul", [], [
         @anode.each(
@@ -210,28 +220,33 @@ fn corpus_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="case23", ns=Input))],
       [@anode.on("click", HandlerName(name="case24", ns=Input))],
       [@anode.on("click", HandlerName(name="case25", ns=Input))],
-      [
-        @anode.on("click", HandlerName(name="case26", ns=Input), args=[
-          @anode.const_num(5.0),
-        ]),
-      ],
+      [@anode.on("click", HandlerName(name="case26", ns=Input))],
       [@anode.on("click", HandlerName(name="case27", ns=Input))],
       [@anode.on("click", HandlerName(name="case28", ns=Input))],
       [@anode.on("click", HandlerName(name="case29", ns=Input))],
       [@anode.on("click", HandlerName(name="case30", ns=Input))],
-      [@anode.on("click", HandlerName(name="case31", ns=Input))],
+      [
+        @anode.on("click", HandlerName(name="case31", ns=Input), args=[
+          @anode.const_num(5.0),
+        ]),
+      ],
       [@anode.on("click", HandlerName(name="case32", ns=Input))],
       [@anode.on("click", HandlerName(name="case33", ns=Input))],
       [@anode.on("click", HandlerName(name="case34", ns=Input))],
       [@anode.on("click", HandlerName(name="case35", ns=Input))],
       [@anode.on("click", HandlerName(name="case36", ns=Input))],
+      [@anode.on("click", HandlerName(name="case37", ns=Input))],
+      [@anode.on("click", HandlerName(name="case38", ns=Input))],
+      [@anode.on("click", HandlerName(name="case39", ns=Input))],
+      [@anode.on("click", HandlerName(name="case40", ns=Input))],
+      [@anode.on("click", HandlerName(name="case41", ns=Input))],
       [
-        @anode.on("click", HandlerName(name="case37", ns=Input), args=[
+        @anode.on("click", HandlerName(name="case42", ns=Input), args=[
           @anode.const_num(3.0),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="case39", ns=Input), args=[
+        @anode.on("click", HandlerName(name="case44", ns=Input), args=[
           @anode.const_num(4.0),
         ]),
       ],
@@ -304,27 +319,55 @@ fn corpus_inline_update(
       }
       Next(s)
     }
+    Input("case15", _args) => {
+      let cur0 : CorpusLabel = { text: "", done: false }
+      let cur0 = { ..cur0, text: "z" }
+      let cur0 = { ..cur0, done: true }
+      let s = { ..s, labels: s.labels + [cur0] }
+      Next(s)
+    }
+    Input("case16", _args) => {
+      let cur1 : CorpusLabel = { text: "", done: false }
+      let s = { ..s, labels: s.labels + [cur1] }
+      Next(s)
+    }
+    Input("case17", _args) => {
+      let cur2 : CorpusLabel = { text: "", done: false }
+      let cur2 = { ..cur2, text: "p" }
+      let s = { ..s, labels: s.labels + [cur2] }
+      let cur3 : CorpusLabel = { text: "", done: false }
+      let cur3 = { ..cur3, text: "q" }
+      let s = { ..s, labels: s.labels + [cur3] }
+      Next(s)
+    }
     Input("case18", _args) => {
+      let cur4 : Array[String] = []
+      let cur4 = cur4 + ["p"]
+      let cur4 = cur4 + ["q"]
+      let s = { ..s, items: cur4 }
+      Next(s)
+    }
+    Input("case23", _args) => {
       let s = { ..s, count: (10.0 - 3.0 - 2.0).to_int() }
       Next(s)
     }
-    Input("case19", _args) => {
+    Input("case24", _args) => {
       let d0 = 3.0
       guard d0 != 0.0 else { return Unchanged }
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() % d0.to_int() }
       Next(s)
     }
-    Input("case20", _args) => {
+    Input("case25", _args) => {
       let d0 = 4.0
       guard d0 != 0.0 else { return Unchanged }
       let s = { ..s, ratio: (s.count.to_double() + 5.0) / d0 }
       Next(s)
     }
-    Input("case21", _args) => {
+    Input("case26", _args) => {
       let s = { ..s, name: s.name + "!" }
       Next(s)
     }
-    Input("case22", _args) => {
+    Input("case27", _args) => {
       let s = {
         ..s,
         name: (Str(s.name) : @tutuca.Value).to_display_string() +
@@ -333,11 +376,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case23", _args) => {
+    Input("case28", _args) => {
       let s = { ..s, name: if s.ok { "yes" } else { "no" } }
       Next(s)
     }
-    Input("case24", _args) => {
+    Input("case29", _args) => {
       let s = if s.ok {
         let s = { ..s, count: 1 }
         s
@@ -347,7 +390,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case25", _args) => {
+    Input("case30", _args) => {
       let s = { ..s, count: 7 }
       let s = if s.ok {
         let s = { ..s, count: 1 }
@@ -357,7 +400,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case26", args) => {
+    Input("case31", args) => {
       guard args.get(0) is Some(Num(p)) else { return Unchanged }
       let s = {
         ..s,
@@ -373,7 +416,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case27", _args) => {
+    Input("case32", _args) => {
       let s = {
         ..s,
         ok: ({
@@ -397,7 +440,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case28", _args) => {
+    Input("case33", _args) => {
       let s = {
         ..s,
         ok: match @tutuca.builtin("truthy?") {
@@ -416,11 +459,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case30", _args) => {
+    Input("case35", _args) => {
       let s = { ..s, items: s.items + ["c"] }
       Next(s)
     }
-    Input("case31", _args) => {
+    Input("case36", _args) => {
       guard 0 >= 0 && 0 <= s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -428,7 +471,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case32", _args) => {
+    Input("case37", _args) => {
       guard 1 >= 0 && 1 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -440,7 +483,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case33", _args) => {
+    Input("case38", _args) => {
       guard 0 >= 0 && 0 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -448,7 +491,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case34", _args) => {
+    Input("case39", _args) => {
       guard 9 >= 0 && 9 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -456,7 +499,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case35", _args) => {
+    Input("case40", _args) => {
       let s = {
         ..s,
         tags: {
@@ -496,7 +539,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case36", _args) => {
+    Input("case41", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
       let s = { ..s, ok: true }
@@ -507,7 +550,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case37", args) => {
+    Input("case42", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.bubble("rowPicked", [(Num(k) : @tutuca.Value)]))
@@ -764,67 +807,65 @@ fn corpus_enrich_scope_v16_info(s : CorpusState) -> Map[String, @tutuca.Value] {
 ///|
 /// The `compute` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
-fn corpus_inline_compute(
-  k : CorpusMethod,
-) -> ((CorpusState, Array[@tutuca.Value]) -> @tutuca.Value)? {
-  match k {
-    V0Summary => Some(corpus_compute_v0_summary)
-    V1Left => Some(corpus_compute_v1_left)
-    V2Over => Some(corpus_compute_v2_over)
-    V3Moved => Some(corpus_compute_v3_moved)
-    V4Named => Some(corpus_compute_v4_named)
-    V5Named => Some(corpus_compute_v5_named)
-    V6IsAda => Some(corpus_compute_v6_isAda)
-    V7Over => Some(corpus_compute_v7_over)
-    V7Status => Some(corpus_compute_v7_status)
-    V8ContainsText => Some(corpus_compute_v8_containsText)
-    V9ContainsText => Some(corpus_compute_v9_containsText)
-    _ => None
+fn corpus_inline_compute() -> Map[
+  String,
+  (CorpusState, Array[@tutuca.Value]) -> @tutuca.Value,
+] {
+  {
+    "v0_summary": corpus_compute_v0_summary,
+    "v1_left": corpus_compute_v1_left,
+    "v2_over": corpus_compute_v2_over,
+    "v3_moved": corpus_compute_v3_moved,
+    "v4_named": corpus_compute_v4_named,
+    "v5_named": corpus_compute_v5_named,
+    "v6_isAda": corpus_compute_v6_isAda,
+    "v7_over": corpus_compute_v7_over,
+    "v7_status": corpus_compute_v7_status,
+    "v8_containsText": corpus_compute_v8_containsText,
+    "v9_containsText": corpus_compute_v9_containsText,
   }
 }
 
 ///|
 /// The `when` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
-fn corpus_inline_when(
-  k : CorpusWhen,
-) -> ((CorpusState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)? {
-  match k {
-    V5Named => Some(corpus_when_v5_named)
-    V10Matches => Some(corpus_when_v10_matches)
-    V11Matches => Some(corpus_when_v11_matches)
-    V12Matches => Some(corpus_when_v12_matches)
-    V13FirstOnly => Some(corpus_when_v13_firstOnly)
+fn corpus_inline_when() -> Map[
+  String,
+  (CorpusState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+] {
+  {
+    "v5_named": corpus_when_v5_named,
+    "v10_matches": corpus_when_v10_matches,
+    "v11_matches": corpus_when_v11_matches,
+    "v12_matches": corpus_when_v12_matches,
+    "v13_firstOnly": corpus_when_v13_firstOnly,
   }
 }
 
 ///|
 /// The `enrich` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
-fn corpus_inline_enrich(
-  k : CorpusEnrich,
-) -> ((
-  CorpusState,
-  Map[String, @tutuca.Value],
-  @tutuca.Value,
-  @tutuca.Value,
-  @tutuca.Value,
-) -> Unit)? {
-  match k {
-    V14Row => Some(corpus_enrich_v14_row)
-    V15Row => Some(corpus_enrich_v15_row)
-  }
+fn corpus_inline_enrich() -> Map[
+  String,
+  (
+    CorpusState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit,
+] {
+  { "v14_row": corpus_enrich_v14_row, "v15_row": corpus_enrich_v15_row }
 }
 
 ///|
 /// The `enrich_scope` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
-fn corpus_inline_enrich_scope(
-  k : CorpusEnrichScope,
-) -> ((CorpusState) -> Map[String, @tutuca.Value])? {
-  match k {
-    V16Info => Some(corpus_enrich_scope_v16_info)
-  }
+fn corpus_inline_enrich_scope() -> Map[
+  String,
+  (CorpusState) -> Map[String, @tutuca.Value],
+] {
+  { "v16_info": corpus_enrich_scope_v16_info }
 }
 
 ///|
@@ -848,23 +889,6 @@ pub fn corpus_component(
   ],
   compute? : (CorpusMethod) -> ((CorpusState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (CorpusInput) -> ((CorpusState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  when? : (CorpusWhen) -> ((
-    CorpusState,
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Bool)?,
-  enrich? : (CorpusEnrich) -> ((
-    CorpusState,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-  enrich_scope? : (CorpusEnrichScope) -> ((CorpusState) -> Map[
-    String,
-    @tutuca.Value,
-  ])?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -886,38 +910,23 @@ pub fn corpus_component(
         answered => answered
       }
     },
-    compute=@component.build_bucket(
-      (
-        [
-          Long,
-          V0Summary,
-          V10Matches,
-          V11Matches,
-          V12Matches,
-          V13FirstOnly,
-          V1Left,
-          V2Over,
-          V3Moved,
-          V4Named,
-          V5Named,
-          V6IsAda,
-          V7Over,
-          V7Status,
-          V8ContainsText,
-          V9ContainsText,
-        ] : Array[CorpusMethod]),
-      CorpusMethod::name,
-      k => {
-        match corpus_inline_compute(k) {
-          Some(f) => Some(f)
-          None =>
-            match compute {
-              Some(g) => g(k)
-              None => None
-            }
-        }
-      },
-    ),
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [Long, V10Matches, V11Matches, V12Matches, V13FirstOnly] :
+              Array[CorpusMethod]),
+            CorpusMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in corpus_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
+    },
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -955,8 +964,13 @@ pub fn corpus_component(
               Case35,
               Case36,
               Case37,
+              Case38,
               Case39,
               Case4,
+              Case40,
+              Case41,
+              Case42,
+              Case44,
               Case5,
               Case6,
               Case7,
@@ -968,50 +982,9 @@ pub fn corpus_component(
         )
       None => Map([])
     },
-    when=@component.build_bucket(
-      (
-        [V10Matches, V11Matches, V12Matches, V13FirstOnly, V5Named] :
-        Array[CorpusWhen]),
-      CorpusWhen::name,
-      k => {
-        match corpus_inline_when(k) {
-          Some(f) => Some(f)
-          None =>
-            match when {
-              Some(g) => g(k)
-              None => None
-            }
-        }
-      },
-    ),
-    enrich=@component.build_bucket(
-      ([V14Row, V15Row] : Array[CorpusEnrich]),
-      CorpusEnrich::name,
-      k => {
-        match corpus_inline_enrich(k) {
-          Some(f) => Some(f)
-          None =>
-            match enrich {
-              Some(g) => g(k)
-              None => None
-            }
-        }
-      },
-    ),
-    enrich_scope=@component.build_bucket(
-      ([V16Info] : Array[CorpusEnrichScope]),
-      CorpusEnrichScope::name,
-      k => {
-        match corpus_inline_enrich_scope(k) {
-          Some(f) => Some(f)
-          None =>
-            match enrich_scope {
-              Some(g) => g(k)
-              None => None
-            }
-        }
-      },
-    ),
+    when=corpus_inline_when(),
+    enrich=corpus_inline_enrich(),
+    enrich_scope=corpus_inline_enrich_scope(),
     slots~,
     slot_args~,
     provide~,

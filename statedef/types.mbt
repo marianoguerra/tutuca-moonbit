@@ -40,6 +40,71 @@ pub fn StateDef::user_ty(self : StateDef, source_name : String) -> UserTy? {
 }
 
 ///|
+/// The types whose spelling takes no arguments and needs no schema.
+///
+/// Here rather than inline in `named`, because `StateDef::resolve_ty` answers
+/// the same question for a `new` in a block and the two must not drift: a
+/// second copy of `"Int" => TInt(width=32, signed=true)` is how `new Int16`
+/// and `count : Int16` would come to mean different things.
+fn scalar_ty(name : String) -> StateTy? {
+  match name {
+    "Bool" => Some(TBool)
+    // Width and signedness survive so decode can range-check, even though
+    // every one of them emits a MoonBit `Int`. `Int` is the one an author
+    // reaches for; the rest are there when a bound is meant.
+    "Int" => Some(TInt(width=32, signed=true))
+    "Int8" => Some(TInt(width=8, signed=true))
+    "Int16" => Some(TInt(width=16, signed=true))
+    "UInt" => Some(TInt(width=32, signed=false))
+    "UInt8" => Some(TInt(width=8, signed=false))
+    "UInt16" => Some(TInt(width=16, signed=false))
+    "Double" => Some(TFloat)
+    "String" => Some(TText)
+    "Any" => Some(TAny)
+    _ => None
+  }
+}
+
+///|
+/// Resolve a type written in the state spelling, with its arguments already
+/// resolved. None when the name is not a type this schema can name.
+///
+/// What the block language's `new` goes through. The parse half lives in
+/// `tscript`, which sees no schema; this is the half that needs one, and it
+/// shares `scalar_ty` with the state block's own resolver so a name cannot
+/// mean two things.
+///
+/// `Component[…]` is deliberately absent: a child instance is MADE through the
+/// registration scope, and a zeroed one would be a `Null` wearing a slot's
+/// name.
+pub fn StateDef::resolve_ty(
+  self : StateDef,
+  name : String,
+  args : Array[StateTy],
+) -> StateTy? {
+  if scalar_ty(name) is Some(t) {
+    return if args.is_empty() { Some(t) } else { None }
+  }
+  match (name, args) {
+    ("Array", [e]) => Some(TList(e))
+    // `Set[String]` is open membership; `Set[E]` over a declared enum is
+    // closed. The container decides the zero, which is empty either way.
+    ("Set", [TText]) => Some(TSet)
+    ("Set", [TEnum(n)]) => Some(TFlags(n))
+    // Ordered, and keyed by String because a JSON object's key is.
+    ("Map", [TText, v]) => Some(TOMap(v))
+    (_, []) =>
+      match self.user_ty(name) {
+        Some({ kind: URecord(_), .. }) => Some(TRecord(name))
+        Some({ kind: UEnum(_), .. }) => Some(TEnum(name))
+        Some({ kind: UVariant(_), .. }) => Some(TVariant(name))
+        None => None
+      }
+    _ => None
+  }
+}
+
+///|
 pub fn StateTy::elem(self : StateTy) -> StateTy? {
   match self {
     TList(e) => Some(e)

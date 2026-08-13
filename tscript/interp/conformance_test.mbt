@@ -81,7 +81,11 @@ test "the interpreter agrees with the corpus" {
       }
     }
     let schema = @info.schema_info(defs[0])
-    let env = @interp.Env::of_state(c.before, callables~, schema~)
+    // And what a `new` builds, which only the schema can say — the same wiring
+    // the card runtime does when it mounts a deck.
+    let env = @interp.Env::of_state(c.before, callables~, schema~, zero=t => {
+      @info.zero_of_ref(defs[0], t)
+    })
     let out = match found {
       Some(d) => @interp.dispatch(d, c.args, env)
       // No arm answers it, which for a corpus case is the same outcome as a

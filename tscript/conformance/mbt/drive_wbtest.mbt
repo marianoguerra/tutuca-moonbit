@@ -103,9 +103,13 @@ test "the MoonBit backend agrees with the corpus" {
   //     one of them earlier);
   //   - a parameter with no call site to type it, which a typed backend has
   //     nothing to bind.
+  //   - a `@cur` with no `new` above it, which is the same "the schema rules
+  //     it out at build time" as the second: a target the emitter cannot name
+  //     is a refusal, where the interpreter reaches it and answers no
+  //     successor. The checker reports it as `NO_TARGET` either way.
   //
   // If this number goes DOWN, lower it. If it goes UP, something regressed.
-  @debug.assert_eq(refused.length(), 12, msg=refused.join(", "))
+  @debug.assert_eq(refused.length(), 13, msg=refused.join(", "))
 }
 
 ///|

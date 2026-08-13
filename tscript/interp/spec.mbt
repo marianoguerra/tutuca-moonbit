@@ -55,6 +55,14 @@ pub(all) struct Env {
   /// thing: an assignment into an integer field truncates, matching what the
   /// generated codec's decode does with the same value.
   schema : @tutuca.SchemaInfo?
+  /// The zero of a type a `new` names, or None for a caller that supplied no
+  /// resolver — which makes every `new` a transition that does not happen.
+  ///
+  /// A function rather than a table because building one needs a
+  /// `@statedef.StateDef`, and this package deliberately does not see one: it
+  /// ships inside every card runtime, and a schema resolver is exactly the
+  /// weight it should not carry. Whoever HAS the schema passes the answer in.
+  zero : ((@tscript.TyRef) -> @tutuca.Value?)?
 }
 
 ///|
@@ -63,6 +71,7 @@ declare pub fn Env::of_state(
   state : Map[String, @tutuca.Value],
   callables? : Map[String, @tscript.Decl],
   schema? : @tutuca.SchemaInfo,
+  zero? : (@tscript.TyRef) -> @tutuca.Value?,
 ) -> Env
 
 ///|
@@ -82,7 +91,8 @@ pub(all) struct Outcome {
   state : Map[String, @tutuca.Value]?
   effects : Array[Effect]
   /// The BINDINGS the body ended with: what it was handed, plus every `@name`
-  /// it assigned.
+  /// it assigned — never `@cur`, which `run` withholds. The target is a
+  /// workbench, and a workbench is not something to hand a renderer.
   ///
   /// Here rather than mutated in place, for the same reason `state` is. A body
   /// runs against copies so that abandoning it costs nothing, which means an
