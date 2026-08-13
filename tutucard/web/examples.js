@@ -16,6 +16,13 @@
 // styling route that a `<style>` block cannot demonstrate, since a card's own
 // styles are scoped to its view and a utility class is not.
 //
+// `styles` is the deliberate exception, and it is there because the reverse is
+// also true: a class list cannot show what a `<style>` block is FOR — a rule
+// scoped to one view, one shared by every view of the component, and one that
+// opts out with `data-global`. It uses both routes at once, which is what a
+// card that has something of its own to say actually looks like. `drag-reorder`
+// is the other, for the two attributes tutuca sets on live nodes.
+//
 // Write them as LITERAL lists. The collector reads what the views say, so a
 // class name assembled at runtime is a class name that never gets compiled —
 // which is also why `@if.class` switches between whole literals.
@@ -224,6 +231,120 @@ export const EXAMPLES = [
 `,
   },
   {
+    name: "requests",
+    source: `<script type="tutuca/state">
+  state Feed {
+    rows   : Array[Any]
+    query  : String
+    echoed : String
+    error  : String
+    busy   : Bool
+  }
+
+  receive Feed { Init }
+
+  /// A response arm is named after the REQUEST it answers, and every one of
+  /// them takes the same pair: a result and an error, exactly one of which is
+  /// Null. \`Any\` on both halves, because what a host produces is the host's
+  /// business rather than the schema's.
+  response Feed {
+    Rows(Any, Any)
+    Echo(Any, Any)
+    Fail(Any, Any)
+  }
+</script>
+
+<script type="tutuca/script">
+  /// \`request\` hands a NAME to the host and the host answers whenever it can.
+  /// It is an EFFECT, so it goes out only if the whole transition finished — a
+  /// card never asks for something on the strength of a state it did not reach.
+  ///
+  /// This page answers three names: \`rows\`, \`echo\` and \`fail\`. It answers them
+  /// late and out of a fixture, which is what a playground can honestly offer;
+  /// a page with a real fetch registers the same names against it and the card
+  /// does not change.
+  receive init {
+    request 'rows'
+    .busy = true
+  }
+
+  on reload {
+    request 'rows'
+    .busy = true
+    .error = ''
+  }
+
+  /// Whatever follows the name is the PAYLOAD. \`echo\` answers with the first
+  /// thing it was handed, so what comes back is what went out.
+  on echoQuery {
+    request 'echo' .query
+    .busy = true
+  }
+
+  /// The error path, with nothing mocked. A name no host answers arrives here
+  /// the same way this one does: an unclaimed request is not a crash.
+  on breakIt {
+    request 'fail'
+    .busy = true
+    .error = ''
+  }
+
+  response rows(res, err) {
+    .busy = false
+    if (null? err) {
+      .rows = res
+    } else {
+      .error = str err
+    }
+  }
+
+  response echo(res, err) {
+    .busy = false
+    if (null? err) {
+      .echoed = str res
+    } else {
+      .error = str err
+    }
+  }
+
+  response fail(res, err) {
+    .busy = false
+    .error = str err
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <p class="opacity-60 italic" @show=".busy">asking the host…</p>
+      <div class="alert alert-error" @hide="empty? .error">
+        <span class="font-mono text-sm"><x text=".error"></x></span>
+      </div>
+      <ul class="flex flex-col gap-1" @hide=".busy">
+        <li class="rounded bg-base-100 p-2" @each=".rows">
+          <p class="font-bold"><x text="@value.title"></x></p>
+          <p class="text-sm opacity-70"><x text="@value.description"></x></p>
+        </li>
+      </ul>
+      <div class="flex gap-2 items-center">
+        <input class="input input-sm w-full" placeholder="say something"
+               :value=".query" @on.input="setQuery value"
+               @on.keydown+send="echoQuery">
+        <button class="btn btn-sm" @on.click="echoQuery">echo it</button>
+      </div>
+      <p class="badge badge-sm badge-neutral" @hide="empty? .echoed">
+        <x text=".echoed"></x>
+      </p>
+      <div class="join">
+        <button class="btn btn-sm btn-primary join-item" @on.click="reload">reload</button>
+        <button class="btn btn-sm btn-soft btn-error join-item" @on.click="breakIt">break it</button>
+      </div>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
     name: "traffic-light",
     source: `<script type="tutuca/state">
   state TrafficLight {
@@ -395,6 +516,66 @@ export const EXAMPLES = [
       </p>
     </div>
   </section>
+</template>
+`,
+  },
+  {
+    name: "file-picker",
+    source: `<script type="tutuca/state">
+  state FilePicker {
+    name    : String
+    size    : Double
+    type    : String
+    hasFile : Bool
+  }
+</script>
+
+<script type="tutuca/script">
+  /// A change on a file input hands the handler the WHOLE file — an Obj with
+  /// \`name\`, \`size\` and \`type\` on it — so the handler reads a place rooted at
+  /// its own parameter. The steps below \`f\` are the steps \`.field\` takes, and
+  /// what tells \`f.name\` from \`f .name\` is attachment, the rule already in
+  /// force for \`min .a .b\` against \`min .a.b\`.
+  ///
+  /// One way only: an argument is a value the caller handed over rather than a
+  /// position this component owns, so \`f.name = 'x'\` is refused by the parser.
+  on pick(f) {
+    if (null? f) {
+      .hasFile = false
+    } else {
+      .name = f.name
+      .size = f.size
+      .type = f.type
+      .hasFile = true
+    }
+  }
+
+  /// The browser answers '' for a file whose type it cannot name, which is a
+  /// word worth saying rather than an empty cell.
+  compute typeLabel { if (empty? .type) { 'unknown' } else { .type } }
+
+  /// \`size\` is a Double because that is what the event carries; \`int\` is how a
+  /// card asks for the reading rather than the storage.
+  compute sizeLabel { $'{(int .size)} bytes' }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <label class="flex flex-col gap-1">
+        <span class="text-sm opacity-70">Pick a file</span>
+        <input type="file" class="file-input file-input-sm" @on.change="pick value">
+      </label>
+      <table class="table" @show=".hasFile">
+        <tbody>
+          <tr><th>Name</th><td><x text=".name"></x></td></tr>
+          <tr><th>Size</th><td><x text="$sizeLabel"></x></td></tr>
+          <tr><th>Type</th><td><x text="$typeLabel"></x></td></tr>
+        </tbody>
+      </table>
+      <p class="opacity-70" @hide=".hasFile">Nothing picked yet.</p>
+    </div>
+  </div>
 </template>
 `,
   },
@@ -641,6 +822,56 @@ export const EXAMPLES = [
 `,
   },
   {
+    name: "styles",
+    source: `<script type="tutuca/state">
+  state Styled {
+    loud : Bool
+  }
+</script>
+
+<script type="tutuca/script">
+  compute label { if .loud { 'quieten it' } else { 'make it loud' } }
+</script>
+
+<template>
+  <!-- A <style> inside a template belongs to THAT view: the runtime scopes it
+       to the component's own nodes, so \`.mine\` here reaches neither the page
+       around the card nor another card on it. -->
+  <style>
+    .mine { color: gold; font-weight: 600; }
+    .mine.loud { font-size: 1.4rem; letter-spacing: .05em; }
+  </style>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <!-- A class list and a scoped rule compose: \`card\`, \`btn\` and the rest
+           are compiled by margaui, \`mine\` is this file's. Switching between
+           whole literals is what keeps both readable to the collector. -->
+      <p @if.class=".loud" @then="'mine loud'" @else="'mine'">
+        styled by the view's own block
+      </p>
+      <p class="common">styled by the file's common block</p>
+      <p class="styled-global">styled by the global block</p>
+      <button class="btn btn-sm" @on.click="toggleLoud" @text="$label"></button>
+    </div>
+  </div>
+</template>
+
+<!-- Outside every template: the COMMON block, which every view of this
+     component gets. A card that grows a second view shares this one and keeps
+     its own <style> for what differs. -->
+<style>
+  .common { color: mediumaquamarine; font-style: italic; }
+</style>
+
+<!-- \`data-global\` opts OUT of scoping: the rule is injected once, for the
+     page. The class name is the card's own for that reason — a global rule
+     with a common name is a rule that reaches somebody else's markup. -->
+<style data-global>
+  .styled-global { color: violet; text-decoration: underline dotted; }
+</style>
+`,
+  },
+  {
     name: "swatches",
     source: `<script type="tutuca/state">
   state SwatchPicker {
@@ -814,6 +1045,139 @@ export const EXAMPLES = [
                   @on.click="toggleLabel @key">
             <x text="@value.text"></x>
           </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "contracts",
+    source: `<script type="tutuca/state">
+  state Seats {
+    capacity : Int
+    taken    : Int
+    waiting  : Int
+  }
+
+  receive Seats { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .capacity = 6
+    .taken = 2
+    .waiting = 3
+  }
+
+  /// A \`pred\` names a rule. Where it ATTACHES is what the rule IS — the same
+  /// three names below are read by the badges at the bottom, which is the
+  /// point of a rule having a name at all.
+  pred canSeat { (.waiting > 0) and (.taken < .capacity) }
+  pred someoneSeated { .taken > 0 }
+  pred noneWaiting { .waiting is 0 }
+
+  /// PRECONDITION — asked before the body, against the state as it arrived,
+  /// so a refusal needs no rollback. One clause of each kind per handler:
+  /// two rules become one by naming their \`and\`, which is what \`canSeat\` is.
+  on seat requires canSeat {
+    .taken += 1
+    .waiting -= 1
+  }
+
+  on stand requires someoneSeated {
+    .taken -= 1
+    .waiting += 1
+  }
+
+  /// POSTCONDITION — asked after the body, against the successor. There is no
+  /// \`old\`, so what an \`ensures\` says is where the transition had to LAND.
+  on seatAll ensures noneWaiting {
+    .taken += .waiting
+    .waiting = 0
+  }
+
+  /// The same claim, from a handler that seats one person. It holds when one
+  /// is all there was, and otherwise the rule catches the lie: the transition
+  /// is abandoned whole — no successor, no effects — and
+  /// \`@tutuca.postcondition_failed\` goes through the warn hook with the
+  /// handler and the rule in it. Open the console and press it with three
+  /// people waiting.
+  on rush ensures noneWaiting {
+    .taken += 1
+    .waiting -= 1
+  }
+
+  /// THE INVARIANT — the one rule nothing has to mention. It is checked after
+  /// every transition this block declares, including the two below, which
+  /// were written without a thought for it.
+  invariant withinCapacity { .taken <= .capacity }
+
+  on queue { .waiting += 1 }
+
+  /// Refused by a rule it does not name, and reported rather than silent —
+  /// which is the whole difference between a contract and an \`if\` at the top
+  /// of the body.
+  on overbook { .taken = (.capacity + 1) }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <div class="stats bg-base-100">
+        <div class="stat">
+          <div class="stat-title">seated</div>
+          <div class="stat-value text-2xl" @text=".taken"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">waiting</div>
+          <div class="stat-value text-2xl" @text=".waiting"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">capacity</div>
+          <div class="stat-value text-2xl" @text=".capacity"></div>
+        </div>
+      </div>
+      <div class="flex gap-2 items-center flex-wrap">
+        <div class="join">
+          <button class="btn btn-sm join-item" @on.click="seat">seat one</button>
+          <button class="btn btn-sm join-item" @on.click="stand">stand one</button>
+          <button class="btn btn-sm join-item" @on.click="queue">queue one</button>
+        </div>
+        <div class="join">
+          <button class="btn btn-sm btn-primary join-item" @on.click="seatAll"
+                  title="a postcondition it keeps">seat all</button>
+          <button class="btn btn-sm btn-soft btn-warning join-item" @on.click="rush"
+                  title="a postcondition it only keeps when one was all there was">rush</button>
+        </div>
+        <button class="btn btn-sm btn-soft btn-error" @on.click="overbook"
+                title="refused by the invariant, and reported">overbook</button>
+      </div>
+      <ul class="flex flex-col gap-1 font-mono text-xs">
+        <li class="flex gap-2 items-center">
+          <span @if.class="$withinCapacity"
+                @then="'badge badge-sm badge-success'"
+                @else="'badge badge-sm badge-error'">
+            <x text="$withinCapacity"></x>
+          </span>
+          withinCapacity: the invariant, kept after every handler
+        </li>
+        <li class="flex gap-2 items-center">
+          <span @if.class="$canSeat"
+                @then="'badge badge-sm badge-success'"
+                @else="'badge badge-sm badge-error'">
+            <x text="$canSeat"></x>
+          </span>
+          canSeat: what \`seat\` asks before it moves anybody
+        </li>
+        <li class="flex gap-2 items-center">
+          <span @if.class="$noneWaiting"
+                @then="'badge badge-sm badge-success'"
+                @else="'badge badge-sm badge-error'">
+            <x text="$noneWaiting"></x>
+          </span>
+          noneWaiting: where \`seat all\` and \`rush\` have to land
         </li>
       </ul>
     </div>

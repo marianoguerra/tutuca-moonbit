@@ -6,6 +6,66 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Three more starter cards: `file-picker`, `styles` and `contracts`.** Two of
+  them exist because 0.16 made them possible and one because the selector had a
+  hole in it.
+
+  `file-picker` is the example that `f.name` was for. Its MoonBit arm was a
+  `match` that pulled `name`, `size` and `type` out of a `Value::Map` one
+  `unwrap_or` at a time, and the card is four assignments off a parameter —
+  `@on.change="pick value"` hands the handler the whole file and the handler
+  reads fields off it. It is also the first card whose only event is a
+  `change`, which is how the shell bug below was found. The two formatters stay
+  in MoonBit and the card says the size in bytes: a card should not pretend to
+  be a place to write `format_size`.
+
+  `contracts` is the trio with a runtime behind it. The landing site's tutorial
+  step 8 had been the only place any of it ran, and a starter card is what
+  somebody opens first. `seat` asks a precondition, `seatAll` and `rush` both
+  claim the same postcondition — `rush` seats one person, so it keeps the claim
+  exactly when one was all there was and is abandoned otherwise — and
+  `withinCapacity` is an invariant that `overbook` never mentions and cannot
+  escape. Every refusal names its rule in the console, which is the half that
+  distinguishes a contract from an `if` at the top of a body.
+
+  `styles` is the deliberate exception to the rule that these cards are written
+  in margaui classes, and it earns it by showing what a class list cannot: a
+  `<style>` inside a template scoped to that view, the file's common block
+  shared by every view of the component, and a `data-global` block that is
+  injected once for the page. Verified in a browser rather than by reading:
+  `.mine` colours the card and leaves an identical element outside it alone,
+  and `.styled-global` reaches both.
+
+- **The card playground answers requests now, and a `requests` card asks.**
+  `request` has been an effect the block language spells since the language had
+  effects, and on this page it had nothing to reach: every name went out and
+  came back "not found". That was honest — it is what the tutorial's step 7
+  shows on purpose — but a card could not demonstrate the ordinary path, which
+  is a host that answers.
+
+  So the host registers three fixtures for every card it mounts: `rows` answers
+  a list, `echo` answers the first thing it was handed, and `fail` answers an
+  error. Fixtures rather than an API, because a request is a NAME and what the
+  name means is the host's business — a page with a real fetch registers the
+  same names against it and the card does not change. A name that is not among
+  them still comes back unanswered, so nothing the tutorial says stopped being
+  true, and `tut-7-response` still shows `Request not found: loadQuote`.
+
+  They answer LATE, on a `setTimeout`, and that is the point rather than a
+  simulation detail: a request answered inside the transaction that raised it
+  never shows a card its own loading state, which is the half of asynchrony an
+  author has to write for. Answering late means a card can be torn down — this
+  page remounts on every keystroke — before its answer arrives, so each slot
+  carries a generation and a fixture built for an older one stays quiet.
+
+  The `requests` card is all three paths in one file: `receive init` asks, the
+  loading line shows for as long as the ask takes, a `response` arm per request
+  name unpacks the pair, and `break it` walks the error path with nothing
+  mocked. It is the demo `storybook/examples/request` could not be — that one
+  renders its rows as child components, which a card still cannot hold.
+
 ### Changed
 
 - **The examples caught up with the two newest features.** `new` / `@cur` and
@@ -39,6 +99,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   checked by putting the section's own example through `gen-views`, which is
   how the third limit was found: it is not in the changelog entry that added
   the feature.
+
+### Fixed
+
+- **The card playground's State and Activity panes did not follow a `change`.**
+  They were redrawn from capture-phase `click` and `input` listeners on the
+  preview, which covers every card that had shipped — and misses a file input,
+  whose click opens the chooser and whose redraw therefore lands before a file
+  exists. The panes then sat on the previous state until the next click
+  anywhere in the preview, which reads as "the handler did not run" for the one
+  card where the handler is the whole point. The three names are one list now.
 
 ## [0.16.0] - 2026-08-13
 

@@ -632,22 +632,20 @@ function boot() {
   els.source.addEventListener("scroll", () => {
     els.gutter.scrollTop = els.source.scrollTop;
   });
-  $("preview").addEventListener(
-    "click",
-    () => setTimeout(() => {
-      drawState();
-      drawActivity();
-    }, 0),
-    true,
-  );
-  $("preview").addEventListener(
-    "input",
-    () => setTimeout(() => {
-      drawState();
-      drawActivity();
-    }, 0),
-    true,
-  );
+  // `change` is here for the same reason as the other two, and it is not
+  // redundant: a file input raises nothing else. The click that opens the
+  // chooser redraws both panels before a file exists, so without this the
+  // panes would sit on the state the card had before the pick.
+  for (const name of ["click", "input", "change"]) {
+    $("preview").addEventListener(
+      name,
+      () => setTimeout(() => {
+        drawState();
+        drawActivity();
+      }, 0),
+      true,
+    );
+  }
   pickExample(EXAMPLES[0].name);
   // Last, and not awaited: the page is a working playground by the time the
   // editor is asked for, so the 330 KB lands on a card that is already mounted

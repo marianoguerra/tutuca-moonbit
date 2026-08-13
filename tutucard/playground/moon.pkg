@@ -13,6 +13,7 @@
 // which nothing in a view file could report until `tscript` carried spans.
 import {
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard",
   "marianoguerra/tutuca/app/browser" @glue,

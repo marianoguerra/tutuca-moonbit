@@ -13,6 +13,14 @@
 priv struct Slot {
   mut app : @app.App[@bdom.BrowserNode]?
   activity : Array[Json]
+  /// Bumped by every teardown of this mount point.
+  ///
+  /// The fixtures answer LATE, and a card is remounted on every keystroke, so
+  /// a timer outlives the app that asked. The generation the handler captured
+  /// is what tells a late answer from a live one — per slot rather than
+  /// global, because an embedded card mounting elsewhere says nothing about
+  /// whether this one is still there.
+  mut gen : Int
 }
 
 ///|
@@ -41,7 +49,7 @@ fn slot_of(id : String) -> Slot {
   match slots.get(id) {
     Some(s) => s
     None => {
-      let s = Slot::{ app: None, activity: [] }
+      let s = Slot::{ app: None, activity: [], gen: 0 }
       slots[id] = s
       s
     }
@@ -203,6 +211,73 @@ fn teardown(id : String) -> Unit {
   }
   slot.app = None
   slot.activity.clear()
+  // Whatever this card asked the host for, it is no longer here to be told.
+  slot.gen += 1
+}
+
+///|
+/// `setTimeout`, for the one thing the fixtures below need that the runtime
+/// deliberately has none of: a clock.
+extern "js" fn set_timeout(cb : () -> Unit, ms : Int) -> Unit =
+  #|(cb, ms) => { setTimeout(cb, ms) }
+
+///|
+/// The requests this page answers, for every card it mounts.
+///
+/// Three fixtures, and they are fixtures rather than an API: a card asks for a
+/// NAME and the host decides what that name means, so what a page registers is
+/// the page's business. This one is a playground, so what it can honestly
+/// offer is canned data — `rows` answers a list, `echo` answers the first
+/// thing it was handed, and `fail` answers an error. A card that wants a real
+/// fetch belongs in a page that has one.
+///
+/// **A name that is not here still answers**, with an error, which is what the
+/// runtime does with any request nobody claimed — so registering these takes
+/// nothing away from a card demonstrating the unanswered path.
+///
+/// They answer LATE, and that is the point rather than a simulation detail: a
+/// request that lands before the transaction finishes never shows a card its
+/// own loading state, which is the half of asynchrony a card author has to
+/// write for. `gen` is the mount they were built for; a card that has been
+/// torn down since gets no answer, because there is nobody left to tell.
+fn playground_requests(
+  slot : Slot,
+  gen : Int,
+) -> Map[String, @component.RequestFn] {
+  fn later(ms : Int, f : () -> Unit) -> Unit {
+    set_timeout(() => if slot.gen == gen { f() }, ms)
+  }
+
+  {
+    "rows": @component.RequestFn((_args, respond) => {
+      later(500, () => {
+        respond(
+          Ok(
+            @tutuca.Value::List([
+              Map({
+                "title": Str("Tutuca"),
+                "description": Str("A SPA framework that fits in your head"),
+              }),
+              Map({
+                "title": Str("MoonBit"),
+                "description": Str("The language this port is written in"),
+              }),
+              Map({
+                "title": Str("Borges"),
+                "description": Str("Wrote the list the other examples iterate"),
+              }),
+            ]),
+          ),
+        )
+      })
+    }),
+    "echo": @component.RequestFn((args, respond) => {
+      later(300, () => respond(Ok(args.get(0).unwrap_or(Null))))
+    }),
+    "fail": @component.RequestFn((_args, respond) => {
+      later(500, () => respond(Err(Str("the host said no"))))
+    }),
+  }
 }
 
 ///|
@@ -214,11 +289,15 @@ fn mount(card : @tutucard.Card, id : String) -> Bool {
   let root_node = @bdom.BrowserNode::from_element(root_el)
   root_node.replace_children()
   // The file's macros travel with it: `<x:name>` in a card expands against the
-  // scope the module registers, exactly as a generated module's does.
+  // scope the module registers, exactly as a generated module's does. So do
+  // the page's request fixtures — a `request` in a block reaches the host the
+  // same way a compiled component's `ctx.request` does, and the host is this.
+  let slot = slot_of(id)
   let m = @component.ModuleDef::new(
     name="card",
     components=[card.component],
     macros=card.macros,
+    requests=playground_requests(slot, slot.gen),
   )
   let a = @app.App::from_module(
     m,
@@ -234,7 +313,6 @@ fn mount(card : @tutucard.Card, id : String) -> Bool {
   // scoped by the framework, so several embedded cards on one page each add
   // their own rules without reaching each other's nodes.
   @glue.install_styles(a, @bdom.BrowserNode::from_document(doc))
-  let slot = slot_of(id)
   slot.app = Some(a)
   a.transactor.observe(record => {
     slot.activity.push(record.to_json())
