@@ -5,7 +5,15 @@
      views — which is also the whole of the subset. What it cannot do is name a
      MoonBit value: no imports, no closures, no components built at run time.
      Reach for one of those and you are writing a component, and the compiler
-     comes back. -->
+     comes back.
+
+     There is no <style> block: the view names margaui's component classes
+     (`card`, `btn`, `input`, `badge`) and Tailwind utilities beside them, and
+     the page this card is embedded in — `<mb-card margaui>` — hands the class
+     names the mounted card published to margaui's compiler and injects the
+     CSS, scoped to the preview. Write them as LITERAL lists: a class name
+     assembled at run time is one the collector never sees. -->
+
 
 <script type="tutuca/state">
   state Counter {
@@ -59,30 +67,31 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
-
-    .row { display: flex; gap: .4rem; align-items: center; }
-    .trail { display: flex; gap: .3rem; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
-    .trail li { font: .75rem ui-monospace, monospace; opacity: .7; }
-  </style>
-  <div>
-    <h3 style="margin:0"><x text="$summary"></x></h3>
-    <p class="row">
-      <button @on.click="add 1">+1</button>
-      <button @on.click="add -1">-1</button>
-      <button @on.click="start">reset</button>
-    </p>
-    <label class="row">
-      label
-      <input :value=".label" @on.input="setLabel value" placeholder="name it">
-    </label>
-    <ul class="trail" @show="$moved">
-      <li @each=".history"><x text="@value"></x></li>
-    </ul>
-    <p @hide="$moved"><em>press a button — the trail shows where it landed</em></p>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title"><x text="$summary"></x></h2>
+      <div class="join">
+        <button class="btn btn-sm join-item" @on.click="add 1">+1</button>
+        <button class="btn btn-sm join-item" @on.click="add -1">-1</button>
+        <button class="btn btn-sm join-item btn-ghost" @on.click="start">
+          reset
+        </button>
+      </div>
+      <label class="flex gap-2 items-center">
+        <span>label</span>
+        <input class="input input-sm w-full" :value=".label"
+               @on.input="setLabel value" placeholder="name it">
+      </label>
+      <ul class="flex gap-2 flex-wrap" @show="$moved">
+        <li @each=".history">
+          <span class="badge badge-sm badge-neutral font-mono">
+            <x text="@value"></x>
+          </span>
+        </li>
+      </ul>
+      <p class="opacity-60 italic" @hide="$moved">
+        press a button — the trail shows where it landed
+      </p>
+    </div>
   </div>
 </template>

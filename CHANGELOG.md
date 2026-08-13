@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The landing page's counter card is styled by class name.** It was the one
+  card in the tree still carrying a `<style>` block, so the first card a
+  visitor meets looked like the least of them — and looked nothing like the
+  nine in the tutorial, which is where that visitor goes next. Its views name
+  margaui's `card`, `btn`, `input` and `badge` now, the `<mb-card>` on
+  `index.html` asks for `margaui`, and the CSS the page compiles is the class
+  set the card actually used. The `<style>` block is still the other way to do
+  it, and `cards.html` still documents both.
+
 ## [0.15.0] - 2026-08-13
 
 > This section covers 0.14.0's entries too: the `## [0.14.0]` heading was

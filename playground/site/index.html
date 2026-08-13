@@ -125,7 +125,15 @@ let counter = counter_component()</code></pre>
           preview are the same ones <code>tutuca gen-views</code> reports, with
           the same line and column.
         </p>
-        <mb-card src="./site/cards/counter.html" codemirror></mb-card>
+        <p>
+          It carries no CSS either. The views name
+          <a href="https://github.com/marianoguerra/margaui">margaui</a>'s
+          component classes — <code>card</code>, <code>btn</code>,
+          <code>input</code>, <code>badge</code> — with Tailwind utilities
+          beside them, and <code>&lt;mb-card margaui&gt;</code> compiles the
+          ones this card actually used, in your browser.
+        </p>
+        <mb-card src="./site/cards/counter.html" margaui codemirror></mb-card>
         <p>
           <a href="./cards.html"><strong>The card tutorial</strong></a> builds
           one of these from an empty schema up, six live examples at a time —
