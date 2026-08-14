@@ -3,18 +3,22 @@
 ///|
 /// Everything the walk needs that does not change as it descends.
 priv struct Build {
-  sanitizer : @sanitize.Sanitizer
-  /// The same sanitizer with CSS taken away, for the RAW HTML inside a markdown
-  /// document and for nothing else.
+  /// One sanitizer, for everything this file emits and for the raw HTML inside
+  /// the document alike.
   ///
-  /// The split is about who wrote the value, which is a question the sanitizer
-  /// cannot ask itself. Everything this file emits directly is a literal from a
-  /// fixed set — the only `style` among them is GFM's column alignment,
-  /// `text-align:left|center|right`, written by `Build::table` — and narrowing
-  /// that away would be a rendering bug rather than a tightening. An
-  /// `HtmlBlock` is the author's markup, arriving at the same builder
-  /// `@setinnerhtml` uses, and gets the same answer `@setinnerhtml` gets.
-  html_sanitizer : @sanitize.Sanitizer
+  /// There used to be two. The narrowing available was `without_css`, which
+  /// dropped `style` by NAME, and the only `style` this file emits is GFM's
+  /// column alignment — `text-align:left|center|right`, written by
+  /// `Build::table` — so applying it to the whole walk turned a config decision
+  /// about untrusted CSS into a rendering bug in tables. The split was who wrote
+  /// the value, a question a name rule cannot ask.
+  ///
+  /// `anode/sanitize/css` asks it of the value instead, and gets the same answer
+  /// for both authors: `text-align:left` is admitted at the smallest level there
+  /// is, and a payload's `background:url(…)` is not admitted at any. So the
+  /// distinction stopped paying for itself, and `filter_for` narrows once, on the
+  /// way in.
+  sanitizer : @sanitize.Sanitizer
   /// Link reference definitions, by label, for `RefLink` / `RefImage`.
   defs : Map[String, @md.LinkDefinition]
   /// The element the markdown is being built INTO, for the report only.
@@ -46,14 +50,7 @@ pub fn build(
       defs[key] = d
     }
   }
-  let b = Build::{
-    sanitizer,
-    html_sanitizer: sanitizer.without_css(),
-    defs,
-    host_tag,
-    on_drop,
-    footnotes: [],
-  }
+  let b = Build::{ sanitizer, defs, host_tag, on_drop, footnotes: [] }
   let out = b.blocks(parsed.document.children)
   for node in b.footnote_section() {
     out.push(node)
@@ -186,7 +183,7 @@ fn Build::block(self : Build, b : @md.Block) -> Array[@vdom.Vdom] {
     // a boundary when what you are producing is a tree.
     HtmlBlock(html~, ..) =>
       @markup.html_nodes(
-        self.html_sanitizer,
+        self.sanitizer,
         html,
         self.host_tag,
         self.on_drop,
@@ -378,7 +375,7 @@ fn Build::inline(self : Build, i : @md.Inline) -> Array[@vdom.Vdom] {
     // `Sanitizer.comments` decides, exactly as it does for raw markup.
     HtmlInline(html~, ..) =>
       @markup.html_nodes(
-        self.html_sanitizer,
+        self.sanitizer,
         html,
         self.host_tag,
         self.on_drop,

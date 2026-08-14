@@ -4,6 +4,7 @@ package "marianoguerra/tutuca/dyncomp/policy"
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/anode/sanitize/css",
   "moonbitlang/core/debug",
 }
 
@@ -90,6 +91,7 @@ pub fn Policy::trusting_manifest_config(Self) -> Self
 pub fn Policy::untrusted() -> Self
 pub fn Policy::view_config(Self) -> Map[String, String]
 pub fn Policy::with_config(Self, Array[(String, ConfigBinding)]) -> Self raise InvalidConfig
+pub fn Policy::with_css(Self, @css.CssPolicy) -> Self
 pub fn Policy::with_sanitizer(Self, @sanitize.SanitizerConfig) -> Self raise @sanitize.InvalidConfig
 
 pub(all) struct Quotas {

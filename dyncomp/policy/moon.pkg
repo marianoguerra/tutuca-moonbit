@@ -11,6 +11,9 @@
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/anode/sanitize",
+  // the CSS value policy an untrusted guest's constant `style` and
+  // presentation attributes are read against — see `view_authority.mbt`
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/debug",
   "moonbitlang/core/string",

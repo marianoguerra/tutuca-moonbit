@@ -1,0 +1,98 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/anode/sanitize/css"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/set",
+}
+
+// Values
+pub let allowed_functions : @set.Set[String]
+
+pub let color_properties : @set.Set[String]
+
+pub let computed_properties : @set.Set[String]
+
+pub let constant_properties : @set.Set[String]
+
+pub let css_properties : @set.Set[String]
+
+pub let css_wide_keywords : @set.Set[String]
+
+pub let max_declarations : Int
+
+pub let max_nesting : Int
+
+pub let max_tokens : Int
+
+pub let named_colors : @set.Set[String]
+
+pub let overlay_functions : @set.Set[String]
+
+pub let overlay_properties : @set.Set[String]
+
+pub let property_keywords : Map[String, @set.Set[String]]
+
+pub let prose_properties : @set.Set[String]
+
+pub let string_properties : @set.Set[String]
+
+pub let units : @set.Set[String]
+
+pub let url_properties : @set.Set[String]
+
+// Errors
+
+// Types and methods
+pub(all) struct CssDrop {
+  property : String
+  reason : CssReason
+} derive(Eq, @debug.Debug)
+pub fn CssDrop::to_string(Self) -> String
+
+pub(all) enum CssLevel {
+  Deny
+  Constant
+  Computed
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CssPolicy {
+  level : CssLevel
+  overlay : Bool
+  url : UrlRule
+  stylesheet : Bool
+} derive(Eq, @debug.Debug)
+pub fn CssPolicy::app() -> Self
+pub fn CssPolicy::declarations(Self, String, screen? : (String) -> Bool) -> CssResult
+pub fn CssPolicy::deny() -> Self
+pub fn CssPolicy::payload() -> Self
+pub fn CssPolicy::value(Self, String, String, screen? : (String) -> Bool) -> String?
+pub fn CssPolicy::value_checked(Self, String, String, screen? : (String) -> Bool) -> CssResult
+
+pub(all) enum CssReason {
+  Malformed(String)
+  Escape
+  UnknownProperty
+  BadValue(String)
+  Function(String)
+  Url(String)
+  Important
+  Overlay
+  TooLarge
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CssResult {
+  css : String?
+  dropped : Array[CssDrop]
+  screened_urls : Array[String]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum UrlRule {
+  NoUrl
+  FragmentOnly
+  Screened
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

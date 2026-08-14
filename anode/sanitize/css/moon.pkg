@@ -1,0 +1,28 @@
+// A validator for a SUBSET of CSS: it reads a declaration list, refuses
+// everything it does not understand, and RE-EMITS what is left canonically.
+//
+// A LEAF. It imports `mizchi/css/token` and core, and nothing of tutuca's — not
+// even `anode`, which is the parent of the directory it sits in. That is
+// deliberate: `anode/sanitize` needs it for the `style` attribute, `vdom/filter`
+// needs it for the same attribute at render time, and `dyncomp/policy` needs it
+// for a guest's presentation attributes. None of those three imports the other
+// two, so a validator that reached for any of them could only be used by one.
+//
+// Its own directory rather than a file in `anode/sanitize`, for the reason
+// `vdom/filter/markup` gives for its: it drags a tokenizer behind it, and a
+// host that only wants the name rules should not link one.
+//
+// Only `mizchi/css/token` is taken from `mizchi/css`. The parser package sits
+// right beside it and is NOT used: `parse_inline_style` returns a layout
+// engine's `@style.Style`, which cannot round-trip a declaration list, and
+// round-tripping is the entire mechanism here. See `normalize.mbt` for the two
+// places the tokenizer diverges from css-syntax-3 and what is done about them.
+import {
+  "mizchi/css/token",
+  "moonbitlang/core/set",
+}
+
+import {
+  "moonbitlang/core/set",
+  "moonbitlang/core/test",
+} for "test"

@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/anode/sanitize"
 
 import {
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/anode/sanitize/css",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
 }
@@ -81,13 +82,15 @@ pub struct Sanitizer {
   comments : Bool
   data_attributes : Bool
   raw_markup : Bool
-  no_css : Bool
+  css : @css.CssPolicy
 }
 pub fn Sanitizer::attribute_allowed(Self, String, @anode.Ns?, String) -> Bool
+pub fn Sanitizer::attribute_value(Self, String, String, screen? : (String) -> Bool) -> String?
 pub fn Sanitizer::check(Self, @anode.ANode) -> Array[Violation]
 pub fn Sanitizer::default() -> Self
 pub fn Sanitizer::element_verdict(Self, String, @anode.Ns?) -> ElementVerdict
 pub fn Sanitizer::new(SanitizerConfig) -> Self raise InvalidConfig
+pub fn Sanitizer::with_css(Self, @css.CssPolicy) -> Self
 pub fn Sanitizer::without_css(Self) -> Self
 
 pub(all) struct SanitizerConfig {

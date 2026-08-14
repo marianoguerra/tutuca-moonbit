@@ -16,8 +16,8 @@ Where a claim is weaker than it sounds, it says so.
 | archive parsing | page responsiveness/memory | **bounded** — compressed, expanded, entry and file-count limits; checked tar arithmetic and headers |
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
-| guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
+| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
+| guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that. The declaration half now has a validator (§4); the selector and at-rule half does not |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
@@ -557,7 +557,7 @@ accident of the DOM API, which this document has already been wrong to do once
 (see the `onclick` routing note in `docs/sanitizer.md`). `foreign_attr_name` in
 `vdom/filter/markup/nodes.mbt` folds the name back before any rule reads it.
 
-## 4. Guest CSS: no global stylesheet, and a validator to come
+## 4. Guest CSS: no global stylesheet, a value validator, and a stylesheet one to come
 
 **The finding, and a correction.** A guest's static manifest `style` rides on the
 `"main"` **view's** style, not on `common_style` (`host/bundle.mbt`), and
@@ -582,22 +582,47 @@ style with the host's utility classes, which the host compiles and which
 therefore cannot break out of anything. All three sample guests already do
 exactly that, so the strict default costs nothing real.
 
-That includes CSS smuggled through view syntax: untrusted views cannot use
-inline/embedded CSS or bracketed arbitrary utility classes. They may use only
-literal utility names whose definitions the host already owns and compiles.
+That includes CSS smuggled through view syntax as a bracketed arbitrary utility
+class. Those are still refused by substring test (`has_arbitrary_css`).
 
-Above that tier the block is currently accepted **unvalidated**, and that is a
-known gap rather than a decision: `allow_custom_css` today means someone
-vouched for the bundle, not that anything checked it.
+**Inline CSS is no longer refused by name.** An untrusted view may STATE a
+constant `style` or SVG presentation attribute, and it is read:
+`anode/sanitize/css` parses the declaration list against
+`CssPolicy::payload()` and **re-emits it**, so `fill="#1da1f2"` and
+`style="display:flex;gap:4px"` reach the page and a fetch, an overlay, an
+`!important` or a `<style>` block does not. A DYNAMIC value in one of those names
+stays refused, and that is not caution: `check_view` runs at registration, the
+host installs `@filter.Baseline`, which carries no CSS rule, so nothing
+downstream would ever look at what this pass cannot see.
 
-**What is next**, and what would turn `allow_custom_css` into a real check. A
-validator for the scoped block, built on
-[`mizchi/css`](https://mooncakes.io/docs/mizchi/css) rather than hand-rolled:
-`mizchi/css/token` + `mizchi/css/parser` parse it as a declaration list and
-`mizchi/css/diagnostics` carries the errors. Parsing and **re-serializing**,
-instead of concatenating the raw string, is what structurally kills the
-brace-breakout; the validator then also rejects `@import` and screens `url()`
-targets, which are the egress channel.
+The design, the subsets and the two findings behind them are in
+`docs/css-validator.md`. The one worth repeating here is that the value is
+**re-emitted rather than approved**, so a declaration list that survives contains
+no byte the validator did not choose — which is what makes "the guest wrote it"
+stop mattering.
+
+The generated property table also settled a question this section could not have
+answered by hand. `untrusted_sink_attr` names fourteen CSS sinks; the
+specifications name thirty-three, and `background` — the shorthand containing the
+`background-image` that IS on the list — was one of the misses.
+
+**What is still unvalidated is the scoped `style` BLOCK.** Above the untrusted
+tier `Policy::check_style` accepts it whole, and `Component::compile_style` still
+pastes it into `[data-cid="N"][data-vid="main"]{…}` by string concatenation, so a
+`}` escapes the wrapper. `allow_custom_css` still means someone vouched for the
+bundle, not that anything checked it.
+
+What would close it: parse the block as a rule list, keep `@media`/`@supports`/
+`@keyframes`, refuse `@import` and `@font-face`, validate each declaration with
+the validator that now exists, and **prefix each selector with the scope** rather
+than wrapping the block — which is what structurally kills the brace-breakout.
+
+The one thing in the way is escapes. The value validator refuses a backslash
+outright, because `mizchi/css/token` does not decode them and there is no sound
+name comparison over its output otherwise; a SELECTOR cannot take that deal,
+since Tailwind emits `.bg-\[\#fff\]`. So the stylesheet half needs either a fix
+upstream in `mizchi/css` — its `consume_name` not implementing css-syntax-3
+§4.3.7 is a real bug worth sending back — or a tokenizer of our own.
 
 The stricter tier that would have been the other half of this is already in
 place — see "what is true now" above.

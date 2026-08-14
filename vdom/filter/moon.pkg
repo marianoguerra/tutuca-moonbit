@@ -9,10 +9,16 @@
 // policy, no bundle and no renderer. See docs/sanitizer.md.
 import {
   "marianoguerra/tutuca/vdom",
+  // The CSS value validator, for `CssFilter`. A leaf over a tokenizer, with no
+  // dependency on `anode` or on `anode/sanitize` — which is what lets this
+  // package take it without taking the config model it deliberately does not
+  // have.
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "moonbitlang/core/set",
 }
 
 import {
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "moonbitlang/core/debug",
   "moonbitlang/core/test",
 } for "test"

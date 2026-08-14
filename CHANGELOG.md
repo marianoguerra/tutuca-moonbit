@@ -6,6 +6,92 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A CSS value validator: a subset parsed and re-emitted, instead of a name
+  refused.** `anode/sanitize/css` reads a declaration list against a policy,
+  refuses everything it does not understand, and writes back a CANONICAL form.
+  Nothing it admits is a substring of what it was given, so a list that survives
+  contains no byte the validator did not choose.
+
+  Two ordered levels — `Constant` (paint and typography, no function anywhere)
+  and `Computed` (layout, the colour and maths functions, gradients, `var()`) —
+  and three switches that are separate from them because they are separate
+  questions: `overlay` (can it leave its box), `url` (`NoUrl` / `FragmentOnly` /
+  `Screened`), and `stylesheet` (may a `<style>` element survive). Three named
+  policies cover the real cases: `deny()`, `payload()`, `app()`.
+
+  What it bought:
+
+  - `@setinnerhtml`, `@setinnersvg` and `@setinnermd` payloads may paint and lay
+    themselves out again. They carried NO CSS before — `without_css` dropped the
+    `style` attribute by name, because there was nothing that could tell
+    `color:red` from `background:url(//evil.test/p)`.
+  - **`Build`'s two sanitizers collapsed into one.** Narrowing CSS at the
+    markdown filter used to take GFM column alignment with it —
+    `style="text-align:left"`, which `build.mbt` writes itself — so the split was
+    who AUTHORED the value, a question a name rule cannot ask. A value rule does
+    not need to ask it: the alignment is admitted at the smallest level there is
+    and a payload's `url(…)` is admitted at none.
+  - **An untrusted dyncomp guest may state a constant style.**
+    `fill="#1da1f2"`, `stroke="currentcolor"`, `style="display:flex;gap:4px"`,
+    and `fill="url(#grad)"` pointing at a gradient it defined itself. A DYNAMIC
+    value in one of those names stays refused, because `check_view` runs at
+    registration and nothing downstream would look at what it could not see.
+  - `@filter.CssFilter`, for an app's own tree. **Not** in `Baseline`: `app()`
+    refuses an unquoted `url(/logo.png)` and `!important`, both ordinary in
+    app-authored CSS, so making it the default would cost real pages for a threat
+    model the payload filters already cover.
+
+  Two findings shaped it, both in `docs/css-validator.md`:
+
+  - **`mizchi/css/token` does not decode CSS escapes**, so
+    `background-image:\75 rl(https://evil.test/p)` tokenizes as `Ident("75")
+    Whitespace Function("rl")` while every browser reads `url(`. `Token` carries
+    no source span, so nothing downstream can recover the spelling — which means
+    no name comparison over that token stream is sound. The answer is to refuse
+    a backslash outright, on the raw input: an escape spells a character you
+    could have written directly, and no level here needs one. (Its `peek_char`
+    also returns U+0000 for end-of-input, so an embedded NUL is indistinguishable
+    from EOF; css-syntax-3 §3.3 preprocessing runs first and removes it.)
+  - **Re-serializing CSS is SAFE, which is the inverse of the rule
+    `docs/sanitizer.md` argues for HTML.** A sanitized HTML payload becomes
+    NODES, so writing it back out as text adds a second parse that can disagree —
+    mutation XSS. A CSS value is never nodes: it reaches the browser as a STRING
+    the browser parses either way, so emitting our own canonical form removes the
+    chance that ours and theirs disagreed rather than adding a parse.
+
+  The property facts are **generated**, by `scripts/fetch-css-properties.mjs`
+  from w3c/webref's CSS extracts at a pinned commit (plus mdn/data for the colour
+  keyword tables, which css-color states as prose). It emits only what a
+  specification states — 818 property names, which 33 transitively reach a URL,
+  which reach a string or a colour, the keywords each grammar admits — and the
+  POLICY stays in MoonBit beside the argument for it, held against the facts by
+  tests. `moon run dev -- css-properties` regenerates and drift-checks.
+
+  That paid for itself immediately: `untrusted_sink_attr` names fourteen CSS
+  sinks by hand and the specs name thirty-three. Six of the misses are properties
+  a level here admits, including `background` — the shorthand containing the
+  `background-image` that IS on the hand-written list. None was a live hole,
+  since the `style` attribute was refused wholesale, but reopening it is exactly
+  what this change does.
+
+  New dependency: `mizchi/css@0.7.3`, of which only `mizchi/css/token` is used —
+  673 lines over `moonbitlang/core/string`. Its parser is not: `parse_inline_style`
+  returns a layout engine's `Style`, which cannot round-trip a declaration list.
+
+### Changed
+
+- `Sanitizer`'s `no_css : Bool` is now `css : @safecss.CssPolicy`.
+  `without_css()` stays and means `with_css(CssPolicy::deny())`; `with_css` is
+  the general form. `Sanitizer::attribute_value` is the new value-side
+  companion to `attribute_allowed`, routing `style` as a declaration list and an
+  SVG presentation attribute as one property's value.
+- `Policy::with_sanitizer` now carries the CSS policy across rather than taking
+  the freshly compiled sanitizer's default, so a host tightening its element
+  allow-list does not silently widen what a guest may paint with.
+  `Policy::with_css` sets it directly.
+
 ## [0.19.0] - 2026-08-14
 
 ### Added

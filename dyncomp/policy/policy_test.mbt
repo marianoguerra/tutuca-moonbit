@@ -86,7 +86,7 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
       ("<form action=\"/pay\"></form>", "attribute 'action'"),
       (
         "<svg><circle fill=\"url(https://attacker.test/pixel)\"></circle></svg>",
-        "attribute 'fill'",
+        "'fill' on <circle>",
       ),
       ("<button is=\"x-fetching-button\">go</button>", "may not use 'is'"),
       ("<style>.x{background:url(/pixel)}</style>", "may not create <style>"),
@@ -104,6 +104,64 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
       ("<svg @setinnersvg=\".chart\"></svg>", "may not render runtime SVG"),
       (
         "<div class=\"bg-[url(https://attacker.test/pixel)]\"></div>", "bracketed arbitrary utility classes",
+      ),
+    ] {
+    let (view, needle) = pair
+    let messages = shown(p.check_view("Guest/main", parsed(view)))
+    assert_true(messages.any(message => message.contains(needle)))
+  }
+}
+
+///|
+/// What an untrusted guest may now paint with, which before this was nothing.
+///
+/// `style` and the SVG presentation attributes were refused BY NAME, because a
+/// value may be dynamic and nothing could tell a colour from a fetch.
+/// `anode/sanitize/css` can, so a CONSTANT value is read: the guest gets colour,
+/// type and layout, and does not get a fetch, an overlay, a `<style>` block or
+/// `!important`.
+///
+/// A DYNAMIC value stays refused, and that is not caution. `check_view` runs at
+/// registration; the dyncomp host installs `@filter.Baseline`, which carries no
+/// CSS rule; so there is nothing downstream that would look at what this pass
+/// cannot see. Admitting it here would be admitting it unchecked.
+test "untrusted views may state a constant style" {
+  let p = Policy::untrusted()
+  // Admitted.
+  for
+    view in [
+      "<div style=\"color:#1da1f2;text-align:center\"></div>", "<div style=\"display:flex;gap:0.5rem;padding:4px\"></div>",
+      "<svg><circle fill=\"#1da1f2\" stroke=\"currentcolor\"></circle></svg>",
+      // A fragment reference to the guest's own gradient fetches nothing.
+       "<svg><circle fill=\"url(#grad)\"></circle></svg>",
+    ] {
+    inspect(
+      shown(p.check_view("Guest/main", parsed(view))).join("\n"),
+      content="",
+    )
+  }
+  // Refused, one reason each.
+  for
+    pair in [
+      // Egress.
+      (
+        "<div style=\"background-image:url(&quot;https://attacker.test/p&quot;)\"></div>",
+        "url(https://attacker.test/p) is not admitted",
+      ),
+      // Clickjacking, which no scheme check sees.
+      (
+        "<div style=\"position:fixed;inset:0;opacity:0\"></div>", "can overlay the page",
+      ),
+      // Beating the host's own scoped rules.
+      (
+        "<div style=\"color:red!important\"></div>", "!important is not admitted",
+      ),
+      // The escape class, which is why the value is re-emitted rather than
+      // approved.
+      ("<div style=\"background-image:\\75 rl(#a)\"></div>", "backslash escape"),
+      // And a value nothing here can read.
+      (
+        "<div :style=\".theme\"></div>", "must be a literal here, since nothing checks it later",
       ),
     ] {
     let (view, needle) = pair
@@ -261,7 +319,7 @@ test "cap-external-urls opens img src and a href, with the origin pinned" {
       ("<img srcset=\"https://cdn.bsky.app/x 1x\" />", "attribute 'srcset'"),
       ("<a ping=\"https://cdn.bsky.app/x\">go</a>", "attribute 'ping'"),
       (
-        "<div style=\"background:url(https://cdn.bsky.app/x)\"></div>", "attribute 'style'",
+        "<div style=\"background:url(https://cdn.bsky.app/x)\"></div>", "'style' on <div>",
       ),
     ] {
     let (view, needle) = pair

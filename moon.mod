@@ -25,6 +25,13 @@ import {
   "moonbitlang/async@0.20.3",
   "moonbit-community/html@0.1.2",
   "mizchi/fswatch@0.2.1",
+  // Only `mizchi/css/token` is used, by `anode/sanitize/css` — a css-syntax-3
+  // tokenizer with no dependency of its own beyond `moonbitlang/core/string`.
+  // The parser, cascade and computed packages are NOT used: `parse_inline_style`
+  // returns a layout engine's `@style.Style`, which cannot round-trip a
+  // declaration list, and round-tripping is the whole point. Apache-2.0, where
+  // this module is MIT.
+  "mizchi/css@0.7.3",
   "marianoguerra/tailwindcss@0.2.0",
   "moonbitlang/x@0.4.47",
 }

@@ -234,6 +234,31 @@ fn Build::element(
           )
           continue
         }
+        // The CSS half. `style` is a declaration list and an SVG presentation
+        // attribute (`fill`, `stroke`, `stop-color`) is one property's value;
+        // both come back CANONICALLY RE-EMITTED rather than approved, so what
+        // reaches the DOM is generated from what the validator understood. Any
+        // other name comes back unchanged.
+        //
+        // `screen` hands the URL rule that just ran to the one place a `url()`
+        // can appear inside a value. It has to be passed rather than assumed:
+        // its default refuses, so forgetting it would silently narrow to
+        // `UrlRule::NoUrl` instead of silently widening.
+        let value = match
+          self.sanitizer.attribute_value(name, value, screen=target => {
+            @filter.url_value_allowed("src", target)
+          }) {
+          Some(text) => text
+          None => {
+            (self.on_drop)(
+              self.host_tag,
+              name,
+              value,
+              "CSS value is not one this sanitizer admits",
+            )
+            continue
+          }
+        }
         attrs[name] = Str(value)
       }
       Some(@vdom.h(tag, attrs~, childs=children(), ns?=vdom_ns(el.ns)))

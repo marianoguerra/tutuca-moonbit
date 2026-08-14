@@ -101,17 +101,26 @@ pub(all) struct Policy {
 }
 
 ///|
-/// What an untrusted bundle gets: no capabilities, no CSS of its own, default
-/// quotas. It can still declare components, ship views, hold state, handle
-/// events, nest children and serve its own requests — which is to say, it can
-/// still be a component. That is the claim this design is making.
+/// What an untrusted bundle gets: no capabilities, no stylesheet of its own,
+/// default quotas. It can still declare components, ship views, hold state,
+/// handle events, nest children and serve its own requests — which is to say,
+/// it can still be a component. That is the claim this design is making.
+///
+/// `CssPolicy::payload()` is the one thing here that is not a refusal, and it is
+/// new: a CONSTANT inline style or SVG presentation attribute is now read
+/// rather than refused by name. See `check_untrusted_attrs`. It buys a guest
+/// `fill="#1da1f2"` and `style="text-align:center"` without buying it a fetch,
+/// an overlay, or a `<style>` block — and a DYNAMIC value in one of those names
+/// is still refused, because nothing checks it at render time here.
 pub fn Policy::untrusted() -> Policy {
   {
     tier: Untrusted,
     quotas: Quotas::default(),
     grants: [],
     allow_custom_css: false,
-    sanitizer: @sanitize.Sanitizer::default(),
+    sanitizer: @sanitize.Sanitizer::default().with_css(
+      @safecss.CssPolicy::payload(),
+    ),
     external_origins: [],
     config: Map([]),
     trusts_manifest_config: false,
@@ -262,13 +271,20 @@ pub fn Policy::check_quotas(
 /// cannot break out of anything. All three sample guests already do exactly
 /// that, so the strict default costs nothing real.
 ///
-/// A bundle at a tier that DOES allow custom CSS is currently accepted
-/// unvalidated, and that is a known gap rather than a decision:
-/// `Component::compile_style` wraps the block by string concatenation, so a
-/// `}` inside it escapes the scope selector and reaches the page around it.
-/// The `mizchi/css` validator that closes it is the next piece of work here
-/// (SECURITY.md §4). Until then, `allow_custom_css` is a statement that
-/// someone vouched for this bundle, not that anything checked it.
+/// A bundle at a tier that DOES allow custom CSS is still accepted unvalidated,
+/// and that is a known gap rather than a decision: `Component::compile_style`
+/// wraps the block by string concatenation, so a `}` inside it escapes the scope
+/// selector and reaches the page around it. `allow_custom_css` is a statement
+/// that someone vouched for this bundle, not that anything checked it.
+///
+/// The VALUE validator that would do the checking exists now
+/// (`anode/sanitize/css`, and `docs/css-validator.md`), and it is what let an
+/// untrusted guest state a constant inline `style` again. It is not enough for
+/// this: a block is selectors and at-rules as well as declarations, and the fix
+/// is to prefix each selector with the scope rather than wrap the block —
+/// which is what structurally kills the breakout. The one thing in the way is
+/// that a selector legitimately carries escapes, which the value validator
+/// refuses outright. SECURITY.md §4 has the rest.
 pub fn Policy::check_style(
   self : Policy,
   where_ : String,
@@ -335,11 +351,30 @@ pub fn Policy::check_view(
 ///   the render-time markup filter is installed; see
 ///   `@markdown.filter_for`, which is what pairs the two so a host cannot
 ///   have the permission without the filter.
+/// The same policy, with CSS narrowed or widened.
+///
+/// Separate from `with_sanitizer` because a `SanitizerConfig` says nothing
+/// about CSS — the Sanitizer API's vocabulary is names, and every question here
+/// lives in a value. A host tightening its element allow-list must not thereby
+/// widen what a guest may paint with, which is why `with_sanitizer` carries the
+/// CSS policy across rather than taking the compiled sanitizer's default.
+pub fn Policy::with_css(self : Policy, css : @safecss.CssPolicy) -> Policy {
+  { ..self, sanitizer: self.sanitizer.with_css(css) }
+}
+
+///|
 pub fn Policy::with_sanitizer(
   self : Policy,
   config : @sanitize.SanitizerConfig,
 ) -> Policy raise @sanitize.InvalidConfig {
-  { ..self, sanitizer: @sanitize.Sanitizer::new(config) }
+  // The CSS policy is carried across rather than reset. A config has no field
+  // for it, so taking the freshly compiled sanitizer's default would silently
+  // widen an untrusted policy from `payload()` to `app()` — a host tightening
+  // its element allow-list would be loosening its CSS in the same call.
+  {
+    ..self,
+    sanitizer: @sanitize.Sanitizer::new(config).with_css(self.sanitizer.css),
+  }
 }
 
 ///|

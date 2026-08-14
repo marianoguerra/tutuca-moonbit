@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/vdom/filter"
 
 import {
+  "marianoguerra/tutuca/anode/sanitize/css",
   "marianoguerra/tutuca/vdom",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
@@ -35,6 +36,13 @@ pub struct Chain {
 }
 pub fn Chain::new(Array[&VdomFilter]) -> Self
 pub impl VdomFilter for Chain
+
+pub struct CssFilter {
+  policy : @css.CssPolicy
+  log : DropLog
+}
+pub fn CssFilter::new(policy? : @css.CssPolicy, max_reports? : Int) -> Self
+pub impl VdomFilter for CssFilter
 
 pub struct DropLog {
   entries : Array[Dropped]

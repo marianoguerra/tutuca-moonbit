@@ -44,15 +44,21 @@ pub fn filter_for(sanitizer : @sanitize.Sanitizer) -> &@filter.VdomFilter {
     fs.push(@markup.MarkupFilter::new(sanitizer~))
   }
   fs.push(@markup.SafeMarkupFilter::new(sanitizer~))
-  // NOT narrowed by `without_css` here, unlike the filter above, and the
-  // reason is a distinction the overlay cannot draw for itself: who wrote the
-  // value. Markdown's own `style` is the framework's — GFM column alignment
-  // becomes `style="text-align:left"` in `build.mbt`, a literal from a fixed
-  // set — while a `<style>` inside a markdown HTML BLOCK is the payload's.
-  // Narrowing the whole filter takes both, which turns a config decision about
-  // untrusted CSS into a rendering bug in tables. `build.mbt` narrows at the
-  // two places it hands a payload to `@markup.html_nodes` instead.
-  fs.push(MdFilter::new(sanitizer~))
+  // Narrowed here, once, which it could not be before. The narrowing available
+  // used to be `without_css`, which dropped `style` by NAME — and the only
+  // `style` markdown emits is GFM's column alignment, `text-align:left`, which
+  // `build.mbt` writes itself. Narrowing the whole filter took both, so
+  // `build.mbt` carried two sanitizers and applied the narrow one only where it
+  // handed a payload to `@markup.html_nodes`.
+  //
+  // `CssPolicy::payload()` reads the VALUE, so it does not need to know who
+  // wrote it: the alignment is admitted at the smallest level there is, and a
+  // `url(…)` is admitted at none. A markdown document is content the app did not
+  // write — that is what `@setinnermd` is FOR — so the whole walk gets the
+  // payload policy and `build.mbt` carries one sanitizer again.
+  fs.push(
+    MdFilter::new(sanitizer=sanitizer.with_css(@safecss.CssPolicy::payload())),
+  )
   fs.push(@filter.Baseline::new())
   let chained : &@filter.VdomFilter = @filter.Chain::new(fs)
   chained

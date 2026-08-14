@@ -125,6 +125,6 @@ pub fn Sanitizer::default() -> Sanitizer {
     // (`Sanitizer::without_css`). The default sanitizer is what every ordinary
     // view is checked against, and an ordinary view's `style` attribute is the
     // author's own.
-    no_css: false,
+    css: @safecss.CssPolicy::app(),
   }
 }

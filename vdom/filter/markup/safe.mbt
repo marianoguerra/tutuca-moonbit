@@ -49,8 +49,9 @@
 /// element per render for nothing, which is the same argument `Baseline` makes
 /// about the URL and handler rules.
 pub struct SafeMarkupFilter {
-  /// The host's sanitizer with CSS taken away. See `without_css` for why the
-  /// two names go, and why it is an overlay rather than a config.
+  /// The host's sanitizer, narrowed to what a payload may carry. See
+  /// `CssPolicy::payload` for what that is, and `without_css` for why the
+  /// narrowing is an overlay rather than a config.
   sanitizer : @sanitize.Sanitizer
   log : @filter.DropLog
 }
@@ -66,14 +67,20 @@ pub const SAFE_HTML_ATTR : String = "setInnerHtml"
 pub const SAFE_SVG_ATTR : String = "setInnerSvg"
 
 ///|
-/// The sanitizer handed in is narrowed by `without_css` before it is stored, so
-/// a caller cannot construct this filter with CSS left in by forgetting to.
+/// The sanitizer handed in is narrowed on the way in, so a caller cannot
+/// construct this filter with an app's own CSS policy by forgetting to.
+///
+/// It used to be narrowed by `without_css`, which dropped `style` entirely
+/// because there was no parser to tell a colour from a `url()`. There is one
+/// now, so the narrowing is `CssPolicy::payload()`: a payload may lay itself
+/// out and paint itself, may point at an SVG gradient it defined, and may not
+/// fetch, overlay, or carry a `<style>` block.
 pub fn SafeMarkupFilter::new(
   sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
   max_reports? : Int = 64,
 ) -> SafeMarkupFilter {
   {
-    sanitizer: sanitizer.without_css(),
+    sanitizer: sanitizer.with_css(@safecss.CssPolicy::payload()),
     log: @filter.DropLog::new(max_reports~),
   }
 }

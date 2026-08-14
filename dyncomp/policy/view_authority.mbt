@@ -12,6 +12,24 @@
 /// rule; this file owns where it applies.
 
 ///|
+/// Whether this attribute name is a CSS VALUE rather than a value of its own.
+///
+/// `style` is a declaration list. Every other name here is an SVG presentation
+/// attribute: `<circle fill="red">` sets the `fill` PROPERTY, with the same
+/// grammar it has in a stylesheet, which is why `fill="url(…)"` is a fetch and
+/// `fill="red"` is a colour. The set is asked of the generated property table
+/// rather than listed, so a property that becomes a presentation attribute is
+/// covered without anyone noticing.
+///
+/// These used to be refused outright, along with the network sinks, on the
+/// grounds that a value may be dynamic and there was nothing that could tell a
+/// colour from a fetch. `anode/sanitize/css` is that thing, so the CONSTANT
+/// case is now read. See `check_untrusted_attrs`.
+fn css_sink_attr(name : String) -> Bool {
+  name == "style" || @safecss.css_properties.contains(name)
+}
+
+///|
 fn untrusted_sink_attr(name : String) -> Bool {
   match name.to_lower() {
     // Browser navigation and subresource fetches.
@@ -84,6 +102,37 @@ fn untrusted_sink_element(tag : String) -> Bool {
 }
 
 ///|
+/// Why this CSS-valued attribute is refused, or `None` when it is not.
+///
+/// Two ways to fail. The value is not a literal, so nothing can read it; or it
+/// is, and the policy did not admit what it says. The second carries the
+/// validator's own reason, because "your `fill` was refused" and "your `fill`
+/// pointed at another origin" are different things for an author to be told.
+fn css_refusal(attr : String, val : @tutuca.Val, policy : Policy) -> String? {
+  let text = match val {
+    Const(lit=LStr(s), ..) => s
+    // A number or a boolean in a CSS attribute is not CSS. Refused with the
+    // same message as an expression, since neither is a value this can read.
+    _ =>
+      return Some(
+        "a CSS value must be a literal here, since nothing checks it later",
+      )
+  }
+  let result = if attr == "style" {
+    policy.sanitizer.css.declarations(text)
+  } else {
+    policy.sanitizer.css.value_checked(attr, text)
+  }
+  if result.css is Some(_) && result.dropped.is_empty() {
+    return None
+  }
+  match result.dropped.get(0) {
+    Some(drop) => Some(drop.to_string())
+    None => Some("no declaration survived")
+  }
+}
+
+///|
 /// Tailwind/margaui bracket syntax is guest-authored CSS, including url(...).
 fn has_arbitrary_css(val : @tutuca.Val) -> Bool {
   fn fragment_is_arbitrary(s : String) -> Bool {
@@ -138,6 +187,28 @@ fn check_untrusted_attrs(
                 "untrusted views may not use '\{name}' on <\{d.tag}>: \{why}",
               ),
             )
+          }
+        }
+      } else if css_sink_attr(lower) {
+        // A CSS-valued attribute is read rather than refused — but only when
+        // the view STATES the value, which is the same shape
+        // `cap-external-urls` reads an origin off. A dynamic one stays refused,
+        // and the reason is not caution: `check_view` runs at registration and
+        // the dyncomp host installs `@filter.Baseline`, which carries no CSS
+        // rule, so there is nothing downstream that would ever look at the
+        // value this pass could not see. Admitting it here would be admitting
+        // it unchecked.
+        for val in vals {
+          guard val is Some(v) else { continue }
+          match css_refusal(lower, v, policy) {
+            Some(why) =>
+              out.push(
+                refusal(
+                  where_,
+                  "untrusted views may not use '\{name}' on <\{d.tag}>: \{why}",
+                ),
+              )
+            None => ()
           }
         }
       } else {

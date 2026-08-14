@@ -266,6 +266,33 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "css-properties",
+      about: "regenerate anode/sanitize/css/properties_gen.mbt from the W3C's CSS extracts, then drift-check (needs network)",
+      // The same shape as `sanitizer-defaults`, and for the same reason: the
+      // script's own `--check` compares raw generator output against a file
+      // `moon fmt` has reformatted, so formatting first is what makes the
+      // comparison mean what it says.
+      //
+      // Read the diff rather than the exit code. This is the table that decides
+      // which properties can reach a URL, and a name ENTERING `url_properties`
+      // is a property the validator has to stop admitting freely.
+      commands: [
+        {
+          label: "regenerate · css property facts from the W3C extracts",
+          prog: "node",
+          args: ["scripts/fetch-css-properties.mjs"],
+        },
+        moon("fmt", ["fmt"]),
+        {
+          label: "drift check · css property facts match the specs",
+          prog: "git",
+          args: [
+            "diff", "--exit-code", "HEAD", "--", "anode/sanitize/css/properties_gen.mbt",
+          ],
+        },
+      ],
+    },
+    {
       name: "check-guest-list",
       about: "hold dev/tasks.mbt's guest list against guests/guests.mjs",
       // `guests` runs this too, but it belongs in `ci` on its own: the guest

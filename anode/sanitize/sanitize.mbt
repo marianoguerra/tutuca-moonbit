@@ -25,10 +25,13 @@ pub struct Sanitizer {
   comments : Bool
   data_attributes : Bool
   raw_markup : Bool
-  /// A second unconditional overlay, alongside the baseline, switched on by
-  /// `without_css`. See that function for why it is here and not a config
-  /// field.
-  no_css : Bool
+  /// A second unconditional overlay, alongside the baseline: how much CSS a
+  /// value may carry. See `without_css` and `with_css` for why it is here and
+  /// not a config field.
+  ///
+  /// It was a `Bool` before there was a parser to mean anything more, and
+  /// `CssLevel::Deny` is exactly what that `true` meant.
+  css : @safecss.CssPolicy
 }
 
 ///|
@@ -126,7 +129,11 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
     comments: cfg.comments.unwrap_or(true),
     data_attributes: cfg.data_attributes.unwrap_or(false),
     raw_markup: cfg.raw_markup.unwrap_or(false),
-    no_css: false,
+    // A config says nothing about CSS, so the compiled sanitizer takes the
+    // permissive answer the `style` attribute has always had. Narrowing is
+    // `with_css`, and the callers that render markup they did not write do it
+    // on the way in.
+    css: @safecss.CssPolicy::app(),
   }
 }
 
@@ -145,12 +152,21 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
 /// Neither is a thing the sanitizer's vocabulary can talk about, because the
 /// Sanitizer API decides NAMES and both of those live in a value.
 ///
-/// Deciding it needs a CSS parser, which this repo does not have and which
-/// `dyncomp/SECURITY.md` §4 already has a plan for (`mizchi/css`, parse and
-/// re-serialize). Until that lands, the safe directives drop the two names
-/// rather than admit values nothing reads. Authors style with classes, which is
-/// what an untrusted dyncomp guest is already required to do
-/// (`view_authority.mbt`).
+/// Deciding it needed a CSS parser. There is one now — `anode/sanitize/css`,
+/// which parses a declaration list and re-emits it rather than approving the
+/// author's bytes — so this is no longer the only answer available. It is kept
+/// because it is still the right answer for a host that wants its guests to
+/// style with its own classes and nothing else, and because it is what every
+/// existing caller of this function asked for.
+///
+/// What a caller probably wants instead is `with_css`, and in particular
+/// `@safecss.CssPolicy::payload()`: level `Computed` so a payload can lay
+/// itself out, `overlay` off so it cannot leave its box, and `FragmentOnly` so
+/// `fill="url(#grad)"` works and nothing fetches.
+///
+/// The `<style>` ELEMENT is dropped by both, and stays dropped: a stylesheet is
+/// selectors and at-rules as well as declarations, and only the declaration
+/// half is built. `dyncomp/SECURITY.md` §4 has the rest.
 ///
 /// ## Why an overlay and not a config
 ///
@@ -167,7 +183,74 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
 /// `attribute_allowed` because that is the same shape: a rule the config does
 /// not get a vote on.
 pub fn Sanitizer::without_css(self : Sanitizer) -> Sanitizer {
-  { ..self, no_css: true }
+  { ..self, css: @safecss.CssPolicy::deny() }
+}
+
+///|
+/// The same sanitizer, with CSS narrowed to what this policy admits.
+///
+/// The overlay generalized: `without_css()` is `with_css(CssPolicy::deny())`,
+/// and every other level keeps the `style` attribute while deciding its VALUE.
+/// The `<style>` element is dropped at every level below the default, because
+/// a stylesheet is not a declaration list — see `without_css`.
+pub fn Sanitizer::with_css(
+  self : Sanitizer,
+  policy : @safecss.CssPolicy,
+) -> Sanitizer {
+  { ..self, css: policy }
+}
+
+///|
+/// What a value on this attribute may be, once the name is allowed.
+///
+/// `None` drops the attribute; `Some(text)` is what to write instead of what
+/// the author sent, which for CSS is never the same string. Anything that is
+/// not a CSS-valued attribute comes back unchanged, so a caller can route every
+/// attribute through it without knowing which are which.
+///
+/// The two shapes a CSS value arrives in are both here: `style` is a
+/// declaration LIST, and an SVG presentation attribute (`fill`, `stroke`,
+/// `stop-color`) is a single value for the property of the same name. The
+/// second is the one that widens what a payload may carry — those names are
+/// refused outright for an untrusted guest today, because a dynamic value could
+/// have been a `url()` and nothing could tell.
+///
+/// URL SCHEMES are decided by `screen`, which the caller supplies, because the
+/// rule already exists as `@filter.url_value_allowed` and this package cannot
+/// see it — two URL rules that could disagree would be one too many. Its
+/// DEFAULT REFUSES, so a caller that forgets it gets `UrlRule::NoUrl`
+/// behaviour rather than an unchecked URL.
+pub fn Sanitizer::attribute_value(
+  self : Sanitizer,
+  name : String,
+  value : String,
+  screen? : (String) -> Bool = _ => false,
+) -> String? {
+  let attr = name.to_lower()
+  if attr == "style" {
+    return self.css.declarations(value, screen~).css
+  }
+  if is_css_presentation_attr(attr) {
+    return self.css.value(attr, value, screen~)
+  }
+  Some(value)
+}
+
+///|
+/// The attribute names that are a CSS property's value rather than a value of
+/// their own.
+///
+/// SVG presentation attributes: `<circle fill="red">` sets the `fill` PROPERTY,
+/// with the same grammar it has in a stylesheet, which is why `fill="url(…)"`
+/// is a fetch and `fill="red"` is a colour. The set is every name in
+/// `@safecss.css_properties` that an element can also carry as an attribute —
+/// asked of the generated table rather than listed here, so a property that
+/// becomes a presentation attribute is covered without anyone noticing.
+///
+/// `style` is deliberately NOT in it: it is a declaration list, not a value,
+/// and `attribute_value` routes it separately.
+fn is_css_presentation_attr(name : String) -> Bool {
+  name != "style" && @safecss.css_properties.contains(name)
 }
 
 ///|
@@ -195,7 +278,7 @@ pub fn Sanitizer::element_verdict(
   // The second overlay, on the same footing as the baseline: a config that
   // allows `style` does not get `style` when CSS has been taken away. Both
   // namespaces, because `<svg><style>` is a stylesheet like any other.
-  if self.no_css && key is ("style" | "svg:style") {
+  if !self.css.stylesheet && key is ("style" | "svg:style") {
     return Drop
   }
   if self.replace_with_children.contains(key) {
@@ -243,7 +326,7 @@ pub fn Sanitizer::attribute_allowed(
   }
   // Beside the baseline, and before the reserved carve-out only because no
   // reserved name is `style`. See `without_css`.
-  if self.no_css && name == "style" {
+  if self.css.level is Deny && name == "style" {
     return false
   }
   if reserved_data_attrs.contains(name) {

@@ -543,20 +543,33 @@ Three things worth stating:
   `<foreignObject>` — and that route is the *parser's* doing, which is what
   makes it safe: the contents are labelled HTML, so `html("script")` on the
   baseline covers them without anything here special-casing it.
-- **They drop CSS, and nothing else does.** `Sanitizer::without_css` is an
-  overlay beside the baseline — not a config, because `remove_elements` cannot
-  coexist with an `elements` allow-list under the spec's validity relation, so a
-  merged config would raise for exactly the hosts that configured most
-  carefully. It takes `style` in both namespaces and the `style` attribute,
-  because `url()` is egress and a fixed-position overlay is clickjacking, and
-  the Sanitizer API's vocabulary is names while both of those live in a value.
-  This is the placeholder until the `mizchi/css` validator of SECURITY.md §4
-  lands and CSS can be parsed and re-serialized rather than refused.
-- **`@setinnermd` narrows the same way, but only for its HTML blocks.** Doing it
-  at the filter took GFM column alignment with it — `style="text-align:left"`,
-  written by `build.mbt` itself — which is a rendering bug, not a tightening.
-  The split is who authored the value, a question the overlay cannot ask, so
-  `Build` carries two sanitizers and hands the narrowed one to `html_nodes`.
+- **They narrow CSS, and nothing else does.** The narrowing is an overlay beside
+  the baseline — not a config, because `remove_elements` cannot coexist with an
+  `elements` allow-list under the spec's validity relation, so a merged config
+  would raise for exactly the hosts that configured most carefully.
+
+  It used to be `Sanitizer::without_css`, which took `style` in both namespaces
+  and the `style` attribute, because `url()` is egress and a fixed-position
+  overlay is clickjacking and the Sanitizer API's vocabulary is names while both
+  of those live in a value. That was the placeholder until there was a parser.
+
+  There is one now — `anode/sanitize/css`, and `docs/css-validator.md` — so the
+  overlay is `Sanitizer::with_css(@safecss.CssPolicy::payload())`: the `style`
+  ATTRIBUTE is parsed and re-emitted rather than dropped, and the `<style>`
+  ELEMENT stays refused, because a stylesheet is selectors and at-rules as well
+  and only the declaration half is built. `without_css()` remains, as
+  `with_css(CssPolicy::deny())`.
+- **`@setinnermd` narrows the same way, and it took a value rule to let it.**
+  Doing it at the filter used to take GFM column alignment with it —
+  `style="text-align:left"`, written by `build.mbt` itself — which is a rendering
+  bug, not a tightening. The split was who authored the value, a question a NAME
+  rule cannot ask, so `Build` carried two sanitizers and handed the narrowed one
+  to `html_nodes`.
+
+  A value rule does not need to ask it: `text-align:left` is admitted at the
+  smallest level there is and a payload's `background:url(…)` is admitted at
+  none, so the answer is the same for both authors. `filter_for` narrows once, on
+  the way in, and `Build` carries one sanitizer again.
 
 Two things that fell out of writing them, neither of which is about the new
 directives:
@@ -817,8 +830,24 @@ correct one, which an event handler's is not.
    `vdom/filter/markup/safe.mbt`, 16 tests, plus the SMIL baseline entries and
    the `xlink href` fold that writing them turned up. See "HTML and SVG come
    back the same way" above. No new dependency: the HTML parser was already
-   linked by `MdFilter`, and CSS is dropped rather than parsed precisely so
+   linked by `MdFilter`, and CSS was dropped rather than parsed precisely so
    `mizchi/css` did not have to become one yet.
+
+9. ~~A CSS VALUE rule, so `style` and the SVG presentation attributes stop being
+   all-or-nothing.~~ **Done** — `anode/sanitize/css`, 31 tests, over
+   `mizchi/css/token` and a property table generated from the W3C's own CSS
+   extracts. Two ordered levels and three switches; a declaration list is parsed
+   and RE-EMITTED rather than approved. `docs/css-validator.md` is the design,
+   including the two findings that shaped it: the tokenizer does not decode
+   escapes, so `\75 rl(…)` is invisible to any name check over its output and the
+   answer is to refuse the backslash; and re-serializing CSS is SAFE, which is
+   the inverse of the rule this document argues for HTML, because a CSS value
+   reaches the browser as a string it parses either way.
+
+   What it bought, beyond the name: `@setinnerhtml` payloads may paint and lay
+   themselves out again, `Build`'s two-sanitizer split collapsed, and an
+   untrusted dyncomp guest may state a constant `fill="#1da1f2"` or
+   `style="text-align:center"`.
 
 What is left, in rough order of who it helps:
 

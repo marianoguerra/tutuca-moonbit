@@ -15,6 +15,9 @@ import {
   // the config model and its verdicts, shared with the registration-time pass
   // so a host cannot have two different answers to the same question
   "marianoguerra/tutuca/anode/sanitize",
+  // the CSS value policy a payload is narrowed to, on the way into
+  // `SafeMarkupFilter::new`
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   // `parse_fragment` — the same template-context parse a view goes through
   "marianoguerra/tutuca/anode",
   "moonbit-community/html/src" @html5,

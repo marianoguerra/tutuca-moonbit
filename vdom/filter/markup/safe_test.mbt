@@ -36,6 +36,39 @@ fn run_svg(
 }
 
 ///|
+/// The first `attr` found anywhere in the tree, or `"-"`.
+///
+/// For the CSS tests, which are about what a value BECAME rather than about the
+/// shape of the tree it sits in.
+fn attr_of(v : @vdom.Vdom, attr : String) -> String {
+  match v {
+    Node(el) => {
+      match el.attrs.get(attr) {
+        Some(value) => return value.to_attr_string()
+        None => ()
+      }
+      for child in el.childs {
+        let found = attr_of(child, attr)
+        if found != "-" {
+          return found
+        }
+      }
+      "-"
+    }
+    Fragment(cs) => {
+      for child in cs {
+        let found = attr_of(child, attr)
+        if found != "-" {
+          return found
+        }
+      }
+      "-"
+    }
+    _ => "-"
+  }
+}
+
+///|
 /// Like `shape`, but printing the namespace, which is the whole subject of the
 /// SVG half and which `shape` deliberately drops.
 fn ns_shape(v : @vdom.Vdom) -> String {
@@ -173,11 +206,17 @@ test "setinnerhtml strips event handlers" {
 }
 
 ///|
-/// CSS goes, both spellings, and this is the one rule the safe directives have
-/// that the dangerous one does not. See `@sanitize.Sanitizer::without_css` —
-/// the config's vocabulary is names, and `url(…)` and `position:fixed` live in
-/// a value nothing here can read.
-test "setinnerhtml drops style attributes and style elements" {
+/// The `<style>` ELEMENT goes, and a `style` ATTRIBUTE is now read rather than
+/// dropped. This is the one rule the safe directives have that the dangerous
+/// one does not.
+///
+/// It used to be a blunt drop of both names, because the config's vocabulary is
+/// names and `url(…)` lives in a value. `anode/sanitize/css` is what changed:
+/// the attribute's value is parsed against `CssPolicy::payload()` and RE-EMITTED,
+/// so a fetch is refused and a colour is not. The element stays refused, because
+/// a stylesheet is selectors and at-rules as well as declarations and only the
+/// declaration half is built.
+test "setinnerhtml reads a style attribute and still refuses a style element" {
   let (tree, reports) = run_html(
     "<style>body{display:none}</style><b style=\"background:url(//evil.test/p)\">hi</b>",
   )
@@ -191,9 +230,43 @@ test "setinnerhtml drops style attributes and style elements" {
     reports.join("\n"),
     content=(
       #|dropped setInnerHtml on <DIV>: element is not allowed here (<style>)
-      #|dropped style on <DIV>: attribute is not allowed on <b> here (background:url(//evil.test/p))
+      #|dropped style on <DIV>: CSS value is not one this sanitizer admits (background:url(//evil.test/p))
     ),
   )
+}
+
+///|
+/// What a payload MAY now carry, which before this was nothing at all.
+///
+/// The three answers a payload gets: paint and layout survive, a fetch does
+/// not, and leaving the box does not. Each is a different mechanism —
+/// `CssPolicy::payload()` is level `Computed` with `overlay` off and
+/// `UrlRule::FragmentOnly` — and each is pinned here because the point of the
+/// package is that they are three questions rather than one.
+test "a payload may paint and lay out, and may not fetch or overlay" {
+  let (tree, reports) = run_html(
+    "<b style=\"color:#1da1f2;display:flex;gap:4px\">hi</b>",
+  )
+  inspect(attr_of(tree, "style"), content="color:#1da1f2;display:flex;gap:4px")
+  inspect(reports.join("\n"), content="")
+  // Overlay: refused, and the rest of the declaration list survives.
+  let (over, _) = run_html(
+    "<b style=\"position:fixed;inset:0;opacity:0;color:red\">hi</b>",
+  )
+  inspect(attr_of(over, "style"), content="opacity:0;color:red")
+  // A fragment reference to the payload's own gradient: kept, because it
+  // fetches nothing.
+  let (frag, _) = run_html("<b style=\"fill:url(#grad)\">hi</b>")
+  inspect(
+    attr_of(frag, "style"),
+    content=(
+      #|fill:url("#grad")
+    ),
+  )
+  // And the canonical form is generated, not copied: the case folds and the
+  // spacing is ours.
+  let (canon, _) = run_html("<b style=\"COLOR:  #FFF\">hi</b>")
+  inspect(attr_of(canon, "style"), content="color:#fff")
 }
 
 ///|
@@ -396,10 +469,9 @@ test "setinnersvg truncates a payload that closes the wrapper" {
 }
 
 ///|
-/// CSS goes here too, and `<svg><style>` is a stylesheet like any other — which
-/// is why `without_css` refuses the name in both namespaces rather than just in
-/// HTML.
-test "setinnersvg drops style attributes and svg style elements" {
+/// The same in SVG, where `<svg><style>` is a stylesheet like any other — which
+/// is why the element is refused in both namespaces rather than just in HTML.
+test "setinnersvg reads a style attribute and still refuses an svg style element" {
   let (tree, reports) = run_svg(
     "<style>circle{r:100}</style><circle style=\"fill:url(//evil.test/p)\"/>",
   )
@@ -413,7 +485,48 @@ test "setinnersvg drops style attributes and svg style elements" {
     reports.join("\n"),
     content=(
       #|dropped setInnerSvg on <DIV>: element is not allowed here (<style>)
-      #|dropped style on <DIV>: attribute is not allowed on <circle> here (fill:url(//evil.test/p))
+      #|dropped style on <DIV>: CSS value is not one this sanitizer admits (fill:url(//evil.test/p))
+    ),
+  )
+}
+
+///|
+/// SVG PRESENTATION ATTRIBUTES, which is the case this whole package widens.
+///
+/// `fill` and `stroke` are not ordinary attributes: they set the CSS property
+/// of the same name, with the same grammar, so `fill="url(…)"` is a fetch and
+/// `fill="red"` is a colour. Before there was a value rule the only way to tell
+/// them apart was not to try — `dyncomp/policy/view_authority.mbt` refuses both
+/// by NAME for an untrusted guest, on the grounds that a dynamic value could
+/// have been either.
+///
+/// Under `CssPolicy::payload()` the question is asked of the value instead: a
+/// colour survives, a fragment reference to the payload's own gradient survives
+/// because it fetches nothing, and an external URL does not.
+test "an svg presentation attribute is judged by its value" {
+  let (paint, reports) = run_svg(
+    "<circle fill=\"#1da1f2\" stroke=\"currentcolor\" stroke-width=\"2\"/>",
+  )
+  inspect(
+    ns_shape(paint),
+    content=(
+      #|<DIV><svg:circle fill=#1da1f2 stroke-width=2 stroke=currentcolor></svg:circle></DIV>
+    ),
+  )
+  inspect(reports.join("\n"), content="")
+  let (frag, _) = run_svg("<circle fill=\"url(#grad)\"/>")
+  inspect(
+    attr_of(frag, "fill"),
+    content=(
+      #|url("#grad")
+    ),
+  )
+  let (fetch, dropped) = run_svg("<circle fill=\"url(//evil.test/p)\"/>")
+  inspect(attr_of(fetch, "fill"), content="-")
+  inspect(
+    dropped.join("\n"),
+    content=(
+      #|dropped fill on <DIV>: CSS value is not one this sanitizer admits (url(//evil.test/p))
     ),
   )
 }

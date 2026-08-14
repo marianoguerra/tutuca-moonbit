@@ -26,6 +26,9 @@ import {
   // and with `markup`, so a host cannot have three different answers to the
   // same question
   "marianoguerra/tutuca/anode/sanitize",
+  // the CSS value policy the whole markdown walk is narrowed to, in
+  // `filter_for`
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
 }
 
 import {

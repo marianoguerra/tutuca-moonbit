@@ -8,6 +8,12 @@
 // See docs/sanitizer.md for the design and dyncomp/SECURITY.md §3 for why.
 import {
   "marianoguerra/tutuca/anode",
+  // The CSS value validator. Its own package, and a leaf over a tokenizer
+  // rather than over anode, so `vdom/filter` and `dyncomp/policy` can each
+  // reach it without going through this one. What it costs here is the
+  // tokenizer, which every consumer of a sanitizer that renders markup it did
+  // not write wants anyway — see `Sanitizer::css`.
+  "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "moonbitlang/core/set",
   "moonbitlang/core/debug",
 }
