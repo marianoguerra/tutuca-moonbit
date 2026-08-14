@@ -90,6 +90,8 @@ pub(all) struct DynComponentDef {
   responses : Array[String]
   methods : Array[String]
   whens : Array[String]
+  enriches : Array[String]
+  enrich_scopes : Array[String]
   requests : Array[String]
   inits : Array[DynInitDef]
   style : String
@@ -117,6 +119,12 @@ pub(all) struct DynInitDef {
   doc : String
 } derive(Eq, @debug.Debug)
 
+pub(all) struct DynMacroDef {
+  name : String
+  defaults : Map[String, String]
+  html : String
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DynManifest {
   api_version : Int
   module_name : String
@@ -127,6 +135,7 @@ pub(all) struct DynManifest {
   capabilities : Array[@policy.CapabilityReq]
   config : Array[DynConfigDef]
   components : Array[DynComponentDef]
+  macros : Array[DynMacroDef]
 } derive(Eq, @debug.Debug)
 pub fn DynManifest::from_json_string(String) -> Self raise ManifestError
 

@@ -29,8 +29,53 @@ pub(all) struct Case {
   /// of thing a second implementation quietly gets wrong by writing half a
   /// change before noticing.
   after : Map[String, @tutuca.Value]?
-  /// The effects, in order, in their printed form: `send flash "hi"`.
-  effects : Array[String]
+  /// The effects, in order.
+  effects : Array[CaseEffect]
+}
+
+///|
+/// One effect a transition performed.
+///
+/// STRUCTURAL, and it used to be a printed string. The string was chosen so
+/// that no backend's spelling of an effect became the language's — a fair worry
+/// — but it had a cost nobody had to pay until a backend could not be driven
+/// from MoonBit: `tutucard/wasm` sees an effect as a name and a list of values
+/// arriving at a host import, and turning that back into `send flash RStr("a")`
+/// meant reproducing MoonBit's derived `Debug` in JavaScript. So `cmd/corpus`
+/// ran the INTERPRETER to recover the values the corpus had thrown away, and
+/// the compiled backend's conformance harness depended on the interpreter
+/// existing.
+///
+/// `kind` is a plain word rather than an enum arm for the original reason: it
+/// is the corpus's own vocabulary and not one implementation's. The printed
+/// form is still available, derived rather than stored — see `printed`.
+pub(all) struct CaseEffect {
+  /// `send`, `bubble`, `request`, `sendAt`, or `stop`.
+  kind : String
+  /// The message name. Empty for `stop`, which carries none.
+  name : String
+  args : Array[@tutuca.Value]
+} derive(Debug, Eq)
+
+///|
+/// The printed form — what the corpus used to store, now derived from what it
+/// stores instead. Two adapters still compare against it, because what they
+/// have in hand is a line their own recorder wrote.
+pub fn CaseEffect::printed(self : CaseEffect) -> String {
+  if self.kind == "stop" {
+    return "stop"
+  }
+  show_effect(self.kind + " " + self.name, self.args)
+}
+
+///|
+/// A `send`, and the other four by the same shape.
+pub fn effect(
+  kind : String,
+  name? : String = "",
+  args? : Array[@tutuca.Value] = [],
+) -> CaseEffect {
+  { kind, name, args }
 }
 
 ///|
@@ -184,7 +229,7 @@ fn on_case(
   handler : String,
   args? : Array[@tutuca.Value] = [],
   after~ : Map[String, @tutuca.Value]?,
-  effects? : Array[String] = [],
+  effects? : Array[CaseEffect] = [],
 ) -> Case {
   {
     name,
@@ -547,7 +592,11 @@ pub fn cases() -> Array[Case] {
       "on go {\n  request 'loadData'\n  .ok = true\n  send 'flash' .name\n  stop\n}",
       "go",
       after=Some(with_fields({ "ok": Bool(true) })),
-      effects=["request loadData", "send flash RStr(\"ada\")", "stop"],
+      effects=[
+        effect("request", name="loadData"),
+        effect("send", name="flash", args=[Str("ada")]),
+        effect("stop"),
+      ],
     ),
     on_case(
       "a bubble carries what it was given",
@@ -555,7 +604,7 @@ pub fn cases() -> Array[Case] {
       "go",
       args=[Num(3)],
       after=Some(counter_state()),
-      effects=["bubble rowPicked RNum(3)"],
+      effects=[effect("bubble", name="rowPicked", args=[Num(3)])],
     ),
     // -- the other buckets -------------------------------------------------
     {
@@ -604,7 +653,7 @@ pub fn cases() -> Array[Case] {
     // asked after every other case's transition as well. The mechanism is the
     // one these rows already pin — the same guard, in the same place, dropping
     // the same queue — and that it is written into EVERY arm is pinned in
-    // `tscript/emit_mbt` and `tscript/interp` instead.
+    // `tscript/emit_mbt` and `tutucard/wasm` instead.
     on_case(
       "a precondition that holds is not in the way",
       "pred enoughA { .count >= 0 }\non bump requires enoughA {\n  .count += 1\n}",
@@ -632,7 +681,7 @@ pub fn cases() -> Array[Case] {
       "pred smallB { .count < 5 }\non bump ensures smallB {\n  .count += 1\n  send 'bumped' .count\n}",
       "bump",
       after=Some(with_fields({ "count": Num(1) })),
-      effects=["send bumped RNum(1)"],
+      effects=[effect("send", name="bumped", args=[Num(1)])],
     ),
   ]
 }

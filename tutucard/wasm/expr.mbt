@@ -9,7 +9,7 @@
 // against the schema and reported what disagrees, so a generator that inferred
 // types a second time would be a second checker with a second opinion. What
 // runs instead is one dispatch on the value's own kind, in
-// `runtime/runtime.wax`, which is the thing the interpreter does too.
+// `runtime/runtime.wax`, which is what the language says a value means.
 
 ///|
 /// What an expression is compiled AGAINST.
@@ -21,6 +21,22 @@ priv struct ECtx {
   state : String
   /// The declaration's parameters, by position in the incoming argument list.
   params : Map[String, Int]
+  /// The render-time bindings that arrive as ARGUMENTS, by position.
+  ///
+  /// A handler is handed none. A declaration reached through the Alter
+  /// namespace is handed the row: `@key`, `@value` and `@iter`, which
+  /// `component/instance.mbt` passes positionally to a `@when` and an `enrich`
+  /// alike — at different offsets, because an enricher is also handed the binds
+  /// it is extending. Empty for everything else, which is what makes `@name`
+  /// still a refusal in a transition.
+  binds : Map[String, Int]
+  /// The local holding the binds an `enrich` body WRITES, when there is one.
+  ///
+  /// `@tag = str @value` is an assignment to a binding rather than to state,
+  /// and the map it writes into is what the declaration answers with. `None`
+  /// for everything that is not an enricher, which is what makes `@tag = …` a
+  /// refusal in a handler.
+  bind_local : String?
   /// The local holding that list, a `&?pv_vector` of `&jv_value`.
   args : String
   /// The kind and name a refusal is reported against.
@@ -116,7 +132,7 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
     }
     ERef(span~, ..) => {
       self.bail(
-        "`&.place` is legal only as `sendAt`'s first argument, which this generator does not compile yet",
+        "`&.place` denotes a POSITION rather than a value, and `sendAt`'s first argument is the only place one can be written",
         span,
       )
       call("tc_null", [])
@@ -173,6 +189,20 @@ fn ECtx::read(
       self.uses_target = true
       self.walk(call("tc_target", [get(target_local)]), place.steps)
     }
+    // The row a `@when` filter or an enricher is called about. These DO arrive
+    // at a compiled declaration — `component/instance.mbt` passes them
+    // positionally through `call-method` — so the only thing that was ever
+    // missing is knowing which position each one is at.
+    PBind(name) if self.binds.get(name) is Some(i) =>
+      self.walk(call("tc_arg_at", [get(self.args), i32c(i)]), place.steps)
+    // Anything else an enricher can see it wrote, or was handed. A name nobody
+    // bound reads null, which is what an unresolved binding reads as
+    // everywhere else in a slot.
+    PBind(name) if self.bind_local is Some(b) =>
+      self.walk(
+        call("tc_step_field", [get(b), text_const_str(self.g.pool, name)]),
+        place.steps,
+      )
     PBind(name) => {
       self.bail(
         "`@" +
@@ -217,12 +247,6 @@ fn ECtx::apply(
 ) -> @abi.I raise Bail {
   match self.g.callables.get(name) {
     Some(_) => {
-      guard args.length() <= 4 else {
-        self.bail(
-          "a call with more than four arguments is not compiled yet", span,
-        )
-        return call("tc_null", [])
-      }
       let cells = []
       for a in args {
         cells.push(self.expr(a))
@@ -244,7 +268,19 @@ fn ECtx::apply(
     ("min", 2) => call("tc_min", [cells[0], cells[1]])
     ("max", 2) => call("tc_max", [cells[0], cells[1]])
     ("clamp", 3) => call("tc_clamp", [cells[0], cells[1], cells[2]])
-    ("int", 1) => call("tc_int", [cells[0]])
+    // Both read a string as well as a number, and neither has an answer for
+    // anything else — `tc_num_cast` is the language's arm, including the "no
+    // answer" that abandons the transition rather than reading null. Saying so is what
+    // pulls `parse_num.wax` into the module; a card that never converts one
+    // carries no parser.
+    ("int", 1) => {
+      self.g.uses_num = true
+      call("tc_int", [cells[0]])
+    }
+    ("num", 1) => {
+      self.g.uses_num = true
+      call("tc_num_cast", [cells[0]])
+    }
     ("str", 1) => call("tc_str", [cells[0]])
     // `truthy?` and `falsy?` are `pred_truthy`, NOT plain truthiness: the
     // predicates treat an empty collection as falsy and `if` does not. Both
@@ -374,12 +410,21 @@ fn callable_fn(name : String) -> String {
 
 ///|
 /// A `list<value>` built out of already-compiled cells.
+///
+/// A `pv_push` fold rather than the `tc_args1..4` family, which is what used to
+/// cap a call at four arguments and a `send` at four payload values. The fold
+/// has no arity to run out of, and it is the same shape `const_value`'s `List`
+/// arm already builds a literal with. `tc_args1..4` stay in the runtime: they
+/// are what a hand-written escape reaches for, where a fold would be four lines.
 fn arg_list(cells : Array[@abi.I]) -> @abi.I {
-  match cells.length() {
-    0 => nullref()
-    1 => call("tc_args1", cells)
-    2 => call("tc_args2", cells)
-    3 => call("tc_args3", cells)
-    _ => call("tc_args4", cells)
+  // Null rather than an empty vector, because "no arguments" allocates nothing
+  // and every reader of an argument list is already nullable.
+  if cells.is_empty() {
+    return nullref()
   }
+  let mut acc = call("pv_empty", [])
+  for c in cells {
+    acc = call("pv_push", [acc, c])
+  }
+  acc
 }

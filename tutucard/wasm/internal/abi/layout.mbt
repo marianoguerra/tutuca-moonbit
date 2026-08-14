@@ -97,6 +97,14 @@ pub let bucket_response : Int = 2
 ///|
 pub let bucket_bubble : Int = 3
 
+///|
+/// `control.log`'s level, in WIT order: debug, info, warn, error.
+///
+/// A declined contract is a warning and not an error, which is the reading the
+/// interpreter already takes: it goes through `warn_hook`, and a transition
+/// that did not happen is the rule working rather than the card being broken.
+pub let log_warn : Int = 2
+
 // ---------------------------------------------------------------------------
 // the constant pool
 

@@ -62,6 +62,13 @@ let i32_ : @abi.VT = I32
 let i64_ : @abi.VT = I64
 
 ///|
+/// What a number reads as outside the value model. Only the escape prelude's
+/// `num_<field>` answers one — everything the generator itself builds stays a
+/// `&jv_value`, because tutuca has exactly one number and unwrapping it early
+/// is how two of them stop being equal.
+let f64_ : @abi.VT = F64
+
+///|
 /// A non-nullable reference to a type the stdlib declares.
 ///
 /// The reason `@build` has no builder for this: it is the one place a generator

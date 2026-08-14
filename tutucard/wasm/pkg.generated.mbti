@@ -1,0 +1,66 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutucard/wasm"
+
+import {
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn check_card(String, name~ : String) -> Checked raise GenError
+
+pub fn compile(String, name~ : String, allow_wax? : Bool) -> Compiled raise GenError
+
+// Errors
+pub suberror GenError {
+  BadCard(String)
+  BadScript(Array[String])
+  BadModule(Array[String])
+  BadEscape(Array[String])
+}
+pub fn GenError::message(Self) -> String
+
+// Types and methods
+pub(all) struct Checked {
+  component : String
+  issues : Array[Issue]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Compiled {
+  component : String
+  wasm : Bytes
+  wat : String
+  wax : String
+  refusals : Array[Refusal]
+  escapes : Array[Escape]
+  fields : Array[String]
+  manifest : Json
+  descriptor : Json
+}
+
+pub(all) struct Escape {
+  kind : String
+  name : String
+  fn_name : String
+  declared : Bool
+  replaced : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Issue {
+  code : String
+  message : String
+  line : Int
+  span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Refusal {
+  kind : String
+  name : String
+  reason : String
+  line : Int
+  span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

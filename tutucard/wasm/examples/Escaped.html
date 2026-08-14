@@ -1,0 +1,73 @@
+<script type="tutuca/state">
+  /// A card that answers three things in Wax, for three different reasons.
+  state Escaped {
+    /// A running total.
+    total: Double
+    /// How many times it has been added to.
+    hits: Int
+    /// The last thing the escape had to say.
+    note: String
+    /// Rows a message can be addressed at.
+    rows: Array[Any]
+    /// Which one is selected, read live.
+    sel: String
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Nothing here is ever negative.
+  invariant sane { .total >= 0 }
+  /// Declared, checks, and REFUSED by this backend: a `sendAt` whose key is
+  /// read from live state re-resolves on every dispatch, and
+  /// `control.path-step` has no case that says so. Answered in Wax below.
+  on ping { sendAt &.rows[.sel] 'ping' }
+</script>
+
+<script type="tutuca/wax">
+  // Three escapes, and each is here for a different reason.
+  //
+  // Everything they use is either the runtime's or the generator's:
+  // `num_total` / `set_total` are emitted per DECLARED FIELD (only for a card
+  // with a block like this one), `tc_arg_at` reads an event argument, and
+  // `tcx_send` buffers an effect the way any compiled body does.
+
+  // 1. A name the script block declared and this backend REFUSED. The refusal
+  //    stays in the list — it is why this function exists — and the dispatch
+  //    arm is this one's.
+  fn card_on_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
+      tcx_send(utf8_from_bytes("ping"), tc_args1(get_sel(s)));
+      null
+  }
+
+  // 2. A name the script block never declared at all, which is legal: an
+  //    escape may ADD a handler as readily as replace one.
+  fn card_on_accumulate(s: &jv_record_value, args: &?pv_vector)
+      -> &?jv_record_value {
+      let by = tc_num_of(tc_arg_at(args, 0));
+      if by < 0.0 {
+          // No answer, so the transition does not happen — and `sane` never
+          // has to catch it.
+          tcx_fail();
+          return null;
+      }
+      let t = set_total(s, tc_num(num_total(s) + by));
+      let t2 = set_hits(t, tc_num(num_hits(t) + 1.0));
+      set_note(t2, tcx_str("ok"))
+  }
+
+  // 3. A `compute`, which answers a VALUE rather than a successor.
+  fn card_compute_rounded(s: &jv_record_value, args: &?pv_vector) -> &jv_value {
+      tc_num(round_half_up(num_total(s)))
+  }
+
+  // A helper the escapes share. Anything not called `card_<role>_<name>` is
+  // one, and it answers no declaration.
+  fn round_half_up(x: f64) -> f64 { (x + 0.5).floor() }
+</script>
+
+<template id="Escaped">
+  <div>
+    <p @text="$rounded"></p>
+    <button @on.click="accumulate">add</button>
+  </div>
+</template>

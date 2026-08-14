@@ -3,14 +3,15 @@
 // `abi.mjs` — the same file `dyncomp` ships, copied here unchanged by
 // `build/assemble.mjs` — turns a core module into an object with an
 // `Instance` class. This wraps that in the four calls the MoonBit `&Guest`
-// impl makes over `globalThis.__cardguest`, keyed by an integer handle,
+// impl makes over `globalThis.__cardguest[key]`, keyed by an integer handle,
 // because a MoonBit extern cannot hold a JS object.
 //
 // It is the js-target twin of `createTcompImports` in
 // `dyncomp/host/wasm/loader.mjs`, minus everything a compiled card cannot do:
-// no pending-children protocol (a card has no `make-instance`), no clock to
-// freeze (a card asks for no capability), no bundle table (a playground holds
-// one card).
+// no pending-children protocol (a card has no `make-instance`) and no clock to
+// freeze (a card asks for no capability). It DOES keep a table, keyed by mount
+// point — a page with two `<mb-card>` embeds has two modules, and that stopped
+// being hypothetical when mounting a card became compiling one.
 
 import { instantiate } from "./abi.mjs";
 
@@ -89,9 +90,17 @@ function jsonToGuest(j, put) {
  * anything the manifest claims — so a card that asked for a clock would be
  * refused here rather than quietly given one.
  */
-export async function loadGuest(bytes, descriptor) {
+export async function loadGuest(bytes, descriptor, key = "default") {
   const arena = makeArena();
   let control = [];
+  // The same spelling `dyncomp/host/wasm/loader.mjs` uses, so `glue.mbt`'s
+  // `path_step` and `cardguest.mbt`'s read one shape and not two.
+  const stepToJson = (s) =>
+    s.tag === "field"
+      ? { field: s.val }
+      : s.tag === "item"
+        ? { item: [s.val.field, s.val.key] }
+        : { at: [s.val.field, Number(s.val.index)] };
   const root = await instantiate(
     () => WebAssembly.compile(bytes),
     {
@@ -103,9 +112,26 @@ export async function loadGuest(bytes, descriptor) {
         send: (name, args) =>
           control.push({ kind: "send", name, args: args.map((a) => guestToJson(a, arena.cells)) }),
         stopPropagation: () => control.push({ kind: "stopPropagation" }),
-        sendAt: () => {},
+        // `sendAt` and `request` are things a compiled card can now do, so they
+        // are collected rather than swallowed. `path` arrives as lifted
+        // `path-step` variants; `cardguest.mbt` turns them back into steps.
+        sendAt: (path, name, args) =>
+          control.push({
+            kind: "sendAt",
+            path: path.map(stepToJson),
+            name,
+            args: args.map((a) => guestToJson(a, arena.cells)),
+          }),
+        request: (name, args, opts) =>
+          control.push({
+            kind: "request",
+            name,
+            args: args.map((a) => guestToJson(a, arena.cells)),
+            opts,
+          }),
+        // Still nothing a card can emit: the generator has no `bubbleAt` and no
+        // `after`, and a stub is what an unreachable import costs.
         bubbleAt: () => {},
-        request: () => {},
         after: () => {},
         makeInstance: () => 0n,
         dropInstance: () => {},
@@ -124,7 +150,17 @@ export async function loadGuest(bytes, descriptor) {
   const to = (j) => jsonToGuest(j, arena.put);
   const from = (v) => guestToJson(v, arena.cells);
 
-  globalThis.__cardguest = {
+  // KEYED, and it used to be one global object. That was fine while exactly one
+  // compiled card existed on a page — the "run the module" pane, pressed
+  // deliberately — and stops being fine now that mounting ANY card compiles it:
+  // a page with two `<mb-card>` embeds has two modules, each with its own
+  // instance table, and a second `loadGuest` would otherwise leave the first
+  // card's handles pointing into a table that is no longer there.
+  //
+  // The key is the mount point's element id, which is what makes it unique: an
+  // element holds one card.
+  globalThis.__cardguest = globalThis.__cardguest ?? {};
+  globalThis.__cardguest[key] = {
     create(component, argsJson) {
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, to(v)]);
       const h = register(new root.guest.Instance(component, args));
@@ -235,6 +271,73 @@ function buildTar(files) {
  */
 export const b64ToBytes = (b64) =>
   Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+
+/**
+ * Show a card: compile it, instantiate the module, mount an instance.
+ *
+ * THE ONE ASYNC STEP is the middle one. `__tutucard.compile` is synchronous and
+ * so is `__tutucard.mountCompiled`, but `WebAssembly.compile` between them
+ * answers a promise — which is why this sequence is here rather than on the
+ * MoonBit side as one call. There used to be a `__tutucard.load` that did all
+ * of it synchronously, because what it mounted was an INTERPRETED card and
+ * there was no module to instantiate.
+ *
+ * Answers the shape the editor already reads, with the compiler's own two lists
+ * added: what it `refused` and what the card `escaped` into Wax.
+ *
+ *   { ok: true,  component, mounted, issues, refusals, escapes, build }
+ *   { ok: false, error, line, start, end }
+ *
+ * `build` is the compile report, for the panels that show the WAT, the WAX and
+ * the download — so a caller that wants those does not compile a second time.
+ */
+export async function mountCard(previewId, source, name, { allowWax = false } = {}) {
+  // The CHECKER first, and separately. A card being edited is usually a card
+  // with something wrong with it, and the findings are what the editor
+  // underlines — `compile` turns such a card away whole, which is right for a
+  // module a host will mount and wrong for a line somebody is halfway through.
+  let checked;
+  try {
+    checked = JSON.parse(globalThis.__tutucard.check(source, name));
+  } catch (e) {
+    return { ok: false, error: String(e), line: 1, start: 0, end: 0 };
+  }
+  if (!checked.ok) return checked;
+
+  let build;
+  try {
+    build = JSON.parse(globalThis.__tutucard.compile(source, name, allowWax));
+  } catch (e) {
+    build = { ok: false, error: String(e) };
+  }
+  if (!build.ok) {
+    return { ...checked, mounted: false, build, error: build.error };
+  }
+
+  // An id that is not on the page answers `mounted: false` rather than
+  // failing: an embed removed while a debounce was in flight is an ordinary
+  // thing, not an error to report to a reader.
+  if (!document.getElementById(previewId)) {
+    globalThis.__tutucard.unmount(previewId);
+    return { ...checked, mounted: false, build };
+  }
+  // Keyed by the mount point, so two cards on one page are two modules.
+  await loadGuest(b64ToBytes(build.wasm), build.descriptor, previewId);
+  const mounted = JSON.parse(
+    globalThis.__tutucard.mountCompiled(previewId, JSON.stringify(build.manifest)),
+  );
+  return {
+    ...checked,
+    mounted: mounted.ok === true,
+    // A bundle the host refuses is a real failure and the reason is the whole
+    // of what a reader can act on.
+    error: mounted.ok === true ? undefined : mounted.error,
+    diagnostics: mounted.diagnostics ?? [],
+    refusals: build.refusals ?? [],
+    escapes: build.escapes ?? [],
+    build,
+  };
+}
 
 /** A `.tutuca.tar.gz` for a compiled card, as a Blob. */
 export async function packBundle(report, wasmBytes) {

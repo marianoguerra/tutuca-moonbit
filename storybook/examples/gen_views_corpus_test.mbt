@@ -72,6 +72,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       state: [],
       init: [],
       scripts: [],
+      wax: [],
     }
     // Emitting IS the check — asking first only bought a second compile of
     // every view.

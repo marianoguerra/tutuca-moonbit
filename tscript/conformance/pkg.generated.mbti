@@ -9,6 +9,8 @@ import {
 // Values
 pub fn cases() -> Array[Case]
 
+pub fn effect(String, name? : String, args? : Array[@core.Value]) -> CaseEffect
+
 pub fn show_effect(String, Array[@core.Value]) -> String
 
 pub fn value_cases() -> Array[ValueCase]
@@ -40,8 +42,15 @@ pub(all) struct Case {
   handler : String
   args : Array[@core.Value]
   after : Map[String, @core.Value]?
-  effects : Array[String]
+  effects : Array[CaseEffect]
 }
+
+pub(all) struct CaseEffect {
+  kind : String
+  name : String
+  args : Array[@core.Value]
+} derive(Eq, @debug.Debug)
+pub fn CaseEffect::printed(Self) -> String
 
 pub(all) struct ValueCase {
   name : String

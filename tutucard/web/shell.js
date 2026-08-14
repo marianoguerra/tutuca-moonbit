@@ -1,10 +1,11 @@
 // The card playground's shell.
 //
 // Everything here is presentation. The whole edit loop is one call —
-// `__tutucard.load(source, name)` — and the rest of this file draws what it
+// `mountCard(previewId, source, name)` — and the rest of this file draws what it
 // answers. There is no worker, no compiler client, no payload manifest and no
-// toolchain pin, because there is nothing to compile: a card is parsed and
-// mounted, and the runtime that does it is already on the page.
+// toolchain pin — the card compiler is a library in the bundle already on the
+// page, so showing a card is compiling it to wasm and instantiating the module
+// right here.
 
 import { EXAMPLES } from "./examples.js";
 import { addClasses } from "./margaui.js";
@@ -329,24 +330,47 @@ function drawActivity() {
   }
 }
 
-/** Parse, check, mount, and draw everything that came back. */
-function reload() {
+/**
+ * Check, compile, mount, and draw everything that came back.
+ *
+ * ASYNC, and it did not use to be: mounting a card meant handing its source to
+ * an interpreter, and it now means compiling it to wasm and instantiating the
+ * module. `mountCard` is the three steps and `WebAssembly.compile` is the
+ * middle one — the only thing on this boundary that could not stay a
+ * synchronous MoonBit call.
+ *
+ * One consequence worth naming: two reloads can now overlap, because a fast
+ * typist can start a second while the first is still instantiating. `gen` is
+ * what tells a late answer from a live one, and dropping a stale one is what
+ * stops the older card from being the one left on the page.
+ */
+// The escape hatch is on in THIS page and off by default in the library, and
+// the difference is the whole point of it being a parameter: a playground is a
+// tool you point at your own card, so the code in it is yours. A page that
+// mounts cards it did not write should pass false.
+const ALLOW_WAX = true;
+
+let reloadGen = 0;
+
+async function reload() {
   // A pending debounce would re-mount, half a beat later, the card this call
   // is mounting now — and re-mounting resets the app the reader may already
   // have clicked. Callers that mount immediately (a new example, a reset) do
   // not have to remember to cancel it.
   clearTimeout(timer);
+  const gen = ++reloadGen;
   const src = source();
-  const report = JSON.parse(
-    globalThis.__tutucard.load(src, componentName(src)),
-  );
+  const { mountCard } = await import("./card-wasm.js");
+  const report = await mountCard("preview", src, componentName(src), {
+    allowWax: ALLOW_WAX,
+  });
+  if (gen !== reloadGen) return;
   let issues;
   if (!report.ok) {
     // Nothing to mount: the file does not split, or the script does not parse.
     // The last render STAYS, dimmed, rather than blanking — a syntax error is
     // the ordinary state of a half-typed line, and a preview that goes empty
-    // between two keystrokes is worse than one that is visibly behind. The
-    // class is what says it is behind; the app itself is already torn down.
+    // between two keystrokes is worse than one that is visibly behind.
     els.status.textContent = "cannot load";
     els.status.className = "status bad";
     $("preview").classList.add("stale");
@@ -354,12 +378,21 @@ function reload() {
       {
         line: report.line,
         code: "SYNTAX",
-        // The loader's message names its own line, because it is also what a
-        // CLI would print. The gutter button says that here, so drop it.
-        message: report.error.replace(/^line \d+: /, ""),
+        // The message names its own line, because it is also what a CLI would
+        // print. The gutter button says that here, so drop it.
+        message: String(report.error).replace(/^line \d+: /, ""),
         start: report.start,
         end: report.end,
       },
+    ];
+  } else if (!report.mounted && report.error) {
+    // It checked, and then the compiler or the host turned it away. A different
+    // failure from a card that does not parse, and worth a different sentence.
+    els.status.textContent = "cannot compile";
+    els.status.className = "status bad";
+    $("preview").classList.add("stale");
+    issues = [
+      { line: 1, code: "COMPILE", message: String(report.error), start: 0, end: 0 },
     ];
   } else {
     $("preview").classList.remove("stale");
@@ -374,7 +407,10 @@ function reload() {
   drawState();
   drawActivity();
   styleClasses();
-  compileToWasm(src);
+  // The compile PANEL, from the build this mount already did — so the WAT, the
+  // WAX and the download come from the module on the page rather than from a
+  // second compile of the same source.
+  showBuild(report.build);
 }
 
 /**
@@ -633,24 +669,25 @@ function drawCompiled() {
   els.compiled.textContent = lastBuild ? lastBuild[outTab] : "";
 }
 
-/** Compile, and draw what came out. Never throws into the edit loop. */
-function compileToWasm(src) {
-  let report;
-  try {
-    report = JSON.parse(globalThis.__tutucard.compile(src, componentName(src)));
-  } catch (e) {
-    report = { ok: false, error: String(e) };
-  }
-  if (!report.ok) {
-    // A card the compiler turns away is not necessarily a card the interpreter
-    // turns away — the checker is stricter than the parser — so this panel says
-    // so on its own rather than blanking the preview beside it.
+/**
+ * Draw the compile panel from a build `reload` already did.
+ *
+ * It used to compile a SECOND time — once to mount the card, once to fill this
+ * panel — because mounting went through an interpreter and the panel was the
+ * only thing that wanted a module. Mounting is compiling now, so the panel
+ * takes what came back rather than asking again.
+ */
+function showBuild(report) {
+  if (!report || !report.ok) {
+    // The panel says so on its own rather than blanking the preview beside it:
+    // a card that does not compile may still be a card whose last render is
+    // worth looking at.
     lastBuild = null;
     els.download.disabled = true;
     els.load.disabled = true;
     els.wasmSize.textContent = "";
     els.refusals.replaceChildren();
-    els.compiled.textContent = report.error ?? "did not compile";
+    els.compiled.textContent = report?.error ?? "did not compile";
     els.compiled.classList.add("bad");
     staleMount();
     return;
@@ -731,7 +768,9 @@ async function loadAndMount() {
     // The manifest travels with the module it was compiled WITH. Its field list
     // is the order `get-field` answers in, so a manifest paired with any other
     // build would be a bundle whose halves disagree.
-    await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor);
+    // Keyed by "loaded", which is this pane's own mount point: the preview
+    // above is a compiled card too now, and the two must not share a module.
+    await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor, "loaded");
     report = JSON.parse(
       globalThis.__tutucard.mountCompiled(
         "loaded",

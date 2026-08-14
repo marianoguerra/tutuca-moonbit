@@ -241,6 +241,21 @@ pub fn register_bundle(
   if !served.is_empty() {
     child.register_request_handlers(served)
   }
+  // Macros BEFORE the components compile, because a view expands one at parse
+  // time: `register_macros` is deliberately separate from `register_components`
+  // for exactly this order, and `comp.compile()` below is where a `<x:badge>`
+  // would otherwise be an unknown element that renders as itself.
+  //
+  // Into the bundle's own child scope, like everything else it declares — a
+  // bundle's macros are its own, and a host component two levels up has no
+  // business seeing them.
+  if !manifest.macros.is_empty() {
+    let macros : Map[String, @anode.Macro] = Map([])
+    for m in manifest.macros {
+      macros[m.name] = { defaults: m.defaults, raw_view: m.html }
+    }
+    child.register_macros(macros)
+  }
   child.register_components(synthesized)
   for comp in synthesized {
     // A view that will not compile is a bundle that will not render, and the

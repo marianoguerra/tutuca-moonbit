@@ -20,6 +20,7 @@ pub suberror FileError {
   UnclosedTemplate(String)
   DuplicateStateBlock
   DuplicateScriptBlock(String)
+  DuplicateWaxBlock(String)
   BadStateBlock(line~ : Int, message~ : String)
   BadInitBlock(line~ : Int, message~ : String)
 }
@@ -55,8 +56,10 @@ pub(all) struct ViewFile {
   state : Array[@statedef.StateDef]
   init : Array[(String, @statedef.InitState)]
   scripts : Array[ScriptBlock]
+  wax : Array[ScriptBlock]
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
+pub fn ViewFile::wax_for(Self, String) -> Block?
 
 pub(all) struct ViewSet {
   name : String

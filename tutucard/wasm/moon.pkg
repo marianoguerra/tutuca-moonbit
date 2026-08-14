@@ -1,11 +1,21 @@
 // The card-to-wasm backend: a tutucard `.html` in, a `tutuca:component@0.7.0`
 // core wasm module out.
 //
-// The third backend over `tscript`'s one AST. The interpreter (`tscript/interp`)
-// runs a card where it stands; the MoonBit emitter (`tscript/emit_mbt`) turns
-// one into source ahead of time; this one compiles it, and the three are held
-// to the same corpus (`tscript/conformance`) because a language with three
-// implementations and no shared table has three semantics.
+// One of TWO backends over `tscript`'s one AST: the MoonBit emitter
+// (`tscript/emit_mbt`) turns a block into source ahead of time, and this one
+// compiles it. Both are held to the same corpus (`tscript/conformance`),
+// because a language with two implementations and no shared table has two
+// semantics.
+//
+// There was a third — an interpreter that ran a card where it stood, and what
+// `tutucard` mounted. It is gone, and this is what replaced it: a card is
+// mounted by compiling it and instantiating the module. That is a bigger claim
+// than it sounds, because the interpreter was the REFERENCE — every "which is
+// what the interpreter does" in this package was a pointer at a running answer.
+// What makes it safe to have removed is that the corpus states those answers
+// outright now, and that closing the gap turned up nine places where this
+// backend was quietly answering something plausible where the language answers
+// nothing at all.
 //
 // It compiles in a BROWSER, which is the whole reason it exists: the card
 // playground hands you a real bundle with no server and no toolchain.

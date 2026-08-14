@@ -22,7 +22,9 @@
   /// A line is only ever worth a non-negative amount.
   invariant sane { .qty >= 0 }
   /// True while there is something to send.
-  pred hasItem { not (empty? .item) }
+  pred hasItem
+  format $'a line with no item cannot be checked out ({.qty} of nothing)'
+  { not (empty? .item) }
   /// What this line costs.
   compute total { .qty * .price }
   /// The line as a sentence.

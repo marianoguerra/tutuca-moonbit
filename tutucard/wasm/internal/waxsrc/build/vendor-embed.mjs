@@ -56,10 +56,14 @@ const RUNTIME_ORDER = ["runtime.wax"];
 // Concatenated one at a time, never together: which one a card gets decides
 // its import section. See runtime/lower_scalar.wax.
 const LOWER_ORDER = ["lower_scalar.wax", "lower_values.wax"];
+// Carried only by a card that uses what is in them. Zero, one or several, in
+// this order, after the lowering half. See runtime/parse_num.wax.
+const OPTIONAL_ORDER = ["parse_num.wax", "send_at.wax", "contract_log.wax", "escape_help.wax"];
 
 const parts = ORDER.map((name) => [name, readFileSync(join(VENDOR, name), "utf8")]);
 const runtimeParts = RUNTIME_ORDER.map((n) => [n, readFileSync(join(RUNTIME, n), "utf8")]);
 const lowerParts = LOWER_ORDER.map((n) => [n, readFileSync(join(RUNTIME, n), "utf8")]);
+const optionalParts = OPTIONAL_ORDER.map((n) => [n, readFileSync(join(RUNTIME, n), "utf8")]);
 
 const body = parts
   .map(([name, src]) => `  (${mbtString(name)}, ${mbtString(src)}),`)
@@ -68,6 +72,9 @@ const runtimeBody = runtimeParts
   .map(([name, src]) => `  (${mbtString(name)}, ${mbtString(src)}),`)
   .join("\n");
 const lowerBody = lowerParts
+  .map(([name, src]) => `  (${mbtString(name)}, ${mbtString(src)}),`)
+  .join("\n");
+const optionalBody = optionalParts
   .map(([name, src]) => `  (${mbtString(name)}, ${mbtString(src)}),`)
   .join("\n");
 
@@ -127,6 +134,30 @@ ${lowerBody}
 /// The lowering half named, or the empty string if there is no such half.
 pub fn lower_src(name : String) -> String {
   for f in lower_files {
+    if f.0 == name {
+      return f.1
+    }
+  }
+  ""
+}
+
+///|
+/// The pieces of the runtime a card carries only if it uses them.
+///
+/// Wax's emitter does no dead-code elimination, so every function in the fixed
+/// runtime is in every module whether or not anything calls it. That is the
+/// right trade for the parts every card needs and the wrong one for the parts
+/// two cards in ten do — so those live here, and the generator says which it
+/// wants. The lowering halves next door make the same split about the IMPORT
+/// section; this one is about size.
+pub let optional_files : Array[(String, String)] = [
+${optionalBody}
+]
+
+///|
+/// The optional piece named, or the empty string if there is no such piece.
+pub fn optional_src(name : String) -> String {
+  for f in optional_files {
     if f.0 == name {
       return f.1
     }

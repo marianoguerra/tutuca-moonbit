@@ -43,6 +43,22 @@ priv struct Gen {
   /// boundary. Same argument as `uses_control`, and the same consequence: it
   /// decides which of the two lowering halves the runtime is built from.
   mut uses_values : Bool
+  /// Set when a body compiles `num` or `int`, so the module carries the decimal
+  /// parser only if something can call it. Not an import decision like the two
+  /// above — it is a size one, and Wax emits every function it is handed.
+  mut uses_num : Bool
+  /// Set when a body compiles `sendAt`, which is the only effect that carries a
+  /// path — and the only one that needs the reifying half of the runtime.
+  mut uses_send_at : Bool
+  /// Set when a transition has a `requires`, an `ensures` or an invariant to
+  /// check — which is when there is something that can decline, and so
+  /// something to say. Unlike the two above this one reaches the import
+  /// section: saying it needs `control.log`.
+  mut uses_contract_log : Bool
+  /// The declarations this card's `<script type="tutuca/wax">` block answers,
+  /// by kind word and name. A name in here takes the dispatch arm the block
+  /// language would have had, and its `Refusal` becomes an `Escape`.
+  escapes : Map[String, EscapeFn]
   /// Fresh names for temporaries, per emitted function.
   mut temp : Int
   /// The script block's position in the FILE, for rebasing a refusal's span.
@@ -100,7 +116,23 @@ fn line_of(text : String, offset : Int) -> Int {
 ///
 /// `name` names the component when the file's blocks do not, exactly as
 /// `tutucard.load`'s does.
-pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
+///
+/// `allow_wax` decides whether the card's `<script type="tutuca/wax">` block —
+/// the escape hatch — is compiled or refused. It is OFF by default, and that is
+/// a trust decision rather than a feature flag: a card is untrusted content in
+/// the `<mb-card>` story, so whether one may carry hand-written code at all
+/// belongs to the host that mounts it. With it off, a block is a `Refusal`
+/// naming the block rather than something quietly ignored.
+///
+/// It is not the only thing keeping an escape honest, and not the important
+/// one: `escape.mbt`'s screen takes functions and refuses everything a guest's
+/// authority is made of, so an escape cannot widen the import section whatever
+/// this is set to.
+pub fn compile(
+  source : String,
+  name~ : String,
+  allow_wax? : Bool = false,
+) -> Compiled raise GenError {
   let file = @viewfile.split_file(source, name~) catch {
     e => raise BadCard(e.message())
   }
@@ -116,7 +148,31 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
     )
   }
   let comp = views.component_name(name)
-  guard file.state.get(0) is Some(def) else { raise NoState }
+  // A card with no `<script type="tutuca/state">` block is a card with no
+  // fields, and it used to be turned away whole. That was wrong twice over:
+  // `tutucard.load` mounts one happily, so the two backends disagreed about
+  // what a card IS; and `viewfile` has a name for the shape — a SCHEMA-LESS
+  // file, whose views are built at runtime — so it is a thing people write.
+  //
+  // What comes out is a guest with an empty `jv_record` type: `get-field`
+  // answers `none` for everything, `with-field` refuses everything, and any
+  // handler the script declares is refused for naming a field that does not
+  // exist. All of which is the truth about a card with no state, and all of
+  // which the host can act on.
+  let def = match file.state.get(0) {
+    Some(d) => d
+    None =>
+      {
+        source_name: comp,
+        component: comp,
+        fields: [],
+        receive: [],
+        bubble: [],
+        response: [],
+        types: [],
+        doc: None,
+      }
+  }
   let block = file.script_for(comp)
   let decls : Array[@tscript.Decl] = match block {
     Some(b) =>
@@ -171,6 +227,10 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
     refusals: [],
     uses_control: false,
     uses_values: false,
+    uses_num: false,
+    uses_send_at: false,
+    uses_contract_log: false,
+    escapes: Map([]),
     temp: 0,
     block_line: match block {
       Some(b) => b.line
@@ -188,12 +248,68 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
   for i, f in def.fields {
     g.index[f.name] = i
   }
+  // Every declaration that answers through `call-method`, which is now five
+  // kinds rather than three: the two enrichers reach a view through the Alter
+  // namespace and used to reach nothing at all.
+  //
+  // An enricher's name is NOT callable from an expression, and does not become
+  // so by being in here: `tscript/check` answers `NO_NAME` for a bare one — "a
+  // bare name is a parameter, a builtin, or a `pred` or `compute` this block
+  // declares" — so a card that tried would be rejected before a single
+  // instruction was built.
   for d in decls {
-    if d.kind is (DCompute | DPred | DInvariant) {
+    if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
       g.callables[d.name] = d
     }
   }
-  let module_ = emit_module(g, decls)
+  // The escape block, parsed and screened BEFORE anything is emitted — so that
+  // the fixpoint over the callables and the dispatch chains already know which
+  // names a hand-written function answers.
+  let escape_fields : Array[@abi.Field] = match file.wax_for(comp) {
+    Some(b) if allow_wax => {
+      let (fields, defined) = parse_escape(b.text, "<" + comp + ".wax>")
+      for e in defined {
+        // A helper carries no kind and answers no declaration; it is there for
+        // the functions that do.
+        if e.kind != "" {
+          g.escapes[e.kind + " " + e.name] = e
+        }
+      }
+      // AN ESCAPE MAY DO ANYTHING, and the generator cannot know what.
+      //
+      // Every other one of these flags is inferred from what a compiled body
+      // actually said — a card that performs no effect imports no `control`,
+      // one that never writes `num` carries no parser. A hand-written function
+      // is opaque to all of that: it may call `tcx_send`, it may build a map,
+      // it may reach for `tc_int`. So the whole vocabulary the documentation
+      // promises is made available, and the import section widens to match.
+      //
+      // That widening is the real cost of the escape hatch and the reason
+      // `allow_wax` is a host's decision rather than a card's: a card with a
+      // block like this asks for `control` whether or not it uses it, and a
+      // host reads the import section to know what a guest can do.
+      g.uses_control = true
+      g.uses_values = true
+      g.uses_num = true
+      g.uses_send_at = true
+      fields
+    }
+    // A block the host did not allow is REFUSED rather than ignored. A card
+    // whose escape silently did nothing would be a card whose author cannot
+    // tell "the host said no" from "I spelled the function wrong".
+    Some(b) => {
+      g.refusals.push({
+        kind: "wax",
+        name: comp,
+        reason: "this host compiles cards without their `<script type=\"tutuca/wax\">` block — whether a card may carry hand-written code is the host's decision, and this one did not grant it",
+        line: b.line,
+        span: { start: b.offset, end_: b.offset + b.text.length() },
+      })
+      []
+    }
+    None => []
+  }
+  let module_ = emit_module(g, decls, escape_fields)
   let session = @compile.Session::new()
   let checked = session.check(module_)
   let reports = session.reports()
@@ -212,6 +328,7 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
     wat,
     wax,
     refusals: g.refusals,
+    escapes: escape_list(g, decls),
     fields: def.fields.map(f => f.name),
     manifest: manifest_json(g, decls, views, file),
     descriptor: Json::object({
@@ -231,11 +348,12 @@ pub fn compile(source : String, name~ : String) -> Compiled raise GenError {
 fn emit_module(
   g : Gen,
   decls : Array[@tscript.Decl],
+  escape_fields : Array[@abi.Field],
 ) -> @ast.LocModule raise GenError {
   // Bodies first: every one of them interns constants, and neither the data
   // segment nor the `#[start]` that builds them can be laid down until the pool
   // has stopped growing.
-  let card = card_fields(g, decls)
+  let card = card_fields(g, decls, escape_fields)
   let alloc = runtime_fields()
   let fs : @ast.LocModule = []
   // The stdlib first: Wax resolves in one pass, so a name must be defined
@@ -283,6 +401,68 @@ fn emit_module(
         as_=Some("ctl_stop"),
       ),
     )
+    // Fourteen i32s, which is what `(string, list<value>, request-opts)`
+    // flattens to: two for the name, two for the arguments, three per
+    // `option<string>` (a discriminant and the joined string payload) and one
+    // for `live-path`. Under the canonical ABI's sixteen, so it stays flat
+    // rather than going indirect through a pointer — `dyncomp/host/wasm/abi.mjs`
+    // is where that limit lives and where these params were read off.
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "request",
+        as_=Some("ctl_request"),
+        params=[
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+          (Some("ok_d"), i32_),
+          (Some("ok_p"), i32_),
+          (Some("ok_l"), i32_),
+          (Some("er_d"), i32_),
+          (Some("er_p"), i32_),
+          (Some("er_l"), i32_),
+          (Some("rs_d"), i32_),
+          (Some("rs_p"), i32_),
+          (Some("rs_l"), i32_),
+          (Some("live"), i32_),
+        ],
+      ),
+    )
+  }
+  // Only a card that says `sendAt` asks for this one. `control` is already
+  // imported by then — an effect is what set `uses_control` — so this is a
+  // sixth function on an interface the module already names, rather than a new
+  // thing to be granted.
+  // Outside the `uses_control` block on purpose: a card can declare an
+  // `invariant` and perform no effect at all, and it still has something to say
+  // when the rule turns a transition away.
+  if g.uses_contract_log {
+    fs.push(
+      @build.import_func(@abi.control_iface, "log", as_=Some("ctl_log"), params=[
+        (Some("level"), i32_),
+        (Some("p"), i32_),
+        (Some("l"), i32_),
+      ]),
+    )
+  }
+  if g.uses_send_at {
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "send-at",
+        as_=Some("ctl_send_at"),
+        params=[
+          (Some("sp"), i32_),
+          (Some("sl"), i32_),
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+        ],
+      ),
+    )
   }
   fs.push(memory_field(2))
   fs.push(data_field("pool", @abi.pool_base, g.pool.to_bytes()))
@@ -292,7 +472,13 @@ fn emit_module(
   for f in alloc {
     fs.push(f)
   }
-  let runtime = @waxsrc.runtime_wax_fields(g.uses_values) catch {
+  let runtime = @waxsrc.runtime_wax_fields(
+    g.uses_values,
+    uses_num=g.uses_num,
+    uses_send_at=g.uses_send_at,
+    uses_contract_log=g.uses_contract_log,
+    uses_escape=g.escapes.length() > 0 || !escape_fields.is_empty(),
+  ) catch {
     e => raise BadModule(e.reasons())
   }
   for f in runtime {
@@ -306,7 +492,11 @@ fn emit_module(
 
 ///|
 /// The half of the module the card decides.
-fn card_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
+fn card_fields(
+  g : Gen,
+  decls : Array[@tscript.Decl],
+  escape_fields : Array[@abi.Field],
+) -> Array[@abi.Field] {
   let fs : Array[@abi.Field] = []
 
   // -- the schema ----------------------------------------------------------
@@ -499,10 +689,29 @@ fn card_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
   for f in callable_fields(g, decls) {
     fs.push(f)
   }
+  // THEN the escape, and the order is the whole of what it can reach. Wax
+  // resolves in one pass, so a function may call anything defined ahead of it
+  // and nothing defined after: an escape sits behind the stdlib, the runtime,
+  // the per-field accessors and the compiled `cm_*` callables — so it can call
+  // every one of those — and ahead of the dispatch chains, so those can call
+  // it. That is exactly the reach an escape should have and no more.
+  if !escape_fields.is_empty() {
+    for f in escape_prelude(g) {
+      fs.push(f)
+    }
+    for f in escape_fields {
+      fs.push(f)
+    }
+    // …and the `cm_<name>` forwarders last, so every call site that reaches a
+    // callable reaches an escaped one the same way.
+    for f in escape_wrappers(g) {
+      fs.push(f)
+    }
+  }
   fs.push(handle_event_fn(g, decls))
   fs.push(call_method_fn(g, decls))
   if g.uses_control {
-    fs.push(flush_fn())
+    fs.push(flush_fn(g.uses_send_at))
   }
 
   // `#[start]`, assembled now that NOTHING else will intern a constant: one
@@ -545,8 +754,9 @@ fn card_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
 /// `tc_flush` — hand the host the effects the transition buffered, in order.
 ///
 /// The buffer is the runtime's; the switch is here because only the generated
-/// half knows that `ctl_send`, `ctl_emit` and `ctl_stop` exist.
-fn flush_fn() -> @abi.Field {
+/// half knows which of `ctl_send`, `ctl_emit`, `ctl_stop`, `ctl_request` and
+/// `ctl_send_at` this module imported.
+fn flush_fn(uses_send_at : Bool) -> @abi.Field {
   func("tc_flush", body=[
     let_("i", i32c(0)),
     while_(
@@ -562,7 +772,73 @@ fn flush_fn() -> @abi.Field {
           if_(
             eq(get("k"), i32c(2)),
             [call("ctl_emit", [get("np"), get("nl"), get("ap"), get("al")])],
-            [call("ctl_send", [get("np"), get("nl"), get("ap"), get("al")])],
+            [
+              if_(
+                eq(get("k"), i32c(4)),
+                [
+                  // `request-opts` as the interpreter builds it:
+                  // `RequestOpts::new()` names no `on-ok`, no `on-error` and no
+                  // `on-res`, and does not ask for a live path. Three `none`
+                  // discriminants with dead pointer/length slots, and a false.
+                  // The response arrives at the request's own name, in the
+                  // `response` bucket, which this card already dispatches.
+                  call("ctl_request", [
+                    get("np"),
+                    get("nl"),
+                    get("ap"),
+                    get("al"),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                    i32c(0),
+                  ]),
+                ],
+                if uses_send_at {
+                  [
+                    if_(
+                      eq(get("k"), i32c(5)),
+                      [
+                        // The path is lowered HERE rather than when the effect
+                        // was buffered, because what it lowers to is linear
+                        // memory the host reads during this call and nothing
+                        // owns afterwards.
+                        call("ctl_send_at", [
+                          call("tc_effect_steps_ptr", [get("i")]),
+                          call("tc_effect_steps_len", [get("i")]),
+                          get("np"),
+                          get("nl"),
+                          get("ap"),
+                          get("al"),
+                        ]),
+                      ],
+                      [
+                        call("ctl_send", [
+                          get("np"),
+                          get("nl"),
+                          get("ap"),
+                          get("al"),
+                        ]),
+                      ],
+                    ),
+                  ]
+                } else {
+                  [
+                    call("ctl_send", [
+                      get("np"),
+                      get("nl"),
+                      get("ap"),
+                      get("al"),
+                    ]),
+                  ]
+                },
+              ),
+            ],
           ),
         ]),
       ],

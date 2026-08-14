@@ -1,0 +1,71 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutucard/wasm/internal/abi"
+
+import {
+  "marianoguerra/wax/ast",
+  "marianoguerra/wax/basic",
+  "marianoguerra/wax/wasm/types",
+}
+
+// Values
+pub let bucket_bubble : Int
+
+pub let bucket_input : Int
+
+pub let bucket_receive : Int
+
+pub let bucket_response : Int
+
+pub let cell_size : Int
+
+pub let control_iface : String
+
+pub let guest_iface : String
+
+pub let log_warn : Int
+
+pub let memory_name : String
+
+pub let pool_base : Int
+
+pub let resource_iface : String
+
+pub let ret_call_method : Int
+
+pub let ret_get_field : Int
+
+pub let ret_handle_event : Int
+
+pub let ret_handle_request : Int
+
+pub let ret_persist : Int
+
+pub let ret_restore : Int
+
+pub let ret_with_field : Int
+
+pub fn utf8_len(String) -> Int
+
+// Errors
+
+// Types and methods
+pub struct Pool {
+  bytes : Array[Byte]
+  strings : Map[String, Int]
+  string_list : Array[(Int, Int)]
+  doubles : Map[Double, Int]
+}
+pub fn Pool::double(Self, Double) -> Int
+pub fn Pool::heap_base(Self) -> Int
+pub fn Pool::new() -> Self
+pub fn Pool::string_index(Self, String) -> Int
+pub fn Pool::to_bytes(Self) -> Bytes
+
+// Type aliases
+pub type Field = @basic.Annotated[@ast.ModuleField[@basic.Location], @basic.Location]
+
+pub type I = @ast.Instr[@basic.Location]
+
+pub type VT = @types.ValType[@ast.Ident]
+
+// Traits

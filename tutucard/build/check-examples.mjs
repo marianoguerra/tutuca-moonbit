@@ -5,7 +5,8 @@
 // MoonBit test can reach, and the landing site's are `.html` files in no moon
 // package, so a card that stopped parsing would be found by whoever opened the
 // page. This runs the REAL loader over both sets — the same
-// `globalThis.__tutucard.load` the page calls — in the assembled payload.
+// `globalThis.__tutucard.check` and `.compile` the page calls — in the
+// assembled payload.
 //
 // It runs headless, so it calls `check` rather than `load` — the same report
 // without the half that needs a page. That split is worth having anyway: an
@@ -73,7 +74,27 @@ for (const ex of cards) {
     failed++;
     continue;
   }
-  console.log(`ok      ${ex.name} (${report.component})`);
+  // …and it COMPILES. Checking used to be the whole gate, because mounting a
+  // card meant handing it to an interpreter and a card that checked would run.
+  // Mounting is compiling now, so a card that checks and does not compile is a
+  // card this page cannot show — which is exactly what this file exists to
+  // catch before a reader does.
+  const build = JSON.parse(globalThis.__tutucard.compile(ex.source, "Card", true));
+  if (!build.ok) {
+    console.error(`✗ ${ex.name}: does not compile — ${build.error}`);
+    failed++;
+    continue;
+  }
+  // A REFUSAL is not a failure: the declaration is left out, the host falls
+  // back, and the rest of the card runs. It is worth printing, because a
+  // starter card is meant to be exemplary and a refused handler in one is
+  // usually a card to rewrite rather than a backend to extend.
+  for (const r of build.refusals) {
+    console.log(`  note  ${ex.name}: refused ${r.kind} ${r.name} — ${r.reason}`);
+  }
+  console.log(
+    `ok      ${ex.name} (${report.component}, ${(build.size / 1024).toFixed(1)} KB)`,
+  );
 }
 
 if (failed > 0) {

@@ -84,6 +84,17 @@ pub(all) struct DynComponentDef {
   methods : Array[String]
   /// Callables a view's `@when` names (the render-time namespace).
   whens : Array[String]
+  /// Callables a view's `@enrich-with` names — the in-loop form, called about
+  /// one row and answering the bindings that row is rendered with.
+  ///
+  /// Same namespace as `whens` and a different call shape, which is why it is a
+  /// separate list rather than more names in that one: an enricher is handed
+  /// the bindings it is extending and answers a map, where a `@when` is handed
+  /// the row and answers a yes or a no.
+  enriches : Array[String]
+  /// The scope form: called about no row at all, and answering the bindings a
+  /// whole subtree is rendered with.
+  enrich_scopes : Array[String]
   /// Requests this BUNDLE serves; registered into its own scope, so its
   /// components find them before the host's.
   requests : Array[String]
@@ -108,6 +119,27 @@ pub(all) struct DynManifest {
   /// bundle that is the same everywhere it runs, which is most of them.
   config : Array[DynConfigDef]
   components : Array[DynComponentDef]
+  /// The `<template id="macro:name">` declarations this bundle carries.
+  ///
+  /// Bundle-level rather than per component, because that is what a macro IS: a
+  /// piece of markup a view expands, registered in the scope every component of
+  /// the bundle is registered in. It has no behaviour, no state and no schema —
+  /// which is the reason a bundle can have macros while a guest cannot have
+  /// children.
+  macros : Array[DynMacroDef]
+} derive(Debug, Eq)
+
+///|
+/// One macro: its name, its `data-` defaults, and the markup it expands to.
+///
+/// The same two fields `@anode.Macro` holds, because that is what this becomes
+/// — `register_bundle` hands them straight to `register_macros`. Nothing here
+/// is compiled ahead of time: a bundle's views arrive as markup and so does
+/// this.
+pub(all) struct DynMacroDef {
+  name : String
+  defaults : Map[String, String]
+  html : String
 } derive(Debug, Eq)
 
 ///|
@@ -316,6 +348,44 @@ fn parse_config(
 }
 
 ///|
+/// The bundle's macros. Absent is the common case and means none.
+fn parse_macros(
+  root : Map[String, Json],
+) -> Array[DynMacroDef] raise ManifestError {
+  let out : Array[DynMacroDef] = []
+  guard root.get("macros") is Some(Array(items)) else { return out }
+  let seen : Array[String] = []
+  for item in items {
+    guard item is Object(r) else {
+      raise ManifestError("manifest: bad macro entry")
+    }
+    let name = opt_str(r, "name")
+    guard name != "" else {
+      raise ManifestError("manifest: a macro entry has no name")
+    }
+    // Two macros of one name is the same failure two templates of one id are,
+    // and the loader has no way to choose between them.
+    if seen.contains(name) {
+      raise ManifestError("manifest: macros declare '\{name}' twice")
+    }
+    seen.push(name)
+    let defaults : Map[String, String] = Map([])
+    match r.get("defaults") {
+      Some(Object(d)) =>
+        for k, v in d {
+          defaults[k] = match v {
+            String(t) => t
+            other => other.stringify()
+          }
+        }
+      _ => ()
+    }
+    out.push({ name, defaults, html: opt_str(r, "html") })
+  }
+  out
+}
+
+///|
 fn parse_types(c : Map[String, Json]) -> Array[DynTyDef] raise ManifestError {
   let out : Array[DynTyDef] = []
   guard c.get("types") is Some(Array(items)) else { return out }
@@ -503,6 +573,8 @@ pub fn DynManifest::from_json_string(
       responses: str_array(c, "responses"),
       methods: str_array(c, "methods"),
       whens: str_array(c, "whens"),
+      enriches: str_array(c, "enriches"),
+      enrich_scopes: str_array(c, "enrichScopes"),
       requests: str_array(c, "requests"),
       inits: parse_inits(c),
       style: str_field(c, "style"),
@@ -518,5 +590,6 @@ pub fn DynManifest::from_json_string(
     capabilities: parse_capabilities(root),
     config: parse_config(root),
     components,
+    macros: parse_macros(root),
   }
 }

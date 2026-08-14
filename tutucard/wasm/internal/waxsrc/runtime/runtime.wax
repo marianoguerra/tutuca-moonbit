@@ -43,7 +43,7 @@ let tc_insts: &?pv_vector = null;
 let tc_state_type: &?jv_record_type = null;
 
 // Set when a body did something with no answer — a division by zero, an index
-// past the end of a list. `interp/eval.mbt` returns `None` for these and the
+// past the end of a list. The language answers `None` for these and the
 // `None` propagates until the transition is abandoned; a compiled body has no
 // option type to propagate, so it raises this flag and `handle-event` reads it
 // where the interpreter would have seen the None.
@@ -236,7 +236,7 @@ fn tc_eq(a: &jv_value, b: &jv_value) -> i32 {
 }
 
 // -1, 0 or 1. Two strings compare as text and everything else as numbers,
-// which is `interp/eval.mbt`'s `compare_op`.
+// which is what the corpus pins.
 fn tc_cmp(a: &jv_value, b: &jv_value) -> i32 {
     if tc_is_text(a) == 1 {
         if tc_is_text(b) == 1 {
@@ -379,7 +379,7 @@ fn tc_tpl_concat(a: &jv_value, b: &jv_value) -> &jv_value {
 // `+` is two operators. It joins two strings and adds two numbers, and which
 // one it is depends on the VALUES rather than on anything the generator knew.
 //
-// A MIXED pair fails, which is `interp/eval.mbt`'s `arith`: it takes the
+// A MIXED pair fails, which is what the corpus says: it takes the
 // two-strings case first and then requires both to be numbers. An earlier
 // version of this joined a mixed pair instead, on the theory that an opaque
 // event argument is better joined than refused — the corpus disagrees, and the
@@ -455,11 +455,6 @@ fn tc_not(a: &jv_value) -> &jv_value {
     if tc_truthy(a) == 0 { jv_bool(1) } else { jv_bool(0) }
 }
 
-fn tc_int(a: &jv_value) -> &jv_value {
-    if jv_kind(a) != jv_kind_f64 { return jv_null(); }
-    jv_f64(jv_require_f64(a).trunc())
-}
-
 // `empty?` — null is empty, "" is empty, and an empty collection is empty.
 fn tc_empty(a: &jv_value) -> &jv_value {
     let k = jv_kind(a);
@@ -481,13 +476,26 @@ fn tc_empty(a: &jv_value) -> &jv_value {
 // --- the six that used to be refused ---------------------------------------
 //
 // None of them needed anything the stdlib does not have, and none of them
-// needs Unicode: `interp/eval.mbt` implements `lower`/`upper` as an ASCII
+// needs Unicode: the language defines `lower`/`upper` as an ASCII
 // A-Z/a-z shift and `trim` over exactly " \t\n\r", so byte-level work here
 // agrees with the interpreter by construction rather than by luck.
 
+// THE RULE THESE SEVEN SHARE.
+//
+// The language answers `None` for an argument of the wrong
+// shape — `lower 3`, `contains 3 'a'`, `min 'a' 'b'`, `len 3` — and a None
+// abandons the transition. Every one of these used to answer something
+// PLAUSIBLE instead: the value unchanged, or `false`, or zero, or a comparison
+// that read two strings as numbers.
+//
+// The corpus found the first of them (`lower` of a number, inside a `pred`
+// called with the wrong argument) the first time this backend was held to the
+// value table, and the rest are the same mistake in the same family. A
+// plausible answer is worse than no answer here, because "the transition did
+// not happen" is a thing a card author can see and `false` is not.
+
 // `len` — codepoints for a string, items for a collection. `size_of` in
-// `core/value_eval.mbt`; a value with no size answers null there and 0 here,
-// which is what `len` of a number has always meant to a card.
+// `core/value_eval.mbt`, which has no answer for anything else.
 fn tc_len(v: &jv_value) -> &jv_value {
     let k = jv_kind(v);
     if k == jv_kind_string {
@@ -499,7 +507,8 @@ fn tc_len(v: &jv_value) -> &jv_value {
     if k == jv_kind_ordered_map {
         return jv_f64(jv_ordered_map_count(jv_require_ordered_map(v)) as f64_s);
     }
-    jv_f64(0.0)
+    tc_fail = 1;
+    jv_null()
 }
 
 // `has` — a key in a map, or a value in a list. Both, because the interpreter
@@ -520,13 +529,16 @@ fn tc_has(hay: &jv_value, needle: &jv_value) -> &jv_value {
         }
         return jv_bool(0);
     }
-    jv_bool(0)
+    // Neither a map nor a list has no membership to ask about, which is not
+    // the same as answering no.
+    tc_fail = 1;
+    jv_null()
 }
 
-// `contains` — substring, and text only, which is what `interp/eval.mbt` says.
+// `contains` — substring, and text only, which is what the corpus says.
 fn tc_contains(hay: &jv_value, needle: &jv_value) -> &jv_value {
-    if tc_is_text(hay) == 0 { return jv_bool(0); }
-    if tc_is_text(needle) == 0 { return jv_bool(0); }
+    if tc_is_text(hay) == 0 { tc_fail = 1; return jv_null(); }
+    if tc_is_text(needle) == 0 { tc_fail = 1; return jv_null(); }
     let h = jv_require_string(hay);
     let n = jv_require_string(needle);
     let hl = utf8_byte_length(h);
@@ -551,7 +563,7 @@ fn tc_contains(hay: &jv_value, needle: &jv_value) -> &jv_value {
 // ASCII case, byte for byte. A multi-byte codepoint's bytes are all >= 0x80 and
 // so are left alone, which is exactly what the interpreter's char loop does.
 fn tc_case(v: &jv_value, down: i32) -> &jv_value {
-    if tc_is_text(v) == 0 { return v; }
+    if tc_is_text(v) == 0 { tc_fail = 1; return jv_null(); }
     let s = jv_require_string(v);
     let l = utf8_byte_length(s);
     let out = [wax_hash_bytes| 0; l];
@@ -584,7 +596,7 @@ fn tc_space(b: i32) -> i32 {
 // `trim` — exactly " \t\n\r", which is the `chars=` the interpreter passes.
 // All four are single-byte, so trimming bytes cannot land mid-codepoint.
 fn tc_trim(v: &jv_value) -> &jv_value {
-    if tc_is_text(v) == 0 { return v; }
+    if tc_is_text(v) == 0 { tc_fail = 1; return jv_null(); }
     let s = jv_require_string(v);
     let l = utf8_byte_length(s);
     let start: i32 = 0;
@@ -605,17 +617,24 @@ fn tc_trim(v: &jv_value) -> &jv_value {
     jv_string(utf8_slice_bytes(s, start, stop - start))
 }
 
+// Both NUMBERS, which `tc_cmp` does not require: it reads two strings as text
+// and everything else as numbers, so `min 'a' 'b'` used to answer `'a'` where
+// the interpreter has no answer at all.
 fn tc_min(a: &jv_value, b: &jv_value) -> &jv_value {
+    if tc_both_num(a, b) == 0 { tc_fail = 1; return jv_null(); }
     if tc_cmp(a, b) <=s 0 { a } else { b }
 }
 
 fn tc_max(a: &jv_value, b: &jv_value) -> &jv_value {
+    if tc_both_num(a, b) == 0 { tc_fail = 1; return jv_null(); }
     if tc_cmp(a, b) >=s 0 { a } else { b }
 }
 
-// `clamp lo hi` answers `lo` when `hi <s lo`, which is `interp/eval.mbt`'s
+// `clamp lo hi` answers `lo` when `hi <s lo`, which is the language's
 // choice: a range with no answer that is not a guess picks the low end.
 fn tc_clamp(v: &jv_value, lo: &jv_value, hi: &jv_value) -> &jv_value {
+    if tc_both_num(v, lo) == 0 { tc_fail = 1; return jv_null(); }
+    if jv_kind(hi) != jv_kind_f64 { tc_fail = 1; return jv_null(); }
     if tc_cmp(v, lo) <s 0 { return lo; }
     if tc_cmp(v, hi) >s 0 { return hi; }
     v
@@ -646,7 +665,7 @@ fn tc_target(v: &?jv_value) -> &jv_value {
 // ---------------------------------------------------------------------------
 // mutating a collection
 //
-// `interp/run.mbt`'s `collection_op`, method for method. It answers `None` for
+// The collection methods, one for one. The language answers `None` for
 // a pair it does not implement — `.items.push` on a number, and the four names
 // `collection_method` parses but the interpreter never handled (`clear`,
 // `delete`, `set`, `removeAt`) — and the transition then does not happen.
@@ -919,7 +938,33 @@ fn tc_set(
     out!
 }
 
-// An Int field truncates on the way in — `coerce_root`, `interp/run.mbt`. The
+// ---------------------------------------------------------------------------
+// an enricher's bindings
+//
+// `Env.binds` in the interpreter is a plain map, and so is this. No schema, no
+// declared types, no truncation: a binding is whatever was bound, and a name
+// nobody bound reads null. An ORDERED map, like every other map this compiler
+// builds, so the order a card binds names in is the order a reader sees them.
+
+// `&jv_value` and not `&jv_ordered_map_value` throughout, so the local an
+// enricher accumulates in has ONE type from its first assignment to its last —
+// a `let` takes the type of what it is initialized with, and a body that starts
+// from the narrow one cannot then be assigned the wide one.
+fn tc_binds_empty() -> &jv_value { jv_ordered_map_empty() }
+
+// The bindings an in-loop `enrich` was handed. Anything that is not a map — a
+// caller that passed nothing, or a host that passed something else — starts the
+// enricher from empty rather than trapping.
+fn tc_binds_in(v: &jv_value) -> &jv_value {
+    if jv_kind(v) != jv_kind_ordered_map { return tc_binds_empty(); }
+    v
+}
+
+fn tc_bind_put(binds: &jv_value, name: &utf8_string, v: &jv_value) -> &jv_value {
+    jv_ordered_map_assoc(jv_require_ordered_map(tc_binds_in(binds)), name, v)
+}
+
+// An Int field truncates on the way in, which the corpus pins. The
 // schema cannot do this: tutuca's Int and Double are one jv kind, so the
 // generator emits this call at the assignment sites of the fields it declared
 // as integers, and nowhere else.
@@ -953,15 +998,32 @@ fn tc_deref(h: i32) -> &jv_record_value {
 const tc_e_send: i32 = 1;
 const tc_e_bubble: i32 = 2;
 const tc_e_stop: i32 = 3;
+// A `request` buffers exactly like the other three, and carries exactly what
+// the block language gives it: a name and arguments. The `request-opts` record
+// the import also takes is the interpreter's `RequestOpts::new()` — three
+// absent names and a false — so it is constants at the flush and nothing here.
+const tc_e_request: i32 = 4;
 
-type tc_effect = { kind: i32, name: &utf8_string, args: &?pv_vector };
+const tc_e_send_at: i32 = 5;
+
+// `steps` is null for every effect but a `sendAt`, which is the only one that
+// addresses somewhere other than here. It is a list of `tc_pstep`, built by
+// `send_at.wax` — the field is here rather than there because the buffer is,
+// and one nullable word per effect is cheaper than a second buffer.
+type tc_effect = {
+    kind: i32,
+    name: &utf8_string,
+    args: &?pv_vector,
+    steps: &?pv_vector,
+};
 
 fn tc_effect_new(
     kind: i32,
     name: &utf8_string,
     args: &?pv_vector,
+    steps: &?pv_vector,
 ) -> &tc_effect {
-    { kind, name, args }
+    { kind, name, args, steps }
 }
 
 fn tc_effect_reset() { tc_effects = pv_empty(); }
@@ -971,7 +1033,17 @@ fn tc_effect_reset() { tc_effects = pv_empty(); }
 fn tc_empty_str() -> &utf8_string { tc_s_empty! }
 
 fn tc_effect_push(kind: i32, name: &utf8_string, args: &?pv_vector) {
-    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args));
+    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, null));
+}
+
+// The same, for the one effect that carries a path.
+fn tc_effect_push_at(
+    kind: i32,
+    name: &utf8_string,
+    args: &?pv_vector,
+    steps: &?pv_vector,
+) {
+    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, steps));
 }
 
 fn tc_effect_count() -> i32 { pv_count(tc_effects!) }

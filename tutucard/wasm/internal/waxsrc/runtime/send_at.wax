@@ -1,0 +1,122 @@
+// `sendAt` — a message addressed at a place in this component's own subtree.
+//
+// An OPTIONAL half, like `parse_num.wax`: only a card that writes `sendAt`
+// carries any of it. Concatenated AFTER `runtime.wax` and after the lowering
+// half, so everything it names is already defined.
+//
+// WHAT A PATH IS. `&.rows[k].label` denotes a POSITION, not a value, and the
+// difference is the whole point: a position survives the root being rebuilt,
+// which is what lets an answer land on the row that asked for it.
+// The corpus is the reference for what one reifies TO, and
+// the generator does the same walk at compile time — a `.field` and a `[key]`
+// pair up into one keyed step, and a trailing `.field` is a step of its own.
+//
+// THE WIRE. `control.path-step` is a three-case variant, 20 bytes, align 4:
+// a one-byte discriminant at +0 and the payload at +4.
+//
+//   0  field(string)                    ptr +4, len +8
+//   1  item  { field: string, key: string }   ptr +4, len +8, ptr +12, len +16
+//   2  at    { field: string, index: u32 }    ptr +4, len +8, index +12
+//
+// A `list<path-step>` is the (pointer, length) pair the flush hands the import.
+// Those numbers are `dyncomp/host/wasm/abi.mjs`'s, read off its own `sizeOf`
+// rather than counted by hand.
+
+const tc_ps_field: i32 = 0;
+const tc_ps_keyed: i32 = 1;
+
+// One reified step. `key` is null for a bare `.field`; when it is not, WHICH
+// wire case this becomes is decided by the key's own kind at lowering time,
+// because `.rows['a']` and `.rows[3]` are the same syntax and different cases.
+type tc_pstep = { kind: i32, field: &utf8_string, key: &?jv_value };
+
+fn tc_path_field(field: &utf8_string) -> &tc_pstep {
+    { kind: tc_ps_field, field, key: null }
+}
+
+// Whether a value can be a path key AT ALL.
+//
+// `Value::as_key` says text, or a number with nothing after the point.
+// `path-step.at` narrows that further: it carries a `u32`, so a negative index
+// has no wire form and there is nothing to lower it as. Both cases answer
+// no answer at all, and no answer abandons the transition.
+//
+// Written without `tc_index_of`, which reports "not a key" as -1 and so cannot
+// tell that sentinel from the value -1.
+fn tc_is_path_key(v: &jv_value) -> i32 {
+    let k = jv_kind(v);
+    if k == jv_kind_string { return 1; }
+    if k != jv_kind_f64 { return 0; }
+    let x = jv_require_f64(v);
+    if x != x { return 0; }
+    if x != x.trunc() { return 0; }
+    if x < 0.0 { return 0; }
+    1
+}
+
+// A `.field[key]` step. The key is checked HERE, in the body, and not at the
+// flush — by the flush the transition has already been allowed to happen, and
+// "this is not a key" has to be a failure that stops it.
+fn tc_path_keyed(field: &utf8_string, key: &jv_value) -> &tc_pstep {
+    if tc_is_path_key(key) == 0 { tc_fail = 1; }
+    { kind: tc_ps_keyed, field, key }
+}
+
+fn tc_steps_len(steps: &?pv_vector) -> i32 {
+    match steps {
+        v: &pv_vector => { return pv_count(v); }
+        _ => { return 0; }
+    }
+    unreachable;
+}
+
+fn tc_step_at(steps: &?pv_vector, i: i32) -> &tc_pstep {
+    pv_at(steps!, i)! as &tc_pstep
+}
+
+fn tc_step_out(s: &tc_pstep, dest: i32) {
+    let fp = tc_str_out(s.field);
+    let fl = utf8_byte_length(s.field);
+    match s.key {
+        k: &jv_value => {
+            if jv_kind(k) == jv_kind_string {
+                let ks = jv_require_string(k);
+                mem.store8(dest, 1);
+                mem.store32(dest + 4, fp);
+                mem.store32(dest + 8, fl);
+                mem.store32(dest + 12, tc_str_out(ks));
+                mem.store32(dest + 16, utf8_byte_length(ks));
+                return;
+            }
+            // Integral and non-negative, because `tc_path_keyed` failed the
+            // transition for anything else before this could run.
+            mem.store8(dest, 2);
+            mem.store32(dest + 4, fp);
+            mem.store32(dest + 8, fl);
+            mem.store32(dest + 12, jv_require_f64(k) as i32_s);
+            return;
+        }
+        _ => {
+            mem.store8(dest, 0);
+            mem.store32(dest + 4, fp);
+            mem.store32(dest + 8, fl);
+            return;
+        }
+    }
+}
+
+fn tc_steps_out(steps: &?pv_vector) -> i32 {
+    let n = tc_steps_len(steps);
+    if n == 0 { return 0; }
+    let p = alloc(n * 20, 4);
+    let i: i32 = 0;
+    while i <s n {
+        tc_step_out(tc_step_at(steps, i), p + i * 20);
+        i += 1;
+    }
+    p
+}
+
+fn tc_effect_steps_ptr(i: i32) -> i32 { tc_steps_out(tc_effect_at(i).steps) }
+
+fn tc_effect_steps_len(i: i32) -> i32 { tc_steps_len(tc_effect_at(i).steps) }

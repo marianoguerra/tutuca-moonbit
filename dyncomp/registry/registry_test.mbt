@@ -86,6 +86,7 @@ fn counter_bundle() -> @dyncomp.DynManifest {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Counter",
@@ -109,6 +110,8 @@ fn counter_bundle() -> @dyncomp.DynManifest {
         responses: [],
         methods: ["label"],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [
           {
@@ -136,6 +139,7 @@ fn todo_bundle() -> @dyncomp.DynManifest {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Todo",
@@ -159,6 +163,8 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [],
         style: "",

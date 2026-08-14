@@ -16,7 +16,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,7 +28,7 @@ const MODULE = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const out = mkdtempSync(join(tmpdir(), "cardwasm-"));
 
 /** Compile one of `tutucard/wasm/examples/` and instantiate it. */
-async function load(stem) {
+async function load(stem, { allowWax = false } = {}) {
   const log = execFileSync(
     "moon",
     [
@@ -37,6 +37,7 @@ async function load(stem) {
       "--target",
       "native",
       "--",
+      ...(allowWax ? ["--allow-wax"] : []),
       `tutucard/wasm/examples/${stem}.html`,
       out,
     ],
@@ -76,9 +77,15 @@ async function load(stem) {
         fromJson: JSON.parse,
       },
       "tutuca:component/control": {
+        // A card that declares a rule imports this to say when the rule turned
+        // a transition away — the line `core/warn.mbt` prints, on the one
+        // channel the guest world has for saying anything at all.
+        log: (level, msg) => control.push({ kind: "log", level, msg }),
         emit: (name, args) => control.push({ kind: "emit", name, args }),
         send: (name, args) => control.push({ kind: "send", name, args }),
         stopPropagation: () => control.push({ kind: "stop" }),
+        request: (name, args, opts) => control.push({ kind: "request", name, args, opts }),
+        sendAt: (path, name, args) => control.push({ kind: "sendAt", path, name, args }),
       },
     },
     { ...descriptor, core: `${stem}.wasm` },
@@ -88,6 +95,9 @@ async function load(stem) {
     control,
     log,
     arena,
+    // Handing a compound value IN needs the same arena a compound value comes
+    // out through: an enricher is passed the row's bindings as a `%map`.
+    put,
     manifest: JSON.parse(readFileSync(join(out, `${stem}.manifest.json`), "utf8")),
     bytes: wasm.length,
   };
@@ -197,7 +207,20 @@ test("effects reach the host, and a precondition declines the transition", async
   assert.deepEqual(c.callMethod("line", []), text("2 x  = 7"));
   // `requires hasItem` — no item, so nothing happens and nothing is emitted.
   assert.deepEqual(c.handleEvent("input", "checkout", []), { tag: "unchanged" });
-  assert.deepEqual(control, []);
+  // …but the card SAYS so, on the one channel a guest has for saying anything:
+  // the line `core/warn.mbt` prints, with the rule's own `format` sentence
+  // evaluated over the state that was rejected. The record the interpreter
+  // builds still has no shape in the guest world; the sentence does.
+  assert.deepEqual(control, [
+    {
+      kind: "log",
+      level: "warn",
+      msg:
+        "contract: `checkout` declined — its precondition `hasItem` does not hold: " +
+        "a line with no item cannot be checked out (2 of nothing)",
+    },
+  ]);
+  control.length = 0;
 
   const named = c.handleEvent("input", "rename", [text("coffee")]).val;
   assert.deepEqual(named.callMethod("line", []), text("2 x coffee = 7"));
@@ -211,12 +234,26 @@ test("effects reach the host, and a precondition declines the transition", async
 });
 
 test("`max` clamps, so the invariant holds without ever declining", async () => {
-  const { root } = await load("Cart");
+  const { root, control } = await load("Cart");
   const c = new root.guest.Instance("Cart", [["qty", num(1)]]);
   assert.deepEqual(c.handleEvent("input", "fewer", []).val.getField("qty"), num(0));
   // At zero the clamp is a no-op, which the byte comparison reports honestly.
   const zero = c.withField("qty", num(0));
   assert.deepEqual(zero.handleEvent("input", "fewer", []), { tag: "unchanged" });
+  assert.deepEqual(control, []);
+
+  // Reached round the clamp, the invariant DOES decline — and says so with the
+  // short line, because `sane` declares no `format`. A refusal that cannot
+  // describe itself is still a refusal, which is `sentence()`'s `""`.
+  const bad = c.withField("qty", num(-5));
+  assert.deepEqual(bad.handleEvent("input", "more", []), { tag: "unchanged" });
+  assert.deepEqual(control, [
+    {
+      kind: "log",
+      level: "warn",
+      msg: "contract: `more` was abandoned — it broke the invariant `sane`",
+    },
+  ]);
 });
 
 test("a list field holds a list, and pushing to it compiles", async () => {
@@ -260,6 +297,362 @@ test("a list field holds a list, and pushing to it compiles", async () => {
     "history",
     "receipt",
   ]);
+});
+
+test("`num` and `int` read a string, and refuse what is not one", async () => {
+  const { root, log } = await load("Reading");
+  assert.doesNotMatch(log, /refused on parse/);
+  assert.doesNotMatch(log, /refused on truncate/);
+  const c = new root.guest.Instance("Reading", []);
+
+  // The spellings a card writes by hand, exactly.
+  for (const [raw, value] of [
+    ["42", 42],
+    ["-3.5", -3.5],
+    ["+7", 7],
+    [".5", 0.5],
+    ["1e3", 1000],
+    ["2.5e-2", 0.025],
+  ]) {
+    const r = c.withField("raw", text(raw)).handleEvent("input", "parse", []);
+    assert.equal(r.tag, "changed", `${raw} should parse`);
+    assert.deepEqual(r.val.getField("value"), num(value), raw);
+  }
+
+  // A string that is not a number has NO ANSWER, and no answer is no change —
+  // which is `eval.mbt` returning None, not a zero written into the field.
+  for (const raw of ["12px", "", "abc", "1.2.3", "1e", "+", "."]) {
+    assert.deepEqual(
+      c.withField("raw", text(raw)).handleEvent("input", "parse", []),
+      { tag: "unchanged" },
+      raw,
+    );
+  }
+
+  // `int` is `num` and then a truncation, string reading included.
+  const t = c.withField("raw", text("-3.9")).handleEvent("input", "truncate", []);
+  assert.deepEqual(t.val.getField("whole"), num(-3));
+  // …and it declines the same values `num` declines, where it used to answer
+  // null and let the field take it.
+  assert.deepEqual(
+    c.withField("raw", text("nope")).handleEvent("input", "truncate", []),
+    { tag: "unchanged" },
+  );
+});
+
+test("a call and a send carry more than four values", async () => {
+  const { root, control, log } = await load("Reading");
+  assert.doesNotMatch(log, /refused on wide/);
+  assert.doesNotMatch(log, /refused compute total/);
+  const c = new root.guest.Instance("Reading", []);
+  // Six arguments through a `compute`, which the fixed `tc_args1..4` family
+  // could not express — the sixth used to be dropped, so this refused.
+  assert.deepEqual(c.callMethod("total", [num(1), num(2), num(3), num(4), num(5), num(6)]), num(21));
+  const r = c.handleEvent("input", "wide", []);
+  assert.deepEqual(r.val.getField("tally"), num(21));
+  // And six payload values out through `control.send`, in order.
+  assert.deepEqual(control, [
+    { kind: "send", name: "wide", args: [1, 2, 3, 4, 5, 6].map(num) },
+  ]);
+});
+
+test("`request` reaches the host, and its answer comes back", async () => {
+  const { root, control, log } = await load("Reading");
+  assert.doesNotMatch(log, /refused on lookup/);
+  assert.doesNotMatch(log, /refused response rows/);
+  const c = new root.guest.Instance("Reading", [["raw", text("ada")]]);
+  assert.deepEqual(c.handleEvent("input", "lookup", []), { tag: "unchanged" });
+  // The name, the arguments, and the `RequestOpts::new()` the interpreter
+  // hands `ctx.request`: no `on-ok`, no `on-error`, no `on-res`, no live path.
+  assert.deepEqual(control, [
+    {
+      kind: "request",
+      name: "rows",
+      args: [text("ada")],
+      opts: { onOk: undefined, onError: undefined, onRes: undefined, livePath: false },
+    },
+  ]);
+  // Which means the answer arrives under the request's own name, in the
+  // `response` bucket — a bucket this backend already dispatched, and now has
+  // something to put in it.
+  const back = c.handleEvent("response", "rows", [text("lovelace"), { tag: "nil" }]);
+  assert.equal(back.tag, "changed");
+  assert.deepEqual(back.val.getField("raw"), text("lovelace"));
+
+  // And a request in a transition that goes on to FAIL never escapes: effects
+  // are buffered and flushed only once every rule has held.
+  assert.deepEqual(
+    c.withField("raw", text("nope")).handleEvent("input", "parse", []),
+    { tag: "unchanged" },
+  );
+  assert.equal(control.length, 1);
+});
+
+test("`sendAt` reifies a place into the path steps the host resolves", async () => {
+  const { root, control, log } = await load("Addressing");
+  for (const h of ["pokeAll", "pokeRow", "pokeFirst", "pokePane", "pokeDeep"]) {
+    assert.doesNotMatch(log, new RegExp(`refused on ${h}`));
+  }
+  const c = new root.guest.Instance("Addressing", [["word", text("hi")]]);
+
+  // A bare `.field` — the whole slot.
+  c.handleEvent("input", "pokeAll", []);
+  assert.deepEqual(control.at(-1), {
+    kind: "sendAt",
+    path: [{ tag: "field", val: "rows" }],
+    name: "ping",
+    args: [text("hi")],
+  });
+
+  // An index from a parameter, frozen to the value in hand. A number key is
+  // `at`, which is what `control.path-step` calls a positional element.
+  c.handleEvent("input", "pokeRow", [num(2)]);
+  assert.deepEqual(control.at(-1).path, [
+    { tag: "at", val: { field: "rows", index: 2 } },
+  ]);
+
+  // A literal key is the same step written out.
+  c.handleEvent("input", "pokeFirst", []);
+  assert.deepEqual(control.at(-1).path, [
+    { tag: "at", val: { field: "rows", index: 0 } },
+  ]);
+
+  // A text key is `item`, and WHICH case it is was decided by the key's value
+  // at run time — `.rows[k]` and `.panes[k]` are the same syntax.
+  c.handleEvent("input", "pokePane", [text("left")]);
+  assert.deepEqual(control.at(-1).path, [
+    { tag: "item", val: { field: "panes", key: "left" } },
+  ]);
+
+  // Two steps: the keyed one, then the trailing field.
+  c.handleEvent("input", "pokeDeep", [num(1)]);
+  assert.deepEqual(control.at(-1).path, [
+    { tag: "at", val: { field: "rows", index: 1 } },
+    { tag: "field", val: "inner" },
+  ]);
+
+  // A key that is not a key at all abandons the transition, and nothing goes
+  // out — `Value::as_key` answers None for a fraction, and a None is no change.
+  const before = control.length;
+  assert.deepEqual(c.handleEvent("input", "pokeRow", [num(1.5)]), {
+    tag: "unchanged",
+  });
+  assert.equal(control.length, before);
+
+  // And the one form with no wire shape is REFUSED rather than approximated.
+  // `&.panes[.sel]` means "re-read `.sel` on every dispatch"; freezing the key
+  // would be a different path that looks like this one.
+  assert.match(log, /refused on pokeSelected/);
+  // Refused means absent, so the host hears `unhandled` and falls back.
+  assert.deepEqual(c.handleEvent("input", "pokeSelected", []), {
+    tag: "unhandled",
+  });
+});
+
+test("a card that never addresses a place carries no path lowering", async () => {
+  const { log } = await load("Counter");
+  assert.doesNotMatch(log, /refused/);
+  // The optional halves are a size decision, and `Counter` is the card that
+  // wants none of them: no `num`, no `sendAt`, no collection.
+  const bare = (await load("Counter")).bytes;
+  const addressing = (await load("Addressing")).bytes;
+  assert.ok(addressing > bare, `${addressing} should exceed ${bare}`);
+});
+
+test("a `@when` filter is handed the row, not parameters", async () => {
+  const { root, log, manifest } = await load("Enriched");
+  assert.doesNotMatch(log, /refused pred matches/);
+  assert.doesNotMatch(log, /refused pred second/);
+  // A filter is written `pred matches { … @value … }` with NO parameter list —
+  // the renderer passes `(key, value, iter)` positionally — and this used to
+  // read every `@name` as a refusal, so a compiled filter kept every row.
+  const c = new root.guest.Instance("Enriched", [["needle", text("b")]]);
+  const when = (name, key, value) =>
+    c.callMethod(name, [key, value, { tag: "nil" }]);
+  assert.deepEqual(when("matches", num(0), text("abc")), {
+    tag: "boolean",
+    val: true,
+  });
+  assert.deepEqual(when("matches", num(1), text("xyz")), {
+    tag: "boolean",
+    val: false,
+  });
+  assert.deepEqual(when("second", num(1), text("x")), {
+    tag: "boolean",
+    val: true,
+  });
+  assert.deepEqual(when("second", num(0), text("x")), {
+    tag: "boolean",
+    val: false,
+  });
+  // And the manifest says both names belong to the render-time namespace, or
+  // the host would never route to them.
+  assert.deepEqual(manifest.components[0].whens, ["matches", "second"]);
+});
+
+test("an enricher binds what the row does not carry", async () => {
+  const { root, log, manifest, arena, put } = await load("Enriched");
+  assert.doesNotMatch(log, /refused enrich row/);
+  assert.doesNotMatch(log, /refused enrichScope info/);
+  const c = new root.guest.Instance("Enriched", [["title", text("Rows")]]);
+  const mapOf = (v) => {
+    assert.equal(v.tag, "map");
+    return Object.fromEntries(arena.get(v.val));
+  };
+
+  // The in-loop form: the row's bindings go down, and the whole map comes back
+  // — a guest cannot write into the host's map, so `dynobj.mbt` merges what it
+  // answers. `@echo = str @tag` reads a binding written the line above, which
+  // is the case the corpus pins.
+  const binds = put(new Map());
+  const enriched = mapOf(
+    c.callMethod("row", [
+      { tag: "map", val: binds },
+      num(3),
+      text("b"),
+      { tag: "nil" },
+    ]),
+  );
+  assert.deepEqual(enriched, { tag: text("b"), echo: text("b"), at: num(3) });
+
+  // A binding it was HANDED is readable and comes back untouched beside the
+  // ones it wrote.
+  const seeded = put(new Map([["from", text("earlier")]]));
+  assert.deepEqual(
+    mapOf(c.callMethod("row", [{ tag: "map", val: seeded }, num(0), text("z"), { tag: "nil" }])),
+    { from: text("earlier"), tag: text("z"), echo: text("z"), at: num(0) },
+  );
+
+  // The scope form is handed no row at all, and its answer IS the map.
+  assert.deepEqual(mapOf(c.callMethod("info", [])), {
+    heading: text("Rows"),
+    width: num(4),
+  });
+
+  // Both are in the manifest, under keys that did not exist: a host cannot
+  // route to a name it was never told about, which is the other half of why a
+  // card using `@enrich-with` used to lose its bindings in silence.
+  assert.deepEqual(manifest.components[0].enriches, ["row"]);
+  assert.deepEqual(manifest.components[0].enrichScopes, ["info"]);
+});
+
+test("an escape block is refused unless the host allows it", async () => {
+  const { log, manifest } = await load("Escaped");
+  // Refused rather than ignored: a card whose escape silently did nothing
+  // would be a card whose author cannot tell "the host said no" from "I
+  // spelled the function wrong".
+  assert.match(log, /refused wax Escaped/);
+  assert.doesNotMatch(log, /escaped /);
+  // …and nothing it answered is claimed in the manifest, so the host will not
+  // route to a name that is not there. `sane` is the script block's own
+  // invariant, which is a method like any other callable.
+  assert.deepEqual(manifest.components[0].methods, ["sane"]);
+});
+
+test("an escape answers what the block language turned away", async () => {
+  const { root, control, log, manifest } = await load("Escaped", { allowWax: true });
+
+  // Three escapes, three reasons. The REFUSAL that sent `ping` there is still
+  // in the list — it is why the function exists — and the arm is the escape's.
+  assert.match(log, /refused on ping .*live state/);
+  assert.match(log, /escaped on ping -> card_on_ping/);
+  // A name the script block never declared at all is legal: an escape adds a
+  // handler as readily as it replaces one.
+  assert.match(log, /escaped on accumulate -> card_on_accumulate/);
+  assert.match(log, /escaped compute rounded -> card_compute_rounded/);
+
+  const c = new root.guest.Instance("Escaped", [["sel", text("b")]]);
+
+  // The added handler runs, reads its argument, writes two fields through the
+  // generated `set_<field>` accessors, and answers a successor.
+  const up = c.handleEvent("input", "accumulate", [num(2.5)]);
+  assert.equal(up.tag, "changed");
+  assert.deepEqual(up.val.getField("total"), num(2.5));
+  assert.deepEqual(up.val.getField("hits"), num(1));
+  assert.deepEqual(up.val.getField("note"), text("ok"));
+
+  // `tcx_fail()` is how a hand-written body says "no answer", and the wrapper
+  // reads it exactly where a compiled body's `tc_fail` is read.
+  assert.deepEqual(c.handleEvent("input", "accumulate", [num(-1)]), {
+    tag: "unchanged",
+  });
+
+  // The replaced handler runs, and its effect is buffered and flushed like any
+  // other — the escape said `tcx_send` and the wrapper did the rest.
+  control.length = 0;
+  assert.deepEqual(c.handleEvent("input", "ping", []), { tag: "unchanged" });
+  assert.deepEqual(control, [
+    { kind: "send", name: "ping", args: [text("b")] },
+  ]);
+
+  // A `compute` escape answers a value, through the same `cm_<name>` every
+  // other callable is reached by — which is what `escape_wrappers` buys.
+  assert.deepEqual(c.withField("total", num(2.4)).callMethod("rounded", []), num(2));
+  assert.deepEqual(c.withField("total", num(2.5)).callMethod("rounded", []), num(3));
+
+  // And every escaped name is in the manifest, or a host would never route to
+  // it. `rounded` is there despite the script block never declaring it.
+  assert.deepEqual([...manifest.components[0].methods].sort(), ["rounded", "sane"]);
+});
+
+test("an escape gets the wrapper, so the card's rules still hold", async () => {
+  const { root, control } = await load("Escaped", { allowWax: true });
+  const c = new root.guest.Instance("Escaped", []);
+  // `invariant sane { .total >= 0 }` is the SCRIPT block's, and it guards a
+  // hand-written transition exactly as it guards a compiled one. An escape
+  // answers a declaration's body, not its rules.
+  const bad = c.withField("total", num(-5));
+  assert.deepEqual(bad.handleEvent("input", "accumulate", [num(1)]), {
+    tag: "unchanged",
+  });
+  assert.deepEqual(control.at(-1), {
+    kind: "log",
+    level: "warn",
+    msg: "contract: `accumulate` was abandoned — it broke the invariant `sane`",
+  });
+});
+
+test("the screen takes functions and refuses what authority is made of", async () => {
+  // Written out here rather than as fixture files: each is one line, and what
+  // is being pinned is the REASON, which reads better beside the thing that
+  // provoked it.
+  const cases = [
+    [
+      'import "evil:mod/thing" { #[import = "go"] fn go(); }\nfn h() -> i32 { 1 }',
+      /an `import`: a guest's authority is its import section/,
+    ],
+    ['#[export = "sneak"]\nfn sneak() -> i32 { 1 }', /`#\[export\]` on `sneak`/],
+    ["fn tc_evil() -> i32 { 1 }", /`tc_evil` starts with `tc_`/],
+    ["let leak: i32 = 0;\nfn h() -> i32 { leak }", /a global `leak`/],
+    ["memory m2: i32 [1];", /a `memory`/],
+    ["fn broken( { }", /it did not parse/],
+  ];
+  for (const [block, want] of cases) {
+    const card =
+      `<script type="tutuca/state">\nstate Bad { n: Int }\n</` + `script>\n` +
+      `<script type="tutuca/wax">\n${block}\n</` + `script>\n` +
+      `<template id="Bad"><div></div></template>\n`;
+    writeFileSync(join(out, "Bad.html"), card);
+    const log = execFileSync(
+      "moon",
+      ["run", "cmd/cardwasm", "--target", "native", "--", "--allow-wax", join(out, "Bad.html"), out],
+      { cwd: MODULE, encoding: "utf8" },
+    );
+    // Rejected, not refused: an escape block that cannot be trusted is not a
+    // declaration this backend declines to compile, it is a card that does not
+    // hold together. And `BadEscape` rather than `BadModule`, whose message
+    // says "this is a cardwasm bug" — the card's author typed this.
+    assert.match(log, /^rejected: this card's <script type="tutuca\/wax"> block: /);
+    assert.match(log, want, `for: ${block}`);
+  }
+});
+
+test("a card that never converts a number carries no parser", async () => {
+  // The optional half is a size decision, and the only way to know it stayed
+  // optional is to weigh a card that does not want it against one that does.
+  const bare = (await load("Counter")).bytes;
+  const parsing = (await load("Reading")).bytes;
+  assert.ok(parsing > bare, `${parsing} should exceed ${bare}`);
 });
 
 test("the builtins that needed a collection or a string now compile", async () => {

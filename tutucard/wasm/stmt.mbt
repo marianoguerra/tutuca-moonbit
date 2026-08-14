@@ -40,7 +40,7 @@ fn Gen::field_ty(self : Gen, name : String) -> @statedef.StateTy? {
 /// The schema cannot do this. tutuca has ONE number type, so an `Int` field and
 /// a `Double` field are both `jv_type_f64` and nothing in the record layer can
 /// tell them apart — but the interpreter truncates on the way into an Int
-/// (`coerce_root`, `interp/run.mbt`), so the compiled backend has to emit the
+/// — the corpus pins it — so the compiled backend has to emit the
 /// truncation at the sites where it knows.
 fn Gen::coerce(self : Gen, name : String, v : @abi.I) -> @abi.I {
   match self.field_ty(name) {
@@ -72,6 +72,11 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
           self.uses_target = true
           self.assign_target(place.steps, op, value)
         }
+        // `@tag = str @value` — an enricher writes BINDINGS, not state, and the
+        // map it writes is what it answers with. Only an enricher has one, so
+        // this is still a refusal everywhere else.
+        PBind(b) if self.bind_local is Some(_) =>
+          self.assign_bind(b, place.steps, op, value)
         _ => {
           self.bail(
             "only a `.field` of this card's own state and the `@cur` a `new` makes are assignable in a compiled handler",
@@ -108,7 +113,7 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
 /// `.field = e`, `.field += e`, and the same through a path.
 ///
 /// The path case walks DOWN into locals and rebuilds UP through
-/// `tc_step_put` — `write_place` and `rebuild` in `interp/run.mbt`, spelled as
+/// `tc_step_put` — a read down and a rebuild up, spelled as
 /// a chain of temporaries so that a key expression is evaluated once rather
 /// than once per level.
 fn ECtx::assign(
@@ -163,6 +168,58 @@ fn ECtx::assign(
     i = i - 1
   }
   out.push(set(self.state, call("tc_set", [get(self.state), field, acc])))
+  out
+}
+
+///|
+/// `@tag = e`, and the same through a path — an enricher writing a binding.
+///
+/// Structurally the same walk as a field assignment, and simpler in one way
+/// that matters: there is no schema. A binding has no declared type, so nothing
+/// truncates and nothing validates, and a name nobody bound yet is created
+/// rather than refused. That is what `Env.binds` is in the interpreter — a
+/// plain map — and reading one back sees the write, which is what makes the
+/// corpus's `@echo = str @tag` answer what it does.
+fn ECtx::assign_bind(
+  self : ECtx,
+  name : String,
+  steps : Array[@tscript.PathStep],
+  op : @tscript.AssignOp,
+  value : @tscript.Expr,
+) -> Array[@abi.I] raise Bail {
+  guard self.bind_local is Some(b) else { return [] }
+  let out : Array[@abi.I] = []
+  let key = text_const_str(self.g.pool, name)
+  let rs : Array[String] = [self.g.fresh("r")]
+  out.push(let_(rs[0], call("tc_step_field", [get(b), key])))
+  let keys : Array[String] = []
+  for st in steps {
+    let k = self.g.fresh("k")
+    out.push(let_(k, self.step_key(st)))
+    keys.push(k)
+    let r = self.g.fresh("r")
+    out.push(
+      let_(r, call(self.step_fn(st), [get(rs[rs.length() - 1]), get(k)])),
+    )
+    rs.push(r)
+  }
+  let cur = get(rs[rs.length() - 1])
+  let v = self.expr(value)
+  let mut acc = match op {
+    ASet => v
+    AAdd => call("tc_add", [cur, v])
+    ASub => call("tc_sub", [cur, v])
+  }
+  let mut i = steps.length()
+  while i > 0 {
+    acc = call(self.put_fn(steps[i - 1]), [
+      get(rs[i - 1]),
+      get(keys[i - 1]),
+      acc,
+    ])
+    i = i - 1
+  }
+  out.push(set(b, call("tc_bind_put", [get(b), key, acc])))
   out
 }
 
@@ -262,7 +319,7 @@ fn ECtx::put_fn(self : ECtx, st : @tscript.PathStep) -> String {
 /// `.items.push v` — a mutating collection method.
 ///
 /// The names and arities are `collection_method`'s (`tscript/script_parse.mbt`)
-/// and the semantics are `collection_op`'s (`interp/run.mbt`). Four of the
+/// and the semantics are the corpus's. Four of the
 /// eleven — `clear`, `delete`, `set`, `removeAt` — are parsed by tscript and
 /// implemented by NEITHER backend: the interpreter answers `None` for them, so
 /// compiling them into something would be inventing a meaning the language does
@@ -404,13 +461,15 @@ fn ECtx::mutate_target(
 }
 
 ///|
-/// The effects a compiled body may perform.
+/// The effects a compiled body may perform — all five of them.
 ///
-/// Three of the five: `bubble`, `send` and `stop`. `request` and `sendAt` are
-/// refused rather than approximated — a request carries a `request-opts`
-/// record and a `sendAt` a relative path, and both are shapes this generator
-/// would have to lower into the canonical ABI to get right rather than nearly
-/// right.
+/// A `request` needed less than it looked like: the block language gives one a
+/// name and arguments and nothing else, and the interpreter hands the host
+/// `RequestOpts::new()` for the rest (`tutucard/obj.mbt`), so the record lowers
+/// to a row of constant zeros at the flush.
+///
+/// A `sendAt` needed more. Its first argument is a PLACE, which is reified into
+/// `control.path-step`s rather than read — see `send_at_effect`.
 fn ECtx::effect(
   self : ECtx,
   name : String,
@@ -425,24 +484,20 @@ fn ECtx::effect(
       call("tc_effect_push", [i32c(3), call("tc_empty_str", []), nullref()]),
     ]
   }
-  guard name is ("send" | "bubble") else {
+  if name == "sendAt" {
+    return self.send_at(args, span)
+  }
+  guard name is ("send" | "bubble" | "request") else {
     self.bail(
       "`" +
       name +
-      "` is an effect this generator does not compile yet — `send`, `bubble` and `stop` are the ones it does",
+      "` is not an effect this language has — `send`, `bubble`, `request`, `sendAt` and `stop` are the ones it does",
       span,
     )
     return []
   }
   guard args.length() >= 1 else {
     self.bail("`" + name + "` needs a message name", span)
-    return []
-  }
-  guard args.length() <= 5 else {
-    self.bail(
-      "`" + name + "` with more than four payload values is not compiled yet",
-      span,
-    )
     return []
   }
   self.g.uses_control = true
@@ -463,9 +518,128 @@ fn ECtx::effect(
     // interpreter drops the effects of a transition that is abandoned — so
     // these are held until the contracts have held and flushed then.
     call("tc_effect_push", [
-      i32c(if name == "bubble" { 2 } else { 1 }),
+      i32c(
+        match name {
+          "bubble" => 2
+          "request" => 4
+          _ => 1
+        },
+      ),
       get(msg),
       get(pl),
+    ]),
+  ]
+}
+
+///|
+/// `sendAt &.place 'name' args…` — the one effect that addresses somewhere else.
+///
+/// The place is REIFIED rather than read: `&.rows[k]` denotes the position, and
+/// a position survives the root being rebuilt, which is what makes an answer
+/// land on the row that asked for it. The corpus fixes what a
+/// reified path means, and this is the walk that produces one: a `.field` and a following `[key]` pair
+/// up into one keyed step, a `.field` with nothing after it is a step of its
+/// own, and the root's own name starts the walk.
+fn ECtx::send_at(
+  self : ECtx,
+  args : Array[@tscript.Expr],
+  span : @tscript.Span,
+) -> Array[@abi.I] raise Bail {
+  guard args.get(0) is Some(ERef(place~, ..)) else {
+    self.bail(
+      "`sendAt` addresses a place, so its first argument is `&.field…` — a value would say WHAT to send to rather than WHERE",
+      span,
+    )
+    return []
+  }
+  // The interpreter requires a string LITERAL here and abandons the transition
+  // otherwise, so a computed name is refused when it compiles rather than
+  // failing when it runs. `send` and `bubble` take an expression because the
+  // interpreter lets them.
+  guard args.get(1) is Some(ELit(lit=LStr(msg), ..)) else {
+    self.bail(
+      "`sendAt`'s message name has to be written out — the interpreter reads it as a literal and abandons the transition for anything else",
+      span,
+    )
+    return []
+  }
+  guard place.root is PState(root) else {
+    self.bail(
+      "`sendAt` addresses a place in this card's own state, so the path starts at a `.field`",
+      span,
+    )
+    return []
+  }
+  let steps : Array[@abi.I] = []
+  let mut pending : String? = Some(root)
+  for st in place.steps {
+    match st {
+      PField(name) => {
+        match pending {
+          Some(f) =>
+            steps.push(call("tc_path_field", [text_const_str(self.g.pool, f)]))
+          None => ()
+        }
+        pending = Some(name)
+      }
+      PIndex(key) => {
+        guard pending is Some(field) else {
+          self.bail("`sendAt`: `[key]` needs a field to index into", span)
+          return []
+        }
+        // The one form with no wire shape. `&.sheets[.selId]` means "re-read
+        // `.selId` on every dispatch" — the interpreter makes it a
+        // `SeqAccessStep` for exactly that — and `control.path-step` has no
+        // case that says so. Freezing the key instead would be a DIFFERENT
+        // path that looks like this one, so it is refused rather than
+        // approximated.
+        if key is ERead(place=kp, ..) &&
+          kp.root is PState(_) &&
+          kp.steps.is_empty() {
+          self.bail(
+            "`sendAt` with a key read from live state re-resolves on every dispatch, and `control.path-step` has no case for that — index by a literal or by a parameter instead",
+            span,
+          )
+          return []
+        }
+        steps.push(
+          call("tc_path_keyed", [
+            text_const_str(self.g.pool, field),
+            self.expr(key),
+          ]),
+        )
+        pending = None
+      }
+    }
+  }
+  match pending {
+    Some(f) =>
+      steps.push(call("tc_path_field", [text_const_str(self.g.pool, f)]))
+    None => ()
+  }
+  self.g.uses_control = true
+  self.g.uses_send_at = true
+  let sp = self.g.fresh("path")
+  let pl = self.g.fresh("pl")
+  let payload : Array[@abi.I] = []
+  for i, a in args {
+    if i > 1 {
+      payload.push(self.expr(a))
+    }
+  }
+  [
+    // `arg_list` is a `pv_push` fold over whatever it is handed, so it builds
+    // the step list as readily as the payload.
+    let_(sp, arg_list(steps)),
+    let_(pl, arg_list(payload)),
+    // Buffered like the rest. A `sendAt` before a failing statement is a
+    // `sendAt` that did not happen — and `tc_path_keyed` may itself be what
+    // fails, when the key is not one.
+    call("tc_effect_push_at", [
+      i32c(5),
+      text_const_str(self.g.pool, msg),
+      get(pl),
+      get(sp),
     ]),
   ]
 }

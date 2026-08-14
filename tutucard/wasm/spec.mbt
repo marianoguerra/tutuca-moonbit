@@ -31,6 +31,33 @@ pub(all) struct Refusal {
 } derive(Debug, Eq)
 
 ///|
+/// One declaration a card answered in Wax rather than in the block language.
+///
+/// The other half of a `Refusal`, and the reason the two are worth reading
+/// together: the AOT path has always refused a handler by NAME and handed it
+/// back as an `update~` argument you write in MoonBit, and this path refused by
+/// name and handed back nothing. A `<script type="tutuca/wax">` block is where
+/// what it handed back goes.
+pub(all) struct Escape {
+  /// The declaration's kind word: `on`, `receive`, `compute`, …
+  kind : String
+  name : String
+  /// The Wax function that answers it.
+  fn_name : String
+  /// Whether the script block declares this name too.
+  ///
+  /// False is legal and is the second thing an escape is for: a handler tutuca
+  /// cannot express need not be declared in tutuca to be answered. True is the
+  /// first — the block language said it, this backend turned it away, and the
+  /// Wax below is what came back.
+  declared : Bool
+  /// The reason it was turned away, when it was. Empty when the script block
+  /// never declared the name, and empty when it declared one that compiles
+  /// perfectly well and the card chose to answer it in Wax anyway.
+  replaced : String
+} derive(Debug, Eq)
+
+///|
 /// A compiled card: the bytes, and everything a host needs to mount them.
 ///
 /// `manifest` and `descriptor` are here rather than left to the caller because
@@ -55,6 +82,8 @@ pub(all) struct Compiled {
   /// is what the module IS, and this is what the generator SAID.
   wax : String
   refusals : Array[Refusal]
+  /// What the card's own `<script type="tutuca/wax">` block answered.
+  escapes : Array[Escape]
   /// The state fields, in the order their cells are laid out.
   fields : Array[String]
   /// The `DynManifest` JSON `dyncomp/host.register_bundle` parses.
@@ -84,25 +113,29 @@ pub suberror GenError {
   /// with a hole where the handler should be would turn a mistake into a
   /// silent fallback.
   BadScript(Array[String])
-  /// The file declares no `state` block, so there are no fields, no zero and
-  /// nothing for a handler to change. A card like that is a set of views,
-  /// which the host can render without a guest at all.
-  NoState
   /// Wax rejected the module this generator built. Always a bug HERE — the
   /// card's own mistakes were found before a single instruction was emitted —
   /// so it carries the diagnostics verbatim rather than a friendly summary.
   BadModule(Array[String])
+  /// The card's `<script type="tutuca/wax">` block is not usable.
+  ///
+  /// Its own error rather than `BadModule`, whose message says "this is a
+  /// cardwasm bug": a card that hand-writes Wax can get it wrong, and telling
+  /// its author to file a compiler bug would be the generator blaming somebody
+  /// else for what they typed. It carries the Wax front end's diagnostics, or
+  /// the screen's own reason for turning a field away.
+  BadEscape(Array[String])
 }
 
 ///|
 pub fn GenError::message(self : GenError) -> String {
   match self {
     BadCard(m) => m
-    NoState =>
-      "a compiled card needs a <script type=\"tutuca/state\"> block: the state is what an instance IS, and a guest with no fields has nothing to answer get-field with"
     BadScript(fs) => "this card does not check: " + fs.join("; ")
     BadModule(ds) =>
       "the generated module did not type-check (this is a cardwasm bug): " +
       ds.join("; ")
+    BadEscape(ds) =>
+      "this card's <script type=\"tutuca/wax\"> block: " + ds.join("; ")
   }
 }

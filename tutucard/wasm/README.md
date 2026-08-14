@@ -13,10 +13,16 @@ card.html  --viewfile/statedef/tscript-->  declarations
            --dyncomp/host-------------->   a component in a page
 ```
 
-The third backend over `tscript`'s one AST. `tscript/interp` runs a card where
-it stands; `tscript/emit_mbt` turns one into MoonBit ahead of time; this one
-compiles it. All three are held to `tscript/conformance`, because a language
-with three implementations and no shared table has three semantics.
+One of TWO backends over `tscript`'s one AST: `tscript/emit_mbt` turns a block
+into MoonBit ahead of time, and this one compiles it. Both are held to
+`tscript/conformance`, because a language with two implementations and no shared
+table has two semantics.
+
+There was a third — an interpreter that ran a card where it stood, and what
+`tutucard` mounted. **It is gone, and this is what replaced it.** Mounting a
+card means compiling it and instantiating the module, which is why
+`web/card-wasm.js` has a `mountCard` and the MoonBit side no longer has a
+`load`.
 
 ## Three packages
 
@@ -48,25 +54,85 @@ a copy of it.
 
 `Int` and `Double` are both `jv_f64`, because tutuca has exactly one number
 (`Value::Num(Double)`). An `Int` field truncates at its assignment sites, which
-is where `coerce_root` does it in the interpreter.
+is where the interpreter did it too, and what the corpus pins.
 
 Every map is a **`jv_ordered_map`** and every set a `jv_ordered_set`, because
 tutuca's `Value::Map` is MoonBit's `Map` and the renderer's `@each` indexes one
 directly — see the note at the bottom.
 
 **Declarations.** `on`, `receive`, `bubble`, `response`, `compute`, `pred`,
-`invariant`, and the `requires` / `ensures` clauses that attach to a transition.
+`invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses
+that attach to a transition.
+
+The last two were the worst gap this backend had, and the only one that was
+INVISIBLE: `DEnrich` and `DEnrichScope` appeared nowhere in this package at all,
+so a card using `@enrich-with` compiled with no refusal to show for it and
+quietly lost its bindings. Both compile now, and both are in the manifest under
+keys that did not exist — a host cannot route to a name it was never told about,
+which was the other half of the same hole.
+
+**The render stack's row.** `@key`, `@value` and `@iter` arrive at a compiled
+declaration as ARGUMENTS: `component/instance.mbt` passes them positionally
+through what is, for a guest, `call-method`. A filter is written
+`pred matches { … @value … }` with no parameter list at all, and every `@name` in
+one used to be a refusal — so a compiled filter kept every row. The offsets
+differ by shape, which is what `bind_index` is for:
+
+| | handed | answers |
+|---|---|---|
+| `pred` through `@when` | `(key, value, iter)` | a yes or a no |
+| `enrich` | `(binds, key, value, iter)` | the whole binding map |
+| `enrichScope` | `()` | the whole binding map |
+
+An enricher answers the map rather than writing into one, and that is the one
+place the compiled shape had to differ from the interpreted one. The renderer
+reads the map it PASSED IN — `render/render.mbt` discards an enricher's return
+value, which is why `TypedInstance`'s adapter mutates its argument — and a guest
+cannot mutate a host's map. So the guest returns one and
+`dyncomp/host/dynobj.mbt` merges it back, minus `key` / `value` / `iter`, which
+belong to the loop. Same contract, written on the side of the boundary that can
+keep it.
 
 **Statements.** `.field = e`, `+=`, `-=`, the same through a path
 (`.a[k].b = e`), `if … else …`, the collection mutators `push`, `insertAt`,
 `setAt`, `deleteAt`, `add`, `remove`, `toggle`, `new T`, and the effects
-`send`, `bubble` and `stop`.
+`send`, `bubble`, `request`, `sendAt` and `stop`.
+
+`sendAt` addresses a PLACE — `&.rows[k].label` — and a place is reified rather
+than read, because a position survives the root being rebuilt and that is what
+makes an answer land on the row that asked for it. The generator does the same
+walk at compile time that the corpus pins the meaning of, and the result is a
+`list<control.path-step>` the flush lowers into linear memory. Which wire case a
+keyed step becomes is decided at RUN time, because `.rows[k]` and `.panes[k]`
+are the same syntax: a text key is an `item`, a whole non-negative number is an
+`at`, and anything else is not a key at all and abandons the transition. One
+form is refused — see below.
+
+`request` was the last thing the corpus caught this backend not doing, and what
+made it look hard was the `request-opts` record. It is not one the block
+language can write: `request 'name' args…` is all there is to say, and the
+language has no way to say anything else — so the record lowers to a
+row of constant zeros at the flush, and the answer arrives in the `response`
+bucket under the request's own name, which this backend already dispatched.
 
 **Expressions.** Literals, `$'…'` templates, `.field` and a path into one, a
 declaration's parameters, a bare or applied `compute`/`pred`/`invariant`,
 `and` / `or` / `implies` / `not`, `is` / `is not` / `<` / `<=` / `>` / `>=`,
 `+ - * /` `mod`, `if … else …` in a value position, and **all sixteen** reading
-builtins.
+builtins — which this said before it was true of `num`, and now is.
+
+A call takes as many arguments as it is written with, and so does a `send`.
+Both used to stop at four, because the argument list was built by a
+`tc_args1..4` family; it is a `pv_push` fold now and has no arity to run out of.
+
+`num` and `int` read a **string** as well as a number, which is what
+the corpus says — and they have no answer at all
+for a value that is neither, so `num true` abandons the transition rather than
+writing a null into the field. The decimal parser that makes this possible is
+`runtime/parse_num.wax`, and it is carried only by a card that says one of the
+two names: Wax's emitter does no dead-code elimination, so ~950 bytes for two
+builtins most cards never write has to be made optional by the generator or not
+at all. It is not correctly rounded — see the deviations below.
 
 ### `new`, and the one binding a handler owns
 
@@ -90,7 +156,7 @@ over.
 **A quirk, and why it needs no fix.** `@cur` is a function-level local, so a
 `new` inside an `if` branch survives the branch. That is not this backend being
 loose: the INTERPRETER does the same, because `exec` hands both arms the same
-`Env` and `SNew` writes `env.binds` (`tscript/interp/run.mbt`). Both agree,
+`Env` and `SNew` writes `env.binds` (`tscript/conformance`). Both agree,
 which is what the corpus is for.
 
 It is also not observable, because the checker will not let you look. `C::stmts`
@@ -119,7 +185,7 @@ Two different answers, and the difference is the whole of what a host does next.
 
 **Rejected** is the card being turned away whole, because it does not check.
 `compile` runs `tscript/check` before it builds a single instruction — the same
-checker `tutucard.load` runs — and a finding is an error:
+checker `check_card` runs — and a finding is an error:
 
 ```
 rejected: this card does not check: line 5 [NO_NAME]: nothing here is called
@@ -142,14 +208,125 @@ component answers something it does not.
 
 | | why |
 |---|---|
-| `request` | **NOT IMPLEMENTED.** A request carries a `request-opts` record and expects a `response` back, so it needs the record lowered into the canonical ABI and the response bucket wired to the reply. Neither is hard; neither is written. This is the one genuine gap the corpus still shows. |
-| `sendAt` | carries a relative path, which would have to be reified into `core.Step`s and lowered |
-| `@binding`, `enrich`, `enrichScope` | a binding the render stack provides, and a compiled handler runs outside one. `@cur` is the exception — see above |
-| `$method`, `*dyn` | answered by the render stack, for the same reason |
+| `sendAt` **with a key read from live state** | `&.panes[.sel]` means "re-read `.sel` on every dispatch", which is what makes it follow a moving selection — `tscript/conformance` reifies it as a `SeqAccessStep` for exactly that. `control.path-step` has no case that says so, so there is nothing to lower it AS. Freezing the key would be a different path that looks like this one, so it is refused rather than approximated. A literal or a parameter key compiles |
+| `@binding` **in a transition** | a handler is handed no row, so there is nothing for `@value` to mean there. In a `pred`, an `enrich` or an `enrichScope` it now compiles — see above. `@cur` is the other exception, and the only binding a handler owns |
+| `$method`, `*dyn` | answered by the render stack, and a compiled handler runs after one |
 
 Also `clear`, `delete`, `set` and `removeAt`: `tscript` parses them as
-collection methods and **the interpreter does not implement them either**, so
-there is no behaviour to compile rather than a behaviour left uncompiled.
+collection methods and **no backend has ever implemented them**, so there is no
+behaviour to compile rather than a behaviour left uncompiled.
+
+## The escape hatch: `<script type="tutuca/wax">`
+
+**Rejected** is the card being turned away. **Refused** is one declaration this
+backend cannot compile. There used to be no third answer, and there should have
+been: tutuca's ahead-of-time path refuses a handler by name and hands it back as
+an `update~` argument you write in MoonBit, and this path refused by name and
+handed back *nothing*. A refused handler was simply absent, and the host fell
+back to whatever mutator the declared field implied — a reasonable answer for a
+handler nobody wrote, and a bad one for a handler somebody wrote and this
+generator turned away.
+
+So a card may carry a fourth block, and what you write in it is the language the
+module is built out of anyway:
+
+```html
+<script type="tutuca/script">
+  /// Checks, and REFUSED: a `sendAt` whose key is read from live state.
+  on ping { sendAt &.rows[.sel] 'ping' }
+</script>
+
+<script type="tutuca/wax">
+  fn card_on_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
+      tcx_send(utf8_from_bytes("ping"), tc_args1(get_sel(s)));
+      null
+  }
+</script>
+```
+
+**A name, not an attribute.** `card_<role>_<name>` binds a function to a
+declaration — `on`, `receive`, `bubble`, `response`, `compute`, `pred`,
+`invariant`. Anything else is a helper the escapes may call. Wax's attributes
+are Wax's, and inventing a `#[card.on]` would mean teaching its front end about
+cards.
+
+| | signature | answers |
+|---|---|---|
+| a transition | `(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value` | the successor, or `null` for unchanged |
+| a callable | `(s: &jv_record_value, args: &?pv_vector) -> &jv_value` | the value |
+
+The script block need not declare the name at all — that is the second thing an
+escape is for. A handler tutuca cannot express does not have to be written in
+tutuca to be answered.
+
+**You write the body and nothing else.** An escaped transition gets the same
+wrapper a compiled one gets: the `requires` still guards, the `ensures` and the
+invariants still hold, `tc_fail` is still read where the language answers
+nothing, and the effects it buffers are still flushed only once every rule has
+held. Those are the language's guarantees and none of them are yours to
+reimplement.
+
+### What you have to write with
+
+The generator emits **per declared field**, and only for a card with an escape
+block:
+
+```wax
+get_count(s)          -> &jv_value            // the field
+set_count(s, v)       -> &jv_record_value     // the successor, schema-checked
+num_count(s)          -> f64                  // Int and Double fields only
+```
+
+These are the difference between an escape being writable and being a research
+project: the generator reaches a field through `tc_get(s, tc_const_str(7))`, and
+`7` is a constant-pool index only the generator knows.
+
+`runtime/escape_help.wax` adds the short list of things that were awkward —
+`tcx_fail()`, `tcx_send` / `tcx_bubble` / `tcx_request` / `tcx_stop`,
+`tcx_str("literal")`, `tcx_int`, `tcx_failed()`. Everything else is already the
+right shape and needs no wrapper: `tc_num` / `tc_bool` / `tc_text` / `tc_null`
+for values, `tc_add`…`tc_mod` for arithmetic **with tutuca's semantics** (a
+mixed `+` *fails* the transition, where an `f64` add written by hand would
+silently join), `tc_eq` / `tc_cmp` / `tc_truthy` for tests, `tc_arg_at` and
+`tc_args1..4` for arguments, `tc_step_field` / `tc_step_index` for paths,
+`tc_method` and the `tc_m_*` constants for the collection mutators, and
+`tc_display` for text.
+
+The WAX panel beside the card is the discovery path. Read what the generator
+emitted for the handlers that *did* compile, and write the missing one in the
+same idiom.
+
+### What it costs, and what it cannot do
+
+**`allow_wax` is off by default**, and that is a trust decision rather than a
+feature flag: a card is untrusted content in the `<mb-card>` story, so whether
+one may carry hand-written code belongs to the host that mounts it. With it off
+a block is a `Refusal` naming the block — refused, not ignored, because a card
+whose escape silently did nothing is a card whose author cannot tell "the host
+said no" from "I spelled the function wrong".
+
+**The screen takes functions and refuses everything a guest's authority is made
+of**: no `import`, no `memory`, no `data`, no `#[export]`, no `#[start]`, no
+globals, and no name in a prefix the runtime has claimed. A guest's authority is
+its import section — that is what `abi.mjs` inspects — so an escape that could
+add an import could widen what the card may do. It cannot, whatever `allow_wax`
+is set to. A block that breaks the screen is `BadEscape`, never `BadModule`:
+that error's message says "this is a cardwasm bug", and the card's author typed
+this.
+
+**A card with an escape block widens its import section anyway.** Every other
+conditional half is inferred from what a compiled body actually said; a
+hand-written function is opaque to all of it, so the whole documented vocabulary
+is made available and `control` and the value arena are imported whether or not
+they are used. That is the real cost of the hatch and the second reason
+`allow_wax` belongs to the host.
+
+**One thing an escape cannot do**: a *compiled* callable cannot call an escaped
+one. Wax resolves in one pass, and the compiled `cm_*` functions are emitted
+before the escape block so that the escape can call them — the reuse direction,
+which is the one worth having. The other way round reads as an ordinary refusal
+(`callable_fields` refuses a callable whose dependency was refused), and the
+answer is to escape both.
 
 ### The value arena, and why some cards import it
 
@@ -160,31 +337,83 @@ imports `tutuca:component/values`; one whose fields are all scalars does not —
 halves, and exactly one is compiled in. Same argument `control` already made: a
 host reads the import section to know what a guest can do.
 
+Four more halves are cut the same way, and mostly for a *different* reason. The
+lowering halves decide what the module IMPORTS, which is a statement about the
+card; these mostly decide only what it WEIGHS:
+
+| | carried by | |
+|---|---|---|
+| `runtime/parse_num.wax` | a card saying `num` or `int` | the decimal parser |
+| `runtime/send_at.wax` | a card saying `sendAt` | reifies and lowers a `&.place` |
+| `runtime/contract_log.wax` | a card declaring a rule | the line a declined rule says — and this one DOES reach the import section, through `control.log` |
+| `runtime/escape_help.wax` | a card with a `tutuca/wax` block | the `tcx_*` vocabulary a hand-writer reaches for |
+
+All of them exist because Wax's emitter does no dead-code elimination, so a
+piece only some cards can reach has to be left out by the generator or carried
+by everyone.
+
 ## Held to the corpus
 
 `tscript/conformance/corpus.mbt` is the language's semantics as data, and
-`test/conformance.test.mjs` is this backend's adapter over it — each case
-becomes a card, gets compiled, and is driven through the same `abi.mjs` a
-downloaded bundle gets.
+`test/conformance.test.mjs` is this backend's adapter over BOTH its tables —
+each case becomes a card, gets compiled, and is driven through the same
+`abi.mjs` a downloaded bundle gets.
 
-**49 pass, 3 are rejected as invalid, 1 is refused, 0 fail.**
+`cmd/card-corpus` writes the table out as JSON, because a compiled card can only
+be run from node. It is a PROJECTION and nothing else: both tables state their
+answers as data. That used to be false of the transitions — an effect was stored
+as a printed line, so the values had to be recovered by RUNNING the interpreter,
+which made this backend's conformance harness depend on the interpreter
+existing. `CaseEffect` is what fixed it, and removing the interpreter is what
+made fixing it necessary.
+
+**50 pass, 3 are rejected as invalid, 0 are refused, 0 fail.**
+
+And `corpus.mbt`'s OTHER table — `value_cases()`, seventeen rows about what a
+block SAID rather than what the state became — is now driven too. It was not
+before, and that is where this backend's worst gap lived: `enrich` and
+`enrichScope` were absent from the generator entirely, which no table was asking
+about. **17 pass, 0 fail.**
+
+The first run of it found a family of real divergences, all the same mistake:
+`lower`, `upper`, `trim`, `contains`, `has`, `len`, `min`, `max` and `clamp`
+answered something PLAUSIBLE for an argument of the wrong shape — the value
+unchanged, or `false`, or zero, or a comparison that read two strings as numbers
+— where `tscript/conformance` answers `None` and abandons the transition. All nine
+now fail where the language answers nothing. A plausible answer is the worse one
+here:
+"the transition did not happen" is something a card author can see, and `false`
+is not.
 
 The three rejected are cards that do not check — a name that resolves to
-nothing, arithmetic on a String, and `@cur` read before any `new`. The one
-refusal is `request`.
+nothing, arithmetic on a String, and `@cur` read before any `new`. Nothing is
+refused any more, and the adapter asserts that: the refusal count used to be a
+number allowed only to shrink, and a number with nothing left in it is better
+spelled as the empty list.
 
-## Known deviations from the interpreter
+## Known deviations
 
 - **Number formatting.** `tc_num_text` prints the integer part exactly and up to
   six fractional digits with the trailing zeros trimmed. It is not a
   shortest-round-trip formatter: `0.1 + 0.2` reads as `0.3`. Anything at or
   above 1e15 reads as `Infinity`.
+- **Number *parsing* is the same trade in reverse.** `tc_parse_f64` reads an
+  optional sign, digits with an optional fraction and an optional exponent, and
+  nothing else — no hex float, no `inf`, no `nan`, none of which a card has a
+  way to write. It accumulates the mantissa by multiplication rather than
+  correctly rounding, so a long decimal can land an ulp from what
+  `@string.from_str` reads. The spellings a card writes by hand are exact.
 - **`with-field` is stricter.** The schema validates, so a value whose type the
   field cannot hold answers `none` and the host falls back.
-- **A declined rule is silent.** A `requires`, `ensures` or `invariant` that
-  does not hold makes the transition not happen, and the `format` sentence it
-  declares is not reported: there is no channel in the guest world for a
-  refusal record yet.
+- **A declined rule reports a LINE, not a record.** A `requires`, `ensures` or
+  `invariant` that does not hold makes the transition not happen, and the card
+  now says so through `control.log` — the same sentence `core/warn.mbt` prints,
+  including the rule's own `format` clause evaluated over the state that was
+  rejected. What does not cross is the structured `Refusal` a host component
+  raises, with the state inside it: the guest world has no shape for that, and
+  `log` is the one thing on `control` that no capability gates. A card that
+  declares a rule therefore imports `control.log`, which is a true statement
+  about the card.
 - **`tutuca/init` fixtures are dropped** from the manifest. Their field values
   are MoonBit source and a manifest wants JSON.
 - **utf8, not utf16.** The shipped MoonBit guests are built `--encoding utf16`;
@@ -197,7 +426,7 @@ refusal is `request`.
 Three things that used to be on this list and are not any more.
 
 Two were found by the corpus: `+` on a mixed pair now FAILS the transition
-rather than joining, which is what `interp/eval.mbt`'s `arith` does; and an
+rather than joining, which is what the corpus says; and an
 effect performed before a failing statement no longer escapes, because effects
 are buffered in the guest and flushed only once every rule has held.
 

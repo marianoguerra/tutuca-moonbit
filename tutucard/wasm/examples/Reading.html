@@ -1,0 +1,45 @@
+<script type="tutuca/state">
+  /// A field typed as text and used as a number.
+  state Reading {
+    /// What the input carried, verbatim.
+    raw: String
+    /// The same thing read as a number.
+    value: Double
+    /// And truncated to a whole unit.
+    whole: Int
+    /// What the six-argument compute answered.
+    tally: Double
+  }
+
+  /// What the host answers a `request 'rows'` with. No view writes these, so
+  /// the schema is the only place they can be declared.
+  response Reading {
+    rows(Any, Any)
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Six arguments — two more than the argument list used to hold.
+  compute total(a, b, c, d, e, f) { a + b + c + d + e + f }
+  /// Read `raw` as a number. A `raw` that is not one leaves the state alone.
+  on parse { .value = num .raw }
+  /// The same reading, truncated.
+  on truncate { .whole = int .raw }
+  /// A call with six arguments, and a `send` carrying six payload values.
+  on wide {
+    .tally = total 1 2 3 4 5 6
+    send 'wide' 1 2 3 4 5 6
+  }
+  /// Ask the host to look `raw` up. The answer comes back later.
+  on lookup { request 'rows' .raw }
+  /// …in the `response` bucket, under the request's own name.
+  response rows(result, error) { .raw = str result }
+</script>
+
+<template id="Reading">
+  <div>
+    <p @text=".raw"></p>
+    <p @text=".value"></p>
+    <button @on.click="parse">parse</button>
+  </div>
+</template>

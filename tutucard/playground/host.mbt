@@ -59,30 +59,30 @@ fn slot_of(id : String) -> Slot {
 ///|
 /// Install the page-facing entry points.
 ///
-/// `load` is the whole API for the playground page. Everything else is a
-/// getter the panels poll, in the same shape `playground/host` publishes — so
-/// the shell's inspector and activity panels work over a card without knowing
-/// it is one, and `classes` feeds the same margaui compiler the other
-/// playground hands `__tutuca.classes()` to.
+/// `check` is the whole API for validating a card. Everything else is a getter
+/// the panels poll, in the same shape `playground/host` publishes — so the
+/// shell's inspector and activity panels work over a card without knowing it is
+/// one, and `classes` feeds the same margaui compiler the other playground
+/// hands `__tutuca.classes()` to.
 ///
-/// `mount` / `unmount` are the same loop addressed by mount point rather than
-/// by "the page's one card", which is what an embedded example needs: it
-/// arrives and leaves with its element, and several live side by side. So is
-/// `classesAt`: an embedded card is styled where it sits, and the page's one
-/// card is not a thing it can ask about.
+/// `unmount` and `classesAt` are addressed by MOUNT POINT rather than by "the
+/// page's one card", which is what an embedded example needs: it arrives and
+/// leaves with its element, and several live side by side.
 ///
-/// `mountCompiled` is the other backend's mount, and it takes a manifest rather
-/// than a source: by then the card is a running wasm module the page
-/// instantiated, and what is left is to register it as a bundle (`cardguest.mbt`).
+/// `compile` and `mountCompiled` are the two halves of showing a card. There
+/// used to be a `load` and a `mount` between them that parsed a card and ran it
+/// where it stood, and there is no interpreter to do that any more: a card is
+/// mounted by compiling it and instantiating the module. Instantiation is
+/// `WebAssembly`, which answers a promise, so the sequence lives in
+/// `web/card-wasm.js` as `mountCard` — the one thing on this boundary that
+/// could not be a synchronous MoonBit call.
 pub fn install() -> Unit {
   publish(
-    (source, name) => load(source, name),
     (source, name) => check(source, name),
-    (source, name) => compile(source, name),
+    (source, name, allow_wax) => compile(source, name, allow_wax),
     () => state_json(),
     () => classes_json(),
     () => activity_json(),
-    (id, source, name) => mount_at(id, source, name),
     id => unmount_at(id),
     id => classes_at(id),
     (id, manifest) => mount_compiled(id, manifest),
@@ -91,31 +91,16 @@ pub fn install() -> Unit {
 
 ///|
 extern "js" fn publish(
-  load : (String, String) -> String,
   check : (String, String) -> String,
-  compile : (String, String) -> String,
+  compile : (String, String, Bool) -> String,
   state : () -> String,
   classes : () -> String,
   activity : () -> String,
-  mount : (String, String, String) -> String,
   unmount : (String) -> Unit,
   classes_at : (String) -> String,
   mount_compiled : (String, String) -> String,
 ) -> Unit =
-  #|(load, check, compile, state, classes, activity, mount, unmount, classesAt, mountCompiled) => { globalThis.__tutucard = { load, check, compile, state, classes, activity, mount, unmount, classesAt, mountCompiled } }
-
-///|
-/// Parse, check and mount a card into the element with this id.
-///
-/// The same report `load` answers, and the same teardown-first order — the
-/// difference is only WHERE, which is the whole of what an embed needs. An id
-/// that is not on the page answers `"mounted": false` rather than failing:
-/// an embed that has been removed while a debounce was in flight is an
-/// ordinary thing, not an error to report to a reader.
-pub fn mount_at(id : String, source : String, name : String) -> String {
-  teardown(id)
-  report(source, name, mount_into=Some(id))
-}
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled } }
 
 ///|
 /// Tear a card down and forget its mount point.
@@ -129,7 +114,7 @@ pub fn unmount_at(id : String) -> Unit {
 }
 
 ///|
-/// Parse, check and mount a card. Answers a JSON report the editor reads.
+/// Parse and check a card WITHOUT mounting it. Answers a JSON report.
 ///
 /// ```json
 /// { "ok": true,  "component": "Counter", "issues": [ … ] }
@@ -139,70 +124,44 @@ pub fn unmount_at(id : String) -> Unit {
 ///
 /// `ok: false` means there is nothing to mount — the file does not split, or
 /// the script does not parse. `ok: true` with a non-empty `issues` is the
-/// ordinary state of a card being edited: it renders, and the things wrong
-/// with it are listed. Refusing to show anything until everything is right is
-/// what makes a live editor unusable, and a live editor is the one thing this
-/// exists to be good at.
-pub fn load(source : String, name : String) -> String {
-  mount_at(root_id.val, source, name)
-}
-
-///|
-/// Parse and check a card WITHOUT mounting it.
+/// ordinary state of a card being edited: it renders, and the things wrong with
+/// it are listed. Refusing to show anything until everything is right is what
+/// makes a live editor unusable, and a live editor is the one thing this exists
+/// to be good at.
 ///
-/// The same report, minus the part that needs a page. Worth being a separate
-/// entry rather than a flag: validating a card is a thing a host does without
-/// showing one — an agent that generated it, a build step over a directory of
-/// them, or the check that keeps the starter cards on this page loading — and
-/// none of those has a DOM.
+/// MOUNTING is not here any more, and cannot be: a card is mounted by compiling
+/// it and instantiating the module, and instantiation is `WebAssembly` — which
+/// answers a promise. So the three steps live in `web/card-wasm.js` as
+/// `mountCard`, and what is left on this side is the half that needs no page
+/// (`check`) and the half that needs a module already running (`mountCompiled`).
 pub fn check(source : String, name : String) -> String {
-  report(source, name, mount_into=None)
-}
-
-///|
-fn report(source : String, name : String, mount_into~ : String?) -> String {
-  let card = @tutucard.load(source, name~) catch {
-    e => {
-      let (line, from, to) = locate(e)
+  let out = @wasm.check_card(source, name~) catch {
+    e =>
       return Json::object({
         "ok": Json::boolean(false),
         "error": Json::string(e.message()),
-        "line": Json::number(line.to_double()),
-        "start": Json::number(from.to_double()),
-        "end": Json::number(to.to_double()),
+        // A whole-card failure is about the file's structure rather than a
+        // position in it, so the editor decides what to highlight.
+        "line": Json::number(1),
+        "start": Json::number(0),
+        "end": Json::number(0),
       }).stringify()
-    }
-  }
-  let issues = card.issues.map(i => {
-    Json::object({
-      "code": Json::string(i.code),
-      "message": Json::string(i.message),
-      "line": Json::number(i.line.to_double()),
-      "start": Json::number(i.span.start.to_double()),
-      "end": Json::number(i.span.end_.to_double()),
-    })
-  })
-  let mounted = match mount_into {
-    Some(id) => mount(card, id)
-    None => false
   }
   Json::object({
     "ok": Json::boolean(true),
-    "component": Json::string(card.component.name),
-    "mounted": Json::boolean(mounted),
-    "issues": Json::array(issues),
+    "component": Json::string(out.component),
+    "issues": Json::array(
+      out.issues.map(i => {
+        Json::object({
+          "code": Json::string(i.code),
+          "message": Json::string(i.message),
+          "line": Json::number(i.line.to_double()),
+          "start": Json::number(i.span.start.to_double()),
+          "end": Json::number(i.span.end_.to_double()),
+        })
+      }),
+    ),
   }).stringify()
-}
-
-///|
-/// Where a load failure happened. A file failure has no span of its own — it
-/// is about the file's structure rather than a position in it — so it reports
-/// the whole of it and lets the editor decide what to highlight.
-fn locate(e : @tutucard.CardError) -> (Int, Int, Int) {
-  match e {
-    BadScript(line~, span~, ..) => (line, span.start, span.end_)
-    _ => (1, 0, 0)
-  }
 }
 
 ///|
@@ -289,53 +248,6 @@ fn playground_requests(
 }
 
 ///|
-fn mount(card : @tutucard.Card, id : String) -> Bool {
-  let doc = @dom.window().document()
-  guard doc.getElementById(id) is Some(root_el) else { return false }
-  // The preview element is reused across loads, so whatever the last card
-  // rendered has to go before this one renders into it.
-  let root_node = @bdom.BrowserNode::from_element(root_el)
-  root_node.replace_children()
-  // The file's macros travel with it: `<x:name>` in a card expands against the
-  // scope the module registers, exactly as a generated module's does. So do
-  // the page's request fixtures — a `request` in a block reaches the host the
-  // same way a compiled component's `ctx.request` does, and the host is this.
-  let slot = slot_of(id)
-  let m = @component.ModuleDef::new(
-    name="card",
-    components=[card.component],
-    macros=card.macros,
-    requests=playground_requests(slot, slot.gen),
-  )
-  let a = @app.App::from_module(
-    m,
-    card.component.name,
-    root_node,
-    @bdom.opts_for(doc),
-    args=card.initial(),
-  ) catch {
-    _ => return false
-  }
-  @glue.install(a)
-  // Into the DOCUMENT, not the mount point: a card's `<style>` blocks are
-  // scoped by the framework, so several embedded cards on one page each add
-  // their own rules without reaching each other's nodes.
-  @glue.install_styles(a, @bdom.BrowserNode::from_document(doc))
-  slot.app = Some(a)
-  a.transactor.observe(record => {
-    slot.activity.push(record.to_json())
-    if slot.activity.length() > ACTIVITY_CAP {
-      slot.activity.remove(0) |> ignore
-    }
-  })
-  |> ignore
-  // tutuca has no lifecycle: the HOST dispatches `init`, so a card with a
-  // `receive init` arm gets one exactly as a compiled component does.
-  a.send_at_root("init") |> ignore
-  true
-}
-
-///|
 /// The dispatches since the playground page's card was last loaded, as a JSON
 /// array.
 pub fn activity_json() -> String {
@@ -414,8 +326,8 @@ fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
 /// byte array, and the page has to hold the real bytes: it instantiates them
 /// through `abi.mjs` and packs them into the archive the download button hands
 /// you.
-pub fn compile(source : String, name : String) -> String {
-  let out = @wasm.compile(source, name~) catch {
+pub fn compile(source : String, name : String, allow_wax : Bool) -> String {
+  let out = @wasm.compile(source, name~, allow_wax~) catch {
     e =>
       return Json::object({
         "ok": Json::boolean(false),
@@ -439,6 +351,20 @@ pub fn compile(source : String, name : String) -> String {
           "name": Json::string(r.name),
           "reason": Json::string(r.reason),
           "line": Json::number(r.line.to_double()),
+        })
+      }),
+    ),
+    // The other half of the refusal panel: what the card ANSWERED in Wax, and
+    // for a name it also declared, the reason the block language turned it
+    // away. A refusal and the escape that answers it are one story.
+    "escapes": Json::array(
+      out.escapes.map(e => {
+        Json::object({
+          "kind": Json::string(e.kind),
+          "name": Json::string(e.name),
+          "fn": Json::string(e.fn_name),
+          "declared": Json::boolean(e.declared),
+          "replaced": Json::string(e.replaced),
         })
       }),
     ),

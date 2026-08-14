@@ -1,7 +1,7 @@
 // The MoonBit backend, run against the corpus.
 //
 // The second of the three adapters the corpus exists for. The interpreter's
-// (tscript/interp/conformance_test.mbt) reads the table directly; this one
+// The corpus is data and nothing runs it; this one
 // cannot, because its answers only exist once `moonc` has compiled them — so
 // the corpus is projected into corpus.html by `cmd/dev -- gen-conformance`,
 // compiled by `gen-views` like any other view file, and driven here.
@@ -93,9 +93,12 @@ test "the MoonBit backend agrees with the corpus" {
         "\{c.name}: expected \{show_state(c.after)}, got \{show_state(after)}",
       )
     }
-    if rec.seen != c.effects {
+    // The recorder writes a LINE, so the comparison is against the printed
+    // form the corpus derives rather than the record it stores.
+    let want = c.effects.map(e => e.printed())
+    if rec.seen != want {
       failures.push(
-        "\{c.name}: expected effects [\{c.effects.join(", ")}], got [\{rec.seen.join(", ")}]",
+        "\{c.name}: expected effects [\{want.join(", ")}], got [\{rec.seen.join(", ")}]",
       )
     }
   }

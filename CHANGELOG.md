@@ -6,6 +6,102 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **The card interpreter is gone, and the compiler is what a card runs on.**
+  `tscript/interp` and `tutucard`'s `load` / `Card` / `CardObj` / `Deck` have
+  been deleted. A card is mounted by compiling it to a
+  `tutuca:component@0.7.0` core wasm module and instantiating it — which the
+  page could already do, in a panel next door, to show you what the compiler
+  would have made of the card it was interpreting. That panel's answer is the
+  one on screen now.
+
+  BREAKING for anyone importing `marianoguerra/tutuca/tutucard` or
+  `marianoguerra/tutuca/tscript/interp`. `tutucard/wasm` is what replaces both:
+  `compile` for a module, and a new `check_card` for the findings on their own,
+  which is what `load` was mostly used for.
+
+  The language has two implementations now rather than three, and the corpus is
+  what keeps them honest. Losing the third cost something worth naming: it was
+  the implementation you could read in an afternoon, and it was where a case's
+  answer came from when somebody wrote one. Both corpus tables state their
+  answers outright now — which they had to, for the compiler's adapter to exist
+  at all.
+
+### Added
+
+- **`<script type="tutuca/wax">` — the escape hatch, for the backend that had
+  none.** The ahead-of-time path has always refused a handler by name and handed
+  it back as an `update~` argument you write in MoonBit. The compiled path
+  refused by name and handed back *nothing*: a refused handler was simply
+  absent. Now a card can answer it in the language the module is built out of.
+
+  A function called `card_on_<name>` (or `card_compute_<name>`, …) takes the
+  dispatch arm the block language would have had, and gets the same wrapper a
+  compiled handler gets — the `requires` still guards, the invariants still
+  hold, and the effects it buffers are still flushed only once every rule has
+  held. It may also answer a name the script block never declared, which is how
+  you add a handler tutuca cannot express.
+
+  Two things make it writable rather than a research project. The generator
+  emits `get_<field>` / `set_<field>` / `num_<field>` per declared field, because
+  it addresses a field through a constant-pool index only it knows. And
+  `runtime/escape_help.wax` adds the short list of things that were awkward —
+  `tcx_fail()`, `tcx_send`, `tcx_str("…")`. Everything else was already the right
+  shape; the README lists it.
+
+  `allow_wax` is OFF by default — a card is untrusted content in the `<mb-card>`
+  story, so whether one may carry hand-written code belongs to the host.
+  Independently, the screen refuses everything a guest's authority is made of:
+  no `import`, no `memory`, no `data`, no `#[export]`, no `#[start]`, no globals.
+
+- **`request` and `sendAt` compile.** `request` was the one genuine gap the
+  corpus showed, and the `request-opts` record that made it look hard is not one
+  the block language can write — so it lowers to constant zeros. `sendAt` reifies
+  a `&.place` into `control.path-step`s at compile time, deciding `item` vs `at`
+  from the key's value at run time. One form stays refused, deliberately:
+  `&.panes[.sel]` means "re-read `.sel` on every dispatch" and the wire has no
+  case that says so, so freezing the key would be a different path that looks
+  like this one.
+
+- **`enrich`, `enrichScope`, and the row a filter is judging.** These were the
+  worst gap the compiler had and the only INVISIBLE one: both enrichers appeared
+  nowhere in the package, so a card using `@enrich-with` compiled with no refusal
+  to show for it and quietly lost its bindings. `@key` / `@value` / `@iter` now
+  compile too, so a `@when` filter reads the row it is judging rather than
+  keeping every one.
+
+- **A declined contract says so.** A `requires`, `ensures` or `invariant` that
+  does not hold reports through `control.log` — the same line `core/warn.mbt`
+  prints, `format` sentence included. The structured `Refusal` still has no shape
+  in the guest world; the sentence does.
+
+- **`num`, and calls that take more than four arguments.** The README claimed
+  "all sixteen" reading builtins before it was true of `num`. A call and a `send`
+  now take as many values as they are written with.
+
+### Fixed
+
+- **Nine builtins answered something plausible where the language answers
+  nothing.** `lower`, `upper`, `trim`, `contains`, `has`, `len`, `min`, `max` and
+  `clamp` returned the value unchanged, or `false`, or zero, or a comparison that
+  read two strings as numbers — `min 'a' 'b'` answered `'a'` — where the language
+  abandons the transition. Found the first time the compiled backend was driven
+  against the corpus's *value* table, which nothing had ever done. A plausible
+  answer is the worse one here: "the transition did not happen" is something a
+  card author can see, and `false` is not.
+
+- **`int` of a string, and of anything else.** `int "42"` answered null instead of
+  42, and `int true` answered null instead of abandoning the transition.
+
+- **A compiled card carries its macros.** `<x:badge>` in one was an unknown
+  element that rendered as itself — the same bug the card loader had and fixed,
+  one backend later. The manifest carries them now and `register_bundle`
+  registers them.
+
+- **A card with no `<script type="tutuca/state">` block compiles.** It was turned
+  away whole, while the loader mounted one happily.
+
 ## [0.21.0] - 2026-08-14
 
 ### Added

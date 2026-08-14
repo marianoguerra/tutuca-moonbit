@@ -365,7 +365,7 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "tutucard-playground",
-      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card loads",
+      about: "assemble dist/tutucard/ (the card playground, which carries the card compiler and no MoonBit one): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card checks AND compiles",
       commands: [
         // No MoonBit compiler, no worker, no prebuilt .mi/.core closure and no
         // toolchain pin — a card is parsed and mounted, so what ships is the
@@ -429,7 +429,7 @@ pub fn tasks() -> Array[Task] {
 /// The corpus, projected and then compiled.
 ///
 /// Two steps because the second is `gen-views`: the corpus is DATA and the
-/// interpreter reads it directly, but the MoonBit backend's answers only exist
+/// wasm backend reads it as JSON, but the MoonBit backend's answers only exist
 /// once `moonc` has compiled them — so the corpus becomes a view file and
 /// takes the ordinary path from there. `gen-views` already lists corpus.html,
 /// so `ci` re-runs and drift-checks the second half on its own; this task is

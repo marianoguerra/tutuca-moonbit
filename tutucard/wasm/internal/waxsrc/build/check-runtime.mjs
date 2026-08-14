@@ -45,6 +45,12 @@ fn alloc(size: i32, align: i32) -> i32 {
 }
 `;
 
+// Carried only by a card that uses what is in them, and appended after the
+// lowering half. Checked here unconditionally: the point of this script is to
+// compile every line of `runtime/`, and a piece only some cards get is exactly
+// the piece a typo hides in.
+const OPTIONAL = ["parse_num.wax", "send_at.wax", "contract_log.wax", "escape_help.wax"];
+
 function build(lowering) {
   const parts = [];
   const spans = [];
@@ -59,6 +65,7 @@ function build(lowering) {
   add("<prelude>", PRELUDE);
   add("runtime/runtime.wax", readFileSync(join(MODULE, "runtime", "runtime.wax"), "utf8") + "\n");
   add(`runtime/${lowering}`, readFileSync(join(MODULE, "runtime", lowering), "utf8") + "\n");
+  for (const n of OPTIONAL) add(`runtime/${n}`, readFileSync(join(MODULE, "runtime", n), "utf8") + "\n");
   return { src: parts.join(""), spans };
 }
 

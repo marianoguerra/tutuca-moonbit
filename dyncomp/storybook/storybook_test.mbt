@@ -132,6 +132,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Tally",
@@ -167,6 +168,8 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [
           {
@@ -209,6 +212,8 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [
           {

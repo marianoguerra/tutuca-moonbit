@@ -206,7 +206,7 @@ class MbCard extends HTMLElement {
           for (const e of entries) {
             if (!e.isIntersecting) continue;
             this._io.disconnect();
-            this.reload();
+            this.reload().catch((e) => console.warn(`[mb-card] ${e.message}`));
           }
         },
         { rootMargin: "200px" },
@@ -267,7 +267,7 @@ class MbCard extends HTMLElement {
     this.setText(this.original);
     this.fitRows();
     this.syncReset();
-    this.reload();
+    this.reload().catch((e) => console.warn(`[mb-card] ${e.message}`));
   }
 
   /**
@@ -326,7 +326,12 @@ class MbCard extends HTMLElement {
     // as the page lagging.
     this.syncReset();
     clearTimeout(this._timer);
-    this._timer = setTimeout(() => this.reload(), DEBOUNCE_MS);
+    this._timer = setTimeout(() => {
+      this.reload().catch((e) => {
+        this.setStatus("cannot load", "bad");
+        console.warn(`[mb-card] ${e.message}`);
+      });
+    }, DEBOUNCE_MS);
   }
 
   setStatus(text, cls) {
@@ -334,20 +339,35 @@ class MbCard extends HTMLElement {
     this.statusEl.className = "mbc-status " + (cls || "");
   }
 
-  /** Parse, check, mount, and draw what came back. */
-  reload() {
+  /**
+   * Check, compile, mount, and draw what came back.
+   *
+   * ASYNC, and it did not use to be: mounting a card meant handing its source
+   * to an interpreter, and it now means compiling the card to wasm and
+   * instantiating the module. `mountCard` is the three steps, and the middle
+   * one is `WebAssembly.compile`.
+   *
+   * Reloads can overlap, because a fast typist can start a second one while the
+   * first is still instantiating. `_gen` is what tells a late answer from a live
+   * one — the same trick the request fixtures use — and dropping a stale answer
+   * is what stops the older card from being the one left on the page.
+   */
+  async reload() {
     if (!globalThis.__tutucard) {
       this.setStatus("runtime did not load", "bad");
       return;
     }
+    const gen = (this._gen = (this._gen ?? 0) + 1);
     const source = this.text();
-    const report = JSON.parse(
-      globalThis.__tutucard.mount(
-        this.previewId,
-        source,
-        componentOf(source) || "Card",
-      ),
+    const { mountCard } = await import("./card-wasm.js");
+    const report = await mountCard(
+      this.previewId,
+      source,
+      componentOf(source) || "Card",
     );
+    // A newer reload started while this one was in flight, or the element left
+    // the document. Either way this answer is about a card nobody is looking at.
+    if (gen !== this._gen || !this.previewId) return;
     if (!report.ok) {
       this.previewEl.classList.add("stale");
       this.setStatus("cannot load", "bad");

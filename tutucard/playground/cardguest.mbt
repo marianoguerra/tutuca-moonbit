@@ -24,41 +24,52 @@
 
 ///|
 /// Whether a compiled card has been instantiated on this page.
-extern "js" fn cardguest_ready() -> Bool =
-  #|() => !!globalThis.__cardguest
+extern "js" fn cardguest_ready(key : String) -> Bool =
+  #|(key) => !!(globalThis.__cardguest && globalThis.__cardguest[key])
 
 ///|
-extern "js" fn cardguest_create(component : String, args_json : String) -> Int =
-  #|(component, args) => globalThis.__cardguest.create(component, args)
+extern "js" fn cardguest_create(
+  key : String,
+  component : String,
+  args_json : String,
+) -> Int =
+  #|(key, component, args) => globalThis.__cardguest[key].create(component, args)
 
 ///|
-extern "js" fn cardguest_get_field(handle : Int, name : String) -> String =
-  #|(handle, name) => globalThis.__cardguest.getField(handle, name)
+extern "js" fn cardguest_get_field(
+  key : String,
+  handle : Int,
+  name : String,
+) -> String =
+  #|(key, handle, name) => globalThis.__cardguest[key].getField(handle, name)
 
 ///|
 extern "js" fn cardguest_dispatch(
+  key : String,
   handle : Int,
   bucket : Int,
   name : String,
   args_json : String,
 ) -> String =
-  #|(handle, bucket, name, args) => globalThis.__cardguest.dispatch(handle, bucket, name, args)
+  #|(key, handle, bucket, name, args) => globalThis.__cardguest[key].dispatch(handle, bucket, name, args)
 
 ///|
 extern "js" fn cardguest_call_method(
+  key : String,
   handle : Int,
   name : String,
   args_json : String,
 ) -> String =
-  #|(handle, name, args) => globalThis.__cardguest.callMethod(handle, name, args)
+  #|(key, handle, name, args) => globalThis.__cardguest[key].callMethod(handle, name, args)
 
 ///|
 extern "js" fn cardguest_with_field(
+  key : String,
   handle : Int,
   name : String,
   value_json : String,
 ) -> Int =
-  #|(handle, name, value) => globalThis.__cardguest.withField(handle, name, value)
+  #|(key, handle, name, value) => globalThis.__cardguest[key].withField(handle, name, value)
 
 // --- value codecs ----------------------------------------------------------
 //
@@ -102,18 +113,26 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
 // --- the Guest impl over __cardguest ---------------------------------------
 
 ///|
-/// A card has one instantiated module per page, so there is nothing to key on:
-/// where `WasmGuest` carries a bundle id, this carries nothing at all.
-struct CardGuest {}
-
-///|
-impl @dyncomp.Guest for CardGuest with fn create(_self, component, args) {
-  cardguest_create(component, fields_json(args))
+/// Which instantiated module this guest speaks to.
+///
+/// The key is the MOUNT POINT's element id, and there used to be no key at all:
+/// a page held one compiled card, deliberately loaded by pressing a button, so
+/// `globalThis.__cardguest` could be one object. Every card is compiled now, and
+/// a page with two `<mb-card>` embeds has two modules with two instance tables
+/// — so a guest has to say which one it means, exactly as `WasmGuest` carries a
+/// bundle id.
+struct CardGuest {
+  key : String
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn get_field(_self, handle, name) {
-  let raw = cardguest_get_field(handle, name)
+impl @dyncomp.Guest for CardGuest with fn create(self, component, args) {
+  cardguest_create(self.key, component, fields_json(args))
+}
+
+///|
+impl @dyncomp.Guest for CardGuest with fn get_field(self, handle, name) {
+  let raw = cardguest_get_field(self.key, handle, name)
   if raw == "" {
     None
   } else {
@@ -123,13 +142,14 @@ impl @dyncomp.Guest for CardGuest with fn get_field(_self, handle, name) {
 
 ///|
 impl @dyncomp.Guest for CardGuest with fn dispatch(
-  _self,
+  self,
   handle,
   bucket,
   name,
   args,
 ) {
   let raw = cardguest_dispatch(
+    self.key,
     handle,
     bucket_int(bucket),
     name,
@@ -143,9 +163,10 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
     Some(Number(n, ..)) => Some(n.to_int())
     _ => None
   }
-  // Three kinds, and three is all there is: the generator emits no `send-at`,
-  // `bubble-at` or `request`, so `card-wasm.js` binds those imports to nothing
-  // and they never reach this list.
+  // Five kinds now. `bubble-at` is the only one the generator still cannot
+  // emit, so `card-wasm.js` binds that import to nothing and it never reaches
+  // this list. `request` carries the interpreter's own `RequestOpts::new()`,
+  // which is the only shape a compiled card can ask for.
   let msgs : Array[@dyncomp.ControlMsg] = []
   match o.get("msgs") {
     Some(Array(items)) =>
@@ -166,6 +187,10 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
         match m.get("kind") {
           Some(String("emit")) => msgs.push(Emit(name, args))
           Some(String("send")) => msgs.push(Send(name, args))
+          Some(String("request")) =>
+            msgs.push(Request(name, args, @tutuca.RequestOpts::new()))
+          Some(String("sendAt")) =>
+            msgs.push(SendAt(path_steps(m.get("path")), name, args))
           _ => ()
         }
       }
@@ -175,13 +200,58 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn call_method(_self, handle, name, args) {
-  value_of(cardguest_call_method(handle, name, list_json(args)))
+/// One relative path step of a `sendAt`, as `card-wasm.js` spells it:
+/// `{"field": "left"}`, `{"item": ["seq", "k"]}` or `{"at": ["seq", 3]}`.
+///
+/// The twin of `dyncomp/host/wasm/glue.mbt`'s, and deliberately a copy rather
+/// than a shared function: that one is the wasm-gc host's and this page is the
+/// js one, and the thing they share is the JSON rather than the code. Three
+/// cases is a small enough thing to say twice; the spelling is what has to
+/// agree, and `stepToJson` in both loaders is where it is said once.
+fn path_step(j : Json) -> @tutuca.Step? {
+  guard j is Object(o) else { return None }
+  match o.get("field") {
+    Some(String(name)) => return Some(FieldStep(name))
+    _ => ()
+  }
+  match o.get("item") {
+    Some(Array([String(field), String(key)])) =>
+      return Some(SeqStep(field~, key=KStr(key)))
+    _ => ()
+  }
+  match o.get("at") {
+    Some(Array([String(field), Number(i, ..)])) =>
+      return Some(SeqStep(field~, key=KInt(i.to_int())))
+    _ => ()
+  }
+  None
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn with_field(_self, handle, name, v) {
+fn path_steps(j : Json?) -> Array[@tutuca.Step] {
+  let out : Array[@tutuca.Step] = []
+  match j {
+    Some(Array(items)) =>
+      for item in items {
+        match path_step(item) {
+          Some(s) => out.push(s)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  out
+}
+
+///|
+impl @dyncomp.Guest for CardGuest with fn call_method(self, handle, name, args) {
+  value_of(cardguest_call_method(self.key, handle, name, list_json(args)))
+}
+
+///|
+impl @dyncomp.Guest for CardGuest with fn with_field(self, handle, name, v) {
   let next = cardguest_with_field(
+    self.key,
     handle,
     name,
     @dyncomp.child_json(v).stringify(),
@@ -271,7 +341,7 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   // reason: the app holds transactor subscriptions and DOM listeners, and
   // pressing the button twice would otherwise leave the first set behind.
   teardown(id)
-  guard cardguest_ready() else {
+  guard cardguest_ready(id) else {
     return mount_failed("no compiled card is instantiated on this page")
   }
   let doc = @dom.window().document()
@@ -281,10 +351,18 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   let root_node = @bdom.BrowserNode::from_element(root_el)
   root_node.replace_children()
   let scope = @component.ComponentStack::new()
+  // The page's request fixtures, in the scope OUTSIDE the bundle's own.
+  // `lookup_request` walks child -> parent, so a compiled card's
+  // `request 'rows'` finds its bundle's handlers first — it serves none — and
+  // then these. The interpreted card next door got them by construction; a
+  // compiled one had `request` refused until recently and so had nowhere to
+  // ask.
+  let slot = slot_of(id)
+  scope.register_request_handlers(playground_requests(slot, slot.gen))
   let policy = card_policy()
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
-    @dyncomp.register_bundle(scope, CardGuest::{  }, manifest, policy~)
+    @dyncomp.register_bundle(scope, CardGuest::{ key: id }, manifest, policy~)
   } catch {
     // Registration has one failure mode from a page's point of view — the
     // bundle was refused — and one thing worth showing: why. The reasons are a
@@ -314,10 +392,19 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   app.start()
   @glue.install(app)
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
-  // Into the same slot table the interpreted cards use, which is what makes
-  // `unmount` and `classesAt` work over this mount without knowing it is a
-  // compiled one.
-  slot_of(id).app = Some(app)
+  // Into the same slot table `unmount` and `classesAt` read, which is what lets
+  // those two work over this mount without knowing anything about it.
+  slot.app = Some(app)
+  // …and the activity panel, which reads what the transactor saw. This used to
+  // be installed by the interpreted mount next door, and there is no
+  // interpreted mount any more.
+  app.transactor.observe(record => {
+    slot.activity.push(record.to_json())
+    if slot.activity.length() > ACTIVITY_CAP {
+      slot.activity.remove(0) |> ignore
+    }
+  })
+  |> ignore
   // tutuca has no lifecycle: the HOST dispatches `init`, exactly as it does for
   // the interpreted card in the pane beside this one.
   app.send_at_root("init") |> ignore

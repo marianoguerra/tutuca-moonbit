@@ -362,6 +362,7 @@ fn counter_manifest() -> DynManifest {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Counter",
@@ -401,6 +402,8 @@ fn counter_manifest() -> DynManifest {
         responses: ["doubled", "triple"],
         methods: ["label"],
         whens: ["nonZero"],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         // a named initial state a host can offer instead of a bare instance
         inits: [
@@ -443,6 +446,8 @@ fn counter_manifest() -> DynManifest {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         // the bundle serves this one itself; the host never sees the name
         requests: ["triple"],
         inits: [],
@@ -486,6 +491,8 @@ fn counter_manifest() -> DynManifest {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [],
         style: "",
@@ -1348,6 +1355,7 @@ test "manifest with wrong api version is rejected" {
         authors: [],
         capabilities: [],
         config: [],
+        macros: [],
         components: [],
       }
     }
@@ -1386,6 +1394,7 @@ test "a bundle's views are linted at load" {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Sloppy",
@@ -1406,6 +1415,8 @@ test "a bundle's views are linted at load" {
         responses: [],
         methods: [],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [],
         style: "",
@@ -1452,6 +1463,7 @@ test "a `$method` the manifest never declared is reported at load" {
     authors: [],
     capabilities: [],
     config: [],
+    macros: [],
     components: [
       {
         name: "Stat",
@@ -1480,6 +1492,8 @@ test "a `$method` the manifest never declared is reported at load" {
         // implies, so the host answers it and it must NOT be reported
         methods: ["boxStyle"],
         whens: [],
+        enriches: [],
+        enrich_scopes: [],
         requests: [],
         inits: [],
         style: "",

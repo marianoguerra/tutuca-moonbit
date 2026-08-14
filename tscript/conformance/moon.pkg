@@ -1,19 +1,30 @@
 // The conformance corpus: what tutuca script MEANS, as data.
 //
-// One AST, three backends — the interpreter that ships today, the MoonBit
-// emitter, and wasm-gc when there is an encoder to emit into. A language with
-// three implementations and no shared corpus does not have one semantics, it
-// has three, and the difference shows up as a component that behaves
-// differently depending on how it was built.
+// One AST, TWO backends: the MoonBit emitter (`tscript/emit_mbt`) and the wasm
+// compiler (`tutucard/wasm`). There were three, and the third — an interpreter
+// that ran a card where it stood — has been removed now that the compiler
+// covers what it did. A language with two implementations and no shared corpus
+// does not have one semantics, it has two, and the difference shows up as a
+// component that behaves differently depending on how it was built.
 //
 // So the cases are DATA and nothing here runs them. Each backend writes an
-// adapter — the interpreter's is `run_corpus_test.mbt` beside it, the emitter's
-// generates a module and drives it through `@harness` — and a case that one
-// backend passes and another does not is the thing the corpus exists to catch.
+// adapter — the emitter generates a module and drives it through `@harness`,
+// the compiler compiles each case into a card and drives it through the host's
+// own `abi.mjs` — and a case that one backend passes and another does not is
+// the thing the corpus exists to catch.
 //
-// Effects are compared as their PRINTED form rather than as a type, for the
-// same reason: `@interp.Effect` is one backend's spelling of them, and a corpus
-// that named it could only ever be checked against that backend.
+// LOSING the interpreter cost the corpus something worth naming: it was the
+// implementation you could read in an afternoon, and it was where a case's
+// answer came from when somebody wrote one. Both tables state their answers
+// outright now, which they had to for the compiler's adapter to exist at all —
+// a compiled card can only be driven from node, and JavaScript cannot re-derive
+// a MoonBit `Debug`.
+//
+// Which is why an EFFECT is structural here (`CaseEffect`) and used to be a
+// printed line. The line was chosen so that no backend's spelling became the
+// language's — a fair worry, and `kind` being a plain word rather than an enum
+// arm keeps it — but it meant the values had to be recovered by running an
+// implementation, and the one that got run was the interpreter.
 import {
   "marianoguerra/tutuca/core" @tutuca,
 }

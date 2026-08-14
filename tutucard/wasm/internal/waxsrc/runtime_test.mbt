@@ -71,3 +71,18 @@ test "the card runtime compiles, lowering through the value arena" {
     "<runtime+values>",
   )
 }
+
+///|
+/// The optional halves compile too, and they only ever appear on top of a
+/// complete runtime — so this is the combination a card that says `num` gets,
+/// rather than the file on its own.
+test "the number parser compiles on top of the runtime" {
+  check_wax(
+    stdlib_src +
+    test_prelude +
+    runtime_src +
+    lower_src("lower_scalar.wax") +
+    optional_src("parse_num.wax"),
+    "<runtime+scalar+parse_num>",
+  )
+}

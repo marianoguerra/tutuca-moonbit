@@ -7,12 +7,18 @@
 ///|
 fn main raise {
   let args = @env.args()
-  guard args.length() >= 2 else {
-    println("usage: cardwasm <card.html> [outdir]")
+  // `--allow-wax` compiles the card's `<script type="tutuca/wax">` block — the
+  // escape hatch — rather than refusing it. Off by default here for the same
+  // reason it is off in the library: whether a card may carry hand-written code
+  // is the host's decision, and a CLI is a host.
+  let allow_wax = args.iter().any(a => a == "--allow-wax")
+  let positional = args[1:].iter().filter(a => a != "--allow-wax").collect()
+  guard positional.length() >= 1 else {
+    println("usage: cardwasm [--allow-wax] <card.html> [outdir]")
     return
   }
-  let path = args[1]
-  let outdir = if args.length() >= 3 { args[2] } else { "." }
+  let path = positional[0]
+  let outdir = if positional.length() >= 2 { positional[1] } else { "." }
   let source = @fs.read_file_to_string(path) catch {
     _ => {
       println("cannot read " + path)
@@ -20,7 +26,7 @@ fn main raise {
     }
   }
   let stem = basename(path)
-  let out = @gen.compile(source, name=stem) catch {
+  let out = @gen.compile(source, name=stem, allow_wax~) catch {
     // Not "refused": a refusal is per-declaration and leaves a module behind,
     // and this is the card being turned away whole.
     e => {
@@ -52,6 +58,16 @@ fn main raise {
     // rather than into a tree with coordinates.
     let at = if r.line == 0 { "" } else { " (line " + r.line.to_string() + ")" }
     println("  refused " + r.kind + " " + r.name + at + ": " + r.reason)
+  }
+  for e in out.escapes {
+    let was = if e.replaced != "" {
+      " (which the script block declares, and this backend refused)"
+    } else if e.declared {
+      " (which the script block declares too)"
+    } else {
+      " (which the script block does not declare)"
+    }
+    println("  escaped " + e.kind + " " + e.name + " -> " + e.fn_name + was)
   }
 }
 

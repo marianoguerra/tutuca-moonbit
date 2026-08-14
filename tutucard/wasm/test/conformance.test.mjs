@@ -1,7 +1,7 @@
 // The wasm backend, run against the conformance corpus.
 //
 // `tscript/conformance/corpus.mbt` is the language's semantics as data, and
-// `tscript/interp/conformance_test.mbt` is one backend held to it. This is the
+// `tscript/conformance/mbt/` is one backend held to it. This is the
 // other one: each case becomes a card, the card is compiled, and the module is
 // driven through `dyncomp/host/wasm/abi.mjs` — the same host a downloaded
 // bundle gets. A case the interpreter passes and this does not is a bug in one
@@ -10,9 +10,11 @@
 // The table crosses as JSON because a compiled card can only be run from node;
 // `cmd/corpus` writes it, and checks itself against the corpus on the way out.
 //
-// A case whose handler the generator REFUSES is skipped and counted, not
-// failed. That count is the honest measure of what the compiled backend does
-// not do yet, and the assertion at the bottom is that it never grows.
+// A case whose handler the generator REFUSES is skipped and counted rather
+// than failed, and the count is now asserted to be ZERO. It was the honest
+// measure of what this backend did not do yet, and what it measured was
+// `request`; with that compiled there is nothing in the corpus this backend
+// turns away, so the assertion says so instead of watching a number.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -37,7 +39,13 @@ execFileSync("moon", ["run", "--target", "native", "cmd/card-corpus", "--", join
   cwd: MODULE,
   stdio: "pipe",
 });
-const CORPUS = JSON.parse(readFileSync(join(out, "corpus.json"), "utf8")).cases;
+const DUMP = JSON.parse(readFileSync(join(out, "corpus.json"), "utf8"));
+const CORPUS = DUMP.cases;
+// The other half of the table: what a block SAID, rather than what the state
+// became. This backend was never held to it, which is where its
+// `enrich` / `enrichScope` gap lived — both were absent from the generator
+// entirely, with no refusal to show for it.
+const VALUE_CORPUS = DUMP.valueCases;
 
 // The declaration kind each bucket dispatches, which is the word a refusal is
 // reported under.
@@ -127,9 +135,18 @@ async function build(c, i, source) {
         fromJson: JSON.parse,
       },
       "tutuca:component/control": {
+        // Bound but NOT collected: a declined rule says so on this channel, and
+        // what the corpus asserts is the successor and the effects. The
+        // interpreter's adapter quiets its `warn_hook` for the same reason.
+        log: () => {},
         emit: (name, args) => effects.push({ kind: "bubble", name, args }),
         send: (name, args) => effects.push({ kind: "send", name, args }),
         stopPropagation: () => effects.push({ kind: "stop", name: "", args: [] }),
+        // The `opts` a compiled card sends is always `RequestOpts::new()`, which
+        // is what the interpreter hands `ctx.request` too — so the corpus, which
+        // records a request as a name and its arguments, has nothing to say
+        // about it and neither does this.
+        request: (name, args, _opts) => effects.push({ kind: "request", name, args }),
       },
     },
     { ...descriptor, core: `${stem}.wasm` },
@@ -231,6 +248,109 @@ test("the wasm backend agrees with the conformance corpus", async () => {
     console.log("failed:\n  " + results.failed.join("\n  "));
   }
   assert.deepEqual(results.failed, []);
+  // And nothing in the corpus is refused any more. This used to be a COUNT
+  // that was only allowed to shrink, because `request` sat here and there was
+  // no date on when it would not. It does not sit here now, so the honest
+  // assertion is the empty one: a refusal reaching this table again is a
+  // feature the language has and this backend has stopped having.
+  assert.deepEqual(results.refused, []);
+});
+
+// ---------------------------------------------------------------------------
+
+test("the wasm backend agrees with the corpus about value bodies", async () => {
+  const failures = [];
+  let ran = 0;
+  for (const [i, c] of VALUE_CORPUS.entries()) {
+    // The declaration is reached through `call-method` in every role, so the
+    // card is built the same way and only the ARGUMENTS differ. The kind word
+    // a refusal is reported under differs too: a `@when` is a `pred`, and an
+    // enricher is its own word.
+    const b = await build(c, 1000 + i);
+    if (b.error) {
+      failures.push(`${c.name}: did not compile — ${b.error.trim()}`);
+      continue;
+    }
+    const { root, arena, put, log } = b;
+    if (/\brefused (pred|compute|invariant|enrich|enrichScope) /.test(log)) {
+      failures.push(`${c.name}: refused — ${log.trim()}`);
+      continue;
+    }
+    const ctorArgs = Object.entries(c.state).map(([k, v]) => [k, toWire(v, put)]);
+    let inst;
+    try {
+      inst = new root.guest.Instance(c.component, ctorArgs);
+    } catch (e) {
+      failures.push(`${c.name}: the constructor threw — ${e.message}`);
+      continue;
+    }
+
+    // What each role is HANDED, which `component/instance.mbt` decides and
+    // `dyncomp/host/dynobj.mbt` passes on. A method gets its own arguments; a
+    // filter gets the row; an enricher gets the bindings first and then the
+    // row; the scope form gets nothing at all.
+    const row = [toWire(c.key, put), toWire(c.value, put), { tag: "nil" }];
+    const args = {
+      method: () => c.args.map((a) => toWire(a, put)),
+      when: () => row,
+      enrich: () => [{ tag: "map", val: put(new Map()) }, ...row],
+      enrichScope: () => [],
+    }[c.role]();
+
+    let out;
+    try {
+      out = inst.callMethod(c.callable, args);
+    } catch (e) {
+      failures.push(`${c.name}: the call threw — ${e.message}`);
+      continue;
+    }
+    ran += 1;
+
+    const got = fromWire(out, arena);
+    const want = c.answer;
+    // `ANothing` is a body that could not finish. Across this boundary that is
+    // nil, which is the same thing `call_method_fn` answers for a `tc_fail`.
+    if (want.kind === "nothing") {
+      if (got !== null) failures.push(`${c.name}: answered ${JSON.stringify(got)}, want nothing`);
+      continue;
+    }
+    if (want.kind === "bool") {
+      // A `@when` is read for its TRUTHINESS, not for being a boolean: the
+      // corpus has `pred named { .name }` answering a string, and the renderer
+      // asks whether the row survives.
+      const truthy = got !== null && got !== false && got !== 0 && got !== "";
+      if (truthy !== want.value) {
+        failures.push(`${c.name}: answered ${JSON.stringify(got)}, want ${want.value}`);
+      }
+      continue;
+    }
+    if (want.kind === "binds") {
+      // Only what the body WROTE. The compiled enricher answers the incoming
+      // bindings plus its own, and the incoming ones are empty here — the
+      // loop's `key` and `value` are the renderer's and never go in the map.
+      try {
+        assert.deepEqual(got, want.value);
+      } catch {
+        failures.push(
+          `${c.name}: answered ${JSON.stringify(got)}, want ${JSON.stringify(want.value)}`,
+        );
+      }
+      continue;
+    }
+    try {
+      assert.deepEqual(got, want.value);
+    } catch {
+      failures.push(
+        `${c.name}: answered ${JSON.stringify(got)}, want ${JSON.stringify(want.value)}`,
+      );
+    }
+  }
+  console.log(
+    `value corpus: ${ran - failures.length} passed, ${failures.length} failed ` +
+      `(of ${VALUE_CORPUS.length})`,
+  );
+  if (failures.length) console.log("failed:\n  " + failures.join("\n  "));
+  assert.deepEqual(failures, []);
 });
 
 // ---------------------------------------------------------------------------

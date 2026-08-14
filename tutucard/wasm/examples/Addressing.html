@@ -1,0 +1,36 @@
+<script type="tutuca/state">
+  /// A component that talks to a place in its own subtree rather than to
+  /// whatever happens to be listening.
+  state Addressing {
+    /// The rows, each of which is somewhere a message can be sent.
+    rows: Array[Any]
+    /// Named panes, addressed by key rather than by position.
+    panes: Map[String, Any]
+    /// What to say.
+    word: String
+    /// Which pane is selected, read live rather than pinned.
+    sel: String
+  }
+</script>
+
+<script type="tutuca/script">
+  /// A bare field step: the whole `rows` slot.
+  on pokeAll { sendAt &.rows 'ping' .word }
+  /// An index resolved from a parameter — frozen to the value in hand.
+  on pokeRow(i) { sendAt &.rows[i] 'ping' .word }
+  /// A literal key, which is the same thing written out.
+  on pokeFirst { sendAt &.rows[0] 'ping' }
+  /// A named pane, so the step is an `item` rather than an `at`.
+  on pokePane(k) { sendAt &.panes[k] 'ping' .word }
+  /// Two steps deep, and a trailing field after the key.
+  on pokeDeep(i) { sendAt &.rows[i].inner 'ping' }
+  /// REFUSED, deliberately: a key read from live state re-resolves on every
+  /// dispatch, and `control.path-step` has no case that says so.
+  on pokeSelected { sendAt &.panes[.sel] 'ping' }
+</script>
+
+<template id="Addressing">
+  <div>
+    <button @on.click="pokeAll">poke</button>
+  </div>
+</template>

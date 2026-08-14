@@ -42,10 +42,20 @@ fn manifest_json(
       }),
     )
   }
+  // Every name this card answers, of one kind — the ones it compiled and the
+  // ones its escape block answered. A host routes by this list, so a name
+  // answered in Wax has to be in it for the same reason a refused one has to be
+  // out: the manifest DESCRIBES the guest.
   let compiled : (@tscript.DeclKind) -> Array[String] = kind => {
+    let word = @tscript.kind_word(kind)
     let out : Array[String] = []
+    for _key, e in g.escapes {
+      if e.kind == word {
+        out.push(e.name)
+      }
+    }
     for d in decls {
-      if d.kind == kind && is_compiled(g, d) {
+      if d.kind == kind && is_compiled(g, d) && !g.escaped(word, d.name) {
         out.push(d.name)
       }
     }
@@ -68,11 +78,25 @@ fn manifest_json(
       "html": Json::string(v.source),
     })
   })
+  // The file's macros travel with it. `split_file` has been returning them all
+  // along and this dropped them, which made `<x:badge>` in a compiled card an
+  // unknown element that rendered as itself — the same bug the card LOADER had
+  // and fixed, one backend later.
+  let macro_defs : Array[Json] = file.macros.map(m => {
+    let defaults : Map[String, Json] = Map([])
+    for k, v in m.defaults {
+      defaults[k] = Json::string(v)
+    }
+    Json::object({
+      "name": Json::string(m.name),
+      "defaults": Json::object(defaults),
+      "html": Json::string(m.source),
+    })
+  })
   // `inits` stays empty. A `tutuca/init` block's field values are MoonBit
   // SOURCE — the generator that consumes them writes them into a `make` call
   // — and a manifest wants JSON. Projecting one into the other is a small
   // evaluator, which is a thing to add deliberately rather than in passing.
-  ignore(file)
   Json::object({
     "manifestVersion": Json::number(1),
     "apiVersion": Json::number(7),
@@ -88,6 +112,7 @@ fn manifest_json(
     // than a grant.
     "capabilities": Json::array([]),
     "stringEncoding": Json::string("utf8"),
+    "macros": Json::array(macro_defs),
     "components": Json::array([
       Json::object({
         "name": Json::string(g.comp),
@@ -105,6 +130,12 @@ fn manifest_json(
           compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
         ),
         "whens": strings(compiled(DPred)),
+        // The two the manifest had no key for, which is half of why a card
+        // using `@enrich-with` used to lose its bindings in silence: the other
+        // half was that nothing compiled them, and a host cannot route to a
+        // name it was never told about.
+        "enriches": strings(compiled(DEnrich)),
+        "enrichScopes": strings(compiled(DEnrichScope)),
         "requests": Json::array([]),
         "inits": Json::array([]),
         "style": Json::string(views.common_style),
@@ -121,7 +152,7 @@ fn manifest_json(
 /// to it and get `unhandled` back, having skipped the field mutator that would
 /// have worked.
 fn is_compiled(g : Gen, d : @tscript.Decl) -> Bool {
-  if d.kind is (DCompute | DPred | DInvariant) {
+  if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
     return g.callables.get(d.name) is Some(_)
   }
   for r in g.refusals {

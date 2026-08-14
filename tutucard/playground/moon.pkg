@@ -3,26 +3,28 @@
 // The payload here is the whole story. The existing `playground/` ships a
 // 5.5 MB `moonc` worker, a prebuilt `.mi`/`.core` bundle per target, and a
 // toolchain pin asserted at assemble time — because it compiles the user's
-// MoonBit in the browser. A card needs none of that: it is parsed and mounted,
-// so the edit loop is parse → check → mount.
+// MoonBit in the browser. A card needs none of that: `tutucard/wasm` turns the
+// source into a `tutuca:component@0.7.0` core wasm module, and that compiler is
+// a MoonBit LIBRARY in this bundle rather than a payload fetched beside it.
 //
-// It also COMPILES, which is a second answer to the same card rather than a
-// replacement for the first. `tutucard/wasm` turns the source into a
-// `tutuca:component@0.7.0` core wasm module and the page shows what came out —
-// the Wax the generator said, the WAT the module is, and a button that hands
-// you the bundle. That compiler is a MoonBit library in this bundle, not a
-// payload fetched beside it, which is the whole difference from the other
-// playground.
+// COMPILING used to be the second answer to a card and interpreting was the
+// first: the page parsed a card, mounted it where it stood, and showed what the
+// compiler would have made of the same source in a panel next door. There is no
+// interpreter any more, so the panel's answer is the one on screen — the page
+// compiles, instantiates and mounts, and what it shows you is what it is
+// running.
 //
-// Which means the interesting entry points are `load(source)` and
-// `compile(source)`, both called on every keystroke. It tears the previous app down and builds a new one, and answers
-// the diagnostics as JSON so the editor can underline them — with real columns,
-// which nothing in a view file could report until `tscript` carried spans.
+// The edit loop is therefore check → compile → instantiate → mount, and the
+// third step is the only one that is not a synchronous call: it lives in
+// `web/card-wasm.js` as `mountCard`, because `WebAssembly.compile` answers a
+// promise. What is left on this side is `check(source)` — the diagnostics, as
+// JSON, with real columns, which nothing in a view file could report until
+// `tscript` carried spans — and `mountCompiled`, which takes a module the page
+// has already instantiated.
 import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/tutucard",
   "marianoguerra/tutuca/tutucard/wasm",
   // What the compiled card is mounted AS: an ordinary dyncomp bundle. The
   // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is

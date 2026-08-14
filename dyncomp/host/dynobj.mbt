@@ -306,6 +306,62 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
   if ns is Alter && self.def.whens.contains(name) {
     return Some(self.method_fn(name))
   }
+  // An ENRICHER answers a map of bindings, and the renderer reads the map it
+  // PASSED IN rather than what the call returned (`render/render.mbt` discards
+  // an enricher's answer, which is why `TypedInstance`'s adapter mutates its
+  // argument and returns Null). A guest cannot mutate a host's map, so the
+  // guest returns one and this writes it back — the same contract
+  // `tutucard/obj.mbt`'s `alter_fn` documents, with the write-back moved to the
+  // side of the boundary that can do it.
+  if ns is Alter && self.def.enriches.contains(name) {
+    return Some(
+      Fn(args => {
+        match drop_this(args) {
+          [Map(binds), ..] as a => {
+            // The row's bindings go DOWN so the body can read one it did not
+            // write, then `key` / `value` / `iter`, which is the shape
+            // `component/instance.mbt` uses and the offsets the generated
+            // guest reads them at.
+            let out = self.guest.call_method(self.handle, name, [
+              Map(binds),
+              a.get(1).unwrap_or(Null),
+              a.get(2).unwrap_or(Null),
+              a.get(3).unwrap_or(Null),
+            ])
+            match out {
+              Map(bound) =>
+                for k, v in bound {
+                  // `key`, `value` and `iter` belong to the LOOP: the renderer
+                  // restores the first two right after this call and never puts
+                  // the third in the map. Writing them back would be a guest
+                  // binding a name a host component does not.
+                  if k != "key" && k != "value" && k != "iter" {
+                    binds[k] = v
+                  }
+                }
+              // A body that could not finish binds nothing, and the row keeps
+              // what it arrived with.
+              _ => ()
+            }
+            Null
+          }
+          _ => Null
+        }
+      }),
+    )
+  }
+  // The scope form is handed no row and its answer IS the map, so there is
+  // nothing to write back.
+  if ns is Alter && self.def.enrich_scopes.contains(name) {
+    return Some(
+      Fn(_args => {
+        match self.guest.call_method(self.handle, name, []) {
+          Map(_) as m => m
+          _ => Map(Map([]))
+        }
+      }),
+    )
+  }
   if self.def.methods.contains(name) {
     Some(self.method_fn(name))
   } else {

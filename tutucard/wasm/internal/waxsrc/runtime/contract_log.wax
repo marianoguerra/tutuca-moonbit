@@ -1,0 +1,50 @@
+// Saying that a contract declined.
+//
+// An OPTIONAL half, carried only by a card that declares a `requires`, an
+// `ensures` or an `invariant`.
+//
+// A rule that does not hold makes the transition not happen, and that much the
+// compiled backend always did. What it did in SILENCE was say so: the
+// interpreter reports a `Refusal` — the handler, the rule, the state, and the
+// sentence the rule's own `format` writes — and a compiled guest has no channel
+// back to the host shaped like a refusal record.
+//
+// It has `control.log`, which is the least a guest can ask for: no capability
+// gates it and the WIT calls it "immediate and always legal". So the LINE the
+// interpreter prints crosses, and the record does not. That is a smaller thing
+// than parity and a much larger thing than nothing — a card author watching a
+// handler quietly do nothing now reads which rule turned it away.
+//
+// The line is `core/warn.mbt`'s, verbatim, so the two backends say the same
+// sentence about the same refusal:
+//
+//   contract: `publish` declined — its precondition `hasTitle` does not hold
+//   contract: `publish` declined — its precondition `hasTitle` does not hold: the title is empty
+//
+// Both halves of it are interned by the generator, because both are known when
+// it runs: only whether there IS a sentence, and what it says, is not.
+
+// The line the generated half is about to hand `ctl_log`. A global rather than
+// a return value because the import takes a (pointer, length) pair and a Wax
+// function answers one thing.
+let tc_log_msg: &?utf8_string = null;
+
+// `ok` is 0 when the rule declares no `format`, or when evaluating it failed —
+// which is the same `""` the interpreter's `sentence()` answers for both. A
+// refusal that cannot describe itself is still a refusal.
+fn tc_contract_msg(
+    head: &utf8_string,
+    head_colon: &utf8_string,
+    ok: i32,
+    sentence: &jv_value,
+) {
+    if ok == 0 {
+        tc_log_msg = head;
+        return;
+    }
+    tc_log_msg = utf8_concat(head_colon, tc_display(sentence));
+}
+
+fn tc_log_ptr() -> i32 { tc_str_out(tc_log_msg!) }
+
+fn tc_log_len() -> i32 { utf8_byte_length(tc_log_msg!) }

@@ -1,0 +1,76 @@
+// What a hand-written escape reaches for, spelled once.
+//
+// An OPTIONAL half, carried only by a card with a `<script type="tutuca/wax">`
+// block. Everything here is a one-liner over something the runtime already has;
+// the point is that a person writing Wax should not have to read
+// `stmt.mbt` to find out that an effect is `tc_effect_push(1, …)` and that the
+// `1` is a `send`.
+//
+// Most of what an escape needs is ALREADY the right shape and needs nothing
+// here — this file is the short list of things that were not:
+//
+//   values      tc_num(x)  tc_bool(b)  tc_text(s)  tc_null()
+//   arithmetic  tc_add tc_sub tc_mul tc_div tc_mod  — with tutuca's semantics,
+//               which matter: a mixed `+` FAILS the transition, and an `f64`
+//               add written by hand would silently join instead
+//   tests       tc_eq  tc_cmp  tc_truthy  tc_is_text  tc_is_null
+//   arguments   tc_arg_at(args, i)  tc_args_len(args)  tc_args1..4
+//   paths       tc_step_field(v, name)  tc_step_index(v, key)
+//   collections tc_method(old, which, a, b) and the tc_m_* constants
+//   text        tc_display(v)  utf8_from_bytes("literal")
+//   fields      get_<field>(s) / set_<field>(s, v) / num_<field>(s), which the
+//               GENERATOR emits per declared field — see `escape.mbt`
+
+// "This did something with no answer." The transition is abandoned and the host
+// hears `unchanged`, which is what every failing operation in the runtime does
+// and the one thing an escape has no other way to say.
+fn tcx_fail() { tc_fail = 1; }
+
+// The three effects, by name rather than by kind number. Buffered, like every
+// effect: what a body performs before a statement that fails never happens.
+fn tcx_send(name: &utf8_string, args: &?pv_vector) {
+    tc_effect_push(tc_e_send, name, args);
+}
+
+fn tcx_bubble(name: &utf8_string, args: &?pv_vector) {
+    tc_effect_push(tc_e_bubble, name, args);
+}
+
+fn tcx_request(name: &utf8_string, args: &?pv_vector) {
+    tc_effect_push(tc_e_request, name, args);
+}
+
+fn tcx_stop() { tc_effect_push(tc_e_stop, tc_empty_str(), null); }
+
+// A text literal as a value: `tcx_str("hello")` rather than
+// `tc_text(utf8_from_bytes("hello"))`. It re-validates and re-hashes on every
+// call, unlike a card's own literals — which the generator interns once into
+// the constant pool — so a string in a hot path is worth hoisting.
+fn tcx_str(bytes: &wax_hash_bytes) -> &jv_value {
+    jv_string(utf8_from_bytes(bytes))
+}
+
+// The truncation an Int field takes on the way in. `set_<field>` already
+// applies it for a declared Int, so this is for a value going somewhere else —
+// into a list, or back out through `call-method`.
+fn tcx_int(v: &jv_value) -> &jv_value { tc_trunc(v) }
+
+// Whether a transition has failed so far. An escape that calls several runtime
+// operations in a row can stop at the first one with no answer rather than
+// working on the null it got back.
+fn tcx_failed() -> i32 { tc_fail }
+
+// What an escaped transition answered.
+//
+// A hand-written handler returns `&?jv_record_value`: the successor it built,
+// or NULL for "nothing changed". Null rather than returning the state it was
+// handed, because that is one fewer thing to get right — and the generated
+// wrapper still asks `tc_same` afterwards, so returning the state unchanged
+// works too and means the same.
+fn tcx_next(r: &?jv_record_value, s: &jv_record_value) -> &jv_record_value {
+    match r {
+        t: &jv_record_value => { return t; }
+        _ => { return s; }
+    }
+    unreachable;
+}

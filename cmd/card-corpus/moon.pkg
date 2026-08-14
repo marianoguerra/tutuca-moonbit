@@ -3,12 +3,15 @@
 // The corpus is MoonBit data and a compiled card can only be RUN from node, so
 // the table crosses as JSON and `tutucard/wasm/test/conformance.test.mjs` is
 // the adapter over it.
+//
+// `tscript/interp` is NOT imported, and used to be: the corpus stored effects
+// in a printed form, so the values had to be recovered by running a second
+// implementation, and the compiled backend's conformance harness depended on
+// the interpreter existing. The corpus stores the values now and this is a
+// projection.
 import {
   "marianoguerra/tutuca/tscript/conformance",
-  "marianoguerra/tutuca/tscript",
-  "marianoguerra/tutuca/tscript/interp",
   "marianoguerra/tutuca/statedef",
-  "marianoguerra/tutuca/statedef/info",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/x/fs",
   "moonbitlang/core/json",

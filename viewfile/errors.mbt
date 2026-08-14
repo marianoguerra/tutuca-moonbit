@@ -21,6 +21,10 @@ pub fn FileError::message(self : FileError) -> String {
       "two unqualified <script type=\"tutuca/script\"> blocks — a block is written about ONE component, so name each one with `for=\"Comp\"`"
     DuplicateScriptBlock(comp) =>
       "two <script type=\"tutuca/script\" for=\"\{comp}\"> blocks — one component answers one set of handlers"
+    DuplicateWaxBlock("") =>
+      "two unqualified <script type=\"tutuca/wax\"> blocks — a block is written about ONE component, so name each one with `for=\"Comp\"`"
+    DuplicateWaxBlock(comp) =>
+      "two <script type=\"tutuca/wax\" for=\"\{comp}\"> blocks — one component's escapes are one body of source"
     BadStateBlock(line~, message~) | BadInitBlock(line~, message~) =>
       "line \{line}: \{message}"
   }
