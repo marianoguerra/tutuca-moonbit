@@ -580,3 +580,124 @@ test "set_filter(None) still does not put a list on the href property" {
   )
   debug_inspect(a.take_filter_reports().length(), content="0")
 }
+
+// ---------------------------------------------------------------------------
+// `@setinnerhtml` and `@setinnersvg`, end to end
+//
+// The same shape as the markdown suite above, and the same headline claim: an
+// app nobody configured renders a runtime markup payload with the dangerous
+// parts already gone, through the sanitizer that judges every other node, with
+// no permission granted anywhere.
+
+///|
+/// A component whose content is HTML and SVG from its own state — the shape of
+/// a CMS body and of a server-computed chart.
+fn safe_markup_component() -> @component.Component {
+  @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><article @setinnerhtml=\".body\"></article><svg @setinnersvg=\".body\"></svg><button @on.click=\"setBody '<a href=\\'javascript:alert(2)\\'>later</a>'\">x</button></div>",
+      ),
+    },
+    name="Marked",
+    init=BodyState::{
+      body: "<b>ok</b><script>alert(1)</script><style>b{display:none}</style>",
+    },
+  )
+}
+
+///|
+fn mk_safe_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
+  let scope = @component.ComponentStack::new()
+  scope.register_components([safe_markup_component()])
+  guard scope.lookup_component("Marked") is Some(c) else {
+    fail("component missing")
+  }
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let a = @app.App::new(
+    scope,
+    c.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  a.start()
+  (a, container)
+}
+
+///|
+/// Asserted on the TREE rather than on `to_html()`, for the reason the markdown
+/// suite spells out: memdom's serializer does no entity escaping, so the
+/// characters of a dropped tag can appear in its output as an inert text node
+/// and a string assertion would misread that. Asking what elements exist is the
+/// question with an answer.
+test "an app renders setinnerhtml by default, with the dangerous parts gone" {
+  let (_a, container) = mk_safe_app()
+  guard find_el(container, "ARTICLE") is Some(article) else {
+    fail("no article")
+  }
+  assert_true(find_el(article, "B") is Some(_))
+  assert_true(find_el(article, "SCRIPT") is None)
+  assert_true(find_el(article, "STYLE") is None)
+}
+
+///|
+/// **`set_inner_html` was never called**, for either directive. The claim the
+/// whole design rests on, and the one that makes the names honest: the payload
+/// became elements through `create_element`, so the browser never re-parses a
+/// string this code produced and there is no second parser to disagree with.
+test "the safe markup directives never touch set_inner_html" {
+  let (a, container) = mk_safe_app()
+  inspect(container.inner_html_sets, content="0")
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  inspect(container.inner_html_sets, content="0")
+}
+
+///|
+/// A value that arrives only on a later render is the case a registration-time
+/// pass cannot see at all, which is the entire reason there is a Pass 2. The
+/// link keeps its words and loses its destination, and the host is told why.
+test "a payload that arrives on a later render is filtered too" {
+  let (a, container) = mk_safe_app()
+  let _ = a.take_filter_reports()
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  let html = container.to_html()
+  assert_true(html.contains("<a>later</a>"))
+  assert_false(html.contains("javascript:"))
+  let reports = a.take_filter_reports().map(@filter.Dropped::to_string)
+  assert_true(
+    reports.contains(
+      "dropped href on <ARTICLE>: URL scheme is not one a view may navigate to (javascript:alert(2))",
+    ),
+  )
+}
+
+///|
+/// Opting out is honest about it, the same way `@setinnermd` is: with no
+/// filter, both directives render an EMPTY element rather than the payload as
+/// text or as markup. A construct that fails visibly is recoverable.
+test "set_filter(None) makes the safe markup directives render nothing" {
+  let scope = @component.ComponentStack::new()
+  scope.register_components([safe_markup_component()])
+  guard scope.lookup_component("Marked") is Some(c) else {
+    fail("component missing")
+  }
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let a = @app.App::new(
+    scope,
+    c.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  a.set_filter(None)
+  a.start()
+  let html = container.to_html()
+  assert_true(html.contains("<article></article>"))
+  assert_true(html.contains("<svg></svg>"))
+  assert_false(html.contains("<b>ok</b>"))
+  inspect(container.inner_html_sets, content="0")
+}

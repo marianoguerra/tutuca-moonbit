@@ -499,3 +499,71 @@ test "setinnermd renders described nodes once a filter is installed" {
     "<div><h1>hi</h1><p><a>x</a></p></div>",
   )
 }
+
+///|
+/// The two safe markup directives, on their own. Same fail-closed shape as
+/// `@setinnermd` above and for the same reason: no filter consumed the
+/// attribute, so `set_prop` CLEARS the element rather than handing the payload
+/// to `set_inner_html`. This is the branch that lets Pass 1 wave both through —
+/// "the builder ran" is not an assumption the static pass has to make.
+test "the safe markup directives render nothing on their own" {
+  assert_eq(
+    render_html(
+      "<div @setinnerhtml=\".body\"></div>",
+      state=state_of([("body", Str("<b>markup</b>"))]),
+    ),
+    "<div></div>",
+  )
+  assert_eq(
+    render_html(
+      "<svg @setinnersvg=\".chart\"></svg>",
+      state=state_of([("chart", Str("<circle r=\"1\"/>"))]),
+    ),
+    "<svg></svg>",
+  )
+}
+
+///|
+/// And with the filter installed, the whole path: directive →
+/// `AttrItem::SafeHtml` → `AttrValue::SafeHtml` → `SafeMarkupFilter` → nodes →
+/// DOM. The `<script>` is gone and the `javascript:` href is gone, which is
+/// what the safe name is promising; `<b>` and the link text stay.
+test "setinnerhtml renders sanitized nodes once a filter is installed" {
+  assert_eq(
+    render_html(
+      "<div @setinnerhtml=\".body\"></div>",
+      state=state_of([
+        (
+          "body",
+          Str(
+            "<b>ok</b><script>alert(1)</script><a href=\"javascript:alert(2)\">x</a>",
+          ),
+        ),
+      ]),
+      filter=@mdfilter.default_filter(),
+    ),
+    "<div><b>ok</b><a>x</a></div>",
+  )
+}
+
+///|
+/// The SVG half, through the same filter. A bare fragment with no `<svg>` root
+/// becomes SVG-namespaced elements, and the SMIL element that would have
+/// rewritten the `href` after every filter had run is not there.
+test "setinnersvg renders namespaced nodes and drops SMIL" {
+  assert_eq(
+    render_html(
+      "<svg @setinnersvg=\".chart\"></svg>",
+      state=state_of([
+        (
+          "chart",
+          Str(
+            "<circle r=\"1\"/><a href=\"/ok\"><animate attributeName=\"href\" to=\"javascript:alert(1)\"/></a>",
+          ),
+        ),
+      ]),
+      filter=@mdfilter.default_filter(),
+    ),
+    "<svg><circle r=\"1\"></circle><a href=\"/ok\"></a></svg>",
+  )
+}

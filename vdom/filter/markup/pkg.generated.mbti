@@ -10,7 +10,13 @@ import {
 // Values
 pub const RAW_ATTR : String = "dangerouslySetInnerHTML"
 
-pub fn html_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit) -> Array[@vdom.Vdom]
+pub const SAFE_HTML_ATTR : String = "setInnerHtml"
+
+pub const SAFE_SVG_ATTR : String = "setInnerSvg"
+
+pub fn html_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit, attr? : String) -> Array[@vdom.Vdom]
+
+pub fn svg_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit, attr? : String) -> Array[@vdom.Vdom]
 
 // Errors
 
@@ -21,6 +27,13 @@ pub struct MarkupFilter {
 }
 pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
 pub impl @filter.VdomFilter for MarkupFilter
+
+pub struct SafeMarkupFilter {
+  sanitizer : @sanitize.Sanitizer
+  log : @filter.DropLog
+}
+pub fn SafeMarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
+pub impl @filter.VdomFilter for SafeMarkupFilter
 
 // Type aliases
 

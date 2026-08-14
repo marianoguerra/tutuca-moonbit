@@ -4,6 +4,17 @@
 /// Everything the walk needs that does not change as it descends.
 priv struct Build {
   sanitizer : @sanitize.Sanitizer
+  /// The same sanitizer with CSS taken away, for the RAW HTML inside a markdown
+  /// document and for nothing else.
+  ///
+  /// The split is about who wrote the value, which is a question the sanitizer
+  /// cannot ask itself. Everything this file emits directly is a literal from a
+  /// fixed set — the only `style` among them is GFM's column alignment,
+  /// `text-align:left|center|right`, written by `Build::table` — and narrowing
+  /// that away would be a rendering bug rather than a tightening. An
+  /// `HtmlBlock` is the author's markup, arriving at the same builder
+  /// `@setinnerhtml` uses, and gets the same answer `@setinnerhtml` gets.
+  html_sanitizer : @sanitize.Sanitizer
   /// Link reference definitions, by label, for `RefLink` / `RefImage`.
   defs : Map[String, @md.LinkDefinition]
   /// The element the markdown is being built INTO, for the report only.
@@ -35,7 +46,14 @@ pub fn build(
       defs[key] = d
     }
   }
-  let b = Build::{ sanitizer, defs, host_tag, on_drop, footnotes: [] }
+  let b = Build::{
+    sanitizer,
+    html_sanitizer: sanitizer.without_css(),
+    defs,
+    host_tag,
+    on_drop,
+    footnotes: [],
+  }
   let out = b.blocks(parsed.document.children)
   for node in b.footnote_section() {
     out.push(node)
@@ -167,7 +185,13 @@ fn Build::block(self : Build, b : @md.Block) -> Array[@vdom.Vdom] {
     // concatenating strings — there is no partial element to leave open across
     // a boundary when what you are producing is a tree.
     HtmlBlock(html~, ..) =>
-      @markup.html_nodes(self.sanitizer, html, self.host_tag, self.on_drop)
+      @markup.html_nodes(
+        self.html_sanitizer,
+        html,
+        self.host_tag,
+        self.on_drop,
+        attr=MD_ATTR,
+      )
     BlankLines(..) => []
     // Hoisted; `footnote_section` emits them once, at the end.
     FootnoteDefinition(label~, children~, ..) => {
@@ -353,7 +377,13 @@ fn Build::inline(self : Build, i : @md.Inline) -> Array[@vdom.Vdom] {
     // parser produces this variant for. Through the shared builder, so
     // `Sanitizer.comments` decides, exactly as it does for raw markup.
     HtmlInline(html~, ..) =>
-      @markup.html_nodes(self.sanitizer, html, self.host_tag, self.on_drop)
+      @markup.html_nodes(
+        self.html_sanitizer,
+        html,
+        self.host_tag,
+        self.on_drop,
+        attr=MD_ATTR,
+      )
     FootnoteReference(label~, ..) =>
       self.wrap("sup", self.anchor("#fn-\{label}", "", [Text(label)]))
     // Unreachable: `build` parses with `wikilinks=false`. Rendered as its text

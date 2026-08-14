@@ -212,6 +212,47 @@ let counter = counter_component()</code></pre>
           view="./site/examples/markdown.html"
         ></mb-playground>
 
+        <h4>HTML and SVG, Sanitized</h4>
+        <p>
+          The same argument, about markup itself rather than a source language.
+          <code>@setinnerhtml</code> and <code>@setinnersvg</code> take a string that
+          is already markup — a CMS body, a server-rendered fragment, a chart another
+          program drew — and replace the element's children with the nodes it parses
+          to. This is the case people reach for
+          <code>@dangerouslysetinnerhtml</code> to solve.
+        </p>
+        <p>
+          Neither takes a permission, and that is not a shortcut. The dangerous
+          directive needs one because its <em>fallback</em> is
+          <code>innerHTML</code>: mount an app without the filter and the payload goes
+          to the browser unexamined. These two fail closed — no filter, empty element
+          — so there is no unchecked path for a host to permit.
+        </p>
+        <p>
+          Edit either pane and watch the rule. Below it: <code>&lt;script&gt;</code> in
+          both namespaces, <code>&lt;iframe&gt;</code>, <code>&lt;base&gt;</code>, SVG
+          <code>&lt;use&gt;</code>, <code>on*</code> handlers and
+          <code>javascript:</code> URLs, entity-obfuscated or not. Two are worth
+          opening devtools for. SVG <code>&lt;animate&gt;</code> is refused as an
+          <em>element</em>, not for anything in its value — SMIL writes
+          <code>href</code> in the browser after every check has run, so the
+          <code>href</code> the URL rule inspected is not the one that would navigate.
+          And <code>style</code> is dropped, which is the one rule these two have that
+          <code>@dangerouslysetinnerhtml</code> does not: <code>url(…)</code> is a
+          request to an origin the payload chose, and nothing here parses CSS to tell a
+          background image from a beacon.
+        </p>
+        <p>
+          The SVG pane's payload has no <code>&lt;svg&gt;</code> root of its own. That
+          is the difference between the two directives: <code>@setinnersvg</code>
+          parses in SVG context, so a bare fragment works and the payload cannot leave
+          the namespace it was promised.
+        </p>
+        <mb-playground
+          src="./site/examples/markup.mbt"
+          view="./site/examples/markup.html"
+        ></mb-playground>
+
         <h3>Interaction Patterns</h3>
         <h4>Tree Navigation</h4>
         <p>Click folders to toggle them open or closed, and click files to select them.</p>

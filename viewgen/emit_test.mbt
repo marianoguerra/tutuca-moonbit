@@ -272,3 +272,33 @@ test "a view with a $method, several views and styles" {
     ),
   )
 }
+
+///|
+/// The safe markup directives survive AOT codegen.
+///
+/// A snapshot of the whole module would be the wrong test here — what can break
+/// is one arm of `attr_item_expr`, and it breaks SILENTLY: a missing arm means
+/// the generated view drops the directive and the component renders an empty
+/// element with no error anywhere. So assert on the builder calls themselves.
+///
+/// `emit_ir_module` rather than `generate`, because the builder calls live in
+/// the IR module; `generate` emits the styles and the handler enums.
+test "gen-views emits the safe markup directives" {
+  let out = @viewgen.emit_ir_module(
+    "Doc",
+    "doc.html",
+    @viewgen.split_file(
+      (
+        #|<view name="main">
+        #|  <div>
+        #|    <article @setinnerhtml=".body"></article>
+        #|    <svg @setinnersvg=".chart"></svg>
+        #|  </div>
+        #|</view>
+      ),
+      name="Doc",
+    ),
+  )
+  assert_true(out.contains("set_inner_html(val=Field(\"body\"))"))
+  assert_true(out.contains("set_inner_svg(val=Field(\"chart\"))"))
+}

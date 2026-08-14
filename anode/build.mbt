@@ -84,6 +84,16 @@ pub fn set_inner_md(val? : @tutuca.Val) -> AttrItem {
   RawMarkdown(val~)
 }
 
+///|
+pub fn set_inner_html(val? : @tutuca.Val) -> AttrItem {
+  SafeHtml(val~)
+}
+
+///|
+pub fn set_inner_svg(val? : @tutuca.Val) -> AttrItem {
+  SafeSvg(val~)
+}
+
 // ---------------------------------------------------------------------------
 // Nodes
 

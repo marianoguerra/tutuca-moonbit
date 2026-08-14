@@ -13,6 +13,12 @@
 /// So: read the sanitizer, and build the filters it needs.
 ///
 /// - `raw_markup` permitted → `MarkupFilter` at the front.
+/// - `@markup.SafeMarkupFilter`, always, for the same reason `MdFilter` is
+///   always here: `set_prop` fails closed on `@setinnerhtml` and
+///   `@setinnersvg`, so there is no unchecked path to permit and leaving it out
+///   only breaks the directives. See `markup/safe.mbt` for why that is a
+///   different situation from `@dangerouslysetinnerhtml` rather than the same
+///   one with the check removed.
 /// - `MdFilter`, always. There is no permission to read for it, because there
 ///   is nothing unchecked to permit: a markdown payload becomes elements only
 ///   through this same sanitizer. Leaving it out would not make an app safer,
@@ -37,6 +43,15 @@ pub fn filter_for(sanitizer : @sanitize.Sanitizer) -> &@filter.VdomFilter {
   if sanitizer.raw_markup {
     fs.push(@markup.MarkupFilter::new(sanitizer~))
   }
+  fs.push(@markup.SafeMarkupFilter::new(sanitizer~))
+  // NOT narrowed by `without_css` here, unlike the filter above, and the
+  // reason is a distinction the overlay cannot draw for itself: who wrote the
+  // value. Markdown's own `style` is the framework's — GFM column alignment
+  // becomes `style="text-align:left"` in `build.mbt`, a literal from a fixed
+  // set — while a `<style>` inside a markdown HTML BLOCK is the payload's.
+  // Narrowing the whole filter takes both, which turns a config decision about
+  // untrusted CSS into a rendering bug in tables. `build.mbt` narrows at the
+  // two places it hands a payload to `@markup.html_nodes` instead.
   fs.push(MdFilter::new(sanitizer~))
   fs.push(@filter.Baseline::new())
   let chained : &@filter.VdomFilter = @filter.Chain::new(fs)

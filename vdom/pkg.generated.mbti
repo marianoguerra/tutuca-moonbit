@@ -39,6 +39,8 @@ pub(all) enum AttrValue {
   Bool(Bool)
   Html(String)
   Md(String)
+  SafeHtml(String)
+  Svg(String)
   Data(Json)
 } derive(Eq, @debug.Debug)
 pub fn AttrValue::int(Int) -> Self

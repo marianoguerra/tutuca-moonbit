@@ -206,6 +206,27 @@ fn check_untrusted_attrs(
                 where_, "untrusted views may not render runtime Markdown because it can synthesize network-bearing elements",
               ),
             )
+          // The same refusal, for the same reason, and it is worth saying why
+          // "but the sanitizer checks every element it builds" is not an
+          // answer here. It is the answer for a plain app, and it is why Pass 1
+          // waves these through. This walk is about something narrower: an
+          // `<img src>` the sanitizer is perfectly happy with is still a GET to
+          // an origin the guest chose, from the host's page, and the whole
+          // point of the Untrusted tier is that the guest does not get to make
+          // that request. Every sink this file refuses by name is a sink a
+          // runtime payload can synthesize, so the payload has to go.
+          SafeHtml(_) =>
+            out.push(
+              refusal(
+                where_, "untrusted views may not render runtime HTML because it can synthesize network-bearing elements",
+              ),
+            )
+          SafeSvg(_) =>
+            out.push(
+              refusal(
+                where_, "untrusted views may not render runtime SVG because it can synthesize network-bearing elements",
+              ),
+            )
           // Avoid duplicating the baseline sanitizer's refusal. If a host
           // loosens that sanitizer, Untrusted still cannot use the construct:
           // its dynamic payload could synthesize every sink checked here.

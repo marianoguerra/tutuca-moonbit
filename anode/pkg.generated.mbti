@@ -54,6 +54,8 @@ pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
+pub fn parse_fragment_svg(String) -> (@src.Document, Array[Int])
+
 pub fn push_view(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn raw_html(val? : @core.Val) -> AttrItem
@@ -64,7 +66,11 @@ pub fn render_it(Int, view? : @core.Val) -> ANode
 
 pub fn scope(Int, @core.Val, ANode) -> ANode
 
+pub fn set_inner_html(val? : @core.Val) -> AttrItem
+
 pub fn set_inner_md(val? : @core.Val) -> AttrItem
+
+pub fn set_inner_svg(val? : @core.Val) -> AttrItem
 
 pub fn show(@core.Val, ANode, id? : Int) -> ANode
 
@@ -106,6 +112,8 @@ pub(all) enum AttrItem {
   ConstA(name~ : String, val~ : @core.Val)
   RawHtml(val~ : @core.Val?)
   RawMarkdown(val~ : @core.Val?)
+  SafeHtml(val~ : @core.Val?)
+  SafeSvg(val~ : @core.Val?)
   If(IfAttr)
 } derive(@debug.Debug)
 

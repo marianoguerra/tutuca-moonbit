@@ -7,4 +7,6 @@ import {
 import {
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/core/debug",
+  // `collect_method_names` takes one; the safe-markup suite calls it.
+  "moonbitlang/core/set",
 } for "test"

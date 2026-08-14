@@ -352,6 +352,20 @@ fn eval_attrs(
             }
             out["setInnerMd"] = Md(md)
           }
+          SafeHtml(val~) => {
+            let html = match val {
+              Some(v) => v.eval(stack).to_display_string()
+              None => "null" // same sentinel as RawHtml above
+            }
+            out["setInnerHtml"] = SafeHtml(html)
+          }
+          SafeSvg(val~) => {
+            let svg = match val {
+              Some(v) => v.eval(stack).to_display_string()
+              None => "null" // same sentinel as RawHtml above
+            }
+            out["setInnerSvg"] = Svg(svg)
+          }
         }
       }
   }

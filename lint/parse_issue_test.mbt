@@ -154,3 +154,20 @@ test "closest_name: case typo wins, distance capped at 2, exact is None" {
   // adjacent transposition counts as one edit
   @debug.assert_eq(@lint.closest_name("redner", ["render"]), Some("render"))
 }
+
+///|
+/// The safe markup directives are KNOWN, which is the half of `known_directive_names`
+/// that has no test of its own elsewhere: a name missing from that list is not a
+/// silent no-op, it is a hard `UnknownDirective` error on a directive that works.
+test "the safe markup directives are known directives" {
+  assert_eq(lint_parse("<div @setinnerhtml=\".body\">x</div>").length(), 0)
+  assert_eq(lint_parse("<svg @setinnersvg=\".chart\"></svg>").length(), 0)
+  // And a typo of one reaches the did-you-mean, which only works because the
+  // real name is in the list to be near.
+  let findings = lint_parse("<div @setinnerhtm=\".body\">x</div>")
+  assert_eq(findings.length(), 1)
+  assert_true(
+    findings[0].suggestion
+    is Some(ReplaceName(from="setinnerhtm", to="setinnerhtml")),
+  )
+}

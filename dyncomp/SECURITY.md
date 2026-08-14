@@ -517,6 +517,46 @@ opt into the paired sanitizer/filter deliberately. `Untrusted` cannot: even
 after scripts and dangerous schemes are removed, dynamic HTML can still create
 an ordinary network request and bypass the registration-time sink-name walk.
 
+**The safe markup directives are refused for the same reason, and only for
+it.** `@setinnermd`, `@setinnerhtml` and `@setinnersvg` need no permission
+anywhere else in the framework — their payloads reach the DOM only through a
+builder that asks the sanitizer about every element and every attribute value,
+and `set_prop` fails closed on all three, so Pass 1 has nothing to refuse
+(`docs/sanitizer.md`). This tier is asking a narrower question than XSS. An
+`<img src>` the sanitizer is perfectly happy with is still a GET to an origin
+the guest chose, issued from the host's page, and a runtime payload can
+synthesize every sink `untrusted_sink_attr` refuses by name. So all three are
+refused at `Untrusted` and unconstrained above it — which is the mirror image
+of `@dangerouslysetinnerhtml`, refused everywhere by default and openable above
+`Untrusted` with a permission.
+
+**A third finding, from giving SVG a directive of its own: SMIL was not
+refused by the baseline.** `<animate>`, `<animateMotion>`, `<animateTransform>`
+and `<set>` are in `untrusted_sink_element` and were nowhere else. They assign
+the attribute named by `attributeName` in the browser, *after* `check_view` has
+read the tree and after the render-time filter has read the built nodes, so
+`<a><animate attributeName="href" to="javascript:…"/></a>` presents both passes
+with an `href` that is not the one that will navigate. A dyncomp guest was
+covered; a plain app has no Pass 1 at all and reached the same markup through
+`@setinnermd`'s HTML blocks. All four are in `unsafe_elements` now, alongside
+`svg("script")` and for the same class of reason: there is no value to inspect
+and no later point to inspect it at, so the element is the only thing left to
+refuse.
+
+**A fourth, in the other direction — a spelling nothing but the parser knew.**
+`moonbit-community/html` implements WHATWG 13.2.6.4 "adjust foreign
+attributes", which splits a qualified name and returns it space-separated:
+`xlink:href` in a payload arrives as `xlink href`. Every rule in the tree knows
+the colon form, because that is the only spelling a *view* can write —
+`@filter.url_attrs`, and `untrusted_sink_attr` in this package's own
+`view_authority.mbt`. So `<a xlink:href="javascript:…">` inside a raw-markup
+payload went past the URL rule untouched. It would then have reached
+`set_attribute("xlink href", …)`, which throws on the space, so this was a
+latent hole rather than a live one — but relying on that is relying on an
+accident of the DOM API, which this document has already been wrong to do once
+(see the `onclick` routing note in `docs/sanitizer.md`). `foreign_attr_name` in
+`vdom/filter/markup/nodes.mbt` folds the name back before any rule reads it.
+
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 
 **The finding, and a correction.** A guest's static manifest `style` rides on the

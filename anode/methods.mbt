@@ -46,7 +46,8 @@ fn add_attr_methods(attrs : Attrs, into : Set[String]) -> Unit {
             add_opt_val_methods(ia.then_val, into)
             add_opt_val_methods(ia.else_val, into)
           }
-          RawHtml(val~) | RawMarkdown(val~) => add_opt_val_methods(val, into)
+          RawHtml(val~) | RawMarkdown(val~) | SafeHtml(val~) | SafeSvg(val~) =>
+            add_opt_val_methods(val, into)
         }
       }
   }

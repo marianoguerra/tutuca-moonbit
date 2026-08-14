@@ -15,6 +15,11 @@ priv struct Build {
   /// nodes here have no author to complain to, so a report has to say which
   /// host element the markup arrived at.
   host_tag : String
+  /// The directive the payload arrived under, for the report only. Four
+  /// directives reach this builder now, so "dropped `dangerouslySetInnerHTML`"
+  /// would be a lie in three of them — and a developer reading a drop log wants
+  /// to know which attribute in their view to go and look at.
+  attr : String
   /// `(tag, attr, value, reason)` — the shape of `@filter.Dropped`.
   on_drop : (String, String, String, String) -> Unit
 }
@@ -35,9 +40,48 @@ pub fn html_nodes(
   html : String,
   host_tag : String,
   on_drop : (String, String, String, String) -> Unit,
+  attr? : String = RAW_ATTR,
 ) -> Array[@vdom.Vdom] {
-  let b = Build::{ sanitizer, host_tag, on_drop }
   let (doc, roots) = @anode.parse_fragment(html)
+  build_roots({ sanitizer, host_tag, attr, on_drop }, doc, roots)
+}
+
+///|
+/// Parse an SVG payload and sanitize it into vdom nodes.
+///
+/// The SVG twin of `html_nodes`, and deliberately the same function with one
+/// line changed: `@anode.parse_fragment_svg` instead of `@anode.parse_fragment`.
+/// Everything after the parse — the walk, the verdicts, the attribute-value
+/// rule — is shared, which is the same argument this file's header makes about
+/// having one builder rather than two. A `<script>` cannot be refused in an
+/// HTML payload and allowed in an SVG one, and `svg("script")` being a separate
+/// baseline entry from `html("script")` is handled where it should be, in the
+/// sanitizer's namespace-qualified keys, rather than by a second copy of this
+/// walk.
+///
+/// What the different parse buys is the NAMESPACE. A bare `<circle/>` is an
+/// unknown HTML element to `parse_fragment` and an SVG circle to this one, and
+/// the sanitizer asks a different question of each. It also means the payload
+/// cannot leave the namespace it was promised: the only route back to HTML is
+/// `<foreignObject>`, which the parser labels as HTML and which is therefore
+/// judged as HTML.
+pub fn svg_nodes(
+  sanitizer : @sanitize.Sanitizer,
+  svg : String,
+  host_tag : String,
+  on_drop : (String, String, String, String) -> Unit,
+  attr? : String = SAFE_SVG_ATTR,
+) -> Array[@vdom.Vdom] {
+  let (doc, roots) = @anode.parse_fragment_svg(svg)
+  build_roots({ sanitizer, host_tag, attr, on_drop }, doc, roots)
+}
+
+///|
+fn build_roots(
+  b : Build,
+  doc : @html5.Document,
+  roots : Array[Int],
+) -> Array[@vdom.Vdom] {
   let out : Array[@vdom.Vdom] = []
   for id in roots {
     match b.node(doc, id) {
@@ -67,6 +111,49 @@ fn vdom_ns(ns : @html5.Namespace) -> @vdom.Ns? {
     SVG => Some(Svg)
     MathML => Some(MathMl)
     _ => None
+  }
+}
+
+///|
+/// A namespaced foreign attribute, back in the spelling everything downstream
+/// uses.
+///
+/// The parser implements WHATWG 13.2.6.4 "adjust foreign attributes", which
+/// splits a qualified name into prefix and local name and hands the pair back
+/// SPACE-separated: `xlink:href` in source arrives here as `xlink href`. That
+/// is faithful — the space stands for the namespace split a `setAttributeNS`
+/// call would make — and it is wrong for us in two ways.
+///
+/// It is a hole. `@filter.url_attrs` knows `xlink:href`, and so does
+/// `untrusted_sink_attr` in `dyncomp/policy`, because that is the only spelling
+/// a VIEW can write. Neither knows `xlink href`, so
+/// `<a xlink:href="javascript:…">` inside a payload walked straight past the
+/// URL rule. That predates the safe directives — it is reachable through
+/// `@dangerouslysetinnerhtml` and through markdown's HTML blocks — but it is
+/// this builder's to fix, because this is where the two spellings meet.
+///
+/// And it is broken output regardless. `vdom` has no namespaced-attribute path;
+/// `set_prop` would reach `set_attribute("xlink href", …)`, and a space is not
+/// a legal attribute name character, so a browser throws `InvalidCharacterError`
+/// rather than setting anything.
+///
+/// Folding back to the colon form fixes both: every existing rule matches, and
+/// `setAttribute("xlink:href", …)` is a legal call that SVG resolves the way an
+/// author meant. It is not `setAttributeNS`, and for these seven names the
+/// difference does not reach the page.
+fn foreign_attr_name(name : String) -> String {
+  match name {
+    "xlink actuate"
+    | "xlink arcrole"
+    | "xlink href"
+    | "xlink role"
+    | "xlink show"
+    | "xlink title"
+    | "xlink type"
+    | "xml lang"
+    | "xml space"
+    | "xmlns xlink" => name.replace(old=" ", new=":")
+    _ => name
   }
 }
 
@@ -111,7 +198,7 @@ fn Build::element(
     Drop => {
       (self.on_drop)(
         self.host_tag,
-        RAW_ATTR,
+        self.attr,
         "<\{tag}>",
         "element is not allowed here",
       )
@@ -123,7 +210,10 @@ fn Build::element(
     Keep => {
       let attrs : Map[String, @vdom.AttrValue] = Map([])
       for pair in el.attributes {
-        let (name, value) = pair
+        let (raw_name, value) = pair
+        // Folded before ANY rule reads it, so no rule has to know about the
+        // parser's space form. See `foreign_attr_name`.
+        let name = foreign_attr_name(raw_name)
         if !self.sanitizer.attribute_allowed(tag, sns, name) {
           (self.on_drop)(
             self.host_tag,

@@ -225,7 +225,8 @@ fn walk_attrs(
             }
             walk_val(val, c, root_scope)
           }
-          RawHtml(val~) | RawMarkdown(val~) => walk_val_opt(val, c, root_scope)
+          RawHtml(val~) | RawMarkdown(val~) | SafeHtml(val~) | SafeSvg(val~) =>
+            walk_val_opt(val, c, root_scope)
           If(a) => {
             walk_val(a.cond_val, c, root_scope)
             walk_val_opt(a.then_val, c, root_scope)

@@ -81,6 +81,11 @@ fn has_raw_html_attr(attrs : Attrs) -> Bool {
     // `@dangerouslysetinnerhtml` parses to a directive item, never to a
     // plain attribute, so a constant-attribute node cannot carry one.
     ConstAttrs(_) => false
+    // `RawHtml` only. `SafeHtml` and `SafeSvg` are markup-bearing too, but this
+    // predicate is about the construct that reaches the DOM AS MARKUP, and
+    // theirs never does — `set_prop` fails closed on both, and the only thing
+    // that consumes them builds described nodes. A host reading this to decide
+    // whether to grant `raw_markup` would be told the wrong thing by a `true`.
     DynAttrs(items) => items.iter().any(item => item is RawHtml(..))
   }
 }

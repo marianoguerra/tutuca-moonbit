@@ -318,7 +318,8 @@ fn Checker::attrs(
       for item in items {
         match item {
           Plain(val~, ..) | ConstA(val~, ..) => self.val(val, sc)
-          RawHtml(val~) | RawMarkdown(val~) => self.val_opt(val, sc)
+          RawHtml(val~) | RawMarkdown(val~) | SafeHtml(val~) | SafeSvg(val~) =>
+            self.val_opt(val, sc)
           If(a) => {
             self.val(a.cond_val, sc)
             self.val_opt(a.then_val, sc)

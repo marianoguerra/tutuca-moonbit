@@ -86,6 +86,27 @@ pub(all) enum AttrItem {
   /// element and every attribute value. Pass 1 refuses the first by default and
   /// never refuses the second — which it cannot express if they share a case.
   RawMarkdown(val~ : @tutuca.Val?)
+  /// `@setinnerhtml`: an HTML source string (None val = failed parse, same
+  /// sentinel convention as `RawHtml`).
+  ///
+  /// The safe half of `RawHtml`, and a separate case for the same reason
+  /// `RawMarkdown` is one. `RawHtml` reaches the DOM as markup — `set_prop`
+  /// hands it to `set_inner_html` — so the only lever a host has over it is
+  /// whether to permit the construct, which is what `raw_markup` is. This
+  /// reaches the DOM only through `@markup.html_nodes`, which asks the
+  /// sanitizer about every element and every attribute value it builds, so
+  /// there is nothing here for a host to grant and Pass 1 never refuses it.
+  /// One variant for both would make that difference inexpressible.
+  SafeHtml(val~ : @tutuca.Val?)
+  /// `@setinnersvg`: an SVG source string (None val = failed parse, same
+  /// sentinel convention as `RawHtml`).
+  ///
+  /// Not a flag on `SafeHtml`, because the two differ before the sanitizer ever
+  /// sees them: the payload is parsed in a different insertion mode, and the
+  /// namespace that comes out of that decides which half of a
+  /// namespace-qualified config applies. `svg("script")` and `html("script")`
+  /// are different entries.
+  SafeSvg(val~ : @tutuca.Val?)
   If(IfAttr)
 } derive(Debug)
 

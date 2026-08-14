@@ -219,8 +219,12 @@ pub impl VdomFilter for UrlFilter with fn filter_elem(self, el) {
     if !is_url_attr(name) {
       continue
     }
-    // `Html` is raw markup and is the next filter's problem, not this one's.
-    if value is Html(_) {
+    // A markup payload is the markup filters' problem, not this one's — they
+    // check the URLs inside what they build, because nothing runs after them on
+    // a subtree they created. Unreachable in practice, since none of the four
+    // attribute names these arrive under is in `url_attrs`; kept so that stays
+    // true by rule rather than by coincidence.
+    if value is (Html(_) | Md(_) | SafeHtml(_) | Svg(_)) {
       continue
     }
     let raw = value.to_attr_string()

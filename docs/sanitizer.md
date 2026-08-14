@@ -511,6 +511,71 @@ Three things this cost that were not obvious:
   unconditional and nothing about it is dead.
   `set_filter(Some(@filter.Baseline::new()))` is the smaller-footprint opt-out.
 
+### HTML and SVG come back the same way, and need no permission either
+
+**Implemented** as `vdom/filter/markup/safe.mbt`: the `@setinnerhtml` and
+`@setinnersvg` directives and the `SafeMarkupFilter` that consumes them, over
+the same `html_nodes` builder `@dangerouslysetinnerhtml` uses and a new
+`svg_nodes` beside it.
+
+The argument that made these two obvious is one this document had already
+written down without noticing. `@setinnermd` routes `HtmlBlock` and
+`HtmlInline` straight through `html_nodes`, `MdFilter` is installed by
+`App::new`, and neither reads a permission. So **"an arbitrary runtime string
+becomes sanitized HTML nodes, unpermissioned" is what a default app has always
+done** — an author who wanted it just had to wrap the payload in a markdown
+document to reach it. Naming it directly adds no capability; it removes a
+detour.
+
+What makes the safe name honest is not the filter, which a host could fail to
+install. It is that `set_prop` **fails closed** on both names, the way it
+already did on `setInnerMd`: no filter, empty element. That is the difference
+from `@dangerouslysetinnerhtml`, whose fallback is `set_inner_html`, and it is
+why `raw_markup` is a permission and these two are not. There is no unchecked
+path to permit, so Pass 1 waves them through and the filter reads no field.
+
+Three things worth stating:
+
+- **The SVG one is not the HTML one restricted to `<svg>` payloads.** It parses
+  in SVG context (`@anode.parse_fragment_svg`, which wraps in `<svg>` and hands
+  back the wrapper's children), so a bare `<circle/>` works and the payload
+  cannot leave the namespace it was promised. The one way back to HTML is
+  `<foreignObject>` — and that route is the *parser's* doing, which is what
+  makes it safe: the contents are labelled HTML, so `html("script")` on the
+  baseline covers them without anything here special-casing it.
+- **They drop CSS, and nothing else does.** `Sanitizer::without_css` is an
+  overlay beside the baseline — not a config, because `remove_elements` cannot
+  coexist with an `elements` allow-list under the spec's validity relation, so a
+  merged config would raise for exactly the hosts that configured most
+  carefully. It takes `style` in both namespaces and the `style` attribute,
+  because `url()` is egress and a fixed-position overlay is clickjacking, and
+  the Sanitizer API's vocabulary is names while both of those live in a value.
+  This is the placeholder until the `mizchi/css` validator of SECURITY.md §4
+  lands and CSS can be parsed and re-serialized rather than refused.
+- **`@setinnermd` narrows the same way, but only for its HTML blocks.** Doing it
+  at the filter took GFM column alignment with it — `style="text-align:left"`,
+  written by `build.mbt` itself — which is a rendering bug, not a tightening.
+  The split is who authored the value, a question the overlay cannot ask, so
+  `Build` carries two sanitizers and hands the narrowed one to `html_nodes`.
+
+Two things that fell out of writing them, neither of which is about the new
+directives:
+
+- **SMIL was a hole in the baseline.** `<animate>`, `<animateMotion>`,
+  `<animateTransform>` and `<set>` assign the attribute named by
+  `attributeName` in the browser, *after* `check` has read the tree and after
+  the render-time filter has read the built nodes — so the `href` anything
+  checked is not the `href` that navigates. `dyncomp/policy` already refused all
+  four for an untrusted guest; the baseline did not, and a plain app has no
+  Pass 1 at all. They are in `unsafe_elements` now.
+- **Namespaced attributes had a spelling nothing else knew.** The parser
+  implements WHATWG 13.2.6.4 faithfully and hands back `xlink href`,
+  space-separated, where the source said `xlink:href`. `@filter.url_attrs` knows
+  the colon form, because that is the only spelling a *view* can write — so
+  `<a xlink:href="javascript:…">` inside any payload walked past the URL rule.
+  It would also have reached `set_attribute("xlink href", …)`, which throws.
+  `foreign_attr_name` in `nodes.mbt` folds it back before any rule reads it.
+
 #### Two findings from the parser that the design rests on
 
 Both are pinned by `markdown/parse_test.mbt`, and a re-sync that moves either
@@ -746,6 +811,14 @@ correct one, which an event handler's is not.
    `take_reports` moved onto the trait so the default is drainable, and
    `Policy::with_sanitizer` + `@markdown.filter_for` make raw markup a permission
    a host can actually grant.
+
+8. ~~The same treatment for raw HTML and SVG, under names that carry no
+   warning.~~ **Done** — `@setinnerhtml` and `@setinnersvg`,
+   `vdom/filter/markup/safe.mbt`, 16 tests, plus the SMIL baseline entries and
+   the `xlink href` fold that writing them turned up. See "HTML and SVG come
+   back the same way" above. No new dependency: the HTML parser was already
+   linked by `MdFilter`, and CSS is dropped rather than parsed precisely so
+   `mizchi/css` did not have to become one yet.
 
 What is left, in rough order of who it helps:
 

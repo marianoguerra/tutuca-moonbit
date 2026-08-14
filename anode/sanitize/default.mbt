@@ -22,6 +22,26 @@
 ///
 /// SVG's `use` is here because `<use href="…">` pulls in a subtree from
 /// elsewhere, the same capability as an include.
+///
+/// **The four SMIL elements are tutuca's own addition too, and they are here
+/// because neither of tutuca's two passes can see what they do.** `<animate>`,
+/// `<animateMotion>`, `<animateTransform>` and `<set>` assign an attribute
+/// named by `attributeName` to a value named by `to`, and they do it in the
+/// browser, AFTER `check` has read the tree and after the render-time filter
+/// has read the built nodes. So
+/// `<a><animate attributeName="href" to="javascript:…"/></a>` is a live script
+/// URL that both passes watched go by: the `href` the filter checked was the
+/// one in the source, and the one that navigates is the one SMIL wrote. There
+/// is no value here to inspect and no later point to inspect it at, which
+/// leaves refusing the ELEMENT as the only decision available — the same shape
+/// of argument `dyncomp/policy` already made when it put these four in
+/// `untrusted_sink_element`. They are in the baseline rather than in that list
+/// alone because a plain app has no Pass 1 at all, and reaches the same markup
+/// through `@setinnerhtml`, `@setinnersvg` and markdown's HTML blocks.
+///
+/// Case is the parser's: `moonbit-community/html` runs the HTML5 "adjust SVG
+/// tag name" table, so `<animatetransform>` in source arrives as
+/// `animateTransform` and matches the entry below.
 pub let unsafe_elements : Array[ElementName] = [
   html("base"),
   html("embed"),
@@ -31,6 +51,10 @@ pub let unsafe_elements : Array[ElementName] = [
   html("script"),
   svg("script"),
   svg("use"),
+  svg("animate"),
+  svg("animateMotion"),
+  svg("animateTransform"),
+  svg("set"),
 ]
 
 ///|
@@ -97,5 +121,10 @@ pub fn Sanitizer::default() -> Sanitizer {
     comments: true,
     data_attributes: false,
     raw_markup: false,
+    // Off here, and switched on by the filters that need it
+    // (`Sanitizer::without_css`). The default sanitizer is what every ordinary
+    // view is checked against, and an ordinary view's `style` attribute is the
+    // author's own.
+    no_css: false,
   }
 }

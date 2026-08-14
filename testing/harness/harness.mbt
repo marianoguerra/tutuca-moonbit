@@ -350,7 +350,7 @@ pub fn Harness::value_of(
     Some(Str(s)) => s
     Some(Num(n)) => n.to_string()
     Some(Bool(b)) => b.to_string()
-    Some(Html(s)) | Some(Md(s)) => s
+    Some(Html(s)) | Some(Md(s)) | Some(SafeHtml(s)) | Some(Svg(s)) => s
     Some(Data(j)) => j.stringify()
     None => ""
   }

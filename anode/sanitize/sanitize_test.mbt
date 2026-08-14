@@ -359,13 +359,20 @@ test "the baseline covers everything the spec's baseline removes" {
   for e in spec_baseline_removes {
     assert_true(ours.contains(shown(e)))
   }
-  // The one deliberate difference, stated so a regen that dropped it would be
-  // noticed rather than absorbed.
+  // The deliberate differences, stated so a regen that dropped one would be
+  // noticed rather than absorbed. `base` retargets relative URLs; the four SMIL
+  // elements write an attribute after both passes have run. See `default.mbt`.
   let spec = @set.Set::from_array(spec_baseline_removes.map(shown))
   debug_inspect(
     unsafe_elements.map(shown).filter(k => !spec.contains(k)),
     content=(
-      #|["base"]
+      #|[
+      #|  "base",
+      #|  "svg:animate",
+      #|  "svg:animateMotion",
+      #|  "svg:animateTransform",
+      #|  "svg:set",
+      #|]
     ),
   )
 }
@@ -446,4 +453,112 @@ test "the spec's default configuration refuses an ordinary component view" {
       #|]
     ),
   )
+}
+
+// ---------------------------------------------------------------------------
+// The safe markup directives, and the CSS overlay they use
+
+///|
+/// Never a violation, and that is the whole reason they are separate `AttrItem`
+/// cases from `RawHtml`. See `check_attrs` — there is no unchecked route to the
+/// DOM to permit, so there is nothing here to refuse.
+test "the safe markup directives are never a violation" {
+  let s = Sanitizer::default()
+  debug_inspect(
+    shown(s.check(parsed("<article @setinnerhtml=\".body\"></article>"))),
+    content="[]",
+  )
+  debug_inspect(
+    shown(s.check(parsed("<svg @setinnersvg=\".chart\"></svg>"))),
+    content="[]",
+  )
+  // The dangerous one still is, under the same sanitizer, which is the
+  // comparison that makes the point.
+  debug_inspect(
+    shown(s.check(parsed("<div @dangerouslysetinnerhtml=\".x\"></div>"))),
+    content=(
+      #|["<div> sets markup directly (@dangerouslysetinnerhtml), which cannot be checked before it renders (at div)"]
+    ),
+  )
+}
+
+///|
+/// SMIL is refused by the BASELINE, so a permissive config does not get it
+/// back. Written as a view rather than as a payload because this is the static
+/// pass; `vdom/filter/markup/safe_test.mbt` covers the runtime half.
+///
+/// The reason it is a baseline entry rather than a config default: `<animate>`
+/// writes the attribute named by `attributeName` in the browser, after every
+/// pass here and after the render-time filter. The `href` anything checked is
+/// not the `href` that navigates.
+test "SMIL is refused whatever the config says" {
+  let s = Sanitizer::new({
+    ..SanitizerConfig::empty(),
+    elements: Some([
+      ElementRule::of(svg("svg")),
+      ElementRule::of(svg("a")),
+      ElementRule::of(svg("animate")),
+      ElementRule::of(svg("animateMotion")),
+      ElementRule::of(svg("animateTransform")),
+      ElementRule::of(svg("set")),
+    ]),
+  })
+  debug_inspect(
+    shown(
+      s.check(
+        parsed(
+          "<svg><a><animate/><animatemotion/><animatetransform/><set/></a></svg>",
+        ),
+      ),
+    ),
+    content=(
+      #|[
+      #|  "<animate> is not allowed (at svg>a>animate)",
+      #|  "<animateMotion> is not allowed (at svg>a>animateMotion)",
+      #|  "<animateTransform> is not allowed (at svg>a>animateTransform)",
+      #|  "<set> is not allowed (at svg>a>set)",
+      #|]
+    ),
+  )
+}
+
+///|
+/// The overlay the safe directives narrow their sanitizer with. It takes the
+/// two CSS names in both namespaces and nothing else — a narrowing, never a
+/// widening, which is why it can sit beside the baseline rather than inside a
+/// config.
+test "without_css takes style and leaves everything else" {
+  let plain = Sanitizer::default()
+  let no_css = plain.without_css()
+  // Before: the default is a remove configuration, so `style` is allowed.
+  assert_true(plain.element_verdict("style", None) is Keep)
+  assert_true(plain.element_verdict("style", Some(Svg)) is Keep)
+  assert_true(plain.attribute_allowed("b", None, "style"))
+  // After: neither element in either namespace, and not the attribute.
+  assert_true(no_css.element_verdict("style", None) is Drop)
+  assert_true(no_css.element_verdict("style", Some(Svg)) is Drop)
+  assert_false(no_css.attribute_allowed("b", None, "style"))
+  assert_false(no_css.attribute_allowed("circle", Some(Svg), "style"))
+  // And nothing else moved.
+  assert_true(no_css.element_verdict("div", None) is Keep)
+  assert_true(no_css.element_verdict("circle", Some(Svg)) is Keep)
+  assert_true(no_css.attribute_allowed("b", None, "class"))
+  assert_true(no_css.attribute_allowed("a", None, "href"))
+  assert_true(no_css.attribute_allowed("div", None, "data-eid"))
+}
+
+///|
+/// It narrows an allow-list config too, rather than replacing it — the case a
+/// merged `SanitizerConfig` could not have expressed at all, since the spec's
+/// validity relation forbids `remove_elements` beside an `elements` list.
+test "without_css composes with an allow-list config" {
+  let s = Sanitizer::new({
+    ..SanitizerConfig::empty(),
+    elements: Some([ElementRule::of(html("b")), ElementRule::of(html("style"))]),
+    attributes: Some(["style", "class"]),
+  }).without_css()
+  assert_true(s.element_verdict("b", None) is Keep)
+  assert_true(s.element_verdict("style", None) is Drop)
+  assert_true(s.attribute_allowed("b", None, "class"))
+  assert_false(s.attribute_allowed("b", None, "style"))
 }

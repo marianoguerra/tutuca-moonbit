@@ -357,6 +357,11 @@ test "a relative url is fine" {
 ///|
 /// Through the SAME builder `@dangerouslysetinnerhtml` uses, so the unsafe
 /// baseline applies here without this package knowing what is on it.
+///
+/// The report says `setInnerMd`, not `dangerouslySetInnerHTML`. Four directives
+/// reach that builder now, and a developer reading a drop log wants the name of
+/// the attribute in their own view — the shared builder is an implementation
+/// detail they did not write.
 test "a script in an html block produces no element" {
   let (out, reports) = run("<div>ok<script>alert(1)</script></div>\n")
   inspect(
@@ -369,7 +374,7 @@ test "a script in an html block produces no element" {
   inspect(
     reports.join("\n"),
     content=(
-      #|dropped dangerouslySetInnerHTML on <DIV>: element is not allowed here (<script>)
+      #|dropped setInnerMd on <DIV>: element is not allowed here (<script>)
     ),
   )
 }

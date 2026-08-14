@@ -250,6 +250,16 @@ fn attr_item_expr(item : @anode.AttrItem) -> String {
         Some(v) => "\{q}set_inner_md(val=\{val_expr(v)})"
         None => "\{q}set_inner_md()"
       }
+    SafeHtml(val~) =>
+      match val {
+        Some(v) => "\{q}set_inner_html(val=\{val_expr(v)})"
+        None => "\{q}set_inner_html()"
+      }
+    SafeSvg(val~) =>
+      match val {
+        Some(v) => "\{q}set_inner_svg(val=\{val_expr(v)})"
+        None => "\{q}set_inner_svg()"
+      }
     If(a) =>
       "\{q}if_attr(\{quote(a.name)}, \{val_expr(a.cond_val)}" +
       val_arg("then_val", a.then_val) +

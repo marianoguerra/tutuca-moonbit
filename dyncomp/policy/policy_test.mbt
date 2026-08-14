@@ -95,6 +95,13 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
         "may not create <animate>",
       ),
       ("<div @setinnermd=\".body\"></div>", "may not render runtime Markdown"),
+      // Safe by construction for a plain app — Pass 1 never refuses either —
+      // and still refused here, because this tier is about a narrower thing
+      // than XSS. An `<img src>` the sanitizer is happy with is a GET to an
+      // origin the guest chose, from the host's page, and a runtime payload can
+      // synthesize every sink the list above refuses by name.
+      ("<div @setinnerhtml=\".body\"></div>", "may not render runtime HTML"),
+      ("<svg @setinnersvg=\".chart\"></svg>", "may not render runtime SVG"),
       (
         "<div class=\"bg-[url(https://attacker.test/pixel)]\"></div>", "bracketed arbitrary utility classes",
       ),
@@ -117,6 +124,52 @@ test "untrusted network checks reach macro slots" {
     ),
   )
   assert_true(refusals.any(message => message.contains("'href' on <a>")))
+  // The safe markup directives too. A slot is guest markup wherever it ends up,
+  // and a directive hidden one level down is exactly the shape this walk has
+  // been wrong about before.
+  let nested = shown(
+    Policy::untrusted().check_view(
+      "Guest/main",
+      parsed(
+        "<x:card><div @setinnerhtml=\".body\"></div><svg @setinnersvg=\".chart\"></svg></x:card>",
+      ),
+    ),
+  )
+  assert_true(nested.any(message => message.contains("runtime HTML")))
+  assert_true(nested.any(message => message.contains("runtime SVG")))
+}
+
+///|
+/// Above the Untrusted tier there is nothing to refuse. This is the difference
+/// between the safe directives and `@dangerouslysetinnerhtml`, which a
+/// `Granted` policy still refuses unless the host also set `raw_markup` — there
+/// is no permission here to have forgotten, because there is no unchecked path
+/// to permit.
+test "the safe markup directives need no grant above the untrusted tier" {
+  for p in [Policy::granted(), Policy::system()] {
+    debug_inspect(
+      shown(
+        p.check_view("Guest/main", parsed("<div @setinnerhtml=\".b\"></div>")),
+      ),
+      content="[]",
+    )
+    debug_inspect(
+      shown(
+        p.check_view("Guest/main", parsed("<svg @setinnersvg=\".c\"></svg>")),
+      ),
+      content="[]",
+    )
+    // The dangerous one, under the same policy, for contrast.
+    assert_true(
+      shown(
+        p.check_view(
+          "Guest/main",
+          parsed("<div @dangerouslysetinnerhtml=\".b\"></div>"),
+        ),
+      ).length() ==
+      1,
+    )
+  }
 }
 
 ///|

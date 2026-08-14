@@ -950,8 +950,13 @@ Registry keys are lowercased — `<x:Card>` resolves as `<x:card>`.
 Bypasses all escaping; children of the element are ignored when active.
 
 **Only for markup you wrote.** For content that came from a user, an API or a
-model, reach for `@setinnermd` below instead — it is the same shape without the
-escape hatch.
+model, reach for `@setinnerhtml`, `@setinnersvg` or `@setinnermd` below instead
+— all three are the same shape without the escape hatch.
+
+You almost never want this one. Its single remaining use is markup you need to
+reach the DOM *unaltered* — a deliberate `javascript:` URL, an inline `<style>`
+— and it costs you a permission (`SanitizerConfig.raw_markup`) and a filter to
+get it.
 
 ## Markdown (`@setinnermd`)
 
@@ -983,6 +988,50 @@ unbalanced HTML block does not adopt the markdown that follows it as children.
 it on every render. A worked example — editor on the left, live preview on the
 right, and a second half showing what gets refused — is on the landing site
 (`playground/site/examples/markdown.{mbt,html}`).
+
+## HTML and SVG (`@setinnerhtml`, `@setinnersvg`)
+
+```html
+<article @setinnerhtml=".body"></article>
+<svg viewBox="0 0 100 100" @setinnersvg=".chart"></svg>
+```
+
+`@setinnermd`'s siblings, for a payload that is already markup — a CMS body, a
+server-rendered fragment, a chart some other program drew. Same promise, same
+mechanism: the payload is parsed ONCE, walked into described nodes, and every
+element and attribute value is judged by the app's own `@sanitize.Sanitizer` on
+the way out. No HTML string is ever handed to the browser, so there is no second
+parse to disagree with the first.
+
+Gone from a payload, whatever the config says: `<script>` in either namespace,
+`<iframe>`, `<object>`, `<base>`, SVG `<use>`, the four SMIL elements
+(`<animate>`, `<animateMotion>`, `<animateTransform>`, `<set>` — they rewrite an
+attribute *after* every check has run), `on*` handlers, and `javascript:` URLs.
+A denied URL drops the *attribute*, not the element.
+
+Also gone, and only from these two: `style` attributes and `<style>` elements.
+CSS is not script, but `url(…)` is a request to an origin the payload chose and
+`position:fixed` over your page is a click somebody thought they were giving to
+something else — and nothing here parses CSS to tell the difference. Style the
+payload's container with classes instead.
+
+`@setinnersvg` differs from `@setinnerhtml` in one thing: the payload is parsed
+in SVG context. A bare `<circle/>` fragment works with no `<svg>` root of its
+own, and the payload cannot leave the SVG namespace except through
+`<foreignObject>`, whose contents are then judged as HTML. Put it on an element
+that is itself SVG.
+
+Neither needs a permission and neither is refused at registration — unlike
+`@dangerouslysetinnerhtml`, there is no unchecked path to permit. `App::new`
+installs the filter, so both work with no setup; `set_filter(None)` opts out,
+and then they render an EMPTY element rather than anything unsanitized. A host
+that wants less says which elements it will have, with a `SanitizerConfig`, the
+same way it does for every other node in the tree.
+
+One exception, in `dyncomp`: an **untrusted** guest may not use any of the three
+runtime-markup directives. That refusal is not about XSS — the sanitizer handles
+that — but about egress: an `<img src>` the sanitizer is perfectly happy with is
+still a request to an origin the guest chose, from the host's page.
 
 ## State values: the `Value` enum
 

@@ -25,6 +25,10 @@ pub struct Sanitizer {
   comments : Bool
   data_attributes : Bool
   raw_markup : Bool
+  /// A second unconditional overlay, alongside the baseline, switched on by
+  /// `without_css`. See that function for why it is here and not a config
+  /// field.
+  no_css : Bool
 }
 
 ///|
@@ -122,7 +126,48 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
     comments: cfg.comments.unwrap_or(true),
     data_attributes: cfg.data_attributes.unwrap_or(false),
     raw_markup: cfg.raw_markup.unwrap_or(false),
+    no_css: false,
   }
+}
+
+///|
+/// The same sanitizer with author CSS taken away: no `<style>` element in
+/// either namespace, and no `style` attribute anywhere.
+///
+/// ## Why the safe directives ask for this
+///
+/// `@setinnerhtml` and `@setinnersvg` promise safety in their names, and the
+/// default config is a REMOVE configuration — everything not named is allowed —
+/// so under it a payload's `style` survives. CSS is not script, but it is not
+/// nothing either: `url(…)` in a presentation property is a request to an
+/// origin of the payload's choosing, and `position:fixed;inset:0` over the host
+/// page is a click the person thought they were giving to something else.
+/// Neither is a thing the sanitizer's vocabulary can talk about, because the
+/// Sanitizer API decides NAMES and both of those live in a value.
+///
+/// Deciding it needs a CSS parser, which this repo does not have and which
+/// `dyncomp/SECURITY.md` §4 already has a plan for (`mizchi/css`, parse and
+/// re-serialize). Until that lands, the safe directives drop the two names
+/// rather than admit values nothing reads. Authors style with classes, which is
+/// what an untrusted dyncomp guest is already required to do
+/// (`view_authority.mbt`).
+///
+/// ## Why an overlay and not a config
+///
+/// The obvious spelling is a `SanitizerConfig` with `remove_elements: [style]`
+/// and `remove_attributes: ["style"]`, merged into the host's. It does not
+/// work: the spec's validity relation — which `SanitizerConfig::validate`
+/// enforces, and which is the reason a config here means what it would mean
+/// handed to a real `setHTML()` — does not let `remove_elements` coexist with
+/// an `elements` allow-list. So the merge would raise for exactly the hosts
+/// that configured most carefully.
+///
+/// As an overlay it composes with any config, valid or narrow, and it can only
+/// ever narrow. It sits beside the baseline in `element_verdict` and
+/// `attribute_allowed` because that is the same shape: a rule the config does
+/// not get a vote on.
+pub fn Sanitizer::without_css(self : Sanitizer) -> Sanitizer {
+  { ..self, no_css: true }
 }
 
 ///|
@@ -145,6 +190,12 @@ pub fn Sanitizer::element_verdict(
   // point, not from the config, so a config that allows `script` does not get
   // `script`. See `SanitizerConfig::default`.
   if is_unsafe_element(key) {
+    return Drop
+  }
+  // The second overlay, on the same footing as the baseline: a config that
+  // allows `style` does not get `style` when CSS has been taken away. Both
+  // namespaces, because `<svg><style>` is a stylesheet like any other.
+  if self.no_css && key is ("style" | "svg:style") {
     return Drop
   }
   if self.replace_with_children.contains(key) {
@@ -188,6 +239,11 @@ pub fn Sanitizer::attribute_allowed(
   // The baseline, before anything a config says: an event handler is never
   // allowed, however permissive the config is.
   if is_event_handler_attr(name) {
+    return false
+  }
+  // Beside the baseline, and before the reserved carve-out only because no
+  // reserved name is `style`. See `without_css`.
+  if self.no_css && name == "style" {
     return false
   }
   if reserved_data_attrs.contains(name) {
@@ -382,6 +438,18 @@ fn Sanitizer::check_attrs(
           // allow-list), which is the same lever it already has over every
           // other node in the tree.
           RawMarkdown(_) => ()
+          // `@setinnerhtml` and `@setinnersvg` are the same case as
+          // `@setinnermd`, and the reasoning above transfers whole: their
+          // payload's only route to the DOM is `@markup.html_nodes` /
+          // `@markup.svg_nodes`, which ask THIS config for a verdict on every
+          // element and run every attribute value past
+          // `@filter.attr_value_allowed`. There is nothing left here to refuse.
+          //
+          // What makes that true rather than hoped for is the pair of
+          // fail-closed branches in `vdom/to_dom.mbt`: an app mounted without a
+          // filter renders these EMPTY, so "the builder ran" is not an
+          // assumption the pass is making about the host.
+          SafeHtml(_) | SafeSvg(_) => ()
         }
       }
   }

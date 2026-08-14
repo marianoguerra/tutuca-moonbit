@@ -8,6 +8,85 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`@setinnerhtml` and `@setinnersvg`: markup you did not write, without the
+  escape hatch.** `@setinnermd`'s siblings, for a payload that is already
+  markup — a CMS body, a server-rendered fragment, a chart another program drew.
+  The payload is parsed ONCE and walked into described nodes, with every element
+  and attribute value judged by the app's own `@sanitize.Sanitizer`; no HTML
+  string is handed to the browser, so there is no second parse to disagree with
+  the first. `App::new` installs the filter, so both work with no setup.
+
+  Neither takes a permission, and the reason is worth stating because "we
+  removed the safety check and renamed it safe" would be the wrong change.
+  `raw_markup` gates `@dangerouslysetinnerhtml` because that directive's
+  fallback is `set_inner_html` — nothing in the types says a host installed the
+  filter. These two fail CLOSED in `set_prop`, like `@setinnermd`: no filter,
+  empty element. There is no unchecked path to permit.
+
+  The capability is also not new. `@setinnermd` already routed a markdown
+  document's HTML blocks through the same builder with no permission, and
+  `MdFilter` is installed by default — so "an arbitrary runtime string becomes
+  sanitized HTML nodes" is what a default app has always done. An author who
+  wanted it just had to wrap the payload in markdown to reach it.
+
+  `@setinnersvg` differs in one thing: it parses in SVG context. A bare
+  `<circle/>` works with no `<svg>` root of its own, and the payload cannot
+  leave the namespace it was promised — the one route back to HTML is
+  `<foreignObject>`, whose contents the parser labels HTML and the sanitizer
+  therefore judges as HTML.
+
+  In `dyncomp`, an **untrusted** guest may use none of the three
+  runtime-markup directives. That refusal is about egress rather than XSS: an
+  `<img src>` the sanitizer is happy with is still a request to an origin the
+  guest chose, from the host's page.
+
+  No new dependency. The HTML parser was already linked by `MdFilter`, and the
+  CSS question below is answered by refusing rather than parsing, so
+  `mizchi/css` did not have to become one yet.
+
+### Changed
+
+- **SMIL is refused by the sanitizer baseline.** `<animate>`,
+  `<animateMotion>`, `<animateTransform>` and `<set>` assign the attribute
+  named by `attributeName` in the browser — *after* the registration-time pass
+  has read the tree and after the render-time filter has read the built nodes.
+  `<a><animate attributeName="href" to="javascript:…"/></a>` therefore showed
+  both passes an `href` that is not the one that would navigate. `dyncomp`
+  already refused all four for an untrusted guest; the baseline did not, and a
+  plain app has no registration-time pass at all — it reached the same markup
+  through `@setinnermd`'s HTML blocks. There is no value here to inspect and no
+  later point to inspect it at, which leaves refusing the element.
+
+- **`style` and `<style>` are dropped from a sanitized markup payload.** The
+  new directives, and `@setinnermd`'s HTML blocks, run under
+  `@sanitize.Sanitizer::without_css`. CSS is not script, but `url(…)` is a
+  request to an origin the payload chose and a fixed-position overlay is a click
+  somebody thought they were giving to something else — and there is no CSS
+  parser here to tell the difference (`dyncomp/SECURITY.md` §4 has the plan).
+  Markdown's OWN `style` is untouched: GFM column alignment still renders,
+  because the split is who authored the value. `@dangerouslysetinnerhtml` is
+  unchanged — unaltered markup is what it is for.
+
+### Fixed
+
+- **A `javascript:` URL under `xlink:href` survived the URL rule inside any raw
+  markup payload.** `moonbit-community/html` implements the WHATWG "adjust
+  foreign attributes" step faithfully and returns the name space-separated, so
+  `xlink:href` in a payload arrived as `xlink href` — and every rule in the tree
+  knows the colon form, because that is the only spelling a view can write. It
+  would then have reached `set_attribute("xlink href", …)`, which throws on the
+  space, so this was latent rather than live; relying on that is relying on an
+  accident of the DOM API. The name is folded back before any rule reads it.
+
+- **Drop reports name the directive the author wrote.** Four directives reach
+  the shared markup builder now, so a report saying `dangerouslySetInnerHTML`
+  was wrong in three of them — and a developer reading a drop log wants the
+  attribute in their own view, not the builder's internal constant.
+
+## [0.19.0] - 2026-08-14
+
+### Added
+
 - **Config vars: one bundle, any instance.** A manifest can now declare
   variables — a name, a type, a default and a sentence saying what it is for —
   and a host binds them at load (`@policy.Policy::with_config`). The guest reads

@@ -65,19 +65,24 @@ fn[N : DomNode] set_prop(
     }
     return
   }
-  // `@setinnermd` never reaches the DOM as markup, and this is where that is
-  // enforced rather than merely intended. `MdFilter` removes the attribute as
-  // it builds the sanitized children, so seeing it HERE means no filter
-  // consumed it — the app was mounted with `set_filter(None)`, or with a filter
-  // chain that does not include one.
+  // The three safe directives never reach the DOM as markup, and this is where
+  // that is enforced rather than merely intended. `MdFilter` and
+  // `SafeMarkupFilter` remove these attributes as they build the sanitized
+  // children, so seeing one HERE means no filter consumed it — the app was
+  // mounted with `set_filter(None)`, or with a filter chain that does not
+  // include one.
   //
-  // Rendering nothing is the only defensible answer. Setting the markdown as
+  // Rendering nothing is the only defensible answer. Setting the payload as
   // text would be wrong output; parsing it here is impossible (vdom knows about
   // no parser and no sanitizer, deliberately); and passing it to
-  // `set_inner_html` would make a directive whose name promises it is safe into
-  // the most dangerous one in the framework. A construct that fails visibly is
-  // recoverable; one that fails open is not.
-  if name == "setInnerMd" {
+  // `set_inner_html` would make the directives whose names promise they are
+  // safe into the most dangerous ones in the framework. A construct that fails
+  // visibly is recoverable; one that fails open is not.
+  //
+  // This is also the branch that lets Pass 1 wave all three through
+  // (`anode/sanitize/sanitize.mbt`): "the builder ran" is not an assumption the
+  // static pass makes about the host, because the alternative is empty.
+  if name is ("setInnerMd" | "setInnerHtml" | "setInnerSvg") {
     node.replace_children()
     return
   }
