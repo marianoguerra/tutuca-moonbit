@@ -13,6 +13,7 @@ import {
   "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/debug",
+  "moonbitlang/core/string",
 }
 
 import {

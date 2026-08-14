@@ -64,6 +64,7 @@ pub struct Registry {
 pub fn Registry::all(Self) -> Array[Descriptor]
 pub fn Registry::describe(Self, ComponentRef) -> Descriptor?
 pub fn Registry::forget(Self, String) -> Unit
+pub fn Registry::keys(Self) -> Array[String]
 pub fn Registry::modules(Self) -> Array[String]
 pub fn Registry::new() -> Self
 pub fn Registry::register(Self, @host.Bundle) -> Unit

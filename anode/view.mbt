@@ -10,8 +10,17 @@ pub fn View::new(
   name : String,
   raw_view? : String = "No View Defined",
   style? : String = "",
+  config_vars? : Map[String, String],
 ) -> View {
-  { name, raw_view, style, anode: None, ctx: None, parse: Some(parse_source) }
+  {
+    name,
+    raw_view,
+    style,
+    config_vars: config_vars.unwrap_or(Map([])),
+    anode: None,
+    ctx: None,
+    parse: Some(parse_source),
+  }
 }
 
 ///|
@@ -23,6 +32,12 @@ fn parse_source(
   cid : @tutuca.Lit?,
 ) -> Unit raise MacroError {
   v.ctx = Some(ctx)
+  // Before the parse rather than at construction: the context is the caller's
+  // (`Component::compile` builds one per component), and this is the only
+  // moment both it and the view are in hand.
+  if !v.config_vars.is_empty() {
+    ctx.config_vars = v.config_vars
+  }
   let anode = ANode::parse(v.raw_view, ctx)
   v.anode = anode
   guard anode is Some(node) else { return }

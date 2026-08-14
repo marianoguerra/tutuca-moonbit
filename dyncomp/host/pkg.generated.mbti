@@ -41,12 +41,16 @@ pub struct Bundle {
   comps : Map[String, (Int, @core.SchemaInfo, DynComponentDef)]
   next_pid : @ref.Ref[Int]
   scope : @component.ComponentStack
+  config : ResolvedConfig
+  key : String
 }
 pub fn Bundle::component_names(Self) -> Array[String]
+pub fn Bundle::config(Self) -> Map[String, String]
 pub fn Bundle::def_of(Self, String) -> DynComponentDef?
 pub fn Bundle::diagnostics(Self) -> Array[String]
 pub fn Bundle::drop_instance(Self, Int) -> Unit
 pub fn Bundle::init_names(Self, String) -> Array[String]
+pub fn Bundle::key(Self) -> String
 pub fn Bundle::make_init(Self, String, String) -> DynObj?
 pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value], pid? : String) -> DynObj?
 pub fn Bundle::manifest(Self) -> DynManifest
@@ -92,6 +96,13 @@ pub(all) struct DynComponentDef {
 } derive(Eq, @debug.Debug)
 pub fn DynComponentDef::field_infos(Self) -> Array[@core.FieldInfo]
 
+pub(all) struct DynConfigDef {
+  name : String
+  ty : @policy.ConfigTy
+  default_ : String
+  doc : String
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DynFieldDef {
   name : String
   ty : Int
@@ -114,6 +125,7 @@ pub(all) struct DynManifest {
   homepage : String
   authors : Array[String]
   capabilities : Array[@policy.CapabilityReq]
+  config : Array[DynConfigDef]
   components : Array[DynComponentDef]
 } derive(Eq, @debug.Debug)
 pub fn DynManifest::from_json_string(String) -> Self raise ManifestError
@@ -147,6 +159,11 @@ pub(all) struct DynTyDef {
 pub(all) struct DynViewDef {
   name : String
   html : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ResolvedConfig {
+  all : Map[String, String]
+  view : Map[String, String]
 } derive(Eq, @debug.Debug)
 
 // Type aliases

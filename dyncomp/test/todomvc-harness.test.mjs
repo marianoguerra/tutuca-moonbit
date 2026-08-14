@@ -73,9 +73,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.6.0': values,
+    'tutuca:component/values@0.7.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.6.0': control,
+    'tutuca:component/control@0.7.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -91,7 +91,7 @@ before(async () => {
 
 test('the static manifest declares the component schema', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 6);
+  assert.equal(m.apiVersion, 7);
   assert.equal(m.moduleName, 'todomvclib');
   const [c] = m.components;
   assert.equal(c.name, 'TodoMvc');

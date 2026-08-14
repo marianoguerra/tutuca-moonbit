@@ -215,8 +215,9 @@ JavaScript at page authority and a warning was not an isolation boundary.
 | — | how messages are routed — that is the transactor's |
 | `methods` and `whens` (`@when` filters) | — |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
-| what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is the hash of its archive |
+| what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is its module, version and the config it was registered with (`Bundle::key`) |
 | the capabilities it needs (`cap-clock` / `cap-random` / `cap-timer` / `cap-external-urls`) | whether it gets them — nor, for `cap-external-urls`, WHICH origins it gets |
+| the `config` variables it reads, with a type, a default and a reason | what they are bound to — a default reaches the guest, and only a host's binding reaches a view |
 | a SCOPED style, or none | any global CSS — there is no field for it, deliberately |
 
 ## Trade-offs accepted

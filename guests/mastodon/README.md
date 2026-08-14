@@ -59,27 +59,51 @@ spans in its own HTML do — and the whole url stays in the tooltip, because tha
 is all a reader gets: its origin belongs to whoever posted it, so no view can
 name it.
 
-### 2. Federation is why ONE picture origin is enough
+### 2. Federation is why ONE picture origin is enough — and config is why it can be ANY one
 
 A post in a federated timeline comes from any server there is, so no view could
 name the origins its avatars live on. Except that an instance **proxies what it
 federates**: a remote account's avatar and a remote post's attachment are both
-re-served from `files.mastodon.social`, under `/cache/`. So this bundle asks for
-`cap-external-urls` and spends it on exactly two origins, both literals in the
-views:
+re-served from the instance's own media host, under `/cache/`. So this bundle
+asks for `cap-external-urls` and spends it on exactly two origins.
+
+Neither of them is written here. They are **config vars** — declared in
+`manifest.json` with a default, bound by the host at load — so one build of this
+bundle reads mastodon.social, hachyderm.io, or any instance somebody points it
+at, with no rebuild and no edit:
+
+```json
+{ "name": "mediaOrigin", "type": "origin", "default": "https://files.mastodon.social/" },
+{ "name": "webOrigin",   "type": "origin", "default": "https://mastodon.social/" }
+```
 
 ```html
-<!-- allowed: the origin is settled before anything runs -->
-<img :src="$'https://files.mastodon.social/{.avatarPath}'" alt="">
+<!-- allowed: the origin is settled before anything runs — the HOST settled it -->
+<img :src="$'{$$mediaOrigin}{.avatarPath}'" alt="">
 <!-- refused: this bundle would be picking the origin -->
 <img :src=".avatar">
 ```
 
-What crosses from the guest is therefore only a PATH. An avatar, a header and an
-attachment preview arrive as the urls the API hands out and are read back
+`$$mediaOrigin` resolves at PARSE time to the string the host bound, so what the
+policy checks is an ordinary pinned literal and the rule is exactly the one
+`bluesky` and `slack` pass with hosts written into their views. The origin moved
+from the bundle to the host, which is the direction that makes it stricter:
+before, the host approved an origin the guest chose; now the host writes it.
+
+What crosses from the guest is therefore still only a PATH. An avatar, a header
+and an attachment preview arrive as the urls the API hands out and are read back
 through `media_path`, which keeps what follows the host and refuses everything
 else — including `files.mastodon.social.attacker.test` and
-`files.mastodon.social@attacker.test`, which is why the constant ends in a `/`.
+`files.mastodon.social@attacker.test`, which is why the bound origin ends in a
+`/`. Both halves now read the SAME string (`@config.get("mediaOrigin")` and
+`$$mediaOrigin`), so the two cannot drift: pointing this bundle somewhere else
+is binding a variable, not editing two files that have to agree.
+
+A host that binds nothing gets the defaults for the guest's half and **no
+pictures**, on purpose: a bundle that could open a URL sink with an origin from
+its own manifest would make the rule decorative. A page that ships this archive
+says so with `trusting_manifest_config`; a page that loads bundles it did not
+ship binds with `with_config`. See `dyncomp/SECURITY.md` §3a.
 
 **The fallback is a layer, not a branch.** The `<img>` sits over the initials
 square rather than replacing it, so an author with no picture, a picture on an
@@ -87,12 +111,17 @@ origin no view names, and a fetch that fails anyway all show the same two
 letters. An untrusted view has no `onerror` to write and does not need one.
 
 The one thing proxying does not fix is a **permalink**: a remote post is a page
-on the server that holds it. So a local post gets a `mastodon.social` link and a
+on the server that holds it. So a local post gets a link under `webOrigin` and a
 remote one stays selectable text with its address in the tooltip — the same
 split bluesky makes between a hashtag and a link somebody posted, arrived at
 from a different direction. Profiles and hashtags need no such split: this server
 renders remote profiles at its own address, so `@servo@floss.social` is a page
 here.
+
+The server's NAME is a third variable, `instanceName`, and it is `text` rather
+than `origin` — deliberately. It is prose: the `@user@server` handle, a
+tooltip, the visible text under a permalink. A `text` variable cannot be named
+by a view at all, which is what stops it from becoming an origin.
 
 ### 3. A poll bar is an element, not a stylesheet
 

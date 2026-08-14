@@ -801,8 +801,26 @@ pub fn plan(name : String) -> Array[Step]? {
 fn moonbit_guests() -> Array[String] {
   [
     "counter", "table", "todo", "todomvc", "calculator", "tictactoe", "bluesky",
-    "mastodon", "slack",
+    "mastodon", "slack", "dice",
   ]
+}
+
+///|
+/// Where a guest's tree is, relative to the repo root.
+///
+/// The mirror of `guestDir` in `guests/guests.mjs`, and it exists for the one
+/// guest that is not under `guests/`: the die that `examples/dyncomp-dice`
+/// ships. That example is a CONSUMER of the published package — no path
+/// dependency anywhere under it, deliberately — but its guest implements this
+/// repo's WIT, and being out of the way is exactly how it came to sit at
+/// `tutuca:component@0.5.0` through two package bumps while everything else
+/// moved. Building and packing it here is what keeps it honest.
+fn guest_src_dir(name : String) -> String {
+  if name == "dice" {
+    "examples/dyncomp-dice/dice"
+  } else {
+    "guests/\{name}"
+  }
 }
 
 ///|
@@ -866,7 +884,7 @@ pub fn guest_pack_steps(into~ : String) -> Array[Step] {
         prog: "node",
         args: [
           "scripts/pack-bundle.mjs",
-          "guests/\{name}/dist/js",
+          "\{guest_src_dir(name)}/dist/js",
           "\{into}/\{name}.tutuca.tar.gz",
         ],
       }),

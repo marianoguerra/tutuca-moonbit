@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// Pack this guest's jco-transpiled output (dist/js) into a SINGLE
+// Pack this guest's core wasm plus static declaration into a SINGLE
 // self-contained `.tutuca.tar.gz` — a gzipped ustar tar a universal host
 // unpacks in the browser with the native DecompressionStream and a tiny tar
 // reader. That is the whole distribution format: one file, dropped on a page.
 //
-// Only runtime files go in — the ESM entry (*.component.js) and its core
-// modules (*.wasm). Type files (*.d.ts, interfaces/) are dropped: nothing at
-// runtime reads them, and they are a third of the archive.
+// It contains no executable JavaScript: `tutuca.json`, one core wasm, and the
+// HTML views are enough because the host owns the canonical ABI.
 //
 // No dependency: Node's zlib gzips a tar built by hand here, because Node has
 // no tar writer. Regular files only, stored by basename.
@@ -14,7 +13,7 @@
 //   node pack.mjs                     # dist/js -> <name>.tutuca.tar.gz
 //   node pack.mjs <srcDir> <outFile>
 import { gzipSync } from "node:zlib";
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -57,17 +56,41 @@ function buildTar(files) {
   return Buffer.concat(chunks);
 }
 
-const names = readdirSync(srcDir).filter(
-  (n) => n.endsWith(".component.js") || n.endsWith(".wasm"),
-);
-if (!names.some((n) => n.endsWith(".component.js"))) {
-  console.error(`pack: no *.component.js in ${srcDir} — run \`node build.mjs\` first`);
+const names = readdirSync(srcDir);
+const core = names.find((n) => n.endsWith(".component.core.wasm"));
+if (!core) {
+  console.error(`pack: no *.component.core.wasm in ${srcDir} — run \`node build.mjs\` first`);
   process.exit(1);
 }
-const files = names.map((n) => ({
-  name: basename(n),
-  data: readFileSync(join(srcDir, n)),
-}));
+const manifestPath = join(here, "manifest.json");
+if (!existsSync(manifestPath)) {
+  console.error("pack: manifest.json is missing");
+  process.exit(1);
+}
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+const descriptor = {
+  world: "tutuca:component@0.7.0",
+  encoding: manifest.stringEncoding ?? "utf16",
+  core,
+  manifest,
+};
+const files = [
+  { name: "tutuca.json", data: Buffer.from(JSON.stringify(descriptor)) },
+  { name: core, data: readFileSync(join(srcDir, core)) },
+];
+for (const component of manifest.components ?? []) {
+  for (const view of component.views ?? []) {
+    const name = basename(view.src ?? "");
+    const path = join(here, "views", name);
+    if (!name || !existsSync(path)) {
+      console.error(`pack: missing view ${view.src ?? "<unnamed>"}`);
+      process.exit(1);
+    }
+    if (!files.some((f) => f.name === name)) {
+      files.push({ name, data: readFileSync(path) });
+    }
+  }
+}
 
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, gzipSync(buildTar(files), { level: 9 }));

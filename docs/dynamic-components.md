@@ -185,7 +185,7 @@ states each claim's actual strength:
 | --- | --- | --- |
 | wasm imports (`values`, `control`) | nothing ambient | safe by construction |
 | `env` — clock, randomness, ids | weakened, host-supplied answers | gated; refused by default |
-| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks, URL-bearing macro arguments and runtime markup; `<img src>`/`<a href>` reopen only with `cap-external-urls`; trusted tiers retain filtered URLs |
+| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks, URL-bearing macro arguments and runtime markup; `<img src>`/`<a href>` reopen only with `cap-external-urls`, to an origin the view states or a config var you bound; trusted tiers retain filtered URLs |
 | guest CSS | your stylesheet | refused outright for an untrusted bundle |
 | `control.request` → host handlers | your own services | **open** — needs caller-aware authorization |
 | a runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -213,18 +213,38 @@ A page that wants an untrusted bundle to show pictures grants
 ```
 
 That reopens `src` on `<img>` and `href` on `<a>`, and only for a URL whose
-ORIGIN is a literal in the view — `<img :src="$'https://cdn.example/a/{.id}.png'">`
+ORIGIN is settled before anything renders — `<img :src="$'https://cdn.example/a/{.id}.png'">`
 is allowed, `<img :src=".avatar">` is not. It is a network grant: the path is
 still the bundle's to write, so grant the origins you meant and read
 `SECURITY.md` §3 before passing an empty list, which means any `https://`
 origin.
 
+A bundle that should work at more than one server names no origin at all.
+It declares a **config var** and its views spend it, and the host binds it:
+
+```moonbit
+@policy.Policy::untrusted().with_config([
+  ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+])
+```
+
+```html
+<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+```
+
+`$$name` resolves at parse time to the string the host bound, so the same rule
+checks it and the origin is still settled at registration — it is just written
+by the host rather than by the bundle. Binding an origin IS granting it, which
+is one decision in one call; `SECURITY.md` §3a is the whole argument.
+
 The `bluesky`, `mastodon` and `slack` guests are what that looks like from the
-other side: between them they name seven origins — the Bluesky CDN and
-`bsky.app`, Mastodon's media host and `mastodon.social`, and the three hosts a
-Slack profile picture comes from — and both demo pages grant exactly those
-(`@shell.sample_policy`). None of them can pick an origin at runtime, so the list
-of hosts any of these bundles can reach is a thing you read off its views.
+other side. `bluesky` and `slack` name five origins between them — the Bluesky
+CDN and `bsky.app`, and the three hosts a Slack profile picture comes from — as
+literals in their views. `mastodon` names none: its two origins are config vars,
+so the servers it can reach are whatever a host binds. Neither kind can pick an
+origin at RUNTIME, which is the property that matters: the hosts any of these
+bundles can reach is a thing you read off the bundle and the policy beside it,
+before it draws anything (`@shell.sample_policy`).
 
 The two open rows are open on purpose and are marked as such in the code. If
 you host untrusted bundles today, they are what to think about.
@@ -250,7 +270,9 @@ number in prose is the half that stops being true):
   against the record's own `tags` / `mentions` (Mastodon's `content` is HTML, and
   no tier may emit markup), one picture origin still covers every server because
   an instance proxies what it federates, and a poll share is a `<progress value>`
-  rather than a width no untrusted view could set
+  rather than a width no untrusted view could set. It is also the worked example
+  for config vars: it names no host anywhere, so one build reads mastodon.social,
+  hachyderm.io or any instance a host points it at
 - **todo**, **todomvc**, **tictactoe** — collections
 - **calculator** — state the declared fields do not name
 - **rust-tempconv** — the polyglot proof: the same WIT, no tutuca code at all,

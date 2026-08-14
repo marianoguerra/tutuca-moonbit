@@ -77,6 +77,11 @@ fn samples() -> Array[@shell.LoaderBarSample] {
     { label: "slack", url: "./examples/slack.tutuca.tar.gz" },
     { label: "table", url: "./examples/table.tutuca.tar.gz" },
     { label: "rust temp", url: "./examples/rust-tempconv.tutuca.tar.gz" },
+    // The die `examples/dyncomp-dice` ships. It is offered here because its
+    // own page cannot host it — that example builds against the PUBLISHED
+    // package and imports one this repo added since — and a guest nothing can
+    // run is a guest nothing notices going stale.
+    { label: "dice", url: "./examples/dice.tutuca.tar.gz" },
   ]
 }
 

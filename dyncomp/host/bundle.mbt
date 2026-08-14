@@ -38,11 +38,63 @@ pub struct Bundle {
   /// a bundle gets: it names a component, the host builds it, and the guest
   /// never holds the result.
   scope : @component.ComponentStack
+  /// What this registration decided its variables are (`bundle_config.mbt`):
+  /// the guest's whole table, and the origins its views may name.
+  config : ResolvedConfig
+  /// This registration's identity — see `Bundle::key`.
+  key : String
 }
 
 ///|
 pub fn Bundle::module_name(self : Bundle) -> String {
   self.manifest.module_name
+}
+
+///|
+/// What identifies this registration: the bundle AND the variables it was
+/// registered with.
+///
+/// The module name alone is not an identity, and treating it as one is what
+/// made two configurations of one bundle impossible: loading the second
+/// retired the first, because `by_name` had room for exactly one. A mastodon
+/// reader pointed at mastodon.social and one pointed at hachyderm.io are the
+/// same code and different components, and this is the string that says so.
+///
+/// It also makes hot-swap mean what it looked like it meant. Reloading a
+/// bundle with the SAME config still replaces the old one — same key — while
+/// reloading it with different config now adds a sibling instead of evicting
+/// something a page was still drawing.
+///
+/// FNV-1a, like `SchemaInfo::shape_fingerprint`, and not cryptographic for the
+/// same reason: it separates registrations a host made, not ones an attacker
+/// did. A host that binds attacker-chosen config has already made a decision
+/// this hash is not the boundary for.
+pub fn Bundle::key(self : Bundle) -> String {
+  self.key
+}
+
+///|
+/// The variables this bundle runs with, by name. What a consent dialog or a
+/// catalog shows beside the capability list, and what `config.get` answers.
+pub fn Bundle::config(self : Bundle) -> Map[String, String] {
+  self.config.all
+}
+
+///|
+fn bundle_key(manifest : DynManifest, config : ResolvedConfig) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("m:\{manifest.module_name}\nv:\{manifest.version}\n")
+  sb.write_string(config.canonical())
+  let mut h : UInt64 = 0xcbf29ce484222325UL
+  for c in sb.to_string().to_array() {
+    h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
+  }
+  let digits = "0123456789abcdef".to_array()
+  let out = StringBuilder::new()
+  for i in 0..<16 {
+    out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
+  }
+  "\{manifest.module_name}@\{out.to_string()}"
 }
 
 ///|
@@ -112,10 +164,15 @@ pub fn register_bundle(
   // decisions; this owns the mechanics — see dyncomp/SECURITY.md.
   refuse_if_any(policy.check_quotas(facts_of(manifest)))
   refuse_if_any(policy.check_capabilities(manifest.capabilities))
+  let diagnostics : Array[String] = []
+  // Before anything is parsed, because the parse depends on it: a `$$name` in
+  // a view resolves against `config.view`, and the policy the views are then
+  // JUDGED against may have grown an origin from a manifest default this host
+  // said it trusts. Both have to be settled first or the two disagree.
+  let (config, policy) = resolve_config(manifest, policy, diagnostics)
   let child = scope.enter()
   let comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)] = Map([])
   let synthesized = []
-  let diagnostics : Array[String] = []
   for def in manifest.components {
     refuse_if_any(policy.check_style(def.name, def.style))
     // Guest view HTML arrives at runtime from the manifest, so it is parsed
@@ -124,8 +181,19 @@ pub fn register_bundle(
     let cviews : Map[String, @anode.View] = Map([])
     for v in def.views {
       let style = if v.name == "main" { def.style } else { "" }
-      cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
-      screen_view(policy, diagnostics, "\{def.name}/\{v.name}", v.html)
+      cviews[v.name] = @anode.View::new(
+        v.name,
+        raw_view=v.html,
+        style~,
+        config_vars=config.view,
+      )
+      screen_view(
+        policy,
+        diagnostics,
+        "\{def.name}/\{v.name}",
+        v.html,
+        config.view,
+      )
     }
     // The schema the guest DECLARED, which is the whole difference between a
     // guest component that is a name with handlers hanging off it and one the
@@ -200,7 +268,16 @@ pub fn register_bundle(
       None => ()
     }
   }
-  { guest, manifest, comps, diagnostics, next_pid: { val: 1 }, scope: child }
+  {
+    guest,
+    manifest,
+    comps,
+    diagnostics,
+    next_pid: { val: 1 },
+    scope: child,
+    config,
+    key: bundle_key(manifest, config),
+  }
 }
 
 ///|
@@ -382,13 +459,20 @@ fn screen_view(
   into : Array[String],
   where_ : String,
   html : String,
+  config_vars : Map[String, String],
 ) -> Unit raise ManifestError {
   let line = (f : @lint.Finding) => diagnostic_line(into, where_, f)
   for f in @lint.lint_html(html) {
     line(f)
   }
   let collector = @lint.LintCollector::new()
-  let px = @anode.ParseContext::new(handler=collector)
+  // The SAME table `View::new` got, and passing it is the whole point of this
+  // parameter. This is a second, throwaway parse of the same source; if it
+  // resolved `$$name` differently from the tree that will actually render, the
+  // check would be about a document nobody displays. Screening the unresolved
+  // tree refuses every config-origin sink; screening a resolved one while
+  // rendering an unresolved one checks nothing.
+  let px = @anode.ParseContext::new(handler=collector, config_vars~)
   let tree = @anode.ANode::parse(html, px)
   for f in @lint.check_collected(collector) {
     line(f)

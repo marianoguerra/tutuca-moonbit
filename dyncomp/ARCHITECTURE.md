@@ -129,9 +129,9 @@ Three tiers, differing in authority deliberately extended by the host:
 |---|---|---|---|
 | `cap-clock` / `cap-random` | no | yes | yes |
 | `cap-timer` | no | no | yes |
-| `cap-external-urls` | grantable — `allowing_external_urls(origins)` | yes | yes |
+| `cap-external-urls` | grantable — `allowing_external_urls(origins)`, or `with_config` binding an `origin` variable | yes | yes |
 | its own CSS | no | yes | yes |
-| direct DOM URL/CSS sinks | no — `<img src>` / `<a href>` only with `cap-external-urls`, and only to an origin the view states literally | yes, render-time scheme filtered | yes, render-time scheme filtered |
+| direct DOM URL/CSS sinks | no — `<img src>` / `<a href>` only with `cap-external-urls`, and only to an origin settled before render: a literal the view states, or a config var the host bound | yes, render-time scheme filtered | yes, render-time scheme filtered |
 | sanitized runtime HTML | no | configurable | configurable |
 
 An ungranted capability **refuses the bundle** rather than degrading it: a guest

@@ -77,6 +77,24 @@ pub fn Policy::allowing_external_urls(
 }
 
 ///|
+/// An origin as this package writes them, or None for text that does not name
+/// one: scheme lowercased, authority lowercased, and the `/` that ends the
+/// authority on the end.
+///
+/// The public form of `origin_of` + `with_authority_end`, for the one caller
+/// outside this package that has to produce the SAME string rather than judge
+/// one — `host/bundle_config.mbt`, resolving a manifest's own origin defaults.
+/// Exported as one function rather than two because the pair only ever makes
+/// sense together, and a caller that ran them in the other order would get a
+/// prefix test back instead of an origin.
+pub fn normalized_origin(text : String) -> String? {
+  match origin_of(with_authority_end(text)) {
+    Some(o) => Some(o + "/")
+    None => None
+  }
+}
+
+///|
 /// The index of the `:` in `://`, which is where a scheme ends.
 fn scheme_end(url : String) -> Int? {
   let n = url.length()
@@ -146,21 +164,37 @@ fn origin_of(url : String) -> String? {
 /// The literal head of a value: what is settled before anything the guest
 /// evaluates can add to it.
 ///
-/// A template's first part and nothing deeper, because everything after the
-/// first placeholder is path — an origin cannot be extended once the `/` that
-/// ends it is in the literal, which is what `origin_of` insists on.
+/// A template's leading RUN of literal parts, stopping at the first one that is
+/// not — because everything from there on is path, and an origin cannot be
+/// extended once the `/` that ends it is in the literal, which is what
+/// `origin_of` insists on.
+///
+/// A run rather than `parts[0]` alone because a literal head can arrive in more
+/// than one piece. `$'{$$mediaOrigin}/{.path}'` splits into the host's origin,
+/// the `/`, and the field: three parts whose first two are both settled, and
+/// reading only the first would refuse a spelling that pins perfectly well.
+/// Concatenating stops being safe exactly where the parts stop being literal,
+/// which is the same place the old rule stopped.
 ///
 /// `from_macro` is excluded: a `^name` constant is the CALLER's string wearing
-/// a literal's shape, and the caller is the guest.
+/// a literal's shape, and the caller is the guest. A `$$name` constant is the
+/// HOST's string wearing a literal's shape, so it is not excluded — that is the
+/// whole of what config vars buy (`config.mbt`).
 fn pinned_prefix(val : @tutuca.Val) -> String? {
   match val {
     Const(lit=LStr(s), from_macro=false) => Some(s)
     StrTpl(parts) => {
-      guard parts.length() > 0 else { return None }
-      guard parts[0] is Some(Const(lit=LStr(s), from_macro=false)) else {
-        return None
+      let buf = StringBuilder::new()
+      for part in parts {
+        guard part is Some(Const(lit=LStr(s), from_macro=false)) else { break }
+        buf.write_string(s)
       }
-      Some(s)
+      let head = buf.to_string()
+      if head == "" {
+        None
+      } else {
+        Some(head)
+      }
     }
     _ => None
   }

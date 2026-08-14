@@ -4,17 +4,24 @@ A WebAssembly component that a **running** tutuca app can fetch, instantiate and
 mount — no rebuild of the host, no shared language, no trust required. Scaffolded
 by `tutuca new-guest dice`.
 
-## The one file you write
+## The three files you write
 
-`gen/interface/tutuca/component/guest/dice.mbt`. Everything else is
-generated or fixed:
+Behavior is MoonBit, the declaration is JSON, and the views are HTML. Nothing
+else is yours:
 
 | path | what it is |
 | --- | --- |
-| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.5.0`. The host generates its side from this same file. |
+| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.7.0`. The host generates its side from this same file. |
 | `gen/`, `interface/`, `world/` | `wit-bindgen moonbit` output, checked in — so building needs no wit-bindgen |
 | `gen/interface/tutuca/component/guest/sdk.mbt` | the guest SDK: implements every generated `declare` over the `DynComponent` trait |
-| `gen/interface/tutuca/component/guest/dice.mbt` | **yours** |
+| `gen/interface/tutuca/component/guest/dice.mbt` | **yours**: the behavior |
+| `manifest.json` | **yours**: the schema, the docs, the message buckets, the capabilities |
+| `views/Dice.main.html` | **yours**: the view, as a file an editor understands |
+
+The last two used to be a `dice_def()` inside `dice.mbt`, exported through a
+`get-manifest` the guest implemented. `tutuca:component@0.6.0` moved them out:
+a host can now read what a bundle IS without instantiating it, and a view is
+HTML rather than a string inside source.
 
 ## Build
 
@@ -25,7 +32,9 @@ node pack.mjs      # -> dice.tutuca.tar.gz
 ```
 
 Then drop `dice.tutuca.tar.gz` on a universal host page. Every component your
-`dyn_module()` declares joins its catalog.
+`manifest.json` declares joins its catalog. The archive carries no executable
+JavaScript — `tutuca.json`, one core wasm and the view HTML — because the host
+owns the canonical ABI.
 
 Needs `moon` v0.10.x, `wasm-tools` 1.244.x and Node. These are version-coupled —
 bumping one without the others produces a component the host rejects.
@@ -39,15 +48,21 @@ bumping one without the others produces a component the host rejects.
    delegation, morphing and linter apply to you unchanged.
 3. **State is opaque, its shape is declared.** The host never sees inside your
    struct. It reads one field at a time through `get_field`, and it knows what
-   fields exist because your `ComponentDef` says so. That split is what lets a
+   fields exist because `manifest.json` says so. That split is what lets a
    catalog rank you, a form configure you and an inspector show you — with
    nobody trusting your code.
 4. **Ambient authority is granted, never assumed.** The world imports no WASI:
    no filesystem, no network, no clock, no entropy. The three facts you cannot
    compute for yourself — the time, a random number, a fresh id — are
-   capabilities you request in `dyn_module(capabilities=[...])` and a host
-   grants or refuses. A host that will not grant one **refuses the bundle**
-   rather than handing you a plausible lie.
+   capabilities you request in `manifest.json` and a host grants or refuses. A
+   host that will not grant one **refuses the bundle** rather than handing you a
+   plausible lie.
+
+   What a host CAN hand you without a capability is configuration: variables
+   your manifest declares with defaults and a host binds at load, read back
+   through `config.get`. This die declares none — it needs a number, not a
+   setting — but `guests/mastodon` upstairs is the worked example, and it is
+   how one build of a reader serves any server there is.
 
 ## Two things that will bite
 

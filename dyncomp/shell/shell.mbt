@@ -202,7 +202,51 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
         _ => respond(Err(Str("double: expected one number")))
       }
     }),
+    // `roll` is what `examples/dyncomp-dice`'s die calls, and it is the sharper
+    // demonstration of the same seam: the counter could compute `double`
+    // itself and asks as a courtesy, while the die CANNOT make a number. The
+    // world imports no WASI, and the die deliberately declares no
+    // `cap-random` — a bundle that asks for a capability is a bundle some
+    // pages cannot run, and asking through `control.request` needs no grant
+    // because it is not ambient authority. The page answers one question,
+    // once, and may decline.
+    "roll": RequestFn((args, respond) => {
+      match args {
+        [Num(faces)] => {
+          let n = faces.to_int()
+          if n < 2 {
+            respond(Err(Str("roll: a die needs at least two faces")))
+          } else {
+            let face = (next_u32() % n.reinterpret_as_uint()).reinterpret_as_int() +
+              1
+            respond(Ok(Num(face.to_double())))
+          }
+        }
+        _ => respond(Err(Str("roll: expected one number (the face count)")))
+      }
+    }),
   }
+}
+
+///|
+/// A page's own PRNG, for `roll` above.
+///
+/// The HOST's entropy, not the guest's, and that is the whole point of the die:
+/// this is the thing a sandboxed bundle has no way to reach. xorshift32 rather
+/// than anything stronger because a demo die needs a different face each time
+/// and nothing more; a page that needed unpredictability an attacker cannot
+/// reproduce would reach for the platform's own generator here.
+let seed : Ref[UInt] = { val: 0x9E3779B9 }
+
+///|
+fn next_u32() -> UInt {
+  let mut x = seed.val
+  x = x ^ (x << 13)
+  x = x ^ (x >> 17)
+  x = x ^ (x << 5)
+  // 0 is xorshift's fixed point: it would give the same face forever.
+  seed.val = if x == 0 { 0x9E3779B9 } else { x }
+  seed.val
 }
 
 ///|
@@ -220,15 +264,13 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
 /// - `cdn.bsky.app` — every picture the bluesky reader draws: an avatar, a
 ///   profile banner, an attached image's thumbnail.
 /// - `bsky.app` — where its links go: a profile, a hashtag, a permalink.
-/// - `files.mastodon.social` — every picture the mastodon reader draws, and one
-///   host is enough for a FEDERATED timeline because the server proxies what it
-///   federates: a remote account's avatar is re-served from there under
-///   `/cache/`.
-/// - `mastodon.social` — where its links go: a profile (remote ones included,
-///   since that server renders them at its own address), a hashtag, and the
-///   permalink of a status that is local to it.
 /// - `ca.slack-edge.com`, `avatars.slack-edge.com`, `secure.gravatar.com` — the
 ///   three hosts a Slack profile picture actually comes from.
+///
+/// The mastodon reader is NOT on this list, and that is the change config vars
+/// made rather than an omission: it names no origin of its own any more, so
+/// there is no origin here to permit. `trusting_manifest_config` is what
+/// answers for it — see below.
 ///
 /// What granting them costs is written out in `dyncomp/SECURITY.md` §3, and the
 /// short version is that an image is a GET the guest chose: an allowed origin
@@ -238,10 +280,18 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
 ///
 /// A page that hosts bundles it did NOT ship should not copy this. It should
 /// decide, per bundle, which is what the capability is for.
+///
+/// `trusting_manifest_config` is here for the same reason the list is: these
+/// pages ship the archives they load, so "the default in the manifest" and
+/// "what this page decided" are one sentence, and writing the mastodon
+/// reader's two origins out again in host code would only be a chance to
+/// disagree with them. A page loading bundles it did not ship binds with
+/// `with_config` instead — deciding per bundle is the whole point.
 pub fn sample_policy() -> @policy.Policy {
-  @policy.Policy::untrusted().allowing_external_urls([
-    "https://cdn.bsky.app", "https://bsky.app", "https://files.mastodon.social",
-    "https://mastodon.social", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
+  @policy.Policy::untrusted()
+  .trusting_manifest_config()
+  .allowing_external_urls([
+    "https://cdn.bsky.app", "https://bsky.app", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
     "https://secure.gravatar.com",
   ]) catch {
     // Unreachable: every entry above is a literal origin. Refusing to grant is

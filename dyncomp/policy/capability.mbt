@@ -31,6 +31,12 @@ pub(all) enum Capability {
   /// request the guest chooses, to an origin that learns the page loaded it.
   /// Pinning the origin in the view is what keeps that origin the host's
   /// decision instead of the guest's — see SECURITY.md §3.
+  ///
+  /// A view can also reach the origin through a config var (`$$name`,
+  /// `config.mbt`), and the bargain there is the same one read from the other
+  /// end: **binding an origin is granting it.** `Policy::with_config` adds this
+  /// capability for exactly that reason, so a host that pointed a bundle at a
+  /// CDN does not then have to remember to permit the CDN.
   CapExternalUrls
   /// A name this host does not know. Kept rather than dropped so a refusal can
   /// SAY which one: a dropped name would make a bundle asking for something

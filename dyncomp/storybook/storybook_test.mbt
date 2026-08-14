@@ -131,6 +131,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
     homepage: "",
     authors: [],
     capabilities: [],
+    config: [],
     components: [
       {
         name: "Tally",

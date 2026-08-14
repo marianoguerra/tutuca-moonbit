@@ -78,6 +78,18 @@ extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "
 extern "wasm" fn tcomp_set_grants(caps_json : String) -> Unit = "tcomp" "set_grants"
 
 ///|
+/// What `config.get` answers with, for ONE bundle — the manifest's declared
+/// variables with this host's bindings applied.
+///
+/// Per bundle rather than per host, unlike `set_grants`: two registrations of
+/// one archive with different variables are the case config vars exist for,
+/// and a page-wide table could not tell them apart.
+extern "wasm" fn tcomp_set_bundle_config(
+  bundle_id : Int,
+  config_json : String,
+) -> Unit = "tcomp" "set_bundle_config"
+
+///|
 /// The guest's own state, base64 (see the bridge): "" is a guest that does not
 /// persist. Text rather than bytes because that is what this FFI speaks, and
 /// base64 is already the encoding a snapshot and a KV store use.
@@ -439,7 +451,41 @@ let current_doc : Ref[@wdom.WasmNode?] = { val: None }
 let bundles : Map[Int, @dyncomp.Bundle] = Map([])
 
 ///|
+/// A registration's identity: `Bundle::key()` — the module AND the variables
+/// it was registered with. What a hot swap replaces, and what keeps two
+/// configurations of one archive from evicting each other.
+let by_key : Map[String, Int] = Map([])
+
+///|
+/// A convenience index, name -> most recently registered bundle of that name.
+///
+/// This bridge's published surface addresses a bundle by module name, and that
+/// stays true: naming one is what a page can write down. With two
+/// configurations loaded the name alone is ambiguous, and "the last one
+/// registered" is the answer that keeps the ordinary case — load, then mount
+/// from the "dyncompLoaded" handler — reading exactly as it did.
+///
+/// A page that means a SPECIFIC configuration passes the key instead; every
+/// lookup here goes through `find_bundle`, which takes either.
 let by_name : Map[String, Int] = Map([])
+
+///|
+/// The bundle a page means, addressed by key or by module name.
+///
+/// Key first, because it is unambiguous and a name may not be: a page that
+/// went to the trouble of holding a key gets the bundle it asked for rather
+/// than whichever one loaded last.
+fn find_bundle(which : String) -> @dyncomp.Bundle? {
+  let bid = match by_key.get(which) {
+    Some(bid) => bid
+    None =>
+      match by_name.get(which) {
+        Some(bid) => bid
+        None => return None
+      }
+  }
+  bundles.get(bid)
+}
 
 ///|
 let next_load : Ref[Int] = { val: 1 }
@@ -609,14 +655,39 @@ pub fn on_loaded(
     }
   }
   registered.val = Some(bundle)
+  // Before anything can construct an instance: the guest reads these through
+  // `config.get`, and the first call that could reach it is a `create` from a
+  // "dyncompLoaded" handler further down.
+  tcomp_set_bundle_config(
+    bundle_id,
+    Json::object(
+      Map::from_iter(
+        bundle.config().iter().map(pair => (pair.0, Json::string(pair.1))),
+      ),
+    ).stringify(),
+  )
   // A guest's views are the one part that never went through a build step, so
   // the lint findings are the only feedback its author gets. Console, not the
   // app: they are advice about the bundle, not a state change in the page.
   for line in bundle.diagnostics() {
     @core.log(@core.any("tutuca dyncomp [\{bundle.module_name()}]: \{line}"))
   }
-  let old_bid = by_name.get(bundle.module_name())
+  // Keyed on `Bundle::key()`, not the module name: a bundle's identity is the
+  // code AND the variables it was registered with. Two readers of one archive
+  // pointed at two servers are different components that happen to share a
+  // module name, and keying on the name alone made loading the second retire
+  // the first — which is not a hot swap, it is a page losing a card.
+  //
+  // Reloading with the SAME variables still replaces, because the key is the
+  // same. That is what hot swap always meant; it just now says so.
+  let old_bid = by_key.get(bundle.key())
   bundles[bundle_id] = bundle
+  by_key[bundle.key()] = bundle_id
+  // ...and the name index alongside it, not instead of it. Every entry point
+  // this bridge publishes takes a module NAME — `make_instance("mastodonlib",
+  // "Status", …)` is what a page writes — and `find_bundle` reads this map
+  // when the string is not a key. Setting only `by_key` above left every one
+  // of them answering None.
   by_name[bundle.module_name()] = bundle_id
   // The catalog is kept HERE rather than by whoever asks for it, because this
   // is the code that already knows about a load, a hot swap and a drop. A
@@ -670,8 +741,7 @@ pub fn migrate_instance(
   component : String,
   old : @tutuca.Value,
 ) -> @tutuca.Value? {
-  guard by_name.get(module_name) is Some(bid) else { return None }
-  guard bundles.get(bid) is Some(bundle) else { return None }
+  guard find_bundle(module_name) is Some(bundle) else { return None }
   match bundle.migrate_instance(old, component) {
     Some(d) => Some(d.to_value())
     None => None
@@ -683,8 +753,7 @@ pub fn migrate_instance(
 /// the module is not loaded. Lets a host mount every component of a freshly
 /// loaded bundle without hard-coding names.
 pub fn bundle_component_names(module_name : String) -> Array[String] {
-  guard by_name.get(module_name) is Some(bid) else { return [] }
-  guard bundles.get(bid) is Some(bundle) else { return [] }
+  guard find_bundle(module_name) is Some(bundle) else { return [] }
   bundle.component_names()
 }
 
@@ -712,8 +781,7 @@ pub fn component_inits(
   module_name : String,
   component : String,
 ) -> Array[String] {
-  guard by_name.get(module_name) is Some(bid) else { return [] }
-  guard bundles.get(bid) is Some(bundle) else { return [] }
+  guard find_bundle(module_name) is Some(bundle) else { return [] }
   bundle.init_names(component)
 }
 
@@ -724,8 +792,7 @@ pub fn make_init(
   component : String,
   init : String,
 ) -> @tutuca.Value? {
-  guard by_name.get(module_name) is Some(bid) else { return None }
-  guard bundles.get(bid) is Some(bundle) else { return None }
+  guard find_bundle(module_name) is Some(bundle) else { return None }
   match bundle.make_init(component, init) {
     Some(d) => Some(d.to_value())
     None => None
@@ -739,8 +806,7 @@ pub fn make_instance(
   component : String,
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value? {
-  guard by_name.get(module_name) is Some(bid) else { return None }
-  guard bundles.get(bid) is Some(bundle) else { return None }
+  guard find_bundle(module_name) is Some(bundle) else { return None }
   match bundle.make_instance(component, args~) {
     Some(d) => Some(d.to_value())
     None => None
@@ -758,8 +824,7 @@ pub fn make_instance_at(
   pid : String,
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value? {
-  guard by_name.get(module_name) is Some(bid) else { return None }
-  guard bundles.get(bid) is Some(bundle) else { return None }
+  guard find_bundle(module_name) is Some(bundle) else { return None }
   match bundle.make_instance(component, args~, pid~) {
     Some(d) => Some(d.to_value())
     None => None
@@ -787,8 +852,10 @@ pub fn snapshot(v : @tutuca.Value) -> @persist.Snapshot? {
 /// bundle it names. None when that bundle is not loaded — which is the honest
 /// answer, and why a page that restores a session loads its bundles first.
 pub fn restore(snap : @persist.Snapshot) -> @tutuca.Value? {
-  guard by_name.get(snap.module_) is Some(bid) else { return None }
-  guard bundles.get(bid) is Some(bundle) else { return None }
+  // A snapshot names its bundle the way everything else here does — by key or
+  // by module name. Sessions taken before config vars existed carry a module
+  // name, and they still restore.
+  guard find_bundle(snap.module_) is Some(bundle) else { return None }
   match bundle.restore(snap) {
     Some(d) => Some(d.to_value())
     None => None
@@ -805,10 +872,32 @@ pub fn app_root_value() -> @tutuca.Value? {
 ///|
 /// Drop a whole bundle (guest instances included). Phase 3 will track live
 /// instance handles; for now this only clears the tables and the JS side.
-pub fn drop_bundle(module_name : String) -> Unit {
-  guard by_name.get(module_name) is Some(bid) else { return }
-  catalog.forget(module_name)
-  by_name.remove(module_name) |> ignore
+/// Takes a key or a module name, like every other lookup here. Dropping BY
+/// NAME with two configurations loaded drops the one `by_name` points at — the
+/// most recent — and leaves the other; a page that means a specific one says
+/// so with its key.
+pub fn drop_bundle(which : String) -> Unit {
+  guard find_bundle(which) is Some(bundle) else { return }
+  guard by_key.get(bundle.key()) is Some(bid) else { return }
+  by_key.remove(bundle.key()) |> ignore
   bundles.remove(bid) |> ignore
   tcomp_drop_bundle(bid)
+  // The name index and the catalog are keyed by module name, so they only
+  // stop pointing at this bundle if no OTHER registration of the same name is
+  // still live. Forgetting either unconditionally would take a sibling's
+  // catalog entry down with this one.
+  let name = bundle.module_name()
+  let mut survivor : Int? = None
+  for other_bid in by_key.values() {
+    if bundles.get(other_bid) is Some(b) && b.module_name() == name {
+      survivor = Some(other_bid)
+    }
+  }
+  match survivor {
+    Some(other) => by_name[name] = other
+    None => {
+      catalog.forget(name)
+      by_name.remove(name) |> ignore
+    }
+  }
 }

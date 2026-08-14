@@ -53,7 +53,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.6.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.7.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -63,7 +63,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.6.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.7.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -73,7 +73,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.6.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.7.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.

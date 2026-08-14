@@ -41,6 +41,37 @@ const pending = [];
 const children = new Map();
 let nextToken = 1n;
 
+/// The variables a host binds, which is what makes this bundle a reader for
+/// one particular server. `bind` swaps them mid-suite the way loading the same
+/// archive under a second policy would — the two configurations are the whole
+/// point, and this is the cheapest place to hold them against each other.
+///
+/// An origin arrives normalized through the `/` that ends the authority,
+/// because that is what `@policy.with_config` does before either the guest or
+/// the views see it.
+let bound = {};
+const bind = (vars) => {
+  bound = { ...vars };
+};
+const bindMastodon = () => bind({
+  mediaOrigin: 'https://files.mastodon.social/',
+  webOrigin: 'https://mastodon.social/',
+  instanceName: 'mastodon.social',
+});
+bindMastodon();
+
+const config = {
+  get: (name) => {
+    // The real host traps here rather than answering "": an empty string is a
+    // plausible value, so a guest that got one back could not tell a variable
+    // it misspelled from one deliberately set to nothing.
+    if (!Object.hasOwn(bound, name)) {
+      throw new Error(`config '${name}' is not declared`);
+    }
+    return bound[name];
+  },
+};
+
 const control = {
   log: () => {},
   emit: (name, args) => emitted.push([name, args]),
@@ -142,10 +173,12 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.6.0': values,
+    'tutuca:component/values@0.7.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.6.0': control,
+    'tutuca:component/control@0.7.0': control,
     'tutuca:component/control': control,
+    'tutuca:component/config@0.7.0': config,
+    'tutuca:component/config': config,
   });
   guest = root.guest;
   manifest = JSON.parse(
@@ -167,12 +200,29 @@ before(async () => {
 
 test('the static manifest declares six components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 6);
+  assert.equal(m.apiVersion, 7);
   assert.equal(m.moduleName, 'mastodonlib');
   // the one thing this bundle asks a host for, and it asks with a reason: the
   // origins its views name are the whole of its network reach
   assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
-  assert.match(m.capabilities[0].reason, /files\.mastodon\.social/);
+  // The reason names the VARIABLES rather than a host, because there is no
+  // host in this bundle to name any more — which is the difference between a
+  // reader for mastodon.social and a reader for the fediverse.
+  assert.match(m.capabilities[0].reason, /mediaOrigin/);
+  assert.match(m.capabilities[0].reason, /webOrigin/);
+  // Two origins the host binds, and one name it writes in prose. The type is
+  // the enforcement: only an `origin` can reach a view, so `instanceName`
+  // cannot become one.
+  assert.deepEqual(
+    m.config.map((c) => [c.name, c.type]),
+    [['mediaOrigin', 'origin'], ['webOrigin', 'origin'], ['instanceName', 'text']],
+  );
+  // Every declaration carries a default, so a bundle nobody configured is
+  // still the thing its author shipped, and a sentence saying what it is for.
+  for (const c of m.config) {
+    assert.ok(c.default, c.name);
+    assert.ok(c.doc.length > 40, c.name);
+  }
   assert.deepEqual(m.components.map((c) => c.name),
     ['Scope', 'Status', 'Poll', 'Thread', 'Timeline', 'Profile']);
 
@@ -727,4 +777,57 @@ test('a timeline and a thread each say what they do not cover', { skip: !built }
     field(child(th.getField('scope').val), 'truncatedLabel'),
     'stopped at the depth cap — this is not everything',
   );
+});
+
+test('one build reads any instance, and only the one it was pointed at', { skip: !built }, () => {
+  // The regression this whole change exists for. Before config vars, the media
+  // origin was a constant in the wasm AND a literal in the views, so pointing
+  // this bundle at another server meant editing two files that had to agree.
+  // Feeding it hachyderm-shaped records produced a timeline with no pictures
+  // at all — not a broken image, nothing — because `media_path` discarded every
+  // url before the view ever saw one.
+  const hachy = 'https://files.hachyderm.io';
+  const record = {
+    displayName: 'Nova',
+    acct: 'nova',
+    avatar: `${hachy}/accounts/avatars/000/111/222/original/aa.png`,
+    media: [{ description: 'a graph', previewUrl: `${hachy}/media_attachments/files/9/small/g.png`, url: `${hachy}/media_attachments/files/9/original/g.png`, type: 'image' }],
+  };
+
+  try {
+    bind({
+      mediaOrigin: 'https://files.hachyderm.io/',
+      webOrigin: 'https://hachyderm.io/',
+      instanceName: 'hachyderm.io',
+    });
+    const shown = instance('Status', record);
+    // The path crosses, so the picture draws. This is the assertion that was
+    // impossible to make before.
+    assert.equal(field(shown, 'avatarPath'), 'accounts/avatars/000/111/222/original/aa.png');
+    assert.equal(field(shown, 'mediaItems')[0].path, 'media_attachments/files/9/small/g.png');
+    // And the prose follows the same binding: the handle a reader sees is this
+    // server's, not the one the bundle was built against.
+    assert.equal(field(shown, 'handleText'), '@nova@hachyderm.io');
+
+    // The SAME input under the other binding yields nothing, and that is not a
+    // bug — a url on a host this instance does not serve is not this instance's
+    // picture to draw. The initials square under the <img> is what shows.
+    bindMastodon();
+    const elsewhere = instance('Status', record);
+    assert.equal(field(elsewhere, 'avatarPath'), '');
+    assert.equal(field(elsewhere, 'mediaItems')[0].path, '');
+    assert.equal(field(elsewhere, 'handleText'), '@nova@mastodon.social');
+  } finally {
+    bindMastodon();
+  }
+});
+
+test('a config name the manifest does not declare traps rather than reading ""', { skip: !built }, () => {
+  // Held here because the guest cannot reach it: nothing in the source asks
+  // for an undeclared name, so this pins the HOST half of the contract — an
+  // empty string is a plausible value, and answering with one would make a
+  // misspelled variable indistinguishable from one set to nothing.
+  assert.throws(() => config.get('mediaorigin'), /not declared/);
+  assert.throws(() => config.get('nope'), /not declared/);
+  assert.equal(config.get('mediaOrigin'), 'https://files.mastodon.social/');
 });

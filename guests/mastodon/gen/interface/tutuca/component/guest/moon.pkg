@@ -3,6 +3,9 @@ warnings = "-44"
 import {
   "tutuca/component/interface/tutuca/component/values",
   "tutuca/component/interface/tutuca/component/control",
+  // which instance this reader is: the two origins its views name and the
+  // server's name as a person writes it (manifest `config`)
+  "tutuca/component/interface/tutuca/component/config",
   // types only (no functions): what tables.mbt converts to and from
   "tutuca/component/interface/tutuca/component/tables",
   // the SDK's bytes_of / text_of: a persisted state is UTF-8 text

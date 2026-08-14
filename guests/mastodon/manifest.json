@@ -1,15 +1,35 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 6,
+  "apiVersion": 7,
   "moduleName": "mastodonlib",
-  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data \u2014 no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
+  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data \u2014 no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
   "capabilities": [
     {
       "cap": "cap-external-urls",
-      "reason": "avatars, profile headers and attachment previews from files.mastodon.social \u2014 which serves a remote account's pictures too, under /cache/, because the server proxies what it federates \u2014 and profile / hashtag / permalink links to mastodon.social. Both origins are literals in the views; the records only ever supply the path."
+      "reason": "avatars, profile headers and attachment previews from the configured media origin \u2014 which serves a remote account's pictures too, under /cache/, because the server proxies what it federates \u2014 and profile / hashtag / permalink links to the configured web origin. Neither origin is a literal in this bundle: the views name them through `mediaOrigin` and `webOrigin`, which the HOST binds, and the records only ever supply the path."
+    }
+  ],
+  "config": [
+    {
+      "name": "mediaOrigin",
+      "type": "origin",
+      "default": "https://files.mastodon.social/",
+      "doc": "Where this instance serves avatars, profile headers and attachment previews. ONE origin draws a whole federated timeline, because a server proxies what it federates: a remote account's avatar and a remote post's attachment are both re-served here, under /cache/. The views name it; the records only supply the path under it."
+    },
+    {
+      "name": "webOrigin",
+      "type": "origin",
+      "default": "https://mastodon.social/",
+      "doc": "Where this instance's pages are: a profile, a hashtag, and the permalink of a post that is local to it. Remote profiles are here too, because the server renders them at its own address \u2014 a remote POST is not, and stays selectable text."
+    },
+    {
+      "name": "instanceName",
+      "type": "text",
+      "default": "mastodon.social",
+      "doc": "The server this reader belongs to, as a person writes it. Prose only \u2014 the full @user@server handle, a link's tooltip, and the visible text of a permalink. Never an origin: a text variable cannot reach a view, which is what keeps it from becoming one."
     }
   ],
   "stringEncoding": "utf16",

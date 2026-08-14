@@ -147,24 +147,40 @@ priv struct ProfileField {
 ///|
 /// The one origin this bundle's pictures come from, with the `/` that ends it.
 ///
+/// A CONFIG VARIABLE rather than a constant, which is what makes one build of
+/// this bundle a reader for any instance there is. The host binds it, the host
+/// normalizes it through the closing `/`, and the same string is what the views
+/// name as `$$mediaOrigin` — so the two halves of `cap-external-urls` cannot
+/// drift apart, because there is only one of them now.
+///
 /// The trailing slash is the whole check rather than a tidiness: without it
 /// `https://files.mastodon.social.attacker.test/x` and
 /// `https://files.mastodon.social@attacker.test/x` both pass a prefix test, and
 /// both are somebody else's host. It is the same boundary the host insists on
 /// when it reads the origin off the view (`dyncomp/policy/external_url.mbt`),
-/// spelled here so the two agree.
+/// and `@policy.normalized_origin` is where it is put there.
 ///
 /// One origin covers a FEDERATED timeline because an instance proxies what it
 /// federates: a remote account's avatar and a remote status's attachment are
 /// both re-served from this host, under `/cache/`.
-const MEDIA = "https://files.mastodon.social/"
+fn media() -> String {
+  @config.get("mediaOrigin")
+}
 
 ///|
 /// The server whose reader this is. Every link a view offers is a path under it:
 /// a profile (`@acct`), a hashtag (`tags/name`), a local permalink. A remote
 /// account still has one, because this server renders remote profiles at its own
 /// address — `mastodon.social/@alice@other.test` is a page.
-const HOME = "mastodon.social"
+///
+/// A `text` variable, not an `origin`, and the difference is enforced rather
+/// than documented: this is the server's name as a person WRITES it, and every
+/// use of it below is prose — a handle, a tooltip, the visible text under a
+/// link. The href beside that text gets its origin from `$$webOrigin` in the
+/// view, and a text variable is one a view cannot name at all.
+fn home() -> String {
+  @config.get("instanceName")
+}
 
 ///|
 /// What is left of a url once the media host is taken off the front, or `""` for
@@ -176,9 +192,15 @@ const HOME = "mastodon.social"
 /// between them is a path. A picture that fails the test is not drawn at all,
 /// and drawing nothing is a state the views already have — it is what a record
 /// with no picture gets.
+///
+/// Now that both sides read the same configured string, "the origin the view
+/// names" is literally the same value this compares against — which is what
+/// makes pointing this bundle at another instance a matter of binding two
+/// variables rather than editing two files that have to agree.
 fn media_path(url : String) -> String {
-  guard url.has_prefix(MEDIA) else { return "" }
-  url[MEDIA.length():].to_owned()
+  let media = media()
+  guard url.has_prefix(media) else { return "" }
+  url[media.length():].to_owned()
 }
 
 ///|
@@ -717,7 +739,7 @@ fn segments_of(
         flush(i)
         segs.push({
           text: slice(chars, i, to),
-          target: "\{HOME}/tags/\{lower(name)}",
+          target: "\{home()}/tags/\{lower(name)}",
           path: "tags/\{lower(name)}",
           kind: "tag",
         })
@@ -740,7 +762,7 @@ fn segments_of(
         flush(i)
         segs.push({
           text: slice(chars, i, to),
-          target: "\{HOME}/@\{acct}",
+          target: "\{home()}/@\{acct}",
           path: "@\{acct}",
           kind: "mention",
         })
@@ -823,7 +845,7 @@ fn full_handle(acct : String) -> String {
   } else if acct.contains("@") {
     "@\{acct}"
   } else {
-    "@\{acct}@\{HOME}"
+    "@\{acct}@\{home()}"
   }
 }
 
@@ -1003,7 +1025,7 @@ fn permalink_path_of(t : Toot) -> String {
 fn permalink_of(t : Toot) -> String {
   let path = permalink_path_of(t)
   if path != "" {
-    "\{HOME}/\{path}"
+    "\{home()}/\{path}"
   } else if t.url != "" {
     bare_url(t.url)
   } else {

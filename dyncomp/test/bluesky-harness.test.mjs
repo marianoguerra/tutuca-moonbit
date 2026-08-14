@@ -162,9 +162,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.6.0': values,
+    'tutuca:component/values@0.7.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.6.0': control,
+    'tutuca:component/control@0.7.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -187,7 +187,7 @@ before(async () => {
 
 test('the static manifest declares five components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 6);
+  assert.equal(m.apiVersion, 7);
   assert.equal(m.moduleName, 'blueskylib');
   // the one thing this bundle asks a host for, and it asks with a reason: the
   // origins its views name are the whole of its network reach, and a host that

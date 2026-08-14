@@ -462,18 +462,53 @@ export function createTcompImports(getExports) {
     },
     newId: () => `id-${++idCounter}`,
   };
+  // What the HOST decided this bundle's variables are. Filled by
+  // `set_bundle_config` once MoonBit has resolved the manifest's declarations
+  // against the policy's bindings — which happens inside `dyncomp_on_loaded`,
+  // before anything can construct an instance, so no guest call can arrive
+  // ahead of it.
+  //
+  // Keyed off `currentBundle` rather than closed over per instantiation
+  // because `guestImports` is one table shared by every bundle: two
+  // registrations of the same code with different variables are the entire
+  // point, and they are told apart by which bundle is executing.
+  const configImpl = {
+    get: (name) => {
+      const b = bundles.get(currentBundle);
+      const config = b?.config;
+      // A name the manifest does not declare. Loud rather than "": an empty
+      // string is a plausible value, so a guest that got one back could not
+      // tell a variable it misspelled from one deliberately set to nothing.
+      if (!config || !Object.hasOwn(config, name)) {
+        throw new Error(
+          `tutuca dyncomp: bundle ${currentBundle} read config '${name}', ` +
+          `which its manifest does not declare` +
+          (config ? ` (it declares: ${Object.keys(config).join(", ") || "nothing"})` : ""),
+        );
+      }
+      return config[name];
+    },
+  };
   const guestImports = {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
     // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
+    "tutuca:component/values@0.7.0": valuesImpl,
     "tutuca:component/values@0.6.0": valuesImpl,
     "tutuca:component/values@0.5.0": valuesImpl,
     "tutuca:component/control": controlImpl,
+    "tutuca:component/control@0.7.0": controlImpl,
     "tutuca:component/control@0.6.0": controlImpl,
     "tutuca:component/control@0.5.0": controlImpl,
     "tutuca:component/env": envImpl,
+    "tutuca:component/env@0.7.0": envImpl,
     "tutuca:component/env@0.6.0": envImpl,
     "tutuca:component/env@0.5.0": envImpl,
+    // Only 0.7.0: `config` is what 0.7.0 ADDED, so an older spelling would be
+    // a key nothing can ever ask for — and one that claimed a bundle built
+    // against 0.6.0 could reach something that did not exist for it.
+    "tutuca:component/config": configImpl,
+    "tutuca:component/config@0.7.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
   // functions, so there is nothing for a host to implement and jco asks for
@@ -605,6 +640,26 @@ export function createTcompImports(getExports) {
 
   return {
     set_grants: (capsJson) => setGrants(JSON.parse(capsJson)),
+    // What `config.get` answers with, for one bundle.
+    //
+    // Per BUNDLE rather than per host, which is the difference between this
+    // and `set_grants`: a grant is a decision about what any bundle may do,
+    // and a config is a decision about what THIS registration is. Two
+    // registrations of one archive with different variables are the case the
+    // whole mechanism exists for, and a host-wide table could not tell them
+    // apart.
+    //
+    // Called from `dyncomp_on_loaded`, after MoonBit resolved the manifest's
+    // declarations against the policy's bindings and before anything can
+    // construct an instance.
+    set_bundle_config: (bundleId, configJson) => {
+      const b = bundles.get(bundleId);
+      if (!b) {
+        console.warn(`tutuca dyncomp: no bundle ${bundleId} to configure`);
+        return;
+      }
+      b.config = JSON.parse(configJson);
+    },
     // A bundle is a `.tutuca.tar.gz` archive, and there are two ways to name
     // one: the id of a file the user dropped, or a URL to fetch it from. Both
     // end in the same unpack-and-instantiate path.

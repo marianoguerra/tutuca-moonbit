@@ -3,7 +3,10 @@
 // replaced by html_adapter.mbt.
 
 ///|
-pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext {
+pub fn ParseContext::new(
+  handler? : &ParseHandler,
+  config_vars? : Map[String, String],
+) -> ParseContext {
   let h : &ParseHandler = match handler {
     Some(h) => h
     None => WarnHandler::{  }
@@ -14,6 +17,7 @@ pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext {
     macro_nodes: [],
     parent: None,
     frame: None,
+    config_vars: config_vars.unwrap_or(Map([])),
     val_ctx: None,
     current_tag: None,
     handler: h,
@@ -33,6 +37,8 @@ pub fn ParseContext::enter_macro(
     macro_nodes: self.macro_nodes,
     parent: Some(self),
     frame: Some({ macro_name: name, macro_vars: vars, macro_slots: slots }),
+    // Inherited, not reset: an expansion is still this host's parse.
+    config_vars: self.config_vars,
     val_ctx: None,
     current_tag: None,
     handler: self.handler,
@@ -64,9 +70,10 @@ fn ParseContext::value_ctx(self : ParseContext) -> @tscript.ParseCtx {
   match self.val_ctx {
     Some(ctx) => ctx
     None => {
+      let config_vars = self.config_vars
       let ctx = match self.frame {
-        Some(f) => @tscript.ParseCtx::new(macro_vars=f.macro_vars)
-        None => @tscript.ParseCtx::new()
+        Some(f) => @tscript.ParseCtx::new(macro_vars=f.macro_vars, config_vars~)
+        None => @tscript.ParseCtx::new(config_vars~)
       }
       self.val_ctx = Some(ctx)
       ctx

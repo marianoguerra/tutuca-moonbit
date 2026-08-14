@@ -16,7 +16,7 @@ Where a claim is weaker than it sounds, it says so.
 | archive parsing | page responsiveness/memory | **bounded** — compressed, expanded, entry and file-count limits; checked tar arithmetic and headers |
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin the view states literally; autonomous custom elements remain a host-code trust boundary |
+| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -311,13 +311,17 @@ literal in the view:
 - `<img src="https://cdn.bsky.app/img/avatar/plain/x@jpeg">` — a constant.
 - `<img :src="$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'">` —
   literal through the `/` that ends the authority, dynamic from there.
+- `<img :src="$'{$$mediaOrigin}{.avatarPath}'">` — a CONFIG variable the host
+  bound (§3a). Still a literal when the host looks at it; the host is just the
+  one who wrote it.
 - `<img :src=".avatar">` — refused. The origin is a value, so nothing about
   where this points was settled when the host looked at it.
 
 That is decidable at registration for the same reason the sink-name rule is:
-`StrTpl`'s first part is a literal or it is not, and a URL whose authority is
-already closed by a `/` cannot be re-pointed by anything interpolated after it
-(`policy/external_url.mbt`). `origin_of` refuses userinfo outright —
+the leading run of a `StrTpl`'s parts is literal or it is not, and a URL whose
+authority is already closed by a `/` cannot be re-pointed by anything
+interpolated after it (`policy/external_url.mbt`). `origin_of` refuses
+userinfo outright —
 `https://cdn.example@attacker.test/` is `attacker.test` to a browser and
 `cdn.example` to a prefix comparison — and refuses a backslash, a control
 character or a space in the authority, where the browser's own normalization
@@ -365,6 +369,65 @@ guest computes and nothing more, and an initials disc drawn UNDER every avatar
 so a refused, missing or failed picture lands somewhere. `@shell.sample_policy`
 is the matching host half, and it is a list rather than the empty one for the
 reason above.
+
+### 3a. Config vars: the origin can be a literal the HOST wrote
+
+A view that names its origin as a literal is a view that only works at one
+server. `guests/mastodon` was that: `https://files.mastodon.social/` in nine
+sinks and again as a constant in the wasm, so pointing it at hachyderm.io meant
+editing two files that had to agree, and getting one of them wrong produced a
+timeline with no pictures and no error.
+
+A **config var** closes that without moving the boundary. A manifest DECLARES a
+variable — name, type, default, and a sentence saying what it is for — and a
+host BINDS it (`@policy.with_config`). In a view, `$$name` resolves at PARSE
+time to the bound literal, so `external_url_refusal` sees an ordinary pinned
+origin and the rule above runs unchanged (`policy/config.mbt`,
+`tscript/parse.mbt`).
+
+```moonbit
+// Binding an origin IS granting it — one call, one decision, like the list.
+@policy.Policy::untrusted().with_config([
+  ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+  ("instanceName", @policy.text("hachyderm.io")),
+])
+```
+
+The invariant is not weakened by this; it is tightened. Before: *the origin is
+a literal the guest wrote and the host allowed.* After: *the origin is a
+literal the host wrote.* Both are settled before anything renders.
+
+Four things hold it there, and each is load-bearing:
+
+- **A manifest default is not a grant.** An unbound `origin` reaches the GUEST
+  — so a bundle nobody configured is still what its author shipped — and never
+  reaches a view. Otherwise a bundle would grant itself an origin by writing
+  one in its own file, which would make the whole rule decorative. A host that
+  ships the bundles it loads opts in explicitly with
+  `trusting_manifest_config`, and that call is named for what it costs.
+- **The type is stated twice, by both parties, and a disagreement refuses the
+  bundle.** Without the host's half, a manifest could declare `type: "origin"`
+  for a variable a host bound as prose — an internal API base, say — and turn a
+  string the host meant as data into a network grant.
+- **Only an `origin` reaches a view.** `Policy::view_config` hands the parser
+  the origin-typed entries and nothing else, because `$$name` becomes a `Const`
+  the URL rule will happily pin, so a `text` variable a view could name would
+  be a `text` variable that could be an origin.
+- **Both parses get the same table.** `register_bundle` parses each view twice
+  — once into the tree that renders, once into a throwaway tree the policy
+  screens — and they must resolve `$$name` identically or the check is about a
+  document nobody displays.
+
+The sharp edge, stated plainly: **binding an origin is granting it.** A host
+that binds one from input it did not write — a query parameter, a model's
+output — has granted whatever that input named. `origin_of` still refuses
+anything that is not a well-formed http(s) authority, so the worst case is a
+picture fetched from a server the input chose; that is not a way past the rule,
+but it is a real decision and it belongs in host code that means it.
+
+`guests/mastodon` is the worked example: two origins and one prose name, no
+literal host anywhere in the bundle, and one build that reads any instance
+there is.
 
 **Custom elements are not banned, but they cannot be made an isolation
 boundary.** Autonomous tags such as `<x-picker :items=".items">` and ordinary

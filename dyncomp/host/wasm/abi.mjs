@@ -1,4 +1,4 @@
-// The canonical ABI for `tutuca:component@0.6.0`, written once, host-side.
+// The canonical ABI for `tutuca:component@0.7.0`, written once, host-side.
 //
 // This replaces the `*.component.js` that `jco transpile` emits into every
 // bundle archive. That file is ~5,000-7,500 lines and 38-57% of a gzipped
@@ -156,9 +156,18 @@ export const IMPORTS = {
     "random-u64": { impl: "randomU64", params: [], result: U64, cap: "cap-random" },
     "new-id": { impl: "newId", params: [], result: STRING, cap: "cap-random" },
   },
+  // No `cap`, and that is the design rather than an omission. A capability is
+  // authority a guest would not otherwise have; these values are the host's
+  // own, handed over deliberately, and reading one gives a guest nothing it
+  // could not have been shipped as a constant. What the values REACH is
+  // decided elsewhere — a view spending `cap-external-urls` on an origin
+  // variable — and that grant is the host's, made by binding it.
+  "tutuca:component/config": {
+    get: { impl: "get", params: [STRING], result: STRING },
+  },
 };
 
-const GUEST = "tutuca:component/guest@0.6.0";
+const GUEST = "tutuca:component/guest@0.7.0";
 const RESOURCE_NS = `[export]${GUEST}`;
 
 // The export side. `post` names the `cabi_post_*` that frees what a lift
@@ -777,9 +786,15 @@ class ResourceTable {
 const unversioned = (m) => m.replace(/@[\d.]+$/, "");
 
 // A host may key its implementations with or without the version; `loader.mjs`
-// supplies both spellings, jco resolved either, so both work here.
+// supplies both spellings, jco resolved either, so both work here. The
+// versioned fallbacks are tried newest-first and cover the worlds this host
+// still accepts, so a harness that keys its table one way keeps working across
+// a package bump.
+const IMPL_VERSIONS = ["@0.7.0", "@0.6.0"];
+
 function implFor(imports, iface, spec, fnName) {
-  const table = imports[iface] ?? imports[`${iface}@0.6.0`];
+  const table = imports[iface] ??
+    IMPL_VERSIONS.map((v) => imports[`${iface}${v}`]).find(Boolean);
   const fn = table?.[spec.impl];
   if (typeof fn !== "function") {
     throw new Error(`host does not implement ${iface}#${fnName}`);
@@ -856,7 +871,7 @@ function liftExport(cx, spec, coreFn, postFn) {
 // ---------------------------------------------------------------------------
 
 /**
- * Instantiate a `tutuca:component@0.6.0` guest from its core module alone.
+ * Instantiate a `tutuca:component@0.7.0` guest from its core module alone.
  *
  * `getCoreModule(name)` resolves a name to a `WebAssembly.Module` (or a promise
  * of one), exactly as it does for a transpiled bundle. `imports` is the host's
@@ -865,7 +880,7 @@ function liftExport(cx, spec, coreFn, postFn) {
  *
  * `descriptor` is what the archive carries in place of 200KB of JavaScript:
  *
- *   { world: "tutuca:component@0.6.0", encoding: "utf16" | "utf8",
+ *   { world: "tutuca:component@0.7.0", encoding: "utf16" | "utf8",
  *     core: "<name>.component.core.wasm" }
  *
  * `policy.grants` is the list of capabilities the host is willing to give this
@@ -879,9 +894,9 @@ function liftExport(cx, spec, coreFn, postFn) {
  * time, so the main module is the only one instantiated.
  */
 export async function instantiate(getCoreModule, imports, descriptor = {}) {
-  const { world = "tutuca:component@0.6.0", encoding = "utf16", core } = descriptor;
-  if (world !== "tutuca:component@0.6.0") {
-    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.6.0)`);
+  const { world = "tutuca:component@0.7.0", encoding = "utf16", core } = descriptor;
+  if (world !== "tutuca:component@0.7.0") {
+    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.7.0)`);
   }
   const grants = descriptor.policy?.grants ?? [];
 
@@ -915,7 +930,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
     if (!spec) {
       throw new Error(
         `bundle imports ${imp.module}#${imp.name}, which is outside ` +
-        `tutuca:component@0.6.0 — refused`,
+        `tutuca:component@0.7.0 — refused`,
       );
     }
     if (spec.cap && !grants.includes(spec.cap)) {

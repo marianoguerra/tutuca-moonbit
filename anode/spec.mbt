@@ -575,6 +575,18 @@ pub struct ParseContext {
   macro_nodes : Array[ANode]
   parent : ParseContext?
   frame : MacroFrame?
+  /// The `$$name` table this parse runs against — what the HOST bound, not
+  /// anything the parsed source can add to.
+  ///
+  /// Context-wide rather than per-frame, which is the opposite of `macro_vars`
+  /// and for the opposite reason: a macro frame exists to scope the CALLER's
+  /// arguments to one expansion, and there is nothing to scope here — every
+  /// frame in one parse is looking at the same host's decision. `enter_macro`
+  /// therefore inherits it.
+  ///
+  /// Mutable and empty by default so `ParseContext::new` keeps its signature:
+  /// whoever holds the config sets it before parsing, which is `View`.
+  mut config_vars : Map[String, String]
   /// Created lazily on the first value-parse call (keeps value-free parsing
   /// independent of the value layer's constructor).
   mut val_ctx : @tscript.ParseCtx?
@@ -583,7 +595,10 @@ pub struct ParseContext {
 }
 
 ///|
-declare pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext
+declare pub fn ParseContext::new(
+  handler? : &ParseHandler,
+  config_vars? : Map[String, String],
+) -> ParseContext
 
 ///|
 /// New context for expanding macro `name`: shared registries and handler,
@@ -653,6 +668,11 @@ pub(all) struct View {
   name : String
   raw_view : String
   style : String
+  /// What `$$name` resolves to when this view is parsed — the host's table,
+  /// carried here rather than on `ParseContext` because `Component::compile`
+  /// builds the context and knows nothing about any of this. `parse_source`
+  /// moves it across.
+  config_vars : Map[String, String]
   mut anode : ANode?
   mut ctx : ParseContext?
   /// How to turn `raw_view` into a tree — `None` for a view that already IS
@@ -700,6 +720,7 @@ declare pub fn View::new(
   name : String,
   raw_view? : String = "No View Defined",
   style? : String = "",
+  config_vars? : Map[String, String],
 ) -> View
 
 ///|

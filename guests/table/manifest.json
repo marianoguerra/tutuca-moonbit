@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 6,
+  "apiVersion": 7,
   "moduleName": "tablelib",
   "doc": "A typed data table \u2014 the reference consumer of the shared tutuca:component/tables vocabulary.",
   "version": "0.1.0",

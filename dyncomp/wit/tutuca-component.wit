@@ -23,7 +23,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.6.0;
+package tutuca:component@0.7.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -268,6 +268,30 @@ interface env {
   new-id: func() -> string;
 }
 
+/// What the HOST decided this bundle's variables are: the manifest's declared
+/// defaults with the host's bindings applied.
+///
+/// The answer to "this component would work anywhere, if somebody told it
+/// where". `guests/mastodon` is the worked example: the same six components
+/// read mastodon.social or hachyderm.io depending on two strings, and neither
+/// the wasm nor the views change between them.
+///
+/// NOT a capability, unlike everything in `env`. A capability is authority a
+/// guest would not otherwise have, and these values are the host's own,
+/// handed over deliberately — reading one gives a guest nothing it could not
+/// have been shipped as a constant. What the values reach is decided
+/// elsewhere: a view can name an `origin` variable and spend
+/// `cap-external-urls` on it, and that grant is the host's, made by binding it.
+interface config {
+  /// The value bound for `name`.
+  ///
+  /// TRAPS for a name the manifest does not declare, for the reason an
+  /// ungranted `env` call traps: an empty string is a plausible value, and a
+  /// guest that got one back could not tell a variable it misspelled from a
+  /// variable somebody deliberately set to nothing.
+  get: func(name: string) -> string;
+}
+
 /// Framework services available to a running handler. Calls are buffered by
 /// the host and applied through the dispatching handler's context when
 /// `handle-event` returns (tutuca ctx.bubble / ctx.send / ctx.request).
@@ -452,6 +476,7 @@ world dynamic-component {
   import values;
   import control;
   import env;
+  import config;
   /// Types only — `tables` declares no functions, so this import costs a
   /// guest nothing at runtime and buys it the shared table vocabulary.
   import tables;

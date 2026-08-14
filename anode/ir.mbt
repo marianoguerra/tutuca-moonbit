@@ -65,6 +65,9 @@ fn ParseContext::from_ir(
     macro_nodes: [],
     parent: None,
     frame: None,
+    // Nothing left to resolve: an ahead-of-time tree was parsed by the
+    // generator, so every `$$name` in it is already the literal it became.
+    config_vars: Map([]),
     val_ctx: None,
     current_tag: None,
     handler: WarnHandler::{  },
@@ -95,5 +98,13 @@ pub fn View::from_ir(
 ) -> View {
   let ctx = ParseContext::from_ir(root, events_of(handlers))
   root.set_data_attr("data-vid", LStr(name))
-  { name, raw_view: "", style, anode: Some(root), ctx: Some(ctx), parse: None }
+  {
+    name,
+    raw_view: "",
+    style,
+    config_vars: Map([]),
+    anode: Some(root),
+    ctx: Some(ctx),
+    parse: None,
+  }
 }

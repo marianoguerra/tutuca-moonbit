@@ -6,6 +6,106 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Config vars: one bundle, any instance.** A manifest can now declare
+  variables — a name, a type, a default and a sentence saying what it is for —
+  and a host binds them at load (`@policy.Policy::with_config`). The guest reads
+  them through a new `tutuca:component/config` interface; a view names one as
+  `$$mediaOrigin`, which resolves AT PARSE TIME to the string the host bound.
+
+  `guests/mastodon` is the worked example and the reason. It could only ever
+  read mastodon.social: the origin was hardcoded in nine `:src`/`:href` literals
+  AND as two constants in the wasm, so pointing it at hachyderm.io meant editing
+  two files that had to agree — and getting one wrong produced a timeline with
+  no pictures and no error, because `media_path` discarded every url before a
+  view saw one. It now names no host anywhere. Both halves read the same
+  configured string, so they cannot drift.
+
+  **The security invariant got stricter, not looser.** Before: the origin is a
+  literal the guest wrote and the host allowed. After: the origin is a literal
+  the HOST wrote. Both are settled before anything renders, and
+  `external_url_refusal` is unchanged — it sees an ordinary pinned `Const`.
+  Four things hold that boundary, each load-bearing:
+
+  - a manifest DEFAULT is not a grant. An unbound `origin` reaches the guest and
+    never a view, or a bundle could grant itself an origin by writing one in its
+    own file. A page that ships the archives it loads opts in with
+    `trusting_manifest_config`.
+  - the type is stated by BOTH parties and a disagreement refuses the bundle.
+    Otherwise a manifest could declare `type: "origin"` for a variable a host
+    bound as prose and turn a string into a network grant.
+  - only an `origin` reaches a view (`Policy::view_config`), because `$$name`
+    becomes a `Const` the URL rule will pin.
+  - both of `register_bundle`'s parses — the tree that renders and the throwaway
+    tree the policy screens — get the same table, or the check is about a
+    document nobody displays.
+
+  The sharp edge, written into SECURITY.md §3a: **binding an origin is granting
+  it.** `with_config` adds `cap-external-urls` and the origin together, because
+  they are one decision — the same reasoning `allowing_external_urls` already
+  used for fusing its list and its grant.
+
+- **A bundle's identity is its module AND its config** (`Bundle::key`). Three
+  maps keyed on the module name alone, and `glue.mbt`'s `on_loaded` called
+  `tcomp_drop_bundle` on the previous one — so loading the same archive under a
+  second configuration did not add a sibling, it TORE DOWN the first. A
+  mastodon.social reader and a hachyderm.io reader now coexist. Reloading with
+  the same config still hot-swaps, which is what that always meant; it just says
+  so now. `by_key` is the identity, `by_name` stays a convenience index, and
+  every lookup takes either.
+
+### Changed
+
+- **`tutuca:component@0.6.0` → `@0.7.0`**, and manifest `apiVersion` 6 → 7. The
+  world gained `import config`; nothing existing changed shape. All ten guests
+  regenerated and rebuilt, `cardwasm` emits the new world, and the harnesses
+  bind the new interface. `examples/dyncomp-dice` is NOT migrated — it was
+  already stranded at `@0.5.0`, still exporting the `get-manifest` that 0.6
+  removed, so bringing it forward is a port rather than a rename.
+
+- **`pinned_prefix` reads the leading literal RUN of a template**, not just its
+  first part. `$'{$$origin}/{.path}'` splits into three parts whose first two
+  are both settled, and refusing that spelling would have been a rule about
+  where the `/` was typed rather than about what the origin is.
+
+- **`@shell.sample_policy` no longer names Mastodon's two origins** — there is
+  nothing left in that bundle to name them for. It uses
+  `trusting_manifest_config`, which is the right shape for a page that ships the
+  archives it loads and the wrong one for a page that does not.
+
+- **`examples/dyncomp-dice` is a `@0.7.0` guest**, having sat at `@0.5.0`
+  through two package bumps. It was not a version string: the die still
+  exported the `get-manifest` and `seq-entries` that 0.6 removed, and carried
+  its declaration as a `dice_def()` in MoonBit source. It now has a
+  `manifest.json` and a `views/Dice.main.html` like every other guest, and its
+  handler returns `HandleResult` — so it distinguishes "handled, nothing
+  changed" from "never mine", which the old `&DynComponent?` collapsed.
+
+  The reason it rotted is the part worth fixing: no script knew where it was.
+  `guests/guests.mjs` now carries an `OUT_OF_TREE` map, so `gen-bindings.mjs`
+  regenerates it and `dev/tasks.mbt` builds and packs it with the rest — and
+  the existing guest-list drift check holds the two lists together. It is
+  offered as a sample on the universal demo, because its own page cannot host
+  it: that example builds against the PUBLISHED package and imports one this
+  repo added since, so a guest nothing can run is a guest nothing notices going
+  stale.
+
+- **`@shell.sample_host_requests` serves `roll`.** The sharper demonstration of
+  the request seam than `double`: the counter could compute its answer and asks
+  as a courtesy, while the die genuinely cannot make a number and declares no
+  `cap-random` to avoid being a bundle some pages cannot run.
+
+### Fixed
+
+- **`on_loaded` stopped populating the module-name index.** Rekeying the bundle
+  tables on `Bundle::key()` replaced the `by_name` write instead of joining it,
+  and every entry point this bridge publishes takes a module NAME — so
+  `make_instance("mastodonlib", "Status", …)` answered None and a page could
+  load a bundle and then not place anything from it. Caught in a browser, not
+  by a test: `glue.mbt` reaches the JS bridge through `extern "wasm"`, so
+  nothing in `moon test` can drive it.
+
 ## [0.18.1] - 2026-08-13
 
 ### Fixed

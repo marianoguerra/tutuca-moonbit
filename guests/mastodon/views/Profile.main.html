@@ -1,12 +1,12 @@
 <div class="max-w-xl overflow-hidden rounded-xl border border-base-300 bg-base-100 masto-profile" :title="$summary">
   <div class="relative h-28 overflow-hidden bg-base-200 header">
-    <img class="absolute inset-0 size-full object-cover header-image" alt="" @show="truthy? .headerPath" :src="$'https://files.mastodon.social/{.headerPath}'">
+    <img class="absolute inset-0 size-full object-cover header-image" alt="" @show="truthy? .headerPath" :src="$'{$$mediaOrigin}{.headerPath}'">
   </div>
   <div class="px-4 pb-4">
     <div class="-mt-10 flex items-end gap-3">
       <div class="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-4 border-base-100 bg-base-300 text-xl font-semibold text-base-content/70 masto-avatar">
         <span @text=".initials"></span>
-        <img class="absolute inset-0 size-full object-cover avatar-image" alt="" @show="truthy? .avatarPath" :src="$'https://files.mastodon.social/{.avatarPath}'">
+        <img class="absolute inset-0 size-full object-cover avatar-image" alt="" @show="truthy? .avatarPath" :src="$'{$$mediaOrigin}{.avatarPath}'">
       </div>
       <button @if.class=".following" @then="'ml-auto rounded-full border border-indigo-500 bg-indigo-500 px-4 py-1.5 text-sm font-semibold text-base-100 cursor-pointer follow'" @else="'ml-auto rounded-full border border-indigo-500 px-4 py-1.5 text-sm font-semibold text-indigo-500 cursor-pointer hover:bg-indigo-500 hover:text-base-100 follow'" @on.click="toggleFollow" @text="$followLabel"></button>
     </div>
@@ -15,7 +15,7 @@
       <span class="rounded border border-base-300 px-1.5 text-xs bot" @show=".bot">BOT</span>
       <span class="text-xs lock" @show=".locked" title="this account approves its followers by hand" aria-hidden="true">🔒</span>
     </div>
-    <a class="text-sm text-base-content/60 hover:underline handle" @show="truthy? .acct" :href="$'https://mastodon.social/{.profilePath}'" target="_blank" rel="noopener noreferrer" @text=".handleText"></a>
+    <a class="text-sm text-base-content/60 hover:underline handle" @show="truthy? .acct" :href="$'{$$webOrigin}{.profilePath}'" target="_blank" rel="noopener noreferrer" @text=".handleText"></a>
     <div class="mt-3 flex gap-6 counts">
       <span class="flex flex-col followers"><span class="text-xs uppercase tracking-wide text-base-content/50">Followers</span><span class="font-bold" @text=".followersLabel"></span></span>
       <span class="flex flex-col follows"><span class="text-xs uppercase tracking-wide text-base-content/50">Following</span><span class="font-bold" @text=".followingLabel"></span></span>

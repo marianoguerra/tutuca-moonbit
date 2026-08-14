@@ -86,6 +86,18 @@ pub(all) struct Policy {
   /// the list and the capability are one decision and a policy holding one
   /// without the other would be a policy nobody meant to write.
   external_origins : Array[String]
+  /// The variables this host BOUND, by name — see `config.mbt`. Empty means
+  /// every bundle runs on its manifest's own defaults, which is the strict
+  /// answer: those defaults reach the guest and never reach a view.
+  ///
+  /// Set through `with_config`, which is also what adds an origin among them
+  /// to `external_origins` and the grant with it.
+  config : Map[String, ConfigBinding]
+  /// Whether a bundle's OWN `origin` defaults count as bound (see
+  /// `trusting_manifest_config`). False everywhere a host did not say
+  /// otherwise, because the alternative lets a manifest grant itself an
+  /// origin by writing one.
+  trusts_manifest_config : Bool
 }
 
 ///|
@@ -101,6 +113,8 @@ pub fn Policy::untrusted() -> Policy {
     allow_custom_css: false,
     sanitizer: @sanitize.Sanitizer::default(),
     external_origins: [],
+    config: Map([]),
+    trusts_manifest_config: false,
   }
 }
 
@@ -122,6 +136,8 @@ pub fn Policy::granted() -> Policy {
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
     external_origins: [],
+    config: Map([]),
+    trusts_manifest_config: false,
   }
 }
 
@@ -135,6 +151,8 @@ pub fn Policy::system() -> Policy {
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
     external_origins: [],
+    config: Map([]),
+    trusts_manifest_config: false,
   }
 }
 

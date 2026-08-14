@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 6,
+  "apiVersion": 7,
   "moduleName": "slacklib",
   "doc": "Slack-style conversation components: a message, a thread, and a channel's history.",
   "version": "0.1.0",

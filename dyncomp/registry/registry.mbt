@@ -1,9 +1,12 @@
 ///| The catalog across every loaded bundle, and search over it.
 ///
-/// Keyed by MODULE name rather than by bundle, because that is the unit the
-/// rest of the system already treats as identity: loading a module that is
-/// already registered is a hot swap, and the registry has to answer with the
-/// new components the moment it happens.
+/// Keyed by `Bundle::key()` rather than by module name, because that is the
+/// unit the rest of the system treats as identity: a registration is a bundle
+/// AND the variables it was registered with. Loading the same archive with the
+/// same variables is a hot swap and replaces its entry; loading it with
+/// different ones is a second component that happens to share a module name,
+/// and the catalog lists both — a mastodon.social reader and a hachyderm.io
+/// reader are two things a person can choose between.
 
 ///|
 pub struct Registry {
@@ -44,27 +47,77 @@ pub fn Registry::set_builtins(
 }
 
 ///|
-/// Take a loaded bundle into the catalog, replacing any earlier one under the
-/// same module name (a hot swap).
+/// Take a loaded bundle into the catalog, replacing any earlier one with the
+/// same key (a hot swap).
 pub fn Registry::register(self : Registry, bundle : @dyncomp.Bundle) -> Unit {
-  let name = bundle.module_name()
-  if !self.by_module.contains(name) {
-    self.order.push(name)
+  let key = bundle.key()
+  if !self.by_module.contains(key) {
+    self.order.push(key)
   }
-  self.by_module[name] = bundle
+  self.by_module[key] = bundle
 }
 
 ///|
-/// Drop a module from the catalog. The bundle itself is the host's to release.
-pub fn Registry::forget(self : Registry, module_ : String) -> Unit {
-  if self.by_module.remove(module_) is _ {
-    self.order.retain(m => m != module_)
+/// Drop a registration from the catalog. The bundle itself is the host's to
+/// release.
+///
+/// Takes a key or a module NAME: a page holding a key means one registration,
+/// and a page holding a name means every registration of it — which is what
+/// "forget this module" has always meant and stays the right answer for a
+/// module loaded once.
+pub fn Registry::forget(self : Registry, which : String) -> Unit {
+  let gone = self.order.filter(key => {
+    key == which ||
+    (self.by_module.get(key) is Some(b) && b.module_name() == which)
+  })
+  for key in gone {
+    self.by_module.remove(key) |> ignore
   }
+  self.order.retain(key => !gone.contains(key))
 }
 
 ///|
+/// The module names in the catalog, in load order, each once.
+///
+/// Names rather than keys, because that is what this has always answered and
+/// what a palette shows a person. Two registrations of one module appear once:
+/// they are the same code, and telling them apart is `keys`' job.
 pub fn Registry::modules(self : Registry) -> Array[String] {
+  let out : Array[String] = []
+  for key in self.order {
+    guard self.by_module.get(key) is Some(b) else { continue }
+    let name = b.module_name()
+    if !out.contains(name) {
+      out.push(name)
+    }
+  }
+  out
+}
+
+///|
+/// Every registration, in load order — one entry per bundle-and-its-variables,
+/// so two configurations of one module are two entries.
+pub fn Registry::keys(self : Registry) -> Array[String] {
   self.order.copy()
+}
+
+///|
+/// The bundle a caller means, by key or by module name. A name with two
+/// registrations behind it resolves to the most recently loaded, matching what
+/// the wasm bridge's `find_bundle` does with the same ambiguity.
+fn Registry::find(self : Registry, which : String) -> @dyncomp.Bundle? {
+  match self.by_module.get(which) {
+    Some(b) => Some(b)
+    None => {
+      let mut found : @dyncomp.Bundle? = None
+      for key in self.order {
+        if self.by_module.get(key) is Some(b) && b.module_name() == which {
+          found = Some(b)
+        }
+      }
+      found
+    }
+  }
 }
 
 ///|
@@ -79,8 +132,8 @@ pub fn Registry::all(self : Registry) -> Array[Descriptor] {
   for d in self.builtins {
     out.push(d)
   }
-  for module_ in self.order {
-    guard self.by_module.get(module_) is Some(bundle) else { continue }
+  for key in self.order {
+    guard self.by_module.get(key) is Some(bundle) else { continue }
     for name in bundle.component_names() {
       if describe(bundle, name) is Some(d) {
         out.push(d)
@@ -101,7 +154,7 @@ pub fn Registry::describe(self : Registry, ref_ : ComponentRef) -> Descriptor? {
       return Some(d)
     }
   }
-  guard self.by_module.get(ref_.module_) is Some(bundle) else { return None }
+  guard self.find(ref_.module_) is Some(bundle) else { return None }
   describe(bundle, ref_.name)
 }
 

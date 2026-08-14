@@ -539,3 +539,263 @@ test "the default quotas are orders of magnitude clear of real use" {
   assert_true(q.max_components >= 100)
   assert_true(q.max_view_bytes >= 100000)
 }
+
+///|
+/// `parsed`, with a config table — the shape `register_bundle` gives both the
+/// view it renders and the shadow tree it screens.
+fn parsed_with(html : String, config : Map[String, String]) -> @anode.ANode {
+  let px = @anode.ParseContext::new(config_vars=config)
+  @anode.ANode::parse(html, px).unwrap()
+}
+
+///|
+/// The point of the whole mechanism: the origin is still a literal, and still
+/// settled before anything renders — it is just a literal the HOST wrote.
+test "a bound config origin pins a sink the same way a written one does" {
+  let p = Policy::untrusted().with_config([
+    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  ])
+  // Binding it granted it: one call, one decision.
+  assert_true(p.grants.contains(CapExternalUrls))
+  debug_inspect(
+    p.external_origins,
+    content=(
+      #|["https://files.hachyderm.io"]
+    ),
+  )
+  let cfg = p.view_config()
+  // Normalized through the `/` that ends the authority, which is what makes
+  // the template pin rather than merely start with the right characters.
+  debug_inspect(
+    cfg.get("mediaOrigin"),
+    content=(
+      #|Some("https://files.hachyderm.io/")
+    ),
+  )
+  for
+    html in [
+      (
+        #|<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+      ),
+      (
+        #|<a :href="$'{$$mediaOrigin}{.profilePath}'"></a>
+      ),
+      // The slash written in the view rather than carried by the value: the
+      // literal head arrives in two pieces and `pinned_prefix` joins them.
+      (
+        #|<img :src="$'{$$mediaOrigin}cache/{.avatarPath}'">
+      ),
+    ] {
+    debug_inspect(
+      shown(p.check_view("Status/main", parsed_with(html, cfg))),
+      content="[]",
+    )
+  }
+}
+
+///|
+/// The hole this design exists to not have: a bundle that could point a sink
+/// at an origin its OWN manifest named would make the rule decorative.
+test "an unbound config origin reaches the guest and never a view" {
+  // No `with_config` at all: `register_bundle` still hands the guest the
+  // manifest's default, but `view_config` is empty, so the name resolves to
+  // nothing and the view says so.
+  let p = Policy::untrusted()
+  debug_inspect(p.view_config(), content="{}")
+  let px = @anode.ParseContext::new()
+  let tree = @anode.ANode::parse(
+    (
+      #|<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+    ),
+    px,
+  ).unwrap()
+  // The name resolved to nothing, so the template carries a hole where its
+  // origin would be — and the sink is refused on the ordinary ground, because
+  // a host that bound no origin granted no capability either.
+  debug_inspect(
+    shown(p.check_view("Status/main", tree)),
+    content=(
+      #|["Status/main: untrusted views may not use 'src' on <img>: this host does not grant cap-external-urls"]
+    ),
+  )
+}
+
+///|
+/// The reason `view_config` is a subset rather than the whole table.
+test "a text config variable cannot become an origin" {
+  let p = Policy::untrusted().with_config([
+    ("instanceName", text("hachyderm.io")),
+    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  ])
+  let cfg = p.view_config()
+  // Bound, readable by the guest, absent from what a view can name.
+  assert_true(p.config.contains("instanceName"))
+  assert_true(!cfg.contains("instanceName"))
+  // So a view that tries to build an origin out of it gets the same answer as
+  // one that tried to build an origin out of a field: the literal head stops
+  // at `https://`, which pins nothing.
+  let px = @anode.ParseContext::new(config_vars=cfg)
+  let tree = @anode.ANode::parse(
+    (
+      #|<img :src="$'https://{$$instanceName}/{.avatarPath}'">
+    ),
+    px,
+  ).unwrap()
+  debug_inspect(
+    shown(p.check_view("Status/main", tree)),
+    content=(
+      #|["Status/main: untrusted views may not use 'src' on <img>: 'https://' does not pin an origin: the literal has to run through the '/' that ends the authority, as in $'https://cdn.example/{.path}'"]
+    ),
+  )
+}
+
+///|
+/// A config origin is checked by exactly the rules a written one is, because
+/// it goes through exactly the same function.
+test "a config value cannot smuggle an origin past origin_of" {
+  for
+    bad in [
+      // userinfo: `attacker.test` to a browser, `files.hachyderm.io` to
+      // anything comparing prefixes.
+      "https://files.hachyderm.io@attacker.test/",
+      // not https, and not http either.
+       "ftp://files.hachyderm.io/",
+      // no scheme at all.
+       "files.hachyderm.io",
+      // an authority the browser's normalization would re-read.
+       "https://files.hachyderm.io\\@attacker.test/",
+      // no authority.
+       "https://",
+    ] {
+    let refused = try {
+      Policy::untrusted().with_config([("mediaOrigin", origin(bad))]) |> ignore
+      false
+    } catch {
+      InvalidConfig(_) => true
+    }
+    assert_true(refused)
+  }
+}
+
+///|
+/// A path in a bound origin is dropped rather than honored, exactly as it is
+/// in `allowing_external_urls`: `/public/../private/key` is a URL to
+/// `/private/key`, so a path prefix is not a boundary.
+test "a path in a bound origin is dropped, not honored" {
+  let p = Policy::untrusted().with_config([
+    ("mediaOrigin", origin("https://files.hachyderm.io/public/")),
+  ])
+  debug_inspect(
+    p.view_config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.hachyderm.io/")
+    ),
+  )
+}
+
+///|
+/// The type is stated twice on purpose, and this is the case that needs it:
+/// without the host's half, a manifest could declare `origin` for a variable
+/// the host bound as prose and turn a string into a network grant.
+test "a bound value carries its own type, and a bad one is loud" {
+  let refused = try {
+    Policy::untrusted().with_config([
+      ("retries", { ty: TyNumber, value: "a lot" }),
+      ("verbose", { ty: TyBool, value: "yes" }),
+    ])
+    |> ignore
+    ""
+  } catch {
+    InvalidConfig(_) as e => e.to_string()
+  }
+  debug_inspect(
+    refused,
+    content=(
+      #|"bad config bindings: 'retries' is a number, and 'a lot' does not read as one; 'verbose' is a bool, so it is 'true' or 'false', not 'yes'"
+    ),
+  )
+}
+
+///|
+/// `pinned_prefix` used to read only the first part of a template, which
+/// refused a spelling that pins perfectly well.
+test "a literal head split across parts still pins" {
+  let p = Policy::untrusted().allowing_external_urls(["https://cdn.example"])
+  // Two literal parts and then a field: the head is `https://cdn.example/`,
+  // whose authority is closed, so nothing interpolated after it can re-point
+  // the request.
+  debug_inspect(
+    shown(
+      p.check_view(
+        "C/main",
+        parsed_with(
+          (
+            #|<img :src="$'{$$o}/{.path}'">
+          ),
+          { "o": "https://cdn.example" },
+        ),
+      ),
+    ),
+    content="[]",
+  )
+  // And the run stops where the parts stop being literal: a field FIRST means
+  // the guest is still choosing the host.
+  debug_inspect(
+    shown(
+      p.check_view(
+        "C/main",
+        parsed_with(
+          (
+            #|<img :src="$'{.host}/{$$o}/x.png'">
+          ),
+          { "o": "https://cdn.example" },
+        ),
+      ),
+    ),
+    content=(
+      #|["C/main: untrusted views may not use 'src' on <img>: the value must BEGIN with a literal absolute URL, as in $'https://cdn.example/{.path}', so the origin is settled by the view rather than computed at render"]
+    ),
+  )
+}
+
+///|
+/// Binding is granting, but only for what was bound: the rest of the origin
+/// rule is untouched.
+test "a config origin does not widen anything else" {
+  let p = Policy::untrusted().with_config([
+    ("mediaOrigin", origin("https://files.hachyderm.io")),
+  ])
+  let cfg = p.view_config()
+  debug_inspect(
+    shown(
+      p.check_view(
+        "S/main",
+        (
+          #|<img src="https://attacker.test/p.png">
+        )
+        |> parsed_with(cfg),
+      ),
+    ),
+    content=(
+      #|["S/main: untrusted views may not use 'src' on <img>: 'https://attacker.test' is not an origin this host allows (https://files.hachyderm.io)"]
+    ),
+  )
+  // Still two attributes on two elements. Still not a mood.
+  debug_inspect(
+    shown(
+      p.check_view(
+        "S/main",
+        (
+          #|<iframe :src="$'{$$mediaOrigin}{.path}'"></iframe>
+        )
+        |> parsed_with(cfg),
+      ),
+    ),
+    content=(
+      #|[
+      #|  "S/main: <iframe> is not allowed (at iframe)",
+      #|  "S/main: untrusted views may not use network/CSS sink attribute 'src' on <iframe>",
+      #|]
+    ),
+  )
+}

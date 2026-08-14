@@ -59,6 +59,9 @@ impl @anode.MacroScope for FileMacros with fn lookup_macro(self, name) {
 fn value_issue_message(role : @tscript.IssueRole) -> String {
   match role {
     BadMacroVar => "unknown macro variable"
+    // Named as a host-side gap rather than a typo: the view spelled a config
+    // variable nothing was bound to, and the fix is in whatever registered it.
+    BadConfigVar => "no config variable of that name was bound"
     BadHandlerName => "not a valid handler name"
     BadHandlerArg => "not a valid handler argument"
     UnknownPredicate => "unknown predicate"

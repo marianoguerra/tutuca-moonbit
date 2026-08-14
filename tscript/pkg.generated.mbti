@@ -145,6 +145,7 @@ pub(all) enum IssueKind {
 
 pub(all) enum IssueRole {
   BadMacroVar
+  BadConfigVar
   BadHandlerName
   BadHandlerArg
   UnknownPredicate
@@ -167,9 +168,10 @@ pub(all) struct Param {
 
 pub struct ParseCtx {
   macro_vars : Map[String, String]
+  config_vars : Map[String, String]
   issues : Array[Issue]
 }
-pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> Self
+pub fn ParseCtx::new(macro_vars? : Map[String, String], config_vars? : Map[String, String]) -> Self
 
 pub(all) enum PathStep {
   PField(String)

@@ -128,9 +128,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.6.0': values,
+    'tutuca:component/values@0.7.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.6.0': control,
+    'tutuca:component/control@0.7.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -140,7 +140,7 @@ before(async () => {
 });
 
 test('the static manifest declares eight nesting components', { skip: !built }, () => {
-  assert.equal(manifest.apiVersion, 6);
+  assert.equal(manifest.apiVersion, 7);
   assert.equal(manifest.moduleName, 'slacklib');
   // nothing ambient — no clock for the timestamps, no entropy for the ids —
   // and one capability, for the pictures, which names its origins in its reason

@@ -506,3 +506,91 @@ test "a span indexes the string handed to the parser, untrimmed" {
   assert_true(@tscript.parse_bool("  present? .x", ctx) is None)
   assert_eq(ctx.issues[0].span, { start: 2, end_: 10 })
 }
+
+///|
+test "a $$name config variable is the host's literal, and it pins" {
+  // The mirror of `^name`, and the marking is the difference: a config value
+  // is the HOST's string, so the Const it becomes is not from_macro and the
+  // template around it stays literal enough to pin a URL origin.
+  let ctx = @tscript.ParseCtx::new(config_vars={
+    "mediaOrigin": "https://files.hachyderm.io/",
+  })
+  guard! @tscript.parse_text("$'{$$mediaOrigin}{.avatarPath}'", ctx)
+    is Some(StrTpl(parts))
+  // Three, not two: the split leaves an empty text part BETWEEN the two
+  // placeholders, and only the bookends are trimmed. What matters is that
+  // parts[0] is the host's literal, which is what `pinned_prefix` reads.
+  assert_eq(parts.length(), 3)
+  assert_true(
+    parts[0]
+    is Some(Const(lit=LStr("https://files.hachyderm.io/"), from_macro=false)),
+  )
+  assert_true(parts[1] is Some(Const(lit=LStr(""), ..)))
+  assert_true(parts[2] is Some(Field("avatarPath")))
+  assert_eq(ctx.issues.length(), 0)
+}
+
+///|
+test "a $$name nothing was bound to is an issue, not a silent empty string" {
+  let ctx = @tscript.ParseCtx::new()
+  assert_true(@tscript.parse_text("$$mediaOrigin", ctx) is None)
+  assert_eq(ctx.issues.length(), 1)
+  assert_eq(ctx.issues[0].role, BadConfigVar)
+  assert_eq(ctx.issues[0].value, "$$mediaOrigin")
+}
+
+///|
+test "a config value is substituted, not re-parsed" {
+  // `^name` re-tokenizes what it is bound to, because that is a macro
+  // argument: source the CALLER wrote. A config value is text the host
+  // decided, so it lands as text — a bound value that looks like an
+  // expression is that expression's characters, not that expression.
+  let ctx = @tscript.ParseCtx::new(config_vars={ "who": ".secret" })
+  guard! @tscript.parse_text("$$who", ctx) is Some(v)
+  assert_true(v is Const(lit=LStr(".secret"), from_macro=false))
+}
+
+///|
+test "$ and $$ stay apart" {
+  let ctx = @tscript.ParseCtx::new(config_vars={ "total": "9" })
+  assert_true(@tscript.parse_text("$total", ctx) is Some(Method("total")))
+  guard! @tscript.parse_text("$$total", ctx) is Some(v)
+  assert_true(v is Const(lit=LStr("9"), ..))
+}
+
+///|
+/// The last link: a config template does not merely PARSE to a pinned literal,
+/// it evaluates to the url the browser fetches. This is what
+/// `<img :src="$'{$$mediaOrigin}{.avatarPath}'">` actually puts in the DOM.
+priv struct AvatarStack {
+  fields : Map[String, @tutuca.Value]
+}
+
+///|
+impl @tutuca.Stack for AvatarStack with fn lookup_field_raw(self, name) {
+  self.fields.get(name).unwrap_or(Null)
+}
+
+///|
+test "a config origin template renders the url the host pointed at" {
+  let tpl = "$'{$$mediaOrigin}{.avatarPath}'"
+  let stack = AvatarStack::{
+    fields: { "avatarPath": Str("accounts/avatars/000/111/aa.png") },
+  }
+  // The same view, the same record, two servers — which is the whole claim.
+  for
+    pair in [
+      (
+        "https://files.hachyderm.io/", "https://files.hachyderm.io/accounts/avatars/000/111/aa.png",
+      ),
+      (
+        "https://files.mastodon.social/", "https://files.mastodon.social/accounts/avatars/000/111/aa.png",
+      ),
+    ] {
+    let (origin, want) = pair
+    let ctx = @tscript.ParseCtx::new(config_vars={ "mediaOrigin": origin })
+    guard! @tscript.parse_text(tpl, ctx) is Some(v)
+    guard! v.eval(stack) is Str(got)
+    assert_eq(got, want)
+  }
+}

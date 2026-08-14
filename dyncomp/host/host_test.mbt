@@ -361,6 +361,7 @@ fn counter_manifest() -> DynManifest {
     homepage: "",
     authors: [],
     capabilities: [],
+    config: [],
     components: [
       {
         name: "Counter",
@@ -1024,7 +1025,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 6, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 7, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -1238,7 +1239,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs, constraints and capability requests" {
   let json =
-    #|{"apiVersion": 6, "moduleName": "formlib",
+    #|{"apiVersion": 7, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
     #|                  {"cap": "cap-teleport", "reason": "?"}],
@@ -1302,7 +1303,7 @@ test "catalog metadata parses: docs, constraints and capability requests" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 6, "moduleName": "bare", "components": [
+    #|{"apiVersion": 7, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
     #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
@@ -1317,7 +1318,7 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 6, "moduleName": "m", "components": [
+    #|{"apiVersion": 7, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1346,6 +1347,7 @@ test "manifest with wrong api version is rejected" {
         homepage: "",
         authors: [],
         capabilities: [],
+        config: [],
         components: [],
       }
     }
@@ -1383,6 +1385,7 @@ test "a bundle's views are linted at load" {
     homepage: "",
     authors: [],
     capabilities: [],
+    config: [],
     components: [
       {
         name: "Sloppy",
@@ -1448,6 +1451,7 @@ test "a `$method` the manifest never declared is reported at load" {
     homepage: "",
     authors: [],
     capabilities: [],
+    config: [],
     components: [
       {
         name: "Stat",
@@ -1712,5 +1716,244 @@ test "a bound the type cannot carry is a load-time hint" {
   assert_eq(
     quiet.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT")).length(),
     0,
+  )
+}
+
+///|
+/// A mastodon-shaped bundle: one config-origin variable, one view that spends
+/// it, and a module name the caller varies so the `by_name` hot-swap does not
+/// eat the previous registration mid-test.
+fn config_manifest(module_name : String) -> DynManifest {
+  let base = counter_manifest()
+  {
+    ..base,
+    module_name,
+    config: [
+      {
+        name: "mediaOrigin",
+        ty: TyOrigin,
+        default_: "https://files.mastodon.social/",
+        doc: "where the pictures are",
+      },
+      {
+        name: "instanceName",
+        ty: TyText,
+        default_: "mastodon.social",
+        doc: "the server, as a person writes it",
+      },
+    ],
+    components: [
+      {
+        ..base.components[0],
+        style: "",
+        views: [
+          {
+            name: "main",
+            html: "<img :src=\"$'{$$mediaOrigin}avatars/{.count}.png'\" />",
+          },
+        ],
+      },
+    ],
+  }
+}
+
+///|
+/// The whole point: one bundle, two instances, two servers, no rebuild.
+test "a config origin lets one bundle serve two instances" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let hachyderm = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+    ("instanceName", @policy.text("hachyderm.io")),
+  ])
+  let masto = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.origin("https://files.mastodon.social")),
+    ("instanceName", @policy.text("mastodon.social")),
+  ])
+  let a = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=hachyderm,
+  )
+  let b = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=masto,
+  )
+  // Same module name, same code, different identity — which is what makes the
+  // two survivable side by side rather than one evicting the other.
+  assert_eq(a.module_name(), b.module_name())
+  assert_not_eq(a.key(), b.key())
+  // The guest reads its whole table; the text variable is in it too.
+  debug_inspect(
+    a.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.hachyderm.io/")
+    ),
+  )
+  debug_inspect(
+    a.config().get("instanceName"),
+    content=(
+      #|Some("hachyderm.io")
+    ),
+  )
+  debug_inspect(
+    b.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.mastodon.social/")
+    ),
+  )
+  // Registering the same bundle with the SAME config is the same registration,
+  // which is what keeps hot-swap meaning what it always meant.
+  let again = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("reader"),
+    policy=hachyderm,
+  )
+  assert_eq(a.key(), again.key())
+}
+
+///|
+/// The trap this design has: `register_bundle` parses each view TWICE — once
+/// into the tree that renders (`View::new`) and once into a throwaway tree the
+/// policy screens (`screen_view`). If only one of them resolved `$$name`, the
+/// check would be about a document nobody displays.
+///
+/// Held from both sides, because each failure looks like success from the
+/// other: screening an unresolved tree refuses a bundle that is fine, and
+/// screening a resolved tree while rendering an unresolved one passes a bundle
+/// nothing checked.
+test "the screened tree and the rendered tree resolve config the same way" {
+  let register = (module_name : String, policy : @policy.Policy) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let mut ok = true
+    try
+      register_bundle(
+        h.app.scope,
+        FakeGuest::new(),
+        config_manifest(module_name),
+        policy~,
+      )
+      |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  // Bound: the screen resolves the origin, finds it pinned, and lets it
+  // through. If the screen parsed without the config this would be false.
+  assert_true(
+    register(
+      "screen-bound",
+      @policy.Policy::untrusted().with_config([
+        ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+      ]),
+    ),
+  )
+  // Unbound: the screen sees a template with a hole where the origin goes and
+  // refuses. If the screen were skipping the check this would be true, and a
+  // view that renders nothing useful would have registered silently.
+  assert_false(register("screen-unbound", @policy.Policy::untrusted()))
+}
+
+///|
+/// Binding is granting — but only what was bound, and only when the host was
+/// the one who bound it.
+test "a manifest's own origin default is not a grant" {
+  let h = @harness.mount(shell_module(), "Shell")
+  // The manifest defaults to files.mastodon.social. A host that bound nothing
+  // has granted nothing, so the view cannot spend it.
+  let refused = try {
+    register_bundle(
+      h.app.scope,
+      FakeGuest::new(),
+      config_manifest("default-only"),
+    )
+    |> ignore
+    false
+  } catch {
+    _ => true
+  }
+  assert_true(refused)
+  // ...until the host says, in as many words, that it ships these bundles and
+  // their defaults are its own decision.
+  let trusting = @policy.Policy::untrusted().trusting_manifest_config()
+  let b = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    config_manifest("default-trusted"),
+    policy=trusting,
+  )
+  debug_inspect(
+    b.config().get("mediaOrigin"),
+    content=(
+      #|Some("https://files.mastodon.social/")
+    ),
+  )
+}
+
+///|
+/// The type is stated by both parties, and a disagreement is the case that
+/// makes the redundancy worth it: without it a manifest could declare `origin`
+/// for a variable a host bound as prose and turn a string into a network grant.
+test "a config type the host and the manifest disagree about refuses" {
+  let h = @harness.mount(shell_module(), "Shell")
+  // The host bound `mediaOrigin` as ordinary text; the manifest calls it an
+  // origin. Nothing here is a valid bundle.
+  let mismatched = @policy.Policy::untrusted().with_config([
+    ("mediaOrigin", @policy.text("https://files.hachyderm.io/")),
+  ])
+  let why = try {
+    register_bundle(
+      h.app.scope,
+      FakeGuest::new(),
+      config_manifest("mismatch"),
+      policy=mismatched,
+    )
+    |> ignore
+    ""
+  } catch {
+    e => e.message()
+  }
+  debug_inspect(
+    why,
+    content=(
+      #|"bundle refused: config 'mediaOrigin' is declared 'origin' and this host bound it as 'text'"
+    ),
+  )
+}
+
+///|
+/// A shared policy is the normal case — one page, one decision, many bundles —
+/// so a name this bundle does not declare is worth SAYING and not worth
+/// refusing over. The other reason to see it is a typo.
+test "a bound name the bundle does not declare is a diagnostic" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  // No `config` section at all — the ordinary bundle, sharing the page's one
+  // policy with the one bundle that does read a variable.
+  let plain : DynManifest = {
+    ..base,
+    module_name: "no-config-here",
+    components: [{ ..base.components[0], style: "" }],
+  }
+  let b = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    plain,
+    policy=@policy.Policy::untrusted().with_config([
+      ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
+    ]),
+  )
+  assert_true(
+    b
+    .diagnostics()
+    .any(d => {
+      d.contains(
+        "this host bound 'mediaOrigin', which this bundle does not declare",
+      )
+    }),
   )
 }

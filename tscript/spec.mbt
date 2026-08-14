@@ -58,6 +58,11 @@ pub(all) enum IssueKind {
 /// What was malformed (JS `info.role`)
 pub(all) enum IssueRole {
   BadMacroVar // "macro-var": unknown ^name
+  /// "config-var": a `$$name` the host bound nothing to. Separate from
+  /// `BadMacroVar` because the two name different parties: an unknown `^name`
+  /// is the view's mistake, an unknown `$$name` is a view asking for something
+  /// the HOST did not hand over, and the fix is in a different file.
+  BadConfigVar
   BadHandlerName // "handler-name"
   BadHandlerArg // "handler-arg"
   UnknownPredicate // "predicate": no builtin (and no declaration) of that name
@@ -86,13 +91,22 @@ pub(all) struct Issue {
 
 ///|
 /// Parse context (JS `px`): macro variables in scope plus collected issues
+///
+/// `config_vars` is the HOST's table, and it is separate from `macro_vars` for
+/// the reason the two sigils are separate: a `^name` resolves to the CALLER's
+/// string and a `$$name` resolves to the host's, and the difference decides
+/// whether the result may pin a URL origin. See `parse_tok`.
 pub struct ParseCtx {
   macro_vars : Map[String, String]
+  config_vars : Map[String, String]
   issues : Array[Issue]
 }
 
 ///|
-declare pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> ParseCtx
+declare pub fn ParseCtx::new(
+  macro_vars? : Map[String, String],
+  config_vars? : Map[String, String],
+) -> ParseCtx
 
 ///|
 /// Split a value source string into tokens: `$'…'` template runs and `'…'`

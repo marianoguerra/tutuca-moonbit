@@ -8,9 +8,20 @@ import { fileURLToPath } from 'node:url';
 
 ///  The MoonBit guests. The Rust guest (guests/rust-tempconv) implements the
 ///  same WIT but builds through cargo, so it keeps its own script.
-export const GUESTS = ['counter', 'table', 'todo', 'todomvc', 'calculator', 'tictactoe', 'bluesky', 'mastodon', 'slack'];
+export const GUESTS = ['counter', 'table', 'todo', 'todomvc', 'calculator', 'tictactoe', 'bluesky', 'mastodon', 'slack', 'dice'];
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/// Guests that are not under `guests/`. There is one, and it is here rather
+/// than special-cased at each call site because of what happened without it:
+/// `examples/dyncomp-dice` sat at `tutuca:component@0.5.0` through two package
+/// bumps — still exporting the `get-manifest` that 0.6 removed — for the single
+/// reason that no script knew where it was. A guest the generator cannot reach
+/// is a guest that goes stale, and "it is an example" is not a reason for it to
+/// implement a contract nothing else does.
+const OUT_OF_TREE = {
+  dice: join('examples', 'dyncomp-dice', 'dice'),
+};
 
 /// The ONE WIT source in the repo. Guests do not keep a copy: wasm-tools
 /// embeds this directory directly, wit-bindgen generates from it, and the
@@ -18,7 +29,10 @@ export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 /// implement a different contract than dyncomp/host expects.
 export const WIT_DIR = join(repoRoot, 'dyncomp', 'wit');
 
-export const guestDir = (name) => join(repoRoot, 'guests', name);
+export const guestDir = (name) =>
+  name in OUT_OF_TREE
+    ? join(repoRoot, OUT_OF_TREE[name])
+    : join(repoRoot, 'guests', name);
 
 /// The ONE SDK source, for the same reason there is one WIT: it used to be five
 /// byte-identical copies, and five copies of a contract is five chances to

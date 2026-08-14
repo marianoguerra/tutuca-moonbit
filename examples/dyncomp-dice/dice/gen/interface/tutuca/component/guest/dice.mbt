@@ -1,9 +1,17 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.5.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.7.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
+///
+/// What this file does NOT hold is the declaration. The component's doc, its
+/// fields, its message buckets and its views live in `manifest.json` and
+/// `views/`, as data beside the wasm — so a host can read what a bundle IS
+/// before instantiating it, and an author edits a view as HTML rather than as
+/// a string inside source. That split arrived with `tutuca:component@0.6.0`;
+/// before it, this file carried a `dice_def()` and the guest exported
+/// `get-manifest`.
 ///
 /// The host is the framework. Your views are DATA — tutuca template strings the
 /// host compiles and renders; you never touch the DOM. Your state is opaque —
@@ -64,8 +72,14 @@ impl DynComponent for Dice with fn get_field(self, name) {
 }
 
 ///|
-/// Handle a message. `self` in, the successor out — or `None` for "nothing
-/// changed", which is cheaper than returning an identical copy.
+/// Handle a message. `self` in, the successor out.
+///
+/// Three answers, not two, and the third is what `tutuca:component@0.6.0`
+/// added: `Changed(next)` carries a successor, `Unchanged` says the name was
+/// MINE and nothing moved, and `Unhandled` says it was never mine at all. The
+/// 0.5 contract returned `&DynComponent?` and collapsed the last two into one
+/// `None`, which left the host unable to tell a handler that declined from a
+/// component that had no such handler.
 ///
 /// The buckets: INPUT is what this component's own views raise (`@on.click`),
 /// RECEIVE is what a parent sends it, BUBBLE is what a child raised, RESPONSE
@@ -73,7 +87,7 @@ impl DynComponent for Dice with fn get_field(self, name) {
 impl DynComponent for Dice with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     // The whole point. A request leaves now and the answer comes back later as
-    // a RESPONSE — so this returns `None`: nothing has changed yet, and a die
+    // a RESPONSE — so this is `Unchanged`: the click was handled, and a die
     // that showed a new face before the host had answered would be lying.
     (INPUT, "roll") => {
       @control.request("roll", [@values.Value::Number(self.faces)], {
@@ -82,7 +96,7 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
         on_res: None,
         live_path: false,
       })
-      None
+      Unchanged
     }
     // `on_ok` means these args carry just the value; without it a response
     // arrives as [result, error] and this would have to unpack both.
@@ -95,17 +109,21 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
           // bubble and the host routes it; this component does not know, and
           // must not know, who is listening.
           @control.emit("rolled", [@values.Value::Number(n)])
-          Some({ ..self, last: n, rolls } as &DynComponent)
+          Changed({ ..self, last: n, rolls } as &DynComponent)
         }
-        _ => None
+        // An answer shaped wrong is still an answer to a question this die
+        // asked, so it is Unchanged rather than Unhandled.
+        _ => Unchanged
       }
     // A host that refuses to roll is a host that refuses; there is nothing to
     // do about it here, and nothing to show that would not be a made-up face.
-    (RESPONSE, "rollFailed") => None
+    (RESPONSE, "rollFailed") => Unchanged
     (INPUT, "clear") =>
-      Some({ ..self, last: 0.0, rolls: [] } as &DynComponent)
-    (RECEIVE, "init") => None
-    _ => None
+      Changed({ ..self, last: 0.0, rolls: [] } as &DynComponent)
+    (RECEIVE, "init") => Unchanged
+    // Everything else is somebody else's message. Saying so — rather than
+    // saying "handled, nothing changed" — is what lets the host keep routing it.
+    _ => Unhandled
   }
 }
 
@@ -158,21 +176,17 @@ impl DynComponent for Dice with fn with_field(self, name, v) {
           _ => ()
         }
       }
-      Some({ ..self, rolls } as &DynComponent)
+      Some({ ..self, rolls, } as &DynComponent)
     }
     _ => None
   }
 }
 
-///|
-/// Iterated by host `@each` over the instance itself.
-impl DynComponent for Dice with fn seq_entries(self) {
-  let out = []
-  for i, n in self.rolls {
-    out.push(("r\{i}", @values.Value::Number(n)))
-  }
-  Some(out)
-}
+// `seq_entries` used to live here — an instance offering ITSELF as a sequence
+// for a host `@each` to walk. It went with `tutuca:component@0.6.0` and is not
+// missed: the view iterates `.rolls`, a declared list field the host already
+// reads through `get_field`, so the second path was a second way to say the
+// same thing and one more thing a guest could get wrong.
 
 ///|
 /// Build one. `args` are the declared fields the caller supplied — from a
@@ -200,110 +214,22 @@ fn make_dice(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-/// What this component IS, in the terms a catalog can rank and a form can draw.
-/// `doc`, `keywords` and `message_docs` are not decoration: they are what lets
-/// someone — or a language model — find this component among forty they have
-/// never seen, and generate a form for it without trusting it.
-fn dice_def() -> ComponentDef {
-  component_def(
-    "Dice",
-    doc="A die you roll. It asks the host for the number, because it has no way to make one.",
-    keywords=["dice", "die", "random", "roll", "game", "chance"],
-    category="input",
-    message_docs=[
-      { name: "roll", doc: "Ask the host for a number and show it." },
-      { name: "clear", doc: "Forget every roll." },
-      { name: "rolled", doc: "The host answered with a face." },
-      { name: "rollFailed", doc: "The host would not roll." },
-      { name: "caption", doc: "The die and its face as one sentence." },
-      { name: "isMax", doc: "Was this roll the highest face?" },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm">
-          #|  <div class="card-body gap-3 items-center p-4">
-          #|    <span class="text-sm opacity-70" @text="$caption"></span>
-          #|    <div class="rounded-box bg-base-200 px-6 py-3 text-5xl font-bold tabular-nums" @text=".last"></div>
-          #|    <div class="join">
-          #|      <button class="btn btn-sm btn-primary join-item" @on.click="roll">roll</button>
-          #|      <button class="btn btn-sm btn-ghost join-item" @on.click="clear">clear</button>
-          #|    </div>
-          #|    <ul class="flex gap-1 flex-wrap justify-center"><li class="badge badge-sm badge-primary" @each=".rolls" @when="isMax" @text="@value"></li></ul>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // The declared shape, as a FLAT table: WIT has no recursive types, so a
-    // field names its type by INDEX into this array rather than inline, and a
-    // compound points at its parts the same way (`elem`, `items`, `members`).
-    types=[
-      { kind: TY_FLOAT, elem: None, items: [], name: "", members: [] },
-      { kind: TY_LIST, elem: Some(0), items: [], name: "", members: [] },
-    ],
-    // The constraint is the half a TYPE cannot state, and it is what the
-    // generated config form draws its bounds from — nothing here validates
-    // `faces` a second time except `with_field`'s floor.
-    fields=[
-      field(
-        "faces",
-        0,
-        doc="How many faces. Six unless you say otherwise.",
-        required=false,
-        constraint=Some({ ..no_limits(), min: Some(2), max: Some(100) }),
-      ),
-      field("last", 0, doc="The face showing, or 0 before the first roll."),
-      field("rolls", 1, doc="Every face this die has shown, oldest first."),
-    ],
-    // what its own views raise. `setFaces` is deliberately absent: it is the
-    // mutator `faces` implies, and the host answers it through `with_field` —
-    // declaring it here would take it back.
-    handlers=["roll", "clear"],
-    // what a parent may send it
-    receives=["init"],
-    // what it raises for whoever holds it
-    bubbles=["rolled"],
-    // answers to requests it made
-    responses=["rolled", "rollFailed"],
-    // what its views call with `$`
-    methods=["caption"],
-    // what its views filter with `@when`
-    whens=["isMax"],
-    // a named initial state a host can offer instead of the bare constructor
-    inits=[
-      {
-        name: "d20",
-        args_json: "{\"faces\": 20}",
-        doc: "A twenty-sided die.",
-      },
-    ],
-    // Styling is entirely margaui (daisyUI) classes above. Under the untrusted
-    // tier an empty `style` is the only thing a bundle may ship, and the host
-    // recompiles its utility CSS after this bundle loads so the classes above
-    // are styled by the time anything renders.
-  )
-}
-
-///|
 /// The bundle: every component in it, and how to build each one.
 ///
-/// `capabilities` is the honest list of ambient facts this bundle needs — a
-/// clock, randomness, a timer. Asking for none is what makes a bundle safe to
-/// mount from anywhere, and an untrusted host REFUSES one that asks for
-/// something it will not grant rather than handing it a plausible lie.
+/// Two lists used to live here — this one and a `dice_def()` describing the
+/// component. The description moved to `manifest.json`, which is why this is
+/// now the whole of what the wasm says about itself: a name and a factory. The
+/// host reads the rest as data, before it instantiates anything.
+///
+/// `capabilities` is likewise a manifest field now, and this bundle's is empty
+/// — the honest list of ambient facts it needs. Asking for none is what makes a
+/// bundle safe to mount from anywhere, and an untrusted host REFUSES one that
+/// asks for something it will not grant rather than handing it a plausible lie.
 ///
 /// No `serve` either: `roll` is a request this bundle does NOT answer, which is
 /// what sends it past the bundle and out to the page. A bundle that served a
 /// `roll` of its own would answer its own components first and the host would
 /// never hear it.
 fn dyn_module() -> DynModule {
-  module_def(
-    "dice",
-    [dyn_comp(dice_def(), make_dice)],
-    doc="A die you roll. It asks the host for the number, because it cannot make one.",
-    version="0.1.0",
-    capabilities=[],
-  )
+  module_def([dyn_comp("Dice", make_dice)])
 }

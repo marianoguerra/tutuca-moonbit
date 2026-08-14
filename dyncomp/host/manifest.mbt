@@ -33,6 +33,26 @@ pub(all) struct DynFieldDef {
 } derive(Debug, Eq)
 
 ///|
+/// One variable this bundle reads, as the bundle DECLARES it: a name, what
+/// kind of thing it is, what it is worth when nobody says otherwise, and what
+/// it is for.
+///
+/// The declaration is half of a contract, and the host's binding is the other
+/// half — both state the type, and `resolve_config` refuses a bundle where
+/// they disagree. See `@policy.with_config` for why the redundancy is the
+/// point rather than an oversight.
+///
+/// The default reaches the GUEST, which is what lets a bundle be sensible on a
+/// host that bound nothing. It does not reach a view: an `origin` default that
+/// opened a URL sink would be a bundle granting itself an origin.
+pub(all) struct DynConfigDef {
+  name : String
+  ty : @policy.ConfigTy
+  default_ : String
+  doc : String
+} derive(Debug, Eq)
+
+///|
 /// A named initial state the guest declares, with its constructor args already
 /// decoded from the manifest's JSON.
 pub(all) struct DynInitDef {
@@ -84,6 +104,9 @@ pub(all) struct DynManifest {
   homepage : String
   authors : Array[String]
   capabilities : Array[@policy.CapabilityReq]
+  /// The variables this bundle reads, declared with defaults. Empty for every
+  /// bundle that is the same everywhere it runs, which is most of them.
+  config : Array[DynConfigDef]
   components : Array[DynComponentDef]
 } derive(Debug, Eq)
 
@@ -91,7 +114,7 @@ pub(all) struct DynManifest {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 6
+pub let supported_api_version : Int = 7
 
 ///|
 suberror ManifestError {
@@ -246,6 +269,48 @@ fn parse_capabilities(root : Map[String, Json]) -> Array[@policy.CapabilityReq] 
     // look like a bundle that asked for nothing.
     let cap = @policy.Capability::parse(opt_str(r, "cap"))
     out.push({ cap, reason: opt_str(r, "reason") })
+  }
+  out
+}
+
+///|
+/// The variables a bundle declares. Unlike `parse_capabilities`, a malformed
+/// entry RAISES rather than being kept as an unknown: a capability's name is
+/// the only thing a host has to judge it by, so an unrecognized one is still
+/// information, while a config var with no name or an unreadable type is not a
+/// declaration at all — nothing can be bound to it and nothing can refuse it,
+/// so letting it through would leave a `$$name` in the views with no way to
+/// say what went wrong.
+fn parse_config(
+  root : Map[String, Json],
+) -> Array[DynConfigDef] raise ManifestError {
+  let out : Array[DynConfigDef] = []
+  guard root.get("config") is Some(Array(items)) else { return out }
+  let seen : Array[String] = []
+  for item in items {
+    guard item is Object(r) else {
+      raise ManifestError("manifest: bad config entry")
+    }
+    let name = opt_str(r, "name")
+    guard name != "" else {
+      raise ManifestError("manifest: a config entry has no name")
+    }
+    if seen.contains(name) {
+      raise ManifestError("manifest: config declares '\{name}' twice")
+    }
+    seen.push(name)
+    let raw_ty = opt_str(r, "type")
+    guard @policy.ConfigTy::parse(raw_ty) is Some(ty) else {
+      raise ManifestError(
+        "manifest: config '\{name}' has type '\{raw_ty}', which is not one of origin, text, bool, number",
+      )
+    }
+    out.push({
+      name,
+      ty,
+      default_: opt_str(r, "default"),
+      doc: opt_str(r, "doc"),
+    })
   }
   out
 }
@@ -451,6 +516,7 @@ pub fn DynManifest::from_json_string(
     homepage: opt_str(root, "homepage"),
     authors: str_array(root, "authors"),
     capabilities: parse_capabilities(root),
+    config: parse_config(root),
     components,
   }
 }

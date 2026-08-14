@@ -10,8 +10,15 @@
 // the one place the language has no operands to distinguish.
 
 ///|
-pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> ParseCtx {
-  { macro_vars: macro_vars.unwrap_or(Map([])), issues: [] }
+pub fn ParseCtx::new(
+  macro_vars? : Map[String, String],
+  config_vars? : Map[String, String],
+) -> ParseCtx {
+  {
+    macro_vars: macro_vars.unwrap_or(Map([])),
+    config_vars: config_vars.unwrap_or(Map([])),
+    issues: [],
+  }
 }
 
 ///|
@@ -220,7 +227,32 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
         }
       }
     }
-    '$' => mk_id(s[1:].to_owned(), n => Method(n))
+    '$' =>
+      if s.get_char(1) is Some('$') {
+        // $$name config variable: a string the HOST bound, substituted here as
+        // a literal. The mirror of `^name` above, and the marking is the whole
+        // difference between them. A `^name` constant is the CALLER's string
+        // wearing a literal's shape, and the caller is the guest, so it is
+        // `from_macro=true` and cannot pin a URL origin. A `$$name` constant is
+        // the HOST's string wearing a literal's shape, and the host is the one
+        // party the origin rule was ever about — so it is `from_macro=false`
+        // and pins, which is the point (dyncomp/policy/external_url.mbt).
+        //
+        // The value is substituted rather than re-parsed: it is text the host
+        // decided, not source the guest wrote, and re-parsing it would let the
+        // host's table smuggle in an expression nobody asked it for.
+        let name = s[2:].to_owned()
+        guard is_valid_val_id(name) else { return None }
+        match ctx.config_vars.get(name) {
+          Some(v) => Some(Const(lit=LStr(v), from_macro=false))
+          None => {
+            ctx.issue(BadConfigVar, s, tok.span)
+            None
+          }
+        }
+      } else {
+        mk_id(s[1:].to_owned(), n => Method(n))
+      }
     '@' => {
       // @name bind, or @name.member — one-level member read on a binding.
       let rest = s[1:].to_owned()
