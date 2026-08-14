@@ -723,6 +723,42 @@
         {
           "name": "summary",
           "doc": "How many posts there are, and how many are folded away."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -756,6 +792,12 @@
           "items": [],
           "name": "Scope",
           "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
         }
       ],
       "fields": [
@@ -776,6 +818,16 @@
           "ty": 3,
           "doc": "What this conversation does not show \u2014 the depth the caller asked for, and the replies this instance has never federated. Same record shape a Timeline's scope takes.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 4,
+          "doc": "How many posts a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [],
@@ -789,7 +841,12 @@
       ],
       "responses": [],
       "methods": [
-        "summary"
+        "summary",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -803,6 +860,11 @@
           "name": "a conversation that was cut short",
           "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \\u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}], \"scope\": {\"truncated\": true, \"truncatedBy\": \"depth\", \"notes\": [\"replies on servers this one has not federated are not shown\"]}}",
           "doc": "The gaps a federated thread has and a card cannot draw: a depth cap, and the replies that live on servers this instance has never spoken to."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}], \"pageSize\": 3}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""
@@ -852,6 +914,42 @@
         {
           "name": "replyTo",
           "doc": "A row wants a composer opened."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -891,6 +989,12 @@
           "items": [],
           "name": "Scope",
           "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
         }
       ],
       "fields": [
@@ -926,6 +1030,16 @@
           "ty": 4,
           "doc": "What this page does not cover. Written as a plain record \u2014 the keys are the Scope component's own field names \u2014 and drawn only when there is something to disclose.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 5,
+          "doc": "How many posts a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [],
@@ -939,7 +1053,12 @@
       "responses": [],
       "methods": [
         "countLabel",
-        "mediaLabel"
+        "mediaLabel",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -958,6 +1077,11 @@
           "name": "trending, and what it is a page of",
           "argsJson": "{\"title\": \"Trending\", \"posts\": [{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}, {\"id\": \"117088936559529737\", \"url\": \"https://mastodon.social/@mcc/117088936559529737\", \"acct\": \"mcc\", \"displayName\": \"mcc\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/011/307/original/dana-andi-portrait-square.jpg\", \"content\": \"When Tom Scott is trying to flirt with you\", \"createdAt\": \"2026-08-13T15:36:24.515Z\", \"media\": [{\"description\": \"YouTube video by Tom Scott titled \\\"Want to see a hidden, suspended monorail?\\\". The caption shows Tom Scott wearing high-vis safety gear with a huge grin on his face.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/small/4fc8cb8ea334fead.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/original/4fc8cb8ea334fead.png\", \"type\": \"image\"}], \"repliesCount\": 7, \"reblogsCount\": 69, \"favouritesCount\": 160, \"boostedBy\": \"Prof. Sam Lawler\"}, {\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}, {\"id\": \"117088645298852906\", \"url\": \"https://mastodon.social/@sundogplanets/117088645298852906\", \"acct\": \"sundogplanets\", \"displayName\": \"Prof. Sam Lawler\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/108/194/428/751/240/116/original/f1eb397ab1659575.jpeg\", \"content\": \"Good morning from my cute animals.\\n\\nThe mama goats wanted to immediately head down to the eating pen after morning milking, but were caught by their giant-and-still-nursing babies, so they patiently chewed their cud and let their giant babies nurse. Looks hilarious!\", \"createdAt\": \"2026-08-13T14:22:20.242Z\", \"media\": [{\"description\": \"Four mama goats all lined up and waiting to walk through the gate to the grassy eating area, but all four of them have giant babies nursing underneath.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/small/3aebb8bb59cdd641.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/original/3aebb8bb59cdd641.png\", \"type\": \"image\"}, {\"description\": \"A stripey grey cat, appreciatively leaning in to scritches she's getting. She's in green grass with morning sunshine on her.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/small/1f6542def3cdb340.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/original/1f6542def3cdb340.png\", \"type\": \"image\"}], \"repliesCount\": 8, \"reblogsCount\": 106, \"favouritesCount\": 256}, {\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}], \"scope\": {\"more\": true, \"notes\": [\"this instance only holds posts it has federated\"]}}",
           "doc": "The same timeline with the scope the card never used to carry: a page of something with no total, out of a slice of the network this server happens to have seen."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"title\": \"Trending\", \"posts\": [{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}, {\"id\": \"117088936559529737\", \"url\": \"https://mastodon.social/@mcc/117088936559529737\", \"acct\": \"mcc\", \"displayName\": \"mcc\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/011/307/original/dana-andi-portrait-square.jpg\", \"content\": \"When Tom Scott is trying to flirt with you\", \"createdAt\": \"2026-08-13T15:36:24.515Z\", \"media\": [{\"description\": \"YouTube video by Tom Scott titled \\\"Want to see a hidden, suspended monorail?\\\". The caption shows Tom Scott wearing high-vis safety gear with a huge grin on his face.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/small/4fc8cb8ea334fead.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/934/302/400/082/original/4fc8cb8ea334fead.png\", \"type\": \"image\"}], \"repliesCount\": 7, \"reblogsCount\": 69, \"favouritesCount\": 160, \"boostedBy\": \"Prof. Sam Lawler\"}, {\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}, {\"id\": \"117088645298852906\", \"url\": \"https://mastodon.social/@sundogplanets/117088645298852906\", \"acct\": \"sundogplanets\", \"displayName\": \"Prof. Sam Lawler\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/108/194/428/751/240/116/original/f1eb397ab1659575.jpeg\", \"content\": \"Good morning from my cute animals.\\n\\nThe mama goats wanted to immediately head down to the eating pen after morning milking, but were caught by their giant-and-still-nursing babies, so they patiently chewed their cud and let their giant babies nurse. Looks hilarious!\", \"createdAt\": \"2026-08-13T14:22:20.242Z\", \"media\": [{\"description\": \"Four mama goats all lined up and waiting to walk through the gate to the grassy eating area, but all four of them have giant babies nursing underneath.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/small/3aebb8bb59cdd641.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/627/772/998/551/original/3aebb8bb59cdd641.png\", \"type\": \"image\"}, {\"description\": \"A stripey grey cat, appreciatively leaning in to scritches she's getting. She's in green grass with morning sunshine on her.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/small/1f6542def3cdb340.png\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/088/628/467/709/239/original/1f6542def3cdb340.png\", \"type\": \"image\"}], \"repliesCount\": 8, \"reblogsCount\": 106, \"favouritesCount\": 256}, {\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}], \"pageSize\": 3}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""
@@ -1002,6 +1126,42 @@
         {
           "name": "boosted",
           "doc": "A post in the feed was boosted."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -1147,6 +1307,16 @@
           "ty": 6,
           "doc": "Its recent posts, in the same shape a Thread's take; each becomes a Status of its own.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 1,
+          "doc": "How many posts a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [],
@@ -1162,7 +1332,12 @@
       "responses": [],
       "methods": [
         "summary",
-        "followLabel"
+        "followLabel",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -1176,6 +1351,11 @@
           "name": "alice",
           "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}]}",
           "doc": "An account with no pictures at all, so the initials and the flat band are what shows, and locked, so the button asks instead of following."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}], \"pageSize\": 1}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""

@@ -8,6 +8,52 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A card handed four hundred rows draws twenty-five of them.** The three social
+  guests each hold lists whose length was never theirs to decide — a caller asks
+  a server for a timeline, a conversation, an account's posts or a channel's
+  history, and gets back whatever a `limit` allowed. Forty rows is a card. Four
+  hundred is a wall a reader scrolls past rather than reads, built out of four
+  hundred child components before any one of them is looked at.
+
+  So nine components grew a window and the four buttons that move it:
+  `mastodonlib`'s `Timeline` / `Thread` / `Profile`, `blueskylib`'s `Feed` /
+  `Thread` / `Profile`, and `slacklib`'s `ChannelHistory` / `Thread` /
+  `FileList`. The vocabulary is `tablelib`'s rather than a new one — a declared
+  `pageSize`, derived `page` / `pageCount`, the `firstPage` / `prevPage` /
+  `nextPage` / `lastPage` messages, and `paged` / `atFirst` / `atLast` /
+  `pageLabel` / `rangeLabel` for the footer — because a host drawing two of these
+  cards side by side should not have to learn two spellings of "show me the next
+  lot".
+
+  What is worth knowing about it:
+
+  - **It appears only when it is worth appearing.** A card pages once it holds
+    more than a hundred rows; below that it draws exactly what it drew before
+    this existed, footer and all absent. A host that wants the window anyway asks
+    for a `pageSize`, because asking for one is what asking means.
+  - **The window is over what the FILTERS left**, not over the records. The
+    search box narrows, the pager pages what is left, and typing in the box goes
+    back to the first page — it made a different list. A thread's window is over
+    what the folds left, for the same reason and through the same `visible()`.
+  - **Paging rebuilds nothing.** A page is a claim about what is on screen rather
+    than about what exists, so a favourite three pages back is still there when
+    the reader pages back to it — the property the filter already had, for the
+    same reason: the children are built once and something else chooses among
+    them.
+  - **Everything that counts rendered positions goes through one function.** A
+    write-back lands by position and `ChannelHistory`'s expand-all addresses by
+    positional path, so `shown()` decides what the view is given, where a
+    successor goes home, and how many steps expand-all walks — which also settles
+    what that button means: the conversations in front of the reader.
+  - `slacklib/FileList` reads `openFile`'s `@key` back through the same window,
+    since a file row is a record rather than a child and position 0 of page two
+    is not the first file. `slacklib/Thread` now tells two writes to `replies`
+    apart by length: the page it was shown with a successor in it, or the whole
+    list a host went and fetched after hearing `openThread`.
+
+  Nine new `init` fixtures come with it — one per paged component, small enough
+  that the footer is somewhere to be seen in the storybook.
+
 - **The render-time filter asks the tree what it could possibly find.** Every
   rule in `vdom/filter` asks two things of an attribute — does its NAME concern
   me, and is this render's VALUE allowed. The second is why the filter exists at

@@ -97,9 +97,9 @@ check by looking.
 | component | declared fields | persists |
 | --- | --- | --- |
 | `Post` | the record: author, `text` + `facets`, `images`, the three counts, this reader's `liked` / `reposted`, where it sits in a thread (`depth`, `focus`, `foldable`, `folded`, `owned`), why it is in front of you (`repostedBy`, `pinned`), what a moderator said about it (`labels`) and its embeds (`external`, `quote`, `video`) | no |
-| `Feed` | a `title`, `posts` — a list, every row at depth 0 — and a `scope` | no |
-| `Thread` | `posts` — the reply tree, FLAT, each message with a `depth` — plus `focus` and a `scope` | no |
-| `Profile` | the account, its three counts, `following`, its recent `posts`, when it was `createdAt` and what it `pinnedPost` | no |
+| `Feed` | a `title`, `posts` — a list, every row at depth 0 — a `scope` and a `pageSize` | no |
+| `Thread` | `posts` — the reply tree, FLAT, each message with a `depth` — plus `focus`, a `scope` and a `pageSize` | no |
+| `Profile` | the account, its three counts, `following`, its recent `posts`, when it was `createdAt`, what it `pinnedPost` and a `pageSize` | no |
 | `Scope` | what the answer above it does not cover: `truncated` / `truncatedBy`, `more`, and free-text `notes` | no |
 
 None of them persists: each one's state is exactly the fields it declares, so
@@ -202,6 +202,33 @@ its own state counted up in the guest and not on the screen, and the flags had
 to live in the thread keyed by uri with the row rebuilt around them. `owned`
 survives from that arrangement with a smaller job: it now only says "this is a
 row inside something larger", which is what the view reads to draw it smaller.
+
+### A column that arrived too long
+
+`Feed`, `Thread` and `Profile` are each a column of `Post`s, and how long one is
+was never theirs to decide: a caller asks a service for a timeline and gets back
+whatever a `limit` allowed. Forty rows is a card. Four hundred is a wall a reader
+scrolls past rather than reads, drawn out of four hundred child components before
+any one of them is looked at.
+
+So a long list gets a window and the four buttons that move it — `firstPage` /
+`prevPage` / `nextPage` / `lastPage`, over `page`, `pageCount`, `pageSize`,
+`atFirst` / `atLast`, and the two labels a footer writes (`pageLabel`, and
+`rangeLabel` for the `26–50 of 340` a page number does not say). That is the
+`table` bundle's vocabulary rather than a new one, for the reason `Scope` is
+field-for-field the mastodon bundle's: a host drawing both should not have to
+learn two spellings of "show me the next lot".
+
+A card pages only once it holds more than a hundred rows, so nothing that already
+fits grew a control it does not need — and a host that wants the window anyway
+asks for a `pageSize`, because asking is what that means. A thread's window is
+over what the FOLDS left rather than over the records, which is the same list
+`visible()` already decided; folding a branch away can therefore take a page with
+it, and the stored page comes back inside what is left rather than showing
+nothing.
+
+Paging rebuilds nothing, so a like three pages back is still there when the
+reader pages back to it.
 
 ### Facets
 

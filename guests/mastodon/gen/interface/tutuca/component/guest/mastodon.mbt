@@ -1966,6 +1966,198 @@ fn scope_child(v : @values.Value?) -> (UInt64, Bool) {
   (@control.make_instance("Scope", args), any)
 }
 
+// ── Paging: a window over a list that arrived long ───────────────────────────
+//
+// Three of the components below are a column of child `Status`es, and how long
+// that column is was never theirs to decide: a caller asks a server for a
+// timeline, a conversation or an account's posts, and what comes back is
+// whatever a `limit` allowed. Forty rows is a card. Four hundred is a wall a
+// reader scrolls past rather than reads, drawn out of four hundred child
+// components before any one of them is looked at.
+//
+// So a long list gets a window and the four buttons that move it, in the
+// vocabulary the `table` bundle already uses for the same job — `page`,
+// `pageCount`, `pageSize`, `firstPage` / `prevPage` / `nextPage` / `lastPage`,
+// `atFirst` / `atLast` — because a host drawing both should not have to learn
+// two spellings of "show me the next lot".
+//
+// The window is over what the FILTERS left, not over the records: a search box
+// narrows and the pager pages what is left, which is the order a reader means
+// when they type in the box while on page three.
+//
+// And nothing here rebuilds a row. A page is a claim about what is on screen
+// rather than about what exists, so a favourite three pages back is still there
+// when the reader comes back to it — the property the filter already had, for
+// the same reason: the children are built once and something else chooses among
+// them.
+
+///|
+/// How many rows a paged card shows at once when nobody asked for a number.
+const PAGE_SIZE = 25
+
+///|
+/// How long a list has to BE before a reader is made to page through it.
+///
+/// The pager is not furniture that is always there: below this a card draws
+/// exactly what it drew before it could page at all — no footer, every row on
+/// screen — because breaking forty posts into two pages costs a reader a click
+/// and buys them nothing. A host that wants the window anyway asks for a
+/// `pageSize`, which is what asking for one means.
+const PAGE_ABOVE = 100
+
+///|
+/// The state of one paged list, and every answer a view asks about it.
+///
+/// Computed per read rather than stored, because two of the three numbers in it
+/// are not the component's to keep: `total` is what the filters left, which
+/// moves as a reader types, and `page` is a wish that has to be brought back
+/// inside a list that may have shrunk under it. What a component stores is the
+/// two wishes; this is what they come out as.
+priv struct Pager {
+  /// 0-based, and already clamped to what `total` and the window allow.
+  page : Int
+  /// How many rows a page holds. In effect whether or not it is being used, so
+  /// `pageSize` reads back the same either way.
+  size : Int
+  /// Whether the list is long enough that a page is a window rather than the
+  /// whole of it.
+  on : Bool
+  /// How many rows there are to page through: after the filters, before the
+  /// window.
+  total : Int
+}
+
+///|
+/// The pager for a list of `total` rows sitting at `page`, given the page size
+/// the host asked for — 0 for "did not ask".
+fn paging(page : Int, total : Int, page_size : Int) -> Pager {
+  let size = if page_size > 0 { page_size } else { PAGE_SIZE }
+  let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
+  let last = if on { (total + size - 1) / size - 1 } else { 0 }
+  let page = if page < 0 { 0 } else if page > last { last } else { page }
+  { page, size, on, total }
+}
+
+///|
+/// How many pages there are. One when the whole list is on screen, so a card
+/// that is not paging reads "1 of 1" rather than "1 of 0".
+fn Pager::pages(self : Pager) -> Int {
+  if self.on {
+    (self.total + self.size - 1) / self.size
+  } else {
+    1
+  }
+}
+
+///|
+/// The positions this page shows, out of the ones the filters left.
+fn Pager::slice(self : Pager, at : Array[Int]) -> Array[Int] {
+  guard self.on else { return at }
+  let start = self.page * self.size
+  let stop = if start + self.size < at.length() {
+    start + self.size
+  } else {
+    at.length()
+  }
+  let out : Array[Int] = []
+  for i in start..<stop {
+    out.push(at[i])
+  }
+  out
+}
+
+///|
+/// Where one of the four buttons lands, or `None` for one that would not move —
+/// which is what a view disables and what a handler answers `unchanged` to.
+fn Pager::moved(self : Pager, name : String) -> Int? {
+  let want = match name {
+    "firstPage" => 0
+    "prevPage" => self.page - 1
+    "nextPage" => self.page + 1
+    "lastPage" => self.pages() - 1
+    _ => return None
+  }
+  let last = self.pages() - 1
+  let next = if want < 0 { 0 } else if want > last { last } else { want }
+  if next == self.page {
+    None
+  } else {
+    Some(next)
+  }
+}
+
+///|
+/// The fields a paged card answers on top of its own.
+///
+/// `page` is 1-based because it is a label rather than an index — the choice the
+/// `table` bundle's pager made, and the one a reader would make.
+fn Pager::field(self : Pager, name : String) -> @values.Value? {
+  match name {
+    "page" => Some(vnum(self.page + 1))
+    "pageCount" => Some(vnum(self.pages()))
+    "pageSize" => Some(vnum(self.size))
+    _ => None
+  }
+}
+
+///|
+/// Whether a name is one of the pager's four buttons. Asked before `moved`,
+/// because `moved` answering `None` means "that button would not move", and a
+/// name this component has never heard of has to keep travelling instead.
+fn is_page_message(name : String) -> Bool {
+  name == "firstPage" ||
+  name == "prevPage" ||
+  name == "nextPage" ||
+  name == "lastPage"
+}
+
+///|
+/// The methods a paged card answers.
+///
+/// `paged` is the one a view asks first: a card showing everything it has draws
+/// no footer at all, so the whole control hangs off this rather than off a row
+/// count a template would have to do arithmetic on.
+fn Pager::answer(self : Pager, name : String) -> @values.Value? {
+  match name {
+    "paged" => Some(vbool(self.on))
+    "atFirst" => Some(vbool(self.page <= 0))
+    "atLast" => Some(vbool(self.page >= self.pages() - 1))
+    "pageLabel" => Some(vtext("\{self.page + 1} of \{self.pages()}"))
+    // Which rows these are, which is the half a page number does not say.
+    "rangeLabel" => {
+      guard self.on else { return Some(vtext("")) }
+      let first = self.page * self.size + 1
+      let last = if first + self.size - 1 < self.total {
+        first + self.size - 1
+      } else {
+        self.total
+      }
+      Some(vtext("\{first}–\{last} of \{self.total}"))
+    }
+    _ => None
+  }
+}
+
+///|
+/// Either the pager's answer or nothing, as a `call_method` has to answer.
+fn Pager::answer_or_nil(self : Pager, name : String) -> @values.Value {
+  match self.answer(name) {
+    Some(v) => v
+    None => @values.Value::Nil
+  }
+}
+
+///|
+/// Every position in a list of `n`, for the components that have no filter to
+/// narrow one: a page is the only thing between their rows and the screen.
+fn all_positions(n : Int) -> Array[Int] {
+  let out : Array[Int] = []
+  for i in 0..<n {
+    out.push(i)
+  }
+  out
+}
+
 // ── Thread: a reply tree, flattened, as a list of Statuses ───────────────────
 
 ///|
@@ -1995,6 +2187,12 @@ priv struct Thread {
   /// Whether that child has anything to disclose, which is what the view gates
   /// the box on. Kept here because a token cannot be read back.
   has_scope : Bool
+  /// Which page of the conversation is on screen, 0-based. A wish rather than a
+  /// fact: folding a subtree takes rows away underneath it, so what it comes out
+  /// as is whatever `paging` can honour.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
 }
 
 ///|
@@ -2066,6 +2264,20 @@ fn Thread::visible(self : Thread) -> Array[Int] {
 }
 
 ///|
+/// The pager over what the folds left.
+fn Thread::pager(self : Thread) -> Pager {
+  paging(self.page, self.visible().length(), self.page_size)
+}
+
+///|
+/// The positions actually on screen: unfolded, and on this page. Every caller
+/// that counts rendered positions goes through this one function, because a
+/// write-back lands by position and a guess would land on the wrong post.
+fn Thread::shown(self : Thread) -> Array[Int] {
+  self.pager().slice(self.visible())
+}
+
+///|
 /// The child tokens for a set of positions, as the value a view renders.
 fn rows_value(children : Array[UInt64], at : Array[Int]) -> @values.Value {
   vlist(
@@ -2103,9 +2315,10 @@ impl DynComponent for Thread with fn get_field(self, name) {
     "focus" => Some(vtext(self.focus))
     "scope" => Some(@values.Value::Instance(self.scope))
     "hasScope" => Some(vbool(self.has_scope))
-    // derived: the child components the view renders, minus the folded-away
-    "rows" => Some(rows_value(self.children, self.visible()))
-    _ => None
+    // derived: the child components the view renders, minus the folded-away and
+    // minus the pages a reader is not on
+    "rows" => Some(rows_value(self.children, self.shown()))
+    _ => self.pager().field(name)
   }
 }
 
@@ -2117,6 +2330,16 @@ impl DynComponent for Thread with fn get_field(self, name) {
 /// nobody on the way up: this bundle cannot write to a server, so the component
 /// above is the one that turns them into API calls.
 impl DynComponent for Thread with fn handle(self, bucket, name, args) {
+  // The pager's four buttons are the only input of its own a thread has;
+  // everything else that reaches it came up from a row. A page moves nothing
+  // but which rows are drawn, so no row is rebuilt and nothing is announced —
+  // there is nobody above who could act on "the reader turned a page".
+  if bucket is INPUT && is_page_message(name) {
+    return match self.pager().moved(name) {
+      Some(page) => Changed({ ..self, page, } as &DynComponent)
+      None => Unchanged
+    }
+  }
   guard bucket is BUBBLE else { return Unhandled }
   guard args is [@values.Value::Text(id), ..] else { return Unhandled }
   guard id != "" && self.has(id) else { return Unchanged }
@@ -2150,7 +2373,7 @@ impl DynComponent for Thread with fn call_method(self, name, _args) {
         vtext("\{total} posts · \{total - shown} folded away")
       }
     }
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
@@ -2175,6 +2398,10 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
         // was handed stays. Rebuilding one here would also strand the old token.
         scope: self.scope,
         has_scope: self.has_scope,
+        // A new conversation starts at its beginning. Page four of the old one
+        // is a position in a list that is no longer here.
+        page: 0,
+        page_size: self.page_size,
       }
       Some(next.build_rows() as &DynComponent)
     }
@@ -2182,11 +2409,16 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
       Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
     ("scope", @values.Value::Instance(t)) =>
       Some({ ..self, scope: t } as &DynComponent)
+    // Asking for a page size is asking to be paged, so it starts at the first
+    // page: the window a host just chose is not one this reader has been
+    // anywhere in.
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
-    // What it hands back is the list it was SHOWN — `visible()` — so it goes
-    // home through the same function that decided those positions.
+    // What it hands back is the list it was SHOWN — `shown()` — so it goes home
+    // through the same function that decided those positions.
     ("rows", _) =>
-      match write_rows(self.children, self.visible(), v) {
+      match write_rows(self.children, self.shown(), v) {
         Some(children) => Some({ ..self, children, } as &DynComponent)
         None => None
       }
@@ -2198,6 +2430,7 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
 fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts : Array[Toot] = []
   let mut focus = ""
+  let mut page_size = 0
   let mut scope_arg : @values.Value? = None
   for arg in args {
     let (name, v) = arg
@@ -2205,12 +2438,23 @@ fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
       // hot-swap migration hands the declared fields back as args
       ("posts", @values.Value::List(h)) => posts = toots_of(h)
       ("focus", @values.Value::Text(s)) => focus = s
+      ("pageSize", @values.Value::Number(n)) => page_size = n.to_int()
       ("scope", _) => scope_arg = Some(v)
       _ => ()
     }
   }
   let (scope, has_scope) = scope_child(scope_arg)
-  ({ posts, focus, children: [], collapsed: [], scope, has_scope } : Thread).build_rows()
+  (
+    {
+      posts,
+      focus,
+      children: [],
+      collapsed: [],
+      scope,
+      has_scope,
+      page: 0,
+      page_size,
+    } : Thread).build_rows()
   as &DynComponent
 }
 
@@ -2239,6 +2483,12 @@ priv struct Timeline {
   /// seen — and the card said so nowhere until this field existed.
   scope : UInt64
   has_scope : Bool
+  /// Which page of the column is on screen, 0-based. A wish rather than a fact:
+  /// the search box narrows the list under it, so what it comes out as is
+  /// whatever `paging` can honour.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
 }
 
 ///|
@@ -2287,6 +2537,19 @@ fn Timeline::visible(self : Timeline) -> Array[Int] {
 }
 
 ///|
+/// The pager over what the filters left. The order is the one a reader means:
+/// the box narrows, and the pager pages what is left of it.
+fn Timeline::pager(self : Timeline) -> Pager {
+  paging(self.page, self.visible().length(), self.page_size)
+}
+
+///|
+/// The positions actually on screen: kept by the filters, and on this page.
+fn Timeline::shown(self : Timeline) -> Array[Int] {
+  self.pager().slice(self.visible())
+}
+
+///|
 impl DynComponent for Timeline with fn get_field(self, name) {
   match name {
     // declared
@@ -2297,11 +2560,13 @@ impl DynComponent for Timeline with fn get_field(self, name) {
     "scope" => Some(@values.Value::Instance(self.scope))
     "hasScope" => Some(vbool(self.has_scope))
     // derived
-    "rows" => Some(rows_value(self.children, self.visible()))
+    "rows" => Some(rows_value(self.children, self.shown()))
+    // Empty is a fact about the FILTERS, not about the page: a column with rows
+    // on another page is not "Nothing here."
     "isEmpty" => Some(vbool(self.visible().length() == 0))
     "isFiltered" =>
       Some(vbool(self.media_only || self.query.trim().to_owned() != ""))
-    _ => None
+    _ => self.pager().field(name)
   }
 }
 
@@ -2312,20 +2577,32 @@ impl DynComponent for Timeline with fn handle(self, bucket, name, args) {
     // The filter does NOT rebuild the rows: the children are built once and the
     // filter chooses among them, so what a reader did to a row is still there
     // when the row comes back.
+    // Each of the three goes back to the first page, because a filter makes a
+    // different list and page four of the old one is a position in a column
+    // that is not there any more.
     "setQuery" =>
       match args {
         [@values.Value::Text(s), ..] => {
           guard s != self.query else { return Unchanged }
-          Changed({ ..self, query: s } as &DynComponent)
+          Changed({ ..self, query: s, page: 0 } as &DynComponent)
         }
         _ => Unhandled
       }
     "clearQuery" => {
       guard self.query != "" else { return Unchanged }
-      Changed({ ..self, query: "" } as &DynComponent)
+      Changed({ ..self, query: "", page: 0 } as &DynComponent)
     }
     "toggleMediaOnly" =>
-      Changed({ ..self, media_only: !self.media_only } as &DynComponent)
+      Changed(
+        { ..self, media_only: !self.media_only, page: 0 } as &DynComponent,
+      )
+    // Paging is not a filter: it changes which rows are drawn and nothing about
+    // which rows there are, so no row is rebuilt.
+    "firstPage" | "prevPage" | "nextPage" | "lastPage" =>
+      match self.pager().moved(name) {
+        Some(page) => Changed({ ..self, page, } as &DynComponent)
+        None => Unchanged
+      }
     _ => Unhandled
   }
 }
@@ -2344,7 +2621,7 @@ impl DynComponent for Timeline with fn call_method(self, name, _args) {
     }
     "mediaLabel" =>
       vtext(if self.media_only { "✓ media only" } else { "media only" })
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
@@ -2355,17 +2632,19 @@ impl DynComponent for Timeline with fn with_field(self, name, v) {
       Some({ ..self, title: s } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: toots_of(h) } : Timeline).build_rows()
+        ({ ..self, posts: toots_of(h), page: 0 } : Timeline).build_rows()
         as &DynComponent,
       )
     ("query", @values.Value::Text(s)) =>
-      Some({ ..self, query: s } as &DynComponent)
+      Some({ ..self, query: s, page: 0 } as &DynComponent)
     ("mediaOnly", @values.Value::Boolean(b)) =>
-      Some({ ..self, media_only: b } as &DynComponent)
+      Some({ ..self, media_only: b, page: 0 } as &DynComponent)
     ("scope", @values.Value::Instance(t)) =>
       Some({ ..self, scope: t } as &DynComponent)
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
     ("rows", _) =>
-      match write_rows(self.children, self.visible(), v) {
+      match write_rows(self.children, self.shown(), v) {
         Some(children) => Some({ ..self, children, } as &DynComponent)
         None => None
       }
@@ -2379,6 +2658,7 @@ fn make_timeline(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut posts : Array[Toot] = []
   let mut query = ""
   let mut media_only = false
+  let mut page_size = 0
   let mut scope_arg : @values.Value? = None
   for arg in args {
     let (name, v) = arg
@@ -2387,14 +2667,24 @@ fn make_timeline(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("posts", @values.Value::List(h)) => posts = toots_of(h)
       ("query", @values.Value::Text(s)) => query = s
       ("mediaOnly", @values.Value::Boolean(b)) => media_only = b
+      ("pageSize", @values.Value::Number(n)) => page_size = n.to_int()
       ("scope", _) => scope_arg = Some(v)
       _ => ()
     }
   }
   let (scope, has_scope) = scope_child(scope_arg)
   (
-    { title, posts, query, media_only, children: [], scope, has_scope } :
-    Timeline).build_rows()
+    {
+      title,
+      posts,
+      query,
+      media_only,
+      children: [],
+      scope,
+      has_scope,
+      page: 0,
+      page_size,
+    } : Timeline).build_rows()
   as &DynComponent
 }
 
@@ -2426,6 +2716,11 @@ priv struct Profile {
   fields : Array[ProfileField]
   posts : Array[Toot]
   children : Array[UInt64]
+  /// Which page of the account's posts is on screen, 0-based. An account with
+  /// nothing else on the card can arrive carrying hundreds of them.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
 }
 
 ///|
@@ -2443,6 +2738,19 @@ fn Profile::build_rows(self : Profile) -> Profile {
     children.push(self.make_row(i))
   }
   { ..self, children, }
+}
+
+///|
+/// The pager over the account's posts. There is no filter here, so the page is
+/// the only thing between the rows and the screen.
+fn Profile::pager(self : Profile) -> Pager {
+  paging(self.page, self.children.length(), self.page_size)
+}
+
+///|
+/// The positions on this page.
+fn Profile::shown(self : Profile) -> Array[Int] {
+  self.pager().slice(all_positions(self.children.length()))
 }
 
 ///|
@@ -2513,8 +2821,8 @@ impl DynComponent for Profile with fn get_field(self, name) {
     "statusesLabel" => Some(vtext(count_label(self.statuses)))
     "joinedLabel" => Some(vtext(year_label(self.created_at)))
     "fieldItems" => Some(field_items_value(self.fields))
-    "rows" => Some(vlist(self.children.map(t => @values.Value::Instance(t))))
-    _ => None
+    "rows" => Some(rows_value(self.children, self.shown()))
+    _ => self.pager().field(name)
   }
 }
 
@@ -2529,6 +2837,14 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
         vtext(self.acct),
       ])
       Changed({ ..self, following: !self.following } as &DynComponent)
+    }
+    // The pager under the account's posts.
+    (INPUT, _) => {
+      guard is_page_message(name) else { return Unhandled }
+      match self.pager().moved(name) {
+        Some(page) => Changed({ ..self, page, } as &DynComponent)
+        None => Unchanged
+      }
     }
     // A row's favourite is the ROW's, and it announces upward for whoever can
     // write the record. A feed has nothing to add to that — unlike a thread,
@@ -2555,7 +2871,7 @@ impl DynComponent for Profile with fn call_method(self, name, _args) {
       } else {
         vtext("Follow")
       }
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
@@ -2590,16 +2906,17 @@ impl DynComponent for Profile with fn with_field(self, name, v) {
       Some({ ..self, fields: fields_of(list_items(h)) } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: toots_of(h) } : Profile).build_rows() as &DynComponent,
+        ({ ..self, posts: toots_of(h), page: 0 } : Profile).build_rows()
+        as &DynComponent,
       )
-    // A row returned a successor and the host is writing the whole list home. A
-    // feed shows every row it has, so the positions map straight across.
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+    // A row returned a successor and the host is writing the whole list home.
+    // What it hands back is the page it was shown, so it goes home through the
+    // same function that decided those positions.
     ("rows", _) =>
-      match tokens_of(v) {
-        Some(children) => {
-          guard children.length() == self.children.length() else { None }
-          Some({ ..self, children, } as &DynComponent)
-        }
+      match write_rows(self.children, self.shown(), v) {
+        Some(children) => Some({ ..self, children, } as &DynComponent)
         None => None
       }
     _ => None
@@ -2622,6 +2939,7 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut following = false
   let mut fields : Array[ProfileField] = []
   let mut posts : Array[Toot] = []
+  let mut page_size = 0
   for arg in args {
     let (name, v) = arg
     match (name, v) {
@@ -2639,6 +2957,7 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("following", @values.Value::Boolean(b)) => following = b
       ("fields", @values.Value::List(h)) => fields = fields_of(list_items(h))
       ("posts", @values.Value::List(h)) => posts = toots_of(h)
+      ("pageSize", @values.Value::Number(n)) => page_size = n.to_int()
       _ => ()
     }
   }
@@ -2659,6 +2978,8 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       fields,
       posts,
       children: [],
+      page: 0,
+      page_size,
     } : Profile).build_rows()
   as &DynComponent
 }

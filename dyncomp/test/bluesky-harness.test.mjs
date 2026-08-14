@@ -208,14 +208,21 @@ test('the static manifest declares five components and asks for one capability',
     'repostedBy', 'pinned', 'labels', 'external', 'quote', 'video',
   ]);
   assert.deepEqual(post.bubbles, ['liked', 'unliked', 'reposted', 'unreposted', 'folded', 'unfolded']);
-  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope']);
+  // `pageSize` is the one field the three list-shaped components share and the
+  // leaves do not: a column of messages is the thing that can arrive too long
+  // to draw, and a single message is not.
+  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope', 'pageSize']);
   // a feed is a list and a thread is a conversation, so a feed declares no
   // reply vocabulary at all — that is the whole reason it exists
   // `title` first, the way the mastodon sibling's `Timeline` declares it: a feed is the one
   // surface that cannot say what it is from its own contents
-  assert.deepEqual(feed.fields.map((f) => f.name), ['title', 'posts', 'scope']);
+  assert.deepEqual(feed.fields.map((f) => f.name), ['title', 'posts', 'scope', 'pageSize']);
+  for (const c of [feed, thread, profile]) {
+    assert.deepEqual(c.methods.slice(-5), ['paged', 'atFirst', 'atLast', 'pageLabel', 'rangeLabel'], c.name);
+    assert.deepEqual(c.fields.find((f) => f.name === 'pageSize').constraint, { min: 1, max: 500 }, c.name);
+  }
   assert.deepEqual(scope.fields.map((f) => f.name), ['truncated', 'truncatedBy', 'more', 'notes']);
-  assert.deepEqual(profile.fields.map((f) => f.name).slice(-2), ['createdAt', 'pinnedPost']);
+  assert.deepEqual(profile.fields.map((f) => f.name).slice(-3), ['createdAt', 'pinnedPost', 'pageSize']);
   // the thread's bubbles are the ones it HEARS from its rows
   assert.deepEqual(thread.bubbles, ['folded', 'unfolded', 'liked', 'unliked', 'reposted', 'unreposted']);
   assert.deepEqual(feed.bubbles, ['liked', 'unliked', 'reposted', 'unreposted']);
@@ -774,6 +781,100 @@ test('a feed is a list, and says what the list left out', { skip: !built }, () =
   ]);
   assert.equal(mixed.callMethod('summary', []).val, '2 messages · 1 reposted in');
   assert.deepEqual(rowField(mixed, 'repostLabel'), ['', 'Reposted by @alice.bsky.social']);
+});
+
+/// Seven messages, so a page size of three makes three pages and a last one
+/// that is not full — the case an off-by-one in `rangeLabel` would show up in.
+const MANY = Array.from({ length: 7 }, (_, i) => ({
+  uri: `at://a/app.bsky.feed.post/${100 + i}`,
+  displayName: 'Alice', handle: 'alice.bsky.social', text: `message ${i}`,
+}));
+const manyPosts = () => list(MANY.map(message));
+
+test('a long feed is paged, and a page is not a rebuild', { skip: !built }, () => {
+  // Below the threshold nothing changed: no window, no footer, every row on
+  // screen — which is what these cards did before they could page at all.
+  const short = instance('Feed', [['posts', list(CONVERSATION.map(message))]]);
+  assert.equal(short.callMethod('paged', []).val, false);
+  assert.equal(field(short, 'pageCount'), 1);
+  assert.equal(field(short, 'rows').length, 4);
+
+  // Asking for a page size is asking to be paged, whatever the length.
+  let f = instance('Feed', [['posts', manyPosts()], ['pageSize', num(3)]]);
+  assert.equal(f.callMethod('paged', []).val, true);
+  // 1-based, because it is a label rather than an index
+  assert.equal(field(f, 'page'), 1);
+  assert.equal(field(f, 'pageCount'), 3);
+  assert.equal(f.callMethod('rangeLabel', []).val, '1–3 of 7');
+  assert.deepEqual(rowField(f, 'text'), ['message 0', 'message 1', 'message 2']);
+  // the summary is about the feed, not about the page
+  assert.equal(f.callMethod('summary', []).val, '7 messages');
+
+  // A button that would not move answers `unchanged` rather than rebuilding the
+  // same page, and a name the pager does not know keeps travelling.
+  assert.equal(f.handleEvent('input', 'prevPage', []), undefined);
+  assert.equal(f.handleEvent('input', 'somethingElse', []), undefined);
+
+  const first = field(f, 'rows');
+  f = f.handleEvent('input', 'nextPage', []);
+  assert.deepEqual(rowField(f, 'text'), ['message 3', 'message 4', 'message 5']);
+  assert.equal(f.callMethod('atFirst', []).val, false);
+
+  // The host writes a successor home by its position IN THE PAGE — position 0
+  // here is message 3 — so the write-back and the render have to agree about
+  // which rows those are.
+  const liked = child(field(f, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  f = writeRow(f, 0, liked);
+  assert.deepEqual(rowField(f, 'liked'), [true, false, false]);
+
+  // Page back: the rows are the same children, not rebuilt ones, so the like
+  // three rows on is still where the reader left it.
+  f = f.handleEvent('input', 'prevPage', []);
+  assert.deepEqual(field(f, 'rows'), first);
+  assert.deepEqual(rowField(f, 'liked'), [false, false, false]);
+  assert.deepEqual(rowField(f.handleEvent('input', 'nextPage', []), 'liked'), [true, false, false]);
+
+  // the last page is the short one, and it says so
+  const end = f.handleEvent('input', 'lastPage', []);
+  assert.deepEqual(rowField(end, 'text'), ['message 6']);
+  assert.equal(end.callMethod('rangeLabel', []).val, '7–7 of 7');
+  assert.equal(end.callMethod('atLast', []).val, true);
+  assert.equal(end.handleEvent('input', 'nextPage', []), undefined);
+
+  // A new list starts at its beginning, and so does a window a host just chose.
+  assert.equal(field(end.withField('posts', manyPosts()), 'page'), 1);
+  assert.equal(field(end.withField('pageSize', num(2)), 'page'), 1);
+  assert.equal(field(end.withField('pageSize', num(2)), 'pageCount'), 4);
+});
+
+test('a thread pages what the folds left, and a profile pages its messages', { skip: !built }, () => {
+  // A thread's list is what is unfolded, so the pager counts those and not the
+  // records: fold the branch away and the page it was on goes with it.
+  const posts = MANY.map((m, i) => ({ ...m, depth: i === 0 ? 0 : 1 }));
+  let t = instance('Thread', [['posts', list(posts.map(message))], ['pageSize', num(3)]]);
+  assert.equal(field(t, 'pageCount'), 3);
+  t = t.handleEvent('input', 'lastPage', []);
+  assert.deepEqual(rowField(t, 'text'), ['message 6']);
+
+  // Folding the root hides the six under it, which leaves one page — and the
+  // stored page comes back inside it rather than showing nothing.
+  t = t.handleEvent('bubble', 'folded', [text(posts[0].uri)]);
+  assert.equal(field(t, 'pageCount'), 1);
+  assert.equal(t.callMethod('paged', []).val, false);
+  assert.deepEqual(rowField(t, 'text'), ['message 0']);
+
+  // An account's messages page the same way, with no fold in front of them.
+  const p = instance('Profile', [
+    ['handle', text('alice.bsky.social')],
+    ['posts', manyPosts()],
+    ['pageSize', num(4)],
+  ]);
+  assert.equal(field(p, 'pageCount'), 2);
+  assert.equal(p.callMethod('rangeLabel', []).val, '1–4 of 7');
+  assert.deepEqual(rowField(p.handleEvent('input', 'nextPage', []), 'text'),
+    ['message 4', 'message 5', 'message 6']);
+  // and its own button still works, which is the arm the pager was added beside
+  assert.notEqual(p.handleEvent('input', 'toggleFollow', []), undefined);
 });
 
 test('a thread carries a scope too, and keeps it across a rewrite', { skip: !built }, () => {

@@ -232,8 +232,16 @@ test('the static manifest declares six components and asks for one capability', 
     'bookmarked', 'unbookmarked', 'replyTo', 'folded', 'unfolded',
   ]);
   assert.deepEqual(poll.bubbles, ['voted', 'unvoted']);
-  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope']);
-  assert.deepEqual(timeline.fields.map((f) => f.name), ['title', 'posts', 'query', 'mediaOnly', 'scope']);
+  // `pageSize` is the one field the three list-shaped components share and the
+  // leaves do not: a column of posts is the thing that can arrive too long to
+  // draw, and a single post is not.
+  assert.deepEqual(thread.fields.map((f) => f.name), ['posts', 'focus', 'scope', 'pageSize']);
+  assert.deepEqual(timeline.fields.map((f) => f.name), ['title', 'posts', 'query', 'mediaOnly', 'scope', 'pageSize']);
+  for (const c of [thread, timeline, profile]) {
+    assert.deepEqual(c.methods.slice(-5), ['paged', 'atFirst', 'atLast', 'pageLabel', 'rangeLabel'], c.name);
+    const size = c.fields.find((f) => f.name === 'pageSize');
+    assert.deepEqual(size.constraint, { min: 1, max: 500 }, c.name);
+  }
   // field-for-field the component the bluesky bundle has, and that is the point rather than a
   // coincidence: a host drawing both should not learn two spellings of "this is not everything"
   assert.deepEqual(scope.fields.map((f) => f.name), ['truncated', 'truncatedBy', 'more', 'notes']);
@@ -685,6 +693,132 @@ test('a timeline filters among rows it already built, so nothing a reader did is
   assert.equal(field(media, 'isFiltered'), true);
   // and the favourite is still on the row the filter hid
   assert.deepEqual(rowField(media.handleEvent('input', 'toggleMediaOnly', []), 'favourited'), [false, true, false]);
+});
+
+/// Seven posts, so a page size of three makes three pages and a last one that
+/// is not full — the case an off-by-one in `rangeLabel` would show up in.
+const MANY = Array.from({ length: 7 }, (_, i) => ({
+  id: `${100 + i}`, acct: 'alice', displayName: 'Alice', content: `post ${i}`,
+}));
+
+test('a long column is paged, and a page is not a filter', { skip: !built }, () => {
+  // Below the threshold nothing changed: no window, no footer, every row on
+  // screen — which is what these cards did before they could page at all.
+  const short = timeline();
+  assert.equal(short.callMethod('paged', []).val, false);
+  assert.equal(field(short, 'pageCount'), 1);
+  assert.equal(field(short, 'rows').length, 3);
+  assert.equal(short.callMethod('rangeLabel', []).val, '');
+
+  // Asking for a page size is asking to be paged, whatever the length.
+  let tl = instance('Timeline', { title: 'Trending', posts: MANY, pageSize: 3 });
+  assert.equal(tl.callMethod('paged', []).val, true);
+  // 1-based, because it is a label rather than an index
+  assert.equal(field(tl, 'page'), 1);
+  assert.equal(field(tl, 'pageCount'), 3);
+  assert.equal(field(tl, 'pageSize'), 3);
+  assert.equal(tl.callMethod('pageLabel', []).val, '1 of 3');
+  assert.equal(tl.callMethod('rangeLabel', []).val, '1–3 of 7');
+  assert.equal(tl.callMethod('atFirst', []).val, true);
+  assert.equal(tl.callMethod('atLast', []).val, false);
+  assert.deepEqual(rowField(tl, 'content'), ['post 0', 'post 1', 'post 2']);
+  // the count is about the column, not about the page
+  assert.equal(tl.callMethod('countLabel', []).val, '7 posts');
+
+  // A button that would not move answers `unchanged` rather than rebuilding the
+  // same page, which is what keeps a held-down « from churning the tree.
+  assert.equal(tl.handleEvent('input', 'firstPage', []), undefined);
+  assert.equal(tl.handleEvent('input', 'prevPage', []), undefined);
+
+  tl = tl.handleEvent('input', 'nextPage', []);
+  assert.deepEqual(rowField(tl, 'content'), ['post 3', 'post 4', 'post 5']);
+  assert.equal(tl.callMethod('rangeLabel', []).val, '4–6 of 7');
+  assert.equal(tl.callMethod('atFirst', []).val, false);
+
+  // the last page is the short one, and it says so
+  tl = tl.handleEvent('input', 'lastPage', []);
+  assert.deepEqual(rowField(tl, 'content'), ['post 6']);
+  assert.equal(tl.callMethod('rangeLabel', []).val, '7–7 of 7');
+  assert.equal(tl.callMethod('atLast', []).val, true);
+  assert.equal(tl.handleEvent('input', 'nextPage', []), undefined);
+
+  // A name the pager does not know still travels: `unhandled` is what lets a
+  // host hear a message this component was never going to answer.
+  assert.equal(tl.handleEvent('input', 'somethingElse', []), undefined);
+});
+
+test('a row keeps what a reader did to it across a page turn', { skip: !built }, () => {
+  let tl = instance('Timeline', { title: 'Trending', posts: MANY, pageSize: 3 });
+  const first = field(tl, 'rows');
+  tl = tl.handleEvent('input', 'nextPage', []);
+
+  // The host writes a successor home by its position IN THE PAGE — position 0
+  // here is post 3 — so the write-back and the render have to agree about which
+  // rows those are.
+  const liked = child(field(tl, 'rows')[0]).handleEvent('input', 'toggleFavourite', []);
+  tl = writeRow(tl, 0, liked);
+  assert.deepEqual(rowField(tl, 'favourited'), [true, false, false]);
+
+  // Page back: the rows are the same children, not rebuilt ones, and the
+  // favourite is still on the row that has it.
+  tl = tl.handleEvent('input', 'prevPage', []);
+  assert.deepEqual(field(tl, 'rows'), first);
+  assert.deepEqual(rowField(tl, 'favourited'), [false, false, false]);
+  assert.deepEqual(rowField(tl.handleEvent('input', 'nextPage', []), 'favourited'), [true, false, false]);
+});
+
+test('filtering a paged column takes it back to the first page', { skip: !built }, () => {
+  let tl = instance('Timeline', { title: 'Trending', posts: MANY, pageSize: 3 })
+    .handleEvent('input', 'lastPage', []);
+  assert.equal(field(tl, 'page'), 3);
+
+  // A filter makes a different list, and page three of the old one is a
+  // position in a column that is not there any more.
+  tl = tl.handleEvent('input', 'setQuery', [text('post')]);
+  assert.equal(field(tl, 'page'), 1);
+  assert.equal(field(tl, 'pageCount'), 3);
+
+  // A narrower filter leaves one page, and the pager puts itself away.
+  const one = tl.handleEvent('input', 'setQuery', [text('post 4')]);
+  assert.equal(one.callMethod('paged', []).val, false);
+  assert.deepEqual(rowField(one, 'content'), ['post 4']);
+  // and an empty result is still empty rather than "there is more on page two"
+  const none = tl.handleEvent('input', 'setQuery', [text('zzz')]);
+  assert.equal(field(none, 'isEmpty'), true);
+  assert.deepEqual(field(none, 'rows'), []);
+
+  // A host writing the size home does the same: a window it just chose is not
+  // one this reader has been anywhere in.
+  const resized = instance('Timeline', { posts: MANY, pageSize: 3 })
+    .handleEvent('input', 'lastPage', [])
+    .withField('pageSize', num(2));
+  assert.equal(field(resized, 'page'), 1);
+  assert.equal(field(resized, 'pageCount'), 4);
+});
+
+test('a thread pages what the folds left, and a profile pages its posts', { skip: !built }, () => {
+  // A thread's list is what is unfolded, so the pager counts those and not the
+  // records: fold the branch away and the page it was on goes with it.
+  const posts = MANY.map((p, i) => ({ ...p, depth: i === 0 ? 0 : 1 }));
+  let th = instance('Thread', { posts, pageSize: 3 });
+  assert.equal(field(th, 'pageCount'), 3);
+  th = th.handleEvent('input', 'lastPage', []);
+  assert.deepEqual(rowField(th, 'content'), ['post 6']);
+
+  // Folding the root hides the six under it, which leaves one page — and the
+  // stored page comes back inside it rather than showing nothing.
+  th = th.handleEvent('bubble', 'folded', [text('100')]);
+  assert.equal(field(th, 'pageCount'), 1);
+  assert.equal(th.callMethod('paged', []).val, false);
+  assert.deepEqual(rowField(th, 'content'), ['post 0']);
+
+  // An account's posts page the same way, with no filter in front of them.
+  const p = instance('Profile', { acct: 'alice', posts: MANY, pageSize: 4 });
+  assert.equal(field(p, 'pageCount'), 2);
+  assert.equal(p.callMethod('rangeLabel', []).val, '1–4 of 7');
+  assert.deepEqual(rowField(p.handleEvent('input', 'nextPage', []), 'content'), ['post 4', 'post 5', 'post 6']);
+  // and its own button still works, which is the arm the pager was added beside
+  assert.notEqual(p.handleEvent('input', 'toggleFollow', []), undefined);
 });
 
 test('a profile counts a follow on top of the number the record came with', { skip: !built }, () => {

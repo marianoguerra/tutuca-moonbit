@@ -17,6 +17,14 @@
   </main>
   <footer class="flex gap-2 items-center text-xs opacity-60 mt-3 px-1 file-foot">
     <span class="italic note" @text="$note"></span>
+    <span class="range" @show="$paged" @text="$rangeLabel"></span>
+    <div class="join ml-auto pager" @show="$paged">
+      <button class="btn btn-xs join-item first" @on.click="firstPage" :disabled="$atFirst" title="first page">«</button>
+      <button class="btn btn-xs join-item prev" @on.click="prevPage" :disabled="$atFirst" title="previous page">‹</button>
+      <span class="btn btn-xs join-item no-animation pointer-events-none page" @text="$pageLabel"></span>
+      <button class="btn btn-xs join-item next" @on.click="nextPage" :disabled="$atLast" title="next page">›</button>
+      <button class="btn btn-xs join-item last" @on.click="lastPage" :disabled="$atLast" title="last page">»</button>
+    </div>
   </footer>
   <div class="mt-2"><x render=".scope" @show="truthy? .hasScope"></x></div>
 </div>

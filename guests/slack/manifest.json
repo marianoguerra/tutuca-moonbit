@@ -740,6 +740,42 @@
         {
           "name": "loadTitle",
           "doc": "The two arguments that would load them, filled in."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -817,6 +853,16 @@
           "ty": 4,
           "doc": "The root's timestamp, for the same reason. Defaults to the root message's own `id`.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 3,
+          "doc": "How many replies a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [
@@ -829,7 +875,12 @@
         "replyLabel",
         "hasUnloadedReplies",
         "loadLabel",
-        "loadTitle"
+        "loadTitle",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -853,6 +904,11 @@
           "name": "counted, and not loaded",
           "argsJson": "{\"root\": {\"id\": \"1755253920.000100\", \"author\": \"alice\", \"channelName\": \"incidents\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"body\": [{\"text\": \"anyone else seeing the latency spike?\"}]}, \"expanded\": false, \"replyCount\": 21}",
           "doc": "Exactly what `conversations.history` hands a card: a root with twenty-one replies counted and none of them fetched. The caret is not offered \u2014 there is nothing behind it \u2014 and what is offered instead is the call that would fetch them."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"expanded\": true, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\ud83c\udf89\", \"count\": 4}, {\"emoji\": \"\ud83d\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\ud83d\ude4f\", \"count\": 1}]}], \"pageSize\": 1}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""
@@ -888,6 +944,42 @@
         {
           "name": "note",
           "doc": "That the bytes are not available through this server."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -921,6 +1013,12 @@
           "items": [],
           "name": "Scope",
           "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
         }
       ],
       "fields": [
@@ -941,6 +1039,16 @@
           "ty": 3,
           "doc": "What this listing covers. Same record shape a ChannelHistory's scope takes.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 4,
+          "doc": "How many files a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [],
@@ -950,7 +1058,12 @@
         "title",
         "countLabel",
         "isEmpty",
-        "note"
+        "note",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -959,6 +1072,11 @@
           "name": "a channel\u2019s files",
           "argsJson": "{\"filter\": \"#incidents\", \"files\": [{\"id\": \"F0123ABCD\", \"title\": \"Postmortem: the 14 August outage\", \"name\": \"postmortem-2026-08-14.md\", \"mimetype\": \"text/markdown\", \"size\": 18422, \"author\": \"alice\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"permalink\": \"https://acme.slack.com/files/U0123/F0123ABCD/postmortem-2026-08-14.md\"}, {\"id\": \"F0124EFGH\", \"name\": \"latency.png\", \"mimetype\": \"image/png\", \"size\": 244118, \"author\": \"bob\", \"createdAt\": \"2026-08-15T09:20:00Z\", \"permalink\": \"https://acme.slack.com/files/U0124/F0124EFGH/latency.png\"}, {\"id\": \"F0125IJKL\", \"name\": \"raw-metrics.csv\", \"mimetype\": \"text/csv\", \"size\": 3145728, \"author\": \"carol\", \"createdAt\": \"2026-08-15T10:02:00Z\"}], \"scope\": {\"privateChannels\": false, \"channelsScanned\": 1, \"note\": \"files uploaded to conversations this token is not in are not listed\"}}",
           "doc": "Three files with a title, without one, and without a permalink \u2014 and a scope saying which uploads were never in the set."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"filter\": \"#incidents\", \"files\": [{\"id\": \"F0123ABCD\", \"title\": \"Postmortem: the 14 August outage\", \"name\": \"postmortem-2026-08-14.md\", \"mimetype\": \"text/markdown\", \"size\": 18422, \"author\": \"alice\", \"createdAt\": \"2026-08-15T09:12:00Z\", \"permalink\": \"https://acme.slack.com/files/U0123/F0123ABCD/postmortem-2026-08-14.md\"}, {\"id\": \"F0124EFGH\", \"name\": \"latency.png\", \"mimetype\": \"image/png\", \"size\": 244118, \"author\": \"bob\", \"createdAt\": \"2026-08-15T09:20:00Z\", \"permalink\": \"https://acme.slack.com/files/U0124/F0124EFGH/latency.png\"}, {\"id\": \"F0125IJKL\", \"name\": \"raw-metrics.csv\", \"mimetype\": \"text/csv\", \"size\": 3145728, \"author\": \"carol\", \"createdAt\": \"2026-08-15T10:02:00Z\"}], \"scope\": {\"privateChannels\": false, \"channelsScanned\": 1, \"note\": \"files uploaded to conversations this token is not in are not listed\"}, \"pageSize\": 2}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""
@@ -1027,6 +1145,42 @@
         {
           "name": "openThread",
           "doc": "A thread asked for replies it was counted but not given. The channel history is the one that can say which call would fetch them, so it stops the bubble and says so in its footer."
+        },
+        {
+          "name": "firstPage",
+          "doc": "Jump to the first page."
+        },
+        {
+          "name": "prevPage",
+          "doc": "Show the previous page."
+        },
+        {
+          "name": "nextPage",
+          "doc": "Show the next page."
+        },
+        {
+          "name": "lastPage",
+          "doc": "Jump to the last page."
+        },
+        {
+          "name": "paged",
+          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+        },
+        {
+          "name": "atFirst",
+          "doc": "Whether this is the first page, which is what disables the two buttons that go back."
+        },
+        {
+          "name": "atLast",
+          "doc": "Whether this is the last page, which is what disables the two that go on."
+        },
+        {
+          "name": "pageLabel",
+          "doc": "Which page of how many, as the footer writes it."
+        },
+        {
+          "name": "rangeLabel",
+          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
         }
       ],
       "views": [
@@ -1138,6 +1292,16 @@
           "ty": 5,
           "doc": "What this answer covers and what it never looked at. Written as a plain record whose keys are the Scope component's own field names; drawn only when there is something to disclose.",
           "required": false
+        },
+        {
+          "name": "pageSize",
+          "ty": 1,
+          "doc": "How many conversations a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
+          "required": false,
+          "constraint": {
+            "min": 1,
+            "max": 500
+          }
         }
       ],
       "receives": [],
@@ -1153,7 +1317,12 @@
         "orderLabel",
         "countLabel",
         "hasError",
-        "isEmpty"
+        "isEmpty",
+        "paged",
+        "atFirst",
+        "atLast",
+        "pageLabel",
+        "rangeLabel"
       ],
       "whens": [],
       "requests": [],
@@ -1192,6 +1361,11 @@
           "name": "error",
           "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [], \"error\": \"channel history unavailable (HTTP 503)\"}",
           "doc": "The history could not be fetched."
+        },
+        {
+          "name": "a page at a time",
+          "argsJson": "{\"channel\": \"general\", \"topic\": \"Announcements and anything that does not have a channel yet\", \"memberCount\": 214, \"threads\": [{\"expanded\": true, \"root\": {\"id\": \"m1\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T09:12:00Z\", \"body\": [{\"text\": \"Morning! The \"}, {\"text\": \"analytical-engine\", \"code\": true}, {\"text\": \" deploy is out \u2014 notes are in \"}, {\"text\": \"#releases\", \"channel\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\ud83c\udf89\", \"count\": 4}, {\"emoji\": \"\ud83d\udc40\", \"count\": 2}]}, \"replies\": [{\"id\": \"m1r1\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"createdAt\": \"2026-06-23T09:20:00Z\", \"body\": [{\"text\": \"Nice. Did the \"}, {\"text\": \"compiler\", \"bold\": true}, {\"text\": \" step land too?\"}], \"reactions\": []}, {\"id\": \"m1r2\", \"author\": \"Ada Lovelace\", \"avatar\": \"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\", \"createdAt\": \"2026-06-23T09:22:00Z\", \"edited\": true, \"body\": [{\"text\": \"It did \u2014 \"}, {\"text\": \"@Grace Hopper\", \"mention\": true}, {\"text\": \" I pushed the changelog with it.\"}], \"reactions\": [{\"emoji\": \"\ud83d\ude4f\", \"count\": 1}]}]}, {\"expanded\": false, \"root\": {\"id\": \"m2\", \"author\": \"Alan Turing\", \"channelName\": \"general\", \"createdAt\": \"2026-06-23T11:05:00Z\", \"pinned\": true, \"body\": [{\"text\": \"Reminder: the design review moved to \"}, {\"text\": \"Thursday\", \"bold\": true}, {\"text\": \". The old invite is \"}, {\"text\": \"cancelled\", \"strike\": true}, {\"text\": \".\"}], \"reactions\": [{\"emoji\": \"\u2705\", \"count\": 7, \"reacted\": true}]}, \"replies\": [{\"id\": \"m2r1\", \"author\": \"Katherine Johnson\", \"avatar\": \"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\", \"createdAt\": \"2026-06-23T11:31:00Z\", \"body\": [{\"text\": \"Calendar updated, thanks.\"}], \"reactions\": []}]}, {\"expanded\": true, \"root\": {\"id\": \"m3\", \"author\": \"Grace Hopper\", \"avatar\": \"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\", \"channelName\": \"general\", \"createdAt\": \"2026-06-22T16:40:00Z\", \"body\": [{\"text\": \"Docs for the new API are up at \"}, {\"text\": \"docs.example.com/api\", \"link\": true, \"url\": \"https://docs.example.com/api\"}, {\"text\": \" \u2014 feedback welcome.\"}], \"reactions\": [{\"emoji\": \"\ud83d\udcda\", \"count\": 3}]}, \"replies\": []}], \"scope\": {\"privateChannels\": false, \"channelsScanned\": 1}, \"pageSize\": 2}",
+          "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
       "style": ""

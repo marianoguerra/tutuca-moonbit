@@ -165,6 +165,8 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
   const declared = manifest.components.find((c) => c.name === 'ChannelHistory');
   assert.deepEqual(declared.methods, [
     'channelLabel', 'memberLabel', 'orderLabel', 'countLabel', 'hasError', 'isEmpty',
+    // the pager's five, in the spelling the bluesky and mastodon bundles use
+    'paged', 'atFirst', 'atLast', 'pageLabel', 'rangeLabel',
   ]);
   // including the three the avatar is drawn from: an undeclared one resolves to
   // Null, which hides the image and leaves the initials looking correct — the
@@ -178,7 +180,15 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
   ]);
   assert.deepEqual(manifest.components.find((c) => c.name === 'Thread').methods, [
     'hasReplies', 'replyLabel', 'hasUnloadedReplies', 'loadLabel', 'loadTitle',
+    'paged', 'atFirst', 'atLast', 'pageLabel', 'rangeLabel',
   ]);
+  // the three list-shaped components take a page size and the leaves do not: a
+  // column of messages is the thing that can arrive too long to draw
+  for (const name of ['Thread', 'FileList', 'ChannelHistory']) {
+    const c = manifest.components.find((x) => x.name === name);
+    assert.equal(ty(name, 'pageSize').kind, 'ty-int', name);
+    assert.deepEqual(c.fields.find((f) => f.name === 'pageSize').constraint, { min: 1, max: 500 }, name);
+  }
   // `bubbles` is the bubble-bucket HANDLER surface, the way `receives` is:
   // Segment EMITS openLink and declares none, and the one component that can
   // decide what a link or an unfetched thread means declares all three
@@ -414,6 +424,107 @@ test('expand-all walks the RENDERED positions, not the stored ones', { skip: !bu
     emitted.map((m) => [m.path[0].val.field, m.path[0].val.index, m.args[0].val]),
     [['threads', 0, true]],
   );
+});
+
+/// Seven conversations, so a page size of three makes three pages and a last
+/// one that is not full — the case an off-by-one in `rangeLabel` would show up
+/// in. The timestamps ascend, so newest-first draws them backwards.
+const MANY_THREADS = Array.from({ length: 7 }, (_, i) => ({
+  root: {
+    id: `17000000${10 + i}.000001`,
+    author: 'alice',
+    channelName: 'general',
+    createdAt: `2026-08-14T09:${10 + i}:00Z`,
+    body: [{ text: `message ${i}` }],
+  },
+}));
+/// The author of each conversation the card is drawing, in order.
+const drawn = (c) => childrenOf(c, 'threads')
+  .map((t) => childOf(t, 'root').getField('id').val);
+
+test('a long channel is paged, and a page is not a filter', { skip: !built }, () => {
+  // Below the threshold nothing changed: no window, no footer, every
+  // conversation on screen — which is what this card did before it could page.
+  const short = make('ChannelHistory', initArgs('ChannelHistory', 'general'));
+  assert.deepEqual(short.callMethod('paged', []), bool(false));
+  assert.deepEqual(short.getField('pageCount'), num(1));
+  assert.deepEqual(short.callMethod('rangeLabel', []), text(''));
+
+  // Asking for a page size is asking to be paged, whatever the length.
+  let c = make('ChannelHistory', { channel: 'general', threads: MANY_THREADS, pageSize: 3 });
+  assert.deepEqual(c.callMethod('paged', []), bool(true));
+  // 1-based, because it is a label rather than an index
+  assert.deepEqual(c.getField('page'), num(1));
+  assert.deepEqual(c.getField('pageCount'), num(3));
+  assert.deepEqual(c.callMethod('rangeLabel', []), text('1–3 of 7'));
+  // newest first, so the newest three are the first page
+  assert.deepEqual(drawn(c), ['1700000016.000001', '1700000015.000001', '1700000014.000001']);
+  // the count is about the channel, not about the page
+  assert.deepEqual(c.callMethod('countLabel', []), text('7 conversations'));
+
+  // A button that would not move answers `unchanged`, and a name the pager
+  // does not know keeps travelling.
+  assert.equal(dispatch(c, 'input', 'prevPage', []), undefined);
+  assert.equal(dispatch(c, 'input', 'somethingElse', []), undefined);
+
+  c = dispatch(c, 'input', 'nextPage', []);
+  assert.deepEqual(drawn(c), ['1700000013.000001', '1700000012.000001', '1700000011.000001']);
+  assert.deepEqual(c.callMethod('atFirst', []), bool(false));
+
+  // Expand-all addresses THIS page: the paths are positions in what the
+  // renderer drew, and a reader pressing it means the ones in front of them.
+  dispatch(c, 'input', 'expandAll', []);
+  assert.deepEqual(emitted.map((m) => m.path[0].val.index), [0, 1, 2]);
+
+  // the last page is the short one, and it says so
+  const end = dispatch(c, 'input', 'lastPage', []);
+  assert.deepEqual(drawn(end), ['1700000010.000001']);
+  assert.deepEqual(end.callMethod('rangeLabel', []), text('7–7 of 7'));
+  assert.deepEqual(end.callMethod('atLast', []), bool(true));
+  assert.equal(dispatch(end, 'input', 'nextPage', []), undefined);
+
+  // Filtering and reordering each make a different list, so page three of the
+  // old one is a position in a channel that is not there any more.
+  assert.deepEqual(dispatch(end, 'input', 'setQuery', [text('message')]).getField('page'), num(1));
+  assert.deepEqual(dispatch(end, 'input', 'toggleOrder', []).getField('page'), num(1));
+  // and a filter narrow enough to fit on one page puts the pager away
+  const one = dispatch(end, 'input', 'setQuery', [text('message 4')]);
+  assert.deepEqual(one.callMethod('paged', []), bool(false));
+  assert.deepEqual(drawn(one), ['1700000014.000001']);
+});
+
+test('a thread pages its replies, and a file list pages its rows', { skip: !built }, () => {
+  // A thread's window is over the replies that ARE here; `replyCount` is how
+  // many exist, which is a different number and stays put.
+  const replies = Array.from({ length: 7 }, (_, i) => ({ author: 'bob', body: [{ text: `reply ${i}` }] }));
+  let t = make('Thread', { root: { id: '1', author: 'alice' }, replies, replyCount: 21, pageSize: 3 });
+  assert.deepEqual(t.callMethod('paged', []), bool(true));
+  assert.deepEqual(t.getField('pageCount'), num(3));
+  assert.deepEqual(t.callMethod('replyLabel', []), text('▾ 7 of 21 replies'));
+  assert.equal(childrenOf(t, 'replies').length, 3);
+  t = dispatch(t, 'input', 'lastPage', []);
+  assert.deepEqual(t.callMethod('rangeLabel', []), text('7–7 of 7'));
+  assert.equal(childrenOf(t, 'replies').length, 1);
+
+  // A host that went and fetched the replies writes a whole new list home,
+  // which is a different write from handing back the page it was shown — and
+  // it starts at the first page, because it is a different set of rows.
+  const fetched = t.withField('replies', { tag: 'list', val: put([]) });
+  assert.deepEqual(fetched.getField('page'), num(1));
+  assert.deepEqual(fetched.getField('replyCount'), num(21));
+
+  // A file row is a record rather than a child, so `@key` counts the rows the
+  // view was GIVEN — which on page two are not the first files in the list.
+  let f = make('FileList', { ...initArgs('FileList', 'a channel’s files'), pageSize: 2 });
+  assert.deepEqual(f.callMethod('countLabel', []), text('3 files'));
+  assert.deepEqual(f.callMethod('rangeLabel', []), text('1–2 of 3'));
+  f = dispatch(f, 'input', 'nextPage', []);
+  dispatch(f, 'input', 'openFile', [num(0)]);
+  // position 0 of page two is the third file, which has no permalink to offer
+  assert.deepEqual(emitted, []);
+  dispatch(dispatch(f, 'input', 'prevPage', []), 'input', 'openFile', [num(1)]);
+  assert.equal(emitted[0].name, 'openLink');
+  assert.match(emitted[0].args[1].val, /latency\.png/);
 });
 
 test('a channel catches what its children report', { skip: !built }, () => {

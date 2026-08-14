@@ -677,6 +677,206 @@ fn body_args(v : @values.Value?) -> @values.Value? {
   }
 }
 
+// --- Paging: a window over a list that arrived long ------------------------
+//
+// Three of the components below are a column of something: a thread's replies,
+// a channel's conversations, a channel's files. How long that column is was
+// never theirs to decide — a caller asks for a history with a `limit` and gets
+// back whatever it allowed. Forty rows is a card. Four hundred is a wall a
+// reader scrolls past rather than reads, and for the two that build children it
+// is four hundred child components drawn before any one of them is looked at.
+//
+// So a long list gets a window and the four buttons that move it, in the
+// vocabulary the `table` bundle already uses for the same job — `page`,
+// `pageCount`, `pageSize`, `firstPage` / `prevPage` / `nextPage` / `lastPage`,
+// `atFirst` / `atLast` — because a host drawing this card beside the bluesky or
+// mastodon one should not have to learn three spellings of "show me the next
+// lot".
+//
+// The window is over what the FILTER left, not over the records: the search box
+// narrows and the pager pages what is left, which is the order a reader means
+// when they type in the box while on page three. Nothing here rebuilds a child,
+// so what a reader did to a message is still there when the page comes back.
+
+///|
+/// How many rows a paged card shows at once when nobody asked for a number.
+const PAGE_SIZE = 25
+
+///|
+/// How long a list has to BE before a reader is made to page through it.
+///
+/// The pager is not furniture that is always there: below this a card draws
+/// exactly what it drew before it could page at all — no footer, every row on
+/// screen — because breaking forty messages into two pages costs a reader a
+/// click and buys them nothing. A host that wants the window anyway asks for a
+/// `pageSize`, which is what asking for one means.
+const PAGE_ABOVE = 100
+
+///|
+/// The state of one paged list, and every answer a view asks about it.
+///
+/// Computed per read rather than stored, because two of the three numbers in it
+/// are not the component's to keep: `total` is what the filter left, which moves
+/// as a reader types, and `page` is a wish that has to be brought back inside a
+/// list that may have shrunk under it.
+priv struct Pager {
+  /// 0-based, and already clamped to what `total` and the window allow.
+  page : Int
+  /// How many rows a page holds. In effect whether or not it is being used, so
+  /// `pageSize` reads back the same either way.
+  size : Int
+  /// Whether the list is long enough that a page is a window rather than the
+  /// whole of it.
+  on : Bool
+  /// How many rows there are to page through: after the filter, before the
+  /// window.
+  total : Int
+}
+
+///|
+/// The pager for a list of `total` rows sitting at `page`, given the page size
+/// the host asked for — 0 for "did not ask".
+fn paging(page : Int, total : Int, page_size : Int) -> Pager {
+  let size = if page_size > 0 { page_size } else { PAGE_SIZE }
+  let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
+  let last = if on { (total + size - 1) / size - 1 } else { 0 }
+  let page = if page < 0 {
+    0
+  } else if page > last {
+    last
+  } else {
+    page
+  }
+  { page, size, on, total }
+}
+
+///|
+/// How many pages there are. One when the whole list is on screen, so a card
+/// that is not paging reads "1 of 1" rather than "1 of 0".
+fn Pager::pages(self : Pager) -> Int {
+  if self.on {
+    (self.total + self.size - 1) / self.size
+  } else {
+    1
+  }
+}
+
+///|
+/// The positions this page shows, out of the ones the filter left.
+fn Pager::slice(self : Pager, at : Array[Int]) -> Array[Int] {
+  guard self.on else { return at }
+  let start = self.page * self.size
+  let stop = if start + self.size < at.length() {
+    start + self.size
+  } else {
+    at.length()
+  }
+  let out : Array[Int] = []
+  for i in start..<stop {
+    out.push(at[i])
+  }
+  out
+}
+
+///|
+/// Where one of the four buttons lands, or `None` for one that would not move —
+/// which is what a view disables and what a handler answers `unchanged` to.
+fn Pager::moved(self : Pager, name : String) -> Int? {
+  let want = match name {
+    "firstPage" => 0
+    "prevPage" => self.page - 1
+    "nextPage" => self.page + 1
+    "lastPage" => self.pages() - 1
+    _ => return None
+  }
+  let last = self.pages() - 1
+  let next = if want < 0 {
+    0
+  } else if want > last {
+    last
+  } else {
+    want
+  }
+  if next == self.page {
+    None
+  } else {
+    Some(next)
+  }
+}
+
+///|
+/// Whether a name is one of the pager's four buttons. Asked before `moved`,
+/// because `moved` answering `None` means "that button would not move", and a
+/// name this component has never heard of has to keep travelling instead.
+fn is_page_message(name : String) -> Bool {
+  name == "firstPage" ||
+  name == "prevPage" ||
+  name == "nextPage" ||
+  name == "lastPage"
+}
+
+///|
+/// The fields a paged card answers on top of its own.
+///
+/// `page` is 1-based because it is a label rather than an index — the choice the
+/// `table` bundle's pager made, and the one a reader would make.
+fn Pager::field(self : Pager, name : String) -> @values.Value? {
+  match name {
+    "page" => Some(@values.Value::Number((self.page + 1).to_double()))
+    "pageCount" => Some(@values.Value::Number(self.pages().to_double()))
+    "pageSize" => Some(@values.Value::Number(self.size.to_double()))
+    _ => None
+  }
+}
+
+///|
+/// The methods a paged card answers.
+///
+/// `paged` is the one a view asks first: a card showing everything it has draws
+/// no footer at all, so the whole control hangs off this rather than off a row
+/// count a template would have to do arithmetic on.
+fn Pager::answer(self : Pager, name : String) -> @values.Value? {
+  match name {
+    "paged" => Some(@values.Value::Boolean(self.on))
+    "atFirst" => Some(@values.Value::Boolean(self.page <= 0))
+    "atLast" => Some(@values.Value::Boolean(self.page >= self.pages() - 1))
+    "pageLabel" =>
+      Some(@values.Value::Text("\{self.page + 1} of \{self.pages()}"))
+    // Which rows these are, which is the half a page number does not say.
+    "rangeLabel" => {
+      guard self.on else { return Some(@values.Value::Text("")) }
+      let first = self.page * self.size + 1
+      let last = if first + self.size - 1 < self.total {
+        first + self.size - 1
+      } else {
+        self.total
+      }
+      Some(@values.Value::Text("\{first}–\{last} of \{self.total}"))
+    }
+    _ => None
+  }
+}
+
+///|
+/// Either the pager's answer or nothing, as a `call_method` has to answer.
+fn Pager::answer_or_nil(self : Pager, name : String) -> @values.Value {
+  match self.answer(name) {
+    Some(v) => v
+    None => @values.Value::Nil
+  }
+}
+
+///|
+/// Every position in a list of `n`, for the components with no filter to narrow
+/// one: a page is the only thing between their rows and the screen.
+fn all_positions(n : Int) -> Array[Int] {
+  let out : Array[Int] = []
+  for i in 0..<n {
+    out.push(i)
+  }
+  out
+}
+
 // --- Thread: a root message and its replies -------------------------------
 
 ///|
@@ -702,18 +902,43 @@ priv struct Thread {
   /// same constraint that makes `ChannelHistory` keep `haystack` and `times`.
   channel_name : String
   root_ts : String
+  /// Which page of the replies is on screen, 0-based. A thread on a busy
+  /// channel is the one list here that arrives long without anybody asking for
+  /// it.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
+}
+
+///|
+/// The pager over the replies that ARE here. `reply_count` is how many exist,
+/// which is a different number and not one a window can be cut out of.
+fn Thread::pager(self : Thread) -> Pager {
+  paging(self.page, self.replies.length(), self.page_size)
+}
+
+///|
+/// The positions on this page.
+fn Thread::shown(self : Thread) -> Array[Int] {
+  self.pager().slice(all_positions(self.replies.length()))
 }
 
 ///|
 impl DynComponent for Thread with fn get_field(self, name) {
   match name {
     "root" => Some(@values.Value::Instance(self.root))
-    "replies" => Some(instance_list(self.replies))
+    "replies" => {
+      let shown : Array[UInt64] = []
+      for i in self.shown() {
+        shown.push(self.replies[i])
+      }
+      Some(instance_list(shown))
+    }
     "expanded" => Some(@values.Value::Boolean(self.expanded))
     "replyCount" => Some(@values.Value::Number(self.reply_count.to_double()))
     "channelName" => Some(@values.Value::Text(self.channel_name))
     "rootTs" => Some(@values.Value::Text(self.root_ts))
-    _ => None
+    _ => self.pager().field(name)
   }
 }
 
@@ -755,7 +980,7 @@ impl DynComponent for Thread with fn call_method(self, name, _args) {
           "read them with channel=\{self.channel_name}, ts=\{self.root_ts}"
         },
       )
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
@@ -785,6 +1010,15 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
           Changed({ ..self, expanded: b } as &DynComponent)
         _ => Unchanged
       }
+    // The pager under the replies. A page moves nothing but which of them are
+    // drawn, so no child is rebuilt and nothing is announced.
+    (INPUT, _) => {
+      guard is_page_message(name) else { return Unhandled }
+      match self.pager().moved(name) {
+        Some(page) => Changed({ ..self, page, } as &DynComponent)
+        None => Unchanged
+      }
+    }
     _ => Unhandled
   }
 }
@@ -802,12 +1036,33 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
       Some({ ..self, channel_name: s } as &DynComponent)
     ("rootTs", @values.Value::Text(s)) =>
       Some({ ..self, root_ts: s } as &DynComponent)
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
     // Writing the replies home does NOT move the count: how many exist is a
     // fact about the conversation, and how many are on screen is a fact about
     // this page of it.
+    //
+    // Two different writes arrive here, and the length is what tells them
+    // apart. `replies` is a DECLARED field, so a host may hand back the page it
+    // was shown with a successor in it — which goes home by position, through
+    // the same function that decided those positions — or a whole new list,
+    // which is what happens when whoever heard `openThread` went and fetched
+    // the replies this card never had. The second starts at the first page,
+    // because it is a different conversation's worth of rows.
     ("replies", _) =>
       match tokens_of(v) {
-        Some(replies) => Some({ ..self, replies, } as &DynComponent)
+        Some(shown) => {
+          let at = self.shown()
+          if at.length() != shown.length() {
+            Some({ ..self, replies: shown, page: 0 } as &DynComponent)
+          } else {
+            let replies = self.replies.copy()
+            for k, i in at {
+              replies[i] = shown[k]
+            }
+            Some({ ..self, replies, } as &DynComponent)
+          }
+        }
         None => None
       }
     _ => None
@@ -844,6 +1099,8 @@ fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
       Some(@values.Value::Text(s)) => s
       _ => root_text(root_args, "id")
     },
+    page: 0,
+    page_size: as_num(arg(args, "pageSize")).to_int(),
   }
   t as &DynComponent
 }
@@ -1088,6 +1345,24 @@ priv struct FileList {
   files : Array[FileRow]
   scope : UInt64
   has_scope : Bool
+  /// Which page of the list is on screen, 0-based.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
+}
+
+///|
+/// The pager over the files.
+fn FileList::pager(self : FileList) -> Pager {
+  paging(self.page, self.files.length(), self.page_size)
+}
+
+///|
+/// The positions on this page. A row is a record rather than a child here, so
+/// these are also what `openFile` looks a row up by: `@key` counts the rows the
+/// view was given, which on page two is not where the file is.
+fn FileList::shown(self : FileList) -> Array[Int] {
+  self.pager().slice(all_positions(self.files.length()))
 }
 
 ///|
@@ -1169,7 +1444,8 @@ impl DynComponent for FileList with fn get_field(self, name) {
     // the view stays a template and does no arithmetic.
     "rows" => {
       let h = @values.list_new()
-      for f in self.files {
+      for at in self.shown() {
+        let f = self.files[at]
         let m = @values.map_new()
         @values.map_set(m, "id", @values.Value::Text(f.id))
         @values.map_set(m, "label", @values.Value::Text(f.label))
@@ -1189,7 +1465,7 @@ impl DynComponent for FileList with fn get_field(self, name) {
     }
     "scope" => Some(@values.Value::Instance(self.scope))
     "hasScope" => Some(@values.Value::Boolean(self.has_scope))
-    _ => None
+    _ => self.pager().field(name)
   }
 }
 
@@ -1214,7 +1490,7 @@ impl DynComponent for FileList with fn call_method(self, name, _args) {
     // worse than one that never suggested it.
     "note" =>
       @values.Value::Text("file contents are not available through this server")
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
@@ -1225,9 +1501,13 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
     // and looking the row up here means the view never carries a link it might
     // pass to the wrong component.
     (INPUT, "openFile") => {
+      // The index is into the rows the view was GIVEN, which on page two are
+      // not the first rows of the list — so it is read back through the same
+      // window that decided them.
+      let shown = self.shown()
       let at = as_num(args.get(0), default=-1.0).to_int()
-      if at >= 0 && at < self.files.length() {
-        let f = self.files[at]
+      if at >= 0 && at < shown.length() {
+        let f = self.files[shown[at]]
         if f.permalink != "" {
           @control.emit("openLink", [
             @values.Value::Text(f.permalink),
@@ -1236,6 +1516,13 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
         }
       }
       Unchanged
+    }
+    (INPUT, _) => {
+      guard is_page_message(name) else { return Unhandled }
+      match self.pager().moved(name) {
+        Some(page) => Changed({ ..self, page, } as &DynComponent)
+        None => Unchanged
+      }
     }
     _ => Unhandled
   }
@@ -1248,10 +1535,13 @@ impl DynComponent for FileList with fn with_field(self, name, v) {
       Some({ ..self, filter: s } as &DynComponent)
     ("files", @values.Value::List(_)) =>
       Some(
-        { ..self, files: as_items(Some(v)).map(file_row_of) } as &DynComponent,
+        { ..self, files: as_items(Some(v)).map(file_row_of), page: 0 }
+        as &DynComponent,
       )
     ("scope", @values.Value::Instance(t)) =>
       Some({ ..self, scope: t } as &DynComponent)
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
     _ => None
   }
 }
@@ -1264,6 +1554,8 @@ fn make_file_list(args : Array[(String, @values.Value)]) -> &DynComponent {
     files: as_items(arg(args, "files")).map(file_row_of),
     scope,
     has_scope,
+    page: 0,
+    page_size: as_num(arg(args, "pageSize")).to_int(),
   }
   f as &DynComponent
 }
@@ -1304,6 +1596,12 @@ priv struct ChannelHistory {
   /// Whether that child has anything to disclose. Kept here for the reason
   /// everything else in this struct is: a token cannot be read back.
   has_scope : Bool
+  /// Which page of the channel is on screen, 0-based. A wish rather than a
+  /// fact: the search box narrows the list under it, so what it comes out as is
+  /// whatever `paging` can honour.
+  page : Int
+  /// The page size the host asked for, 0 for "did not ask" — see `PAGE_ABOVE`.
+  page_size : Int
 }
 
 ///|
@@ -1385,6 +1683,25 @@ fn out_of_order(a : String, b : String, newest_first : Bool) -> Bool {
 }
 
 ///|
+/// The pager over what the filter left.
+fn ChannelHistory::pager(self : ChannelHistory) -> Pager {
+  paging(self.page, self.visible().length(), self.page_size)
+}
+
+///|
+/// Which threads are RENDERED, in the order they are rendered: filtered,
+/// ordered, and on this page.
+///
+/// `visible()` decides which and in what order; this cuts the page out of it.
+/// Everything that counts rendered positions goes through here — the field the
+/// view reads, the write-back that lands by position, and expand-all's
+/// positional paths — because a path counted against a different list would
+/// reach a different thread.
+fn ChannelHistory::shown(self : ChannelHistory) -> Array[Int] {
+  self.pager().slice(self.visible())
+}
+
+///|
 impl DynComponent for ChannelHistory with fn get_field(self, name) {
   match name {
     "channel" => Some(@values.Value::Text(self.channel))
@@ -1392,7 +1709,7 @@ impl DynComponent for ChannelHistory with fn get_field(self, name) {
     "memberCount" => Some(@values.Value::Number(self.member_count))
     "threads" => {
       let shown : Array[UInt64] = []
-      for i in self.visible() {
+      for i in self.shown() {
         shown.push(self.threads[i])
       }
       Some(instance_list(shown))
@@ -1404,7 +1721,7 @@ impl DynComponent for ChannelHistory with fn get_field(self, name) {
     "lastAction" => Some(@values.Value::Text(self.last_action))
     "scope" => Some(@values.Value::Instance(self.scope))
     "hasScope" => Some(@values.Value::Boolean(self.has_scope))
-    _ => None
+    _ => self.pager().field(name)
   }
 }
 
@@ -1435,25 +1752,39 @@ impl DynComponent for ChannelHistory with fn call_method(self, name, _args) {
       )
     }
     "hasError" => @values.Value::Boolean(self.error != "")
+    // Empty is a fact about the FILTER, not about the page: a channel with
+    // conversations on another page is not "No messages."
     "isEmpty" =>
       @values.Value::Boolean(
         !self.loading && self.error == "" && self.visible().is_empty(),
       )
-    _ => @values.Value::Nil
+    _ => self.pager().answer_or_nil(name)
   }
 }
 
 ///|
 impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
   match (bucket, name) {
+    // The filter and the ordering each go back to the first page: both make a
+    // different list, and page four of the old one is a position in a channel
+    // that is not there any more.
     (INPUT, "setQuery") =>
       match args {
         [@values.Value::Text(q), ..] =>
-          Changed({ ..self, query: q } as &DynComponent)
+          Changed({ ..self, query: q, page: 0 } as &DynComponent)
         _ => Unchanged
       }
     (INPUT, "toggleOrder") =>
-      Changed({ ..self, newest_first: !self.newest_first } as &DynComponent)
+      Changed(
+        { ..self, newest_first: !self.newest_first, page: 0 } as &DynComponent,
+      )
+    // Paging is not a filter: it changes which conversations are drawn and
+    // nothing about which ones there are, so no child is rebuilt.
+    (INPUT, "firstPage" | "prevPage" | "nextPage" | "lastPage") =>
+      match self.pager().moved(name) {
+        Some(page) => Changed({ ..self, page, } as &DynComponent)
+        None => Unchanged
+      }
     (INPUT, "expandAll") => {
       self.set_all_expanded(true)
       Unchanged
@@ -1504,11 +1835,15 @@ impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
 /// Expand or collapse every thread the view is currently showing.
 ///
 /// The path is an INDEX into the rendered `threads` list, which is why
-/// `visible()` decides both what `get_field` returns and how many steps this
-/// walks: a positional path against a filtered list has to count the same
-/// positions the renderer did.
+/// `shown()` decides both what `get_field` returns and how many steps this
+/// walks: a positional path against a filtered and paged list has to count the
+/// same positions the renderer did.
+///
+/// "Showing" therefore means this page, which is also what the button means: a
+/// reader pressing expand-all is asking about the conversations in front of
+/// them, not about four hundred they would have to page to.
 fn ChannelHistory::set_all_expanded(self : ChannelHistory, on : Bool) -> Unit {
-  let shown = self.visible().length()
+  let shown = self.shown().length()
   for i in 0..<shown {
     @control.send_at(
       [
@@ -1530,21 +1865,23 @@ impl DynComponent for ChannelHistory with fn with_field(self, name, v) {
     ("topic", @values.Value::Text(s)) => Some({ ..self, topic: s })
     ("memberCount", @values.Value::Number(n)) =>
       Some({ ..self, member_count: n })
-    ("query", @values.Value::Text(s)) => Some({ ..self, query: s })
+    ("query", @values.Value::Text(s)) => Some({ ..self, query: s, page: 0 })
     ("newestFirst", @values.Value::Boolean(b)) =>
-      Some({ ..self, newest_first: b })
+      Some({ ..self, newest_first: b, page: 0 })
+    ("pageSize", @values.Value::Number(n)) =>
+      Some({ ..self, page_size: n.to_int(), page: 0 })
     ("loading", @values.Value::Boolean(b)) => Some({ ..self, loading: b })
     ("error", @values.Value::Text(s)) => Some({ ..self, error: s })
     ("scope", @values.Value::Instance(t)) => Some({ ..self, scope: t })
-    // What the host hands back is the list it was SHOWN — filtered and
-    // ordered — so it goes home through `visible()`, which is the same
+    // What the host hands back is the list it was SHOWN — filtered, ordered
+    // and paged — so it goes home through `shown()`, which is the same
     // function that decided those positions in the first place. A length that
     // does not match means the two disagree about what is on screen, and
     // guessing which position a token belongs to would be worse than refusing.
     ("threads", _) =>
       match tokens_of(v) {
         Some(shown) => {
-          let idx = self.visible()
+          let idx = self.shown()
           guard idx.length() == shown.length() else { None }
           let threads = self.threads.copy()
           for i, at in idx {
@@ -1588,6 +1925,8 @@ fn make_channel_history(args : Array[(String, @values.Value)]) -> &DynComponent 
     last_action: "",
     scope,
     has_scope,
+    page: 0,
+    page_size: as_num(arg(args, "pageSize")).to_int(),
   }
   c as &DynComponent
 }

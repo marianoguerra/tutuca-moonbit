@@ -35,6 +35,17 @@
   </div>
   <div class="border-t border-base-300 bg-base-200/40 feed" @hide="empty? .rows">
     <div class="px-4 pb-1 pt-3 text-xs uppercase tracking-widest text-base-content/50 recent-label">Activity</div>
-    <div class="divide-y divide-base-300"><x render-each=".rows"></x></div>
+    <div class="divide-y divide-base-300"><x render-each=".rows"></x>
+      <footer class="flex flex-wrap items-center gap-2 px-4 py-2 pager" @show="$paged">
+        <span class="text-xs text-base-content/50 range" @text="$rangeLabel"></span>
+        <div class="ml-auto flex items-center gap-1">
+          <button class="cursor-pointer rounded-md border border-base-300 px-2 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-500 disabled:pointer-events-none disabled:opacity-30 first" @on.click="firstPage" :disabled="$atFirst" title="first page">«</button>
+          <button class="cursor-pointer rounded-md border border-base-300 px-2 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-500 disabled:pointer-events-none disabled:opacity-30 prev" @on.click="prevPage" :disabled="$atFirst" title="previous page">‹</button>
+          <span class="px-1 text-xs text-base-content/50 page" @text="$pageLabel"></span>
+          <button class="cursor-pointer rounded-md border border-base-300 px-2 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-500 disabled:pointer-events-none disabled:opacity-30 next" @on.click="nextPage" :disabled="$atLast" title="next page">›</button>
+          <button class="cursor-pointer rounded-md border border-base-300 px-2 text-xs font-semibold hover:border-indigo-500 hover:text-indigo-500 disabled:pointer-events-none disabled:opacity-30 last" @on.click="lastPage" :disabled="$atLast" title="last page">»</button>
+        </div>
+      </footer>
+    </div>
   </div>
 </div>

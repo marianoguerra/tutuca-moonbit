@@ -143,9 +143,9 @@ where the platform really does have nothing to offer.
 | --- | --- | --- |
 | `Status` | the record: author, `content` + `tags` / `mentions`, `media`, `poll`, the three counts, this reader's `favourited` / `reblogged` / `bookmarked` / `revealed`, and where it sits in a thread (`depth`, `focus`, `foldable`, `folded`, `owned`) | no |
 | `Poll` | `options`, the two counts, `expiresAt` / `expired` / `multiple` / `voted` / `ownVotes`, and the `statusId` it belongs to | no |
-| `Thread` | `posts` — the reply tree, FLAT, each post with a `depth` — plus `focus` and a `scope` | no |
-| `Timeline` | `title`, `posts`, the two filters (`query`, `mediaOnly`) and a `scope` | no |
-| `Profile` | the account, its four columns, `locked` / `bot` / `following`, its metadata `fields`, and its recent `posts` | no |
+| `Thread` | `posts` — the reply tree, FLAT, each post with a `depth` — plus `focus`, a `scope` and a `pageSize` | no |
+| `Timeline` | `title`, `posts`, the two filters (`query`, `mediaOnly`), a `scope` and a `pageSize` | no |
+| `Profile` | the account, its four columns, `locked` / `bot` / `following`, its metadata `fields`, its recent `posts` and a `pageSize` | no |
 | `Scope` | what the answer above it does not cover: `truncated` / `truncatedBy`, `more`, and free-text `notes` | no |
 
 None of them persists: each one's state is exactly the fields it declares, so
@@ -211,6 +211,32 @@ rather than a coincidence: a host drawing a mastodon card beside an ATProto one
 should not have to learn two spellings of "this is not everything". The slack
 bundle's twin differs, because what a Slack answer leaves out is conversations
 rather than pages of a feed.
+
+## A column that arrived too long
+
+`Thread`, `Timeline` and `Profile` are each a column of `Status`es, and how long
+one is was never theirs to decide: a caller asks a server for a timeline and gets
+back whatever a `limit` allowed. Forty rows is a card. Four hundred is a wall a
+reader scrolls past rather than reads, drawn out of four hundred child components
+before any one of them is looked at.
+
+So a long list gets a window and the four buttons that move it — `firstPage` /
+`prevPage` / `nextPage` / `lastPage`, over `page`, `pageCount`, `pageSize`,
+`atFirst` / `atLast`, and the two labels a footer writes (`pageLabel`, and
+`rangeLabel` for the `26–50 of 340` a page number does not say). That is the
+`table` bundle's vocabulary rather than a new one, for the reason `Scope` is
+bluesky's component rather than a second spelling of it.
+
+Two things decide when it appears. A card pages only once it holds more than a
+hundred rows, so nothing that already fits grew a control it does not need — and
+a host that wants the window anyway asks for a `pageSize`, because asking is what
+that means. And the window is over what the FILTERS left rather than over the
+records: the search box narrows, the pager pages what is left, and typing in the
+box takes the reader back to the first page, since it made a different list.
+
+Paging rebuilds nothing. It is the property the filter already had, for the same
+reason — the children are built once and something else chooses among them — so
+a favourite three pages back is still there when the reader pages back to it.
 
 ## No clock, and no writes
 

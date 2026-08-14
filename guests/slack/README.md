@@ -143,12 +143,46 @@ same name.)
 Everything else uses `@if.class` / `@then` / `@else`, whose literals the scanner
 DOES see, which is why only this one component needs it.
 
+## A column that arrived too long
+
+`ChannelHistory` holds conversations, `Thread` holds replies and `FileList` holds
+files, and how long any of those is was never theirs to decide: a caller asks for
+a history with a `limit` and gets back whatever it allowed. Forty rows is a card.
+Four hundred is a wall a reader scrolls past rather than reads — and for the two
+that build children, four hundred child components drawn before any one of them
+is looked at.
+
+So a long list gets a window and the four buttons that move it — `firstPage` /
+`prevPage` / `nextPage` / `lastPage`, over `page`, `pageCount`, `pageSize`,
+`atFirst` / `atLast`, and the two labels the footer writes (`pageLabel`, and
+`rangeLabel` for the `26–50 of 340` a page number does not say). That is the
+`table` bundle's vocabulary, and the one the bluesky and mastodon bundles use.
+
+A card pages only once it holds more than a hundred rows, so nothing that already
+fits grew a control it does not need; a host that wants the window anyway asks for
+a `pageSize`. Three consequences are particular to this bundle:
+
+- **The window is over what the filter left.** `shown()` is `visible()` cut to a
+  page, and everything that counts rendered positions goes through it: the field
+  the view reads, the write-back that lands by position, and expand-all's
+  positional `send-at` paths. So expand-all means the conversations in front of
+  the reader, which is what pressing it looks like it means.
+- **`openFile` reads its row back through the same window.** A file row is a
+  record rather than a child, so `@key` is a position in the rows the view was
+  GIVEN — which on page two are not the first files in the list.
+- **A thread's `replies` write-back now has two shapes.** The page it was shown
+  with a successor in it goes home by position; a list of a different length is a
+  host that went and fetched the replies `openThread` asked for, and starts at the
+  first page. `replyCount` moves for neither: how many exist is a fact about the
+  conversation.
+
 ## The `inits` are the storybook
 
-Thirty-five named configurations across the eight components — every `Segment` style,
+Thirty-eight named configurations across the eight components — every `Segment` style,
 a mixed body, a reaction at three counts, a message as a root and as a reply, a
 thread expanded, folded, and counted-but-not-loaded, a file listing, two scopes,
-and a channel loaded / filtered / reversed / empty / loading / failed.
+a channel loaded / filtered / reversed / empty / loading / failed, and one of each
+list-shaped card small enough to page so the footer is somewhere to be seen.
 
 They are not documentation of the storybook; they ARE it. `dyncomp/storybook`
 builds one card per `init` straight from the manifest, so `moon run --target
