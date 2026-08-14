@@ -385,7 +385,10 @@ fn card_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
       params=[("np", i32_), ("nl", i32_), ("bp", i32_), ("bl", i32_)],
       results=[i32_],
       export_as=@abi.guest_iface + "#[static]instance.restore",
-      body=[mem("store32", [i32c(@abi.ret_restore), i32c(0)]), i32c(@abi.ret_restore)],
+      body=[
+        mem("store32", [i32c(@abi.ret_restore), i32c(0)]),
+        i32c(@abi.ret_restore),
+      ],
     ),
   )
   fs.push(

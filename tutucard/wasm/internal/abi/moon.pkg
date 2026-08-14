@@ -9,8 +9,8 @@
 //
 // `internal/`, so none of it is a promise to anyone outside this module.
 import {
-  "marianoguerra/wax/ast" @ast,
-  "marianoguerra/wax/basic" @basic,
+  "marianoguerra/wax/ast",
+  "marianoguerra/wax/basic",
   "marianoguerra/wax/wasm/types" @wasm_types,
   "moonbitlang/core/encoding/utf8",
 }

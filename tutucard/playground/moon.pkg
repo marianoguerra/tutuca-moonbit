@@ -23,7 +23,7 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard",
-  "marianoguerra/tutuca/tutucard/wasm" @wasm,
+  "marianoguerra/tutuca/tutucard/wasm",
   "moonbitlang/core/encoding/base64",
   "marianoguerra/tutuca/app/browser" @glue,
   "marianoguerra/tutuca/vdom/browser" @bdom,

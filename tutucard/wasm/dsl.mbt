@@ -237,7 +237,12 @@ fn if_(cond : @abi.I, then_ : Array[@abi.I], else_ : Array[@abi.I]) -> @abi.I {
 
 ///|
 /// An `if` in a VALUE position: both arms leave one value of type `ty`.
-fn if_val(ty : @abi.VT, cond : @abi.I, then_ : Array[@abi.I], else_ : Array[@abi.I]) -> @abi.I {
+fn if_val(
+  ty : @abi.VT,
+  cond : @abi.I,
+  then_ : Array[@abi.I],
+  else_ : Array[@abi.I],
+) -> @abi.I {
   ins(
     If(
       label=None,

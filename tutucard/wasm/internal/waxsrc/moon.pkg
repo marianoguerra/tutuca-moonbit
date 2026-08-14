@@ -11,7 +11,7 @@
 import {
   "marianoguerra/wax" @waxfacade,
   "marianoguerra/wax/basic",
-  "marianoguerra/tutuca/tutucard/wasm/internal/abi" @abi,
+  "marianoguerra/tutuca/tutucard/wasm/internal/abi",
   "moonbitlang/core/ref",
 }
 
@@ -21,6 +21,6 @@ import {
 // only parses; checking and emitting is the caller's job, so these are the
 // tests' imports and not the package's.
 import {
-  "marianoguerra/wax/compile" @compile,
-  "marianoguerra/wax/message" @message,
+  "marianoguerra/wax/compile",
+  "marianoguerra/wax/message",
 } for "test"

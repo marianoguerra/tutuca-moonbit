@@ -427,12 +427,14 @@ pub fn compile(source : String, name : String) -> String {
     "descriptor": out.descriptor,
     "fields": Json::array(out.fields.map(Json::string)),
     "refusals": Json::array(
-      out.refusals.map(r => Json::object({
-        "kind": Json::string(r.kind),
-        "name": Json::string(r.name),
-        "reason": Json::string(r.reason),
-        "line": Json::number(r.line.to_double()),
-      })),
+      out.refusals.map(r => {
+        Json::object({
+          "kind": Json::string(r.kind),
+          "name": Json::string(r.name),
+          "reason": Json::string(r.reason),
+          "line": Json::number(r.line.to_double()),
+        })
+      }),
     ),
   }).stringify()
 }

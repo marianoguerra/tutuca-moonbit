@@ -194,7 +194,10 @@ fn transition(
   // reads it where the interpreter would have seen a `None`. Effects are
   // buffered for the same reason: the interpreter drops the effects of a
   // transition it abandons, and the host cannot un-hear a `send`.
-  let out : Array[@abi.I] = [set("tc_fail", i32c(0)), call("tc_effect_reset", [])]
+  let out : Array[@abi.I] = [
+    set("tc_fail", i32c(0)),
+    call("tc_effect_reset", []),
+  ]
   // A precondition reads the state as it ARRIVED, which is `s` — the successor
   // does not exist yet, and asking a rule about a state the transition has
   // already half-written would be asking it the wrong question.
@@ -318,7 +321,11 @@ fn call_method_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
           if_(
             ne(get("tc_fail"), i32c(0)),
             [
-              mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]),
+              mem("fill", [
+                i32c(@abi.ret_call_method),
+                i32c(0),
+                i32c(@abi.cell_size),
+              ]),
               ret(Some(i32c(@abi.ret_call_method))),
             ],
             [],
@@ -330,7 +337,9 @@ fn call_method_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
       ),
     )
   }
-  arms.push(mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]))
+  arms.push(
+    mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]),
+  )
   arms.push(i32c(@abi.ret_call_method))
   let body : Array[@abi.I] = [
     let_("s", call("tc_deref", [get("h")])),

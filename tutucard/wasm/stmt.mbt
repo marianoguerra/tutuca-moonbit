@@ -12,7 +12,10 @@
 // not change, including — when the value is equal — the SAME record.
 
 ///|
-fn ECtx::stmts(self : ECtx, ss : Array[@tscript.Stmt]) -> Array[@abi.I] raise Bail {
+fn ECtx::stmts(
+  self : ECtx,
+  ss : Array[@tscript.Stmt],
+) -> Array[@abi.I] raise Bail {
   let out : Array[@abi.I] = []
   for s in ss {
     for i in self.stmt(s) {
