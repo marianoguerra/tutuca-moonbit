@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-08-14
+
 ### Added
 
 - **A card handed four hundred rows draws twenty-five of them.** The three social
@@ -4015,5 +4017,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.21.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
