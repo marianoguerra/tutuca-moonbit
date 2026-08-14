@@ -1,6 +1,6 @@
 name = "marianoguerra/tutuca"
 
-version = "0.18.1"
+version = "0.19.0"
 
 readme = "README.mbt.md"
 
@@ -63,6 +63,12 @@ import {
 options(
   exclude: [
     "benchmarks",
+    // `cardwasm/` is a module of its own for the reason `examples/` is, with
+    // the sign flipped: it depends on things that are NOT in the tarball. Its
+    // manifest path-depends on this checkout and on a sibling `wax` one, and a
+    // path dependency in THIS manifest would be paid for by every consumer —
+    // so it stays a nested module, checked and tested from its own directory.
+    "cardwasm",
     "examples",
     "guests",
     "playground",
