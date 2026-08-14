@@ -1,0 +1,20 @@
+// Dump `tscript/conformance` as JSON, for the wasm backend's adapter.
+//
+// The corpus is MoonBit data and a compiled card can only be RUN from node, so
+// the table crosses as JSON and `tutucard/wasm/test/conformance.test.mjs` is
+// the adapter over it.
+import {
+  "marianoguerra/tutuca/tscript/conformance",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/interp",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/info",
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/x/fs",
+  "moonbitlang/core/json",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

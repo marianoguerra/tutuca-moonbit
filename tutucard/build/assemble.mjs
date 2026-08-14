@@ -1,10 +1,16 @@
 // Assemble dist/tutucard/.
 //
-// Seven files copied and two built. That is the whole build, and the brevity is
-// the point: the other playground assembles a vendored compiler, a per-target
-// `.mi`/`.core` closure and a manifest telling the shell how to drive
-// `buildPackage`/`linkCore`, because it compiles MoonBit in the browser. A card
-// is parsed and mounted, so what ships is the runtime and the page.
+// Nine files copied and two built. That is the whole build, and the brevity is
+// still the point: the other playground assembles a vendored 5.5 MB compiler, a
+// per-target `.mi`/`.core` closure and a manifest telling the shell how to
+// drive `buildPackage`/`linkCore`, because it compiles MoonBit in the browser.
+//
+// A card is parsed and mounted, so what ships is the runtime and the page — AND
+// a compiler, which is new. `tutucard/wasm` turns the same card into a
+// `tutuca:component@0.7.0` core wasm module, and it is a MoonBit library in
+// this bundle rather than a payload fetched beside it: `marianoguerra/wax` plus
+// the Wax standard library it vendors, which is why `abi.mjs` and
+// `card-wasm.js` are copied too.
 //
 // The two built things are the compilers a card can ask for, and neither is
 // new: `margaui.wasm` is the wasm-gc build of `@css.compile_margaui` the other
@@ -41,7 +47,23 @@ const WEB_FILES = [
   "card-embed.js",
   // …except the class compiler, which both the shell and the element import.
   "margaui.js",
+  // The compiler's half of the page: the guest bridge over `abi.mjs` and the
+  // `.tutuca.tar.gz` packer. Imported lazily by `shell.js` — a reader who
+  // never downloads a bundle never fetches it.
+  "card-wasm.js",
 ];
+
+/**
+ * The host's own canonical ABI, COPIED rather than reimplemented.
+ *
+ * `card-wasm.js` instantiates a compiled card through it, which is what makes
+ * "this page produced a real `tutuca:component` guest" a claim about the
+ * artifact rather than about the playground. If this file ever needs editing to
+ * make the page work, the generator is wrong and not this copy.
+ */
+function copyAbi(out) {
+  cpSync(join(REPO, "dyncomp", "host", "wasm", "abi.mjs"), join(out, "abi.mjs"));
+}
 
 function build() {
   console.log("building tutucard/playground (js) ...");
@@ -122,6 +144,7 @@ async function assemble() {
   for (const name of WEB_FILES) {
     cpSync(join(WEB, name), join(OUT, name));
   }
+  copyAbi(OUT);
   const bundle = join(
     REPO,
     "_build",
@@ -144,7 +167,7 @@ async function assemble() {
   console.log(`assembled ${OUT}`);
   // Printed every time, because it is the number this page exists to keep
   // small: the other playground's compiler payload alone is ~5.5 MB.
-  console.log(`  runtime: ${kb} KB (no compiler, no worker, no payload)`);
+  console.log(`  runtime: ${kb} KB (runtime + card compiler; no worker, no payload)`);
   console.log(`  margaui: ${css} KB (fetched only by a card with classes)`);
   console.log(`  editor:  ${ed} KB (fetched after first mount; ?editor=plain skips it)`);
 }

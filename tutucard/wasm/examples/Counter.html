@@ -1,0 +1,40 @@
+<script type="tutuca/state">
+  /// A number with buttons that raise and lower it.
+  state Counter {
+    /// The current value.
+    count: Int
+    /// How much a step moves it.
+    step: Int
+  }
+
+  /// What the host says to this component when it mounts. Declared here
+  /// because no view writes it: the schema is the only place it can be.
+  receive Counter {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Add one step.
+  on inc { .count += .step }
+  /// Take one step off.
+  on dec { .count -= .step }
+  /// Start with a step of one.
+  receive init { .step = 1 }
+  /// Back to nothing.
+  on reset { .count = 0 }
+  /// The count as a sentence.
+  compute label { $'the count is {.count}' }
+  /// True while the count is above zero.
+  pred positive { .count > 0 }
+</script>
+
+<template id="Counter">
+  <div>
+    <button @on.click="dec">-</button>
+    <output @text=".count"></output>
+    <button @on.click="inc">+</button>
+    <p @text="$label"></p>
+    <button @on.click="reset" @show="$positive">reset</button>
+  </div>
+</template>

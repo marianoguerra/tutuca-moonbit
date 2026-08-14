@@ -74,6 +74,7 @@ pub fn install() -> Unit {
   publish(
     (source, name) => load(source, name),
     (source, name) => check(source, name),
+    (source, name) => compile(source, name),
     () => state_json(),
     () => classes_json(),
     () => activity_json(),
@@ -87,6 +88,7 @@ pub fn install() -> Unit {
 extern "js" fn publish(
   load : (String, String) -> String,
   check : (String, String) -> String,
+  compile : (String, String) -> String,
   state : () -> String,
   classes : () -> String,
   activity : () -> String,
@@ -94,7 +96,7 @@ extern "js" fn publish(
   unmount : (String) -> Unit,
   classes_at : (String) -> String,
 ) -> Unit =
-  #|(load, check, state, classes, activity, mount, unmount, classesAt) => { globalThis.__tutucard = { load, check, state, classes, activity, mount, unmount, classesAt } }
+  #|(load, check, compile, state, classes, activity, mount, unmount, classesAt) => { globalThis.__tutucard = { load, check, compile, state, classes, activity, mount, unmount, classesAt } }
 
 ///|
 /// Parse, check and mount a card into the element with this id.
@@ -389,4 +391,48 @@ fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
     }
     None => "[]"
   }
+}
+
+// ---------------------------------------------------------------------------
+// the compiler
+
+///|
+/// Compile a card to a `tutuca:component@0.7.0` core wasm module.
+///
+/// The same card the page is already interpreting, put through the OTHER
+/// backend — so the two answers sit side by side and a difference between them
+/// is visible rather than theoretical. `tutucard/wasm` does the work; this only
+/// shapes it for a page.
+///
+/// The wasm crosses as base64 because a MoonBit extern cannot hand JavaScript a
+/// byte array, and the page has to hold the real bytes: it instantiates them
+/// through `abi.mjs` and packs them into the archive the download button hands
+/// you.
+pub fn compile(source : String, name : String) -> String {
+  let out = @wasm.compile(source, name~) catch {
+    e =>
+      return Json::object({
+        "ok": Json::boolean(false),
+        "error": Json::string(e.message()),
+      }).stringify()
+  }
+  Json::object({
+    "ok": Json::boolean(true),
+    "component": Json::string(out.component),
+    "wasm": Json::string(@base64.encode(out.wasm)),
+    "size": Json::number(out.wasm.length().to_double()),
+    "wax": Json::string(out.wax),
+    "wat": Json::string(out.wat),
+    "manifest": out.manifest,
+    "descriptor": out.descriptor,
+    "fields": Json::array(out.fields.map(Json::string)),
+    "refusals": Json::array(
+      out.refusals.map(r => Json::object({
+        "kind": Json::string(r.kind),
+        "name": Json::string(r.name),
+        "reason": Json::string(r.reason),
+        "line": Json::number(r.line.to_double()),
+      })),
+    ),
+  }).stringify()
 }

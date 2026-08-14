@@ -1,0 +1,262 @@
+// Owned UTF-8 strings for Wax.
+//
+// Concatenate collections/hashing.wax before this file. Wax GC arrays cannot
+// be filled dynamically after being declared immutable, so this type owns a
+// mutable byte array but never exposes it through the API. Treat utf8_string
+// and its storage field as opaque after vendoring this source.
+
+type utf8_visit = fn(&?eq, i32, i32, i32);
+
+type utf8_string = {
+    storage_internal: &wax_hash_bytes,
+    byte_length: i32,
+    codepoint_length: i32,
+    hash: i32,
+};
+
+fn utf8_continuation(byte: i32) -> i32 {
+    if byte <u (0x80 as i32) { return 0; }
+    if byte >u (0xbf as i32) { return 0; }
+    1
+}
+
+fn utf8_validate(bytes: &wax_hash_bytes) -> (i32, i32) {
+    let i: i32 = 0;
+    let count: i32 = 0;
+    let length = bytes.length();
+    while i <s length {
+        let first = bytes[i] as i32_u;
+        'unit: do {
+            if first <=u (0x7f as i32) { i += 1; br 'unit; }
+            if first <=u (0xc1 as i32) { return (0, 0); }
+            if first <=u (0xdf as i32) {
+                if i + 1 >=s length { return (0, 0); }
+                if utf8_continuation(bytes[i + 1] as i32_u) == 0 { return (0, 0); }
+                i += 2;
+                br 'unit;
+            }
+            if first <=u (0xef as i32) {
+                if i + 2 >=s length { return (0, 0); }
+                let second = bytes[i + 1] as i32_u;
+                if utf8_continuation(second) == 0 { return (0, 0); }
+                if utf8_continuation(bytes[i + 2] as i32_u) == 0 { return (0, 0); }
+                if first == 0xe0 {
+                    if second <u (0xa0 as i32) { return (0, 0); }
+                }
+                if first == 0xed {
+                    if second >u (0x9f as i32) { return (0, 0); }
+                }
+                i += 3;
+                br 'unit;
+            }
+            if first <=u (0xf4 as i32) {
+                if i + 3 >=s length { return (0, 0); }
+                let second = bytes[i + 1] as i32_u;
+                if utf8_continuation(second) == 0 { return (0, 0); }
+                if utf8_continuation(bytes[i + 2] as i32_u) == 0 { return (0, 0); }
+                if utf8_continuation(bytes[i + 3] as i32_u) == 0 { return (0, 0); }
+                if first == 0xf0 {
+                    if second <u (0x90 as i32) { return (0, 0); }
+                }
+                if first == 0xf4 {
+                    if second >u (0x8f as i32) { return (0, 0); }
+                }
+                i += 4;
+                br 'unit;
+            }
+            return (0, 0);
+        }
+        count += 1;
+    }
+    (1, count)
+}
+
+fn utf8_copy_storage(bytes: &wax_hash_bytes, start: i32, length: i32) -> &wax_hash_bytes {
+    let out = [wax_hash_bytes| 0; length];
+    if length != 0 { out.copy(0, bytes, start, length); }
+    out
+}
+
+fn utf8_new_valid(bytes: &wax_hash_bytes, codepoints: i32) -> &utf8_string {
+    let storage_internal = utf8_copy_storage(bytes, 0, bytes.length());
+    {
+        storage_internal,
+        byte_length: storage_internal.length(),
+        codepoint_length: codepoints,
+        hash: wax_hash_bytes_value(storage_internal),
+    }
+}
+
+fn utf8_try_from_bytes(bytes: &wax_hash_bytes) -> (i32, &?utf8_string) {
+    let (valid, codepoints) = utf8_validate(bytes);
+    if valid == 0 { return (0, null); }
+    (1, utf8_new_valid(bytes, codepoints))
+}
+
+fn utf8_from_bytes(bytes: &wax_hash_bytes) -> &utf8_string {
+    let (valid, value) = utf8_try_from_bytes(bytes);
+    if valid == 0 { unreachable; }
+    value!
+}
+
+fn utf8_empty() -> &utf8_string {
+    utf8_new_valid([wax_hash_bytes|], 0)
+}
+
+fn utf8_copy_bytes(value: &utf8_string) -> &wax_hash_bytes {
+    utf8_copy_storage(value.storage_internal, 0, value.byte_length)
+}
+
+fn utf8_byte_length(value: &utf8_string) -> i32 { value.byte_length }
+
+fn utf8_codepoint_length(value: &utf8_string) -> i32 {
+    value.codepoint_length
+}
+
+fn utf8_is_empty(value: &utf8_string) -> i32 {
+    if value.byte_length == 0 { 1 } else { 0 }
+}
+
+fn utf8_get_byte(value: &utf8_string, index: i32) -> (i32, i32) {
+    if index <s (0 as i32) { return (0, 0); }
+    if index >=s value.byte_length { return (0, 0); }
+    (1, value.storage_internal[index] as i32_u)
+}
+
+fn utf8_at_byte(value: &utf8_string, index: i32) -> i32 {
+    let (found, byte) = utf8_get_byte(value, index);
+    if found == 0 { unreachable; }
+    byte
+}
+
+fn utf8_equal(left: &utf8_string, right: &utf8_string) -> i32 {
+    if left == right { return 1; }
+    if left.hash != right.hash { return 0; }
+    if left.byte_length != right.byte_length { return 0; }
+    let i: i32 = 0;
+    while i <s left.byte_length {
+        if left.storage_internal[i] as i32_u != right.storage_internal[i] as i32_u {
+            return 0;
+        }
+        i += 1;
+    }
+    1
+}
+
+fn utf8_compare(left: &utf8_string, right: &utf8_string) -> i32 {
+    let length = if left.byte_length <u right.byte_length {
+        left.byte_length
+    } else {
+        right.byte_length
+    };
+    let i: i32 = 0;
+    while i <s length {
+        let a = left.storage_internal[i] as i32_u;
+        let b = right.storage_internal[i] as i32_u;
+        if a <u b { return -1; }
+        if a >u b { return 1; }
+        i += 1;
+    }
+    if left.byte_length <u right.byte_length { return -1; }
+    if left.byte_length >u right.byte_length { return 1; }
+    0
+}
+
+fn utf8_hash(value: &utf8_string) -> i32 { value.hash }
+
+fn utf8_hash_key(key: &eq) -> i32 {
+    utf8_hash(key as &utf8_string)
+}
+
+fn utf8_equal_key(left: &eq, right: &eq) -> i32 {
+    utf8_equal(left as &utf8_string, right as &utf8_string)
+}
+
+fn utf8_concat(left: &utf8_string, right: &utf8_string) -> &utf8_string {
+    if left.byte_length == 0 { return right; }
+    if right.byte_length == 0 { return left; }
+    if left.byte_length >s 0x7fffffff - right.byte_length { unreachable; }
+    let length = left.byte_length + right.byte_length;
+    let storage = [wax_hash_bytes| 0; length];
+    storage.copy(0, left.storage_internal, 0, left.byte_length);
+    storage.copy(left.byte_length, right.storage_internal, 0, right.byte_length);
+    {
+        storage_internal: storage,
+        byte_length: length,
+        codepoint_length: left.codepoint_length + right.codepoint_length,
+        hash: wax_hash_bytes_value(storage),
+    }
+}
+
+fn utf8_is_boundary(value: &utf8_string, offset: i32) -> i32 {
+    if offset <s (0 as i32) { return 0; }
+    if offset >s value.byte_length { return 0; }
+    if offset == 0 { return 1; }
+    if offset == value.byte_length { return 1; }
+    if utf8_continuation(value.storage_internal[offset] as i32_u) == 0 { 1 } else { 0 }
+}
+
+fn utf8_try_slice_bytes(
+    value: &utf8_string,
+    start: i32,
+    length: i32,
+) -> (i32, &?utf8_string) {
+    if start <s (0 as i32) { return (0, null); }
+    if length <s (0 as i32) { return (0, null); }
+    if start >s value.byte_length { return (0, null); }
+    if length >s value.byte_length - start { return (0, null); }
+    let end = start + length;
+    if utf8_is_boundary(value, start) == 0 { return (0, null); }
+    if utf8_is_boundary(value, end) == 0 { return (0, null); }
+    if start == 0 {
+        if length == value.byte_length { return (1, value); }
+    }
+    let storage = utf8_copy_storage(value.storage_internal, start, length);
+    let (_, codepoints) = utf8_validate(storage);
+    (1, utf8_new_valid(storage, codepoints))
+}
+
+fn utf8_slice_bytes(value: &utf8_string, start: i32, length: i32) -> &utf8_string {
+    let (valid, slice) = utf8_try_slice_bytes(value, start, length);
+    if valid == 0 { unreachable; }
+    slice!
+}
+
+fn utf8_each_codepoint(value: &utf8_string, context: &?eq, visit: &utf8_visit) {
+    let offset: i32 = 0;
+    let index: i32 = 0;
+    while offset <s value.byte_length {
+        let first = value.storage_internal[offset] as i32_u;
+        let scalar: i32;
+        let width: i32;
+        'decoded: do {
+            if first <=u (0x7f as i32) {
+                scalar = first;
+                width = 1;
+                br 'decoded;
+            }
+            if first <=u (0xdf as i32) {
+                scalar = (first & 0x1f) << 6 | (value.storage_internal[offset + 1] as i32_u & 0x3f);
+                width = 2;
+                br 'decoded;
+            }
+            if first <=u (0xef as i32) {
+                scalar =
+                    (first & 0x0f) << 12
+                    | (value.storage_internal[offset + 1] as i32_u & 0x3f) << 6
+                    | (value.storage_internal[offset + 2] as i32_u & 0x3f);
+                width = 3;
+                br 'decoded;
+            }
+            scalar =
+                (first & 0x07) << 18
+                | (value.storage_internal[offset + 1] as i32_u & 0x3f) << 12
+                | (value.storage_internal[offset + 2] as i32_u & 0x3f) << 6
+                | (value.storage_internal[offset + 3] as i32_u & 0x3f);
+            width = 4;
+        }
+        visit(context, index, offset, scalar);
+        offset += width;
+        index += 1;
+    }
+}

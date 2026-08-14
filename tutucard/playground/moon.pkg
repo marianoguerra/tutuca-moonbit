@@ -4,11 +4,18 @@
 // 5.5 MB `moonc` worker, a prebuilt `.mi`/`.core` bundle per target, and a
 // toolchain pin asserted at assemble time — because it compiles the user's
 // MoonBit in the browser. A card needs none of that: it is parsed and mounted,
-// so the edit loop is parse → check → mount and the payload is the tutuca
-// runtime plus the language front end.
+// so the edit loop is parse → check → mount.
 //
-// Which means the interesting entry point is `load(source)`, called on every
-// keystroke. It tears the previous app down and builds a new one, and answers
+// It also COMPILES, which is a second answer to the same card rather than a
+// replacement for the first. `tutucard/wasm` turns the source into a
+// `tutuca:component@0.7.0` core wasm module and the page shows what came out —
+// the Wax the generator said, the WAT the module is, and a button that hands
+// you the bundle. That compiler is a MoonBit library in this bundle, not a
+// payload fetched beside it, which is the whole difference from the other
+// playground.
+//
+// Which means the interesting entry points are `load(source)` and
+// `compile(source)`, both called on every keystroke. It tears the previous app down and builds a new one, and answers
 // the diagnostics as JSON so the editor can underline them — with real columns,
 // which nothing in a view file could report until `tscript` carried spans.
 import {
@@ -16,6 +23,8 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard",
+  "marianoguerra/tutuca/tutucard/wasm" @wasm,
+  "moonbitlang/core/encoding/base64",
   "marianoguerra/tutuca/app/browser" @glue,
   "marianoguerra/tutuca/vdom/browser" @bdom,
   "mizchi/js_browser/dom",

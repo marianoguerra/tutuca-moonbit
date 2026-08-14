@@ -1,0 +1,15 @@
+// `cardwasm <card.html> [outdir]` — the card compiler in a terminal.
+//
+// The playground's job without a page: it exists so `tutucard/wasm/test` can
+// drive real modules through `dyncomp/host/wasm/abi.mjs`, which is the only
+// place the canonical ABI is agreed rather than merely believed.
+import {
+  "marianoguerra/tutuca/tutucard/wasm" @gen,
+  "moonbitlang/x/fs",
+  "moonbitlang/core/json",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

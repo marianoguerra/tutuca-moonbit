@@ -1,0 +1,89 @@
+// Wax hashing utilities.
+//
+// This standalone source implements MurmurHash3 x86-32 for canonical Wax
+// byte arrays and i31 keys. It is non-cryptographic. Vendor it only when the
+// application wants these policies; PersistentHashMap accepts any compatible
+// hash/equality callbacks and does not depend on this file.
+
+type wax_hash_bytes = [mut i8];
+
+fn wax_hash_mix_i32(value: i32) -> i32 {
+    let mixed = value * 0xcc9e2d51;
+    mixed = mixed.rotl(15);
+    mixed * 0x1b873593
+}
+
+// Add one 32-bit word to a MurmurHash3 x86-32 state. Composite-key hash
+// callbacks can begin with their seed, add each field, then finalize with the
+// total byte length.
+fn wax_hash_add_i32(state: i32, value: i32) -> i32 {
+    let out = state ^ wax_hash_mix_i32(value);
+    out.rotl(13) * 5 + 0xe6546b64
+}
+
+fn wax_hash_finalize(state: i32, byte_length: i32) -> i32 {
+    let out = state ^ byte_length;
+    out ^= out >>u 16;
+    out *= 0x85ebca6b;
+    out ^= out >>u 13;
+    out *= 0xc2b2ae35;
+    out ^ out >>u 16
+}
+
+fn wax_hash_i32_seeded(value: i32, seed: i32) -> i32 {
+    wax_hash_finalize(wax_hash_add_i32(seed, value), 4)
+}
+
+fn wax_hash_i32(value: i32) -> i32 { wax_hash_i32_seeded(value, 0) }
+
+fn wax_hash_bytes_seeded(bytes: &wax_hash_bytes, seed: i32) -> i32 {
+    let state = seed;
+    let length = bytes.length();
+    let offset: i32 = 0;
+    while offset + 4 <=s length {
+        let word =
+            bytes[offset] as i32_u
+            | bytes[offset + 1] as i32_u << 8
+            | bytes[offset + 2] as i32_u << 16
+            | bytes[offset + 3] as i32_u << 24;
+        state = wax_hash_add_i32(state, word);
+        offset += 4;
+    }
+    let remaining = length - offset;
+    if remaining != 0 {
+        let tail: i32 = bytes[offset] as i32_u;
+        if remaining >=s (2 as i32) { tail |= bytes[offset + 1] as i32_u << 8; }
+        if remaining == 3 { tail |= bytes[offset + 2] as i32_u << 16; }
+        state ^= wax_hash_mix_i32(tail);
+    }
+    wax_hash_finalize(state, length)
+}
+
+fn wax_hash_bytes_value(bytes: &wax_hash_bytes) -> i32 {
+    wax_hash_bytes_seeded(bytes, 0)
+}
+
+fn wax_hash_i31_key(key: &eq) -> i32 {
+    wax_hash_i32(key as i32_s)
+}
+
+fn wax_equal_i31_key(left: &eq, right: &eq) -> i32 {
+    if (left as i32_s) == (right as i32_s) { 1 } else { 0 }
+}
+
+fn wax_hash_bytes_key(key: &eq) -> i32 {
+    wax_hash_bytes_value(key as &wax_hash_bytes)
+}
+
+fn wax_equal_bytes_key(left: &eq, right: &eq) -> i32 {
+    if left == right { return 1; }
+    let a = left as &wax_hash_bytes;
+    let b = right as &wax_hash_bytes;
+    if a.length() != b.length() { return 0; }
+    let i: i32 = 0;
+    while i <s a.length() {
+        if a[i] as i32_u != b[i] as i32_u { return 0; }
+        i += 1;
+    }
+    1
+}

@@ -1,0 +1,152 @@
+// Lowering a value to the wire, for a card that CAN produce a compound one.
+//
+// WIT has no recursive types, so `values.value` carries `%list` and `%map` as
+// u64 handles into a host-side arena and this interface is how a guest reads
+// and builds one. Handles live for the duration of the current host->guest
+// call, which is exactly the lifetime a lowered return value needs.
+//
+// Concatenated INSTEAD of `lower_scalar.wax`, and only for a card whose state
+// declares a collection or whose script builds one. That conditionality is the
+// whole reason the two are separate files: the import section is what a host
+// inspects to know what a guest can do, and a four-scalar card that imported
+// the arena would be claiming a reach it does not have.
+//
+// `to-json` / `from-json` are on the interface too and would collapse this to
+// one call each way, but they need a JSON writer and reader inside the guest
+// and the stdlib has neither. Walking the arena needs no serializer at all.
+
+import "tutuca:component/values@0.7.0" {
+    #[import = "list-new"]
+    fn tc_list_new() -> i64;
+    #[import = "list-push"]
+    fn tc_list_push(h: i64, kind: i32, p64: i64, p32: i32);
+    #[import = "map-new"]
+    fn tc_map_new() -> i64;
+    #[import = "map-set"]
+    fn tc_map_set(h: i64, kp: i32, kl: i32, kind: i32, p64: i64, p32: i32);
+    #[import = "list-len"]
+    fn tc_list_len(h: i64) -> i32;
+    #[import = "list-get"]
+    fn tc_list_get(h: i64, index: i32, dest: i32);
+    #[import = "map-len"]
+    fn tc_map_len(h: i64) -> i32;
+    #[import = "map-keys"]
+    fn tc_map_keys(h: i64, dest: i32);
+    #[import = "map-get"]
+    fn tc_map_get(h: i64, kp: i32, kl: i32, dest: i32);
+}
+
+// A scratch cell for flattening a value into the (kind, p64, p32) triple the
+// imports take. Above the static return areas, which end at 168.
+const tc_flat: i32 = 192;
+
+fn tc_flatten(v: &jv_value) {
+    tc_lower(v, tc_flat);
+}
+
+// The three flat components of the value now at `tc_flat`.
+fn tc_flat_tag() -> i32 { mem.load8(tc_flat) as i32_u }
+
+fn tc_flat_p64() -> i64 { mem.load64(tc_flat + 8) }
+
+fn tc_flat_p32() -> i32 { mem.load32(tc_flat + 12) }
+
+// A vector as an arena list. Recursive through `tc_lower`, so a list of lists
+// builds bottom up and each inner handle is pushed as its parent's element.
+fn tc_lower_vector(items: &jv_vector_value) -> i64 {
+    let h = tc_list_new();
+    let n = jv_vector_count(items);
+    let i: i32 = 0;
+    while i <s n {
+        tc_flatten(jv_vector_at(items, i));
+        tc_list_push(h, tc_flat_tag(), tc_flat_p64(), tc_flat_p32());
+        i += 1;
+    }
+    h
+}
+
+type tc_map_ctx = { handle: i64 };
+
+fn tc_lower_map_entry(context: &?eq, key: &utf8_string, value: &jv_value) {
+    let ctx = context! as &tc_map_ctx;
+    let kp = tc_str_out(key);
+    let kl = utf8_byte_length(key);
+    tc_flatten(value);
+    tc_map_set(ctx.handle, kp, kl, tc_flat_tag(), tc_flat_p64(), tc_flat_p32());
+}
+
+fn tc_lower_map(entries: &jv_ordered_map_value) -> i64 {
+    let h = tc_map_new();
+    let ctx: &tc_map_ctx = { handle: h };
+    jv_ordered_map_each(entries, ctx, tc_lower_map_entry);
+    h
+}
+
+const tc_tag_list: i32 = 4;
+const tc_tag_map: i32 = 5;
+
+fn tc_lower(v: &jv_value, dest: i32) {
+    if tc_lower_scalar(v, dest) == 1 { return; }
+    let k = jv_kind(v);
+    if k == jv_kind_vector {
+        let h = tc_lower_vector(jv_require_vector(v));
+        mem.store32(dest, tc_tag_list);
+        mem.store64(dest + 8, h);
+        return;
+    }
+    if k == jv_kind_ordered_map {
+        let h = tc_lower_map(jv_require_ordered_map(v));
+        mem.store32(dest, tc_tag_map);
+        mem.store64(dest + 8, h);
+        return;
+    }
+    mem.store32(dest, tc_tag_nil);
+    mem.store64(dest + 8, 0);
+}
+
+// The other direction: an arena handle back into a jv value. `list-get` and
+// `map-get` return a `value`, which the canonical ABI returns by writing into
+// an area the CALLER owns — `tc_in` here, distinct from `tc_flat` so a lift
+// nested inside a lower cannot tread on it.
+const tc_in: i32 = 256;
+
+fn tc_lift_list(h: i64) -> &jv_value {
+    let out = jv_vector_empty();
+    let n = tc_list_len(h);
+    let i: i32 = 0;
+    while i <s n {
+        tc_list_get(h, i, tc_in);
+        out = jv_vector_push(out, tc_lift_cell(tc_in));
+        i += 1;
+    }
+    out
+}
+
+fn tc_lift_cell(p: i32) -> &jv_value {
+    let kind = mem.load8(p) as i32_u;
+    if kind == tc_tag_list { return tc_lift_list(mem.load64(p + 8)); }
+    if kind == tc_tag_map { return tc_lift_map(mem.load64(p + 8)); }
+    tc_lift_scalar_cell(p)
+}
+
+fn tc_lift_map(h: i64) -> &jv_value {
+    let out = jv_ordered_map_empty();
+    // `map-keys` answers a `list<string>`: a (pointer, length) pair, the
+    // pointer at the area and each element an 8-byte (pointer, length) pair.
+    tc_map_keys(h, tc_in);
+    let kp = mem.load32(tc_in);
+    let kn = mem.load32(tc_in + 4);
+    let i: i32 = 0;
+    while i <s kn {
+        let sp = mem.load32(kp + i * 8);
+        let sl = mem.load32(kp + i * 8 + 4);
+        let key = tc_str_in(sp, sl);
+        tc_map_get(h, sp, sl, tc_in + 32);
+        // `option<value>`: a discriminant, then the value at +8.
+        if mem.load8(tc_in + 32) as i32_u != 0 {
+            out = jv_ordered_map_assoc(out, key, tc_lift_cell(tc_in + 40));
+        }
+        i += 1;
+    }
+    out
+}

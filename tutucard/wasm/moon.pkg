@@ -1,0 +1,39 @@
+// The card-to-wasm backend: a tutucard `.html` in, a `tutuca:component@0.7.0`
+// core wasm module out.
+//
+// The third backend over `tscript`'s one AST. The interpreter (`tscript/interp`)
+// runs a card where it stands; the MoonBit emitter (`tscript/emit_mbt`) turns
+// one into source ahead of time; this one compiles it, and the three are held
+// to the same corpus (`tscript/conformance`) because a language with three
+// implementations and no shared table has three semantics.
+//
+// It compiles in a BROWSER, which is the whole reason it exists: the card
+// playground hands you a real bundle with no server and no toolchain.
+//
+// Three packages, split where the seams are THIN and not where they are merely
+// nameable. `internal/abi` is the canonical ABI's numbers, the constant pool
+// and the three Wax types everything here speaks in — fifty-odd uses, each
+// reading better qualified (`@abi.ret_get_field`). `internal/waxsrc` is the Wax
+// source every module carries — two uses. The instruction builders stayed here,
+// in `dsl.mbt`: three hundred uses, and qualifying them would undo the one
+// thing that file exists to do, which is to let the emitters read as the Wax
+// they stand for rather than as a tree walk.
+import {
+  "marianoguerra/wax/ast" @ast,
+  "marianoguerra/wax/ast/build" @build,
+  "marianoguerra/wax/basic" @basic,
+  "marianoguerra/wax" @waxfacade,
+  "marianoguerra/wax/syntax/trivia" @trivia,
+  "marianoguerra/wax/compile" @compile,
+  "marianoguerra/wax/message" @message,
+  "marianoguerra/tutuca/tutucard/wasm/internal/abi" @abi,
+  "marianoguerra/tutuca/tutucard/wasm/internal/waxsrc" @waxsrc,
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/info" @info,
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check" @check,
+  "moonbitlang/core/json",
+  "moonbitlang/core/ref",
+}

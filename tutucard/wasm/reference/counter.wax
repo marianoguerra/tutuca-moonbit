@@ -1,0 +1,185 @@
+// A hand-written `tutuca:component@0.7.0` guest, in Wax.
+//
+// The canonical ABI written out by hand once, in ~180 readable lines: the
+// smallest core module `dyncomp/host/wasm/abi.mjs` will instantiate and drive.
+//
+// It is NO LONGER what the generator emits. This holds its state as 16-byte
+// `values.value` cells in linear memory, which is what the generator did until
+// the state became a `jv_record` over the Wax data stdlib -- so a diff against
+// a generated module now differs in nearly every line, and the thing this is
+// still good for is the ABI itself: the export names, the return areas, the
+// joined `with-field` payload, the three-way `event-result`.
+
+import "[export]tutuca:component/guest@0.7.0" {
+    #[import = "[resource-new]instance"]
+    fn resource_new(i32) -> i32;
+}
+
+#[export = "memory"]
+memory m: i32 [2];
+
+// Field names, back to back: "count" at 1024, "step" at 1029, "inc" at 1033.
+data names @ m [1024] = "countstepinc";
+
+// The bump allocator's next free byte. Everything below 1024 is return areas.
+let heap: i32 = 2048;
+
+#[export]
+fn cabi_realloc(old_ptr: i32, old_size: i32, align: i32, size: i32) -> i32 {
+    let base = (heap + align - 1) & (0 - align);
+    let end = base + size;
+    let have = m.size() * 65536;
+    if end >s have {
+        if m.grow((end - have + 65535) /u 65536) <s 0 {
+            return 0;
+        }
+    }
+    heap = end;
+    base;
+}
+
+fn streq(p: i32, len: i32, off: i32, clen: i32) -> i32 {
+    if len != clen {
+        return 0;
+    }
+    let i: i32;
+    while i <u len : (i += 1) {
+        if m.load8(p + i) as i32_u != m.load8(off + i) as i32_u {
+            return 0;
+        }
+    }
+    1;
+}
+
+// -1 when this component declares no such field.
+fn field_index(p: i32, len: i32) -> i32 {
+    if streq(p, len, 1024, 5) {
+        return 0;
+    }
+    if streq(p, len, 1029, 4) {
+        return 1;
+    }
+    0 - 1;
+}
+
+fn set_num(s: i32, idx: i32, v: f64) {
+    let slot = s + idx * 16;
+    m.store32(slot, 2);
+    m.storef64(slot + 8, v);
+}
+
+fn get_num(s: i32, idx: i32) -> f64 {
+    m.loadf64(s + idx * 16 + 8);
+}
+
+fn zero_state() -> i32 {
+    let s = cabi_realloc(0, 0, 8, 32);
+    m.fill(s, 0, 32);
+    set_num(s, 0, 0.0);
+    set_num(s, 1, 1.0);
+    s;
+}
+
+fn clone_state(s: i32) -> i32 {
+    let t = cabi_realloc(0, 0, 8, 32);
+    m.copy(t, s, 32);
+    t;
+}
+
+#[export = "tutuca:component/guest@0.7.0#[constructor]instance"]
+fn ctor(np: i32, nl: i32, ap: i32, al: i32) -> i32 {
+    let s = zero_state();
+    let i: i32;
+    while i <u al : (i += 1) {
+        let e = ap + i * 24;
+        let k = field_index(m.load32(e), m.load32(e + 4));
+        if k >=s 0 {
+            m.copy(s + k * 16, e + 8, 16);
+        }
+    }
+    resource_new(s);
+}
+
+#[export = "tutuca:component/guest@0.7.0#[static]instance.restore"]
+fn restore(np: i32, nl: i32, bp: i32, bl: i32) -> i32 {
+    m.store32(80, 0);
+    80;
+}
+
+#[export = "tutuca:component/guest@0.7.0#[method]instance.get-field"]
+fn get_field(s: i32, np: i32, nl: i32) -> i32 {
+    let k = field_index(np, nl);
+    if k <s 0 {
+        m.store32(16, 0);
+    } else {
+        m.store32(16, 1);
+        m.copy(24, s + k * 16, 16);
+    }
+    16;
+}
+
+#[export = "cabi_post_tutuca:component/guest@0.7.0#[method]instance.get-field"]
+fn post_get_field(p: i32) {}
+
+#[export = "tutuca:component/guest@0.7.0#[method]instance.handle-event"]
+fn handle_event(s: i32, b: i32, np: i32, nl: i32, ap: i32, al: i32) -> i32 {
+    if b == 0 {
+        if streq(np, nl, 1033, 3) {
+            let t = clone_state(s);
+            set_num(t, 0, get_num(t, 0) + get_num(t, 1));
+            m.store32(48, 2);
+            m.store32(52, resource_new(t));
+            return 48;
+        }
+    }
+    m.store32(48, 0);
+    48;
+}
+
+#[export = "tutuca:component/guest@0.7.0#[method]instance.call-method"]
+fn call_method(s: i32, np: i32, nl: i32, ap: i32, al: i32) -> i32 {
+    m.store32(96, 0);
+    96;
+}
+
+#[export = "cabi_post_tutuca:component/guest@0.7.0#[method]instance.call-method"]
+fn post_call_method(p: i32) {}
+
+#[export = "tutuca:component/guest@0.7.0#[method]instance.with-field"]
+fn with_field(s: i32, np: i32, nl: i32, vtag: i32, p64: i64, p32: i32) -> i32 {
+    let k = field_index(np, nl);
+    if k <s 0 {
+        m.store32(64, 0);
+        return 64;
+    }
+    let t = clone_state(s);
+    let slot = t + k * 16;
+    m.store64(slot + 8, p64);
+    if vtag == 3 {
+        m.store32(slot + 12, p32);
+    }
+    m.store32(slot, vtag);
+    m.store32(64, 1);
+    m.store32(68, resource_new(t));
+    64;
+}
+
+#[export = "tutuca:component/guest@0.7.0#[method]instance.persist"]
+fn persist(s: i32) -> i32 {
+    m.store32(128, 0);
+    m.store32(132, 0);
+    128;
+}
+
+#[export = "cabi_post_tutuca:component/guest@0.7.0#[method]instance.persist"]
+fn post_persist(p: i32) {}
+
+#[export = "tutuca:component/guest@0.7.0#handle-request"]
+fn handle_request(np: i32, nl: i32, ap: i32, al: i32) -> i32 {
+    m.store32(144, 1);
+    m.store32(152, 0);
+    144;
+}
+
+#[export = "cabi_post_tutuca:component/guest@0.7.0#handle-request"]
+fn post_handle_request(p: i32) {}

@@ -1,0 +1,116 @@
+// Wax persistent hash set.
+//
+// Concatenate persistent_hash_map.wax before this file. The set reuses the
+// HAMT's hash/equality policy, structural sharing, null-key support, and
+// transient edit ownership. Values in the backing map are an internal marker.
+
+type phs_visit = fn(&?eq, &?eq);
+
+type phs_set = { map: &phm_map };
+type phst_set = { map: &phmt_map };
+
+type phs_each_context = {
+    context: &?eq,
+    visit: &phs_visit,
+};
+
+fn phs_each_entry(context: &?eq, key: &?eq, _value: &?eq) {
+    let state = context! as &phs_each_context;
+    state.visit(state.context, key);
+}
+
+fn phs_empty(hash: &phm_hash, equal: &phm_equal) -> &phs_set {
+    { map: phm_empty(hash, equal) }
+}
+
+fn phs_count(set: &phs_set) -> i32 { phm_count(set.map) }
+
+fn phs_contains(set: &phs_set, value: &?eq) -> i32 {
+    phm_contains(set.map, value)
+}
+
+fn phs_add(set: &phs_set, value: &?eq) -> &phs_set {
+    let map = phm_assoc(set.map, value, 0 as &i31);
+    if map == set.map { return set; }
+    { map }
+}
+
+fn phs_remove(set: &phs_set, value: &?eq) -> &phs_set {
+    let map = phm_dissoc(set.map, value);
+    if map == set.map { return set; }
+    { map }
+}
+
+fn phs_each(set: &phs_set, context: &?eq, visit: &phs_visit) {
+    let state: &phs_each_context = { context, visit };
+    phm_each(set.map, state, phs_each_entry);
+}
+
+type phs_union_context = { out: mut &phs_set };
+
+fn phs_union_add(context: &?eq, value: &?eq) {
+    let state = context! as &phs_union_context;
+    state.out = phs_add(state.out, value);
+}
+
+fn phs_union(left: &phs_set, right: &phs_set) -> &phs_set {
+    let state: &phs_union_context = { out: left };
+    phs_each(right, state, phs_union_add);
+    state.out
+}
+
+type phs_filter_context = {
+    other: &phs_set,
+    out: mut &phs_set,
+    keep_present: i32,
+};
+
+fn phs_filter_add(context: &?eq, value: &?eq) {
+    let state = context! as &phs_filter_context;
+    let present = phs_contains(state.other, value);
+    if present == state.keep_present {
+        state.out = phs_add(state.out, value);
+    }
+}
+
+fn phs_intersection(left: &phs_set, right: &phs_set) -> &phs_set {
+    let state: &phs_filter_context = {
+        other: right,
+        out: phs_empty(left.map.hash, left.map.equal),
+        keep_present: 1,
+    };
+    phs_each(left, state, phs_filter_add);
+    state.out
+}
+
+fn phs_difference(left: &phs_set, right: &phs_set) -> &phs_set {
+    let state: &phs_filter_context = {
+        other: right,
+        out: phs_empty(left.map.hash, left.map.equal),
+        keep_present: 0,
+    };
+    phs_each(left, state, phs_filter_add);
+    state.out
+}
+
+fn phs_as_transient(set: &phs_set) -> &phst_set {
+    { map: phm_as_transient(set.map) }
+}
+
+fn phst_count(set: &phst_set) -> i32 { phmt_count(set.map) }
+
+fn phst_contains(set: &phst_set, value: &?eq) -> i32 {
+    phmt_contains(set.map, value)
+}
+
+fn phst_add(set: &phst_set, value: &?eq) {
+    phmt_assoc(set.map, value, 0 as &i31);
+}
+
+fn phst_remove(set: &phst_set, value: &?eq) {
+    phmt_dissoc(set.map, value);
+}
+
+fn phst_persistent(set: &phst_set) -> &phs_set {
+    { map: phmt_persistent(set.map) }
+}

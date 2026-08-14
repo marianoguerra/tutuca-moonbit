@@ -1,0 +1,73 @@
+<script type="tutuca/state">
+  /// One entry on the receipt.
+  struct Line { what: String, qty: Int }
+  /// One line of a shopping cart.
+  state Cart {
+    /// What is being bought.
+    item: String
+    /// How many of it.
+    qty: Int
+    /// What one costs.
+    price: Double
+    /// Set once the line has been sent upward.
+    sent: Bool
+    /// Every quantity this line has held.
+    history: Array[Int]
+    /// The receipt lines, each one a record this card builds with `new`.
+    receipt: Array[Line]
+  }
+</script>
+
+<script type="tutuca/script">
+  /// A line is only ever worth a non-negative amount.
+  invariant sane { .qty >= 0 }
+  /// True while there is something to send.
+  pred hasItem { not (empty? .item) }
+  /// What this line costs.
+  compute total { .qty * .price }
+  /// The line as a sentence.
+  compute line { $'{.qty} x {.item} = {total}' }
+
+  /// One more.
+  on more { .qty += 1 }
+  /// One fewer, but never below nothing.
+  on fewer { .qty = max 0 (.qty - 1) }
+  /// Name the item from what the view passed.
+  on rename(text) { .item = text }
+  /// Tell the parent about this line, once it has an item.
+  on checkout requires hasItem {
+    bubble 'lineReady' .item total
+    .sent = true
+    stop
+  }
+  /// Remember the quantity.
+  on remember { .history.push .qty }
+  /// Write the line onto the receipt, as a record built here.
+  on receipt {
+    new Line
+    @cur.what = .item
+    @cur.qty = .qty
+    .receipt.push @cur
+  }
+  /// How many quantities have been remembered.
+  compute remembered { len .history }
+  /// The item, tidied: no stray spaces, and compared case-blind.
+  compute tidy { trim .item }
+  /// True once the item names something a receipt would print.
+  pred namable { not (empty? (trim .item)) }
+</script>
+
+<template id="Cart">
+  <div>
+    <input @on.input="rename value" :value=".item" placeholder="what?">
+    <button @on.click="fewer">-</button>
+    <span @text=".qty"></span>
+    <button @on.click="more">+</button>
+    <p @text="$line"></p>
+    <button @on.click="remember">remember</button>
+    <button @on.click="receipt">to receipt</button>
+    <p @text="$'{$remembered} remembered: {.history}'"></p>
+    <button @on.click="checkout" @show="$hasItem">checkout</button>
+    <p @text="'sent'" @show=".sent"></p>
+  </div>
+</template>

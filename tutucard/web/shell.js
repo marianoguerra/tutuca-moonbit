@@ -25,6 +25,10 @@ const els = {
   source: $("source"),
   gutter: $("gutter"),
   issues: $("issues"),
+  compiled: $("compiled"),
+  refusals: $("refusals"),
+  wasmSize: $("wasm-size"),
+  download: $("download"),
   state: $("state"),
   activity: $("activity"),
   status: $("status"),
@@ -366,6 +370,7 @@ function reload() {
   drawState();
   drawActivity();
   styleClasses();
+  compileToWasm(src);
 }
 
 /**
@@ -589,6 +594,94 @@ function setPart(part) {
   if (part === "views" || part === "macros") drawTabs();
   drawPart();
 }
+
+// ---------------------------------------------------------------------------
+// the other backend
+//
+// The card above is INTERPRETED. The same source also goes through
+// `tutucard/wasm`, which compiles it to a `tutuca:component@0.7.0` core wasm
+// module — in this page, with no server and no toolchain — and the panel shows
+// what came out. Two answers to one card, side by side, so a difference between
+// them is visible rather than theoretical.
+
+/** The last successful compile, held for the download button. */
+let lastBuild = null;
+
+/** Which output pane is showing. Wax by default: it is what the generator SAID. */
+let outTab = "wax";
+
+function drawRefusals(refusals) {
+  els.refusals.replaceChildren();
+  for (const r of refusals) {
+    const li = document.createElement("li");
+    li.className = "issue warn";
+    const code = document.createElement("span");
+    code.className = "code";
+    code.textContent = `${r.kind} ${r.name}`;
+    const msg = document.createElement("span");
+    msg.textContent = r.reason;
+    li.append(code, msg);
+    els.refusals.append(li);
+  }
+}
+
+function drawCompiled() {
+  els.compiled.textContent = lastBuild ? lastBuild[outTab] : "";
+}
+
+/** Compile, and draw what came out. Never throws into the edit loop. */
+function compileToWasm(src) {
+  let report;
+  try {
+    report = JSON.parse(globalThis.__tutucard.compile(src, componentName(src)));
+  } catch (e) {
+    report = { ok: false, error: String(e) };
+  }
+  if (!report.ok) {
+    // A card the compiler turns away is not necessarily a card the interpreter
+    // turns away — the checker is stricter than the parser — so this panel says
+    // so on its own rather than blanking the preview beside it.
+    lastBuild = null;
+    els.download.disabled = true;
+    els.wasmSize.textContent = "";
+    els.refusals.replaceChildren();
+    els.compiled.textContent = report.error ?? "did not compile";
+    els.compiled.classList.add("bad");
+    return;
+  }
+  els.compiled.classList.remove("bad");
+  lastBuild = report;
+  els.wasmSize.textContent = `${(report.size / 1024).toFixed(1)} KB · ${report.fields.length} field${report.fields.length === 1 ? "" : "s"}`;
+  els.download.disabled = false;
+  drawRefusals(report.refusals);
+  drawCompiled();
+}
+
+for (const b of document.querySelectorAll("[data-out]")) {
+  b.addEventListener("click", () => {
+    outTab = b.dataset.out;
+    for (const other of document.querySelectorAll("[data-out]")) {
+      const on = other === b;
+      other.classList.toggle("on", on);
+      other.setAttribute("aria-selected", String(on));
+    }
+    drawCompiled();
+  });
+}
+
+els.download.addEventListener("click", async () => {
+  if (!lastBuild) return;
+  // The packer is `card-wasm.js`'s, and the archive is the ordinary shape:
+  // `tutuca.json` plus one core wasm, and no executable JavaScript in it.
+  // Imported lazily so a reader who never downloads never fetches it.
+  const { packBundle, b64ToBytes } = await import("./card-wasm.js");
+  const blob = await packBundle(lastBuild, b64ToBytes(lastBuild.wasm));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${lastBuild.component.toLowerCase()}.tutuca.tar.gz`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
 
 /** A structured edit, spliced back into the one string that is the card. */
 function onPartInput() {

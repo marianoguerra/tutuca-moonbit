@@ -91,6 +91,28 @@
         <h2>Activity</h2>
         <ol id="activity" class="activity"></ol>
       </section>
+
+      <!-- The OTHER backend. The card above is interpreted; this compiles the
+           same source to a `tutuca:component@0.7.0` core wasm module, in this
+           page, with no toolchain. Wax first because it is what the generator
+           SAID; the WAT is what the module IS. -->
+      <section class="pane">
+        <h2>
+          Compiled
+          <span id="wasm-size" class="note"></span>
+        </h2>
+        <div class="tabs" role="tablist" aria-label="compiler output">
+          <button id="out-wax" class="tab on" data-out="wax" role="tab"
+                  aria-selected="true">wax</button>
+          <button id="out-wat" class="tab" data-out="wat" role="tab"
+                  aria-selected="false">wat</button>
+          <button id="download" class="tab download" disabled>
+            download .tutuca.tar.gz
+          </button>
+        </div>
+        <ul id="refusals" class="issues"></ul>
+        <pre id="compiled" class="json wasm-out"></pre>
+      </section>
     </main>
 
     <script src="./tutucard.js"></script>

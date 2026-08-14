@@ -1,0 +1,719 @@
+// Runtime-defined immutable records for jv_value.
+//
+// Concatenate this file after immutable_value.wax. Record definitions, schemas,
+// and values are immutable. Validator callbacks must be pure and deterministic.
+
+const jv_record_ok = 0;
+const jv_record_unknown_field = 1;
+const jv_record_duplicate_field = 2;
+const jv_record_type_mismatch = 3;
+const jv_record_field_invalid = 4;
+const jv_record_value_invalid = 5;
+
+const jv_type_kind_null = 0;
+const jv_type_kind_bool = 1;
+const jv_type_kind_string = 2;
+const jv_type_kind_i32 = 3;
+const jv_type_kind_i64 = 4;
+const jv_type_kind_f32 = 5;
+const jv_type_kind_f64 = 6;
+const jv_type_kind_vector = 7;
+const jv_type_kind_map = 8;
+const jv_type_kind_opaque = 9;
+const jv_type_kind_set = 10;
+const jv_type_kind_record = 11;
+const jv_type_kind_any = 12;
+const jv_type_kind_or = 13;
+const jv_type_kind_ordered_map = 14;
+const jv_type_kind_ordered_set = 15;
+
+type jv_record_schema_visit = fn(&?eq, &utf8_string, &jv_type, &jv_value);
+type jv_record_visit = fn(&?eq, &utf8_string, &jv_value);
+
+type jvt_record = {
+    definition: &jv_record_type,
+    values: &phmt_map,
+};
+
+fn jv_type_scalar(kind: i32) -> &jv_type {
+    let out: &jv_type_scalar = { kind };
+    out
+}
+
+fn jv_type_null() -> &jv_type { jv_type_scalar(jv_type_kind_null) }
+fn jv_type_bool() -> &jv_type { jv_type_scalar(jv_type_kind_bool) }
+fn jv_type_string() -> &jv_type { jv_type_scalar(jv_type_kind_string) }
+fn jv_type_i32() -> &jv_type { jv_type_scalar(jv_type_kind_i32) }
+fn jv_type_i64() -> &jv_type { jv_type_scalar(jv_type_kind_i64) }
+fn jv_type_f32() -> &jv_type { jv_type_scalar(jv_type_kind_f32) }
+fn jv_type_f64() -> &jv_type { jv_type_scalar(jv_type_kind_f64) }
+fn jv_type_opaque() -> &jv_type { jv_type_scalar(jv_type_kind_opaque) }
+fn jv_type_any() -> &jv_type { jv_type_scalar(jv_type_kind_any) }
+
+fn jv_type_vector(element: &jv_type) -> &jv_type {
+    let out: &jv_type_vector_value = { kind: jv_type_kind_vector, element };
+    out
+}
+
+fn jv_type_map(value: &jv_type) -> &jv_type {
+    let out: &jv_type_map_value = { kind: jv_type_kind_map, value };
+    out
+}
+
+fn jv_type_set(element: &jv_type) -> &jv_type {
+    let out: &jv_type_set_value = { kind: jv_type_kind_set, element };
+    out
+}
+
+fn jv_type_ordered_map(value: &jv_type) -> &jv_type {
+    let out: &jv_type_ordered_map_value = {
+        kind: jv_type_kind_ordered_map,
+        value,
+    };
+    out
+}
+
+fn jv_type_ordered_set(element: &jv_type) -> &jv_type {
+    let out: &jv_type_ordered_set_value = {
+        kind: jv_type_kind_ordered_set,
+        element,
+    };
+    out
+}
+
+fn jv_type_record(definition: &jv_record_type) -> &jv_type {
+    let out: &jv_type_record_value = { kind: jv_type_kind_record, definition };
+    out
+}
+
+fn jv_type_or(left: &jv_type, right: &jv_type) -> &jv_type {
+    let out: &jv_type_or_value = { kind: jv_type_kind_or, left, right };
+    out
+}
+
+fn jv_type_optional(value: &jv_type) -> &jv_type {
+    jv_type_or(jv_type_null(), value)
+}
+
+fn jv_type_kind(value_type: &jv_type) -> i32 { value_type.kind }
+
+type jv_type_validate_context = {
+    value_type: &jv_type,
+    valid: mut i32,
+};
+
+fn jv_type_validate_vector_entry(context: &?eq, _index: i32, value: &jv_value) {
+    let state = context! as &jv_type_validate_context;
+    if state.valid != 0 {
+        if jv_type_accepts(state.value_type, value) == 0 { state.valid = 0; }
+    }
+}
+
+fn jv_type_validate_map_entry(context: &?eq, _key: &utf8_string, value: &jv_value) {
+    let state = context! as &jv_type_validate_context;
+    if state.valid != 0 {
+        if jv_type_accepts(state.value_type, value) == 0 { state.valid = 0; }
+    }
+}
+
+fn jv_type_validate_set_entry(context: &?eq, value: &jv_value) {
+    let state = context! as &jv_type_validate_context;
+    if state.valid != 0 {
+        if jv_type_accepts(state.value_type, value) == 0 { state.valid = 0; }
+    }
+}
+
+fn jv_type_accepts(value_type: &jv_type, value: &jv_value) -> i32 {
+    match value_type {
+        found: &jv_type_vector_value => {
+            let (is_vector, vector) = jv_get_vector(value);
+            if is_vector == 0 { return 0; }
+            let state: &jv_type_validate_context = { value_type: found.element, valid: 1 };
+            jv_vector_each(vector!, state, jv_type_validate_vector_entry);
+            return state.valid;
+        }
+        found: &jv_type_map_value => {
+            let (is_map, map) = jv_get_map(value);
+            if is_map == 0 { return 0; }
+            let state: &jv_type_validate_context = { value_type: found.value, valid: 1 };
+            jv_map_each(map!, state, jv_type_validate_map_entry);
+            return state.valid;
+        }
+        found: &jv_type_set_value => {
+            let (is_set, set) = jv_get_set(value);
+            if is_set == 0 { return 0; }
+            let state: &jv_type_validate_context = { value_type: found.element, valid: 1 };
+            jv_set_each(set!, state, jv_type_validate_set_entry);
+            return state.valid;
+        }
+        found: &jv_type_ordered_map_value => {
+            let (is_map, map) = jv_get_ordered_map(value);
+            if is_map == 0 { return 0; }
+            let state: &jv_type_validate_context = {
+                value_type: found.value,
+                valid: 1,
+            };
+            jv_ordered_map_each(map!, state, jv_type_validate_map_entry);
+            return state.valid;
+        }
+        found: &jv_type_ordered_set_value => {
+            let (is_set, set) = jv_get_ordered_set(value);
+            if is_set == 0 { return 0; }
+            let state: &jv_type_validate_context = {
+                value_type: found.element,
+                valid: 1,
+            };
+            jv_ordered_set_each(set!, state, jv_type_validate_set_entry);
+            return state.valid;
+        }
+        found: &jv_type_record_value => {
+            match value {
+                record: &jv_record_value => {
+                    return if record.definition == found.definition { 1 } else { 0 };
+                }
+                _ => { return 0; }
+            }
+        }
+        found: &jv_type_or_value => {
+            if jv_type_accepts(found.left, value) != 0 { return 1; }
+            return jv_type_accepts(found.right, value);
+        }
+        found: &jv_type_scalar => {
+            if found.kind == jv_type_kind_any { return 1; }
+            let expected = if found.kind == jv_type_kind_opaque {
+                jv_kind_any
+            } else {
+                found.kind
+            };
+            return if jv_kind(value) == expected { 1 } else { 0 };
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn jv_record_schema_empty() -> &jv_record_schema {
+    {
+        fields: phm_empty(utf8_hash_key, utf8_equal_key),
+        defaults: phm_empty(utf8_hash_key, utf8_equal_key),
+    }
+}
+
+fn jv_record_schema_count(schema: &jv_record_schema) -> i32 {
+    phm_count(schema.fields)
+}
+
+fn jv_record_schema_has(schema: &jv_record_schema, field: &utf8_string) -> i32 {
+    phm_contains(schema.fields, field)
+}
+
+fn jv_record_schema_get_field(
+    schema: &jv_record_schema,
+    field: &utf8_string,
+) -> (i32, &?jv_record_field) {
+    let (found, value) = phm_get(schema.fields, field);
+    if found == 0 { return (0, null); }
+    (1, value! as &jv_record_field)
+}
+
+fn jv_record_field_type(field: &jv_record_field) -> &jv_type { field.value_type }
+fn jv_record_field_default(field: &jv_record_field) -> &jv_value { field.default_value }
+
+fn jv_record_accept_field(_context: &?eq, _value: &jv_value) -> i32 { 1 }
+fn jv_record_accept_value(_context: &?eq, _record: &jv_record_value) -> i32 { 1 }
+
+fn jv_record_validate_field(field: &jv_record_field, value: &jv_value) -> i32 {
+    if jv_type_accepts(field.value_type, value) == 0 { return jv_record_type_mismatch; }
+    if (field.validator as &jv_field_validator)(field.validator_context, value) == 0 {
+        return jv_record_field_invalid;
+    }
+    jv_record_ok
+}
+
+fn jv_record_schema_try_add_validated(
+    schema: &jv_record_schema,
+    field: &utf8_string,
+    value_type: &jv_type,
+    default_value: &jv_value,
+    validator_context: &?eq,
+    validator: &jv_field_validator,
+) -> (i32, &?jv_record_schema) {
+    if jv_record_schema_has(schema, field) != 0 {
+        return (jv_record_duplicate_field, null);
+    }
+    let spec: &jv_record_field = {
+        value_type,
+        default_value,
+        validator_context,
+        validator,
+    };
+    let status = jv_record_validate_field(spec, default_value);
+    if status != jv_record_ok { return (status, null); }
+    let out: &jv_record_schema = {
+        fields: phm_assoc(schema.fields, field, spec),
+        defaults: phm_assoc(schema.defaults, field, default_value),
+    };
+    (jv_record_ok, out)
+}
+
+fn jv_record_schema_add_validated(
+    schema: &jv_record_schema,
+    field: &utf8_string,
+    value_type: &jv_type,
+    default_value: &jv_value,
+    validator_context: &?eq,
+    validator: &jv_field_validator,
+) -> &jv_record_schema {
+    let (status, out) = jv_record_schema_try_add_validated(
+        schema,
+        field,
+        value_type,
+        default_value,
+        validator_context,
+        validator,
+    );
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_schema_try_add(
+    schema: &jv_record_schema,
+    field: &utf8_string,
+    value_type: &jv_type,
+    default_value: &jv_value,
+) -> (i32, &?jv_record_schema) {
+    jv_record_schema_try_add_validated(
+        schema,
+        field,
+        value_type,
+        default_value,
+        null,
+        jv_record_accept_field,
+    )
+}
+
+fn jv_record_schema_add(
+    schema: &jv_record_schema,
+    field: &utf8_string,
+    value_type: &jv_type,
+    default_value: &jv_value,
+) -> &jv_record_schema {
+    jv_record_schema_add_validated(
+        schema,
+        field,
+        value_type,
+        default_value,
+        null,
+        jv_record_accept_field,
+    )
+}
+
+type jv_record_schema_each_context = {
+    context: &?eq,
+    visit: &jv_record_schema_visit,
+};
+
+fn jv_record_schema_each_adapter(context: &?eq, key: &?eq, value: &?eq) {
+    let state = context! as &jv_record_schema_each_context;
+    let spec = value! as &jv_record_field;
+    state.visit(state.context, key! as &utf8_string, spec.value_type, spec.default_value);
+}
+
+fn jv_record_schema_each(
+    schema: &jv_record_schema,
+    context: &?eq,
+    visit: &jv_record_schema_visit,
+) {
+    let state: &jv_record_schema_each_context = { context, visit };
+    phm_each(schema.fields, state, jv_record_schema_each_adapter);
+}
+
+fn jv_record_candidate(definition: &jv_record_type, values: &phm_map) -> &jv_record_value {
+    { kind: jv_kind_record, definition, values }
+}
+
+fn jv_record_validate_candidate(record: &jv_record_value) -> i32 {
+    if (record.definition.validator as &jv_record_validator)(
+        record.definition.validator_context,
+        record,
+    ) == 0 {
+        return jv_record_value_invalid;
+    }
+    jv_record_ok
+}
+
+fn jv_record_type_try_create_validated(
+    name: &utf8_string,
+    schema: &jv_record_schema,
+    validator_context: &?eq,
+    validator: &jv_record_validator,
+) -> (i32, &?jv_record_type) {
+    let definition: &jv_record_type = {
+        name,
+        schema,
+        validator_context,
+        validator,
+    };
+    let candidate = jv_record_candidate(definition, schema.defaults);
+    let status = jv_record_validate_candidate(candidate);
+    if status != jv_record_ok { return (status, null); }
+    (jv_record_ok, definition)
+}
+
+fn jv_record_type_create_validated(
+    name: &utf8_string,
+    schema: &jv_record_schema,
+    validator_context: &?eq,
+    validator: &jv_record_validator,
+) -> &jv_record_type {
+    let (status, out) = jv_record_type_try_create_validated(
+        name,
+        schema,
+        validator_context,
+        validator,
+    );
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_type_create(
+    name: &utf8_string,
+    schema: &jv_record_schema,
+) -> &jv_record_type {
+    jv_record_type_create_validated(name, schema, null, jv_record_accept_value)
+}
+
+fn jv_record_type_name(definition: &jv_record_type) -> &utf8_string { definition.name }
+fn jv_record_type_schema(definition: &jv_record_type) -> &jv_record_schema { definition.schema }
+
+fn jv_record_default(definition: &jv_record_type) -> &jv_record_value {
+    jv_record_candidate(definition, definition.schema.defaults)
+}
+
+fn jv_get_record(value: &jv_value) -> (i32, &?jv_record_value) {
+    match value {
+        found: &jv_record_value => { return (1, found); }
+        _ => { return (0, null); }
+    }
+    unreachable;
+}
+
+fn jv_require_record(value: &jv_value) -> &jv_record_value {
+    let (found, out) = jv_get_record(value);
+    if found == 0 { unreachable; }
+    out!
+}
+
+fn jv_record_definition(record: &jv_record_value) -> &jv_record_type {
+    record.definition
+}
+
+fn jv_record_count(record: &jv_record_value) -> i32 {
+    jv_record_schema_count(record.definition.schema)
+}
+
+fn jv_record_has_field(record: &jv_record_value, field: &utf8_string) -> i32 {
+    jv_record_schema_has(record.definition.schema, field)
+}
+
+fn jv_record_get(
+    record: &jv_record_value,
+    field: &utf8_string,
+) -> (i32, &?jv_value) {
+    let (found, value) = phm_get(record.values, field);
+    if found == 0 { return (0, null); }
+    (1, value! as &jv_value)
+}
+
+fn jv_record_at(record: &jv_record_value, field: &utf8_string) -> &jv_value {
+    let (found, value) = jv_record_get(record, field);
+    if found == 0 { unreachable; }
+    value!
+}
+
+fn jv_record_try_set(
+    record: &jv_record_value,
+    field: &utf8_string,
+    value: &jv_value,
+) -> (i32, &?jv_record_value) {
+    let (found, spec) = jv_record_schema_get_field(record.definition.schema, field);
+    if found == 0 { return (jv_record_unknown_field, null); }
+    let status = jv_record_validate_field(spec!, value);
+    if status != jv_record_ok { return (status, null); }
+    let (_, old) = jv_record_get(record, field);
+    if jv_equal(old!, value) != 0 { return (jv_record_ok, record); }
+    let candidate = jv_record_candidate(
+        record.definition,
+        phm_assoc(record.values, field, value),
+    );
+    let candidate_status = jv_record_validate_candidate(candidate);
+    if candidate_status != jv_record_ok { return (candidate_status, null); }
+    (jv_record_ok, candidate)
+}
+
+fn jv_record_set(
+    record: &jv_record_value,
+    field: &utf8_string,
+    value: &jv_value,
+) -> &jv_record_value {
+    let (status, out) = jv_record_try_set(record, field, value);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_try_reset(
+    record: &jv_record_value,
+    field: &utf8_string,
+) -> (i32, &?jv_record_value) {
+    let (found, spec) = jv_record_schema_get_field(record.definition.schema, field);
+    if found == 0 { return (jv_record_unknown_field, null); }
+    jv_record_try_set(record, field, spec!.default_value)
+}
+
+fn jv_record_reset(record: &jv_record_value, field: &utf8_string) -> &jv_record_value {
+    let (status, out) = jv_record_try_reset(record, field);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_clear(record: &jv_record_value) -> &jv_record_value {
+    if record.values == record.definition.schema.defaults { return record; }
+    jv_record_default(record.definition)
+}
+
+type jv_record_build_context = {
+    definition: &jv_record_type,
+    values: &phmt_map,
+    strict: i32,
+    status: mut i32,
+    failed_field: mut &?utf8_string,
+    changed: mut i32,
+};
+
+fn jv_record_build_entry(context: &?eq, key: &utf8_string, value: &jv_value) {
+    let state = context! as &jv_record_build_context;
+    if state.status != jv_record_ok { return; }
+    let (found, spec) = jv_record_schema_get_field(state.definition.schema, key);
+    if found == 0 {
+        if state.strict != 0 {
+            state.status = jv_record_unknown_field;
+            state.failed_field = key;
+        }
+        return;
+    }
+    let status = jv_record_validate_field(spec!, value);
+    if status != jv_record_ok {
+        state.status = status;
+        state.failed_field = key;
+        return;
+    }
+    let (old_found, old) = phmt_get(state.values, key);
+    if old_found != 0 {
+        if jv_equal(old! as &jv_value, value) != 0 { return; }
+    }
+    phmt_assoc(state.values, key, value);
+    state.changed = 1;
+}
+
+fn jv_record_try_apply_map(
+    definition: &jv_record_type,
+    initial: &phm_map,
+    overrides: &jv_map_value,
+    strict: i32,
+) -> (i32, &?utf8_string, &?jv_record_value) {
+    let values = phm_as_transient(initial);
+    let state: &jv_record_build_context = {
+        definition,
+        values,
+        strict,
+        status: jv_record_ok,
+        failed_field: null,
+        changed: 0,
+    };
+    jv_map_each(overrides, state, jv_record_build_entry);
+    let persistent = phmt_persistent(values);
+    if state.status != jv_record_ok {
+        return (state.status, state.failed_field, null);
+    }
+    let candidate = jv_record_candidate(
+        definition,
+        if state.changed == 0 { initial } else { persistent },
+    );
+    let status = jv_record_validate_candidate(candidate);
+    if status != jv_record_ok { return (status, null, null); }
+    (jv_record_ok, null, candidate)
+}
+
+fn jv_record_try_from_map(
+    definition: &jv_record_type,
+    overrides: &jv_map_value,
+) -> (i32, &?utf8_string, &?jv_record_value) {
+    jv_record_try_apply_map(definition, definition.schema.defaults, overrides, 1)
+}
+
+fn jv_record_from_map(
+    definition: &jv_record_type,
+    overrides: &jv_map_value,
+) -> &jv_record_value {
+    let (status, _, out) = jv_record_try_from_map(definition, overrides);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_try_from_map_lenient(
+    definition: &jv_record_type,
+    overrides: &jv_map_value,
+) -> (i32, &?utf8_string, &?jv_record_value) {
+    jv_record_try_apply_map(definition, definition.schema.defaults, overrides, 0)
+}
+
+fn jv_record_from_map_lenient(
+    definition: &jv_record_type,
+    overrides: &jv_map_value,
+) -> &jv_record_value {
+    let (status, _, out) = jv_record_try_from_map_lenient(definition, overrides);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_try_merge(
+    record: &jv_record_value,
+    overrides: &jv_map_value,
+) -> (i32, &?utf8_string, &?jv_record_value) {
+    let (status, field, out) = jv_record_try_apply_map(
+        record.definition,
+        record.values,
+        overrides,
+        1,
+    );
+    if status == jv_record_ok {
+        if out!.values == record.values { return (status, field, record); }
+    }
+    (status, field, out)
+}
+
+fn jv_record_merge(
+    record: &jv_record_value,
+    overrides: &jv_map_value,
+) -> &jv_record_value {
+    let (status, _, out) = jv_record_try_merge(record, overrides);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_try_merge_lenient(
+    record: &jv_record_value,
+    overrides: &jv_map_value,
+) -> (i32, &?utf8_string, &?jv_record_value) {
+    let (status, field, out) = jv_record_try_apply_map(
+        record.definition,
+        record.values,
+        overrides,
+        0,
+    );
+    if status == jv_record_ok {
+        if out!.values == record.values { return (status, field, record); }
+    }
+    (status, field, out)
+}
+
+fn jv_record_merge_lenient(
+    record: &jv_record_value,
+    overrides: &jv_map_value,
+) -> &jv_record_value {
+    let (status, _, out) = jv_record_try_merge_lenient(record, overrides);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_to_map(record: &jv_record_value) -> &jv_map_value {
+    { kind: jv_kind_map, value: record.values }
+}
+
+type jv_record_each_context = {
+    context: &?eq,
+    visit: &jv_record_visit,
+};
+
+fn jv_record_each_adapter(context: &?eq, key: &?eq, value: &?eq) {
+    let state = context! as &jv_record_each_context;
+    state.visit(state.context, key! as &utf8_string, value! as &jv_value);
+}
+
+fn jv_record_each(
+    record: &jv_record_value,
+    context: &?eq,
+    visit: &jv_record_visit,
+) {
+    let state: &jv_record_each_context = { context, visit };
+    phm_each(record.values, state, jv_record_each_adapter);
+}
+
+fn jv_record_as_transient(record: &jv_record_value) -> &jvt_record {
+    { definition: record.definition, values: phm_as_transient(record.values) }
+}
+
+fn jvt_record_count(record: &jvt_record) -> i32 { phmt_count(record.values) }
+
+fn jvt_record_get(
+    record: &jvt_record,
+    field: &utf8_string,
+) -> (i32, &?jv_value) {
+    let (found, value) = phmt_get(record.values, field);
+    if found == 0 { return (0, null); }
+    (1, value! as &jv_value)
+}
+
+fn jvt_record_try_set(
+    record: &jvt_record,
+    field: &utf8_string,
+    value: &jv_value,
+) -> i32 {
+    let (found, spec) = jv_record_schema_get_field(record.definition.schema, field);
+    if found == 0 { return jv_record_unknown_field; }
+    let status = jv_record_validate_field(spec!, value);
+    if status != jv_record_ok { return status; }
+    let (old_found, old) = phmt_get(record.values, field);
+    if old_found != 0 {
+        if jv_equal(old! as &jv_value, value) != 0 { return jv_record_ok; }
+    }
+    phmt_assoc(record.values, field, value);
+    jv_record_ok
+}
+
+fn jvt_record_set(record: &jvt_record, field: &utf8_string, value: &jv_value) {
+    if jvt_record_try_set(record, field, value) != jv_record_ok { unreachable; }
+}
+
+fn jvt_record_try_reset(record: &jvt_record, field: &utf8_string) -> i32 {
+    let (found, spec) = jv_record_schema_get_field(record.definition.schema, field);
+    if found == 0 { return jv_record_unknown_field; }
+    jvt_record_try_set(record, field, spec!.default_value)
+}
+
+fn jvt_record_reset(record: &jvt_record, field: &utf8_string) {
+    if jvt_record_try_reset(record, field) != jv_record_ok { unreachable; }
+}
+
+fn jvt_record_try_persistent(record: &jvt_record) -> (i32, &?jv_record_value) {
+    let candidate = jv_record_candidate(record.definition, phmt_persistent(record.values));
+    let status = jv_record_validate_candidate(candidate);
+    if status != jv_record_ok { return (status, null); }
+    (jv_record_ok, candidate)
+}
+
+fn jvt_record_persistent(record: &jvt_record) -> &jv_record_value {
+    let (status, out) = jvt_record_try_persistent(record);
+    if status != jv_record_ok { unreachable; }
+    out!
+}
+
+fn jv_record_equal(left: &jv_record_value, right: &jv_record_value) -> i32 {
+    if left.definition != right.definition { return 0; }
+    return jv_equal(jv_record_to_map(left), jv_record_to_map(right));
+}
+
+fn jv_record_hash(record: &jv_record_value) -> i32 {
+    let state = wax_hash_add_i32(jv_hash_tag(jv_kind_record), utf8_hash(record.definition.name));
+    return wax_hash_add_i32(state, jv_hash(jv_record_to_map(record)));
+}

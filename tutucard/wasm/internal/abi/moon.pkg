@@ -1,0 +1,16 @@
+// The canonical ABI's numbers, the constant pool, and the three Wax types this
+// compiler speaks in.
+//
+// Every number here was computed by the rules in `dyncomp/host/wasm/abi.mjs`
+// and then CHECKED against it by driving a compiled module through
+// `instantiate` — which is the only way a layout constant can be known to be
+// right, since the host and the guest each write it out independently and a
+// disagreement is silent.
+//
+// `internal/`, so none of it is a promise to anyone outside this module.
+import {
+  "marianoguerra/wax/ast" @ast,
+  "marianoguerra/wax/basic" @basic,
+  "marianoguerra/wax/wasm/types" @wasm_types,
+  "moonbitlang/core/encoding/utf8",
+}

@@ -387,3 +387,43 @@ textarea:focus {
 .activity .miss {
   color: var(--warn);
 }
+
+/* --- the compiled panel ---------------------------------------------------
+ *
+ * The other backend's output. `wasm-out` is a code pane rather than a JSON
+ * one: what it shows is Wax or WAT, both of which are long lines that want to
+ * scroll rather than wrap, and both of which are read rather than skimmed.
+ */
+.wasm-out {
+  max-height: 22rem;
+  overflow: auto;
+  white-space: pre;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.wasm-out.bad {
+  color: var(--bad, #b4232c);
+  white-space: pre-wrap;
+}
+
+/* Pushed to the right of the two output tabs, because it is an action and they
+ * are a choice — and disabled until there is something to download. */
+.tab.download {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.tab.download[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The size and field count, beside the heading rather than in the pane: it is
+ * the one number a reader wants without scrolling. */
+h2 .note {
+  font-weight: 400;
+  font-size: 0.75rem;
+  opacity: 0.65;
+  margin-left: 0.5rem;
+}

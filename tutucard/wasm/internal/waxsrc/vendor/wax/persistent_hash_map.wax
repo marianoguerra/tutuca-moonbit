@@ -1,0 +1,808 @@
+// Wax persistent hash map.
+//
+// This file is deliberately standalone and uses a phm_/phmt_ prefix because
+// Wax modules do not have source namespaces.  Vendor this file into a project
+// and concatenate it before the application's Wax source.
+//
+// Values are nullable WebAssembly GC references.  Full-width numbers and
+// references outside the eq hierarchy must be boxed by the caller.
+
+type phm_hash = fn(&eq) -> i32;
+type phm_equal = fn(&eq, &eq) -> i32;
+type phm_visit = fn(&?eq, &?eq, &?eq);
+
+type phm_edit = { active: mut i32 };
+type phm_slots = [mut &?eq];
+
+rec {
+    type phm_node = open { edit: mut &?phm_edit };
+    type phm_bitmap_node : phm_node = {
+        ..,
+        bitmap: mut i32,
+        slots: mut &phm_slots,
+    };
+    type phm_node_slots = [mut &?phm_node];
+    type phm_array_node : phm_node = {
+        ..,
+        count: mut i32,
+        children: mut &phm_node_slots,
+    };
+    type phm_collision_node : phm_node = {
+        ..,
+        hash: i32,
+        count: mut i32,
+        slots: mut &phm_slots,
+    };
+}
+
+type phm_map = {
+    count: i32,
+    root: &?phm_node,
+    has_null: i32,
+    null_value: &?eq,
+    hash: &phm_hash,
+    equal: &phm_equal,
+};
+
+type phmt_map = {
+    edit: &phm_edit,
+    count: mut i32,
+    root: mut &?phm_node,
+    has_null: mut i32,
+    null_value: mut &?eq,
+    hash: &phm_hash,
+    equal: &phm_equal,
+};
+
+fn phm_bitpos(hash: i32, shift: i32) -> i32 {
+    1 << ((hash >>u shift) & 31)
+}
+
+fn phm_bitmap_index(bitmap: i32, bit: i32) -> i32 {
+    (bitmap & (bit - 1)).popcnt()
+}
+
+fn phm_copy_slots(src: &phm_slots, length: i32) -> &phm_slots {
+    let dst = [phm_slots| null; length];
+    let n = if src.length() <u length { src.length() } else { length };
+    if n != 0 { dst.copy(0, src, 0, n); }
+    dst
+}
+
+fn phm_insert_pair(src: &phm_slots, at: i32, key: &?eq, value: &?eq) -> &phm_slots {
+    let n = src.length();
+    let dst = [phm_slots| null; n + 2];
+    if at != 0 { dst.copy(0, src, 0, at); }
+    dst[at] = key;
+    dst[at + 1] = value;
+    if at != n { dst.copy(at + 2, src, at, n - at); }
+    dst
+}
+
+fn phm_remove_pair(src: &phm_slots, at: i32) -> &phm_slots {
+    let n = src.length();
+    let dst = [phm_slots| null; n - 2];
+    if at != 0 { dst.copy(0, src, 0, at); }
+    if at + 2 != n { dst.copy(at, src, at + 2, n - at - 2); }
+    dst
+}
+
+fn phm_bitmap(edit: &?phm_edit, bitmap: i32, slots: &phm_slots) -> &phm_node {
+    let out: &phm_bitmap_node = { edit, bitmap, slots };
+    out
+}
+
+fn phm_array(edit: &?phm_edit, count: i32, children: &phm_node_slots) -> &phm_node {
+    let out: &phm_array_node = { edit, count, children };
+    out
+}
+
+fn phm_collision(edit: &?phm_edit, hash: i32, count: i32, slots: &phm_slots) -> &phm_node {
+    let out: &phm_collision_node = { edit, hash, count, slots };
+    out
+}
+
+fn phm_singleton_at(shift: i32, hash: i32, key: &eq, value: &?eq) -> &phm_node {
+    phm_bitmap(null, phm_bitpos(hash, shift), [phm_slots| key, value])
+}
+
+fn phm_merge_two(
+    shift: i32,
+    hash1: i32,
+    key1: &eq,
+    value1: &?eq,
+    hash2: i32,
+    key2: &eq,
+    value2: &?eq,
+) -> &phm_node {
+    if hash1 == hash2 {
+        return phm_collision(null, hash1, 2, [phm_slots| key1, value1, key2, value2]);
+    }
+    let bit1 = phm_bitpos(hash1, shift);
+    let bit2 = phm_bitpos(hash2, shift);
+    if bit1 == bit2 {
+        let child = phm_merge_two(shift + 5, hash1, key1, value1, hash2, key2, value2);
+        return phm_bitmap(null, bit1, [phm_slots| null, child]);
+    }
+    if bit1 <u bit2 {
+        phm_bitmap(null, bit1 | bit2, [phm_slots| key1, value1, key2, value2])
+    } else {
+        phm_bitmap(null, bit1 | bit2, [phm_slots| key2, value2, key1, value1])
+    }
+}
+
+fn phm_node_get(
+    node: &phm_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    equal: &phm_equal,
+) -> (i32, &?eq) {
+    match node {
+        b: &phm_bitmap_node => {
+            let bit = phm_bitpos(hash, shift);
+            if (b.bitmap & bit) == 0 { return (0, null); }
+            let at = phm_bitmap_index(b.bitmap, bit) * 2;
+            let found_key = b.slots[at];
+            if found_key == null {
+                return phm_node_get(b.slots[at + 1] as &phm_node, shift + 5, hash, key, equal);
+            }
+            if equal(found_key!, key) != 0 { return (1, b.slots[at + 1]); }
+            return (0, null);
+        }
+        a: &phm_array_node => {
+            let child = a.children[(hash >>u shift) & 31];
+            if child == null { return (0, null); }
+            return phm_node_get(child!, shift + 5, hash, key, equal);
+        }
+        c: &phm_collision_node => {
+            if c.hash != hash { return (0, null); }
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                let at = i * 2;
+                if equal(c.slots[at]!, key) != 0 { return (1, c.slots[at + 1]); }
+                i += 1;
+            }
+            return (0, null);
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phm_promote(
+    node: &phm_bitmap_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    value: &?eq,
+    hash_fn: &phm_hash,
+    equal: &phm_equal,
+) -> &phm_node {
+    let children = [phm_node_slots| null; 32];
+    let slot: i32 = 0;
+    let branch: i32 = 0;
+    while branch <s (32 as i32) {
+        let bit = (1 as i32) << branch;
+        if (node.bitmap & bit) != 0 {
+            let old_key = node.slots[slot];
+            if old_key == null {
+                children[branch] = node.slots[slot + 1] as &phm_node;
+            } else {
+                let old_hash = hash_fn(old_key!);
+                children[branch] = phm_singleton_at(shift + 5, old_hash, old_key!, node.slots[slot + 1]);
+            }
+            slot += 2;
+        }
+        branch += 1;
+    }
+    let index = (hash >>u shift) & 31;
+    children[index] = phm_singleton_at(shift + 5, hash, key, value);
+    return phm_array(null, 17, children);
+}
+
+fn phm_node_assoc(
+    node: &?phm_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    value: &?eq,
+    hash_fn: &phm_hash,
+    equal: &phm_equal,
+) -> (&phm_node, i32) {
+    if node == null { return (phm_singleton_at(shift, hash, key, value), 1); }
+    match node! {
+        b: &phm_bitmap_node => {
+            let bit = phm_bitpos(hash, shift);
+            let at = phm_bitmap_index(b.bitmap, bit) * 2;
+            if (b.bitmap & bit) == 0 {
+                if b.bitmap.popcnt() >=s (16 as i32) {
+                    return (phm_promote(b, shift, hash, key, value, hash_fn, equal), 1);
+                }
+                return (phm_bitmap(null, b.bitmap | bit, phm_insert_pair(b.slots, at, key, value)), 1);
+            }
+            let old_key = b.slots[at];
+            if old_key == null {
+                let (child, added) = phm_node_assoc(
+                    b.slots[at + 1] as &phm_node,
+                    shift + 5,
+                    hash,
+                    key,
+                    value,
+                    hash_fn,
+                    equal,
+                );
+                if child == b.slots[at + 1] { return (b, added); }
+                let slots = phm_copy_slots(b.slots, b.slots.length());
+                slots[at + 1] = child;
+                return (phm_bitmap(null, b.bitmap, slots), added);
+            }
+            if equal(old_key!, key) != 0 {
+                if b.slots[at + 1] == value { return (b, 0); }
+                let slots = phm_copy_slots(b.slots, b.slots.length());
+                slots[at + 1] = value;
+                return (phm_bitmap(null, b.bitmap, slots), 0);
+            }
+            let old_hash = hash_fn(old_key!);
+            let child = phm_merge_two(
+                shift + 5,
+                old_hash,
+                old_key!,
+                b.slots[at + 1],
+                hash,
+                key,
+                value,
+            );
+            let slots = phm_copy_slots(b.slots, b.slots.length());
+            slots[at] = null;
+            slots[at + 1] = child;
+            return (phm_bitmap(null, b.bitmap, slots), 1);
+        }
+        a: &phm_array_node => {
+            let index = (hash >>u shift) & 31;
+            let old = a.children[index];
+            let (child, added) = phm_node_assoc(old, shift + 5, hash, key, value, hash_fn, equal);
+            if old == child { return (a, added); }
+            let children = [phm_node_slots| null; 32];
+            children.copy(0, a.children, 0, 32);
+            children[index] = child;
+            let child_delta = if old == null { 1 } else { 0 };
+            return (phm_array(null, a.count + child_delta, children), added);
+        }
+        c: &phm_collision_node => {
+            if c.hash != hash {
+                let bit1 = phm_bitpos(c.hash, shift);
+                let bit2 = phm_bitpos(hash, shift);
+                if bit1 == bit2 {
+                    let (child, _) = phm_node_assoc(c, shift + 5, hash, key, value, hash_fn, equal);
+                    return (phm_bitmap(null, bit1, [phm_slots| null, child]), 1);
+                }
+                if bit1 <u bit2 {
+                    return (phm_bitmap(null, bit1 | bit2, [phm_slots| null, c, key, value]), 1);
+                }
+                return (phm_bitmap(null, bit1 | bit2, [phm_slots| key, value, null, c]), 1);
+            }
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                let at = i * 2;
+                if equal(c.slots[at]!, key) != 0 {
+                    if c.slots[at + 1] == value { return (c, 0); }
+                    let slots = phm_copy_slots(c.slots, c.slots.length());
+                    slots[at + 1] = value;
+                    return (phm_collision(null, hash, c.count, slots), 0);
+                }
+                i += 1;
+            }
+            return (phm_collision(null, hash, c.count + 1, phm_insert_pair(c.slots, c.slots.length(), key, value)), 1);
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phm_pack_array(node: &phm_array_node, removed_index: i32) -> &?phm_node {
+    let bitmap: i32 = 0;
+    let slots = [phm_slots| null; (node.count - 1) * 2];
+    let out: i32 = 0;
+    let i: i32 = 0;
+    while i <s (32 as i32) {
+        let child = node.children[i];
+        if i != removed_index {
+            if child != null {
+                bitmap |= (1 as i32) << i;
+                slots[out] = null;
+                slots[out + 1] = child;
+                out += 2;
+            }
+        }
+        i += 1;
+    }
+    if bitmap == 0 { return null; }
+    return phm_bitmap(null, bitmap, slots);
+}
+
+fn phm_node_dissoc(
+    node: &phm_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    equal: &phm_equal,
+) -> (&?phm_node, i32) {
+    match node {
+        b: &phm_bitmap_node => {
+            let bit = phm_bitpos(hash, shift);
+            if (b.bitmap & bit) == 0 { return (b, 0); }
+            let at = phm_bitmap_index(b.bitmap, bit) * 2;
+            let old_key = b.slots[at];
+            if old_key == null {
+                let (child, removed) = phm_node_dissoc(
+                    b.slots[at + 1] as &phm_node,
+                    shift + 5,
+                    hash,
+                    key,
+                    equal,
+                );
+                if removed == 0 { return (b, 0); }
+                if child == null {
+                    if b.bitmap == bit { return (null, 1); }
+                    return (phm_bitmap(null, b.bitmap ^ bit, phm_remove_pair(b.slots, at)), 1);
+                }
+                let slots = phm_copy_slots(b.slots, b.slots.length());
+                slots[at + 1] = child;
+                return (phm_bitmap(null, b.bitmap, slots), 1);
+            }
+            if equal(old_key!, key) == 0 { return (b, 0); }
+            if b.bitmap == bit { return (null, 1); }
+            return (phm_bitmap(null, b.bitmap ^ bit, phm_remove_pair(b.slots, at)), 1);
+        }
+        a: &phm_array_node => {
+            let index = (hash >>u shift) & 31;
+            let old = a.children[index];
+            if old == null { return (a, 0); }
+            let (child, removed) = phm_node_dissoc(old!, shift + 5, hash, key, equal);
+            if removed == 0 { return (a, 0); }
+            if child == null {
+                if a.count <=s (9 as i32) { return (phm_pack_array(a, index), 1); }
+            }
+            let children = [phm_node_slots| null; 32];
+            children.copy(0, a.children, 0, 32);
+            children[index] = child;
+            let delta = if child == null { 1 } else { 0 };
+            return (phm_array(null, a.count - delta, children), 1);
+        }
+        c: &phm_collision_node => {
+            if c.hash != hash { return (c, 0); }
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                let at = i * 2;
+                if equal(c.slots[at]!, key) != 0 {
+                    if c.count == 1 { return (null, 1); }
+                    if c.count == 2 {
+                        let keep = if at == 0 { 2 } else { 0 };
+                        return (
+                            phm_singleton_at(shift, hash, c.slots[keep]!, c.slots[keep + 1]),
+                            1,
+                        );
+                    }
+                    return (
+                        phm_collision(null, hash, c.count - 1, phm_remove_pair(c.slots, at)),
+                        1,
+                    );
+                }
+                i += 1;
+            }
+            return (c, 0);
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phm_node_each(node: &phm_node, context: &?eq, visit: &phm_visit) {
+    match node {
+        b: &phm_bitmap_node => {
+            let i: i32 = 0;
+            while i <s b.slots.length() {
+                let key = b.slots[i];
+                if key == null { phm_node_each(b.slots[i + 1] as &phm_node, context, visit); }
+                else { visit(context, key, b.slots[i + 1]); }
+                i += 2;
+            }
+            return;
+        }
+        a: &phm_array_node => {
+            let i: i32 = 0;
+            while i <s (32 as i32) {
+                if a.children[i] != null { phm_node_each(a.children[i]!, context, visit); }
+                i += 1;
+            }
+            return;
+        }
+        c: &phm_collision_node => {
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                visit(context, c.slots[i * 2], c.slots[i * 2 + 1]);
+                i += 1;
+            }
+            return;
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phm_empty(hash: &phm_hash, equal: &phm_equal) -> &phm_map {
+    { count: 0, root: null, has_null: 0, null_value: null, hash, equal }
+}
+
+fn phm_count(map: &phm_map) -> i32 { map.count }
+
+fn phm_get(map: &phm_map, key: &?eq) -> (i32, &?eq) {
+    if key == null { return (map.has_null, map.null_value); }
+    if map.root == null { return (0, null); }
+    return phm_node_get(map.root!, 0, map.hash(key!), key!, map.equal);
+}
+
+fn phm_contains(map: &phm_map, key: &?eq) -> i32 {
+    let (found, _) = phm_get(map, key);
+    found
+}
+
+fn phm_assoc(map: &phm_map, key: &?eq, value: &?eq) -> &phm_map {
+    if key == null {
+        if map.has_null != 0 {
+            if map.null_value == value { return map; }
+        }
+        return {
+            count: map.count + (if map.has_null == 0 { 1 } else { 0 }),
+            root: map.root,
+            has_null: 1,
+            null_value: value,
+            hash: map.hash,
+            equal: map.equal,
+        };
+    }
+    if map.count == 0x7fffffff { unreachable; }
+    let (root, added) = phm_node_assoc(map.root, 0, map.hash(key!), key!, value, map.hash, map.equal);
+    if root == map.root { return map; }
+    {
+        count: map.count + added,
+        root,
+        has_null: map.has_null,
+        null_value: map.null_value,
+        hash: map.hash,
+        equal: map.equal,
+    }
+}
+
+fn phm_dissoc(map: &phm_map, key: &?eq) -> &phm_map {
+    if key == null {
+        if map.has_null == 0 { return map; }
+        return {
+            count: map.count - 1,
+            root: map.root,
+            has_null: 0,
+            null_value: null,
+            hash: map.hash,
+            equal: map.equal,
+        };
+    }
+    if map.root == null { return map; }
+    let (root, removed) = phm_node_dissoc(map.root!, 0, map.hash(key!), key!, map.equal);
+    if removed == 0 { return map; }
+    {
+        count: map.count - 1,
+        root,
+        has_null: map.has_null,
+        null_value: map.null_value,
+        hash: map.hash,
+        equal: map.equal,
+    }
+}
+
+fn phm_each(map: &phm_map, context: &?eq, visit: &phm_visit) {
+    if map.has_null != 0 { visit(context, null, map.null_value); }
+    if map.root != null { phm_node_each(map.root!, context, visit); }
+}
+
+fn phm_as_transient(map: &phm_map) -> &phmt_map {
+    let edit: &phm_edit = { active: 1 };
+    {
+        edit,
+        count: map.count,
+        root: map.root,
+        has_null: map.has_null,
+        null_value: map.null_value,
+        hash: map.hash,
+        equal: map.equal,
+    }
+}
+
+fn phmt_require_active(map: &phmt_map) {
+    if map.edit.active == 0 { unreachable; }
+}
+
+fn phmt_count(map: &phmt_map) -> i32 { phmt_require_active(map); map.count }
+
+fn phmt_get(map: &phmt_map, key: &?eq) -> (i32, &?eq) {
+    phmt_require_active(map);
+    if key == null { return (map.has_null, map.null_value); }
+    if map.root == null { return (0, null); }
+    return phm_node_get(map.root!, 0, map.hash(key!), key!, map.equal);
+}
+
+fn phmt_contains(map: &phmt_map, key: &?eq) -> i32 {
+    let (found, _) = phmt_get(map, key);
+    found
+}
+
+fn phmt_ensure_node(node: &phm_node, edit: &phm_edit) -> &phm_node {
+    match node {
+        b: &phm_bitmap_node => {
+            if b.edit == edit { return b; }
+            return phm_bitmap(edit, b.bitmap, phm_copy_slots(b.slots, b.slots.length()));
+        }
+        a: &phm_array_node => {
+            if a.edit == edit { return a; }
+            let children = [phm_node_slots| null; 32];
+            children.copy(0, a.children, 0, 32);
+            return phm_array(edit, a.count, children);
+        }
+        c: &phm_collision_node => {
+            if c.edit == edit { return c; }
+            return phm_collision(edit, c.hash, c.count, phm_copy_slots(c.slots, c.slots.length()));
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phmt_node_assoc(
+    node: &?phm_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    value: &?eq,
+    hash_fn: &phm_hash,
+    equal: &phm_equal,
+    edit: &phm_edit,
+) -> (&phm_node, i32) {
+    if node == null {
+        let out = phm_singleton_at(shift, hash, key, value);
+        out.edit = edit;
+        return (out, 1);
+    }
+    let owned = phmt_ensure_node(node!, edit);
+    match owned {
+        b: &phm_bitmap_node => {
+            let bit = phm_bitpos(hash, shift);
+            let at = phm_bitmap_index(b.bitmap, bit) * 2;
+            if (b.bitmap & bit) == 0 {
+                if b.bitmap.popcnt() >=s (16 as i32) {
+                    let promoted = phm_promote(b, shift, hash, key, value, hash_fn, equal);
+                    promoted.edit = edit;
+                    return (promoted, 1);
+                }
+                b.bitmap = b.bitmap | bit;
+                b.slots = phm_insert_pair(b.slots, at, key, value);
+                return (b, 1);
+            }
+            let old_key = b.slots[at];
+            if old_key == null {
+                let (child, added) = phmt_node_assoc(
+                    b.slots[at + 1] as &phm_node,
+                    shift + 5,
+                    hash,
+                    key,
+                    value,
+                    hash_fn,
+                    equal,
+                    edit,
+                );
+                b.slots[at + 1] = child;
+                return (b, added);
+            }
+            if equal(old_key!, key) != 0 {
+                b.slots[at + 1] = value;
+                return (b, 0);
+            }
+            let child = phm_merge_two(
+                shift + 5,
+                hash_fn(old_key!),
+                old_key!,
+                b.slots[at + 1],
+                hash,
+                key,
+                value,
+            );
+            b.slots[at] = null;
+            b.slots[at + 1] = child;
+            return (b, 1);
+        }
+        a: &phm_array_node => {
+            let index = (hash >>u shift) & 31;
+            let (child, added) = phmt_node_assoc(
+                a.children[index],
+                shift + 5,
+                hash,
+                key,
+                value,
+                hash_fn,
+                equal,
+                edit,
+            );
+            if a.children[index] == null { a.count = a.count + 1; }
+            a.children[index] = child;
+            return (a, added);
+        }
+        c: &phm_collision_node => {
+            if c.hash != hash {
+                let (out, added) = phm_node_assoc(c, shift, hash, key, value, hash_fn, equal);
+                out.edit = edit;
+                return (out, added);
+            }
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                let at = i * 2;
+                if equal(c.slots[at]!, key) != 0 {
+                    c.slots[at + 1] = value;
+                    return (c, 0);
+                }
+                i += 1;
+            }
+            c.slots = phm_insert_pair(c.slots, c.slots.length(), key, value);
+            c.count = c.count + 1;
+            return (c, 1);
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phmt_node_dissoc(
+    node: &phm_node,
+    shift: i32,
+    hash: i32,
+    key: &eq,
+    equal: &phm_equal,
+    edit: &phm_edit,
+) -> (&?phm_node, i32) {
+    let owned = phmt_ensure_node(node, edit);
+    match owned {
+        b: &phm_bitmap_node => {
+            let bit = phm_bitpos(hash, shift);
+            if (b.bitmap & bit) == 0 { return (b, 0); }
+            let at = phm_bitmap_index(b.bitmap, bit) * 2;
+            let old_key = b.slots[at];
+            if old_key == null {
+                let (child, removed) = phmt_node_dissoc(
+                    b.slots[at + 1] as &phm_node,
+                    shift + 5,
+                    hash,
+                    key,
+                    equal,
+                    edit,
+                );
+                if removed == 0 { return (b, 0); }
+                if child == null {
+                    if b.bitmap == bit { return (null, 1); }
+                    b.bitmap = b.bitmap ^ bit;
+                    b.slots = phm_remove_pair(b.slots, at);
+                } else {
+                    b.slots[at + 1] = child;
+                }
+                return (b, 1);
+            }
+            if equal(old_key!, key) == 0 { return (b, 0); }
+            if b.bitmap == bit { return (null, 1); }
+            b.bitmap = b.bitmap ^ bit;
+            b.slots = phm_remove_pair(b.slots, at);
+            return (b, 1);
+        }
+        a: &phm_array_node => {
+            let index = (hash >>u shift) & 31;
+            let old = a.children[index];
+            if old == null { return (a, 0); }
+            let (child, removed) = phmt_node_dissoc(old!, shift + 5, hash, key, equal, edit);
+            if removed == 0 { return (a, 0); }
+            if child == null {
+                if a.count <=s (9 as i32) {
+                    let packed = phm_pack_array(a, index);
+                    if packed != null { packed!.edit = edit; }
+                    return (packed, 1);
+                }
+                a.count = a.count - 1;
+            }
+            a.children[index] = child;
+            return (a, 1);
+        }
+        c: &phm_collision_node => {
+            if c.hash != hash { return (c, 0); }
+            let i: i32 = 0;
+            let count: i32 = c.count;
+            while i <s count {
+                let at = i * 2;
+                if equal(c.slots[at]!, key) != 0 {
+                    if c.count == 1 { return (null, 1); }
+                    if c.count == 2 {
+                        let keep = if at == 0 { 2 } else { 0 };
+                        let out = phm_singleton_at(shift, hash, c.slots[keep]!, c.slots[keep + 1]);
+                        out.edit = edit;
+                        return (out, 1);
+                    }
+                    c.slots = phm_remove_pair(c.slots, at);
+                    c.count = c.count - 1;
+                    return (c, 1);
+                }
+                i += 1;
+            }
+            return (c, 0);
+        }
+        _ => { unreachable; }
+    }
+    unreachable;
+}
+
+fn phmt_assoc(map: &phmt_map, key: &?eq, value: &?eq) {
+    phmt_require_active(map);
+    if key == null {
+        if map.has_null == 0 { map.count = map.count + 1; }
+        map.has_null = 1;
+        map.null_value = value;
+        return;
+    }
+    if map.count == 0x7fffffff { unreachable; }
+    let (root, added) = phmt_node_assoc(
+        map.root,
+        0,
+        map.hash(key!),
+        key!,
+        value,
+        map.hash,
+        map.equal,
+        map.edit,
+    );
+    map.root = root;
+    map.count = map.count + added;
+}
+
+fn phmt_dissoc(map: &phmt_map, key: &?eq) {
+    phmt_require_active(map);
+    if key == null {
+        if map.has_null != 0 {
+            map.has_null = 0;
+            map.null_value = null;
+            map.count = map.count - 1;
+        }
+        return;
+    }
+    if map.root == null { return; }
+    let (root, removed) = phmt_node_dissoc(
+        map.root!,
+        0,
+        map.hash(key!),
+        key!,
+        map.equal,
+        map.edit,
+    );
+    map.root = root;
+    map.count = map.count - removed;
+}
+
+fn phmt_persistent(map: &phmt_map) -> &phm_map {
+    phmt_require_active(map);
+    map.edit.active = 0;
+    {
+        count: map.count,
+        root: map.root,
+        has_null: map.has_null,
+        null_value: map.null_value,
+        hash: map.hash,
+        equal: map.equal,
+    }
+}

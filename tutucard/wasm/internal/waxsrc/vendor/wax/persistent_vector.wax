@@ -1,0 +1,443 @@
+// Wax persistent vector.
+//
+// Standalone, vendorable source. All names use pv_/pvt_ prefixes because Wax
+// has no source namespaces. Values are nullable references in the eq hierarchy.
+
+type pv_visit = fn(&?eq, i32, &?eq);
+type pv_edit = { active: mut i32 };
+type pv_slots = [mut &?eq];
+
+rec {
+    type pv_node = { edit: mut &?pv_edit, slots: mut &pv_slots };
+}
+
+type pv_vector = {
+    count: i32,
+    shift: i32,
+    root: &pv_node,
+    tail: &pv_slots,
+};
+
+type pvt_vector = {
+    edit: &pv_edit,
+    count: mut i32,
+    shift: mut i32,
+    root: mut &pv_node,
+    tail: mut &pv_slots,
+    tail_count: mut i32,
+};
+
+fn pv_node_new(edit: &?pv_edit) -> &pv_node {
+    { edit, slots: [pv_slots| null; 32] }
+}
+
+fn pv_copy_slots(src: &pv_slots, length: i32) -> &pv_slots {
+    let dst = [pv_slots| null; length];
+    let n = if src.length() <u length { src.length() } else { length };
+    if n != 0 { dst.copy(0, src, 0, n); }
+    dst
+}
+
+fn pv_node_copy(node: &pv_node) -> &pv_node {
+    { edit: null, slots: pv_copy_slots(node.slots, 32) }
+}
+
+fn pv_tail_offset(count: i32) -> i32 {
+    if count <s (32 as i32) { return 0; }
+    ((count - 1) >>u 5) << 5
+}
+
+fn pv_new_path(level: i32, node: &pv_node) -> &pv_node {
+    if level == 0 { return node; }
+    let parent = pv_node_new(null);
+    parent.slots[0] = pv_new_path(level - 5, node);
+    parent
+}
+
+fn pv_push_tail(level: i32, parent: &pv_node, tail_node: &pv_node, index: i32) -> &pv_node {
+    let out = pv_node_copy(parent);
+    let subidx = (index >>u level) & 31;
+    if level == 5 {
+        out.slots[subidx] = tail_node;
+        return out;
+    }
+    let child = parent.slots[subidx];
+    if child == null {
+        out.slots[subidx] = pv_new_path(level - 5, tail_node);
+    } else {
+        out.slots[subidx] = pv_push_tail(level - 5, child as &pv_node, tail_node, index);
+    }
+    out
+}
+
+fn pv_do_assoc(level: i32, node: &pv_node, index: i32, value: &?eq) -> &pv_node {
+    let out = pv_node_copy(node);
+    if level == 0 {
+        out.slots[index & 31] = value;
+        return out;
+    }
+    let subidx = (index >>u level) & 31;
+    out.slots[subidx] = pv_do_assoc(level - 5, node.slots[subidx] as &pv_node, index, value);
+    out
+}
+
+fn pv_array_for(vector: &pv_vector, index: i32) -> &pv_slots {
+    if index <s (0 as i32) { unreachable; }
+    if index >=s vector.count { unreachable; }
+    if index >=s pv_tail_offset(vector.count) { return vector.tail; }
+    let node = vector.root;
+    let level = vector.shift;
+    while level >s (0 as i32) {
+        node = node.slots[(index >>u level) & 31] as &pv_node;
+        level -= 5;
+    }
+    node.slots
+}
+
+fn pv_pop_tail(level: i32, node: &pv_node, index: i32) -> &?pv_node {
+    let subidx = (index >>u level) & 31;
+    if level >s (5 as i32) {
+        let child = pv_pop_tail(level - 5, node.slots[subidx] as &pv_node, index);
+        if child == null {
+            if subidx == 0 { return null; }
+        }
+        let out = pv_node_copy(node);
+        out.slots[subidx] = child;
+        return out;
+    }
+    if subidx == 0 { return null; }
+    let out = pv_node_copy(node);
+    out.slots[subidx] = null;
+    out
+}
+
+fn pv_empty() -> &pv_vector {
+    { count: 0, shift: 5, root: pv_node_new(null), tail: [pv_slots| null; 0] }
+}
+
+fn pv_count(vector: &pv_vector) -> i32 { vector.count }
+
+fn pv_get(vector: &pv_vector, index: i32) -> (i32, &?eq) {
+    if index <s (0 as i32) { return (0, null); }
+    if index >=s vector.count { return (0, null); }
+    let slots = pv_array_for(vector, index);
+    return (1, slots[index & 31]);
+}
+
+fn pv_at(vector: &pv_vector, index: i32) -> &?eq {
+    let (found, value) = pv_get(vector, index);
+    if found == 0 { unreachable; }
+    value
+}
+
+fn pv_push(vector: &pv_vector, value: &?eq) -> &pv_vector {
+    if vector.count == 0x7fffffff { unreachable; }
+    if vector.tail.length() <u (32 as i32) {
+        let tail = pv_copy_slots(vector.tail, vector.tail.length() + 1);
+        tail[vector.tail.length()] = value;
+        return {
+            count: vector.count + 1,
+            shift: vector.shift,
+            root: vector.root,
+            tail,
+        };
+    }
+    let tail_node: &pv_node = { edit: null, slots: vector.tail };
+    let shift = vector.shift;
+    let root: &pv_node = if (vector.count >>u 5) >s ((1 as i32) << shift) {
+        let grown = pv_node_new(null);
+        grown.slots[0] = vector.root;
+        grown.slots[1] = pv_new_path(shift, tail_node);
+        shift += 5;
+        grown
+    } else {
+        pv_push_tail(shift, vector.root, tail_node, vector.count - 1)
+    };
+    {
+        count: vector.count + 1,
+        shift,
+        root,
+        tail: [pv_slots| value],
+    }
+}
+
+fn pv_assoc(vector: &pv_vector, index: i32, value: &?eq) -> &pv_vector {
+    if index == vector.count { return pv_push(vector, value); }
+    if index <s (0 as i32) { unreachable; }
+    if index >=s vector.count { unreachable; }
+    let tail_offset = pv_tail_offset(vector.count);
+    if index >=s tail_offset {
+        if vector.tail[index & 31] == value { return vector; }
+        let tail = pv_copy_slots(vector.tail, vector.tail.length());
+        tail[index & 31] = value;
+        return {
+            count: vector.count,
+            shift: vector.shift,
+            root: vector.root,
+            tail,
+        };
+    }
+    {
+        count: vector.count,
+        shift: vector.shift,
+        root: pv_do_assoc(vector.shift, vector.root, index, value),
+        tail: vector.tail,
+    }
+}
+
+fn pv_peek(vector: &pv_vector) -> (i32, &?eq) {
+    if vector.count == 0 { return (0, null); }
+    return (1, vector.tail[vector.tail.length() - 1]);
+}
+
+fn pv_pop(vector: &pv_vector) -> &pv_vector {
+    if vector.count == 0 { unreachable; }
+    if vector.count == 1 { return pv_empty(); }
+    if vector.tail.length() >s (1 as i32) {
+        return {
+            count: vector.count - 1,
+            shift: vector.shift,
+            root: vector.root,
+            tail: pv_copy_slots(vector.tail, vector.tail.length() - 1),
+        };
+    }
+    let new_tail = pv_array_for(vector, vector.count - 2);
+    let root0 = pv_pop_tail(vector.shift, vector.root, vector.count - 2);
+    let root: &pv_node = if root0 == null { pv_node_new(null) } else { root0! };
+    let shift = vector.shift;
+    if shift >s (5 as i32) {
+        if root.slots[1] == null {
+            root = root.slots[0] as &pv_node;
+            shift -= 5;
+        }
+    }
+    {
+        count: vector.count - 1,
+        shift,
+        root,
+        tail: new_tail,
+    }
+}
+
+fn pv_each(vector: &pv_vector, context: &?eq, visit: &pv_visit) {
+    let i: i32 = 0;
+    while i <s vector.count {
+        visit(context, i, pv_at(vector, i));
+        i += 1;
+    }
+}
+
+fn pv_as_transient(vector: &pv_vector) -> &pvt_vector {
+    let edit: &pv_edit = { active: 1 };
+    {
+        edit,
+        count: vector.count,
+        shift: vector.shift,
+        root: pvt_ensure_node(vector.root, edit),
+        tail: pv_copy_slots(vector.tail, 32),
+        tail_count: vector.tail.length(),
+    }
+}
+
+fn pvt_ensure_node(node: &pv_node, edit: &pv_edit) -> &pv_node {
+    if node.edit == edit { return node; }
+    { edit, slots: pv_copy_slots(node.slots, 32) }
+}
+
+fn pvt_new_path(level: i32, node: &pv_node, edit: &pv_edit) -> &pv_node {
+    if level == 0 { return node; }
+    let parent = pv_node_new(edit);
+    parent.slots[0] = pvt_new_path(level - 5, node, edit);
+    parent
+}
+
+fn pvt_push_tail(
+    level: i32,
+    parent: &pv_node,
+    tail_node: &pv_node,
+    index: i32,
+    edit: &pv_edit,
+) -> &pv_node {
+    let out = pvt_ensure_node(parent, edit);
+    let subidx = (index >>u level) & 31;
+    if level == 5 {
+        out.slots[subidx] = tail_node;
+        return out;
+    }
+    let child = out.slots[subidx];
+    if child == null {
+        out.slots[subidx] = pvt_new_path(level - 5, tail_node, edit);
+    } else {
+        out.slots[subidx] = pvt_push_tail(level - 5, child as &pv_node, tail_node, index, edit);
+    }
+    out
+}
+
+fn pvt_do_assoc(
+    level: i32,
+    node: &pv_node,
+    index: i32,
+    value: &?eq,
+    edit: &pv_edit,
+) -> &pv_node {
+    let out = pvt_ensure_node(node, edit);
+    if level == 0 {
+        out.slots[index & 31] = value;
+        return out;
+    }
+    let subidx = (index >>u level) & 31;
+    out.slots[subidx] = pvt_do_assoc(
+        level - 5,
+        out.slots[subidx] as &pv_node,
+        index,
+        value,
+        edit,
+    );
+    out
+}
+
+fn pvt_pop_tail(
+    level: i32,
+    node: &pv_node,
+    index: i32,
+    edit: &pv_edit,
+) -> &?pv_node {
+    let out = pvt_ensure_node(node, edit);
+    let subidx = (index >>u level) & 31;
+    if level >s (5 as i32) {
+        let child = pvt_pop_tail(level - 5, out.slots[subidx] as &pv_node, index, edit);
+        if child == null {
+            if subidx == 0 { return null; }
+        }
+        out.slots[subidx] = child;
+        return out;
+    }
+    if subidx == 0 { return null; }
+    out.slots[subidx] = null;
+    out
+}
+
+fn pvt_require_active(vector: &pvt_vector) {
+    if vector.edit.active == 0 { unreachable; }
+}
+
+fn pvt_snapshot(vector: &pvt_vector) -> &pv_vector {
+    {
+        count: vector.count,
+        shift: vector.shift,
+        root: vector.root,
+        tail: pv_copy_slots(vector.tail, vector.tail_count),
+    }
+}
+
+fn pvt_count(vector: &pvt_vector) -> i32 { pvt_require_active(vector); vector.count }
+
+fn pvt_get(vector: &pvt_vector, index: i32) -> (i32, &?eq) {
+    pvt_require_active(vector);
+    if index <s (0 as i32) { return (0, null); }
+    if index >=s vector.count { return (0, null); }
+    if index >=s pv_tail_offset(vector.count) {
+        return (1, vector.tail[index & 31]);
+    }
+    let node = vector.root;
+    let level = vector.shift;
+    while level >s (0 as i32) {
+        node = node.slots[(index >>u level) & 31] as &pv_node;
+        level -= 5;
+    }
+    (1, node.slots[index & 31])
+}
+
+fn pvt_at(vector: &pvt_vector, index: i32) -> &?eq {
+    pvt_require_active(vector);
+    let (found, value) = pvt_get(vector, index);
+    if found == 0 { unreachable; }
+    value
+}
+
+fn pvt_push(vector: &pvt_vector, value: &?eq) {
+    pvt_require_active(vector);
+    if vector.count == 0x7fffffff { unreachable; }
+    if vector.tail_count <s (32 as i32) {
+        vector.tail[vector.tail_count] = value;
+        vector.tail_count = vector.tail_count + 1;
+        vector.count = vector.count + 1;
+        return;
+    }
+    let tail_node: &pv_node = { edit: vector.edit, slots: vector.tail };
+    if (vector.count >>u 5) >s ((1 as i32) << vector.shift) {
+        let grown = pv_node_new(vector.edit);
+        grown.slots[0] = vector.root;
+        grown.slots[1] = pvt_new_path(vector.shift, tail_node, vector.edit);
+        vector.root = grown;
+        vector.shift = vector.shift + 5;
+    } else {
+        vector.root = pvt_push_tail(
+            vector.shift,
+            vector.root,
+            tail_node,
+            vector.count - 1,
+            vector.edit,
+        );
+    }
+    vector.tail = [pv_slots| null; 32];
+    vector.tail[0] = value;
+    vector.tail_count = 1;
+    vector.count = vector.count + 1;
+}
+
+fn pvt_assoc(vector: &pvt_vector, index: i32, value: &?eq) {
+    pvt_require_active(vector);
+    if index == vector.count {
+        pvt_push(vector, value);
+        return;
+    }
+    if index <s (0 as i32) { unreachable; }
+    if index >=s vector.count { unreachable; }
+    if index >=s pv_tail_offset(vector.count) {
+        vector.tail[index & 31] = value;
+        return;
+    }
+    vector.root = pvt_do_assoc(vector.shift, vector.root, index, value, vector.edit);
+}
+
+fn pvt_pop(vector: &pvt_vector) {
+    pvt_require_active(vector);
+    if vector.count == 0 { unreachable; }
+    if vector.count == 1 {
+        vector.count = 0;
+        vector.tail[0] = null;
+        vector.tail_count = 0;
+        return;
+    }
+    if vector.tail_count >s (1 as i32) {
+        vector.tail_count = vector.tail_count - 1;
+        vector.tail[vector.tail_count] = null;
+        vector.count = vector.count - 1;
+        return;
+    }
+    let leaf = vector.root;
+    let level = vector.shift;
+    let index = vector.count - 2;
+    while level >s (0 as i32) {
+        leaf = leaf.slots[(index >>u level) & 31] as &pv_node;
+        level -= 5;
+    }
+    vector.tail = pv_copy_slots(leaf.slots, 32);
+    vector.tail_count = 32;
+    let root0 = pvt_pop_tail(vector.shift, vector.root, vector.count - 2, vector.edit);
+    vector.root = if root0 == null { pv_node_new(vector.edit) } else { root0! };
+    if vector.shift >s (5 as i32) {
+        if vector.root.slots[1] == null {
+            vector.root = vector.root.slots[0] as &pv_node;
+            vector.shift = vector.shift - 5;
+        }
+    }
+    vector.count = vector.count - 1;
+}
+
+fn pvt_persistent(vector: &pvt_vector) -> &pv_vector {
+    pvt_require_active(vector);
+    vector.edit.active = 0;
+    pvt_snapshot(vector)
+}

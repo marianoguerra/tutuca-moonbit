@@ -32,6 +32,10 @@ import {
   // declaration list, and round-tripping is the whole point. Apache-2.0, where
   // this module is MIT.
   "mizchi/css@0.7.3",
+  // The Wax compiler, for `tutucard/wasm` — the card-to-core-wasm backend.
+  // Dependency-free itself, and MoonBit links per package, so a consumer who
+  // never compiles a card pays the fetch and nothing else.
+  "marianoguerra/wax@0.2.0",
   "marianoguerra/tailwindcss@0.2.0",
   "moonbitlang/x@0.4.47",
 }
@@ -70,12 +74,6 @@ import {
 options(
   exclude: [
     "benchmarks",
-    // `cardwasm/` is a module of its own for the reason `examples/` is, with
-    // the sign flipped: it depends on things that are NOT in the tarball. Its
-    // manifest path-depends on this checkout and on a sibling `wax` one, and a
-    // path dependency in THIS manifest would be paid for by every consumer —
-    // so it stays a nested module, checked and tested from its own directory.
-    "cardwasm",
     "examples",
     "guests",
     "playground",
@@ -86,6 +84,13 @@ options(
     "dev",
     "cmd/dev",
     "cmd/css-bundle",
+    // `cmd/cardwasm` and `cmd/card-corpus` are dev shells over `tutucard/wasm`,
+    // which DOES ship: the compiler is the feature, and a terminal front end
+    // for it is not. `tutucard/wasm/test` stays behind for the reason
+    // `dyncomp/test` does — it drives node against real modules.
+    "cmd/cardwasm",
+    "cmd/card-corpus",
+    "tutucard/wasm/test",
     "storybook",
     "package.json",
     "package-lock.json",
