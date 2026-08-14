@@ -6,6 +6,103 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The render-time filter asks the tree what it could possibly find.** Every
+  rule in `vdom/filter` asks two things of an attribute — does its NAME concern
+  me, and is this render's VALUE allowed. The second is why the filter exists at
+  all: a value is a `Val` expression until state produces it. The first is not
+  like that. **Every attribute name in a view is a literal**, the same fact
+  `Policy::check_view` rests on, so which rules an element could ever concern is
+  the same answer on every render — and for almost every element the answer is
+  "none of them".
+
+  `@sinks.SinkHints` is that answer: four bits (`url`, `handler`, `css`,
+  `markup`), computed by `render` off anode's attributes with `vdom/filter`'s own
+  predicates, memoized on `DomData`, and handed to a new
+  `VdomFilter::filter_elem_hinted`. A rule whose bit is clear returns without
+  reading the attribute map at all. A `<div class= id=>` pays a field read where
+  it used to pay a walk of its attributes and, for the CSS rule, a probe of an
+  818-name property set per attribute.
+
+  **What the filter still cost is now inside the noise.** It was +4% to +33% on
+  the workloads that rebuild most (`OPTIMIZATIONS.md` §"What the filter still
+  costs"); an A/B with only the call site swapped now saves 5–26% of those
+  workloads' total time, and the same build measured against no filter at all
+  comes out within the machine's own drift. §13 has the table.
+
+  Three things about how it is built, since each was a design choice with an
+  alternative:
+
+  - **The type lives alone in `sinks/`, importing nothing.** `render` produces
+    the fact and `vdom/filter` consumes it, and those two cannot name a type in
+    each other's package: `vdom/filter` is "over `vdom` and nothing else" —
+    importing `anode` would put a template compiler behind every render, which is
+    why `handler.mbt` duplicates a two-line prefix test rather than import one —
+    and `anode` is imported by everything, so a type it holds must not drag a CSS
+    tokenizer in. Same shape of argument as `anode/sanitize/css`'s.
+  - **It is a memo, not a parse result**, for that same reason: the tables that
+    decide it are behind a tokenizer and an HTML parser that no consumer of a
+    view tree should link. One `Option` test per element per render buys the same
+    steady state, since a `DomData` is shared by every render of that element.
+  - **Everything defaults generous**, because only a hint that is too NARROW
+    could cost a rule: `filter_elem_hinted` defaults to ignoring its hints, so a
+    filter this repo does not own still sees every element; an unclassified
+    element means `SinkHints::all()`; the fold only ever sets bits. Two tests
+    keep it honest — every rule under `all()` does exactly what `filter_elem`
+    does, and the `data-*` names `set_data_attr` stamps after the walk concern no
+    rule.
+
+### Changed
+
+- **The filter seam takes a POLICY, not a filter.** `App::set_filter` is gone.
+  In its place:
+
+  ```moonbit
+  app.set_sanitizer(sanitizer)   // what the built-in chain enforces
+  app.add_filter(my_rule)        // a rule of my own, BEHIND the built-in chain
+  ```
+
+  Two things were wrong with the old shape, and they were the same thing. **A
+  filter is opaque**: `&VdomFilter` is a trait object, so "is the one you are
+  installing at least as strict as the one it replaces" is not a question any
+  code can ask — which means an API that takes one can only offer replacement,
+  and replacement includes removal. And **order between filters is
+  load-bearing** — a filter that replaces a subtree must run before the ones that
+  inspect attributes, `CssFilter` must run before `Baseline` because it rewrites
+  what that reads — so letting a host assemble its own chain put that invariant
+  in the host's call sequence rather than in `@mdfilter.filter_for`, which exists
+  to hold it.
+
+  A `Sanitizer` is a value with structure instead, `add_filter` appends behind
+  the built-in chain and there is no `remove_filter`, so the property that
+  actually matters holds by construction: **the built-in chain always runs, and
+  anything a host adds can only remove more.** Note what is NOT claimed — a
+  policy may still widen: dyncomp's does, since a host granting `raw_markup` is
+  the caller this seam was built for.
+
+  **Migrating**, and what it costs:
+
+  - `set_filter(Some(@mdfilter.filter_for(s)))` → `set_sanitizer(s)`. That is
+    what `dyncomp`'s `set_app` did, and now does.
+  - `set_filter(Some(my_filter))` → `add_filter(my_filter)`, with one behaviour
+    change to know: an addition runs BEHIND the built-in rules, so a rule added
+    to watch for `javascript:` URLs will never see one. It is behind the defense,
+    not beside it.
+  - `set_filter(None)` → **nothing**. There is no opt-out. Of the three reasons
+    the docs gave for wanting one, a deliberate `javascript:` URL is no longer
+    expressible (accepted deliberately: it was rare, and the alternative was an
+    API where every app's defense could be removed by one call somebody wrote for
+    one link), an all-developer-authored tree was "hard to promise" when it was
+    written, and a render loop hot enough to notice was measured away by the
+    hints above.
+
+  Three tests went with the call. They mounted with `set_filter(None)` to pin the
+  SECOND layer — a directive whose filter never ran renders an empty element,
+  `set_prop` refuses a structured value on `href` — which is not an app property
+  and stays pinned where it lives, in `render/render_wbtest.mbt` and
+  `vdom/memdom/custom_element_test.mbt`.
+
 ## [0.20.0] - 2026-08-14
 
 ### Added

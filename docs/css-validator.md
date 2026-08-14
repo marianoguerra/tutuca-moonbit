@@ -278,13 +278,15 @@ wrote. So it is a thing a host adds when it knows its `style` values are not
 entirely its own:
 
 ```moonbit
-app.set_filter(Some(@filter.Chain::new([
-  @filter.CssFilter::new(policy=@safecss.CssPolicy::payload()),
-  @filter.Baseline::new(),
-])))
+app.add_filter(@filter.CssFilter::new(policy=@safecss.CssPolicy::payload()))
 ```
 
-Order matters: `CssFilter` rewrites values and `Baseline` reads them.
+Order matters and this spelling does not get it: `add_filter` appends behind the
+built-in chain, and `CssFilter` rewrites values that `Baseline` reads. It still
+validates and still drops there; what it does not get is the URL rule re-reading
+a `url()` it rewrote. Putting it in front is `filter_for`'s job — see "Where it
+runs" — which is also the only way it will ever be reached by a policy rather
+than by a host naming a filter.
 
 ## What is left
 

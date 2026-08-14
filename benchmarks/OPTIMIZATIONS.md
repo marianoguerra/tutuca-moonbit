@@ -640,7 +640,8 @@ component's `[meta, body]` is spliced inline into its parent's child list and
 there is no boundary left to stop at. A test counting filtered elements caught
 it (9 where 6 was expected).
 
-Two consequences: `App::set_filter` clears the render cache, since a cached
+Two consequences: installing a filter clears the render cache (`App::set_filter`
+then; `set_sanitizer` / `add_filter` now), since a cached
 subtree carries the verdict of whichever filter built it; and a filter that
 replaces children owns checking what it built, because nothing runs after it on
 nodes it created.
@@ -728,21 +729,108 @@ this size. Not measured on native: the effect is smaller than that machine's
 drift on several of these, and the wasm-gc direction is consistent enough to
 decide on.
 
+## 13. The filter is told what it could possibly find — updates −5% to −26%
+
+The biggest single number the filter had left, and it comes from not looking
+rather than from looking faster.
+
+Every rule in `vdom/filter` asks two questions of an attribute: does its NAME
+concern me, and is this render's VALUE allowed? The second is the reason the
+filter exists — a value is a `Val` expression until state produces it. The first
+is not like that at all: **every attribute name in a view is a literal**
+(`AttrItem` carries `name : String` in every variant), so which rules an element
+could ever concern is the same answer on every render, and almost always
+"none of them".
+
+`@sinks.SinkHints` is that answer — four bits, `url` / `handler` / `css` /
+`markup` — computed by `render` off the anode attributes with `vdom/filter`'s
+own predicates, memoized on `DomData`, and handed to `filter_elem_hinted`. A
+rule whose bit is clear returns without touching the attribute map. A `<div>`
+with a `class` and an `id` now pays a field read where it used to pay a walk of
+its attribute map and, for the CSS rule, a probe of an 818-name property set per
+attribute.
+
+wasm-gc, release, A/B on the same build with only the call site swapped
+(`filter_elem_hinted` against `filter_elem`, which also skips computing the
+hints at all):
+
+| Workload                     | hints off | hints on  | saving |
+|------------------------------|-----------|-----------|--------|
+| `patch add+remove todo 100`  |   1.33 ms | 983.46 µs | −26.0% |
+| `patch add+remove todo 10`   | 142.75 µs | 108.51 µs | −24.0% |
+| `patch counter`              |  27.74 µs |  22.84 µs | −17.7% |
+| `patch toggle todo 100`      | 658.44 µs | 542.53 µs | −17.6% |
+| `patch toggle todo 10`       |  98.53 µs |  84.80 µs | −13.9% |
+| `patch switch view`          |  68.34 µs |  59.56 µs | −12.8% |
+| `patch refilter people 100`  | 322.34 µs | 282.44 µs | −12.4% |
+| `patch toggle todo 1000`     |  14.14 ms |  12.43 ms | −12.1% |
+| `patch add+remove todo 1000` |  16.47 ms |  15.24 ms |  −7.5% |
+| `patch move json 8x4`        | 180.53 µs | 167.61 µs |  −7.1% |
+| `patch page people 1000`     | 317.57 µs | 298.37 µs |  −6.0% |
+
+A second A/B pair, run before this one, gives the same ordering with the top
+rows 2–6 points smaller (`add+remove todo 100` −24.4%, `add+remove todo 10`
+−20.1%, `toggle todo 100` −14.6%); per-benchmark spreads were ±1–5% in both.
+`patch noop` moves +2% — it rebuilds nothing, so it has no elements to skip and
+this is drift.
+
+**What is left of the filter is now inside the noise.** The same build measured
+against an app with no filter at all — `set_filter(None)`, which still existed
+when this was measured and has since been removed with the rest of the opt-out,
+and which is what §"What the filter still costs" measured at +4% to +33% before
+this — comes out within ±5% on every
+workload, in both directions, over two runs whose own spreads reached ±10% and
+±28% on the rows that moved most. That is not a claim of zero; it is a claim
+that the cost is no longer separable from the machine, which is as far as this
+harness can go.
+
+Three things worth writing down about how it is built:
+
+- **The name tables did not move, and neither package imports the other.**
+  `anode` holds the memo and `vdom/filter` reads it, but `vdom/filter` is "over
+  `vdom` and nothing else" (importing `anode` would put a template compiler
+  behind every render — `handler.mbt` duplicates a two-line prefix test rather
+  than pay it), and `anode` is imported by everything, so it must not link a CSS
+  tokenizer to hold a field. The type therefore lives alone in `sinks/`, with no
+  imports at all, and `render` — which already has both — is where the question
+  is asked.
+- **It is a memo rather than a parse result** for that same reason: computing it
+  at parse would be tidier, but the tables that decide it are behind a
+  tokenizer and an HTML parser that no consumer of a view tree should link. One
+  `Option` test per element per render buys the same steady state, since a
+  `DomData` is shared by every render of that element.
+- **Failing generous is free and failing narrow is a hole**, so everything
+  defaults generous: `SinkHints::all()` where nothing looked, the trait method
+  defaults to ignoring its hints (a host's own rule sees every element, because
+  no bit here describes what it looks for), and the fold only ever sets bits.
+  `vdom/filter/hints_test.mbt` holds every rule to "`all()` does what
+  `filter_elem` does", and `render/sink_hints_wbtest.mbt` holds the memo's one
+  invariant — that the `data-*` names `set_data_attr` stamps afterwards concern
+  no rule.
+
 ## Not yet tried
 
 Ranked by what the profiles say is left.
 
 In the update path (the biggest numbers on the board):
 
-- **The sanitizer's skip set** (#11 measured the cost that is left: +4% to +33%
-  on what rebuilds). Pass 1 already visits every attribute of every node at
-  registration and already distinguishes a `Const` from a `Val` expression. A
-  view whose URL-set attributes are ALL constant, and which has no raw markup,
-  has nothing left for the filter to decide — the static pass settled it. That
-  is a per-view bit computed once, and the filter skips those elements by
-  `data-vid`. The views needing runtime work are the minority, which was the
-  argument for having a static pass at all. This is the only remaining lever on
-  the filter that does not weaken it.
+- **The sanitizer's skip set, VALUE half.** The name half is #13 and took the
+  measurable part of this with it, so what is left here is smaller than the
+  bullet this replaces and needs something the name half did not.
+
+  Pass 1 distinguishes a `Const` from a `Val` expression, so a view whose
+  sink-set attributes are ALL constant has nothing left for the filter to decide
+  — but only if something CHECKED those constants, and `Policy::check_view` has
+  one call site (`dyncomp/host/bundle.mbt`). A plain app has no static pass, so
+  for it "constant" means "unvalidated", and skipping constants would put a
+  literal `href="javascript:…"` back on the page. So this one is not a pure
+  optimization the way #13 was: it needs either a compile-time pass that checks
+  constants for a plain app too, or a host that can promise the policy which
+  checked them is the policy filtering now. Both are in `docs/sanitizer.md`.
+
+  A per-VIEW bit keyed by `data-vid` — what this bullet used to propose — is
+  also the wrong granularity now: #13 is per-element, and one dynamic `:style`
+  would deoptimize a whole view under the coarser scheme.
 - **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
   per pass. #7 took the CONSTANT half of this, and #8 gave it back — EVERY

@@ -19,9 +19,6 @@ import {
   // the render-time half of the sanitizer: an attribute's VALUE is a `Val` at
   // registration, so the URL rule cannot run where the policy does
   "marianoguerra/tutuca/vdom/filter",
-  // `filter_for`, which turns the policy's sanitizer into the filter that
-  // sanitizer needs — the one place the permission and the filter are paired
-  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "mizchi/js/core",
   "moonbitlang/core/json",
   // a guest's persisted bytes cross this bridge as base64 text

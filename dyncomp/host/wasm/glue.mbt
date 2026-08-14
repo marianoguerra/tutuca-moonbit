@@ -518,12 +518,13 @@ pub fn set_app(
   current.val = Some(app)
   current_doc.val = Some(doc)
   set_policy(policy)
-  // The policy decides what a view may NAME; this installs the render-time
-  // filter that decision implies, so a policy permitting raw markup cannot end
-  // up beside an app that would send the payload straight to `set_inner_html`.
-  // One call rather than an `if` here, because the pairing is the invariant and
-  // it belongs in one place — see `@mdfilter.filter_for`.
-  app.set_filter(Some(@mdfilter.filter_for(policy.sanitizer)))
+  // The policy decides what a view may NAME; handing the app the SAME sanitizer
+  // makes the render-time chain enforce it, so a policy permitting raw markup
+  // cannot end up beside an app that would send the payload straight to
+  // `set_inner_html`. The app builds the chain itself (`@mdfilter.filter_for`),
+  // which is what keeps the two from being set from different values — and
+  // there is no call that could take the chain away again.
+  app.set_sanitizer(policy.sanitizer)
   @dyncomp.install_gc(app.transactor)
 }
 

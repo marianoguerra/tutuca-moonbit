@@ -321,7 +321,7 @@ ordinary attribute path:
 ## Pass 2 — a filter between render and diff
 
 **Implemented** as `vdom/filter`: the `VdomFilter` trait, `UrlFilter`, and the
-`App::set_filter` seam.
+`App::set_sanitizer` / `App::add_filter` seam.
 
 What Pass 1 cannot decide is exactly what the Sanitizer API declines to decide:
 attribute values, and the payload of a raw-markup directive. Both are concrete
@@ -348,9 +348,9 @@ pub(open) trait VdomFilter {
 }
 ```
 
-`App` holds a `mut filter : &VdomFilter?`, replaced with `App::set_filter`.
-**`@filter.Baseline` is installed by default**; `None` is the opt-out and costs
-an `if` per render rather than a branch per attribute.
+`App` holds a `mut filter : &VdomFilter` — never absent — built from the
+sanitizer it also holds. **The chain is installed by default and there is no
+opt-out**; see "What a host may change, and what it may only narrow".
 
 `take_reports` is on the trait rather than on each filter because the filter
 that drops something is now usually one the host never constructed. Draining it
@@ -509,7 +509,8 @@ Three things this cost that were not obvious:
 - **`App::new` installs it**, so `@setinnermd` works with no configuration. The
   price is that every app links the ~4.7k-line parser, since the call is
   unconditional and nothing about it is dead.
-  `set_filter(Some(@filter.Baseline::new()))` is the smaller-footprint opt-out.
+  There is no longer a way to trade it away: the seam takes a policy, and the
+  parser is behind a rule the policy does not reach.
 
 ### HTML and SVG come back the same way, and need no permission either
 
@@ -725,7 +726,7 @@ alone re-filters three.
 
 Two consequences of hooking construction rather than a walk:
 
-- **`set_filter` clears the render cache.** A cached subtree carries the verdict
+- **Installing anything clears the render cache.** A cached subtree carries the verdict
   of whichever filter was installed when it was built, so keeping them would
   mean a newly installed filter never saw most of the tree. One full rebuild, on
   a call a host makes about once.
@@ -735,15 +736,52 @@ Two consequences of hooking construction rather than a walk:
   included. That was already true by design; it is now load-bearing rather than
   belt-and-braces.
 
-The remaining idea from this section is not implemented:
+### The tree says which rules could apply, and mostly says none
 
-**The static pass can hand the filter a skip set.** Pass 1 already visits every
-attribute of every node and already distinguishes `Const` from a `Val`
-expression. A view whose URL-set attributes are all constant, and which has no
-`RawHtml`, has *nothing* left for the filter to decide — Pass 1 settled it. That
-is a per-view bit computed once at registration, and the filter skips those
-subtrees by `data-vid`. The views that need runtime work are the minority, which
-is the whole argument for having a static pass at all.
+**Every attribute NAME in a view is a literal.** That is the same fact
+`Policy::check_view` rests on, and it means the first half of every rule here —
+does this name concern me — is decidable off the tree, once, with the same
+answer on every render. Only the second half, the value, needs the filter.
+
+`@sinks.SinkHints` carries the first half: four bits (`url`, `handler`, `css`,
+`markup`), computed by `render` from anode's attributes using `vdom/filter`'s
+own predicates, memoized on `DomData`, and passed to `filter_elem_hinted`. A
+rule whose bit is clear returns without reading the attribute map at all, which
+for most elements is the whole of what the filter used to do. It took the
+filter's remaining cost from +4%–+33% down inside the measurement noise —
+`benchmarks/OPTIMIZATIONS.md` §13 has the numbers and the package-boundary
+reasons the type lives in a directory of its own.
+
+It is safe by construction rather than by argument: the trait method **defaults
+to ignoring its hints**, so a filter this repo does not own sees every element
+as before; a missing hint means `SinkHints::all()`; and the fold only ever sets
+bits. Only a hint that is too NARROW could cost anything, and the one way that
+could happen — `Attrs` being mutable after the walk — is `set_data_attr`, whose
+callers write `data-*` names that no rule looks at. There is a test for exactly
+that.
+
+The remaining idea from this section is not implemented, and it is the VALUE
+half of the same thought:
+
+**The static pass can hand the filter a skip set.** Pass 1 distinguishes `Const`
+from a `Val` expression, so a view whose sink-set attributes are all constant,
+and which has no `RawHtml`, has *nothing* left for the filter to decide — Pass 1
+settled it.
+
+What the name half above did not need, and this does: **something has to have
+checked those constants.** `Policy::check_view` has one call site
+(`dyncomp/host/bundle.mbt`), so Pass 1 runs for a dyncomp guest and nobody else.
+For a plain app "constant" means "nothing ever looked at it", and skipping a
+constant would hand back the literal `javascript:` URL and the literal `onclick`
+that installing the filter by default removed. So this one is not free the way
+the name half was. It needs one of:
+
+- **a compile-time check of constants for a plain app too** — which is where the
+  diagnostic belongs anyway, since a constant `javascript:` href is an author
+  error and Pass 2 has no author to report it to; or
+- **a host that can promise the policy which checked a constant is no stricter
+  than the one filtering now** — which is a property of the app's API, not of
+  the tree. See "What a host may change, and what it may only narrow".
 
 ### What the trusted case gave up, and why the default flipped
 
@@ -752,19 +790,76 @@ values come from application state that routinely includes user-supplied data.
 That was a real loss versus a universal invariant, and the seam originally
 shipped with `None` as the default.
 
-**It no longer does.** `App::new` installs `@filter.Baseline` — opt-out for an
-app, mandatory for a guest, zero configuration for either — and
-`set_filter(None)` restores the old behaviour for an app that wants it. The
+**It no longer does.** `App::new` installs the chain for every app, and the
 argument that settled it: the trusted case was paying nothing and getting
 nothing, while every app that had never heard of the seam was the one carrying
 the risk. A default that is safe and an escape hatch that is one call is the
 right way round; the reverse asks every author to know about a document they
 have not read.
 
-What the opt-out is still for: an app with a deliberate `javascript:` URL, a
-tree that is entirely developer-authored with no user data in it, or a render
-loop hot enough that one walk matters. The first is rare, the second is hard to
-promise, and the third is measurable — see "Doing the work once".
+The escape hatch is gone too, now — see the next section for what replaced it,
+and for why "one call" turned out to be the wrong shape for it as well.
+
+### What a host may change, and what it may only narrow
+
+The seam used to be `App::set_filter(&VdomFilter?)`: hand over a filter, or hand
+over `None`. Both halves of that were wrong, and for the same reason.
+
+**A filter is opaque.** `&VdomFilter` is a trait object, so "is the one you are
+installing at least as strict as the one it replaces" is not a question any code
+here can ask — there is no order on trait objects to ask it in. An API that
+takes one can only offer REPLACEMENT, and replacement includes removal. The
+three documented reasons to reach for `None` were a deliberate `javascript:`
+URL, an all-developer-authored tree, and a hot render loop; the first is one
+link, and it turned off the `on*` rule and the markup sanitizer to get it.
+
+**Order between filters is load-bearing**, which a host cannot be asked to keep.
+A filter that REPLACES a subtree must run before the ones that inspect
+attributes, or the subtree it built is never inspected; `CssFilter` must run
+before `Baseline`, because it rewrites values the URL rule reads. That is why
+`@mdfilter.filter_for` exists — one function where the policy and the chain it
+implies are named together — and a `set_filter` that let a host assemble its own
+put that invariant back in the host's call sequence.
+
+So the seam is a POLICY now:
+
+```moonbit
+app.set_sanitizer(sanitizer)   // what the built-in chain enforces
+app.add_filter(my_rule)        // a rule of my own, BEHIND the built-in chain
+```
+
+- **`set_sanitizer`** changes what the chain enforces, never whether there is
+  one. A `Sanitizer` is a value with structure — narrowing it is something a
+  host can write down and `SanitizerConfig::validate` can check — and whatever
+  it says, `filter_for` puts the same rules around it.
+- **`add_filter`** is append-only and appends BEHIND. An addition sees a tree
+  the built-in chain has already been over, so it can remove more and can never
+  put back what was removed. There is no `remove_filter`, and no way to get in
+  front. (The consequence to know: a rule added to watch for `javascript:` URLs
+  will never see one — it is behind the defense, not beside it.)
+
+**What this does NOT claim.** It is not "a policy may only get stricter": a
+dyncomp host installs `filter_for(policy.sanitizer)` for a policy that may
+PERMIT raw markup, which is a widening, and refusing it would break the one
+caller the seam was built for. The monotone property is narrower and is the one
+that matters: *the built-in chain always runs, and anything a host adds can only
+remove more.*
+
+**What it costs.** A deliberate `javascript:` URL is no longer expressible —
+accepted, and stated here rather than buried: it was rare, and the alternative
+was an API where every app's defense could be removed by one call somebody wrote
+for one link. The other two reasons are answered rather than refused: an
+all-developer-authored tree was "hard to promise" when it was written, and the
+hot render loop was measured away (`@sinks.SinkHints`, `OPTIMIZATIONS.md` §13).
+
+**What it cost the tests**, which is worth writing down because it is the honest
+price: three tests in `app/filter_test.mbt` mounted with `set_filter(None)` to
+pin the SECOND layer — that a directive whose filter never ran renders an empty
+element, and that `set_prop` refuses a structured value on `href`. That
+situation is no longer reachable through an `App`, so those tests are gone. The
+properties are not: they are not app properties at all, and they stay pinned
+where they live, in `render/render_wbtest.mbt` and
+`vdom/memdom/custom_element_test.mbt`.
 
 Unrelated to the filter, and belonging with Pass 1: `set_prop` routes by
 `node.has_property(name)`, and `onclick` *is* a property, so an `:onclick="…"`
@@ -804,10 +899,11 @@ correct one, which an event handler's is not.
    **Done** — the refusal message gained the element and a locator.
 3. ~~The `&VdomFilter` seam with a null default, and the URL rule as the first
    filter.~~ **Done** — `vdom/filter` (10 tests over the scheme table) plus
-   `App::set_filter` and 3 end-to-end tests through the real render loop.
+   `App::set_filter` and 3 end-to-end tests through the real render loop. (That
+   seam is now `set_sanitizer` / `add_filter` — see "What a host may change".)
 4. ~~The dyncomp host installs one, so a loaded bundle gets Pass 2 and not only
    Pass 1.~~ **Done** — `set_app` (`dyncomp/host/wasm/glue.mbt`) calls
-   `set_filter` beside the policy and the GC sweep, and `take_filter_reports()`
+   `set_sanitizer` beside the policy and the GC sweep, and `take_filter_reports()`
    drains the log. That one line lives in the wasm glue, which `moon test` never
    runs; it is verified by inspection like the rest of the `tcomp` bridge.
 5. ~~Raw markup re-admitted through the same filter.~~ **Done** —
@@ -849,6 +945,23 @@ correct one, which an event handler's is not.
    untrusted dyncomp guest may state a constant `fill="#1da1f2"` or
    `style="text-align:center"`.
 
+10. ~~The filter stops inspecting elements that cannot concern it.~~ **Done** —
+    `@sinks.SinkHints`, four bits computed off the tree and memoized per
+    element, with `filter_elem_hinted` defaulting to ignoring them so a host's
+    own rule is unaffected. It took Pass 2's measurable cost with it: +4%–+33%
+    on what rebuilds, down to inside the noise (`OPTIMIZATIONS.md` §13). 15
+    tests across `vdom/filter` and `render`, including the two that keep it
+    honest — every rule under `all()` does what `filter_elem` does, and the
+    `data-*` names stamped after the walk concern no rule.
+
+11. ~~The seam takes a policy rather than a filter.~~ **Done** —
+    `App::set_sanitizer` and `App::add_filter` replace `App::set_filter`, so the
+    built-in chain can be re-aimed but not removed and a host's own rule can
+    only ever remove more. See "What a host may change, and what it may only
+    narrow" for the argument, what it costs (a deliberate `javascript:` URL is
+    no longer expressible) and what it does not claim (a policy may still
+    widen — dyncomp's does).
+
 What is left, in rough order of who it helps:
 
 - ~~**An event-handler rule in Pass 2.**~~ **Done** — `HandlerFilter` drops
@@ -862,7 +975,8 @@ What is left, in rough order of who it helps:
   that only holds when another pass already held is not a second layer. 8 tests.
 
 - ~~**Install the filter by default for a plain app.**~~ **Done** — `App::new`
-  installs `@filter.Baseline`, and `set_filter(None)` is the opt-out. Pass 1
+  installs `@filter.Baseline`, and `set_filter(None)` was the opt-out — since
+  removed, see "What a host may change, and what it may only narrow". Pass 1
   runs for a dyncomp guest and nobody else (`Policy::check_view` has a single
   call site, `dyncomp/host/bundle.mbt`), so before this a plain app had no `on*`
   defense and no URL defense at all. It is a behaviour change for every existing
@@ -910,8 +1024,11 @@ What is left, in rough order of who it helps:
   The placement half is **done** — the filter hooks element CONSTRUCTION in
   `render`, so it is exactly-once and a cached subtree is never re-filtered; see
   "Doing the work once" for why the cache-miss walk this bullet originally
-  proposed does not work. The **skip set is still open**, and is now the only
-  remaining idea there.
+  proposed does not work. The skip set split in two, and the NAME half is
+  **done** — `@sinks.SinkHints`, four bits off the tree, memoized per element,
+  which took the filter's measurable cost with it (`OPTIMIZATIONS.md` §13). What
+  is left open is the VALUE half, which needs a checked constant rather than
+  merely a constant one — see "The tree says which rules could apply".
 - **A guest-level end-to-end test.** `app/filter_test.mbt` proves the filter sees
   what the render loop builds, and a guest's subtree is part of that same tree by
   construction — so this would add little, and the scaffolding is a whole

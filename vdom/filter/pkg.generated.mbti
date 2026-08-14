@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/vdom/filter"
 
 import {
   "marianoguerra/tutuca/anode/sanitize/css",
+  "marianoguerra/tutuca/sinks",
   "marianoguerra/tutuca/vdom",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
@@ -11,7 +12,11 @@ import {
 // Values
 pub fn attr_value_allowed(String, String) -> Bool
 
+pub fn is_css_attr(String) -> Bool
+
 pub fn is_event_handler_attr(String) -> Bool
+
+pub fn is_url_attr(String) -> Bool
 
 pub let navigational_attrs : @set.Set[String]
 
@@ -77,6 +82,7 @@ pub impl VdomFilter for UrlFilter
 // Traits
 pub(open) trait VdomFilter {
   fn filter_elem(Self, @vdom.VElem) -> Unit
+  fn filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit = _
   fn filter_tree(Self, @vdom.Vdom) -> Unit = _
   fn take_reports(Self) -> Array[Dropped] = _
 }

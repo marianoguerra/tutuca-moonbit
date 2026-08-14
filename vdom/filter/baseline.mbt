@@ -48,3 +48,17 @@ pub impl VdomFilter for Baseline with fn filter_elem(self, el) {
   self.url.filter_elem(el)
   self.handlers.filter_elem(el)
 }
+
+///|
+/// Each half asks about its own bit, so an element with a `href` and no `on*`
+/// pays for the URL rule alone. Written out rather than delegating twice
+/// through `filter_elem_hinted` for the reason this type exists at all: one
+/// traversal, two rules, no indirection between them.
+pub impl VdomFilter for Baseline with fn filter_elem_hinted(self, el, hints) {
+  if hints.url {
+    self.url.filter_elem(el)
+  }
+  if hints.handler {
+    self.handlers.filter_elem(el)
+  }
+}

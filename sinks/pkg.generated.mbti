@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/sinks"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct SinkHints {
+  url : Bool
+  handler : Bool
+  css : Bool
+  markup : Bool
+} derive(Eq, @debug.Debug)
+pub fn SinkHints::all() -> Self
+pub fn SinkHints::any(Self) -> Bool
+pub fn SinkHints::empty() -> Self
+
+// Type aliases
+
+// Traits

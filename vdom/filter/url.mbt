@@ -196,7 +196,7 @@ fn UrlFilter::record(self : UrlFilter, d : Dropped) -> Unit {
 /// own IDL spellings (`className`, `htmlFor`, `tabIndex`) — none of which are in
 /// the URL set. The scan for an uppercase letter costs no allocation, and the
 /// `to_lower` happens only for a name that has one.
-fn is_url_attr(name : String) -> Bool {
+pub fn is_url_attr(name : String) -> Bool {
   if url_attrs.contains(name) {
     return true
   }
@@ -206,6 +206,15 @@ fn is_url_attr(name : String) -> Bool {
     }
   }
   false
+}
+
+///|
+/// Nothing to look for when no attribute name is a URL's, which `render`
+/// decided off the view tree — see `@sinks.SinkHints`.
+pub impl VdomFilter for UrlFilter with fn filter_elem_hinted(self, el, hints) {
+  if hints.url {
+    self.filter_elem(el)
+  }
 }
 
 ///|

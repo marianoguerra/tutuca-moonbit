@@ -448,9 +448,11 @@ they cannot execute host code are incompatible requirements.
 
 **Every tutuca app installs one, not only a page that hosts bundles.**
 `App::new` installs `@filter.Baseline` — the URL rule and the handler rule in
-one traversal — and `set_filter(None)` is the opt-out. Not tier-dependent,
-because there is no legitimate `javascript:` URL in a described view at any
-tier.
+one traversal — and there is **no opt-out**: `App::set_sanitizer` re-aims the
+chain and `App::add_filter` adds to it, neither removes it. Not tier-dependent
+either, because there is no legitimate `javascript:` URL in a described view at
+any tier. (Until 0.21 `set_filter(None)` did remove it; `docs/sanitizer.md`,
+"What a host may change, and what it may only narrow", has why that went.)
 
 **The rule used to have a hole where the value was not a string, and the shape
 of that hole is worth keeping.** A view attribute whose value evaluates to a
@@ -501,10 +503,11 @@ had installed that filter: a policy saying `raw_markup: true` beside an app
 mounted without it would send the payload straight to `set_inner_html`
 unchecked. So the permission and the filter are now derived from the SAME value.
 `Policy` carries a `Sanitizer`; `Policy::with_sanitizer(config)` replaces it;
-and `@markdown.filter_for(policy.sanitizer)` returns the filter that sanitizer
+and `@markdown.filter_for(sanitizer)` returns the filter that sanitizer
 requires — the markup filter in front of `Baseline` when raw markup is
-permitted, `Baseline` alone when it is not. `set_app` calls it, so a host cannot
-hold the permission without the filter.
+permitted, `Baseline` alone when it is not. `set_app` hands the app the policy's
+sanitizer (`App::set_sanitizer`), which is what calls it, so a host cannot hold
+the permission without the filter and cannot take the filter away afterwards.
 
 It is a function rather than a type-level proof because `dyncomp/policy` is a
 leaf over `anode` and must not import `vdom` — the permission cannot carry

@@ -1,5 +1,9 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
+  // `DomData.sink_hints` — the memo `render` fills and `vdom/filter` reads. A
+  // leaf with no imports of its own, so holding the type costs nothing; the
+  // name tables that decide it stay in `vdom/filter`.
+  "marianoguerra/tutuca/sinks",
   "marianoguerra/tutuca/tscript",
   "moonbit-community/html/src" @html5,
 }

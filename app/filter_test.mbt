@@ -1,9 +1,16 @@
 // The filter seam, end to end through the real render loop.
 //
 // The unit tests in `vdom/filter` prove the rule; these prove the SEAM — that
-// the filter an App carries runs on every render before anything reaches the
-// DOM, that it is on by default, and that opting out restores the old
-// behaviour exactly.
+// the chain an App carries runs on every render before anything reaches the
+// DOM, that it is on by default, and that nothing a host can say takes it away.
+//
+// The tests that used to mount with `set_filter(None)` are gone with the call.
+// What they pinned was the SECOND layer — that a directive whose filter never
+// ran renders an empty element, and that `set_prop` refuses a structured value
+// on `href` — and that layer is not an app property: it is pinned where it
+// lives, by `render/render_wbtest.mbt` ("… renders nothing on its own", two of
+// them) and `vdom/memdom/custom_element_test.mbt` ("a structured value does not
+// skip never_assign").
 
 ///|
 priv struct LinkState {
@@ -47,16 +54,30 @@ fn link_component() -> @component.Component {
 priv enum FilterMode {
   /// Whatever `App::new` installs — the thing most of these are about.
   Default
-  /// `set_filter(None)`, the behaviour before the default existed.
-  Off
-  /// A host's own, replacing the default.
-  Own
+  /// The same, plus a rule of the host's own BEHIND it. There is no mode for
+  /// "instead of": `add_filter` appends and nothing replaces.
+  Extra
+}
+
+///|
+/// A host's own rule, of the kind `add_filter` is for: it drops `class`, which
+/// no built-in rule touches, so a test can tell which of the two ran.
+priv struct ClassDropper {
+  mut dropped : Int
+}
+
+///|
+impl @filter.VdomFilter for ClassDropper with fn filter_elem(self, el) {
+  if el.attrs.contains("class") {
+    el.attrs.remove("class")
+    self.dropped = self.dropped + 1
+  }
 }
 
 ///|
 fn mk_filtered_app(
   mode : FilterMode,
-) -> (@app.App[@memdom.MemNode], @memdom.MemNode, @filter.UrlFilter) raise {
+) -> (@app.App[@memdom.MemNode], @memdom.MemNode, ClassDropper) raise {
   let scope = @component.ComponentStack::new()
   scope.register_components([link_component()])
   guard scope.lookup_component("Linker") is Some(c) else {
@@ -64,7 +85,7 @@ fn mk_filtered_app(
   }
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let f = @filter.UrlFilter::new()
+  let f = ClassDropper::{ dropped: 0 }
   let a = @app.App::new(
     scope,
     c.make(Map([])),
@@ -73,8 +94,7 @@ fn mk_filtered_app(
   )
   match mode {
     Default => ()
-    Off => a.set_filter(None)
-    Own => a.set_filter(Some(f))
+    Extra => a.add_filter(f)
   }
   a.start()
   (a, container, f)
@@ -104,25 +124,48 @@ test "an app filters by default" {
 }
 
 ///|
-/// Opting out restores the old behaviour exactly, which is the escape hatch an
-/// app with a deliberate `javascript:` URL or a trusted-only tree needs.
-test "set_filter(None) opts out" {
-  let (a, container, _f) = mk_filtered_app(Off)
+/// There is no policy that turns the URL rule off, which is the point of the
+/// seam taking a POLICY rather than a filter.
+///
+/// A sanitizer decides names, raw markup and CSS. The URL rule and the `on*`
+/// rule are not in it and have nothing to configure — a view has no legitimate
+/// `javascript:` URL — so the widest sanitizer a host can write still gets
+/// them. `set_filter(None)`, which did turn them off, is gone.
+test "no sanitizer a host can install removes the URL rule" {
+  let (a, container, _f) = mk_filtered_app(Default)
+  // As permissive as the config model goes: raw markup permitted, nothing
+  // removed, no allow-list narrowing anything.
+  a.set_sanitizer(
+    @sanitize.Sanitizer::new({
+      ..@sanitize.SanitizerConfig::default(),
+      raw_markup: Some(true),
+    }),
+  )
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
-  assert_true(container.to_html().contains("javascript:alert(1)"))
-  // Nothing to report, because nothing ran.
-  debug_inspect(a.take_filter_reports().length(), content="0")
+  let html = container.to_html()
+  assert_false(html.contains("javascript:"))
+  assert_true(html.contains("class=\"link\""))
+  debug_inspect(
+    a.take_filter_reports().map(@filter.Dropped::to_string),
+    content=(
+      #|["dropped href on <A>: URL scheme is not one a view may navigate to (javascript:alert(1))"]
+    ),
+  )
 }
 
 ///|
 /// A value the static pass could not have seen — it arrives from state, and
 /// only at render — is dropped before the DOM is written.
-test "a host's own filter replaces the default" {
-  let (a, container, f) = mk_filtered_app(Own)
-  // The initial value is fine and survives.
-  assert_true(container.to_html().contains("href=\"/safe\""))
-  debug_inspect(f.take_reports().length(), content="0")
+test "a host's own filter runs behind the built-in chain, not instead of it" {
+  let (a, container, f) = mk_filtered_app(Extra)
+  // The addition ran: `class` is gone, and no built-in rule would have taken
+  // it. The initial URL is fine and survives, so the addition did not replace
+  // the rule that decides that either.
+  let html = container.to_html()
+  assert_true(html.contains("href=\"/safe\""))
+  assert_false(html.contains("class="))
+  assert_true(f.dropped > 0)
 
   // Now the component sets a javascript: URL on itself, the way a guest whose
   // state came from anywhere might.
@@ -135,15 +178,14 @@ test "a host's own filter replaces the default" {
     @tutuca.Path::new(steps=[FieldStep("url")]).lookup(a.transactor.root)
     is Some(Str("javascript:alert(1)")),
   )
-  // ...and the DOM never saw it.
+  // ...and the DOM never saw it, which is the built-in rule still running with
+  // a host's own filter installed.
   let html = container.to_html()
   assert_false(html.contains("javascript:"))
-  // The element and its other attributes are untouched: an attribute was
-  // dropped, not a node.
-  assert_true(html.contains("class=\"link\""))
+  // The element stayed: an attribute was dropped, not a node.
   assert_true(html.contains(">go<"))
   debug_inspect(
-    f.take_reports().map(@filter.Dropped::to_string),
+    a.take_filter_reports().map(@filter.Dropped::to_string),
     content=(
       #|["dropped href on <A>: URL scheme is not one a view may navigate to (javascript:alert(1))"]
     ),
@@ -154,25 +196,23 @@ test "a host's own filter replaces the default" {
 /// Installing takes effect from the next render rather than retroactively —
 /// what is already in the DOM stays until something re-renders over it, for
 /// the same reason a policy applies at load.
-test "a filter installed after mount applies from the next render" {
-  // Mounted opted-out, so there is something in the DOM to not reach back for.
-  let (a, container, f) = mk_filtered_app(Off)
-  guard find_el(container, "BUTTON") is Some(bad1) else { fail("no button") }
-  assert_true(a.dispatch(bad1, @render.DomEvent::new(name="click")))
-  // No filter yet, so it rendered.
-  assert_true(container.to_html().contains("javascript:alert(1)"))
+test "a filter added after mount applies from the next render" {
+  // Mounted with the default chain, which does not touch `class`, so there is
+  // something in the DOM for the addition to not reach back for.
+  let (a, container, _f) = mk_filtered_app(Default)
+  assert_true(container.to_html().contains("class=\"link\""))
 
-  // Installing does NOT reach back into the DOM.
-  a.set_filter(Some(f))
-  assert_true(container.to_html().contains("javascript:alert(1)"))
+  // Adding does NOT reach back into the DOM.
+  let dropper = ClassDropper::{ dropped: 0 }
+  a.add_filter(dropper)
+  assert_true(container.to_html().contains("class=\"link\""))
+  assert_eq(dropper.dropped, 0)
 
   // The next render is where it takes effect.
-  guard find_el(container, "BUTTON", nth=1) is Some(bad2) else {
-    fail("no second button")
-  }
-  assert_true(a.dispatch(bad2, @render.DomEvent::new(name="click")))
-  assert_false(container.to_html().contains("javascript:"))
-  debug_inspect(f.take_reports().length(), content="1")
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  assert_false(container.to_html().contains("class="))
+  assert_true(dropper.dropped > 0)
 }
 
 // ---------------------------------------------------------------------------
@@ -285,7 +325,7 @@ fn mk_counted() -> (@app.App[@memdom.MemNode], @memdom.MemNode, CountingFilter) 
     container,
     @vdom.RenderOpts::new(doc),
   )
-  a.set_filter(Some(f))
+  a.add_filter(f)
   a.start()
   (a, container, f)
 }
@@ -317,6 +357,26 @@ test "a rebuild filters only what was rebuilt" {
   // ...and the child is still there, unfiltered this time because unchanged.
   assert_true(container.to_html().contains("<em>"))
   inspect(f.elems, content="3")
+}
+
+///|
+/// Changing the policy drops the render cache, so the new rules see the whole
+/// tree rather than only what happens to rebuild next.
+///
+/// The same reason adding a filter does: a cached subtree carries the verdict
+/// of whichever chain was installed when it was BUILT, so keeping it would mean
+/// a newly installed policy silently never saw most of the page. This is the
+/// counter-example to "a rebuild filters only what was rebuilt" above — after a
+/// policy change, everything is a rebuild.
+test "changing the policy re-filters the whole tree" {
+  let (a, container, f) = mk_counted()
+  f.elems = 0
+  a.set_sanitizer(@sanitize.Sanitizer::default())
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  assert_true(container.to_html().contains("z"))
+  // Six, not the three that changed: the child was rebuilt too.
+  inspect(f.elems, content="6")
 }
 
 // ---------------------------------------------------------------------------
@@ -444,30 +504,6 @@ test "setinnermd re-renders, and the url rule follows the new value" {
   )
 }
 
-///|
-/// Opting out is honest about it: with no filter, the directive renders an
-/// empty element rather than markdown-as-text or markdown-as-markup.
-test "set_filter(None) makes setinnermd render nothing" {
-  let scope = @component.ComponentStack::new()
-  scope.register_components([md_component()])
-  guard scope.lookup_component("Bodied") is Some(c) else {
-    fail("component missing")
-  }
-  let doc = @memdom.document()
-  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let a = @app.App::new(
-    scope,
-    c.make(Map([])),
-    container,
-    @vdom.RenderOpts::new(doc),
-  )
-  a.set_filter(None)
-  a.start()
-  let html = container.to_html()
-  assert_true(html.contains("<article></article>"))
-  assert_false(html.contains("# one"))
-}
-
 // ---------------------------------------------------------------------------
 // The list-valued URL attribute.
 //
@@ -513,9 +549,7 @@ impl @component.Fields for LinksState with fn schema() {
 }
 
 ///|
-fn mk_links_app(
-  filtered : Bool,
-) -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
+fn mk_links_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
   let scope = @component.ComponentStack::new()
   let c = @component.component(
     views={
@@ -536,9 +570,6 @@ fn mk_links_app(
     container,
     @vdom.RenderOpts::new(doc),
   )
-  if !filtered {
-    a.set_filter(None)
-  }
   a.start()
   (a, container)
 }
@@ -546,7 +577,7 @@ fn mk_links_app(
 ///|
 /// The default filter drops it and says so.
 test "a list-valued URL attribute is dropped by default" {
-  let (a, container) = mk_links_app(true)
+  let (a, container) = mk_links_app()
   guard find_el(container, "A") is Some(anchor) else { fail("no anchor") }
   guard find_el(container, "FORM") is Some(form) else { fail("no form") }
   // Neither the property path nor the attribute path carries it.
@@ -568,18 +599,11 @@ test "a list-valued URL attribute is dropped by default" {
 }
 
 ///|
-/// And with the filter off, `set_prop` still refuses to put it on the property
-/// path — the second layer, which is what holds when a host opts out.
-test "set_filter(None) still does not put a list on the href property" {
-  let (a, container) = mk_links_app(false)
-  guard find_el(container, "A") is Some(anchor) else { fail("no anchor") }
-  // `href` is in `never_assign`, so it degrades to inert JSON text.
-  assert_false(anchor.props.contains("href"))
-  assert_true(
-    anchor.attrs.get("href") == Some("[\"javascript:alert(document.cookie)\"]"),
-  )
-  debug_inspect(a.take_filter_reports().length(), content="0")
-}
+/// The second layer — `set_prop` refusing to put a structured value on the
+/// `href` PROPERTY, whatever the filter did — is not reachable from here any
+/// more, since an app always filters. It is pinned where it lives:
+/// `vdom/memdom/custom_element_test.mbt`, "a structured value does not skip
+/// never_assign".
 
 // ---------------------------------------------------------------------------
 // `@setinnerhtml` and `@setinnersvg`, end to end
@@ -673,31 +697,4 @@ test "a payload that arrives on a later render is filtered too" {
       "dropped href on <ARTICLE>: URL scheme is not one a view may navigate to (javascript:alert(2))",
     ),
   )
-}
-
-///|
-/// Opting out is honest about it, the same way `@setinnermd` is: with no
-/// filter, both directives render an EMPTY element rather than the payload as
-/// text or as markup. A construct that fails visibly is recoverable.
-test "set_filter(None) makes the safe markup directives render nothing" {
-  let scope = @component.ComponentStack::new()
-  scope.register_components([safe_markup_component()])
-  guard scope.lookup_component("Marked") is Some(c) else {
-    fail("component missing")
-  }
-  let doc = @memdom.document()
-  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let a = @app.App::new(
-    scope,
-    c.make(Map([])),
-    container,
-    @vdom.RenderOpts::new(doc),
-  )
-  a.set_filter(None)
-  a.start()
-  let html = container.to_html()
-  assert_true(html.contains("<article></article>"))
-  assert_true(html.contains("<svg></svg>"))
-  assert_false(html.contains("<b>ok</b>"))
-  inspect(container.inner_html_sets, content="0")
 }

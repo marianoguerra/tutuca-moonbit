@@ -27,6 +27,23 @@ pub(open) trait VdomFilter {
   /// `attr_value_allowed` is public.
   fn filter_elem(Self, @vdom.VElem) -> Unit
 
+  /// The same, for a caller that already knows which rules can possibly apply.
+  ///
+  /// `render` knows: an attribute's NAME is a literal in the view, so which
+  /// rules an element could concern is decided off the tree once and memoized
+  /// (`@anode.DomData.sink_hints`), while its VALUE is what the filter is here
+  /// to look at. A rule whose bit is clear has nothing to find and returns
+  /// without touching the attribute map — which is the whole cost of the filter
+  /// on the elements that carry no sink at all, and that is most of them.
+  ///
+  /// DEFAULTS TO IGNORING THE HINTS, which is why a filter this package does
+  /// not own is still correct: a host's own rule looks for something no bit
+  /// describes, so it gets asked about every element as it always was. Override
+  /// it only to skip work, never to do different work — `filter_elem` stays the
+  /// definition of what the rule IS, and `@sinks.SinkHints::all()` must always
+  /// mean exactly the same as calling it.
+  fn filter_elem_hinted(Self, @vdom.VElem, @sinks.SinkHints) -> Unit = _
+
   /// Apply this filter to a whole tree.
   ///
   /// The convenience entry point, for a caller holding a tree and no opinion
@@ -46,6 +63,13 @@ pub(open) trait VdomFilter {
 }
 
 ///|
+impl VdomFilter with fn filter_elem_hinted(self, el, _hints) {
+  self.filter_elem(el)
+}
+
+///|
+/// A walk holds no view tree, so it knows nothing and claims nothing:
+/// `filter_elem` is the whole rule and this is what it always did.
 impl VdomFilter with fn filter_tree(self, tree) {
   walk_elems(tree, el => self.filter_elem(el))
 }
@@ -162,6 +186,18 @@ pub fn Chain::new(filters : Array[&VdomFilter]) -> Chain {
 pub impl VdomFilter for Chain with fn filter_elem(self, el) {
   for f in self.filters {
     f.filter_elem(el)
+  }
+}
+
+///|
+/// Each member decides for itself what the hints let it skip.
+///
+/// Passed through rather than tested here: a chain has no idea which bits its
+/// members care about, and a member this package does not own cares about none
+/// of them. The early-out belongs in the rule.
+pub impl VdomFilter for Chain with fn filter_elem_hinted(self, el, hints) {
+  for f in self.filters {
+    f.filter_elem_hinted(el, hints)
   }
 }
 

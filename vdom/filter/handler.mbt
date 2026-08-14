@@ -61,6 +61,19 @@ fn HandlerFilter::record(self : HandlerFilter, d : Dropped) -> Unit {
 }
 
 ///|
+/// Nothing to look for when no attribute name starts with `on`, which `render`
+/// decided off the view tree — see `@sinks.SinkHints`.
+pub impl VdomFilter for HandlerFilter with fn filter_elem_hinted(
+  self,
+  el,
+  hints,
+) {
+  if hints.handler {
+    self.filter_elem(el)
+  }
+}
+
+///|
 /// The rule for one element; the caller owns the walk.
 pub impl VdomFilter for HandlerFilter with fn filter_elem(self, el) {
   // Allocated only when there is something to drop. A view that sets an `on*`

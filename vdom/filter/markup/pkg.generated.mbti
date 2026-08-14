@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/vdom/filter/markup"
 
 import {
   "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/sinks",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
 }

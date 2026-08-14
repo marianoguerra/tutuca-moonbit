@@ -50,8 +50,13 @@ pub fn render(
       // replaces them — raw markup becoming described nodes — is replacing
       // finished nodes, and is responsible for what it builds. `MarkupFilter`
       // sanitizes its own output for exactly this reason.
+      //
+      // The hints say which of the filter's rules can concern this element at
+      // all. That is a fact about attribute NAMES, which are literals in a
+      // view, so it is decided once per element instead of by scanning the
+      // attribute map on every render. See `sink_hints.mbt`.
       if ctx.filter is Some(f) && built is Node(el) {
-        f.filter_elem(el)
+        f.filter_elem_hinted(el, sink_hints(d))
       }
       Some(built)
     }

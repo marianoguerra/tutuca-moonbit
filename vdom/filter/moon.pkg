@@ -14,6 +14,12 @@ import {
   // package take it without taking the config model it deliberately does not
   // have.
   "marianoguerra/tutuca/anode/sanitize/css" @safecss,
+  // `SinkHints` — which of these rules an element's attribute NAMES could
+  // concern, decided by `render` off the view tree and passed to
+  // `filter_elem_hinted`. A leaf with no imports, which is what lets this
+  // package take it: naming the type in `anode`, where the tree is, would put
+  // a template compiler behind every render (see `handler.mbt`).
+  "marianoguerra/tutuca/sinks",
   "moonbitlang/core/set",
 }
 

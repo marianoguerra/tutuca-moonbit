@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/anode"
 
 import {
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/sinks",
   "marianoguerra/tutuca/tscript",
   "moonbit-community/html/src",
   "moonbitlang/core/debug",
@@ -146,6 +147,7 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
+  mut sink_hints : @sinks.SinkHints?
 } derive(@debug.Debug)
 
 pub(all) struct EachData {

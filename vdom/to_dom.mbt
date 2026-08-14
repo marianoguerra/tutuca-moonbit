@@ -68,9 +68,9 @@ fn[N : DomNode] set_prop(
   // The three safe directives never reach the DOM as markup, and this is where
   // that is enforced rather than merely intended. `MdFilter` and
   // `SafeMarkupFilter` remove these attributes as they build the sanitized
-  // children, so seeing one HERE means no filter consumed it — the app was
-  // mounted with `set_filter(None)`, or with a filter chain that does not
-  // include one.
+  // children, so seeing one HERE means no filter consumed it — a tree rendered
+  // with no filter at all (`RenderCtx` allows that; an `App` no longer does),
+  // or through a chain that does not include one.
   //
   // Rendering nothing is the only defensible answer. Setting the payload as
   // text would be wrong output; parsing it here is impossible (vdom knows about

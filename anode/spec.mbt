@@ -216,6 +216,21 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
+  /// Which render-time rules this element's attribute NAMES could concern, or
+  /// `None` until something has looked.
+  ///
+  /// A memo, not a parse result, and anode neither fills it nor reads it:
+  /// deciding it needs the name tables in `vdom/filter`, which anode must not
+  /// import (see `sinks/moon.pkg` for why the type lives in a package of its
+  /// own). `render` fills it the first time it builds this element and every
+  /// later render reads it — see `render/render.mbt`.
+  ///
+  /// Safe to memo because it is a fact about NAMES, and an element's attribute
+  /// names never change after it is parsed. The one thing that edits `attrs`
+  /// afterwards is `set_data_attr`, whose four callers all write a `data-*`
+  /// name — `data-vid`, `data-cid`, `data-nid` — and no rule looks at those.
+  /// `sink_hints_test.mbt` holds that.
+  mut sink_hints : @sinks.SinkHints?
 } derive(Debug)
 
 ///|

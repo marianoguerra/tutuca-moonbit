@@ -6,6 +6,9 @@ import {
   // the sanitizing filter, applied to each component subtree as it is BUILT
   // rather than to the finished tree — see `RenderCtx.filter`
   "marianoguerra/tutuca/vdom/filter",
+  // `SinkHints` — the fact `sink_hints.mbt` computes from anode's attribute
+  // names using the filter's own predicates, and memoizes on the element.
+  "marianoguerra/tutuca/sinks",
   "moonbitlang/core/json",
   "moonbitlang/core/strconv",
 }

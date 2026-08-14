@@ -30,14 +30,16 @@
 // entirely its own:
 //
 // ```moonbit
-// app.set_filter(Some(@filter.Chain::new([
-//   @filter.CssFilter::new(@safecss.CssPolicy::payload()),
-//   @filter.Baseline::new(),
-// ])))
+// app.add_filter(@filter.CssFilter::new(@safecss.CssPolicy::payload()))
 // ```
 //
-// The URL rule must run AFTER this one, the way it does above: this rewrites
-// values and the other reads them.
+// One caveat with that spelling, and it is the reason this is not the whole
+// story: `add_filter` appends BEHIND the built-in chain, and the URL rule must
+// run after this one — this rewrites values and that one reads them. Behind
+// `Baseline` it still validates and still drops, but a `url()` it rewrites is
+// not re-read for its scheme afterwards. Composing it in FRONT is
+// `@mdfilter.filter_for`'s business, which is where it will go when a policy
+// asks for it.
 
 ///|
 /// Validates `style` and the SVG presentation attributes against a policy, and
@@ -76,7 +78,7 @@ pub impl VdomFilter for CssFilter with fn take_reports(self) {
 /// `style` is a declaration list; every other name here is an SVG presentation
 /// attribute, which sets the CSS property of the same name with the same
 /// grammar — which is why `fill="url(…)"` is a fetch and `fill="red"` is not.
-fn is_css_attr(name : String) -> Bool {
+pub fn is_css_attr(name : String) -> Bool {
   if name == "style" || @safecss.css_properties.contains(name) {
     return true
   }
@@ -87,6 +89,17 @@ fn is_css_attr(name : String) -> Bool {
     }
   }
   false
+}
+
+///|
+/// Nothing to look for when no attribute name carries a CSS value, which
+/// `render` decided off the view tree — see `@sinks.SinkHints`. This is the
+/// rule the hints save the most on: `is_css_attr` probes a set of 818 property
+/// names, and `class`, `id` and `type` are in none of them.
+pub impl VdomFilter for CssFilter with fn filter_elem_hinted(self, el, hints) {
+  if hints.css {
+    self.filter_elem(el)
+  }
 }
 
 ///|

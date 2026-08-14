@@ -27,14 +27,24 @@ pub struct App[N] {
   /// passes and generation-rolled each render, so a subtree whose instance did
   /// not change is reused instead of rebuilt.
   render_cache : @render.RenderCache
+  /// The policy the built-in chain enforces. `set_sanitizer` replaces it, and
+  /// that is the only thing a host can say about the built-in rules — see
+  /// `set_sanitizer` for why the seam is a policy and not a filter.
+  mut sanitizer : @sanitize.Sanitizer
+  /// Rules a host added, run after the built-in chain in the order they were
+  /// added. Append-only: nothing can be taken out, and nothing can get in FRONT
+  /// of the built-in chain.
+  extra_filters : Array[&@filter.VdomFilter]
+  /// The two above composed — `@mdfilter.filter_for(sanitizer)` with the extras
+  /// behind it — rebuilt by `install_filter` whenever either changes.
+  ///
   /// Runs over the freshly built tree, between evaluating anode and diffing
-  /// against the last render — the one point where an attribute's VALUE is
+  /// against the last render: the one point where an attribute's VALUE is
   /// concrete and nothing has touched the DOM yet.
   ///
-  /// `@filter.Baseline` by default: the URL-scheme rule and the event-handler
-  /// rule, in one traversal. Opt OUT with `set_filter(None)`, which is one `if`
-  /// per render. See `set_filter` and docs/sanitizer.md.
-  mut filter : &@filter.VdomFilter?
+  /// Never absent. Every app filters; what an app can change is WHICH policy,
+  /// not whether.
+  mut filter : &@filter.VdomFilter
 }
 
 ///|
@@ -59,17 +69,20 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_cache: @render.RenderCache::new(),
-    // Safe by default, opt out with `set_filter`. `filter_for` under the
-    // default sanitizer is `MdFilter` in front of `@filter.Baseline`: the URL
-    // and `on*` rules every app has had, plus the one that makes `@setinnermd`
-    // render at all (`set_prop` fails closed on its attribute otherwise).
+    // Safe by default and safe afterwards: `set_sanitizer` can change what the
+    // chain enforces and `add_filter` can add to it, but nothing removes it.
+    // `filter_for` under the default sanitizer is `MdFilter` in front of
+    // `@filter.Baseline`: the URL and `on*` rules every app has had, plus the
+    // one that makes `@setinnermd` render at all (`set_prop` fails closed on
+    // its attribute otherwise).
     //
     // The cost is that every app links the vendored markdown parser, because
     // this call constructs the filter unconditionally and nothing about it is
-    // dead. An app that wants the smaller footprint back passes
-    // `@filter.Baseline::new()` to `set_filter`; `set_filter(None)` is still
-    // the full opt-out.
-    filter: Some(@mdfilter.default_filter()),
+    // dead. That used to be escapable by installing a bare `Baseline`; it is
+    // not any more, and the reason is in `set_sanitizer`.
+    sanitizer: @sanitize.Sanitizer::default(),
+    extra_filters: [],
+    filter: @mdfilter.default_filter(),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -203,7 +216,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   let ctx = @render.RenderCtx::new(
     view_resolver=self.scope.comps,
     render_cache=self.render_cache,
-    filter?=self.filter,
+    filter=self.filter,
   )
   match @render.render_root(root_val, stack, ctx) {
     Some(vdom) => {
@@ -215,29 +228,109 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 }
 
 ///|
-/// Replace (or clear, with `None`) the filter that runs between building a
-/// vdom tree and diffing it.
+/// Change the POLICY the render-time rules enforce.
 ///
-/// An `App` starts with `@filter.Baseline` installed, so this is for widening
-/// — `@filter.Chain` with the markup filter in front — or for opting OUT.
-/// `None` is the behaviour every tutuca app had before that default existed:
-/// no URL check, no handler check, one `if` per render.
+/// The seam a host gets, and it is deliberately not "here is my filter".
 ///
-/// Takes effect from the next render. It is not retroactive — a value already
-/// in the DOM stays there until something re-renders over it — for the same
-/// reason a policy applies at load: retracting what is already on the page is
-/// dropping it, not filtering it.
+/// ## Why a policy and not a filter
+///
+/// A filter is opaque — `&VdomFilter` is a trait object, so "is this one at
+/// least as strict as the one it replaces" is not a question any code here can
+/// ask. An API that takes one can therefore only offer replacement, and
+/// replacement includes removal: the seam that used to be here also took
+/// `None`, and the escape hatch a host reached for to make one deliberate
+/// `javascript:` link work turned off the `on*` rule and the markup sanitizer
+/// with it.
+///
+/// A sanitizer is a VALUE with structure. Narrowing it is a thing a host can
+/// write down and `SanitizerConfig::validate` can check, and whatever it says,
+/// `@mdfilter.filter_for` puts the same rules around it — which is why the
+/// pairing lives in that one function rather than in a host's call sequence
+/// (order between the members is load-bearing: a filter that REPLACES a subtree
+/// must run before the ones that inspect attributes).
+///
+/// So: the URL rule and the `on*` rule are not configurable and cannot be
+/// removed, because neither has anything to configure — a view has no
+/// legitimate `javascript:` URL and no legitimate `onclick`. What a policy
+/// decides is names, raw markup and CSS.
+///
+/// ## What replaced the opt-out
+///
+/// Three reasons were documented for turning the filter off, and none of them
+/// is one now:
+///
+/// - **a deliberate `javascript:` URL** — gone, and deliberately: it was rare,
+///   and the alternative was an API where every app's defense could be removed
+///   by one call somebody wrote for one link;
+/// - **an all-developer-authored tree** — "hard to promise", as the doc that
+///   proposed it said;
+/// - **a render loop hot enough that one walk matters** — measured away. The
+///   filter now asks the tree which rules could apply before doing anything
+///   (`@sinks.SinkHints`), and what is left is inside the noise. See
+///   `benchmarks/OPTIMIZATIONS.md` §13.
+///
+/// A host with a rule of its OWN — something no policy here describes — adds it
+/// with `add_filter`, which can only ever remove more.
+///
+/// ## When it applies
+///
+/// From the next render. Not retroactive: a value already in the DOM stays
+/// until something re-renders over it, for the same reason a dyncomp policy
+/// applies at load — retracting what is already on the page is dropping it, not
+/// filtering it.
+pub fn[N] App::set_sanitizer(
+  self : App[N],
+  sanitizer : @sanitize.Sanitizer,
+) -> Unit {
+  self.sanitizer = sanitizer
+  self.install_filter()
+}
+
+///|
+/// Add a rule of the host's own, run after everything built in.
+///
+/// The only shape an addition can take, and the reason the whole API is
+/// monotone: an appended filter sees a tree the built-in chain has already
+/// been over, so it can remove more and can never put back what was removed.
+/// There is no `remove_filter` and no way to get in front of the chain.
+///
+/// What it is for: a rule this repo does not have — a host that refuses a
+/// `target` it did not write, or one counting what it renders. What it is NOT
+/// for is replacing a built-in rule with a laxer version of itself; that is
+/// what the policy is for, and it cannot reach the two rules that have nothing
+/// to configure.
+///
+/// One consequence worth knowing: by the time an addition runs, the built-in
+/// rules have already dropped what they drop, so a filter added to "watch for
+/// `javascript:` URLs" will never see one. It is behind the defense, not
+/// beside it.
+pub fn[N] App::add_filter(self : App[N], filter : &@filter.VdomFilter) -> Unit {
+  self.extra_filters.push(filter)
+  self.install_filter()
+}
+
+///|
+/// Compose the policy's chain with the host's additions, and start clean.
 ///
 /// **Clears the render cache**, which is not an optimization detail leaking
 /// out. Filtering happens where a subtree is BUILT, so a cached subtree carries
 /// the verdict of whichever filter was installed when it was built. Keeping
-/// those would mean a newly installed filter silently never saw most of the
-/// tree — the next render would be hits all the way down. Dropping them costs
-/// one full rebuild, on a call a host makes about once.
-///
-/// A filter MUTATES the tree it is given.
-pub fn[N] App::set_filter(self : App[N], filter : &@filter.VdomFilter?) -> Unit {
-  self.filter = filter
+/// those would mean a newly installed rule silently never saw most of the tree
+/// — the next render would be hits all the way down. Dropping them costs one
+/// full rebuild, on a call a host makes about once.
+fn[N] App::install_filter(self : App[N]) -> Unit {
+  let built = @mdfilter.filter_for(self.sanitizer)
+  self.filter = if self.extra_filters.is_empty() {
+    built
+  } else {
+    // The built-in chain first, always. `Chain` is one traversal for all of
+    // them, so an addition costs a call and no extra walk.
+    let all : Array[&@filter.VdomFilter] = [built]
+    for extra in self.extra_filters {
+      all.push(extra)
+    }
+    @filter.Chain::new(all)
+  }
   self.render_cache.clear()
 }
 
@@ -250,10 +343,7 @@ pub fn[N] App::set_filter(self : App[N], filter : &@filter.VdomFilter?) -> Unit 
 /// a dropped value may have come from application state rather than from
 /// anyone's template — so "why did my link vanish" is answered here or nowhere.
 pub fn[N] App::take_filter_reports(self : App[N]) -> Array[@filter.Dropped] {
-  match self.filter {
-    Some(f) => f.take_reports()
-    None => []
-  }
+  self.filter.take_reports()
 }
 
 ///|

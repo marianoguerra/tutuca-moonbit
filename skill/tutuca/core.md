@@ -976,9 +976,9 @@ the app's own `@sanitize.Sanitizer` on the way out. `<script>`, `<iframe>`,
 *attribute*, not the element, so a bad link keeps its words and loses its
 destination. Raw HTML inside the markdown goes through the same sanitizer.
 
-`App::new` installs the filter that does this, so it works with no setup.
-`set_filter(None)` opts out — and then the directive renders an EMPTY element
-rather than anything unsanitized, which is deliberate.
+`App::new` installs the filter that does this, so it works with no setup, and
+there is no way to turn it off: `App::set_sanitizer` changes WHICH policy the
+chain enforces, and `App::add_filter` adds a rule of your own behind it.
 
 Two behaviours worth knowing before you use it: inline HTML tags (`<span>x</span>`
 inside a paragraph) render as literal text rather than as markup, and an
@@ -1023,10 +1023,10 @@ that is itself SVG.
 
 Neither needs a permission and neither is refused at registration — unlike
 `@dangerouslysetinnerhtml`, there is no unchecked path to permit. `App::new`
-installs the filter, so both work with no setup; `set_filter(None)` opts out,
-and then they render an EMPTY element rather than anything unsanitized. A host
-that wants less says which elements it will have, with a `SanitizerConfig`, the
-same way it does for every other node in the tree.
+installs the filter, so both work with no setup, and no call takes it away. A
+host that wants less says which elements it will have, with a `SanitizerConfig`
+through `App::set_sanitizer`, the same way it does for every other node in the
+tree.
 
 One exception, in `dyncomp`: an **untrusted** guest may not use any of the three
 runtime-markup directives. That refusal is not about XSS — the sanitizer handles

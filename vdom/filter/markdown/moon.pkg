@@ -21,6 +21,9 @@ import {
   "marianoguerra/tutuca/markdown" @md,
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
+  // `SinkHints.markup` — whether this element can carry a payload at all,
+  // decided by `render` off the view tree rather than by looking here.
+  "marianoguerra/tutuca/sinks",
   "marianoguerra/tutuca/vdom/filter/markup",
   // the config model and its verdicts, shared with the registration-time pass
   // and with `markup`, so a host cannot have three different answers to the

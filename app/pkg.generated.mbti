@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/app"
 
 import {
+  "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/render",
@@ -27,8 +28,11 @@ pub struct App[N] {
   mut drag : DragState[N]?
   mut cur_drag_over : N?
   render_cache : @render.RenderCache
-  mut filter : &@filter.VdomFilter?
+  mut sanitizer : @sanitize.Sanitizer
+  extra_filters : Array[&@filter.VdomFilter]
+  mut filter : &@filter.VdomFilter
 }
+pub fn[N] App::add_filter(Self[N], &@filter.VdomFilter) -> Unit
 pub fn[N] App::destroy(Self[N]) -> Unit
 pub fn[N : @vdom.DomWalk] App::dispatch(Self[N], N, @render.DomEvent) -> Bool
 pub fn[N] App::drain_batched(Self[N], max_per_batch~ : Int, () -> Unit) -> @transactor.SettleResult
@@ -37,7 +41,7 @@ pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdo
 pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @core.Value, N, @vdom.RenderOpts[N]) -> Self[N] raise
 pub fn[N] App::root_value(Self[N]) -> @core.Value
 pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value], max_turns? : Int) -> @transactor.SettleResult
-pub fn[N] App::set_filter(Self[N], &@filter.VdomFilter?) -> Unit
+pub fn[N] App::set_sanitizer(Self[N], @sanitize.Sanitizer) -> Unit
 pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
 pub fn[N] App::take_filter_reports(Self[N]) -> Array[@filter.Dropped]
 

@@ -1,0 +1,18 @@
+// What a render-time filter must look at on one element, decided once.
+//
+// A LEAF that imports nothing of tutuca's — only what `derive(Debug)` pulls in —
+// and that is its whole reason to exist. The fact it carries is produced by
+// `render` (which walks anode's attributes) and
+// consumed by `vdom/filter` (whose rules read it), and those two packages
+// deliberately cannot name a type in each other's:
+//
+// - `vdom/filter` is "over `vdom` and nothing else" — importing `anode` there
+//   would put a template compiler behind every render, which is the reason
+//   `handler.mbt` duplicates a two-line prefix test rather than importing it.
+// - `anode` is imported by everything, so a type it holds must cost nothing;
+//   the name tables that DECIDE these bits sit behind a CSS tokenizer and an
+//   HTML parser, and neither belongs in every consumer of the view tree.
+//
+// So the type is here, alone, and the tables stay where they are. Same shape of
+// argument as `anode/sanitize/css`'s header, for the same reason: a fact three
+// packages share can only live somewhere none of them owns.

@@ -64,6 +64,21 @@ fn MarkupFilter::record(
 }
 
 ///|
+/// Nothing to replace when the element carries no markup payload, which
+/// `render` decided off the view tree — see `@sinks.SinkHints`. A payload
+/// arrives under one of four fixed directive names, so this is a name question
+/// like the others.
+pub impl @filter.VdomFilter for MarkupFilter with fn filter_elem_hinted(
+  self,
+  el,
+  hints,
+) {
+  if hints.markup {
+    self.filter_elem(el)
+  }
+}
+
+///|
 /// The rule for one element; the caller decides when to call it.
 ///
 /// The nodes this builds are sanitized by `html_nodes` itself, attribute
