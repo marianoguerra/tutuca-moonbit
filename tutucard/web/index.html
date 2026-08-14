@@ -109,9 +109,26 @@
           <button id="download" class="tab download" disabled>
             download .tutuca.tar.gz
           </button>
+          <button id="load" class="tab action" disabled>
+            load &amp; mount
+          </button>
         </div>
         <ul id="refusals" class="issues"></ul>
         <pre id="compiled" class="json wasm-out"></pre>
+      </section>
+
+      <!-- And the module RUNNING. The pane above proves the bytes; this one
+           instantiates them through the host's own `abi.mjs` and registers the
+           manifest as an ordinary dyncomp bundle, so what is drawn here reached
+           the page the way a dropped `.tutuca.tar.gz` would. Two backends over
+           one card, both on screen: the interpreted preview and this. -->
+      <section class="pane">
+        <h2>
+          Mounted
+          <span id="loaded-note" class="note"></span>
+        </h2>
+        <div id="loaded" class="preview"></div>
+        <ul id="loaded-issues" class="issues"></ul>
       </section>
     </main>
 

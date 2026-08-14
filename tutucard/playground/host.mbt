@@ -70,6 +70,10 @@ fn slot_of(id : String) -> Slot {
 /// arrives and leaves with its element, and several live side by side. So is
 /// `classesAt`: an embedded card is styled where it sits, and the page's one
 /// card is not a thing it can ask about.
+///
+/// `mountCompiled` is the other backend's mount, and it takes a manifest rather
+/// than a source: by then the card is a running wasm module the page
+/// instantiated, and what is left is to register it as a bundle (`cardguest.mbt`).
 pub fn install() -> Unit {
   publish(
     (source, name) => load(source, name),
@@ -81,6 +85,7 @@ pub fn install() -> Unit {
     (id, source, name) => mount_at(id, source, name),
     id => unmount_at(id),
     id => classes_at(id),
+    (id, manifest) => mount_compiled(id, manifest),
   )
 }
 
@@ -95,8 +100,9 @@ extern "js" fn publish(
   mount : (String, String, String) -> String,
   unmount : (String) -> Unit,
   classes_at : (String) -> String,
+  mount_compiled : (String, String) -> String,
 ) -> Unit =
-  #|(load, check, compile, state, classes, activity, mount, unmount, classesAt) => { globalThis.__tutucard = { load, check, compile, state, classes, activity, mount, unmount, classesAt } }
+  #|(load, check, compile, state, classes, activity, mount, unmount, classesAt, mountCompiled) => { globalThis.__tutucard = { load, check, compile, state, classes, activity, mount, unmount, classesAt, mountCompiled } }
 
 ///|
 /// Parse, check and mount a card into the element with this id.

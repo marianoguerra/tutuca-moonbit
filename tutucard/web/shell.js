@@ -29,6 +29,10 @@ const els = {
   refusals: $("refusals"),
   wasmSize: $("wasm-size"),
   download: $("download"),
+  load: $("load"),
+  loaded: $("loaded"),
+  loadedNote: $("loaded-note"),
+  loadedIssues: $("loaded-issues"),
   state: $("state"),
   activity: $("activity"),
   status: $("status"),
@@ -643,19 +647,120 @@ function compileToWasm(src) {
     // so on its own rather than blanking the preview beside it.
     lastBuild = null;
     els.download.disabled = true;
+    els.load.disabled = true;
     els.wasmSize.textContent = "";
     els.refusals.replaceChildren();
     els.compiled.textContent = report.error ?? "did not compile";
     els.compiled.classList.add("bad");
+    staleMount();
     return;
   }
   els.compiled.classList.remove("bad");
   lastBuild = report;
   els.wasmSize.textContent = `${(report.size / 1024).toFixed(1)} KB · ${report.fields.length} field${report.fields.length === 1 ? "" : "s"}`;
   els.download.disabled = false;
+  els.load.disabled = false;
   drawRefusals(report.refusals);
   drawCompiled();
+  staleMount();
 }
+
+// ---------------------------------------------------------------------------
+// ...and the module RUNNING
+//
+// The download proves the bytes. This runs them. `card-wasm.js` instantiates
+// the module through the host's own `abi.mjs` and installs it as
+// `globalThis.__cardguest`; `mountCompiled` implements dyncomp's `&Guest` over
+// those five calls, registers the manifest as an ordinary bundle and mounts an
+// instance into the pane below (`tutucard/playground/cardguest.mbt`).
+//
+// Nothing on either side of that is card-specific once the module exists —
+// `register_bundle` is the call the universal host makes over a dropped
+// archive — which is the claim this button turns into something a reader can
+// check by pressing it.
+
+/** Whether a compiled card is mounted, so a later build can mark it behind. */
+let mounted = false;
+
+/**
+ * The mounted card is a snapshot of the build it came from, and the editor has
+ * moved on. Dimmed rather than torn down, for the reason the preview is dimmed
+ * while a card does not parse: what is on screen is a real running module, it
+ * is just not this source any more.
+ */
+function staleMount() {
+  if (mounted) els.loaded.classList.add("stale");
+}
+
+/** The bundle's view findings — the only feedback a guest's views ever get. */
+function drawLoadedIssues(lines) {
+  els.loadedIssues.replaceChildren();
+  for (const line of lines ?? []) {
+    const li = document.createElement("li");
+    li.className = "issue warn";
+    li.textContent = line;
+    els.loadedIssues.append(li);
+  }
+}
+
+/** margaui for the mounted card, scoped to its own pane like the preview. */
+function styleMounted() {
+  let classes = [];
+  try {
+    classes = JSON.parse(globalThis.__tutucard.classesAt("loaded"));
+  } catch {
+    return;
+  }
+  if (classes.length) {
+    els.loaded.dataset.theme = "dark";
+    addClasses(classes, { scope: "#loaded", styleId: "loaded-margaui" });
+  }
+}
+
+/** Instantiate the last successful build and mount it. */
+async function loadAndMount() {
+  if (!lastBuild) return;
+  els.loadedNote.textContent = "instantiating…";
+  els.loadedNote.className = "note";
+  els.loadedIssues.replaceChildren();
+  let report;
+  try {
+    // Imported lazily, with the packer beside it: a reader who never presses
+    // this never fetches the guest bridge or the ABI it stands on.
+    const { loadGuest, b64ToBytes } = await import("./card-wasm.js");
+    // The manifest travels with the module it was compiled WITH. Its field list
+    // is the order `get-field` answers in, so a manifest paired with any other
+    // build would be a bundle whose halves disagree.
+    await loadGuest(b64ToBytes(lastBuild.wasm), lastBuild.descriptor);
+    report = JSON.parse(
+      globalThis.__tutucard.mountCompiled(
+        "loaded",
+        JSON.stringify(lastBuild.manifest),
+      ),
+    );
+  } catch (e) {
+    // A throw is `abi.mjs` refusing the module — most often for a capability
+    // its import section asks for and the empty grants list does not answer.
+    report = { ok: false, error: String(e) };
+  }
+  if (!report.ok) {
+    mounted = false;
+    els.loaded.replaceChildren();
+    els.loaded.classList.remove("stale");
+    els.loadedNote.textContent = "refused";
+    els.loadedNote.className = "note bad";
+    drawLoadedIssues([report.error ?? "did not mount"]);
+    return;
+  }
+  mounted = true;
+  els.loaded.classList.remove("stale");
+  els.loadedNote.textContent = `${report.module} · ${report.component}`;
+  els.loadedNote.className = "note good";
+  drawLoadedIssues(report.diagnostics);
+  styleMounted();
+}
+
+els.load.addEventListener("click", loadAndMount);
 
 for (const b of document.querySelectorAll("[data-out]")) {
   b.addEventListener("click", () => {

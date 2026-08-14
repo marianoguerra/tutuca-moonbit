@@ -407,14 +407,21 @@ textarea:focus {
   white-space: pre-wrap;
 }
 
-/* Pushed to the right of the two output tabs, because it is an action and they
- * are a choice — and disabled until there is something to download. */
-.tab.download {
-  margin-left: auto;
+/* Pushed to the right of the two output tabs, because these are actions and
+ * those are a choice — and disabled until there is something to act on. Only
+ * the FIRST action carries the `auto`: two of them would split the free space
+ * and separate the pair rather than move it. */
+.tab.download,
+.tab.action {
   font-variant-numeric: tabular-nums;
 }
 
-.tab.download[disabled] {
+.tab.download {
+  margin-left: auto;
+}
+
+.tab.download[disabled],
+.tab.action[disabled] {
   opacity: 0.4;
   cursor: default;
 }
@@ -426,4 +433,17 @@ h2 .note {
   font-size: 0.75rem;
   opacity: 0.65;
   margin-left: 0.5rem;
+}
+
+/* The mounted pane's note says which bundle is running, or that the host
+ * refused it — an outcome rather than a measurement, so it is coloured like the
+ * status pill and not dimmed like a size. */
+h2 .note.good {
+  color: var(--good);
+  opacity: 1;
+}
+
+h2 .note.bad {
+  color: var(--bad);
+  opacity: 1;
 }

@@ -24,6 +24,11 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard",
   "marianoguerra/tutuca/tutucard/wasm",
+  // What the compiled card is mounted AS: an ordinary dyncomp bundle. The
+  // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is
+  // what this page will accept from one.
+  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
+  "marianoguerra/tutuca/dyncomp/policy",
   "moonbitlang/core/encoding/base64",
   "marianoguerra/tutuca/app/browser" @glue,
   "marianoguerra/tutuca/vdom/browser" @bdom,
