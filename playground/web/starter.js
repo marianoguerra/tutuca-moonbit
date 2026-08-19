@@ -34,7 +34,7 @@ const EXAMPLES = {
      Write a handler it cannot compile and the Generated tab says which one,
      by name; that one goes in the component tab as an \`update~\`. -->
 <script type="tutuca/script">
-  on add(d) {
+  receive add(d) {
     .count += d
   }
 </script>

@@ -136,7 +136,7 @@ cases.push({
     "    format $'{.here} + {.there} is not {.total}'",
     "  { (.here + .there) is .total }",
     "",
-    "  on push requires canPush { .here -= 1; .there += 1 }",
+    "  receive push requires canPush { .here -= 1; .there += 1 }",
     "</script>",
     "",
     '<template id="Ledger">',
