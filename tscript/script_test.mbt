@@ -30,6 +30,16 @@ fn trip(source : String) -> String raise {
 }
 
 ///|
+/// The route of the first statement of the first declaration.
+fn route_of(source : String) -> Array[@tutuca.Leg] raise {
+  guard @tscript.parse_script(source)[0].body is Stmts(sts) else {
+    fail("not a statement body")
+  }
+  guard sts[0] is SEffect(route~, ..) else { fail("not an effect") }
+  route
+}
+
+///|
 /// The message a block fails with, or "" when it parses.
 fn script_err(source : String) -> String {
   try {
@@ -667,4 +677,135 @@ test "a format attaches to a rule and to nothing else" {
     script_err("pred ok format 'a' format 'b' { .a }"),
     "expected one `format` — a rule says one thing about the failure it describes, found a second `format`",
   )
+}
+
+// -- v2: the intent declaration, the four new effects, and the leg words -----
+
+///|
+test "the intent declaration round-trips" {
+  assert_eq(
+    trip("intent saveDraft(text) { reply .count }"),
+    "intent saveDraft(text) {\n  reply .count\n}",
+  )
+  // It is a transition, so it takes contracts like the other four.
+  assert_eq(
+    trip("intent saveDraft(text) requires hasRoom { .count += 1 }"),
+    "intent saveDraft(text) requires hasRoom {\n  .count += 1\n}",
+  )
+}
+
+///|
+test "reply, fail and stop are one-word answers" {
+  assert_eq(trip("intent go { reply 1 }"), "intent go {\n  reply 1\n}")
+  assert_eq(
+    trip("intent go { fail 'disk full' }"),
+    "intent go {\n  fail 'disk full'\n}",
+  )
+  assert_eq(trip("intent go { stop }"), "intent go {\n  stop\n}")
+}
+
+///|
+test "leg words are written between the verb and the arguments" {
+  assert_eq(
+    trip("receive go { intent 'saveDraft' .name }"),
+    "receive go {\n  intent 'saveDraft' .name\n}",
+  )
+  assert_eq(
+    trip("receive go(k) { intent dyn 'picked' k }"),
+    "receive go(k) {\n  intent dyn 'picked' k\n}",
+  )
+  assert_eq(
+    trip("receive go { intent lex 'loadRows' }"),
+    "receive go {\n  intent lex 'loadRows'\n}",
+  )
+  assert_eq(
+    trip("receive go { intent lex dyn 'saveDraft' }"),
+    "receive go {\n  intent lex dyn 'saveDraft'\n}",
+  )
+}
+
+///|
+test "forward takes leg words, arguments, both or neither" {
+  assert_eq(
+    trip("receive saveDraft(t) { forward }"),
+    "receive saveDraft(t) {\n  forward\n}",
+  )
+  assert_eq(
+    trip("receive saveDraft(t) { forward dyn }"),
+    "receive saveDraft(t) {\n  forward dyn\n}",
+  )
+  assert_eq(
+    trip("receive saveDraft(t) { forward lex dyn }"),
+    "receive saveDraft(t) {\n  forward lex dyn\n}",
+  )
+  assert_eq(
+    trip("receive saveDraft(t) { forward .enriched }"),
+    "receive saveDraft(t) {\n  forward .enriched\n}",
+  )
+  assert_eq(
+    trip("receive saveDraft(t) { forward dyn .enriched }"),
+    "receive saveDraft(t) {\n  forward dyn .enriched\n}",
+  )
+}
+
+///|
+test "an empty route prints nothing, so the default stays where it is written" {
+  // A bare `intent 'save'` records NO legs, not `[Dyn, Lex]`. The default lives
+  // in `@tutuca.IntentOpts::new`, and a parser that resolved it here would be a
+  // second place for it to live and a second place for it to drift.
+  guard route_of("receive go { intent 'save' }") is [] else {
+    fail("a bare intent should record no legs")
+  }
+  guard route_of("receive go { intent dyn lex 'save' }") is [Dyn, Lex] else {
+    fail("the legs written are the legs recorded")
+  }
+}
+
+// -- the collision: `dyn` and `lex` are contextual ---------------------------
+//
+// The lexer hands them over as plain identifiers, so only the two positions
+// that ask about legs ever treat them as words. Everywhere else they are names.
+
+///|
+test "a pred may be called dyn, and a parameter may be called lex" {
+  assert_eq(trip("pred dyn { .count > 0 }"), "pred dyn { .count > 0 }")
+  assert_eq(
+    trip("receive go(lex) { .name = lex }"),
+    "receive go(lex) {\n  .name = lex\n}",
+  )
+  assert_eq(
+    trip("receive go(dyn, lex) { .name = dyn }"),
+    "receive go(dyn, lex) {\n  .name = dyn\n}",
+  )
+}
+
+///|
+test "a handler may be called dyn, and a contract may name a pred called lex" {
+  assert_eq(
+    trip("receive dyn { .count = 1 }"),
+    "receive dyn {\n  .count = 1\n}",
+  )
+  assert_eq(
+    trip("intent go requires lex { .count = 1 }"),
+    "intent go requires lex {\n  .count = 1\n}",
+  )
+}
+
+///|
+test "a leg word is only a leg word before an argument list" {
+  // `send` does not take a route, so `dyn` after it is an ordinary name — and
+  // the parser must not eat it.
+  assert_eq(
+    trip("receive go(dyn) { send 'flash' dyn }"),
+    "receive go(dyn) {\n  send 'flash' dyn\n}",
+  )
+  // ...and a parameter named `dyn` is still readable as an argument to an
+  // effect that DOES take a route, once the route is over.
+  // The leg word wins in the leg position. That is the cost of a contextual
+  // keyword, and it is worth writing down because a reader will ask: a
+  // parameter named `lex` cannot be forwarded by writing `forward lex`, which
+  // is a route. Stage it in a field and write `forward .staged`.
+  guard route_of("receive go(lex) { forward lex }") is [Lex] else {
+    fail("the leg position reads a leg")
+  }
 }

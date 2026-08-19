@@ -87,7 +87,7 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
       }
     SIf(cond~, then_~, else_~, ..) =>
       [if_(self.truthy(cond), self.stmts(then_), self.stmts(else_))]
-    SEffect(name~, args~, span~) => self.effect(name, args, span)
+    SEffect(name~, args~, span~, ..) => self.effect(name, args, span)
     SMethod(place~, call~, args~, span~) => self.mutate(place, call, args, span)
     // `new Label` — the zero of a declared type, into `@cur`.
     //

@@ -220,12 +220,20 @@ fn stmt_src(s : Stmt, indent : String) -> String {
         head + " " + args.map(a => operand_src(a)).join(" ")
       }
     }
-    SEffect(name~, args~, ..) =>
-      if args.is_empty() {
+    SEffect(name~, args~, route~, ..) => {
+      // Leg words go between the verb and the arguments, which is where they
+      // are written and the only place they can be read back from.
+      let head = if route.is_empty() {
         indent + name
       } else {
-        indent + name + " " + args.map(a => operand_src(a)).join(" ")
+        indent + name + " " + @tutuca.route_label(route)
       }
+      if args.is_empty() {
+        head
+      } else {
+        head + " " + args.map(a => operand_src(a)).join(" ")
+      }
+    }
     SNew(ty~, ..) => indent + "new " + ty.to_source()
     SIf(cond~, then_~, else_~, ..) => {
       let b = StringBuilder::new()

@@ -28,10 +28,16 @@
 /// MoonBit calling convention rather than something a body says. So `when`
 /// joins `@show` and `@hide` as a USE of a predicate.
 pub(all) enum DeclKind {
-  /// An `@on` name — the Input arm.
+  /// An `@on` name — the Input arm. v1 only: v2 has one word for an addressed
+  /// message whoever sent it, and it is `DReceive`. Task 25 deletes this.
   DOn
   /// A case of the schema's `variant receive` / `bubble` / `response`.
   DReceive
+  /// A ROUTED name: the schema's `intent` variant. v2's, and the one `DBubble`
+  /// and `DResponse` fold into — a bubble is a routed dispatch that could only
+  /// search one scope, and a response is the answer to one, which v2 delivers
+  /// as an ordinary message instead.
+  DIntent
   DBubble
   DResponse
   /// A `$name` in a value position. One expression.
@@ -151,8 +157,21 @@ pub(all) enum Stmt {
   /// mirror the runtime-generic mutators one for one, with the `In<Field>At`
   /// infix dropped because the receiver is written.
   SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
-  /// `send 'flash' .msg`, `stop`, `sendAt &.status 'flash' 'Saved'`.
-  SEffect(name~ : String, args~ : Array[Expr], span~ : Span)
+  /// `send 'flash' .msg`, `stop`, `sendAt &.status 'flash' 'Saved'`,
+  /// `intent dyn 'picked' @key`, `forward lex`.
+  ///
+  /// `route` is the leg words, in the order written, and it is empty for every
+  /// effect except `intent` and `forward` — the two that HAVE a route. Empty
+  /// means "not written", not "no legs": a bare `intent 'save'` takes the
+  /// default route, and where that default is written is `@tutuca.IntentOpts::new`
+  /// and not here. A parser that resolved it would be a second place for the
+  /// default to live and a second place for it to drift.
+  SEffect(
+    name~ : String,
+    args~ : Array[Expr],
+    route~ : Array[@tutuca.Leg],
+    span~ : Span
+  )
   /// `if cond { … } else { … }`.
   SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
   /// `new Label`, `new Array[String]` — the zero of a declared type, and the

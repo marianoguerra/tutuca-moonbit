@@ -67,7 +67,7 @@ Two consequences worth stating outright.
 
 **Phase 2 — the language**
 
-- [ ] 7. [`tscript`: kinds, effects, leg words](#7-tscript-kinds-effects-leg-words)
+- [x] 7. [`tscript`: kinds, effects, leg words](#7-tscript-kinds-effects-leg-words)
 - [ ] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
 - [ ] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
 - [ ] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
@@ -527,6 +527,41 @@ context is the parser's job and the test suite must cover the collision.
 
 **Validation.** `tscript/script_test.mbt` round-trips every declaration kind and
 every effect. Add the collision cases.
+
+**Done.** Additively: `DeclKind` gains `DIntent` (ten arms; `DOn`, `DBubble` and
+`DResponse` go in task 25), `kind_word` / `kind_of_word` / `is_transition`
+follow, and `effect_min_arity` gains `intent` (1), `forward` (0), `reply` (1)
+and `fail` (1) while keeping `bubble` and `request`.
+
+**`SEffect` gains `route~ : Array[@tutuca.Leg]`** — 10 sites, most of which
+already used `..`. It is written **as written, not resolved**: a bare
+`intent 'save'` records the EMPTY route, not `[Dyn, Lex]`. The default lives in
+`@tutuca.IntentOpts::new` and a parser that resolved it here would be a second
+place for it to live and a second place for it to drift. (The corpus records the
+route resolved, which is the opposite choice for the opposite reason: there it
+is the backends' agreement being pinned, here it is the source being
+represented.) A test asserts both halves.
+
+**The one new parse rule** is `takes_route(name)` plus `leg_of_word(w)`: for
+`intent` and `forward` only, read leg words while the next token is one, then
+parse arguments normally. It adds no ambiguity to juxtaposition — an `intent`'s
+name is always a string literal and `forward`'s arguments are values, so neither
+can be the bare word `dyn` or `lex`.
+
+**The collision risk held**, and there are five tests for it: `pred dyn`,
+`receive dyn`, a parameter named `lex`, a parameter list `(dyn, lex)`, a
+`requires lex` naming a pred, and `send 'flash' dyn` — where `send` takes no
+route, so `dyn` is an ordinary name and the parser must not eat it. The lexer
+emits both as `TIdent` and only the two route positions ever ask.
+
+The one place the contextual keyword does cost something is written into the
+test rather than left to be discovered: a parameter named `lex` cannot be
+forwarded by writing `forward lex`, because that position is a route. Stage it
+in a field and write `forward .staged`.
+
+The printer puts the legs between the verb and the arguments, which is where
+they are written and the only place they can be read back from; every form above
+round-trips.
 
 ## 8. `tscript/check`: the new findings
 

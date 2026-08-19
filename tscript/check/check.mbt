@@ -333,7 +333,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
         None => ()
       }
     }
-    SEffect(name~, args~, span~) => {
+    SEffect(name~, args~, span~, ..) => {
       for a in args {
         // A `&` place is a POSITION and has no value, so it is checked as a
         // place rather than inferred as one.

@@ -163,6 +163,36 @@ pub fn effect_min_arity(name : String) -> Int? {
     "send" | "bubble" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
+    // v2. `intent` takes a name after its leg words; `forward` takes none,
+    // because it re-dispatches the one that arrived. `reply` and `fail` each
+    // take the one value they answer with.
+    "intent" => Some(1)
+    "forward" => Some(0)
+    "reply" | "fail" => Some(1)
+    _ => None
+  }
+}
+
+///|
+/// Whether an effect may be written with leg words before its arguments.
+///
+/// Two of them, and the same two the design gives a route: `intent` chooses one
+/// for a new dispatch, and `forward` chooses one for a message that has not had
+/// one yet — or narrows the one a walk is already on.
+pub fn takes_route(name : String) -> Bool {
+  name is ("intent" | "forward")
+}
+
+///|
+/// A leg word, or nothing.
+///
+/// `dyn` and `lex` are CONTEXTUAL keywords: the lexer hands them over as plain
+/// identifiers, so `pred dyn { … }` and a parameter named `lex` keep working,
+/// and only the two positions above ever ask this question.
+pub fn leg_of_word(w : String) -> @tutuca.Leg? {
+  match w {
+    "dyn" => Some(Dyn)
+    "lex" => Some(Lex)
     _ => None
   }
 }
@@ -173,6 +203,7 @@ pub fn kind_word(k : DeclKind) -> String {
   match k {
     DOn => "on"
     DReceive => "receive"
+    DIntent => "intent"
     DBubble => "bubble"
     DResponse => "response"
     DCompute => "compute"
@@ -188,6 +219,7 @@ fn kind_of_word(w : String) -> DeclKind? {
   match w {
     "on" => Some(DOn)
     "receive" => Some(DReceive)
+    "intent" => Some(DIntent)
     "bubble" => Some(DBubble)
     "response" => Some(DResponse)
     "compute" => Some(DCompute)
@@ -210,7 +242,7 @@ fn kind_takes_stmts(k : DeclKind) -> Bool {
 
 ///|
 pub fn is_transition(k : DeclKind) -> Bool {
-  k is (DOn | DReceive | DBubble | DResponse)
+  k is (DOn | DReceive | DIntent | DBubble | DResponse)
 }
 
 ///|
@@ -508,6 +540,17 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   if p.peek() is TIdent(name) && effect_min_arity(name) is Some(min) {
     p.bump() |> ignore
     let args : Array[Expr] = []
+    // The one new parse rule: read leg words while the next token is one, then
+    // parse normally. It adds no ambiguity to juxtaposition, because an
+    // `intent`'s name is always a string literal and `forward`'s arguments are
+    // values — neither can be the bare word `dyn` or `lex`.
+    let route : Array[@tutuca.Leg] = []
+    if takes_route(name) {
+      while p.peek() is TIdent(w) && leg_of_word(w) is Some(leg) {
+        p.bump() |> ignore
+        route.push(leg)
+      }
+    }
     // `sendAt`'s first argument is a PLACE, and it is the only position in the
     // language where `&` is legal.
     if name == "sendAt" && p.peek() is TAmp {
@@ -531,7 +574,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
         span=p.since(from),
       )
     }
-    return SEffect(name~, args~, span=p.since(from))
+    return SEffect(name~, args~, route~, span=p.since(from))
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
   if !(p.peek() is (TDot | TAt)) {

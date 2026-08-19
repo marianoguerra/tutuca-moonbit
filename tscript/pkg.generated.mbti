@@ -21,6 +21,8 @@ pub fn is_transition(DeclKind) -> Bool
 
 pub fn kind_word(DeclKind) -> String
 
+pub fn leg_of_word(String) -> @core.Leg?
+
 pub let no_span : Span
 
 pub fn parse_alter_handler(String, ParseCtx) -> @core.Val?
@@ -48,6 +50,8 @@ pub fn parse_token(String, ParseCtx) -> @core.Val?
 pub fn script_builtin(String) -> Int?
 
 pub fn script_builtin_names() -> Array[String]
+
+pub fn takes_route(String) -> Bool
 
 pub let target_bind : String
 
@@ -103,6 +107,7 @@ pub fn Decl::to_source(Self) -> String
 pub(all) enum DeclKind {
   DOn
   DReceive
+  DIntent
   DBubble
   DResponse
   DCompute
@@ -230,7 +235,7 @@ pub(all) struct Span {
 pub(all) enum Stmt {
   SAssign(place~ : Place, op~ : AssignOp, value~ : Expr, span~ : Span)
   SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
-  SEffect(name~ : String, args~ : Array[Expr], span~ : Span)
+  SEffect(name~ : String, args~ : Array[Expr], route~ : Array[@core.Leg], span~ : Span)
   SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
   SNew(ty~ : TyRef, span~ : Span)
 } derive(Eq, @debug.Debug)
