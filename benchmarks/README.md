@@ -1,12 +1,13 @@
 # benchmarks
 
-Performance benchmarks for tutuca, in three suites:
+Performance benchmarks for tutuca, in four suites:
 
 | Suite       | Measures                                              | Files |
 |-------------|-------------------------------------------------------|-------|
 | view        | the ahead-of-time view compiler (`viewgen/`, `anode/` and the vendored HTML parser under it) | `viewparse.mbt`, `scaling_bench_test.mbt` |
 | render      | mounting a component tree and rendering it the first time | `render.mbt` |
 | diff/patch  | changing a mounted app: re-render, diff, patch         | `patch.mbt` |
+| dispatch    | routing a message: an intent's walk per hop, and what a name nobody answers costs | `intent.mbt` |
 
 Repo tooling: excluded from `moon package`, not part of the published library.
 
@@ -25,7 +26,10 @@ node benchmarks/report.mjs --target native --baseline /tmp/before.json
 ```
 
 Known-noisy benches, not to be used for judging a change: `render all examples`
-(±13–26%) and `render json 3x4` (±31–38%). Everything else lands under ±5%.
+(±13–26%), `render json 3x4` (±31–38%) and the whole `intent dyn depth *` row
+(±13–58%, and it measures a render that grows with the same parameter as the
+walk — see OPTIMIZATIONS.md #14 for what those rows do and do not establish).
+Everything else lands under ±5%.
 
 ---
 

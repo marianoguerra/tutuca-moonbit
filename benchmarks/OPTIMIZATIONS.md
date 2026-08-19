@@ -947,3 +947,81 @@ body of `ANode::parse` — moved only 1.7 KB and nearly led to the opposite
 conclusion: the rest of the branch (`ParseContext::compile`, the attribute and
 x-op parsers) kept the subtree alive on its own. Stub the entry point, not the
 leaf.
+
+# Dispatch
+
+## 14. Baseline — the v2 walk, 2026-08-19
+
+Not an optimization: v2 made two performance claims and neither was measured.
+`benchmarks/intent.mbt` + `intent_bench_test.mbt` measure them, and
+`intent_test.mbt` pins the shape of each workload so a timing cannot quietly
+start measuring something else.
+
+```
+node benchmarks/report.mjs --file intent_bench_test.mbt [--target native]
+```
+
+| Workload                 | wasm-gc  | native   |
+|--------------------------|----------|----------|
+| `dispatch answered`      |  8.43 µs | 11.02 µs |
+| `dispatch unanswered`    |  0.24 µs |  0.34 µs |
+| `intent lex declines 0`  |  9.44 µs | 13.82 µs |
+| `intent lex declines 4`  |  9.44 µs | 14.06 µs |
+| `intent lex declines 16` | 10.18 µs | 14.80 µs |
+| `intent lex declines 48` | 11.36 µs | 16.55 µs |
+| `intent dyn depth 1`     |  1.73 ms |  3.10 ms |
+| `intent dyn depth 4`     |  2.07 ms |  3.15 ms |
+| `intent dyn depth 16`    |  1.97 ms |  2.39 ms |
+| `intent dyn depth 64`    |  2.98 ms |  3.25 ms |
+| `intent dyn find 64`     |  1.16 µs |  1.75 µs |
+
+**Claim 1 — a name nothing answers costs one lookup.** It holds, with room to
+spare: an unanswered dispatch is **2.8% of an answered one** on wasm-gc and
+**3.1%** on native — 35× and 32× cheaper. Both go through the same
+`send_at_root`; the difference is the transition and the render the answered one
+does and the unanswered one does not. Stop-by-default is not paying for itself
+with a hidden scan, which is what made it worth having.
+
+**Claim 2 — a default-route intent walks every hop, one queued transaction
+each.** True, and cheap. The `lex` rows are the ones to read it off, because
+their DOM is fixed and only the number of DECLINING handlers changes: 48
+declines add **1.92 µs on wasm-gc and 2.73 µs on native**, which is **40 ns and
+57 ns per hop**. A `Pass` costs one call and one frame, exactly as
+`try_lex`'s continuation-passing shape implies.
+
+The `dyn` rows do not resolve a per-hop cost and should not be read as if they
+did. A deeper chain is a deeper DOM, so the click's render grows with the same
+parameter as the walk — and the render dominates by three orders of magnitude.
+The noise says so outright (±58% at depth 1 on native, where depth 16 measures
+*faster* than depth 1). What they do establish is the shape of the worst case: a
+64-level tree whose every ancestor observes the intent and none of them replies
+costs about 3 ms per click on both targets, and 64× the hops is well under 2×
+the time.
+
+**One render per walk, at any depth.** The fact that makes the above readable,
+and the one worth guarding: every hop is its own queued transaction, so the
+obvious worry is 64 repaints. There is exactly one, on both legs and at every
+size — the transactor drains the cascade and the app reports a single change,
+as a fanned-out `send` already did. `intent_test.mbt` asserts it, because a
+regression here would show up in the `dyn` rows as a slope somebody would
+reasonably read as the cost of walking.
+
+**`INTENT_DEPTH` is a budget for the WALK, not for either leg.** Found by
+writing the benchmark: a `lex` chain of 64 declines plus the handler that
+answers is 65 hops, and the walk is cut short — so the last `lex` row is 48 and
+not 64. A `dyn` chain of exactly 64 walks; 65 does not. Worth knowing because
+the natural reading ("64 ancestors, and separately 64 handlers") is not what
+the transactor implements: a default `dyn lex` intent raised deep in a tree has
+already spent part of the budget its scope chain would need.
+
+When the bound is hit the sender hears `<name>Unhandled` — the same message an
+honest exhaustion sends. That is deliberate (`transactor/walk.mbt`: "a sender
+that asked for an answer learns something rather than waiting forever"), and
+the refusal channel is where the two are told apart: a cut-short walk also
+raises `RefusalCode::IntentDepth` and a plain exhaustion does not.
+
+**The house rule, applied.** This file's gate is that a design which does not
+move a number gets reverted rather than kept because it should be faster; the
+plan's own risk note extended it to this one — if the default route is too slow
+to be the default, change the default. At 40–57 ns per hop and one render per
+walk, it is not. `dyn lex` stays.

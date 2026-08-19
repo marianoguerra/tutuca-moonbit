@@ -14,11 +14,21 @@ pub fn build(String) -> Int
 
 pub let corpora : Array[(String, String)]
 
+pub fn declining_scope(Int) -> Map[String, Array[@component.IntentFn]]
+
+pub fn dispatch_answered(@harness.Harness) -> Int
+
+pub fn dispatch_unanswered(@harness.Harness) -> Int
+
 pub fn find_cost(@harness.Harness, String) -> Int
 
 pub fn gen(String) -> Int
 
 pub fn giant_view(Int) -> String
+
+pub fn intent_dyn(@harness.Harness, Int) -> Int
+
+pub fn intent_lex(@harness.Harness) -> Int
 
 pub fn json_args(Int, Int) -> Map[String, @core.Value]
 
@@ -28,11 +38,15 @@ pub fn mount_counter() -> @harness.Harness
 
 pub fn mount_json(Int, Int) -> @harness.Harness
 
+pub fn mount_lex_chain(Int) -> @harness.Harness
+
 pub fn mount_people(Int) -> @harness.Harness
 
 pub fn mount_tabs() -> @harness.Harness
 
 pub fn mount_todo(Int) -> @harness.Harness
+
+pub fn mount_tree_chain(Int) -> @harness.Harness
 
 pub let one_big_view_body : String
 

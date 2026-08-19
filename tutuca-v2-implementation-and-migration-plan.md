@@ -98,7 +98,7 @@ Two consequences worth stating outright.
 
 **Phase 7 — prove it**
 
-- [ ] 23. [Measure the walk](#23-measure-the-walk)
+- [x] 23. [Measure the walk](#23-measure-the-walk)
 - [ ] 25. [Contract: delete the v1 surface](#25-contract-delete-the-v1-surface)
 - [ ] 24. [Release and the consumer examples](#24-release-and-the-consumer-examples)
 
@@ -1782,6 +1782,60 @@ design to it: if the default route is too slow to be the default, say so in
 
 **Validation.** A benchmark checked in beside the existing ones, and a paragraph
 in `OPTIMIZATIONS.md` with the numbers.
+
+**Done.** A fourth suite — `benchmarks/intent.mbt`, `intent_bench_test.mbt` and
+`intent_test.mbt` — and entry #14 in `OPTIMIZATIONS.md` with both targets'
+numbers.
+
+Two workloads, because the legs are different machinery. `dyn` mounts a chain of
+TreeItems `depth` deep (the `communication` example's tree, one child per level
+so depth is the only thing changing) and clicks the DEEPEST one: every ancestor
+between it and the root observes the intent, none replies, so the walk goes the
+whole way and runs out. `lex` mounts the request example against a scope holding
+`n` handlers that answer `Pass` and then one that answers `Ok` — the declining
+chain the plan asked for, and the shape `Pass` made possible.
+
+**Claim 1 holds with room to spare.** An unanswered dispatch is 0.24 µs against
+an answered one's 8.43 µs on wasm-gc, 0.34 against 11.02 on native — **2.8% and
+3.1%**, 35× and 32× cheaper. Stop-by-default is not paying for itself with a
+hidden scan.
+
+**Claim 2 holds and is cheap.** The `lex` rows are where the per-hop number
+comes from, because their DOM is fixed and only the decline count moves: 48
+declines add 1.92 µs (wasm-gc) and 2.73 µs (native), which is **40 ns and 57 ns
+per hop**. The `dyn` rows do NOT resolve a per-hop cost and the entry says so
+outright — a deeper chain is a deeper DOM, so the click's render grows with the
+same parameter as the walk and dominates by three orders of magnitude. The noise
+admits it (±58% at depth 1 on native, where depth 16 measures *faster* than
+depth 1). What they do establish is the worst case's shape: a 64-level tree
+where every ancestor observes and nobody replies is about 3 ms per click on both
+targets, and 64× the hops is under 2× the time.
+
+**The fact that makes those readable: one render per walk, at any depth.** Every
+hop is its own queued transaction, so the obvious worry is 64 repaints. There is
+exactly one, on both legs and at every size. `intent_test.mbt` asserts it,
+because a regression there would appear in the `dyn` rows as a slope somebody
+would reasonably read as the cost of walking.
+
+**A fact the benchmark found.** `INTENT_DEPTH` is a budget for the WALK, not for
+either leg. A `lex` chain of 64 declines plus the handler that answers is 65
+hops and gets cut short — which is why the last `lex` row is 48 and not a power
+of four. A `dyn` chain of exactly 64 walks; 65 does not. The natural reading
+("64 ancestors, and separately 64 handlers") is not what the transactor
+implements: a default `dyn lex` intent raised deep in a tree has already spent
+part of the budget its scope chain would need. When the bound is hit the sender
+hears `<name>Unhandled`, the same message an honest exhaustion sends — deliberate
+(`transactor/walk.mbt`), with `RefusalCode::IntentDepth` on the refusal channel
+as the thing that tells the two apart. Both boundaries are pinned by a test.
+
+**The house rule, applied.** The plan's own risk note extended this file's gate
+to the design: if the default route is too slow to be the default, change the
+default. At 40–57 ns per hop and one render per walk, it is not. `dyn lex`
+stays, and `totuka-v2.md` needs no correction.
+
+**Validated.** `node benchmarks/report.mjs --file intent_bench_test.mbt` on
+wasm-gc and native; `moon test` 1615/1615 (seven new tests, all pinning workload
+shape rather than timing). `moon check` clean.
 
 ## 24. Release and the consumer examples
 
