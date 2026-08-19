@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-08-19
+
+**Every downstream SOURCE tree needs migrating; a compiled bundle does not.**
+This release changes the dispatch model and the buckets a component answers.
+`tutuca migrate` is what moves a v1 codebase — run it BEFORE upgrading, because
+two of its findings are refusals rather than rewrites and a human decides how
+they split.
+
+A `.tutuca.tar.gz` built against `tutuca:component@0.7.0` **keeps loading, with
+no rebuild**: its imports resolve by unversioned interface name, its `emit` /
+`bubble-at` / `request` are translated by the host, and its answer still arrives
+under the name a `response` arm waits for. That is a promise this release makes
+deliberately, and it is held in two places: `dyncomp/test/abi.test.mjs` binds a
+module that imports the 0.7.0 world, and `dyncomp/host/host_test.mbt` drives the
+v1 wire shapes — the `bubbles` manifest key, the `input` bucket, and a `request`
+whose answer lands in a `response` arm. A guest that
+wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
+(`cmd/dev -- gen-guest-bindings`, or `tutuca new-guest` for a fresh tree).
+
 ### Changed
 
 - **Four dispatch channels became two.** `Input` / `Receive` / `Bubble` /
