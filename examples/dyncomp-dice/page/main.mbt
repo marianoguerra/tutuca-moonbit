@@ -88,26 +88,39 @@ fn next_u32() -> UInt {
 /// console is proof that a sandboxed guest reached this map — which is the
 /// single thing this example exists to demonstrate.
 ///
-/// A bundle that serves a request of the same NAME answers its own components
-/// first; this is only reached because the die's bundle serves nothing.
-fn host_requests() -> Map[String, @component.RequestFn] {
+/// A bundle that serves a name of its own answers its components first; this is
+/// only reached because the die's bundle serves nothing.
+///
+/// **The v2 shape.** Tutuca's four dispatch channels became two, and a
+/// `request` is now an intent on the `lex` leg — so what a host registers is an
+/// `IntentFn` and a LIST of them per name, because the leg walks: a handler
+/// that answers `Pass` declines and the next one is tried. The guest side did
+/// not change. `control.request` is still in the contract, and the host
+/// translates it, which is what keeps a bundle built against 0.7 loading.
+///
+/// One answer is new and worth having here. A `RequestFn` HAD to respond, so a
+/// handler with nothing to contribute could only invent an error; this one
+/// could answer `Pass` and let the route run out, and the page would hear
+/// `rollUnhandled` — "nothing on this page rolls dice", which is a different
+/// sentence from "the roll failed".
+fn host_intents() -> Map[String, Array[@component.IntentFn]] {
   {
-    "roll": RequestFn((args, respond) => {
-      match args {
+    "roll": [
+      IntentFn((call, answer) => match call.args {
         [Num(faces)] => {
           let n = faces.to_int()
           if n < 2 {
-            respond(Err(Str("roll: a die needs at least two faces")))
+            answer(Failed(Str("roll: a die needs at least two faces")))
           } else {
             let face = (next_u32() % n.reinterpret_as_uint()).reinterpret_as_int() +
               1
             println("host: rolled \{face} on a d\{n}")
-            respond(Ok(Num(face.to_double())))
+            answer(Ok(Num(face.to_double())))
           }
         }
-        _ => respond(Err(Str("roll: expected one number (the face count)")))
-      }
-    }),
+        _ => answer(Failed(Str("roll: expected one number (the face count)")))
+      }),
+    ],
   }
 }
 
@@ -132,7 +145,7 @@ pub fn mount() -> Unit {
   seed_from_clock()
   @uiw.mount(
     samples=samples(),
-    requests=host_requests(),
+    intents=host_intents(),
     policy=@policy.Policy::untrusted(),
   )
   |> ignore

@@ -66,10 +66,35 @@ moon publish
 git tag -a v0.1.0 -m "v0.1.0" && git push origin v0.1.0
 ```
 
-Then move the `CHANGELOG.md` `[Unreleased]` entries under the new version and
-bump `version` in `moon.mod` — mooncakes versions are immutable, so a re-release
-always needs a new semver number (MAJOR = breaking API, MINOR = additive,
-PATCH = fixes).
+The `moon.mod` version and the `CHANGELOG.md` section are prepared BEFORE the
+publish, in a commit of their own that touches only those two files — mooncakes
+versions are immutable, so a re-release always needs a new semver number
+(MAJOR = breaking API, MINOR = additive, PATCH = fixes; a breaking change under
+`0.x` takes the minor).
+
+### Then the examples, and only then the announcement
+
+`examples/*` are not packages of this module. Each has its own `moon.mod`
+depending on the **published** `marianoguerra/tutuca` from mooncakes, and its
+own `build.mjs`; `moon check`, `moon fmt` and `ci` never reach them. They are
+the only thing that proves a release is complete **on its own** — that
+everything a consumer needs is reachable from the tarball and nothing is
+quietly coming from this checkout.
+
+So the order is fixed and is not a preference:
+
+```sh
+# ...after `moon publish` has landed the new version
+cd examples/dyncomp-dice && node build.mjs   # per example
+```
+
+Then open each example's page and drive it. Announce after that, not before.
+
+An example must never gain a path dependency, a `../` anywhere under its
+directory, or a build step that runs something from this repository. That is
+the one property it exists to hold, and losing it turns the check into
+theatre. Its `import` pin moves to the version just published, in the same
+commit that migrates its source.
 
 ### What ships
 
