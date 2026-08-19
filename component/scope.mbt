@@ -76,6 +76,7 @@ pub fn ComponentStack::new(comps? : Components) -> ComponentStack {
     parent: None,
     by_name: Map([]),
     reqs: Map([]),
+    intents: Map([]),
     macros: Map([]),
   }
 }
@@ -87,6 +88,7 @@ pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack {
     parent: Some(self),
     by_name: Map([]),
     reqs: Map([]),
+    intents: Map([]),
     macros: Map([]),
   }
 }
@@ -143,6 +145,44 @@ pub fn ComponentStack::lookup_component(
         None => None
       }
   }
+}
+
+///|
+pub fn ComponentStack::register_intent_handlers(
+  self : ComponentStack,
+  handlers : Map[String, Array[IntentFn]],
+) -> Unit {
+  for k, hs in handlers {
+    match self.intents.get(k) {
+      // Appended rather than replaced: two registrations of one name are two
+      // candidates, in registration order, and the walk asks both. `reqs`
+      // above overwrites, because a `RequestFn` cannot decline and so the
+      // second one could only ever shadow the first.
+      Some(existing) => existing.append(hs)
+      None => self.intents[k] = hs.copy()
+    }
+  }
+}
+
+///|
+pub fn ComponentStack::lookup_intent(
+  self : ComponentStack,
+  name : String,
+) -> Array[IntentFn] {
+  let out : Array[IntentFn] = []
+  for frame = Some(self) {
+    match frame {
+      Some(s) => {
+        match s.intents.get(name) {
+          Some(hs) => out.append(hs)
+          None => ()
+        }
+        continue s.parent
+      }
+      None => break
+    }
+  }
+  out
 }
 
 ///|

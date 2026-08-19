@@ -62,7 +62,7 @@ Two consequences worth stating outright.
 
 - [x] 3. [`core`: buckets, `Ctx`, `IntentOpts`](#3-core-buckets-ctx-intentopts)
 - [x] 4. [`transactor`: the walk, `reply` / `fail` / `forward`](#4-transactor-the-walk-reply--fail--forward)
-- [ ] 5. [`component`: `Dispatch`, `obj_handler`, `IntentFn`](#5-component-dispatch-obj_handler-intentfn)
+- [x] 5. [`component`: `Dispatch`, `obj_handler`, `IntentFn`](#5-component-dispatch-obj_handler-intentfn)
 - [ ] 6. [`app`: wire the lexical scope and the DOM entry](#6-app-wire-the-lexical-scope-and-the-dom-entry)
 
 **Phase 2 — the language**
@@ -414,6 +414,40 @@ sites before task 19 runs.
 **Validation.** `component/component_test.mbt`. Add a test that
 `sendAt &.child 'setValue' 'x'` mutates, and a test that a `Pass` from a static
 handler continues the walk.
+
+**Done.** The widening is the only part of this task that is not additive, and
+it is the point of the task, so it landed as written: `obj_handler`'s
+`bucket is Input` conditions became `answers_at_home(bucket)`, one named
+function used in all three places, which is `Input | Receive`. **`Intent` is
+deliberately not in it** — a generated mutator answers a message at home and
+never an intent up a route (design section 5), and a test asserts the negative
+alongside the two positives.
+
+**The widening broke nothing in the suite** (1528 tests). That is evidence and
+not proof: it says no test in this repository depends on a `ctx.send` silently
+missing a mutator. Task 18 still has to report the call sites, because a
+component nobody tests can still have one.
+
+Additive, alongside the v1 names:
+
+- **`IntentFn`** beside `RequestFn` — takes an `IntentCall`, answers
+  `Ok` / `Failed` / `Pass`.
+- **`ComponentStack.intents : Map[String, Array[IntentFn]]`** and
+  **`register_intent_handlers`**, which **appends** where `register_request_handlers`
+  overwrites: two registrations of one name are two candidates in registration
+  order, because a handler that can decline does not shadow the next one.
+- **`ComponentStack::lookup_intent`** returns the whole chain, innermost frame
+  first — the shape task 1 settled. `lookup_request` is untouched.
+- **`ModuleDef.intents`** beside `ModuleDef.requests`, registered by
+  `register_into`.
+
+`Dispatch::Intent` and the `obj_handler` arm for it landed in task 3, where a
+five-arm bucket forced them.
+
+`Pass` continuing the walk is tested at the layer that does the continuing —
+`transactor/walk_test.mbt`, task 4. What is tested here is the shape that makes
+it possible: `lookup_intent` hands back four handlers across three frames, in
+order.
 
 ## 6. `app`: wire the lexical scope and the DOM entry
 

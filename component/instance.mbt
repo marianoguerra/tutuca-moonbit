@@ -388,9 +388,26 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
 }
 
 ///|
+/// The bucket a `swap` and a generated mutator answer.
+///
+/// v1 gates them on `Input`, and the design's section 2 argues that is a split
+/// by ORIGIN rather than by message: `@on.click="setQuery e.value"` reaches the
+/// generated setter and a parent's `ctx.send("setQuery", …)` to the same
+/// component does not, though the two are the same message. v2 has one bucket
+/// for both, so both reach it — **the widening**, and the one behaviour change
+/// a migration can trip over.
+///
+/// `Intent` is deliberately NOT in here. A generated mutator answers a message
+/// at home and never an intent up a route (design section 5): an ancestor's
+/// setter is not an answer to a question a descendant asked.
+fn answers_at_home(bucket : @tutuca.HandlerBucket) -> Bool {
+  bucket is (Input | Receive)
+}
+
+///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name) {
   let has_update = self.spec.update is Some(_)
-  let input_fallback = bucket is Input &&
+  let input_fallback = answers_at_home(bucket) &&
     (self.spec.swap.contains(name) || self.spec.generated.contains(name))
   if !has_update && !input_fallback {
     return None
@@ -400,7 +417,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
       // swap handlers are name-keyed and may replace this node with an
       // arbitrary Value (another component's instance) — they win over the
       // opaque update match.
-      if bucket is Input {
+      if answers_at_home(bucket) {
         match self.spec.swap.get(name) {
           Some(f) =>
             return match f(self.state, args, ctx) {
@@ -430,10 +447,11 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
         }
         None => ()
       }
-      // Input dispatch falls through to the GENERATED mutators, so a view
-      // writing `setTitle 'x'` reaches the setter every field gets without
-      // the component declaring one.
-      if bucket is Input {
+      // An addressed message falls through to the GENERATED mutators, so a
+      // view writing `setTitle 'x'` reaches the setter every field gets
+      // without the component declaring one — and so does a parent sending the
+      // same name, which is the widening `answers_at_home` names.
+      if answers_at_home(bucket) {
         match self.spec.generated.get(name) {
           Some(g) =>
             match g(self.field_box(), args) {

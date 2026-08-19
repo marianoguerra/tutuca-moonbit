@@ -1034,3 +1034,95 @@ impl @component.Fields for SwapAState with fn schema() {
     @component.FieldInfo::new("label", TyText),
   ])
 }
+
+// ---------------------------------------------------------------------------
+// v2: the widening, and the lexical walk.
+
+///|
+test "the widening: an addressed message reaches a generated mutator too" {
+  // v1 gates `swap` and the generated mutators on `Input`, which is a split by
+  // ORIGIN and not by message: `@on.click="setTitle 'x'"` reaches the setter
+  // and a parent's `ctx.send("setTitle", …)` to the same component does not,
+  // though the two are the same message. v2 has one bucket for both.
+  //
+  // This is the one behaviour change a migration can trip over: a v1 `ctx.send`
+  // whose name collides with a generated mutator does nothing today and
+  // mutates after this. The migration tool reports those call sites; nothing
+  // here can.
+  let comp = todo_comp()
+  let root : @tutuca.Value = Map({ "todo": comp.make({ "title": Str("a") }) })
+  let p = @tutuca.Path::new(steps=[FieldStep("todo")])
+  fn title(v : @tutuca.Value) -> @tutuca.Value {
+    match
+      @tutuca.Path::new(steps=[FieldStep("todo"), FieldStep("title")]).lookup(v) {
+      Some(x) => x
+      None => Null
+    }
+  }
+
+  assert_eq(
+    title(p.update(root, Input, "setTitle", [Str("via-input")])),
+    Str("via-input"),
+  )
+  assert_eq(
+    title(p.update(root, Receive, "setTitle", [Str("via-send")])),
+    Str("via-send"),
+  )
+  // And NOT up a route. A generated mutator answers a message at home; it is
+  // not an answer to a question a descendant asked (design section 5).
+  assert_eq(
+    title(p.update(root, Intent, "setTitle", [Str("via-intent")])),
+    Str("a"),
+  )
+}
+
+///|
+/// A static handler that records that it was asked and then declines.
+fn pass_fn(log : Array[String], tag : String) -> @component.IntentFn {
+  IntentFn((_call, answer) => {
+    log.push(tag)
+    answer(Pass)
+  })
+}
+
+///|
+test "lookup_intent walks the scope chain and answers with the whole chain" {
+  // `lookup_request` takes the FIRST match, because a `RequestFn` must answer
+  // and a second one could only shadow it. An `IntentFn` may `Pass`, so every
+  // candidate is a candidate — innermost frame first.
+  let log : Array[String] = []
+  let root = @component.ComponentStack::new()
+  root.register_intent_handlers({ "loadRows": [pass_fn(log, "root")] })
+  let mid = root.enter()
+  mid.register_intent_handlers({ "loadRows": [pass_fn(log, "mid")] })
+  let leaf = mid.enter()
+  leaf.register_intent_handlers({
+    "loadRows": [pass_fn(log, "leaf-a"), pass_fn(log, "leaf-b")],
+  })
+  let chain = leaf.lookup_intent("loadRows")
+  assert_eq(chain.length(), 4)
+  for h in chain {
+    let IntentFn(f) = h
+    f({ name: "loadRows", args: [], from: @tutuca.DispatchPath::new() }, _ => ())
+  }
+  // Innermost frame first, and registration order inside a frame.
+  assert_eq(log.join(","), "leaf-a,leaf-b,mid,root")
+  assert_eq(leaf.lookup_intent("nobodyDeclaresThis").length(), 0)
+}
+
+///|
+test "two registrations of one intent name are two candidates, not a shadowing" {
+  let log : Array[String] = []
+  let scope = @component.ComponentStack::new()
+  scope.register_intent_handlers({ "saveDraft": [pass_fn(log, "first")] })
+  scope.register_intent_handlers({ "saveDraft": [pass_fn(log, "second")] })
+  let chain = scope.lookup_intent("saveDraft")
+  assert_eq(chain.length(), 2)
+  for h in chain {
+    let IntentFn(f) = h
+    f({ name: "saveDraft", args: [], from: @tutuca.DispatchPath::new() }, _ => {
+      ()
+    })
+  }
+  assert_eq(log.join(","), "first,second")
+}

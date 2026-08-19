@@ -243,6 +243,21 @@ pub(all) struct RequestFn(
 )
 
 ///|
+/// Scope-registered intent handler: root-typed twin of
+/// `@transactor.IntentHandler`, and the v2 face of `RequestFn`.
+///
+/// Two differences, both the walk's. It receives an `IntentCall` — carrying
+/// `from`, the sender's position, which is what lets a host decide whether
+/// this sender may ask. And it may answer `Pass`, which `RequestFn` cannot: a
+/// `RequestFn` MUST answer, so one with nothing to say has to invent an error,
+/// while a declining intent handler hands the intent to its parent scope. That
+/// is the whole of why `lookup_intent` is a walk and `lookup_request` is a
+/// lookup.
+pub(all) struct IntentFn(
+  (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
+)
+
+///|
 /// the typed-state half (S, handlers) erased behind the make closure.
 /// `id` comes from a process-global counter (JS _compId) — tests must not
 /// assert absolute ids.
@@ -422,6 +437,7 @@ pub struct ComponentStack {
   parent : ComponentStack?
   by_name : Map[String, Component]
   reqs : Map[String, RequestFn]
+  intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
 
@@ -467,6 +483,29 @@ declare pub fn ComponentStack::lookup_request(
 ) -> RequestFn?
 
 ///|
+declare pub fn ComponentStack::register_intent_handlers(
+  self : ComponentStack,
+  handlers : Map[String, Array[IntentFn]],
+) -> Unit
+
+///|
+/// Every handler for `name` visible from this scope, innermost frame first.
+///
+/// A LIST rather than the first match, and that is the whole difference from
+/// `lookup_request` above. `IntentAnswer::Pass` means a declining handler hands
+/// the intent to its parent scope, so the walk needs every candidate — and it
+/// asks them itself, inside the transaction already running, which is why this
+/// returns them rather than taking a continuation (`totuka-v2.md` section 17).
+///
+/// A frame may hold several for one name, which `reqs` cannot: two modules
+/// registered into one scope both offering `loadRows` is a disagreement in v1
+/// and an ordered pair of candidates in v2.
+declare pub fn ComponentStack::lookup_intent(
+  self : ComponentStack,
+  name : String,
+) -> Array[IntentFn]
+
+///|
 declare pub impl @anode.MacroScope for ComponentStack
 
 ///|
@@ -503,6 +542,7 @@ pub(all) struct ModuleDef {
   components : Array[Component]
   macros : Map[String, @anode.Macro]
   requests : Map[String, RequestFn]
+  intents : Map[String, Array[IntentFn]]
   examples : Array[ExampleDef]
 }
 
@@ -512,6 +552,7 @@ declare pub fn ModuleDef::new(
   components~ : Array[Component],
   macros? : Map[String, @anode.Macro],
   requests? : Map[String, RequestFn],
+  intents? : Map[String, Array[IntentFn]],
   examples? : Array[ExampleDef],
 ) -> ModuleDef
 
