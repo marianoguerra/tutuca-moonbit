@@ -18,7 +18,8 @@ Where a claim is weaker than it sounds, it says so.
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
 | guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that. The declaration half now has a validator (§4); the selector and at-rule half does not |
-| `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
+| `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it (§5) |
+| guest view event paths (`e.<path>`) | the host's DOM, and through it the page | **handled** — every step through a host object is checked against a curated allow-list, not just the first one (§9) |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
 The decisions live in [`policy/`](policy/) and are enforced by
@@ -650,11 +651,24 @@ party what it is allowed to do. It is to authorize **at call time, from the
 requester's path**, and let the host decide: the path already identifies the
 caller, and a `DynObj` sitting at it names its bundle.
 
-The plumbing gap is small and specific. `Transactor::push_request` already
-carries the requester's `DispatchPath`, but
-`RequestFn((Array[Value], (Result[Value, Value]) -> Unit) -> Unit)` never
-receives it. Threading it through is a `component/` change, and it is the next
-step here.
+The plumbing gap **is now filled, and this paragraph used to describe it as
+open.** `RequestFn((Array[Value], (Result[Value, Value]) -> Unit) -> Unit)`
+never received the requester's path, so a host handler had nothing to authorize
+against. Its v2 replacement does: `IntentFn` takes an
+`@tutuca.IntentCall` (`core/path_spec.mbt`), which carries `name`, `args` and
+**`from` — the sender's `DispatchPath`**. `Transactor::push_intent` fills it in
+from the position the intent was dispatched at (`transactor/walk.mbt`), and a
+`DynObj` sitting at that path names its bundle.
+
+So the mechanism is here and the decision is the host's. What remains open is
+that no host in this repository USES it yet: `demo/universal_wasm` still
+registers `double` / `listComponents` / `makeComponent` for anyone who asks. The
+gap moved from "cannot be written" to "has not been written", which is a
+different sentence and a smaller one.
+
+`RequestFn` and `ctx.request` are still present beside the new channel and are
+deleted in the migration's contract step; until then the old signature is still
+reachable and still cannot authorize.
 
 ## 6. Availability
 
@@ -713,6 +727,80 @@ anything it says about itself. The static manifest's `doc` / `version` /
 Content-addressed bundle ids (SHA-256, computed in the JS loader) are the
 next step, and signing is a step after that.
 
+## 9. Guest view event paths: every step is checked, not just the root
+
+A view is DATA the host compiles, and a dyncomp guest supplies its views as
+data (`DESIGN.md`, principle 2). So anything a view template can reach is
+authority the host granted by compiling it — and nothing on the other end
+declared it, which is what principle 4 forbids.
+
+An `@on` handler's arguments are where a view reaches the DOM. In v2 they are
+written `e.<path>` (`totuka-v2.md` §7), and two rules bound what a path can be.
+
+**Rule 1: an `e.` path always produces a `Value`.** Never an element, never a
+document, never a host object. A leaf that is not representable is `Null`, so
+`e.target` on its own is `Null`.
+
+**Rule 2: every step through a host object is on an allow-list — not only the
+first.** This is the one that is easy to get wrong, and an earlier draft of the
+design got it wrong: it allowlisted the ROOT segment and let the path run free
+below it. One line shows why that does not hold.
+
+```
+e.target.ownerDocument.defaultView.localStorage.length
+```
+
+`target` is a permitted root, every step after it is an ordinary property read,
+and the leaf is a **number** — so it converts cleanly under rule 1, and a view
+template has just read the window.
+
+### The list, and where it lives
+
+`render/event_paths.mbt` — `event_object_steps`, six entries:
+`target`, `currentTarget`, `relatedTarget`, `detail`, `dataset`,
+`dataTransfer`. `check_event_path` walks a path and refuses at the first
+traversed step that is not one of them, naming the step and its index.
+
+Beside it, `event_data_terminals` — `dataset` and `detail` — below which
+traversal is **free**. That is not a weakening: a `DOMStringMap` is attributes
+the author wrote into the template and a `CustomEvent.detail` is an object the
+application constructed, so once a step reaches author data there is nothing
+left to escalate into. The allow-list governs exactly the boundary between host
+objects and data, and no further — which is also what keeps the language open,
+since `e.detail.a.b.c` needs no framework release.
+
+### Why this list is different from every other one here
+
+**It cannot be generated.** The sanitizer baseline comes from the WHATWG spec's
+own `builtins/` at a pinned commit; the DOM property table beside it comes from
+`w3c/webref`'s extracted IDL at a pinned commit. A specification says what
+EXISTS. None of them says what a view template should be allowed to reach,
+because that is a judgment about authority rather than a fact about the
+platform.
+
+So it is argued, and being argued makes it the only list in the repository that
+can grow by accident. `render/event_paths_test.mbt` asserts the **exact** list,
+so a seventh entry fails a test in a diff that names it, and walks six known
+escape paths asserting each is refused at the right step.
+
+### The second fence
+
+`render/dom_props_gen.mbt` deliberately carries no `Window` and no `Document`.
+No allowlisted step lands on either, so a path through one has no typed
+continuation — a second reason the `localStorage` line above is refused, after
+this list's first. Two tests assert those absences, so neither can drift into
+being an accident.
+
+### What a component does when it needs more
+
+It **dispatches an intent** and the host answers (`totuka-v2.md` §7,
+*Privileged information is an intent, not a path*). The two channels differ in
+exactly the way that matters here: an event path has no caller to authorize —
+a view is compiled data, so nothing is on the other end — while an intent
+carries `IntentCall.from`, and a host holding that can decide. Capability is
+granted through a channel that knows its caller, never reached through one that
+does not, which is principle 4 applied to the DOM instead of to wasm imports.
+
 ## What to check when changing this
 
 - Adding a field to the static manifest: does anything you added reach
@@ -736,3 +824,10 @@ next step, and signing is a step after that.
   Only `log` acts, and only because logging cannot be misused into anything.
 - Adding to `env`: is the answer weaker than the platform's own, and is it
   frozen or seeded so a dispatch still replays?
+- **Adding a step to `event_object_steps`**: what does it reach, and can a path
+  through it get out of the event and into the page? Ask it of the whole PATH
+  and not of the step — `target` is fine and `target.ownerDocument` is the
+  window two reads later. The exact-list test in `render/event_paths_test.mbt`
+  will fail; make the diff that changes it carry the argument, and add an
+  escape-path case for whatever the new step's neighbours are. This is the one
+  allow-list here that no specification can check for you.

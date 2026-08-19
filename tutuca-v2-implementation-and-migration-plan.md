@@ -77,7 +77,7 @@ Two consequences worth stating outright.
 **Phase 3 — the DOM boundary**
 
 - [x] 13. [Generate the DOM property table](#13-generate-the-dom-property-table)
-- [ ] 14. [Curate the object-step allowlist](#14-curate-the-object-step-allowlist)
+- [x] 14. [Curate the object-step allowlist](#14-curate-the-object-step-allowlist)
 - [ ] 15. [`e.` resolution in the glue and the slot parser](#15-e-resolution-in-the-glue-and-the-slot-parser)
 
 **Phase 4 — dynamic components**
@@ -988,6 +988,47 @@ grow by accident.
 deliberate edit to an assertion. A second test walking known escape paths and
 asserting each is refused. Add both to `dyncomp/SECURITY.md`'s "What to check
 when changing this".
+
+**Done.** `render/event_paths.mbt`: `event_object_steps` — six entries,
+`target`, `currentTarget`, `relatedTarget`, `detail`, `dataset`, `dataTransfer`
+— beside `event_data_terminals` (`dataset`, `detail`) and `check_event_path`,
+which walks a path and refuses at the first traversed step that is not on the
+list, **naming the step and its index**. The index is in the verdict because it
+is the difference between "this path is wrong" and "this path is not allowed to
+go that far".
+
+**`check_event_path` checks every traversed step, and the LAST segment is not
+one.** A leaf is converted and the path ends, so `e.deltaY` traverses nothing
+and `e.target` alone is allowed here — it produces `Null` because an `Element`
+is not representable, and that is rule 1's answer rather than this list's. Two
+rules, kept separate.
+
+**Both tests the plan asks for, and the second is the one that matters.** The
+exact-list assertion makes a seventh entry fail in a diff that names it. The
+escape-path tests walk six real ways out and assert each is refused at the right
+step: the `localStorage` line from the design, `parentElement`, `parentNode`,
+`children`, `form` — `e.target.form.action` is as much a read of the host as the
+first — and `view` / `srcElement` straight from the root. Plus one the plan did
+not ask for and should have: **an author-data terminal does not retroactively
+free the steps above it**, so `e.target.ownerDocument.body.dataset.x` is still
+refused at `ownerDocument`.
+
+**What is deliberately absent is written into the code**, because a reader will
+ask: `ownerDocument`, `parentNode`, `parentElement`, `children`, `form`, `view`,
+`window`. Each leads out of the event and into the page.
+
+**`dyncomp/SECURITY.md` gains §9**, with the file-and-line evidence the
+convention requires, a summary-table row, and a "What to check when changing
+this" entry that says the thing the list needs said: **ask it of the whole PATH
+and not of the step** — `target` is fine and `target.ownerDocument` is the
+window two reads later.
+
+**§5 stopped describing a gap that is now filled.** It said `RequestFn` never
+receives the requester's path, so a host handler had nothing to authorize
+against, and that the plumbing was "the next step here". `IntentFn` takes an
+`IntentCall` carrying `from`, and `push_intent` fills it in. The section now
+says what actually remains: no host in this repository USES it yet. That is a
+different sentence and a smaller one.
 
 ## 15. `e.` resolution in the glue and the slot parser
 

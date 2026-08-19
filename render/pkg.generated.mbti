@@ -13,6 +13,8 @@ import {
 // Values
 pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
+pub fn check_event_path(Array[String]) -> EventPathVerdict
+
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
 
 pub fn dom_interface_known(String) -> Bool
@@ -22,6 +24,10 @@ pub let dom_interfaces : Array[(String, DomInterface)]
 pub fn dom_prop_ty(String, String) -> DomPropTy?
 
 pub fn dom_props_of(String) -> Array[String]
+
+pub let event_data_terminals : Array[String]
+
+pub let event_object_steps : Array[String]
 
 pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int, stop_on_no_event? : Bool) -> EventDispatch?
 
@@ -61,6 +67,11 @@ pub(all) struct EventDispatch {
   path : @core.DispatchPath
   handlers : Array[@anode.NodeEvent]
 }
+
+pub(all) enum EventPathVerdict {
+  PathOk
+  BadStep(step~ : String, index~ : Int)
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Meta {
   Comp(nid~ : Int?, cid~ : Int, vid~ : String)
