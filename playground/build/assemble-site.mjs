@@ -16,6 +16,7 @@
 //   dist/site/embed.js        ← the <mb-playground> custom element
 //   dist/site/examples/*.mbt  ← the editable example sources
 //   dist/site/card-embed.js   ← the <mb-card> custom element (+ regions.js)
+//   dist/site/card-wasm.js    ← what it imports to mount (+ abi.mjs)
 //   dist/site/tutucard.js     ← the card runtime, which is the whole payload
 //   dist/site/margaui.{js,wasm} ← the class compiler <mb-card margaui> fetches
 //   dist/site/editor.bundle.js ← the CodeMirror <mb-card codemirror> fetches
@@ -23,7 +24,7 @@
 //
 // Prereq: assemble.mjs and tutucard/build/assemble.mjs have run. Run:
 //   node playground/build/assemble-site.mjs
-import { existsSync, mkdirSync, rmSync, readdirSync, cpSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, readdirSync, readFileSync, cpSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,11 +51,23 @@ mkdirSync(join(outSite, "examples"), { recursive: true });
 cpSync(join(SITE, "embed.js"), join(outSite, "embed.js"));
 cpSync(join(SITE, "examples"), join(outSite, "examples"), { recursive: true });
 
-// The card half: the element, the one module it imports, the runtime, and the
+// The card half: the element, the modules it imports, the runtime, and the
 // cards themselves.
+//
+// `card-wasm.js` and `abi.mjs` are the mount path, and they are here because
+// `reload()` `import()`s the first LAZILY — so a copy list that forgot them
+// assembled, deployed, and 404'd only when a reader looked at a card. Nothing
+// in this file is a build artifact: assembling the site alone leaves every
+// card embed complete except the runtime, which is the one thing `reload()`
+// checks for before it imports any of this.
 cpSync(join(CARDWEB, "card-embed.js"), join(outSite, "card-embed.js"));
 cpSync(join(CARDWEB, "regions.js"), join(outSite, "regions.js"));
 cpSync(join(CARDWEB, "margaui.js"), join(outSite, "margaui.js"));
+cpSync(join(CARDWEB, "card-wasm.js"), join(outSite, "card-wasm.js"));
+// The host's own canonical ABI, from the one place it is written — the same
+// source `tutucard/build/assemble.mjs` copies it from, and for the same
+// reason: `card-wasm.js` instantiates a compiled card through it.
+cpSync(join(REPO, "dyncomp", "host", "wasm", "abi.mjs"), join(outSite, "abi.mjs"));
 cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
 // Two artifacts of the card build rather than of this one: the runtime every
 // embed needs, and the margaui compiler an `<mb-card margaui>` fetches when it
@@ -63,11 +76,12 @@ cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
 // and failing that with a build error about a folder they did not ask for
 // helps nobody. The embeds say "runtime did not load" and the rest of the page
 // works.
-for (const [name, why] of [
+const FROM_CARD_BUILD = [
   ["tutucard.js", "the <mb-card> embeds"],
   ["margaui.wasm", "an <mb-card margaui> to have any CSS"],
   ["editor.bundle.js", "an <mb-card codemirror> to be more than a textarea"],
-]) {
+];
+for (const [name, why] of FROM_CARD_BUILD) {
   const from = join(DIST, "tutucard", name);
   if (existsSync(from)) {
     cpSync(from, join(outSite, name));
@@ -91,6 +105,32 @@ for (const [dir, task] of [
       `  note: dist/${dir}/ is missing — the page links it; run the ${task} task to build it`,
     );
   }
+}
+
+// Every relative specifier in what we just copied must resolve INSIDE
+// dist/site/. This exists because `card-wasm.js` was missing from the list
+// above for as long as it took someone to open a card on the deployed site:
+// `card-embed.js` imports it lazily, so the build was clean, the page loaded,
+// and the 404 waited in `reload()`. A copy list cannot be checked by reading
+// it — this reads the imports instead.
+const SPEC_RE = /(?:from|import)\s*\(?\s*["'](\.\/[^"']+)["']/g;
+const missing = [];
+for (const f of readdirSync(outSite)) {
+  if (!/\.m?js$/.test(f)) continue;
+  const src = readFileSync(join(outSite, f), "utf8");
+  for (const [, spec] of src.matchAll(SPEC_RE)) {
+    // The card build's artifacts are optional above and warned about there;
+    // absent means "that task did not run", not "the copy list is wrong".
+    if (FROM_CARD_BUILD.some(([name]) => spec === `./${name}`)) continue;
+    if (!existsSync(join(outSite, spec))) missing.push(`${f} -> ${spec}`);
+  }
+}
+if (missing.length) {
+  throw new Error(
+    "dist/site/ is missing modules its own copies import:\n  " +
+      missing.join("\n  ") +
+      "\nAdd them to the copy list in playground/build/assemble-site.mjs.",
+  );
 }
 
 const examples = readdirSync(join(SITE, "examples")).filter((f) => f.endsWith(".mbt"));
