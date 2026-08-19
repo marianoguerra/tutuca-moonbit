@@ -266,6 +266,33 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "dom-props",
+      about: "regenerate render/dom_props_gen.mbt from the browser specs' machine-extracted IDL, then drift-check (needs network)",
+      // The type oracle an `e.<path>` is checked against. Same shape as
+      // `sanitizer-defaults` above and for the same reason: the table has to
+      // come from the specifications rather than from a summary of them, and
+      // the drift check has to compare like with like, so the format step is
+      // between the two.
+      //
+      // Not in `ci` — it fetches. What `ci` gets instead is the checked-in
+      // file, which a person regenerates and commits when a pin moves.
+      commands: [
+        {
+          label: "regenerate · DOM properties from webref's extracted IDL",
+          prog: "node",
+          args: ["scripts/fetch-dom-props.mjs"],
+        },
+        moon("fmt", ["fmt"]),
+        {
+          label: "drift check · DOM properties match the specs",
+          prog: "git",
+          args: [
+            "diff", "--exit-code", "HEAD", "--", "render/dom_props_gen.mbt",
+          ],
+        },
+      ],
+    },
+    {
       name: "css-properties",
       about: "regenerate anode/sanitize/css/properties_gen.mbt from the W3C's CSS extracts, then drift-check (needs network)",
       // The same shape as `sanitizer-defaults`, and for the same reason: the

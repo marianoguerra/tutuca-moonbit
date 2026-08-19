@@ -11,6 +11,9 @@ import {
   "marianoguerra/tutuca/sinks",
   "moonbitlang/core/json",
   "moonbitlang/core/strconv",
+  // `DomPropTy` derives Debug — the generated table is data, and a table
+  // nobody can print is a table nobody can debug a lint against.
+  "moonbitlang/core/debug",
 }
 
 import {
@@ -19,5 +22,4 @@ import {
   // the one test that walks a directive all the way to the DOM needs the
   // filter that understands it; `render` itself knows only the trait
   "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
-  "moonbitlang/core/debug",
 } for "wbtest"

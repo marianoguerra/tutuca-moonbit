@@ -76,7 +76,7 @@ Two consequences worth stating outright.
 
 **Phase 3 — the DOM boundary**
 
-- [ ] 13. [Generate the DOM property table](#13-generate-the-dom-property-table)
+- [x] 13. [Generate the DOM property table](#13-generate-the-dom-property-table)
 - [ ] 14. [Curate the object-step allowlist](#14-curate-the-object-step-allowlist)
 - [ ] 15. [`e.` resolution in the glue and the slot parser](#15-e-resolution-in-the-glue-and-the-slot-parser)
 
@@ -908,6 +908,58 @@ layer 2.
 **Validation.** Run the task twice and diff — a generator that is not
 reproducible is not checked in. Then a test that `value` on
 `HTMLInputElement` types as it does today.
+
+**Done.** `scripts/fetch-dom-props.mjs` → `render/dom_props_gen.mbt`: **115
+interfaces, 913 properties**, from `w3c/webref`'s `ed/idl` — WebIDL that Reffy
+extracted from each spec's own text, so it cannot disagree with the prose the
+way a transcription can. `WEBREF_COMMIT` pins it. Ten specs are fetched; which
+interfaces are KEPT is decided by a closure, not by the list, so adding a spec
+can only widen what the table knows and never change what it already said.
+
+**Run twice, byte-identical.** The `dom-props` task is the same three steps as
+`sanitizer-defaults` — regenerate, `moon fmt`, `git diff --exit-code` — and for
+the same reason: the script's own `--check` compares unformatted output against
+a formatted file.
+
+**The scope is a decision, and the absences are load-bearing.** Kept: everything
+inheriting from `Event` (the path's root) or `Element` (what `target`,
+`currentTarget` and `relatedTarget` land on), plus the leaf types an allowlisted
+step reaches — `DataTransfer`, `DOMStringMap`, `FileList`, `File`, `Touch` and
+their neighbours. **`Window` and `Document` are deliberately absent**, so
+`e.target.ownerDocument.defaultView` has no typed continuation here — a second
+reason that path is refused, after task 14's first. A test asserts both
+absences.
+
+**The reader is strict, and the strictness is scoped.** An attribute declaration
+it cannot take apart THROWS rather than being skipped, because a dropped
+property is a lint that fires on correct code; an `includes` naming a mixin no
+fetched spec defines throws too, because a missing mixin is a whole group of
+properties absent with nothing to show for it. Both fired during development and
+both were real — `stringifier attribute`, and `LinkStyle` living in `cssom.idl`.
+
+But bodies are read **lazily, only for what the closure keeps**. `cssom.idl`
+declares `attribute [LegacyNullToEmptyString] CSSOMString margin-top` on
+`CSSPageDescriptors`, an interface no event path reaches, and refusing to read
+that would be the generator failing on something it was never going to say
+anything about. Strictness belongs where the output is.
+
+**`HTMLInputElement.value` types as `PText`**, which took one more fix worth
+recording: it is spelled `[LegacyNullToEmptyString] DOMString`, and an extended
+attribute on the type says what happens when JavaScript ASSIGNS null to it. An
+`e.` path only ever reads, so the annotation is stripped. Without that it came
+out as `PObj("[LegacyNullToEmptyString] DOMString")` — the exact kind of silent
+wrongness the plan's test asks for.
+
+`render/dom_props.mbt` is the lookup: `dom_prop_ty` walks `inherits` (the table
+stores what each interface DECLARES, so flattening would have multiplied its
+size and said nothing more), `dom_props_of` collects the chain for a "did you
+mean", and `dom_interface_known` answers the scope question. Seven tests, and
+none of them restates the table — a test that did would be the transcription the
+generator exists to avoid.
+
+**It is a type oracle and not a permission list.** Whether a step may be
+traversed is task 14's question, and the two stay separate because one is
+fetched and the other is argued.
 
 ## 14. Curate the object-step allowlist
 
