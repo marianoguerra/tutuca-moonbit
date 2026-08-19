@@ -11,7 +11,7 @@
 /// registry trait.
 ///
 /// It answers with the whole chain rather than with one handler, because a
-/// declining handler hands the intent to its parent scope (`totuka-v2.md`
+/// declining handler hands the intent to its parent scope (`docs/two-channels.md`
 /// section 17). Resolution goes through the component's REGISTRATION scope
 /// rather than its instance — which is where v1's `ScopeRequests` looked too,
 /// and the one thing about the `lex` leg that did not change.
@@ -114,7 +114,7 @@ fn run_handlers(
         }
       None => ()
     }
-    // A view raises a MESSAGE (`totuka-v2.md` section 7), addressed to the
+    // A view raises a MESSAGE (`docs/two-channels.md` section 7), addressed to the
     // component that owns the view. v1 dispatched an `Input` here, which is
     // the same thing under a name that said who sent it rather than what it
     // was. The early exit above — `stop_on_no_event` in

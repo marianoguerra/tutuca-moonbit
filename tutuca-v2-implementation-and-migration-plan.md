@@ -1,6 +1,6 @@
 # Implementing tutuca v2
 
-The work to take [`totuka-v2.md`](totuka-v2.md) from a design to a release, in
+The work to take [`docs/two-channels.md`](docs/two-channels.md) from a design to a release, in
 the order it has to happen, with what each step touches and how to know it
 worked.
 
@@ -100,7 +100,7 @@ Two consequences worth stating outright.
 
 - [x] 23. [Measure the walk](#23-measure-the-walk)
 - [x] 25. [Contract: delete the v1 surface](#25-contract-delete-the-v1-surface)
-- [ ] 24. [Release and the consumer examples](#24-release-and-the-consumer-examples)
+- [~] 24. [Release and the consumer examples](#24-release-and-the-consumer-examples) — prepared; `moon publish` is a person's call
 
 ---
 
@@ -130,11 +130,11 @@ Each is additive. Do not hold the release for any of them.
 static handler a queue step. If the corpus has deep scope chains, this is the
 one performance surprise in the design.
 
-**Validation.** Each answer lands as a paragraph in `totuka-v2.md`, moved out of
+**Validation.** Each answer lands as a paragraph in `docs/two-channels.md`, moved out of
 section 18 and into section 17. An open question that stays open is a decision
 nobody made.
 
-**Done.** The three answers are the last three bullets of `totuka-v2.md`
+**Done.** The three answers are the last three bullets of `docs/two-channels.md`
 section 17, and the three questions are gone from section 18, which is down to
 six.
 
@@ -1609,7 +1609,7 @@ counter example and the channel summary.
 `AGENTS.md` needs the new tasks in its table (`dom-props`, and whatever task 18
 is called) and the new generated files in its "never hand-edit" list.
 
-Fold `totuka-v2.md` and this plan into the record once the work lands. A design
+Fold `docs/two-channels.md` and this plan into the record once the work lands. A design
 document that describes shipped behaviour should either move into `docs/` with
 its status banner removed, or be deleted — `AGENTS.md` is explicit that a
 document specified against something that no longer exists gets deleted rather
@@ -1660,7 +1660,7 @@ and the outcome v1 had no word for, `IntentFn` as a list per name, `RequestFn`
 still working and deprecated, `e.<path>` checked against the browser specs, WIT
 `@0.8.0`, and `tutuca migrate` under Added. Task 24 refines it into a release.
 
-**Deferred, deliberately.** Folding `totuka-v2.md` and this plan into the record
+**Deferred, deliberately.** Folding `docs/two-channels.md` and this plan into the record
 is the last paragraph of this task and it cannot run yet — tasks 22-25 are still
 open and both documents are still being read. It moves to task 25, which is
 where the v1 surface goes away and a design document describing shipped
@@ -1778,7 +1778,7 @@ If task 1 answered "`lex` walks", measure a declining static handler chain too.
 **Risk.** The house rule in `OPTIMIZATIONS.md` is that a change which does not
 move a number gets reverted, not kept because it should be faster. Hold this
 design to it: if the default route is too slow to be the default, say so in
-`totuka-v2.md` and change the default.
+`docs/two-channels.md` and change the default.
 
 **Validation.** A benchmark checked in beside the existing ones, and a paragraph
 in `OPTIMIZATIONS.md` with the numbers.
@@ -1831,7 +1831,7 @@ as the thing that tells the two apart. Both boundaries are pinned by a test.
 **The house rule, applied.** The plan's own risk note extended this file's gate
 to the design: if the default route is too slow to be the default, change the
 default. At 40–57 ns per hop and one render per walk, it is not. `dyn lex`
-stays, and `totuka-v2.md` needs no correction.
+stays, and `docs/two-channels.md` needs no correction.
 
 **Validated.** `node benchmarks/report.mjs --file intent_bench_test.mbt` on
 wasm-gc and native; `moon test` 1615/1615 (seven new tests, all pinning workload
@@ -1862,6 +1862,57 @@ release steps), `CHANGELOG.md`.
 
 **Validation.** Publish, then `node build.mjs` in each example, then open each
 page. Then announce.
+
+**Done, up to the publish — which is not mine to run.** `moon publish` puts an
+immutable version on a public registry, so everything the release needs is
+prepared and the irreversible step is left to a person. What that leaves is
+this:
+
+**Prepared.** `moon.mod` is `0.23.0` — MINOR under `0.x`, which is the house
+convention for a breaking change and what 0.21.0 and 0.22.0 both did.
+`CHANGELOG.md`'s `[Unreleased]` moved under `## [0.23.0] - 2026-08-19` in a
+release commit touching only those two files, the shape every release commit in
+this repository has. `moon package --list` builds
+`marianoguerra-tutuca-0.23.0.zip`; unpacked into an empty directory it runs
+`moon check` clean and `moon test` 1395/1395, which is what a consumer sees.
+
+**The example is migrated and its pin moved.** `examples/dyncomp-dice`'s host
+handler was a `RequestFn`; it is a list of `IntentFn` per name now, because the
+`lex` leg walks. Its `import` is `marianoguerra/tutuca@0.23.0`, and the
+transitive `mizchi/js@0.12.1` pin still matches what this version resolves. It
+therefore **cannot build until the publish lands** — which is the order the plan
+fixes, and `CONTRIBUTING.md` now writes that order down with the reason: an
+example proves nothing if it can reach into this checkout.
+
+**The changelog's first line was corrected.** The plan's risk note says it
+should read "every downstream guest needs a rebuild". That is not true, and
+saying it would have sent every consumer to do work they do not need. A
+`.tutuca.tar.gz` built against `tutuca:component@0.7.0` keeps loading: imports
+resolve by unversioned interface name (`abi.mjs`'s `unversioned` +
+`IMPL_VERSIONS`), and task 25's host translates `emit` / `bubble-at` / `request`
+and lands the answer where a `response` arm waits. What needs migrating is a
+SOURCE tree, and the line says that instead.
+
+**And the promise got a test.** It rested on reading `abi.mjs` rather than
+running it, which is not good enough for the most externally-visible sentence in
+a release. `dyncomp/test/abi.test.mjs` now assembles a module importing the
+0.7.0 world and binds it against this host; verified by breaking `unversioned()`
+on purpose, which fails both tests in the file. The semantic half — the
+`bubbles` manifest key, the `input` bucket, a `request` whose answer reaches a
+`response` arm — is `dyncomp/host/host_test.mbt`.
+
+**Also validated here, and it belonged to task 25.** `just dev guest-harness`,
+which task 25's validation names and which needs wasm-tools + jco: 102/102
+against real built bundles.
+
+**Left for a person, in order.**
+
+1. `moon publish` from the `Release 0.23.0` commit, then
+   `git tag -a v0.23.0 -m "v0.23.0" && git push origin v0.23.0`.
+2. `cd examples/dyncomp-dice && node build.mjs`, then open the page and roll a
+   die — the `println` in the host handler puts a line in the browser console,
+   which is the proof a sandboxed guest reached the host's map.
+3. Announce.
 
 ## 25. Contract: delete the v1 surface
 
@@ -1895,6 +1946,26 @@ Here they describe shipped behaviour, and `AGENTS.md` is explicit that a
 document specified against something that no longer exists gets deleted rather
 than left to mislead. Each either moves into `docs/` with its status banner
 removed, or goes.
+
+**Half done, and the half that is left has a condition.**
+
+`totuka-v2.md` is `docs/two-channels.md`. Its status banner — "a design, not a
+description. This is a PLAN" — is gone, replaced by what it is now: the
+argument behind the code, and where a source comment citing "§10" points. Its
+companion list is repointed (`skill/tutuca/request-response.md` has not existed
+since task 20), and `README.md` indexes it beside the other docs. Moving it
+meant repointing 33 references across the source, which is the reason it was
+worth keeping the path stable everywhere rather than leaving the file loose at
+the root: those citations are how a reader gets from a `walk.mbt` comment to
+the paragraph that argues for it.
+
+**This plan stays until the publish lands**, and that is its own instruction
+read carefully: "fold into the record once the work lands". Task 24 is
+prepared, not landed — `moon publish` is a person's call, and the three steps
+after it are written down here and nowhere else. When the release is out and
+the examples have run, this document has no reader left and goes; every fact in
+it is already in the code, in the comments that cite `docs/two-channels.md`, in
+`CHANGELOG.md`, and in the commit messages.
 
 **Done.** Everything on the list, and the two things doing it turned up.
 

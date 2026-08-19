@@ -32,14 +32,14 @@
 /// the component the view belongs to, which is what `send` means), and `Bubble`
 /// and `Response` folded into `Intent` (both were routes, spelled as verbs).
 /// The three lived here through the migration so every commit compiled; this
-/// is the commit that took them out (`totuka-v2.md` §10).
+/// is the commit that took them out (`docs/two-channels.md` §10).
 pub(all) enum HandlerBucket {
   Receive // addressed: a view, ctx.send, the host, an answer
   Intent // routed: dispatched by someone who did not name a target
 } derive(Debug, Eq)
 
 ///|
-/// A leg of an intent's route (`totuka-v2.md` §3).
+/// A leg of an intent's route (`docs/two-channels.md` §3).
 ///
 /// `Dyn` walks the dynamic scope — the dispatch path, from the sender's PARENT
 /// up to the root, one `pop_step()` per hop — and its handlers are component
@@ -77,7 +77,7 @@ pub fn route_label(route : Array[Leg]) -> String {
 /// pinning field-resolved keys at dispatch time. Two are v2's own. `route` is
 /// the walk itself, which v1 could not carry because each of its two channels
 /// had exactly one. And `on_unhandled_name` is the third outcome
-/// (`totuka-v2.md` §6): the route ended with no reply, which is not the same
+/// (`docs/two-channels.md` §6): the route ended with no reply, which is not the same
 /// answer as a handler failing. What is NOT here is `on_res_name`, the
 /// combined `[res, err]` arm — gone with the bug it caused.
 pub(all) struct IntentOpts {
@@ -99,7 +99,7 @@ declare pub fn IntentOpts::new(
 ) -> IntentOpts
 
 ///|
-/// What a static intent handler is handed (`totuka-v2.md` §10).
+/// What a static intent handler is handed (`docs/two-channels.md` §10).
 ///
 /// `from` is the sender's position, and it is the field v1's `RequestFn` never
 /// had. A host reads it to decide whether the sender may ask — which is what

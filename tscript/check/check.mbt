@@ -118,7 +118,7 @@ pub fn check(
 
 ///|
 /// `NO_VIEW_HANDLER`: a view name the block neither answers nor forwards
-/// (`totuka-v2.md` section 7).
+/// (`docs/two-channels.md` section 7).
 ///
 /// A view name that nothing answers does nothing, which is safe and is also
 /// the shape of a misspelling. In v1 the two are indistinguishable and neither

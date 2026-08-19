@@ -397,7 +397,7 @@ pub fn value_cases() -> Array[ValueCase] {
 // Written BEFORE either backend can run them, which is the whole reason they
 // are here. A corpus written after the backends records what the backends
 // agreed on; a corpus written first records what the design said, and the
-// backends have to come to it. `totuka-v2.md` is that design.
+// backends have to come to it. `docs/two-channels.md` is that design.
 //
 // Nothing consumes `cases()` yet. The projection (`cmd/conformance`) and
 // the two adapters pick it up in the plan's tasks 10 and 11, and `cases()`

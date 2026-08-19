@@ -1,4 +1,4 @@
-// The intent walk (`totuka-v2.md` sections 3, 5 and 6).
+// The intent walk (`docs/two-channels.md` sections 3, 5 and 6).
 //
 // v1 has two routed channels and one hop each: `push_bubble` pops one step per
 // hop until the root, and `push_request` resolves one static handler and calls
@@ -75,7 +75,7 @@ fn Transactor::advance_walk(self : Transactor, w : IntentWalk) -> Unit {
       Lex => {
         // The whole leg, inside the transaction that is already running: the
         // handlers come back as a chain and a `Pass` moves to the next one
-        // with a call rather than a queue step (`totuka-v2.md` section 17).
+        // with a call rather than a queue step (`docs/two-channels.md` section 17).
         let leaf = w.origin.to_transaction_path().lookup(self.root)
         let handlers = match leaf {
           Some(l) => self.intents.intents_for(l, w.name)
@@ -204,7 +204,7 @@ fn Transactor::answer_walk(
 }
 
 ///|
-/// The route ended with no reply (`totuka-v2.md` section 6).
+/// The route ended with no reply (`docs/two-channels.md` section 6).
 ///
 /// Three shapes, and which one applies is decided by what the SENDER declared,
 /// not by anything a handler did. A sender that declared nothing is sending a

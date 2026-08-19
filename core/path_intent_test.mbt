@@ -32,7 +32,7 @@ test "a route says which legs, in the order written" {
 ///|
 test "the three outcome names are carried separately, not as one pair" {
   // v1's `on_res_name` — the combined `[res, err]` arm — has no field here,
-  // and the third outcome does. `totuka-v2.md` section 6.
+  // and the third outcome does. `docs/two-channels.md` section 6.
   let opts = @core.IntentOpts::new(
     route=[Dyn],
     on_ok_name="saveDraftOk",

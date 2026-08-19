@@ -442,7 +442,7 @@ test "forward in an intent body amends what the next position sees" {
 // The lexical leg.
 //
 // Its handlers are static functions with no state, and the thing worth testing
-// is the decision in `totuka-v2.md` section 17: `lex` WALKS — a declining
+// is the decision in `docs/two-channels.md` section 17: `lex` WALKS — a declining
 // handler hands the intent to the next one — and the walk is resolution rather
 // than dispatch, so a `Pass` produces no transaction.
 

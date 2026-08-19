@@ -1,9 +1,5 @@
 # Addressed or routed: two channels replace four
 
-> **Status: a design, not a description.** This is a PLAN. It describes tutuca
-> v2. It does not describe the code today. Read `skill/tutuca/request-response.md`
-> and `skill/tutuca/events.md` for the behaviour that ships now.
-
 v2 has two channels, and one question separates them: **does the sender know
 who handles this?**
 
@@ -14,10 +10,17 @@ who handles this?**
 A message is sent. An intent is dispatched. Everything else in this document
 follows from that sentence.
 
-Companion documents: `skill/tutuca/request-response.md` is the v1 channel
-contract this replaces. `skill/tutuca/events.md` is the v1 view surface that
-section 7 changes. `skill/tutuca/semantics.md` is the path and transaction model
-that stays. `dyncomp/DESIGN.md` is the guest contract that section 11 changes.
+This shipped in 0.23.0. It was written as a design and is kept as the argument
+behind the code — every "why" the source comments point at is a section here.
+For how to USE the two channels rather than why there are two, read
+`skill/tutuca/messages-and-intents.md`.
+
+Companion documents: `skill/tutuca/messages-and-intents.md` is the authoring
+guide this argues for. `skill/tutuca/events.md` is the view surface section 7
+changed. `skill/tutuca/semantics.md` is the path and transaction model that
+stayed. `dyncomp/DESIGN.md` is the guest contract section 11 changed — and the
+one place v1 survives, because a bundle somebody else compiled has to keep
+loading.
 
 The file name uses the spelling the request used. The project name stays
 `tutuca`, and so does every identifier below.
@@ -63,7 +66,7 @@ The split costs four things.
 4. **The reply payload has two shapes.** The default arm gets `[res, err]`. A
    split arm gets `[res]` or `[err]` (`transactor/transactor.mbt:232`). A split
    arm that matches `[res, err]` reads the wrong argument. The skill calls this
-   "a common bug" (`skill/tutuca/request-response.md:325-328`).
+   "a common bug" — v1's skill said so outright.
 
 ## 1. Two channels
 
@@ -154,7 +157,7 @@ v1 `ctx.bubble` names split two ways. Half are notifications: `rowPicked`,
 That second half has no other spelling in v1. The other direction strains too: a
 notification to the scope must be sent as a `request` whose answer the sender
 discards, which the skill documents as "fire-and-forget"
-(`skill/tutuca/request-response.md`, *Fire-and-forget requests*).
+(`skill/tutuca/messages-and-intents.md`, *Fire-and-forget*).
 
 v2 separates the two ideas. The **route** says which scope answers. The **name
 and the declared answer arms** say whether an answer is expected. Each is written

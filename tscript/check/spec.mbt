@@ -18,7 +18,7 @@ pub(all) struct Finding {
   /// forwards, and that code behaves exactly as v1 behaves — it does nothing.
   /// A rule whose warned-about code is already correct cannot be an error
   /// without breaking every project that upgrades, which is why the design
-  /// (`totuka-v2.md` section 7) lands it as a warning and leaves the strict
+  /// (`docs/two-channels.md` section 7) lands it as a warning and leaves the strict
   /// mode to be decided from a corpus rather than from a document.
   severity : Severity
   /// Where, in the block's own coordinates. `@viewfile.Block` carries the

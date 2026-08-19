@@ -48,6 +48,10 @@ component — is REFUSED by name, with the reason, and comes back as an
   counter up, also executable.
 - **[docs/first_principles.mbt.md](docs/first_principles.mbt.md)** — the same
   framework rebuilt layer by layer, if you want to know *why* it works.
+- **[docs/two-channels.md](docs/two-channels.md)** — why a component has two
+  ways to be reached and not four: a message is addressed, an intent is routed,
+  and the route says which scope answers. The argument behind 0.23.0, and what
+  the source comments mean when they cite a section number.
 - **[docs/dynamic-components.md](docs/dynamic-components.md)** — the part that
   is *not* decided before the program runs: a WebAssembly component fetched at
   runtime, from someone you have no reason to trust, mounted into a page that

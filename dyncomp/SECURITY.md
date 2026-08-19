@@ -735,7 +735,7 @@ authority the host granted by compiling it — and nothing on the other end
 declared it, which is what principle 4 forbids.
 
 An `@on` handler's arguments are where a view reaches the DOM. In v2 they are
-written `e.<path>` (`totuka-v2.md` §7), and two rules bound what a path can be.
+written `e.<path>` (`docs/two-channels.md` §7), and two rules bound what a path can be.
 
 **Rule 1: an `e.` path always produces a `Value`.** Never an element, never a
 document, never a host object. A leaf that is not representable is `Null`, so
@@ -793,7 +793,7 @@ being an accident.
 
 ### What a component does when it needs more
 
-It **dispatches an intent** and the host answers (`totuka-v2.md` §7,
+It **dispatches an intent** and the host answers (`docs/two-channels.md` §7,
 *Privileged information is an intent, not a path*). The two channels differ in
 exactly the way that matters here: an event path has no caller to authorize —
 a view is compiled data, so nothing is on the other end — while an intent

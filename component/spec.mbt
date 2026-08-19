@@ -475,7 +475,7 @@ declare pub fn ComponentStack::register_intent_handlers(
 /// v1's `lookup_request`. `IntentAnswer::Pass` means a declining handler hands
 /// the intent to its parent scope, so the walk needs every candidate — and it
 /// asks them itself, inside the transaction already running, which is why this
-/// returns them rather than taking a continuation (`totuka-v2.md` section 17).
+/// returns them rather than taking a continuation (`docs/two-channels.md` section 17).
 ///
 /// A frame may hold several for one name, which v1's single-slot registry
 /// could not: two modules registered into one scope both offering `loadRows`

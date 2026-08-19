@@ -41,7 +41,7 @@ pub(all) struct IntentHandler(
 ///
 /// It answers with the WHOLE chain rather than the first match, innermost
 /// scope first, and that shape is the "`lex` walks" decision from
-/// `totuka-v2.md` section 17: a declining handler hands the intent to its
+/// `docs/two-channels.md` section 17: a declining handler hands the intent to its
 /// parent scope, so the walk needs every candidate and not the first one. The
 /// transactor asks each in turn INSIDE the transaction that is already
 /// running, so a `Pass` costs a call rather than a queue step — which is why
@@ -65,7 +65,7 @@ pub impl Intents for NoIntents
 
 ///|
 /// How many positions one intent may walk before the runtime cuts it off
-/// (`totuka-v2.md` section 17).
+/// (`docs/two-channels.md` section 17).
 ///
 /// A cycle breaker, not a tuning knob. A legitimate route is bounded by tree
 /// depth plus scope depth and nothing in the corpus is near this; reaching it

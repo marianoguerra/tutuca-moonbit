@@ -119,7 +119,7 @@ pub(all) struct StateDef {
   fields : Array[FieldDef]
   /// Every MESSAGE the component accepts beyond the ones its own views send:
   /// what a parent sends it, what the host sends it, and every answer it reads
-  /// (`totuka-v2.md` section 9).
+  /// (`docs/two-channels.md` section 9).
   receive : Array[MsgDef]
   /// Every INTENT it answers. v2's, and the one variant `bubble` and
   /// `response` fold into: a bubble is a routed dispatch that could search only

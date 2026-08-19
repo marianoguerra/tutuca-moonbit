@@ -449,7 +449,7 @@ impl @tutuca.Ctx for EventContext with fn is_answer(self) {
 
 ///|
 impl @tutuca.Ctx for EventContext with fn stop_propagation(self) {
-  // "served, and no answer" (`totuka-v2.md` section 6). The walk ends and the
+  // "served, and no answer" (`docs/two-channels.md` section 6). The walk ends and the
   // sender is told nothing, even when it declared an arm — which is exactly
   // what separates `stop` from letting the route run out.
   match self.txn.walk {
@@ -498,7 +498,7 @@ impl @tutuca.Ctx for EventContext with fn forward(self, args, opts) {
         None => ()
       }
       match opts {
-        // Narrowing a route that is already walking. `totuka-v2.md` section 18
+        // Narrowing a route that is already walking. `docs/two-channels.md` section 18
         // asks whether this should be allowed at all; until it is answered,
         // the straightforward reading is the one implemented — the rest of the
         // route becomes what the forwarder named.

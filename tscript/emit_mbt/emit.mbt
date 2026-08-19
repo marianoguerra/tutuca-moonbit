@@ -1271,7 +1271,7 @@ fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
 /// `IntentOpts::new`'s keyword arguments — or "" when it declared none.
 ///
 /// This is where "a sender expects an answer if and only if it declares an
-/// answer arm" (`totuka-v2.md` section 6) becomes code. Nobody writes these;
+/// answer arm" (`docs/two-channels.md` section 6) becomes code. Nobody writes these;
 /// the generator computes them, which is exactly the design's claim that the
 /// notification/request split needs no declaration.
 fn E::outcomes(self : E, msg : String) -> String {

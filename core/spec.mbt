@@ -74,7 +74,7 @@ pub(all) enum Val {
   /// v2's, and the one thing in this enum that names something OUTSIDE the
   /// value language: every other case reads state, a binding or a literal, and
   /// this one reads the event. That is why it is spelled with a root — `e` is
-  /// a NAMESPACE and never a value (`totuka-v2.md` §7), so there is no `Val`
+  /// a NAMESPACE and never a value (`docs/two-channels.md` §7), so there is no `Val`
   /// that means "the event" and nothing can accidentally pass one along.
   ///
   /// What a path may traverse is `@eventpath.check_event_path`'s question, and

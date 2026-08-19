@@ -65,7 +65,7 @@ test "a property no interface in the chain declares is not there" {
   assert_eq(@eventpath.dom_prop_ty("Event", "value"), None)
   // THE one that matters: a DOM `Event` has no `value` property at all, which
   // is why layer 1's computed accessors have to shadow layer 2 rather than
-  // fall through to it (`totuka-v2.md` section 7).
+  // fall through to it (`docs/two-channels.md` section 7).
   assert_eq(@eventpath.dom_prop_ty("MouseEvent", "value"), None)
 }
 
