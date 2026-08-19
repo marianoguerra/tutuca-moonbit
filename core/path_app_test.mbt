@@ -121,7 +121,7 @@ test "an unregistered name is a no-op" {
 test "a missing bucket is an identity no-op" {
   let root = make_app("b")
   assert_true(
-    physical_equal(sel_path().update(root, Input, "rename", []), root),
+    physical_equal(sel_path().update(root, Receive, "rename", []), root),
   )
 }
 

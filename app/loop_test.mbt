@@ -125,7 +125,7 @@ test "@each `value` bind shadows the DOM event's value" {
     init=PickerState::{ items: [], picked: "" },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
-        Input("pick", [Str(p)]) => Next({ ..s, picked: p })
+        Receive("pick", [Str(p)]) => Next({ ..s, picked: p })
         _ => Unhandled
       }
     },
@@ -178,7 +178,7 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
     init=ChattyState::{ n: 0 },
     update=(s : ChattyState, msg, ctx) => {
       match msg {
-        Input("go", _) => {
+        Receive("go", _) => {
           // three follow-up sends: four root swaps in one drained cascade
           ctx.send("bump", [])
           ctx.send("bump", [])

@@ -401,7 +401,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
 /// at home and never an intent up a route (design section 5): an ancestor's
 /// setter is not an answer to a question a descendant asked.
 fn answers_at_home(bucket : @tutuca.HandlerBucket) -> Bool {
-  bucket is (Input | Receive)
+  bucket is Receive
 }
 
 ///|
@@ -432,9 +432,6 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
           let d : Dispatch = match bucket {
             Receive => Receive(name, args)
             Intent => Intent(name, args)
-            Input => Input(name, args)
-            Bubble => Bubble(name, args)
-            Response => Response(name, args)
           }
           let answered = match u(self.state, d, ctx) {
             Next(s2) => return Some(self.with_state(s2).to_value())
@@ -444,25 +441,12 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Unchanged => return Some(self.to_value())
             Unhandled => false
           }
-          // MIGRATION BRIDGE, and it goes in task 25 with the arms it serves.
-          //
-          // A view raises a `Receive` now (`app/app.mbt`), and every `update`
-          // arm in this repository still matches `Input`. The two are one
-          // message split by who sent it, which is the whole of what v2 merged
-          // — so a `Receive` no arm claimed is offered again as an `Input`
-          // before the generated mutators get their chance, and 393 arms keep
-          // working while task 19 rewrites them.
-          //
-          // It cannot make a v2 component behave differently: a component with
-          // no `Input` arms answers `Unhandled` to both, at the cost of one
-          // extra match.
-          if !answered && bucket is Receive {
-            match u(self.state, Input(name, args), ctx) {
-              Next(s2) => return Some(self.with_state(s2).to_value())
-              Unchanged => return Some(self.to_value())
-              Unhandled => ()
-            }
-          }
+          // Where the migration bridge was: a `Receive` no arm claimed used to
+          // be offered again as an `Input`, so 393 v1 arms kept working while
+          // task 19 rewrote them. Both the second match and the bucket it
+          // matched are gone — a view's name and a parent's `send` are one
+          // message now, and one offer is what one message costs.
+          ignore(answered)
         }
         None => ()
       }

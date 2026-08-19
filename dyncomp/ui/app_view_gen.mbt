@@ -227,23 +227,26 @@ pub fn PaletteRowInput::parse(s : String) -> PaletteRowInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum PaletteRowMsg {
   /// `@on.click="pick …"`
   Pick(Bool)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("pick", [Bool(a0)]) => Pick(a0)
@@ -454,7 +457,8 @@ pub fn CommandBarInput::parse(s : String) -> CommandBarInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
@@ -465,16 +469,18 @@ pub(all) enum CommandBarMsg {
   Nav(String)
   /// `@on.input="setQuery …"`
   SetQuery(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("close", []) => Close
@@ -755,25 +761,28 @@ pub fn SchemaFieldInput::parse(s : String) -> SchemaFieldInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum SchemaFieldMsg {
   /// `@on.input="edit …"`
   Edit(@tutuca.Value)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaFieldMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaFieldMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("edit", [a0]) => Edit(a0)
@@ -1011,7 +1020,8 @@ pub fn SchemaFormInput::parse(s : String) -> SchemaFormInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
@@ -1022,16 +1032,18 @@ pub(all) enum SchemaFormMsg {
   Create
   /// `@on.click="useInit …"`
   UseInit(@tutuca.Value)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("cancel", []) => Cancel
@@ -1275,25 +1287,28 @@ pub fn ConfigPanelInput::parse(s : String) -> ConfigPanelInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum ConfigPanelMsg {
   /// `@on.click="close …"`
   Close
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn ConfigPanelMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> ConfigPanelMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("close", []) => Close
@@ -1524,7 +1539,8 @@ pub fn UniversalAppInput::parse(s : String) -> UniversalAppInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to app.html breaks every `match` over this type
 /// until it is handled.
@@ -1535,18 +1551,20 @@ pub(all) enum UniversalAppMsg {
   OpenCommand
   /// `@on.click="toggleMode …"`
   ToggleMode
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn UniversalAppMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> UniversalAppMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("filesDropped", [Str(a0)]) => FilesDropped(a0)

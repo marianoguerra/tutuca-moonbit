@@ -52,7 +52,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (last, so existing discriminants are unchanged) and the four `control` intent
   functions on the host side. Every guest was regenerated.
 
+### Removed
+
+- **The v1 dispatch surface is gone.** `HandlerBucket` and `Dispatch` have two
+  arms; `ObserveKind` has three. Deleted: `RequestOpts`, `Ctx::request`,
+  `Ctx::bubble`, `Ctx::bubble_at_path`, `PathChanges::bubble`, `RequestFn`,
+  `ComponentStack::register_request_handlers` / `lookup_request`,
+  `ScopeRequests`, the transactor's `Requests` / `RequestHandler` /
+  `NoRequests` / `push_input` / `push_bubble` / `push_request`, the block
+  language's `on` / `bubble` / `response` declarations and its `bubble` /
+  `request` effects.
+
+  BREAKING for every consumer. `tutuca migrate` (0.23.0 and later) moves a v1
+  codebase; what it refuses is the work list. Run it BEFORE upgrading if your
+  code uses `RequestFn` or a `response` arm — those two are refusals, not
+  rewrites, and a human decides how they split.
+
+- **A loaded WebAssembly bundle is NOT affected.** `tutuca:component@0.8.0`
+  keeps its five-case `bucket` enum and its `bubble`, `bubble-at`, `request`
+  and `request-opts`, because a `.tutuca.tar.gz` somebody compiled against the
+  published contract has to keep loading. The host translates: `emit` and
+  `bubble-at` become intents on the `dyn` leg, `request` becomes one on `lex`
+  whose answer is named after the request rather than `<name>Ok`, and a bundle
+  whose routed names are under `bubbles` is entered through that bucket. One
+  fidelity is lost and is worth naming: a v1 `response` arm receives the
+  answered value alone, where it used to receive `[res, err]`.
+
 ### Added
+
+- **`Ctx::is_answer`** — whether the message being handled is one the runtime
+  wrote. A component never needs it: an answer being indistinguishable from a
+  message is the design's claim, and the reason one bucket is enough. A bridge
+  to a foreign contract does, because v1 gave the two different buckets and a
+  bundle built against it may have used one name for both.
 
 - **`tutuca migrate`** — a one-way codemod from v1 to v2 over `.html` and the
   `.mbt` beside them. It refuses rather than half-migrates: a file holding a

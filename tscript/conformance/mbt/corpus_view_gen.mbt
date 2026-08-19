@@ -145,59 +145,22 @@ impl @component.Fields for CorpusState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CorpusReceive {
-  ResetTo(Int)
   Case0
   Case1
-  Case10
+  Case2(Int)
+  Case3(String)
+  Case4(Int)
+  Case5(String)
+  Case6(String)
+  Case7(String)
+  Case8(String)
+  Case9
+  Case10(Int)
   Case11
   Case12
   Case13
-  Case14
-  Case15
-  Case16(Double)
-  Case17(Double)
-  Case18
-  Case19
-  Case2
-  Case20
-  Case21
-  Case22
-  Case23
-  Case24
-  Case25
-  Case26
-  Case27
-  Case28
-  Case29
-  Case3
-  Case30
-  Case31
-  Case32
-  Case33
-  Case34
-  Case35(Double)
-  Case36
-  Case37
-  Case38
-  Case39
-  Case4
-  Case40
-  Case41
-  Case42
-  Case43
-  Case44
-  Case45
-  Case46(Double)
-  Case48(Double)
-  Case49
-  Case5(Double)
-  Case50
-  Case51
-  Case52
-  Case6(String, String)
-  Case7
-  Case8
-  Case9
+  Case22(Int)
+  Case23(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -213,61 +176,30 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("resetTo", [Num(a0)]) if a0.to_int().to_double() == a0 &&
-        a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => ResetTo(a0.to_int())
       ("case0", []) => Case0
       ("case1", []) => Case1
-      ("case10", []) => Case10
+      ("case2", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case2(a0.to_int())
+      ("case3", [Str(a0)]) => Case3(a0)
+      ("case4", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case4(a0.to_int())
+      ("case5", [Str(a0)]) => Case5(a0)
+      ("case6", [Str(a0)]) => Case6(a0)
+      ("case7", [Str(a0)]) => Case7(a0)
+      ("case8", [Str(a0)]) => Case8(a0)
+      ("case9", []) => Case9
+      ("case10", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case10(a0.to_int())
       ("case11", []) => Case11
       ("case12", []) => Case12
       ("case13", []) => Case13
-      ("case14", []) => Case14
-      ("case15", []) => Case15
-      ("case16", [Num(a0)]) => Case16(a0)
-      ("case17", [Num(a0)]) => Case17(a0)
-      ("case18", []) => Case18
-      ("case19", []) => Case19
-      ("case2", []) => Case2
-      ("case20", []) => Case20
-      ("case21", []) => Case21
-      ("case22", []) => Case22
-      ("case23", []) => Case23
-      ("case24", []) => Case24
-      ("case25", []) => Case25
-      ("case26", []) => Case26
-      ("case27", []) => Case27
-      ("case28", []) => Case28
-      ("case29", []) => Case29
-      ("case3", []) => Case3
-      ("case30", []) => Case30
-      ("case31", []) => Case31
-      ("case32", []) => Case32
-      ("case33", []) => Case33
-      ("case34", []) => Case34
-      ("case35", [Num(a0)]) => Case35(a0)
-      ("case36", []) => Case36
-      ("case37", []) => Case37
-      ("case38", []) => Case38
-      ("case39", []) => Case39
-      ("case4", []) => Case4
-      ("case40", []) => Case40
-      ("case41", []) => Case41
-      ("case42", []) => Case42
-      ("case43", []) => Case43
-      ("case44", []) => Case44
-      ("case45", []) => Case45
-      ("case46", [Num(a0)]) => Case46(a0)
-      ("case48", [Num(a0)]) => Case48(a0)
-      ("case49", []) => Case49
-      ("case5", [Num(a0)]) => Case5(a0)
-      ("case50", []) => Case50
-      ("case51", []) => Case51
-      ("case52", []) => Case52
-      ("case6", [Str(a0), Str(a1)]) => Case6(a0, a1)
-      ("case7", []) => Case7
-      ("case8", []) => Case8
-      ("case9", []) => Case9
+      ("case22", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case22(a0.to_int())
+      ("case23", [Str(a0)]) => Case23(a0)
       _ => Unknown(name, args)
     },
   )
@@ -279,59 +211,22 @@ pub fn CorpusReceive::to_dispatch(
   self : CorpusReceive,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    ResetTo(a0) => ("resetTo", [Num(a0.to_double())])
     Case0 => ("case0", [])
     Case1 => ("case1", [])
-    Case10 => ("case10", [])
+    Case2(a0) => ("case2", [Num(a0.to_double())])
+    Case3(a0) => ("case3", [Str(a0)])
+    Case4(a0) => ("case4", [Num(a0.to_double())])
+    Case5(a0) => ("case5", [Str(a0)])
+    Case6(a0) => ("case6", [Str(a0)])
+    Case7(a0) => ("case7", [Str(a0)])
+    Case8(a0) => ("case8", [Str(a0)])
+    Case9 => ("case9", [])
+    Case10(a0) => ("case10", [Num(a0.to_double())])
     Case11 => ("case11", [])
     Case12 => ("case12", [])
     Case13 => ("case13", [])
-    Case14 => ("case14", [])
-    Case15 => ("case15", [])
-    Case16(a0) => ("case16", [Num(a0)])
-    Case17(a0) => ("case17", [Num(a0)])
-    Case18 => ("case18", [])
-    Case19 => ("case19", [])
-    Case2 => ("case2", [])
-    Case20 => ("case20", [])
-    Case21 => ("case21", [])
-    Case22 => ("case22", [])
-    Case23 => ("case23", [])
-    Case24 => ("case24", [])
-    Case25 => ("case25", [])
-    Case26 => ("case26", [])
-    Case27 => ("case27", [])
-    Case28 => ("case28", [])
-    Case29 => ("case29", [])
-    Case3 => ("case3", [])
-    Case30 => ("case30", [])
-    Case31 => ("case31", [])
-    Case32 => ("case32", [])
-    Case33 => ("case33", [])
-    Case34 => ("case34", [])
-    Case35(a0) => ("case35", [Num(a0)])
-    Case36 => ("case36", [])
-    Case37 => ("case37", [])
-    Case38 => ("case38", [])
-    Case39 => ("case39", [])
-    Case4 => ("case4", [])
-    Case40 => ("case40", [])
-    Case41 => ("case41", [])
-    Case42 => ("case42", [])
-    Case43 => ("case43", [])
-    Case44 => ("case44", [])
-    Case45 => ("case45", [])
-    Case46(a0) => ("case46", [Num(a0)])
-    Case48(a0) => ("case48", [Num(a0)])
-    Case49 => ("case49", [])
-    Case5(a0) => ("case5", [Num(a0)])
-    Case50 => ("case50", [])
-    Case51 => ("case51", [])
-    Case52 => ("case52", [])
-    Case6(a0, a1) => ("case6", [Str(a0), Str(a1)])
-    Case7 => ("case7", [])
-    Case8 => ("case8", [])
-    Case9 => ("case9", [])
+    Case22(a0) => ("case22", [Num(a0.to_double())])
+    Case23(a0) => ("case23", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -347,277 +242,93 @@ pub fn CorpusReceive::send(self : CorpusReceive, ctx : &@tutuca.Ctx) -> Unit {
 }
 
 ///|
-/// The file-level style — pass as `common_style~`.
-pub let corpus_common_style : String = ""
-
-///|
-/// The `data-global` style — pass as `global_style~`.
-pub let corpus_global_style : String = ""
-
-///|
-/// Every bare `@on` handler name the views reference.
-pub(all) enum CorpusInput {
-  Case0
-  Case1
-  Case10
-  Case11
-  Case12
-  Case13
-  Case14
-  Case15
-  Case16
-  Case17
-  Case18
-  Case19
-  Case2
-  Case20
-  Case21
-  Case22
-  Case23
-  Case24
-  Case25
-  Case26
-  Case27
-  Case28
-  Case29
-  Case3
-  Case30
-  Case31
-  Case32
-  Case33
-  Case34
-  Case35
-  Case36
-  Case37
-  Case38
-  Case39
-  Case4
-  Case40
-  Case41
-  Case42
-  Case43
-  Case44
-  Case45
-  Case46
-  Case48
-  Case49
-  Case5
-  Case50
-  Case51
-  Case52
-  Case6
-  Case7
-  Case8
-  Case9
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CorpusInput::name(self : CorpusInput) -> String {
-  match self {
-    Case0 => "case0"
-    Case1 => "case1"
-    Case10 => "case10"
-    Case11 => "case11"
-    Case12 => "case12"
-    Case13 => "case13"
-    Case14 => "case14"
-    Case15 => "case15"
-    Case16 => "case16"
-    Case17 => "case17"
-    Case18 => "case18"
-    Case19 => "case19"
-    Case2 => "case2"
-    Case20 => "case20"
-    Case21 => "case21"
-    Case22 => "case22"
-    Case23 => "case23"
-    Case24 => "case24"
-    Case25 => "case25"
-    Case26 => "case26"
-    Case27 => "case27"
-    Case28 => "case28"
-    Case29 => "case29"
-    Case3 => "case3"
-    Case30 => "case30"
-    Case31 => "case31"
-    Case32 => "case32"
-    Case33 => "case33"
-    Case34 => "case34"
-    Case35 => "case35"
-    Case36 => "case36"
-    Case37 => "case37"
-    Case38 => "case38"
-    Case39 => "case39"
-    Case4 => "case4"
-    Case40 => "case40"
-    Case41 => "case41"
-    Case42 => "case42"
-    Case43 => "case43"
-    Case44 => "case44"
-    Case45 => "case45"
-    Case46 => "case46"
-    Case48 => "case48"
-    Case49 => "case49"
-    Case5 => "case5"
-    Case50 => "case50"
-    Case51 => "case51"
-    Case52 => "case52"
-    Case6 => "case6"
-    Case7 => "case7"
-    Case8 => "case8"
-    Case9 => "case9"
-  }
-}
-
-///|
-pub fn CorpusInput::parse(s : String) -> CorpusInput? {
-  match s {
-    "case0" => Some(Case0)
-    "case1" => Some(Case1)
-    "case10" => Some(Case10)
-    "case11" => Some(Case11)
-    "case12" => Some(Case12)
-    "case13" => Some(Case13)
-    "case14" => Some(Case14)
-    "case15" => Some(Case15)
-    "case16" => Some(Case16)
-    "case17" => Some(Case17)
-    "case18" => Some(Case18)
-    "case19" => Some(Case19)
-    "case2" => Some(Case2)
-    "case20" => Some(Case20)
-    "case21" => Some(Case21)
-    "case22" => Some(Case22)
-    "case23" => Some(Case23)
-    "case24" => Some(Case24)
-    "case25" => Some(Case25)
-    "case26" => Some(Case26)
-    "case27" => Some(Case27)
-    "case28" => Some(Case28)
-    "case29" => Some(Case29)
-    "case3" => Some(Case3)
-    "case30" => Some(Case30)
-    "case31" => Some(Case31)
-    "case32" => Some(Case32)
-    "case33" => Some(Case33)
-    "case34" => Some(Case34)
-    "case35" => Some(Case35)
-    "case36" => Some(Case36)
-    "case37" => Some(Case37)
-    "case38" => Some(Case38)
-    "case39" => Some(Case39)
-    "case4" => Some(Case4)
-    "case40" => Some(Case40)
-    "case41" => Some(Case41)
-    "case42" => Some(Case42)
-    "case43" => Some(Case43)
-    "case44" => Some(Case44)
-    "case45" => Some(Case45)
-    "case46" => Some(Case46)
-    "case48" => Some(Case48)
-    "case49" => Some(Case49)
-    "case5" => Some(Case5)
-    "case50" => Some(Case50)
-    "case51" => Some(Case51)
-    "case52" => Some(Case52)
-    "case6" => Some(Case6)
-    "case7" => Some(Case7)
-    "case8" => Some(Case8)
-    "case9" => Some(Case9)
-    _ => None
-  }
-}
-
-///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
-/// inferred from the argument shapes written at the call sites, so a
-/// handler added to corpus.html breaks every `match` over this type
-/// until it is handled.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Absent, because the script block answers them: case0, case1, case2, case3, case4, case5, case6, case8, case9, case10, case12, case15, case19, case20, case21, case22, case27, case28, case29, case30, case31, case32, case33, case34, case35, case36, case37, case39, case40, case41, case42, case43, case44, case45, case46, case49, case50, case51, case52.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
-pub(all) enum CorpusMsg {
-  /// `@on.click="case11 …"`
-  Case11
-  /// `@on.click="case13 …"`
-  Case13
-  /// `@on.click="case14 …"`
-  Case14
-  /// `@on.click="case16 …"`
-  Case16(Double)
-  /// `@on.click="case17 …"`
-  Case17(Double)
-  /// `@on.click="case18 …"`
-  Case18
-  /// `@on.click="case23 …"`
-  Case23
-  /// `@on.click="case24 …"`
-  Case24
-  /// `@on.click="case25 …"`
-  Case25
-  /// `@on.click="case26 …"`
-  Case26
-  /// `@on.click="case38 …"`
-  Case38
-  /// `@on.click="case48 …"`
-  Case48(Double)
-  /// `@on.click="case7 …"`
-  Case7
-  /// An Input dispatch the views do not declare, or a declared name
-  /// whose runtime arguments did not match the inferred shape.
+/// Declared as `variant intent` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum CorpusIntent {
+  Case14(String)
+  Case15(String)
+  Case16(Int)
+  Case17(Int)
+  Case18(String)
+  Case19(String)
+  Case20(String)
+  Case21(String)
+  /// A intent the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
-pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
-  guard d is Input(name, args) else { return None }
+/// Decode a Intent dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn CorpusIntent::from_dispatch(d : @component.Dispatch) -> CorpusIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
-      ("case11", []) => Case11
-      ("case13", []) => Case13
-      ("case14", []) => Case14
-      ("case16", [Num(a0)]) => Case16(a0)
-      ("case17", [Num(a0)]) => Case17(a0)
-      ("case18", []) => Case18
-      ("case23", []) => Case23
-      ("case24", []) => Case24
-      ("case25", []) => Case25
-      ("case26", []) => Case26
-      ("case38", []) => Case38
-      ("case48", [Num(a0)]) => Case48(a0)
-      ("case7", []) => Case7
+      ("case14", [Str(a0)]) => Case14(a0)
+      ("case15", [Str(a0)]) => Case15(a0)
+      ("case16", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case16(a0.to_int())
+      ("case17", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case17(a0.to_int())
+      ("case18", [Str(a0)]) => Case18(a0)
+      ("case19", [Str(a0)]) => Case19(a0)
+      ("case20", [Str(a0)]) => Case20(a0)
+      ("case21", [Str(a0)]) => Case21(a0)
       _ => Unknown(name, args)
     },
   )
 }
 
 ///|
-/// Every `$name` the views call.
-///
-/// Absent, because the script block answers them: enoughA, enoughB, smallA, smallB, v0_summary, v1_left, v2_over, v3_moved, v4_named, v5_named, v6_isAda, v7_over, v7_status, v8_containsText, v9_containsText.
-/// The block's own handlers are merged into this bucket, so an arm for one of
-/// these could never run.
-pub(all) enum CorpusMethod {
-  Long
-  V10Matches
-  V11Matches
-  V12Matches
-  V13FirstOnly
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CorpusMethod::name(self : CorpusMethod) -> String {
+/// The dispatch name and arguments this message raises as.
+pub fn CorpusIntent::to_dispatch(
+  self : CorpusIntent,
+) -> (String, Array[@tutuca.Value]) {
   match self {
-    Long => "long"
-    V10Matches => "v10_matches"
-    V11Matches => "v11_matches"
-    V12Matches => "v12_matches"
-    V13FirstOnly => "v13_firstOnly"
+    Case14(a0) => ("case14", [Str(a0)])
+    Case15(a0) => ("case15", [Str(a0)])
+    Case16(a0) => ("case16", [Num(a0.to_double())])
+    Case17(a0) => ("case17", [Num(a0.to_double())])
+    Case18(a0) => ("case18", [Str(a0)])
+    Case19(a0) => ("case19", [Str(a0)])
+    Case20(a0) => ("case20", [Str(a0)])
+    Case21(a0) => ("case21", [Str(a0)])
+    Unknown(n, args) => (n, args)
   }
 }
+
+///|
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CorpusIntent::dispatch(
+  self : CorpusIntent,
+  ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.intent(name, args, opts)
+}
+
+///|
+/// The file-level style — pass as `common_style~`.
+pub let corpus_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let corpus_global_style : String = ""
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -629,7 +340,7 @@ pub fn CorpusMethod::name(self : CorpusMethod) -> String {
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="f650fa606e783b7d",
+    fingerprint="57c713b1b66358ec",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -640,22 +351,14 @@ impl @component.Fields for CorpusState with fn schema() {
       @component.FieldInfo::new("tags", TySet),
       @component.FieldInfo::new("page", TyInt),
     ],
-    inputs=[
-      "case0", "case1", "case10", "case11", "case12", "case13", "case14", "case15",
-      "case16", "case17", "case18", "case19", "case2", "case20", "case21", "case22",
-      "case23", "case24", "case25", "case26", "case27", "case28", "case29", "case3",
-      "case30", "case31", "case32", "case33", "case34", "case35", "case36", "case37",
-      "case38", "case39", "case4", "case40", "case41", "case42", "case43", "case44",
-      "case45", "case46", "case48", "case49", "case5", "case50", "case51", "case52",
-      "case6", "case7", "case8", "case9",
+    receives=[
+      "case0", "case1", "case2", "case3", "case4", "case5", "case6", "case7", "case8",
+      "case9", "case10", "case11", "case12", "case13", "case22", "case23",
     ],
-    receives=["resetTo"],
-    methods=[
-      "enoughA", "enoughB", "long", "smallA", "smallB", "v0_summary", "v10_matches",
-      "v11_matches", "v12_matches", "v13_firstOnly", "v1_left", "v2_over", "v3_moved",
-      "v4_named", "v5_named", "v6_isAda", "v7_over", "v7_status", "v8_containsText",
-      "v9_containsText",
+    intents=[
+      "case14", "case15", "case16", "case17", "case18", "case19", "case20", "case21",
     ],
+    methods=["hasSome", "small"],
     view_names=["main"],
   )
 }

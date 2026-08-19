@@ -22,9 +22,9 @@ fn sheet_comp() -> @component.Component {
     init=SheetState::{ title: "Q1" },
     update=(_s : SheetState, msg, ctx) => {
       match msg {
-        Input("rename", [Str(t)]) => Next({ title: t })
-        Input("poke", _) => {
-          ctx.bubble("sheet-poked", [])
+        Receive("rename", [Str(t)]) => Next({ title: t })
+        Receive("poke", _) => {
+          ctx.intent("sheet-poked", [], @tutuca.IntentOpts::new(route=[Dyn]))
           Unchanged
         }
         _ => Unhandled
@@ -65,7 +65,7 @@ fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> @component
 ] {
   (_s, msg, _ctx) => {
     match msg {
-      Bubble("sheet-poked", _) => Next({ seen: true })
+      Intent("sheet-poked", _) => Next({ seen: true })
       _ => Unhandled
     }
   }
@@ -97,7 +97,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     init=TelePanelState::{ seen: false },
     update=(_s, msg, _ctx) => {
       match msg {
-        Bubble("sheet-poked", _) => Next({ seen: true })
+        Intent("sheet-poked", _) => Next({ seen: true })
         _ => Unhandled
       }
     },
@@ -114,7 +114,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     provide={ "active": ".sheet" },
     update=(_s, msg, _ctx) => {
       match msg {
-        Bubble("sheet-poked", _) => Next({ seen: true })
+        Intent("sheet-poked", _) => Next({ seen: true })
         _ => Unhandled
       }
     },

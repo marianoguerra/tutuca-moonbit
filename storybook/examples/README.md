@@ -46,7 +46,7 @@ copied across unchanged. What changes is the JS *around* the view:
 | `@on.click="onAddItem Item"` (a component as an arg) | the handler **captures** the `Component` in its closure; the view just calls `onAddItem` |
 | `ctx.at.field("x").send(n, a)` | `ctx.send_at_path(ctx.path().concat([FieldStep("x")]), n, a)` |
 | `app.sendAtRoot("init")` | `app.send_at_root("init")` |
-| `async` request handler | `RequestFn((args, respond) => …)` — callback-style, `respond(Ok(v))` / `respond(Err(e))` |
+| `async` request handler | `IntentFn((call, answer) => …)` — callback-style, `answer(Ok(v))` / `answer(Failed(e))` / `answer(Pass)` |
 
 **Handlers that need `ctx` go in `update` (or `swap`), not `compute`.**
 JS appends `ctx` to every dispatched handler, so a `methods.submit(ctx)` can

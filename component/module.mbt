@@ -5,11 +5,10 @@ pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
   macros? : Map[String, @anode.Macro] = Map([]),
-  requests? : Map[String, RequestFn] = Map([]),
   intents? : Map[String, Array[IntentFn]] = Map([]),
   examples? : Array[ExampleDef] = [],
 ) -> ModuleDef {
-  { name, components, macros, requests, intents, examples }
+  { name, components, macros, intents, examples }
 }
 
 ///|
@@ -20,7 +19,6 @@ pub fn ModuleDef::register_into(
   scope : ComponentStack,
 ) -> Unit {
   scope.register_macros(self.macros)
-  scope.register_request_handlers(self.requests)
   scope.register_intent_handlers(self.intents)
   scope.register_components(self.components)
 }

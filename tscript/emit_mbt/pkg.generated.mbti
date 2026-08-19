@@ -21,8 +21,6 @@ pub(all) struct Emitted {
   answers_input : Array[String]
   answers_receive : Array[String]
   answers_intent : Array[String]
-  answers_bubble : Array[String]
-  answers_response : Array[String]
   answers_methods : Array[String]
   answers_whens : Array[String]
   answers_enriches : Array[String]

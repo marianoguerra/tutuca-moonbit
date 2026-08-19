@@ -56,8 +56,8 @@ fn item_comp() -> @component.Component {
     init=ItemState::{ label: "plain" },
     update=(_s : ItemState, msg, _ctx) => {
       match msg {
-        Input("pick", [Str(l)]) => Next({ label: l })
-        Response("load", [Str(l), _]) => Next({ label: l })
+        Receive("pick", [Str(l)]) => Next({ label: l })
+        Receive("loadOk", [Str(l), ..]) => Next({ label: l })
         _ => Unhandled
       }
     },
@@ -110,7 +110,7 @@ test "static e2e: register -> render -> click -> dispatch -> re-render" {
   let tx = @transactor.Transactor::new(root)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   // click: reconstruct (real metas), evaluate the parsed 'gold' arg against
-  // the rebuilt stack, dispatch through the Input channel
+  // the rebuilt stack, dispatch as an addressed message
   assert_true(@app.dispatch_dom_event(tx, btn, "click", container, scope.comps))
   assert_true(item_label(tx) == Str("gold"))
   // the old root is untouched (COW instances)
@@ -138,32 +138,6 @@ test "no matching handler leaves everything untouched" {
   assert_false(
     @app.dispatch_dom_event(tx, btn, "keydown", container, scope.comps),
   )
-  assert_true(physical_equal(tx.root, before))
-}
-
-///|
-test "requests resolve through the component's registration scope" {
-  let scope = @component.ComponentStack::new()
-  scope.register_components([item_comp(), panel_comp()])
-  scope.register_request_handlers({
-    "load": RequestFn((_args, respond) => respond(Ok(Str("from-request")))),
-  })
-  scope.compile_all()
-  guard scope.lookup_component("Panel") is Some(panel) else {
-    fail("Panel missing")
-  }
-  let root = panel.make(Map([]))
-  let tx = @transactor.Transactor::new(root, requests=@app.ScopeRequests::{
-    comps: scope.comps,
-  })
-  // request at the item's path: handler found via the scope chain, the
-  // response lands on the item's Response bucket
-  tx.push_request(@tutuca.DispatchPath::of_steps([FieldStep("item")]), "load", [])
-  assert_true(item_label(tx) == Str("from-request"))
-  // unknown requests respond with the not-found error (no handler -> no-op
-  // here since Item has no matching response bucket entry)
-  let before = tx.root
-  tx.push_request(@tutuca.DispatchPath::of_steps([FieldStep("item")]), "nope", [])
   assert_true(physical_equal(tx.root, before))
 }
 
@@ -209,10 +183,10 @@ impl @component.Fields for PanelState with fn schema() {
 
 ///|
 test "a view raises a message, and the lexical leg answers an intent" {
-  // Two halves of task 6 in one drive. The DOM entry pushes a `Receive` rather
-  // than an `Input`, and `ScopeIntents` resolves the `lex` leg through the
-  // component's REGISTRATION scope — the same place `ScopeRequests` looks,
-  // answering with the whole chain instead of one handler.
+  // Two halves in one drive. The DOM entry pushes a `Receive` — v1 had a
+  // separate `Input` for a view's name, and one bucket holds both now — and
+  // `ScopeIntents` resolves the `lex` leg through the component's REGISTRATION
+  // scope, answering with the whole chain instead of one handler.
   let asked : Array[String] = []
   let scope = @component.ComponentStack::new()
   scope.register_intent_handlers({

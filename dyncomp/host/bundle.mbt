@@ -225,21 +225,35 @@ pub fn register_bundle(
     synthesized.push(comp)
     comps[def.name] = (comp.id, schema, def)
   }
-  // Requests the bundle SERVES, in its own scope: `lookup_request` walks
-  // child -> parent, so a guest component finds its bundle's handler first and
-  // falls through to the host's for anything the bundle does not serve. A host
-  // component never sees these — it is not in this scope — which is what makes
-  // a bundle's services its own.
-  let served : Map[String, @component.RequestFn] = Map([])
+  // What the bundle SERVES, registered in its own scope as intent handlers on
+  // the `lex` leg: `lookup_intent` walks child -> parent, so a guest component
+  // finds its bundle's handler first and falls through to the host's for
+  // anything the bundle does not serve. A host component never sees these — it
+  // is not in this scope — which is what makes a bundle's services its own.
+  //
+  // The manifest key is still `requests`, because it is a published contract
+  // and a built bundle fills it in. What changed is this side: a `request` is
+  // an intent on the `lex` leg, so what the manifest names becomes an
+  // `IntentFn`. It cannot answer `Pass` — the guest ABI has no way to decline
+  // — so it answers `Ok` or `Failed` exactly as the `RequestFn` it replaces
+  // did, and the walk ends here whichever it is.
+  let served : Map[String, Array[@component.IntentFn]] = Map([])
   for def in manifest.components {
     for name in def.requests {
-      served[name] = RequestFn((args, respond) => {
-        respond(guest.handle_request(name, args))
-      })
+      served[name] = [
+        IntentFn((call, answer) => {
+          answer(
+            match guest.handle_request(name, call.args) {
+              Ok(v) => Ok(v)
+              Err(e) => Failed(e)
+            },
+          )
+        }),
+      ]
     }
   }
   if !served.is_empty() {
-    child.register_request_handlers(served)
+    child.register_intent_handlers(served)
   }
   // Macros BEFORE the components compile, because a view expands one at parse
   // time: `register_macros` is deliberately separate from `register_components`

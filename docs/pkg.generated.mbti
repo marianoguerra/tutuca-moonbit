@@ -161,8 +161,6 @@ pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
-  Dec
-  Inc
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?

@@ -219,7 +219,7 @@ test "activity log: observe entries land newest-first via appendEntry" {
   let h = @harness.mount(insp.module_(), "ActivityLog")
   inspect(h.find_all(".empty-hint").length(), content="1")
   let record : @transactor.ObserveRecord = {
-    kind: Input,
+    kind: Receive,
     name: "click",
     args: [],
     path: @tutuca.Path::new(),
@@ -233,7 +233,12 @@ test "activity log: observe entries land newest-first via appendEntry" {
   h.send_at_root("appendEntry", args=[insp.record_to_entry(record)])
   inspect(h.find_all(".empty-hint").length(), content="0")
   inspect(h.find_all(".activity-entry").length(), content="1")
-  inspect(h.text(".entry-kind"), content="input")
+  inspect(
+    h.text(".entry-kind"),
+    content=(
+      #|receive
+    ),
+  )
   inspect(h.text(".entry-name"), content="click")
   inspect(h.text(".entry-matched"), content="exact")
   inspect(h.text(".entry-time"), content="#1")

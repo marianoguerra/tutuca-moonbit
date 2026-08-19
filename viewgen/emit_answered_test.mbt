@@ -112,7 +112,7 @@ test "a declaration the backend refuses is NOT trimmed" {
 
 ///|
 test "a block that answers nothing leaves every bucket exactly as it was" {
-  let (types, ir) = bucket_src("on tick { .n += 1 }")
+  let (types, ir) = bucket_src("receive tick { .n += 1 }")
   assert_true(types.contains("  HasAttachments\n"))
   assert_true(types.contains("  RowLabel\n"))
   assert_true(types.contains("pub(all) enum MailWhen {\n  KeepItem\n}"))

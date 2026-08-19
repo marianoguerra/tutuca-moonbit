@@ -124,12 +124,13 @@ fn manifest_json(
         "types": Json::array(types),
         "fields": Json::array(fields),
         "receives": strings(compiled(DReceive)),
-        // v2's routed bucket. Beside `bubbles` and `responses` rather than
-        // instead of them until task 16 rewrites the manifest's own contract;
-        // a host that does not read this key sees the card it always saw.
         "intents": strings(compiled(DIntent)),
-        "bubbles": strings(compiled(DBubble)),
-        "responses": strings(compiled(DResponse)),
+        // The keys a 0.7 host still reads. Always empty now — this backend has
+        // no bucket to fill them from — and present rather than dropped
+        // because a host that indexes them should find a list and not a
+        // missing key.
+        "bubbles": Json::array([]),
+        "responses": Json::array([]),
         "methods": strings(
           compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
         ),

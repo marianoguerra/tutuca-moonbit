@@ -106,7 +106,7 @@ pub fn check(
     callable,
     predicate,
     binds_assignable: false,
-    decl_kind: DOn,
+    decl_kind: DReceive,
     target: TUnset,
   }
   for d in decls {
@@ -134,7 +134,7 @@ pub fn check(
 fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
   let declared : Set[String] = Set([])
   for d in decls {
-    if d.kind is (DOn | DReceive) {
+    if d.kind is DReceive {
       declared.add(d.name)
     }
   }
@@ -195,31 +195,13 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   // A target belongs to the body that built it and to nothing else — the same
   // rule the interpreter enforces by refusing to hand `@cur` back.
   self.target = TUnset
-  // Where the parameter types come from is the whole difference between the
-  // two halves of the language. A message case is DECLARED, so its payload is
-  // exact; an `@on` name is not declared anywhere, so its arguments are what
-  // the views wrote — and two call sites that disagreed joined to opaque long
-  // before this saw them.
+  // Where a handler's parameter types come from. A schema case is DECLARED, so
+  // its payload is exact; a name only the views write is not declared
+  // anywhere, so its arguments are what the views wrote — and two call sites
+  // that disagreed joined to opaque long before this saw them. `msg_params`
+  // answers both, because one bucket now holds both.
   match d.kind {
-    DReceive | DIntent | DBubble | DResponse => self.msg_params(d)
-    DOn => {
-      let sig = self.surface.inputs.get(d.name)
-      for i, p in d.params {
-        self.params[p.name] = match sig {
-          Some(types) => types.get(i).unwrap_or(None)
-          None => None
-        }
-      }
-      match sig {
-        Some(types) if types.length() != d.params.length() =>
-          self.say(
-            "ARITY",
-            "`\{d.name}` takes \{d.params.length()} parameter(s) here, but the views call it with \{types.length()}",
-            d.name_span,
-          )
-        _ => ()
-      }
-    }
+    DReceive | DIntent => self.msg_params(d)
     // A `compute` or a `pred` is called from a slot or from another body, and
     // nothing declares what it is passed. Opaque, which is the honest answer.
     _ =>
@@ -325,19 +307,16 @@ fn C::format(self : C, d : @tscript.Decl) -> Unit {
 /// Bind a message handler's parameters from the schema's declared payload.
 fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
   let (cases, bucket) = match d.kind {
-    DReceive => (self.def.receive, "receive")
     DIntent => (self.def.intent, "intent")
-    DBubble => (self.def.bubble, "bubble")
-    _ => (self.def.response, "response")
+    _ => (self.def.receive, "receive")
   }
   let found = cases.filter(m => m.name == d.name)
   // A `receive` name the VIEWS send needs no schema case. That is the merge:
-  // one bucket now holds a view's name and a parent's, and the design's
-  // section 9 says the schema declares "every message the component accepts,
-  // BEYOND the ones its own views send". So a `receive` that answers a view
-  // name takes its parameter types where an `on` did — from the call sites —
-  // and reporting `NO_SUCH_MESSAGE` for it would make the migration from `on`
-  // to `receive` require a schema edit per handler.
+  // one bucket holds a view's name and a parent's, and the design's section 9
+  // says the schema declares "every message the component accepts, BEYOND the
+  // ones its own views send". So a `receive` that answers a view name takes
+  // its parameter types from the call sites, which is where v1's `on` took
+  // them.
   // A `receive` the surface cannot speak for. Either the views send this name
   // and its parameters take their types from the call sites, or the caller has
   // no views at all and is in no position to call the name undeclared.

@@ -78,19 +78,19 @@ fn messages_with_views(
 
 ///|
 test "an unknown field is named, and the message guesses" {
-  assert_eq(messages("on x { .coutn = 1 }"), [
+  assert_eq(messages("receive x { .coutn = 1 }"), [
     "`.coutn` is not a field of the Counter state — did you mean `.count`?",
   ])
-  assert_eq(messages("on x { .wildlyDifferent = 1 }"), [
+  assert_eq(messages("receive x { .wildlyDifferent = 1 }"), [
     "`.wildlyDifferent` is not a field of the Counter state; declare it in the <script type=\"tutuca/state\"> block",
   ])
-  assert_eq(codes("on x { .count = 1 }"), [])
+  assert_eq(codes("receive x { .count = 1 }"), [])
 }
 
 ///|
 test "a nested read is checked all the way down" {
-  assert_eq(codes("on x { .labels[0].done = true }"), [])
-  assert_eq(messages("on x { .labels[0].dnoe = true }"), [
+  assert_eq(codes("receive x { .labels[0].done = true }"), [])
+  assert_eq(messages("receive x { .labels[0].dnoe = true }"), [
     "`Label` has no field `dnoe`",
   ])
   assert_eq(messages("compute a { .count[0] }"), [
@@ -102,23 +102,23 @@ test "a nested read is checked all the way down" {
 
 ///|
 test "assignment types have to fit, and the numeric surface is one" {
-  assert_eq(codes("on x { .count = 1 }"), [])
+  assert_eq(codes("receive x { .count = 1 }"), [])
   // `Value` has one `Num(Double)`, so an s32 and an f64 are the same runtime
   // shape — narrowing is a range check at run time, not a type error here.
-  assert_eq(codes("on x { .count = .ratio }"), [])
-  assert_eq(messages("on x { .count = 'hi' }"), [
+  assert_eq(codes("receive x { .count = .ratio }"), [])
+  assert_eq(messages("receive x { .count = 'hi' }"), [
     "this place is Int, but the value is String",
   ])
   // `any` takes anything, which is what it is for.
-  assert_eq(codes("on x { .blob = 'hi' }"), [])
+  assert_eq(codes("receive x { .blob = 'hi' }"), [])
   // …and an enum is a string at runtime, so a computed string can name a case.
-  assert_eq(codes("on x { .pri = 'high' }"), [])
+  assert_eq(codes("receive x { .pri = 'high' }"), [])
 }
 
 ///|
 test "compound assignment is arithmetic" {
-  assert_eq(codes("on x { .count += 1 }"), [])
-  assert_eq(messages("on x { .name += 'x' }"), [
+  assert_eq(codes("receive x { .count += 1 }"), [])
+  assert_eq(messages("receive x { .name += 'x' }"), [
     "`+=` is arithmetic, but this place is String",
   ])
 }
@@ -145,11 +145,13 @@ test "a handler for a message the schema does not declare" {
   assert_eq(messages_with_views("receive resetTP(n) { .count = n }", []), [
     "the schema declares no `receive` case `resetTP` — did you mean `resetTo`?",
   ])
-  // The buckets are separate questions: a `bubble` case is not a `receive`.
+  // The buckets are separate questions: an `intent` case is not a `receive`.
+  // `rowPicked` is one, and answering it as a message is answering a name
+  // nothing addresses.
   assert_eq(messages_with_views("receive rowPicked(i) { .count = i }", []), [
     "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/state\"> block",
   ])
-  assert_eq(codes("bubble rowPicked(i) { .count = i }"), [])
+  assert_eq(codes("intent rowPicked(i) { .count = i }"), [])
 }
 
 ///|
@@ -181,8 +183,8 @@ test "an unknown surface does not call a `receive` undeclared" {
 
 ///|
 test "a bare name is a parameter, a builtin, or something this block declares" {
-  assert_eq(codes("on set(value) { .name = value }"), [])
-  assert_eq(messages("on set(value) { .name = valeu }"), [
+  assert_eq(codes("receive set(value) { .name = value }"), [])
+  assert_eq(messages("receive set(value) { .name = valeu }"), [
     "nothing here is called `valeu` — did you mean `value`?",
   ])
   // A predicate declared anywhere in the block, including below its use.
@@ -199,16 +201,16 @@ test "a builtin's arity is checked, and its result type is known" {
     "`len` takes 1 argument(s), not 2",
   ])
   // `len` answers an integer, so this fits an s32 field.
-  assert_eq(codes("on x { .count = len .items }"), [])
+  assert_eq(codes("receive x { .count = len .items }"), [])
   // …and `trim` answers text, so it does not.
-  assert_eq(messages("on x { .count = trim .name }"), [
+  assert_eq(messages("receive x { .count = trim .name }"), [
     "this place is Int, but the value is String",
   ])
 }
 
 ///|
 test "a parameter cannot be applied" {
-  assert_eq(messages("on set(value) { .name = value .name }"), [
+  assert_eq(messages("receive set(value) { .name = value .name }"), [
     "`value` is a parameter, so it takes no arguments",
   ])
 }
@@ -269,13 +271,13 @@ test "a comparison that can only answer one way is reported" {
 
 ///|
 test "a collection method has to fit its receiver" {
-  assert_eq(codes("on x(v) { .items.push v }"), [])
-  assert_eq(codes("on x(v) { .tags.add v }"), [])
-  assert_eq(codes("on x(k, v) { .byKey.setAt k v }"), [])
-  assert_eq(messages("on x(v) { .items.add v }"), [
+  assert_eq(codes("receive x(v) { .items.push v }"), [])
+  assert_eq(codes("receive x(v) { .tags.add v }"), [])
+  assert_eq(codes("receive x(k, v) { .byKey.setAt k v }"), [])
+  assert_eq(messages("receive x(v) { .items.add v }"), [
     "`add` does not apply to Array[String]",
   ])
-  assert_eq(messages("on x(v) { .byKey.push v }"), [
+  assert_eq(messages("receive x(v) { .byKey.push v }"), [
     "`push` does not apply to Map[String, String]",
   ])
 }
@@ -284,10 +286,10 @@ test "a collection method has to fit its receiver" {
 
 ///|
 test "an effect's message name has to be known before anything runs" {
-  assert_eq(codes("on x { send 'flash' .name }"), [])
-  assert_eq(codes("on x { stop }"), [])
-  assert_eq(codes("on x { sendAt &.labels[0] 'select' }"), [])
-  assert_eq(messages("on x { send .name 'body' }"), [
+  assert_eq(codes("receive x { send 'flash' .name }"), [])
+  assert_eq(codes("receive x { stop }"), [])
+  assert_eq(codes("receive x { sendAt &.labels[0] 'select' }"), [])
+  assert_eq(messages("receive x { send .name 'body' }"), [
     "`send` needs a literal message name: the generator routes it, so it has to be known before anything runs",
   ])
 }
@@ -296,7 +298,7 @@ test "an effect's message name has to be known before anything runs" {
 test "a binding is assignable only where bindings are produced" {
   assert_eq(codes("enrich rowInfo { @cls = 'row' }"), [])
   assert_eq(codes("enrichScope header { @title = .name }"), [])
-  assert_eq(messages("on x { @cls = 'row' }"), [
+  assert_eq(messages("receive x { @cls = 'row' }"), [
     "`@cls` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state, and `new` builds a value in `@cur`",
   ])
 }
@@ -313,7 +315,7 @@ test "a `$name` in a body is reported, and the message names the spelling that w
     messages(
       (
         #|pred over { .count > 10 }
-        #|on x { if $over { .count = 0 } }
+        #|receive x { if $over { .count = 0 } }
       ),
     ),
     [
@@ -325,7 +327,7 @@ test "a `$name` in a body is reported, and the message names the spelling that w
     codes(
       (
         #|pred over { .count > 10 }
-        #|on x { if over { .count = 0 } }
+        #|receive x { if over { .count = 0 } }
       ),
     ),
     [],
@@ -336,7 +338,7 @@ test "a `$name` in a body is reported, and the message names the spelling that w
     "`$summary` is answered by the render stack, and a body runs after one, so it reads Null here; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name",
   ])
   // A dynamic binding has no spelling that works from a body.
-  assert_eq(messages("on x { .name = *theme }"), [
+  assert_eq(messages("receive x { .name = *theme }"), [
     "`*theme` is answered by the render stack, and a body runs after one, so it reads Null here; a body cannot read a dynamic binding at all",
   ])
 }
@@ -348,8 +350,8 @@ test "every opaque source silences the checks below it" {
   // A `$method` result and a `*dyn` are opaque, and the assignment they feed
   // is therefore unchecked — RENDER_ONLY is the finding about the sigil
   // itself, and nothing follows it about `.count`.
-  assert_eq(codes("on x { .count = $whatever }"), ["RENDER_ONLY"])
-  assert_eq(codes("on x { .count = *theme }"), ["RENDER_ONLY"])
+  assert_eq(codes("receive x { .count = $whatever }"), ["RENDER_ONLY"])
+  assert_eq(codes("receive x { .count = *theme }"), ["RENDER_ONLY"])
   // A binding comes from the slot that uses the declaration, which the block
   // cannot see — and so does everything under it.
   assert_eq(codes("pred p { @value.completed }"), [])
@@ -359,14 +361,14 @@ test "every opaque source silences the checks below it" {
   // An `on` handler no view calls has opaque arguments rather than none: a
   // name can be raised from MoonBit, and the block may answer one the
   // templates never mention.
-  assert_eq(codes("on neverCalled(a) { .count = a }"), [])
+  assert_eq(codes("receive neverCalled(a) { .count = a }"), [])
 }
 
 // -- the views' half --------------------------------------------------------
 
 ///|
 test "an on handler's argument types come from the views' call sites" {
-  let decls = @tscript.parse_script("on add(d) { .name = d }")
+  let decls = @tscript.parse_script("receive add(d) { .name = d }")
   // With nothing known, nothing is checked.
   assert_eq(@check.check(decls, def_of(schema())).length(), 0)
   // With the call site saying `@on.click="add 1"`, the parameter is a number
@@ -383,7 +385,7 @@ test "an on handler's argument types come from the views' call sites" {
 
 ///|
 test "a parameter list that disagrees with the call sites" {
-  let decls = @tscript.parse_script("on add(d, e) { .count = d }")
+  let decls = @tscript.parse_script("receive add(d, e) { .count = d }")
   let surface : @check.Surface = {
     inputs: { "add": [Some(TFloat)] },
     knows_views: true,
@@ -398,7 +400,7 @@ test "a parameter list that disagrees with the call sites" {
 test "call sites that disagreed joined to opaque, and stay unchecked" {
   // `join_arg` answers `VValue` when two call sites disagree, which arrives
   // here as None — and None is never wrong.
-  let decls = @tscript.parse_script("on add(d) { .name = d }")
+  let decls = @tscript.parse_script("receive add(d) { .name = d }")
   let surface : @check.Surface = {
     inputs: { "add": [None] },
     knows_views: true,
@@ -410,12 +412,12 @@ test "call sites that disagreed joined to opaque, and stay unchecked" {
 
 ///|
 test "a finding points at the thing it is about" {
-  let decls = @tscript.parse_script("on x {\n  .coutn = 1\n}")
+  let decls = @tscript.parse_script("receive x {\n  .coutn = 1\n}")
   let fs = @check.check(decls, def_of(schema()))
   assert_eq(fs.length(), 1)
-  // `.coutn` starts at offset 9 — the block's own coordinates, which
+  // `.coutn` starts at offset 14 — the block's own coordinates, which
   // `@viewfile.Block` rebases onto the file.
-  assert_eq(fs[0].span, { start: 9, end_: 15 })
+  assert_eq(fs[0].span, { start: 14, end_: 20 })
 }
 
 // -- new, and the target ----------------------------------------------------
@@ -423,40 +425,40 @@ test "a finding points at the thing it is about" {
 ///|
 test "a new gives the target a type, so a field of it is checked" {
   assert_eq(
-    codes("on x {\n  new Label\n  @cur.text = 'a'\n  .labels.push @cur\n}"),
+    codes("receive x {\n  new Label\n  @cur.text = 'a'\n  .labels.push @cur\n}"),
     [],
   )
   // The payoff for typing the target: `@cur.dnoe` reads exactly like
   // `.labels[0].dnoe` does, because it goes through the same step walk.
-  assert_eq(messages("on x {\n  new Label\n  @cur.dnoe = 'a'\n}"), [
+  assert_eq(messages("receive x {\n  new Label\n  @cur.dnoe = 'a'\n}"), [
     "`Label` has no field `dnoe`",
   ])
-  assert_eq(messages("on x {\n  new Label\n  @cur.done = 'yes'\n}"), [
+  assert_eq(messages("receive x {\n  new Label\n  @cur.done = 'yes'\n}"), [
     "this place is Bool, but the value is String",
   ])
 }
 
 ///|
 test "the target does not exist until a new makes one" {
-  assert_eq(messages("on x { .labels.push @cur }"), [
+  assert_eq(messages("receive x { .labels.push @cur }"), [
     "`@cur` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
   ])
   // And the report is once, not once per step below it.
-  assert_eq(codes("on x { @cur.text = 'a' }"), ["NO_TARGET"])
+  assert_eq(codes("receive x { @cur.text = 'a' }"), ["NO_TARGET"])
 }
 
 ///|
 test "a type the state does not declare is named, with the nearest one" {
-  assert_eq(messages("on x { new Labl }"), [
+  assert_eq(messages("receive x { new Labl }"), [
     "`Labl` is not a type the Counter state declares — did you mean `Label`?",
   ])
-  assert_eq(messages("on x { new Array[Widget] }"), [
+  assert_eq(messages("receive x { new Array[Widget] }"), [
     "`Array[Widget]` is not a type the Counter state declares; declare it in the <script type=\"tutuca/state\"> block, or write a built-in type",
   ])
   // The built-in spellings the state block has, all of them legal here.
   assert_eq(
     codes(
-      "on x {\n  new Array[String]\n  new Map[String, Int]\n  new Set[String]\n  new Priority\n}",
+      "receive x {\n  new Array[String]\n  new Map[String, Int]\n  new Set[String]\n  new Priority\n}",
     ),
     [],
   )
@@ -464,8 +466,8 @@ test "a type the state does not declare is named, with the nearest one" {
 
 ///|
 test "a collection method on the target is checked against what it built" {
-  assert_eq(codes("on x {\n  new Array[String]\n  @cur.push 'a'\n}"), [])
-  assert_eq(messages("on x {\n  new Label\n  @cur.push 'a'\n}"), [
+  assert_eq(codes("receive x {\n  new Array[String]\n  @cur.push 'a'\n}"), [])
+  assert_eq(messages("receive x {\n  new Label\n  @cur.push 'a'\n}"), [
     "`push` does not apply to Label",
   ])
 }
@@ -475,14 +477,14 @@ test "a target built in a branch is known only where both arms agree" {
   // Same type on both sides: known below.
   assert_eq(
     codes(
-      "on x {\n  if .ok { new Label } else { new Label }\n  @cur.text = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { new Label }\n  @cur.text = 'a'\n}",
     ),
     [],
   )
   // One arm only: nothing is there on the other path, so a read below reports.
   assert_eq(
     codes(
-      "on x {\n  if .ok { new Label } else { .count = 1 }\n  @cur.text = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { .count = 1 }\n  @cur.text = 'a'\n}",
     ),
     ["NO_TARGET"],
   )
@@ -490,7 +492,7 @@ test "a target built in a branch is known only where both arms agree" {
   // the field goes unchecked rather than misreported.
   assert_eq(
     codes(
-      "on x {\n  if .ok { new Label } else { new Array[String] }\n  @cur.dnoe = 'a'\n}",
+      "receive x {\n  if .ok { new Label } else { new Array[String] }\n  @cur.dnoe = 'a'\n}",
     ),
     [],
   )
@@ -516,15 +518,15 @@ test "the target is not a binding an enrich can publish" {
 test "a path is written on an argument, and only on one that exists" {
   // An argument is opaque in a card (nothing declares what the views pass), so
   // reading a field off one is quiet — "unknown is not wrong" all the way down.
-  assert_eq(codes("on pick(f) { .name = f.name }"), [])
-  assert_eq(codes("on pick(f) { .name = f.meta.name }"), [])
+  assert_eq(codes("receive pick(f) { .name = f.name }"), [])
+  assert_eq(codes("receive pick(f) { .name = f.meta.name }"), [])
   assert_eq(codes("receive resetTo(n) { .count = n }"), [])
   // The root has to BE a parameter: a bare name with an attached `.` is a path
   // and nothing else, so a name that is not one is a mistake rather than a call.
-  assert_eq(messages("on pick(file) { .name = payload.name }"), [
+  assert_eq(messages("receive pick(file) { .name = payload.name }"), [
     "`payload` is not a parameter of `pick`; a path is only written on an argument, and `.payload` is how a state field is read",
   ])
-  assert_eq(messages("on pick(file) { .name = flie.name }"), [
+  assert_eq(messages("receive pick(file) { .name = flie.name }"), [
     "`flie` is not a parameter of `pick` — did you mean `file`?",
   ])
 }
@@ -535,7 +537,7 @@ test "an argument is a value, not a place, so it cannot be assigned" {
   // never reaches the checker — and the message says what the path is rather
   // than listing what a statement may be.
   let e = try {
-    @tscript.parse_script("on pick(f) { f.name = 'x' }") |> ignore
+    @tscript.parse_script("receive pick(f) { f.name = 'x' }") |> ignore
     ""
   } catch {
     err => err.message()
@@ -561,13 +563,13 @@ test "a contract names a `pred` the block declares" {
   assert_eq(
     codes(
       (
-        #|on bump requires enough { .count += 1 }
+        #|receive bump requires enough { .count += 1 }
         #|pred enough { .count > 0 }
       ),
     ),
     [],
   )
-  assert_eq(messages("on bump requires enough { .count += 1 }"), [
+  assert_eq(messages("receive bump requires enough { .count += 1 }"), [
     "`requires enough` names no `pred` this block declares; declare `pred enough { … }` above `bump`",
   ])
   // A `compute` is not a rule: nothing declares that its answer is a yes or a
@@ -575,7 +577,7 @@ test "a contract names a `pred` the block declares" {
   assert_eq(
     messages(
       (
-        #|on bump requires caption { .count += 1 }
+        #|receive bump requires caption { .count += 1 }
         #|compute caption { .name }
       ),
     ),
@@ -590,7 +592,7 @@ test "a near miss in a contract is named" {
   assert_eq(
     messages(
       (
-        #|on bump requires enouhg { .count += 1 }
+        #|receive bump requires enouhg { .count += 1 }
         #|pred enough { .count > 0 }
       ),
     ),
@@ -605,7 +607,7 @@ test "a contract is asked with nothing, so its rule takes nothing" {
   assert_eq(
     codes(
       (
-        #|on bump requires enough { .count += 1 }
+        #|receive bump requires enough { .count += 1 }
         #|pred enough(n) { .count > n }
       ),
     ),
@@ -693,8 +695,8 @@ test "reply and fail answer a sender, and only an intent has one" {
   assert_eq(messages("receive resetTo(n) { reply .count }"), [
     "`reply` answers the sender of an intent, and `receive resetTo` has none — a message is addressed, so nobody is waiting for an answer",
   ])
-  assert_eq(messages("on click { fail 'no' }"), [
-    "`fail` answers the sender of an intent, and `on click` has none — a message is addressed, so nobody is waiting for an answer",
+  assert_eq(messages("receive click { fail 'no' }"), [
+    "`fail` answers the sender of an intent, and `receive click` has none — a message is addressed, so nobody is waiting for an answer",
   ])
   assert_eq(codes("enrich row { reply 1 }"), ["NOT_A_HANDLER"])
 }
@@ -719,15 +721,18 @@ test "reply and fail are not dynamic message names" {
   assert_eq(codes("intent rowPicked(k) { fail .name }"), [])
   assert_eq(codes("receive resetTo(n) { forward .name }"), [])
   // ...and the rule still holds for the effects that DO name one.
-  assert_eq(codes("on x { intent .name }"), ["DYNAMIC_MESSAGE"])
-  assert_eq(codes("on x { send .name }"), ["DYNAMIC_MESSAGE"])
+  assert_eq(codes("receive x { intent .name }"), ["DYNAMIC_MESSAGE"])
+  assert_eq(codes("receive x { send .name }"), ["DYNAMIC_MESSAGE"])
 }
 
 ///|
 test "a view name the block neither answers nor forwards is a warning" {
   assert_eq(codes_with_views("receive save(t) { forward }", ["save"]), [])
-  assert_eq(codes_with_views("on save(t) { .name = t }", ["save"]), [])
-  assert_eq(codes_with_views("on save(t) { .name = t }", ["saev"]), [
+  assert_eq(codes_with_views("receive save(t) { .name = t }", ["save"]), [])
+  // The handler answers a name the SCHEMA declares, and the view's `saev` is
+  // answered by nothing — one warning, and no NO_SUCH_MESSAGE, because
+  // `resetTo` is a real case.
+  assert_eq(codes_with_views("receive resetTo(n) { .count = n }", ["saev"]), [
     "NO_VIEW_HANDLER",
   ])
 }
@@ -737,7 +742,7 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
   inputs["saveDraft"] = [None]
   let found = @check.check(
-    @tscript.parse_script("on other { .count = 1 }"),
+    @tscript.parse_script("receive resetTo(n) { .count = n }"),
     def_of(schema()),
     surface={ inputs, knows_views: true },
   )
@@ -754,14 +759,27 @@ test "a generated mutator answers a view name, so it is not reported" {
   // The checker cannot see `component/gen_mutators`' verb table, so it asks
   // the conservative question instead: does the name address a declared field?
   // Erring toward silence is this package's governing rule.
-  assert_eq(codes_with_views("on other { .count = 1 }", ["setCount"]), [])
-  assert_eq(codes_with_views("on other { .count = 1 }", ["countLen"]), [])
-  assert_eq(codes_with_views("on other { .count = 1 }", ["removeInItemsAt"]), [])
-  assert_eq(codes_with_views("on other { .count = 1 }", ["toggleOk"]), [])
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["setCount"]),
+    [],
+  )
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["countLen"]),
+    [],
+  )
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["removeInItemsAt"]),
+    [],
+  )
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["toggleOk"]),
+    [],
+  )
   // A name that addresses no field is not a mutator, whatever it looks like.
-  assert_eq(codes_with_views("on other { .count = 1 }", ["setWidget"]), [
-    "NO_VIEW_HANDLER",
-  ])
+  assert_eq(
+    codes_with_views("receive resetTo(n) { .count = n }", ["setWidget"]),
+    ["NO_VIEW_HANDLER"],
+  )
 }
 
 ///|

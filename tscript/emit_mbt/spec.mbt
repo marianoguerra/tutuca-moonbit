@@ -76,14 +76,17 @@ pub(all) struct Emitted {
   /// caller that emitted an unused function would have to explain it to
   /// `moon check`.
   source : String
-  /// The names this function ANSWERS, by bucket. What the generator needs in
-  /// order to trim the bucket enums: a name answered here must not also
-  /// appear as a variant the author is asked to write an arm for.
+  /// The names this function ANSWERS, by the enum that types them. What the
+  /// generator needs in order to trim the bucket enums: a name answered here
+  /// must not also appear as a variant the author is asked to write an arm for.
+  ///
+  /// Three lists over two buckets. `answers_input` and `answers_receive` are
+  /// both the `Receive` bucket, split by where the payload's type comes from —
+  /// the views' call sites for the first, the schema's declaration for the
+  /// second — which is exactly the split `<T>Msg` and `<T>Receive` make.
   answers_input : Array[String]
   answers_receive : Array[String]
   answers_intent : Array[String]
-  answers_bubble : Array[String]
-  answers_response : Array[String]
   /// The value bodies that compiled, by role — what the generator routes to.
   /// A name asked for in `Roles` and missing here was refused, and its
   /// `Refusal` says why.

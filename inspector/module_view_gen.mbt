@@ -227,7 +227,8 @@ pub fn RichSampleInput::parse(s : String) -> RichSampleInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to module.html breaks every `match` over this type
 /// until it is handled.
@@ -236,16 +237,18 @@ pub(all) enum RichSampleMsg {
   Inc
   /// `@on.click="reset …"`
   Reset
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn RichSampleMsg::from_dispatch(d : @component.Dispatch) -> RichSampleMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("inc", []) => Inc
@@ -452,23 +455,26 @@ pub fn SampleCardInput::parse(s : String) -> SampleCardInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to module.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum SampleCardMsg {
   /// `@on.click="bump …"`
   Bump
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SampleCardMsg::from_dispatch(d : @component.Dispatch) -> SampleCardMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("bump", []) => Bump

@@ -90,9 +90,6 @@ pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 pub(all) enum HandlerBucket {
   Receive
   Intent
-  Input
-  Bubble
-  Response
 } derive(Eq, @debug.Debug)
 
 pub(all) enum HandlerNamespace {
@@ -172,7 +169,6 @@ pub struct PathChanges {
   ctx : &Ctx
   steps : Array[Step]
 }
-pub fn PathChanges::bubble(Self, String, Array[Value]) -> Unit
 pub fn PathChanges::build_path(Self) -> DispatchPath
 pub fn PathChanges::field(Self, String) -> Self
 pub fn PathChanges::index(Self, String, Int) -> Self
@@ -206,14 +202,6 @@ pub(all) enum RefusalCode {
   IntentDepth
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
-
-pub(all) struct RequestOpts {
-  on_ok_name : String?
-  on_error_name : String?
-  on_res_name : String?
-  live_path : Bool
-} derive(Eq, @debug.Debug)
-pub fn RequestOpts::new(on_ok_name? : String, on_error_name? : String, on_res_name? : String, live_path? : Bool) -> Self
 
 pub(all) struct SchemaInfo {
   name : String
@@ -357,11 +345,9 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
+  fn is_answer(Self) -> Bool = _
   fn send(Self, String, Array[Value]) -> Unit = _
-  fn bubble(Self, String, Array[Value]) -> Unit = _
   fn send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
-  fn bubble_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
-  fn request(Self, String, Array[Value], RequestOpts) -> Unit = _
   fn intent(Self, String, Array[Value], IntentOpts) -> Unit = _
   fn intent_at_path(Self, DispatchPath, String, Array[Value], IntentOpts) -> Unit = _
   fn forward(Self, Array[Value]?, IntentOpts?) -> Unit = _

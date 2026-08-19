@@ -160,7 +160,8 @@ pub fn JsonSelectorInput::parse(s : String) -> JsonSelectorInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
@@ -177,18 +178,20 @@ pub(all) enum JsonSelectorMsg {
   SetToObject
   /// `@on.click="setToString …"`
   SetToString
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonSelectorMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonSelectorMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setToArray", []) => SetToArray
@@ -405,23 +408,26 @@ pub fn JsonBoolInput::parse(s : String) -> JsonBoolInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum JsonBoolMsg {
   /// `@on.click="toggleValue …"`
   ToggleValue
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("toggleValue", []) => ToggleValue
@@ -573,23 +579,26 @@ pub fn JsonStringInput::parse(s : String) -> JsonStringInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum JsonStringMsg {
   /// `@on.input="setValue …"`
   SetValue(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setValue", [Str(a0)]) => SetValue(a0)
@@ -743,23 +752,26 @@ pub fn JsonNumberInput::parse(s : String) -> JsonNumberInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum JsonNumberMsg {
   /// `@on.input="setRawValue …"`
   SetRawValue(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setRawValue", [Str(a0)]) => SetRawValue(a0)
@@ -932,7 +944,8 @@ pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
@@ -943,16 +956,18 @@ pub(all) enum JsonArrayMsg {
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
   /// `@on.click="removeInItemsAt …"`
   RemoveInItemsAt(@tutuca.Value)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("addItem", []) => AddItem
@@ -1108,25 +1123,28 @@ pub fn JsonObjectKeyValInput::parse(s : String) -> JsonObjectKeyValInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum JsonObjectKeyValMsg {
   /// `@on.input="setKey …"`
   SetKey(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonObjectKeyValMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonObjectKeyValMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setKey", [Str(a0)]) => SetKey(a0)
@@ -1299,7 +1317,8 @@ pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to json.html breaks every `match` over this type
 /// until it is handled.
@@ -1310,16 +1329,18 @@ pub(all) enum JsonObjectMsg {
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
   /// `@on.click="removeInItemsAt …"`
   RemoveInItemsAt(@tutuca.Value)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("addItem", []) => AddItem

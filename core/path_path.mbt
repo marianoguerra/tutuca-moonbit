@@ -190,16 +190,6 @@ pub impl Show for Path with fn output(self, logger) {
 }
 
 ///|
-pub fn RequestOpts::new(
-  on_ok_name? : String,
-  on_error_name? : String,
-  on_res_name? : String,
-  live_path? : Bool = false,
-) -> RequestOpts {
-  { on_ok_name, on_error_name, on_res_name, live_path }
-}
-
-///|
 /// The default route is `dyn lex` and is written HERE, once. Every other
 /// package that needs it asks for it rather than spelling two arms of an enum
 /// in its own order — a default route two packages disagree about is the kind

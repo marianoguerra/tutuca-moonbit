@@ -105,11 +105,8 @@ pub(all) struct Decl {
 pub fn Decl::to_source(Self) -> String
 
 pub(all) enum DeclKind {
-  DOn
   DReceive
   DIntent
-  DBubble
-  DResponse
   DCompute
   DPred
   DInvariant

@@ -1,5 +1,5 @@
-// App-layer event wiring (the seams src/app.js owns): the scope-chain
-// request registry adapter, event modifiers, and the dispatch pipeline —
+// App-layer event wiring: the scope-chain intent registry adapter, event
+// modifiers, and the dispatch pipeline —
 // reconstruct an event path from a DOM node, evaluate the handler's parsed
 // args (DOM InputEvent lookups like `value`/`key`/`isCtrl` via
 // render/dom_event) against the rebuilt render stack, and dispatch through
@@ -7,37 +7,14 @@
 // lives in loop.mbt and calls into this file.
 
 ///|
-/// JS comps.getRequestFor: requests resolve through the component's
-/// REGISTRATION scope (not the instance), adapted onto the transactor's
+/// The lexical LEG of an intent's route, adapted onto the transactor's
 /// registry trait.
-pub(all) struct ScopeRequests {
-  comps : @component.Components
-}
-
-///|
-pub impl @transactor.Requests for ScopeRequests with fn request_for(
-  self,
-  leaf,
-  name,
-) {
-  guard self.comps.get_comp_for(leaf) is Some(comp) else { return None }
-  guard comp.scope is Some(scope) else { return None }
-  match scope.lookup_request(name) {
-    Some(RequestFn(f)) => Some(RequestHandler(f))
-    None => None
-  }
-}
-
-///|
-/// The v2 twin: the lexical LEG of an intent's route, adapted onto the
-/// transactor's registry trait.
 ///
 /// It answers with the whole chain rather than with one handler, because a
 /// declining handler hands the intent to its parent scope (`totuka-v2.md`
-/// section 17). Resolution is otherwise the same as `ScopeRequests` above and
-/// deliberately so: an intent's `lex` leg reaches exactly what a v1 request
-/// reached, through the component's REGISTRATION scope rather than its
-/// instance.
+/// section 17). Resolution goes through the component's REGISTRATION scope
+/// rather than its instance — which is where v1's `ScopeRequests` looked too,
+/// and the one thing about the `lex` leg that did not change.
 pub(all) struct ScopeIntents {
   comps : @component.Components
 }

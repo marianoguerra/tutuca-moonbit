@@ -324,11 +324,8 @@ fn handle_event_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
   let arms : Array[@abi.I] = []
   for
     pair in [
-      (@tscript.DeclKind::DOn, @abi.bucket_input),
-      (DReceive, @abi.bucket_receive),
+      (@tscript.DeclKind::DReceive, @abi.bucket_receive),
       (DIntent, @abi.bucket_intent),
-      (DResponse, @abi.bucket_response),
-      (DBubble, @abi.bucket_bubble),
     ] {
     let (kind, bucket) = pair
     let word = @tscript.kind_word(kind)

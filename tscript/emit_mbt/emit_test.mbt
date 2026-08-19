@@ -228,18 +228,22 @@ test "negation is emitted as `!`, which is the spelling moonc does not deprecate
   // the thing that warns, let alone the thing that fails a --deny-warn build
   // over a block whose author wrote nothing wrong. All three negating forms
   // go through the same spelling.
-  assert_true(body("on x { if not .ok { .count = 1 } }").contains("(!s.ok)"))
   assert_true(
-    body("on x { if .label is not 'hi' { .count = 1 } }").contains("(!("),
+    body("receive x { if not .ok { .count = 1 } }").contains("(!s.ok)"),
   )
   assert_true(
-    body("on x { if .ok implies .ok { .count = 1 } }").contains("((!s.ok) ||"),
+    body("receive x { if .label is not 'hi' { .count = 1 } }").contains("(!("),
+  )
+  assert_true(
+    body("receive x { if .ok implies .ok { .count = 1 } }").contains(
+      "((!s.ok) ||",
+    ),
   )
   // And nowhere does the old spelling survive.
   for
     block in [
-      "on x { if not .ok { .count = 1 } }", "on x { if .label is not 'hi' { .count = 1 } }",
-      "on x { if .ok implies .ok { .count = 1 } }",
+      "receive x { if not .ok { .count = 1 } }", "receive x { if .label is not 'hi' { .count = 1 } }",
+      "receive x { if .ok implies .ok { .count = 1 } }",
     ] {
     assert_false(body(block).contains("not("))
   }
@@ -251,7 +255,7 @@ test "an assignment is a copy-on-write rebinding of `s`" {
   // statement read what an earlier one wrote — the same thing a hand-written
   // arm does, spelled the same way.
   inspect(
-    body("on setLabel { .label = 'hi' }"),
+    body("receive setLabel { .label = 'hi' }"),
     content=(
       #|let s = { ..s, label: "hi" }
       #|Next(s)
@@ -265,7 +269,7 @@ test "arithmetic goes through Double and comes back at the field's type" {
   // consulting the other: `Value` has ONE number, so an expression that rounds
   // at the boundary here rounds where the interpreter rounds too.
   inspect(
-    body("on bump { .count += 1 }"),
+    body("receive bump { .count += 1 }"),
     content=(
       #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       #|Next(s)
@@ -273,7 +277,7 @@ test "arithmetic goes through Double and comes back at the field's type" {
   )
   // …and a Double field needs no conversion at all.
   inspect(
-    body("on scale { .ratio += 0.5 }"),
+    body("receive scale { .ratio += 0.5 }"),
     content=(
       #|let s = { ..s, ratio: (s.ratio + 0.5) }
       #|Next(s)
@@ -309,7 +313,7 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
   // The previous state is still on the transactor's stack, so writing through
   // `s.history` would edit a value someone else is holding.
   inspect(
-    body("on add1 { .history.push 1 }"),
+    body("receive add1 { .history.push 1 }"),
     content=(
       #|let s = { ..s, history: (s.history + [1]) }
       #|Next(s)
@@ -319,7 +323,7 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
   // ABORTS past the end where the interpreter answers "no change", and this is
   // the whole reason both backends are held to one corpus.
   inspect(
-    body("on dropAt(i) { .history.removeAt i }"),
+    body("receive dropAt(i) { .history.removeAt i }"),
     content=(
       #|guard args.get(0) is Some(Num(i)) else { return Unchanged }
       #|let at = i.to_int()
@@ -333,7 +337,7 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
 ///|
 test "a set is Map-backed and copied before it is written" {
   inspect(
-    body("on tag(t) { .tags.add t }"),
+    body("receive tag(t) { .tags.add t }"),
     content=(
       #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
       #|let s = { ..s, tags: { let m = s.tags.copy(); m[t] = true; m } }
@@ -342,7 +346,7 @@ test "a set is Map-backed and copied before it is written" {
   )
   // Toggle reads before it writes, which is why it needs the binding.
   inspect(
-    body("on flip(t) { .tags.toggle t }"),
+    body("receive flip(t) { .tags.toggle t }"),
     content=(
       #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
       #|let s = { ..s, tags: { let m = s.tags.copy(); let k = t; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m } }
@@ -350,7 +354,7 @@ test "a set is Map-backed and copied before it is written" {
     ),
   )
   // A closed set takes the same three, because the two share one runtime shape.
-  assert_eq(whys("on show(v) { .vis.add v }"), [])
+  assert_eq(whys("receive show(v) { .vis.add v }"), [])
 }
 
 ///|
@@ -358,7 +362,7 @@ test "an if rebinds `s` through an expression, not two statement blocks" {
   // A `let` inside a braced statement would not escape it, so both branches
   // have to ANSWER the state.
   inspect(
-    body("on maybe { if .ok { .count += 1 } else { .count = 0 } }"),
+    body("receive maybe { if .ok { .count += 1 } else { .count = 0 } }"),
     content=(
       #|let s = if s.ok {
       #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
@@ -376,15 +380,13 @@ test "an if rebinds `s` through an expression, not two statement blocks" {
 test "the answers are reported per bucket, for the enums to be trimmed by" {
   let e = out(
     (
-      #|on bump { .count += 1 }
-      #|on reset { .count = 0 }
+      #|receive bump { .count += 1 }
+      #|receive reset { .count = 0 }
       #|receive resetTo(n) { .count = n }
     ),
   )
   assert_eq(e.answers_input, ["bump", "reset"])
   assert_eq(e.answers_receive, ["resetTo"])
-  assert_eq(e.answers_bubble, [])
-  assert_eq(e.answers_response, [])
 }
 
 ///|
@@ -400,7 +402,7 @@ test "a block that declares no transition emits no function at all" {
 
 ///|
 test "a write through a path is refused by name, with what to do instead" {
-  let w = whys("on deep(i) { .history[0] = i }")
+  let w = whys("receive deep(i) { .history[0] = i }")
   assert_eq(w.length(), 1)
   assert_true(w[0].contains("spine rebuild"))
   assert_true(w[0].contains("write the handler in MoonBit"))
@@ -408,7 +410,7 @@ test "a write through a path is refused by name, with what to do instead" {
 
 ///|
 test "a method the field's type does not have names the type" {
-  let w = whys("on nope { .count.push 1 }")
+  let w = whys("receive nope { .count.push 1 }")
   assert_eq(w, [
     "`push` does not apply to `.count`, which is Int — write the handler in MoonBit",
   ])
@@ -420,21 +422,23 @@ test "one refusal does not cost the block its other handlers" {
   // for something this backend cannot spell still has others that compile.
   let e = out(
     (
-      #|on bump { .count += 1 }
-      #|on deep(i) { .history[0] = i }
-      #|on reset { .count = 0 }
+      #|receive bump { .count += 1 }
+      #|receive deep(i) { .history[0] = i }
+      #|receive reset { .count = 0 }
     ),
   )
   assert_eq(e.answers_input, ["bump", "reset"])
   assert_eq(e.refusals.map(r => r.name), ["deep"])
-  assert_true(e.source.contains("Input(\"bump\", _args)"))
-  assert_true(e.source.contains("Input(\"reset\", _args)"))
-  assert_false(e.source.contains("Input(\"deep\", "))
+  assert_true(e.source.contains("Receive(\"bump\", _args)"))
+  assert_true(e.source.contains("Receive(\"reset\", _args)"))
+  assert_false(e.source.contains("Receive(\"deep\", "))
 }
 
 ///|
 test "a refusal carries the declaration's span, not the block's" {
-  let e = out("on bump { .count += 1 }\non deep(i) { .history[0] = i }")
+  let e = out(
+    "receive bump { .count += 1 }\nreceive deep(i) { .history[0] = i }",
+  )
   assert_eq(e.refusals.length(), 1)
   // The second declaration starts after the first, which is the only thing
   // that makes the span useful for pointing at a line.
@@ -608,7 +612,7 @@ test "an index into the target is refused, as one into the state is" {
 test "a contract compiles into the arm, at the moment it is about" {
   let src = body(
     (
-      #|on bump requires enough ensures small {
+      #|receive bump requires enough ensures small {
       #|  .count += 1
       #|  send 'bumped' .count
       #|}
@@ -646,8 +650,8 @@ test "a contract compiles into the arm, at the moment it is about" {
 test "an invariant is written into every arm the block declares" {
   let e = out(
     (
-      #|on bump { .count += 1 }
-      #|on tag(t) { .label = t }
+      #|receive bump { .count += 1 }
+      #|receive tag(t) { .label = t }
       #|invariant sane { .count >= 0 }
     ),
   )
@@ -680,7 +684,7 @@ test "an invariant is a pred with a role, and compiles as one too" {
   // the two can be in.
   let e = out_values(
     (
-      #|on bump { .count += 1 }
+      #|receive bump { .count += 1 }
       #|invariant sane { .count >= 0 }
     ),
     methods=["sane"],
@@ -694,7 +698,7 @@ test "a contract naming a rule the block does not declare refuses its arm" {
   // Not a silently-dropped check: the arm is refused, with the reason the
   // author reads. A generated file that quietly kept the handler and dropped
   // its guarantee is the outcome worth refusing over.
-  assert_eq(whys("on bump requires enough { .count += 1 }"), [
+  assert_eq(whys("receive bump requires enough { .count += 1 }"), [
     "`enough` is not a `pred` this block declares, so there is no rule to check",
   ])
 }
@@ -703,7 +707,7 @@ test "a contract naming a rule the block does not declare refuses its arm" {
 test "a rule's format is compiled into the refusal, beside the rule" {
   let src = body(
     (
-      #|on bump requires enough {
+      #|receive bump requires enough {
       #|  .count += 1
       #|}
       #|pred enough
@@ -734,7 +738,7 @@ test "a sentence that would need a guard is dropped, and the record stands" {
   // happens. `.blob` is `Any`, and reading it as text is exactly that guard.
   let e = out(
     (
-      #|on bump requires enough {
+      #|receive bump requires enough {
       #|  .count += 1
       #|}
       #|pred enough format (lower .blob) { .count > 0 }

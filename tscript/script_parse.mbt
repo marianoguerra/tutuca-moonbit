@@ -158,14 +158,13 @@ pub fn collection_method(name : String) -> Int? {
 pub fn effect_min_arity(name : String) -> Int? {
   match name {
     "stop" => Some(0)
-    "request" => Some(1)
     // A name plus whatever the message carries.
-    "send" | "bubble" => Some(1)
+    "send" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
-    // v2. `intent` takes a name after its leg words; `forward` takes none,
-    // because it re-dispatches the one that arrived. `reply` and `fail` each
-    // take the one value they answer with.
+    // `intent` takes a name after its leg words; `forward` takes none, because
+    // it re-dispatches the one that arrived. `reply` and `fail` each take the
+    // one value they answer with.
     "intent" => Some(1)
     "forward" => Some(0)
     "reply" | "fail" => Some(1)
@@ -201,11 +200,8 @@ pub fn leg_of_word(w : String) -> @tutuca.Leg? {
 /// The source spelling of a kind — for a message, and for the printer.
 pub fn kind_word(k : DeclKind) -> String {
   match k {
-    DOn => "on"
     DReceive => "receive"
     DIntent => "intent"
-    DBubble => "bubble"
-    DResponse => "response"
     DCompute => "compute"
     DPred => "pred"
     DInvariant => "invariant"
@@ -217,11 +213,8 @@ pub fn kind_word(k : DeclKind) -> String {
 ///|
 fn kind_of_word(w : String) -> DeclKind? {
   match w {
-    "on" => Some(DOn)
     "receive" => Some(DReceive)
     "intent" => Some(DIntent)
-    "bubble" => Some(DBubble)
-    "response" => Some(DResponse)
     "compute" => Some(DCompute)
     "pred" => Some(DPred)
     "invariant" => Some(DInvariant)
@@ -242,7 +235,7 @@ fn kind_takes_stmts(k : DeclKind) -> Bool {
 
 ///|
 pub fn is_transition(k : DeclKind) -> Bool {
-  k is (DOn | DReceive | DIntent | DBubble | DResponse)
+  k is (DReceive | DIntent)
 }
 
 ///|
@@ -1039,7 +1032,7 @@ pub fn ScriptError::message(self : ScriptError) -> String {
       "`&` names a POSITION and is legal in exactly one place: the first argument of `sendAt`"
     BadPlace(why~, ..) => why
     UnknownKind(got~, ..) =>
-      "`\{got}` is not a declaration kind — expected on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope"
+      "`\{got}` is not a declaration kind — expected receive, intent, compute, pred, invariant, enrich or enrichScope"
     DuplicateDecl(name~, ..) =>
       "`\{name}` is declared twice in this bucket; a name is answered once, by exact match, with nothing behind it"
   }

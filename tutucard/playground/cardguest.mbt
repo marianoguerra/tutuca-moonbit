@@ -102,14 +102,8 @@ fn fields_json(args : Map[String, @tutuca.Value]) -> String {
 /// WIT order, which is what the bridge counts in: 0=input, 1=receive,
 /// 2=response, 3=bubble, and 4=intent once the plan's task 16 puts it in the
 /// contract. Nothing dispatches a 4 before then.
-fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
-  match bucket {
-    Input => 0
-    Receive => 1
-    Response => 2
-    Bubble => 3
-    Intent => 4
-  }
+fn bucket_int(bucket : @dyncomp.GuestBucket) -> Int {
+  bucket.ordinal()
 }
 
 // --- the Guest impl over __cardguest ---------------------------------------
@@ -209,7 +203,7 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
           Some(String("emit")) => msgs.push(Emit(name, args))
           Some(String("send")) => msgs.push(Send(name, args))
           Some(String("request")) =>
-            msgs.push(Request(name, args, @tutuca.RequestOpts::new()))
+            msgs.push(Request(name, args, @dyncomp.RequestOpts::new()))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
           Some(String("intent")) =>

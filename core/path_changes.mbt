@@ -73,19 +73,9 @@ pub fn PathChanges::send(
 }
 
 ///|
-/// Bubble `name` from the built path (JS PathChanges.bubble: skipSelf + bubbles).
-pub fn PathChanges::bubble(
-  self : PathChanges,
-  name : String,
-  args : Array[Value],
-) -> Unit {
-  self.ctx.bubble_at_path(self.build_path(), name, args)
-}
-
-///|
-/// Dispatch an intent from the built path. The v2 face of `bubble` above, and
-/// of the `request` that had no builder form at all: one method, and the route
-/// says which scope answers.
+/// Dispatch an intent from the built path. What v1 spelled `bubble` here, and
+/// what its `request` had no builder form for at all: one method, and the
+/// route says which scope answers.
 pub fn PathChanges::intent(
   self : PathChanges,
   name : String,

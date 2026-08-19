@@ -31,7 +31,7 @@ fn board_comp() -> @component.Component {
     init=BoardState::{ cards: Map([]), received: "", from: "", kind: "" },
     update=(s : BoardState, msg, _ctx) => {
       match msg {
-        Input("dropped", [Obj(info)]) => {
+        Receive("dropped", [Obj(info)]) => {
           // a plain @each li contributes only a frame-only step, so the
           // teleported dragInfo.value is the COMPONENT instance (JS
           // semantics); the dragged item comes from the source render's
@@ -63,7 +63,7 @@ fn board_comp() -> @component.Component {
         }
         // The same three, asked for by name. No Fn is applied and no Obj is
         // opened, which is what makes this shape available to a card.
-        Input("narrow", [key, value, ty]) =>
+        Receive("narrow", [key, value, ty]) =>
           Next({
             ..s,
             received: key.to_display_string() +

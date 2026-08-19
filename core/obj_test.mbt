@@ -88,7 +88,7 @@ test "Obj handler dispatches through Path::update" {
     is Some(Str("renamed")),
   )
   // missing handler -> identity
-  assert_true(physical_equal(p.update(root, Input, "rename", []), root))
+  assert_true(physical_equal(p.update(root, Receive, "rename", []), root))
 }
 
 ///|

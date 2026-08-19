@@ -134,28 +134,32 @@ pub fn TrafficLightInput::parse(s : String) -> TrafficLightInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to conditionals.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: nextLight.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum TrafficLightMsg {
-  /// `@on.click="nextLight …"`
-  NextLight
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn TrafficLightMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> TrafficLightMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("nextLight", []) => NextLight
       _ => Unknown(name, args)
     },
   )
@@ -318,23 +322,26 @@ pub fn TabbedUIInput::parse(s : String) -> TabbedUIInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to conditionals.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum TabbedUIMsg {
   /// `@on.click="setTab …"`
   SetTab(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn TabbedUIMsg::from_dispatch(d : @component.Dispatch) -> TabbedUIMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setTab", [Str(a0)]) => SetTab(a0)
@@ -504,7 +511,8 @@ pub fn ListAndFilterInput::parse(s : String) -> ListAndFilterInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to conditionals.html breaks every `match` over this type
 /// until it is handled.
@@ -513,18 +521,20 @@ pub(all) enum ListAndFilterMsg {
   ResetQuery
   /// `@on.input="setQuery …"`
   SetQuery(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn ListAndFilterMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> ListAndFilterMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("resetQuery", []) => ResetQuery

@@ -28,18 +28,16 @@
 /// MoonBit calling convention rather than something a body says. So `when`
 /// joins `@show` and `@hide` as a USE of a predicate.
 pub(all) enum DeclKind {
-  /// An `@on` name — the Input arm. v1 only: v2 has one word for an addressed
-  /// message whoever sent it, and it is `DReceive`. Task 25 deletes this.
-  DOn
-  /// A case of the schema's `variant receive` / `bubble` / `response`.
+  /// An ADDRESSED name: a case of the schema's `receive` variant, or a name a
+  /// view writes. v1 spelled those two `receive` and `on`; they are one word
+  /// now, because a view's name is addressed at the component the view belongs
+  /// to and that is what `send` means.
   DReceive
-  /// A ROUTED name: the schema's `intent` variant. v2's, and the one `DBubble`
-  /// and `DResponse` fold into — a bubble is a routed dispatch that could only
-  /// search one scope, and a response is the answer to one, which v2 delivers
-  /// as an ordinary message instead.
+  /// A ROUTED name: a case of the schema's `intent` variant. The one v1's
+  /// `bubble` and `response` folded into — a bubble was a routed dispatch that
+  /// could only search one scope, and a response was the answer to one, which
+  /// arrives as an ordinary message now.
   DIntent
-  DBubble
-  DResponse
   /// A `$name` in a value position. One expression.
   DCompute
   /// A named boolean. One expression, and the subset of `compute` whose

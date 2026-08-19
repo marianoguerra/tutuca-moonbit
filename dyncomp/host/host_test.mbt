@@ -178,7 +178,7 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
           Request(
             "double",
             [Num(count)],
-            @tutuca.RequestOpts::new(on_ok_name="doubled"),
+            RequestOpts::new(on_ok_name="doubled"),
           ),
         ],
       }
@@ -193,7 +193,7 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
       {
         handled: true,
         next: None,
-        msgs: [Request("triple", [Num(count)], @tutuca.RequestOpts::new())],
+        msgs: [Request("triple", [Num(count)], RequestOpts::new())],
       }
     (Response, "triple") =>
       match args {
@@ -526,9 +526,9 @@ fn shell_module() -> @component.ModuleDef {
     update=(s : TestShellState, msg, _ctx) => {
       match msg {
         Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
-        Bubble("counterChanged", [v, ..]) => Next({ ..s, note: v.str() })
+        Intent("counterChanged", [v, ..]) => Next({ ..s, note: v.str() })
         // only reached when nothing below stopped the bubble
-        Bubble("counted", [v, ..]) =>
+        Intent("counted", [v, ..]) =>
           Next({ ..s, note: "counted \{v.to_display_string()}" })
         _ => Unhandled
       }
@@ -591,7 +591,7 @@ fn filler_comp() -> @component.Component {
     init=FillerState::{ note: "fresh" },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("bump", _) => Next({ note: s.note + "!" })
+        Receive("bump", _) => Next({ note: s.note + "!" })
         _ => Unhandled
       }
     },
@@ -676,23 +676,26 @@ test "a guest successor keeps its origin and moves its revision" {
 }
 
 ///|
-test "guest request round-trips through a host RequestFn" {
+test "a guest `request` round-trips through a host IntentFn" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  h.app.scope.register_request_handlers({
-    "double": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 2.0)))
-        _ => respond(Err(Str("bad args")))
-      }
-    }),
+  h.app.scope.register_intent_handlers({
+    "double": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 2.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
   })
   guard! bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="21")
-  // input "double" fires ctx.request; the response dispatches the guest's
-  // response bucket handler, which returns the doubled successor
+  // the guest's `request` becomes an `intent lex` at the host, and the answer
+  // comes back as an ordinary message named by `on_ok_name` — which the guest
+  // hears in its `receive` bucket and answers with the doubled successor
   h.click(".double")
   inspect(h.text(".count"), content="42")
 }
@@ -970,13 +973,15 @@ test "a guest addresses its own subtree by relative path" {
 test "request opts route the response to the name the guest asked for" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  h.app.scope.register_request_handlers({
-    "double": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 2.0)))
-        _ => respond(Err(Str("bad args")))
-      }
-    }),
+  h.app.scope.register_intent_handlers({
+    "double": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 2.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
   })
   guard! bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
@@ -991,13 +996,15 @@ test "a bundle serves its own requests, ahead of the host's" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
   // a host handler of the SAME name, which the guest's must win over
-  h.app.scope.register_request_handlers({
-    "triple": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 100.0)))
-        _ => respond(Err(Str("bad args")))
-      }
-    }),
+  h.app.scope.register_intent_handlers({
+    "triple": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 100.0)))
+          _ => answer(Failed(Str("bad args")))
+        }
+      }),
+    ],
   })
   guard! bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])

@@ -205,7 +205,8 @@ pub fn SchemaScalarInput::parse(s : String) -> SchemaScalarInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to schema_components.html breaks every `match` over this type
 /// until it is handled.
@@ -216,18 +217,20 @@ pub(all) enum SchemaScalarMsg {
   PrevPage
   /// `@on.click="toggleIsExpanded …"`
   ToggleIsExpanded
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaScalarMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaScalarMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("nextPage", []) => NextPage
@@ -507,7 +510,8 @@ pub fn SchemaObjectInput::parse(s : String) -> SchemaObjectInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to schema_components.html breaks every `match` over this type
 /// until it is handled.
@@ -518,18 +522,20 @@ pub(all) enum SchemaObjectMsg {
   PrevPage
   /// `@on.click="toggleIsExpanded …"`
   ToggleIsExpanded
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaObjectMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaObjectMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("nextPage", []) => NextPage
@@ -809,7 +815,8 @@ pub fn SchemaArrayInput::parse(s : String) -> SchemaArrayInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to schema_components.html breaks every `match` over this type
 /// until it is handled.
@@ -820,18 +827,20 @@ pub(all) enum SchemaArrayMsg {
   PrevPage
   /// `@on.click="toggleIsExpanded …"`
   ToggleIsExpanded
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaArrayMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaArrayMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("nextPage", []) => NextPage
@@ -1111,7 +1120,8 @@ pub fn SchemaEnumInput::parse(s : String) -> SchemaEnumInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to schema_components.html breaks every `match` over this type
 /// until it is handled.
@@ -1122,16 +1132,18 @@ pub(all) enum SchemaEnumMsg {
   PrevPage
   /// `@on.click="toggleIsExpanded …"`
   ToggleIsExpanded
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("nextPage", []) => NextPage
@@ -1411,7 +1423,8 @@ pub fn SchemaCombinatorInput::parse(s : String) -> SchemaCombinatorInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to schema_components.html breaks every `match` over this type
 /// until it is handled.
@@ -1422,18 +1435,20 @@ pub(all) enum SchemaCombinatorMsg {
   PrevPage
   /// `@on.click="toggleIsExpanded …"`
   ToggleIsExpanded
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SchemaCombinatorMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaCombinatorMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("nextPage", []) => NextPage

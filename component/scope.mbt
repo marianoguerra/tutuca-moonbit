@@ -75,7 +75,6 @@ pub fn ComponentStack::new(comps? : Components) -> ComponentStack {
     },
     parent: None,
     by_name: Map([]),
-    reqs: Map([]),
     intents: Map([]),
     macros: Map([]),
   }
@@ -87,7 +86,6 @@ pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack {
     comps: self.comps,
     parent: Some(self),
     by_name: Map([]),
-    reqs: Map([]),
     intents: Map([]),
     macros: Map([]),
   }
@@ -123,16 +121,6 @@ pub fn ComponentStack::register_macros(
 }
 
 ///|
-pub fn ComponentStack::register_request_handlers(
-  self : ComponentStack,
-  handlers : Map[String, RequestFn],
-) -> Unit {
-  for k, h in handlers {
-    self.reqs[k] = h
-  }
-}
-
-///|
 pub fn ComponentStack::lookup_component(
   self : ComponentStack,
   name : String,
@@ -155,9 +143,9 @@ pub fn ComponentStack::register_intent_handlers(
   for k, hs in handlers {
     match self.intents.get(k) {
       // Appended rather than replaced: two registrations of one name are two
-      // candidates, in registration order, and the walk asks both. `reqs`
-      // above overwrites, because a `RequestFn` cannot decline and so the
-      // second one could only ever shadow the first.
+      // candidates, in registration order, and the walk asks both. v1's `reqs`
+      // overwrote, because a `RequestFn` could not decline and so the second
+      // one could only ever shadow the first.
       Some(existing) => existing.append(hs)
       None => self.intents[k] = hs.copy()
     }
@@ -183,21 +171,6 @@ pub fn ComponentStack::lookup_intent(
     }
   }
   out
-}
-
-///|
-pub fn ComponentStack::lookup_request(
-  self : ComponentStack,
-  name : String,
-) -> RequestFn? {
-  match self.reqs.get(name) {
-    Some(r) => Some(r)
-    None =>
-      match self.parent {
-        Some(p) => p.lookup_request(name)
-        None => None
-      }
-  }
 }
 
 ///|

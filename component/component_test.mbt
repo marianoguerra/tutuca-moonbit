@@ -253,7 +253,7 @@ test "update dispatches through Path::update; Input falls back to mutators" {
     n == Str("b"),
   )
   // Input falls back to generated mutators (pre-app-loop convenience)
-  let node3 = p.update(node, Input, "setTitle", [Str("via-input")])
+  let node3 = p.update(node, Receive, "setTitle", [Str("via-input")])
   assert_true(
     @tutuca.Path::new(steps=[FieldStep("todo"), FieldStep("title")]).lookup(
       node3,
@@ -276,7 +276,7 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
     init=CountOnly::{ count: 1 },
     update=(s : CountOnly, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Next({ count: s.count + 1 })
+        Receive("inc", _) => Next({ count: s.count + 1 })
         _ => Unhandled
       }
     },
@@ -295,7 +295,7 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
   let root : @tutuca.Value = Map({ "c": t })
   let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("c")])
-  let node2 = p.update(node, Input, "inc", [])
+  let node2 = p.update(node, Receive, "inc", [])
   assert_true(
     @tutuca.Path::new(steps=[FieldStep("c"), FieldStep("count")]).lookup(node2)
     is Some(n) &&
@@ -738,7 +738,7 @@ test "swap handlers replace the node with another component's instance" {
   let root : @tutuca.Value = Map({ "slot": inst })
   let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("slot")])
-  let node2 = p.update(node, Input, "becomeB", [])
+  let node2 = p.update(node, Receive, "becomeB", [])
   guard @tutuca.Path::new(steps=[FieldStep("slot"), FieldStep("note")]).lookup(
       node2,
     )
@@ -1061,7 +1061,7 @@ test "the widening: an addressed message reaches a generated mutator too" {
   }
 
   assert_eq(
-    title(p.update(root, Input, "setTitle", [Str("via-input")])),
+    title(p.update(root, Receive, "setTitle", [Str("via-input")])),
     Str("via-input"),
   )
   assert_eq(
@@ -1087,7 +1087,7 @@ fn pass_fn(log : Array[String], tag : String) -> @component.IntentFn {
 
 ///|
 test "lookup_intent walks the scope chain and answers with the whole chain" {
-  // `lookup_request` takes the FIRST match, because a `RequestFn` must answer
+  // v1's `lookup_request` took the FIRST match, because a `RequestFn` had to answer
   // and a second one could only shadow it. An `IntentFn` may `Pass`, so every
   // candidate is a candidate — innermost frame first.
   let log : Array[String] = []

@@ -107,7 +107,7 @@ pub fn emit(
     answer_arms.add(m.name)
   }
   for d in decls {
-    if d.kind is (DOn | DReceive) {
+    if d.kind is DReceive {
       answer_arms.add(d.name)
     }
   }
@@ -132,12 +132,15 @@ pub fn emit(
   }
   let arms : Array[String] = []
   let refusals : Array[Refusal] = []
+  // Two buckets, and THREE lists: the `Receive` bucket has two enums over it,
+  // because a name a VIEW writes is typed from its call sites and a name the
+  // SCHEMA declares is typed from the declaration. One dispatch bucket, two
+  // sources of truth about the payload, so the generator needs to know which
+  // half each answered name came from in order to trim the right enum.
   let answers : Map[String, Array[String]] = {
     "Input": [],
     "Receive": [],
     "Intent": [],
-    "Bubble": [],
-    "Response": [],
   }
   // Every callable the block declares, so a body can call its siblings. Filled
   // before the walk because declaration order is not call order: `compute
@@ -166,11 +169,8 @@ pub fn emit(
   e.invariants.sort()
   for d in decls {
     let bucket = match d.kind {
-      DOn => "Input"
       DReceive => "Receive"
       DIntent => "Intent"
-      DBubble => "Bubble"
-      DResponse => "Response"
       // A `compute`, a `pred`, an `enrich`: not a transition, so not this
       // function's business. They are compiled below, into one function each,
       // because what answers them is a different bucket rather than nothing.
@@ -188,7 +188,16 @@ pub fn emit(
       }
     }
     arms.push(arm)
-    answers.get(bucket).unwrap().push(d.name)
+    // A `receive` the schema declares trims `<T>Receive`; one only the views
+    // write trims `<T>Msg`. `"Input"` is the key that half still goes under —
+    // the bucket is gone, the DISTINCTION is not.
+    let key = if bucket == "Receive" &&
+      !e.def.receive.iter().any(m => m.name == d.name) {
+      "Input"
+    } else {
+      bucket
+    }
+    answers.get(key).unwrap().push(d.name)
   }
   let source = if arms.is_empty() {
     ""
@@ -228,8 +237,6 @@ pub fn emit(
     answers_input: answers.get("Input").unwrap(),
     answers_receive: answers.get("Receive").unwrap(),
     answers_intent: answers.get("Intent").unwrap(),
-    answers_bubble: answers.get("Bubble").unwrap(),
-    answers_response: answers.get("Response").unwrap(),
     answers_methods: values.methods,
     answers_whens: values.whens,
     answers_enriches: values.enriches,
@@ -839,20 +846,18 @@ fn decl_any(d : @tscript.Decl, ask : (@tscript.Expr) -> Bool) -> Bool {
 }
 
 ///|
-/// Where a handler's parameter types come from — the schema for a declared
-/// message, the views' call sites for an `@on` name.
+/// Where a handler's parameter types come from — the schema for a message it
+/// declares, the views' call sites for a name only they write.
 fn E::param_types(
   self : E,
   d : @tscript.Decl,
   surface : @check.Surface,
 ) -> Array[@statedef.StateTy?] {
   match d.kind {
-    DReceive | DIntent | DBubble | DResponse => {
+    DReceive | DIntent => {
       let cases = match d.kind {
-        DReceive => self.def.receive
         DIntent => self.def.intent
-        DBubble => self.def.bubble
-        _ => self.def.response
+        _ => self.def.receive
       }
       for m in cases {
         if m.name == d.name {
@@ -861,8 +866,8 @@ fn E::param_types(
       }
       // A `receive` whose name the VIEWS send is declared by the call sites
       // rather than by the schema — the merge, and the same fallback
-      // `tscript/check` makes for the same reason. The other three kinds are
-      // schema-only, and an undeclared one is opaque.
+      // `tscript/check` makes for the same reason. `intent` is schema-only, and
+      // an undeclared one is opaque.
       if d.kind is DReceive && surface.inputs.get(d.name) is Some(ts) {
         return d.params.mapi((i, _p) => ts.get(i).unwrap_or(None))
       }

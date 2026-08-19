@@ -37,7 +37,7 @@ impl @tutuca.Obj for OSheet with fn obj_handler(self, bucket, name) {
     (Receive, "poke-up") =>
       Some(
         Handler((_args, ctx) => {
-          ctx.bubble("poked", [])
+          ctx.intent("poked", [], @tutuca.IntentOpts::new(route=[Dyn]))
           None
         }),
       )
@@ -134,42 +134,11 @@ test "observe: bubble chains emit one record per hop; skipSelf emits none" {
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
   let _ = tx.push_send(p, "poke-up", [])
   tx.settle() |> ignore
-  // the receive that bubbled + one Bubble hop at the root (the skipSelf
-  // first hop of ctx.bubble emits nothing)
-  assert_true(kinds is [Receive, Bubble])
+  // the receive that raised the intent, then one Intent hop at the root: the
+  // `dyn` leg starts at the sender's PARENT, so the sender is not offered its
+  // own intent and emits no hop of its own.
+  assert_true(kinds is [Receive, Intent])
   assert_true(names is ["poke-up", "poked"])
-}
-
-///|
-test "observe: request records pin live keys; unsubscribe stops delivery" {
-  let sheets : @tutuca.Value = Obj(OSheets::{
-    items: { "a": osheet("first"), "b": osheet("second") },
-  })
-  let node : @tutuca.Value = Obj(ORoot::{ sheets, sel_id: "b" })
-  let tx = @transactor.Transactor::new(node)
-  let records : Array[@transactor.ObserveRecord] = []
-  let un = tx.observe(r => records.push(r))
-  tx.push_request(
-    @tutuca.DispatchPath::of_steps([
-      SeqAccessStep(seq_field="sheets", key_field="selId"),
-    ]),
-    "load",
-    [],
-  )
-  // the request record (NoHandler: no registry) with the key pinned to "b"
-  guard records is [req, ..] else { fail("no request record") }
-  assert_true(req.kind is Request)
-  assert_true(req.matched is NoHandler)
-  assert_true(req.path_keys is [{ field: "sheets", key: Some(KStr("b")) }])
-  let seen = records.length()
-  un()
-  let _ = tx.push_send(
-    @tutuca.DispatchPath::of_steps([FieldStep("sheet")]),
-    "rename",
-    [Str("x")],
-  )
-  tx.settle() |> ignore
-  assert_eq(records.length(), seen) // unsubscribed: nothing new
 }
 
 ///|

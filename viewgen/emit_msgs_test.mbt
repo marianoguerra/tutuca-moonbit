@@ -132,7 +132,7 @@ test "a name the script block answers is dropped from the Msg enum" {
   // for a dispatch the block did not claim — an arm for `bump` could not run,
   // and making the author write `Some(Bump(_)) => Unhandled` would move the
   // noise rather than remove it.
-  let src = answered_src("on bump(d) { .n += d }")
+  let src = answered_src("receive bump(d) { .n += d }")
   // Asked of the `<T>Msg` enum BODY rather than of the whole file, because v2
   // emits the same name again in the merged `<T>Receive` — deliberately. That
   // enum is a RAISE surface as well as a decode surface: a component sending
@@ -165,7 +165,7 @@ test "a declaration the backend refuses is NOT counted as answered" {
   // The arm was not emitted, so `update` still sees the dispatch and still
   // needs a case for it. Reporting it as answered would delete the only place
   // the author could handle it.
-  let src = answered_src("on bump(d) { .n[0] = d }")
+  let src = answered_src("receive bump(d) { .n[0] = d }")
   assert_true(src.contains("  Bump(Double)\n"))
   assert_false(src.contains("Absent, because the script block answers"))
 }

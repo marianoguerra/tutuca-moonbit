@@ -8,7 +8,7 @@
 // External users importing `marianoguerra/tutuca` get the same friendly facade.
 
 ///|
-pub using @core {type Value, type RequestOpts, trait Ctx, trait Obj}
+pub using @core {type Value, trait Ctx, trait Obj}
 
 // The intent types, for the same reason and with the same failure mode.
 //

@@ -159,32 +159,36 @@ pub fn PushViewInput::parse(s : String) -> PushViewInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to rendering.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: toggleView.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum PushViewMsg {
   /// `@on.keydown="resetQuery …"`
   ResetQuery
   /// `@on.input="setQuery …"`
   SetQuery(String)
-  /// `@on.click="toggleView …"`
-  ToggleView
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
@@ -405,7 +409,8 @@ pub fn SeqItemAccessInput::parse(s : String) -> SeqItemAccessInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to rendering.html breaks every `match` over this type
 /// until it is handled.
@@ -414,18 +419,20 @@ pub(all) enum SeqItemAccessMsg {
   SetCurrentIndex(Double)
   /// `@on.input="setCurrentKey …"`
   SetCurrentKey(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SeqItemAccessMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SeqItemAccessMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setCurrentIndex", [Num(a0)]) => SetCurrentIndex(a0)
@@ -619,29 +626,30 @@ pub fn PaginationInput::parse(s : String) -> PaginationInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to rendering.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: prev, next.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum PaginationMsg {
-  /// `@on.click="next …"`
-  Next
-  /// `@on.click="prev …"`
-  Prev
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("next", []) => Next
-      ("prev", []) => Prev
       _ => Unknown(name, args)
     },
   )

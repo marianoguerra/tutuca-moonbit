@@ -53,19 +53,18 @@ fn script_err(source : String) -> String {
 // -- declarations -----------------------------------------------------------
 
 ///|
-test "the nine declaration kinds" {
-  assert_eq(trip("on reset { .count = 0 }"), "on reset {\n  .count = 0\n}")
+test "the seven declaration kinds" {
+  assert_eq(
+    trip("receive reset { .count = 0 }"),
+    "receive reset {\n  .count = 0\n}",
+  )
   assert_eq(
     trip("receive resetTo(n) { .count = n }"),
     "receive resetTo(n) {\n  .count = n\n}",
   )
   assert_eq(
-    trip("bubble rowPicked(i) { .sel = i }"),
-    "bubble rowPicked(i) {\n  .sel = i\n}",
-  )
-  assert_eq(
-    trip("response loadRows(rows) { .rows = rows }"),
-    "response loadRows(rows) {\n  .rows = rows\n}",
+    trip("intent rowPicked(i) { .sel = i }"),
+    "intent rowPicked(i) {\n  .sel = i\n}",
   )
   assert_eq(trip("compute label { .name }"), "compute label { .name }")
   assert_eq(
@@ -113,19 +112,20 @@ test "`when` is not a declaration kind" {
   // `when` could. The kind list is nine rather than ten.
   assert_eq(
     script_err("when unfinished { not @value.completed }"),
-    "`when` is not a declaration kind — expected on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope",
+    "`when` is not a declaration kind — expected receive, intent, compute, pred, invariant, enrich or enrichScope",
   )
 }
 
 ///|
 test "a name is answered once per bucket" {
   assert_eq(
-    script_err("on add(d) { .count += d }\non add(e) { .count -= e }"),
+    script_err("receive add(d) { .count += d }\nreceive add(e) { .count -= e }"),
     "`add` is declared twice in this bucket; a name is answered once, by exact match, with nothing behind it",
   )
-  // Different buckets are different questions, so the same name is fine.
+  // Different buckets are different questions, so the same name is fine — an
+  // addressed `reset` and a routed one are two things a component can answer.
   assert_eq(
-    script_err("on reset { .count = 0 }\nreceive reset { .count = 0 }"),
+    script_err("receive reset { .count = 0 }\nintent reset { .count = 0 }"),
     "",
   )
 }
@@ -137,7 +137,7 @@ test "assignment, compound assignment and nested places" {
   assert_eq(
     trip(
       (
-        #|on toggleLabel(key) {
+        #|receive toggleLabel(key) {
         #|  .labels[key].done = not .labels[key].done
         #|  .count += 1
         #|  .count -= 1
@@ -145,7 +145,7 @@ test "assignment, compound assignment and nested places" {
       ),
     ),
     (
-      #|on toggleLabel(key) {
+      #|receive toggleLabel(key) {
       #|  .labels[key].done = not .labels[key].done
       #|  .count += 1
       #|  .count -= 1
@@ -156,8 +156,8 @@ test "assignment, compound assignment and nested places" {
 
 ///|
 test "statements separate on a newline or a semicolon, identically" {
-  let a = trip("on go { .a = 1; .b = 2 }")
-  let b = trip("on go {\n  .a = 1\n  .b = 2\n}")
+  let a = trip("receive go { .a = 1; .b = 2 }")
+  let b = trip("receive go {\n  .a = 1\n  .b = 2\n}")
   assert_eq(a, b)
 }
 
@@ -166,7 +166,7 @@ test "the collection methods are receiver-first" {
   assert_eq(
     trip(
       (
-        #|on edit(i, v) {
+        #|receive edit(i, v) {
         #|  .items.push v
         #|  .items.insertAt i v
         #|  .items.setAt i v
@@ -178,7 +178,7 @@ test "the collection methods are receiver-first" {
       ),
     ),
     (
-      #|on edit(i, v) {
+      #|receive edit(i, v) {
       #|  .items.push v
       #|  .items.insertAt i v
       #|  .items.setAt i v
@@ -224,21 +224,21 @@ test "`new` builds a value into the target, and the target is a place" {
 ///|
 test "a type reference prints the way the state block spells it" {
   assert_eq(
-    trip("on x { new Map[String, Int] }"),
-    "on x {\n  new Map[String, Int]\n}",
+    trip("receive x { new Map[String, Int] }"),
+    "receive x {\n  new Map[String, Int]\n}",
   )
   assert_eq(
-    trip("on x { new Array[Array[String]] }"),
-    "on x {\n  new Array[Array[String]]\n}",
+    trip("receive x { new Array[Array[String]] }"),
+    "receive x {\n  new Array[Array[String]]\n}",
   )
   // `Array [String]` is a name and then something else, exactly as a detached
   // `[` is everywhere else in the language.
   assert_eq(
-    script_err("on x { new Array [String] }"),
+    script_err("receive x { new Array [String] }"),
     "expected the end of the statement — a newline or a `;`, found `[`",
   )
   assert_eq(
-    script_err("on x { new }"),
+    script_err("receive x { new }"),
     "expected a type name after `new`, found `}`",
   )
 }
@@ -246,11 +246,11 @@ test "a type reference prints the way the state block spells it" {
 ///|
 test "a method arity that does not match is refused" {
   assert_eq(
-    script_err("on x { .items.push }"),
+    script_err("receive x { .items.push }"),
     "expected 1 for `push`, found 0 argument(s)",
   )
   assert_eq(
-    script_err("on x { .items.frobnicate 1 }"),
+    script_err("receive x { .items.frobnicate 1 }"),
     "expected a collection method: push, insertAt, setAt, deleteAt/removeAt, clear, add, remove/delete, set or toggle, found `frobnicate`",
   )
 }
@@ -260,19 +260,19 @@ test "the effects" {
   assert_eq(
     trip(
       (
-        #|on save {
+        #|receive save {
         #|  send 'flash' .msg
-        #|  bubble 'rowPicked' @key
-        #|  request 'loadData'
+        #|  intent dyn 'rowPicked' @key
+        #|  intent lex 'loadData'
         #|  stop
         #|}
       ),
     ),
     (
-      #|on save {
+      #|receive save {
       #|  send 'flash' .msg
-      #|  bubble 'rowPicked' @key
-      #|  request 'loadData'
+      #|  intent dyn 'rowPicked' @key
+      #|  intent lex 'loadData'
       #|  stop
       #|}
     ),
@@ -282,9 +282,9 @@ test "the effects" {
 ///|
 test "if / else as a statement, and without an else" {
   assert_eq(
-    trip("on publish { if hasTitle { .published = true } }"),
+    trip("receive publish { if hasTitle { .published = true } }"),
     (
-      #|on publish {
+      #|receive publish {
       #|  if hasTitle {
       #|    .published = true
       #|  }
@@ -292,9 +292,9 @@ test "if / else as a statement, and without an else" {
     ),
   )
   assert_eq(
-    trip("on t { if .ok { .n = 1 } else { .n = 2 } }"),
+    trip("receive t { if .ok { .n = 1 } else { .n = 2 } }"),
     (
-      #|on t {
+      #|receive t {
       #|  if .ok {
       #|    .n = 1
       #|  } else {
@@ -362,8 +362,8 @@ test "application is juxtaposition, and an argument that is one takes parens" {
   // A name with nothing after it is a name, not a call of arity zero — which
   // is what lets `.label = value` mean the parameter.
   assert_eq(
-    trip("on set(value) { .label = value }"),
-    "on set(value) {\n  .label = value\n}",
+    trip("receive set(value) { .label = value }"),
+    "receive set(value) {\n  .label = value\n}",
   )
 }
 
@@ -442,20 +442,20 @@ test "if in a value position needs both arms" {
 ///|
 test "& reifies a position, and only where sendAt takes one" {
   assert_eq(
-    trip("on save { sendAt &.status 'flash' 'Saved' }"),
-    "on save {\n  sendAt &.status 'flash' 'Saved'\n}",
+    trip("receive save { sendAt &.status 'flash' 'Saved' }"),
+    "receive save {\n  sendAt &.status 'flash' 'Saved'\n}",
   )
   assert_eq(
-    trip("on pick(k) { sendAt &.rows[k] 'select' }"),
-    "on pick(k) {\n  sendAt &.rows[k] 'select'\n}",
+    trip("receive pick(k) { sendAt &.rows[k] 'select' }"),
+    "receive pick(k) {\n  sendAt &.rows[k] 'select'\n}",
   )
   // Anywhere else it is refused, because a place is not a value.
   assert_eq(
-    script_err("on x { .a = &.rows[0] }"),
+    script_err("receive x { .a = &.rows[0] }"),
     "`&` names a POSITION and is legal in exactly one place: the first argument of `sendAt`",
   )
   assert_eq(
-    script_err("on x { send 'flash' &.status }"),
+    script_err("receive x { send 'flash' &.status }"),
     "`&` names a POSITION and is legal in exactly one place: the first argument of `sendAt`",
   )
 }
@@ -466,10 +466,10 @@ test "a place the runtime Path cannot express is refused" {
   // places are constrained: a plain read is rebuilt by the backend and never
   // becomes a `Path` at all.
   assert_eq(
-    script_err("on x { sendAt &.a[0][1] 'go' }"),
+    script_err("receive x { sendAt &.a[0][1] 'go' }"),
     "a path step is a field and then a key, so two keys in a row have no step — write `.a[0].b[1]`",
   )
-  assert_eq(script_err("on x { sendAt &.a[0].b[1] 'go' }"), "")
+  assert_eq(script_err("receive x { sendAt &.a[0].b[1] 'go' }"), "")
   assert_eq(script_err("compute x { .a[0][1] }"), "")
 }
 
@@ -481,10 +481,10 @@ test "comments vanish and doc comments do not" {
     trip(
       (
         #|// an ordinary comment
-        #|on reset { .count = 0 } // and a trailing one
+        #|receive reset { .count = 0 } // and a trailing one
       ),
     ),
-    "on reset {\n  .count = 0\n}",
+    "receive reset {\n  .count = 0\n}",
   )
 }
 
@@ -495,14 +495,14 @@ test "a newline inside brackets does not end a statement" {
   assert_eq(
     trip(
       (
-        #|on p {
+        #|receive p {
         #|  .page = clamp .page 0 (
         #|    .n - 1
         #|  )
         #|}
       ),
     ),
-    "on p {\n  .page = clamp .page 0 (.n - 1)\n}",
+    "receive p {\n  .page = clamp .page 0 (.n - 1)\n}",
   )
 }
 
@@ -518,12 +518,12 @@ test "a syntax error names its column" {
   // it is sliced out of the source with its offset intact, so every failure
   // in it has a real position from the first commit.
   let e = try {
-    @tscript.parse_script("on add(d) { .count += }") |> ignore
+    @tscript.parse_script("receive add(d) { .count += }") |> ignore
     @tscript.no_span
   } catch {
     err => err.span()
   }
-  assert_eq(e, { start: 22, end_: 23 })
+  assert_eq(e, { start: 27, end_: 28 })
 }
 
 ///|
@@ -543,20 +543,20 @@ test "a path into an argument, and the attachment that tells it from application
   // one place (`pre_space` in script_lex.mbt). A parameter is the one kind of
   // name that can never be applied, so nothing else could be meant.
   assert_eq(
-    trip("on pick(f) { .name = f.name }"),
-    "on pick(f) {\n  .name = f.name\n}",
+    trip("receive pick(f) { .name = f.name }"),
+    "receive pick(f) {\n  .name = f.name\n}",
   )
   assert_eq(
-    trip("on pick(f) { .name = f.meta.name }"),
-    "on pick(f) {\n  .name = f.meta.name\n}",
+    trip("receive pick(f) { .name = f.meta.name }"),
+    "receive pick(f) {\n  .name = f.meta.name\n}",
   )
   assert_eq(
-    trip("on at(row) { .n = row[0] }"),
-    "on at(row) {\n  .n = row[0]\n}",
+    trip("receive at(row) { .n = row[0] }"),
+    "receive at(row) {\n  .n = row[0]\n}",
   )
   assert_eq(
-    trip("on at(row, k) { .n = row[k].size }"),
-    "on at(row, k) {\n  .n = row[k].size\n}",
+    trip("receive at(row, k) { .n = row[k].size }"),
+    "receive at(row, k) {\n  .n = row[k].size\n}",
   )
   // Detached, it is what it always was: an application of two arguments.
   assert_eq(
@@ -575,12 +575,12 @@ test "a path into an argument, and the attachment that tells it from application
 ///|
 test "a contract sits between the name and the body" {
   assert_eq(
-    trip("on push requires canPush { .here -= 1 }"),
-    "on push requires canPush {\n  .here -= 1\n}",
+    trip("receive push requires canPush { .here -= 1 }"),
+    "receive push requires canPush {\n  .here -= 1\n}",
   )
   assert_eq(
-    trip("on push ensures moved { .here -= 1 }"),
-    "on push ensures moved {\n  .here -= 1\n}",
+    trip("receive push ensures moved { .here -= 1 }"),
+    "receive push ensures moved {\n  .here -= 1\n}",
   )
   // Both, and with parameters, which is where the clause has to be told apart
   // from a body: what follows a name is `(`, `{`, or a clause word.
@@ -591,8 +591,8 @@ test "a contract sits between the name and the body" {
   // Written in the other order, printed in the order they happen. Canonical
   // rather than faithful, exactly as the parentheses are.
   assert_eq(
-    trip("on push ensures moved requires canPush { .here -= 1 }"),
-    "on push requires canPush ensures moved {\n  .here -= 1\n}",
+    trip("receive push ensures moved requires canPush { .here -= 1 }"),
+    "receive push requires canPush ensures moved {\n  .here -= 1\n}",
   )
 }
 
@@ -613,17 +613,17 @@ test "a contract attaches to a transition and to nothing else" {
 ///|
 test "one clause of each kind, and two rules become one by being named" {
   assert_eq(
-    script_err("on push requires canPush requires notBusy { .here -= 1 }"),
+    script_err("receive push requires canPush requires notBusy { .here -= 1 }"),
     "expected one `requires` — two rules become one by naming their `and` in a `pred`, found a second `requires`",
   )
   assert_eq(
-    script_err("on push ensures a ensures b { .here -= 1 }"),
+    script_err("receive push ensures a ensures b { .here -= 1 }"),
     "expected one `ensures` — two rules become one by naming their `and` in a `pred`, found a second `ensures`",
   )
   // The clause takes a NAME and not an expression: a rule spelled inline is an
   // `if` with a second spelling, and the point of a contract is the name.
   assert_eq(
-    script_err("on push requires (.here > 0) { .here -= 1 }"),
+    script_err("receive push requires (.here > 0) { .here -= 1 }"),
     "expected the `pred` `requires` names, found `(`",
   )
 }
@@ -666,8 +666,8 @@ test "a format attaches to a rule and to nothing else" {
   // a yes or a no. A `compute` that might answer the string "ok" has no false
   // case to describe, and a transition is not the thing that is true or false.
   assert_eq(
-    script_err("on push format $'nope' { .here -= 1 }"),
-    "expected a `format` on a rule — `pred` or `invariant`, the two kinds whose answer is declared to be a yes or a no, found `format` on `on`",
+    script_err("receive push format $'nope' { .here -= 1 }"),
+    "expected a `format` on a rule — `pred` or `invariant`, the two kinds whose answer is declared to be a yes or a no, found `format` on `receive`",
   )
   assert_eq(
     script_err("compute label format $'nope' { .name }"),

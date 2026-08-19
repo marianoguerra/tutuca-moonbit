@@ -22,10 +22,8 @@
 ///|
 fn bucket_name(b : @conformance.Bucket) -> String {
   match b {
-    BInput => "input"
     BReceive => "receive"
-    BBubble => "bubble"
-    BResponse => "response"
+    BIntent => "intent"
   }
 }
 
@@ -80,7 +78,7 @@ fn answer_json(a : @conformance.Answer) -> Json {
 ///
 /// Typed `Any` per parameter rather than from the case's arguments: those are
 /// what the DISPATCH carries, and this is a different name.
-fn decl_variant(c : @conformance.V2Case) -> String? {
+fn decl_variant(c : @conformance.Case) -> String? {
   let decls = @tscript.parse_script(c.script) catch { _ => return None }
   guard decls.get(decls.length() - 1) is Some(d) else { return None }
   if d.name == c.handler {
@@ -162,7 +160,7 @@ fn main raise {
   // every v2 case shares one schema, so `component_of` answers `C` for all of
   // them and the harness builds one card per case exactly as it does above.
   let v2_rows : Array[Json] = []
-  for c in @conformance.cases_v2() {
+  for c in @conformance.cases() {
     guard component_of(c.name, c.schema) is Some(comp) else { continue }
     v2_rows.push(
       Json::object({
@@ -172,8 +170,8 @@ fn main raise {
         "component": Json::string(comp),
         "bucket": Json::string(
           match c.bucket {
-            VReceive => "receive"
-            VIntent => "intent"
+            BReceive => "receive"
+            BIntent => "intent"
           },
         ),
         // The case's own handler, as a variant case, for a schema that has to

@@ -99,7 +99,7 @@ Two consequences worth stating outright.
 **Phase 7 — prove it**
 
 - [x] 23. [Measure the walk](#23-measure-the-walk)
-- [ ] 25. [Contract: delete the v1 surface](#25-contract-delete-the-v1-surface)
+- [x] 25. [Contract: delete the v1 surface](#25-contract-delete-the-v1-surface)
 - [ ] 24. [Release and the consumer examples](#24-release-and-the-consumer-examples)
 
 ---
@@ -1895,3 +1895,86 @@ Here they describe shipped behaviour, and `AGENTS.md` is explicit that a
 document specified against something that no longer exists gets deleted rather
 than left to mislead. Each either moves into `docs/` with its status banner
 removed, or goes.
+
+**Done.** Everything on the list, and the two things doing it turned up.
+
+`HandlerBucket` and `Dispatch` are two arms. `ObserveKind` is three (`Receive`,
+`Intent`, `Answer` — the last has no bucket behind it, which is the point).
+`RequestOpts`, `Ctx::request`, `Ctx::bubble`, `Ctx::bubble_at_path`,
+`PathChanges::bubble`, `RequestFn`, `register_request_handlers`,
+`lookup_request`, `ScopeRequests`, `Requests`, `RequestHandler`, `NoRequests`,
+`Transactor::push_input`, `push_bubble`, `push_request`, and `Transaction`'s
+`bubbles` / `skip_self` are gone. `DeclKind` has `DReceive` and `DIntent`. The
+`bubble` and `request` effects are gone from `effect_min_arity`. The v1
+`Case`/`cases()`/`Bucket` are deleted and `V2Case` is `Case` again — with the
+file pair collapsed too: `corpus_v2.html`, `table_v2_gen.mbt` and
+`drive_v2_wbtest.mbt` took the v1 names, and `cmd/conformance` lost `project`
+and gained `project_v2` under that name.
+
+**A consequence the plan did not see: the codemod could no longer read v1.**
+`tutuca migrate` parses a script block through `@tscript.parse_script`, and the
+parser it calls now has no `on`, no `bubble`, no `request` — so the one tool
+whose entire job is reading v1 stopped being able to. The plan's own validation
+assumed it survived ("the only hits should be in `CHANGELOG.md` and in the
+migration tool's own tables"), so deleting it was not an option.
+
+The v1 vocabulary moved INTO the codemod, as a textual pass that runs before
+the parser: `v1_decl_words` rewrites a line-leading `on` / `bubble`
+declaration, `v1_effect_words` rewrites a statement-leading `bubble 'x'` /
+`request 'x'` to `intent dyn` / `intent lex`, and `response` is detected
+textually for the refusal it already was. Both are positional, because all
+three words are ordinary identifiers everywhere else in the language. The AST
+rewriters they replace (`migrate_decl`'s kind map, `migrate_body`,
+`migrate_stmt`) are gone: the words are translated before anything parses them.
+Verified end to end on a fixture with a `bubble` inside an `if`.
+
+**A second consequence, and the one worth the most care: the guest ABI.**
+`dyncomp` loads bundles somebody else built against a published contract, so
+the WIT keeps five buckets, `bubble`, `request` and `request-opts` — deleting
+them would stop a `.tutuca.tar.gz` compiled last year from loading, which is
+not a migration, and the plan's list does not name them for exactly that
+reason. What changed is the HOST side, which now has two buckets facing a wire
+that has five:
+
+- `GuestBucket` is new, in `dyncomp/host`: the WIT's enum, with its five cases
+  and its wire numbers, deliberately not `@tutuca.HandlerBucket`.
+- `RequestOpts` moved there too, as what it always was on that side — a wire
+  shape somebody else's build fills in.
+- `DynObj::obj_handler` translates. A host `Receive` goes out as `receive` and
+  then `input`; a host `Intent` goes out as `intent` for a bundle that declares
+  one and as `bubble` for a 0.7 bundle whose routed names are under that key,
+  and the gate reads both. A guest's `emit` becomes `intent dyn`, its
+  `bubble-at` becomes `intent-at` on the same leg, and its `request` becomes
+  `intent lex` whose answer is named after the request rather than
+  `<name>Ok` — because that is where a 0.7 bundle's `response` arm waits.
+- `ComponentStack` lost its request registry, so a bundle's SERVED names
+  register as `IntentFn`s on its own child scope. They cannot answer `Pass` —
+  the guest ABI has no way to decline — so they answer `Ok` or `Failed`
+  exactly as the `RequestFn` they replace did.
+
+**`Ctx::is_answer`, and why a design that says you cannot tell needed a way to
+tell.** v1 let a bundle spell the click `input triple` and its answer
+`response triple`: two buckets, one name. The host has one bucket for both now,
+so delivering the answer would have re-fired the request — an infinite loop,
+and the test caught it. The discriminator already existed on the transaction
+(`is_answer`, previously private and for the observer); it is on `Ctx` now,
+documented as what it is: a component never needs it, because an answer being
+indistinguishable from a message is the design's claim and the reason one
+bucket is enough. A BRIDGE to a foreign contract needs it, and
+`dyncomp/host/dynobj.mbt` is the only caller.
+
+**And one the merge made visible.** `on` folding into `receive` means the
+`Receive` bucket has two enums over it — `<T>Msg` for the names a VIEW writes
+(typed from the call sites) and `<T>Receive` for the names the SCHEMA declares
+(typed from the declaration). `Emitted` keeps three answer lists over two
+buckets for that reason, and `emit.mbt` decides which by asking whether the
+schema declares the name. `<T>Msg::from_dispatch` now guards on `Receive`; it
+guarded on `Input`, which is why every `dyncomp/ui` test failed until it moved.
+
+**Validated.** `moon check` on all three targets, 0 errors. `moon test`
+1595/1595. `just dev gen-views`, `gen-conformance` (24 cases), `check-skill`
+15/15, `check-examples` 13/13, `skill-embed` 35 files, `tutucard-playground`
+35/35 cards check + compile + instantiate, `moon test docs` 11/11. And the
+plan's own grep: every surviving mention of a deleted identifier is in
+`CHANGELOG.md`, in the codemod's own tables, in the WIT and its guest bindings,
+or in prose that says what v1 did.

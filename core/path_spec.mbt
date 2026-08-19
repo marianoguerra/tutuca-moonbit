@@ -23,19 +23,19 @@
 /// Dispatch buckets a handler can live in (semantics.md §6). Alter is
 /// render-time only and never dispatched, so it is not a bucket here.
 ///
-/// v2 has TWO of these, and the other three are on their way out. `Receive`
-/// holds every ADDRESSED message whoever sent it — a view, a parent, the host,
-/// or an answer — so `Input` folds into it; `Intent` holds every ROUTED one, so
-/// `Bubble` and `Response` fold into it. The five arms coexist only while the
-/// migration runs: a v2 dispatch already uses `Receive` or `Intent` and nothing
-/// else, and the last commit of the migration deletes the other three rather
-/// than teaching anything new to read them (`totuka-v2.md` §10).
+/// TWO of these, which is the whole of v2. `Receive` holds every ADDRESSED
+/// message whoever sent it — a view, a parent, the host, or an answer to an
+/// intent; `Intent` holds every ROUTED one, dispatched by somebody who named a
+/// job rather than a target.
+///
+/// v1 had five. `Input` folded into `Receive` (a view's name is addressed at
+/// the component the view belongs to, which is what `send` means), and `Bubble`
+/// and `Response` folded into `Intent` (both were routes, spelled as verbs).
+/// The three lived here through the migration so every commit compiled; this
+/// is the commit that took them out (`totuka-v2.md` §10).
 pub(all) enum HandlerBucket {
-  Receive // addressed: ctx.send, a view, the host, an answer
+  Receive // addressed: a view, ctx.send, the host, an answer
   Intent // routed: dispatched by someone who did not name a target
-  Input // v1 only, folded into Receive: DOM / @on.* handlers
-  Bubble // v1 only, folded into Intent: ctx.bubble handlers
-  Response // v1 only, folded into Intent: request-response handlers
 } derive(Debug, Eq)
 
 ///|
@@ -70,16 +70,16 @@ pub fn route_label(route : Array[Leg]) -> String {
 }
 
 ///|
-/// Options for `Ctx::intent` — the v2 shape of `RequestOpts`.
+/// Options for `Ctx::intent`.
 ///
-/// Three of the fields are v1's, unchanged in meaning: the two answer names the
-/// sender declared, and `live_path`, which opts out of pinning field-resolved
-/// keys at dispatch time. Two things are new. `route` is the walk itself, which
-/// v1 could not carry because each of its two channels had exactly one. And
-/// `on_unhandled_name` is the third outcome (`totuka-v2.md` §6): the route
-/// ended with no reply, which is not the same answer as a handler failing, and
-/// v1's `on_res_name` — the combined `[res, err]` arm — is gone with the bug it
-/// caused.
+/// Three fields carry over from v1's `RequestOpts` unchanged in meaning: the
+/// two answer names the sender declared, and `live_path`, which opts out of
+/// pinning field-resolved keys at dispatch time. Two are v2's own. `route` is
+/// the walk itself, which v1 could not carry because each of its two channels
+/// had exactly one. And `on_unhandled_name` is the third outcome
+/// (`totuka-v2.md` §6): the route ended with no reply, which is not the same
+/// answer as a handler failing. What is NOT here is `on_res_name`, the
+/// combined `[res, err]` arm — gone with the bug it caused.
 pub(all) struct IntentOpts {
   /// The legs to walk, in order. `[Dyn, Lex]` when nothing says otherwise.
   route : Array[Leg]
@@ -133,25 +133,6 @@ pub(all) enum IntentAnswer {
 } derive(Debug, Eq)
 
 ///|
-/// Options for Ctx::request (JS pushRequest opts): response-handler routing
-/// (on_ok_name / on_error_name / on_res_name) and live_path, which opts out
-/// of pinning field-resolved keys at request time.
-pub(all) struct RequestOpts {
-  on_ok_name : String?
-  on_error_name : String?
-  on_res_name : String?
-  live_path : Bool
-} derive(Debug, Eq)
-
-///|
-declare pub fn RequestOpts::new(
-  on_ok_name? : String,
-  on_error_name? : String,
-  on_res_name? : String,
-  live_path? : Bool,
-) -> RequestOpts
-
-///|
 /// What a handler can do besides transforming its leaf (JS EventContext).
 /// Defined here so Handler can carry it without depending on the transactor;
 /// every method defaults to a no-op so tests and Path::update can run
@@ -160,16 +141,19 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
+  /// Whether the message being handled is an ANSWER the runtime wrote — the
+  /// `<name>Ok` / `<name>Error` / `<name>Unhandled` a walk produced — rather
+  /// than one somebody sent.
+  ///
+  /// A component never needs this: the design's claim is that an answer is a
+  /// message and a handler cannot tell, which is what makes one bucket enough.
+  /// A BRIDGE to a foreign contract does need it, because v1 gave the two
+  /// different buckets and a bundle built against v1 may have used one name for
+  /// both — `input triple` for the click and `response triple` for its answer.
+  /// `dyncomp/host/dynobj.mbt` is the caller, and the only one.
+  fn is_answer(Self) -> Bool = _
   fn send(Self, name : String, args : Array[Value]) -> Unit = _
-  fn bubble(Self, name : String, args : Array[Value]) -> Unit = _
   fn send_at_path(Self, path : DispatchPath, name : String, args : Array[Value]) -> Unit = _
-  fn bubble_at_path(
-    Self,
-    path : DispatchPath,
-    name : String,
-    args : Array[Value],
-  ) -> Unit = _
-  fn request(Self, name : String, args : Array[Value], opts : RequestOpts) -> Unit = _
   /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
   /// ctx's PARENT, so a component never re-enters its own handler.
   fn intent(Self, name : String, args : Array[Value], opts : IntentOpts) -> Unit = _
@@ -222,27 +206,17 @@ impl Ctx with fn name(_self) {
 /// twice, once as a default that did nothing and once as an implementation.
 /// Spelling them here leaves one pair of methods to implement, and no way for
 /// the relative and absolute forms to disagree about what "here" means.
+impl Ctx with fn is_answer(_self) {
+  false
+}
+
+///|
 impl Ctx with fn send(self, name, args) {
   self.send_at_path(self.path(), name, args)
 }
 
 ///|
-impl Ctx with fn bubble(self, name, args) {
-  self.bubble_at_path(self.path(), name, args)
-}
-
-///|
 impl Ctx with fn send_at_path(_self, _path, _name, _args) {
-
-}
-
-///|
-impl Ctx with fn bubble_at_path(_self, _path, _name, _args) {
-
-}
-
-///|
-impl Ctx with fn request(_self, _name, _args, _opts) {
 
 }
 

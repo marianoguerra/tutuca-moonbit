@@ -55,7 +55,7 @@ export const EXAMPLES = [
 
 <script type="tutuca/script">
   /// Move the counter by d, remembering where it landed.
-  on add(d) {
+  receive add(d) {
     .count += d
     .history.push .count
   }
@@ -96,13 +96,13 @@ export const EXAMPLES = [
 <script type="tutuca/script">
   /// Add the draft, unless it is only whitespace. The guard is the whole
   /// handler: everything else a list needs is a generated mutator.
-  on addItem {
+  receive addItem {
     if (trim .draft) is not '' {
       .items.push (trim .draft)
       .draft = ''
     }
   }
-  on removeAt(i) { .items.deleteAt i }
+  receive removeAt(i) { .items.deleteAt i }
 
   compute caption { $'{(len .items)} item(s)' }
   compute anyItems { not (empty? .items) }
@@ -207,9 +207,9 @@ export const EXAMPLES = [
   /// A handler that raises one at itself. The dispatch goes through the
   /// transactor exactly as a parent's would, which is what the Activity panel
   /// beside this is showing.
-  on shout { send 'note' 'shouted' }
-  on quiet { send 'note' 'quiet' }
-  on five { send 'bump' 5 }
+  receive shout { send 'note' 'shouted' }
+  receive quiet { send 'note' 'quiet' }
+  receive five { send 'bump' 5 }
 </script>
 
 <template>
@@ -376,7 +376,7 @@ export const EXAMPLES = [
 
 <script type="tutuca/script">
   /// Step to the next colour, wrapping at the end of the cycle.
-  on nextLight {
+  receive nextLight {
     .lightIndex = (.lightIndex + 1) mod 3
   }
 
@@ -456,7 +456,7 @@ export const EXAMPLES = [
 <script type="tutuca/script">
   /// The panel's own counter. \`toggleIsOpen\` is not here because it is not
   /// written anywhere: a Bool field generates its own toggle.
-  on incCount {
+  receive incCount {
     .count += 1
   }
 
@@ -561,7 +561,7 @@ export const EXAMPLES = [
   ///
   /// One way only: an argument is a value the caller handed over rather than a
   /// position this component owns, so \`f.name = 'x'\` is refused by the parser.
-  on pick(f) {
+  receive pick(f) {
     if (null? f) {
       .hasFile = false
     } else {
@@ -1034,7 +1034,7 @@ export const EXAMPLES = [
     .labels.push @cur
   }
 
-  on addLabel {
+  receive addLabel {
     if (trim .draft) is not '' {
       new Label
       @cur.text = (trim .draft)
@@ -1045,7 +1045,7 @@ export const EXAMPLES = [
 
   /// A nested WRITE: \`.labels[key].done\` is the place, and the spine above it
   /// is rebuilt. This is the pair a view slot cannot spell.
-  on toggleLabel(key) {
+  receive toggleLabel(key) {
     .labels[key].done = not .labels[key].done
   }
 </script>
@@ -1103,19 +1103,19 @@ export const EXAMPLES = [
   /// PRECONDITION — asked before the body, against the state as it arrived,
   /// so a refusal needs no rollback. One clause of each kind per handler:
   /// two rules become one by naming their \`and\`, which is what \`canSeat\` is.
-  on seat requires canSeat {
+  receive seat requires canSeat {
     .taken += 1
     .waiting -= 1
   }
 
-  on stand requires someoneSeated {
+  receive stand requires someoneSeated {
     .taken -= 1
     .waiting += 1
   }
 
   /// POSTCONDITION — asked after the body, against the successor. There is no
   /// \`old\`, so what an \`ensures\` says is where the transition had to LAND.
-  on seatAll ensures noneWaiting {
+  receive seatAll ensures noneWaiting {
     .taken += .waiting
     .waiting = 0
   }
@@ -1126,7 +1126,7 @@ export const EXAMPLES = [
   /// \`@tutuca.postcondition_failed\` goes through the warn hook with the
   /// handler and the rule in it. Open the console and press it with three
   /// people waiting.
-  on rush ensures noneWaiting {
+  receive rush ensures noneWaiting {
     .taken += 1
     .waiting -= 1
   }
@@ -1136,12 +1136,12 @@ export const EXAMPLES = [
   /// were written without a thought for it.
   invariant withinCapacity { .taken <= .capacity }
 
-  on queue { .waiting += 1 }
+  receive queue { .waiting += 1 }
 
   /// Refused by a rule it does not name, and reported rather than silent —
   /// which is the whole difference between a contract and an \`if\` at the top
   /// of the body.
-  on overbook { .taken = (.capacity + 1) }
+  receive overbook { .taken = (.capacity + 1) }
 </script>
 
 <template>
@@ -1221,7 +1221,7 @@ export const EXAMPLES = [
 <script type="tutuca/script">
   receive init { .status = 'warning' }
 
-  on inc { .count += 1 }
+  receive inc { .count += 1 }
 </script>
 
 <!-- A macro is pure template expansion: no state, no handlers, no lifecycle.
@@ -1310,7 +1310,7 @@ export const EXAMPLES = [
   ///
   /// Both arms read the row before they move it, and the second index accounts
   /// for the shift the insert just caused.
-  on moveRow(target, source) {
+  receive moveRow(target, source) {
     if source is not target {
       if source < target {
         .items.insertAt (target + 1) .items[source]

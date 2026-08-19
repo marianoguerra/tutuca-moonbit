@@ -41,8 +41,8 @@ fn counter_module() -> @component.ModuleDef {
     // `gen-views` or from here.
     update=(s : CounterState, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Next({ ..s, count: s.count + 1 })
-        Input("dec", _) => Next({ ..s, count: s.count - 1 })
+        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
+        Receive("dec", _) => Next({ ..s, count: s.count - 1 })
         _ => Unhandled
       }
     },

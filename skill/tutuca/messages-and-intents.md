@@ -35,8 +35,9 @@ If you know tutuca v1, the mapping is:
 | `ctx.send(name, args)`          | unchanged — `send` / `Receive`       |
 | `Response(name, [res, err])`    | three named answers (see below)      |
 
-`Bubble` and `Response` still exist as buckets during the migration, but
-new code should not reach for them: everything they did is a route.
+`Bubble` and `Response` are **gone** — both were routes wearing a verb's
+clothes, and the route says what they said. `tutuca migrate` moves a v1
+codebase; what it refuses is the work list.
 
 ## Messages — `send`, `sendAt`, `receive`
 

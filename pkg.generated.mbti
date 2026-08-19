@@ -35,8 +35,6 @@ pub using @core {type Refusal}
 
 pub using @core {type RefusalCode}
 
-pub using @core {type RequestOpts}
-
 pub using @core {type Value}
 
 pub using @core {trait Ctx}

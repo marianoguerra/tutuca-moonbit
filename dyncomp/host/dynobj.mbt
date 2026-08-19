@@ -374,50 +374,67 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
-  // Input names are discovered dynamically. A guest can answer Unhandled,
-  // after which the field-derived mutator gets its chance. This removes the
-  // duplicated static `handlers` declaration while preserving precedence for
-  // a guest handler whose name also looks like a generated mutator.
+  // `Receive` is not gated on the manifest: a message's name is discovered
+  // dynamically, the guest answers `Unhandled` for one it does not know, and
+  // the field-derived mutator then gets its chance. `def.receives` therefore
+  // documents rather than gates.
+  //
+  // `Intent` is gated, because a walk offers the intent to every hop and a
+  // guest that declares none should not be entered at all. A 0.7 bundle has no
+  // `intents` key — its routed names are under `bubbles`, which is what its
+  // build spelled them — so both keys answer the gate and `guest_bucket_for`
+  // below decides which wire bucket the hop goes out on.
   let declared = match bucket {
-    Input => true
-    // v2's `Receive` is v1's `Input` UNION v1's `Receive` — one bucket for a
-    // message whoever sent it — and the union of "always, discovered
-    // dynamically" with "only what the manifest declares" is the first. A
-    // guest that does not know the name answers `Unhandled` and the
-    // field-derived mutator gets its chance, which is what made the `Input`
-    // arm dynamic in the first place.
-    //
-    // `def.receives` therefore stops gating and starts documenting. Task 16
-    // rewrites the manifest around `receives` and `intents`, and this is where
-    // that lands.
     Receive => true
-    Response => self.def.responses.contains(name)
-    // A guest child raises these with control.emit; a guest PARENT hears them
-    // here, through the same walk the host uses between its own components.
-    Bubble => self.def.bubbles.contains(name)
-    // The manifest's own set now, which task 16 gave it. A 0.7 bundle has no
-    // `intents` key, so it reads as empty and answers `false` for every name —
-    // which is the truth: a bundle built before the key existed declares none.
-    Intent => self.def.intents.contains(name)
+    Intent => self.def.intents.contains(name) || self.def.bubbles.contains(name)
   }
   guard declared else { return None }
   Some(
     Handler((args, ctx) => {
-      let mut result = self.guest.dispatch(self.handle, bucket, name, args)
-      // MIGRATION BRIDGE, and it goes in task 25 with the guest ABI it serves.
+      // WHERE THE HOST'S TWO BUCKETS MEET THE WIRE'S FIVE.
       //
-      // A view raises a `Receive` now, and every loaded bundle was built
-      // against a WIT whose view names live in the `input` bucket. The two are
-      // one bucket in v2, so a `Receive` the guest did not claim is offered
-      // again as an `input` before the field-derived mutators get their
-      // chance. `TypedInstance::obj_handler` carries the same bridge for the
-      // same reason and for the same length of time.
+      // The host has one bucket for an addressed message; a bundle built
+      // against the published contract has two, because v1 split a view's name
+      // (`input`) from a parent's (`receive`). So a `Receive` is offered as
+      // `receive` and, if the guest did not claim it, again as `input` before
+      // the field-derived mutators get their chance.
+      //
+      // This is NOT the migration bridge `TypedInstance` carried and task 25
+      // deleted. That one existed for a fortnight, between two commits of this
+      // repository. This one is a compatibility promise to somebody else's
+      // build, and it lives as long as the contract does.
+      // An intent goes out on `intent` for a bundle that declares one, and on
+      // `bubble` for a 0.7 bundle whose routed names are under that key.
+      let guest_bucket : GuestBucket = match bucket {
+        Intent => if self.def.intents.contains(name) { Intent } else { Bubble }
+        Receive => Receive
+      }
+      // An ANSWER the bundle declares as a `response` goes to that bucket, and
+      // `ctx.is_answer()` is what makes the choice possible. v1 let a bundle
+      // spell the click `input triple` and its answer `response triple`; the
+      // host has one bucket for both now, so without knowing which this is,
+      // delivering the answer would fire the request again.
+      let mut result = if bucket is Receive &&
+        ctx.is_answer() &&
+        self.def.responses.contains(name) {
+        self.guest.dispatch(self.handle, Response, name, args)
+      } else {
+        self.guest.dispatch(self.handle, guest_bucket, name, args)
+      }
+      // Otherwise: `receive`, then `input`, before the field-derived mutators
+      // get their chance.
+      if !result.handled && bucket is Receive {
+        result = self.guest.dispatch(self.handle, Receive, name, args)
+      }
       if !result.handled && bucket is Receive {
         result = self.guest.dispatch(self.handle, Input, name, args)
       }
       for msg in result.msgs {
         match msg {
-          Emit(name, args) => ctx.bubble(name, args)
+          // v1's `emit` was a bubble; a bubble is an intent on the `dyn` leg.
+          // The wire keeps the function because a built bundle still calls it.
+          Emit(name, args) =>
+            ctx.intent(name, args, @tutuca.IntentOpts::new(route=[Dyn]))
           Send(name, args) => ctx.send(name, args)
           // v2's four. The host applies them exactly as it applies a host
           // component's — a guest is not a special case, which is the whole
@@ -443,14 +460,48 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
           // relative: the guest addresses its own subtree (see ControlMsg)
           SendAt(steps, name, args) =>
             ctx.send_at_path(ctx.path().concat(steps), name, args)
+          // Same translation, addressed: `bubble-at` became `intent-at` on the
+          // `dyn` leg, and `request` became one on `lex`. A bundle built
+          // against 0.7 still calls both, and the host still answers.
           BubbleAt(steps, name, args) =>
-            ctx.bubble_at_path(ctx.path().concat(steps), name, args)
-          Request(name, args, opts) => ctx.request(name, args, opts)
+            ctx.intent_at_path(
+              ctx.path().concat(steps),
+              name,
+              args,
+              @tutuca.IntentOpts::new(route=[Dyn]),
+            )
+          // `request` became an intent on `lex`. The ANSWER is named after
+          // the request, not `<name>Ok`, because that is where a 0.7 bundle's
+          // `response` arm waits — the one v1 fidelity this bridge keeps and
+          // the one it cannot: the arm receives the value alone, where v1
+          // handed it `[res, err]`.
+          Request(name, args, opts) => {
+            let answer_name = match opts.on_res_name {
+              Some(n) => n
+              None => name
+            }
+            ctx.intent(
+              name,
+              args,
+              @tutuca.IntentOpts::new(
+                route=[Lex],
+                on_ok_name=match opts.on_ok_name {
+                  Some(n) => n
+                  None => answer_name
+                },
+                on_error_name=match opts.on_error_name {
+                  Some(n) => n
+                  None => answer_name
+                },
+                live_path=opts.live_path,
+              ),
+            )
+          }
           StopPropagation => ctx.stop_propagation()
         }
       }
       if !result.handled {
-        guard bucket is (Input | Receive) && self.mutators.get(name) is Some(g) else {
+        guard bucket is Receive && self.mutators.get(name) is Some(g) else {
           return None
         }
         return match g(self.field_box(), args) {

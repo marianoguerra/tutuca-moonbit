@@ -55,11 +55,6 @@ pub(all) struct ScopeIntents {
 }
 pub impl @transactor.Intents for ScopeIntents
 
-pub(all) struct ScopeRequests {
-  comps : @component.Components
-}
-pub impl @transactor.Requests for ScopeRequests
-
 // Type aliases
 
 // Traits

@@ -1,5 +1,5 @@
-// ctx.at (PathChanges) builder: field/index/key accumulate steps and
-// send/bubble dispatch at the ctx path + accumulated steps.
+// ctx.at (PathChanges) builder: field/index/key accumulate steps, and
+// send/intent dispatch at the ctx path + the accumulated steps.
 
 ///|
 priv struct RecordingCtx {
@@ -21,12 +21,18 @@ impl @core.Ctx for RecordingCtx with fn send_at_path(self, path, name, _args) {
 }
 
 ///|
-impl @core.Ctx for RecordingCtx with fn bubble_at_path(self, path, name, _args) {
+impl @core.Ctx for RecordingCtx with fn intent_at_path(
+  self,
+  path,
+  name,
+  _args,
+  _opts,
+) {
   self.sends.push((path.to_transaction_path().steps, name, true))
 }
 
 ///|
-test "ctx.at builds a relative path and sends/bubbles at it" {
+test "ctx.at builds a relative path and sends/intents at it" {
   let ctx = RecordingCtx::{
     base: @core.DispatchPath::of_steps([FieldStep("root")]),
     sends: [],
@@ -34,7 +40,7 @@ test "ctx.at builds a relative path and sends/bubbles at it" {
   // field / index / key chain
   ctx.at().field("status").send("flash", [Str("hi")])
   ctx.at().index("items", 3).send("init", [])
-  ctx.at().key("byId", "x7").bubble("ping", [])
+  ctx.at().key("byId", "x7").intent("ping", [])
   // build_path exposes the absolute path without dispatching
   let p = ctx.at().field("a").index("b", 1).build_path()
   assert_eq(ctx.sends.length(), 3)
@@ -48,7 +54,7 @@ test "ctx.at builds a relative path and sends/bubbles at it" {
   assert_true(
     ctx.sends[1].0 == [FieldStep("root"), SeqStep(field="items", key=KInt(3))],
   )
-  // send #3: bubble, base + key -> SeqStep with a string key
+  // send #3: an intent, base + key -> SeqStep with a string key
   assert_true(
     ctx.sends[2].0 == [FieldStep("root"), SeqStep(field="byId", key=KStr("x7"))] &&
     ctx.sends[2].2 == true,

@@ -1,6 +1,6 @@
 // The v2 batch, held in place.
 //
-// Nothing runs `cases_v2()` yet — the two backends cannot compile a v2 body
+// Nothing runs `cases()` yet — the two backends cannot compile a v2 body
 // until the plan's tasks 10 and 11 — so this is what stands between a case
 // somebody wrote and a case somebody quietly dropped while making the tree
 // compile again. It pins the roster and the effect vocabulary, and nothing
@@ -8,7 +8,7 @@
 
 ///|
 test "the v2 corpus still holds every case it was written with" {
-  let names = @conformance.cases_v2().map(c => c.name)
+  let names = @conformance.cases().map(c => c.name)
   inspect(
     names.join("\n"),
     content=(
@@ -47,7 +47,7 @@ test "the v2 corpus still holds every case it was written with" {
 test "the v2 effects use the vocabulary the design gives them" {
   let seen : Map[String, Int] = Map([])
   let routes : Map[String, Int] = Map([])
-  for c in @conformance.cases_v2() {
+  for c in @conformance.cases() {
     for e in c.effects {
       seen[e.kind] = seen.get(e.kind).unwrap_or(0) + 1
       if !e.route.is_empty() {
@@ -84,8 +84,8 @@ test "the v2 effects use the vocabulary the design gives them" {
 /// `forward` are the two that carry a route, and this is where the spelling of
 /// one is decided rather than in each adapter.
 test "a routed effect prints its route between the verb and the name" {
-  let by_name : Map[String, @conformance.V2Case] = Map([])
-  for c in @conformance.cases_v2() {
+  let by_name : Map[String, @conformance.Case] = Map([])
+  for c in @conformance.cases() {
     by_name[c.name] = c
   }
   fn printed(name : String) -> String {

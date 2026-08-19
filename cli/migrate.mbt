@@ -152,34 +152,41 @@ fn migrate_html(path : String, source : String) -> MigratePlan {
   // grammar is pinned by parse-print-parse (`tscript/script_test.mbt`), which
   // is exactly the property a rewrite needs: what comes out is what the parser
   // accepts, not what a substitution happened to produce.
+  //
+  // With ONE textual pass in front of it, and it is there because the contract
+  // deleted the v1 surface: `DeclKind` has two message kinds now, so the
+  // parser that reads this block cannot spell `on`, `bubble` or `response`,
+  // and a codemod whose whole job is reading v1 needs those words to survive
+  // somewhere. They survive HERE, in the tool that translates them, rather
+  // than in the language that no longer has them — which is the right place
+  // for a fact about the version you are leaving.
   for sb in file.scripts {
-    let decls = @tscript.parse_script(sb.block.text) catch {
+    // `response` first, because it is a REFUSAL and not a rewrite: the arm
+    // becomes two `receive` arms and which value belongs to which is a reading
+    // of the code rather than a transformation of it. Textual, since the
+    // parser can no longer produce a `DResponse` to look for.
+    for name in v1_response_names(sb.block.text) {
+      refused.push(
+        path +
+        ": `response " +
+        name +
+        "` becomes two `receive` arms (" +
+        name +
+        "Ok, " +
+        name +
+        "Error) and the body has to be split between them — a human decides which half is which",
+      )
+    }
+    if !refused.is_empty() {
+      return { files: [], reports: [], refused }
+    }
+    let decls = @tscript.parse_script(v1_decl_words(sb.block.text)) catch {
       e =>
         return {
           files: [],
           reports: [],
           refused: [path + ": a script block does not parse — " + e.message()],
         }
-    }
-    // A `response` arm becomes TWO `receive` arms and the body has to be split
-    // between them — which value belongs to the ok arm and which to the error
-    // arm is a reading of the code, not a transformation of it.
-    for d in decls {
-      if d.kind is DResponse {
-        refused.push(
-          path +
-          ": `response " +
-          d.name +
-          "` becomes two `receive` arms (" +
-          d.name +
-          "Ok, " +
-          d.name +
-          "Error) and the body has to be split between them — a human decides which half is which",
-        )
-      }
-    }
-    if !refused.is_empty() {
-      return { files: [], reports: [], refused }
     }
     let moved = decls.map(d => migrate_decl(d))
     // The printer emits at column 0, and the block was indented. Re-applying
@@ -283,51 +290,111 @@ fn reindent(src : String, indent : String) -> String {
 }
 
 ///|
+/// The v1 vocabulary this tool still knows, rewritten to v2's before the parser
+/// sees it.
+///
+/// It lives HERE and not in `tscript` because the contract deleted the v1
+/// surface: `DeclKind` has two message kinds and `effect_min_arity` knows
+/// neither `bubble` nor `request`, so the parser this codemod calls cannot read
+/// what the codemod exists to read. The words survive in the tool that
+/// translates them, which is the right place for a fact about the version you
+/// are leaving.
+///
+/// Both halves are POSITIONAL, and have to be: `on`, `bubble` and `request`
+/// are ordinary identifiers everywhere else in the language, so a substitution
+/// that did not care where it was would rename a parameter. A declaration word
+/// starts a line; an effect word starts a STATEMENT, which is a line or the
+/// text just after a `{`.
+fn v1_decl_words(block : String) -> String {
+  let out : Array[String] = []
+  for raw in block.split("\n") {
+    let l = raw.to_owned()
+    let t = l.trim_start(chars=" ").to_owned()
+    let indent = l[0:l.length() - t.length()].to_owned()
+    let head = if t.has_prefix("on ") {
+      indent + "receive " + t[3:].to_owned()
+    } else if t.has_prefix("bubble ") && !t.has_prefix("bubble '") {
+      // A declaration: `bubble rowPicked(i) { … }`. An EFFECT is
+      // `bubble 'name' …`, which the statement pass below takes.
+      indent + "intent " + t[7:].to_owned()
+    } else {
+      l
+    }
+    out.push(v1_effect_words(head))
+  }
+  out.join("\n")
+}
+
+///|
+/// `bubble 'x' …` -> `intent dyn 'x' …` and `request 'x' …` -> `intent lex 'x' …`,
+/// wherever a statement can start on this line.
+///
+/// The design's claim as a rewrite: the ROUTE says which scope answers, where
+/// v1's verb said it. Nothing else about the statement moves.
+fn v1_effect_words(line : String) -> String {
+  let out = StringBuilder::new()
+  let cs = line.to_array()
+  let mut i = 0
+  // A statement starts at the first non-space of the line, or after `{`, `}`
+  // or `;`. Anywhere else, `bubble` is somebody's variable.
+  let mut at_stmt = true
+  while i < cs.length() {
+    if at_stmt {
+      let rest = String::from_array(cs[i:].to_owned())
+      if rest.has_prefix("bubble '") {
+        out.write_string("intent dyn '")
+        i = i + 8
+        at_stmt = false
+        continue
+      }
+      if rest.has_prefix("request '") {
+        out.write_string("intent lex '")
+        i = i + 9
+        at_stmt = false
+        continue
+      }
+    }
+    let c = cs[i]
+    out.write_char(c)
+    at_stmt = c is ('{' | '}' | ';') || (at_stmt && c == ' ')
+    i = i + 1
+  }
+  out.to_string()
+}
+
+///|
+/// The names of the `response` declarations in a block, for the refusal.
+fn v1_response_names(block : String) -> Array[String] {
+  let out : Array[String] = []
+  for raw in block.split("\n") {
+    let t = raw.to_owned().trim_start(chars=" ").to_owned()
+    guard t.has_prefix("response ") else { continue }
+    let rest = t[9:].to_owned().trim_start(chars=" ").to_owned()
+    let name = StringBuilder::new()
+    for c in rest {
+      if c.is_ascii_alphabetic() || c.is_ascii_digit() || c == '_' {
+        name.write_char(c)
+      } else {
+        break
+      }
+    }
+    let n = name.to_string()
+    if n != "" {
+      out.push(n)
+    }
+  }
+  out
+}
+
+///|
 /// One declaration, moved to v2.
 ///
-/// `on` and `receive` merge; `bubble` becomes `intent`. The BODY moves too: a
-/// `bubble` effect becomes `intent dyn` and a `request` becomes `intent lex`,
-/// which is the same statement the design makes — the route says which scope
-/// answers, where v1's verb said it.
+/// Nothing left to do: `v1_decl_words` rewrote the kind AND the effects before
+/// the parser ran, because the parser can no longer spell either. Kept as the
+/// seam the `.html` pass calls, so where a per-declaration rewrite would go is
+/// still named.
 fn migrate_decl(d : @tscript.Decl) -> @tscript.Decl {
-  let kind : @tscript.DeclKind = match d.kind {
-    DOn => DReceive
-    DBubble => DIntent
-    other => other
-  }
-  { ..d, kind, body: migrate_body(d.body) }
-}
-
-///|
-fn migrate_body(b : @tscript.Body) -> @tscript.Body {
-  match b {
-    Value(_) => b
-    Stmts(ss) => Stmts(ss.map(s => migrate_stmt(s)))
-  }
-}
-
-///|
-fn migrate_stmt(s : @tscript.Stmt) -> @tscript.Stmt {
-  match s {
-    SEffect(name~, args~, route=_, span~) =>
-      match name {
-        // v1's two routed verbs, each becoming the one channel plus the leg it
-        // always walked.
-        "bubble" => SEffect(name="intent", args~, route=[Dyn], span~)
-        "request" => SEffect(name="intent", args~, route=[Lex], span~)
-        _ => s
-      }
-    // A branch's arms are statements too, and a `bubble` inside an `if` is as
-    // much a bubble as one at the top.
-    SIf(cond~, then_~, else_~, span~) =>
-      SIf(
-        cond~,
-        then_=then_.map(x => migrate_stmt(x)),
-        else_=else_.map(x => migrate_stmt(x)),
-        span~,
-      )
-    _ => s
-  }
+  d
 }
 
 ///|

@@ -15,25 +15,20 @@ pub fn ObserveKind::label(self : ObserveKind) -> String {
     Receive => "receive"
     Intent => "intent"
     Answer => "answer"
-    Input => "input"
-    Bubble => "bubble"
-    Response => "response"
-    Request => "request"
   }
 }
 
 ///|
-/// The kind a dispatch through `bucket` is observed as. `Request` is the one
-/// kind with no bucket behind it — a request resolves through the registry
-/// rather than on a leaf — so the two enums are not the same enum, but every
-/// bucket has exactly one kind and this is where that is said.
+/// The kind a dispatch through `bucket` is observed as.
+///
+/// `Answer` is the one kind with no bucket behind it: an answer is dispatched
+/// as an ordinary `Receive` and a handler cannot tell it from a parent's
+/// message, so the two enums are not the same enum. Every bucket has exactly
+/// one kind, and this is where that is said.
 pub fn ObserveKind::of_bucket(bucket : @tutuca.HandlerBucket) -> ObserveKind {
   match bucket {
     Receive => Receive
     Intent => Intent
-    Input => Input
-    Bubble => Bubble
-    Response => Response
   }
 }
 

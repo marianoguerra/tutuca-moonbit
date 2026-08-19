@@ -18,7 +18,7 @@ backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 </script>
 
 <script type="tutuca/script">
-  on inc { .count += 1 }
+  receive inc { .count += 1 }
 </script>
 
 <template id="Counter">

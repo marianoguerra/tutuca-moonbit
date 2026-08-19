@@ -316,16 +316,7 @@ impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
 /// Every event/message handler of the gallery, dispatched by (bucket, name).
 /// The bodies mirror the JS storybook's mount.js handlers 1:1.
 impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
-  match self.handler_for(bucket, name) {
-    Some(h) => Some(h)
-    // MIGRATION BRIDGE, and it goes in task 25 with the arms it serves.
-    //
-    // A view raises a `Receive` now (`app/app.mbt`) and the arms below still
-    // say `Input`. This component writes its own `obj_handler` rather than
-    // going through `TypedInstance`, so it needs its own copy of the bridge
-    // that one carries. Task 19 rewrites the arms and this goes with them.
-    None => if bucket is Receive { self.handler_for(Input, name) } else { None }
-  }
+  self.handler_for(bucket, name)
 }
 
 ///|
@@ -336,7 +327,7 @@ fn ShellInst::handler_for(
 ) -> @tutuca.Handler? {
   let done = (inst : ShellInst) => Some(inst.to_value())
   match (bucket, name) {
-    (Input, "toggleSidebarCollapsed") =>
+    (Receive, "toggleSidebarCollapsed") =>
       Some(
         Handler((_args, _ctx) => {
           done(
@@ -348,7 +339,7 @@ fn ShellInst::handler_for(
         }),
       )
     // Sidebar filter: recompute row/header visibility and persist the filter.
-    (Input, "onFilter") =>
+    (Receive, "onFilter") =>
       Some(
         Handler((args, ctx) => {
           let value = match args {
@@ -369,7 +360,7 @@ fn ShellInst::handler_for(
     // Story | Instance for one pane. Switching TO the instance tab builds the
     // explorer (it is Null until then), which is also the only place it is
     // built from a cold start — `obj_with_field` only keeps a live one fresh.
-    (Input, "onStoryTab") =>
+    (Receive, "onStoryTab") =>
       Some(
         Handler((args, _ctx) => {
           let (idx, tab) = match args {
@@ -389,7 +380,7 @@ fn ShellInst::handler_for(
           )
         }),
       )
-    (Input, "onToggleSection") =>
+    (Receive, "onToggleSection") =>
       Some(
         Handler((args, _ctx) => {
           let k = match args {
@@ -403,7 +394,7 @@ fn ShellInst::handler_for(
           done(apply_filter(out, str_field(out, "filter")))
         }),
       )
-    (Input, "onClearFilter") =>
+    (Receive, "onClearFilter") =>
       Some(
         Handler((_args, ctx) => {
           ctx.intent(
@@ -416,7 +407,7 @@ fn ShellInst::handler_for(
       )
     // Select a section pane; push a history entry so Back returns to the
     // prior story.
-    (Input, "onSelect") =>
+    (Receive, "onSelect") =>
       Some(
         Handler((args, ctx) => {
           let id = match args {
@@ -431,7 +422,7 @@ fn ShellInst::handler_for(
           done(self.set("active", Str(id)))
         }),
       )
-    (Input, "onFocusStory") =>
+    (Receive, "onFocusStory") =>
       Some(
         Handler((args, ctx) => {
           let id = match args {
@@ -451,7 +442,7 @@ fn ShellInst::handler_for(
           }
         }),
       )
-    (Input, "onFocusClose") =>
+    (Receive, "onFocusClose") =>
       Some(
         Handler((_args, ctx) => {
           ctx.intent(
@@ -466,7 +457,7 @@ fn ShellInst::handler_for(
     // stylesheet), so it goes out as a request the host owns; the field only
     // syncs the switcher's shown value. theme is added to the persisted
     // snapshot here (and only here) so it enters the URL.
-    (Input, "onSelectTheme") =>
+    (Receive, "onSelectTheme") =>
       Some(
         Handler((args, ctx) => {
           let value = match args {

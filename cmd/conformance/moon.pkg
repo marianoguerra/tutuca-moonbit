@@ -11,7 +11,6 @@
 // (which then runs `gen-views` over the file it writes).
 import {
   "marianoguerra/tutuca/tscript",
-  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript/conformance" @corpus,
   "moonbitlang/x/fs",
   "moonbitlang/core/env",

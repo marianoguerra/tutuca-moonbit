@@ -235,23 +235,16 @@ declare pub fn LoopWith::new(
 ) -> LoopWith
 
 ///|
-/// Scope-registered request handler: root-typed twin of
-/// @transactor.RequestHandler (the component package must not depend on the
-/// transactor; the app layer adapts).
-pub(all) struct RequestFn(
-  (Array[@tutuca.Value], (Result[@tutuca.Value, @tutuca.Value]) -> Unit) -> Unit
-)
-
-///|
 /// Scope-registered intent handler: root-typed twin of
-/// `@transactor.IntentHandler`, and the v2 face of `RequestFn`.
+/// `@transactor.IntentHandler` (the component package must not depend on the
+/// transactor; the app layer adapts).
 ///
-/// Two differences, both the walk's. It receives an `IntentCall` — carrying
-/// `from`, the sender's position, which is what lets a host decide whether
-/// this sender may ask. And it may answer `Pass`, which `RequestFn` cannot: a
-/// `RequestFn` MUST answer, so one with nothing to say has to invent an error,
-/// while a declining intent handler hands the intent to its parent scope. That
-/// is the whole of why `lookup_intent` is a walk and `lookup_request` is a
+/// It receives an `IntentCall` — carrying `from`, the sender's position, which
+/// is what lets a host decide whether this sender may ask — and it may answer
+/// `Pass`. v1's `RequestFn`, which this replaced, could do neither: it MUST
+/// answer, so one with nothing to say had to invent an error, while a
+/// declining intent handler hands the intent to its parent scope. That is the
+/// whole of why `lookup_intent` is a walk and v1's `lookup_request` was a
 /// lookup.
 pub(all) struct IntentFn(
   (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
@@ -436,7 +429,6 @@ pub struct ComponentStack {
   comps : Components
   parent : ComponentStack?
   by_name : Map[String, Component]
-  reqs : Map[String, RequestFn]
   intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
@@ -465,22 +457,10 @@ declare pub fn ComponentStack::register_macros(
 ) -> Unit
 
 ///|
-declare pub fn ComponentStack::register_request_handlers(
-  self : ComponentStack,
-  handlers : Map[String, RequestFn],
-) -> Unit
-
-///|
 declare pub fn ComponentStack::lookup_component(
   self : ComponentStack,
   name : String,
 ) -> Component?
-
-///|
-declare pub fn ComponentStack::lookup_request(
-  self : ComponentStack,
-  name : String,
-) -> RequestFn?
 
 ///|
 declare pub fn ComponentStack::register_intent_handlers(
@@ -492,14 +472,14 @@ declare pub fn ComponentStack::register_intent_handlers(
 /// Every handler for `name` visible from this scope, innermost frame first.
 ///
 /// A LIST rather than the first match, and that is the whole difference from
-/// `lookup_request` above. `IntentAnswer::Pass` means a declining handler hands
+/// v1's `lookup_request`. `IntentAnswer::Pass` means a declining handler hands
 /// the intent to its parent scope, so the walk needs every candidate — and it
 /// asks them itself, inside the transaction already running, which is why this
 /// returns them rather than taking a continuation (`totuka-v2.md` section 17).
 ///
-/// A frame may hold several for one name, which `reqs` cannot: two modules
-/// registered into one scope both offering `loadRows` is a disagreement in v1
-/// and an ordered pair of candidates in v2.
+/// A frame may hold several for one name, which v1's single-slot registry
+/// could not: two modules registered into one scope both offering `loadRows`
+/// was a disagreement then and is an ordered pair of candidates now.
 declare pub fn ComponentStack::lookup_intent(
   self : ComponentStack,
   name : String,
@@ -541,7 +521,6 @@ pub(all) struct ModuleDef {
   name : String
   components : Array[Component]
   macros : Map[String, @anode.Macro]
-  requests : Map[String, RequestFn]
   intents : Map[String, Array[IntentFn]]
   examples : Array[ExampleDef]
 }
@@ -551,7 +530,6 @@ declare pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
   macros? : Map[String, @anode.Macro],
-  requests? : Map[String, RequestFn],
   intents? : Map[String, Array[IntentFn]],
   examples? : Array[ExampleDef],
 ) -> ModuleDef

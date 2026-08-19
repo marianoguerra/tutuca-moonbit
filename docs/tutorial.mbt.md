@@ -69,8 +69,8 @@ compiled handlers:
 </script>
 
 <script type="tutuca/script">
-  on inc { .count += 1 }
-  on dec { .count -= 1 }
+  receive inc { .count += 1 }
+  receive dec { .count -= 1 }
 </script>
 
 <template id="Counter">

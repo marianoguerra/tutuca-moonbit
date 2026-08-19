@@ -24,48 +24,20 @@
 // and render/dom_event.mbt.)
 
 ///|
-/// A request handler: receives its args and a one-shot `respond`
-/// continuation (the promise-less port of an async request). Calling respond
-/// enqueues the response transaction and drains the queue; calling it twice
-/// is ignored. A handler that never responds leaves its parent's subtree
-/// permanently unsettled (the JS analogue is a promise that never resolves).
-pub(all) struct RequestHandler(
-  (Array[@tutuca.Value], (Result[@tutuca.Value, @tutuca.Value]) -> Unit) -> Unit
-)
-
-///|
-/// External request registry (JS comps.getRequestFor). Defaults to None:
-/// an unknown request responds with an error (JS mkReq404).
-pub(open) trait Requests {
-  fn request_for(Self, leaf : @tutuca.Value, name : String) -> RequestHandler? = _
-}
-
-///|
-impl Requests with fn request_for(_self, _leaf, _name) {
-  None
-}
-
-///|
-pub(all) struct NoRequests {}
-
-///|
-pub impl Requests for NoRequests
-
-///|
-/// A static intent handler: the v2 face of `RequestHandler`.
+/// A static intent handler.
 ///
-/// Two differences, and both are the walk's. It receives an `IntentCall` —
-/// which carries `from`, the sender's position, so a host can decide whether
-/// this sender may ask — rather than a bare argument list. And it may answer
-/// `Pass`, which a `RequestHandler` cannot: a request handler MUST respond, so
-/// one with nothing to say has to invent an error, while a declining intent
-/// handler simply hands the intent to the next one.
+/// It receives an `IntentCall` — which carries `from`, the sender's position,
+/// so a host can decide whether this sender may ask — rather than a bare
+/// argument list, and it may answer `Pass`. v1's `RequestHandler`, which this
+/// replaced, could do neither: a request handler MUST respond, so one with
+/// nothing to say had to invent an error, while a declining intent handler
+/// simply hands the intent to the next one.
 pub(all) struct IntentHandler(
   (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
 )
 
 ///|
-/// The lexical leg's registry (the v2 face of `Requests`).
+/// The lexical leg's registry.
 ///
 /// It answers with the WHOLE chain rather than the first match, innermost
 /// scope first, and that shape is the "`lex` walks" decision from
@@ -130,7 +102,7 @@ declare pub fn Completion::on_settled(
 
 ///|
 /// Run `cb` once this transaction AND all transitively-derived work (sends,
-/// bubbles, requests and their responses) have settled.
+/// intent walks and their answers) have settled.
 declare pub fn Completion::on_subtree_settled(
   self : Completion,
   cb : () -> Unit,
@@ -150,8 +122,8 @@ declare fn Completion::release_self(self : Completion) -> Unit
 /// What an observer record describes (JS observeKind strings as an enum).
 pub(all) enum ObserveKind {
   Receive
-  /// One hop of an intent's walk. v2's, and the kind `Bubble`, `Response` and
-  /// `Request` collapse into once the walk owns all three.
+  /// One hop of an intent's walk — the kind v1's `Bubble`, `Response` and
+  /// `Request` all collapsed into once the walk owned all three.
   Intent
   /// A message the RUNTIME wrote: the `<name>Ok`, `<name>Error` or
   /// `<name>Unhandled` a walk produced. It is an ordinary message and the
@@ -159,10 +131,6 @@ pub(all) enum ObserveKind {
   /// claim — so the distinction lives here, where an inspector needs it and a
   /// handler never sees it.
   Answer
-  Input
-  Bubble
-  Response
-  Request
 } derive(Debug, Eq)
 
 ///|
@@ -233,10 +201,10 @@ pub(all) struct SettleResult {
 } derive(Eq, Debug)
 
 ///|
-/// One queued dispatch (JS Transaction subclasses collapsed onto
-/// HandlerBucket): `path` drives dispatch and bubbling, `target_path` stays
-/// the fixed origin across bubble hops, `txn_path` is a pre-pinned
-/// transaction path (responses), `bubbles`/`skip_self` are the send options.
+/// One queued dispatch, the buckets collapsed onto `HandlerBucket`: `path`
+/// drives dispatch and the walk, `target_path` stays the fixed origin across
+/// an intent's hops so an answer knows where to land, and `txn_path` is a
+/// pre-pinned transaction path for one.
 pub struct Transaction {
   priv transactor : Transactor
   path : @tutuca.DispatchPath
@@ -244,8 +212,6 @@ pub struct Transaction {
   name : String
   args : Array[@tutuca.Value]
   target_path : @tutuca.DispatchPath
-  mut bubbles : Bool
-  skip_self : Bool
   txn_path : @tutuca.Path?
   parent : Transaction?
   /// The walk this transaction is one hop of, shared BY REFERENCE with every
@@ -253,8 +219,10 @@ pub struct Transaction {
   /// answer per intent rather than per hop, which is the thing v1's per-request
   /// `responded` flag could not express because v1 had one hop.
   priv walk : IntentWalk?
-  /// Whether the runtime wrote this message, for the observer only.
-  priv is_answer : Bool
+  /// Whether the runtime wrote this message: the `<name>Ok` / `<name>Error` /
+  /// `<name>Unhandled` a walk produced. Read by the observer, and by
+  /// `Ctx::is_answer` for the one caller that bridges to a foreign contract.
+  is_answer : Bool
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
   priv mut finished : Bool
@@ -273,10 +241,9 @@ declare pub fn Transaction::completion(self : Transaction) -> Completion
 
 ///|
 /// The dispatcher: a queue of transactions over a mutable root Value.
-/// Handlers resolve on the leaf (Value::handler); requests resolve via the
-/// external registry.
+/// Handlers resolve on the leaf (Value::handler); an intent's `lex` leg
+/// resolves through the external registry.
 pub struct Transactor {
-  priv requests : &Requests
   priv intents : &Intents
   mut root : @tutuca.Value
   priv mut queue : Array[Transaction]
@@ -291,14 +258,13 @@ pub struct Transactor {
 ///|
 declare pub fn Transactor::new(
   root : @tutuca.Value,
-  requests? : &Requests,
   intents? : &Intents,
 ) -> Transactor
 
 ///|
-/// Subscribe to a normalized record for every handler invocation
-/// (send/receive, bubble, response, input, request). Returns an unsubscribe
-/// function. Purely observational; empty by default (zero overhead).
+/// Subscribe to a normalized record for every handler invocation — a receive,
+/// one hop of an intent's walk, or an answer. Returns an unsubscribe function.
+/// Purely observational; empty by default (zero overhead).
 declare pub fn Transactor::observe(
   self : Transactor,
   cb : (ObserveRecord) -> Unit,
@@ -332,44 +298,15 @@ declare pub fn Transactor::on_change(
 declare pub fn Transactor::clear_subscriptions(self : Transactor) -> Unit
 
 ///|
-/// Queue a targeted send (bucket Receive). skip_self queues the transaction
-/// without running its own handler (the no-op first hop of ctx.bubble);
-/// bubbles makes it pop one component per hop through the Bubble bucket
-/// afterward. Returns the transaction (subscribe to its completion, then
-/// settle()).
+/// Queue a targeted send (bucket Receive). Returns the transaction (subscribe
+/// to its completion, then settle()).
 declare pub fn Transactor::push_send(
   self : Transactor,
   path : @tutuca.DispatchPath,
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
-  skip_self? : Bool,
-  bubbles? : Bool,
 ) -> Transaction
-
-///|
-/// Queue a named input dispatch (bucket Input; JS InputDispatchEvent).
-declare pub fn Transactor::push_input(
-  self : Transactor,
-  path : @tutuca.DispatchPath,
-  name : String,
-  args : Array[@tutuca.Value],
-  parent? : Transaction,
-) -> Transaction
-
-///|
-/// Resolve and invoke a request handler NOW (pinning the transaction path's
-/// field-resolved keys against the current root unless opts.live_path); its
-/// respond continuation queues the response (bucket Response, name routed
-/// via opts) and drains.
-declare pub fn Transactor::push_request(
-  self : Transactor,
-  path : @tutuca.DispatchPath,
-  name : String,
-  args : Array[@tutuca.Value],
-  opts? : @tutuca.RequestOpts,
-  parent? : Transaction,
-) -> Unit
 
 ///|
 /// One intent's whole walk, as state shared across its hops.

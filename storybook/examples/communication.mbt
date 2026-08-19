@@ -1,6 +1,6 @@
 // Ports of:
 //   docs/examples/send-receive.js — ctx.send / ctx.at.field(..).send + receive
-//   docs/examples/tree.js         — recursion, ctx.bubble, and JS `statics`
+//   docs/examples/tree.js         — recursion, `intent dyn`, and JS `statics`
 //
 // PORT RULE — where a handler goes in the typed API.
 // JS appends `ctx` as the last argument to EVERY dispatched handler

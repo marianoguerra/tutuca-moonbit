@@ -141,7 +141,8 @@ pub fn SelectorEntryInput::parse(s : String) -> SelectorEntryInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to dynamic.html breaks every `match` over this type
 /// until it is handled.
@@ -150,18 +151,20 @@ pub(all) enum SelectorEntryMsg {
   SetLabel(String)
   /// `@on.input="setValue …"`
   SetValue(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SelectorEntryMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> SelectorEntryMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setLabel", [Str(a0)]) => SetLabel(a0)
@@ -328,23 +331,26 @@ pub fn SelectorInput::parse(s : String) -> SelectorInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to dynamic.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum SelectorMsg {
   /// `@on.input="setSelectedValue …"`
   SetSelectedValue(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
@@ -520,7 +526,8 @@ pub fn EntryEditorAndSelectorInput::parse(
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to dynamic.html breaks every `match` over this type
 /// until it is handled.
@@ -529,18 +536,20 @@ pub(all) enum EntryEditorAndSelectorMsg {
   OnAddItem
   /// `@on.click="removeInItemsAt …"`
   RemoveInItemsAt(@tutuca.Value)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn EntryEditorAndSelectorMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> EntryEditorAndSelectorMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
@@ -691,23 +700,26 @@ pub fn SheetInput::parse(s : String) -> SheetInput? {
 }
 
 ///|
-/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.
+/// Payload types are
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to dynamic.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum SheetMsg {
   /// `@on.input="setTitle …"`
   SetTitle(String)
-  /// An Input dispatch the views do not declare, or a declared name
+  /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// None for Receive / Bubble / Response — those names are raised by
-/// component code, never written in a view, so the views cannot type them.
+/// None for an `Intent` — a routed name is raised by component code and
+/// never written in a view, so the views cannot type it. A `Receive` the
+/// views do not name decodes to `Unknown`, which is what the sibling
+/// `<T>Receive` (the schema's half of the same bucket) is for.
 pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
-  guard d is Input(name, args) else { return None }
+  guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setTitle", [Str(a0)]) => SetTitle(a0)

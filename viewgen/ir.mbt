@@ -555,9 +555,7 @@ fn emit_ir_component(
       // nothing but `compute` bodies emits value functions and no arms.
       if e.answers_input.is_empty() &&
         e.answers_receive.is_empty() &&
-        e.answers_intent.is_empty() &&
-        e.answers_bubble.is_empty() &&
-        e.answers_response.is_empty() {
+        e.answers_intent.is_empty() {
         None
       } else {
         Some(inline_fn_name(v))

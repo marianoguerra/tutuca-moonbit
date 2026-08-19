@@ -1,9 +1,9 @@
 // A `&Ctx` that records instead of dispatching.
 //
-// Every method of the trait has a default, so recording needs only the four an
-// effect can reach: the two absolute forms (`send` and `bubble` are spelled in
-// terms of them), `request`, and `stop_propagation`. Printed in the corpus's
-// own form, so what is compared is a string both backends produce
+// Every method of the trait has a default, so recording needs only the ones an
+// effect can reach: the absolute forms (`send` and `intent` are each spelled in
+// terms of one), `forward`, `reply`, `fail` and `stop_propagation`. Printed in
+// the corpus's own form, so what is compared is a string both backends produce
 // independently rather than one backend's type.
 
 ///|
@@ -25,23 +25,6 @@ pub impl @tutuca.Ctx for Recorder with fn send_at_path(self, path, name, args) {
   // the whole reason there are only four to implement.
   let verb = if path.items.is_empty() { "send" } else { "sendAt" }
   self.seen.push(@conformance.show_effect(verb + " " + name, args))
-}
-
-///|
-pub impl @tutuca.Ctx for Recorder with fn bubble_at_path(
-  self,
-  _path,
-  name,
-  args,
-) {
-  self.seen.push(@conformance.show_effect("bubble " + name, args))
-}
-
-///|
-pub impl @tutuca.Ctx for Recorder with fn request(self, name, _args, _opts) {
-  // The corpus prints a request by NAME only: its arguments are the request
-  // function's business and no backend can answer for them here.
-  self.seen.push(@conformance.show_effect("request " + name, []))
 }
 
 ///|

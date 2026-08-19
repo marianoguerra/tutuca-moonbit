@@ -427,7 +427,8 @@ fn emit_component(
     )
     out.write_string(
       "///|\n" +
-      "/// The Input arm of @component.Dispatch, decoded. Payload types are\n" +
+      "/// The VIEW-named half of @component.Dispatch's `Receive` arm, decoded.\n" +
+      "/// Payload types are\n" +
       "/// inferred from the argument shapes written at the call sites, so a\n" +
       "/// handler added to \{source_file} breaks every `match` over this type\n" +
       "/// until it is handled.\n" +
@@ -438,7 +439,7 @@ fn emit_component(
       emit_msg_variant(out, sig, variant_of(input_variants, sig.name))
     }
     out.write_string(
-      "  /// An Input dispatch the views do not declare, or a declared name\n" +
+      "  /// A dispatch the views do not declare, or a declared name\n" +
       "  /// whose runtime arguments did not match the inferred shape.\n" +
       "  Unknown(String, Array[@tutuca.Value])\n" +
       // No derives: @tutuca.Value carries Fn and &Obj, so it is neither Eq
@@ -447,10 +448,12 @@ fn emit_component(
     )
     out.write_string(
       "///|\n" +
-      "/// None for Receive / Bubble / Response — those names are raised by\n" +
-      "/// component code, never written in a view, so the views cannot type them.\n" +
+      "/// None for an `Intent` — a routed name is raised by component code and\n" +
+      "/// never written in a view, so the views cannot type it. A `Receive` the\n" +
+      "/// views do not name decodes to `Unknown`, which is what the sibling\n" +
+      "/// `<T>Receive` (the schema's half of the same bucket) is for.\n" +
       "pub fn \{t}Msg::from_dispatch(d : @component.Dispatch) -> \{t}Msg? {\n" +
-      "  guard d is Input(name, args) else { return None }\n" +
+      "  guard d is Receive(name, args) else { return None }\n" +
       "  Some(\n" +
       "    match (name, args) {\n",
     )

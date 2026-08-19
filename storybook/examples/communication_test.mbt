@@ -76,7 +76,7 @@ test "tree: clicking a node toggles it AND bubbles up to the root" {
       #|Some("head closed type-dir")
     ),
   )
-  // ctx.bubble walked up to TreeRoot, which logged it
+  // the `dyn` leg walked up to TreeRoot, which logged it
   debug_inspect(
     h.texts("li"),
     content=(

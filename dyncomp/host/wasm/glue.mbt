@@ -209,18 +209,8 @@ fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
 }
 
 ///|
-fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
-  match bucket {
-    Input => 0
-    Receive => 1
-    Response => 2
-    Bubble => 3
-    // The WIT's `handler-bucket` gains this in the plan's task 16, and the
-    // number is its case index there. Nothing dispatches an intent at a guest
-    // until it does — `DynObj::obj_handler` answers `false` for the bucket —
-    // so no bundle sees a 4 before the contract that names it.
-    Intent => 4
-  }
+fn bucket_int(bucket : @dyncomp.GuestBucket) -> Int {
+  bucket.ordinal()
 }
 
 ///|
@@ -265,15 +255,15 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 ///|
 /// A request's response routing (WIT `request-opts`), defaulted the way
 /// `RequestOpts::new()` does when the guest sends nothing.
-fn request_opts(j : Json?) -> @tutuca.RequestOpts {
-  guard j is Some(Object(o)) else { return @tutuca.RequestOpts::new() }
+fn request_opts(j : Json?) -> @dyncomp.RequestOpts {
+  guard j is Some(Object(o)) else { return @dyncomp.RequestOpts::new() }
   let name = (key : String) => {
     match o.get(key) {
       Some(String(s)) => Some(s)
       _ => None
     }
   }
-  @tutuca.RequestOpts::new(
+  @dyncomp.RequestOpts::new(
     on_ok_name?=name("onOk"),
     on_error_name?=name("onError"),
     on_res_name?=name("onRes"),

@@ -35,7 +35,7 @@ impl @core.Obj for Note with fn obj_with_field(_self, name, v) {
 ///|
 impl @core.Obj for Note with fn obj_handler(_self, bucket, name) {
   match (bucket, name) {
-    (Input, "retitle") =>
+    (Receive, "retitle") =>
       Some(
         Handler((args, _ctx) => {
           match args {
@@ -46,9 +46,9 @@ impl @core.Obj for Note with fn obj_handler(_self, bucket, name) {
       )
     // The DECLINE: an arm that answers None because another bucket serves this,
     // or because there was nothing to do.
-    (Input, "shrug") => Some(Handler((_args, _ctx) => None))
+    (Receive, "shrug") => Some(Handler((_args, _ctx) => None))
     // A rule refusing, as a body with a contract would report it.
-    (Input, "guarded") =>
+    (Receive, "guarded") =>
       Some(
         Handler((_args, _ctx) => {
           @core.precondition_failed(
@@ -88,7 +88,7 @@ fn watched(body : () -> Unit) -> Array[@core.Refusal] {
 test "nothing claimed the name, and nothing answered the path" {
   let root = tree()
   let missing_name = watched(() => {
-    at("a").update(root, Input, "nope", []) |> ignore
+    at("a").update(root, Receive, "nope", []) |> ignore
   })
   assert_eq(missing_name.length(), 1)
   assert_eq(missing_name[0].code, NoHandler)
@@ -101,7 +101,7 @@ test "nothing claimed the name, and nothing answered the path" {
   )
   assert_eq(missing_name[0].path, at("a"))
   let missing_leaf = watched(() => {
-    at("zz").update(root, Input, "retitle", [Str("x")]) |> ignore
+    at("zz").update(root, Receive, "retitle", [Str("x")]) |> ignore
   })
   assert_eq(missing_leaf.length(), 1)
   assert_eq(missing_leaf[0].code, PathUnresolved)
@@ -117,17 +117,20 @@ test "a handler that ran is silent, whether or not it moved anything" {
   // Moved.
   assert_eq(
     watched(() => {
-      at("a").update(root, Input, "retitle", [Str("second")]) |> ignore
+      at("a").update(root, Receive, "retitle", [Str("second")]) |> ignore
     }),
     [],
   )
   // DECLINED — an arm answering None has not refused anything, and the mutator
   // behind it is the intended design. This is the case the channel must stay
   // quiet about, or it becomes noise a team mutes.
-  assert_eq(watched(() => at("a").update(root, Input, "shrug", []) |> ignore), [])
+  assert_eq(
+    watched(() => at("a").update(root, Receive, "shrug", []) |> ignore),
+    [],
+  )
   // Handed a shape it cannot use: the handler decided, so it is a decline too.
   assert_eq(
-    watched(() => at("a").update(root, Input, "retitle", [Num(3.0)]) |> ignore),
+    watched(() => at("a").update(root, Receive, "retitle", [Num(3.0)]) |> ignore),
     [],
   )
 }
@@ -135,7 +138,9 @@ test "a handler that ran is silent, whether or not it moved anything" {
 ///|
 test "a rule inside the dispatch reports where it happened" {
   let root = tree()
-  let said = watched(() => at("a").update(root, Input, "guarded", []) |> ignore)
+  let said = watched(() => {
+    at("a").update(root, Receive, "guarded", []) |> ignore
+  })
   assert_eq(said.length(), 1)
   assert_eq(said[0].code, Precondition)
   assert_eq(said[0].rule, "hasText")
@@ -154,7 +159,7 @@ test "one dispatch produces at most one record" {
   // back up the chain, and a listener that saw both would be reading one
   // failure as two.
   let obj : @core.Value = Map({ "notes": Map({ "a": Obj(Twice::{  }) }) })
-  let said = watched(() => at("a").update(obj, Input, "twice", []) |> ignore)
+  let said = watched(() => at("a").update(obj, Receive, "twice", []) |> ignore)
   assert_eq(said.length(), 1)
   assert_eq(said[0].rule, "first")
 }
@@ -178,7 +183,7 @@ test "switched off, the report is the line warn has always printed" {
   let said : Array[String] = []
   let before = @core.warn_hook.val
   @core.warn_hook.val = msg => said.push(msg)
-  at("zz").update(tree(), Input, "retitle", [Str("x")]) |> ignore
+  at("zz").update(tree(), Receive, "retitle", [Str("x")]) |> ignore
   @core.precondition_failed(handler="publish", pred="hasTitle")
   @core.precondition_failed(
     handler="publish",

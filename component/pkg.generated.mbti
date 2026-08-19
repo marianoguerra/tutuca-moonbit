@@ -47,7 +47,6 @@ pub struct ComponentStack {
   comps : Components
   parent : ComponentStack?
   by_name : Map[String, Component]
-  reqs : Map[String, RequestFn]
   intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
@@ -55,12 +54,10 @@ pub fn ComponentStack::compile_all(Self) -> Unit raise
 pub fn ComponentStack::enter(Self) -> Self
 pub fn ComponentStack::lookup_component(Self, String) -> Component?
 pub fn ComponentStack::lookup_intent(Self, String) -> Array[IntentFn]
-pub fn ComponentStack::lookup_request(Self, String) -> RequestFn?
 pub fn ComponentStack::new(comps? : Components) -> Self
 pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
 pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[IntentFn]]) -> Unit
 pub fn ComponentStack::register_macros(Self, Map[String, @anode.Macro]) -> Unit
-pub fn ComponentStack::register_request_handlers(Self, Map[String, RequestFn]) -> Unit
 pub impl @anode.MacroScope for ComponentStack
 
 pub struct Components {
@@ -142,12 +139,11 @@ pub(all) struct ModuleDef {
   name : String
   components : Array[Component]
   macros : Map[String, @anode.Macro]
-  requests : Map[String, RequestFn]
   intents : Map[String, Array[IntentFn]]
   examples : Array[ExampleDef]
 }
 pub fn ModuleDef::build_scope(Self) -> ComponentStack raise
-pub fn ModuleDef::new(name~ : String, components~ : Array[Component], macros? : Map[String, @anode.Macro], requests? : Map[String, RequestFn], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
+pub fn ModuleDef::new(name~ : String, components~ : Array[Component], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
 pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
 
 pub(all) enum ProducerKeyMemo {
@@ -165,8 +161,6 @@ pub(all) struct ProvideKey {
   comp : Int
   name : String
 } derive(Eq, Hash, @debug.Debug)
-
-pub(all) struct RequestFn((Array[@core.Value], (Result[@core.Value, @core.Value]) -> Unit) -> Unit)
 
 pub(all) enum Update[S] {
   Unhandled

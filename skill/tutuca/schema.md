@@ -271,7 +271,7 @@ other statement already does. `new <Type>` puts that type's **zero** at the
   }
 
   /// A collection is built the same way and assigned whole.
-  on reset {
+  receive reset {
     new Array[String]
     @cur.push 'p'
     @cur.push 'q'
@@ -324,13 +324,13 @@ which of the three kinds of rule it is, and the runtime keeps all three:
   pred canPush { .here > 0 }
 
   /// A PRECONDITION: asked before the body, against the state as it arrived.
-  on push requires canPush {
+  receive push requires canPush {
     .here -= 1
     .there += 1
   }
 
   /// A POSTCONDITION: asked after the body, against where it landed.
-  on drain ensures empty {
+  receive drain ensures empty {
     .here = 0
   }
   pred empty { .here is 0 }
@@ -383,7 +383,7 @@ false:
     format $'Cannot publish "{.slug}": the title is empty.'
   { (trim .title) is not '' }
 
-  on publish requires hasTitle { .published = true }
+  receive publish requires hasTitle { .published = true }
 </script>
 ```
 

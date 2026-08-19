@@ -22,259 +22,8 @@
 fn corpus_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [], [
-      @anode.dyn_text(Field("name"), id=0),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(0)], [@anode.text("case0")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(1)], [@anode.text("case1")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(2)], [@anode.text("case2")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(3)], [@anode.text("case3")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(4)], [@anode.text("case4")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(5)], [@anode.text("case5")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(6)], [@anode.text("case6")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(7)], [@anode.text("case7")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(8)], [@anode.text("case8")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(9)], [@anode.text("case9")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(10)], [@anode.text("case10")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(11)], [@anode.text("case11")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(12)], [@anode.text("case12")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(13)], [@anode.text("case13")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(14)], [@anode.text("case14")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(15)], [@anode.text("case15")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(16)], [@anode.text("case16")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(17)], [@anode.text("case17")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(18)], [@anode.text("case18")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(19)], [@anode.text("case19")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(20)], [@anode.text("case20")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(21)], [@anode.text("case21")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(22)], [@anode.text("case22")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(23)], [@anode.text("case23")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(24)], [@anode.text("case24")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(25)], [@anode.text("case25")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(26)], [@anode.text("case26")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(27)], [@anode.text("case27")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(28)], [@anode.text("case28")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(29)], [@anode.text("case29")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(30)], [@anode.text("case30")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(31)], [@anode.text("case31")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(32)], [@anode.text("case32")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(33)], [@anode.text("case33")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(34)], [@anode.text("case34")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(35)], [@anode.text("case35")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(36)], [@anode.text("case36")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(37)], [@anode.text("case37")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(38)], [@anode.text("case38")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(39)], [@anode.text("case39")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(40)], [@anode.text("case40")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(41)], [@anode.text("case41")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(42)], [@anode.text("case42")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(43)], [@anode.text("case43")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(44)], [@anode.text("case44")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(45)], [@anode.text("case45")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(46)], [@anode.text("case46")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(47)], [@anode.text("case48")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(48)], [@anode.text("case49")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(49)], [@anode.text("case50")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(50)], [@anode.text("case51")]),
-      @anode.text(" "),
-      @anode.h("button", [@anode.eid(51)], [@anode.text("case52")]),
-      @anode.text(" "),
-      @anode.h("ul", [], [
-        @anode.each(
-          1,
-          Field("items"),
-          @anode.h("li", [], []),
-          when_val=HandlerName(name="v5_named", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          2,
-          Field("items"),
-          @anode.h("li", [], []),
-          when_val=HandlerName(name="v10_matches", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          3,
-          Field("items"),
-          @anode.h("li", [], []),
-          when_val=HandlerName(name="v11_matches", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          4,
-          Field("items"),
-          @anode.h("li", [], []),
-          when_val=HandlerName(name="v12_matches", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          5,
-          Field("items"),
-          @anode.h("li", [], []),
-          when_val=HandlerName(name="v13_firstOnly", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          6,
-          Field("items"),
-          @anode.h("li", [], []),
-          enrich_with_val=HandlerName(name="v14_row", ns=Alter),
-        ),
-      ]),
-      @anode.h("ul", [], [
-        @anode.each(
-          7,
-          Field("items"),
-          @anode.h("li", [], []),
-          enrich_with_val=HandlerName(name="v15_row", ns=Alter),
-        ),
-      ]),
-      @anode.text(" "),
-      @anode.scope(
-        8,
-        HandlerName(name="v16_info", ns=Alter),
-        @anode.h("div", [@anode.attr_num("data-nid", 8.0)], []),
-      ),
-    ]),
-    [
-      [@anode.on("click", HandlerName(name="case0", ns=Input))],
-      [@anode.on("click", HandlerName(name="case1", ns=Input))],
-      [@anode.on("click", HandlerName(name="case2", ns=Input))],
-      [@anode.on("click", HandlerName(name="case3", ns=Input))],
-      [@anode.on("click", HandlerName(name="case4", ns=Input))],
-      [
-        @anode.on("click", HandlerName(name="case5", ns=Input), args=[
-          @anode.const_num(3.0),
-        ]),
-      ],
-      [
-        @anode.on("click", HandlerName(name="case6", ns=Input), args=[
-          @anode.const_str("first"),
-          @anode.const_str("second"),
-        ]),
-      ],
-      [@anode.on("click", HandlerName(name="case7", ns=Input))],
-      [@anode.on("click", HandlerName(name="case8", ns=Input))],
-      [@anode.on("click", HandlerName(name="case9", ns=Input))],
-      [@anode.on("click", HandlerName(name="case10", ns=Input))],
-      [@anode.on("click", HandlerName(name="case11", ns=Input))],
-      [@anode.on("click", HandlerName(name="case12", ns=Input))],
-      [@anode.on("click", HandlerName(name="case13", ns=Input))],
-      [@anode.on("click", HandlerName(name="case14", ns=Input))],
-      [@anode.on("click", HandlerName(name="case15", ns=Input))],
-      [
-        @anode.on("click", HandlerName(name="case16", ns=Input), args=[
-          @anode.const_num(1.0),
-        ]),
-      ],
-      [
-        @anode.on("click", HandlerName(name="case17", ns=Input), args=[
-          @anode.const_num(9.0),
-        ]),
-      ],
-      [@anode.on("click", HandlerName(name="case18", ns=Input))],
-      [@anode.on("click", HandlerName(name="case19", ns=Input))],
-      [@anode.on("click", HandlerName(name="case20", ns=Input))],
-      [@anode.on("click", HandlerName(name="case21", ns=Input))],
-      [@anode.on("click", HandlerName(name="case22", ns=Input))],
-      [@anode.on("click", HandlerName(name="case23", ns=Input))],
-      [@anode.on("click", HandlerName(name="case24", ns=Input))],
-      [@anode.on("click", HandlerName(name="case25", ns=Input))],
-      [@anode.on("click", HandlerName(name="case26", ns=Input))],
-      [@anode.on("click", HandlerName(name="case27", ns=Input))],
-      [@anode.on("click", HandlerName(name="case28", ns=Input))],
-      [@anode.on("click", HandlerName(name="case29", ns=Input))],
-      [@anode.on("click", HandlerName(name="case30", ns=Input))],
-      [@anode.on("click", HandlerName(name="case31", ns=Input))],
-      [@anode.on("click", HandlerName(name="case32", ns=Input))],
-      [@anode.on("click", HandlerName(name="case33", ns=Input))],
-      [@anode.on("click", HandlerName(name="case34", ns=Input))],
-      [
-        @anode.on("click", HandlerName(name="case35", ns=Input), args=[
-          @anode.const_num(5.0),
-        ]),
-      ],
-      [@anode.on("click", HandlerName(name="case36", ns=Input))],
-      [@anode.on("click", HandlerName(name="case37", ns=Input))],
-      [@anode.on("click", HandlerName(name="case38", ns=Input))],
-      [@anode.on("click", HandlerName(name="case39", ns=Input))],
-      [@anode.on("click", HandlerName(name="case40", ns=Input))],
-      [@anode.on("click", HandlerName(name="case41", ns=Input))],
-      [@anode.on("click", HandlerName(name="case42", ns=Input))],
-      [@anode.on("click", HandlerName(name="case43", ns=Input))],
-      [@anode.on("click", HandlerName(name="case44", ns=Input))],
-      [@anode.on("click", HandlerName(name="case45", ns=Input))],
-      [
-        @anode.on("click", HandlerName(name="case46", ns=Input), args=[
-          @anode.const_num(3.0),
-        ]),
-      ],
-      [
-        @anode.on("click", HandlerName(name="case48", ns=Input), args=[
-          @anode.const_num(4.0),
-        ]),
-      ],
-      [@anode.on("click", HandlerName(name="case49", ns=Input))],
-      [@anode.on("click", HandlerName(name="case50", ns=Input))],
-      [@anode.on("click", HandlerName(name="case51", ns=Input))],
-      [@anode.on("click", HandlerName(name="case52", ns=Input))],
-    ],
+    @anode.h("div", [], [@anode.dyn_text(Field("name"), id=0)]),
+    [],
   )
 }
 
@@ -297,312 +46,159 @@ fn corpus_inline_update(
   ctx : &@tutuca.Ctx,
 ) -> @component.Update[CorpusState] {
   match msg {
-    Input("case0", args) => {
-      guard args.get(0) is Some(f) else { return Unchanged }
-      let s = {
-        ..s,
-        name: f.field_opt("name").unwrap_or(Null).to_display_string(),
-      }
+    Receive("case0", _args) => {
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       Next(s)
     }
-    Input("case1", args) => {
-      guard args.get(0) is Some(f) else { return Unchanged }
-      let s = {
-        ..s,
-        name: f
-        .field_opt("meta")
-        .unwrap_or(Null)
-        .field_opt("kind")
-        .unwrap_or(Null)
-        .to_display_string(),
-      }
+    Receive("case1", _args) => {
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       Next(s)
     }
-    Input("case2", args) => {
-      guard args.get(0) is Some(f) else { return Unchanged }
-      let s = {
-        ..s,
-        name: f.field_opt("missing").unwrap_or(Null).to_display_string(),
-      }
+    Receive("case2", args) => {
+      guard args.get(0) is Some(Num(n)) else { return Unchanged }
+      let s = { ..s, count: n.to_int() }
       Next(s)
     }
-    Input("case3", args) => {
-      guard args.get(0) is Some(f) else { return Unchanged }
-      let s = {
-        ..s,
-        name: f.field_opt("name").unwrap_or(Null).to_display_string(),
-      }
-      Next(s)
-    }
-    Input("case4", _args) => {
-      let s = { ..s, count: 5 }
-      Next(s)
-    }
-    Input("case5", args) => {
-      guard args.get(0) is Some(Num(d)) else { return Unchanged }
-      let s = { ..s, count: (s.count.to_double() + d).to_int() }
-      Next(s)
-    }
-    Input("case6", args) => {
+    Receive("case3", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
-      guard args.get(1) is Some(Str(b)) else { return Unchanged }
-      let s = { ..s, name: b }
-      Next(s)
-    }
-    Input("case8", _args) => {
-      let s = { ..s, count: 1 }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      Next(s)
-    }
-    Input("case9", _args) => {
-      let s = { ..s, count: 2.7.to_int() }
-      Next(s)
-    }
-    Input("case10", _args) => {
-      let s = { ..s, ratio: 2.7 }
-      Next(s)
-    }
-    Input("case12", _args) => {
-      let d0 = 0.0
-      guard d0 != 0.0 else { return Unchanged }
-      let s = { ..s, count: (1.0 / d0).to_int() }
-      Next(s)
-    }
-    Input("case15", _args) => {
       let effects : Array[() -> Unit] = []
-      effects.push(() => ctx.send("flash", [(Str("hi") : @tutuca.Value)]))
-      let d0 = 0.0
-      guard d0 != 0.0 else { return Unchanged }
-      let s = { ..s, count: (1.0 / d0).to_int() }
+      effects.push(() => ctx.forward(None, None))
       for f in effects {
         f()
       }
       Next(s)
     }
-    Input("case19", _args) => {
-      let cur0 : CorpusLabel = { text: "", done: false }
-      let cur0 = { ..cur0, text: "z" }
-      let cur0 = { ..cur0, done: true }
-      let s = { ..s, labels: s.labels + [cur0] }
-      Next(s)
-    }
-    Input("case20", _args) => {
-      let cur1 : CorpusLabel = { text: "", done: false }
-      let s = { ..s, labels: s.labels + [cur1] }
-      Next(s)
-    }
-    Input("case21", _args) => {
-      let cur2 : CorpusLabel = { text: "", done: false }
-      let cur2 = { ..cur2, text: "p" }
-      let s = { ..s, labels: s.labels + [cur2] }
-      let cur3 : CorpusLabel = { text: "", done: false }
-      let cur3 = { ..cur3, text: "q" }
-      let s = { ..s, labels: s.labels + [cur3] }
-      Next(s)
-    }
-    Input("case22", _args) => {
-      let cur4 : Array[String] = []
-      let cur4 = cur4 + ["p"]
-      let cur4 = cur4 + ["q"]
-      let s = { ..s, items: cur4 }
-      Next(s)
-    }
-    Input("case27", _args) => {
-      let s = { ..s, count: (10.0 - 3.0 - 2.0).to_int() }
-      Next(s)
-    }
-    Input("case28", _args) => {
-      let d0 = 3.0
-      guard d0 != 0.0 else { return Unchanged }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() % d0.to_int() }
-      Next(s)
-    }
-    Input("case29", _args) => {
-      let d0 = 4.0
-      guard d0 != 0.0 else { return Unchanged }
-      let s = { ..s, ratio: (s.count.to_double() + 5.0) / d0 }
-      Next(s)
-    }
-    Input("case30", _args) => {
-      let s = { ..s, name: s.name + "!" }
-      Next(s)
-    }
-    Input("case31", _args) => {
-      let s = {
-        ..s,
-        name: (Str(s.name) : @tutuca.Value).to_display_string() +
-        " has " +
-        (Num(s.items.length().to_double()) : @tutuca.Value).to_display_string(),
-      }
-      Next(s)
-    }
-    Input("case32", _args) => {
-      let s = { ..s, name: if s.ok { "yes" } else { "no" } }
-      Next(s)
-    }
-    Input("case33", _args) => {
-      let s = if s.ok {
-        let s = { ..s, count: 1 }
-        s
-      } else {
-        let s = { ..s, count: 2 }
-        s
-      }
-      Next(s)
-    }
-    Input("case34", _args) => {
-      let s = { ..s, count: 7 }
-      let s = if s.ok {
-        let s = { ..s, count: 1 }
-        s
-      } else {
-        s
-      }
-      Next(s)
-    }
-    Input("case35", args) => {
-      guard args.get(0) is Some(Num(p)) else { return Unchanged }
-      let s = {
-        ..s,
-        page: (if s.items.length().to_double() - 1.0 < 0.0 {
-          0.0
-        } else if p < 0.0 {
-          0.0
-        } else if p > s.items.length().to_double() - 1.0 {
-          s.items.length().to_double() - 1.0
-        } else {
-          p
-        }).to_int(),
-      }
-      Next(s)
-    }
-    Input("case36", _args) => {
-      let s = {
-        ..s,
-        ok: ({
-          let m : Map[String, @tutuca.Value] = Map([])
-          for k, b in s.tags {
-            m[k] = Bool(b)
-          }
-          (Map(m) : @tutuca.Value)
-        })
-        is Null ||
-        @tutuca.size_of(
-          {
-            let m : Map[String, @tutuca.Value] = Map([])
-            for k, b in s.tags {
-              m[k] = Bool(b)
-            }
-            (Map(m) : @tutuca.Value)
-          },
-        )
-        is Some(0),
-      }
-      Next(s)
-    }
-    Input("case37", _args) => {
-      let s = {
-        ..s,
-        ok: match @tutuca.builtin("truthy?") {
-          Some(b) =>
-            (b.apply)([
-              {
-                let m : Map[String, @tutuca.Value] = Map([])
-                for k, b in s.tags {
-                  m[k] = Bool(b)
-                }
-                (Map(m) : @tutuca.Value)
-              },
-            ]).is_truthy()
-          None => false
-        },
-      }
-      Next(s)
-    }
-    Input("case39", _args) => {
-      let s = { ..s, items: s.items + ["c"] }
-      Next(s)
-    }
-    Input("case40", _args) => {
-      guard 0 >= 0 && 0 <= s.items.length() else { return Unchanged }
-      let s = {
-        ..s,
-        items: s.items[0:0].to_owned() + ["z"] + s.items[0:].to_owned(),
-      }
-      Next(s)
-    }
-    Input("case41", _args) => {
-      guard 1 >= 0 && 1 < s.items.length() else { return Unchanged }
-      let s = {
-        ..s,
-        items: {
-          let a = s.items.copy()
-          a[1] = "B"
-          a
-        },
-      }
-      Next(s)
-    }
-    Input("case42", _args) => {
-      guard 0 >= 0 && 0 < s.items.length() else { return Unchanged }
-      let s = {
-        ..s,
-        items: s.items[0:0].to_owned() + s.items[0 + 1:].to_owned(),
-      }
-      Next(s)
-    }
-    Input("case43", _args) => {
-      guard 9 >= 0 && 9 < s.items.length() else { return Unchanged }
-      let s = {
-        ..s,
-        items: s.items[0:9].to_owned() + s.items[9 + 1:].to_owned(),
-      }
-      Next(s)
-    }
-    Input("case44", _args) => {
-      let s = {
-        ..s,
-        tags: {
-          let m = s.tags.copy()
-          m["x"] = true
-          m
-        },
-      }
-      let s = {
-        ..s,
-        tags: {
-          let m = s.tags.copy()
-          m["y"] = true
-          m
-        },
-      }
-      let s = {
-        ..s,
-        tags: {
-          let m = s.tags.copy()
-          m.remove("x")
-          m
-        },
-      }
-      let s = {
-        ..s,
-        tags: {
-          let m = s.tags.copy()
-          let k = "z"
-          if m.get(k) is Some(true) {
-            m.remove(k)
-          } else {
-            m[k] = true
-          }
-          m
-        },
-      }
-      Next(s)
-    }
-    Input("case45", _args) => {
+    Receive("case4", args) => {
+      guard args.get(0) is Some(Num(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
+      effects.push(() => {
+        ctx.forward(
+          None,
+          Some(@tutuca.IntentOpts::new(route=[@tutuca.Leg::Dyn])),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case5", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.forward(
+          None,
+          Some(@tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex])),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case6", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.forward(
+          None,
+          Some(
+            @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex, @tutuca.Leg::Dyn]),
+          ),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case7", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.forward(Some([(Str(s.name) : @tutuca.Value)]), None)
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case8", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => ctx.forward(None, None))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case9", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "saveDraft",
+          [(Str(s.name) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case10", args) => {
+      guard args.get(0) is Some(Num(k)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "picked",
+          [(Num(k) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Dyn]),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case11", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "loadRows",
+          [(Str(s.name) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case12", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "saveDraft",
+          [(Str(s.name) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex, @tutuca.Leg::Dyn]),
+        )
+      })
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case13", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "loadRows",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
       let s = { ..s, ok: true }
       effects.push(() => ctx.send("flash", [(Str(s.name) : @tutuca.Value)]))
       effects.push(() => ctx.stop_propagation())
@@ -611,59 +207,87 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case46", args) => {
+    Intent("case14", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Intent("case15", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => ctx.fail((Str("disk full") : @tutuca.Value)))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Intent("case16", args) => {
+      guard args.get(0) is Some(Num(k)) else { return Unchanged }
+      let s = { ..s, page: k.to_int() }
+      Next(s)
+    }
+    Intent("case17", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      effects.push(() => ctx.bubble("rowPicked", [(Num(k) : @tutuca.Value)]))
+      let s = { ..s, page: k.to_int() }
+      effects.push(() => ctx.forward(None, None))
       for f in effects {
         f()
       }
       Next(s)
     }
-    Receive("resetTo", args) => {
-      guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int() }
-      Next(s)
-    }
-    Receive("case48", args) => {
-      guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int() }
-      Next(s)
-    }
-    Input("case49", _args) => {
-      guard s.count.to_double() >= 0.0 else {
-        @tutuca.precondition_failed(
-          handler="case49",
-          pred="enoughA",
-          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
-        )
-        return Unchanged
+    Intent("case18", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      effects.push(() => ctx.reply((Num(1.0) : @tutuca.Value)))
+      effects.push(() => ctx.reply((Num(2.0) : @tutuca.Value)))
+      for f in effects {
+        f()
       }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       Next(s)
     }
-    Input("case50", _args) => {
+    Intent("case19", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => ctx.stop_propagation())
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Intent("case20", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
       guard s.count.to_double() > 0.0 else {
         @tutuca.precondition_failed(
-          handler="case50",
-          pred="enoughB",
+          handler="case20",
+          pred="hasSome",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
       }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      Next(s)
-    }
-    Input("case51", _args) => {
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      effects.push(() => {
-        ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
-      })
+      effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Intent("case21", args) => {
+      guard args.get(0) is Some(Str(_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       guard s.count.to_double() > 5.0 else {
         @tutuca.postcondition_failed(
-          handler="case51",
-          pred="smallA",
+          handler="case21",
+          pred="small",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -673,23 +297,14 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case52", _args) => {
-      let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      effects.push(() => {
-        ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
-      })
-      guard s.count.to_double() < 5.0 else {
-        @tutuca.postcondition_failed(
-          handler="case52",
-          pred="smallB",
-          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
-        )
-        return Unchanged
-      }
-      for f in effects {
-        f()
-      }
+    Receive("case22", args) => {
+      guard args.get(0) is Some(Num(n)) else { return Unchanged }
+      let s = { ..s, count: n.to_int() }
+      Next(s)
+    }
+    Receive("case23", args) => {
+      guard args.get(0) is Some(Str(why)) else { return Unchanged }
+      let s = { ..s, name: why }
       Next(s)
     }
     _ => Unhandled
@@ -697,19 +312,9 @@ fn corpus_inline_update(
 }
 
 ///|
-/// `pred enoughA` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// `pred hasSome` from the `<script type="tutuca/script">` block. GENERATED — edit
 /// the block, not this.
-fn corpus_compute_enoughA(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Bool(s.count.to_double() >= 0.0) : @tutuca.Value)
-}
-
-///|
-/// `pred enoughB` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_enoughB(
+fn corpus_compute_hasSome(
   s : CorpusState,
   _args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -717,259 +322,13 @@ fn corpus_compute_enoughB(
 }
 
 ///|
-/// `pred smallA` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// `pred small` from the `<script type="tutuca/script">` block. GENERATED — edit
 /// the block, not this.
-fn corpus_compute_smallA(
+fn corpus_compute_small(
   s : CorpusState,
   _args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
   (Bool(s.count.to_double() > 5.0) : @tutuca.Value)
-}
-
-///|
-/// `pred smallB` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_smallB(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Bool(s.count.to_double() < 5.0) : @tutuca.Value)
-}
-
-///|
-/// `compute v0_summary` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v0_summary(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (
-    Str(
-      (Str(s.name) : @tutuca.Value).to_display_string() +
-      ": " +
-      (Num(s.count.to_double()) : @tutuca.Value).to_display_string(),
-    ) : @tutuca.Value)
-}
-
-///|
-/// `compute v1_left` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v1_left(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Num(s.count.to_double() - s.items.length().to_double()) : @tutuca.Value)
-}
-
-///|
-/// `pred v2_over` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v2_over(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Bool(s.count.to_double() > 3.0) : @tutuca.Value)
-}
-
-///|
-/// `pred v3_moved` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v3_moved(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Bool(s.items.length().to_double() > 0.0) : @tutuca.Value)
-}
-
-///|
-/// `pred v4_named` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v4_named(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Str(s.name) : @tutuca.Value)
-}
-
-///|
-/// `pred v5_named` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v5_named(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Str(s.name) : @tutuca.Value)
-}
-
-///|
-/// `pred v5_named` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_when_v5_named(
-  s : CorpusState,
-  _key : @tutuca.Value,
-  _value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Bool {
-  (Str(s.name) : @tutuca.Value).is_truthy()
-}
-
-///|
-/// `pred v6_isAda` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v6_isAda(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (
-    Bool((Str(s.name) : @tutuca.Value) == (Str("ada") : @tutuca.Value)) :
-    @tutuca.Value)
-}
-
-///|
-/// `pred v7_over` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v7_over(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (Bool(s.count.to_double() > 3.0) : @tutuca.Value)
-}
-
-///|
-/// `compute v7_status` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v7_status(
-  s : CorpusState,
-  _args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  (
-    Str(
-      if corpus_compute_v7_over(s, []).is_truthy() {
-        "over"
-      } else {
-        "under"
-      },
-    ) : @tutuca.Value)
-}
-
-///|
-/// `pred v8_containsText` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v8_containsText(
-  s : CorpusState,
-  args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  let q = args.get(0).unwrap_or(Null)
-  guard q is Str(v1) else { return Null }
-  (Bool(s.name.to_lower().contains(v1.to_lower())) : @tutuca.Value)
-}
-
-///|
-/// `pred v9_containsText` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_compute_v9_containsText(
-  s : CorpusState,
-  args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  let q = args.get(0).unwrap_or(Null)
-  guard q is Str(v1) else { return Null }
-  (Bool(s.name.to_lower().contains(v1.to_lower())) : @tutuca.Value)
-}
-
-///|
-/// `pred v10_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_when_v10_matches(
-  s : CorpusState,
-  _key : @tutuca.Value,
-  value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Bool {
-  guard value is Str(v1) else { return false }
-  (
-    (Str(s.name) : @tutuca.Value) is Null ||
-    @tutuca.size_of((Str(s.name) : @tutuca.Value)) is Some(0)
-  ) ||
-  v1.to_lower().contains(s.name.to_lower())
-}
-
-///|
-/// `pred v11_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_when_v11_matches(
-  s : CorpusState,
-  _key : @tutuca.Value,
-  value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Bool {
-  guard value is Str(v1) else { return false }
-  (
-    (Str(s.name) : @tutuca.Value) is Null ||
-    @tutuca.size_of((Str(s.name) : @tutuca.Value)) is Some(0)
-  ) ||
-  v1.to_lower().contains(s.name.to_lower())
-}
-
-///|
-/// `pred v12_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_when_v12_matches(
-  _s : CorpusState,
-  _key : @tutuca.Value,
-  value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Bool {
-  guard value is Str(v1) else { return false }
-  v1.to_lower().contains("a")
-}
-
-///|
-/// `pred v13_firstOnly` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_when_v13_firstOnly(
-  _s : CorpusState,
-  key : @tutuca.Value,
-  _value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Bool {
-  key == (Num(0.0) : @tutuca.Value)
-}
-
-///|
-/// `enrich v14_row` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_enrich_v14_row(
-  _s : CorpusState,
-  binds : Map[String, @tutuca.Value],
-  _key : @tutuca.Value,
-  value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Unit {
-  binds["tag"] = (Str(value.to_display_string()) : @tutuca.Value)
-}
-
-///|
-/// `enrich v15_row` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_enrich_v15_row(
-  _s : CorpusState,
-  binds : Map[String, @tutuca.Value],
-  _key : @tutuca.Value,
-  value : @tutuca.Value,
-  _iter_data : @tutuca.Value,
-) -> Unit {
-  binds["tag"] = (Str(value.to_display_string()) : @tutuca.Value)
-  binds["echo"] = (
-    Str(binds.get("tag").unwrap_or(Null).to_display_string()) : @tutuca.Value)
-}
-
-///|
-/// `enrichScope v16_info` from the `<script type="tutuca/script">` block. GENERATED — edit
-/// the block, not this.
-fn corpus_enrich_scope_v16_info(s : CorpusState) -> Map[String, @tutuca.Value] {
-  let binds : Map[String, @tutuca.Value] = Map([])
-  binds["len"] = (Num(s.name.length().to_double()) : @tutuca.Value)
-  binds
 }
 
 ///|
@@ -979,65 +338,7 @@ fn corpus_inline_compute() -> Map[
   String,
   (CorpusState, Array[@tutuca.Value]) -> @tutuca.Value,
 ] {
-  {
-    "enoughA": corpus_compute_enoughA,
-    "enoughB": corpus_compute_enoughB,
-    "smallA": corpus_compute_smallA,
-    "smallB": corpus_compute_smallB,
-    "v0_summary": corpus_compute_v0_summary,
-    "v1_left": corpus_compute_v1_left,
-    "v2_over": corpus_compute_v2_over,
-    "v3_moved": corpus_compute_v3_moved,
-    "v4_named": corpus_compute_v4_named,
-    "v5_named": corpus_compute_v5_named,
-    "v6_isAda": corpus_compute_v6_isAda,
-    "v7_over": corpus_compute_v7_over,
-    "v7_status": corpus_compute_v7_status,
-    "v8_containsText": corpus_compute_v8_containsText,
-    "v9_containsText": corpus_compute_v9_containsText,
-  }
-}
-
-///|
-/// The `when` names the `<script type="tutuca/script">` block answers.
-/// GENERATED — edit the block, not this.
-fn corpus_inline_when() -> Map[
-  String,
-  (CorpusState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-] {
-  {
-    "v5_named": corpus_when_v5_named,
-    "v10_matches": corpus_when_v10_matches,
-    "v11_matches": corpus_when_v11_matches,
-    "v12_matches": corpus_when_v12_matches,
-    "v13_firstOnly": corpus_when_v13_firstOnly,
-  }
-}
-
-///|
-/// The `enrich` names the `<script type="tutuca/script">` block answers.
-/// GENERATED — edit the block, not this.
-fn corpus_inline_enrich() -> Map[
-  String,
-  (
-    CorpusState,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit,
-] {
-  { "v14_row": corpus_enrich_v14_row, "v15_row": corpus_enrich_v15_row }
-}
-
-///|
-/// The `enrich_scope` names the `<script type="tutuca/script">` block answers.
-/// GENERATED — edit the block, not this.
-fn corpus_inline_enrich_scope() -> Map[
-  String,
-  (CorpusState) -> Map[String, @tutuca.Value],
-] {
-  { "v16_info": corpus_enrich_scope_v16_info }
+  { "hasSome": corpus_compute_hasSome, "small": corpus_compute_small }
 }
 
 ///|
@@ -1059,8 +360,6 @@ pub fn corpus_component(
   update? : (CorpusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CorpusState,
   ],
-  compute? : (CorpusMethod) -> ((CorpusState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  swap? : (CorpusInput) -> ((CorpusState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1082,89 +381,7 @@ pub fn corpus_component(
         answered => answered
       }
     },
-    compute={
-      let bucket = match compute {
-        Some(f) =>
-          @component.build_bucket(
-            (
-              [Long, V10Matches, V11Matches, V12Matches, V13FirstOnly] :
-              Array[CorpusMethod]),
-            CorpusMethod::name,
-            f,
-          )
-        None => Map([])
-      }
-      for k, h in corpus_inline_compute() {
-        bucket[k] = h
-      }
-      bucket
-    },
-    swap=match swap {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              Case0,
-              Case1,
-              Case10,
-              Case11,
-              Case12,
-              Case13,
-              Case14,
-              Case15,
-              Case16,
-              Case17,
-              Case18,
-              Case19,
-              Case2,
-              Case20,
-              Case21,
-              Case22,
-              Case23,
-              Case24,
-              Case25,
-              Case26,
-              Case27,
-              Case28,
-              Case29,
-              Case3,
-              Case30,
-              Case31,
-              Case32,
-              Case33,
-              Case34,
-              Case35,
-              Case36,
-              Case37,
-              Case38,
-              Case39,
-              Case4,
-              Case40,
-              Case41,
-              Case42,
-              Case43,
-              Case44,
-              Case45,
-              Case46,
-              Case48,
-              Case49,
-              Case5,
-              Case50,
-              Case51,
-              Case52,
-              Case6,
-              Case7,
-              Case8,
-              Case9,
-            ] : Array[CorpusInput]),
-          CorpusInput::name,
-          f,
-        )
-      None => Map([])
-    },
-    when=corpus_inline_when(),
-    enrich=corpus_inline_enrich(),
-    enrich_scope=corpus_inline_enrich_scope(),
+    compute=corpus_inline_compute(),
     slots~,
     slot_args~,
     provide~,

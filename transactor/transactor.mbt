@@ -1,17 +1,9 @@
-// The dispatcher (src/transactor.js): queue, the four channels, and the
-// leaf-update core (updateRootValue) with completion accounting.
+// The dispatcher: the queue, the two channels — an addressed message and an
+// intent's walk — and the leaf-update core with completion accounting.
 
 ///|
-pub fn Transactor::new(
-  root : @tutuca.Value,
-  requests? : &Requests,
-  intents? : &Intents,
-) -> Transactor {
+pub fn Transactor::new(root : @tutuca.Value, intents? : &Intents) -> Transactor {
   {
-    requests: match requests {
-      Some(r) => r
-      None => NoRequests::{  }
-    },
     intents: match intents {
       Some(i) => i
       None => NoIntents::{  }
@@ -153,10 +145,10 @@ fn Transactor::link(
 }
 
 ///|
-/// One queued dispatch. Every channel differs in a field or three — the
-/// bucket, whether it bubbles, a pre-pinned response path — and used to say
-/// so by writing all fourteen out, four times over, so a new field meant
-/// finding all four.
+/// One queued dispatch. The channels differ in a field or three — the bucket,
+/// the walk it belongs to, a pre-pinned answer path — and used to say so by
+/// writing all fourteen out, once per channel, so a new field meant finding
+/// every one of them.
 fn Transactor::mk_txn(
   self : Transactor,
   path : @tutuca.DispatchPath,
@@ -164,8 +156,6 @@ fn Transactor::mk_txn(
   name : String,
   args : Array[@tutuca.Value],
   target_path? : @tutuca.DispatchPath,
-  bubbles? : Bool = false,
-  skip_self? : Bool = false,
   txn_path? : @tutuca.Path,
   parent? : Transaction,
   walk? : IntentWalk,
@@ -178,8 +168,6 @@ fn Transactor::mk_txn(
     name,
     args,
     target_path: target_path.unwrap_or(path),
-    bubbles,
-    skip_self,
     txn_path,
     parent,
     walk,
@@ -200,147 +188,8 @@ pub fn Transactor::push_send(
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
-  skip_self? : Bool = false,
-  bubbles? : Bool = false,
 ) -> Transaction {
-  self.link(
-    self.mk_txn(path, Receive, name, args, bubbles~, skip_self~, parent?),
-    parent,
-  )
-}
-
-///|
-pub fn Transactor::push_input(
-  self : Transactor,
-  path : @tutuca.DispatchPath,
-  name : String,
-  args : Array[@tutuca.Value],
-  parent? : Transaction,
-) -> Transaction {
-  self.link(self.mk_txn(path, Input, name, args, parent?), parent)
-}
-
-///|
-/// One bubble hop (JS BubbleEvent): bucket Bubble, keeps bubbling until
-/// stop_propagation or the root; target_path stays the fixed origin.
-fn Transactor::push_bubble(
-  self : Transactor,
-  path : @tutuca.DispatchPath,
-  name : String,
-  args : Array[@tutuca.Value],
-  parent : Transaction?,
-  target_path : @tutuca.DispatchPath,
-) -> Transaction {
-  self.link(
-    self.mk_txn(path, Bubble, name, args, target_path~, bubbles=true, parent?),
-    parent,
-  )
-}
-
-///|
-pub fn Transactor::push_request(
-  self : Transactor,
-  path : @tutuca.DispatchPath,
-  name : String,
-  args : Array[@tutuca.Value],
-  opts? : @tutuca.RequestOpts,
-  parent? : Transaction,
-) -> Unit {
-  let opts = match opts {
-    Some(o) => o
-    None => @tutuca.RequestOpts::new()
-  }
-  // Track on the parent NOW — during the parent's handler, while its
-  // self-unit is still held — then transfer the unit onto the response's
-  // subtree so the parent stays open until the whole response chain settles.
-  let release = match parent {
-    Some(p) => Some(p.completion().track())
-    None => None
-  }
-  let cur_root = self.root
-  let txn_path = path.to_transaction_path()
-  let found = match txn_path.lookup(cur_root) {
-    Some(leaf) => self.requests.request_for(leaf, name)
-    None => None
-  }
-  // Pin field-resolved keys to their value NOW, so the response updates the
-  // item that issued the request even if the key changes while the request
-  // is in flight. live_path opts out and re-evaluates on response.
-  let res_path = if opts.live_path {
-    None
-  } else {
-    Some(txn_path.pin_keys(cur_root))
-  }
-  let base_name = match opts.on_res_name {
-    Some(n) => n
-    None => name
-  }
-  // observe the outgoing request (the response side is observed later when
-  // its ResponseEvent flows through transact)
-  if !self.observers.is_empty() {
-    self.emit_record(
-      Request,
-      name,
-      args,
-      txn_path.pin_keys(cur_root),
-      path,
-      if found is Some(_) {
-        Exact
-      } else {
-        NoHandler
-      },
-      txn_path.lookup(cur_root),
-      None,
-    )
-  }
-  let responded : Ref[Bool] = { val: false }
-  let respond = (result : Result[@tutuca.Value, @tutuca.Value]) => {
-    if responded.val {
-      return
-    }
-    responded.val = true
-    let (specific, res_args) = match result {
-      Ok(v) =>
-        (
-          opts.on_ok_name,
-          match opts.on_ok_name {
-            Some(_) => [v]
-            None => [v, Null]
-          },
-        )
-      Err(e) =>
-        (
-          opts.on_error_name,
-          match opts.on_error_name {
-            Some(_) => [e]
-            None => [Null, e]
-          },
-        )
-    }
-    let t = self.mk_txn(
-      path,
-      Response,
-      match specific {
-        Some(n) => n
-        None => base_name
-      },
-      res_args,
-      txn_path?=res_path,
-      parent?,
-    )
-    // transfer the parent's request-unit onto the response's subtree; the
-    // response is queued directly (not link), so it is not counted twice
-    match release {
-      Some(r) => t.completion().on_subtree_settled(r)
-      None => ()
-    }
-    self.queue.push(t)
-    self.settle() |> ignore
-  }
-  match found {
-    Some(RequestHandler(f)) => f(args, respond)
-    None => respond(Err(Str("Request not found: \{name}")))
-  }
+  self.link(self.mk_txn(path, Receive, name, args, parent?), parent)
 }
 
 ///|
@@ -390,7 +239,7 @@ pub fn Transactor::settle(
 ///|
 fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   let cur = self.root
-  let next = if t.skip_self { cur } else { self.update_root_value(t, cur) }
+  let next = self.update_root_value(t, cur)
   // Physical identity, because that is exactly what the copy-on-write spine
   // preserves: a handler that wrote the value already stored hands back the
   // untouched root, and a root that did not change must not wake the
@@ -533,15 +382,6 @@ fn Transaction::after_transaction(self : Transaction) -> Unit {
     }
     None => ()
   }
-  if self.bubbles && self.path.items.length() > 0 {
-    let _ = self.transactor.push_bubble(
-      self.path.pop_step(),
-      self.name,
-      self.args,
-      Some(self),
-      self.target_path,
-    )
-  }
 }
 
 ///|
@@ -574,18 +414,6 @@ impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
 }
 
 ///|
-impl @tutuca.Ctx for EventContext with fn bubble_at_path(self, path, name, args) {
-  let _ = self.txn.transactor.push_send(
-    path,
-    name,
-    args,
-    parent=self.txn,
-    skip_self=true,
-    bubbles=true,
-  )
-}
-
-///|
 /// The component instance a chain node carries, with its component id — None
 /// for non-component nodes (JS Components.getCompFor returning null).
 fn node_component(node : @tutuca.Value) -> (Int, @tutuca.Value)? {
@@ -615,19 +443,12 @@ impl @tutuca.Ctx for EventContext with fn walk_path(self, callback) {
 }
 
 ///|
-impl @tutuca.Ctx for EventContext with fn request(self, name, args, opts) {
-  self.txn.transactor.push_request(
-    self.txn.path,
-    name,
-    args,
-    opts~,
-    parent=self.txn,
-  )
+impl @tutuca.Ctx for EventContext with fn is_answer(self) {
+  self.txn.is_answer
 }
 
 ///|
 impl @tutuca.Ctx for EventContext with fn stop_propagation(self) {
-  self.txn.bubbles = false
   // "served, and no answer" (`totuka-v2.md` section 6). The walk ends and the
   // sender is told nothing, even when it declared an arm — which is exactly
   // what separates `stop` from letting the route run out.
