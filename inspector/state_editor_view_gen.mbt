@@ -92,6 +92,61 @@ impl @component.Fields for StateEditorRowState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum StateEditorRowReceive {
+  Edit(@tutuca.Value)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn StateEditorRowReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> StateEditorRowReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("edit", [a0]) => Edit(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn StateEditorRowReceive::to_dispatch(
+  self : StateEditorRowReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Edit(a0) => ("edit", [a0])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn StateEditorRowReceive::send(
+  self : StateEditorRowReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let state_editor_row_common_style : String = ""
 

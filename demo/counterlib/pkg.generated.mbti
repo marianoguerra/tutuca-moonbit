@@ -43,6 +43,9 @@ pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum CounterReceive {
   ResetTo(Int)
+  Add(Double)
+  ResetCount
+  SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterReceive::from_dispatch(@component.Dispatch) -> Self?

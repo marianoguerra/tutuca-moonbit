@@ -20,7 +20,11 @@ fn palette_row_comp() -> @component.Component {
       Some(Unknown(_, _)) | None =>
         match PaletteRowReceive::from_dispatch(msg) {
           Some(SetSelected(selected)) => Next({ ..s, selected, })
-          Some(Unknown(_, _)) | None => Unhandled
+          // The merged `Receive` now carries this component's own VIEW names as
+          // well as the schema's, so `Unknown` no longer covers everything this
+          // match has nothing to say about. They are answered by the Input match
+          // beside this one, and task 19 folds the two into one.
+          _ => Unhandled
         }
     }
   })
@@ -159,7 +163,11 @@ fn schema_form_comp() -> @component.Component {
         ctx.bubble("cancelForm", [])
         return Unchanged
       }
-      Some(Unknown(_, _)) | None => ()
+      // The merged `Receive` now carries this component's own VIEW names as
+      // well as the schema's, so `Unknown` no longer covers everything this
+      // match has nothing to say about. They are answered by the Input match
+      // beside this one, and task 19 folds the two into one.
+      _ => ()
     }
     match SchemaFormReceive::from_dispatch(msg) {
       // Errors arrive keyed by JSON Pointer (`/email`), because that is what
@@ -176,7 +184,11 @@ fn schema_form_comp() -> @component.Component {
         let general = by_field.get("").unwrap_or(Str("")).str()
         return Next({ ..s, fields, error: general })
       }
-      Some(Unknown(_, _)) | None => ()
+      // The merged `Receive` now carries this component's own VIEW names as
+      // well as the schema's, so `Unknown` no longer covers everything this
+      // match has nothing to say about. They are answered by the Input match
+      // beside this one, and task 19 folds the two into one.
+      _ => ()
     }
     match msg {
       Bubble("fieldEdited", _) => Next({ ..s, error: "" })

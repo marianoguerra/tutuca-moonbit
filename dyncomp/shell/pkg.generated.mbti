@@ -64,6 +64,9 @@ pub(all) enum LoaderBarReceive {
   FilesDropped(@core.Value)
   DyncompLoaded(String)
   DyncompError(String)
+  LoadSample(@core.Value)
+  LoadUrl
+  TypeUrl(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn LoaderBarReceive::from_dispatch(@component.Dispatch) -> Self?

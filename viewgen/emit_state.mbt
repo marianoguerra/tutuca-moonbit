@@ -23,6 +23,7 @@ fn emit_state(
   def : @statedef.StateDef,
   inits : Array[@statedef.InitState],
   derives : String,
+  surface : Surface,
   out : StringBuilder,
 ) -> Unit raise GenError {
   emit_user_types(def, derives, out)
@@ -30,7 +31,7 @@ fn emit_state(
   emit_zero(t, def, out)
   emit_inits(t, v, def, inits, out)
   emit_codec(t, def, out)
-  emit_msgs(t, def, out)
+  emit_msgs(t, def, surface, out)
 }
 
 ///|

@@ -248,6 +248,89 @@ pub fn CorpusV2Receive::send(
 }
 
 ///|
+/// The Intent arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant intent` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum CorpusV2Intent {
+  Case14(String)
+  Case15(String)
+  Case16(Int)
+  Case17(Int)
+  Case18(String)
+  Case19(String)
+  Case20(String)
+  Case21(String)
+  /// A intent the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Intent dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn CorpusV2Intent::from_dispatch(
+  d : @component.Dispatch,
+) -> CorpusV2Intent? {
+  guard d is Intent(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("case14", [Str(a0)]) => Case14(a0)
+      ("case15", [Str(a0)]) => Case15(a0)
+      ("case16", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case16(a0.to_int())
+      ("case17", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case17(a0.to_int())
+      ("case18", [Str(a0)]) => Case18(a0)
+      ("case19", [Str(a0)]) => Case19(a0)
+      ("case20", [Str(a0)]) => Case20(a0)
+      ("case21", [Str(a0)]) => Case21(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn CorpusV2Intent::to_dispatch(
+  self : CorpusV2Intent,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Case14(a0) => ("case14", [Str(a0)])
+    Case15(a0) => ("case15", [Str(a0)])
+    Case16(a0) => ("case16", [Num(a0.to_double())])
+    Case17(a0) => ("case17", [Num(a0.to_double())])
+    Case18(a0) => ("case18", [Str(a0)])
+    Case19(a0) => ("case19", [Str(a0)])
+    Case20(a0) => ("case20", [Str(a0)])
+    Case21(a0) => ("case21", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CorpusV2Intent::dispatch(
+  self : CorpusV2Intent,
+  ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.intent(name, args, opts)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let corpus_v2_common_style : String = ""
 

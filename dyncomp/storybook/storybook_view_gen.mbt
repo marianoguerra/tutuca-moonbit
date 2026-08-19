@@ -71,6 +71,61 @@ impl @component.Fields for StoryNavState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum StoryNavReceive {
+  Pick
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn StoryNavReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> StoryNavReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("pick", []) => Pick
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn StoryNavReceive::to_dispatch(
+  self : StoryNavReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Pick => ("pick", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn StoryNavReceive::send(
+  self : StoryNavReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The Bubble arm of @component.Dispatch, decoded.
 ///
 /// Declared as `variant bubble` in the state block. These names are
@@ -302,6 +357,61 @@ impl @component.Fields for StoryCardState with fn decode(f) {
     target: v_target,
     error: v_error,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum StoryCardReceive {
+  Rebuild
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn StoryCardReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> StoryCardReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("rebuild", []) => Rebuild
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn StoryCardReceive::to_dispatch(
+  self : StoryCardReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Rebuild => ("rebuild", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn StoryCardReceive::send(
+  self : StoryCardReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -597,6 +707,12 @@ pub(all) enum DyncompStorybookReceive {
   /// by a host that pushes the news itself, and by every test here.
   CatalogChanged(String)
   SetStatus(String)
+  ChooseTheme(String)
+  FilesDropped(String)
+  SetQuery(String)
+  ShowAll
+  ToggleDetails
+  ToggleWide
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -616,6 +732,12 @@ pub fn DyncompStorybookReceive::from_dispatch(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
       ("setStatus", [Str(a0)]) => SetStatus(a0)
+      ("chooseTheme", [Str(a0)]) => ChooseTheme(a0)
+      ("filesDropped", [Str(a0)]) => FilesDropped(a0)
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      ("showAll", []) => ShowAll
+      ("toggleDetails", []) => ToggleDetails
+      ("toggleWide", []) => ToggleWide
       _ => Unknown(name, args)
     },
   )
@@ -629,6 +751,12 @@ pub fn DyncompStorybookReceive::to_dispatch(
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
     SetStatus(a0) => ("setStatus", [Str(a0)])
+    ChooseTheme(a0) => ("chooseTheme", [Str(a0)])
+    FilesDropped(a0) => ("filesDropped", [Str(a0)])
+    SetQuery(a0) => ("setQuery", [Str(a0)])
+    ShowAll => ("showAll", [])
+    ToggleDetails => ("toggleDetails", [])
+    ToggleWide => ("toggleWide", [])
     Unknown(n, args) => (n, args)
   }
 }

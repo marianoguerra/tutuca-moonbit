@@ -91,6 +91,9 @@ pub fn CommandBarMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum CommandBarReceive {
   SetCursor(Int)
+  Close
+  Nav(String)
+  SetQuery(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CommandBarReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -126,6 +129,14 @@ pub(all) enum ConfigPanelMsg {
 }
 pub fn ConfigPanelMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ConfigPanelReceive {
+  Close
+  Unknown(String, Array[@core.Value])
+}
+pub fn ConfigPanelReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ConfigPanelReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ConfigPanelReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct ConfigPanelState {
   title : String
   mode : String
@@ -156,6 +167,7 @@ pub fn PaletteRowMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum PaletteRowReceive {
   SetSelected(Bool)
+  Pick(Bool)
   Unknown(String, Array[@core.Value])
 }
 pub fn PaletteRowReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -192,6 +204,14 @@ pub(all) enum SchemaFieldMsg {
 }
 pub fn SchemaFieldMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SchemaFieldReceive {
+  Edit(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFieldReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaFieldReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaFieldReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SchemaFieldState {
   name : String
   kind : String
@@ -224,6 +244,9 @@ pub fn SchemaFormMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum SchemaFormReceive {
   ShowErrors(@core.Value)
+  Cancel
+  Create
+  UseInit(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaFormReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -266,6 +289,9 @@ pub fn UniversalAppMsg::from_dispatch(@component.Dispatch) -> Self?
 pub(all) enum UniversalAppReceive {
   CatalogChanged(String)
   RestoreTree(@core.Value)
+  FilesDropped(String)
+  OpenCommand
+  ToggleMode
   Unknown(String, Array[@core.Value])
 }
 pub fn UniversalAppReceive::from_dispatch(@component.Dispatch) -> Self?

@@ -120,6 +120,9 @@ pub(all) enum LoaderBarReceive {
   /// asked for the load.
   DyncompLoaded(String)
   DyncompError(String)
+  LoadSample(@tutuca.Value)
+  LoadUrl
+  TypeUrl(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -140,6 +143,9 @@ pub fn LoaderBarReceive::from_dispatch(
       ("filesDropped", [a0]) => FilesDropped(a0)
       ("dyncompLoaded", [Str(a0)]) => DyncompLoaded(a0)
       ("dyncompError", [Str(a0)]) => DyncompError(a0)
+      ("loadSample", [a0]) => LoadSample(a0)
+      ("loadUrl", []) => LoadUrl
+      ("typeUrl", [Str(a0)]) => TypeUrl(a0)
       _ => Unknown(name, args)
     },
   )
@@ -154,6 +160,9 @@ pub fn LoaderBarReceive::to_dispatch(
     FilesDropped(a0) => ("filesDropped", [a0])
     DyncompLoaded(a0) => ("dyncompLoaded", [Str(a0)])
     DyncompError(a0) => ("dyncompError", [Str(a0)])
+    LoadSample(a0) => ("loadSample", [a0])
+    LoadUrl => ("loadUrl", [])
+    TypeUrl(a0) => ("typeUrl", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }

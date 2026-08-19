@@ -125,6 +125,58 @@ pub fn CorpusMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum CorpusReceive {
   ResetTo(Int)
+  Case0
+  Case1
+  Case10
+  Case11
+  Case12
+  Case13
+  Case14
+  Case15
+  Case16(Double)
+  Case17(Double)
+  Case18
+  Case19
+  Case2
+  Case20
+  Case21
+  Case22
+  Case23
+  Case24
+  Case25
+  Case26
+  Case27
+  Case28
+  Case29
+  Case3
+  Case30
+  Case31
+  Case32
+  Case33
+  Case34
+  Case35(Double)
+  Case36
+  Case37
+  Case38
+  Case39
+  Case4
+  Case40
+  Case41
+  Case42
+  Case43
+  Case44
+  Case45
+  Case46(Double)
+  Case48(Double)
+  Case49
+  Case5(Double)
+  Case50
+  Case51
+  Case52
+  Case6(String, String)
+  Case7
+  Case8
+  Case9
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -142,6 +194,21 @@ pub(all) struct CorpusState {
   page : Int
 }
 pub fn CorpusState::zero() -> Self
+
+pub(all) enum CorpusV2Intent {
+  Case14(String)
+  Case15(String)
+  Case16(Int)
+  Case17(Int)
+  Case18(String)
+  Case19(String)
+  Case20(String)
+  Case21(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CorpusV2Intent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn CorpusV2Intent::from_dispatch(@component.Dispatch) -> Self?
+pub fn CorpusV2Intent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CorpusV2Label {
   text : String

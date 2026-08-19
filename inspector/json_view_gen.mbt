@@ -495,6 +495,67 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonArrayReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonArrayReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonArrayReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonArrayReceive::to_dispatch(
+  self : JsonArrayReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonArrayReceive::send(
+  self : JsonArrayReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let json_array_common_style : String = ""
 
@@ -690,6 +751,67 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
     itemsPerPage: v_itemsPerPage,
     currentPage: v_currentPage,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonObjectReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonObjectReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonObjectReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonObjectReceive::to_dispatch(
+  self : JsonObjectReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonObjectReceive::send(
+  self : JsonObjectReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

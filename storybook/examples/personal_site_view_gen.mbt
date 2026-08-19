@@ -381,6 +381,12 @@ impl @component.Fields for RootState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RootReceive {
   Init
+  ClearFilters
+  OnCategoryToggle(@tutuca.Value, Bool)
+  OnRoleToggle(@tutuca.Value, Bool)
+  OnToggleFeaturedFirst
+  OnToggleSortAsc
+  OnToggleSortByEnd
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -397,6 +403,12 @@ pub fn RootReceive::from_dispatch(d : @component.Dispatch) -> RootReceive? {
   Some(
     match (name, args) {
       ("init", []) => Init
+      ("clearFilters", []) => ClearFilters
+      ("onCategoryToggle", [a0, Bool(a1)]) => OnCategoryToggle(a0, a1)
+      ("onRoleToggle", [a0, Bool(a1)]) => OnRoleToggle(a0, a1)
+      ("onToggleFeaturedFirst", []) => OnToggleFeaturedFirst
+      ("onToggleSortAsc", []) => OnToggleSortAsc
+      ("onToggleSortByEnd", []) => OnToggleSortByEnd
       _ => Unknown(name, args)
     },
   )
@@ -409,6 +421,12 @@ pub fn RootReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
+    ClearFilters => ("clearFilters", [])
+    OnCategoryToggle(a0, a1) => ("onCategoryToggle", [a0, Bool(a1)])
+    OnRoleToggle(a0, a1) => ("onRoleToggle", [a0, Bool(a1)])
+    OnToggleFeaturedFirst => ("onToggleFeaturedFirst", [])
+    OnToggleSortAsc => ("onToggleSortAsc", [])
+    OnToggleSortByEnd => ("onToggleSortByEnd", [])
     Unknown(n, args) => (n, args)
   }
 }

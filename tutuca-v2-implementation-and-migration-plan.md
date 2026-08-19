@@ -72,7 +72,7 @@ Two consequences worth stating outright.
 - [x] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
 - [x] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
 - [x] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
-- [ ] 12. [`viewgen`: merge four enums into two](#12-viewgen-merge-four-enums-into-two)
+- [x] 12. [`viewgen`: merge four enums into two](#12-viewgen-merge-four-enums-into-two)
 
 **Phase 3 — the DOM boundary**
 
@@ -840,6 +840,48 @@ reimplement it.
 
 **Validation.** `viewgen/emit_test.mbt` snapshots, then `just dev gen-views` and
 a drift check across the repository.
+
+**Done.** `<T>Receive` is now the schema's `receive` variant **merged with the
+view names** (`merged_receive`), and `<T>Intent` comes from the schema's
+`intent` variant with `dispatch` as its raiser. `<T>Msg`, `<T>Input`,
+`<T>Bubble` and `<T>Response` are still emitted and go in task 25.
+
+**The new build error exists and is `PayloadDisagrees`.** When a name is in both
+places the schema wins and `check_payload` compares the view's inferred shape
+against the declared payload — arity first, then scalar kind. v1 cannot report
+this because the view's `bump` is a `<T>Msg` variant and the schema's is a
+`<T>Receive` variant, and nothing in the generator ever puts the two side by
+side. `arg_fits` keeps the package's governing rule: `VValue` fits everything,
+because it is what the inference answers when it could not read a scalar, and a
+non-scalar declared type takes anything since the payload rides as a raw
+`@tutuca.Value` either way.
+
+**The merge fired nothing across the repository.** 44 generated modules changed
+and not one call site disagreed with a schema — which is worth recording as a
+measurement rather than as luck.
+
+**What it DID surface is better than an error.** Seven hand-written `match`es
+over `<T>Receive` became non-exhaustive, because the enum now carries their
+components' own view names: `dyncomp/shell`, `dyncomp/storybook`,
+`dyncomp/ui/std`, `dyncomp/ui/components` (twice) and `dyncomp/ui/universal_app`.
+Each said `Some(Unknown(_, _)) | None => …`, and `Unknown` stopped covering
+everything they had nothing to say about. Each now says `_ => …` with a comment
+pointing at task 19, which is where the two matches in each of those components
+fold into one. **That list is the merge doing its job**: those are exactly the
+components whose view names can now be answered from a parent.
+
+**The risk held.** The payload-type inference was not touched. `msg_of_sig`
+reads `InputSig` and reuses `emit_inline.mbt`'s existing `arg_state_ty` rather
+than a second copy, so the host element's static `type` attribute is still read
+in exactly one place.
+
+**One test had to be narrowed rather than changed.** `a name the script block
+answers is dropped from the Msg enum` asked `src.contains("  Bump(Double)\n")`
+of the whole file, and v2 emits that name again in the merged `<T>Receive` —
+deliberately. `<T>Msg` is decode-only, so dropping an unreachable arm costs
+nothing; `<T>Receive` is a RAISE surface too, and a component sending `bump` to
+itself writes `ChatReceive::Bump(1.0).send(ctx)` precisely because the block
+answers it. The assertion now names the enum it means.
 
 ## 13. Generate the DOM property table
 

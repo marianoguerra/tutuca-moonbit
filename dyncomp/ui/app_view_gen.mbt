@@ -85,6 +85,7 @@ impl @component.Fields for PaletteRowState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum PaletteRowReceive {
   SetSelected(Bool)
+  Pick(Bool)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -103,6 +104,7 @@ pub fn PaletteRowReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setSelected", [Bool(a0)]) => SetSelected(a0)
+      ("pick", [Bool(a0)]) => Pick(a0)
       _ => Unknown(name, args)
     },
   )
@@ -115,6 +117,7 @@ pub fn PaletteRowReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetSelected(a0) => ("setSelected", [Bool(a0)])
+    Pick(a0) => ("pick", [Bool(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -354,6 +357,9 @@ impl @component.Fields for CommandBarState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CommandBarReceive {
   SetCursor(Int)
+  Close
+  Nav(String)
+  SetQuery(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -374,6 +380,9 @@ pub fn CommandBarReceive::from_dispatch(
       ("setCursor", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => SetCursor(a0.to_int())
+      ("close", []) => Close
+      ("nav", [Str(a0)]) => Nav(a0)
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => Unknown(name, args)
     },
   )
@@ -386,6 +395,9 @@ pub fn CommandBarReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     SetCursor(a0) => ("setCursor", [Num(a0.to_double())])
+    Close => ("close", [])
+    Nav(a0) => ("nav", [Str(a0)])
+    SetQuery(a0) => ("setQuery", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -595,6 +607,61 @@ impl @component.Fields for SchemaFieldState with fn decode(f) {
     choices: v_choices,
     error: v_error,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaFieldReceive {
+  Edit(@tutuca.Value)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaFieldReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaFieldReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("edit", [a0]) => Edit(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaFieldReceive::to_dispatch(
+  self : SchemaFieldReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Edit(a0) => ("edit", [a0])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaFieldReceive::send(
+  self : SchemaFieldReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -846,6 +913,9 @@ impl @component.Fields for SchemaFormState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum SchemaFormReceive {
   ShowErrors(@tutuca.Value)
+  Cancel
+  Create
+  UseInit(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -864,6 +934,9 @@ pub fn SchemaFormReceive::from_dispatch(
   Some(
     match (name, args) {
       ("showErrors", [a0]) => ShowErrors(a0)
+      ("cancel", []) => Cancel
+      ("create", []) => Create
+      ("useInit", [a0]) => UseInit(a0)
       _ => Unknown(name, args)
     },
   )
@@ -876,6 +949,9 @@ pub fn SchemaFormReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ShowErrors(a0) => ("showErrors", [a0])
+    Cancel => ("cancel", [])
+    Create => ("create", [])
+    UseInit(a0) => ("useInit", [a0])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1048,6 +1124,61 @@ impl @component.Fields for ConfigPanelState with fn decode(f) {
   let v_target = f.get("target").unwrap_or(Null)
   let v_form = f.get("form").unwrap_or(Null)
   Some({ title: v_title, mode: v_mode, target: v_target, form: v_form })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ConfigPanelReceive {
+  Close
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ConfigPanelReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ConfigPanelReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("close", []) => Close
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ConfigPanelReceive::to_dispatch(
+  self : ConfigPanelReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Close => ("close", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ConfigPanelReceive::send(
+  self : ConfigPanelReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -1290,6 +1421,9 @@ pub(all) enum UniversalAppReceive {
   CatalogChanged(String)
   /// A whole tree, from wherever the shell keeps them.
   RestoreTree(@tutuca.Value)
+  FilesDropped(String)
+  OpenCommand
+  ToggleMode
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1309,6 +1443,9 @@ pub fn UniversalAppReceive::from_dispatch(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
       ("restoreTree", [a0]) => RestoreTree(a0)
+      ("filesDropped", [Str(a0)]) => FilesDropped(a0)
+      ("openCommand", []) => OpenCommand
+      ("toggleMode", []) => ToggleMode
       _ => Unknown(name, args)
     },
   )
@@ -1322,6 +1459,9 @@ pub fn UniversalAppReceive::to_dispatch(
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
     RestoreTree(a0) => ("restoreTree", [a0])
+    FilesDropped(a0) => ("filesDropped", [Str(a0)])
+    OpenCommand => ("openCommand", [])
+    ToggleMode => ("toggleMode", [])
     Unknown(n, args) => (n, args)
   }
 }

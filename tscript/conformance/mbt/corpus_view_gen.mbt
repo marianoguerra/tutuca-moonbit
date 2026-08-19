@@ -146,6 +146,58 @@ impl @component.Fields for CorpusState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CorpusReceive {
   ResetTo(Int)
+  Case0
+  Case1
+  Case10
+  Case11
+  Case12
+  Case13
+  Case14
+  Case15
+  Case16(Double)
+  Case17(Double)
+  Case18
+  Case19
+  Case2
+  Case20
+  Case21
+  Case22
+  Case23
+  Case24
+  Case25
+  Case26
+  Case27
+  Case28
+  Case29
+  Case3
+  Case30
+  Case31
+  Case32
+  Case33
+  Case34
+  Case35(Double)
+  Case36
+  Case37
+  Case38
+  Case39
+  Case4
+  Case40
+  Case41
+  Case42
+  Case43
+  Case44
+  Case45
+  Case46(Double)
+  Case48(Double)
+  Case49
+  Case5(Double)
+  Case50
+  Case51
+  Case52
+  Case6(String, String)
+  Case7
+  Case8
+  Case9
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -164,6 +216,58 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
       ("resetTo", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => ResetTo(a0.to_int())
+      ("case0", []) => Case0
+      ("case1", []) => Case1
+      ("case10", []) => Case10
+      ("case11", []) => Case11
+      ("case12", []) => Case12
+      ("case13", []) => Case13
+      ("case14", []) => Case14
+      ("case15", []) => Case15
+      ("case16", [Num(a0)]) => Case16(a0)
+      ("case17", [Num(a0)]) => Case17(a0)
+      ("case18", []) => Case18
+      ("case19", []) => Case19
+      ("case2", []) => Case2
+      ("case20", []) => Case20
+      ("case21", []) => Case21
+      ("case22", []) => Case22
+      ("case23", []) => Case23
+      ("case24", []) => Case24
+      ("case25", []) => Case25
+      ("case26", []) => Case26
+      ("case27", []) => Case27
+      ("case28", []) => Case28
+      ("case29", []) => Case29
+      ("case3", []) => Case3
+      ("case30", []) => Case30
+      ("case31", []) => Case31
+      ("case32", []) => Case32
+      ("case33", []) => Case33
+      ("case34", []) => Case34
+      ("case35", [Num(a0)]) => Case35(a0)
+      ("case36", []) => Case36
+      ("case37", []) => Case37
+      ("case38", []) => Case38
+      ("case39", []) => Case39
+      ("case4", []) => Case4
+      ("case40", []) => Case40
+      ("case41", []) => Case41
+      ("case42", []) => Case42
+      ("case43", []) => Case43
+      ("case44", []) => Case44
+      ("case45", []) => Case45
+      ("case46", [Num(a0)]) => Case46(a0)
+      ("case48", [Num(a0)]) => Case48(a0)
+      ("case49", []) => Case49
+      ("case5", [Num(a0)]) => Case5(a0)
+      ("case50", []) => Case50
+      ("case51", []) => Case51
+      ("case52", []) => Case52
+      ("case6", [Str(a0), Str(a1)]) => Case6(a0, a1)
+      ("case7", []) => Case7
+      ("case8", []) => Case8
+      ("case9", []) => Case9
       _ => Unknown(name, args)
     },
   )
@@ -176,6 +280,58 @@ pub fn CorpusReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ResetTo(a0) => ("resetTo", [Num(a0.to_double())])
+    Case0 => ("case0", [])
+    Case1 => ("case1", [])
+    Case10 => ("case10", [])
+    Case11 => ("case11", [])
+    Case12 => ("case12", [])
+    Case13 => ("case13", [])
+    Case14 => ("case14", [])
+    Case15 => ("case15", [])
+    Case16(a0) => ("case16", [Num(a0)])
+    Case17(a0) => ("case17", [Num(a0)])
+    Case18 => ("case18", [])
+    Case19 => ("case19", [])
+    Case2 => ("case2", [])
+    Case20 => ("case20", [])
+    Case21 => ("case21", [])
+    Case22 => ("case22", [])
+    Case23 => ("case23", [])
+    Case24 => ("case24", [])
+    Case25 => ("case25", [])
+    Case26 => ("case26", [])
+    Case27 => ("case27", [])
+    Case28 => ("case28", [])
+    Case29 => ("case29", [])
+    Case3 => ("case3", [])
+    Case30 => ("case30", [])
+    Case31 => ("case31", [])
+    Case32 => ("case32", [])
+    Case33 => ("case33", [])
+    Case34 => ("case34", [])
+    Case35(a0) => ("case35", [Num(a0)])
+    Case36 => ("case36", [])
+    Case37 => ("case37", [])
+    Case38 => ("case38", [])
+    Case39 => ("case39", [])
+    Case4 => ("case4", [])
+    Case40 => ("case40", [])
+    Case41 => ("case41", [])
+    Case42 => ("case42", [])
+    Case43 => ("case43", [])
+    Case44 => ("case44", [])
+    Case45 => ("case45", [])
+    Case46(a0) => ("case46", [Num(a0)])
+    Case48(a0) => ("case48", [Num(a0)])
+    Case49 => ("case49", [])
+    Case5(a0) => ("case5", [Num(a0)])
+    Case50 => ("case50", [])
+    Case51 => ("case51", [])
+    Case52 => ("case52", [])
+    Case6(a0, a1) => ("case6", [Str(a0), Str(a1)])
+    Case7 => ("case7", [])
+    Case8 => ("case8", [])
+    Case9 => ("case9", [])
     Unknown(n, args) => (n, args)
   }
 }

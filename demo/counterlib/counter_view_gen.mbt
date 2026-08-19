@@ -104,6 +104,9 @@ impl @component.Fields for CounterState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CounterReceive {
   ResetTo(Int)
+  Add(Double)
+  ResetCount
+  SetLabel(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -124,6 +127,9 @@ pub fn CounterReceive::from_dispatch(
       ("resetTo", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => ResetTo(a0.to_int())
+      ("add", [Num(a0)]) => Add(a0)
+      ("resetCount", []) => ResetCount
+      ("setLabel", [Str(a0)]) => SetLabel(a0)
       _ => Unknown(name, args)
     },
   )
@@ -136,6 +142,9 @@ pub fn CounterReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ResetTo(a0) => ("resetTo", [Num(a0.to_double())])
+    Add(a0) => ("add", [Num(a0)])
+    ResetCount => ("resetCount", [])
+    SetLabel(a0) => ("setLabel", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }

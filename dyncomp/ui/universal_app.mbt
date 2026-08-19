@@ -388,7 +388,11 @@ fn UniversalUi::app_comp(
       match UniversalAppReceive::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return self.catalog_changed(s, module_)
         Some(RestoreTree(root)) => return restore_tree(s, root)
-        Some(Unknown(_, _)) | None => ()
+        // The merged `Receive` now carries this component's own VIEW names as
+        // well as the schema's, so `Unknown` no longer covers everything this
+        // match has nothing to say about. They are answered by the Input match
+        // beside this one, and task 19 folds the two into one.
+        _ => ()
       }
       match msg {
         // A `+` was clicked. `target_path` is the cell that asked, fixed for

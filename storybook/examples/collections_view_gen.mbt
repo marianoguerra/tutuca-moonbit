@@ -49,6 +49,61 @@ impl @component.Fields for RenderWithScopeState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum RenderWithScopeReceive {
+  SetText(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn RenderWithScopeReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> RenderWithScopeReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setText", [Str(a0)]) => SetText(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn RenderWithScopeReceive::to_dispatch(
+  self : RenderWithScopeReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetText(a0) => ("setText", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn RenderWithScopeReceive::send(
+  self : RenderWithScopeReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let render_with_scope_common_style : String = ""
 
@@ -187,6 +242,64 @@ impl @component.Fields for ListFilterEnrichState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some({ items: v_items, query: v_query })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ListFilterEnrichReceive {
+  ResetQuery
+  SetQuery(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ListFilterEnrichReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ListFilterEnrichReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ListFilterEnrichReceive::to_dispatch(
+  self : ListFilterEnrichReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ResetQuery => ("resetQuery", [])
+    SetQuery(a0) => ("setQuery", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ListFilterEnrichReceive::send(
+  self : ListFilterEnrichReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -348,6 +461,64 @@ impl @component.Fields for ListFilterEnrichWithState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some({ items: v_items, query: v_query })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ListFilterEnrichWithReceive {
+  ResetQuery
+  SetQuery(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ListFilterEnrichWithReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ListFilterEnrichWithReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ListFilterEnrichWithReceive::to_dispatch(
+  self : ListFilterEnrichWithReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ResetQuery => ("resetQuery", [])
+    SetQuery(a0) => ("setQuery", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ListFilterEnrichWithReceive::send(
+  self : ListFilterEnrichWithReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

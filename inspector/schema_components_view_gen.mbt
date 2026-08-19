@@ -109,6 +109,67 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaScalarReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaScalarReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaScalarReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaScalarReceive::to_dispatch(
+  self : SchemaScalarReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaScalarReceive::send(
+  self : SchemaScalarReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let schema_scalar_common_style : String = ""
 
@@ -347,6 +408,67 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaObjectReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaObjectReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaObjectReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaObjectReceive::to_dispatch(
+  self : SchemaObjectReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaObjectReceive::send(
+  self : SchemaObjectReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -591,6 +713,67 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaArrayReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaArrayReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaArrayReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaArrayReceive::to_dispatch(
+  self : SchemaArrayReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaArrayReceive::send(
+  self : SchemaArrayReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let schema_array_common_style : String = ""
 
@@ -832,6 +1015,67 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaEnumReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaEnumReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaEnumReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaEnumReceive::to_dispatch(
+  self : SchemaEnumReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaEnumReceive::send(
+  self : SchemaEnumReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let schema_enum_common_style : String = ""
 
@@ -1068,6 +1312,67 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SchemaCombinatorReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SchemaCombinatorReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SchemaCombinatorReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggleIsExpanded", []) => ToggleIsExpanded
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SchemaCombinatorReceive::to_dispatch(
+  self : SchemaCombinatorReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    ToggleIsExpanded => ("toggleIsExpanded", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SchemaCombinatorReceive::send(
+  self : SchemaCombinatorReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

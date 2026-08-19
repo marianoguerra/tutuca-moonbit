@@ -85,6 +85,12 @@ pub fn DyncompStorybookMsg::from_dispatch(@component.Dispatch) -> Self?
 pub(all) enum DyncompStorybookReceive {
   CatalogChanged(String)
   SetStatus(String)
+  ChooseTheme(String)
+  FilesDropped(String)
+  SetQuery(String)
+  ShowAll
+  ToggleDetails
+  ToggleWide
   Unknown(String, Array[@core.Value])
 }
 pub fn DyncompStorybookReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -156,6 +162,14 @@ pub(all) enum StoryCardMsg {
 }
 pub fn StoryCardMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum StoryCardReceive {
+  Rebuild
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryCardReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryCardReceive::send(Self, &@core.Ctx) -> Unit
+pub fn StoryCardReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct StoryCardState {
   title : String
   doc : String
@@ -187,6 +201,14 @@ pub(all) enum StoryNavMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn StoryNavMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum StoryNavReceive {
+  Pick
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryNavReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryNavReceive::send(Self, &@core.Ctx) -> Unit
+pub fn StoryNavReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StoryNavState {
   module_ : String

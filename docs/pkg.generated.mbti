@@ -138,6 +138,15 @@ pub(all) enum ChatMsg {
 }
 pub fn ChatMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ChatReceive {
+  SetDraft(String)
+  Submit
+  Unknown(String, Array[@core.Value])
+}
+pub fn ChatReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ChatReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ChatReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct ChatState {
   draft : String
   status : @core.Value
@@ -155,6 +164,15 @@ pub(all) enum CounterMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CounterReceive {
+  Dec
+  Inc
+  Unknown(String, Array[@core.Value])
+}
+pub fn CounterReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CounterReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CounterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
   count : Int
@@ -223,6 +241,15 @@ pub(all) enum ProfileMsg {
 }
 pub fn ProfileMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ProfileReceive {
+  SetName(String)
+  ToggleWaving
+  Unknown(String, Array[@core.Value])
+}
+pub fn ProfileReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ProfileReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ProfileReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct ProfileState {
   name : String
   waving : Bool
@@ -266,6 +293,16 @@ pub(all) enum SearchMsg {
 }
 pub fn SearchMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SearchReceive {
+  ResetDraft
+  SetDraft(String)
+  SetSent(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SearchReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SearchReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SearchReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SearchState {
   draft : String
   sent : String
@@ -296,6 +333,14 @@ pub(all) enum ToggleMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ToggleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ToggleReceive {
+  ToggleOn
+  Unknown(String, Array[@core.Value])
+}
+pub fn ToggleReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ToggleReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ToggleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ToggleState {
   on : Bool

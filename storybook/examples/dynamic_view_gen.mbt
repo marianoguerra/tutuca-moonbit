@@ -51,6 +51,64 @@ impl @component.Fields for SelectorEntryState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SelectorEntryReceive {
+  SetLabel(String)
+  SetValue(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SelectorEntryReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SelectorEntryReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setLabel", [Str(a0)]) => SetLabel(a0)
+      ("setValue", [Str(a0)]) => SetValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SelectorEntryReceive::to_dispatch(
+  self : SelectorEntryReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetLabel(a0) => ("setLabel", [Str(a0)])
+    SetValue(a0) => ("setValue", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SelectorEntryReceive::send(
+  self : SelectorEntryReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let selector_entry_common_style : String = ""
 
@@ -186,6 +244,61 @@ impl @component.Fields for SelectorState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SelectorReceive {
+  SetSelectedValue(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SelectorReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SelectorReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SelectorReceive::to_dispatch(
+  self : SelectorReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetSelectedValue(a0) => ("setSelectedValue", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SelectorReceive::send(
+  self : SelectorReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let selector_common_style : String = ""
 
@@ -310,6 +423,64 @@ impl @component.Fields for EntryEditorAndSelectorState with fn decode(f) {
   }
   let v_selector = f.get("selector").unwrap_or(Null)
   Some({ items: v_items, selector: v_selector })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum EntryEditorAndSelectorReceive {
+  OnAddItem
+  RemoveInItemsAt(@tutuca.Value)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn EntryEditorAndSelectorReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> EntryEditorAndSelectorReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("onAddItem", []) => OnAddItem
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn EntryEditorAndSelectorReceive::to_dispatch(
+  self : EntryEditorAndSelectorReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    OnAddItem => ("onAddItem", [])
+    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn EntryEditorAndSelectorReceive::send(
+  self : EntryEditorAndSelectorReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -438,6 +609,56 @@ impl @component.Fields for SheetState with fn encode(s) {
 impl @component.Fields for SheetState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   Some({ title: v_title })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SheetReceive {
+  SetTitle(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SheetReceive::from_dispatch(d : @component.Dispatch) -> SheetReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setTitle", [Str(a0)]) => SetTitle(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SheetReceive::to_dispatch(
+  self : SheetReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetTitle(a0) => ("setTitle", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SheetReceive::send(self : SheetReceive, ctx : &@tutuca.Ctx) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

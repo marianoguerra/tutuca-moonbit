@@ -97,6 +97,17 @@ pub(all) enum GridMsg {
 }
 pub fn GridMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum GridReceive {
+  AddColAfter
+  AddColBefore
+  AddRowAfter
+  AddRowBefore
+  Unknown(String, Array[@core.Value])
+}
+pub fn GridReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn GridReceive::send(Self, &@core.Ctx) -> Unit
+pub fn GridReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct GridState {
   children : Array[@core.Value]
   cols : Int
@@ -125,6 +136,15 @@ pub(all) enum StackMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn StackMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum StackReceive {
+  AppendCell
+  InsertAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StackReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StackReceive::send(Self, &@core.Ctx) -> Unit
+pub fn StackReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StackState {
   children : Array[@core.Value]
@@ -172,6 +192,16 @@ pub(all) enum TabPageMsg {
 }
 pub fn TabPageMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum TabPageReceive {
+  CancelRename
+  DoneRename
+  SetLabel(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabPageReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TabPageReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct TabPageState {
   label : String
   body : @core.Value
@@ -198,6 +228,16 @@ pub(all) enum TabsMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn TabsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TabsReceive {
+  Activate
+  AddTab
+  CloseActive
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabsReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TabsReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TabsState {
   tabs : Array[@core.Value]
@@ -234,6 +274,14 @@ pub(all) enum TextareaMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn TextareaMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TextareaReceive {
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TextareaReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TextareaReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TextareaReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TextareaState {
   text : String
@@ -278,6 +326,10 @@ pub(all) enum UniversalReceive {
   Hold(@core.Value)
   Empty
   ApplyConfig(@core.Value)
+  Add(Bool)
+  Dropped(@core.Value)
+  Pick
+  Remove
   Unknown(String, Array[@core.Value])
 }
 pub fn UniversalReceive::from_dispatch(@component.Dispatch) -> Self?

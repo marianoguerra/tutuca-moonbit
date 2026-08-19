@@ -371,7 +371,7 @@ fn emit_component(
   // -- state ---------------------------------------------------------------
   // First, because everything below may refer to its types.
   if state is Some(def) {
-    emit_state(t, v, def, inits, derives, out)
+    emit_state(t, v, def, inits, derives, surface, out)
   }
 
   // -- views ---------------------------------------------------------------
@@ -714,7 +714,6 @@ fn emit_state_only(
   let inits = file.init
     .filter(p => p.0 == def.component_name(name))
     .map(p => p.1)
-  emit_state(t, v, def, inits, derives, out)
   // The schema too. Its view-derived lists — inputs, methods, ids, view names
   // — come out EMPTY, and that is the honest reading: this file declares the
   // component's data and no views, so there is no `@on` handler or `$name` in
@@ -733,6 +732,9 @@ fn emit_state_only(
     enrich_scopes: [],
     loop_withs: [],
   }
+  // A schema-only file has no call sites, so the `receive` merge has nothing
+  // to merge and nothing to disagree with.
+  emit_state(t, v, def, inits, derives, empty_surface, out)
   let no_views : @viewfile.ViewSet = {
     name: def.component_name(name),
     views: [],

@@ -77,6 +77,8 @@ impl @component.Fields for RichSampleState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RichSampleReceive {
   Ping
+  Inc
+  Reset
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -95,6 +97,8 @@ pub fn RichSampleReceive::from_dispatch(
   Some(
     match (name, args) {
       ("ping", []) => Ping
+      ("inc", []) => Inc
+      ("reset", []) => Reset
       _ => Unknown(name, args)
     },
   )
@@ -107,6 +111,8 @@ pub fn RichSampleReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Ping => ("ping", [])
+    Inc => ("inc", [])
+    Reset => ("reset", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -393,6 +399,61 @@ impl @component.Fields for SampleCardState with fn decode(f) {
   }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
   Some({ title: v_title, count: v_count, tags: v_tags, open: v_open })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SampleCardReceive {
+  Bump
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SampleCardReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SampleCardReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("bump", []) => Bump
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SampleCardReceive::to_dispatch(
+  self : SampleCardReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Bump => ("bump", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SampleCardReceive::send(
+  self : SampleCardReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

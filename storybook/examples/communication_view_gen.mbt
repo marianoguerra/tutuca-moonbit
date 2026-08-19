@@ -183,6 +183,9 @@ impl @component.Fields for SendReceiveState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum SendReceiveReceive {
   ClearDraft
+  ClearStatus
+  SetDraft(String)
+  Submit
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -201,6 +204,9 @@ pub fn SendReceiveReceive::from_dispatch(
   Some(
     match (name, args) {
       ("clearDraft", []) => ClearDraft
+      ("clearStatus", []) => ClearStatus
+      ("setDraft", [Str(a0)]) => SetDraft(a0)
+      ("submit", []) => Submit
       _ => Unknown(name, args)
     },
   )
@@ -213,6 +219,9 @@ pub fn SendReceiveReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ClearDraft => ("clearDraft", [])
+    ClearStatus => ("clearStatus", [])
+    SetDraft(a0) => ("setDraft", [Str(a0)])
+    Submit => ("submit", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -376,6 +385,61 @@ impl @component.Fields for TreeItemState with fn decode(f) {
     v_items.push(x1_items)
   }
   Some({ type_: v_type_, label: v_label, isOpen: v_isOpen, items: v_items })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum TreeItemReceive {
+  OnItemClick
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn TreeItemReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> TreeItemReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("onItemClick", []) => OnItemClick
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn TreeItemReceive::to_dispatch(
+  self : TreeItemReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    OnItemClick => ("onItemClick", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn TreeItemReceive::send(
+  self : TreeItemReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

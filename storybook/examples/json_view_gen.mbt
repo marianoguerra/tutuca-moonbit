@@ -46,6 +46,76 @@ impl @component.Fields for JsonSelectorState with fn decode(_f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonSelectorReceive {
+  SetToArray
+  SetToBool(Bool)
+  SetToNull
+  SetToNumber
+  SetToObject
+  SetToString
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonSelectorReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonSelectorReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setToArray", []) => SetToArray
+      ("setToBool", [Bool(a0)]) => SetToBool(a0)
+      ("setToNull", []) => SetToNull
+      ("setToNumber", []) => SetToNumber
+      ("setToObject", []) => SetToObject
+      ("setToString", []) => SetToString
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonSelectorReceive::to_dispatch(
+  self : JsonSelectorReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetToArray => ("setToArray", [])
+    SetToBool(a0) => ("setToBool", [Bool(a0)])
+    SetToNull => ("setToNull", [])
+    SetToNumber => ("setToNumber", [])
+    SetToObject => ("setToObject", [])
+    SetToString => ("setToString", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonSelectorReceive::send(
+  self : JsonSelectorReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let json_selector_common_style : String = ""
 
@@ -251,6 +321,61 @@ impl @component.Fields for JsonBoolState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonBoolReceive {
+  ToggleValue
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonBoolReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonBoolReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("toggleValue", []) => ToggleValue
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonBoolReceive::to_dispatch(
+  self : JsonBoolReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ToggleValue => ("toggleValue", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonBoolReceive::send(
+  self : JsonBoolReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let json_bool_common_style : String = ""
 
@@ -361,6 +486,61 @@ impl @component.Fields for JsonStringState with fn encode(s) {
 impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   Some({ value: v_value })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonStringReceive {
+  SetValue(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonStringReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonStringReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setValue", [Str(a0)]) => SetValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonStringReceive::to_dispatch(
+  self : JsonStringReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetValue(a0) => ("setValue", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonStringReceive::send(
+  self : JsonStringReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -476,6 +656,61 @@ impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("strValue") is Some(Str(v_strValue)) else { return None }
   guard f.get("value") is Some(Num(v_value)) else { return None }
   Some({ strValue: v_strValue, value: v_value })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonNumberReceive {
+  SetRawValue(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonNumberReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonNumberReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setRawValue", [Str(a0)]) => SetRawValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonNumberReceive::to_dispatch(
+  self : JsonNumberReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetRawValue(a0) => ("setRawValue", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonNumberReceive::send(
+  self : JsonNumberReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -598,6 +833,67 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
     v_items.push(x1_items)
   }
   Some({ items: v_items })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonArrayReceive {
+  AddItem
+  OnDropOnItem(@tutuca.Value, @tutuca.Value)
+  RemoveInItemsAt(@tutuca.Value)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonArrayReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonArrayReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("addItem", []) => AddItem
+      ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonArrayReceive::to_dispatch(
+  self : JsonArrayReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    AddItem => ("addItem", [])
+    OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
+    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonArrayReceive::send(
+  self : JsonArrayReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -728,6 +1024,61 @@ impl @component.Fields for JsonObjectKeyValState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonObjectKeyValReceive {
+  SetKey(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonObjectKeyValReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonObjectKeyValReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setKey", [Str(a0)]) => SetKey(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonObjectKeyValReceive::to_dispatch(
+  self : JsonObjectKeyValReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetKey(a0) => ("setKey", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonObjectKeyValReceive::send(
+  self : JsonObjectKeyValReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let json_object_key_val_common_style : String = ""
 
@@ -849,6 +1200,67 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
     v_items.push(x1_items)
   }
   Some({ items: v_items })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum JsonObjectReceive {
+  AddItem
+  OnDropOnItem(@tutuca.Value, @tutuca.Value)
+  RemoveInItemsAt(@tutuca.Value)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn JsonObjectReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonObjectReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("addItem", []) => AddItem
+      ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn JsonObjectReceive::to_dispatch(
+  self : JsonObjectReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    AddItem => ("addItem", [])
+    OnDropOnItem(a0, a1) => ("onDropOnItem", [a0, a1])
+    RemoveInItemsAt(a0) => ("removeInItemsAt", [a0])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn JsonObjectReceive::send(
+  self : JsonObjectReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

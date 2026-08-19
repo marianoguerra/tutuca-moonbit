@@ -82,6 +82,10 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RequestExampleReceive {
   Init
+  LoadAnotherWay
+  ResetQuery
+  SetQuery(String)
+  ToggleView
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -100,6 +104,10 @@ pub fn RequestExampleReceive::from_dispatch(
   Some(
     match (name, args) {
       ("init", []) => Init
+      ("loadAnotherWay", []) => LoadAnotherWay
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
@@ -112,6 +120,10 @@ pub fn RequestExampleReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
+    LoadAnotherWay => ("loadAnotherWay", [])
+    ResetQuery => ("resetQuery", [])
+    SetQuery(a0) => ("setQuery", [Str(a0)])
+    ToggleView => ("toggleView", [])
     Unknown(n, args) => (n, args)
   }
 }

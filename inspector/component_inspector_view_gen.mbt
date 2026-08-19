@@ -195,6 +195,61 @@ impl @component.Fields for CompViewState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum CompViewReceive {
+  Toggle(Bool)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn CompViewReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> CompViewReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("toggle", [Bool(a0)]) => Toggle(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn CompViewReceive::to_dispatch(
+  self : CompViewReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Toggle(a0) => ("toggle", [Bool(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CompViewReceive::send(
+  self : CompViewReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let comp_view_common_style : String = ""
 
@@ -351,6 +406,67 @@ impl @component.Fields for CompSectionState with fn decode(f) {
     currentPage: v_currentPage,
     label: v_label,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum CompSectionReceive {
+  NextPage
+  PrevPage
+  Toggle(Bool)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn CompSectionReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> CompSectionReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextPage", []) => NextPage
+      ("prevPage", []) => PrevPage
+      ("toggle", [Bool(a0)]) => Toggle(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn CompSectionReceive::to_dispatch(
+  self : CompSectionReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    NextPage => ("nextPage", [])
+    PrevPage => ("prevPage", [])
+    Toggle(a0) => ("toggle", [Bool(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CompSectionReceive::send(
+  self : CompSectionReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

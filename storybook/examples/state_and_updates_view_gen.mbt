@@ -61,6 +61,67 @@ impl @component.Fields for AttributeBindingState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum AttributeBindingReceive {
+  SetBool(Bool)
+  SetRawNumber(String)
+  SetStr(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn AttributeBindingReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> AttributeBindingReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setBool", [Bool(a0)]) => SetBool(a0)
+      ("setRawNumber", [Str(a0)]) => SetRawNumber(a0)
+      ("setStr", [Str(a0)]) => SetStr(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn AttributeBindingReceive::to_dispatch(
+  self : AttributeBindingReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    SetBool(a0) => ("setBool", [Bool(a0)])
+    SetRawNumber(a0) => ("setRawNumber", [Str(a0)])
+    SetStr(a0) => ("setStr", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn AttributeBindingReceive::send(
+  self : AttributeBindingReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let attribute_binding_common_style : String = ""
 
@@ -193,6 +254,61 @@ impl @component.Fields for ConditionalAttributesState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ConditionalAttributesReceive {
+  ToggleIsActive
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ConditionalAttributesReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ConditionalAttributesReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("toggleIsActive", []) => ToggleIsActive
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ConditionalAttributesReceive::to_dispatch(
+  self : ConditionalAttributesReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ToggleIsActive => ("toggleIsActive", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ConditionalAttributesReceive::send(
+  self : ConditionalAttributesReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let conditional_attributes_common_style : String = ""
 
@@ -311,6 +427,67 @@ impl @component.Fields for EventModifiersState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
   let v_lastSentSearch = f.get("lastSentSearch").unwrap_or(Null)
   Some({ query: v_query, lastSentSearch: v_lastSentSearch })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum EventModifiersReceive {
+  OnInput(String)
+  ResetQuery
+  SetLastSentSearch(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn EventModifiersReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> EventModifiersReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("onInput", [Str(a0)]) => OnInput(a0)
+      ("resetQuery", []) => ResetQuery
+      ("setLastSentSearch", [Str(a0)]) => SetLastSentSearch(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn EventModifiersReceive::to_dispatch(
+  self : EventModifiersReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    OnInput(a0) => ("onInput", [Str(a0)])
+    ResetQuery => ("resetQuery", [])
+    SetLastSentSearch(a0) => ("setLastSentSearch", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn EventModifiersReceive::send(
+  self : EventModifiersReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -444,6 +621,64 @@ impl @component.Fields for ShowHideState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some({ isOpen: v_isOpen, count: v_count })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ShowHideReceive {
+  IncCount
+  ToggleIsOpen
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ShowHideReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ShowHideReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("incCount", []) => IncCount
+      ("toggleIsOpen", []) => ToggleIsOpen
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ShowHideReceive::to_dispatch(
+  self : ShowHideReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    IncCount => ("incCount", [])
+    ToggleIsOpen => ("toggleIsOpen", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ShowHideReceive::send(
+  self : ShowHideReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|

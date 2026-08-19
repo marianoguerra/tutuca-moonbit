@@ -40,6 +40,7 @@ pub suberror GenError {
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
   IdInLoop(view~ : String, id~ : String)
+  PayloadDisagrees(name~ : String, declared~ : String, written~ : String, sites~ : String)
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   NotRenderable(view~ : String, expr~ : String, ty~ : String)

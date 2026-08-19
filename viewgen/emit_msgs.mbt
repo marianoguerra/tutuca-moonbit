@@ -13,15 +13,156 @@
 // schema, instead of twice as a matching pair of string literals.
 
 ///|
-/// The three declared buckets, if the schema declares any.
+/// The declared buckets, if the schema declares any.
+///
+/// v2 has two of these and v1 had three, and the interesting one is `Receive`:
+/// it is the schema's `receive` variant **merged with the view names**, because
+/// v2 has one bucket for a message whoever sent it. `Intent` is the schema's
+/// `intent` variant. `Bubble` and `Response` are still emitted and go in the
+/// plan's task 25.
 fn emit_msgs(
   t : String,
   def : @statedef.StateDef,
+  surface : Surface,
   out : StringBuilder,
 ) -> Unit raise GenError {
-  emit_bucket_enum(t, "Receive", "Receive", def.receive, def, out)
+  emit_bucket_enum(
+    t,
+    "Receive",
+    "Receive",
+    merged_receive(def, surface),
+    def,
+    out,
+  )
+  emit_bucket_enum(t, "Intent", "Intent", def.intent, def, out)
   emit_bucket_enum(t, "Bubble", "Bubble", def.bubble, def, out)
   emit_bucket_enum(t, "Response", "Response", def.response, def, out)
+}
+
+///|
+/// The schema's `receive` cases, plus every view name the schema does not
+/// declare.
+///
+/// **This is the merge**, and it is where the design's new build error comes
+/// from. A name in BOTH places is checked: the schema declares the payload and
+/// the call sites have to match it. v1 cannot report that, because the two
+/// names live in two enums and nothing compares them.
+///
+/// A view-only name is typed from what the call sites wrote, exactly as
+/// `<T>Msg` types it — one inference, read from `InputSig` in both places.
+fn merged_receive(
+  def : @statedef.StateDef,
+  surface : Surface,
+) -> Array[@statedef.MsgDef] raise GenError {
+  let out : Array[@statedef.MsgDef] = []
+  let declared : Map[String, @statedef.MsgDef] = Map([])
+  for m in def.receive {
+    declared[m.name] = m
+    out.push(m)
+  }
+  for sig in surface.inputs {
+    match declared.get(sig.name) {
+      // In both. The schema wins, and a disagreement is a build error.
+      Some(m) => check_payload(m, sig)
+      None => out.push(msg_of_sig(sig))
+    }
+  }
+  out
+}
+
+///|
+/// A view call site's inferred shape against the schema's declared payload.
+///
+/// Arity and scalar kind, and nothing finer. `args: None` is the join of call
+/// sites that disagreed about arity, which is already opaque — the generator
+/// cannot say what it should have been, so it says nothing. `VValue` is the
+/// same answer one argument at a time.
+fn check_payload(m : @statedef.MsgDef, sig : InputSig) -> Unit raise GenError {
+  guard sig.args is Some(types) else { return }
+  fn disagree(written : String) -> Unit raise GenError {
+    raise PayloadDisagrees(
+      name=m.name,
+      declared=m.source_name +
+        (if m.payload.is_empty() {
+          ""
+        } else {
+          "(" + m.payload.map(p => p.show_source()).join(", ") + ")"
+        }),
+      written~,
+      sites=sig.sites.join(", "),
+    )
+  }
+
+  let wrote = m.name +
+    (if types.is_empty() {
+      ""
+    } else {
+      "(" + types.map(t => arg_kind_word(t)).join(", ") + ")"
+    })
+  if types.length() != m.payload.length() {
+    disagree(wrote)
+  }
+  for i, t in types {
+    if !arg_fits(t, m.payload[i]) {
+      disagree(wrote)
+    }
+  }
+}
+
+///|
+/// Whether a call site's inferred argument shape can be the declared type.
+///
+/// `VValue` fits everything: it is what the inference answers when the call
+/// sites wrote something it cannot read as a scalar, and "unknown is not
+/// wrong" is the rule the whole generator turns on. A declared type that is
+/// not a scalar takes anything for the same reason — the payload rides as a
+/// raw `@tutuca.Value` there (`msg_payload_ty`), so there is nothing to
+/// disagree with.
+fn arg_fits(t : ArgType, declared : @statedef.StateTy) -> Bool {
+  match (t, declared) {
+    (VValue, _) => true
+    (VDouble, TInt(..) | TFloat) => true
+    (VString, TText) => true
+    (VBool, TBool) => true
+    (_, TInt(..) | TFloat | TText | TBool) => false
+    _ => true
+  }
+}
+
+///|
+/// The word an inferred argument shape reads as in the disagreement message.
+fn arg_kind_word(t : ArgType) -> String {
+  match t {
+    VDouble => "a number"
+    VString => "text"
+    VBool => "a boolean"
+    VValue => "a value"
+  }
+}
+
+///|
+/// A view-only name as a schema-shaped message case.
+///
+/// The variant name goes through `variants_for` at the call site, so this only
+/// has to answer what the name and the payload are. Payload types are the ones
+/// the call sites wrote; `args: None` — call sites that disagreed about arity —
+/// becomes an empty payload, and the decode's `Unknown` arm carries the
+/// arguments instead, which is exactly what `<T>Msg` does with the same input.
+fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
+  let capped = sig.name[0:1].to_owned().to_upper() + sig.name[1:].to_owned()
+  {
+    source_name: capped,
+    name: sig.name,
+    variant: capped,
+    // `arg_state_ty` answers None for a shape the inference could not read,
+    // and `TAny` is what that declares as: the payload rides as a raw
+    // `@tutuca.Value` either way (`msg_payload_ty`), so the two agree.
+    payload: match sig.args {
+      Some(types) => types.map(t => arg_state_ty(t).unwrap_or(TAny))
+      None => []
+    },
+    doc: None,
+  }
 }
 
 ///|
@@ -206,19 +347,50 @@ fn emit_raise(
   }
   out.write_string("    Unknown(n, args) => (n, args)\n  }\n}\n\n")
   // A Response is raised by the host answering a request, never by the
-  // component, so it gets no sender.
+  // component, so it gets no sender. In v2 that whole bucket is gone: an
+  // answer is an ordinary message and lands in `Receive` with everything else,
+  // which is why `Intent` gets a raiser and nothing replaces `Response`'s
+  // absence.
   match suffix {
     "Receive" =>
       emit_sender(
         ty, "send", "send", "Send this message to self; it arrives as a later Receive dispatch.",
         out,
       )
+    "Intent" => emit_intent_sender(ty, out)
     "Bubble" =>
       emit_sender(
         ty, "bubble", "bubble", "Bubble this message to the parent component.", out,
       )
     _ => ()
   }
+}
+
+///|
+/// `<T>Intent::dispatch(ctx)` — the v2 face of `<T>Bubble::bubble(ctx)`.
+///
+/// Separate from `emit_sender` because it takes a third argument the others do
+/// not: the ROUTE, which is the whole of what v2 added. The default is written
+/// once, in `@tutuca.IntentOpts::new`, and this passes it rather than spelling
+/// the two legs — the same rule the parser and both backends follow.
+fn emit_intent_sender(ty : String, out : StringBuilder) -> Unit {
+  out.write_string(
+    "///|\n" +
+    "/// Dispatch this intent along `opts.route` — the default `dyn lex` when\n" +
+    "/// nothing says otherwise. The `dyn` leg starts at this component's\n" +
+    "/// PARENT, so a component never re-enters its own handler.\n" +
+    "///\n" +
+    "/// The name comes from the schema, so it cannot drift from the one\n" +
+    "/// `from_dispatch` decodes.\n" +
+    "pub fn \{ty}::dispatch(\n" +
+    "  self : \{ty},\n" +
+    "  ctx : &@tutuca.Ctx,\n" +
+    "  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),\n" +
+    ") -> Unit {\n" +
+    "  let (name, args) = self.to_dispatch()\n" +
+    "  ctx.intent(name, args, opts)\n" +
+    "}\n\n",
+  )
 }
 
 ///|

@@ -100,6 +100,19 @@ pub suberror GenError {
   /// A constant `id` inside an `@each` body. The loop emits the body once per
   /// item, so the id is not unique the moment the sequence holds two.
   IdInLoop(view~ : String, id~ : String)
+  /// A view call site disagrees with the schema about what a message carries.
+  ///
+  /// v2's `receive` bucket holds a view's name and a parent's, so a name can
+  /// be in both places at once — and when it is, the schema declares the
+  /// payload and the views have to match it. v1 cannot report this at all: the
+  /// two names live in two enums (`<T>Msg` and `<T>Receive`) and nothing ever
+  /// compares them.
+  PayloadDisagrees(
+    name~ : String,
+    declared~ : String,
+    written~ : String,
+    sites~ : String
+  )
   /// `@show` / `@hide` over a container. `Value::is_truthy` answers `true`
   /// for List, Map and Obj unconditionally, so the test cannot fail — the
   /// element is always shown (or always hidden).

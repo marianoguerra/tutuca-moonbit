@@ -391,6 +391,16 @@ pub(all) enum CompSectionMsg {
 }
 pub fn CompSectionMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum CompSectionReceive {
+  NextPage
+  PrevPage
+  Toggle(Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CompSectionReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CompSectionReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CompSectionReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct CompSectionState {
   items : Array[@core.Value]
   isExpanded : Bool
@@ -416,6 +426,14 @@ pub(all) enum CompViewMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn CompViewMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CompViewReceive {
+  Toggle(Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CompViewReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CompViewReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CompViewReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CompViewState {
   name : String
@@ -485,6 +503,14 @@ pub(all) enum InstanceExplorerMsg {
 }
 pub fn InstanceExplorerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum InstanceExplorerReceive {
+  SetActiveTab(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn InstanceExplorerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn InstanceExplorerReceive::send(Self, &@core.Ctx) -> Unit
+pub fn InstanceExplorerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct InstanceExplorerState {
   activeTab : String
   instanceView : @core.Value
@@ -525,6 +551,16 @@ pub(all) enum InstanceFieldsMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn InstanceFieldsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum InstanceFieldsReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn InstanceFieldsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn InstanceFieldsReceive::send(Self, &@core.Ctx) -> Unit
+pub fn InstanceFieldsReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct InstanceFieldsState {
   items : Array[@core.Value]
@@ -572,6 +608,16 @@ pub(all) enum JsonArrayMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonArrayMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonArrayReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonArrayReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonArrayReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonArrayReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonArrayState {
   items : Array[@core.Value]
@@ -639,6 +685,16 @@ pub(all) enum JsonObjectMsg {
 }
 pub fn JsonObjectMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum JsonObjectReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonObjectReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonObjectReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonObjectReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct JsonObjectState {
   items : Array[@core.Value]
   isExpanded : Bool
@@ -698,6 +754,8 @@ pub fn RichSampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RichSampleReceive {
   Ping
+  Inc
+  Reset
   Unknown(String, Array[@core.Value])
 }
 pub fn RichSampleReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -735,6 +793,14 @@ pub(all) enum SampleCardMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SampleCardMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SampleCardReceive {
+  Bump
+  Unknown(String, Array[@core.Value])
+}
+pub fn SampleCardReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SampleCardReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SampleCardReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SampleCardState {
   title : String
@@ -776,6 +842,16 @@ pub(all) enum SchemaArrayMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaArrayMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SchemaArrayReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaArrayReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaArrayReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaArrayReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaArrayState {
   items : Array[@core.Value]
@@ -846,6 +922,16 @@ pub(all) enum SchemaCombinatorMsg {
 }
 pub fn SchemaCombinatorMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SchemaCombinatorReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaCombinatorReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaCombinatorReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaCombinatorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SchemaCombinatorState {
   items : Array[@core.Value]
   isExpanded : Bool
@@ -907,6 +993,16 @@ pub(all) enum SchemaEnumMsg {
 }
 pub fn SchemaEnumMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SchemaEnumReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaEnumReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaEnumReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaEnumReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SchemaEnumState {
   items : Array[@core.Value]
   isExpanded : Bool
@@ -957,6 +1053,16 @@ pub(all) enum SchemaObjectMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SchemaObjectMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SchemaObjectReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaObjectReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaObjectReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaObjectReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SchemaObjectState {
   items : Array[@core.Value]
@@ -1016,6 +1122,16 @@ pub(all) enum SchemaScalarMsg {
 }
 pub fn SchemaScalarMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SchemaScalarReceive {
+  NextPage
+  PrevPage
+  ToggleIsExpanded
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaScalarReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaScalarReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaScalarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SchemaScalarState {
   items : Array[@core.Value]
   isExpanded : Bool
@@ -1046,6 +1162,14 @@ pub(all) enum SchemaViewerMsg {
 }
 pub fn SchemaViewerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SchemaViewerReceive {
+  ToggleShowRaw
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaViewerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaViewerReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaViewerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SchemaViewerState {
   value : @core.Value
   raw : @core.Value
@@ -1065,6 +1189,14 @@ pub(all) enum StateEditorRowMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn StateEditorRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum StateEditorRowReceive {
+  Edit(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StateEditorRowReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StateEditorRowReceive::send(Self, &@core.Ctx) -> Unit
+pub fn StateEditorRowReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StateEditorRowState {
   name : String

@@ -732,6 +732,16 @@ pub(all) enum AttributeBindingMsg {
 }
 pub fn AttributeBindingMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum AttributeBindingReceive {
+  SetBool(Bool)
+  SetRawNumber(String)
+  SetStr(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn AttributeBindingReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn AttributeBindingReceive::send(Self, &@core.Ctx) -> Unit
+pub fn AttributeBindingReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct AttributeBindingState {
   str : String
   num : Int
@@ -764,6 +774,16 @@ pub(all) enum BarChartMsg {
 }
 pub fn BarChartMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum BarChartReceive {
+  AddBar
+  Randomize
+  RemoveBar
+  Unknown(String, Array[@core.Value])
+}
+pub fn BarChartReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn BarChartReceive::send(Self, &@core.Ctx) -> Unit
+pub fn BarChartReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct BarChartState {
   values : Array[@core.Value]
 }
@@ -780,6 +800,14 @@ pub(all) enum ComposabilityMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ComposabilityMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ComposabilityReceive {
+  SetActiveSection(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ComposabilityReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComposabilityReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ComposabilityReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ComposabilityState {
   activeSection : String
@@ -804,6 +832,14 @@ pub(all) enum ConditionalAttributesMsg {
 }
 pub fn ConditionalAttributesMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ConditionalAttributesReceive {
+  ToggleIsActive
+  Unknown(String, Array[@core.Value])
+}
+pub fn ConditionalAttributesReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ConditionalAttributesReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ConditionalAttributesReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct ConditionalAttributesState {
   isActive : Bool
 }
@@ -820,6 +856,15 @@ pub(all) enum CounterMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CounterReceive {
+  Dec
+  Inc
+  Unknown(String, Array[@core.Value])
+}
+pub fn CounterReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CounterReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CounterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct CounterState {
   count : Int
@@ -875,6 +920,16 @@ pub(all) enum DnDExampleMsg {
 }
 pub fn DnDExampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum DnDExampleReceive {
+  OnDropOnItem(@core.Value, @core.Value)
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DnDExampleReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn DnDExampleReceive::send(Self, &@core.Ctx) -> Unit
+pub fn DnDExampleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct DnDExampleState {
   items : Array[@core.Value]
   query : String
@@ -903,6 +958,14 @@ pub(all) enum DseEntryMsg {
 }
 pub fn DseEntryMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum DseEntryReceive {
+  SetName(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DseEntryReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn DseEntryReceive::send(Self, &@core.Ctx) -> Unit
+pub fn DseEntryReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct DseEntryState {
   name : String
 }
@@ -919,6 +982,14 @@ pub(all) enum DseRootMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn DseRootMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum DseRootReceive {
+  SelectItem(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DseRootReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn DseRootReceive::send(Self, &@core.Ctx) -> Unit
+pub fn DseRootReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct DseRootState {
   items : Map[String, @core.Value]
@@ -941,6 +1012,15 @@ pub(all) enum EmojiPickerMsg {
 }
 pub fn EmojiPickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum EmojiPickerReceive {
+  OnEmojiClick(String)
+  ToggleIsPickerVisible
+  Unknown(String, Array[@core.Value])
+}
+pub fn EmojiPickerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn EmojiPickerReceive::send(Self, &@core.Ctx) -> Unit
+pub fn EmojiPickerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct EmojiPickerState {
   current : @core.Value
   isPickerVisible : Bool
@@ -961,6 +1041,15 @@ pub(all) enum EntryEditorAndSelectorMsg {
 }
 pub fn EntryEditorAndSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum EntryEditorAndSelectorReceive {
+  OnAddItem
+  RemoveInItemsAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EntryEditorAndSelectorReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn EntryEditorAndSelectorReceive::send(Self, &@core.Ctx) -> Unit
+pub fn EntryEditorAndSelectorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct EntryEditorAndSelectorState {
   items : Array[@core.Value]
   selector : @core.Value
@@ -980,6 +1069,15 @@ pub(all) enum EntryMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn EntryMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum EntryReceive {
+  SetDescription(String)
+  SetTitle(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EntryReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn EntryReceive::send(Self, &@core.Ctx) -> Unit
+pub fn EntryReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct EntryState {
   title : String
@@ -1002,6 +1100,16 @@ pub(all) enum EventModifiersMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn EventModifiersMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum EventModifiersReceive {
+  OnInput(String)
+  ResetQuery
+  SetLastSentSearch(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EventModifiersReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn EventModifiersReceive::send(Self, &@core.Ctx) -> Unit
+pub fn EventModifiersReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct EventModifiersState {
   query : String
@@ -1036,6 +1144,14 @@ pub(all) enum FilePickerMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn FilePickerMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum FilePickerReceive {
+  OnPickFile(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn FilePickerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn FilePickerReceive::send(Self, &@core.Ctx) -> Unit
+pub fn FilePickerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct FilePickerState {
   name : String
@@ -1075,6 +1191,15 @@ pub(all) enum ItemMsg {
 }
 pub fn ItemMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ItemReceive {
+  SetCompleted(Bool)
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ItemReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ItemReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) enum ItemSelectInput {
   SetCurrent
 } derive(Eq, @debug.Debug)
@@ -1086,6 +1211,14 @@ pub(all) enum ItemSelectMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ItemSelectMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ItemSelectReceive {
+  SetCurrent(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemSelectReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ItemSelectReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ItemSelectReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ItemSelectState {
   options : Array[@core.Value]
@@ -1118,6 +1251,15 @@ pub(all) enum ItemsMsg {
 }
 pub fn ItemsMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ItemsReceive {
+  OnAddItem
+  RemoveInItemsAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ItemsReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ItemsReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct ItemsState {
   items : Array[@core.Value]
 }
@@ -1139,6 +1281,16 @@ pub(all) enum JsonArrayMsg {
 }
 pub fn JsonArrayMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum JsonArrayReceive {
+  AddItem
+  OnDropOnItem(@core.Value, @core.Value)
+  RemoveInItemsAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonArrayReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonArrayReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonArrayReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct JsonArrayState {
   items : Array[@core.Value]
 }
@@ -1155,6 +1307,14 @@ pub(all) enum JsonBoolMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonBoolMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonBoolReceive {
+  ToggleValue
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonBoolReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonBoolReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonBoolReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonBoolState {
   value : Bool
@@ -1176,6 +1336,14 @@ pub(all) enum JsonNumberMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonNumberMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonNumberReceive {
+  SetRawValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonNumberReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonNumberReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonNumberReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonNumberState {
   strValue : String
@@ -1203,6 +1371,14 @@ pub(all) enum JsonObjectKeyValMsg {
 }
 pub fn JsonObjectKeyValMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum JsonObjectKeyValReceive {
+  SetKey(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonObjectKeyValReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonObjectKeyValReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonObjectKeyValReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct JsonObjectKeyValState {
   key : String
   value : @core.Value
@@ -1216,6 +1392,16 @@ pub(all) enum JsonObjectMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonObjectMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonObjectReceive {
+  AddItem
+  OnDropOnItem(@core.Value, @core.Value)
+  RemoveInItemsAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonObjectReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonObjectReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonObjectReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonObjectState {
   items : Array[@core.Value]
@@ -1244,6 +1430,19 @@ pub(all) enum JsonSelectorMsg {
 }
 pub fn JsonSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum JsonSelectorReceive {
+  SetToArray
+  SetToBool(Bool)
+  SetToNull
+  SetToNumber
+  SetToObject
+  SetToString
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonSelectorReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonSelectorReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonSelectorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct JsonSelectorState {
 } derive(Default)
 pub fn JsonSelectorState::zero() -> Self
@@ -1259,6 +1458,14 @@ pub(all) enum JsonStringMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonStringMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonStringReceive {
+  SetValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonStringReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn JsonStringReceive::send(Self, &@core.Ctx) -> Unit
+pub fn JsonStringReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct JsonStringState {
   value : String
@@ -1287,6 +1494,15 @@ pub(all) enum ListAndFilterMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ListAndFilterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ListAndFilterReceive {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListAndFilterReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ListAndFilterReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ListAndFilterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListAndFilterState {
   items : Array[@core.Value]
@@ -1317,6 +1533,15 @@ pub(all) enum ListFilterEnrichMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ListFilterEnrichMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ListFilterEnrichReceive {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListFilterEnrichReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ListFilterEnrichReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ListFilterEnrichReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListFilterEnrichState {
   items : Array[@core.Value]
@@ -1352,6 +1577,15 @@ pub(all) enum ListFilterEnrichWithMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ListFilterEnrichWithMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ListFilterEnrichWithReceive {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListFilterEnrichWithReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ListFilterEnrichWithReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ListFilterEnrichWithReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListFilterEnrichWithState {
   items : Array[@core.Value]
@@ -1425,6 +1659,17 @@ pub(all) enum NaivePeopleMsg {
 }
 pub fn NaivePeopleMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum NaivePeopleReceive {
+  Next
+  Prev
+  RemoveInItemsAt(@core.Value)
+  Search(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NaivePeopleReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn NaivePeopleReceive::send(Self, &@core.Ctx) -> Unit
+pub fn NaivePeopleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct NaivePeopleState {
   items : Array[@core.Value]
   query : String
@@ -1467,6 +1712,15 @@ pub(all) enum NestedStatePriority {
   High
 } derive(Eq, @debug.Debug)
 
+pub(all) enum NestedStateReceive {
+  BumpPriority
+  ToggleLabel(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NestedStateReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn NestedStateReceive::send(Self, &@core.Ctx) -> Unit
+pub fn NestedStateReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct NestedStateState {
   title : String
   labels : Array[NestedStateLabel]
@@ -1506,6 +1760,15 @@ pub(all) enum PaginationMsg {
 }
 pub fn PaginationMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum PaginationReceive {
+  Next
+  Prev
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaginationReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn PaginationReceive::send(Self, &@core.Ctx) -> Unit
+pub fn PaginationReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct PaginationState {
   items : Array[@core.Value]
   page : Int
@@ -1534,6 +1797,16 @@ pub(all) enum PersonMsg {
 }
 pub fn PersonMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum PersonReceive {
+  SetActive(Bool)
+  SetEmail(String)
+  SetName(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PersonReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn PersonReceive::send(Self, &@core.Ctx) -> Unit
+pub fn PersonReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct PersonState {
   name : String
   email : String
@@ -1552,6 +1825,14 @@ pub(all) enum PlaylistMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn PlaylistMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum PlaylistReceive {
+  RemoveSong(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PlaylistReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn PlaylistReceive::send(Self, &@core.Ctx) -> Unit
+pub fn PlaylistReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct PlaylistState {
   songs : @core.Value
@@ -1610,6 +1891,16 @@ pub(all) enum PushViewMsg {
 }
 pub fn PushViewMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum PushViewReceive {
+  ResetQuery
+  SetQuery(String)
+  ToggleView
+  Unknown(String, Array[@core.Value])
+}
+pub fn PushViewReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn PushViewReceive::send(Self, &@core.Ctx) -> Unit
+pub fn PushViewReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct PushViewState {
   items : Array[@core.Value]
   query : String
@@ -1644,6 +1935,16 @@ pub(all) enum QuadraticMsg {
 }
 pub fn QuadraticMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum QuadraticReceive {
+  SetA(Double)
+  SetB(Double)
+  SetC(Double)
+  Unknown(String, Array[@core.Value])
+}
+pub fn QuadraticReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn QuadraticReceive::send(Self, &@core.Ctx) -> Unit
+pub fn QuadraticReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct QuadraticState {
   a : Int
   b : Int
@@ -1667,6 +1968,14 @@ pub(all) enum RenderWithScopeMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn RenderWithScopeMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RenderWithScopeReceive {
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn RenderWithScopeReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn RenderWithScopeReceive::send(Self, &@core.Ctx) -> Unit
+pub fn RenderWithScopeReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RenderWithScopeState {
   text : String
@@ -1692,6 +2001,10 @@ pub fn RequestExampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RequestExampleReceive {
   Init
+  LoadAnotherWay
+  ResetQuery
+  SetQuery(String)
+  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn RequestExampleReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -1747,6 +2060,12 @@ pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RootReceive {
   Init
+  ClearFilters
+  OnCategoryToggle(@core.Value, Bool)
+  OnRoleToggle(@core.Value, Bool)
+  OnToggleFeaturedFirst
+  OnToggleSortAsc
+  OnToggleSortByEnd
   Unknown(String, Array[@core.Value])
 }
 pub fn RootReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -1795,6 +2114,15 @@ pub(all) enum SelectorEntryMsg {
 }
 pub fn SelectorEntryMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SelectorEntryReceive {
+  SetLabel(String)
+  SetValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SelectorEntryReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SelectorEntryReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SelectorEntryReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SelectorEntryState {
   value : String
   label : String
@@ -1812,6 +2140,14 @@ pub(all) enum SelectorMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SelectorMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SelectorReceive {
+  SetSelectedValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SelectorReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SelectorReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SelectorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SelectorState {
   items : Array[@core.Value]
@@ -1837,6 +2173,9 @@ pub fn SendReceiveMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum SendReceiveReceive {
   ClearDraft
+  ClearStatus
+  SetDraft(String)
+  Submit
   Unknown(String, Array[@core.Value])
 }
 pub fn SendReceiveReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -1867,6 +2206,15 @@ pub(all) enum SeqItemAccessMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SeqItemAccessMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SeqItemAccessReceive {
+  SetCurrentIndex(Double)
+  SetCurrentKey(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SeqItemAccessReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SeqItemAccessReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SeqItemAccessReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SeqItemAccessState {
   byKey : Map[String, @core.Value]
@@ -1926,6 +2274,14 @@ pub(all) enum SheetMsg {
 }
 pub fn SheetMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SheetReceive {
+  SetTitle(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SheetReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SheetReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SheetReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SheetState {
   title : String
 }
@@ -1948,6 +2304,15 @@ pub(all) enum ShowHideMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn ShowHideMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ShowHideReceive {
+  IncCount
+  ToggleIsOpen
+  Unknown(String, Array[@core.Value])
+}
+pub fn ShowHideReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ShowHideReceive::send(Self, &@core.Ctx) -> Unit
+pub fn ShowHideReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ShowHideState {
   isOpen : Bool
@@ -2012,6 +2377,14 @@ pub(all) enum SwatchPickerMsg {
 }
 pub fn SwatchPickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum SwatchPickerReceive {
+  SetColor(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SwatchPickerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SwatchPickerReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SwatchPickerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct SwatchPickerState {
   color : String
   palette : Array[@core.Value]
@@ -2029,6 +2402,14 @@ pub(all) enum TabbedUIMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn TabbedUIMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TabbedUIReceive {
+  SetTab(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabbedUIReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabbedUIReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TabbedUIReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TabbedUIState {
   tab : String
@@ -2086,6 +2467,14 @@ pub(all) enum TrafficLightMsg {
 }
 pub fn TrafficLightMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum TrafficLightReceive {
+  NextLight
+  Unknown(String, Array[@core.Value])
+}
+pub fn TrafficLightReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TrafficLightReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TrafficLightReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
 pub(all) struct TrafficLightState {
   lightIndex : Int
 }
@@ -2107,6 +2496,14 @@ pub(all) enum TreeItemMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn TreeItemMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TreeItemReceive {
+  OnItemClick
+  Unknown(String, Array[@core.Value])
+}
+pub fn TreeItemReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TreeItemReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TreeItemReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct TreeItemState {
   type_ : String

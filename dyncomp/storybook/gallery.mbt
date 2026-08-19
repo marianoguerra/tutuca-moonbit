@@ -296,7 +296,11 @@ fn Gallery::root_comp(
       match DyncompStorybookReceive::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
         Some(SetStatus(t)) => return Next({ ..s, status: t })
-        Some(Unknown(_, _)) | None => ()
+        // The merged `Receive` now carries this component's own VIEW names as
+        // well as the schema's, so `Unknown` no longer covers everything this
+        // match has nothing to say about. They are answered by the Input match
+        // beside this one, and task 19 folds the two into one.
+        _ => ()
       }
       // The same two, arriving from BELOW: the host's loader sits inside the
       // bar, so its news bubbles rather than being sent. Both directions are
