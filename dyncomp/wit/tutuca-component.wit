@@ -23,7 +23,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.7.0;
+package tutuca:component@0.8.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -317,11 +317,46 @@ interface control {
     at(index-step),
   }
 
-  /// Response routing for a request (host `RequestOpts`). All three names are
-  /// optional: with none of them the response arrives as
+  /// A leg of an intent's route.
+  ///
+  /// `dyn` walks the dynamic scope — the host tree, from the sender's PARENT
+  /// up to the root. `lex` walks the lexical one, the registration chain, whose
+  /// handlers are static functions with no state. A route is a list of these,
+  /// in the order written, and `[dyn, lex]` when nothing says otherwise.
+  enum leg { dyn, lex }
+
+  /// Answer routing for an intent (host `IntentOpts`).
+  ///
+  /// Three outcome names rather than v1's `on-res`, because v2 has three
+  /// outcomes and not two: a handler replied, a handler failed, or the route
+  /// ended with nobody answering. The combined `[result, error]` payload — and
+  /// the bug where a split arm read the wrong slot — is gone with `on-res`.
+  ///
+  /// A sender expects an answer if and only if it names one of these. That is
+  /// what makes an intent a request rather than a notification, and nothing
+  /// declares it separately.
+  record intent-opts {
+    /// The legs to walk. Empty means the default, `[dyn, lex]` — which the
+    /// HOST supplies, so a guest that says nothing cannot disagree with it.
+    route: list<leg>,
+    on-ok: option<string>,
+    on-error: option<string>,
+    on-unhandled: option<string>,
+    /// Resolve the answering component by its path as it is WHEN THE ANSWER
+    /// ARRIVES rather than pinning the keys at dispatch time (host
+    /// `live_path`).
+    live-path: bool,
+  }
+
+  /// v1. Response routing for a request (host `RequestOpts`). All three names
+  /// are optional: with none of them the response arrives as
   /// handle-event(response, <request name>, [result, error]); with `on-ok` /
   /// `on-error` it arrives at those names carrying just the value; `on-res`
   /// renames the combined form.
+  ///
+  /// Superseded by `intent-opts`. Kept for the length of the migration so a
+  /// guest built against 0.7 still describes something this contract has; it
+  /// goes when `request` does.
   record request-opts {
     on-ok: option<string>,
     on-error: option<string>,
@@ -331,7 +366,42 @@ interface control {
     live-path: bool,
   }
 
-  /// Bubble a message to the parent component in the host tree.
+  /// Dispatch an intent along `opts.route`, from this instance's position.
+  ///
+  /// The `dyn` leg starts at this component's PARENT, so a component never
+  /// re-enters its own handler and a cycle needs two of them. The answer, if
+  /// any, arrives as a later handle-event(receive, ...) — an answer is an
+  /// ordinary message and a handler cannot tell it from one a parent sent.
+  ///
+  /// This is what `emit` and `request` both became: one channel, and the route
+  /// says which scope answers rather than the verb saying it.
+  intent: func(name: string, args: list<value>, opts: intent-opts);
+
+  /// Dispatch an intent AT a descendant, which then walks from there — the
+  /// targeted twin of `intent`, and what `bubble-at` became.
+  intent-at: func(path: list<path-step>, name: string, args: list<value>, opts: intent-opts);
+
+  /// Pass the message being handled on as an intent, or — while handling an
+  /// intent — continue its walk after this position.
+  ///
+  /// The answer target does not move: a handler further up answers whoever
+  /// dispatched, not whoever forwarded. That, and not having to rebuild the
+  /// arguments, is the whole of what makes this different from dispatching the
+  /// intent again. An empty `args` means "the ones that arrived"; an empty
+  /// `route` means "the one the walk is already on".
+  forward: func(args: list<value>, opts: intent-opts);
+
+  /// Answer the intent this handler received, and end the walk. The answer
+  /// arrives at the sender as `<name>Ok`.
+  reply: func(v: value);
+
+  /// Answer it with a failure, and end the walk: `<name>Error`.
+  fail: func(e: value);
+
+  /// v1. Bubble a message to the parent component in the host tree.
+  ///
+  /// Superseded by `intent` with a `dyn` route. Kept for the length of the
+  /// migration; it goes in the contract step.
   emit: func(name: string, args: list<value>);
 
   /// Send a message to self: arrives as a later handle-event(receive, name, ...).
@@ -342,12 +412,15 @@ interface control {
   /// `[field("left")]` for the child a `left` field holds.
   send-at: func(path: list<path-step>, name: string, args: list<value>);
 
-  /// Raise a bubble AT a descendant, which then travels up through it — the
-  /// targeted twin of `emit`.
+  /// v1. Raise a bubble AT a descendant, which then travels up through it —
+  /// the targeted twin of `emit`. Superseded by `intent-at`.
   bubble-at: func(path: list<path-step>, name: string, args: list<value>);
 
-  /// Stop the message being handled from travelling any further up the tree
-  /// (host `ctx.stop-propagation`). Only meaningful while handling a bubble.
+  /// End the walk with no answer — "served, and no answer". The sender hears
+  /// nothing, even if it named an outcome, which is what separates this from
+  /// letting the route run out.
+  ///
+  /// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
   stop-propagation: func();
 
   /// Fire a request handler — one the static manifest says this bundle serves,
@@ -359,6 +432,10 @@ interface control {
   /// place a guest asks for something it cannot do itself, so the host decides
   /// — by the requester's path, at the moment of the call, not by anything the
   /// manifest claimed. A refusal arrives as an error response.
+  /// v1. Superseded by `intent` with a `lex` route — the scope chain is
+  /// exactly what a request searched, and the paragraph above is now a
+  /// statement about which LEG rather than about which verb. Kept for the
+  /// length of the migration.
   request: func(name: string, args: list<value>, opts: request-opts);
 
   /// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
@@ -395,7 +472,14 @@ interface guest {
   /// instance holds.
   handle-request: func(name: string, args: list<value>) -> request-result;
 
-  enum bucket { input, receive, response, bubble }
+  /// The dispatch buckets a handler can live in.
+  ///
+  /// `intent` is v2's and is LAST on purpose: a case's position is its wire
+  /// number, so appending leaves `input`..`bubble` where a 0.7 bundle already
+  /// reads them. v2 has two of these — `receive` for an addressed message
+  /// whoever sent it, `intent` for a routed one — and the other three fold
+  /// into them in the contract step.
+  enum bucket { input, receive, response, bubble, intent }
 
   /// Whether a dispatch name belonged to the guest, independently of whether
   /// it changed state. `unhandled` lets the host fall back to the mutator a

@@ -493,21 +493,25 @@ export function createTcompImports(getExports) {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
     // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
+    "tutuca:component/values@0.8.0": valuesImpl,
     "tutuca:component/values@0.7.0": valuesImpl,
     "tutuca:component/values@0.6.0": valuesImpl,
     "tutuca:component/values@0.5.0": valuesImpl,
     "tutuca:component/control": controlImpl,
+    "tutuca:component/control@0.8.0": controlImpl,
     "tutuca:component/control@0.7.0": controlImpl,
     "tutuca:component/control@0.6.0": controlImpl,
     "tutuca:component/control@0.5.0": controlImpl,
     "tutuca:component/env": envImpl,
+    "tutuca:component/env@0.8.0": envImpl,
     "tutuca:component/env@0.7.0": envImpl,
     "tutuca:component/env@0.6.0": envImpl,
     "tutuca:component/env@0.5.0": envImpl,
-    // Only 0.7.0: `config` is what 0.7.0 ADDED, so an older spelling would be
-    // a key nothing can ever ask for — and one that claimed a bundle built
+    // From 0.7.0 on: `config` is what 0.7.0 ADDED, so an older spelling would
+    // be a key nothing can ever ask for — and one that claimed a bundle built
     // against 0.6.0 could reach something that did not exist for it.
     "tutuca:component/config": configImpl,
+    "tutuca:component/config@0.8.0": configImpl,
     "tutuca:component/config@0.7.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no

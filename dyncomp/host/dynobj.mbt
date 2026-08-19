@@ -395,11 +395,10 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
     // A guest child raises these with control.emit; a guest PARENT hears them
     // here, through the same walk the host uses between its own components.
     Bubble => self.def.bubbles.contains(name)
-    // Nothing dispatches this yet, and a v1 manifest has no set to read: the
-    // WIT gains `intents` in the plan's task 16, and this arm reads it then.
-    // Answering `false` now is the truth rather than a placeholder — no loaded
-    // bundle declares an intent.
-    Intent => false
+    // The manifest's own set now, which task 16 gave it. A 0.7 bundle has no
+    // `intents` key, so it reads as empty and answers `false` for every name —
+    // which is the truth: a bundle built before the key existed declares none.
+    Intent => self.def.intents.contains(name)
   }
   guard declared else { return None }
   Some(
@@ -420,6 +419,27 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
         match msg {
           Emit(name, args) => ctx.bubble(name, args)
           Send(name, args) => ctx.send(name, args)
+          // v2's four. The host applies them exactly as it applies a host
+          // component's — a guest is not a special case, which is the whole
+          // point of the bridge being buffered rather than acting.
+          Intent(name, args, opts) => ctx.intent(name, args, opts)
+          IntentAt(steps, name, args, opts) =>
+            ctx.intent_at_path(ctx.path().concat(steps), name, args, opts)
+          Forward(args, opts) =>
+            ctx.forward(
+              if args.is_empty() {
+                None
+              } else {
+                Some(args)
+              },
+              if opts.route.is_empty() {
+                None
+              } else {
+                Some(opts)
+              },
+            )
+          Reply(v) => ctx.reply(v)
+          Fail(e) => ctx.fail(e)
           // relative: the guest addresses its own subtree (see ControlMsg)
           SendAt(steps, name, args) =>
             ctx.send_at_path(ctx.path().concat(steps), name, args)

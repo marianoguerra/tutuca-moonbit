@@ -128,9 +128,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.7.0': values,
+    'tutuca:component/values@0.8.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.7.0': control,
+    'tutuca:component/control@0.8.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;

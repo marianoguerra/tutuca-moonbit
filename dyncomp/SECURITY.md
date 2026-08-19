@@ -18,7 +18,7 @@ Where a claim is weaker than it sounds, it says so.
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
 | guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that. The declaration half now has a validator (§4); the selector and at-rule half does not |
-| `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it (§5) |
+| `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it, and no host uses it yet (§5) |
 | guest view event paths (`e.<path>`) | the host's DOM, and through it the page | **handled** — every step through a host object is checked against a curated allow-list, not just the first one (§9) |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
@@ -822,6 +822,9 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
   expands the canonical ABI attack surface.
 - Adding to `control`: is it buffered and applied by the host, or does it act?
   Only `log` acts, and only because logging cannot be misused into anything.
+  v2's five — `intent`, `intent-at`, `forward`, `reply`, `fail` — are all
+  buffered and all applied through the dispatching `&Ctx`, exactly as `emit`
+  and `send` are, so a guest is not a special case on any of them.
 - Adding to `env`: is the answer weaker than the platform's own, and is it
   frozen or seeded so a dispatch still replays?
 - **Adding a step to `event_object_steps`**: what does it reach, and can a path

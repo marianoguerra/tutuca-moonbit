@@ -12,12 +12,27 @@
 /// subtree and nothing above it, so what crosses is steps to concat onto
 /// `ctx.path()`, never an absolute path.
 pub(all) enum ControlMsg {
-  Emit(String, Array[@tutuca.Value])
   Send(String, Array[@tutuca.Value])
   SendAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
+  /// v2. `Emit` and `Request` both became this: one channel, and the ROUTE in
+  /// the opts says which scope answers rather than the verb saying it.
+  Intent(String, Array[@tutuca.Value], @tutuca.IntentOpts)
+  IntentAt(
+    Array[@tutuca.Step],
+    String,
+    Array[@tutuca.Value],
+    @tutuca.IntentOpts
+  )
+  /// Pass the message on, or continue the walk. Empty args means "the ones
+  /// that arrived"; the opts carry the route the forwarder named, if any.
+  Forward(Array[@tutuca.Value], @tutuca.IntentOpts)
+  Reply(@tutuca.Value)
+  Fail(@tutuca.Value)
+  StopPropagation
+  /// v1, and all three go in the contract step.
+  Emit(String, Array[@tutuca.Value])
   BubbleAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
   Request(String, Array[@tutuca.Value], @tutuca.RequestOpts)
-  StopPropagation
 } derive(Debug, Eq)
 
 ///|

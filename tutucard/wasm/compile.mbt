@@ -1,4 +1,4 @@
-// Card in, `tutuca:component@0.7.0` core module out.
+// Card in, `tutuca:component@0.8.0` core module out.
 //
 // The pipeline is the card runtime's, with one stage swapped:
 //
@@ -348,7 +348,7 @@ pub fn compile(
     fields: def.fields.map(f => f.name),
     manifest: manifest_json(g, decls, views, file),
     descriptor: Json::object({
-      "world": Json::string("tutuca:component@0.7.0"),
+      "world": Json::string("tutuca:component@0.8.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
       // as a data segment is bytes, and `abi.mjs` implements both.
       "encoding": Json::string("utf8"),

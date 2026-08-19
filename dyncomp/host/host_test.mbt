@@ -398,6 +398,7 @@ fn counter_manifest() -> DynManifest {
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
         receives: ["init", "setTo"],
+        intents: [],
         bubbles: [],
         responses: ["doubled", "triple"],
         methods: ["label"],
@@ -442,6 +443,7 @@ fn counter_manifest() -> DynManifest {
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
         receives: [],
+        intents: [],
         bubbles: ["counted"],
         responses: [],
         methods: [],
@@ -487,6 +489,7 @@ fn counter_manifest() -> DynManifest {
         ],
         fields: [plain_field("title", 0), plain_field("body", 1)],
         receives: [],
+        intents: [],
         bubbles: [],
         responses: [],
         methods: [],
@@ -1411,6 +1414,7 @@ test "a bundle's views are linted at load" {
         types: [],
         fields: [],
         receives: [],
+        intents: [],
         bubbles: [],
         responses: [],
         methods: [],
@@ -1486,6 +1490,7 @@ test "a `$method` the manifest never declared is reported at load" {
         types: [float_ty],
         fields: [plain_field("count", 0)],
         receives: [],
+        intents: [],
         bubbles: [],
         responses: [],
         // `$setCount` is absent on purpose: it is the mutator the `count` field

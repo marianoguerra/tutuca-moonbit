@@ -9,7 +9,7 @@
 // Output: dist/<name>.component.wasm and dist/js/. Then `node pack.mjs` turns
 // dist/js into the single `.tutuca.tar.gz` you hand to a host.
 //
-// `wit/` holds the contract this implements — `tutuca:component@0.7.0`, the
+// `wit/` holds the contract this implements — `tutuca:component@0.8.0`, the
 // same file the host generates its side from. The bindings in gen/, interface/
 // and world/ were generated from it and are checked in, so building needs NO
 // wit-bindgen: only moon, wasm-tools, and node.

@@ -212,6 +212,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
           },
         ],
         receives: [],
+        intents: [],
         bubbles: [],
         responses: [],
         methods: [],

@@ -5,7 +5,7 @@
 // card is loaded through `dyncomp/host/wasm/abi.mjs` and driven. Nothing here
 // knows how the module was produced, so what it proves is not "the generator
 // emitted what the generator meant" but "the host accepts this as a
-// tutuca:component@0.7.0 guest".
+// tutuca:component@0.8.0 guest".
 //
 //   node --test tutucard/wasm/test/
 //

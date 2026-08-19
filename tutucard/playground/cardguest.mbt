@@ -1,7 +1,7 @@
 // The compiled card, mounted — the other half of the boundary `card-wasm.js`
 // holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.7.0` core module
+// The page next door compiles a card to a `tutuca:component@0.8.0` core module
 // and hands you the archive. That proves the BYTES are right. It does not prove
 // the module runs, and until something instantiated one and asked it for a
 // field, "this page produced a real guest" was a claim about a download.

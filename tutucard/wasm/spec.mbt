@@ -67,7 +67,7 @@ pub(all) struct Escape {
 /// separately is a bundle whose parts can disagree.
 pub(all) struct Compiled {
   component : String
-  /// A `tutuca:component@0.7.0` core module. No component wrapper, no
+  /// A `tutuca:component@0.8.0` core module. No component wrapper, no
   /// JavaScript: `dyncomp/host/wasm/abi.mjs` instantiates this directly.
   wasm : Bytes
   /// The same module printed as WAT. Nothing reads it — it is what makes the

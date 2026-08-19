@@ -82,7 +82,7 @@ Two consequences worth stating outright.
 
 **Phase 4 — dynamic components**
 
-- [ ] 16. [WIT 0.8.0 and the host bridge](#16-wit-080-and-the-host-bridge)
+- [x] 16. [WIT 0.8.0 and the host bridge](#16-wit-080-and-the-host-bridge)
 - [ ] 17. [Regenerate and rebuild every guest](#17-regenerate-and-rebuild-every-guest)
 
 **Phase 5 — migration**
@@ -1178,6 +1178,54 @@ Bump the package version to `tutuca:component@0.8.0`.
 **Validation.** `just dev gen-guest-bindings` (drift-checks the generated
 trees), then `just dev guest-harness` — the only runtime coverage the guest ABI
 has. Needs wasm-tools and jco.
+
+**Done, additively in the WIT too.** The package is `tutuca:component@0.8.0`.
+`control` gains `leg`, `intent-opts`, and five functions — `intent`,
+`intent-at`, `forward`, `reply`, `fail`. `emit`, `bubble-at`, `request` and
+`request-opts` stay, marked v1 and slated for the contract step, which is what
+keeps `check-guest-template` green while the guest sources still call them.
+
+**`bucket` gains `intent` LAST, on purpose.** A case's position is its wire
+number, so appending leaves `input`..`bubble` where they are — which is what
+lets the number 4 that tasks 3 and 11 already wrote be the right one.
+
+`intent-opts` carries **three** outcome names where `request-opts` carried
+`on-res`: v2 has three outcomes, and the combined `[result, error]` payload —
+with the bug where a split arm read the wrong slot — is gone with it. An empty
+`route` means the default, which **the host supplies**, so a guest that says
+nothing cannot disagree with it.
+
+`ControlMsg` gains the five, `DynObj` applies each through the dispatching
+`&Ctx` exactly as it applies `emit` and `send`, and `ComponentDef` gains
+`intents` — which `obj_handler` now reads for the `Intent` bucket, replacing
+task 3's honest `false`. A 0.7 manifest has no `intents` key, so it reads as
+empty and answers `false` for every name, which is still the truth.
+
+**The ABI bump is a hard break, and the host now says so.** A 0.7 bundle
+exports under `guest@0.7.0`, so every export lookup would miss and the first
+one to report would say "core module exports no
+tutuca:component/guest@0.8.0#[constructor]instance" — true, and useless.
+`abi.mjs` detects an older guest namespace and says to rebuild. It is right
+that this is a break rather than a compatibility path: a 0.7 guest's
+`handle-event` does not know the `intent` bucket and its manifest has no
+`intents`, so loading one would half-work rather than work.
+
+The IMPORT side stays compatible, because that is a different question — a
+host's table spelling, not a bundle's contract. `loader.mjs` keeps its `@0.7.0`
+keys beside the new `@0.8.0` ones and `IMPL_VERSIONS` gained `@0.8.0` at the
+front.
+
+**`SECURITY.md`'s "What to check when changing this" was run, not just cited.**
+The question it asks about `control` is whether a new function is buffered and
+applied by the host or acts on its own; all five are buffered and go through
+the same `&Ctx`, so a guest is not a special case on any of them. The checklist
+now records that.
+
+**Validation is genuinely paired with task 17.** `gen-guest-bindings`,
+`guest-harness` and `dyncomp/test/abi.test.mjs` all drive BUILT guests, and
+every one of those is a 0.7 bundle until task 17 rebuilds it. What is green
+here: all three `moon check` targets, 1580 tests, and `check-guest-template` —
+the one guest check that IS in `ci`.
 
 ## 17. Regenerate and rebuild every guest
 

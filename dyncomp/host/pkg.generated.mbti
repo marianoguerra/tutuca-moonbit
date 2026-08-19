@@ -62,12 +62,17 @@ pub fn Bundle::snapshot(Self, @core.Value) -> @persist.Snapshot?
 pub fn Bundle::wrap_instance(Self, String, Int) -> @core.Value?
 
 pub(all) enum ControlMsg {
-  Emit(String, Array[@core.Value])
   Send(String, Array[@core.Value])
   SendAt(Array[@core.Step], String, Array[@core.Value])
+  Intent(String, Array[@core.Value], @core.IntentOpts)
+  IntentAt(Array[@core.Step], String, Array[@core.Value], @core.IntentOpts)
+  Forward(Array[@core.Value], @core.IntentOpts)
+  Reply(@core.Value)
+  Fail(@core.Value)
+  StopPropagation
+  Emit(String, Array[@core.Value])
   BubbleAt(Array[@core.Step], String, Array[@core.Value])
   Request(String, Array[@core.Value], @core.RequestOpts)
-  StopPropagation
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DispatchResult {
@@ -86,6 +91,7 @@ pub(all) struct DynComponentDef {
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
   receives : Array[String]
+  intents : Array[String]
   bubbles : Array[String]
   responses : Array[String]
   methods : Array[String]

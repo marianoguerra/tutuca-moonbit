@@ -42,7 +42,7 @@ test('host ABI loads a core-only v0.6 guest and preserves event results', async 
       'tutuca:component/control': control,
     },
     {
-      world: 'tutuca:component@0.7.0',
+      world: 'tutuca:component@0.8.0',
       encoding: 'utf16',
       core: 'counter.component.core.wasm',
     },

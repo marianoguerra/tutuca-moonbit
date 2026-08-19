@@ -79,6 +79,11 @@ pub(all) struct DynComponentDef {
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
   receives : Array[String]
+  /// Every INTENT this component answers. v2's, and the one `bubbles` and
+  /// `responses` fold into: a bubble is a routed dispatch that could search
+  /// only one scope, and a response is the answer to one, which v2 delivers as
+  /// an ordinary message into `receives` instead.
+  intents : Array[String]
   bubbles : Array[String]
   responses : Array[String]
   methods : Array[String]
@@ -569,6 +574,9 @@ pub fn DynManifest::from_json_string(
       types: parse_types(c),
       fields,
       receives: str_array(c, "receives"),
+      // Absent in a 0.7 manifest, which reads as the empty list — a bundle
+      // built before this key existed declares no intents, which is true.
+      intents: str_array(c, "intents"),
       bubbles: str_array(c, "bubbles"),
       responses: str_array(c, "responses"),
       methods: str_array(c, "methods"),
