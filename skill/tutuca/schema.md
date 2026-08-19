@@ -26,8 +26,8 @@ One `state` per component, named after the template id it gives views to
 bare `state { … }`; a file either names every component or none of them,
 exactly as its templates do.
 
-Six declaration keywords and no more — `state`, `struct`, `enum`, and the three
-message buckets `receive` / `bubble` / `response`. There is no nesting level
+Five declaration keywords and no more — `state`, `struct`, `enum`, and the two
+message buckets `receive` / `intent`. There is no nesting level
 above them: a `<template id>` already says which component a thing belongs to,
 so a second place to say it would be a second place to get it wrong.
 
@@ -196,24 +196,31 @@ structural equality read.
 
 ## Message buckets
 
-Three optional variants declare the messages a component receives, beyond the
+Two optional variants declare the messages a component receives, beyond the
 `@on` handlers its views name. Each generates a typed enum
-(`CounterReceive` / `CounterBubble` / `CounterResponse`) that `update` matches:
+(`BoardReceive` / `BoardIntent`) that `update` matches:
 
 ```html
 <script type="tutuca/state">
   state Board { rows: Array[Any], loading: Bool }
-  receive Board { Reset, FocusRow(Int) }
-  bubble Board { RowPicked(Int) }
-  response Board { LoadRows(Array[Any]) }
+  receive Board { Reset, FocusRow(Int), LoadRowsOk(Array[Any]),
+                  LoadRowsError(String), LoadRowsUnhandled }
+  intent Board { RowPicked(Int) }
 </script>
 ```
 
-`receive` is what a parent or sibling `send`s; `bubble` what a child raises;
-`response` what a request resolves to. A bucket the component has no use for is
-simply absent. What a parent asks of a child goes through `receive` — a slot is
-a handle, not a channel. Channel semantics are in
-[request-response.md](./request-response.md).
+`receive` is what something `send`s to this component **by address**; `intent`
+is what reaches it because a walk routed here — a descendant's `intent dyn`, or
+an intent that took the default `dyn lex` route. A bucket the component has no
+use for is simply absent. What a parent asks of a child goes through `receive`
+— a slot is a handle, not a channel.
+
+Note the three `LoadRows…` names in the `receive` list. An intent's **answers**
+are ordinary messages, so they are declared where every other message is; and
+declaring them is what makes `intent lex 'loadRows'` a *request* rather than a
+notification. Nobody writes that down twice — the generator reads this list and
+fills the intent's opts in. Channel semantics are in
+[messages-and-intents.md](./messages-and-intents.md).
 
 ## Methods no view calls (`$`-callables)
 
@@ -356,8 +363,7 @@ Four things to know about the clauses themselves:
   rather than about the component; guard it with `if` inside the body.
 - At most one `requires` and one `ensures` per handler. Two rules become one by
   naming their `and`: `pred canMove { canPush and (not .busy) }`.
-- Contracts attach to transitions only — `on`, `receive`, `bubble`,
-  `response`. An `enrich` writes bindings, and a `compute` is a value.
+- Contracts attach to transitions only — `on`, `receive`, `intent`. An `enrich` writes bindings, and a `compute` is a value.
 - An `invariant` is a `pred` with a role, so `$conserved` still reads from a
   view and `@when="conserved"` still filters a row. It covers the transitions
   the **block** declares; the generated mutators a component answers by default

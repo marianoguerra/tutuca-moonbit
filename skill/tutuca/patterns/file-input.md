@@ -50,7 +50,7 @@ the chosen `File`'s synchronously-available metadata into a plain `Map`
 delivered as `value` — no `event.target.files` digging (this differs from
 the JS docs, where the handler takes `event`). The file's *contents* are
 not in the metadata — read those host-side (JS FFI) and feed the result
-back in through a `request`/`response` or `app.send_at_root`. Flatten
+back in through an `intent lex` or `app.send_at_root`. Flatten
 what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
 derive); gate the summary on a `hasFile` flag with `@show`/`@hide`.

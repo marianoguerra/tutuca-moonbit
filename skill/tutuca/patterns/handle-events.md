@@ -53,7 +53,7 @@ that case via the generated mutator or a raw `Input` arm).
 
 Bind events declaratively with `@on.` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor. A handler
-that needs `ctx` (to `send`/`bubble`/`request`) must be an `update` arm —
+that needs `ctx` (to `send` or raise an `intent`) must be an `update` arm —
 `compute` is pure by type.
 
 Pass the most granular arg the handler needs — `value`/`valueAsInt`/`key` — so

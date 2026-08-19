@@ -92,7 +92,7 @@ Two consequences worth stating outright.
 
 **Phase 6 — words**
 
-- [ ] 20. [The skill](#20-the-skill)
+- [x] 20. [The skill](#20-the-skill)
 - [ ] 21. [`docs/`, `README`, `AGENTS.md`](#21-docs-readme-agentsmd)
 - [ ] 22. [The landing site and the playground](#22-the-landing-site-and-the-playground)
 
@@ -1528,6 +1528,76 @@ block **must** carry a `// nocheck: <reason>` line.
 
 **Validation.** `just dev check-skill`, then `just dev skill-embed` and the
 drift check. Both run in `ci`.
+
+**Done.** `request-response.md` is gone; `messages-and-intents.md` is what
+replaced it, and it is a rewrite rather than a rename — the old file's
+organising idea was the four channels, and there is no arrangement of two
+that is the same document with fewer rows.
+
+The new file opens on the distinction the whole release is: a **message** is
+addressed and stops at its target, an **intent** is routed and walks until
+something answers. A v1→v2 mapping table sits right under it (`bubble` →
+`intent dyn`, `request` → `intent lex`, `send` unchanged, the combined
+`[res, err]` payload → three named answers), because the reader most likely to
+open this file is one who learnt the four channels. Then, in order: messages
+(`send` / `sendAt &.status`, positions vs values, `ctx.at()`); intents (the two
+legs, the `dyn lex` default and the one place it is written, the `dyn` leg
+starting at the sender's PARENT, `INTENT_DEPTH`); answering (`reply` / `fail` /
+`forward` / `stop` / falling off the end, and the one rule — *a reply ends the
+walk, running does not*); the three outcomes and the schema `receive` list that
+wires them; `forward` from both sides; `IntentFn` registration with all three
+answers including `Pass`; the outside world; fire-and-forget; `live_path`;
+catch-all arms; positional delivery.
+
+Every snippet is drawn from code that runs: `storybook/examples/request.{html,mbt}`
+and the v2 conformance corpus. The `IntentFn` struct is the real declaration,
+and the three fixture maps (answering, failing, declining) are the ones the
+example's tests already mount.
+
+Then down the density list. `core.md`: "The four channels" is "The channels"
+and lost a row; `ctx.request`/`ctx.bubble` in the skeleton became
+`ctx.intent` + an `Intent` arm + a `Receive("loadDataOk", …)` arm; the
+`ModuleDef` convention now shows `intents={ "loadData": [fn] }` and the
+per-example fixture parameter is `intents?`. `semantics.md`: the push table
+lost two rows and gained `push_intent`, with the walk's mechanics (the `Dyn`
+leg as `pop_step`, the `Lex` leg as queued callbacks, where the answer lands,
+`INTENT_DEPTH`) written where bubbling used to be; key pinning is now about
+dispatch time and answers rather than request time and responses.
+`schema.md`: six declaration keywords are five, `bubble`/`response` are
+`intent`, and the worked schema now shows the three `LoadRows…` answers sitting
+in the `receive` list — the file where a reader learns that declaring an answer
+is what makes an intent a request. `component-design.md`: the ladder is
+reordered, because the narrowest channel is no longer bubbling — `send` when
+you can name the target, `intent dyn` when an ancestor owns it, `intent lex`
+for async, and a bare `intent` when you know only the job. `testing.md`: the
+cascade section drives all three answers, and the third test — a scope that
+declines — is new, because `Pass` is the path v1 could not express and a test
+file that never exercised it would teach that it does not exist.
+`patterns/coordinate-components.md` was rewritten whole (it is the one pattern
+file entirely about this); `cli.md`, `events.md`, `patterns/README.md`,
+`patterns/add-an-example.md`, `patterns/file-input.md` and
+`patterns/handle-events.md` took one line each. All 20 inbound links to the old
+filename were rewritten, including `SKILL.md`'s routing row.
+
+**A gap this found.** `emit_intent_sender` writes an intent's `dispatch` with
+`opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new()` — it passes the
+default route rather than spelling the legs, which is the right call and the
+reason the default has one home. In a module `@tutuca` aliases `core` and that
+resolves. In the **playground** `@tutuca` IS the module-root facade
+(`reexport.mbt`), which re-exported `Value` / `RequestOpts` / `Ctx` / `Obj` and
+not one intent type — so a card that raised an intent would have compiled
+everywhere except the one place an author writes one in a browser. Exactly the
+failure the file's own comment records for `precondition_failed`, one release
+later. Fixed by re-exporting `IntentOpts`, `IntentCall`, `IntentAnswer` and
+`Leg` (`Leg` because a route is written `route=[Dyn]`, the other two because a
+card may register a `lex` handler).
+
+**Validated.** `just dev check-skill` — 15/15 sections compile, 18 of 62 blocks
+compiled and the remaining 44 identifier-checked against the `.mbti` files (one
+real catch: the `IntentFn` declaration copied `@core.` from the interface file,
+which does not resolve in the snippet package). `just dev skill-embed` — 35
+files embedded, drift check clean once committed. `moon check` clean;
+`moon test` 1607/1607.
 
 ## 21. `docs/`, `README`, `AGENTS.md`
 

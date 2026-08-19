@@ -24,10 +24,11 @@ pub fn foo_module() -> @component.ModuleDef {
 `args` is a `Map[String, Value]` seeding the root instance; a
 component-typed slot must hold a real instance —
 `item.make({...})` (which returns the instance as a `Value`), not a
-bare `Map`. To show request-driven
-states, parameterize the module with `requests?` and build the example's
-module with a fixture (`respond(Ok(...))` / `respond(Err(...))` / never
-respond to hold a loading state) — see *The ModuleDef convention* in
+bare `Map`. To show intent-driven
+states, parameterize the module with `intents?` and build the example's
+module with a fixture (`answer(Ok(...))` / `answer(Failed(...))` /
+`answer(Pass)` / never answer at all to hold a loading state) — see
+*The ModuleDef convention* in
 [core.md](../core.md).
 
 The same example is then reachable two ways: `@harness.mount_example(

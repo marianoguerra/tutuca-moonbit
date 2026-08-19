@@ -10,6 +10,20 @@
 ///|
 pub using @core {type Value, type RequestOpts, trait Ctx, trait Obj}
 
+// The intent types, for the same reason and with the same failure mode.
+//
+// A generated component with an `intent` bucket names `@tutuca.IntentOpts` in
+// the signature of its `dispatch` — `emit_intent_sender` writes the default
+// route as `@tutuca.IntentOpts::new()` rather than spelling the two legs. In a
+// module `@tutuca` aliases core and that resolves; in the playground `@tutuca`
+// IS this facade, so a card that raises an intent would not compile in the one
+// place an author writes one in a browser. `Leg` comes with it because a route
+// is written `route=[Dyn]`, and `IntentAnswer` / `IntentCall` because a card
+// may register a handler for the `lex` leg.
+
+///|
+pub using @core {type IntentOpts, type IntentCall, type IntentAnswer, type Leg}
+
 // The contract reporters and the channel they report through.
 //
 // Not a convenience: a GENERATED module names them. `gen-views` compiles a

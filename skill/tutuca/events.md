@@ -174,7 +174,7 @@ component that owns the state. For any event with a real element in the tree,
 `@on.` is the only entry point you need. Genuinely external inbound sources
 (WebSocket, `postMessage`, timers) have no element to bind — route those through
 `app.send_at_root` instead (see
-[request-response.md](./request-response.md)).
+[messages-and-intents.md](./messages-and-intents.md)).
 
 Pitfall: binding a camelCase JS property on a custom element silently fails —
 the HTML parser lowercases attribute names before tutuca sees them, so `:mapId`

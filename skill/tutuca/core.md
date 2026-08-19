@@ -14,7 +14,7 @@ or when using the embedded `tutuca` CLI.
 > table in [SKILL.md](./SKILL.md) has the full descriptions):
 > [schema.md](./schema.md) · [events.md](./events.md) ·
 > [iteration.md](./iteration.md) · [macros.md](./macros.md) ·
-> [styles.md](./styles.md) · [request-response.md](./request-response.md) ·
+> [styles.md](./styles.md) · [messages-and-intents.md](./messages-and-intents.md) ·
 > [component-design.md](./component-design.md) · [testing.md](./testing.md) ·
 > [cli.md](./cli.md) · [semantics.md](./semantics.md) ·
 > [advanced.md](./advanced.md) · [margaui.md](./margaui.md) ·
@@ -83,7 +83,7 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   — and exists for the other job: a `$`-callable evaluated in a VALUE
   position (`@text="$label"`), where no event and no ctx exist. The
   `update` fn — `(s, msg, ctx) => Update[S]` — gets the `&Ctx` and can
-  `ctx.send` / `ctx.request`. Every `@on` handler is written bare,
+  `ctx.send` / `ctx.intent`. Every `@on` handler is written bare,
   whichever bucket serves it; `$` is for value positions only.
 - **`update` returns `Update[S]`, which has three cases.** `Next(s2)`
   commits a successor. `Unchanged` says "my arm ran and the state stays as
@@ -266,8 +266,8 @@ a new state (`setInItemsAt`, …) or messages the child with `ctx.send`.
 Don't reach in to mutate around the handler discipline, and prefer
 letting a child own and render its own state — reach down to read only
 when the ancestor genuinely needs it. See
-[component-design.md](./component-design.md) and "When to bubble" in
-[request-response.md](./request-response.md).
+[component-design.md](./component-design.md) and "When to send" in
+[messages-and-intents.md](./messages-and-intents.md).
 
 **Stack: frames vs scopes.** As the renderer walks the AST it pushes
 bind frames. A *frame* is a barrier: name lookups (`@x`) stop at it,
@@ -297,13 +297,13 @@ HTML comments adjacent to iteration entries. On a DOM event the
 runtime walks from the target up to the root, reads those breadcrumbs,
 and rebuilds a *positional* path — an array of `Step`s from the root
 to the value the handler should run against. The same path is reused
-verbatim for `ctx.send`, `ctx.bubble`, and `ctx.request` /
-response: because it's positional rather than a captured reference, an
-async response survives intervening transactions that rebuild the root.
+verbatim for `ctx.send` and for `ctx.intent` and its answer: because
+it's positional rather than a captured reference, an async answer
+survives intervening transactions that rebuild the root.
 "The right slot" is exact for named fields and for map entries by key
 (seq-access keys like `.sheets[.selId]` are *pinned* to their
-request-time value by default); a bare list **index** still slides if the
-list reordered. See [request-response.md](./request-response.md) for the
+dispatch-time value by default); a bare list **index** still slides if the
+list reordered. See [messages-and-intents.md](./messages-and-intents.md) for the
 dispatch APIs and [semantics.md](./semantics.md) for the path/transaction
 model and key pinning.
 
@@ -431,11 +431,11 @@ my_comp_component(
   update=(s, msg, ctx) => match msg {
     Input("onClick", _) => Next({ ..s, count: s.count + 1 })
     Receive("init", _) => {
-      ctx.request("loadData", [], @tutuca.RequestOpts::new())
+      ctx.intent("loadData", [], @tutuca.IntentOpts::new(route=[Lex]))
       Some({ ..s, isLoading: true })
     }
-    Bubble("itemPicked", [item, ..]) => Next({ ..s, selected: item })
-    Response("loadData", [List(rows), _err]) =>
+    Intent("itemPicked", [item, ..]) => Next({ ..s, selected: item })
+    Receive("loadDataOk", [List(rows), ..]) =>
       Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
     _ => Unhandled // ALWAYS needed
   },
@@ -832,7 +832,7 @@ canonical list; other files link here rather than restating it.
 
 | Bucket | Signature | Answers |
 | ------ | --------- | ------- |
-| `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event and message; one match over all four channels |
+| `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event, message and intent; one match over all the channels |
 | `compute` | `(S, Array[Value]) -> Value` | a `$name` in a **value** position — pure, no ctx |
 | `swap` | `(S, Array[Value], &Ctx) -> Value?` | an `Input` that replaces this node with a different **Value** |
 | `when` | `(S, key, value, iterData) -> Bool` | `@when` iteration filters |
@@ -870,22 +870,23 @@ handler no view calls yet — the constructor doesn't exist. Add the name to the
 view first, regenerate, then write the handler. A bucket the views never use is
 not a parameter at all.
 
-### The four channels
+### The channels
 
 Each maps a trigger to one arm of the **same `update` match**:
 
-| Triggered by                                | `update` arm            | Use for                                             |
-| ------------------------------------------- | ----------------------- | --------------------------------------------------- |
-| DOM event (`click`, `input`, …)             | `Input(name, args)`     | the component handling its own events               |
-| `ctx.bubble(name, args)` — event up the tree | `Bubble(name, args)`   | aggregate state an ancestor owns (logs, selections) |
-| `ctx.send(name, args)` — message to a target path | `Receive(name, args)` | addressing one known component (or self)        |
-| `ctx.request(name, args, opts)` — async request | `Response(name, args)` | fetch / timer / storage, result routed back      |
+| Triggered by                                      | `update` arm          | Use for                                            |
+| ------------------------------------------------- | --------------------- | -------------------------------------------------- |
+| DOM event (`click`, `input`, …)                   | `Input(name, args)`   | the component handling its own events              |
+| `ctx.send(name, args)` — message to a target path | `Receive(name, args)` | addressing one known component (or self)           |
+| `ctx.intent(name, args, opts)` — a routed walk    | `Intent(name, args)`  | work the sender does not address: an ancestor's job (`dyn`) or the scope's (`lex`) |
 
-The `update` fn is one pattern match over all four; the framework swaps the
-returned state into the dispatch path (`None` = no change). The three channels
-beyond `Input` — plus `ctx.at()`, catch-all arms, per-call handler-name
-overrides, error handling, and `RequestFn` registration — are in
-[request-response.md](./request-response.md); worked snippets in
+The `update` fn is one pattern match over all of them; the framework swaps the
+returned state into the dispatch path (`None` = no change). An intent's three
+answers — `<name>Ok` / `<name>Error` / `<name>Unhandled` — come back as
+ordinary `Receive` arms. The two channels beyond `Input` — plus `ctx.at()`,
+routes and legs, `forward` / `reply` / `fail`, catch-all arms, and `IntentFn`
+registration — are in
+[messages-and-intents.md](./messages-and-intents.md); worked snippets in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
 ### Dispatch precedence for `Input`
@@ -1085,13 +1086,13 @@ The JS `getComponents()` / `getMacros()` / `getRequestHandlers()` /
 modules are built programmatically and handed to tooling:
 
 ```moonbit nocheck
-// nocheck: the comps, macros and request fns are the reader's own
+// nocheck: the comps, macros and intent fns are the reader's own
 pub fn my_module() -> @component.ModuleDef {
   @component.ModuleDef::new(
     name="my-module",
     components=[root_comp(), item_comp()], // EVERY component, helpers included
     macros={ "badge": badge_macro() },     // optional
-    requests={ "loadData": load_data_fn }, // optional, RequestFn values
+    intents={ "loadData": [load_data_fn] }, // optional, Array[IntentFn] per name
     examples=[                             // optional, Array[ExampleDef]
       { component: "Root", title: "Default", args: {}, view: None },
       {
@@ -1109,14 +1110,14 @@ One `ModuleDef` drives the headless tests (`@harness.mount`), the
 browser hosts (`App::from_module`) and the storybook gallery — a passing
 test and a working page are the same artifact.
 
-**Per-example request mocking**: parameterize the module function with
-an optional `requests?` argument, defaulting to the real handlers, and
+**Per-example intent mocking**: parameterize the module function with
+an optional `intents?` argument, defaulting to the real handlers, and
 build the module with a fixture map in tests/demos:
 
 ```moonbit nocheck
 // nocheck: the real handlers and comps are the reader's own
 pub fn request_module(
-  requests? : Map[String, @component.RequestFn] = real_request_handlers(),
+  intents? : Map[String, Array[@component.IntentFn]] = real_intent_handlers(),
 ) -> @component.ModuleDef {
   ...
 }
@@ -1147,9 +1148,9 @@ its examples never reach the storybook or a harness test.
 - [component-design.md](./component-design.md) — design judgment for shaping a
   feature into components: responsibilities, where state lives, which channel to
   reach for, and a curated do's & don'ts list.
-- [request-response.md](./request-response.md) — the `Bubble` /
-  `Receive` / `Response` channels, `ctx.at()`, catch-all arms, and
-  `RequestFn` registration.
+- [messages-and-intents.md](./messages-and-intents.md) — the `Receive` /
+  `Intent` channels, routes and legs, `ctx.at()`, catch-all arms, and
+  `IntentFn` registration.
 - [advanced.md](./advanced.md) — dynamic bindings (`*x`), pseudo-`@x` for
   `<select>` / `<table>` / `<tr>`, drag & drop, custom collections.
 - [margaui.md](./margaui.md) — setting up MargaUI styling:

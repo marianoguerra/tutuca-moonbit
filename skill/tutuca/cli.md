@@ -113,7 +113,7 @@ a `<script type="tutuca/state">` block gets the state half: `CounterState`
 (a plain struct — no derives), `CounterState::zero()`, an
 `impl @component.Fields for CounterState` carrying the whole contract as
 static metadata plus the direct encode/decode, and a typed
-`CounterReceive`/`CounterBubble`/`CounterResponse` for each message bucket the
+`CounterReceive`/`CounterIntent` for each message bucket the
 schema declares.
 
 The field names, their declared kinds, the view names, the constant element

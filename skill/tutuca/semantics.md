@@ -50,8 +50,9 @@ The reconstructed path is transformed two ways depending on use:
 
 - **`DispatchPath::compact()` → the dispatch path.** Drops frame-only
   steps, keeps one step per crossed component (including the `Dyn`
-  markers). `pop_step()` over it bubbles through every component. Used
-  to drive `ctx.send` / `ctx.bubble` and to locate handlers.
+  markers). `pop_step()` over it walks up through every component. Used
+  to drive `ctx.send` and the `Dyn` leg of an intent walk, and to locate
+  handlers.
 - **`DispatchPath::to_transaction_path()` → the transaction path.**
   Teleports every `Dyn` marker (drops the steps interior to its
   producer..consumer span and splices in the producer's own steps) so a
@@ -69,10 +70,10 @@ their custom binds can be replayed). On an event, the render package's
 event-path reconstruction walks from the target up to the root, reads
 the breadcrumbs, and rebuilds the path (`render/build_stack.mbt` mirrors
 the exact frames the renderer pushed). Along the way it resolves the
-handler: normally on the **leaf** component, but for bubbling events
-(and explicit `bubble`) it can resolve on an **ancestor**, in which case
-the descending steps below that ancestor are dropped so the path
-resolves to the ancestor's value.
+handler: normally on the **leaf** component, but an intent walking its
+`Dyn` leg resolves on an **ancestor**, in which case the descending
+steps below that ancestor are dropped so the path resolves to the
+ancestor's value.
 
 ## The transaction lifecycle
 
@@ -81,13 +82,13 @@ FIFO queue; the app layer drains it in batches
 (`App::drain_batched(max_per_batch~, cb)` on the browser glue's
 scheduler; `Transactor::settle(max_turns~)` drains synchronously in
 headless tests), so transactions complete **asynchronously and
-interleaved** — which is exactly why a request's response can land after
+interleaved** — which is exactly why an intent's answer can land after
 other transactions have rebuilt the root.
 
 The core of applying one is `Path::update(root, bucket, name, args)`:
 
 1. compute the transaction path (`to_transaction_path()`, or a pinned
-   path for a response);
+   path for an answer);
 2. `lookup` the addressed leaf value **now**;
 3. find the handler on it — **one** lookup, by exact name, with no fallback
    sentinel behind it — and call it: old self in, new self out;
@@ -98,25 +99,34 @@ The root swap is atomic and structure-sharing: unchanged subtrees keep
 their values. Per-dispatch completion is tracked by
 `@transactor.Completion` (counter-based): `on_settled` fires once a
 transaction's own work finishes, `on_subtree_settled` once the subtree
-it spawned (requests, follow-on sends) settles too.
+it spawned (intent walks, follow-on sends) settles too.
 
 ## Dispatch channels, semantically
 
-The authoring API (`ctx.send` / `bubble` / `request`, the `update`
-dispatch arms) is in [request-response.md](./request-response.md).
-Underneath, each maps to a transactor push:
+The authoring API (`ctx.send` / `ctx.intent` / `ctx.forward`, the
+`update` dispatch arms) is in
+[messages-and-intents.md](./messages-and-intents.md). Underneath, each
+maps to a transactor push:
 
-| Channel             | Push                | Notes                                            |
-| ------------------- | ------------------- | ------------------------------------------------ |
-| DOM event → `Input` arm | `push_input`    | transacted **synchronously**, not queued         |
-| `ctx.send` → `Receive` arm | `push_send`  | queued; `skip_self` runs no self-handler         |
-| `ctx.bubble` → `Bubble` arm | `push_send(bubbles=true)` | queued; re-pushes itself at `path.pop_step()` until it reaches the root or `stop_propagation` |
-| `ctx.request` → `Response` arm | `push_request` | queued **after** the async work calls `respond` |
+| Channel                          | Push          | Notes                                              |
+| -------------------------------- | ------------- | -------------------------------------------------- |
+| DOM event → `Input` arm          | `push_input`  | transacted **synchronously**, not queued           |
+| `ctx.send` → `Receive` arm       | `push_send`   | queued; `skip_self` runs no self-handler           |
+| `ctx.intent` → `Intent` arms     | `push_intent` | returns an `IntentWalk`; each hop is its own queued transaction |
 
-Bubbling is just walking up the dispatch path one `pop_step` at a time.
-`target_path` (the originator's path) stays fixed as `path` shortens, so a
-bubble handler can reply to the originator via
+`push_intent` creates the walk and queues its first hop. The `Dyn` leg is
+just walking up the dispatch path one `pop_step` at a time, starting at
+the sender's **parent**; the `Lex` leg queues each registered `IntentFn`
+in turn and waits for its `answer` callback. A hop that replies ends the
+walk and the answer is dispatched back at the originator's path as an
+ordinary `Receive`; a walk whose route runs out dispatches
+`<name>Unhandled` there instead. `target_path` (the originator's path)
+stays fixed as `path` shortens, which is how the answer finds its way
+home, and is also what an intent handler can address directly with
 `ctx.send_at_path(ctx.target_path(), name, args)`.
+
+Walks are bounded by `@tutuca.INTENT_DEPTH` hops; past it the transactor
+refuses with `RefusalCode::IntentDepth` rather than looping.
 
 ## Dynamic-var teleporting
 
@@ -138,55 +148,55 @@ races come from.
 
 A `SeqAccessStep` resolves `key_field` from the live root **every time it
 runs**. For synchronous dispatch this is invisible — the key cannot change
-mid-transaction. For an async `request`/`response` it is the whole
-problem: between issuing the request and applying the response, the key
-may move (e.g. the user switches the selected tab, so `.selId` changes),
-and a naive re-resolution would deliver the response to **whatever item is
-selected now**, not the one that issued the request.
+mid-transaction. For an async intent walk it is the whole problem:
+between raising the intent and applying its answer, the key may move
+(e.g. the user switches the selected tab, so `.selId` changes), and a
+naive re-resolution would deliver the answer to **whatever item is
+selected now**, not the one that raised the intent.
 
-**Key pinning is the default.** `push_request` snapshots the resolved key
-at request time by running `Path::pin_keys(cur_root)` over the transaction
-path — each `SeqAccessStep(seq_field, key_field)` becomes a literal
-`SeqStep(field, resolved_key)`. The pinned path is stored on the queued
-response, so the response updates the item that issued the request
-regardless of later key changes. (Pinning runs on the transaction path,
-after teleporting, because the `SeqAccessStep` may have come from a
-`Dyn` marker.)
+**Key pinning is the default.** `push_intent` snapshots the resolved key
+at dispatch time by running `Path::pin_keys(cur_root)` over the
+transaction path — each `SeqAccessStep(seq_field, key_field)` becomes a
+literal `SeqStep(field, resolved_key)`. The pinned path is stored on the
+walk, so the answer updates the item that raised the intent regardless of
+later key changes. (Pinning runs on the transaction path, after
+teleporting, because the `SeqAccessStep` may have come from a `Dyn`
+marker.)
 
-**Opt out per request with `live_path=true`:**
+**Opt out per intent with `live_path=true`:**
 
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
-ctx.request("save", [payload], @tutuca.RequestOpts::new(live_path=true))
+ctx.intent("save", [payload], @tutuca.IntentOpts::new(live_path=true))
 ```
 
-With `live_path`, the response re-evaluates the key at apply time — the
-"follow the latest selection" behavior. Use it only when the response is
+With `live_path`, the answer re-evaluates the key at apply time — the
+"follow the latest selection" behavior. Use it only when the answer is
 *meant* to follow wherever the key now points.
 
 Edge cases:
 
-- **Pinned target deleted before the response arrives** — the pinned
+- **Pinned target deleted before the answer arrives** — the pinned
   `SeqStep` resolves to nothing, the handler runs against a null leaf, and
   the result equals the input → a safe no-op (root unchanged). With
   `live_path` it would instead hit the current item.
-- **The ctx path stays live (un-pinned).** A response handler
-  that itself re-dispatches via `ctx.send` / `ctx.request` re-resolves
+- **The ctx path stays live (un-pinned).** An answer handler
+  that itself re-dispatches via `ctx.send` / `ctx.intent` re-resolves
   against current state — pinning covers the *update*, not nested
   re-dispatch.
 
 ## What "positional delivery" guarantees
 
-Because a path is a position, an async response survives intervening
+Because a path is a position, an async answer survives intervening
 transactions that rebuild the root — but "the right slot" means different
 things per step kind:
 
 - **`SeqAccessStep` (`.seq[.key]`)** — the key is **pinned by default**, so
-  the response reaches the entry that issued the request even if the key
+  the answer reaches the entry that raised the intent even if the key
   field moved. Opt out with `live_path=true`.
 - **`SeqStep` with a list index (`.items[3]`)** — the index is literal and
   **not** pinned to identity: if the list re-sorted or an item was inserted
-  ahead of it, index 3 is now a different item and the response lands
+  ahead of it, index 3 is now a different item and the answer lands
   there. Anchor on **map keys**, not list indices, when an async result
   must reach a specific item.
 - **`FieldStep`** — a named field is stable; no ambiguity.
@@ -196,9 +206,9 @@ things per step kind:
 - [core.md](./core.md) — *Mental model* and *Paths, not references* (the
   high-level invariants this file expands on), `view` directives, the
   `update`/`compute`/`swap` buckets.
-- [request-response.md](./request-response.md) — the dispatch **API**:
-  `Bubble` / `send`-`Receive` / `request`-`Response`, `ctx.at()`,
-  catch-all arms, request-handler registration, and the `live_path`
-  request option.
+- [messages-and-intents.md](./messages-and-intents.md) — the dispatch **API**:
+  `send`-`Receive`, `intent` and its `dyn` / `lex` route, the three
+  answers, `ctx.at()`, catch-all arms, `IntentFn` registration, and the
+  `live_path` option.
 - [advanced.md](./advanced.md) — dynamic bindings (`*x`) and the authoring
   view of teleporting.

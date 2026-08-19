@@ -26,7 +26,8 @@ import {
 ```
 
 Import `core` under the `@tutuca` alias, not the module root. The root package
-re-exports only four names (`Value`, `RequestOpts`, `Ctx`, `Obj`), so
+re-exports a facade (`Value`, `Ctx`, `Obj`, the intent types, the contract
+reporters), so
 `@tutuca.NullCtx` — needed to call an `update` fn directly — resolves only
 through `core`, and that is the spelling to use wherever it is needed.
 
@@ -156,18 +157,18 @@ you want to look at it.
 
 ## Driving a full cascade
 
-When a message must fan out through real dispatch — a `request` that
-resolves and feeds its `response`, a `send` that triggers more sends —
+When a message must fan out through real dispatch — an `intent` that walks
+its route and feeds the answer back, a `send` that triggers more sends —
 mount the module and use `h.send_at_root`; the harness settles the whole
-cascade (including the callback-style requests) before returning:
+cascade (including the callback-style `IntentFn`s) before returning:
 
 ```moonbit nocheck
-// nocheck: `request_module` / `failing_request_handlers` are the reader's own
-test "the init Receive arm fires the request, and the response lands" {
-  // request_module takes requests? so tests inject fixtures
+// nocheck: `request_module` / `failing_intent_handlers` are the reader's own
+test "the init Receive arm raises the intent, and the answer lands" {
+  // request_module takes intents? so tests inject fixtures
   let h = @harness.mount(request_module(), "RequestExample")
   h.send_at_root("init")
-  // the fixture responds synchronously, so by the time the send has
+  // the fixture answers synchronously, so by the time the send has
   // drained the loading flag is back off and the items are in
   inspect(h.find_all(".loading").length(), content="0")
   debug_inspect(
@@ -178,28 +179,42 @@ test "the init Receive arm fires the request, and the response lands" {
   )
 }
 
-test "the error path routes to on_error_name" {
-  // swapping the request map is all it takes to drive the failure case
+test "a handler that fails takes the <name>Error arm" {
+  // the intent handler lives OUTSIDE the component, so swapping the map is
+  // all it takes to drive the failure case
   let h = @harness.mount(
-    request_module(requests=failing_request_handlers()),
+    request_module(intents=failing_intent_handlers()),
     "RequestExample",
   )
-  h.click(".another") // this button requests with on_error_name="loadDataErr"
+  h.click(".another") // this button names its own on_error_name
   inspect(h.text(".error"), content="network is down")
+}
+
+test "a scope that DECLINES is not a scope that failed" {
+  // every handler on the route answered `Pass`, so the route ran out and
+  // the sender hears <name>Unhandled — its own arm, its own sentence
+  let h = @harness.mount(
+    request_module(intents=declining_intent_handlers()),
+    "RequestExample",
+  )
+  h.send_at_root("init")
+  inspect(h.text(".error"), content="nothing answers `loadData`")
 }
 ```
 
-- Request fixtures are ordinary `RequestFn` values that call
-  `respond(Ok(...))` / `respond(Err(...))` synchronously — the
-  parameterized-module pattern
-  (`request_module(requests? = fixture_request_handlers())`, see *The
-  ModuleDef convention* in [core.md](./core.md)).
+- Intent fixtures are ordinary `IntentFn` values that call
+  `answer(Ok(...))` / `answer(Failed(...))` / `answer(Pass)`
+  synchronously — the parameterized-module pattern
+  (`request_module(intents? = fixture_intent_handlers())`, see *The
+  ModuleDef convention* in [core.md](./core.md)). Test all three answers:
+  `Pass` from every handler is what produces `<name>Unhandled`, and that
+  path is the one v1 could not express.
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
   call the child's extracted update fn directly on a state value.
-- A root-level `bubble` has no ancestor to receive it — test `Bubble`
-  arms by clicking the child element that emits the bubble, or call
-  the update fn directly with a `Bubble(name, args)` dispatch.
+- A root-level `intent dyn` has no ancestor to reach — test `Intent`
+  arms by clicking the child element that raises the intent, or call the
+  update fn directly with an `Intent(name, args)` dispatch.
 - To observe every committed transaction (message/state traces), the
   transactor exposes `Transactor::observe((ObserveRecord) -> Unit) -> () -> Unit`
   — `h.app.transactor.observe(...)`, returning an **unsubscribe** closure to
@@ -316,7 +331,7 @@ test "counter: immutability — one render per interaction" {
 
 - [core.md](./core.md) — *Verifying changes*, *Event Handling*,
   *Component Skeleton*.
-- [request-response.md](./request-response.md) — the `Bubble` /
-  `Receive` / `Response` arms, override forms, catch-all arms.
+- [messages-and-intents.md](./messages-and-intents.md) — the `Receive` /
+  `Intent` arms, routes and legs, the three answers, catch-all arms.
 - [cli.md](./cli.md) — the embedded CLI (`gen-views` / `watch`) that
   pairs with `moon test` in the verification recipe.

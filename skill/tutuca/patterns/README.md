@@ -48,7 +48,7 @@ task.
 
 ## Component communication
 
-- [Coordinate components](coordinate-components.md) — `bubble`, `send`/`receive`, async `request`/`response`.
+- [Coordinate components](coordinate-components.md) — `send`/`receive`, `intent dyn`, async `intent lex`.
 
 ## Examples & catalog
 

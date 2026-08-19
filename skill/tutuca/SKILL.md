@@ -56,7 +56,7 @@ When authoring tutuca code, also load this if available:
 | Component CSS — `style` / `common_style` / `global_style` scoping and pitfalls | [styles.md](./styles.md) |
 | Designing components — responsibilities, state ownership, channel choice, do's & don'ts | [component-design.md](./component-design.md) |
 | Embedded CLI commands, flags, exit codes, and every `gen-views` diagnostic (lint codes included) | [cli.md](./cli.md)             |
-| `Bubble` / `send`-`Receive` / async `request`-`Response` channels, catch-all arms, `RequestFn` registration | [request-response.md](./request-response.md) |
+| Messages and intents — `send` / `sendAt` / `receive`, `intent` and its `dyn` / `lex` route, `forward` / `reply` / `fail`, the three answers, `IntentFn` registration, catch-all arms | [messages-and-intents.md](./messages-and-intents.md) |
 | Drag & drop, dynamic bindings (`*x`), pseudo-`x`, custom collections via the `Obj` trait | [advanced.md](./advanced.md)   |
 | Setting up MargaUI styling — `collect_classes()`, the MoonBit compile step, `inject_style` | [margaui.md](./margaui.md)     |
 | Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |

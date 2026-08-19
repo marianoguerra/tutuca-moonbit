@@ -23,6 +23,14 @@ pub fn refusing() -> Bool
 // Types and methods
 
 // Type aliases
+pub using @core {type IntentAnswer}
+
+pub using @core {type IntentCall}
+
+pub using @core {type IntentOpts}
+
+pub using @core {type Leg}
+
 pub using @core {type Refusal}
 
 pub using @core {type RefusalCode}
