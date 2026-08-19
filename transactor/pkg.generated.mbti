@@ -7,6 +7,7 @@ import {
 }
 
 // Values
+pub const INTENT_DEPTH : Int = 64
 
 // Errors
 
@@ -21,6 +22,26 @@ pub struct Completion {
 pub fn Completion::on_settled(Self, () -> Unit) -> Unit
 pub fn Completion::on_subtree_settled(Self, () -> Unit) -> Unit
 
+pub(all) struct IntentHandler((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Unit)
+
+pub struct IntentWalk {
+  name : String
+  mut route : Array[@core.Leg]
+  mut leg : Int
+  mut dyn_at : @core.DispatchPath
+  mut args : Array[@core.Value]
+  opts : @core.IntentOpts
+  origin : @core.DispatchPath
+  mut answered : Bool
+  mut stopped : Bool
+  mut hops : Int
+  // private fields
+}
+
+pub(all) struct NoIntents {
+}
+pub impl Intents for NoIntents
+
 pub(all) struct NoRequests {
 }
 pub impl Requests for NoRequests
@@ -28,6 +49,7 @@ pub impl Requests for NoRequests
 pub(all) enum ObserveKind {
   Receive
   Intent
+  Answer
   Input
   Bubble
   Response
@@ -83,11 +105,12 @@ pub struct Transactor {
 }
 pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
-pub fn Transactor::new(@core.Value, requests? : &Requests) -> Self
+pub fn Transactor::new(@core.Value, requests? : &Requests, intents? : &Intents) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
 pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_input(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction) -> Transaction
+pub fn Transactor::push_intent(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.IntentOpts, parent? : Transaction) -> IntentWalk
 pub fn Transactor::push_request(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.RequestOpts, parent? : Transaction) -> Unit
 pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, skip_self? : Bool, bubbles? : Bool) -> Transaction
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
@@ -95,6 +118,10 @@ pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 // Type aliases
 
 // Traits
+pub(open) trait Intents {
+  fn intents_for(Self, @core.Value, String) -> Array[IntentHandler] = _
+}
+
 pub(open) trait Requests {
   fn request_for(Self, @core.Value, String) -> RequestHandler? = _
 }

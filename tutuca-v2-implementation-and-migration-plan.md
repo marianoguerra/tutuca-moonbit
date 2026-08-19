@@ -61,7 +61,7 @@ Two consequences worth stating outright.
 **Phase 1 — the runtime**
 
 - [x] 3. [`core`: buckets, `Ctx`, `IntentOpts`](#3-core-buckets-ctx-intentopts)
-- [ ] 4. [`transactor`: the walk, `reply` / `fail` / `forward`](#4-transactor-the-walk-reply--fail--forward)
+- [x] 4. [`transactor`: the walk, `reply` / `fail` / `forward`](#4-transactor-the-walk-reply--fail--forward)
 - [ ] 5. [`component`: `Dispatch`, `obj_handler`, `IntentFn`](#5-component-dispatch-obj_handler-intentfn)
 - [ ] 6. [`app`: wire the lexical scope and the DOM entry](#6-app-wire-the-lexical-scope-and-the-dom-entry)
 
@@ -322,6 +322,73 @@ transaction.
 **Validation.** The two existing test files, rewritten for the new shape, plus
 the corpus from task 2 once task 10 lands. Add a test that a walk of N hops
 produces N queued transactions and one answer.
+
+**Done.** Additively: `push_bubble` and `push_request` are untouched and
+`bubble_test.mbt` / `request_test.mbt` still pass unchanged. The walk is a new
+file, `transactor/walk.mbt`, and 22 new tests are in `transactor/walk_test.mbt`.
+
+**`IntentWalk` is what replaced `Transaction.bubbles : Bool`**, and the two
+answer different questions — a boolean can say "keep going up", it cannot say
+which leg, how far along it, and whether the one allowed answer has been given.
+It is shared **by reference** across every hop of one intent, which is what
+makes each of the risks below fall out rather than need arranging. `Transaction`
+carries `walk : IntentWalk?` and `is_answer : Bool`.
+
+Three things end a walk, and `walk.mbt` is organized around them: `answer_walk`
+(a handler replied or failed), `end_walk_unanswered` (`stop`), and
+`exhaust_walk` (the route ran out). Everything else continues it.
+
+- **The `dyn` leg** pops before each hop, so it starts at the sender's parent
+  and a component never re-enters its own handler.
+- **The `lex` leg** resolves through a new `Intents` trait that hands back the
+  WHOLE chain, innermost first, and `try_lex` asks each in turn **inside the
+  transaction already running** — the task-1 decision, and a test asserts the
+  observer trace shows no queued hop per `Pass`. It is continuation-passing, so
+  a static handler may still answer later.
+- **`forward`** is one operation from two sides. In an intent body there is a
+  walk, so it amends the hop the walk was going to make anyway (arguments, or a
+  narrowed route) — the walk advances on its own, because every handler on the
+  route runs. In a receive body there is no walk, so it starts one from this
+  component's own position, which is where the answer comes back to.
+- **Route exhaustion** consults only what the sender DECLARED — `Unhandled`,
+  then `Error` with `noHandler`, then a refusal record if it declared `Ok`
+  alone, then nothing. `reply` and `fail` DERIVE `<name>Ok` / `<name>Error` when
+  the opt is absent, so a reply nobody declared an arm for reaches no arm and
+  produces `NO_HANDLER` — design section 1. The asymmetry is deliberate and
+  commented: section 6's fallback chain is defined in terms of declaredness and
+  would be unobservable if it derived a name too.
+
+**The three risks.**
+
+- **Completion.** The sender's unit is held by the WALK, tracked when the walk
+  starts and released exactly once — transferred onto the answer's subtree when
+  there is an answer, released directly when there is not. Hop-to-hop linking
+  keeps the sender open through the hops; the walk's unit keeps it open across
+  an async `lex` handler and until the answer settles. Two tests: one asserts a
+  sender settles only after its answer lands, one that a walk nobody answers
+  still lets the sender go.
+- **`SECOND_REPLY`.** `walk.answered` is per INTENT across hops, because the
+  walk is one object shared by the hops. A test puts a replier at two positions
+  and asserts one answer.
+- **Depth.** `INTENT_DEPTH = 64` counts POSITIONS across the whole walk, not
+  frames of one leg — the only reading that catches a cycle spanning both.
+  Exceeding it takes the exhaustion path, so a sender that asked for an answer
+  learns something, and reports the new `RefusalCode::IntentDepth`
+  (`INTENT_DEPTH`).
+
+`ObserveKind` gained `Answer` alongside task 3's `Intent`, and `transact` picks
+it from `is_answer` rather than from the bucket — a handler must not be able to
+tell an answer from any other message, and an inspector must.
+
+`core` gained `IntentCall` (with `from`, which closes `dyncomp/SECURITY.md` §5's
+open item) and `IntentAnswer` (`Ok` / `Failed` / `Pass`). They live in `core`
+rather than beside `Dispatch` in `component`, where the design lists them,
+because `transactor` constructs one and `component` consumes one and neither
+imports the other.
+
+**The four cases task 2 deferred here** are each a test: an observer above a
+replier, a declining handler and the walk continuing, `reply` twice across two
+hops, and route exhaustion in all three shapes.
 
 ## 5. `component`: `Dispatch`, `obj_handler`, `IntentFn`
 

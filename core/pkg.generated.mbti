@@ -100,6 +100,18 @@ pub(all) enum HandlerNamespace {
   Alter
 } derive(Eq, @debug.Debug)
 
+pub(all) enum IntentAnswer {
+  Ok(Value)
+  Failed(Value)
+  Pass
+} derive(Eq, @debug.Debug)
+
+pub(all) struct IntentCall {
+  name : String
+  args : Array[Value]
+  from : DispatchPath
+} derive(Eq, @debug.Debug)
+
 pub(all) struct IntentOpts {
   route : Array[Leg]
   on_ok_name : String?
@@ -191,6 +203,7 @@ pub(all) enum RefusalCode {
   Precondition
   Postcondition
   Invariant
+  IntentDepth
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
 

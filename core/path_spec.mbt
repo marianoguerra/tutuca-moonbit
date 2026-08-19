@@ -99,6 +99,40 @@ declare pub fn IntentOpts::new(
 ) -> IntentOpts
 
 ///|
+/// What a static intent handler is handed (`totuka-v2.md` §10).
+///
+/// `from` is the sender's position, and it is the field v1's `RequestFn` never
+/// had. A host reads it to decide whether the sender may ask — which is what
+/// `dyncomp/SECURITY.md` §5 says it cannot do today — and the walk needs it
+/// anyway to route the answer, so the handler gets it for free.
+///
+/// This lives in `core` rather than beside `Dispatch` in `component`, where
+/// the design's section 10 lists it, for a mechanical reason: `transactor`
+/// constructs one and `component` consumes one, and neither imports the other.
+/// It is pure data over `core`'s own types, so this is the only place both can
+/// see it.
+pub(all) struct IntentCall {
+  name : String
+  args : Array[Value]
+  from : DispatchPath
+} derive(Debug, Eq)
+
+///|
+/// What a static intent handler answers.
+///
+/// `Pass` is the case `RequestFn` does not have and the walk needs: a
+/// `RequestFn` MUST answer, so a handler that has nothing to say has to invent
+/// an error. An `IntentFn` may decline, and the walk goes on to the next
+/// handler — the same freedom a component's `update` arm has when it answers
+/// `Unhandled`.
+pub(all) enum IntentAnswer {
+  Ok(Value)
+  Failed(Value)
+  /// Decline. The walk continues to the next handler on the route.
+  Pass
+} derive(Debug, Eq)
+
+///|
 /// Options for Ctx::request (JS pushRequest opts): response-handler routing
 /// (on_ok_name / on_error_name / on_res_name) and live_path, which opts out
 /// of pinning field-resolved keys at request time.

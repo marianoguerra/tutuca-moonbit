@@ -52,6 +52,58 @@ pub(all) struct NoRequests {}
 pub impl Requests for NoRequests
 
 ///|
+/// A static intent handler: the v2 face of `RequestHandler`.
+///
+/// Two differences, and both are the walk's. It receives an `IntentCall` —
+/// which carries `from`, the sender's position, so a host can decide whether
+/// this sender may ask — rather than a bare argument list. And it may answer
+/// `Pass`, which a `RequestHandler` cannot: a request handler MUST respond, so
+/// one with nothing to say has to invent an error, while a declining intent
+/// handler simply hands the intent to the next one.
+pub(all) struct IntentHandler(
+  (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
+)
+
+///|
+/// The lexical leg's registry (the v2 face of `Requests`).
+///
+/// It answers with the WHOLE chain rather than the first match, innermost
+/// scope first, and that shape is the "`lex` walks" decision from
+/// `totuka-v2.md` section 17: a declining handler hands the intent to its
+/// parent scope, so the walk needs every candidate and not the first one. The
+/// transactor asks each in turn INSIDE the transaction that is already
+/// running, so a `Pass` costs a call rather than a queue step — which is why
+/// the chain comes back as a list and not as a "next" continuation.
+pub(open) trait Intents {
+  fn intents_for(Self, leaf : @tutuca.Value, name : String) -> Array[
+    IntentHandler,
+  ] = _
+}
+
+///|
+impl Intents with fn intents_for(_self, _leaf, _name) {
+  []
+}
+
+///|
+pub(all) struct NoIntents {}
+
+///|
+pub impl Intents for NoIntents
+
+///|
+/// How many positions one intent may walk before the runtime cuts it off
+/// (`totuka-v2.md` section 17).
+///
+/// A cycle breaker, not a tuning knob. A legitimate route is bounded by tree
+/// depth plus scope depth and nothing in the corpus is near this; reaching it
+/// means two components are forwarding to each other, which v1's
+/// single-component loop could not produce. It is a different number from
+/// `settle`'s `max_turns`, which bounds the whole QUEUE rather than one chain,
+/// and it does not replace it.
+pub const INTENT_DEPTH : Int = 64
+
+///|
 /// Per-transaction completion scope (WaitGroup style): a counter of
 /// outstanding units — one self-unit (the transaction's own processing) plus
 /// one per derived child or in-flight request. Self settles when the handler
@@ -101,6 +153,12 @@ pub(all) enum ObserveKind {
   /// One hop of an intent's walk. v2's, and the kind `Bubble`, `Response` and
   /// `Request` collapse into once the walk owns all three.
   Intent
+  /// A message the RUNTIME wrote: the `<name>Ok`, `<name>Error` or
+  /// `<name>Unhandled` a walk produced. It is an ordinary message and the
+  /// component cannot tell it from one a parent sent — which is the design's
+  /// claim — so the distinction lives here, where an inspector needs it and a
+  /// handler never sees it.
+  Answer
   Input
   Bubble
   Response
@@ -190,6 +248,13 @@ pub struct Transaction {
   skip_self : Bool
   txn_path : @tutuca.Path?
   parent : Transaction?
+  /// The walk this transaction is one hop of, shared BY REFERENCE with every
+  /// other hop of the same intent. That sharing is what makes the one-shot
+  /// answer per intent rather than per hop, which is the thing v1's per-request
+  /// `responded` flag could not express because v1 had one hop.
+  priv walk : IntentWalk?
+  /// Whether the runtime wrote this message, for the observer only.
+  priv is_answer : Bool
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
   priv mut finished : Bool
@@ -212,6 +277,7 @@ declare pub fn Transaction::completion(self : Transaction) -> Completion
 /// external registry.
 pub struct Transactor {
   priv requests : &Requests
+  priv intents : &Intents
   mut root : @tutuca.Value
   priv mut queue : Array[Transaction]
   priv mut queue_head : Int
@@ -226,6 +292,7 @@ pub struct Transactor {
 declare pub fn Transactor::new(
   root : @tutuca.Value,
   requests? : &Requests,
+  intents? : &Intents,
 ) -> Transactor
 
 ///|
@@ -303,6 +370,57 @@ declare pub fn Transactor::push_request(
   opts? : @tutuca.RequestOpts,
   parent? : Transaction,
 ) -> Unit
+
+///|
+/// One intent's whole walk, as state shared across its hops.
+///
+/// v1's `Transaction.bubbles : Bool` is the field this replaces, and the two
+/// answer different questions. A boolean can say "keep going up"; it cannot say
+/// WHERE the walk is — which leg, how far along it, and whether the one answer
+/// the walk is allowed has already been given. A route is a list and a
+/// position, so this is a list and a position.
+pub struct IntentWalk {
+  name : String
+  /// The legs, in the order written. `[Dyn, Lex]` when nothing said otherwise.
+  mut route : Array[@tutuca.Leg]
+  /// Which leg is being walked.
+  mut leg : Int
+  /// Where the NEXT `dyn` hop runs. Starts at the sender's own path and is
+  /// popped before each hop, which is how "the `dyn` leg starts at the parent"
+  /// is spelled: a component never re-enters its own handler.
+  mut dyn_at : @tutuca.DispatchPath
+  /// The arguments the next hop carries. A `forward` in a body amends this.
+  mut args : Array[@tutuca.Value]
+  opts : @tutuca.IntentOpts
+  /// The sender's position — where an answer goes. It does not move when a
+  /// handler forwards, which is the whole of what makes `forward` different
+  /// from dispatching the intent again.
+  origin : @tutuca.DispatchPath
+  /// The unit held on the sender for the length of the walk, released once —
+  /// onto the answer's subtree if there is an answer, and directly if there is
+  /// not. Without it a sender that waits for settlement would see the walk
+  /// finish and the answer still in flight.
+  priv mut release : (() -> Unit)?
+  /// The one-shot. Per INTENT and across hops, which is the difference from
+  /// v1's per-request `responded`.
+  mut answered : Bool
+  /// Ended by `stop`: served, and no answer.
+  mut stopped : Bool
+  /// Positions visited, against `INTENT_DEPTH`.
+  mut hops : Int
+}
+
+///|
+/// Dispatch an intent along `opts.route`, from `path` — the SENDER's own
+/// position, which the walk pops before its first `dyn` hop.
+declare pub fn Transactor::push_intent(
+  self : Transactor,
+  path : @tutuca.DispatchPath,
+  name : String,
+  args : Array[@tutuca.Value],
+  opts? : @tutuca.IntentOpts,
+  parent? : Transaction,
+) -> IntentWalk
 
 ///|
 /// Process at most `max_turns` queued transactions and report whether more

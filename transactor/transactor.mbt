@@ -5,11 +5,16 @@
 pub fn Transactor::new(
   root : @tutuca.Value,
   requests? : &Requests,
+  intents? : &Intents,
 ) -> Transactor {
   {
     requests: match requests {
       Some(r) => r
       None => NoRequests::{  }
+    },
+    intents: match intents {
+      Some(i) => i
+      None => NoIntents::{  }
     },
     root,
     queue: [],
@@ -163,6 +168,8 @@ fn Transactor::mk_txn(
   skip_self? : Bool = false,
   txn_path? : @tutuca.Path,
   parent? : Transaction,
+  walk? : IntentWalk,
+  is_answer? : Bool = false,
 ) -> Transaction {
   {
     transactor: self,
@@ -175,6 +182,8 @@ fn Transactor::mk_txn(
     skip_self,
     txn_path,
     parent,
+    walk,
+    is_answer,
     cmpl: None,
     self_settled: false,
     finished: false,
@@ -399,7 +408,20 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   // _resolvedHandler undefined)
   match t.obs_matched {
     Some(matched) =>
-      self.emit(ObserveKind::of_bucket(t.bucket), t, cur, matched)
+      // An answer is an ordinary `Receive` and the handler cannot tell it from
+      // one a parent sent — which is the design's claim, so the bucket must
+      // not know. An INSPECTOR needs to know, and this is the only place that
+      // does.
+      self.emit(
+        if t.is_answer {
+          Answer
+        } else {
+          ObserveKind::of_bucket(t.bucket)
+        },
+        t,
+        cur,
+        matched,
+      )
     None => ()
   }
   t.finish()
@@ -499,6 +521,18 @@ fn Transaction::finish(self : Transaction) -> Unit {
 
 ///|
 fn Transaction::after_transaction(self : Transaction) -> Unit {
+  // A walk advances on its own. `forward` in an intent body does not push the
+  // next hop — it amends the one this is about to push — because the design's
+  // rule is that every handler on the route runs and a handler that runs does
+  // not consume the intent. A body that says nothing continues the walk, and a
+  // body that says `forward .enriched` continues it with different arguments.
+  match self.walk {
+    Some(w) => {
+      self.transactor.advance_walk(w)
+      return
+    }
+    None => ()
+  }
   if self.bubbles && self.path.items.length() > 0 {
     let _ = self.transactor.push_bubble(
       self.path.pop_step(),
@@ -594,4 +628,94 @@ impl @tutuca.Ctx for EventContext with fn request(self, name, args, opts) {
 ///|
 impl @tutuca.Ctx for EventContext with fn stop_propagation(self) {
   self.txn.bubbles = false
+  // "served, and no answer" (`totuka-v2.md` section 6). The walk ends and the
+  // sender is told nothing, even when it declared an arm — which is exactly
+  // what separates `stop` from letting the route run out.
+  match self.txn.walk {
+    Some(w) => {
+      w.stopped = true
+      self.txn.transactor.end_walk_unanswered(w)
+    }
+    None => ()
+  }
+}
+
+///|
+impl @tutuca.Ctx for EventContext with fn intent_at_path(
+  self,
+  path,
+  name,
+  args,
+  opts,
+) {
+  let _ = self.txn.transactor.push_intent(
+    path,
+    name,
+    args,
+    opts~,
+    parent=self.txn,
+  )
+}
+
+///|
+/// `forward` in the two bodies it is legal in, and it is one operation seen
+/// from two sides.
+///
+/// In an INTENT body there is a walk, and forwarding amends the hop the walk
+/// is about to make: different arguments, or a narrowed route. The walk would
+/// have continued anyway.
+///
+/// In a RECEIVE body there is no walk, so forwarding STARTS one, from this
+/// component's own position — which is where the answer will come back to, and
+/// which is the component the user clicked in when the message came from a
+/// view. This is the one bridge between the two channels.
+impl @tutuca.Ctx for EventContext with fn forward(self, args, opts) {
+  match self.txn.walk {
+    Some(w) => {
+      match args {
+        Some(a) => w.args = a
+        None => ()
+      }
+      match opts {
+        // Narrowing a route that is already walking. `totuka-v2.md` section 18
+        // asks whether this should be allowed at all; until it is answered,
+        // the straightforward reading is the one implemented — the rest of the
+        // route becomes what the forwarder named.
+        Some(o) => {
+          w.route = o.route
+          w.leg = 0
+        }
+        None => ()
+      }
+    }
+    None => {
+      let _ = self.txn.transactor.push_intent(
+        self.txn.path,
+        self.txn.name,
+        args.unwrap_or(self.txn.args),
+        opts?,
+        parent=self.txn,
+      )
+    }
+  }
+}
+
+///|
+impl @tutuca.Ctx for EventContext with fn reply(self, value) {
+  match self.txn.walk {
+    Some(w) => self.txn.transactor.answer_walk(w, Ok(value))
+    // A reply with no walk to answer. `Ctx`'s default is a no-op for the same
+    // reason, and this is the running-transaction case of it: a message has no
+    // sender to answer, and the checker reports the body that wrote this
+    // (`NOT_A_HANDLER`) rather than the runtime failing on it.
+    None => ()
+  }
+}
+
+///|
+impl @tutuca.Ctx for EventContext with fn fail(self, error) {
+  match self.txn.walk {
+    Some(w) => self.txn.transactor.answer_walk(w, Err(error))
+    None => ()
+  }
 }

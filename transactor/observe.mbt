@@ -14,6 +14,7 @@ pub fn ObserveKind::label(self : ObserveKind) -> String {
   match self {
     Receive => "receive"
     Intent => "intent"
+    Answer => "answer"
     Input => "input"
     Bubble => "bubble"
     Response => "response"
