@@ -380,7 +380,17 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
   // a guest handler whose name also looks like a generated mutator.
   let declared = match bucket {
     Input => true
-    Receive => self.def.receives.contains(name)
+    // v2's `Receive` is v1's `Input` UNION v1's `Receive` — one bucket for a
+    // message whoever sent it — and the union of "always, discovered
+    // dynamically" with "only what the manifest declares" is the first. A
+    // guest that does not know the name answers `Unhandled` and the
+    // field-derived mutator gets its chance, which is what made the `Input`
+    // arm dynamic in the first place.
+    //
+    // `def.receives` therefore stops gating and starts documenting. Task 16
+    // rewrites the manifest around `receives` and `intents`, and this is where
+    // that lands.
+    Receive => true
     Response => self.def.responses.contains(name)
     // A guest child raises these with control.emit; a guest PARENT hears them
     // here, through the same walk the host uses between its own components.
@@ -394,7 +404,18 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
   guard declared else { return None }
   Some(
     Handler((args, ctx) => {
-      let result = self.guest.dispatch(self.handle, bucket, name, args)
+      let mut result = self.guest.dispatch(self.handle, bucket, name, args)
+      // MIGRATION BRIDGE, and it goes in task 25 with the guest ABI it serves.
+      //
+      // A view raises a `Receive` now, and every loaded bundle was built
+      // against a WIT whose view names live in the `input` bucket. The two are
+      // one bucket in v2, so a `Receive` the guest did not claim is offered
+      // again as an `input` before the field-derived mutators get their
+      // chance. `TypedInstance::obj_handler` carries the same bridge for the
+      // same reason and for the same length of time.
+      if !result.handled && bucket is Receive {
+        result = self.guest.dispatch(self.handle, Input, name, args)
+      }
       for msg in result.msgs {
         match msg {
           Emit(name, args) => ctx.bubble(name, args)
@@ -409,7 +430,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
         }
       }
       if !result.handled {
-        guard bucket is Input && self.mutators.get(name) is Some(g) else {
+        guard bucket is (Input | Receive) && self.mutators.get(name) is Some(g) else {
           return None
         }
         return match g(self.field_box(), args) {

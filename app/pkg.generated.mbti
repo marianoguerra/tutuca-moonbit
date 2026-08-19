@@ -50,6 +50,11 @@ pub struct DragState[N] {
   info : @core.Value
 }
 
+pub(all) struct ScopeIntents {
+  comps : @component.Components
+}
+pub impl @transactor.Intents for ScopeIntents
+
 pub(all) struct ScopeRequests {
   comps : @component.Components
 }

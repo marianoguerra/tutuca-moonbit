@@ -29,6 +29,36 @@ pub impl @transactor.Requests for ScopeRequests with fn request_for(
 }
 
 ///|
+/// The v2 twin: the lexical LEG of an intent's route, adapted onto the
+/// transactor's registry trait.
+///
+/// It answers with the whole chain rather than with one handler, because a
+/// declining handler hands the intent to its parent scope (`totuka-v2.md`
+/// section 17). Resolution is otherwise the same as `ScopeRequests` above and
+/// deliberately so: an intent's `lex` leg reaches exactly what a v1 request
+/// reached, through the component's REGISTRATION scope rather than its
+/// instance.
+pub(all) struct ScopeIntents {
+  comps : @component.Components
+}
+
+///|
+pub impl @transactor.Intents for ScopeIntents with fn intents_for(
+  self,
+  leaf,
+  name,
+) {
+  guard self.comps.get_comp_for(leaf) is Some(comp) else { return [] }
+  guard comp.scope is Some(scope) else { return [] }
+  scope
+  .lookup_intent(name)
+  .map(h => {
+    let IntentFn(f) = h
+    IntentHandler(f)
+  })
+}
+
+///|
 /// Event-modifier gating (JS compileModifiers, anode.js:809): each modifier
 /// is a predicate on the event; a failing one makes the handler a no-op.
 /// Only keydown and click define modifiers; unknown pairs pass (identity).
@@ -107,7 +137,13 @@ fn run_handlers(
         }
       None => ()
     }
-    let _ = tx.push_input(ed.path, name, args)
+    // A view raises a MESSAGE (`totuka-v2.md` section 7), addressed to the
+    // component that owns the view. v1 dispatched an `Input` here, which is
+    // the same thing under a name that said who sent it rather than what it
+    // was. The early exit above — `stop_on_no_event` in
+    // `render/from_node_and_event_name` — is untouched, so an unanswered name
+    // still costs one lookup.
+    let _ = tx.push_send(ed.path, name, args)
   }
   tx.settle() |> ignore
 }

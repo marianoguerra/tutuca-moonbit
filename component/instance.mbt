@@ -436,13 +436,32 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Bubble => Bubble(name, args)
             Response => Response(name, args)
           }
-          match u(self.state, d, ctx) {
+          let answered = match u(self.state, d, ctx) {
             Next(s2) => return Some(self.with_state(s2).to_value())
             // Answered, and nothing changed. The instance's own Value, which
             // is memoized — so the transactor's `physical_equal` reads it as
             // "nothing happened" and no generated mutator is consulted.
             Unchanged => return Some(self.to_value())
-            Unhandled => ()
+            Unhandled => false
+          }
+          // MIGRATION BRIDGE, and it goes in task 25 with the arms it serves.
+          //
+          // A view raises a `Receive` now (`app/app.mbt`), and every `update`
+          // arm in this repository still matches `Input`. The two are one
+          // message split by who sent it, which is the whole of what v2 merged
+          // — so a `Receive` no arm claimed is offered again as an `Input`
+          // before the generated mutators get their chance, and 393 arms keep
+          // working while task 19 rewrites them.
+          //
+          // It cannot make a v2 component behave differently: a component with
+          // no `Input` arms answers `Unhandled` to both, at the cost of one
+          // extra match.
+          if !answered && bucket is Receive {
+            match u(self.state, Input(name, args), ctx) {
+              Next(s2) => return Some(self.with_state(s2).to_value())
+              Unchanged => return Some(self.to_value())
+              Unhandled => ()
+            }
           }
         }
         None => ()

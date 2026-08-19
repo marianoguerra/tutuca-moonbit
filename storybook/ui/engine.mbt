@@ -316,6 +316,24 @@ impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
 /// Every event/message handler of the gallery, dispatched by (bucket, name).
 /// The bodies mirror the JS storybook's mount.js handlers 1:1.
 impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
+  match self.handler_for(bucket, name) {
+    Some(h) => Some(h)
+    // MIGRATION BRIDGE, and it goes in task 25 with the arms it serves.
+    //
+    // A view raises a `Receive` now (`app/app.mbt`) and the arms below still
+    // say `Input`. This component writes its own `obj_handler` rather than
+    // going through `TypedInstance`, so it needs its own copy of the bridge
+    // that one carries. Task 19 rewrites the arms and this goes with them.
+    None => if bucket is Receive { self.handler_for(Input, name) } else { None }
+  }
+}
+
+///|
+fn ShellInst::handler_for(
+  self : ShellInst,
+  bucket : @tutuca.HandlerBucket,
+  name : String,
+) -> @tutuca.Handler? {
   let done = (inst : ShellInst) => Some(inst.to_value())
   match (bucket, name) {
     (Input, "toggleSidebarCollapsed") =>

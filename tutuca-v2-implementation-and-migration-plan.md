@@ -63,7 +63,7 @@ Two consequences worth stating outright.
 - [x] 3. [`core`: buckets, `Ctx`, `IntentOpts`](#3-core-buckets-ctx-intentopts)
 - [x] 4. [`transactor`: the walk, `reply` / `fail` / `forward`](#4-transactor-the-walk-reply--fail--forward)
 - [x] 5. [`component`: `Dispatch`, `obj_handler`, `IntentFn`](#5-component-dispatch-obj_handler-intentfn)
-- [ ] 6. [`app`: wire the lexical scope and the DOM entry](#6-app-wire-the-lexical-scope-and-the-dom-entry)
+- [x] 6. [`app`: wire the lexical scope and the DOM entry](#6-app-wire-the-lexical-scope-and-the-dom-entry)
 
 **Phase 2 — the language**
 
@@ -466,6 +466,42 @@ name cheap, and section 7 of the design promises it survives. Do not lose it.
 
 **Validation.** `moon test --target js` (the happy-dom suite is the only thing
 that drives real DOM events) and the `@harness` suite.
+
+**Done.** `ScopeIntents` beside `ScopeRequests` in `app/app.mbt`, resolving
+through the same registration scope and answering with the whole chain;
+`App::new` hands both to the transactor. `app/app.mbt:110`'s `push_input`
+became `push_send`: **a view raises a message now.**
+
+**The risk held.** `stop_on_no_event` is about finding a handler in the VIEW and
+never looks at a bucket, so the early exit is untouched and an unanswered name
+still costs one lookup.
+
+**Three migration bridges**, all commented as such and all deleted in task 25.
+Switching the DOM entry is the one change that reaches every component at once
+— 393 `update` arms still say `Input` — so each dispatch site offers a `Receive`
+nothing claimed a second time as an `Input`:
+
+1. `TypedInstance::obj_handler`, for every generated and hand-written typed
+   component. It cannot change a v2 component's behaviour: one with no `Input`
+   arms answers `Unhandled` twice, at the cost of one extra match.
+2. `DynObj::obj_handler`, for a loaded bundle built against the current WIT.
+   The same file's `declared` table also collapsed `Input` and `Receive`, and
+   that one is **not** a bridge but the merge itself: v2's `Receive` is v1's
+   `Input` union v1's `Receive`, and the union of "always, discovered
+   dynamically" with "only what the manifest declares" is the first.
+   `def.receives` stops gating and starts documenting until task 16.
+3. `storybook/ui/engine.mbt`'s `ShellInst`, the one hand-written `obj_handler`
+   in the repository with `(Input, …)` arms. Its match moved into
+   `ShellInst::handler_for` so the same retry could sit over it.
+
+Without bridge 3 exactly one test failed, which is worth recording: the
+gallery's shell is the only place in the repository where a component answers a
+view name without going through `TypedInstance`.
+
+`app/app_test.mbt` drives both halves in one click: the view's name arrives as
+`Receive`, a `lex` intent is dispatched, the first scope handler declines and
+the second answers — a walk, not a lookup — and `IntentCall.from` carries the
+sender's position.
 
 ## 7. `tscript`: kinds, effects, leg words
 

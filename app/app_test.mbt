@@ -203,3 +203,95 @@ impl @component.Fields for PanelState with fn schema() {
     @component.FieldInfo::new("item", TyComp(Some("Item"))),
   ])
 }
+
+// ---------------------------------------------------------------------------
+// v2: the DOM entry and the lexical leg.
+
+///|
+test "a view raises a message, and the lexical leg answers an intent" {
+  // Two halves of task 6 in one drive. The DOM entry pushes a `Receive` rather
+  // than an `Input`, and `ScopeIntents` resolves the `lex` leg through the
+  // component's REGISTRATION scope — the same place `ScopeRequests` looks,
+  // answering with the whole chain instead of one handler.
+  let asked : Array[String] = []
+  let scope = @component.ComponentStack::new()
+  scope.register_intent_handlers({
+    "loadRows": [
+      IntentFn((_call, answer) => {
+        asked.push("first")
+        answer(Pass)
+      }),
+      IntentFn((call, answer) => {
+        asked.push("second@\{call.from.items.length()}")
+        answer(Ok(Str("rows")))
+      }),
+    ],
+  })
+  let comp = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><button class=\"go\" @on.click=\"go\">go</button><span class=\"seen\" @text=\".seen\"></span></div>",
+      ),
+    },
+    name="Lexy",
+    init=LexyState::{ seen: "" },
+    update=(_s : LexyState, msg, ctx) => {
+      match msg {
+        // The view's name arrives as a MESSAGE now.
+        Receive("go", _) => {
+          ctx.intent(
+            "loadRows",
+            [],
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="loadRowsOk"),
+          )
+          Unchanged
+        }
+        // ...and the answer arrives as one too.
+        Receive("loadRowsOk", [v]) => Next({ seen: v.to_repr().to_string() })
+        _ => Unhandled
+      }
+    },
+  )
+  scope.register_components([comp])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = @app.App::new(
+    scope,
+    comp.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  app.start()
+  guard find_el(container, "BUTTON") is Some(btn) else {
+    fail("no button rendered")
+  }
+  let _ = app.dispatch(btn, @render.DomEvent::new(name="click"))
+  // The first scope handler declined and the second answered — a walk, not a
+  // lookup — and `from` carried the sender's position.
+  assert_eq(asked.join(","), "first,second@0")
+  assert_true(container.to_html().contains("rows"))
+}
+
+///|
+priv struct LexyState {
+  seen : String
+}
+
+///|
+impl @component.Fields for LexyState with fn encode(s) {
+  { "seen": Str(s.seen) }
+}
+
+///|
+impl @component.Fields for LexyState with fn decode(f) {
+  guard f.get("seen") is Some(Str(v)) else { return None }
+  Some({ seen: v })
+}
+
+///|
+impl @component.Fields for LexyState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="lexy_state", fields=[
+    @component.FieldInfo::new("seen", TyText),
+  ])
+}
