@@ -17,7 +17,17 @@ pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init?
 
 pub let corpus_global_style : String
 
+pub let corpus_v2_common_style : String
+
+pub fn corpus_v2_component(name? : String, views? : Map[String, @anode.View], init? : CorpusV2State, common_style? : String, global_style? : String, update? : (CorpusV2State, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusV2State], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let corpus_v2_global_style : String
+
+pub fn corpus_v2_views() -> Map[String, @anode.View]
+
 pub fn corpus_views() -> Map[String, @anode.View]
+
+pub fn v2_case_name(Int) -> String?
 
 pub fn value_case_name(Int) -> String?
 
@@ -132,6 +142,46 @@ pub(all) struct CorpusState {
   page : Int
 }
 pub fn CorpusState::zero() -> Self
+
+pub(all) struct CorpusV2Label {
+  text : String
+  done : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CorpusV2Receive {
+  Case0
+  Case1
+  Case2(Int)
+  Case3(String)
+  Case4(Int)
+  Case5(String)
+  Case6(String)
+  Case7(String)
+  Case8(String)
+  Case9
+  Case10(Int)
+  Case11
+  Case12
+  Case13
+  Case22(Int)
+  Case23(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CorpusV2Receive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CorpusV2Receive::send(Self, &@core.Ctx) -> Unit
+pub fn CorpusV2Receive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct CorpusV2State {
+  name : String
+  count : Int
+  ratio : Double
+  ok : Bool
+  items : Array[String]
+  labels : Array[CorpusV2Label]
+  tags : Map[String, Bool]
+  page : Int
+}
+pub fn CorpusV2State::zero() -> Self
 
 pub(all) struct Recorder {
   seen : Array[String]

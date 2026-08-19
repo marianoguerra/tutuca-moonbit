@@ -81,6 +81,7 @@ pub(all) struct Emitted {
   /// appear as a variant the author is asked to write an arm for.
   answers_input : Array[String]
   answers_receive : Array[String]
+  answers_intent : Array[String]
   answers_bubble : Array[String]
   answers_response : Array[String]
   /// The value bodies that compiled, by role — what the generator routes to.

@@ -457,6 +457,7 @@ fn gen_views_commands() -> Array[Command] {
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
     ("tscript/conformance/mbt/corpus.html", Some("Corpus")),
+    ("tscript/conformance/mbt/corpus_v2.html", Some("CorpusV2")),
     ("dyncomp/shell/loader_bar.html", Some("LoaderBar")),
     ("dyncomp/ui/app.html", Some("UniversalApp")),
     ("dyncomp/ui/std/std.html", None),

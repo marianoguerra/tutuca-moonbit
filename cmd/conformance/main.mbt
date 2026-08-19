@@ -49,6 +49,16 @@ fn main raise {
   @fs.write_string_to_file(out_dir + "/corpus.html", html)
   @fs.write_string_to_file(out_dir + "/table_gen.mbt", table)
   println("conformance: \{cases.length()} case(s) -> \{out_dir}/corpus.html")
+  // The v2 cases go into their own component and their own file rather than
+  // joining the one above. They share no schema with it — v2's has an `intent`
+  // variant and two answer arms the v1 one has never heard of — and merging two
+  // schemas so two vocabularies could live in one `<template>` would be work
+  // that exists only until task 25 deletes the first.
+  let v2 = @corpus.cases_v2()
+  let (html2, table2) = project_v2(v2)
+  @fs.write_string_to_file(out_dir + "/corpus_v2.html", html2)
+  @fs.write_string_to_file(out_dir + "/table_v2_gen.mbt", table2)
+  println("conformance: \{v2.length()} v2 case(s) -> \{out_dir}/corpus_v2.html")
 }
 
 ///|
@@ -246,6 +256,188 @@ fn project(
     "pub fn value_case_name(i : Int) -> String? {\n" +
     "  match i {\n" +
     value_arms.to_string() +
+    "    _ => None\n" +
+    "  }\n" +
+    "}\n"
+  (html, table)
+}
+
+///|
+/// The v2 component's name.
+const COMP_V2 : String = "CorpusV2"
+
+///|
+/// The state-block type a projected case's payload is declared as.
+///
+/// Inferred from the VALUES the case dispatches, which is the only description
+/// of them the corpus carries. Narrow on purpose: a wider guess would declare a
+/// payload the case does not exercise, and `Any` is what "the corpus did not
+/// say" honestly reads as.
+fn payload_ty(v : @tutuca.Value) -> String {
+  match v {
+    Num(n) => if n == n.to_int().to_double() { "Int" } else { "Double" }
+    Str(_) => "String"
+    Bool(_) => "Bool"
+    _ => "Any"
+  }
+}
+
+///|
+/// Project the v2 cases into their own view file.
+///
+/// Deliberately a second function rather than a widened first one, and it
+/// differs from `project` in one decision that matters: **the schema is
+/// GENERATED from the cases** rather than taken from the first of them.
+///
+/// The v1 corpus can take its schema verbatim because it declares one `receive`
+/// case, one `bubble` and one `response`, and everything else is an `Input`
+/// whose names nothing declares. The v2 corpus cannot: six cases declare
+/// `intent saveDraft` with six different bodies, because that is the point of
+/// them, and one component answers one name once. So every handler is renamed
+/// to `case<i>` — as v1 already does for its `Input` names — and the schema
+/// follows the rename, one variant case per projected handler, typed from the
+/// values the case dispatches.
+///
+/// A consequence worth stating: the projection emits **no view call sites**.
+/// v1 needs them so the surface can infer an `on` handler's argument types; a
+/// generated schema declares them outright, so a template here would be the
+/// projection answering a question the schema already answered — and for an
+/// `intent` it would be wrong, since a view raises messages and never intents.
+fn project_v2(cases : Array[@corpus.V2Case]) -> (String, String) {
+  let decls = StringBuilder::new()
+  let arms = StringBuilder::new()
+  let recv_cases : Array[String] = []
+  let intent_cases : Array[String] = []
+  let shared : Map[String, String] = Map([])
+  let mut skipped = 0
+  for i, c in cases {
+    let name = "case\{i}"
+    let parsed = @tscript.parse_script(c.script) catch {
+      _ => {
+        skipped = skipped + 1
+        continue
+      }
+    }
+    guard parsed.get(parsed.length() - 1) is Some(d) else {
+      skipped = skipped + 1
+      continue
+    }
+    // The auxiliary declarations — a `pred` a contract names — travel with the
+    // case and are shared, exactly as they are above.
+    let aux : Array[String] = []
+    let mut clash = false
+    for k in 0..<(parsed.length() - 1) {
+      let a = parsed[k]
+      let src = a.to_source()
+      match shared.get(a.name) {
+        Some(prev) => if prev != src { clash = true }
+        None => {
+          shared[a.name] = src
+          aux.push(src)
+        }
+      }
+    }
+    if clash {
+      skipped = skipped + 1
+      continue
+    }
+    for a in aux {
+      decls.write_string(
+        "  " +
+        a.split("\n").map(l => l.to_owned()).collect().join("\n  ") +
+        "\n\n",
+      )
+    }
+    decls.write_string(
+      "  " +
+      { ..d, name, doc: "case \{i}: \{c.name}" }
+      .to_source()
+      .split("\n")
+      .map(l => l.to_owned())
+      .collect()
+      .join("\n  ") +
+      "\n\n",
+    )
+    // The schema case, named after the rename and typed from the dispatch.
+    let variant = "Case\{i}" +
+      (if c.args.is_empty() {
+        ""
+      } else {
+        "(" + c.args.map(a => payload_ty(a)).join(", ") + ")"
+      })
+    match c.bucket {
+      VReceive => recv_cases.push(variant)
+      VIntent => intent_cases.push(variant)
+    }
+    // The name the DRIVER dispatches, which is the renamed one only when the
+    // case is about the declaration it renamed. A case whose whole point is a
+    // name no arm answers dispatches its own, and renaming that would be the
+    // projection quietly answering it.
+    arms.write_string(
+      "    \{i} => Some(\{quote(if c.handler == d.name { name } else { c.handler })})\n",
+    )
+  }
+  if skipped > 0 {
+    println("conformance: \{skipped} v2 case(s) could not be projected")
+  }
+  // The state half is the corpus's own; the message halves are generated.
+  let state = match cases.get(0) {
+    Some(c) => {
+      // Everything but the message variants, which are generated below.
+      let keep : Array[String] = []
+      for line in c.schema.split("\n") {
+        let l = line.to_owned()
+        if l.has_prefix("receive ") || l.has_prefix("intent ") {
+          continue
+        }
+        keep.push(l)
+      }
+      keep.join("\n").replace(old="state C {", new="state \{COMP_V2} {")
+    }
+    None => "state \{COMP_V2} {}"
+  }
+  let schema = state +
+    "\nreceive \{COMP_V2} { " +
+    recv_cases.join(", ") +
+    " }" +
+    (if intent_cases.is_empty() {
+      ""
+    } else {
+      "\nintent \{COMP_V2} { " + intent_cases.join(", ") + " }"
+    })
+  let html = "<!--\n" +
+    "  GENERATED by `cmd/dev -- gen-conformance` from tscript/conformance.\n" +
+    "  DO NOT EDIT: add a case to `cases_v2()` and regenerate.\n" +
+    "\n" +
+    "  The v2 half of the corpus. Its own component and its own file, because\n" +
+    "  it shares no schema with the v1 one — v2's has an `intent` variant and\n" +
+    "  answer arms the v1 one has never heard of.\n" +
+    "\n" +
+    "  The message variants are GENERATED from the cases rather than copied\n" +
+    "  from the corpus's own schema: six cases declare `intent saveDraft` with\n" +
+    "  six different bodies, and one component answers one name once.\n" +
+    "-->\n" +
+    "<script type=\"tutuca/state\">\n" +
+    indent(schema) +
+    "\n</script>\n\n" +
+    "<script type=\"tutuca/script\">\n" +
+    decls.to_string() +
+    "</script>\n\n" +
+    "<template id=\"\{COMP_V2}\">\n<div>\n  <x text=\".name\"></x>\n" +
+    "</div>\n</template>\n"
+  let table = "// GENERATED by `cmd/dev -- gen-conformance` — DO NOT EDIT.\n" +
+    "//\n" +
+    "// The v2 corpus is a list and the emitted arms are named; this is what\n" +
+    "// lines the two up. Every handler is renamed to `case<i>` and the schema\n" +
+    "// follows the rename — except where a case dispatches a name it did not\n" +
+    "// declare, which is the whole point of one of them.\n" +
+    "\n" +
+    "///|\n" +
+    "/// The name v2 case `i` was DISPATCHED under, or None when it was not\n" +
+    "/// projected.\n" +
+    "pub fn v2_case_name(i : Int) -> String? {\n" +
+    "  match i {\n" +
+    arms.to_string() +
     "    _ => None\n" +
     "  }\n" +
     "}\n"

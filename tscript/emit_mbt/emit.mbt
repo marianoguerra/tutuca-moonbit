@@ -49,6 +49,16 @@ priv struct E {
   /// existing `Unchanged` idiom already covers it and a guard on an opaque
   /// value is still refused.
   mut fail : String
+  /// Every name this component has an arm for, so an `intent` can be told
+  /// which of the three outcomes its sender is waiting for.
+  ///
+  /// The design's section 6 says a sender expects an answer if and only if its
+  /// schema declares `<name>Ok`, `<name>Error` or `<name>Unhandled`. This set
+  /// is the schema's `receive` variant PLUS the block's own message
+  /// declarations, because both are arms and the rule is about having one —
+  /// and because a block may answer a name the schema does not carry, now that
+  /// a `receive` can take its types from the views.
+  answer_arms : Set[String]
   /// A counter for the temporaries those guards bind, and what is already
   /// bound: reading `q` twice is one guard, not two.
   mut tmp : Int
@@ -90,8 +100,20 @@ pub fn emit(
   roles? : Roles = Roles::none(),
   surface? : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
+  // Every name this component has an arm for, gathered before the walk for the
+  // same reason `callables` is: a body above a declaration still needs it.
+  let answer_arms : Set[String] = Set([])
+  for m in def.receive {
+    answer_arms.add(m.name)
+  }
+  for d in decls {
+    if d.kind is (DOn | DReceive) {
+      answer_arms.add(d.name)
+    }
+  }
   let e = E::{
     def,
+    answer_arms,
     state_ty,
     params: Map([]),
     prelude: [],
@@ -113,6 +135,7 @@ pub fn emit(
   let answers : Map[String, Array[String]] = {
     "Input": [],
     "Receive": [],
+    "Intent": [],
     "Bubble": [],
     "Response": [],
   }
@@ -145,6 +168,7 @@ pub fn emit(
     let bucket = match d.kind {
       DOn => "Input"
       DReceive => "Receive"
+      DIntent => "Intent"
       DBubble => "Bubble"
       DResponse => "Response"
       // A `compute`, a `pred`, an `enrich`: not a transition, so not this
@@ -203,6 +227,7 @@ pub fn emit(
     source: source + values.source,
     answers_input: answers.get("Input").unwrap(),
     answers_receive: answers.get("Receive").unwrap(),
+    answers_intent: answers.get("Intent").unwrap(),
     answers_bubble: answers.get("Bubble").unwrap(),
     answers_response: answers.get("Response").unwrap(),
     answers_methods: values.methods,
@@ -822,9 +847,10 @@ fn E::param_types(
   surface : @check.Surface,
 ) -> Array[@statedef.StateTy?] {
   match d.kind {
-    DReceive | DBubble | DResponse => {
+    DReceive | DIntent | DBubble | DResponse => {
       let cases = match d.kind {
         DReceive => self.def.receive
+        DIntent => self.def.intent
         DBubble => self.def.bubble
         _ => self.def.response
       }
@@ -832,6 +858,13 @@ fn E::param_types(
         if m.name == d.name {
           return m.payload.map(t => Some(t))
         }
+      }
+      // A `receive` whose name the VIEWS send is declared by the call sites
+      // rather than by the schema — the merge, and the same fallback
+      // `tscript/check` makes for the same reason. The other three kinds are
+      // schema-only, and an undeclared one is opaque.
+      if d.kind is DReceive && surface.inputs.get(d.name) is Some(ts) {
+        return d.params.mapi((i, _p) => ts.get(i).unwrap_or(None))
       }
       d.params.map(_p => None)
     }
@@ -933,7 +966,7 @@ fn E::stmt_body(
       let next = self.collection_call(call, field, ty, args)
       self.rebind(field, next, pad)
     }
-    SEffect(name~, args~, ..) => self.effect(name, args, pad)
+    SEffect(name~, args~, route~, ..) => self.effect(name, args, route, pad)
     // `new Label` is a `let` at the type's zero. The annotation is what makes
     // it resolve: `zero_expr` writes `{ text: "", done: false }` unqualified,
     // because every other position it lands in already has a type wanted.
@@ -1229,15 +1262,90 @@ fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
 
 ///|
 /// An effect, straight through to the `ctx` the function already holds.
+/// The three outcome names a sender declared an arm for, as
+/// `IntentOpts::new`'s keyword arguments — or "" when it declared none.
+///
+/// This is where "a sender expects an answer if and only if it declares an
+/// answer arm" (`totuka-v2.md` section 6) becomes code. Nobody writes these;
+/// the generator computes them, which is exactly the design's claim that the
+/// notification/request split needs no declaration.
+fn E::outcomes(self : E, msg : String) -> String {
+  let parts : Array[String] = []
+  for
+    pair in [
+      ("Ok", "on_ok_name"),
+      ("Error", "on_error_name"),
+      ("Unhandled", "on_unhandled_name"),
+    ] {
+    let arm = msg + pair.0
+    if self.answer_arms.contains(arm) {
+      parts.push("\{pair.1}=\{quote(arm)}")
+    }
+  }
+  parts.join(", ")
+}
+
+///|
+/// `@tutuca.IntentOpts::new(...)`, with only what was written.
+///
+/// An EMPTY route emits no `route=`, so the default `dyn lex` stays where it is
+/// written — `IntentOpts::new` — rather than being spelled a second time into
+/// every generated module.
+fn intent_opts(route : Array[@tutuca.Leg], outcomes : String?) -> String {
+  let parts : Array[String] = []
+  if !route.is_empty() {
+    parts.push(
+      "route=[" +
+      route
+      .map(l => "@tutuca.Leg::" + (if l is Dyn { "Dyn" } else { "Lex" }))
+      .join(", ") +
+      "]",
+    )
+  }
+  match outcomes {
+    Some(o) if o != "" => parts.push(o)
+    _ => ()
+  }
+  "@tutuca.IntentOpts::new(" + parts.join(", ") + ")"
+}
+
+///|
 fn E::effect(
   self : E,
   name : String,
   args : Array[@tscript.Expr],
+  route : Array[@tutuca.Leg],
   pad : String,
 ) -> String raise NoWay {
   self.uses_ctx = true
   if name == "stop" {
     return "\{pad}effects.push(() => ctx.stop_propagation())\n"
+  }
+  // The three effects that name no message. `forward` re-dispatches the one
+  // that arrived, and `reply` / `fail` are addressed by the walk, so the
+  // literal-name guard below is not theirs to satisfy.
+  match name {
+    "reply" | "fail" => {
+      let v = self.as_value(args[0])
+      let verb = if name == "reply" { "reply" } else { "fail" }
+      return "\{pad}effects.push(() => ctx.\{verb}(\{v}))\n"
+    }
+    "forward" => {
+      // Amended arguments, or the ones that arrived. A route the forwarder
+      // wrote, or the one the walk is already on.
+      let amended = if args.is_empty() {
+        "None"
+      } else {
+        "Some([" + args.map(a => self.as_value(a)).join(", ") + "])"
+      }
+      let opts = if route.is_empty() {
+        "None"
+      } else {
+        "Some(\{intent_opts(route, None)})"
+      }
+      return "\{pad}effects.push(() => ctx.forward(\{amended}, \{opts}))\n"
+    }
+    _ => ()
   }
   guard args.get(0) is Some(ELit(lit=LStr(msg), ..)) else {
     raise Cannot("`\{name}` needs a literal message name")
@@ -1256,6 +1364,8 @@ fn E::effect(
       "\{pad}effects.push(() => ctx.bubble(\{quote(msg)}, \{payload}))\n"
     "request" =>
       "\{pad}effects.push(() => ctx.request(\{quote(msg)}, \{payload}, @tutuca.RequestOpts::new()))\n"
+    "intent" =>
+      "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, Some(self.outcomes(msg)))}))\n"
     _ =>
       raise Cannot(
         "`\{name}` addresses a position, which this backend does not emit yet — write the handler in MoonBit",

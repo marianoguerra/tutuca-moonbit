@@ -48,3 +48,53 @@ pub impl @tutuca.Ctx for Recorder with fn request(self, name, _args, _opts) {
 pub impl @tutuca.Ctx for Recorder with fn stop_propagation(self) {
   self.seen.push("stop")
 }
+
+// The v2 four. `intent` and `forward` carry a route, and the corpus records it
+// RESOLVED — a bare `intent 'save'` is `dyn lex` — so this is where the
+// generated call's opts are read back into the corpus's own spelling. The
+// emitter writes no `route=` for a default route, precisely so the default
+// lives in `IntentOpts::new`; `opts.route` therefore already holds it, and
+// asking the opts rather than the source is what makes the resolved form
+// checkable at all.
+
+///|
+pub impl @tutuca.Ctx for Recorder with fn intent_at_path(
+  self,
+  _path,
+  name,
+  args,
+  opts,
+) {
+  self.seen.push(
+    @conformance.show_effect(
+      "intent " + @tutuca.route_label(opts.route) + " " + name,
+      args,
+    ),
+  )
+}
+
+///|
+pub impl @tutuca.Ctx for Recorder with fn forward(self, args, opts) {
+  // A forward with no opts keeps the route the walk is already on, which the
+  // corpus writes as the default — there is no walk here to ask.
+  let route = match opts {
+    Some(o) => o.route
+    None => @tutuca.IntentOpts::new().route
+  }
+  self.seen.push(
+    @conformance.show_effect(
+      "forward " + @tutuca.route_label(route),
+      args.unwrap_or([]),
+    ),
+  )
+}
+
+///|
+pub impl @tutuca.Ctx for Recorder with fn reply(self, value) {
+  self.seen.push(@conformance.show_effect("reply", [value]))
+}
+
+///|
+pub impl @tutuca.Ctx for Recorder with fn fail(self, error) {
+  self.seen.push(@conformance.show_effect("fail", [error]))
+}

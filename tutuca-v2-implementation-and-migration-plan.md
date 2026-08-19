@@ -70,7 +70,7 @@ Two consequences worth stating outright.
 - [x] 7. [`tscript`: kinds, effects, leg words](#7-tscript-kinds-effects-leg-words)
 - [x] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
 - [x] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
-- [ ] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
+- [x] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
 - [ ] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
 - [ ] 12. [`viewgen`: merge four enums into two](#12-viewgen-merge-four-enums-into-two)
 
@@ -695,6 +695,60 @@ already does.
 
 **Validation.** The corpus from task 2, through `gen-conformance` and
 `moon test`.
+
+**Done. All 24 v2 cases compile and pass, with zero refusals.** That number is
+pinned in the driver, and it is the number worth having: every v2 case was
+written against the design rather than against this backend, so a refusal here
+would be the backend failing to express something the design says.
+
+The kind-to-bucket map gains `DIntent => "Intent"`, `answers` and `EmitResult`
+gain `answers_intent`, and the effect emitter gains all four. `intent` emits
+`ctx.intent(name, payload, IntentOpts::new(…))`; `forward`, `reply` and `fail`
+skip the literal-name guard entirely, because none of them names a message.
+
+**`E::outcomes` is where "the generator computes it" becomes code.** Design
+section 6 says a sender expects an answer if and only if it declares an answer
+arm; `answer_arms` is the schema's `receive` variant plus the block's own
+message declarations, and an `intent` effect gets `on_ok_name` /
+`on_error_name` / `on_unhandled_name` filled in from whichever of
+`<name>Ok` / `<name>Error` / `<name>Unhandled` the component actually answers.
+Nobody writes them. **`intent_opts` emits no `route=` for an empty route**, so
+the default `dyn lex` stays in `IntentOpts::new` rather than being spelled into
+every generated module.
+
+**The corpus needed a second projection, and one real decision inside it.**
+`cmd/conformance` now writes `corpus_v2.html` + `table_v2_gen.mbt` beside the v1
+pair, driven by `drive_v2_wbtest.mbt`; `dev/tasks.mbt`'s `gen-views` list gained
+the file. Separate rather than merged because the two schemas have nothing in
+common, and merging them would be work that exists only until task 25.
+
+The decision: **`project_v2` GENERATES the schema's message variants from the
+cases** rather than copying the corpus's own. v1 can copy, because it declares
+one `receive`, one `bubble` and one `response` and everything else is an `Input`
+whose names nothing declares. v2 cannot: six cases declare `intent saveDraft`
+with six different bodies, which is the point of them, and one component answers
+one name once. So every handler is renamed to `case<i>` and the schema follows,
+one variant case per handler, typed from the values the case dispatches. A
+consequence: **no view call sites are emitted** — a generated schema declares
+the payloads outright, and for an `intent` a template would be wrong, since a
+view raises messages and never intents.
+
+One case is renamed and dispatched under a DIFFERENT name on purpose: `a message
+no arm answers` declares `receive inc` and dispatches `nope`. The table records
+the dispatched name, not the declaration's, or the projection would quietly
+answer the case it exists to leave unanswered.
+
+**The refusal door is intact** — `E::effect` still raises `Cannot` for what it
+cannot compile, and a `forward` reached no new limit.
+
+**One v1 case started compiling as a side effect, and it is a real
+improvement.** `E::param_types` now falls back to the view surface for a
+`DReceive` the schema does not declare — the same fallback `tscript/check` made
+in task 8, for the same reason: with one bucket for a view's name and a
+parent's, a `receive` answering a view name takes its types from the call sites.
+v1's `case48` had been refused for want of a type and now emits an arm. The
+driver's pinned refusal count is unchanged, because that case dispatches into
+the `Input` bucket and still finds nothing there.
 
 ## 11. `tutucard/wasm`: the card backend
 

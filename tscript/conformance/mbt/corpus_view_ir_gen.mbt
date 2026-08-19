@@ -625,6 +625,11 @@ fn corpus_inline_update(
       let s = { ..s, count: n.to_int() }
       Next(s)
     }
+    Receive("case48", args) => {
+      guard args.get(0) is Some(Num(n)) else { return Unchanged }
+      let s = { ..s, count: n.to_int() }
+      Next(s)
+    }
     Input("case49", _args) => {
       guard s.count.to_double() >= 0.0 else {
         @tutuca.precondition_failed(

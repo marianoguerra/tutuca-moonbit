@@ -21,6 +21,9 @@
 // guessed at those would be worse than one that says which handler to write by
 // hand.
 import {
+  // The `Leg` an `SEffect` carries, and nothing else — this package emits the
+  // TEXT of a call into `core` rather than making one.
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/statedef",
