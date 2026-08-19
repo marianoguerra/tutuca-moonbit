@@ -50,11 +50,20 @@ pub(all) struct Case {
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
-  /// `send`, `bubble`, `request`, `sendAt`, or `stop`.
+  /// v1: `send`, `bubble`, `request`, `sendAt`, or `stop`.
+  /// v2: `send`, `sendAt`, `intent`, `forward`, `reply`, `fail`, or `stop`.
   kind : String
-  /// The message name. Empty for `stop`, which carries none.
+  /// The message name. Empty for `stop`, and for `forward`, `reply` and
+  /// `fail`, which carry none — a `forward` re-dispatches the name that
+  /// arrived, and an answer is addressed by the walk rather than by a name.
   name : String
   args : Array[@tutuca.Value]
+  /// The route, for the two effects that have one: `intent` and `forward`.
+  /// Written RESOLVED — a bare `intent 'save'` records `dyn lex` — because the
+  /// default route is exactly the kind of thing two backends can agree to
+  /// disagree about while every case with an explicit route passes. Empty for
+  /// every other effect, and for every v1 case.
+  route : String
 } derive(Debug, Eq)
 
 ///|
@@ -65,17 +74,25 @@ pub fn CaseEffect::printed(self : CaseEffect) -> String {
   if self.kind == "stop" {
     return "stop"
   }
-  show_effect(self.kind + " " + self.name, self.args)
+  let mut head = self.kind
+  if !self.route.is_empty() {
+    head = head + " " + self.route
+  }
+  if !self.name.is_empty() {
+    head = head + " " + self.name
+  }
+  show_effect(head, self.args)
 }
 
 ///|
-/// A `send`, and the other four by the same shape.
+/// A `send`, and the others by the same shape.
 pub fn effect(
   kind : String,
   name? : String = "",
   args? : Array[@tutuca.Value] = [],
+  route? : String = "",
 ) -> CaseEffect {
-  { kind, name, args }
+  { kind, name, args, route }
 }
 
 ///|
@@ -871,6 +888,353 @@ pub fn value_cases() -> Array[ValueCase] {
       "info",
       role=VEnrichScope,
       answer=ABinds({ "len": Num(3) }),
+    ),
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// v2: two channels
+//
+// Written BEFORE either backend can run them, which is the whole reason they
+// are here. A corpus written after the backends records what the backends
+// agreed on; a corpus written first records what the design said, and the
+// backends have to come to it. `totuka-v2.md` is that design.
+//
+// Nothing consumes `cases_v2()` yet. The projection (`cmd/conformance`) and
+// the two adapters pick it up in the plan's tasks 10 and 11, and `cases()`
+// goes away when they do. Until then these rows are data with one test on
+// them — that the batch is still all here and still says what it says.
+//
+// WHAT IS NOT HERE, and why. A case is ONE transition: one handler, one
+// dispatch, one successor, one effect list. So a row can say what a body
+// EMITS, and cannot say where it goes. These belong to the transactor's own
+// suite instead (the plan's task 4), and listing them here is what stops them
+// from being forgotten in the gap between the two files:
+//
+//   - an observer above a replier, and the replier ending the walk;
+//   - a `requires` refusing mid-walk and the walk CONTINUING past it — the
+//     half that is one transition is `a requires that does not hold takes the
+//     reply with it` below;
+//   - `reply` twice across two HOPS, which is the one-shot the transactor
+//     owns; the row below is two replies in one body, which is what a backend
+//     can get wrong on its own;
+//   - route exhaustion in its three shapes (`<name>Unhandled` declared,
+//     only `<name>Error` declared, neither) — the sender's schema decides it
+//     and the walk performs it, and no single transition contains both.
+
+///|
+/// The two buckets v2 has. `Input`, `Bubble` and `Response` are gone: the
+/// first folded into `Receive` (a message is a message whoever sent it), and
+/// the other two into `Intent` (a route is a route whichever scope it walks).
+pub(all) enum V2Bucket {
+  VReceive
+  VIntent
+} derive(Debug, Eq)
+
+///|
+/// One v2 transition. `Case` with the bucket swapped, and deliberately a
+/// second type rather than a widened first one: the two vocabularies should
+/// not be mixable in one list while both exist.
+pub(all) struct V2Case {
+  name : String
+  schema : String
+  script : String
+  before : Map[String, @tutuca.Value]
+  bucket : V2Bucket
+  handler : String
+  args : Array[@tutuca.Value]
+  after : Map[String, @tutuca.Value]?
+  effects : Array[CaseEffect]
+}
+
+///|
+/// The v2 schema: the same fields, with the three message variants down to
+/// two. `SaveDraftOk` and `SaveDraftError` are declared because declaring them
+/// is what makes `saveDraft` a request rather than a notification (design
+/// section 6), and a row below turns on that being visible in the schema.
+fn v2_schema() -> String {
+  (
+    #|struct Label { text: String, done: Bool }
+    #|state C {
+    #|  name   : String
+    #|  count  : Int
+    #|  ratio  : Double
+    #|  ok     : Bool
+    #|  items  : Array[String]
+    #|  labels : Array[Label]
+    #|  tags   : Set[String]
+    #|  page   : Int
+    #|}
+    #|receive C { ResetTo(Int), SaveDraftOk(Int), SaveDraftError(String) }
+    #|intent  C { SaveDraft(String), Picked(Int) }
+  )
+}
+
+///|
+/// One `receive` case over the shared schema and state.
+fn recv_case(
+  name : String,
+  script : String,
+  handler : String,
+  args? : Array[@tutuca.Value] = [],
+  after~ : Map[String, @tutuca.Value]?,
+  effects? : Array[CaseEffect] = [],
+) -> V2Case {
+  {
+    name,
+    schema: v2_schema(),
+    script,
+    before: counter_state(),
+    bucket: VReceive,
+    handler,
+    args,
+    after,
+    effects,
+  }
+}
+
+///|
+/// One `intent` case over the shared schema and state.
+fn intent_case(
+  name : String,
+  script : String,
+  handler : String,
+  args? : Array[@tutuca.Value] = [],
+  after~ : Map[String, @tutuca.Value]?,
+  effects? : Array[CaseEffect] = [],
+) -> V2Case {
+  {
+    name,
+    schema: v2_schema(),
+    script,
+    before: counter_state(),
+    bucket: VIntent,
+    handler,
+    args,
+    after,
+    effects,
+  }
+}
+
+///|
+/// Every v2 case, in one list.
+pub fn cases_v2() -> Array[V2Case] {
+  [
+    // -- a message is addressed, and stops ---------------------------------
+    recv_case(
+      "a message answered at home",
+      "receive inc { .count += 1 }",
+      "inc",
+      after=Some(with_fields({ "count": Num(1) })),
+    ),
+    recv_case(
+      "a message no arm answers produces no successor",
+      "receive inc { .count += 1 }",
+      "nope",
+      after=None,
+    ),
+    // The merge, stated as a case. In v1 this row's twin is `an input name no
+    // arm answers is not this bucket's business`: `resetTo` was declared in
+    // the RECEIVE bucket, so an `Input` dispatch of it found nothing. v2 has
+    // one bucket for both, so the same dispatch now lands — which is the
+    // widening in the design's section 2, and the one behaviour change a
+    // migration can trip over.
+    recv_case(
+      "a view name and a schema-declared name share one bucket",
+      "receive resetTo(n) { .count = n }",
+      "resetTo",
+      args=[Num(4)],
+      after=Some(with_fields({ "count": Num(4) })),
+    ),
+    // -- forward: the bridge -----------------------------------------------
+    recv_case(
+      "forward with no legs takes the default route",
+      "receive saveDraft(text) { forward }",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("forward", route="dyn lex")],
+    ),
+    recv_case(
+      "forward dyn walks the ancestors only",
+      "receive picked(k) { forward dyn }",
+      "picked",
+      args=[Num(3)],
+      after=Some(counter_state()),
+      effects=[effect("forward", route="dyn")],
+    ),
+    recv_case(
+      "forward lex walks the registered handlers only",
+      "receive saveDraft(text) { forward lex }",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("forward", route="lex")],
+    ),
+    recv_case(
+      "forward lex dyn walks the legs in the order written",
+      "receive saveDraft(text) { forward lex dyn }",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("forward", route="lex dyn")],
+    ),
+    recv_case(
+      "forward amends the arguments and keeps the name and the route",
+      "receive saveDraft(text) { forward .name }",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("forward", args=[Str("ada")], route="dyn lex")],
+    ),
+    recv_case(
+      "a handler may run and then forward",
+      "receive saveDraft(text) {\n  .count += 1\n  forward\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(with_fields({ "count": Num(1) })),
+      effects=[effect("forward", route="dyn lex")],
+    ),
+    // -- intent: the routed dispatch ---------------------------------------
+    recv_case(
+      "an intent with no legs takes the default route",
+      "receive go { intent 'saveDraft' .name }",
+      "go",
+      after=Some(counter_state()),
+      effects=[
+        effect("intent", name="saveDraft", args=[Str("ada")], route="dyn lex"),
+      ],
+    ),
+    recv_case(
+      "intent dyn is what v1 spelled bubble",
+      "receive go(k) { intent dyn 'picked' k }",
+      "go",
+      args=[Num(3)],
+      after=Some(counter_state()),
+      effects=[effect("intent", name="picked", args=[Num(3)], route="dyn")],
+    ),
+    recv_case(
+      "intent lex is what v1 spelled request",
+      "receive go { intent lex 'loadRows' .name }",
+      "go",
+      after=Some(counter_state()),
+      effects=[
+        effect("intent", name="loadRows", args=[Str("ada")], route="lex"),
+      ],
+    ),
+    recv_case(
+      "intent lex dyn reverses the legs",
+      "receive go { intent lex dyn 'saveDraft' .name }",
+      "go",
+      after=Some(counter_state()),
+      effects=[
+        effect("intent", name="saveDraft", args=[Str("ada")], route="lex dyn"),
+      ],
+    ),
+    recv_case(
+      "effects come out in order, with the state",
+      "receive go {\n  intent lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  stop\n}",
+      "go",
+      after=Some(with_fields({ "ok": Bool(true) })),
+      effects=[
+        effect("intent", name="loadRows", route="lex"),
+        effect("send", name="flash", args=[Str("ada")]),
+        effect("stop"),
+      ],
+    ),
+    // -- answering an intent ------------------------------------------------
+    intent_case(
+      "an intent answered where it arrives",
+      "intent saveDraft(text) {\n  .count += 1\n  reply .count\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(with_fields({ "count": Num(1) })),
+      effects=[effect("reply", args=[Num(1)])],
+    ),
+    intent_case(
+      "fail answers with an error and ends the walk",
+      "intent saveDraft(text) { fail 'disk full' }",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("fail", args=[Str("disk full")])],
+    ),
+    // An observer: it runs, it changes state, and it does not answer. The
+    // design's one rule — a reply ends the walk, running does not — is what
+    // this row is half of. The other half is the transactor's.
+    intent_case(
+      "a handler that does not reply is an observer",
+      "intent picked(k) { .page = k }",
+      "picked",
+      args=[Num(2)],
+      after=Some(with_fields({ "page": Num(2) })),
+    ),
+    intent_case(
+      "an intent handler may run and then continue the walk",
+      "intent picked(k) {\n  .page = k\n  forward\n}",
+      "picked",
+      args=[Num(2)],
+      after=Some(with_fields({ "page": Num(2) })),
+      effects=[effect("forward", route="dyn lex")],
+    ),
+    // Two replies in ONE body. Both are queued, because the effect queue does
+    // not judge; the transactor honours the first and refuses the second, and
+    // that one-shot is per intent ACROSS hops rather than per body, which is
+    // why it is pinned there and not here.
+    intent_case(
+      "a body may queue two replies, and both come out of it",
+      "intent saveDraft(text) {\n  reply 1\n  reply 2\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(counter_state()),
+      effects=[effect("reply", args=[Num(1)]), effect("reply", args=[Num(2)])],
+    ),
+    intent_case(
+      "stop ends the walk before any reply, and answers nothing",
+      "intent saveDraft(text) {\n  .count += 1\n  stop\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=Some(with_fields({ "count": Num(1) })),
+      effects=[effect("stop")],
+    ),
+    // The transition does not happen, so the queue is dropped, so the reply
+    // never leaves. The walk continuing past this position is the transactor's
+    // half of the same rule.
+    intent_case(
+      "a requires that does not hold takes the reply with it",
+      "pred hasSome { .count > 0 }\nintent saveDraft(text) requires hasSome {\n  .count += 1\n  reply .count\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=None,
+      effects=[],
+    ),
+    intent_case(
+      "an ensures that does not hold takes the reply with it",
+      "pred small { .count > 5 }\nintent saveDraft(text) ensures small {\n  .count += 1\n  reply .count\n}",
+      "saveDraft",
+      args=[Str("hi")],
+      after=None,
+      effects=[],
+    ),
+    // -- an answer is a message ---------------------------------------------
+    //
+    // Nothing here says "an answer". `saveDraftOk` is dispatched into the
+    // receive bucket like every other message, and the arm cannot tell that
+    // the runtime wrote it rather than a parent. That is the design's claim,
+    // and this row is what makes it a claim a backend can fail.
+    recv_case(
+      "an answer arrives as an ordinary message",
+      "receive saveDraftOk(n) { .count = n }",
+      "saveDraftOk",
+      args=[Num(7)],
+      after=Some(with_fields({ "count": Num(7) })),
+    ),
+    recv_case(
+      "an error answer arrives as an ordinary message too",
+      "receive saveDraftError(why) { .name = why }",
+      "saveDraftError",
+      args=[Str("disk full")],
+      after=Some(with_fields({ "name": Str("disk full") })),
     ),
   ]
 }

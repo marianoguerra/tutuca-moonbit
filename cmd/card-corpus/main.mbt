@@ -45,6 +45,9 @@ fn effect_json(e : @conformance.CaseEffect) -> Json {
     "kind": Json::string(e.kind),
     "name": Json::string(e.name),
     "args": Json::array(e.args.map(a => a.to_json())),
+    // Empty for every v1 effect; `intent` and `forward` are the two that
+    // carry one, and the card adapter reads it in the plan's task 11.
+    "route": Json::string(e.route),
   })
 }
 

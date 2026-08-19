@@ -29,7 +29,7 @@ not the first.
 **Phase 0 — decide**
 
 - [x] 1. [Close the blocking open questions](#1-close-the-blocking-open-questions)
-- [ ] 2. [Write the conformance corpus first](#2-write-the-conformance-corpus-first)
+- [x] 2. [Write the conformance corpus first](#2-write-the-conformance-corpus-first)
 
 **Phase 1 — the runtime**
 
@@ -167,6 +167,37 @@ difference. Add cases in small batches and run `gen-conformance` after each.
 **Validation.** `just dev gen-conformance`, then `just test`. Every new case
 fails at this point — that is correct, and the failures are the specification of
 tasks 10 and 11.
+
+**Done.** 24 v2 cases in `cases_v2()` at the foot of
+`tscript/conformance/corpus.mbt`, with `V2Case` and `V2Bucket` (`VReceive`,
+`VIntent`) beside them. A second type rather than a widened `Case`, so the two
+vocabularies cannot be mixed in one list while both exist.
+
+`CaseEffect` gains **`route : String`**, written RESOLVED — a bare
+`intent 'save'` records `dyn lex` — because the default route is exactly what
+two backends can agree to disagree about while every explicit-route case passes.
+`printed()` puts it between the verb and the name (`intent dyn lex saveDraft …`),
+`effect()` takes it as an optional, and `cmd/card-corpus`'s `effect_json` carries
+it for task 11.
+
+**Nothing consumes `cases_v2()` yet, and that is the point.** The projection
+cannot emit a v2 body until the parser accepts one (task 7), so running it now
+would fail generation rather than report a difference — the risk above. So the
+cases were written first, and the batch is held in place by
+`tscript/conformance/corpus_test.mbt`: the roster by name, the effect
+vocabulary and route tally, and the printed form of a routed effect. `cases()`
+and its drivers are untouched; tasks 10 and 11 switch over and delete the v1
+list.
+
+**What went to task 4 instead.** A case is one transition, so a row can say
+what a body EMITS and not where it goes. Four of the listed cases are walk
+behaviour and have no single-transition form: an observer above a replier;
+a `requires` refusing and the walk CONTINUING; `reply` twice across two hops
+(the one-shot is per intent across hops, not per body); and route exhaustion in
+its three shapes. They are listed in a comment above `cases_v2()` so the gap
+between the two files does not swallow them. Each has a corpus half that IS
+here — `a handler that does not reply is an observer`, `a requires that does
+not hold takes the reply with it`, `a body may queue two replies`.
 
 ## 3. `core`: buckets, `Ctx`, `IntentOpts`
 

@@ -9,7 +9,9 @@ import {
 // Values
 pub fn cases() -> Array[Case]
 
-pub fn effect(String, name? : String, args? : Array[@core.Value]) -> CaseEffect
+pub fn cases_v2() -> Array[V2Case]
+
+pub fn effect(String, name? : String, args? : Array[@core.Value], route? : String) -> CaseEffect
 
 pub fn show_effect(String, Array[@core.Value]) -> String
 
@@ -49,8 +51,26 @@ pub(all) struct CaseEffect {
   kind : String
   name : String
   args : Array[@core.Value]
+  route : String
 } derive(Eq, @debug.Debug)
 pub fn CaseEffect::printed(Self) -> String
+
+pub(all) enum V2Bucket {
+  VReceive
+  VIntent
+} derive(Eq, @debug.Debug)
+
+pub(all) struct V2Case {
+  name : String
+  schema : String
+  script : String
+  before : Map[String, @core.Value]
+  bucket : V2Bucket
+  handler : String
+  args : Array[@core.Value]
+  after : Map[String, @core.Value]?
+  effects : Array[CaseEffect]
+}
 
 pub(all) struct ValueCase {
   name : String
