@@ -609,3 +609,108 @@ test "a format answers a string, because it is a sentence" {
   // Unknown is not wrong here either: an `any` field could be a string.
   assert_eq(codes("pred ok format .blob { .ok }"), [])
 }
+
+// -- v2: NOT_A_HANDLER and NO_VIEW_HANDLER ----------------------------------
+
+///|
+/// The codes reported against the shared schema with a view surface in hand.
+fn codes_with_views(
+  block : String,
+  views : Array[String],
+) -> Array[String] raise {
+  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  for v in views {
+    // One opaque argument: enough for a one-parameter handler to bind, and
+    // opaque is what a real join of disagreeing call sites gives anyway.
+    inputs[v] = [None]
+  }
+  let decls = @tscript.parse_script(block)
+  @check.check(decls, def_of(schema()), surface={ inputs, }).map(f => f.code)
+}
+
+///|
+test "reply and fail answer a sender, and only an intent has one" {
+  assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
+  assert_eq(codes("intent rowPicked(k) { fail 'no' }"), [])
+  assert_eq(messages("receive resetTo(n) { reply .count }"), [
+    "`reply` answers the sender of an intent, and `receive resetTo` has none — a message is addressed, so nobody is waiting for an answer",
+  ])
+  assert_eq(messages("on click { fail 'no' }"), [
+    "`fail` answers the sender of an intent, and `on click` has none — a message is addressed, so nobody is waiting for an answer",
+  ])
+  assert_eq(codes("enrich row { reply 1 }"), ["NOT_A_HANDLER"])
+}
+
+///|
+test "forward passes on the message this body is handling" {
+  assert_eq(codes("receive resetTo(n) { forward }"), [])
+  assert_eq(codes("intent rowPicked(k) { forward dyn }"), [])
+  assert_eq(messages("compute a { .count }"), [])
+  assert_eq(messages("enrich row { forward }"), [
+    "`forward` passes on the message this body is handling, and `enrich row` is not handling one",
+  ])
+}
+
+///|
+test "reply and fail are not dynamic message names" {
+  // v1 asked "is the first argument a literal" of every effect but `stop`,
+  // which was the same set. `reply 1` would have been reported as a dynamic
+  // message name; it names no message at all.
+  assert_eq(codes("intent rowPicked(k) { reply 1 }"), [])
+  assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
+  assert_eq(codes("intent rowPicked(k) { fail .name }"), [])
+  assert_eq(codes("receive resetTo(n) { forward .name }"), [])
+  // ...and the rule still holds for the effects that DO name one.
+  assert_eq(codes("on x { intent .name }"), ["DYNAMIC_MESSAGE"])
+  assert_eq(codes("on x { send .name }"), ["DYNAMIC_MESSAGE"])
+}
+
+///|
+test "a view name the block neither answers nor forwards is a warning" {
+  assert_eq(codes_with_views("receive save(t) { forward }", ["save"]), [])
+  assert_eq(codes_with_views("on save(t) { .name = t }", ["save"]), [])
+  assert_eq(codes_with_views("on save(t) { .name = t }", ["saev"]), [
+    "NO_VIEW_HANDLER",
+  ])
+}
+
+///|
+test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
+  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  inputs["saveDraft"] = [None]
+  let found = @check.check(
+    @tscript.parse_script("on other { .count = 1 }"),
+    def_of(schema()),
+    surface={ inputs, },
+  )
+  assert_eq(found.length(), 1)
+  assert_eq(found[0].severity, SWarning)
+  assert_eq(
+    found[0].message,
+    "the view sends `saveDraft`, and this block neither answers it nor forwards it — write `receive saveDraft(…) { forward }` to dispatch it as an intent, or `receive saveDraft(…) { … }` to answer it here",
+  )
+}
+
+///|
+test "a generated mutator answers a view name, so it is not reported" {
+  // The checker cannot see `component/gen_mutators`' verb table, so it asks
+  // the conservative question instead: does the name address a declared field?
+  // Erring toward silence is this package's governing rule.
+  assert_eq(codes_with_views("on other { .count = 1 }", ["setCount"]), [])
+  assert_eq(codes_with_views("on other { .count = 1 }", ["countLen"]), [])
+  assert_eq(codes_with_views("on other { .count = 1 }", ["removeInItemsAt"]), [])
+  assert_eq(codes_with_views("on other { .count = 1 }", ["toggleOk"]), [])
+  // A name that addresses no field is not a mutator, whatever it looks like.
+  assert_eq(codes_with_views("on other { .count = 1 }", ["setWidget"]), [
+    "NO_VIEW_HANDLER",
+  ])
+}
+
+///|
+test "an intent declaration does not answer a view name" {
+  // A view raises MESSAGES. An `intent` declaration answers a routed dispatch,
+  // which is a different channel, so it does not silence this rule.
+  assert_eq(codes_with_views("intent save(t) { reply 1 }", ["save"]), [
+    "NO_VIEW_HANDLER",
+  ])
+}

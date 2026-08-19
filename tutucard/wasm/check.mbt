@@ -79,6 +79,9 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     return { component: comp, issues }
   }
   for f in @check.check(decls, def) {
+    // The checker's warnings are listed here rather than dropped — this is the
+    // reporting face, and a warning is worth showing. `compile.mbt` is the one
+    // that decides what stops a build, and it skips them.
     issues.push({
       code: f.code,
       message: f.message,

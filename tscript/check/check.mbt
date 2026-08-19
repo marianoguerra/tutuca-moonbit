@@ -28,6 +28,10 @@ priv struct C {
   /// True inside `enrich` / `enrich_scope`, the only kinds that may assign a
   /// binding.
   mut binds_assignable : Bool
+  /// The kind of the declaration being checked. `reply`, `fail` and `forward`
+  /// are the first statements in the language whose legality depends on which
+  /// body they are in, so this is the first thing the walk has to carry.
+  mut decl_kind : @tscript.DeclKind
   /// What `new` last put in `@cur`, on this path through the body.
   mut target : Target
 }
@@ -50,7 +54,19 @@ fn C::say(
   message : String,
   span : @tscript.Span,
 ) -> Unit {
-  self.out.push({ code, message, span })
+  self.out.push({ code, message, span, severity: SError })
+}
+
+///|
+/// A finding a build does not have to stop for. One rule uses it; see
+/// `Severity`.
+fn C::warn(
+  self : C,
+  code : String,
+  message : String,
+  span : @tscript.Span,
+) -> Unit {
+  self.out.push({ code, message, span, severity: SWarning })
 }
 
 ///|
@@ -90,12 +106,81 @@ pub fn check(
     callable,
     predicate,
     binds_assignable: false,
+    decl_kind: DOn,
     target: TUnset,
   }
   for d in decls {
     c.decl(d)
   }
+  c.view_names(decls)
   c.out
+}
+
+///|
+/// `NO_VIEW_HANDLER`: a view name the block neither answers nor forwards
+/// (`totuka-v2.md` section 7).
+///
+/// A view name that nothing answers does nothing, which is safe and is also
+/// the shape of a misspelling. In v1 the two are indistinguishable and neither
+/// is reported; the whole rule is that a component states its own vocabulary,
+/// so reading the block tells you every name it answers and every name it lets
+/// out.
+///
+/// Answering and forwarding are the same thing here, deliberately: a
+/// `receive save(text) { forward }` IS a declaration, so the rule is about the
+/// name being DECLARED and not about what the body does with it. An `intent`
+/// declaration does not count — an intent is not a message, and a view raises
+/// messages.
+fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
+  let declared : Set[String] = Set([])
+  for d in decls {
+    if d.kind is (DOn | DReceive) {
+      declared.add(d.name)
+    }
+  }
+  for name, _ in self.surface.inputs {
+    if declared.contains(name) || self.addresses_a_field(name) {
+      continue
+    }
+    self.warn(
+      "NO_VIEW_HANDLER",
+      "the view sends `\{name}`, and this block neither answers it nor forwards it — write `receive \{name}(…) { forward }` to dispatch it as an intent, or `receive \{name}(…) { … }` to answer it here",
+      // The block has no span for a name it does not mention, so the finding
+      // points at the block's start. Where the name IS written is the view,
+      // and this package cannot see one.
+      { start: 0, end_: 0 },
+    )
+  }
+}
+
+///|
+/// Whether `name` looks like a generated mutator over a declared field.
+///
+/// Deliberately CONSERVATIVE, and deliberately not a copy of
+/// `component/gen_mutators`' verb table. This package imports `tscript` and
+/// `statedef` and nothing else, so it cannot see that table, and a second copy
+/// of a list is exactly how two lists drift apart. What it can see is that
+/// every generated name is built from a field's name capitalized
+/// (`@tutuca.mutator_name`) — `setTitle`, `titleLen`, `removeInItemsAt` — so a
+/// name that does not contain one is certainly not a mutator, and one that
+/// does might be.
+///
+/// Erring toward silence is this package's governing rule: unknown is not
+/// wrong. A missed mutator here is a warning nobody wanted; a false one is a
+/// warning that teaches people to ignore the rule.
+fn C::addresses_a_field(self : C, name : String) -> Bool {
+  for f in self.def.fields {
+    if f.name.is_empty() {
+      continue
+    }
+    let capped = f.name[0:1].to_owned().to_upper() + f.name[1:].to_owned()
+    // `<field>Len` is the one generated name that does NOT capitalize, so it
+    // is the one that has to be spelled out here.
+    if name.contains(capped) || name == f.name + "Len" {
+      return true
+    }
+  }
+  false
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +191,7 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   self.params = Map([])
   self.decl_name = d.name
   self.binds_assignable = d.kind is (DEnrich | DEnrichScope)
+  self.decl_kind = d.kind
   // A target belongs to the body that built it and to nothing else — the same
   // rule the interpreter enforces by refusing to hand `@cur` back.
   self.target = TUnset
@@ -116,6 +202,14 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   // before this saw them.
   match d.kind {
     DReceive | DBubble | DResponse => self.msg_params(d)
+    // A `DIntent` has no schema variant to check against yet — the state block
+    // gains `intent` in the plan's task 9, and `msg_params` reads it there.
+    // Opaque parameters until then, which is what every other undeclared kind
+    // gets, rather than a `NO_SUCH_MESSAGE` naming the wrong variant.
+    DIntent =>
+      for p in d.params {
+        self.params[p.name] = None
+      }
     DOn => {
       let sig = self.surface.inputs.get(d.name)
       for i, p in d.params {
@@ -244,6 +338,28 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
     _ => (self.def.response, "response")
   }
   let found = cases.filter(m => m.name == d.name)
+  // A `receive` name the VIEWS send needs no schema case. That is the merge:
+  // one bucket now holds a view's name and a parent's, and the design's
+  // section 9 says the schema declares "every message the component accepts,
+  // BEYOND the ones its own views send". So a `receive` that answers a view
+  // name takes its parameter types where an `on` did — from the call sites —
+  // and reporting `NO_SUCH_MESSAGE` for it would make the migration from `on`
+  // to `receive` require a schema edit per handler.
+  if found.is_empty() &&
+    d.kind is DReceive &&
+    self.surface.inputs.get(d.name) is Some(types) {
+    for i, p in d.params {
+      self.params[p.name] = types.get(i).unwrap_or(None)
+    }
+    if types.length() != d.params.length() {
+      self.say(
+        "ARITY",
+        "`\{d.name}` takes \{d.params.length()} parameter(s) here, but the views call it with \{types.length()}",
+        d.name_span,
+      )
+    }
+    return
+  }
   guard found.get(0) is Some(msg) else {
     // The schema is the only place these names can be declared — the views
     // never write them — so a handler for one the block does not declare is
@@ -277,6 +393,45 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
 
 // ---------------------------------------------------------------------------
 // Statements
+
+///|
+/// Whether an effect's first argument is a message NAME.
+///
+/// The list is short and worth being explicit about, because the answer used
+/// to be "everything except `stop`" and v2 makes that wrong three ways over.
+fn names_a_message(effect : String) -> Bool {
+  effect is ("send" | "sendAt" | "bubble" | "request" | "intent")
+}
+
+///|
+/// `NOT_A_HANDLER`: the two effects that answer, and the one that continues,
+/// are legal only in a body that has something to answer or continue.
+///
+/// `reply` and `fail` need a sender, and only an intent has one — a message is
+/// addressed and its sender is not waiting. `forward` needs a message to pass
+/// on, so it is legal wherever one arrives: a `receive`, where it starts a
+/// walk, and an `intent`, where it amends the one already walking.
+fn C::effect_placement(self : C, effect : String, span : @tscript.Span) -> Unit {
+  match effect {
+    "reply" | "fail" =>
+      if !(self.decl_kind is DIntent) {
+        self.say(
+          "NOT_A_HANDLER",
+          "`\{effect}` answers the sender of an intent, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` has none — a message is addressed, so nobody is waiting for an answer",
+          span,
+        )
+      }
+    "forward" =>
+      if !(self.decl_kind is (DReceive | DIntent)) {
+        self.say(
+          "NOT_A_HANDLER",
+          "`forward` passes on the message this body is handling, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` is not handling one",
+          span,
+        )
+      }
+    _ => ()
+  }
+}
 
 ///|
 fn C::stmts(self : C, ss : Array[@tscript.Stmt]) -> Unit {
@@ -342,10 +497,16 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
           _ => self.expr(a) |> ignore
         }
       }
-      // The first argument of every effect but `stop` names a message, and a
-      // name that is not a literal cannot be checked against anything — nor
-      // routed by the generator, which needs it at generation time.
-      if name != "stop" && args.get(0) is Some(a0) && !(a0 is ERef(..)) {
+      self.effect_placement(name, span)
+      // The first argument of a NAMING effect is a message, and a name that is
+      // not a literal cannot be checked against anything — nor routed by the
+      // generator, which needs it at generation time.
+      //
+      // v1 asked this of every effect but `stop`, which was the same set. v2
+      // adds three that carry no name at all: `forward` re-dispatches the one
+      // that arrived, and `reply` and `fail` are addressed by the walk. Asking
+      // them would report `reply 1` as a dynamic message name.
+      if names_a_message(name) && args.get(0) is Some(a0) && !(a0 is ERef(..)) {
         if !(a0 is ELit(lit=LStr(_), ..)) {
           self.say(
             "DYNAMIC_MESSAGE",

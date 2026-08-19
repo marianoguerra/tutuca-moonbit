@@ -18,7 +18,13 @@ pub fn resolve_ty_ref(@statedef.StateDef, @tscript.TyRef) -> @statedef.StateTy?
 pub(all) struct Finding {
   code : String
   message : String
+  severity : Severity
   span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Severity {
+  SError
+  SWarning
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Surface {

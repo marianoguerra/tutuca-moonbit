@@ -204,6 +204,15 @@ pub fn compile(
     Some(b) => {
       let bad : Array[String] = []
       for f in @check.check(decls, def) {
+        // A warning is not a card that does not typecheck. The paragraph above
+        // argues that a name resolving to nothing should be rejected rather
+        // than compiled around, and that argument is about ERRORS; the one
+        // warning the checker has (`NO_VIEW_HANDLER`) reports code that
+        // behaves exactly as it did before, so stopping a build for it would
+        // break every card that upgrades.
+        if f.severity is SWarning {
+          continue
+        }
         bad.push(
           "line " +
           (b.line + line_of(b.text, f.span.start) - 1).to_string() +

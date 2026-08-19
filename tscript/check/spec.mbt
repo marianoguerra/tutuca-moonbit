@@ -11,9 +11,26 @@ pub(all) struct Finding {
   /// assert on the RULE rather than on its wording.
   code : String
   message : String
+  /// Whether a build should stop for this.
+  ///
+  /// Every finding was fatal until v2, and every finding still IS except one:
+  /// `NO_VIEW_HANDLER` reports a view name the block neither answers nor
+  /// forwards, and that code behaves exactly as v1 behaves — it does nothing.
+  /// A rule whose warned-about code is already correct cannot be an error
+  /// without breaking every project that upgrades, which is why the design
+  /// (`totuka-v2.md` section 7) lands it as a warning and leaves the strict
+  /// mode to be decided from a corpus rather than from a document.
+  severity : Severity
   /// Where, in the block's own coordinates. `@viewfile.Block` carries the
   /// offset that rebases it onto the file.
   span : @tscript.Span
+} derive(Debug, Eq)
+
+///|
+/// Whether a finding stops a build.
+pub(all) enum Severity {
+  SError
+  SWarning
 } derive(Debug, Eq)
 
 ///|

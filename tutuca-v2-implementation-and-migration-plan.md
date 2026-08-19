@@ -68,7 +68,7 @@ Two consequences worth stating outright.
 **Phase 2 — the language**
 
 - [x] 7. [`tscript`: kinds, effects, leg words](#7-tscript-kinds-effects-leg-words)
-- [ ] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
+- [x] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
 - [ ] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
 - [ ] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
 - [ ] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
@@ -590,6 +590,56 @@ order `docs/` uses for every diagnostic that touches existing code.
 **Validation.** `check_test.mbt` with one case for each finding, asserting the
 exact message. The messages are the user interface of this task.
 
+**Done — two of the five.** `NOT_A_HANDLER` and `NO_VIEW_HANDLER` are in, with
+seven test cases and their exact messages asserted.
+
+**The other three moved to task 15, and the reason is a dependency the plan has
+backwards.** `BAD_EVENT_PATH` needs task 14's allowlist, `UNKNOWN_EVENT_PROP`
+needs task 13's generated table, and `BARE_ARG` needs task 15's slot parser to
+accept `e.` before a bare name can be called wrong. All three are findings
+ABOUT the `e.` boundary and none of them can be written before the boundary
+exists. Task 15 is where they go, and its Validation section names them.
+
+**`Finding` gains `severity : Severity`** (`SError` / `SWarning`). It had none,
+because every finding was fatal; `NO_VIEW_HANDLER` cannot be, since the code it
+warns about behaves exactly as v1 behaves. `C::warn` is the second constructor
+and `tutucard/wasm/compile.mbt` — the one place a finding stops a build — skips
+warnings, while `check.mbt`, the reporting face, still lists them.
+
+**The risk is already held, by an accident worth writing down.** The plan says
+to land `NO_VIEW_HANDLER` silent, run it, and read the list. It IS silent: the
+only two callers of `@check.check` are the card backend's, and both pass
+`Surface::empty()`, so `surface.inputs` is empty and the rule cannot fire. The
+AOT path does not call the checker at all. Wiring a real surface is task 10 and
+12's work, and reading the list belongs there.
+
+**Two rules changed as well as gained.**
+
+- **`DYNAMIC_MESSAGE`** asked "is the first argument a literal" of every effect
+  but `stop`, which in v1 was the same set as "effects that name a message". v2
+  adds three that name none — `forward` re-dispatches the name that arrived,
+  and `reply` / `fail` are addressed by the walk — so `reply 1` would have been
+  reported as a dynamic message name. `names_a_message` is now explicit.
+- **`NO_SUCH_MESSAGE`** no longer fires for a `receive` whose name the VIEWS
+  send. That is the merge: the schema declares every message the component
+  accepts *beyond the ones its own views send* (design section 9), so a
+  `receive` answering a view name takes its parameter types from the call sites
+  exactly as an `on` did. Without this, migrating `on save` to `receive save`
+  would require a schema edit per handler.
+
+**`addresses_a_field` is deliberately conservative.** This package imports
+`tscript` and `statedef` and nothing else, so it cannot see
+`component/gen_mutators`' verb table, and a second copy of that list is how two
+lists drift. What it can see is that every generated name is built from a
+declared field's name capitalized — plus `<field>Len`, the one that is not — so
+a name containing none is certainly not a mutator and one that does might be.
+Erring toward silence is this package's governing rule: a missed mutator is a
+warning nobody wanted; a false one teaches people to ignore the rule.
+
+`DIntent` gets opaque parameters for now: the state block has no `intent`
+variant until task 9, and `msg_params` reads it there rather than reporting
+`NO_SUCH_MESSAGE` against the wrong variant.
+
 ## 9. `statedef` / `viewfile`: two message variants
 
 The state block's six keywords become five: `state`, `struct`, `enum`,
@@ -739,9 +789,18 @@ Both the js and the wasm-gc glue need it (`app/browser/`, `app/wasm/`).
 all 315 `e.value` call sites read `Null` and every form in the repository stops
 working. Layer 1 shadows layer 2 — assert it in a test, not in a comment.
 
+**Also here: the three checker findings task 8 could not write.** Each is about
+the `e.` boundary and none can exist before it does — `BAD_EVENT_PATH` (a step
+off task 14's allowlist; an error), `UNKNOWN_EVENT_PROP` (a rooted path naming a
+property task 13's table does not have; a warning naming the closest match) and
+`BARE_ARG` (a bare name in an `@on` argument slot; an error naming the three
+prefixes). They live in `tscript/check` with the other two, and
+`Finding.severity` from task 8 is what lets the middle one be a warning.
+
 **Validation.** `moon test --target js` for the real DOM path. A test for each
 accessor, a test for `e.detail.unicode`, a test that `e.target` alone is `Null`,
-and the refusal tests from task 14.
+and the refusal tests from task 14. Plus one `check_test.mbt` case per finding
+above, asserting the exact message.
 
 ## 16. WIT 0.8.0 and the host bridge
 
