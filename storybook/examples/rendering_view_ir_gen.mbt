@@ -70,7 +70,7 @@ fn push_view_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
           "cancel",
@@ -100,7 +100,7 @@ fn push_view_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[PushViewState] {
   match msg {
-    Input("toggleView", _args) => {
+    Receive("toggleView", _args) => {
       let s = {
         ..s,
         view: if (Str(s.view) : @tutuca.Value) == (Str("main") : @tutuca.Value) {
@@ -244,12 +244,12 @@ fn seq_item_access_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setCurrentIndex", ns=Input), args=[
-          Name("valueAsInt"),
+          EventPath(["valueAsInt"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setCurrentKey", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -402,7 +402,7 @@ fn pagination_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[PaginationState] {
   match msg {
-    Input("prev", _args) => {
+    Receive("prev", _args) => {
       let s = {
         ..s,
         page: (if 0.0 > s.page.to_double() - 1.0 {
@@ -413,7 +413,7 @@ fn pagination_inline_update(
       }
       Next(s)
     }
-    Input("next", _args) => {
+    Receive("next", _args) => {
       let d0 = s.pageSize.to_double()
       guard d0 != 0.0 else { return Unchanged }
       let s = {

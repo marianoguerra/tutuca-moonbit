@@ -35,6 +35,7 @@ pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
+  Add(Double)
   ResetCount
   SetLabel(String)
   Unknown(String, Array[@core.Value])

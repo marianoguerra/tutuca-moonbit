@@ -81,17 +81,17 @@ fn attribute_binding_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setStr", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setRawNumber", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setBool", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -294,12 +294,12 @@ fn event_modifiers_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="onInput", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on(
           "keydown",
           HandlerName(name="setLastSentSearch", ns=Input),
-          args=[Name("value")],
+          args=[EventPath(["value"])],
           modifiers=["send"],
         ),
         @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
@@ -446,7 +446,7 @@ fn show_hide_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[ShowHideState] {
   match msg {
-    Input("incCount", _args) => {
+    Receive("incCount", _args) => {
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       Next(s)
     }

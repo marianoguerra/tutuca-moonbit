@@ -63,7 +63,7 @@ fn dn_d_example_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
           "cancel",
@@ -72,7 +72,7 @@ fn dn_d_example_main_view_ir() -> @anode.View {
       [
         @anode.on("drop", HandlerName(name="onDropOnItem", ns=Input), args=[
           Bind("key"),
-          Name("dragInfo"),
+          EventPath(["dragInfo"]),
         ]),
       ],
     ],

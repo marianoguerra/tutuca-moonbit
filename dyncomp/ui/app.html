@@ -14,7 +14,7 @@
     selected : Bool
   }
 
-  bubble PaletteRow {
+  intent PaletteRow {
     /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
     /// its arguments" rather than "place it with its defaults".
     ComponentPicked(String, String, Bool)
@@ -62,7 +62,7 @@
     error : String
   }
 
-  bubble SchemaField {
+  intent SchemaField {
     FieldEdited(String, String)
   }
 
@@ -107,7 +107,7 @@
     form : Component
   }
 
-  bubble ConfigPanel {
+  intent ConfigPanel {
     CloseConfig
   }
 
@@ -158,7 +158,7 @@
   <li @if.class=".selected"
       @then="'palette-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300'"
       @else="'palette-row flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer hover:bg-base-200'"
-      @on.click="pick isCtrl">
+      @on.click="pick e.isCtrl">
     <div class="flex items-baseline gap-2">
       <span class="font-mono text-sm row-name" @text=".name"></span>
       <span class="text-[0.65rem] opacity-50 row-module" @text=".module"></span>
@@ -179,7 +179,7 @@
     <div class="command-bar w-[36rem] max-w-[90vw] rounded-lg border border-base-300 bg-base-100 shadow-xl flex flex-col gap-2 p-3">
       <input type="search" autofocus class="input input-sm input-bordered command-input"
              placeholder="search components…" :value=".query"
-             @on.input="setQuery value" @on.keydown="nav key">
+             @on.input="setQuery e.value" @on.keydown="nav e.key">
       <p class="text-[0.65rem] opacity-50 command-hint" @show=".configure">
         ctrl/cmd — the one you pick will ask for its arguments
       </p>
@@ -203,16 +203,16 @@
 
     <input @show="equals? .kind 'bool'"
            type="checkbox" class="checkbox checkbox-xs field-bool"
-           :checked=".flag" @on.input="edit value">
+           :checked=".flag" @on.input="edit e.value">
     <input @show="equals? .kind 'number'"
            type="number" class="input input-xs input-bordered field-number"
-           :value=".num" @on.input="edit value">
+           :value=".num" @on.input="edit e.value">
     <input @show="equals? .kind 'string'"
            type="text" class="input input-xs input-bordered field-string"
-           :value=".text" @on.input="edit value">
+           :value=".text" @on.input="edit e.value">
     <select @show="equals? .kind 'enum'"
             class="select select-xs select-bordered field-enum"
-            :value=".text" @on.input="edit value">
+            :value=".text" @on.input="edit e.value">
       <option @each=".choices" :value="@value" @text="@value"></option>
     </select>
     <!-- A compound the vocabulary has no control for is edited as JSON. That
@@ -220,7 +220,7 @@
          and drawing three text boxes would be pretending to be one. -->
     <textarea @show="equals? .kind 'json'"
               class="textarea textarea-xs textarea-bordered font-mono field-json"
-              rows="2" :value=".text" @on.input="edit value"></textarea>
+              rows="2" :value=".text" @on.input="edit e.value"></textarea>
 
     <span class="text-error text-[0.65rem] field-error" @show="truthy? .error" @text=".error"></span>
   </label>
@@ -273,7 +273,7 @@
      No boolean is threaded anywhere, and nothing had to opt in. -->
 <template id="UniversalApp">
   <div class="universal-app min-h-screen flex flex-col bg-base-200 text-base-content"
-       data-droptarget="tutuca-host-drop" @on.drop="filesDropped value">
+       data-droptarget="tutuca-host-drop" @on.drop="filesDropped e.value">
     <header class="app-bar flex items-center gap-2 px-3 py-1 border-b border-base-300 bg-base-100">
       <span class="config-pill badge badge-sm badge-outline cursor-grab select-none"
             draggable="true" data-dragtype="config-pill">config</span>

@@ -70,17 +70,17 @@ fn person_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setName", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setEmail", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setActive", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -310,7 +310,7 @@ fn naive_people_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="search", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
@@ -517,7 +517,7 @@ fn shared_people_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="search", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
@@ -629,7 +629,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="search", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [

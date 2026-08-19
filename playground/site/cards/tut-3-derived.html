@@ -22,43 +22,35 @@
 
   /// `$left` is how a template calls this, and this is the only
   /// place the subtraction is written.
-  compute left {
-    .limit - (len .text)
-  }
+  compute left { .limit - (len .text) }
 
   /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
-  pred over {
-    (len .text) > .limit
-  }
+  pred over { (len .text) > .limit }
 
   /// The bar's width, as a whole style declaration.
-  ///
+  /// 
   /// Computed HERE rather than interpolated into the attribute, and
   /// that is a rule rather than a preference: a view slot names
   /// things, it does not call them, so `{(len .text)}` written in an
   /// attribute has nothing to interpolate. A body is where an
   /// expression may be written.
-  compute bar {
-    $'width: {(min (len .text) 100)}%'
-  }
+  compute bar { $'width: {min (len .text) 100}%' }
 
   /// One declaration calling two others, and `if` in a value
   /// position — where both arms are required, because an expression
   /// has to have a value.
-  ///
+  /// 
   /// `over` and `left` are written BARE. The `$` spelling belongs to
   /// a template, where the render stack answers it; inside a body it
   /// names nothing, and the compiler refuses it in so many words.
-  compute status {
-    if over { $'{0 - left} over' } else { $'{left} to spare' }
-  }
+  compute status { if over { $'{0 - left} over' } else { $'{left} to spare' } }
 </script>
 
 <template>
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input class="input input-sm w-full" :value=".text"
-             @on.input="setText value"
+             @on.input="setText e.value"
              placeholder="write something and watch the numbers move">
       <div @if.class="$over" @then="'h-2 rounded bg-error'"
            @else="'h-2 rounded bg-success'" :style="$bar"></div>

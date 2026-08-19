@@ -29,9 +29,13 @@
     .kind = 'feature'
   }
 
-  on vote { .votes += 1 }
+  receive vote {
+    .votes += 1
+  }
 
-  on pick(k) { .kind = k }
+  receive pick(k) {
+    .kind = k
+  }
 
   pred isFeature { .kind is 'feature' }
 </script>
@@ -48,7 +52,7 @@
         </span>
       </h2>
       <input class="input input-sm w-full" :value=".title"
-             @on.input="setTitle value" placeholder="what is it">
+             @on.input="setTitle e.value" placeholder="what is it">
       <div class="join">
         <button class="btn btn-sm join-item" @on.click="pick 'feature'">
           feature

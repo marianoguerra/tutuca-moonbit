@@ -78,7 +78,7 @@ fn file_picker_comp() -> @component.Component {
     init={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("onPickFile", args) =>
+        Receive("onPickFile", args) =>
           Next(with_file(s, args.get(0).unwrap_or(Null)))
         _ => Unhandled
       }

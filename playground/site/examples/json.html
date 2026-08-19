@@ -48,17 +48,17 @@
 </template>
 
 <template id="JsonString">
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
 </template>
 
 <template id="JsonNumber">
-  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue value">
+  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
 </template>
 
 <template id="JsonSelector">
   <div class="join gap-3 font-mono json-selector">
     <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="setToNull">null</button>
-    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool isCtrl">bool</button>
+    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool e.isCtrl">bool</button>
     <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="setToNumber">0</button>
     <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="setToString">""</button>
     <button class="btn btn-sm btn-soft btn-info to-array" @on.click="setToArray">[]</button>
@@ -73,7 +73,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-list-item" data-droptarget="json-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -89,7 +89,7 @@
 
 <template id="JsonObjectKeyVal">
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -102,7 +102,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>

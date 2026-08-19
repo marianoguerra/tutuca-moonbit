@@ -23,23 +23,23 @@
   /// Flip the pushed view name. The label under the button is `$getToggleLabel`
   /// and stays in MoonBit — a `compute` is answered while rendering, and this
   /// runs after.
-  on toggleView {
+  receive toggleView {
     .view = if .view is 'main' { 'edit' } else { 'main' }
   }
 </script>
 
 <script type="tutuca/script" for="Pagination">
   /// Step back, never past the first page.
-  on prev {
+  receive prev {
     .page = max 0 (.page - 1)
   }
 
   /// Step forward, never past the last one.
-  ///
+  /// 
   /// `((len .items) - 1) / .pageSize` is the last page's index with its
   /// fraction still on it — the field is an Int and takes the whole part, so
   /// the division needs no ceiling of its own.
-  on next {
+  receive next {
     .page = min (.page + 1) (((len .items) - 1) / .pageSize)
   }
 </script>
@@ -48,7 +48,7 @@
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="toggleView"></button>
     </div>
@@ -60,9 +60,9 @@
 <template id="SeqItemAccess">
   <section class="flex flex-col gap-3">
     <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-      @on.input="setCurrentIndex valueAsInt">
+      @on.input="setCurrentIndex e.valueAsInt">
     <x render=".byIndex[.currentIndex]"></x>
-    <select class="select" :value=".currentKey" @on.input="setCurrentKey value">
+    <select class="select" :value=".currentKey" @on.input="setCurrentKey e.value">
       <option @each=".byKey" :value="@key" @text="@value.title"></option>
     </select>
     <x render=".byKey[.currentKey]"></x>

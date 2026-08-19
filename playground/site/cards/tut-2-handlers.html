@@ -25,24 +25,24 @@
   }
 
   /// Move one step in `dir`, remembering where it landed.
-  ///
+  /// 
   /// `.count` on the second line reads what the first one wrote: a
   /// statement rebinds the state, so the trail records where the
   /// counter ENDED rather than where it started.
-  on step(dir) {
+  receive step(dir) {
     .count += dir * .step
     .trail.push .count
   }
 
   /// `n` is whatever the call site wrote — `pickStep valueAsInt`
   /// below — so its type comes from there, not from an annotation.
-  on pickStep(n) {
+  receive pickStep(n) {
     .step = clamp n 1 10
   }
 
   /// The last entry is a place like any other: `.trail[expr]` reads
   /// it and `.trail.deleteAt` drops it.
-  on undo {
+  receive undo {
     if (len .trail) > 0 {
       .trail.deleteAt ((len .trail) - 1)
       .count = 0
@@ -68,7 +68,7 @@
       <label class="flex gap-2 items-center">
         <span class="opacity-70">step</span>
         <input type="range" class="range range-sm" min="1" max="10"
-               :value=".step" @on.input="pickStep valueAsInt">
+               :value=".step" @on.input="pickStep e.valueAsInt">
         <span class="badge badge-sm badge-neutral">
           <x text=".step"></x>
         </span>

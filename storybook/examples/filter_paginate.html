@@ -21,10 +21,10 @@
 
 <template id="Person">
   <div class="person flex gap-2 items-center grow">
-    <input class="input input-sm grow name" :value=".name" @on.input="setName value" placeholder="name">
-    <input class="input input-sm grow email" :value=".email" @on.input="setEmail value" placeholder="email">
+    <input class="input input-sm grow name" :value=".name" @on.input="setName e.value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="setEmail e.value" placeholder="email">
     <label class="label cursor-pointer gap-1 chk-label">
-      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive value">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive e.value">
       active
     </label>
   </div>
@@ -39,7 +39,7 @@
 
 <template id="NaivePeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -57,7 +57,7 @@
 
 <template id="SharedPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -75,7 +75,7 @@
 
 <template id="CoupledPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>

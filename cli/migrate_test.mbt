@@ -277,6 +277,96 @@ test "an unbalanced call refuses the file rather than half-editing it" {
 }
 
 ///|
+test "EVERY occurrence moves, not the first one in a file" {
+  // `String::replace` moves ONE occurrence. A codemod built on it renames the
+  // first arm in a file and leaves the rest, which compiles in a small test
+  // and breaks a real one — task 19 found it on the first run.
+  let src =
+    #|match msg {
+    #|  Input("a", _) => x
+    #|  Input("b", _) => y
+    #|  Bubble("c", _) => z
+    #|  Bubble("d", _) => w
+    #|}
+  let out = rewritten(mig("c.mbt", src))
+  assert_false(out.contains("Input("))
+  assert_false(out.contains("Bubble("))
+  assert_eq(out.split("Receive(").collect().length(), 3)
+  assert_eq(out.split("Intent(").collect().length(), 3)
+}
+
+///|
+test "a token boundary keeps OnInput from becoming OnReceive" {
+  // THE substring bug, and the reason `replace_token` exists. `OnInput` is a
+  // generated `<T>Msg` variant for an `@on.input` handler, and a plain
+  // substitution turned it into `OnReceive` — a name nothing declares.
+  let out = rewritten(
+    mig("c.mbt", "match m { Some(OnInput(v)) => x\n  Input(\"a\", _) => y }"),
+  )
+  assert_true(out.contains("OnInput(v)"))
+  assert_true(out.contains("Receive(\"a\", _)"))
+  // A file whose comments are not ASCII — which is every file here. A
+  // `String` is indexed by UTF-16 code unit and `to_array()` by character, and
+  // slicing by a char index panicked on the first em-dash.
+  let wide = rewritten(
+    mig("c.mbt", "// an em—dash — and another\nInput(\"a\", _)"),
+  )
+  assert_true(wide.contains("an em—dash — and another"))
+  assert_true(wide.contains("Receive(\"a\", _)"))
+  // ...and the same shape for the other one.
+  let b = rewritten(mig("c.mbt", "OnBubble(v)\nBubble(\"a\", _)"))
+  assert_true(b.contains("OnBubble(v)"))
+  assert_true(b.contains("Intent(\"a\", _)"))
+}
+
+///|
+test "the generated enums move with their schema" {
+  // `<T>Bubble` became `<T>Intent` when the state block's variant did, and
+  // `bubble(ctx)` became `dispatch(ctx)` — the raiser that carries a route.
+  let raised = rewritten(
+    mig("c.mbt", "ABubble::X(1).bubble(ctx)\nCBubble::Y(2).bubble(ctx)"),
+  )
+  assert_eq(raised, "AIntent::X(1).dispatch(ctx)\nCIntent::Y(2).dispatch(ctx)")
+  // A payload-less variant has no closing paren before the call, which the
+  // first version of this rule required.
+  let bare = rewritten(mig("c.mbt", "ABubble::Done.bubble(ctx)"))
+  assert_eq(bare, "AIntent::Done.dispatch(ctx)")
+  // ...and `moon fmt` wraps a long call, which the second version missed.
+  let wrapped = rewritten(
+    mig("c.mbt", "ABubble::X(a, b, c).bubble(\n  ctx,\n)"),
+  )
+  assert_eq(wrapped, "AIntent::X(a, b, c).dispatch(\n  ctx,\n)")
+}
+
+///|
+test "a path builder's bubble is refused, because its v2 name is different" {
+  // `ctx.at().key(…).bubble(…)` becomes `.intent(…)`, not `.dispatch(…)`. A
+  // file holding both that and a generated raiser is refused rather than
+  // guessed at.
+  let p = mig("c.mbt", "ctx.at().key(\"a\", \"b\").bubble(\"ping\", [])")
+  assert_eq(p.files.length(), 0)
+  assert_true(p.refused[0].contains("path builder"))
+  // ...including the decode side, which is where most of the call sites are.
+  let decoded = rewritten(
+    mig("c.mbt", "match ABubble::from_dispatch(msg) { _ => () }"),
+  )
+  assert_eq(decoded, "match AIntent::from_dispatch(msg) { _ => () }")
+}
+
+///|
+test "RequestFn is refused, because a signature change is not a rename" {
+  // Renaming it compiles the annotation and breaks the body: an `IntentFn`
+  // takes an `IntentCall` where a `RequestFn` took `(args, respond)`. The
+  // rewrite would leave a type error, which is a half-edit.
+  let p = mig(
+    "c.mbt", "let m : Map[String, RequestFn] = { \"a\": RequestFn(f) }",
+  )
+  assert_eq(p.files.length(), 0)
+  assert_eq(p.refused.length(), 1)
+  assert_true(p.refused[0].contains("SIGNATURE change and not a rename"))
+}
+
+///|
 test "a generated file is never edited" {
   // `AGENTS.md` is explicit, and the reason applies exactly to a codemod: an
   // edit here survives until the next `gen-views` and then silently does not.

@@ -31,18 +31,18 @@
 
 <script type="tutuca/script">
   /// Move the counter by `d`, remembering where it landed.
-  ///
+  /// 
   /// `.count` on the second line reads what the first one wrote: a statement
   /// rebinds the state, so the trail records where the counter ENDED rather
   /// than where it started.
-  on add(d) {
+  receive add(d) {
     .count += d
     .history.push .count
   }
 
   /// A handler that raises a message at itself, so two buttons can share one
   /// body without either of them repeating it.
-  on start {
+  receive start {
     send 'resetTo' 0
   }
 
@@ -52,14 +52,12 @@
   }
 
   /// A derived value. `$summary` is how a template calls it.
-  ///
+  /// 
   /// A card starts at the schema's ZERO state — there is no seed to pass, since
   /// there is no MoonBit here to pass one — so the label is empty until someone
   /// types it, and this says what to show meanwhile. Both arms are required:
   /// an expression has to have a value.
-  compute summary {
-    if .label is '' { $'{.count}' } else { $'{.label}: {.count}' }
-  }
+  compute summary { if .label is '' { $'{.count}' } else { $'{.label}: {.count}' } }
 
   /// A named boolean — the same thing, with its answer declared, which is what
   /// lets `@show` be checked.
@@ -80,7 +78,7 @@
       <label class="flex gap-2 items-center">
         <span>label</span>
         <input class="input input-sm w-full" :value=".label"
-               @on.input="setLabel value" placeholder="name it">
+               @on.input="setLabel e.value" placeholder="name it">
       </label>
       <ul class="flex gap-2 flex-wrap" @show="$moved">
         <li @each=".history">

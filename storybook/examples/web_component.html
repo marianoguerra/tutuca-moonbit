@@ -6,7 +6,7 @@
 </script>
 
 <template>
-  <section @on.emoji-click="onEmojiClick value" class="join join-vertical gap-3 items-center">
+  <section @on.emoji-click="onEmojiClick e.value" class="join join-vertical gap-3 items-center">
     <p class="hint" @hide="truthy? .current">
       Select the <em>Toggle Picker</em> button and select an emoji, it will be
       displayed here

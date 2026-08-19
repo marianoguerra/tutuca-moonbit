@@ -67,7 +67,7 @@ fn emoji_picker_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="toggleIsPickerVisible", ns=Input))],
       [
         @anode.on("emoji-click", HandlerName(name="onEmojiClick", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

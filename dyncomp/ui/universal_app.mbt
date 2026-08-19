@@ -373,7 +373,7 @@ fn UniversalUi::app_comp(
           // element's static `type` and a `<div>` has none. What actually
           // arrives is the list of dropped files, so it is read raw.
           let files = match msg {
-            Input(_, [first, ..]) => first
+            Receive(_, [first, ..]) => first
             _ => Null
           }
           ctx.send_at_path(
@@ -397,15 +397,15 @@ fn UniversalUi::app_comp(
       match msg {
         // A `+` was clicked. `target_path` is the cell that asked, fixed for
         // the whole bubble however many components it passed on the way up.
-        Bubble("addRequested", [flag, ..]) => {
+        Intent("addRequested", [flag, ..]) => {
           ctx.stop_propagation()
           self.open_bar(s, ctx.target_path(), configure=flag.is_truthy())
         }
-        Bubble("configRequested", [child, ..]) => {
+        Intent("configRequested", [child, ..]) => {
           ctx.stop_propagation()
           self.open_config(s, ctx, child)
         }
-        Bubble("queryChanged", [Str(q), ..]) => {
+        Intent("queryChanged", [Str(q), ..]) => {
           ctx.stop_propagation()
           Next({
             ..s,
@@ -415,11 +415,11 @@ fn UniversalUi::app_comp(
             ),
           })
         }
-        Bubble("commandClose", _) => {
+        Intent("commandClose", _) => {
           ctx.stop_propagation()
           self.close_bar(s)
         }
-        Bubble("componentPicked", [Str(module_), Str(name), flag, ..]) => {
+        Intent("componentPicked", [Str(module_), Str(name), flag, ..]) => {
           ctx.stop_propagation()
           let ref_ : @registry.ComponentRef = { module_, name }
           // Two ways to ask for the form and either will do: ctrl/cmd on THIS
@@ -451,11 +451,11 @@ fn UniversalUi::app_comp(
             self.place_default(s, ctx, ref_)
           }
         }
-        Bubble("submitForm", [Str(module_), Str(name), Str(init), List(fields)]) => {
+        Intent("submitForm", [Str(module_), Str(name), Str(init), List(fields)]) => {
           ctx.stop_propagation()
           self.place_form(s, ctx, { module_, name }, init, fields)
         }
-        Bubble("cancelForm", _) | Bubble("closeConfig", _) => {
+        Intent("cancelForm", _) | Intent("closeConfig", _) => {
           ctx.stop_propagation()
           self.close_config(s, ctx)
         }
@@ -464,18 +464,18 @@ fn UniversalUi::app_comp(
         // what it has to say comes up as a bubble — and a host that drives the
         // app from outside sends the same names down. One pair of names, two
         // directions, one implementation.
-        Bubble("catalogChanged", [Str(module_), ..]) => {
+        Intent("catalogChanged", [Str(module_), ..]) => {
           ctx.stop_propagation()
           self.catalog_changed(s, module_)
         }
-        Bubble("restoreTree", [root, ..]) => {
+        Intent("restoreTree", [root, ..]) => {
           ctx.stop_propagation()
           restore_tree(s, root)
         }
         // Files, from a CELL that did not want them: `drop` stops at the first
         // component that handles it, so a universal has to hand back what is
         // not its.
-        Bubble("filesDropped", args) => {
+        Intent("filesDropped", args) => {
           ctx.send_at_path(
             ctx.path().concat([FieldStep("devTools")]),
             "filesDropped",

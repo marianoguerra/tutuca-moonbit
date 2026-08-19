@@ -109,19 +109,19 @@ pub(all) struct CommandBarState {
 }
 pub fn CommandBarState::zero() -> Self
 
-pub(all) enum ConfigPanelBubble {
-  CloseConfig
-  Unknown(String, Array[@core.Value])
-}
-pub fn ConfigPanelBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn ConfigPanelBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn ConfigPanelBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum ConfigPanelInput {
   Close
 } derive(Eq, @debug.Debug)
 pub fn ConfigPanelInput::name(Self) -> String
 pub fn ConfigPanelInput::parse(String) -> Self?
+
+pub(all) enum ConfigPanelIntent {
+  CloseConfig
+  Unknown(String, Array[@core.Value])
+}
+pub fn ConfigPanelIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn ConfigPanelIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn ConfigPanelIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum ConfigPanelMsg {
   Close
@@ -145,19 +145,19 @@ pub(all) struct ConfigPanelState {
 }
 pub fn ConfigPanelState::zero() -> Self
 
-pub(all) enum PaletteRowBubble {
-  ComponentPicked(String, String, Bool)
-  Unknown(String, Array[@core.Value])
-}
-pub fn PaletteRowBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn PaletteRowBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn PaletteRowBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum PaletteRowInput {
   Pick
 } derive(Eq, @debug.Debug)
 pub fn PaletteRowInput::name(Self) -> String
 pub fn PaletteRowInput::parse(String) -> Self?
+
+pub(all) enum PaletteRowIntent {
+  ComponentPicked(String, String, Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaletteRowIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn PaletteRowIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn PaletteRowIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum PaletteRowMsg {
   Pick(Bool)
@@ -184,19 +184,19 @@ pub(all) struct PaletteRowState {
 }
 pub fn PaletteRowState::zero() -> Self
 
-pub(all) enum SchemaFieldBubble {
-  FieldEdited(String, String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn SchemaFieldBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn SchemaFieldBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn SchemaFieldBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum SchemaFieldInput {
   Edit
 } derive(Eq, @debug.Debug)
 pub fn SchemaFieldInput::name(Self) -> String
 pub fn SchemaFieldInput::parse(String) -> Self?
+
+pub(all) enum SchemaFieldIntent {
+  FieldEdited(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFieldIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn SchemaFieldIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaFieldIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum SchemaFieldMsg {
   Edit(@core.Value)

@@ -40,22 +40,29 @@
   /// itself is how two call sites share one transition, and the
   /// dispatch goes through the transactor exactly as a parent's
   /// would.
-  ///
+  /// 
   /// `(-1)` is parenthesised because `-` is an OPERATOR here, not
   /// part of the number — unlike a view slot, where `step -1` is a
   /// literal.
-  on warmer { send 'nudge' 1 }
-  on cooler { send 'nudge' (-1) }
-  on away   { send 'setMode' 'away' }
-  on home   { send 'setMode' 'auto' }
-
-  pred isAway {
-    .mode is 'away'
+  receive warmer {
+    send 'nudge' 1
   }
 
-  compute reading {
-    if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' }
+  receive cooler {
+    send 'nudge' (-1)
   }
+
+  receive away {
+    send 'setMode' 'away'
+  }
+
+  receive home {
+    send 'setMode' 'auto'
+  }
+
+  pred isAway { .mode is 'away' }
+
+  compute reading { if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' } }
 </script>
 
 <template>

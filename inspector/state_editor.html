@@ -28,13 +28,13 @@
     <span class="font-mono text-[0.65rem] w-24 shrink-0 opacity-40 row-type" @text=".type"></span>
     <input @show="equals? .kind 'bool'"
       type="checkbox" class="checkbox checkbox-xs row-bool"
-      :checked=".flag" @on.input="edit value">
+      :checked=".flag" @on.input="edit e.value">
     <input @show="equals? .kind 'num'"
       type="number" class="input input-xs input-bordered w-40 row-num"
-      :value=".num" @on.input="edit valueAsFloat">
+      :value=".num" @on.input="edit e.valueAsFloat">
     <input @show="equals? .kind 'text'"
       type="text" class="input input-xs input-bordered w-64 row-text"
-      :value=".text" @on.input="edit value">
+      :value=".text" @on.input="edit e.value">
     <span @hide=".editable"
       class="font-mono text-xs opacity-50 row-readonly" @text=".readonly"></span>
   </label>

@@ -20,7 +20,7 @@
     child : Component
   }
 
-  bubble Universal {
+  intent Universal {
     /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
     /// configure it" rather than "place it with its defaults".
     AddRequested(Bool)
@@ -79,7 +79,7 @@
     body : Component
   }
 
-  bubble TabPage {
+  intent TabPage {
     /// The name is settled — Enter, or the box lost focus.
     DoneRename
     /// Escape: put the old name back, which only the strip still knows.
@@ -148,9 +148,9 @@
 
 <template id="Universal:edit">
   <div class="tut-universal relative min-w-8 min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300"
-       data-droptarget="config-pill" @on.drop="dropped dragInfo">
+       data-droptarget="config-pill" @on.drop="dropped e.dragInfo">
     <button class="universal-add btn btn-ghost btn-block min-h-20 text-3xl font-thin opacity-30 hover:opacity-100"
-            @show="null? .child" @on.click="add isCtrl">+</button>
+            @show="null? .child" @on.click="add e.isCtrl">+</button>
     <span class="universal-badge absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer"
           @hide="null? .child" @on.click="pick" @text="$label"></span>
     <button class="universal-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-0 hover:opacity-100"
@@ -222,7 +222,7 @@
 
 <template id="TabPage:tabname">
   <input class="tab-rename input input-xs w-28" autofocus :value=".label"
-         @on.input="setLabel value"
+         @on.input="setLabel e.value"
          @on.keydown+send="doneRename" @on.keydown+cancel="cancelRename"
          @on.focusout="doneRename">
 </template>
@@ -244,7 +244,7 @@
       <span class="contents" @each=".tabs" @enrich-with="markActive">
         <button role="tab" @hide="@editing"
                 @if.class="@active" @then="'tab-label tab tab-active'" @else="'tab-label tab'"
-                @on.click="activate @key isCtrl" @text="@value.label"></button>
+                @on.click="activate @key e.isCtrl" @text="@value.label"></button>
         <x render-it as="tabname" @show="@editing"></x>
       </span>
       <button class="tab-add tab" @on.click="addTab">+</button>
@@ -261,5 +261,5 @@
 <template id="Textarea">
   <textarea class="tut-textarea textarea textarea-bordered w-full font-mono"
             :rows=".rows" :placeholder=".placeholder"
-            :value=".text" @on.input="setText value"></textarea>
+            :value=".text" @on.input="setText e.value"></textarea>
 </template>

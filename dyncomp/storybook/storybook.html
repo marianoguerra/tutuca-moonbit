@@ -12,7 +12,7 @@
     selected : Bool
   }
 
-  bubble StoryNav {
+  intent StoryNav {
     /// (module, component). Two empty strings mean "everything", which is
     /// what the `all` button sends.
     NavPicked(String, String)
@@ -47,7 +47,7 @@
     error : String
   }
 
-  bubble StoryCard {
+  intent StoryCard {
     /// (module, component, init) — build me again from scratch. The card
     /// cannot do it itself: making an instance is the host's job, and this
     /// package is backend-agnostic.
@@ -95,7 +95,7 @@
     SetStatus(String)
   }
 
-  bubble DyncompStorybook {
+  intent DyncompStorybook {
     /// The same news, arriving the other way: from the loader the host put
     /// in the bar, which is BELOW this component and therefore bubbles.
     ///
@@ -160,14 +160,14 @@
 <template id="DyncompStorybook">
   <div class="dyncomp-storybook min-h-screen flex flex-col bg-base-200 text-base-content"
        :data-theme=".theme"
-       data-droptarget="tutuca-host-drop" @on.drop="filesDropped value">
+       data-droptarget="tutuca-host-drop" @on.drop="filesDropped e.value">
     <header class="sb-bar flex items-center gap-2 flex-wrap px-3 py-1 border-b border-base-300 bg-base-100">
       <span class="font-semibold text-sm">dyncomp storybook</span>
       <input type="search" class="input input-xs input-bordered sb-search"
-             placeholder="filter stories…" :value=".query" @on.input="setQuery value">
+             placeholder="filter stories…" :value=".query" @on.input="setQuery e.value">
       <button class="btn btn-xs btn-ghost sb-all" @on.click="showAll">all</button>
       <label class="text-xs flex items-center gap-1">theme
-        <select class="select select-xs select-bordered sb-theme" :value=".theme" @on.input="chooseTheme value">
+        <select class="select select-xs select-bordered sb-theme" :value=".theme" @on.input="chooseTheme e.value">
           <option value="light">light</option>
           <option value="dark">dark</option>
           <option value="corporate">corporate</option>

@@ -79,7 +79,7 @@ fn file_picker_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("change", HandlerName(name="onPickFile", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

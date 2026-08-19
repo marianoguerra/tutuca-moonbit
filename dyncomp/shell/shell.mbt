@@ -162,7 +162,7 @@ pub fn loader_bar_comp(
         Next({ ..s, status: "loading…" })
       }
       Some(DyncompLoaded(module_name)) => {
-        LoaderBarBubble::CatalogChanged(module_name).bubble(ctx)
+        LoaderBarIntent::CatalogChanged(module_name).dispatch(ctx)
         notify(Loaded(module_name), ctx)
         Next({ ..s, status: "loaded \{module_name}" })
       }

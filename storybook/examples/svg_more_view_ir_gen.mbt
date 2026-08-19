@@ -134,7 +134,7 @@ fn bar_chart_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[BarChartState] {
   match msg {
-    Input("addBar", _args) => {
+    Receive("addBar", _args) => {
       guard s.values.length().to_double() < 9.0 else {
         @tutuca.precondition_failed(
           handler="addBar",
@@ -160,7 +160,7 @@ fn bar_chart_inline_update(
       }
       Next(s)
     }
-    Input("removeBar", _args) => {
+    Receive("removeBar", _args) => {
       guard s.values.length().to_double() > 1.0 else {
         @tutuca.precondition_failed(
           handler="removeBar",

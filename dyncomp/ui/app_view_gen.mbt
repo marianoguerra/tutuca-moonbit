@@ -136,30 +136,30 @@ pub fn PaletteRowReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum PaletteRowBubble {
+pub(all) enum PaletteRowIntent {
   /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
   /// its arguments" rather than "place it with its defaults".
   ComponentPicked(String, String, Bool)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn PaletteRowBubble::from_dispatch(
+pub fn PaletteRowIntent::from_dispatch(
   d : @component.Dispatch,
-) -> PaletteRowBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> PaletteRowIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("componentPicked", [Str(a0), Str(a1), Bool(a2)]) =>
@@ -171,8 +171,8 @@ pub fn PaletteRowBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn PaletteRowBubble::to_dispatch(
-  self : PaletteRowBubble,
+pub fn PaletteRowIntent::to_dispatch(
+  self : PaletteRowIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ComponentPicked(a0, a1, a2) =>
@@ -182,16 +182,19 @@ pub fn PaletteRowBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn PaletteRowBubble::bubble(
-  self : PaletteRowBubble,
+pub fn PaletteRowIntent::dispatch(
+  self : PaletteRowIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -259,7 +262,7 @@ pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
 impl @component.Fields for PaletteRowState with fn schema() {
   @component.SchemaInfo::new(
     name="PaletteRow",
-    fingerprint="c2b7bcfd82824d3b",
+    fingerprint="a7ff9178a560c220",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -270,7 +273,6 @@ impl @component.Fields for PaletteRowState with fn schema() {
     ],
     inputs=["pick"],
     receives=["setSelected"],
-    bubbles=["componentPicked"],
     view_names=["main"],
   )
 }
@@ -665,28 +667,28 @@ pub fn SchemaFieldReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum SchemaFieldBubble {
+pub(all) enum SchemaFieldIntent {
   FieldEdited(String, String)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn SchemaFieldBubble::from_dispatch(
+pub fn SchemaFieldIntent::from_dispatch(
   d : @component.Dispatch,
-) -> SchemaFieldBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> SchemaFieldIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("fieldEdited", [Str(a0), Str(a1)]) => FieldEdited(a0, a1)
@@ -697,8 +699,8 @@ pub fn SchemaFieldBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn SchemaFieldBubble::to_dispatch(
-  self : SchemaFieldBubble,
+pub fn SchemaFieldIntent::to_dispatch(
+  self : SchemaFieldIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     FieldEdited(a0, a1) => ("fieldEdited", [Str(a0), Str(a1)])
@@ -707,16 +709,19 @@ pub fn SchemaFieldBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn SchemaFieldBubble::bubble(
-  self : SchemaFieldBubble,
+pub fn SchemaFieldIntent::dispatch(
+  self : SchemaFieldIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -786,7 +791,7 @@ pub fn SchemaFieldMsg::from_dispatch(
 impl @component.Fields for SchemaFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaField",
-    fingerprint="582149c7effc3fdb",
+    fingerprint="5e462b3100a585bc",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("kind", TyText),
@@ -800,7 +805,6 @@ impl @component.Fields for SchemaFieldState with fn schema() {
       @component.FieldInfo::new("error", TyText),
     ],
     inputs=["edit"],
-    bubbles=["fieldEdited"],
     view_names=["main"],
   )
 }
@@ -1182,28 +1186,28 @@ pub fn ConfigPanelReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ConfigPanelBubble {
+pub(all) enum ConfigPanelIntent {
   CloseConfig
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn ConfigPanelBubble::from_dispatch(
+pub fn ConfigPanelIntent::from_dispatch(
   d : @component.Dispatch,
-) -> ConfigPanelBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> ConfigPanelIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("closeConfig", []) => CloseConfig
@@ -1214,8 +1218,8 @@ pub fn ConfigPanelBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn ConfigPanelBubble::to_dispatch(
-  self : ConfigPanelBubble,
+pub fn ConfigPanelIntent::to_dispatch(
+  self : ConfigPanelIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CloseConfig => ("closeConfig", [])
@@ -1224,16 +1228,19 @@ pub fn ConfigPanelBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn ConfigPanelBubble::bubble(
-  self : ConfigPanelBubble,
+pub fn ConfigPanelIntent::dispatch(
+  self : ConfigPanelIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -1303,7 +1310,7 @@ pub fn ConfigPanelMsg::from_dispatch(
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="ConfigPanel",
-    fingerprint="ca3bf0ce51624e89",
+    fingerprint="beddfc2bea243a73",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("mode", TyText),
@@ -1311,7 +1318,6 @@ impl @component.Fields for ConfigPanelState with fn schema() {
       @component.FieldInfo::new("form", TyComp(None)),
     ],
     inputs=["close"],
-    bubbles=["closeConfig"],
     view_names=["main"],
   )
 }

@@ -94,14 +94,14 @@ fn universal_edit_view_ir() -> @anode.View {
     [
       [
         @anode.on("click", HandlerName(name="add", ns=Input), args=[
-          Name("isCtrl"),
+          EventPath(["isCtrl"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="pick", ns=Input))],
       [@anode.on("click", HandlerName(name="remove", ns=Input))],
       [
         @anode.on("drop", HandlerName(name="dropped", ns=Input), args=[
-          Name("dragInfo"),
+          EventPath(["dragInfo"]),
         ]),
       ],
     ],
@@ -542,7 +542,7 @@ fn tab_page_tabname_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="doneRename", ns=Input), modifiers=[
           "send",
@@ -745,7 +745,7 @@ fn tabs_edit_view_ir() -> @anode.View {
       [
         @anode.on("click", HandlerName(name="activate", ns=Input), args=[
           Bind("key"),
-          Name("isCtrl"),
+          EventPath(["isCtrl"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="addTab", ns=Input))],
@@ -933,7 +933,7 @@ fn textarea_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setText", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

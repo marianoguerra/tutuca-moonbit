@@ -116,8 +116,12 @@ fn state_editor_row_comp() -> @component.Component {
     // WIT; `schema_viewer` takes the same escape for the same reason.
     update=(s, msg, ctx) => {
       match msg {
-        Input("edit", [v]) => {
-          ctx.bubble("onEdit", [Str(s.name), v])
+        Receive("edit", [v]) => {
+          ctx.intent(
+            "onEdit",
+            [Str(s.name), v],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          )
           Unhandled
         }
         _ => Unhandled
@@ -135,7 +139,7 @@ fn state_editor_row_comp() -> @component.Component {
 fn state_editor_comp(insp : Inspector) -> @component.Component {
   state_editor_component(update=(s, msg, _ctx) => {
     match msg {
-      Bubble("onEdit", [Str(field), v]) => {
+      Intent("onEdit", [Str(field), v]) => {
         // The declared kind decides what shape to send...
         guard s.target.field_info(field) is Some(info) else { return Unchanged }
         let next = s.target.call_field(setter_name(field), [

@@ -274,17 +274,17 @@ fn quadratic_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setA", ns=Input), args=[
-          Name("valueAsInt"),
+          EventPath(["valueAsInt"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setB", ns=Input), args=[
-          Name("valueAsInt"),
+          EventPath(["valueAsInt"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setC", ns=Input), args=[
-          Name("valueAsInt"),
+          EventPath(["valueAsInt"]),
         ]),
       ],
     ],

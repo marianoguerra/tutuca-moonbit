@@ -21,47 +21,65 @@
 <script type="tutuca/script">
   /// A line is only ever worth a non-negative amount.
   invariant sane { .qty >= 0 }
+
   /// True while there is something to send.
   pred hasItem
-  format $'a line with no item cannot be checked out ({.qty} of nothing)'
-  { not (empty? .item) }
+    format $'a line with no item cannot be checked out ({.qty} of nothing)' { not (empty? .item) }
+
   /// What this line costs.
   compute total { .qty * .price }
+
   /// The line as a sentence.
   compute line { $'{.qty} x {.item} = {total}' }
 
   /// One more.
-  on more { .qty += 1 }
+  receive more {
+    .qty += 1
+  }
+
   /// One fewer, but never below nothing.
-  on fewer { .qty = max 0 (.qty - 1) }
+  receive fewer {
+    .qty = max 0 (.qty - 1)
+  }
+
   /// Name the item from what the view passed.
-  on rename(text) { .item = text }
+  receive rename(text) {
+    .item = text
+  }
+
   /// Tell the parent about this line, once it has an item.
-  on checkout requires hasItem {
-    bubble 'lineReady' .item total
+  receive checkout requires hasItem {
+    intent dyn 'lineReady' .item total
     .sent = true
     stop
   }
+
   /// Remember the quantity.
-  on remember { .history.push .qty }
+  receive remember {
+    .history.push .qty
+  }
+
   /// Write the line onto the receipt, as a record built here.
-  on receipt {
+  receive receipt {
     new Line
     @cur.what = .item
     @cur.qty = .qty
     .receipt.push @cur
   }
+
   /// How many quantities have been remembered.
   compute remembered { len .history }
+
   /// The item, tidied: no stray spaces, and compared case-blind.
   compute tidy { trim .item }
+
   /// True once the item names something a receipt would print.
   pred namable { not (empty? (trim .item)) }
 </script>
 
 <template id="Cart">
   <div>
-    <input @on.input="rename value" :value=".item" placeholder="what?">
+    <input @on.input="rename e.value" :value=".item" placeholder="what?">
     <button @on.click="fewer">-</button>
     <span @text=".qty"></span>
     <button @on.click="more">+</button>

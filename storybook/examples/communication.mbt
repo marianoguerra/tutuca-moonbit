@@ -45,7 +45,7 @@ fn send_receive_comp() -> @component.Component {
     ctx,
   ) => {
     match msg {
-      Input("submit", _) => {
+      Receive("submit", _) => {
         let text = s.draft.trim().to_owned()
         if text != "" {
           // message the sibling child by path — JS spells this
@@ -58,7 +58,7 @@ fn send_receive_comp() -> @component.Component {
         }
         Unchanged
       }
-      Input("clearStatus", _) => {
+      Receive("clearStatus", _) => {
         ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
         Unchanged
       }
@@ -101,18 +101,22 @@ fn tree_item_comp() -> @component.Component {
         // emit an event any ancestor may observe, then toggle self. The event
         // carries this item's own instance value, read off the dispatch path
         // (its leaf is self).
-        Input("onItemClick", _) => {
+        Receive("onItemClick", _) => {
           let mut self_v : @tutuca.Value = Null
           ctx.walk_path((_id, inst) => {
             self_v = inst // stop at the leaf: self
             false
           })
-          ctx.bubble("treeItemSelected", [self_v])
+          ctx.intent(
+            "treeItemSelected",
+            [self_v],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          )
           Next({ ..s, isOpen: !s.isOpen })
         }
         // a TreeItem between the source and the root sees the event and passes
         // it on unchanged (returning None = no change)
-        Bubble("treeItemSelected", _) => Unhandled
+        Intent("treeItemSelected", _) => Unhandled
         _ => Unhandled
       }
     },
@@ -129,7 +133,7 @@ fn tree_root_comp() -> @component.Component {
     _ctx,
   ) => {
     match msg {
-      Bubble("treeItemSelected", args) => {
+      Intent("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
             match o.obj_field("label") {

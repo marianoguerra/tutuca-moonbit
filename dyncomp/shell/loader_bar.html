@@ -39,7 +39,7 @@
     DyncompError(String)
   }
 
-  bubble {
+  intent {
     /// The catalog changed. Whatever is above re-reads it — a bar showing
     /// search results, or a gallery showing every configuration — rather than
     /// telling a person to ask again.
@@ -62,7 +62,7 @@
     <span class="join" @show=".showUrl">
       <input class="input input-xs input-bordered join-item bar-url"
              placeholder="…/name.tutuca.tar.gz" :value=".url"
-             @on.input="typeUrl value" @on.keydown+send="loadUrl">
+             @on.input="typeUrl e.value" @on.keydown+send="loadUrl">
       <button class="btn btn-xs join-item load-url" @on.click="loadUrl">load</button>
     </span>
     <span class="text-xs opacity-60 bar-status" @text=".status"></span>

@@ -14,11 +14,11 @@
 
 <script type="tutuca/script">
   /// Move the counter by `d`, remembering where it landed.
-  ///
+  /// 
   /// `.count` reads the value the line above wrote: a statement rebinds the
   /// state, so the push records where the counter ENDED rather than where it
   /// started.
-  on add(d) {
+  receive add(d) {
     .count += d
     .history.push .count
   }
@@ -44,7 +44,7 @@
     <button id="inc" @on.click="add 1">+1</button>
     <button id="dec" @on.click="add -1">-1</button>
     <button id="reset" @on.click="resetCount">reset</button>
-    <input id="label" :value=".label" @on.input="setLabel value" @on.keydown+send="setLabel 'sent!'">
+    <input id="label" :value=".label" @on.input="setLabel e.value" @on.keydown+send="setLabel 'sent!'">
     <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
   </div>
 </template>

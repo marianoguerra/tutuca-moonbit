@@ -12,23 +12,21 @@
   /// The two limits, named. A `pred` reads the state and nothing else, which
   /// is what lets it sit in a handler's header instead of at the top of its
   /// body.
-  ///
+  /// 
   /// Each carries the sentence it says when it does NOT hold. The comment says
   /// what the rule is; the `format` says what went wrong this time, with the
   /// count that made it go wrong — which is the half nobody can reconstruct
   /// afterwards from a chart that simply did not change.
   pred hasRoom
-    format $'nine bars is the cap, and there are already {len .values}'
-  { (len .values) < 9 }
+    format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
 
   pred hasSpare
-    format 'one bar has to stay, or there is no chart left to look at'
-  { (len .values) > 1 }
+    format 'one bar has to stay, or there is no chart left to look at' { (len .values) > 1 }
 
   /// Add a bar, up to nine. The height is derived from the length rather than
   /// drawn at random, so the picture is the same on every run — a test can
   /// look at it.
-  ///
+  /// 
   /// The cap is a PRECONDITION rather than an `if` around the whole body: both
   /// refuse the same presses, but a refusal with a name is REPORTED — the
   /// tenth press says `contract: addBar declined — its precondition hasRoom
@@ -37,12 +35,12 @@
   /// that had nothing to add. A host that wants the record rather than the
   /// line calls `@tutuca.on_refusal` and gets the rule, the path and the state
   /// that was rejected with it.
-  on addBar requires hasRoom {
+  receive addBar requires hasRoom {
     .values.push (((((len .values) * 17) + 23) mod 90) + 10)
   }
 
   /// Drop the last bar, never the last one standing.
-  on removeBar requires hasSpare {
+  receive removeBar requires hasSpare {
     .values.deleteAt ((len .values) - 1)
   }
 </script>

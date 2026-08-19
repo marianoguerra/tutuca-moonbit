@@ -86,7 +86,7 @@ fn loader_bar_main_view_ir() -> @anode.View {
       ],
       [
         @anode.on("input", HandlerName(name="typeUrl", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="loadUrl", ns=Input), modifiers=[
           "send",

@@ -27,7 +27,11 @@ fn ocall(v : @tutuca.Value, name : String) -> @tutuca.Value {
 /// find no Fn to call. This is how the view reaches them too.
 fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
   guard v is Obj(o) else { return Null }
-  guard o.obj_handler(Input, name) is Some(Handler(f)) else { return Null }
+  // `Receive`, because that is what a view raises now. This helper stands in
+  // for a click, and in v2 a click is an addressed message — the `Input`
+  // bucket it used to name is v1's word for the same thing, and a v2
+  // component's generated arms no longer answer it.
+  guard o.obj_handler(Receive, name) is Some(Handler(f)) else { return Null }
   match f([], @tutuca.NullCtx::{  }) {
     Some(node) => node
     None => v

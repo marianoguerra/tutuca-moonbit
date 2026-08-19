@@ -15,18 +15,35 @@
 
 <script type="tutuca/script">
   /// A bare field step: the whole `rows` slot.
-  on pokeAll { sendAt &.rows 'ping' .word }
+  receive pokeAll {
+    sendAt &.rows 'ping' .word
+  }
+
   /// An index resolved from a parameter — frozen to the value in hand.
-  on pokeRow(i) { sendAt &.rows[i] 'ping' .word }
+  receive pokeRow(i) {
+    sendAt &.rows[i] 'ping' .word
+  }
+
   /// A literal key, which is the same thing written out.
-  on pokeFirst { sendAt &.rows[0] 'ping' }
+  receive pokeFirst {
+    sendAt &.rows[0] 'ping'
+  }
+
   /// A named pane, so the step is an `item` rather than an `at`.
-  on pokePane(k) { sendAt &.panes[k] 'ping' .word }
+  receive pokePane(k) {
+    sendAt &.panes[k] 'ping' .word
+  }
+
   /// Two steps deep, and a trailing field after the key.
-  on pokeDeep(i) { sendAt &.rows[i].inner 'ping' }
+  receive pokeDeep(i) {
+    sendAt &.rows[i].inner 'ping'
+  }
+
   /// REFUSED, deliberately: a key read from live state re-resolves on every
   /// dispatch, and `control.path-step` has no case that says so.
-  on pokeSelected { sendAt &.panes[.sel] 'ping' }
+  receive pokeSelected {
+    sendAt &.panes[.sel] 'ping'
+  }
 </script>
 
 <template id="Addressing">

@@ -31,7 +31,7 @@
 
   /// Raised by a CompSection / CompView on a ctrl-click, so it arrives here
   /// as a Bubble. No view of this component declares it.
-  bubble ComponentInspector {
+  intent ComponentInspector {
     ToggleAllSections(Bool)
     ToggleAllViews(Bool)
   }
@@ -56,7 +56,7 @@
     <button
       type="button"
       class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start"
-      @on.click="toggle isCtrl">
+      @on.click="toggle e.isCtrl">
       <span @text="$arrowText"></span>
       <span class="font-mono text-sm comp-view-name" @text=".name"></span>
     </button>
@@ -74,7 +74,7 @@
         type="button"
         class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
         :disabled="$isItemsEmpty"
-        @on.click="toggle isCtrl">
+        @on.click="toggle e.isCtrl">
         <span @text="$arrowText"></span>
         <span class="font-semibold comp-section" @text="$typeText"></span>
         <span @text="$countText"></span>

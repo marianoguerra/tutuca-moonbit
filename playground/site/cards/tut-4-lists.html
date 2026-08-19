@@ -25,7 +25,7 @@
   /// The guard is the whole handler: appending and clearing the box
   /// are both mutators, and refusing an empty draft is the part that
   /// belongs to this component.
-  on add {
+  receive add {
     if (trim .draft) is not '' {
       .songs.push (trim .draft)
       .draft = ''
@@ -34,20 +34,16 @@
 
   /// Moving a row is two writes at two positions, which is exactly
   /// the shape no single mutator has.
-  on up(i) {
+  receive up(i) {
     if i > 0 {
       .songs.insertAt (i - 1) .songs[i]
       .songs.deleteAt (i + 1)
     }
   }
 
-  pred any {
-    not (empty? .songs)
-  }
+  pred any { not (empty? .songs) }
 
-  compute caption {
-    $'{(len .songs)} song(s)'
-  }
+  compute caption { $'{len .songs} song(s)' }
 </script>
 
 <template>
@@ -56,7 +52,7 @@
       <h2 class="card-title">Playlist</h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="add a song"
-               :value=".draft" @on.input="setDraft value"
+               :value=".draft" @on.input="setDraft e.value"
                @on.keydown+send="add">
         <button class="btn btn-sm btn-primary"
                 @on.click="add">add</button>

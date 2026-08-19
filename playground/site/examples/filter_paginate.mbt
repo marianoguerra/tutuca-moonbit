@@ -70,12 +70,12 @@ fn fp_update() -> (
   (s, msg, _ctx) => match msg {
     // reset to page 0 on every query change, so a shrinking result set never
     // strands you on an empty page
-    Input("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0 })
-    Input("prev", _) => {
+    Receive("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0 })
+    Receive("prev", _) => {
       let (_, current) = fp_clamp(s.page, fp_match_count(s), s.pageSize)
       Next({ ..s, page: @cmp.maximum(0, current - 1) })
     }
-    Input("next", _) => {
+    Receive("next", _) => {
       let (page_count, current) = fp_clamp(
         s.page,
         fp_match_count(s),

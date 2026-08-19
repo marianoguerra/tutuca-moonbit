@@ -75,7 +75,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         // The bubble arrives with a SHORTENED path (one hop popped per
         // component it passed) but a fixed `target_path`, which is the one
         // worth keeping.
-        Bubble("addRequested", _) => {
+        Intent("addRequested", _) => {
           target.val = Some(ctx.target_path())
           ctx.stop_propagation()
           Next({ ..s, status: "asked:\{ctx.target_path().items.length()}" })
@@ -83,7 +83,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         // A LATER dispatch, with nothing of the first one still on the stack —
         // which is the case the app is actually in when somebody picks a row
         // out of the command bar.
-        Input("place", _) =>
+        Receive("place", _) =>
           match target.val {
             Some(p) => {
               ctx.send_at_path(p, "hold", [
@@ -96,7 +96,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         // Put a two-cell stack in the root universal, so the next request comes
         // from a universal INSIDE a container — one more component boundary for
         // the path to cross, which is the case every real layout is in.
-        Input("useStack", _) => {
+        Receive("useStack", _) => {
           ctx.send_at_path(ctx.path().concat([FieldStep("root")]), "hold", [
             std.build("Stack", {
               "children": List([std.cell(), std.cell()]),

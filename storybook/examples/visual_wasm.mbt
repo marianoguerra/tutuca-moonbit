@@ -121,7 +121,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
     // so there is no generated Msg and every arm names the dispatch directly.
     update=(s : VwImmState, msg, _ctx) => {
       match msg {
-        Input("setFromRawValue", args) => {
+        Receive("setFromRawValue", args) => {
           let raw = match args {
             [Str(t), ..] => t
             _ => ""
@@ -360,7 +360,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
     init=VwTypesState::{ items: [] },
     update=(s : VwTypesState, msg, _ctx) => {
       match msg {
-        Input("addItemAt", args) => {
+        Receive("addItemAt", args) => {
           let items = s.items.copy()
           let at = @cmp.minimum(
             @cmp.maximum(0, vw_int_arg(args, 0)),
@@ -369,7 +369,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
           items.insert(at, vw_make_type(reg, "TypeI32"))
           Next({ items, })
         }
-        Input("appendItem", _) =>
+        Receive("appendItem", _) =>
           Next({ items: s.items + [vw_make_type(reg, "TypeI32")] })
         _ => Unhandled
       }
@@ -431,9 +431,9 @@ fn vw_container_update(
 ] {
   (s, msg, _ctx) => {
     match msg {
-      Input("addItemAt", args) =>
+      Receive("addItemAt", args) =>
         Next({ ..s, items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)) })
-      Input("appendItem", _) =>
+      Receive("appendItem", _) =>
         Next({ ..s, items: s.items + [vw_make_picker(reg)] })
       _ => Unhandled
     }
@@ -576,16 +576,16 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
     slots={ "blockType": "BlockType" },
     update=(s : VwIfState, msg, _ctx) => {
       match msg {
-        Input("addThnAt", args) =>
+        Receive("addThnAt", args) =>
           Next({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) })
-        Input("appendInThn", _) =>
+        Receive("appendInThn", _) =>
           Next({ ..s, thn: s.thn + [vw_make_picker(reg)] })
-        Input("addElseAt", args) =>
+        Receive("addElseAt", args) =>
           Next({
             ..s,
             else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
           })
-        Input("appendInElse", _) =>
+        Receive("appendInElse", _) =>
           Next({ ..s, else_: s.else_ + [vw_make_picker(reg)] })
         _ => Unhandled
       }
@@ -621,7 +621,7 @@ fn vw_section_comp() -> @component.Component {
     },
     update=(s : VwSectionState, msg, _ctx) => {
       match msg {
-        Input("addDefaultItem", _) =>
+        Receive("addDefaultItem", _) =>
           Next({ ..s, items: s.items + [vw_with_editing(s.defaultItem)] })
         _ => Unhandled
       }
@@ -664,9 +664,9 @@ fn vw_memory_comp() -> @component.Component {
     init=VwMemoryState::{ n: 1, m: 1 },
     update=(s : VwMemoryState, msg, _ctx) => {
       match msg {
-        Input("setNFromString", args) =>
+        Receive("setNFromString", args) =>
           Next({ ..s, n: vw_int_value(args, s.n) })
-        Input("setMFromString", args) =>
+        Receive("setMFromString", args) =>
           Next({ ..s, m: vw_int_value(args, s.m) })
         _ => Unhandled
       }
@@ -770,7 +770,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     },
     update=(s : VwPickerState, msg, _ctx) => {
       match msg {
-        Input(name, _) =>
+        Receive(name, _) =>
           match sections.get(name) {
             Some(f) => Next(f(s))
             None => Unhandled

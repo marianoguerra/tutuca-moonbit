@@ -8,14 +8,14 @@
 <template id="DnDExample">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"
         draggable="true"
         data-dragtype="my-list-item"
         data-droptarget="my-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <span class="k" @text="@key"></span>: <x text="@value"></x>
       </div>
     </div>

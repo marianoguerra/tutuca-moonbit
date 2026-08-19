@@ -45,14 +45,6 @@ pub fn story_nav_views() -> Map[String, @anode.View]
 // Errors
 
 // Types and methods
-pub(all) enum DyncompStorybookBubble {
-  CatalogChanged(String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn DyncompStorybookBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn DyncompStorybookBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn DyncompStorybookBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum DyncompStorybookInput {
   ChooseTheme
   FilesDropped
@@ -63,6 +55,14 @@ pub(all) enum DyncompStorybookInput {
 } derive(Eq, @debug.Debug)
 pub fn DyncompStorybookInput::name(Self) -> String
 pub fn DyncompStorybookInput::parse(String) -> Self?
+
+pub(all) enum DyncompStorybookIntent {
+  CatalogChanged(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DyncompStorybookIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn DyncompStorybookIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn DyncompStorybookIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum DyncompStorybookMethod {
   DetailsLabel
@@ -137,19 +137,19 @@ pub(all) struct Story {
   args : String
 } derive(Eq)
 
-pub(all) enum StoryCardBubble {
-  RebuildCard(String, String, String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn StoryCardBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn StoryCardBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn StoryCardBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum StoryCardInput {
   Rebuild
 } derive(Eq, @debug.Debug)
 pub fn StoryCardInput::name(Self) -> String
 pub fn StoryCardInput::parse(String) -> Self?
+
+pub(all) enum StoryCardIntent {
+  RebuildCard(String, String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryCardIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn StoryCardIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryCardIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum StoryCardMethod {
   RefLabel
@@ -182,19 +182,19 @@ pub(all) struct StoryCardState {
 }
 pub fn StoryCardState::zero() -> Self
 
-pub(all) enum StoryNavBubble {
-  NavPicked(String, String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn StoryNavBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn StoryNavBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn StoryNavBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum StoryNavInput {
   Pick
 } derive(Eq, @debug.Debug)
 pub fn StoryNavInput::name(Self) -> String
 pub fn StoryNavInput::parse(String) -> Self?
+
+pub(all) enum StoryNavIntent {
+  NavPicked(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryNavIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn StoryNavIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryNavIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum StoryNavMsg {
   Pick

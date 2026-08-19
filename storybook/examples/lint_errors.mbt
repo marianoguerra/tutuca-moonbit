@@ -160,7 +160,7 @@ fn lint_demo_comp() -> @component.Component {
     // Msg to match on and the arm names the dispatch directly.
     update=(_s : LintDemoState, msg, _ctx) => {
       match msg {
-        Input("doClick", _) => Unhandled
+        Receive("doClick", _) => Unhandled
         _ => Unhandled
       }
     },

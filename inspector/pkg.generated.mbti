@@ -442,14 +442,14 @@ pub(all) struct CompViewState {
 }
 pub fn CompViewState::zero() -> Self
 
-pub(all) enum ComponentInspectorBubble {
+pub(all) enum ComponentInspectorIntent {
   ToggleAllSections(Bool)
   ToggleAllViews(Bool)
   Unknown(String, Array[@core.Value])
 }
-pub fn ComponentInspectorBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn ComponentInspectorBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn ComponentInspectorBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn ComponentInspectorIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn ComponentInspectorIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentInspectorIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum ComponentInspectorMethod {
   IdText

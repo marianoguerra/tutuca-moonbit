@@ -102,7 +102,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
     init=TmItemsState::{ items: [] },
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {
-        Input("onAddItem", _) =>
+        Receive("onAddItem", _) =>
           Next({
             items: s.items +
             [

@@ -169,7 +169,7 @@ let counter = counter_component()</code></pre>
 
         <h4>Two-way Text Binding</h4>
         <p>
-          <code>:value</code> reads a field; <code>@on.input="setName value"</code>
+          <code>:value</code> reads a field; <code>@on.input="setName e.value"</code>
           writes it via the generated mutator; <code>@text</code> mirrors it live.
         </p>
         <mb-playground
@@ -284,7 +284,7 @@ let counter = counter_component()</code></pre>
         <p>
           Hosting a third-party web component and reacting to its
           <code>CustomEvent</code> is a core tutuca feature
-          (<code>@on.emoji-click="onEmojiClick value"</code>). Because it needs an
+          (<code>@on.emoji-click="onEmojiClick e.value"</code>). Because it needs an
           external custom element loaded on the page, see it running in the
           <a href="./storybook/?story=web-component-custom-event">storybook gallery</a>.
         </p>

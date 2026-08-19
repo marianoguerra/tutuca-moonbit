@@ -167,15 +167,6 @@ pub fn Std::resize_grid(Self, GridState, cols~ : Int, rows~ : Int) -> GridState
 pub fn Std::tab_page(Self, label? : String) -> @core.Value
 pub fn Std::tabs(Self, count? : Int) -> @core.Value
 
-pub(all) enum TabPageBubble {
-  DoneRename
-  CancelRename
-  Unknown(String, Array[@core.Value])
-}
-pub fn TabPageBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn TabPageBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn TabPageBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum TabPageInput {
   CancelRename
   DoneRename
@@ -183,6 +174,15 @@ pub(all) enum TabPageInput {
 } derive(Eq, @debug.Debug)
 pub fn TabPageInput::name(Self) -> String
 pub fn TabPageInput::parse(String) -> Self?
+
+pub(all) enum TabPageIntent {
+  DoneRename
+  CancelRename
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabPageIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn TabPageIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum TabPageMsg {
   CancelRename
@@ -290,15 +290,6 @@ pub(all) struct TextareaState {
 }
 pub fn TextareaState::zero() -> Self
 
-pub(all) enum UniversalBubble {
-  AddRequested(Bool)
-  ConfigRequested(@core.Value)
-  Unknown(String, Array[@core.Value])
-}
-pub fn UniversalBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn UniversalBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn UniversalBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum UniversalInput {
   Add
   Dropped
@@ -307,6 +298,15 @@ pub(all) enum UniversalInput {
 } derive(Eq, @debug.Debug)
 pub fn UniversalInput::name(Self) -> String
 pub fn UniversalInput::parse(String) -> Self?
+
+pub(all) enum UniversalIntent {
+  AddRequested(Bool)
+  ConfigRequested(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn UniversalIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn UniversalIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum UniversalMethod {
   Label

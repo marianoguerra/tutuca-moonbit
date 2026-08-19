@@ -15,14 +15,17 @@
   /// rather than parameters, which is what a filter is written with and what a
   /// compiled one could not read until now.
   pred matches { contains (str @value) .needle }
+
   /// A filter with no arguments at all still sees the row.
   pred second { @key is 1 }
+
   /// An in-loop enricher: binds what the row does not carry.
   enrich row {
     @tag = str @value
     @echo = str @tag
     @at = @key
   }
+
   /// The scope form is handed no row and answers the whole map.
   enrichScope info {
     @heading = .title

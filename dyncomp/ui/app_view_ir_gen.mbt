@@ -72,7 +72,7 @@ fn palette_row_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("click", HandlerName(name="pick", ns=Input), args=[
-          Name("isCtrl"),
+          EventPath(["isCtrl"]),
         ]),
       ],
     ],
@@ -224,10 +224,10 @@ fn command_bar_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="nav", ns=Input), args=[
-          Name("key"),
+          EventPath(["key"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="close", ns=Input))],
@@ -433,27 +433,27 @@ fn schema_field_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="edit", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="edit", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="edit", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="edit", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="edit", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -866,7 +866,7 @@ fn universal_app_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="toggleMode", ns=Input))],
       [
         @anode.on("drop", HandlerName(name="filesDropped", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

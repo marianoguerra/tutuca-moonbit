@@ -199,11 +199,9 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to counter.html breaks every `match` over this type
 /// until it is handled.
-///
-/// Absent, because the script block answers them: add.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
 pub(all) enum CounterMsg {
+  /// `@on.click="add …"`
+  Add(Double)
   /// `@on.click="resetCount …"`
   ResetCount
   /// `@on.input, @on.keydown="setLabel …"`
@@ -220,6 +218,7 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
+      ("add", [Num(a0)]) => Add(a0)
       ("resetCount", []) => ResetCount
       ("setLabel", [Str(a0)]) => SetLabel(a0)
       _ => Unknown(name, args)

@@ -74,7 +74,7 @@ fn traffic_light_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[TrafficLightState] {
   match msg {
-    Input("nextLight", _args) => {
+    Receive("nextLight", _args) => {
       let d0 = 3.0
       guard d0 != 0.0 else { return Unchanged }
       let s : TrafficLightState = {
@@ -370,7 +370,7 @@ fn list_and_filter_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
           "cancel",

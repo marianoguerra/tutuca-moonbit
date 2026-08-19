@@ -48,12 +48,12 @@ fn item_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setCompleted", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setText", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

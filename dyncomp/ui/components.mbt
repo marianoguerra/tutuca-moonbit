@@ -12,7 +12,7 @@ fn palette_row_comp() -> @component.Component {
   palette_row_component(update=(s, msg, ctx) => {
     match PaletteRowMsg::from_dispatch(msg) {
       Some(Pick(configure)) => {
-        PaletteRowBubble::ComponentPicked(s.module_, s.name, configure).bubble(
+        PaletteRowIntent::ComponentPicked(s.module_, s.name, configure).dispatch(
           ctx,
         )
         Next(s)
@@ -67,7 +67,11 @@ fn command_bar_comp() -> @component.Component {
       // The bar does not search — it cannot, since the catalog is the app's.
       // It reports what was typed and gets new rows back.
       Some(SetQuery(q)) => {
-        ctx.bubble("queryChanged", [Str(q)])
+        ctx.intent(
+          "queryChanged",
+          [Str(q)],
+          @tutuca.IntentOpts::new(route=[Dyn]),
+        )
         Next({ ..s, query: q })
       }
       Some(Nav(key)) =>
@@ -75,7 +79,7 @@ fn command_bar_comp() -> @component.Component {
           "ArrowDown" => with_cursor(moved(s.cursor, 1, s.hits.length()))
           "ArrowUp" => with_cursor(moved(s.cursor, -1, s.hits.length()))
           "Escape" => {
-            ctx.bubble("commandClose", [])
+            ctx.intent("commandClose", [], @tutuca.IntentOpts::new(route=[Dyn]))
             Unchanged
           }
           "Enter" => {
@@ -83,11 +87,11 @@ fn command_bar_comp() -> @component.Component {
               return Unchanged
             }
             let row = s.hits[s.cursor]
-            ctx.bubble("componentPicked", [
-              row.field("module"),
-              row.field("name"),
-              Bool(s.configure),
-            ])
+            ctx.intent(
+              "componentPicked",
+              [row.field("module"), row.field("name"), Bool(s.configure)],
+              @tutuca.IntentOpts::new(route=[Dyn]),
+            )
             Unchanged
           }
           _ => Unhandled
@@ -96,7 +100,7 @@ fn command_bar_comp() -> @component.Component {
       // by the panel because the panel is inside it, and a click inside the
       // panel stops at whatever it hit.
       Some(Close) => {
-        ctx.bubble("commandClose", [])
+        ctx.intent("commandClose", [], @tutuca.IntentOpts::new(route=[Dyn]))
         Unchanged
       }
       Some(Unknown(_, _)) | None => Unhandled
@@ -116,7 +120,7 @@ fn schema_field_comp() -> @component.Component {
   schema_field_component(update=(s, msg, ctx) => {
     match SchemaFieldMsg::from_dispatch(msg) {
       Some(Edit(v)) => {
-        SchemaFieldBubble::FieldEdited(s.name, v.to_display_string()).bubble(
+        SchemaFieldIntent::FieldEdited(s.name, v.to_display_string()).dispatch(
           ctx,
         )
         Next(
@@ -142,25 +146,23 @@ fn schema_form_comp() -> @component.Component {
       Some(Create) => {
         // The form does not build anything: it hands the app what was filled
         // in, and the app validates it against the schema and builds.
-        ctx.bubble("submitForm", [
-          Str(s.module_),
-          Str(s.name),
-          Str(""),
-          List(s.fields),
-        ])
+        ctx.intent(
+          "submitForm",
+          [Str(s.module_), Str(s.name), Str(""), List(s.fields)],
+          @tutuca.IntentOpts::new(route=[Dyn]),
+        )
         return Unchanged
       }
       Some(UseInit(init)) => {
-        ctx.bubble("submitForm", [
-          Str(s.module_),
-          Str(s.name),
-          init,
-          List(s.fields),
-        ])
+        ctx.intent(
+          "submitForm",
+          [Str(s.module_), Str(s.name), init, List(s.fields)],
+          @tutuca.IntentOpts::new(route=[Dyn]),
+        )
         return Unchanged
       }
       Some(Cancel) => {
-        ctx.bubble("cancelForm", [])
+        ctx.intent("cancelForm", [], @tutuca.IntentOpts::new(route=[Dyn]))
         return Unchanged
       }
       // The merged `Receive` now carries this component's own VIEW names as
@@ -191,7 +193,7 @@ fn schema_form_comp() -> @component.Component {
       _ => ()
     }
     match msg {
-      Bubble("fieldEdited", _) => Next({ ..s, error: "" })
+      Intent("fieldEdited", _) => Next({ ..s, error: "" })
       _ => Unhandled
     }
   })
@@ -204,7 +206,7 @@ fn config_panel_comp() -> @component.Component {
   config_panel_component(update=(_s, msg, ctx) => {
     match ConfigPanelMsg::from_dispatch(msg) {
       Some(Close) => {
-        ConfigPanelBubble::CloseConfig.bubble(ctx)
+        ConfigPanelIntent::CloseConfig.dispatch(ctx)
         Unchanged
       }
       Some(Unknown(_, _)) | None => Unhandled

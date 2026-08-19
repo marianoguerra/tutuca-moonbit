@@ -27,12 +27,10 @@
 
   /// A row survives when the query is empty or its text contains it,
   /// folded on both sides so the filter is not a spelling test.
-  ///
+  /// 
   /// `@when` takes this bare — an iteration filter has always been
   /// a name.
-  pred matches {
-    (empty? .query) or (contains (lower @value) (lower .query))
-  }
+  pred matches { (empty? .query) or (contains (lower @value) (lower .query)) }
 
   /// Per-row bindings. The renderer hands an enricher the row's key
   /// and value; what it writes is in scope for that row and nowhere
@@ -41,9 +39,7 @@
     @picked = has .picked @value
   }
 
-  compute caption {
-    $'{(len .picked)} picked of {(len .names)}'
-  }
+  compute caption { $'{len .picked} picked of {len .names}' }
 </script>
 
 <template>
@@ -51,7 +47,7 @@
     <div class="card-body gap-3">
       <input type="search" class="input input-sm w-full"
              placeholder="filter" :value=".query"
-             @on.input="setQuery value">
+             @on.input="setQuery e.value">
       <ul class="flex flex-col gap-1">
         <li @each=".names" @when="matches" @enrich-with="row">
           <label @if.class="@picked"

@@ -156,7 +156,7 @@ fn send_receive_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="submit", ns=Input), modifiers=[
           "send",

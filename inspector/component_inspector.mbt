@@ -134,9 +134,13 @@ fn comp_view_comp() -> @component.Component {
     },
     update=(s, msg, ctx) => {
       match msg {
-        Input("toggle", args) =>
+        Receive("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
-            ctx.bubble("toggleAllViews", [Bool(!s.isExpanded)])
+            ctx.intent(
+              "toggleAllViews",
+              [Bool(!s.isExpanded)],
+              @tutuca.IntentOpts::new(route=[Dyn]),
+            )
             Unhandled
           } else {
             Next({ ..s, isExpanded: !s.isExpanded })
@@ -202,9 +206,13 @@ fn comp_section_comp() -> @component.Component {
       match msg {
         // Plain click toggles this section; ctrl/cmd-click bubbles up so the
         // inspector can toggle every section at once.
-        Input("toggle", args) =>
+        Receive("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
-            ctx.bubble("toggleAllSections", [Bool(!s.isExpanded)])
+            ctx.intent(
+              "toggleAllSections",
+              [Bool(!s.isExpanded)],
+              @tutuca.IntentOpts::new(route=[Dyn]),
+            )
             Unhandled
           } else {
             Next({ ..s, isExpanded: !s.isExpanded })
@@ -261,7 +269,7 @@ fn component_inspector_comp() -> @component.Component {
       }
     },
     update=(s, msg, _ctx) => {
-      match ComponentInspectorBubble::from_dispatch(msg) {
+      match ComponentInspectorIntent::from_dispatch(msg) {
         Some(ToggleAllSections(on)) => Next(set_all_sections(s, on))
         Some(ToggleAllViews(on)) => Next(set_all_views(s, on))
         Some(Unknown(_, _)) | None => Unhandled

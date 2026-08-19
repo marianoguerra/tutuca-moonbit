@@ -120,13 +120,13 @@ fn universal_comp() -> @component.Component {
         // Both routes to the same place: the `+` asks for something to hold,
         // and ctrl/cmd asks to configure it on the way in.
         Some(Add(configure)) => {
-          UniversalBubble::AddRequested(configure).bubble(ctx)
+          UniversalIntent::AddRequested(configure).dispatch(ctx)
           return Next(s)
         }
         // The badge is what configures, not the box: a click on the box would
         // mean never being able to click through to what is held.
         Some(Pick) => {
-          UniversalBubble::ConfigRequested(s.child).bubble(ctx)
+          UniversalIntent::ConfigRequested(s.child).dispatch(ctx)
           return Next(s)
         }
         // Emptying gives the `+` back rather than deleting the cell. Deleting
@@ -138,12 +138,21 @@ fn universal_comp() -> @component.Component {
         // travelling, because `drop` stops at the first component that
         // handles it and the shell's bundle loader is further up.
         Some(Dropped(_)) | Some(Unknown("dropped", _)) => {
+          // BOTH buckets, for the length of the migration. This arm is
+          // reached through `UniversalMsg::from_dispatch`, which decodes the
+          // `Input` bucket — so on the pass that matches it, `msg` is an
+          // `Input` and not the `Receive` the view raised. The codemod moved
+          // this pattern and could not move the generated decode above it,
+          // which is the one shape it cannot see: a file using a `<T>Msg`
+          // decode AND a raw dispatch pattern together.
+          //
+          // Task 25 deletes `Input` and this reads `Receive` alone.
           let info = match msg {
-            Input(_, [first, ..]) => first
+            Receive(_, [first, ..]) | Input(_, [first, ..]) => first
             _ => Null
           }
           if info.field("type").str() == "config-pill" {
-            UniversalBubble::ConfigRequested(s.child).bubble(ctx)
+            UniversalIntent::ConfigRequested(s.child).dispatch(ctx)
             ctx.stop_propagation()
             return Next(s)
           }
@@ -474,11 +483,11 @@ fn tab_page_comp() -> @component.Component {
     match TabPageMsg::from_dispatch(msg) {
       Some(SetLabel(label)) => Next({ ..s, label, })
       Some(DoneRename) => {
-        TabPageBubble::DoneRename.bubble(ctx)
+        TabPageIntent::DoneRename.dispatch(ctx)
         Unchanged
       }
       Some(CancelRename) => {
-        TabPageBubble::CancelRename.bubble(ctx)
+        TabPageIntent::CancelRename.dispatch(ctx)
         Unchanged
       }
       Some(Unknown(_, _)) | None => Unhandled
@@ -591,7 +600,7 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
         Some(Unknown(_, _)) | None => ()
       }
       match msg {
-        Bubble("doneRename", _) =>
+        Intent("doneRename", _) =>
           if s.renaming {
             Next({ ..s, renaming: false, original: "" })
           } else {
@@ -600,7 +609,7 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
         // Escape puts the old name back. It is kept rather than recomputed,
         // because typing already overwrote it — that is what renaming live
         // costs, and this is what pays it.
-        Bubble("cancelRename", _) => {
+        Intent("cancelRename", _) => {
           guard s.renaming else { return Unchanged }
           let at = active_of(s)
           guard at >= 0 else {

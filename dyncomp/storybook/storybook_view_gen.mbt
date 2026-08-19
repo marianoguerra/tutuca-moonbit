@@ -126,30 +126,30 @@ pub fn StoryNavReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StoryNavBubble {
+pub(all) enum StoryNavIntent {
   /// (module, component). Two empty strings mean "everything", which is
   /// what the `all` button sends.
   NavPicked(String, String)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn StoryNavBubble::from_dispatch(
+pub fn StoryNavIntent::from_dispatch(
   d : @component.Dispatch,
-) -> StoryNavBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> StoryNavIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("navPicked", [Str(a0), Str(a1)]) => NavPicked(a0, a1)
@@ -160,8 +160,8 @@ pub fn StoryNavBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StoryNavBubble::to_dispatch(
-  self : StoryNavBubble,
+pub fn StoryNavIntent::to_dispatch(
+  self : StoryNavIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     NavPicked(a0, a1) => ("navPicked", [Str(a0), Str(a1)])
@@ -170,16 +170,19 @@ pub fn StoryNavBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StoryNavBubble::bubble(
-  self : StoryNavBubble,
+pub fn StoryNavIntent::dispatch(
+  self : StoryNavIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -247,7 +250,7 @@ pub fn StoryNavMsg::from_dispatch(d : @component.Dispatch) -> StoryNavMsg? {
 impl @component.Fields for StoryNavState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryNav",
-    fingerprint="8a12779dc5754fa4",
+    fingerprint="8af78b515c4ca0ed",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -255,7 +258,6 @@ impl @component.Fields for StoryNavState with fn schema() {
       @component.FieldInfo::new("selected", TyBool),
     ],
     inputs=["pick"],
-    bubbles=["navPicked"],
     view_names=["main"],
   )
 }
@@ -415,31 +417,31 @@ pub fn StoryCardReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum StoryCardBubble {
+pub(all) enum StoryCardIntent {
   /// (module, component, init) — build me again from scratch. The card
   /// cannot do it itself: making an instance is the host's job, and this
   /// package is backend-agnostic.
   RebuildCard(String, String, String)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn StoryCardBubble::from_dispatch(
+pub fn StoryCardIntent::from_dispatch(
   d : @component.Dispatch,
-) -> StoryCardBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> StoryCardIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("rebuildCard", [Str(a0), Str(a1), Str(a2)]) => RebuildCard(a0, a1, a2)
@@ -450,8 +452,8 @@ pub fn StoryCardBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn StoryCardBubble::to_dispatch(
-  self : StoryCardBubble,
+pub fn StoryCardIntent::to_dispatch(
+  self : StoryCardIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     RebuildCard(a0, a1, a2) => ("rebuildCard", [Str(a0), Str(a1), Str(a2)])
@@ -460,16 +462,19 @@ pub fn StoryCardBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn StoryCardBubble::bubble(
-  self : StoryCardBubble,
+pub fn StoryCardIntent::dispatch(
+  self : StoryCardIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -550,7 +555,7 @@ pub fn StoryCardMethod::name(self : StoryCardMethod) -> String {
 impl @component.Fields for StoryCardState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryCard",
-    fingerprint="3f7fbf54675a636b",
+    fingerprint="2e29e01e9a196287",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("doc", TyText),
@@ -562,7 +567,6 @@ impl @component.Fields for StoryCardState with fn schema() {
       @component.FieldInfo::new("error", TyText),
     ],
     inputs=["rebuild"],
-    bubbles=["rebuildCard"],
     methods=["refLabel"],
     view_names=["main", "details"],
   )
@@ -775,33 +779,33 @@ pub fn DyncompStorybookReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum DyncompStorybookBubble {
+pub(all) enum DyncompStorybookIntent {
   /// The same news, arriving the other way: from the loader the host put
   /// in the bar, which is BELOW this component and therefore bubbles.
   /// 
   /// The loader says what it is DOING in the bar itself; this is only the
   /// part the gallery has to act on.
   CatalogChanged(String)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn DyncompStorybookBubble::from_dispatch(
+pub fn DyncompStorybookIntent::from_dispatch(
   d : @component.Dispatch,
-) -> DyncompStorybookBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> DyncompStorybookIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
@@ -812,8 +816,8 @@ pub fn DyncompStorybookBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn DyncompStorybookBubble::to_dispatch(
-  self : DyncompStorybookBubble,
+pub fn DyncompStorybookIntent::to_dispatch(
+  self : DyncompStorybookIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
@@ -822,16 +826,19 @@ pub fn DyncompStorybookBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn DyncompStorybookBubble::bubble(
-  self : DyncompStorybookBubble,
+pub fn DyncompStorybookIntent::dispatch(
+  self : DyncompStorybookIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -961,7 +968,7 @@ pub fn DyncompStorybookWhen::name(self : DyncompStorybookWhen) -> String {
 impl @component.Fields for DyncompStorybookState with fn schema() {
   @component.SchemaInfo::new(
     name="DyncompStorybook",
-    fingerprint="009eeb763ad92b17",
+    fingerprint="bfd0a40228d59f1f",
     fields=[
       @component.FieldInfo::new("cards", TyList(TyAny)),
       @component.FieldInfo::new("nav", TyList(TyAny)),
@@ -979,7 +986,6 @@ impl @component.Fields for DyncompStorybookState with fn schema() {
       "chooseTheme", "filesDropped", "setQuery", "showAll", "toggleDetails", "toggleWide",
     ],
     receives=["catalogChanged", "setStatus"],
-    bubbles=["catalogChanged"],
     methods=["detailsLabel", "isEmpty", "layoutLabel"],
     view_names=["main"],
   )

@@ -486,6 +486,50 @@ fn migrate_on_value(value : String) -> (String, String?) {
 // .mbt — the update arms and the ctx calls
 
 ///|
+/// `old` -> `new`, but only where `old` starts a TOKEN.
+///
+/// The character before has to be one an identifier cannot continue with.
+/// `Input(` is a substring of `OnInput(` — a generated `<T>Msg` variant for an
+/// `@on.input` handler — and a plain substitution turned that into
+/// `OnReceive(`, which is a name nothing declares.
+fn replace_token(source : String, old : String, new : String) -> String {
+  fn ident_char(c : Char) -> Bool {
+    c is ('a'..='z' | 'A'..='Z' | '0'..='9' | '_')
+  }
+
+  // Entirely over the CHAR array, never mixing it with string slicing. A
+  // `String` is indexed by UTF-16 code unit and `to_array()` gives characters,
+  // and the two agree only while the text is ASCII — which the comments in
+  // this repository are not. Slicing by a char index panicked on the first
+  // em-dash.
+  let out = StringBuilder::new()
+  let chars = source.to_array()
+  let needle = old.to_array()
+  let n = chars.length()
+  let m = needle.length()
+  let mut i = 0
+  while i < n {
+    let mut hit = i + m <= n && (i == 0 || !ident_char(chars[i - 1]))
+    if hit {
+      for k in 0..<m {
+        if chars[i + k] != needle[k] {
+          hit = false
+          break
+        }
+      }
+    }
+    if hit {
+      out.write_string(new)
+      i = i + m
+    } else {
+      out.write_char(chars[i])
+      i = i + 1
+    }
+  }
+  out.to_string()
+}
+
+///|
 /// Every `ctx.bubble(…)` call, with the `dyn` route appended.
 ///
 /// A bubble is an intent whose route is the dynamic scope, which is the design
@@ -548,6 +592,19 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
       ": a `Response(…)` arm becomes two `Receive` arms (`<name>Ok`, `<name>Error`) and the body has to be split between them — a human decides which half is which",
     )
   }
+  // `RequestFn` is NOT renamed, and that is a correction rather than a gap.
+  //
+  // Renaming it compiles the annotation and breaks the body: an `IntentFn`
+  // takes `(IntentCall, (IntentAnswer) -> Unit)` where a `RequestFn` takes
+  // `(args, respond)`, so the rewrite would leave a type error — a half-edit,
+  // which is the one thing this must not do. A signature change is not a
+  // rename, and task 19 found that by running it.
+  if source.contains("RequestFn") {
+    refused.push(
+      path +
+      ": `RequestFn` becomes `IntentFn`, which is a SIGNATURE change and not a rename — it takes an `IntentCall` (carrying `from`, the sender's path) and answers `Ok` / `Failed` / `Pass` where a `RequestFn` had to answer. Rewrite each handler by hand",
+    )
+  }
   // `ctx.request` carries opts whose `on_res_name` has no v2 field, so a
   // mechanical rewrite could silently drop a routing decision.
   if source.contains("on_res_name") {
@@ -562,9 +619,49 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
   let mut out = source
   // The dispatch arms. `Input(` and `Bubble(` are constructor applications, so
   // the paren is part of the match and nothing longer can contain them.
-  out = out.replace(old="Input(", new="Receive(")
-  out = out.replace(old="Bubble(", new="Intent(")
-  out = out.replace(old="RequestFn", new="IntentFn")
+  // `ctx.bubble(…)` FIRST, so the `.bubble(ctx)` rule below cannot see one.
+  match add_dyn_route(out) {
+    Ok(next) => out = next
+    Err(why) => {
+      refused.push(path + ": " + why)
+      return { files: [], reports: [], refused }
+    }
+  }
+  // The dispatch arms, as WHOLE tokens.
+  //
+  // `replace_all` and not `replace`, because `String::replace` moves ONE
+  // occurrence and a codemod built on it renames the first arm in a file and
+  // leaves the rest. And token-wise, because `Input(` is a substring of
+  // `OnInput(` — a generated `<T>Msg` variant for an `@on.input` handler — and
+  // a plain substitution turned it into `OnReceive(`. Task 19 found both on
+  // its first two runs, which is what running a codemod on real code is for.
+  out = replace_token(out, "Input(", "Receive(")
+  out = replace_token(out, "Bubble(", "Intent(")
+  // The GENERATED enums, which viewgen renamed with the schema: `<T>Bubble`
+  // became `<T>Intent`, and `bubble(ctx)` became `dispatch(ctx)` — the raiser
+  // that carries a route where the old one carried only a direction.
+  //
+  // `Bubble::` rather than the bare word, so a hand-written type that merely
+  // ends in it is untouched: a generated name is always used qualified.
+  out = out.replace_all(old="Bubble::", new="Intent::")
+  // Every remaining `.bubble(` is a generated raiser, because `ctx.bubble(`
+  // was rewritten above. Not `.bubble(ctx)` with the argument attached: `moon
+  // fmt` wraps a long call across lines, and a rule that required the argument
+  // on the same line missed exactly the sites a formatter had touched.
+  //
+  // The one shape that is NOT a raiser is `ctx.at()…bubble(…)`, the path
+  // builder's own method — whose v2 spelling is `.intent(…)` and not
+  // `.dispatch(…)`. A file holding both is refused rather than guessed at.
+  if out.contains(".bubble(") {
+    if out.contains(".at()") {
+      refused.push(
+        path +
+        ": this file has both a generated raiser's `.bubble(` and a `ctx.at()` path builder, whose v2 spelling is `.intent(…)` rather than `.dispatch(…)`. Which is which needs a reader",
+      )
+      return { files: [], reports: [], refused }
+    }
+    out = out.replace_all(old=".bubble(", new=".dispatch(")
+  }
   // The two routed calls, each becoming the one channel plus its leg. The
   // opts argument is appended rather than rewritten, because v1's call carries
   // none for `bubble` and a `RequestOpts` for `request` — and a `RequestOpts`
@@ -574,19 +671,6 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
       path +
       ": `ctx.request(name, args, RequestOpts::new(…))` becomes `ctx.intent(name, args, IntentOpts::new(route=[Lex], …))`. The opts do not map one for one — `on_res_name` is gone — so this one is left as it is",
     )
-  }
-  // `ctx.bubble(name, args)` -> `ctx.intent(name, args, IntentOpts::new(route=[Dyn]))`.
-  //
-  // Paren-MATCHED rather than substituted, because the third argument goes
-  // before the closing paren and a naive replace has no idea where that is.
-  // A call whose parens do not balance is left alone and the file is refused,
-  // which is the rule: never half-edit.
-  match add_dyn_route(out) {
-    Ok(next) => out = next
-    Err(why) => {
-      refused.push(path + ": " + why)
-      return { files: [], reports: [], refused }
-    }
   }
   // A `ctx.send` whose name is a generated mutator changes behaviour: v1
   // dropped it and v2 mutates. The tool cannot tell which names are mutators

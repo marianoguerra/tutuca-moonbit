@@ -662,29 +662,29 @@ impl @component.Fields for ComponentInspectorState with fn decode(f) {
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum ComponentInspectorBubble {
+pub(all) enum ComponentInspectorIntent {
   ToggleAllSections(Bool)
   ToggleAllViews(Bool)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn ComponentInspectorBubble::from_dispatch(
+pub fn ComponentInspectorIntent::from_dispatch(
   d : @component.Dispatch,
-) -> ComponentInspectorBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> ComponentInspectorIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("toggleAllSections", [Bool(a0)]) => ToggleAllSections(a0)
@@ -696,8 +696,8 @@ pub fn ComponentInspectorBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn ComponentInspectorBubble::to_dispatch(
-  self : ComponentInspectorBubble,
+pub fn ComponentInspectorIntent::to_dispatch(
+  self : ComponentInspectorIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     ToggleAllSections(a0) => ("toggleAllSections", [Bool(a0)])
@@ -707,16 +707,19 @@ pub fn ComponentInspectorBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn ComponentInspectorBubble::bubble(
-  self : ComponentInspectorBubble,
+pub fn ComponentInspectorIntent::dispatch(
+  self : ComponentInspectorIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -752,13 +755,12 @@ pub fn ComponentInspectorMethod::name(
 impl @component.Fields for ComponentInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentInspector",
-    fingerprint="88a34eadaa277e2d",
+    fingerprint="e397ea106815c30d",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("compId", TyInt),
       @component.FieldInfo::new("sections", TyList(TyAny)),
     ],
-    bubbles=["toggleAllSections", "toggleAllViews"],
     methods=["idText"],
     view_names=["main"],
   )

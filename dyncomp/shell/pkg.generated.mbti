@@ -36,14 +36,6 @@ pub fn set_live_app(@app.App[@wasm.WasmNode]) -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum LoaderBarBubble {
-  CatalogChanged(String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn LoaderBarBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn LoaderBarBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn LoaderBarBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum LoaderBarInput {
   LoadSample
   LoadUrl
@@ -51,6 +43,14 @@ pub(all) enum LoaderBarInput {
 } derive(Eq, @debug.Debug)
 pub fn LoaderBarInput::name(Self) -> String
 pub fn LoaderBarInput::parse(String) -> Self?
+
+pub(all) enum LoaderBarIntent {
+  CatalogChanged(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn LoaderBarIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn LoaderBarIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn LoaderBarIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum LoaderBarMsg {
   LoadSample(@core.Value)

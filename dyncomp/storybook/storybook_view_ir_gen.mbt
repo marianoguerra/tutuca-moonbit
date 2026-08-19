@@ -589,20 +589,20 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="showAll", ns=Input))],
       [
         @anode.on("input", HandlerName(name="chooseTheme", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="toggleWide", ns=Input))],
       [@anode.on("click", HandlerName(name="toggleDetails", ns=Input))],
       [
         @anode.on("drop", HandlerName(name="filesDropped", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

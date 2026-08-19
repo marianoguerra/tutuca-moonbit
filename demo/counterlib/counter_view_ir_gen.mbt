@@ -75,7 +75,7 @@ fn counter_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="resetCount", ns=Input))],
       [
         @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on(
           "keydown",
@@ -108,7 +108,7 @@ fn counter_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[CounterState] {
   match msg {
-    Input("add", args) => {
+    Receive("add", args) => {
       guard args.get(0) is Some(Num(d)) else { return Unchanged }
       let s = { ..s, count: (s.count.to_double() + d).to_int() }
       let s = { ..s, history: s.history + [s.count] }

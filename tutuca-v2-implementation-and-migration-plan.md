@@ -1400,6 +1400,67 @@ break in either is invisible to `moon check`.
 compile → link headlessly for every site example) and `just dev
 tutucard-playground`.
 
+**First pass done. 73 files rewritten, 9 reported, 21 refused, and all three
+targets green** (1605 / 1614 / 1605). What remains is the 21 refusals, which is
+the second pass.
+
+**Scoped to the user-facing corpus, not the whole repository, and that is a
+correction.** Run over everything, the codemod refuses `core/path_path.mbt`,
+`transactor/transactor.mbt`, `component/spec.mbt` — the files that DEFINE
+`on_res_name` and `Dispatch::Response`. Those are not code to migrate; they are
+the v1 surface task 25 deletes, and a tool cannot tell the difference from the
+text. The roots are the plan's own list.
+
+**Running it found five bugs in task 18's tool**, every one of which would have
+been a silent half-migration. This is what "the tool is done when task 19 needs
+no hand edits outside its reported list" is FOR:
+
+1. **`String::replace` moves one occurrence.** The first `Input(` arm in a file
+   moved and the rest stayed. Compiles in a small test, breaks a real file.
+2. **`Input(` is a substring of `OnInput(`** — a generated `<T>Msg` variant for
+   an `@on.input` handler — so a plain substitution produced `OnReceive(`, a
+   name nothing declares. `replace_token` now requires a token boundary.
+3. **`replace_token`'s first version mixed char indices with string slicing.**
+   A `String` is indexed by UTF-16 code unit and `to_array()` by character;
+   they agree only while the text is ASCII, and it panicked on the first
+   em-dash in a comment.
+4. **`RequestFn` → `IntentFn` was a rename of a SIGNATURE change.** It compiles
+   the annotation and breaks the body — a half-edit. Now refused.
+5. **`.bubble(ctx)` missed the calls `moon fmt` had wrapped**, and a
+   payload-less variant has no closing paren before the call.
+
+**And one bug in the tool's SHAPE, which is the more interesting one.** It
+refused `request.mbt` and rewrote `request.html`, leaving the component half
+migrated — the same failure the whole tool is organized against, one file apart
+instead of one line. **Refusal is now per COMPONENT**: the shell groups by
+directory and stem, and anything refused holds back its siblings. That took the
+failure count from 14 to 2.
+
+**Two hand edits, both inside the reported list.**
+
+- `dyncomp/shell/shell.mbt` uses `LoaderBarBubble`, a name generated from
+  `loader_bar.html` — a DIFFERENT stem. Stem-pairing cannot see a cross-file
+  reference to a generated name, and no filename convention can; the compiler
+  caught it, which is the backstop that matters.
+- `dyncomp/ui/std/std.mbt` had a raw `Input(_, [first, ..])` pattern INSIDE an
+  arm reached through `UniversalMsg::from_dispatch`, which decodes the `Input`
+  bucket. The codemod moved the raw pattern and cannot move the generated
+  decode, so the two disagreed and a drop silently read `Null`. It now accepts
+  both buckets for the length of the migration. **This is the one hazard shape
+  worth remembering**: a file using a `<T>Msg` decode AND a raw dispatch
+  pattern together.
+
+`inspector/unit_test.mbt`'s `odispatch` helper asked `obj_handler(Input, name)`
+— it stands in for a click, and a click is a `Receive` now.
+
+**Still to do (the second pass).** The 21 refusals: ten `RequestFn` handler
+tables and nine `response` / `Response(…)` pairs. Both still COMPILE — `RequestFn`
+and `Dispatch::Response` are v1 and live until task 25 — so the tree is green
+with them in place, and converting them is design work rather than a rewrite:
+an `IntentFn` answers `Ok` / `Failed` / `Pass` and a `response` pair becomes two
+`receive` arms whose bodies have to be split. Task 25 cannot simply delete
+around them.
+
 ## 20. The skill
 
 35 files under `skill/tutuca/`, embedded in the CLI binary and read by an agent

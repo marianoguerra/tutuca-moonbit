@@ -181,31 +181,31 @@ pub fn LoaderBarReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum LoaderBarBubble {
+pub(all) enum LoaderBarIntent {
   /// The catalog changed. Whatever is above re-reads it — a bar showing
   /// search results, or a gallery showing every configuration — rather than
   /// telling a person to ask again.
   CatalogChanged(String)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn LoaderBarBubble::from_dispatch(
+pub fn LoaderBarIntent::from_dispatch(
   d : @component.Dispatch,
-) -> LoaderBarBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> LoaderBarIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
@@ -216,8 +216,8 @@ pub fn LoaderBarBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn LoaderBarBubble::to_dispatch(
-  self : LoaderBarBubble,
+pub fn LoaderBarIntent::to_dispatch(
+  self : LoaderBarIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
@@ -226,16 +226,19 @@ pub fn LoaderBarBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn LoaderBarBubble::bubble(
-  self : LoaderBarBubble,
+pub fn LoaderBarIntent::dispatch(
+  self : LoaderBarIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -315,7 +318,7 @@ pub fn LoaderBarMsg::from_dispatch(d : @component.Dispatch) -> LoaderBarMsg? {
 impl @component.Fields for LoaderBarState with fn schema() {
   @component.SchemaInfo::new(
     name="LoaderBar",
-    fingerprint="d90cd2f90de52646",
+    fingerprint="dc6adfc16098a1fc",
     fields=[
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("url", TyText),
@@ -324,7 +327,6 @@ impl @component.Fields for LoaderBarState with fn schema() {
     ],
     inputs=["loadSample", "loadUrl", "typeUrl"],
     receives=["filesDropped", "dyncompLoaded", "dyncompError"],
-    bubbles=["catalogChanged"],
     view_names=["main"],
   )
 }

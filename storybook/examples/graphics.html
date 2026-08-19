@@ -26,9 +26,9 @@
 <template id="Quadratic">
   <div class="flex flex-col gap-3">
     <div class="flex gap-3 text-sm">
-      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA valueAsInt"></label>
-      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB valueAsInt"></label>
-      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC valueAsInt"></label>
+      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA e.valueAsInt"></label>
+      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB e.valueAsInt"></label>
+      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC e.valueAsInt"></label>
     </div>
     <math display="block">
       <mn class="m-a" @text=".a"></mn>

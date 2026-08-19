@@ -769,7 +769,9 @@ pub(all) enum BarChartLoopWith {
 pub fn BarChartLoopWith::name(Self) -> String
 
 pub(all) enum BarChartMsg {
+  AddBar
   Randomize
+  RemoveBar
   Unknown(String, Array[@core.Value])
 }
 pub fn BarChartMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -853,6 +855,8 @@ pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
+  Dec
+  Inc
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1756,6 +1760,8 @@ pub(all) enum PaginationMethod {
 pub fn PaginationMethod::name(Self) -> String
 
 pub(all) enum PaginationMsg {
+  Next
+  Prev
   Unknown(String, Array[@core.Value])
 }
 pub fn PaginationMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1887,6 +1893,7 @@ pub fn PushViewMethod::name(Self) -> String
 pub(all) enum PushViewMsg {
   ResetQuery
   SetQuery(String)
+  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn PushViewMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -2300,6 +2307,7 @@ pub(all) enum ShowHideMethod {
 pub fn ShowHideMethod::name(Self) -> String
 
 pub(all) enum ShowHideMsg {
+  IncCount
   ToggleIsOpen
   Unknown(String, Array[@core.Value])
 }
@@ -2463,6 +2471,7 @@ pub(all) enum TrafficLightMethod {
 pub fn TrafficLightMethod::name(Self) -> String
 
 pub(all) enum TrafficLightMsg {
+  NextLight
   Unknown(String, Array[@core.Value])
 }
 pub fn TrafficLightMsg::from_dispatch(@component.Dispatch) -> Self?

@@ -210,7 +210,7 @@ fn[S : Composite] composite_update(
   msg : @component.Dispatch,
 ) -> @component.Update[S] {
   match msg {
-    Input("prevPage", _) => {
+    Receive("prevPage", _) => {
       let cur = s.current_page()
       if cur > 0 {
         Next(s.with_current_page(cur - 1))
@@ -218,7 +218,7 @@ fn[S : Composite] composite_update(
         Unchanged
       }
     }
-    Input("nextPage", _) => {
+    Receive("nextPage", _) => {
       let cur = s.current_page()
       if cur < page_count_of(s) - 1 {
         Next(s.with_current_page(cur + 1))
@@ -389,7 +389,7 @@ fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
 fn data_inspector_comp() -> @component.Component {
   data_inspector_component(update=(s, msg, _ctx) => {
     match msg {
-      Input("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
+      Receive("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
       _ => Unhandled
     }
   })

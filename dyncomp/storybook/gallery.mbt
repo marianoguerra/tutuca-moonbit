@@ -178,7 +178,7 @@ fn nav_comp() -> @component.Component {
       // means. A row that filtered the list itself would need to know there is
       // a list.
       Some(Pick) => {
-        StoryNavBubble::NavPicked(s.module_, s.name).bubble(ctx)
+        StoryNavIntent::NavPicked(s.module_, s.name).dispatch(ctx)
         Unchanged
       }
       Some(Unknown(_, _)) | None => Unhandled
@@ -202,7 +202,7 @@ fn card_comp() -> @component.Component {
         // Rebuilding means asking the host for a fresh instance, which a card
         // cannot do — so it says what it is and lets the gallery answer.
         Some(Rebuild) => {
-          StoryCardBubble::RebuildCard(s.module_, s.name, s.init_).bubble(ctx)
+          StoryCardIntent::RebuildCard(s.module_, s.name, s.init_).dispatch(ctx)
           Unhandled
         }
         Some(Unknown(_, _)) | None => Unhandled
@@ -281,7 +281,7 @@ fn Gallery::root_comp(
           // element's static `type` and a `<div>` has none. What actually
           // arrives is the list of dropped files, so it is read raw.
           let files = match msg {
-            Input(_, [first, ..]) => first
+            Receive(_, [first, ..]) => first
             _ => Null
           }
           ctx.send_at_path(
@@ -306,11 +306,11 @@ fn Gallery::root_comp(
       // bar, so its news bubbles rather than being sent. Both directions are
       // declared because both happen — a test pushes the news down, and a
       // running page has it come up.
-      match DyncompStorybookBubble::from_dispatch(msg) {
+      match DyncompStorybookIntent::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
         Some(Unknown(_, _)) | None => ()
       }
-      match StoryNavBubble::from_dispatch(msg) {
+      match StoryNavIntent::from_dispatch(msg) {
         Some(NavPicked(module_, name)) =>
           return Next(
             { ..s, module_, name, nav: self.nav(module_, name) }
@@ -318,7 +318,7 @@ fn Gallery::root_comp(
           )
         Some(Unknown(_, _)) | None => ()
       }
-      match StoryCardBubble::from_dispatch(msg) {
+      match StoryCardIntent::from_dispatch(msg) {
         // One card, from scratch. Rebuilding the whole set here would throw
         // away every OTHER card's live state to reset one of them.
         Some(RebuildCard(module_, name, init_)) => {

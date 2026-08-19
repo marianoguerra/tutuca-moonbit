@@ -16,15 +16,28 @@
 
 <script type="tutuca/script">
   /// Add one step.
-  on inc { .count += .step }
+  receive inc {
+    .count += .step
+  }
+
   /// Take one step off.
-  on dec { .count -= .step }
+  receive dec {
+    .count -= .step
+  }
+
   /// Start with a step of one.
-  receive init { .step = 1 }
+  receive init {
+    .step = 1
+  }
+
   /// Back to nothing.
-  on reset { .count = 0 }
+  receive reset {
+    .count = 0
+  }
+
   /// The count as a sentence.
   compute label { $'the count is {.count}' }
+
   /// True while the count is above zero.
   pred positive { .count > 0 }
 </script>

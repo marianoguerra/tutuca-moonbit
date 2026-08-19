@@ -12,7 +12,7 @@
   <section class="flex flex-col gap-3">
     <label class="flex flex-col gap-1">
       <span>Pick a file</span>
-      <input type="file" class="file-input" @on.change="onPickFile value">
+      <input type="file" class="file-input" @on.change="onPickFile e.value">
     </label>
 
     <table class="table" @show=".hasFile">

@@ -24,18 +24,18 @@ fn tree_item_comp() -> @component.Component {
       // emit an event any ancestor may observe (payload: this item's own
       // instance value, read off the dispatch path — its leaf is self),
       // then toggle self
-      Input("onItemClick", _) => {
+      Receive("onItemClick", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
           self_v = inst
           false // stop at the leaf: self
         })
-        ctx.bubble("treeItemSelected", [self_v])
+        ctx.intent("treeItemSelected", [self_v], @tutuca.IntentOpts::new(route=[Dyn]))
         Next({ ..s, isOpen: !s.isOpen })
       }
       // a TreeItem between the source and the root sees the event and passes
       // it on unchanged (returning None = no change)
-      Bubble("treeItemSelected", _) => Unhandled
+      Intent("treeItemSelected", _) => Unhandled
       _ => Unhandled
     },
   )
@@ -47,7 +47,7 @@ fn tree_root_comp() -> @component.Component {
   tree_root_component(
     init={ ..TreeRootState::zero(), log: [] },
     update=(s, msg, _ctx) => match msg {
-      Bubble("treeItemSelected", args) => {
+      Intent("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
             match o.obj_field("label") {

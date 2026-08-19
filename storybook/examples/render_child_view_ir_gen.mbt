@@ -193,12 +193,12 @@ fn entry_edit_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setTitle", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setDescription", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],

@@ -144,12 +144,12 @@ pub fn UniversalReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum UniversalBubble {
+pub(all) enum UniversalIntent {
   /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
   /// configure it" rather than "place it with its defaults".
   AddRequested(Bool)
@@ -157,21 +157,21 @@ pub(all) enum UniversalBubble {
   /// what is held, because the app needs the instance and asking it to
   /// find one by path would be a second way to name the same thing.
   ConfigRequested(@tutuca.Value)
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn UniversalBubble::from_dispatch(
+pub fn UniversalIntent::from_dispatch(
   d : @component.Dispatch,
-) -> UniversalBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> UniversalIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("addRequested", [Bool(a0)]) => AddRequested(a0)
@@ -183,8 +183,8 @@ pub fn UniversalBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn UniversalBubble::to_dispatch(
-  self : UniversalBubble,
+pub fn UniversalIntent::to_dispatch(
+  self : UniversalIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AddRequested(a0) => ("addRequested", [Bool(a0)])
@@ -194,16 +194,19 @@ pub fn UniversalBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn UniversalBubble::bubble(
-  self : UniversalBubble,
+pub fn UniversalIntent::dispatch(
+  self : UniversalIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -302,11 +305,10 @@ pub fn UniversalMethod::name(self : UniversalMethod) -> String {
 impl @component.Fields for UniversalState with fn schema() {
   @component.SchemaInfo::new(
     name="Universal",
-    fingerprint="fc5eb602f241a431",
+    fingerprint="5059592cc08209c4",
     fields=[@component.FieldInfo::new("child", TyComp(None))],
     inputs=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
-    bubbles=["addRequested", "configRequested"],
     methods=["label"],
     view_names=["main", "edit"],
   )
@@ -905,29 +907,29 @@ pub fn TabPageReceive::send(self : TabPageReceive, ctx : &@tutuca.Ctx) -> Unit {
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum TabPageBubble {
+pub(all) enum TabPageIntent {
   /// The name is settled — Enter, or the box lost focus.
   DoneRename
   /// Escape: put the old name back, which only the strip still knows.
   CancelRename
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn TabPageBubble::from_dispatch(d : @component.Dispatch) -> TabPageBubble? {
-  guard d is Bubble(name, args) else { return None }
+pub fn TabPageIntent::from_dispatch(d : @component.Dispatch) -> TabPageIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("doneRename", []) => DoneRename
@@ -939,8 +941,8 @@ pub fn TabPageBubble::from_dispatch(d : @component.Dispatch) -> TabPageBubble? {
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn TabPageBubble::to_dispatch(
-  self : TabPageBubble,
+pub fn TabPageIntent::to_dispatch(
+  self : TabPageIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     DoneRename => ("doneRename", [])
@@ -950,13 +952,19 @@ pub fn TabPageBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn TabPageBubble::bubble(self : TabPageBubble, ctx : &@tutuca.Ctx) -> Unit {
+pub fn TabPageIntent::dispatch(
+  self : TabPageIntent,
+  ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
+) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -1036,13 +1044,12 @@ pub fn TabPageMsg::from_dispatch(d : @component.Dispatch) -> TabPageMsg? {
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
     name="TabPage",
-    fingerprint="a201dd2830fe2ea9",
+    fingerprint="eddcf421a134a1a3",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),
     ],
     inputs=["cancelRename", "doneRename", "setLabel"],
-    bubbles=["doneRename", "cancelRename"],
     view_names=["main", "tabname"],
   )
 }

@@ -20,7 +20,7 @@ fn schema_viewer_comp() -> @component.Component {
       _ctx,
     ) => {
       match msg {
-        Input("toggleIsExpanded", _) =>
+        Receive("toggleIsExpanded", _) =>
           Next({ ..s, value: toggle_wrapped(s.value) })
         _ => Unhandled
       }

@@ -15,10 +15,10 @@
 
 <script type="tutuca/script" for="TrafficLight">
   /// Step to the next colour, wrapping at the end of the cycle.
-  ///
+  /// 
   /// The three names are the `$light` method's business, not this one's: the
   /// handler only ever moves an index, so `mod 3` is all it needs to know.
-  on nextLight {
+  receive nextLight {
     .lightIndex = (.lightIndex + 1) mod 3
   }
 </script>
@@ -62,7 +62,7 @@
 <template id="ListAndFilter">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem">

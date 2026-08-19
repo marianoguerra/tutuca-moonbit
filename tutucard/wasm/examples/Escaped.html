@@ -17,10 +17,13 @@
 <script type="tutuca/script">
   /// Nothing here is ever negative.
   invariant sane { .total >= 0 }
+
   /// Declared, checks, and REFUSED by this backend: a `sendAt` whose key is
   /// read from live state re-resolves on every dispatch, and
   /// `control.path-step` has no case that says so. Answered in Wax below.
-  on ping { sendAt &.rows[.sel] 'ping' }
+  receive ping {
+    sendAt &.rows[.sel] 'ping'
+  }
 </script>
 
 <script type="tutuca/wax">

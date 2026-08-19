@@ -8,11 +8,11 @@
   /// The behaviour, in the same file as the state and the view. `gen-views`
   /// compiles this block into MoonBit and the component composes it ahead of
   /// the `update~` you pass — so a counter needs no `update~` at all.
-  on inc {
+  receive inc {
     .count += 1
   }
 
-  on dec {
+  receive dec {
     .count -= 1
   }
 </script>

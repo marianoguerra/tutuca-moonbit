@@ -24,16 +24,16 @@
 <script type="tutuca/script" for="ShowHide">
   /// The panel's own counter. `toggleIsOpen` is not here because it is not
   /// written anywhere: a Bool field generates its own toggle.
-  on incCount {
+  receive incCount {
     .count += 1
   }
 </script>
 
 <template id="AttributeBinding">
   <section class="flex flex-col gap-3">
-    <input class="input s" :value=".str" @on.input="setStr value" :title="$'Content is {.str}'">
-    <input class="input n" type="number" :value=".num" @on.input="setRawNumber value">
-    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool value">
+    <input class="input s" :value=".str" @on.input="setStr e.value" :title="$'Content is {.str}'">
+    <input class="input n" type="number" :value=".num" @on.input="setRawNumber e.value">
+    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool e.value">
     <p>String: <span class="o-str" @text=".str"></span></p>
     <p>Number: <span class="o-num" @text=".num"></span></p>
     <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
@@ -53,8 +53,8 @@
 <template id="EventModifiers">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="onInput value"
-      @on.keydown+send="setLastSentSearch value"
+      @on.input="onInput e.value"
+      @on.keydown+send="setLastSentSearch e.value"
       @on.keydown+cancel="resetQuery"
       placeholder="Search Query (Enter to send, Esc to clear)">
     <p class="sent" @show="truthy? .lastSentSearch">

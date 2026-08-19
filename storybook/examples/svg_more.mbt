@@ -67,7 +67,7 @@ fn bar_chart_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("randomize", _) => {
+        Receive("randomize", _) => {
           let next : Array[@tutuca.Value] = s.values.map(v => {
             match v {
               // deterministic stand-in for Math.random, in the 10..99 range

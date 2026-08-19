@@ -19,19 +19,16 @@
 
 <script type="tutuca/script" for="Entry">
   /// Whether this entry matches a query, for a parent's `@when` filter.
-  ///
+  /// 
   /// It used to be a `func` in the state block — the one thing that put
   /// behaviour in a block whose own header says it holds none. It is a
   /// callable, so it lives with the callables.
-  ///
+  /// 
   /// No view of Entry calls it: a parent's `@when` does, holding Entry
   /// instances and knowing nothing of their fields. That is why the block says
   /// `for="Entry"` — this file declares four components, and a `.title` here
   /// has to mean exactly one of them.
-  pred containsText(q) {
-    ((contains (lower .title) (lower q)) or
-     (contains (lower .description) (lower q)))
-  }
+  pred containsText(q) { (contains (lower .title) (lower q)) or (contains (lower .description) (lower q)) }
 </script>
 
 <template id="Greeting">
@@ -57,8 +54,8 @@
 <template id="Entry:edit">
   <div class="card bg-base-100 shadow-sm gap-3">
     <div class="card-body">
-      <input class="input title" :value=".title" @on.input="setTitle value">
-      <input class="input desc" :value=".description" @on.input="setDescription value">
+      <input class="input title" :value=".title" @on.input="setTitle e.value">
+      <input class="input desc" :value=".description" @on.input="setDescription e.value">
     </div>
   </div>
 </template>

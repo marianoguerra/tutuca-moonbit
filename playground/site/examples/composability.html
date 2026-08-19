@@ -35,11 +35,11 @@
 <script type="tutuca/script" for="Counter">
   /// Six components share this file, so a script block says which one it
   /// answers for — a `.count` here has to mean exactly one state.
-  on inc {
+  receive inc {
     .count += 1
   }
 
-  on dec {
+  receive dec {
     .count -= 1
   }
 </script>
@@ -56,8 +56,8 @@
 
 <template id="Item">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
 </template>
 

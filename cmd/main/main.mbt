@@ -597,6 +597,26 @@ async fn scan_migrate_dir(
 }
 
 ///|
+/// The component a file belongs to: its directory and its stem, with a `_test`
+/// suffix and a known extension removed.
+///
+/// The convention this repository already keeps — `request.html`,
+/// `request.mbt`, `request_test.mbt` — and the one every example under
+/// `storybook/examples/` is written to.
+fn component_stem(path : String) -> String {
+  let mut stem = path
+  for ext in [".html", ".mbt"] {
+    if stem.has_suffix(ext) {
+      stem = stem[0:stem.length() - ext.length()].to_owned()
+    }
+  }
+  if stem.has_suffix("_test") {
+    stem = stem[0:stem.length() - "_test".length()].to_owned()
+  }
+  stem
+}
+
+///|
 /// `tutuca migrate` — read, rewrite, and say what needs a person.
 ///
 /// The REPORT is the deliverable as much as the rewrite is. A run that
@@ -624,14 +644,43 @@ async fn run_migrate(
   let reports : Array[String] = []
   let refused : Array[String] = []
   let out = StringBuilder::new()
+  // TWO passes, and the second one is why.
+  //
+  // A component is more than one file — `request.html` holds its views and its
+  // block, `request.mbt` holds its update, `request_test.mbt` drives it — and
+  // `migrate_source` sees one file at a time. Refusing the `.mbt` while
+  // rewriting the `.html` leaves the component HALF MIGRATED, which is the
+  // exact failure the whole tool is organized against, one file apart instead
+  // of one line.
+  //
+  // So a refusal is per COMPONENT: anything refused holds back its siblings,
+  // and the pair is left as it was for a person to move together.
+  let plans : Array[(String, @cli.MigratePlan)] = []
+  let blocked : Map[String, Bool] = Map([])
   for path in paths {
     let source = @fs.read_file(path).text() catch { _ => continue }
     let plan = @cli.migrate_source(path, source)
+    if !plan.refused.is_empty() {
+      blocked[component_stem(path)] = true
+    }
+    plans.push((path, plan))
+  }
+  for entry in plans {
+    let (path, plan) = entry
     for r in plan.reports {
       reports.push(r)
     }
     for r in plan.refused {
       refused.push(r)
+    }
+    if blocked.contains(component_stem(path)) {
+      if plan.refused.is_empty() && !plan.files.is_empty() {
+        refused.push(
+          path +
+          ": held back — a sibling of this component was refused, and moving half of a component is the same mistake as moving half of a file",
+        )
+      }
+      continue
     }
     for f in plan.files {
       if dry_run {

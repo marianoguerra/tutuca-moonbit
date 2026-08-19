@@ -46,12 +46,12 @@ fn selector_entry_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setValue", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [
         @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -144,7 +144,7 @@ fn selector_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setSelectedValue", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
@@ -352,7 +352,7 @@ fn sheet_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setTitle", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
     ],
