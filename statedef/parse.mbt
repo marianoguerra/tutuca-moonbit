@@ -204,13 +204,13 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       break
     }
     let (word, word_span) = p.ident(
-      "a declaration: state, struct, enum, receive, bubble or response",
+      "a declaration: state, struct, enum, receive, intent, bubble or response",
     )
     let kind : RawKind = match word {
       "state" => RState
       "struct" => RStruct
       "enum" => REnum
-      "receive" | "bubble" | "response" => RBucket(word)
+      "receive" | "intent" | "bubble" | "response" => RBucket(word)
       _ => raise UnknownDecl(got=word, span=word_span)
     }
     // A `state` may be bare; everything else is named.
@@ -448,6 +448,7 @@ fn build(
     component: comp,
     fields,
     receive: bucket("receive"),
+    intent: bucket("intent"),
     bubble: bucket("bubble"),
     response: bucket("response"),
     // `func` is gone: a callable is declared in the script block, where every

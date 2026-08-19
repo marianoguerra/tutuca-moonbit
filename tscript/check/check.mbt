@@ -201,15 +201,7 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   // the views wrote — and two call sites that disagreed joined to opaque long
   // before this saw them.
   match d.kind {
-    DReceive | DBubble | DResponse => self.msg_params(d)
-    // A `DIntent` has no schema variant to check against yet — the state block
-    // gains `intent` in the plan's task 9, and `msg_params` reads it there.
-    // Opaque parameters until then, which is what every other undeclared kind
-    // gets, rather than a `NO_SUCH_MESSAGE` naming the wrong variant.
-    DIntent =>
-      for p in d.params {
-        self.params[p.name] = None
-      }
+    DReceive | DIntent | DBubble | DResponse => self.msg_params(d)
     DOn => {
       let sig = self.surface.inputs.get(d.name)
       for i, p in d.params {
@@ -334,6 +326,7 @@ fn C::format(self : C, d : @tscript.Decl) -> Unit {
 fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
   let (cases, bucket) = match d.kind {
     DReceive => (self.def.receive, "receive")
+    DIntent => (self.def.intent, "intent")
     DBubble => (self.def.bubble, "bubble")
     _ => (self.def.response, "response")
   }

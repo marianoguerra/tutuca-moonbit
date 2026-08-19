@@ -38,6 +38,7 @@ fn schema() -> String {
     #|}
     #|receive Counter { ResetTo(Int), Rename(String, Int) }
     #|bubble  Counter { RowPicked(Int) }
+    #|intent  Counter { RowPicked(Int), Save(String) }
   )
 }
 

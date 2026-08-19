@@ -69,7 +69,7 @@ Two consequences worth stating outright.
 
 - [x] 7. [`tscript`: kinds, effects, leg words](#7-tscript-kinds-effects-leg-words)
 - [x] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
-- [ ] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
+- [x] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
 - [ ] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
 - [ ] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
 - [ ] 12. [`viewgen`: merge four enums into two](#12-viewgen-merge-four-enums-into-two)
@@ -653,6 +653,29 @@ reserved-name list.
 
 **Validation.** `statedef`'s own tests, plus `gen-views` over the repository's
 `.html` files in task 19.
+
+**Done.** Additively: the keyword list is `state`, `struct`, `enum`, `receive`,
+`intent`, `bubble`, `response` — seven for now, five after task 25. `StateDef`
+gains `intent : Array[MsgDef]` beside `receive`, `bubble` and `response`, and
+one `StateDef` record literal (`tutucard/wasm/compile.mbt`'s no-state fallback)
+gained the field.
+
+**The risk did not materialize, and there is a test rather than an argument.**
+The declaration word is lowercase `intent` and a type name is capitalized, so
+`struct Intent`, a field of type `Intent`, and an `intent Board { Intent(Intent) }`
+case all coexist — a parser that lowercased before matching would collide and
+nothing else would notice until somebody named a struct after the keyword. The
+case is written out.
+
+`viewfile` needed nothing: neither `split.mbt` nor `errors.mbt` names a message
+variant. The word list lives in exactly two places — the parser's `want` text
+and `DefError`'s `UnknownDecl` message — and a test asserts the second in full,
+so a word added to the match without being added to both is a parser that
+accepts something it says it does not.
+
+**Task 8's deferral is closed here.** `tscript/check`'s `msg_params` now maps
+`DIntent` to `def.intent`, so an `intent` handler for a name the schema does not
+declare reports `NO_SUCH_MESSAGE` naming the right variant.
 
 ## 10. `tscript/emit_mbt`: the AOT backend
 

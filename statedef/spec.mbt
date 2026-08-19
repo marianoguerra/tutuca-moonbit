@@ -73,7 +73,7 @@ pub(all) struct FieldDef {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// One case of a receive, bubble, or response bucket.
+/// One case of a receive, intent, bubble, or response bucket.
 pub(all) struct MsgDef {
   /// The case name exactly as the author wrote it.
   source_name : String
@@ -117,7 +117,15 @@ pub(all) struct StateDef {
   /// The component name, as a MoonBit type prefix (`Counter`).
   component : String
   fields : Array[FieldDef]
+  /// Every MESSAGE the component accepts beyond the ones its own views send:
+  /// what a parent sends it, what the host sends it, and every answer it reads
+  /// (`totuka-v2.md` section 9).
   receive : Array[MsgDef]
+  /// Every INTENT it answers. v2's, and the one variant `bubble` and
+  /// `response` fold into: a bubble is a routed dispatch that could search only
+  /// one scope, and a response is the answer to one, which v2 delivers as an
+  /// ordinary message into `receive` instead. Both go in task 25.
+  intent : Array[MsgDef]
   bubble : Array[MsgDef]
   response : Array[MsgDef]
   types : Array[UserTy]

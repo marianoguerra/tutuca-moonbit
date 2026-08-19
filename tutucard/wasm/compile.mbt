@@ -167,6 +167,7 @@ pub fn compile(
         component: comp,
         fields: [],
         receive: [],
+        intent: [],
         bubble: [],
         response: [],
         types: [],

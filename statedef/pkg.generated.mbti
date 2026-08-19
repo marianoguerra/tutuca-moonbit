@@ -96,6 +96,7 @@ pub(all) struct StateDef {
   component : String
   fields : Array[FieldDef]
   receive : Array[MsgDef]
+  intent : Array[MsgDef]
   bubble : Array[MsgDef]
   response : Array[MsgDef]
   types : Array[UserTy]
