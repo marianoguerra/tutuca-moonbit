@@ -7,29 +7,45 @@
     error : Any
   }
 
-  /// The host dispatches this after `start()`. No view writes it, so the
+  /// The host dispatches `Init` after `start()`. No view writes it, so the
   /// schema is the only place it can be declared.
+  ///
+  /// The other three are the ANSWERS, and declaring them is what makes
+  /// `loadData` a request rather than a notification: a sender expects an
+  /// answer if and only if it declares an arm for one. Nobody writes that
+  /// down twice — the generator reads this list and fills the intent's opts in.
+  ///
+  /// Three outcomes, three arms. v1 had one combined `[res, err]` payload and
+  /// a split arm that read the wrong slot; v2 gives each outcome its own name
+  /// and its own shape.
   receive {
     Init
+    LoadDataOk(Any)
+    LoadDataError(String)
+    LoadDataUnhandled
   }
 </script>
 
 <script type="tutuca/script">
   /// Flip the pushed view name.
-  on toggleView {
+  receive toggleView {
     .view = if .view is 'main' { 'edit' } else { 'main' }
   }
 
-  /// Fire the request and say so. `request` is an effect here, which means it
-  /// goes out only if the whole body finished — a message sent beside a
+  /// Dispatch the intent and say so. `intent` is an effect here, which means
+  /// it goes out only if the whole body finished — a message sent beside a
   /// transition that did not happen is the one outcome nobody can reason
   /// about afterwards.
-  ///
-  /// `loadAnotherWay` sends the SAME request to different response handlers,
-  /// which is a `RequestOpts`, and choosing a request's options is one of the
-  /// two things this language deliberately leaves in MoonBit.
+  /// 
+  /// `lex` is the leg: the answer comes from a handler REGISTERED IN THE
+  /// SCOPE, not from a component up the tree. That is what v1 spelled
+  /// `request`, and writing it as a route is the whole change — the verb no
+  /// longer decides which scope answers.
+  /// 
+  /// No opts here. The three answer arms are in the schema, so the generator
+  /// already knows where the answer goes.
   receive init {
-    request 'loadData'
+    intent lex 'loadData'
     .isLoading = true
   }
 </script>
@@ -39,7 +55,7 @@
     <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>
     <div class="flex justify-between" @hide=".isLoading">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
       <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="toggleView"></button>

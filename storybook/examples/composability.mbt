@@ -71,20 +71,20 @@ pub fn composability_module() -> @component.ModuleDef {
   }
   // the sub-apps' macros (visual-wasm) and request handlers (personal-site)
   let macros : Map[String, @anode.Macro] = Map([])
-  let requests : Map[String, @component.RequestFn] = Map([])
+  let intents : Map[String, Array[@component.IntentFn]] = Map([])
   for m in [todo, json, tree, personal_site, visual_wasm, dnd] {
     for k, v in m.macros {
       macros[k] = v
     }
-    for k, v in m.requests {
-      requests[k] = v
+    for k, v in m.intents {
+      intents[k] = v
     }
   }
   @component.ModuleDef::new(
     name="composability",
     components~,
     macros~,
-    requests~,
+    intents~,
     examples=[
       {
         component: "Composability",

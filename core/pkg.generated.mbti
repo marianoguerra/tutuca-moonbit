@@ -221,6 +221,7 @@ pub(all) struct SchemaInfo {
   fields : Array[FieldInfo]
   inputs : Array[String]
   receives : Array[String]
+  intents : Array[String]
   bubbles : Array[String]
   responses : Array[String]
   methods : Array[String]
@@ -230,7 +231,7 @@ pub(all) struct SchemaInfo {
 }
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], inputs? : Array[String], receives? : Array[String], bubbles? : Array[String], responses? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], inputs? : Array[String], receives? : Array[String], intents? : Array[String], bubbles? : Array[String], responses? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {

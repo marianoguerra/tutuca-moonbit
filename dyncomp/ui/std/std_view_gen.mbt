@@ -309,6 +309,7 @@ impl @component.Fields for UniversalState with fn schema() {
     fields=[@component.FieldInfo::new("child", TyComp(None))],
     inputs=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
+    intents=["addRequested", "configRequested"],
     methods=["label"],
     view_names=["main", "edit"],
   )
@@ -1050,6 +1051,7 @@ impl @component.Fields for TabPageState with fn schema() {
       @component.FieldInfo::new("body", TyComp(None)),
     ],
     inputs=["cancelRename", "doneRename", "setLabel"],
+    intents=["doneRename", "cancelRename"],
     view_names=["main", "tabname"],
   )
 }

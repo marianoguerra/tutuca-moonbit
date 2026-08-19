@@ -258,6 +258,7 @@ impl @component.Fields for StoryNavState with fn schema() {
       @component.FieldInfo::new("selected", TyBool),
     ],
     inputs=["pick"],
+    intents=["navPicked"],
     view_names=["main"],
   )
 }
@@ -567,6 +568,7 @@ impl @component.Fields for StoryCardState with fn schema() {
       @component.FieldInfo::new("error", TyText),
     ],
     inputs=["rebuild"],
+    intents=["rebuildCard"],
     methods=["refLabel"],
     view_names=["main", "details"],
   )
@@ -986,6 +988,7 @@ impl @component.Fields for DyncompStorybookState with fn schema() {
       "chooseTheme", "filesDropped", "setQuery", "showAll", "toggleDetails", "toggleWide",
     ],
     receives=["catalogChanged", "setStatus"],
+    intents=["catalogChanged"],
     methods=["detailsLabel", "isEmpty", "layoutLabel"],
     view_names=["main"],
   )

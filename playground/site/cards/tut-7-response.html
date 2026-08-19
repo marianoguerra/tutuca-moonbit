@@ -1,8 +1,13 @@
 <!-- Step 7 — asking for something the component does not have.
 
-     `request` hands a NAME to the host, which answers whenever it can.
-     The answer arrives at a `response` arm as a pair: a result and an
-     error, exactly one of which is Null. -->
+     `intent` hands a NAME to a ROUTE, and something on that route answers
+     whenever it can. `lex` is the leg that searches the registered
+     handlers — what a host puts in the scope.
+
+     THREE outcomes, three arms, each with its own shape: it worked, it
+     failed, or nobody answered at all. That last one is not an error, and
+     giving it its own name is the difference between "the fetch broke" and
+     "this page has no fetch". -->
 
 <script type="tutuca/state">
   state Quote {
@@ -12,43 +17,58 @@
     tries : Int
   }
 
+  /// `Init` is the host's. The other three are the ANSWERS, and declaring
+  /// them is what makes `loadQuote` a request rather than a notification —
+  /// a sender expects an answer if and only if it declares an arm for one.
+  /// Nobody writes that down twice; the generator reads this list.
+  ///
+  /// `Any` on the payloads, because what a host produces is the host's
+  /// business, not the schema's.
   receive Quote {
     Init
-  }
-
-  /// The pair every request answers with. `Any` on both halves, because
-  /// what a host produces is the host's business, not the schema's.
-  response Quote {
-    LoadQuote(Any, Any)
+    LoadQuoteOk(Any)
+    LoadQuoteError(Any)
+    LoadQuoteUnhandled
   }
 </script>
 
 <script type="tutuca/script">
   receive init {
-    request 'loadQuote'
+    intent lex 'loadQuote'
     .busy = true
   }
 
-  on retry {
-    request 'loadQuote'
+  receive retry {
+    intent lex 'loadQuote'
     .busy = true
     .error = ''
     .tries += 1
   }
 
-  /// Exactly one of the two is Null, so the branch is the whole arm.
-  ///
-  /// This page registers NO handler for `loadQuote`, and an unanswered
-  /// name is not a crash: the runtime answers it with an error, which
-  /// lands here exactly as a failed fetch would. That is what you are
-  /// looking at below — the error path, live, with nothing mocked.
-  response loadQuote(res, err) {
+  /// Each outcome is its own arm, and each gets only what it is about.
+  /// 
+  /// v1 sent one payload carrying BOTH a result and an error, exactly one
+  /// of which was Null, and every arm began by working out which. The
+  /// branch is gone with the pair.
+  receive loadQuoteOk(res) {
     .busy = false
-    if (null? err) {
-      .text = str res
-    } else {
-      .error = str err
-    }
+    .text = str res
+  }
+
+  receive loadQuoteError(err) {
+    .busy = false
+    .error = str err
+  }
+
+  /// The third outcome, and the one this page is actually showing you.
+  /// 
+  /// It registers NO handler for `loadQuote`, so the route runs out and
+  /// NOBODY answered — which is not the same as a fetch that failed. v1
+  /// could only say the second, so it invented an error and this arm was a
+  /// lie about what happened. Now it says the true thing.
+  receive loadQuoteUnhandled {
+    .busy = false
+    .error = 'nothing on this page answers `loadQuote`'
   }
 
   pred failed { not (empty? .error) }

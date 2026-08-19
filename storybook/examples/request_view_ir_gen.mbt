@@ -101,7 +101,7 @@ fn request_example_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
           "cancel",
@@ -132,7 +132,7 @@ fn request_example_inline_update(
   ctx : &@tutuca.Ctx,
 ) -> @component.Update[RequestExampleState] {
   match msg {
-    Input("toggleView", _args) => {
+    Receive("toggleView", _args) => {
       let s = {
         ..s,
         view: if (Str(s.view) : @tutuca.Value) == (Str("main") : @tutuca.Value) {
@@ -145,7 +145,18 @@ fn request_example_inline_update(
     }
     Receive("init", _args) => {
       let effects : Array[() -> Unit] = []
-      effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
+      effects.push(() => {
+        ctx.intent(
+          "loadData",
+          [],
+          @tutuca.IntentOpts::new(
+            route=[@tutuca.Leg::Lex],
+            on_ok_name="loadDataOk",
+            on_error_name="loadDataError",
+            on_unhandled_name="loadDataUnhandled",
+          ),
+        )
+      })
       let s = { ..s, isLoading: true }
       for f in effects {
         f()

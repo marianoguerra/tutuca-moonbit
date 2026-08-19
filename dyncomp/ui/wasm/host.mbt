@@ -331,7 +331,12 @@ fn host_tools_comp(
             host.pending.val = host.pending.val - 1
             if host.pending.val == 0 {
               match restored_tree() {
-                Some(root) => ctx.bubble("restoreTree", [root])
+                Some(root) =>
+                  ctx.intent(
+                    "restoreTree",
+                    [root],
+                    @tutuca.IntentOpts::new(route=[Dyn]),
+                  )
                 None => ()
               }
             }
@@ -355,7 +360,7 @@ fn host_tools_comp(
 /// same name answers its own components first.
 pub fn universal_module(
   samples? : Array[@shell.LoaderBarSample] = [],
-  requests? : Map[String, @component.RequestFn] = {},
+  intents? : Map[String, Array[@component.IntentFn]] = {},
 ) -> (@component.ModuleDef, @ui.UniversalUi) {
   let (module_, ui) = @ui.seeded_app(
     @dhw.registry(),
@@ -366,7 +371,7 @@ pub fn universal_module(
     @component.ModuleDef::new(
       name="universalwasm",
       components=[..module_.components, host_tools_comp(samples)],
-      requests~,
+      intents~,
     ),
     ui,
   )
@@ -407,10 +412,10 @@ pub fn refresh_margaui() -> Unit {
 pub fn mount(
   session? : Session? = None,
   samples? : Array[@shell.LoaderBarSample] = [],
-  requests? : Map[String, @component.RequestFn] = {},
+  intents? : Map[String, Array[@component.IntentFn]] = {},
   policy? : @policy.Policy = @policy.Policy::untrusted(),
 ) -> UniversalHost? {
-  let (module_, ui) = universal_module(samples~, requests~)
+  let (module_, ui) = universal_module(samples~, intents~)
   guard @wglue.mount_in(module_, "UniversalApp") is Some(app) else {
     return None
   }

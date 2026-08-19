@@ -161,6 +161,8 @@ pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
+  Dec
+  Inc
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -258,18 +260,13 @@ pub fn ProfileState::zero() -> Self
 
 pub(all) enum QuotesReceive {
   Init
+  LoadQuotesOk(@core.Value)
+  LoadQuotesError(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn QuotesReceive::from_dispatch(@component.Dispatch) -> Self?
 pub fn QuotesReceive::send(Self, &@core.Ctx) -> Unit
 pub fn QuotesReceive::to_dispatch(Self) -> (String, Array[@core.Value])
-
-pub(all) enum QuotesResponse {
-  LoadQuotes(@core.Value)
-  Unknown(String, Array[@core.Value])
-}
-pub fn QuotesResponse::from_dispatch(@component.Dispatch) -> Self?
-pub fn QuotesResponse::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct QuotesState {
   items : Array[String]

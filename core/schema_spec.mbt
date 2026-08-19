@@ -66,6 +66,9 @@ pub(all) struct SchemaInfo {
   /// The `@on` handler names the views raise.
   inputs : Array[String]
   receives : Array[String]
+  /// The ROUTED names this component answers. v2's, and the one `bubbles` and
+  /// `responses` fold into — both go in the contract step.
+  intents : Array[String]
   bubbles : Array[String]
   responses : Array[String]
   /// `$name` callables in VALUE positions.
@@ -117,6 +120,7 @@ declare pub fn SchemaInfo::new(
   fields? : Array[FieldInfo],
   inputs? : Array[String],
   receives? : Array[String],
+  intents? : Array[String],
   bubbles? : Array[String],
   responses? : Array[String],
   methods? : Array[String],

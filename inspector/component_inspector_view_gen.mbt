@@ -761,6 +761,7 @@ impl @component.Fields for ComponentInspectorState with fn schema() {
       @component.FieldInfo::new("compId", TyInt),
       @component.FieldInfo::new("sections", TyList(TyAny)),
     ],
+    intents=["toggleAllSections", "toggleAllViews"],
     methods=["idText"],
     view_names=["main"],
   )

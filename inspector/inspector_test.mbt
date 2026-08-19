@@ -116,15 +116,16 @@ test "component inspector: sections toggle one by one and all at once" {
     "Component: Rich Sample",
   )
   inspect(h.text(".comp-title"), content="RichSample")
-  // Receive / Bubble / Response appear only because the component is
-  // DESCRIBED: those names are raised from MoonBit, never written in a
-  // view, so nothing at runtime can recover them.
-  assert_true(
-    h.texts(".comp-section") ==
-    [
-      "Fields", "Methods", "Update", "Receive", "Bubble", "Response", "Alter", "Views",
-    ],
-  )
+  // Receive and Intent appear only because the component is DESCRIBED: those
+  // names are raised from MoonBit, never written in a view, so nothing at
+  // runtime can recover them.
+  //
+  // TWO sections where v1 drew three, and the third is absent rather than
+  // empty — the view hides a section with no rows, so the buckets v2 folded
+  // away simply stop being drawn. Nothing here had to learn about the merge.
+  @debug.assert_eq(h.texts(".comp-section"), [
+    "Fields", "Methods", "Update", "Receive", "Intent", "Alter", "Views",
+  ])
   // Fields starts expanded (4 rows), name sections collapsed
   inspect(h.find_all(".comp-field").length(), content="4")
   inspect(h.find_all(".comp-name").length(), content="0")

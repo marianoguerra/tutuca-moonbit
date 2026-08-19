@@ -60,7 +60,7 @@ pub fn mount() -> Unit {
   @sbw.mount(
     samples=samples(),
     autoload=true,
-    requests=@shell.sample_host_requests(),
+    intents=@shell.sample_host_intents(),
     policy=@shell.sample_policy(),
   )
   |> ignore

@@ -217,9 +217,9 @@ fn sample_comp() -> @component.Component {
     },
     update=(s : RichState, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Next({ ..s, count: s.count + 1 })
-        Input("reset", _) => Next({ ..s, count: 0 })
-        Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
+        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
+        Receive("reset", _) => Next({ ..s, count: 0 })
+        Receive("ping", _) | Intent("onChild", _) | Receive("onData", _) =>
           Next(s)
         _ => Unhandled
       }
@@ -261,9 +261,11 @@ test "component_summary reads fields, buckets, and view sources" {
   // `update` is one opaque pattern match at run time, so reflection could
   // only ever say THAT it exists. The schema names what it answers.
   assert_true(d.get("update") is Some(List([Str("inc"), Str("reset")])))
-  assert_true(d.get("receive") is Some(List([Str("ping")])))
-  assert_true(d.get("bubble") is Some(List([Str("onChild")])))
-  assert_true(d.get("response") is Some(List([Str("onData")])))
+  // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so it
+  // sits beside `ping` rather than in a bucket of its own.
+  assert_true(d.get("receive") is Some(List([Str("ping"), Str("onData")])))
+  assert_true(d.get("intent") is Some(List([Str("onChild")])))
+  assert_true(d.get("bubble") is Some(List([])))
   assert_true(d.get("alter") is Some(List([Str("rows")])))
   guard d.get("views") is Some(List(views)) else { fail("no views") }
   inspect(views.length(), content="2")
@@ -279,6 +281,9 @@ test "inspect_component builds one section per non-empty group" {
   assert_true(oget(ci, "compName") is Str("RichSample"))
   inspect(otext(ci, "idText").contains("#"), content="true")
   let labels = olist(ci, "sections").map(s => oget(s, "label"))
+  // Two message sections where v1 drew three, and the third is ABSENT rather
+  // than empty — "one section per non-empty group" is the rule this test
+  // names, and the buckets v2 folded away simply stop being drawn.
   assert_true(
     labels ==
     [
@@ -286,8 +291,7 @@ test "inspect_component builds one section per non-empty group" {
       Str("Methods"),
       Str("Update"),
       Str("Receive"),
-      Str("Bubble"),
-      Str("Response"),
+      Str("Intent"),
       Str("Alter"),
       Str("Views"),
     ],
@@ -472,9 +476,9 @@ test "a described component surfaces what reflection cannot" {
   assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
   // Buckets that are invisible without a schema — they are raised from
   // MoonBit, never written in a view.
-  assert_eq(d.get("receive"), Some(List([Str("ping")])))
-  assert_eq(d.get("bubble"), Some(List([Str("onChild")])))
-  assert_eq(d.get("response"), Some(List([Str("onData")])))
+  assert_eq(d.get("receive"), Some(List([Str("ping"), Str("onData")])))
+  assert_eq(d.get("intent"), Some(List([Str("onChild")])))
+  assert_eq(d.get("bubble"), Some(List([])))
   // The selectors a test addresses, and the fixtures it can seed from.
   assert_eq(d.get("ids"), Some(List([Str("counter"), Str("resetBtn")])))
   assert_eq(d.get("fixtures"), Some(List([Str("fresh")])))
@@ -527,16 +531,18 @@ test "a generated component fills every summary row its schema can" {
   for
     row in [
       "name", "id", "fingerprint", "fields", "methods", "update", "receive", "bubble",
-      "response", "swap", "alter", "ids", "fixtures", "views",
+      "intent", "response", "swap", "alter", "ids", "fixtures", "views",
     ] {
     assert_true(d.get(row) is Some(_))
   }
   // ...and every row RichSample declares is actually populated.
   assert_eq(d.get("name"), Some(Str("RichSample")))
   assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
-  assert_eq(d.get("receive"), Some(List([Str("ping")])))
-  assert_eq(d.get("bubble"), Some(List([Str("onChild")])))
-  assert_eq(d.get("response"), Some(List([Str("onData")])))
+  // `onData` is an ANSWER and lands beside `ping`; `onChild` is ROUTED and
+  // has a bucket of its own. Two where v1 drew three.
+  assert_eq(d.get("receive"), Some(List([Str("ping"), Str("onData")])))
+  assert_eq(d.get("intent"), Some(List([Str("onChild")])))
+  assert_eq(d.get("bubble"), Some(List([])))
   assert_eq(d.get("methods"), Some(List([Str("double"), Str("label")])))
   // A fingerprint is computed, not merely present: 64 bits of hex.
   guard! d.get("fingerprint") is Some(Str(fp))
@@ -589,9 +595,10 @@ impl @component.Fields for RichState with fn schema() {
       @component.FieldInfo::new("open", TyBool),
     ],
     inputs=["inc", "reset"],
-    receives=["ping"],
-    bubbles=["onChild"],
-    responses=["onData"],
+    // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so
+    // it is declared beside `ping` rather than in a bucket of its own.
+    receives=["ping", "onData"],
+    intents=["onChild"],
     methods=["double", "label"],
     view_names=["main", "compact"],
   )
@@ -641,9 +648,10 @@ impl @component.Fields for DescribedState with fn schema() {
       @component.FieldInfo::new("tags", TyList(TyText)),
     ],
     inputs=["inc", "reset"],
-    receives=["ping"],
-    bubbles=["onChild"],
-    responses=["onData"],
+    // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so
+    // it is declared beside `ping` rather than in a bucket of its own.
+    receives=["ping", "onData"],
+    intents=["onChild"],
     methods=["label"],
     ids=["counter", "resetBtn"],
     view_names=["main"],

@@ -57,21 +57,23 @@ fn url_fixture(
   focus : String,
   filter : String,
   theme? : String = "",
-) -> Map[String, @component.RequestFn] {
+) -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadState": RequestFn((_args, respond) => {
-      respond(
-        Ok(
-          Map({
-            "story": Str(story),
-            "focus": Str(focus),
-            "filter": Str(filter),
-            "theme": Str(theme),
-          }),
-        ),
-      )
-    }),
-    "persistState": RequestFn((_args, respond) => respond(Ok(Null))),
+    "loadState": [
+      IntentFn((_call, answer) => {
+        answer(
+          Ok(
+            Map({
+              "story": Str(story),
+              "focus": Str(focus),
+              "filter": Str(filter),
+              "theme": Str(theme),
+            }),
+          ),
+        )
+      }),
+    ],
+    "persistState": [IntentFn((_call, answer) => answer(Ok(Null)))],
   }
 }
 

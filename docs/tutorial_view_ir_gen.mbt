@@ -61,11 +61,11 @@ fn counter_inline_update(
   _ctx : &@tutuca.Ctx,
 ) -> @component.Update[CounterState] {
   match msg {
-    Input("inc", _args) => {
+    Receive("inc", _args) => {
       let s : CounterState = { count: (s.count.to_double() + 1.0).to_int() }
       Next(s)
     }
-    Input("dec", _args) => {
+    Receive("dec", _args) => {
       let s : CounterState = { count: (s.count.to_double() - 1.0).to_int() }
       Next(s)
     }
@@ -167,7 +167,7 @@ fn profile_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setName", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="toggleWaving", ns=Input))],
@@ -253,12 +253,12 @@ fn search_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
         @anode.on(
           "keydown",
           HandlerName(name="setSent", ns=Input),
-          args=[Name("value")],
+          args=[EventPath(["value"])],
           modifiers=["send"],
         ),
         @anode.on("keydown", HandlerName(name="resetDraft", ns=Input), modifiers=[
@@ -721,7 +721,7 @@ fn chat_main_view_ir() -> @anode.View {
     [
       [
         @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
-          Name("value"),
+          EventPath(["value"]),
         ]),
       ],
       [@anode.on("click", HandlerName(name="submit", ns=Input))],

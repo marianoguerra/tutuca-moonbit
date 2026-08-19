@@ -58,7 +58,7 @@ fn tools_comp(samples : Array[@shell.LoaderBarSample]) -> @component.Component {
 /// answers its own components first.
 pub fn storybook_module(
   samples? : Array[@shell.LoaderBarSample] = [],
-  requests? : Map[String, @component.RequestFn] = {},
+  intents? : Map[String, Array[@component.IntentFn]] = {},
 ) -> (@component.ModuleDef, @sb.Gallery) {
   let (module_, gallery) = @sb.gallery_module(
     @dhw.registry(),
@@ -69,7 +69,7 @@ pub fn storybook_module(
     @component.ModuleDef::new(
       name="dyncompstorybookwasm",
       components=[..module_.components, tools_comp(samples)],
-      requests~,
+      intents~,
     ),
     gallery,
   )
@@ -101,10 +101,10 @@ pub fn storybook_module(
 pub fn mount(
   samples? : Array[@shell.LoaderBarSample] = [],
   autoload? : Bool = false,
-  requests? : Map[String, @component.RequestFn] = {},
+  intents? : Map[String, Array[@component.IntentFn]] = {},
   policy? : @policy.Policy = @policy.Policy::untrusted(),
 ) -> StorybookHost? {
-  let (module_, gallery) = storybook_module(samples~, requests~)
+  let (module_, gallery) = storybook_module(samples~, intents~)
   guard @wglue.mount_in(module_, "DyncompStorybook") is Some(app) else {
     return None
   }

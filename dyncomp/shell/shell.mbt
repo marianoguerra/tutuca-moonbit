@@ -198,14 +198,25 @@ pub fn loader_bar_comp(
 /// deliberately different from each other, which is a statement about what
 /// they SHOW — not a reason for the sample service behind them to be written
 /// out twice.
-pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
+/// A LIST per name, because the `lex` leg WALKS: a declining handler hands the
+/// intent to the next one in the scope chain rather than having to answer.
+/// These two decline on a bad argument — see `Pass` below, which is the answer
+/// v1 had no word for.
+pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]] {
   {
-    "double": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 2.0)))
-        _ => respond(Err(Str("double: expected one number")))
-      }
-    }),
+    "double": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(n)] => answer(Ok(Num(n * 2.0)))
+          // NOT `Failed`. This handler cannot answer a call shaped like that,
+          // and saying so is different from saying the doubling went wrong —
+          // `Pass` lets the walk try the next handler, and if none answers the
+          // sender hears `doubleUnhandled` rather than a made-up error. A
+          // `RequestFn` had to respond, so v1 could only invent one.
+          _ => answer(Pass)
+        }
+      }),
+    ],
     // `roll` is what `examples/dyncomp-dice`'s die calls, and it is the sharper
     // demonstration of the same seam: the counter could compute `double`
     // itself and asks as a courtesy, while the die CANNOT make a number. The
@@ -214,21 +225,26 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
     // pages cannot run, and asking through `control.request` needs no grant
     // because it is not ambient authority. The page answers one question,
     // once, and may decline.
-    "roll": RequestFn((args, respond) => {
-      match args {
-        [Num(faces)] => {
-          let n = faces.to_int()
-          if n < 2 {
-            respond(Err(Str("roll: a die needs at least two faces")))
-          } else {
-            let face = (next_u32() % n.reinterpret_as_uint()).reinterpret_as_int() +
-              1
-            respond(Ok(Num(face.to_double())))
+    "roll": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Num(faces)] => {
+            let n = faces.to_int()
+            if n < 2 {
+              // A REAL failure: the call is shaped right and the request is
+              // impossible. `Failed`, not `Pass` — no other handler is going
+              // to make a one-sided die either.
+              answer(Failed(Str("roll: a die needs at least two faces")))
+            } else {
+              let face = (next_u32() % n.reinterpret_as_uint()).reinterpret_as_int() +
+                1
+              answer(Ok(Num(face.to_double())))
+            }
           }
+          _ => answer(Pass)
         }
-        _ => respond(Err(Str("roll: expected one number (the face count)")))
-      }
-    }),
+      }),
+    ],
   }
 }
 

@@ -106,7 +106,7 @@ pub fn mount() -> Unit {
   @uiw.mount(
     session~,
     samples=samples(),
-    requests=@shell.sample_host_requests(),
+    intents=@shell.sample_host_intents(),
     policy=@shell.sample_policy(),
   )
   |> ignore

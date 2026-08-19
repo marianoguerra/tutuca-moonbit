@@ -574,6 +574,31 @@ fn add_dyn_route(source : String) -> Result[String, String] {
 }
 
 ///|
+/// Whether `needle` appears on a line that is not a comment.
+///
+/// A refusal is a work item, and prose is not work. Every file that DESCRIBES
+/// the migration mentions the v1 names — including the ones already migrated,
+/// whose comments say what they used to be — so a plain `contains` reports
+/// them forever and the list stops meaning anything.
+///
+/// Line-wise, and that is enough: MoonBit's `//` runs to end of line and it has
+/// no block comment. A `//` inside a string literal would be a false negative,
+/// which is the safe direction — a missed refusal is caught by the compiler,
+/// and a false one erodes the list.
+fn mentions_in_code(source : String, needle : String) -> Bool {
+  for raw in source.split("\n") {
+    let line = raw.to_owned().trim_start(chars=" ").to_owned()
+    if line.has_prefix("//") {
+      continue
+    }
+    if line.contains(needle) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 /// Migrate a MoonBit source file.
 ///
 /// Textual, because there is no MoonBit parser here — which is exactly why the
@@ -586,7 +611,7 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
 
   // A `Response(name, [res, err])` arm becomes two arms and the body has to be
   // split. Refused whole rather than rewritten, per the rule at the top.
-  if source.contains("Response(") {
+  if mentions_in_code(source, "Response(") {
     refused.push(
       path +
       ": a `Response(…)` arm becomes two `Receive` arms (`<name>Ok`, `<name>Error`) and the body has to be split between them — a human decides which half is which",
@@ -599,7 +624,7 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
   // `(args, respond)`, so the rewrite would leave a type error — a half-edit,
   // which is the one thing this must not do. A signature change is not a
   // rename, and task 19 found that by running it.
-  if source.contains("RequestFn") {
+  if mentions_in_code(source, "RequestFn") {
     refused.push(
       path +
       ": `RequestFn` becomes `IntentFn`, which is a SIGNATURE change and not a rename — it takes an `IntentCall` (carrying `from`, the sender's path) and answers `Ok` / `Failed` / `Pass` where a `RequestFn` had to answer. Rewrite each handler by hand",
@@ -607,7 +632,7 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
   }
   // `ctx.request` carries opts whose `on_res_name` has no v2 field, so a
   // mechanical rewrite could silently drop a routing decision.
-  if source.contains("on_res_name") {
+  if mentions_in_code(source, "on_res_name") {
     refused.push(
       path +
       ": `on_res_name` names the combined `[res, err]` arm, which v2 removed. Split it into `on_ok_name` and `on_error_name` first",
@@ -676,7 +701,8 @@ fn migrate_mbt(path : String, source : String) -> MigratePlan {
   // dropped it and v2 mutates. The tool cannot tell which names are mutators
   // without the schema, so it reports every `ctx.send` in a file that has one
   // rather than guessing.
-  if source.contains("ctx.send(") || source.contains("send_at_path(") {
+  if mentions_in_code(source, "ctx.send(") ||
+    mentions_in_code(source, "send_at_path(") {
     reports.push(
       path +
       ": this file sends addressed messages. A `ctx.send` naming a GENERATED MUTATOR did nothing in v1 and mutates in v2 — check each name against the component's fields",

@@ -12,14 +12,15 @@
 
   receive RichSample {
     Ping
-  }
-
-  bubble RichSample {
-    OnChild
-  }
-
-  response RichSample {
+    /// An ANSWER, which in v2 is an ordinary message and lands here with
+    /// everything else. v1 gave it a bucket of its own, and a handler could
+    /// not tell one from the other anyway.
     OnData
+  }
+
+  /// A ROUTED name: something up the tree, or in the scope, answers it.
+  intent RichSample {
+    OnChild
   }
 
   state SampleCard {

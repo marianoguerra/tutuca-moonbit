@@ -141,11 +141,11 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to tutorial.html breaks every `match` over this type
 /// until it is handled.
-///
-/// Absent, because the script block answers them: inc, dec.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
 pub(all) enum CounterMsg {
+  /// `@on.click="dec …"`
+  Dec
+  /// `@on.click="inc …"`
+  Inc
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -158,6 +158,8 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
+      ("dec", []) => Dec
+      ("inc", []) => Inc
       _ => Unknown(name, args)
     },
   )
@@ -1280,6 +1282,8 @@ impl @component.Fields for QuotesState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum QuotesReceive {
   Init
+  LoadQuotesOk(@tutuca.Value)
+  LoadQuotesError(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1296,6 +1300,8 @@ pub fn QuotesReceive::from_dispatch(d : @component.Dispatch) -> QuotesReceive? {
   Some(
     match (name, args) {
       ("init", []) => Init
+      ("loadQuotesOk", [a0]) => LoadQuotesOk(a0)
+      ("loadQuotesError", [Str(a0)]) => LoadQuotesError(a0)
       _ => Unknown(name, args)
     },
   )
@@ -1308,6 +1314,8 @@ pub fn QuotesReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
+    LoadQuotesOk(a0) => ("loadQuotesOk", [a0])
+    LoadQuotesError(a0) => ("loadQuotesError", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1320,48 +1328,6 @@ pub fn QuotesReceive::to_dispatch(
 pub fn QuotesReceive::send(self : QuotesReceive, ctx : &@tutuca.Ctx) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
-}
-
-///|
-/// The Response arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant response` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum QuotesResponse {
-  LoadQuotes(@tutuca.Value)
-  /// A response the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Response dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-pub fn QuotesResponse::from_dispatch(
-  d : @component.Dispatch,
-) -> QuotesResponse? {
-  guard d is Response(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("loadQuotes", [a0]) => LoadQuotes(a0)
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn QuotesResponse::to_dispatch(
-  self : QuotesResponse,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    LoadQuotes(a0) => ("loadQuotes", [a0])
-    Unknown(n, args) => (n, args)
-  }
 }
 
 ///|
@@ -1382,13 +1348,12 @@ pub let quotes_global_style : String = ""
 impl @component.Fields for QuotesState with fn schema() {
   @component.SchemaInfo::new(
     name="Quotes",
-    fingerprint="802dda11e6ff01ac",
+    fingerprint="839b1f887fb25366",
     fields=[
       @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("isLoading", TyBool),
     ],
-    receives=["init"],
-    responses=["loadQuotes"],
+    receives=["init", "loadQuotesOk", "loadQuotesError"],
     view_names=["main"],
   )
 }

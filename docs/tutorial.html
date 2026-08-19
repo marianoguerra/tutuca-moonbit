@@ -48,12 +48,18 @@
     isLoading : Bool
   }
 
+  /// `Init` is the host's. The other two are the ANSWERS to an
+  /// `intent lex 'loadQuotes'`, and declaring them is what makes it a request
+  /// rather than a notification — a sender expects an answer if and only if it
+  /// declares an arm for one.
+  ///
+  /// Two arms where v1 had one: each outcome gets its own name and its own
+  /// shape, instead of one payload carrying a result and an error with exactly
+  /// one of them Null.
   receive Quotes {
     Init
-  }
-
-  response Quotes {
-    LoadQuotes(Array[Any])
+    LoadQuotesOk(Array[Any])
+    LoadQuotesError(String)
   }
 
   state Features {
@@ -65,11 +71,11 @@
   /// The counter's whole behaviour, in the file that already holds its state
   /// and its view. `gen-views` compiles this into the update the generated
   /// `counter_component` passes, so the MoonBit side has nothing to answer.
-  on inc {
+  receive inc {
     .count += 1
   }
 
-  on dec {
+  receive dec {
     .count -= 1
   }
 </script>
@@ -84,7 +90,7 @@
 
 <template id="Profile">
   <section>
-    <input class="who" :value=".name" @on.input="setName value"
+    <input class="who" :value=".name" @on.input="setName e.value"
       :title="$'Editing {.name}'">
     <button class="wave" @on.click="toggleWaving">wave</button>
     <p class="out" @text="$'Hello, {.name}!'"></p>
@@ -94,8 +100,8 @@
 <template id="Search">
   <section>
     <input class="q" :value=".draft"
-      @on.input="setDraft value"
-      @on.keydown+send="setSent value"
+      @on.input="setDraft e.value"
+      @on.keydown+send="setSent e.value"
       @on.keydown+cancel="resetDraft">
     <p class="sent" @text=".sent"></p>
   </section>
@@ -141,7 +147,7 @@
 <template id="Chat">
   <section>
     <x render=".status"></x>
-    <input class="draft" :value=".draft" @on.input="setDraft value">
+    <input class="draft" :value=".draft" @on.input="setDraft e.value">
     <button class="send" @on.click="submit">send</button>
   </section>
 </template>

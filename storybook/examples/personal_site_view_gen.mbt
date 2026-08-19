@@ -381,6 +381,7 @@ impl @component.Fields for RootState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RootReceive {
   Init
+  LoadDataOk(@tutuca.Value)
   ClearFilters
   OnCategoryToggle(@tutuca.Value, Bool)
   OnRoleToggle(@tutuca.Value, Bool)
@@ -403,6 +404,7 @@ pub fn RootReceive::from_dispatch(d : @component.Dispatch) -> RootReceive? {
   Some(
     match (name, args) {
       ("init", []) => Init
+      ("loadDataOk", [a0]) => LoadDataOk(a0)
       ("clearFilters", []) => ClearFilters
       ("onCategoryToggle", [a0, Bool(a1)]) => OnCategoryToggle(a0, a1)
       ("onRoleToggle", [a0, Bool(a1)]) => OnRoleToggle(a0, a1)
@@ -421,6 +423,7 @@ pub fn RootReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
+    LoadDataOk(a0) => ("loadDataOk", [a0])
     ClearFilters => ("clearFilters", [])
     OnCategoryToggle(a0, a1) => ("onCategoryToggle", [a0, Bool(a1)])
     OnRoleToggle(a0, a1) => ("onRoleToggle", [a0, Bool(a1)])
@@ -577,7 +580,7 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
 impl @component.Fields for RootState with fn schema() {
   @component.SchemaInfo::new(
     name="Root",
-    fingerprint="1bc2f486c229ba72",
+    fingerprint="2501994ece2d6267",
     fields=[
       @component.FieldInfo::new("allEntries", TyList(TyAny)),
       @component.FieldInfo::new("allCategories", TyList(TyText)),
@@ -592,7 +595,7 @@ impl @component.Fields for RootState with fn schema() {
       "clearFilters", "onCategoryToggle", "onRoleToggle", "onToggleFeaturedFirst",
       "onToggleSortAsc", "onToggleSortByEnd",
     ],
-    receives=["init"],
+    receives=["init", "loadDataOk"],
     methods=["hasActiveFilters"],
     view_names=["main"],
   )

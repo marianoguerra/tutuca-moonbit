@@ -20,46 +20,57 @@ let current_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
 /// `loadState` reads the query string, `persistState` writes it. Kept in the
 /// host (not storybook/ui) so the pure gallery package never depends on the JS
 /// FFI — the same split as the JS storybook (mount.js owns the URL effects).
-fn url_request_handlers() -> Map[String, @component.RequestFn] {
+/// The page's own services, on the LEX leg.
+///
+/// A LIST per name, because that leg walks: a declining handler hands the
+/// intent to the next one. These three never decline — a page that owns the
+/// URL is the only thing that can answer for it — so each list has one entry.
+fn url_request_handlers() -> Map[String, Array[@component.IntentFn]] {
   {
-    "loadState": RequestFn((_args, respond) => {
-      let params = parse_query(
-        @core.global_this()._get("location")._get("search").to_string(),
-      )
-      let get = fn(k : String) -> @tutuca.Value {
-        Str(params.get(k).unwrap_or(""))
-      }
-      // Resolve+apply the starting theme (URL param, else the OS preference) so
-      // margaui's dark palette shows when the OS is dark; return the resolved
-      // name so the switcher displays it.
-      let theme = resolve_theme(params.get("theme").unwrap_or(""))
-      respond(
-        Ok(
-          Map({
-            "story": get("story"),
-            "focus": get("focus"),
-            "filter": get("filter"),
-            "theme": Str(theme),
-          }),
-        ),
-      )
-    }),
-    "persistState": RequestFn((args, respond) => {
-      match args {
-        [Map(m), push] => write_url(m, push is Bool(true))
-        _ => ()
-      }
-      respond(Ok(Null))
-    }),
+    "loadState": [
+      IntentFn((_call, answer) => {
+        let params = parse_query(
+          @core.global_this()._get("location")._get("search").to_string(),
+        )
+        let get = fn(k : String) -> @tutuca.Value {
+          Str(params.get(k).unwrap_or(""))
+        }
+        // Resolve+apply the starting theme (URL param, else the OS preference) so
+        // margaui's dark palette shows when the OS is dark; return the resolved
+        // name so the switcher displays it.
+        let theme = resolve_theme(params.get("theme").unwrap_or(""))
+        answer(
+          Ok(
+            Map({
+              "story": get("story"),
+              "focus": get("focus"),
+              "filter": get("filter"),
+              "theme": Str(theme),
+            }),
+          ),
+        )
+      }),
+    ],
+    "persistState": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Map(m), push] => write_url(m, push is Bool(true))
+          _ => ()
+        }
+        answer(Ok(Null))
+      }),
+    ],
     // Switch the margaui palette: load its stylesheet (if not bundled) and flip
     // document.documentElement's data-theme.
-    "applyTheme": RequestFn((args, respond) => {
-      match args {
-        [Str(name), ..] => apply_theme(name)
-        _ => ()
-      }
-      respond(Ok(Null))
-    }),
+    "applyTheme": [
+      IntentFn((call, answer) => {
+        match call.args {
+          [Str(name), ..] => apply_theme(name)
+          _ => ()
+        }
+        answer(Ok(Null))
+      }),
+    ],
   }
 }
 

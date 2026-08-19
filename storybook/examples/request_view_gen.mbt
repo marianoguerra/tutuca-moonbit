@@ -82,6 +82,9 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RequestExampleReceive {
   Init
+  LoadDataOk(@tutuca.Value)
+  LoadDataError(String)
+  LoadDataUnhandled
   LoadAnotherWay
   ResetQuery
   SetQuery(String)
@@ -104,6 +107,9 @@ pub fn RequestExampleReceive::from_dispatch(
   Some(
     match (name, args) {
       ("init", []) => Init
+      ("loadDataOk", [a0]) => LoadDataOk(a0)
+      ("loadDataError", [Str(a0)]) => LoadDataError(a0)
+      ("loadDataUnhandled", []) => LoadDataUnhandled
       ("loadAnotherWay", []) => LoadAnotherWay
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
@@ -120,6 +126,9 @@ pub fn RequestExampleReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
+    LoadDataOk(a0) => ("loadDataOk", [a0])
+    LoadDataError(a0) => ("loadDataError", [Str(a0)])
+    LoadDataUnhandled => ("loadDataUnhandled", [])
     LoadAnotherWay => ("loadAnotherWay", [])
     ResetQuery => ("resetQuery", [])
     SetQuery(a0) => ("setQuery", [Str(a0)])
@@ -184,10 +193,6 @@ pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to request.html breaks every `match` over this type
 /// until it is handled.
-///
-/// Absent, because the script block answers them: toggleView.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
 pub(all) enum RequestExampleMsg {
   /// `@on.click="loadAnotherWay …"`
   LoadAnotherWay
@@ -195,6 +200,8 @@ pub(all) enum RequestExampleMsg {
   ResetQuery
   /// `@on.input="setQuery …"`
   SetQuery(String)
+  /// `@on.click="toggleView …"`
+  ToggleView
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -212,6 +219,7 @@ pub fn RequestExampleMsg::from_dispatch(
       ("loadAnotherWay", []) => LoadAnotherWay
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
+      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
@@ -240,7 +248,7 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="f34b7c20519b21a2",
+    fingerprint="bf8b6d46f36bb9ec",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
@@ -249,7 +257,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
       @component.FieldInfo::new("error", TyAny),
     ],
     inputs=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
-    receives=["init"],
+    receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
     view_names=["main"],
   )
 }

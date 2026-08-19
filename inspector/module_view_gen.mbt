@@ -77,6 +77,10 @@ impl @component.Fields for RichSampleState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RichSampleReceive {
   Ping
+  /// An ANSWER, which in v2 is an ordinary message and lands here with
+  /// everything else. v1 gave it a bucket of its own, and a handler could
+  /// not tell one from the other anyway.
+  OnData
   Inc
   Reset
   /// A receive the schema does not declare, or a declared name whose
@@ -97,6 +101,7 @@ pub fn RichSampleReceive::from_dispatch(
   Some(
     match (name, args) {
       ("ping", []) => Ping
+      ("onData", []) => OnData
       ("inc", []) => Inc
       ("reset", []) => Reset
       _ => Unknown(name, args)
@@ -111,6 +116,7 @@ pub fn RichSampleReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Ping => ("ping", [])
+    OnData => ("onData", [])
     Inc => ("inc", [])
     Reset => ("reset", [])
     Unknown(n, args) => (n, args)
@@ -131,28 +137,28 @@ pub fn RichSampleReceive::send(
 }
 
 ///|
-/// The Bubble arm of @component.Dispatch, decoded.
+/// The Intent arm of @component.Dispatch, decoded.
 ///
-/// Declared as `variant bubble` in the state block. These names are
+/// Declared as `variant intent` in the state block. These names are
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
-pub(all) enum RichSampleBubble {
+pub(all) enum RichSampleIntent {
   OnChild
-  /// A bubble the schema does not declare, or a declared name whose
+  /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Decode a Bubble dispatch. None for any other bucket.
+/// Decode a Intent dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
-pub fn RichSampleBubble::from_dispatch(
+pub fn RichSampleIntent::from_dispatch(
   d : @component.Dispatch,
-) -> RichSampleBubble? {
-  guard d is Bubble(name, args) else { return None }
+) -> RichSampleIntent? {
+  guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
       ("onChild", []) => OnChild
@@ -163,8 +169,8 @@ pub fn RichSampleBubble::from_dispatch(
 
 ///|
 /// The dispatch name and arguments this message raises as.
-pub fn RichSampleBubble::to_dispatch(
-  self : RichSampleBubble,
+pub fn RichSampleIntent::to_dispatch(
+  self : RichSampleIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     OnChild => ("onChild", [])
@@ -173,58 +179,19 @@ pub fn RichSampleBubble::to_dispatch(
 }
 
 ///|
-/// Bubble this message to the parent component.
+/// Dispatch this intent along `opts.route` — the default `dyn lex` when
+/// nothing says otherwise. The `dyn` leg starts at this component's
+/// PARENT, so a component never re-enters its own handler.
 ///
 /// The name comes from the schema, so it cannot drift from the one
 /// `from_dispatch` decodes.
-pub fn RichSampleBubble::bubble(
-  self : RichSampleBubble,
+pub fn RichSampleIntent::dispatch(
+  self : RichSampleIntent,
   ctx : &@tutuca.Ctx,
+  opts? : @tutuca.IntentOpts = @tutuca.IntentOpts::new(),
 ) -> Unit {
   let (name, args) = self.to_dispatch()
-  ctx.bubble(name, args)
-}
-
-///|
-/// The Response arm of @component.Dispatch, decoded.
-///
-/// Declared as `variant response` in the state block. These names are
-/// raised by component code rather than written in a view, so the views
-/// cannot type them — the schema is the only place they can be declared.
-pub(all) enum RichSampleResponse {
-  OnData
-  /// A response the schema does not declare, or a declared name whose
-  /// runtime arguments did not match the declared types.
-  Unknown(String, Array[@tutuca.Value])
-}
-
-///|
-/// Decode a Response dispatch. None for any other bucket.
-///
-/// A payload that does not match falls into `Unknown` rather than being
-/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
-/// and silently truncating it would hide that.
-pub fn RichSampleResponse::from_dispatch(
-  d : @component.Dispatch,
-) -> RichSampleResponse? {
-  guard d is Response(name, args) else { return None }
-  Some(
-    match (name, args) {
-      ("onData", []) => OnData
-      _ => Unknown(name, args)
-    },
-  )
-}
-
-///|
-/// The dispatch name and arguments this message raises as.
-pub fn RichSampleResponse::to_dispatch(
-  self : RichSampleResponse,
-) -> (String, Array[@tutuca.Value]) {
-  match self {
-    OnData => ("onData", [])
-    Unknown(n, args) => (n, args)
-  }
+  ctx.intent(name, args, opts)
 }
 
 ///|
@@ -326,7 +293,7 @@ pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
 impl @component.Fields for RichSampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RichSample",
-    fingerprint="a98d8e367382fc66",
+    fingerprint="f8b4fa14a7af37d1",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -334,9 +301,8 @@ impl @component.Fields for RichSampleState with fn schema() {
       @component.FieldInfo::new("open", TyBool),
     ],
     inputs=["inc", "reset"],
-    receives=["ping"],
-    bubbles=["onChild"],
-    responses=["onData"],
+    receives=["ping", "onData"],
+    intents=["onChild"],
     methods=["double", "label"],
     view_names=["main", "compact"],
   )

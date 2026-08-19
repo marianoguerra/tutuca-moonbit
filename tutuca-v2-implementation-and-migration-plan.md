@@ -88,7 +88,7 @@ Two consequences worth stating outright.
 **Phase 5 — migration**
 
 - [x] 18. [Build `tutuca migrate`](#18-build-tutuca-migrate)
-- [ ] 19. [Migrate the repository's own code](#19-migrate-the-repositorys-own-code)
+- [x] 19. [Migrate the repository's own code](#19-migrate-the-repositorys-own-code)
 
 **Phase 6 — words**
 
@@ -1453,13 +1453,53 @@ failure count from 14 to 2.
 `inspector/unit_test.mbt`'s `odispatch` helper asked `obj_handler(Input, name)`
 — it stands in for a click, and a click is a `Receive` now.
 
-**Still to do (the second pass).** The 21 refusals: ten `RequestFn` handler
-tables and nine `response` / `Response(…)` pairs. Both still COMPILE — `RequestFn`
-and `Dispatch::Response` are v1 and live until task 25 — so the tree is green
-with them in place, and converting them is design work rather than a rewrite:
-an `IntentFn` answers `Ok` / `Failed` / `Pass` and a `response` pair becomes two
-`receive` arms whose bodies have to be split. Task 25 cannot simply delete
-around them.
+**Second pass done. `tutuca migrate` now reports 0 files would change and 0
+refused**, and all three targets are green (1607 / 1616 / 1607). The run is
+idempotent, which is the property that says the corpus is actually on v2 rather
+than merely compiling.
+
+**The `response` pairs, six components, and each taught something.** A
+`response name(res, err)` arm became two or three `receive` arms — and the
+third, `<name>Unhandled`, is the outcome v1 could not name.
+
+`playground/site/cards/tut-7-response.html` is the one worth reading. It
+registers NO handler for `loadQuote`, and v1 taught the error path with it: "an
+unanswered name is not a crash — the runtime answers it with an error, which
+lands here exactly as a failed fetch would." **That was a lie the language
+forced.** v2 has a name for it, so the card now says the true thing —
+`loadQuoteUnhandled`, "nothing on this page answers `loadQuote`" — and the
+lesson got sharper rather than longer.
+
+**The `RequestFn` tables, ten of them, and the same shape twice.**
+`sample_host_requests` became `sample_host_intents`, and its two handlers now
+answer **`Pass`** on a call they cannot read — where v1 had to invent an error,
+because a `RequestFn` was obliged to respond. `roll` still answers `Failed` for
+a one-sided die, and the difference between those two lines is the whole point:
+"I cannot answer this call" is not "this request is impossible".
+`storybook/examples/request.mbt` gained `declining_request_handlers` and a test
+that drives `Pass` → route exhaustion → `loadDataUnhandled` end to end.
+
+**Three gaps this pass found in earlier tasks.**
+
+- **Task 12 left `SchemaInfo` without `intents`.** The generated `receives=` /
+  `bubbles=` / `responses=` had no fourth key, so a v2 component described
+  itself with an empty bucket and no routed one. `core`, `viewgen` and the
+  inspector all gained it, and the fingerprint gained a letter — a name moving
+  from `bubbles` to `intents` IS a different schema.
+- **The inspector drew a section per bucket.** It now draws `Intent`, and
+  `Bubble` / `Response` are ABSENT rather than empty, because the view already
+  hid a section with no rows. Nothing there had to learn about the merge.
+- **`mentions_in_code`**: the codemod refused every file whose COMMENTS
+  mentioned a v1 name — including the files it had just migrated, whose
+  comments say what they used to be. A refusal is a work item, and a list that
+  reports prose forever stops meaning anything.
+
+**And one hand edit that had to be undone and done differently**, which is the
+lesson of the whole task. `dyncomp/ui/std/std.mbt` re-matched `msg` inside an
+arm reached through an `Input`-guarded decode. Naming one bucket read `Null`;
+naming both was a pattern the codemod rewrote into a duplicate on its next run.
+**The variant already carried the payload** — taking it from there needs no
+bucket at all, and survives both.
 
 ## 20. The skill
 

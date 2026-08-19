@@ -24,6 +24,7 @@ pub fn SchemaInfo::new(
   fields? : Array[FieldInfo] = [],
   inputs? : Array[String] = [],
   receives? : Array[String] = [],
+  intents? : Array[String] = [],
   bubbles? : Array[String] = [],
   responses? : Array[String] = [],
   methods? : Array[String] = [],
@@ -37,6 +38,7 @@ pub fn SchemaInfo::new(
     fields,
     inputs,
     receives,
+    intents,
     bubbles,
     responses,
     methods,
@@ -90,6 +92,10 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
   for
     pair in [
       ("r", self.receives),
+      // A new letter rather than reusing one: the fingerprint is what tells
+      // two schemas apart, and a name moving from `bubbles` to `intents` IS a
+      // different schema.
+      ("i", self.intents),
       ("b", self.bubbles),
       ("p", self.responses),
       ("c", self.methods),

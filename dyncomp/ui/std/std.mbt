@@ -108,6 +108,27 @@ fn label_of(child : @tutuca.Value) -> String {
 }
 
 ///|
+/// A `drop` that landed on a cell: the config pill, or an OS file drag that
+/// happens to have landed here.
+///
+/// Only the first is ours. The second has to keep travelling, because a drop
+/// stops at the first component that handles it and the shell's bundle loader
+/// is further up — so an unrecognized payload answers `Unhandled` rather than
+/// swallowing it.
+fn drop_on_cell(
+  s : UniversalState,
+  ctx : &@tutuca.Ctx,
+  info : @tutuca.Value,
+) -> @component.Update[UniversalState] {
+  if info.field("type").str() == "config-pill" {
+    UniversalIntent::ConfigRequested(s.child).dispatch(ctx)
+    ctx.stop_propagation()
+    return Next(s)
+  }
+  Unhandled
+}
+
+///|
 fn universal_comp() -> @component.Component {
   universal_component(
     compute=m => {
@@ -137,27 +158,20 @@ fn universal_comp() -> @component.Component {
         // landed here. Only the first is ours; the second has to keep
         // travelling, because `drop` stops at the first component that
         // handles it and the shell's bundle loader is further up.
-        Some(Dropped(_)) | Some(Unknown("dropped", _)) => {
-          // BOTH buckets, for the length of the migration. This arm is
-          // reached through `UniversalMsg::from_dispatch`, which decodes the
-          // `Input` bucket — so on the pass that matches it, `msg` is an
-          // `Input` and not the `Receive` the view raised. The codemod moved
-          // this pattern and could not move the generated decode above it,
-          // which is the one shape it cannot see: a file using a `<T>Msg`
-          // decode AND a raw dispatch pattern together.
-          //
-          // Task 25 deletes `Input` and this reads `Receive` alone.
-          let info = match msg {
-            Receive(_, [first, ..]) | Input(_, [first, ..]) => first
-            _ => Null
-          }
-          if info.field("type").str() == "config-pill" {
-            UniversalIntent::ConfigRequested(s.child).dispatch(ctx)
-            ctx.stop_propagation()
-            return Next(s)
-          }
-          return Unhandled
-        }
+        // Read from the DECODED variant rather than by re-matching `msg`.
+        //
+        // Re-matching was the bug and then the second bug. This arm is reached
+        // through `UniversalMsg::from_dispatch`, which decodes the `Input`
+        // bucket, so `msg` here is an `Input` and not the `Receive` the view
+        // raised — a pattern naming one bucket silently read `Null`. And a
+        // pattern naming both is one a codemod rewrites into a duplicate the
+        // next time it runs.
+        //
+        // The variant already carries the payload. Taking it from there needs
+        // no bucket at all, which is why it survives both.
+        Some(Dropped(info)) => return drop_on_cell(s, ctx, info)
+        Some(Unknown("dropped", args)) =>
+          return drop_on_cell(s, ctx, args.get(0).unwrap_or(Null))
         Some(Unknown(_, _)) | None => ()
       }
       match UniversalReceive::from_dispatch(msg) {

@@ -164,9 +164,9 @@ fn rich_sample_comp() -> @component.Component {
   rich_sample_component(
     update=(s, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Next({ ..s, count: s.count + 1 })
-        Input("reset", _) => Next({ ..s, count: 0 })
-        Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
+        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
+        Receive("reset", _) => Next({ ..s, count: 0 })
+        Receive("ping", _) | Intent("onChild", _) | Receive("onData", _) =>
           Next(s)
         _ => Unhandled
       }
@@ -192,7 +192,7 @@ fn sample_card_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("bump", _) => Next({ ..s, count: s.count + 1 })
+        Receive("bump", _) => Next({ ..s, count: s.count + 1 })
         _ => Unhandled
       }
     },

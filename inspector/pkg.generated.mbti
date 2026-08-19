@@ -719,20 +719,20 @@ pub(all) struct JsonStringState {
 }
 pub fn JsonStringState::zero() -> Self
 
-pub(all) enum RichSampleBubble {
-  OnChild
-  Unknown(String, Array[@core.Value])
-}
-pub fn RichSampleBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn RichSampleBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn RichSampleBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
 pub(all) enum RichSampleInput {
   Inc
   Reset
 } derive(Eq, @debug.Debug)
 pub fn RichSampleInput::name(Self) -> String
 pub fn RichSampleInput::parse(String) -> Self?
+
+pub(all) enum RichSampleIntent {
+  OnChild
+  Unknown(String, Array[@core.Value])
+}
+pub fn RichSampleIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn RichSampleIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn RichSampleIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum RichSampleLoopWith {
   Rows
@@ -754,6 +754,7 @@ pub fn RichSampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RichSampleReceive {
   Ping
+  OnData
   Inc
   Reset
   Unknown(String, Array[@core.Value])
@@ -761,13 +762,6 @@ pub(all) enum RichSampleReceive {
 pub fn RichSampleReceive::from_dispatch(@component.Dispatch) -> Self?
 pub fn RichSampleReceive::send(Self, &@core.Ctx) -> Unit
 pub fn RichSampleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
-
-pub(all) enum RichSampleResponse {
-  OnData
-  Unknown(String, Array[@core.Value])
-}
-pub fn RichSampleResponse::from_dispatch(@component.Dispatch) -> Self?
-pub fn RichSampleResponse::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RichSampleState {
   title : String

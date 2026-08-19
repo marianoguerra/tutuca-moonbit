@@ -327,6 +327,7 @@ impl @component.Fields for LoaderBarState with fn schema() {
     ],
     inputs=["loadSample", "loadUrl", "typeUrl"],
     receives=["filesDropped", "dyncompLoaded", "dyncompError"],
+    intents=["catalogChanged"],
     view_names=["main"],
   )
 }

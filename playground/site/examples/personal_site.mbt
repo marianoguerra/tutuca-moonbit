@@ -325,13 +325,13 @@ fn root_comp() -> @component.Component {
         },
     },
     update=(s : RootState, msg, ctx) => match msg {
-        Input("clearFilters", _) =>
+        Receive("clearFilters", _) =>
           Next({
             ..s,
             selectedCategories: ps_set_of(s.allCategories),
             selectedRoles: ps_set_of(s.allRoles),
           })
-        Input("onCategoryToggle", args) =>
+        Receive("onCategoryToggle", args) =>
           Next({
             ..s,
             selectedCategories: ps_facet_toggle(
@@ -340,18 +340,20 @@ fn root_comp() -> @component.Component {
               args,
             ),
           })
-        Input("onRoleToggle", args) =>
+        Receive("onRoleToggle", args) =>
           Next({
             ..s,
             selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
           })
-        Input("onToggleSortByEnd", _) =>
+        Receive("onToggleSortByEnd", _) =>
           Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
-        Input("onToggleSortAsc", _) =>
+        Receive("onToggleSortAsc", _) =>
           Next(ps_resort({ ..s, sortAsc: !s.sortAsc }))
-        Input("onToggleFeaturedFirst", _) =>
+        Receive("onToggleFeaturedFirst", _) =>
           Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
-        Response("loadData", args) => {
+        // The ANSWER, named for its outcome and carrying only what it is
+        // about. v1 sent one payload holding a result AND an error.
+        Receive("loadDataOk", args) => {
           let entries = match args {
             [List(a), ..] => a
             _ => []
@@ -529,15 +531,17 @@ pub fn personal_site_module() -> @component.ModuleDef {
   let alt_url = alt_url_comp()
   let entry = ps_entry_comp()
   let root = root_comp()
-  let requests : Map[String, @component.RequestFn] = {
-    "loadData": RequestFn((_args, respond) => {
-      respond(Ok(ps_fixture(entry, alt_url)))
-    }),
+  // A LIST per name, because the `lex` leg walks: a declining handler hands
+  // the intent to the next one in the scope chain.
+  let intents : Map[String, Array[@component.IntentFn]] = {
+    "loadData": [
+      IntentFn((_call, answer) => answer(Ok(ps_fixture(entry, alt_url)))),
+    ],
   }
   @component.ModuleDef::new(
     name="personal-site",
     components=[root, entry, alt_url],
-    requests~,
+    intents~,
     examples=[
       {
         component: "Root",

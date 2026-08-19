@@ -15,7 +15,7 @@ pub fn dyncomp_on_load_error(Int, String) -> Unit
 
 pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
 
-pub fn mount(samples? : Array[@shell.LoaderBarSample], autoload? : Bool, requests? : Map[String, @component.RequestFn], policy? : @policy.Policy) -> StorybookHost?
+pub fn mount(samples? : Array[@shell.LoaderBarSample], autoload? : Bool, intents? : Map[String, Array[@component.IntentFn]], policy? : @policy.Policy) -> StorybookHost?
 
 pub fn on_event(@core.Any) -> Unit
 
@@ -23,7 +23,7 @@ pub fn refresh_margaui() -> Unit
 
 pub fn state_json() -> String
 
-pub fn storybook_module(samples? : Array[@shell.LoaderBarSample], requests? : Map[String, @component.RequestFn]) -> (@component.ModuleDef, @storybook.Gallery)
+pub fn storybook_module(samples? : Array[@shell.LoaderBarSample], intents? : Map[String, Array[@component.IntentFn]]) -> (@component.ModuleDef, @storybook.Gallery)
 
 // Errors
 

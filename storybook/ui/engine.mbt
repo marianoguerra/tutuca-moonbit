@@ -355,10 +355,10 @@ fn ShellInst::handler_for(
             [Str(v), ..] => v
             _ => ""
           }
-          ctx.request(
+          ctx.intent(
             "persistState",
             [snapshot(self, filter=value), Bool(false)],
-            @tutuca.RequestOpts::new(),
+            @tutuca.IntentOpts::new(route=[Lex]),
           )
           done(apply_filter(self, value))
         }),
@@ -406,10 +406,10 @@ fn ShellInst::handler_for(
     (Input, "onClearFilter") =>
       Some(
         Handler((_args, ctx) => {
-          ctx.request(
+          ctx.intent(
             "persistState",
             [snapshot(self, filter=""), Bool(false)],
-            @tutuca.RequestOpts::new(),
+            @tutuca.IntentOpts::new(route=[Lex]),
           )
           done(apply_filter(self, ""))
         }),
@@ -423,10 +423,10 @@ fn ShellInst::handler_for(
             [Str(v), ..] => v
             _ => ""
           }
-          ctx.request(
+          ctx.intent(
             "persistState",
             [snapshot(self, story=id), Bool(true)],
-            @tutuca.RequestOpts::new(),
+            @tutuca.IntentOpts::new(route=[Lex]),
           )
           done(self.set("active", Str(id)))
         }),
@@ -440,10 +440,10 @@ fn ShellInst::handler_for(
           }
           match self.spec.id_to_field.get(id) {
             Some(fld) => {
-              ctx.request(
+              ctx.intent(
                 "persistState",
                 [snapshot(self, focus=id), Bool(true)],
-                @tutuca.RequestOpts::new(),
+                @tutuca.IntentOpts::new(route=[Lex]),
               )
               done(self.set("focus", Str(id)).set("focusValue", self.get(fld)))
             }
@@ -454,10 +454,10 @@ fn ShellInst::handler_for(
     (Input, "onFocusClose") =>
       Some(
         Handler((_args, ctx) => {
-          ctx.request(
+          ctx.intent(
             "persistState",
             [snapshot(self, focus=""), Bool(false)],
-            @tutuca.RequestOpts::new(),
+            @tutuca.IntentOpts::new(route=[Lex]),
           )
           done(self.set("focus", Str("")).set("focusValue", Null))
         }),
@@ -473,11 +473,15 @@ fn ShellInst::handler_for(
             [Str(v), ..] => v
             _ => ""
           }
-          ctx.request("applyTheme", [Str(value)], @tutuca.RequestOpts::new())
-          ctx.request(
+          ctx.intent(
+            "applyTheme",
+            [Str(value)],
+            @tutuca.IntentOpts::new(route=[Lex]),
+          )
+          ctx.intent(
             "persistState",
             [snapshot(self, theme=value), Bool(false)],
-            @tutuca.RequestOpts::new(),
+            @tutuca.IntentOpts::new(route=[Lex]),
           )
           done(self.set("theme", Str(value)))
         }),
@@ -489,14 +493,22 @@ fn ShellInst::handler_for(
     (Receive, "init") =>
       Some(
         Handler((_args, ctx) => {
-          ctx.request("loadState", [], @tutuca.RequestOpts::new())
+          ctx.intent("loadState", [], @tutuca.IntentOpts::new(route=[Lex]))
           for f in self.spec.init_fields {
             ctx.send_at_path(ctx.path().concat([FieldStep(f)]), "init", [])
           }
           done(self)
         }),
       )
-    (Response, "loadState") =>
+    // The ANSWER, which is an ordinary message now — same bucket as `init`
+    // above, and named for the outcome rather than for the request. `loadState`
+    // names no outcomes in its opts, so the runtime derives them: `<name>Ok`.
+    //
+    // A host with no URL persistence answers nothing, the route runs out, and
+    // this component declares no `loadStateUnhandled` — so nothing arrives and
+    // the defaults stand, which is what the paragraph above always meant by
+    // "404s harmlessly".
+    (Receive, "loadStateOk") =>
       Some(
         Handler((args, _ctx) => {
           match args {
@@ -772,7 +784,7 @@ pub fn[N : @vdom.DomWalk] mount(
   sections : Array[@sb.Section],
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  url_handlers? : Map[String, @component.RequestFn] = Map([]),
+  url_handlers? : Map[String, Array[@component.IntentFn]] = Map([]),
 ) -> @app.App[N] raise {
   let root_scope = @component.ComponentStack::new()
   let (shell, spec, fields) = build_shell(sections)
@@ -789,7 +801,7 @@ pub fn[N : @vdom.DomWalk] mount(
   // visible to every story that didn't register a component of that name.
   root_scope.enter().register_components(spec.insp.components())
   if !url_handlers.is_empty() {
-    root_scope.register_request_handlers(url_handlers)
+    root_scope.register_intent_handlers(url_handlers)
   }
   let mut idx = 0
   for sec in sections {
@@ -797,7 +809,7 @@ pub fn[N : @vdom.DomWalk] mount(
       let child = root_scope.enter()
       child.register_components(s.module_.components)
       child.register_macros(s.module_.macros)
-      child.register_request_handlers(s.module_.requests)
+      child.register_intent_handlers(s.module_.intents)
       if idx == 0 {
         fields["active"] = Str(s.id)
       }

@@ -85,6 +85,8 @@ pub fn danger_set_inner_html_module() -> @component.ModuleDef
 
 pub fn danger_set_inner_html_views() -> Map[String, @anode.View]
 
+pub fn declining_request_handlers() -> Map[String, Array[@component.IntentFn]]
+
 pub let dn_d_example_common_style : String
 
 pub fn dn_d_example_component(name? : String, views? : Map[String, @anode.View], init? : DnDExampleState, common_style? : String, global_style? : String, update? : (DnDExampleState, @component.Dispatch, &@core.Ctx) -> @component.Update[DnDExampleState], swap? : (DnDExampleInput) -> ((DnDExampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (DnDExampleWhen) -> ((DnDExampleState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
@@ -161,7 +163,7 @@ pub fn event_modifiers_module() -> @component.ModuleDef
 
 pub fn event_modifiers_views() -> Map[String, @anode.View]
 
-pub fn failing_request_handlers() -> Map[String, @component.RequestFn]
+pub fn failing_request_handlers() -> Map[String, Array[@component.IntentFn]]
 
 pub let file_picker_common_style : String
 
@@ -473,7 +475,7 @@ pub let request_example_global_style : String
 
 pub fn request_example_views() -> Map[String, @anode.View]
 
-pub fn request_module(requests? : Map[String, @component.RequestFn]) -> @component.ModuleDef
+pub fn request_module(intents? : Map[String, Array[@component.IntentFn]]) -> @component.ModuleDef
 
 pub let root_common_style : String
 
@@ -2002,12 +2004,16 @@ pub(all) enum RequestExampleMsg {
   LoadAnotherWay
   ResetQuery
   SetQuery(String)
+  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn RequestExampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RequestExampleReceive {
   Init
+  LoadDataOk(@core.Value)
+  LoadDataError(String)
+  LoadDataUnhandled
   LoadAnotherWay
   ResetQuery
   SetQuery(String)
@@ -2067,6 +2073,7 @@ pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RootReceive {
   Init
+  LoadDataOk(@core.Value)
   ClearFilters
   OnCategoryToggle(@core.Value, Bool)
   OnRoleToggle(@core.Value, Bool)

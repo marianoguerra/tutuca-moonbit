@@ -27,7 +27,7 @@ pub fn make_instance(@registry.ComponentRef, String, Map[String, @core.Value]) -
 
 pub fn refresh_margaui() -> Unit
 
-pub fn sample_host_requests() -> Map[String, @component.RequestFn]
+pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]]
 
 pub fn sample_policy() -> @policy.Policy
 

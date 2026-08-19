@@ -16,7 +16,7 @@ pub fn dyncomp_on_load_error(Int, String) -> Unit
 
 pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
 
-pub fn mount(session? : Session?, samples? : Array[@shell.LoaderBarSample], requests? : Map[String, @component.RequestFn], policy? : @policy.Policy) -> UniversalHost?
+pub fn mount(session? : Session?, samples? : Array[@shell.LoaderBarSample], intents? : Map[String, Array[@component.IntentFn]], policy? : @policy.Policy) -> UniversalHost?
 
 pub fn on_event(@mizchi/js/core.Any) -> Unit
 
@@ -30,7 +30,7 @@ pub fn tree_json(@marianoguerra/tutuca/core.Value, String, Map[String, @persist.
 
 pub fn tree_of_json(@ui.UniversalUi, Json, String, Map[String, @persist.Snapshot]) -> @marianoguerra/tutuca/core.Value
 
-pub fn universal_module(samples? : Array[@shell.LoaderBarSample], requests? : Map[String, @component.RequestFn]) -> (@component.ModuleDef, @ui.UniversalUi)
+pub fn universal_module(samples? : Array[@shell.LoaderBarSample], intents? : Map[String, Array[@component.IntentFn]]) -> (@component.ModuleDef, @ui.UniversalUi)
 
 // Errors
 

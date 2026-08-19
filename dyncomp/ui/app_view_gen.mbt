@@ -273,6 +273,7 @@ impl @component.Fields for PaletteRowState with fn schema() {
     ],
     inputs=["pick"],
     receives=["setSelected"],
+    intents=["componentPicked"],
     view_names=["main"],
   )
 }
@@ -805,6 +806,7 @@ impl @component.Fields for SchemaFieldState with fn schema() {
       @component.FieldInfo::new("error", TyText),
     ],
     inputs=["edit"],
+    intents=["fieldEdited"],
     view_names=["main"],
   )
 }
@@ -1318,6 +1320,7 @@ impl @component.Fields for ConfigPanelState with fn schema() {
       @component.FieldInfo::new("form", TyComp(None)),
     ],
     inputs=["close"],
+    intents=["closeConfig"],
     view_names=["main"],
   )
 }

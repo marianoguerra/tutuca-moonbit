@@ -29,17 +29,23 @@
   }
 
   /// Dispatched by the host after `start()`. No view writes it.
+  /// `Init` is the host's; `LoadDataOk` is the ANSWER, and declaring it is
+  /// what makes `loadData` a request rather than a notification.
   receive Root {
     Init
+    LoadDataOk(Array[Any])
   }
 </script>
 
 <script type="tutuca/script" for="Root">
-  /// Ask for the data. Nothing else moves — the entries arrive on the
-  /// `loadData` response, which sorts them and collects the facets, and that
+  /// Ask for the data. Nothing else moves — the entries arrive as an ordinary
+  /// message, `loadDataOk`, which sorts them and collects the facets, and that
   /// is a MoonBit handler.
+  /// 
+  /// `lex` is the leg: the answer comes from a handler registered in the
+  /// SCOPE, which is where the module puts its fixture.
   receive init {
-    request 'loadData'
+    intent lex 'loadData'
   }
 </script>
 

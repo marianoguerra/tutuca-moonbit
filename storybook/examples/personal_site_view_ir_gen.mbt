@@ -506,7 +506,16 @@ fn root_inline_update(
   match msg {
     Receive("init", _args) => {
       let effects : Array[() -> Unit] = []
-      effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
+      effects.push(() => {
+        ctx.intent(
+          "loadData",
+          [],
+          @tutuca.IntentOpts::new(
+            route=[@tutuca.Leg::Lex],
+            on_ok_name="loadDataOk",
+          ),
+        )
+      })
       for f in effects {
         f()
       }

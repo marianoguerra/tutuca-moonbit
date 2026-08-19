@@ -367,6 +367,20 @@ test "RequestFn is refused, because a signature change is not a rename" {
 }
 
 ///|
+test "a v1 name in a COMMENT is prose, not work" {
+  // Every file that describes the migration mentions the v1 names — including
+  // the ones already migrated, whose comments say what they used to be. A
+  // refusal is a work item, and a list that reports prose forever stops
+  // meaning anything.
+  let p = mig(
+    "c.mbt", "/// A `RequestFn` had to respond, which is why this one answers `Pass`.\nlet x = 1\n",
+  )
+  assert_eq(p.refused.length(), 0)
+  // ...and the same name in code still refuses.
+  assert_eq(mig("c.mbt", "let f : RequestFn = g").refused.length(), 1)
+}
+
+///|
 test "a generated file is never edited" {
   // `AGENTS.md` is explicit, and the reason applies exactly to a codemod: an
   // edit here survives until the next `gen-views` and then silently does not.
