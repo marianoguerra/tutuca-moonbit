@@ -200,6 +200,22 @@ pub fn RequestOpts::new(
 }
 
 ///|
+/// The default route is `dyn lex` and is written HERE, once. Every other
+/// package that needs it asks for it rather than spelling two arms of an enum
+/// in its own order — a default route two packages disagree about is the kind
+/// of difference that shows up as a component answering in one build and not
+/// in another.
+pub fn IntentOpts::new(
+  route? : Array[Leg] = [Dyn, Lex],
+  on_ok_name? : String,
+  on_error_name? : String,
+  on_unhandled_name? : String,
+  live_path? : Bool = false,
+) -> IntentOpts {
+  { route, on_ok_name, on_error_name, on_unhandled_name, live_path }
+}
+
+///|
 /// The handlers a value carries: component instances answer through the `Obj`
 /// trait, pure data has none.
 pub fn Value::handler(

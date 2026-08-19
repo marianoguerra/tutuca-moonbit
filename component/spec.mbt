@@ -169,9 +169,13 @@ pub(all) struct DynProducer {
 ///|
 /// All effectful dispatches in one enum — the typed-state `update` bucket
 /// pattern-matches it like a TEA Msg. The payload is (handler name, args).
+/// v2 has TWO of these — `Receive` for an addressed message and `Intent` for a
+/// routed one — and the other three fold into them exactly as the buckets do
+/// (`@tutuca.HandlerBucket`). The five coexist only while the migration runs.
 pub(all) enum Dispatch {
-  Input(String, Array[@tutuca.Value])
   Receive(String, Array[@tutuca.Value])
+  Intent(String, Array[@tutuca.Value])
+  Input(String, Array[@tutuca.Value])
   Bubble(String, Array[@tutuca.Value])
   Response(String, Array[@tutuca.Value])
 }

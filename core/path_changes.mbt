@@ -81,3 +81,16 @@ pub fn PathChanges::bubble(
 ) -> Unit {
   self.ctx.bubble_at_path(self.build_path(), name, args)
 }
+
+///|
+/// Dispatch an intent from the built path. The v2 face of `bubble` above, and
+/// of the `request` that had no builder form at all: one method, and the route
+/// says which scope answers.
+pub fn PathChanges::intent(
+  self : PathChanges,
+  name : String,
+  args : Array[Value],
+  opts? : IntentOpts = IntentOpts::new(),
+) -> Unit {
+  self.ctx.intent_at_path(self.build_path(), name, args, opts)
+}

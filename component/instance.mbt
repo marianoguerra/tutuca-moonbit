@@ -414,6 +414,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
         Some(u) => {
           let d : Dispatch = match bucket {
             Receive => Receive(name, args)
+            Intent => Intent(name, args)
             Input => Input(name, args)
             Bubble => Bubble(name, args)
             Response => Response(name, args)

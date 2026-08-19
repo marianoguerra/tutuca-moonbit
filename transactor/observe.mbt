@@ -13,6 +13,7 @@
 pub fn ObserveKind::label(self : ObserveKind) -> String {
   match self {
     Receive => "receive"
+    Intent => "intent"
     Input => "input"
     Bubble => "bubble"
     Response => "response"
@@ -28,6 +29,7 @@ pub fn ObserveKind::label(self : ObserveKind) -> String {
 pub fn ObserveKind::of_bucket(bucket : @tutuca.HandlerBucket) -> ObserveKind {
   match bucket {
     Receive => Receive
+    Intent => Intent
     Input => Input
     Bubble => Bubble
     Response => Response

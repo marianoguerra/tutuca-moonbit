@@ -26,6 +26,8 @@ pub fn refuse(Refusal) -> Unit
 
 pub fn refusing() -> Bool
 
+pub fn route_label(Array[Leg]) -> String
+
 pub fn size_of(Value) -> Int?
 
 pub fn step_get(Value, Step) -> Value?
@@ -87,6 +89,7 @@ pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
 pub(all) enum HandlerBucket {
   Receive
+  Intent
   Input
   Bubble
   Response
@@ -96,6 +99,21 @@ pub(all) enum HandlerNamespace {
   Input
   Alter
 } derive(Eq, @debug.Debug)
+
+pub(all) struct IntentOpts {
+  route : Array[Leg]
+  on_ok_name : String?
+  on_error_name : String?
+  on_unhandled_name : String?
+  live_path : Bool
+} derive(Eq, @debug.Debug)
+pub fn IntentOpts::new(route? : Array[Leg], on_ok_name? : String, on_error_name? : String, on_unhandled_name? : String, live_path? : Bool) -> Self
+
+pub(all) enum Leg {
+  Dyn
+  Lex
+} derive(Eq, @debug.Debug)
+pub fn Leg::word(Self) -> String
 
 pub(all) enum Lit {
   LNull
@@ -146,6 +164,7 @@ pub fn PathChanges::bubble(Self, String, Array[Value]) -> Unit
 pub fn PathChanges::build_path(Self) -> DispatchPath
 pub fn PathChanges::field(Self, String) -> Self
 pub fn PathChanges::index(Self, String, Int) -> Self
+pub fn PathChanges::intent(Self, String, Array[Value], opts? : IntentOpts) -> Unit
 pub fn PathChanges::key(Self, String, String) -> Self
 pub fn PathChanges::send(Self, String, Array[Value]) -> Unit
 
@@ -328,6 +347,11 @@ pub(open) trait Ctx {
   fn send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
   fn bubble_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
   fn request(Self, String, Array[Value], RequestOpts) -> Unit = _
+  fn intent(Self, String, Array[Value], IntentOpts) -> Unit = _
+  fn intent_at_path(Self, DispatchPath, String, Array[Value], IntentOpts) -> Unit = _
+  fn forward(Self, Array[Value]?, IntentOpts?) -> Unit = _
+  fn reply(Self, Value) -> Unit = _
+  fn fail(Self, Value) -> Unit = _
   fn stop_propagation(Self) -> Unit = _
   fn at(Self) -> PathChanges = _
   fn walk_path(Self, (Int, Value) -> Bool) -> Unit = _

@@ -100,13 +100,15 @@ fn fields_json(args : Map[String, @tutuca.Value]) -> String {
 
 ///|
 /// WIT order, which is what the bridge counts in: 0=input, 1=receive,
-/// 2=response, 3=bubble.
+/// 2=response, 3=bubble, and 4=intent once the plan's task 16 puts it in the
+/// contract. Nothing dispatches a 4 before then.
 fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
   match bucket {
     Input => 0
     Receive => 1
     Response => 2
     Bubble => 3
+    Intent => 4
   }
 }
 

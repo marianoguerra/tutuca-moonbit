@@ -215,6 +215,11 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
     Receive => 1
     Response => 2
     Bubble => 3
+    // The WIT's `handler-bucket` gains this in the plan's task 16, and the
+    // number is its case index there. Nothing dispatches an intent at a guest
+    // until it does — `DynObj::obj_handler` answers `false` for the bucket —
+    // so no bundle sees a 4 before the contract that names it.
+    Intent => 4
   }
 }
 

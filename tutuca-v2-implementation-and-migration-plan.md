@@ -24,6 +24,33 @@ The block language is the smallest surface and the loudest change. The MoonBit
 `update` matches are the largest. Plan the schedule around the second number,
 not the first.
 
+## How this lands: expand, migrate, contract
+
+The task order below is the order the work has to happen in. It is **not** a
+sequence of commits, and one fact decides that: `.githooks/pre-commit` runs
+`moon check`, so a commit that does not compile cannot be made. Task 3 removing
+`ctx.bubble` would break `transactor`, `component`, `app`, both backends,
+`viewgen`, eleven guests and every example at once, and the tree would stay red
+from task 3 to task 19 — no bisect, no working intermediate, and a `moon test`
+that says nothing for the length of the release.
+
+So each task lands **additively**. The v2 surface goes in beside the v1 one,
+both compile, and the v1 one is deleted at the end in a separate contract step.
+Where the design says a type "goes from four cases to two", the four gain a
+fifth now and lose three later. That is what the task-2 corpus already did —
+`cases_v2()` beside `cases()`, with the v1 list deleted in tasks 10 and 11 — so
+this is the shape the plan chose the moment it wrote a second corpus rather than
+editing the first.
+
+Two consequences worth stating outright.
+
+- **A five-arm `HandlerBucket` is not the design.** Every one of them carries a
+  comment saying which v2 arm it folds into and that it is going. The
+  intermediate state is a scaffold, not a compromise.
+- **The contract step is a task**, added at the end as task 25, and it is not
+  optional: an expand that never contracts is how a codebase ends up with two of
+  everything.
+
 ## Tasks
 
 **Phase 0 — decide**
@@ -33,7 +60,7 @@ not the first.
 
 **Phase 1 — the runtime**
 
-- [ ] 3. [`core`: buckets, `Ctx`, `IntentOpts`](#3-core-buckets-ctx-intentopts)
+- [x] 3. [`core`: buckets, `Ctx`, `IntentOpts`](#3-core-buckets-ctx-intentopts)
 - [ ] 4. [`transactor`: the walk, `reply` / `fail` / `forward`](#4-transactor-the-walk-reply--fail--forward)
 - [ ] 5. [`component`: `Dispatch`, `obj_handler`, `IntentFn`](#5-component-dispatch-obj_handler-intentfn)
 - [ ] 6. [`app`: wire the lexical scope and the DOM entry](#6-app-wire-the-lexical-scope-and-the-dom-entry)
@@ -72,6 +99,7 @@ not the first.
 **Phase 7 — prove it**
 
 - [ ] 23. [Measure the walk](#23-measure-the-walk)
+- [ ] 25. [Contract: delete the v1 surface](#25-contract-delete-the-v1-surface)
 - [ ] 24. [Release and the consumer examples](#24-release-and-the-consumer-examples)
 
 ---
@@ -222,6 +250,38 @@ no-op, not a crash.
 **Validation.** `moon check` on all three targets. `moon info` and read the
 `.mbti` diff — this task is entirely an interface change, so the diff **is** the
 deliverable.
+
+**Done.** Additively, per "How this lands" above. `core/pkg.generated.mbti`
+gains, and loses nothing:
+
+- **`Leg`** (`Dyn`, `Lex`) with `Leg::word` and `route_label`, so a route has
+  one spelling and not one per package that prints it.
+- **`IntentOpts`** — `route : Array[Leg]`, `on_ok_name`, `on_error_name`,
+  `on_unhandled_name`, `live_path`. v1's `on_res_name`, the combined
+  `[res, err]` arm, has no field here. **`IntentOpts::new` is where the default
+  route `[Dyn, Lex]` is written**, once, and every package asks for it rather
+  than spelling the two arms itself.
+- **`Ctx`** gains `intent`, `intent_at_path`, `forward(args?, opts?)`, `reply`
+  and `fail`, each defaulting to nothing. `intent` defaults to `intent_at_path`
+  at the ctx's own path, the way `send` does — "start at the parent" is the
+  walk's rule and belongs to the transactor, not to the address.
+- **`PathChanges::intent`**, so `ctx.at()` reaches the new channel.
+- **`HandlerBucket`** gains `Intent` (five arms; three go in task 25).
+
+`RequestOpts`, `ctx.bubble` and `ctx.request` are untouched and still work.
+
+Pulled forward, because a fifth bucket arm makes them non-exhaustive and the
+tree has to compile: `Dispatch::Intent` (task 5's enum, one arm early),
+`ObserveKind::Intent` (task 4's), and the bucket arms in `dyncomp/host/dynobj.mbt`,
+`dyncomp/host/wasm/glue.mbt` and `tutucard/playground/cardguest.mbt`. The two
+guest-facing ones answer honestly rather than with a placeholder: no loaded
+bundle declares an intent, so `DynObj::obj_handler` says `false` for the bucket,
+and no bundle can see the wire number until task 16 puts it in the WIT.
+
+**The risk held.** `core/path_intent_test.mbt` drives `intent`, `forward`,
+`reply` and `fail` on a `NullCtx` and asserts each returns — a `reply` with no
+transactor is a no-op, because there is no walk to answer. The same file pins
+the default route in the one place it is written.
 
 ## 4. `transactor`: the walk, `reply` / `fail` / `forward`
 
@@ -738,3 +798,29 @@ release steps), `CHANGELOG.md`.
 
 **Validation.** Publish, then `node build.mjs` in each example, then open each
 page. Then announce.
+
+## 25. Contract: delete the v1 surface
+
+The other half of "How this lands". Everything the migration added beside a v1
+name is only worth adding because this task removes the v1 name.
+
+What goes: `HandlerBucket`'s `Input`, `Bubble` and `Response`; `Dispatch`'s
+same three; `ObserveKind`'s `Input`, `Bubble`, `Response` and `Request`;
+`RequestOpts` and `RequestOpts::new`; `Ctx::bubble`, `Ctx::bubble_at_path` and
+`Ctx::request`; `PathChanges::bubble`; `RequestFn` and
+`register_request_handlers`; `ScopeRequests`; `Case` and `cases()` in the
+conformance corpus, with `V2Case` renamed back to `Case`; `DeclKind`'s `DOn`,
+`DBubble` and `DResponse`; and the `bubble` / `request` effects.
+
+**Key files.** Every file tasks 3–17 touched, minus the ones that only gained
+something.
+
+**Risk.** A deletion this wide is exactly where a v1 spelling survives in a
+string, a comment or a generated table rather than in a type — the checker
+cannot see those. Grep for each removed name after the types are gone, and
+treat a hit in `skill/`, `docs/` or a `.html` as a task-19-or-20 miss rather
+than as noise.
+
+**Validation.** `just ci`, then `just dev guest-harness` and `just dev
+tutucard-playground`. Then `git grep` for each deleted identifier: the only
+hits should be in `CHANGELOG.md` and in the migration tool's own tables.

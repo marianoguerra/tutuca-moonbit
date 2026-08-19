@@ -71,8 +71,9 @@ pub fn Components::new() -> Self
 pub fn Components::register(Self, Component) -> Unit
 
 pub(all) enum Dispatch {
-  Input(String, Array[@core.Value])
   Receive(String, Array[@core.Value])
+  Intent(String, Array[@core.Value])
+  Input(String, Array[@core.Value])
   Bubble(String, Array[@core.Value])
   Response(String, Array[@core.Value])
 }

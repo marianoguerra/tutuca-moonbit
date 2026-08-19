@@ -27,6 +27,7 @@ pub impl Requests for NoRequests
 
 pub(all) enum ObserveKind {
   Receive
+  Intent
   Input
   Bubble
   Response

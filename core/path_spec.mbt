@@ -22,12 +22,81 @@
 ///|
 /// Dispatch buckets a handler can live in (semantics.md §6). Alter is
 /// render-time only and never dispatched, so it is not a bucket here.
+///
+/// v2 has TWO of these, and the other three are on their way out. `Receive`
+/// holds every ADDRESSED message whoever sent it — a view, a parent, the host,
+/// or an answer — so `Input` folds into it; `Intent` holds every ROUTED one, so
+/// `Bubble` and `Response` fold into it. The five arms coexist only while the
+/// migration runs: a v2 dispatch already uses `Receive` or `Intent` and nothing
+/// else, and the last commit of the migration deletes the other three rather
+/// than teaching anything new to read them (`totuka-v2.md` §10).
 pub(all) enum HandlerBucket {
-  Receive // ctx.send targeted messages
-  Input // DOM / @on.* handlers
-  Bubble // ctx.bubble handlers
-  Response // request-response handlers
+  Receive // addressed: ctx.send, a view, the host, an answer
+  Intent // routed: dispatched by someone who did not name a target
+  Input // v1 only, folded into Receive: DOM / @on.* handlers
+  Bubble // v1 only, folded into Intent: ctx.bubble handlers
+  Response // v1 only, folded into Intent: request-response handlers
 } derive(Debug, Eq)
+
+///|
+/// A leg of an intent's route (`totuka-v2.md` §3).
+///
+/// `Dyn` walks the dynamic scope — the dispatch path, from the sender's PARENT
+/// up to the root, one `pop_step()` per hop — and its handlers are component
+/// instances with state. `Lex` walks the lexical scope — the registration
+/// chain — and its handlers are static functions with none. A route is a list
+/// of these, in the order written, and `[Dyn, Lex]` when nothing says
+/// otherwise.
+pub(all) enum Leg {
+  Dyn
+  Lex
+} derive(Debug, Eq)
+
+///|
+/// The leg word a route is written with, so a route has one spelling and not
+/// one per package that prints it.
+pub fn Leg::word(self : Leg) -> String {
+  match self {
+    Dyn => "dyn"
+    Lex => "lex"
+  }
+}
+
+///|
+/// A route as it is written: the leg words, space-separated. `[Dyn, Lex]` is
+/// `"dyn lex"`, and the empty route is the empty string.
+pub fn route_label(route : Array[Leg]) -> String {
+  route.map(l => l.word()).join(" ")
+}
+
+///|
+/// Options for `Ctx::intent` — the v2 shape of `RequestOpts`.
+///
+/// Three of the fields are v1's, unchanged in meaning: the two answer names the
+/// sender declared, and `live_path`, which opts out of pinning field-resolved
+/// keys at dispatch time. Two things are new. `route` is the walk itself, which
+/// v1 could not carry because each of its two channels had exactly one. And
+/// `on_unhandled_name` is the third outcome (`totuka-v2.md` §6): the route
+/// ended with no reply, which is not the same answer as a handler failing, and
+/// v1's `on_res_name` — the combined `[res, err]` arm — is gone with the bug it
+/// caused.
+pub(all) struct IntentOpts {
+  /// The legs to walk, in order. `[Dyn, Lex]` when nothing says otherwise.
+  route : Array[Leg]
+  on_ok_name : String?
+  on_error_name : String?
+  on_unhandled_name : String?
+  live_path : Bool
+} derive(Debug, Eq)
+
+///|
+declare pub fn IntentOpts::new(
+  route? : Array[Leg],
+  on_ok_name? : String,
+  on_error_name? : String,
+  on_unhandled_name? : String,
+  live_path? : Bool,
+) -> IntentOpts
 
 ///|
 /// Options for Ctx::request (JS pushRequest opts): response-handler routing
@@ -67,6 +136,27 @@ pub(open) trait Ctx {
     args : Array[Value],
   ) -> Unit = _
   fn request(Self, name : String, args : Array[Value], opts : RequestOpts) -> Unit = _
+  /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
+  /// ctx's PARENT, so a component never re-enters its own handler.
+  fn intent(Self, name : String, args : Array[Value], opts : IntentOpts) -> Unit = _
+  fn intent_at_path(
+    Self,
+    path : DispatchPath,
+    name : String,
+    args : Array[Value],
+    opts : IntentOpts,
+  ) -> Unit = _
+  /// Dispatch the message being handled as an intent, or — in an intent body —
+  /// continue the walk after this position. `None` arguments pass on the ones
+  /// that arrived; `None` opts keep the route the intent is already walking, or
+  /// take the default when a message is picking one for the first time. The
+  /// answer target does not move, which is the whole of what makes this
+  /// different from dispatching the intent again.
+  fn forward(Self, args : Array[Value]?, opts : IntentOpts?) -> Unit = _
+  /// Answer the intent this handler received, and end the walk.
+  fn reply(Self, value : Value) -> Unit = _
+  /// Answer it with a failure, and end the walk.
+  fn fail(Self, error : Value) -> Unit = _
   fn stop_propagation(Self) -> Unit = _
   /// `ctx.at`: a relative-path builder rooted at this ctx's dispatch path.
   fn at(Self) -> PathChanges = _
@@ -119,6 +209,38 @@ impl Ctx with fn bubble_at_path(_self, _path, _name, _args) {
 
 ///|
 impl Ctx with fn request(_self, _name, _args, _opts) {
+
+}
+
+///|
+/// `ctx.intent` is `intent_at_path` at the ctx's OWN path, the way `send` is —
+/// the walk's "start at the parent" rule belongs to the transactor and not to
+/// the address, so both spellings hand it the same place.
+impl Ctx with fn intent(self, name, args, opts) {
+  self.intent_at_path(self.path(), name, args, opts)
+}
+
+///|
+impl Ctx with fn intent_at_path(_self, _path, _name, _args, _opts) {
+
+}
+
+///|
+/// The four new methods default to nothing, for the reason every method on this
+/// trait does: a handler has to be runnable with no dispatcher, so `Path::update`
+/// and a test can call one. A `reply` with no transactor is a no-op and not a
+/// crash — there is no walk to answer, and nothing to report to.
+impl Ctx with fn forward(_self, _args, _opts) {
+
+}
+
+///|
+impl Ctx with fn reply(_self, _value) {
+
+}
+
+///|
+impl Ctx with fn fail(_self, _error) {
 
 }
 

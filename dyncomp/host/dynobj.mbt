@@ -385,6 +385,11 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
     // A guest child raises these with control.emit; a guest PARENT hears them
     // here, through the same walk the host uses between its own components.
     Bubble => self.def.bubbles.contains(name)
+    // Nothing dispatches this yet, and a v1 manifest has no set to read: the
+    // WIT gains `intents` in the plan's task 16, and this arm reads it then.
+    // Answering `false` now is the truth rather than a placeholder — no loaded
+    // bundle declares an intent.
+    Intent => false
   }
   guard declared else { return None }
   Some(

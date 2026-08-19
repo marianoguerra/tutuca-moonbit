@@ -98,6 +98,9 @@ declare fn Completion::release_self(self : Completion) -> Unit
 /// What an observer record describes (JS observeKind strings as an enum).
 pub(all) enum ObserveKind {
   Receive
+  /// One hop of an intent's walk. v2's, and the kind `Bubble`, `Response` and
+  /// `Request` collapse into once the walk owns all three.
+  Intent
   Input
   Bubble
   Response
