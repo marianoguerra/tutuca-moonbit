@@ -32,9 +32,10 @@ Three rules explain everything else:
    (copy-on-write, so untouched siblings keep their identity) and re-renders
    once per interaction.
 
-Components never hold references to each other — they communicate by **path**
-(`send`, `bubble`, `request`), and events are not wired as DOM listeners:
-they are delegated at the root and routed back through the tree.
+Components never hold references to each other — they communicate by **path**:
+a `send` addressed to one target, or an `intent` that walks a route until
+something answers. Events are not wired as DOM listeners either — they are
+delegated at the root and routed back through the tree.
 
 ## Notation reference
 
@@ -106,6 +107,6 @@ Things to notice:
   is checked against that schema — `.count` has to be a field, and `+=` has to
   be arithmetic — and compiled into a match over the same dispatch a
   hand-written arm takes.
-- **What is left is what neither block can state.** A seed value, a request's
+- **What is left is what neither block can state.** A seed value, an intent's
   options, a handler that reaches for a path or builds a child: those are
   arguments to `counter_component(...)`, and everything else is the file.

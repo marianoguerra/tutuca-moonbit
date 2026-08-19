@@ -122,7 +122,7 @@ binary inside the `_build` they delete.
 | `ci`       | `gen-views` + `skill-embed` drift checks, then `check`, the example/skill/guest checks, `test` and `build` |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
-| `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen-views` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
+| `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html` and `corpus_v2.html` (v1's four channels and v2's two are separate corpora, and stay so until the contract deletes v1), then run `gen-views` over both — the MoonBit backend cannot read a corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
 | `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` — which is how `guests/table` sat in one list and not the other, built by nothing |
@@ -253,6 +253,26 @@ bundles) and injects the resulting `<style id="margaui-css">`, re-running it fro
 the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
 no `globalThis` class hand-off. The in-browser playground uses the same compiler
 shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
+
+### The codemod (`tutuca migrate`)
+
+`cli/migrate.mbt` is a one-way codemod from the v1 four-channel surface to v2's
+two, over `.html` view files and the `.mbt` beside them: `bubble` → `intent dyn`,
+`request` → `intent lex`, the combined `[res, err]` response payload → the three
+named answers. Run it with `just cli migrate <paths…>` — it writes; `--dry-run`
+prints what it would change instead. A path may be a file or a directory.
+
+Its governing rule is that it **refuses rather than half-migrates**. A file
+holding a construct the codemod cannot rewrite safely — a `RequestFn`, which is
+a signature change and not a rename; a `.bubble(` call `moon fmt` wrapped across
+lines beside an `.at()` builder — is reported by name with the reason and left
+untouched. Refusal is per COMPONENT, not per file: a `.html` whose `.mbt` twin
+is refused is refused too, because a view rewritten against handlers that were
+not is worse than either half. That rule came from watching it half-migrate
+`request.{html,mbt}` in this repo; failures went from 14 to 2 when it changed.
+
+Refusals mention only code — a v1 name inside a `//` comment is not a reason to
+refuse a file, and `mentions_in_code` is what draws that line.
 
 ### Styling (`css/`)
 

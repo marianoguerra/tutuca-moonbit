@@ -462,7 +462,7 @@ and path seams, decoding it back for the handlers), and so does `dyncomp`'s
 host object for WebAssembly guest components — the value tree cannot tell
 the difference. `core` never learns what a component is.
 
-A `ModuleDef` bundles components + macros + request handlers;
+A `ModuleDef` bundles components + macros + intent handlers;
 `build_scope()` registers them into a `ComponentStack` (a lexical scope used
 to resolve `FieldSpec::comp("Name")` references and macro names) and
 compiles every view once.
@@ -544,15 +544,16 @@ Two refinements exist on top of plain `Path`:
   a plain state path.
 - `Handler` — the uniform shape every bucket entry is wrapped into:
   `(Array[Value], &Ctx) -> Value?`. The **`Ctx` trait** is the
-  handler's window to the world: `path()`, `send`, `bubble`,
-  `send_at_path`, `request`, `stop_propagation`. Handlers see only that
+  handler's window to the world: `path()`, `send`, `send_at_path`,
+  `intent`, `forward`, `reply`, `fail`, `stop_propagation`. Handlers see only that
   trait, so the same component code runs under the real transactor, a test
   double, or a wasm-guest bridge.
 
 ## 8. The transactor: settling state
 
 One event can trigger a cascade: a handler `send`s to a child, whose handler
-`bubble`s up, which fires a `request`, whose response mutates again. The
+raises an `intent`, which walks up to an ancestor, which raises another along
+the scope, whose answer mutates again. The
 `transactor` package serializes that cascade. `Transactor` owns the root
 (`mut root : Value` — the *only* mutable state cell in the framework),
 queues `Transaction`s, and `settle()` runs a bounded batch — each one a
@@ -588,10 +589,19 @@ test "transactor: messages queue, settle produces one new root" {
 The `ctx` a handler receives is the transactor's: `ctx.send(...)` pushes
 another transaction rather than running the handler reentrantly — that is
 how one user interaction becomes *one* `on_change`, no matter how many
-messages it fans out into. Bubbling walks the path towards the root trying
-each ancestor's `bubble` bucket; requests resolve through the `Requests`
-trait and come back as `Response`-bucket transactions; `observe()` exposes
-the whole dispatch feed (the inspector consumes it).
+messages it fans out into.
+
+An **intent** is the same machinery with a route on it. `push_intent` returns
+an `IntentWalk`; each hop is its own queued transaction. The `Dyn` leg walks
+the path towards the root trying each ancestor's `intent` bucket, starting at
+the sender's parent; the `Lex` leg resolves handlers through the `Intents`
+trait and waits for each one's `answer` callback, where `Pass` means "not mine,
+keep walking". A hop that replies ends the walk, and the answer comes back to
+the originator's pinned path as an ordinary `receive` transaction named
+`<name>Ok` or `<name>Error`; a route that runs out sends `<name>Unhandled`
+there instead. So an answer is a message, and a handler cannot tell one from
+the other. `observe()` exposes the whole dispatch feed (the inspector consumes
+it).
 
 ## 9. Closing the loop: events without listeners
 

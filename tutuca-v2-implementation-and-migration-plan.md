@@ -93,7 +93,7 @@ Two consequences worth stating outright.
 **Phase 6 — words**
 
 - [x] 20. [The skill](#20-the-skill)
-- [ ] 21. [`docs/`, `README`, `AGENTS.md`](#21-docs-readme-agentsmd)
+- [x] 21. [`docs/`, `README`, `AGENTS.md`](#21-docs-readme-agentsmd)
 - [ ] 22. [The landing site and the playground](#22-the-landing-site-and-the-playground)
 
 **Phase 7 — prove it**
@@ -1621,6 +1621,54 @@ than left to mislead.
 **Validation.** `moon test docs` for the executable pair, and a read-through of
 `README.md` by somebody who did not do the work.
 
+**Done.** `docs/first_principles.mbt.md`'s dispatch chapter was the one that was
+actually wrong, and it is rewritten: the `Ctx` trait's method list is the v2 one
+(`intent` / `forward` / `reply` / `fail` where `bubble` / `request` were), the
+cascade sentence in §8 is a cascade that can happen (`send` → `intent` up the
+tree → another along the scope → an answer), and the paragraph that used to end
+"requests resolve through the `Requests` trait and come back as `Response`-bucket
+transactions" now describes the walk: `push_intent` returns an `IntentWalk`,
+each hop is its own queued transaction, the `Dyn` leg is `pop_step` from the
+sender's parent, the `Lex` leg resolves through the `Intents` trait and waits on
+each `answer` callback where `Pass` means keep walking, and the answer comes back
+to the originator's pinned path as an ordinary `receive` named `<name>Ok` /
+`<name>Error` / `<name>Unhandled`. That last clause is the design's claim stated
+where a reader building the framework up will meet it: **an answer is a message**,
+and a handler cannot tell one from the other.
+
+`docs/tutorial.mbt.md` lost `(send, bubble, request)` for the two-channel
+sentence, and "a request's options" for "an intent's options".
+`README.mbt.md`'s typed-enum paragraph names two buckets rather than three.
+`README.md` needed nothing — it carries the counter and the package pitch, and
+neither mentions a channel.
+
+`AGENTS.md`: `dom-props` was already in the table (task 12 put it there when it
+added the task, which is the discipline working). What was missing was
+`gen-conformance`'s second corpus — the row now says both `corpus.html` and
+`corpus_v2.html` and why they stay separate until the contract — and task 18,
+which is a CLI command rather than a dev task and so got its own section,
+**The codemod (`tutuca migrate`)**. It records the rule that is the whole design:
+refuses rather than half-migrates, refusal is per COMPONENT and not per file
+(with the `request.{html,mbt}` incident that produced the rule, 14 failures → 2),
+and refusals mention only code because a v1 name in a `//` comment is not a
+reason to refuse a file.
+
+`CHANGELOG.md`'s `[Unreleased]` was empty after twenty commits, which is its own
+kind of wrong. It now carries the release: two channels instead of four, routes
+and legs, the three named outcomes and the `[res, err]` bug they delete, `Pass`
+and the outcome v1 had no word for, `IntentFn` as a list per name, `RequestFn`
+still working and deprecated, `e.<path>` checked against the browser specs, WIT
+`@0.8.0`, and `tutuca migrate` under Added. Task 24 refines it into a release.
+
+**Deferred, deliberately.** Folding `totuka-v2.md` and this plan into the record
+is the last paragraph of this task and it cannot run yet — tasks 22-25 are still
+open and both documents are still being read. It moves to task 25, which is
+where the v1 surface goes away and a design document describing shipped
+behaviour stops being a plan.
+
+**Validated.** `moon test docs` 11/11, `moon check` clean, `just dev check-skill`
+15/15.
+
 ## 22. The landing site and the playground
 
 `playground/site/` embeds two kinds of live example: `<mb-playground>`, which
@@ -1712,3 +1760,10 @@ than as noise.
 **Validation.** `just ci`, then `just dev guest-harness` and `just dev
 tutucard-playground`. Then `git grep` for each deleted identifier: the only
 hits should be in `CHANGELOG.md` and in the migration tool's own tables.
+
+**Inherited from task 21.** Fold `totuka-v2.md` and this plan into the record.
+Task 21 could not: both documents were still being read by the tasks after it.
+Here they describe shipped behaviour, and `AGENTS.md` is explicit that a
+document specified against something that no longer exists gets deleted rather
+than left to mislead. Each either moves into `docs/` with its status banner
+removed, or goes.

@@ -6,6 +6,60 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Four dispatch channels became two.** `Input` / `Receive` / `Bubble` /
+  `Response` are now `Receive` — a message addressed to one component, which
+  stops there — and `Intent`, which names a job and walks a **route** until
+  something answers. A route is a list of legs: `dyn` walks the dispatch path
+  from the sender's PARENT up to the root, `lex` walks the handlers registered
+  on the scope chain, and a bare `intent` takes `dyn lex`. What v1 spelled
+  `bubble` is `intent dyn`; what it spelled `request` is `intent lex`. The verb
+  no longer decides which scope answers — the route does, and it is written at
+  the call site where the decision is.
+
+  In the block language: `intent [dyn|lex]… 'name' args…` raises one,
+  `reply` / `fail` answer it, `forward` hands it to the next hop, and `stop`
+  ends the walk answering nothing. A handler that runs without replying is an
+  **observer** — one rule, `a reply ends the walk, running does not`, replaces
+  the separate listener bucket v1 would have needed.
+
+- **An intent has three named outcomes, and each has its own shape.**
+  `<name>Ok`, `<name>Error` and `<name>Unhandled` are dispatched back to the
+  sender as ordinary `receive` messages. v1's combined `[res, err]` payload is
+  gone, and so is the bug it caused: a split arm matching `[res, err]` read the
+  wrong slot silently, and there is now no arm that can be handed both.
+
+  `<name>Unhandled` is the outcome v1 had no word for. A `RequestFn` *had* to
+  respond, so a handler with nothing to contribute could only invent an error;
+  an `IntentFn` answers `Pass`, the walk goes on, and if the route runs out the
+  sender hears "nothing claimed it" — a different sentence from "a handler
+  refused it".
+
+- **Scope handlers are `IntentFn`, registered as a list per name.**
+  `ModuleDef::new(intents=…)` takes `Map[String, Array[IntentFn]]`, because the
+  `lex` leg walks: a declining handler hands the intent to the next one.
+  `RequestFn` and `requests=` still exist and still work; they are deprecated
+  and will be removed.
+
+- **`e.<path>` in an `@on` argument is checked against the browser specs.**
+  `eventpath/dom_props_gen.mbt` is generated from `w3c/webref`'s machine-extracted
+  WebIDL, so `e.target.value` is type-checked against the event interface it is
+  reached through rather than accepted on faith. Regenerate with the `dom-props`
+  task.
+
+- **WIT is `tutuca:component@0.8.0`**, with `intent` added to the `bucket` enum
+  (last, so existing discriminants are unchanged) and the four `control` intent
+  functions on the host side. Every guest was regenerated.
+
+### Added
+
+- **`tutuca migrate`** — a one-way codemod from v1 to v2 over `.html` and the
+  `.mbt` beside them. It refuses rather than half-migrates: a file holding a
+  construct it cannot rewrite safely is reported by name with the reason and
+  left exactly as it was, and refusal is per COMPONENT so a view is never
+  rewritten against handlers that were not. The refusals are the work list.
+
 ## [0.22.0] - 2026-08-15
 
 ### Removed
