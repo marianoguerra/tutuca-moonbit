@@ -326,6 +326,7 @@ fn handle_event_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
     pair in [
       (@tscript.DeclKind::DOn, @abi.bucket_input),
       (DReceive, @abi.bucket_receive),
+      (DIntent, @abi.bucket_intent),
       (DResponse, @abi.bucket_response),
       (DBubble, @abi.bucket_bubble),
     ] {

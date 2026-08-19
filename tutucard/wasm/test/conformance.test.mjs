@@ -46,10 +46,59 @@ const CORPUS = DUMP.cases;
 // `enrich` / `enrichScope` gap lived — both were absent from the generator
 // entirely, with no refusal to show for it.
 const VALUE_CORPUS = DUMP.valueCases;
+// The v2 half: two buckets, four new effects, and a route on two of them.
+const CORPUS_V2 = DUMP.casesV2;
 
 // The declaration kind each bucket dispatches, which is the word a refusal is
 // reported under.
-const KIND = { input: "on", receive: "receive", bubble: "bubble", response: "response" };
+const KIND = {
+  input: "on",
+  receive: "receive",
+  bubble: "bubble",
+  response: "response",
+  intent: "intent",
+};
+
+// A route as the wire carries it (`@abi.route_*`, an i32 because the set is
+// closed) against the words the corpus writes. The card compiler holds the
+// same table from the other side; this is the second half of it, and the
+// reason it can be a table at all is that the design's leg words are closed.
+// Index 0 is `route_none` — "not written" — and it resolves to the DEFAULT,
+// which is why it and index 3 read the same. That is the whole reason the
+// corpus stores a route resolved: the default is the one thing two backends
+// can agree to disagree about while every explicit route passes, so both are
+// made to say `dyn lex` out loud.
+const ROUTE = ["dyn lex", "dyn", "lex", "dyn lex", "lex dyn"];
+
+/**
+ * A v2 case as a card's state block.
+ *
+ * The corpus's own schema plus the case's own handler, because the harness
+ * builds one card per case with an empty template — and in v2 a `receive` the
+ * schema does not declare is one the VIEWS send, of which a card with no views
+ * has none. `cmd/card-corpus` computes the variant case; this puts it in the
+ * right bucket.
+ */
+function schemaOf(c) {
+  const word = c.bucket === "intent" ? "intent" : "receive";
+  // The dispatched name, and the declared one when they differ — one case
+  // declares `receive inc` and dispatches `nope`, which is the point of it.
+  const want = [c.variant, c.declVariant].filter(Boolean);
+  const lines = c.schema.split("\n");
+  let placed = false;
+  const out = lines.map((line) => {
+    const l = line.trim();
+    if (placed || !l.startsWith(word + " ")) return line;
+    placed = true;
+    const missing = want.filter(
+      (v) => !new RegExp(`\\b${v.split("(")[0]}\\b`).test(l),
+    );
+    return missing.length
+      ? line.replace(/\}\s*$/, `, ${missing.join(", ")} }`)
+      : line;
+  });
+  return placed ? out.join("\n") : `${c.schema}\n${word} C { ${want.join(", ")} }`;
+}
 
 /**
  * A corpus case as a card. The corpus carries the two script blocks; a card
@@ -147,6 +196,14 @@ async function build(c, i, source) {
         // records a request as a name and its arguments, has nothing to say
         // about it and neither does this.
         request: (name, args, _opts) => effects.push({ kind: "request", name, args }),
+        // v2's four. `intent` and `forward` carry a route; `reply` and `fail`
+        // carry one value and no name, because the walk addresses them.
+        intent: (name, args, route) =>
+          effects.push({ kind: "intent", name, args, route: ROUTE[route] ?? "" }),
+        forward: (args, route) =>
+          effects.push({ kind: "forward", name: "", args, route: ROUTE[route] ?? "" }),
+        reply: (args) => effects.push({ kind: "reply", name: "", args }),
+        fail: (args) => effects.push({ kind: "fail", name: "", args }),
       },
     },
     { ...descriptor, core: `${stem}.wasm` },
@@ -221,11 +278,15 @@ test("the wasm backend agrees with the conformance corpus", async () => {
       name: e.name,
       args: e.args.map((a) => fromWire(a, arena)),
     }));
+    // The corpus carries a `route` on every effect now, and every v1 effect's
+    // is empty — the two that have one are v2's. Dropped here rather than
+    // compared, so this loop keeps asking exactly what it asked before.
+    const wantEffects = c.effects.map(({ route: _r, ...rest }) => rest);
     try {
-      assert.deepEqual(gotEffects, c.effects);
+      assert.deepEqual(gotEffects, wantEffects);
     } catch {
       problems.push(
-        `effects are ${JSON.stringify(gotEffects)}, want ${JSON.stringify(c.effects)}`,
+        `effects are ${JSON.stringify(gotEffects)}, want ${JSON.stringify(wantEffects)}`,
       );
     }
     if (problems.length) results.failed.push(`${c.name}: ${problems.join("; ")}`);
@@ -351,6 +412,93 @@ test("the wasm backend agrees with the corpus about value bodies", async () => {
   );
   if (failures.length) console.log("failed:\n  " + failures.join("\n  "));
   assert.deepEqual(failures, []);
+});
+
+// ---------------------------------------------------------------------------
+
+test("the wasm backend agrees with the v2 conformance corpus", async () => {
+  // The same drive as the v1 loop above, over `casesV2`. A separate test
+  // rather than a second pass through the first one, for the reason the two
+  // corpora are separate at all: they carry two vocabularies while both exist,
+  // and the plan's task 25 deletes the first.
+  //
+  // ZERO refusals is asserted here, and it is a stronger claim than the v1
+  // loop's: every v2 case was written against the design rather than against
+  // either backend, so a refusal is this backend failing to express something
+  // the design says — not a gap it has yet to close.
+  const passed = [], refused = [], failed = [];
+  for (const [i, c] of CORPUS_V2.entries()) {
+    const b = await build(
+      c,
+      `v2_${i}`,
+      `<script type="tutuca/state">\n${schemaOf(c)}\n</` + `script>\n` +
+        `<script type="tutuca/script">\n${c.script}\n</` + `script>\n` +
+        `<template id="${c.component}"><div></div></template>\n`,
+    );
+    if (b.error) {
+      failed.push(`${c.name}: did not compile — ${b.error.trim()}`);
+      continue;
+    }
+    const { root, arena, put, effects, log } = b;
+    if (log.includes(`refused ${KIND[c.bucket]} ${c.handler}`)) {
+      refused.push(c.name);
+      continue;
+    }
+    const ctorArgs = Object.entries(c.before).map(([k, v]) => [k, toWire(v, put)]);
+    let inst;
+    try {
+      inst = new root.guest.Instance(c.component, ctorArgs);
+    } catch (e) {
+      failed.push(`${c.name}: the constructor threw — ${e.message}`);
+      continue;
+    }
+    let res;
+    try {
+      res = inst.handleEvent(c.bucket, c.handler, c.args.map((a) => toWire(a, put)));
+    } catch (e) {
+      failed.push(`${c.name}: the dispatch threw — ${e.message}`);
+      continue;
+    }
+    const wantState = c.after ?? c.before;
+    const after = res.tag === "changed" ? res.val : inst;
+    const got = {};
+    for (const k of Object.keys(wantState)) got[k] = fromWire(after.getField(k), arena);
+
+    const problems = [];
+    try {
+      assert.deepEqual(got, wantState);
+    } catch {
+      problems.push(`state is ${JSON.stringify(got)}, want ${JSON.stringify(wantState)}`);
+    }
+    // The route travels with the effect now, so it is compared with it. An
+    // effect that carries none records the empty string, which is what the
+    // corpus writes for every effect but `intent` and `forward`.
+    const gotEffects = effects.map((e) => ({
+      kind: e.kind,
+      name: e.name,
+      args: e.args.map((a) => fromWire(a, arena)),
+      route: e.route ?? "",
+    }));
+    const wantEffects = c.effects.map((e) => ({ ...e, route: e.route ?? "" }));
+    try {
+      assert.deepEqual(gotEffects, wantEffects);
+    } catch {
+      problems.push(
+        `effects are ${JSON.stringify(gotEffects)}, want ${JSON.stringify(wantEffects)}`,
+      );
+    }
+    if (problems.length) failed.push(`${c.name}: ${problems.join("; ")}`);
+    else passed.push(c.name);
+  }
+
+  console.log(
+    `v2 corpus: ${passed.length} passed, ${refused.length} refused, ` +
+      `${failed.length} failed (of ${CORPUS_V2.length})`,
+  );
+  if (failed.length) console.log("failed:\n  " + failed.join("\n  "));
+  if (refused.length) console.log("refused:\n  " + refused.join("\n  "));
+  assert.deepEqual(failed, []);
+  assert.deepEqual(refused, []);
 });
 
 // ---------------------------------------------------------------------------

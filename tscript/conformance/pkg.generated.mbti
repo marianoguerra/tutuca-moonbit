@@ -13,6 +13,8 @@ pub fn cases_v2() -> Array[V2Case]
 
 pub fn effect(String, name? : String, args? : Array[@core.Value], route? : String) -> CaseEffect
 
+pub fn payload_ty(@core.Value) -> String
+
 pub fn show_effect(String, Array[@core.Value]) -> String
 
 pub fn value_cases() -> Array[ValueCase]
@@ -71,6 +73,7 @@ pub(all) struct V2Case {
   after : Map[String, @core.Value]?
   effects : Array[CaseEffect]
 }
+pub fn V2Case::variant_case(Self) -> String
 
 pub(all) struct ValueCase {
   name : String

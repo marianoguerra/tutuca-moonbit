@@ -11,6 +11,9 @@
 // projection.
 import {
   "marianoguerra/tutuca/tscript/conformance",
+  // The script is reparsed for ONE thing: the name the case DECLARES, which is
+  // not always the name it dispatches. See `decl_variant`.
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/x/fs",

@@ -12,6 +12,8 @@ pub let bucket_bubble : Int
 
 pub let bucket_input : Int
 
+pub let bucket_intent : Int
+
 pub let bucket_receive : Int
 
 pub let bucket_response : Int
@@ -43,6 +45,16 @@ pub let ret_persist : Int
 pub let ret_restore : Int
 
 pub let ret_with_field : Int
+
+pub let route_dyn : Int
+
+pub let route_dyn_lex : Int
+
+pub let route_lex : Int
+
+pub let route_lex_dyn : Int
+
+pub let route_none : Int
 
 pub fn utf8_len(String) -> Int
 

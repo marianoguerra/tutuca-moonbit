@@ -124,6 +124,10 @@ fn manifest_json(
         "types": Json::array(types),
         "fields": Json::array(fields),
         "receives": strings(compiled(DReceive)),
+        // v2's routed bucket. Beside `bubbles` and `responses` rather than
+        // instead of them until task 16 rewrites the manifest's own contract;
+        // a host that does not read this key sees the card it always saw.
+        "intents": strings(compiled(DIntent)),
         "bubbles": strings(compiled(DBubble)),
         "responses": strings(compiled(DResponse)),
         "methods": strings(

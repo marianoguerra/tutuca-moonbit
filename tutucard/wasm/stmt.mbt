@@ -87,7 +87,7 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
       }
     SIf(cond~, then_~, else_~, ..) =>
       [if_(self.truthy(cond), self.stmts(then_), self.stmts(else_))]
-    SEffect(name~, args~, span~, ..) => self.effect(name, args, span)
+    SEffect(name~, args~, route~, span~) => self.effect(name, args, route, span)
     SMethod(place~, call~, args~, span~) => self.mutate(place, call, args, span)
     // `new Label` — the zero of a declared type, into `@cur`.
     //
@@ -470,10 +470,33 @@ fn ECtx::mutate_target(
 ///
 /// A `sendAt` needed more. Its first argument is a PLACE, which is reified into
 /// `control.path-step`s rather than read — see `send_at_effect`.
+/// A route as the one integer the wire carries (`@abi.route_*`).
+///
+/// Written as WRITTEN: an empty route is `route_none`, not `dyn lex`. The
+/// default lives in `@tutuca.IntentOpts::new`, and a compiler that resolved it
+/// here would be a second place for it to live — the same rule the parser and
+/// the AOT emitter already follow.
+fn route_code(route : Array[@tutuca.Leg]) -> Int {
+  match route {
+    [] => @abi.route_none
+    [Dyn] => @abi.route_dyn
+    [Lex] => @abi.route_lex
+    [Dyn, Lex] => @abi.route_dyn_lex
+    [Lex, Dyn] => @abi.route_lex_dyn
+    // The parser reads leg words until it finds a literal, so a longer or a
+    // repeated route is writable — `forward dyn dyn` parses. It denotes
+    // nothing the design gives a meaning to, and the closed table above is
+    // where that is said.
+    _ => @abi.route_none
+  }
+}
+
+///|
 fn ECtx::effect(
   self : ECtx,
   name : String,
   args : Array[@tscript.Expr],
+  route : Array[@tutuca.Leg],
   span : @tscript.Span,
 ) -> Array[@abi.I] raise Bail {
   if name == "stop" {
@@ -487,11 +510,50 @@ fn ECtx::effect(
   if name == "sendAt" {
     return self.send_at(args, span)
   }
-  guard name is ("send" | "bubble" | "request") else {
+  // The three v2 effects that carry no message name. `forward` re-dispatches
+  // the one that arrived; `reply` and `fail` are addressed by the walk. Each
+  // buffers like the rest, because a `reply` before a failing statement is a
+  // `reply` that did not happen.
+  if name is ("reply" | "fail") {
+    guard args.length() >= 1 else {
+      self.bail("`" + name + "` needs the value it answers with", span)
+      return []
+    }
+    self.g.uses_control = true
+    self.g.uses_v2_effects = true
+    let pl = self.g.fresh("pl")
+    return [
+      let_(pl, arg_list([self.expr(args[0])])),
+      call("tc_effect_push", [
+        i32c(if name == "reply" { 8 } else { 9 }),
+        call("tc_empty_str", []),
+        get(pl),
+      ]),
+    ]
+  }
+  if name == "forward" {
+    self.g.uses_control = true
+    self.g.uses_v2_effects = true
+    let pl = self.g.fresh("pl")
+    let amended : Array[@abi.I] = []
+    for a in args {
+      amended.push(self.expr(a))
+    }
+    return [
+      let_(pl, arg_list(amended)),
+      call("tc_effect_push_routed", [
+        i32c(7),
+        call("tc_empty_str", []),
+        get(pl),
+        i32c(route_code(route)),
+      ]),
+    ]
+  }
+  guard name is ("send" | "bubble" | "request" | "intent") else {
     self.bail(
       "`" +
       name +
-      "` is not an effect this language has — `send`, `bubble`, `request`, `sendAt` and `stop` are the ones it does",
+      "` is not an effect this language has — `send`, `sendAt`, `intent`, `forward`, `reply`, `fail` and `stop` are the ones it does",
       span,
     )
     return []
@@ -501,6 +563,9 @@ fn ECtx::effect(
     return []
   }
   self.g.uses_control = true
+  if name == "intent" {
+    self.g.uses_v2_effects = true
+  }
   let msg = self.g.fresh("msg")
   let pl = self.g.fresh("pl")
   let payload : Array[@abi.I] = []
@@ -517,17 +582,26 @@ fn ECtx::effect(
     // BUFFERED, not sent. The host cannot un-hear a `send`, and the
     // interpreter drops the effects of a transition that is abandoned — so
     // these are held until the contracts have held and flushed then.
-    call("tc_effect_push", [
-      i32c(
-        match name {
-          "bubble" => 2
-          "request" => 4
-          _ => 1
-        },
-      ),
-      get(msg),
-      get(pl),
-    ]),
+    if name == "intent" {
+      call("tc_effect_push_routed", [
+        i32c(6),
+        get(msg),
+        get(pl),
+        i32c(route_code(route)),
+      ])
+    } else {
+      call("tc_effect_push", [
+        i32c(
+          match name {
+            "bubble" => 2
+            "request" => 4
+            _ => 1
+          },
+        ),
+        get(msg),
+        get(pl),
+      ])
+    },
   ]
 }
 

@@ -267,22 +267,6 @@ fn project(
 const COMP_V2 : String = "CorpusV2"
 
 ///|
-/// The state-block type a projected case's payload is declared as.
-///
-/// Inferred from the VALUES the case dispatches, which is the only description
-/// of them the corpus carries. Narrow on purpose: a wider guess would declare a
-/// payload the case does not exercise, and `Any` is what "the corpus did not
-/// say" honestly reads as.
-fn payload_ty(v : @tutuca.Value) -> String {
-  match v {
-    Num(n) => if n == n.to_int().to_double() { "Int" } else { "Double" }
-    Str(_) => "String"
-    Bool(_) => "Bool"
-    _ => "Any"
-  }
-}
-
-///|
 /// Project the v2 cases into their own view file.
 ///
 /// Deliberately a second function rather than a widened first one, and it
@@ -363,7 +347,7 @@ fn project_v2(cases : Array[@corpus.V2Case]) -> (String, String) {
       (if c.args.is_empty() {
         ""
       } else {
-        "(" + c.args.map(a => payload_ty(a)).join(", ") + ")"
+        "(" + c.args.map(a => @corpus.payload_ty(a)).join(", ") + ")"
       })
     match c.bucket {
       VReceive => recv_cases.push(variant)

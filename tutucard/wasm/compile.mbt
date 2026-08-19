@@ -50,6 +50,11 @@ priv struct Gen {
   /// Set when a body compiles `sendAt`, which is the only effect that carries a
   /// path — and the only one that needs the reifying half of the runtime.
   mut uses_send_at : Bool
+  /// Whether any of v2's four effects compiled — `intent`, `forward`, `reply`
+  /// or `fail`. One flag rather than four, because a card that says one of
+  /// them is a v2 card and the host that hosts it provides all four; a v1 card
+  /// says none and imports none, which is the property worth keeping.
+  mut uses_v2_effects : Bool
   /// Set when a transition has a `requires`, an `ensures` or an invariant to
   /// check — which is when there is something that can decline, and so
   /// something to say. Unlike the two above this one reaches the import
@@ -239,6 +244,7 @@ pub fn compile(
     uses_values: false,
     uses_num: false,
     uses_send_at: false,
+    uses_v2_effects: false,
     uses_contract_log: false,
     escapes: Map([]),
     temp: 0,
@@ -454,6 +460,48 @@ fn emit_module(
         (Some("level"), i32_),
         (Some("p"), i32_),
         (Some("l"), i32_),
+      ]),
+    )
+  }
+  // v2's four. Emitted only when a card performs one, so a v1 card's import
+  // section is exactly what it was — which is what keeps an old bundle
+  // loadable by a host that has not been rebuilt.
+  if g.uses_v2_effects {
+    fs.push(
+      @build.import_func(@abi.control_iface, "intent", as_=Some("ctl_intent"), params=[
+        (Some("np"), i32_),
+        (Some("nl"), i32_),
+        (Some("ap"), i32_),
+        (Some("al"), i32_),
+        // The route, as `@abi.route_*`. One i32 because the set is closed.
+        (Some("rt"), i32_),
+      ]),
+    )
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "forward",
+        as_=Some("ctl_forward"),
+        params=[
+          // An empty argument list is "no amendment", which is the same thing
+          // `forward` with no arguments means — so there is no third state to
+          // encode and no discriminant to carry.
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+          (Some("rt"), i32_),
+        ],
+      ),
+    )
+    fs.push(
+      @build.import_func(@abi.control_iface, "reply", as_=Some("ctl_reply"), params=[
+        (Some("ap"), i32_),
+        (Some("al"), i32_),
+      ]),
+    )
+    fs.push(
+      @build.import_func(@abi.control_iface, "fail", as_=Some("ctl_fail"), params=[
+        (Some("ap"), i32_),
+        (Some("al"), i32_),
       ]),
     )
   }
@@ -721,7 +769,7 @@ fn card_fields(
   fs.push(handle_event_fn(g, decls))
   fs.push(call_method_fn(g, decls))
   if g.uses_control {
-    fs.push(flush_fn(g.uses_send_at))
+    fs.push(flush_fn(g.uses_send_at, g.uses_v2_effects))
   }
 
   // `#[start]`, assembled now that NOTHING else will intern a constant: one
@@ -766,7 +814,106 @@ fn card_fields(
 /// The buffer is the runtime's; the switch is here because only the generated
 /// half knows which of `ctl_send`, `ctl_emit`, `ctl_stop`, `ctl_request` and
 /// `ctl_send_at` this module imported.
-fn flush_fn(uses_send_at : Bool) -> @abi.Field {
+fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
+  // A FLAT chain rather than a nest. It was nested while there were four
+  // kinds and it read as one; nine kinds nested five deep reads as nothing,
+  // and every arm here is the same shape — compare the kind, make one call.
+  let arms : Array[@abi.I] = [
+    if_(
+      eq(get("k"), i32c(1)),
+      [call("ctl_send", [get("np"), get("nl"), get("ap"), get("al")])],
+      [],
+    ),
+    if_(
+      eq(get("k"), i32c(2)),
+      [call("ctl_emit", [get("np"), get("nl"), get("ap"), get("al")])],
+      [],
+    ),
+    // `request-opts` as the interpreter builds it: `RequestOpts::new()` names
+    // no `on-ok`, no `on-error` and no `on-res`, and does not ask for a live
+    // path. Three `none` discriminants with dead pointer/length slots, and a
+    // false. The response arrives at the request's own name, in the `response`
+    // bucket, which this card already dispatches.
+    if_(
+      eq(get("k"), i32c(4)),
+      [
+        call("ctl_request", [
+          get("np"),
+          get("nl"),
+          get("ap"),
+          get("al"),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+          i32c(0),
+        ]),
+      ],
+      [],
+    ),
+  ]
+  if uses_send_at {
+    // The path is lowered HERE rather than when the effect was buffered,
+    // because what it lowers to is linear memory the host reads during this
+    // call and nothing owns afterwards.
+    arms.push(
+      if_(
+        eq(get("k"), i32c(5)),
+        [
+          call("ctl_send_at", [
+            call("tc_effect_steps_ptr", [get("i")]),
+            call("tc_effect_steps_len", [get("i")]),
+            get("np"),
+            get("nl"),
+            get("ap"),
+            get("al"),
+          ]),
+        ],
+        [],
+      ),
+    )
+  }
+  if uses_v2 {
+    arms.push(
+      if_(
+        eq(get("k"), i32c(6)),
+        [
+          call("ctl_intent", [
+            get("np"),
+            get("nl"),
+            get("ap"),
+            get("al"),
+            call("tc_effect_route", [get("i")]),
+          ]),
+        ],
+        [],
+      ),
+    )
+    arms.push(
+      if_(
+        eq(get("k"), i32c(7)),
+        [
+          call("ctl_forward", [
+            get("ap"),
+            get("al"),
+            call("tc_effect_route", [get("i")]),
+          ]),
+        ],
+        [],
+      ),
+    )
+    arms.push(
+      if_(eq(get("k"), i32c(8)), [call("ctl_reply", [get("ap"), get("al")])], []),
+    )
+    arms.push(
+      if_(eq(get("k"), i32c(9)), [call("ctl_fail", [get("ap"), get("al")])], []),
+    )
+  }
   func("tc_flush", body=[
     let_("i", i32c(0)),
     while_(
@@ -774,83 +921,19 @@ fn flush_fn(uses_send_at : Bool) -> @abi.Field {
       Some(setop("i", Add, i32c(1))),
       [
         let_("k", call("tc_effect_kind", [get("i")])),
-        if_(eq(get("k"), i32c(3)), [call("ctl_stop", [])], [
-          let_("np", call("tc_effect_name_ptr", [get("i")])),
-          let_("nl", call("tc_effect_name_len", [get("i")])),
-          let_("ap", call("tc_effect_args_ptr", [get("i")])),
-          let_("al", call("tc_effect_args_len", [get("i")])),
-          if_(
-            eq(get("k"), i32c(2)),
-            [call("ctl_emit", [get("np"), get("nl"), get("ap"), get("al")])],
-            [
-              if_(
-                eq(get("k"), i32c(4)),
-                [
-                  // `request-opts` as the interpreter builds it:
-                  // `RequestOpts::new()` names no `on-ok`, no `on-error` and no
-                  // `on-res`, and does not ask for a live path. Three `none`
-                  // discriminants with dead pointer/length slots, and a false.
-                  // The response arrives at the request's own name, in the
-                  // `response` bucket, which this card already dispatches.
-                  call("ctl_request", [
-                    get("np"),
-                    get("nl"),
-                    get("ap"),
-                    get("al"),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                    i32c(0),
-                  ]),
-                ],
-                if uses_send_at {
-                  [
-                    if_(
-                      eq(get("k"), i32c(5)),
-                      [
-                        // The path is lowered HERE rather than when the effect
-                        // was buffered, because what it lowers to is linear
-                        // memory the host reads during this call and nothing
-                        // owns afterwards.
-                        call("ctl_send_at", [
-                          call("tc_effect_steps_ptr", [get("i")]),
-                          call("tc_effect_steps_len", [get("i")]),
-                          get("np"),
-                          get("nl"),
-                          get("ap"),
-                          get("al"),
-                        ]),
-                      ],
-                      [
-                        call("ctl_send", [
-                          get("np"),
-                          get("nl"),
-                          get("ap"),
-                          get("al"),
-                        ]),
-                      ],
-                    ),
-                  ]
-                } else {
-                  [
-                    call("ctl_send", [
-                      get("np"),
-                      get("nl"),
-                      get("ap"),
-                      get("al"),
-                    ]),
-                  ]
-                },
-              ),
-            ],
-          ),
-        ]),
+        // `stop` carries neither a name nor arguments, so it is answered before
+        // the lifts rather than beside them.
+        if_(
+          eq(get("k"), i32c(3)),
+          [call("ctl_stop", [])],
+          [
+            let_("np", call("tc_effect_name_ptr", [get("i")])),
+            let_("nl", call("tc_effect_name_len", [get("i")])),
+            let_("ap", call("tc_effect_args_ptr", [get("i")])),
+            let_("al", call("tc_effect_args_len", [get("i")])),
+            ..arms,
+          ],
+        ),
       ],
     ),
   ])

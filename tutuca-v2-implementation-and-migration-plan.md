@@ -71,7 +71,7 @@ Two consequences worth stating outright.
 - [x] 8. [`tscript/check`: the new findings](#8-tscriptcheck-the-new-findings)
 - [x] 9. [`statedef` / `viewfile`: two message variants](#9-statedef--viewfile-two-message-variants)
 - [x] 10. [`tscript/emit_mbt`: the AOT backend](#10-tscriptemit_mbt-the-aot-backend)
-- [ ] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
+- [x] 11. [`tutucard/wasm`: the card backend](#11-tutucardwasm-the-card-backend)
 - [ ] 12. [`viewgen`: merge four enums into two](#12-viewgen-merge-four-enums-into-two)
 
 **Phase 3 — the DOM boundary**
@@ -765,6 +765,56 @@ Only the corpus proves both.
 **Validation.** `just dev tutucard-playground`, which checks and compiles every
 starter card and every `playground/site/cards/*.html` through the real entry
 points.
+
+**Done. All 24 v2 cases pass here too, with zero refusals** — the same number
+the AOT backend reached, reached independently. That is the whole point of the
+corpus, and it is now doing the job: two compilers with nothing in common
+between them agree about what a v2 block means.
+
+**The wire, which is where the real decisions were.**
+
+- `@abi.bucket_intent = 4`, and `handle_event_fn` gains a `DIntent` arm.
+- Four effect kinds in the wax runtime (`tc_e_intent` 6, `forward` 7, `reply` 8,
+  `fail` 9) and a **`route : i32` field on `tc_effect`** with
+  `tc_effect_push_routed`. One i32 rather than a list, because **the set of
+  routes is closed** — two legs in one of two orders, or one, or none — so it
+  costs a word instead of a pointer and a length into linear memory.
+  `@abi.route_*` is the table, and `route_code` in `stmt.mbt` and `ROUTE` in the
+  harness are its two halves.
+- `flush_fn` became a **flat chain** rather than a nest. It read as one thing at
+  four kinds; at nine, nested five deep, it read as nothing.
+- The four control imports are emitted **only when a card performs one of
+  them**, so a v1 card's import section is byte-identical and an old bundle
+  stays loadable by a host that was not rebuilt.
+- `manifest.mbt` gains `intents` beside `bubbles` and `responses`.
+
+**`route_none` resolves to the default, on both sides.** A bare
+`intent 'save'` writes `route_none`, and the harness maps index 0 and index 3
+to the same words. That is exactly why the corpus stores a route RESOLVED: the
+default is the one thing two backends can agree to disagree about while every
+explicit route passes, so both are made to say `dyn lex` out loud.
+
+**Two things the harness needed, and both are about a card having no views.**
+The harness builds one card per case with an empty `<template>`, so there are no
+call sites — and in v2 a `receive` the schema does not declare is one the VIEWS
+send. So `cmd/card-corpus` now emits the case's handler **as a variant case**
+and the harness splices it into the schema. One case needs two: it declares
+`receive inc` and dispatches `nope`, which is the point of it, so `decl_variant`
+reparses the script for the declared name and the schema carries both.
+`payload_ty` moved into the corpus package, because both projections need it and
+two copies of a type inference is two ways to hand the two backends different
+declarations for the same case.
+
+**Pulled forward from task 16**, because the card could not otherwise be
+instantiated: `abi.mjs`'s `BUCKET` enumeration and `loader.mjs`'s twin gain
+`intent` as the fifth case, and `IMPORTS` gains the four control functions —
+`abi.mjs` refuses any import outside the contract before a single guest
+instruction runs, which is the check working. Task 16 owns the WIT itself; if it
+lands on a `list<leg>` rather than a `u32` route, `IMPORTS`' row and
+`@abi.route_*` are what move.
+
+`just dev tutucard-playground` passes: all fourteen starter cards still compile,
+and the region checks pass.
 
 ## 12. `viewgen`: merge four enums into two
 

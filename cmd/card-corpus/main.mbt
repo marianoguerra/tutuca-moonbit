@@ -69,6 +69,34 @@ fn answer_json(a : @conformance.Answer) -> Json {
 }
 
 ///|
+/// The variant case a v2 case's DECLARATION needs, when that is not the name
+/// the case dispatches.
+///
+/// One case in the corpus declares `receive inc` and dispatches `nope`, which
+/// is the whole point of it — a message no arm answers. The card the harness
+/// builds has an empty template, so both names have to be in the schema: the
+/// declared one so the card compiles, and the dispatched one so the dispatch
+/// reaches the bucket and finds nothing.
+///
+/// Typed `Any` per parameter rather than from the case's arguments: those are
+/// what the DISPATCH carries, and this is a different name.
+fn decl_variant(c : @conformance.V2Case) -> String? {
+  let decls = @tscript.parse_script(c.script) catch { _ => return None }
+  guard decls.get(decls.length() - 1) is Some(d) else { return None }
+  if d.name == c.handler {
+    return None
+  }
+  let capped = d.name[0:1].to_owned().to_upper() + d.name[1:].to_owned()
+  Some(
+    if d.params.is_empty() {
+      capped
+    } else {
+      capped + "(" + d.params.map(_p => "Any").join(", ") + ")"
+    },
+  )
+}
+
+///|
 fn state_json(m : Map[String, @tutuca.Value]) -> Json {
   let out : Map[String, Json] = Map([])
   for k, v in m {
@@ -130,6 +158,48 @@ fn main raise {
     )
   }
 
+  // The v2 table. Same shape, its own key, and its own component per case —
+  // every v2 case shares one schema, so `component_of` answers `C` for all of
+  // them and the harness builds one card per case exactly as it does above.
+  let v2_rows : Array[Json] = []
+  for c in @conformance.cases_v2() {
+    guard component_of(c.name, c.schema) is Some(comp) else { continue }
+    v2_rows.push(
+      Json::object({
+        "name": Json::string(c.name),
+        "schema": Json::string(c.schema),
+        "script": Json::string(c.script),
+        "component": Json::string(comp),
+        "bucket": Json::string(
+          match c.bucket {
+            VReceive => "receive"
+            VIntent => "intent"
+          },
+        ),
+        // The case's own handler, as a variant case, for a schema that has to
+        // declare it. The harness builds ONE card per case with an EMPTY
+        // template, so there are no call sites to type a `receive` from — and
+        // in v2 a `receive` name the schema does not declare is one the views
+        // send. A card with no views has none, so the schema is where the
+        // declaration has to be, and this is the piece the harness needs to
+        // put it there.
+        "variant": Json::string(c.variant_case()),
+        "declVariant": match decl_variant(c) {
+          Some(v) => Json::string(v)
+          None => Json::null()
+        },
+        "handler": Json::string(c.handler),
+        "args": Json::array(c.args.map(a => a.to_json())),
+        "before": state_json(c.before),
+        "after": match c.after {
+          Some(m) => state_json(m)
+          None => Json::null()
+        },
+        "effects": Json::array(c.effects.map(effect_json)),
+      }),
+    )
+  }
+
   // The OTHER table. `cases()` asks what the state became; these ask what the
   // block SAID — a `compute`, a `@when` filter, an enricher — and the wasm
   // backend was never held to any of it, which is exactly where its
@@ -163,13 +233,16 @@ fn main raise {
     out,
     Json::object({
       "cases": Json::array(rows),
+      "casesV2": Json::array(v2_rows),
       "valueCases": Json::array(value_rows),
     }).stringify(),
   )
   println(
     "wrote " +
     rows.length().to_string() +
-    " cases and " +
+    " cases, " +
+    v2_rows.length().to_string() +
+    " v2 cases and " +
     value_rows.length().to_string() +
     " value cases to " +
     out,

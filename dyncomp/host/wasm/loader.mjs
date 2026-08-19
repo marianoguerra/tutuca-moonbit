@@ -701,7 +701,7 @@ export function createTcompImports(getExports) {
       return out;
     },
     dispatch: (bundle, handle, bucketInt, name, argsJson) => {
-      const bucket = ["input", "receive", "response", "bubble"][bucketInt] ?? "input";
+      const bucket = ["input", "receive", "response", "bubble", "intent"][bucketInt] ?? "input";
       controlBuf = [];
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);

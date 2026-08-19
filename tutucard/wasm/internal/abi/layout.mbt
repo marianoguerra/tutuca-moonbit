@@ -98,6 +98,39 @@ pub let bucket_response : Int = 2
 pub let bucket_bubble : Int = 3
 
 ///|
+/// v2's routed bucket. Its number is the next one in WIT order, and the plan's
+/// task 16 is what puts it in the WIT — until then no bundle can be called
+/// with it, and this is the number that arrives when one is.
+pub let bucket_intent : Int = 4
+
+///|
+/// A route, as one small integer.
+///
+/// The set is closed — two legs, in one of two orders, or one of them, or
+/// none — so a code is a fairer wire form than a list would be, and it costs
+/// one i32 rather than a pointer and a length into linear memory. The design's
+/// section 3 is what closes it: the leg words are a closed set and the parser
+/// reads them until it finds a literal.
+///
+/// EMPTY is not "no legs"; it is "not written", and the default lives in
+/// `@tutuca.IntentOpts::new`. Task 16 decides the WIT's own spelling; if it
+/// lands on a `list<leg>`, this is the table that has to move rather than be
+/// copied.
+pub let route_none : Int = 0
+
+///|
+pub let route_dyn : Int = 1
+
+///|
+pub let route_lex : Int = 2
+
+///|
+pub let route_dyn_lex : Int = 3
+
+///|
+pub let route_lex_dyn : Int = 4
+
+///|
 /// `control.log`'s level, in WIT order: debug, info, warn, error.
 ///
 /// A declined contract is a warning and not an error, which is the reading the

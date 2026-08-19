@@ -1017,6 +1017,41 @@ fn intent_case(
 }
 
 ///|
+/// The state-block type a case's payload is declared as, inferred from the
+/// VALUES it dispatches.
+///
+/// Here rather than in either projection because BOTH need it — the MoonBit
+/// backend's writes one schema for the whole corpus, the card backend's writes
+/// one per case — and two copies of a type inference is two ways for the two
+/// backends to be handed different declarations for the same case.
+///
+/// Narrow on purpose: a wider guess would declare a payload the case does not
+/// exercise, and `Any` is what "the corpus did not say" honestly reads as.
+pub fn payload_ty(v : @tutuca.Value) -> String {
+  match v {
+    Num(n) => if n == n.to_int().to_double() { "Int" } else { "Double" }
+    Str(_) => "String"
+    Bool(_) => "Bool"
+    _ => "Any"
+  }
+}
+
+///|
+/// The variant case a v2 case's handler is declared as: `Picked(Int)`.
+///
+/// The name is the handler's, capitalized — the state block declares
+/// PascalCase and the dispatch name is its lowerCamel twin.
+pub fn V2Case::variant_case(self : V2Case) -> String {
+  let capped = self.handler[0:1].to_owned().to_upper() +
+    self.handler[1:].to_owned()
+  if self.args.is_empty() {
+    capped
+  } else {
+    capped + "(" + self.args.map(a => payload_ty(a)).join(", ") + ")"
+  }
+}
+
+///|
 /// Every v2 case, in one list.
 pub fn cases_v2() -> Array[V2Case] {
   [

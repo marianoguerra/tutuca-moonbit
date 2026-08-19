@@ -91,7 +91,11 @@ const REQUEST_OPTS = record([
 ]);
 
 const LOG_LEVEL = enumeration(["debug", "info", "warn", "error"]);
-const BUCKET = enumeration(["input", "receive", "response", "bubble"]);
+// `intent` is v2's routed bucket and is the fifth case, which is its wire
+// number. The WIT gains it in the plan's task 16; a host that lifts one before
+// then can only have been handed it by a card built after this line, and a
+// guest built before then never sends a 4.
+const BUCKET = enumeration(["input", "receive", "response", "bubble", "intent"]);
 const REQUEST_RESULT = variant([["ok", VALUE], ["err", VALUE]]);
 const EVENT_RESULT = variant([
   ["unhandled", null],
@@ -135,6 +139,22 @@ export const IMPORTS = {
       result: null,
     },
     "stop-propagation": { impl: "stopPropagation", params: [], result: null },
+    // v2's four. The route is one U32 because the set of routes is closed —
+    // two legs, in one of two orders, or one of them, or none — so it costs an
+    // i32 rather than a pointer and a length into linear memory. The plan's
+    // task 16 decides the WIT's own spelling; if it lands on a `list<leg>`,
+    // this is the row that moves.
+    intent: {
+      impl: "intent",
+      params: [STRING, list(VALUE), U32],
+      result: null,
+    },
+    // An empty argument list is "no amendment", which is exactly what
+    // `forward` with no arguments means — so there is no third state and no
+    // discriminant.
+    forward: { impl: "forward", params: [list(VALUE), U32], result: null },
+    reply: { impl: "reply", params: [list(VALUE)], result: null },
+    fail: { impl: "fail", params: [list(VALUE)], result: null },
     request: {
       impl: "request",
       params: [STRING, list(VALUE), REQUEST_OPTS],

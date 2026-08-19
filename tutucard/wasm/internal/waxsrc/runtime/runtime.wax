@@ -1006,15 +1006,29 @@ const tc_e_request: i32 = 4;
 
 const tc_e_send_at: i32 = 5;
 
+// v2. `intent` and `forward` carry a ROUTE, which is one small integer because
+// the set of routes is closed (see `@abi.route_*`). `reply` and `fail` carry
+// one value and no name — the walk addresses them — so their argument list has
+// exactly one entry and their name is the empty string.
+const tc_e_intent: i32 = 6;
+const tc_e_forward: i32 = 7;
+const tc_e_reply: i32 = 8;
+const tc_e_fail: i32 = 9;
+
 // `steps` is null for every effect but a `sendAt`, which is the only one that
 // addresses somewhere other than here. It is a list of `tc_pstep`, built by
 // `send_at.wax` — the field is here rather than there because the buffer is,
 // and one nullable word per effect is cheaper than a second buffer.
+// `route` is 0 for every effect but an `intent` and a `forward`, which are the
+// two the design gives a route. One i32 per effect, for the same reason `steps`
+// is one nullable word: the buffer is here, and a second buffer for a field two
+// kinds use would cost more than the field does.
 type tc_effect = {
     kind: i32,
     name: &utf8_string,
     args: &?pv_vector,
     steps: &?pv_vector,
+    route: i32,
 };
 
 fn tc_effect_new(
@@ -1022,8 +1036,9 @@ fn tc_effect_new(
     name: &utf8_string,
     args: &?pv_vector,
     steps: &?pv_vector,
+    route: i32,
 ) -> &tc_effect {
-    { kind, name, args, steps }
+    { kind, name, args, steps, route }
 }
 
 fn tc_effect_reset() { tc_effects = pv_empty(); }
@@ -1033,7 +1048,17 @@ fn tc_effect_reset() { tc_effects = pv_empty(); }
 fn tc_empty_str() -> &utf8_string { tc_s_empty! }
 
 fn tc_effect_push(kind: i32, name: &utf8_string, args: &?pv_vector) {
-    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, null));
+    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, null, 0));
+}
+
+// The same, for the two effects that carry a route.
+fn tc_effect_push_routed(
+    kind: i32,
+    name: &utf8_string,
+    args: &?pv_vector,
+    route: i32,
+) {
+    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, null, route));
 }
 
 // The same, for the one effect that carries a path.
@@ -1043,7 +1068,7 @@ fn tc_effect_push_at(
     args: &?pv_vector,
     steps: &?pv_vector,
 ) {
-    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, steps));
+    tc_effects = pv_push(tc_effects!, tc_effect_new(kind, name, args, steps, 0));
 }
 
 fn tc_effect_count() -> i32 { pv_count(tc_effects!) }
@@ -1053,6 +1078,8 @@ fn tc_effect_at(i: i32) -> &tc_effect {
 }
 
 fn tc_effect_kind(i: i32) -> i32 { tc_effect_at(i).kind }
+
+fn tc_effect_route(i: i32) -> i32 { tc_effect_at(i).route }
 
 // The name and the arguments in the shape `control` takes them: a (pointer,
 // length) pair into linear memory, and a `list<value>`.
