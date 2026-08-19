@@ -10,11 +10,19 @@ pub(all) enum RequestResult {
 } derive(Debug, Eq)
 
 ///|
+/// The dispatch buckets a handler can live in.
+///
+/// `intent` is v2's and is LAST on purpose: a case's position is its wire
+/// number, so appending leaves `input`..`bubble` where a 0.7 bundle already
+/// reads them. v2 has two of these — `receive` for an addressed message
+/// whoever sent it, `intent` for a routed one — and the other three fold
+/// into them in the contract step.
 pub(all) enum Bucket {
   INPUT
   RECEIVE
   RESPONSE
   BUBBLE
+  INTENT
 } derive(Debug, Eq)
 
 ///|
@@ -24,6 +32,7 @@ pub fn Bucket::ordinal(self : Bucket) -> Int {
     RECEIVE => 1
     RESPONSE => 2
     BUBBLE => 3
+    INTENT => 4
   }
 }
 
@@ -34,6 +43,7 @@ pub fn Bucket::from(self : Int) -> Bucket {
     1 => RECEIVE
     2 => RESPONSE
     3 => BUBBLE
+    4 => INTENT
     _ => panic()
   }
 }
@@ -53,7 +63,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.7.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.8.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -63,7 +73,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.7.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.8.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -73,7 +83,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.7.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.8.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.

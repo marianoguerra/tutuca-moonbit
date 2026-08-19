@@ -83,7 +83,7 @@ Two consequences worth stating outright.
 **Phase 4 — dynamic components**
 
 - [x] 16. [WIT 0.8.0 and the host bridge](#16-wit-080-and-the-host-bridge)
-- [ ] 17. [Regenerate and rebuild every guest](#17-regenerate-and-rebuild-every-guest)
+- [x] 17. [Regenerate and rebuild every guest](#17-regenerate-and-rebuild-every-guest)
 
 **Phase 5 — migration**
 
@@ -1247,6 +1247,39 @@ other, built by nothing. `check-guest-list` exists for this; make sure it runs.
 **Validation.** `just dev check-guest-list`, `gen-guest-bindings`,
 `guest-harness`, `check-guest-template`, and `dyncomp-storybook` for the
 gallery.
+
+**Done. Every guest rebuilt against 0.8.0, and all 102 harness tests pass** —
+which is what turns task 16's WIT change from a declaration into something
+checked. `dyncomp-storybook` assembles the gallery, `check-guest-template`
+scaffolds and compiles, and the Rust guest rebuilt from the same WIT through
+its `generate!` macro without being touched.
+
+**No handwritten guest source needed editing.** That is task 16's additive WIT
+paying off: `emit`, `send` and `request` still exist, so ten component sources
+that call them still compile. What every tree gained is the five new control
+wrappers, generated — `intent`, `intent_at`, `forward`, `reply`, `fail` — ready
+for whoever writes the first v2 guest.
+
+**One thing the drift check could not have caught, and it is worth recording.**
+`gen-bindings.mjs` deliberately does not overwrite the hand-maintained
+`moon.pkg` files, and `guests/<name>/gen/moon.pkg` is one of them — it carries
+the wasm **export list**, every entry of which names
+`tutuca:component/guest@0.7.0#…`. So the bindings regenerated cleanly at 0.8.0
+while the exports stayed at 0.7.0, and the failure surfaced three steps later
+as `wasm-tools component new` reporting
+`failed to find export of interface tutuca:component/guest@0.8.0 function
+[constructor]instance`.
+
+Ten `gen/moon.pkg` files needed the bump by hand, `examples/dyncomp-dice`'s
+included. **This is exactly the shape of failure `check-guest-list` exists
+for** — a fact split across a generated file and a hand-maintained one, where
+only one of them moves — and it deserves the same treatment: a package bump
+should fail loudly at generation rather than at `wasm-tools`. Worth a follow-up
+in the generator; noted rather than fixed here, because it is the WIT bump that
+found it and the bump is what task 16 owns.
+
+`cli/guest_template_gen.mbt` was re-embedded (40 files) so `tutuca new-guest`
+emits a 0.8.0 tree.
 
 ## 18. Build `tutuca migrate`
 

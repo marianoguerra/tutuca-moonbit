@@ -740,13 +740,7 @@ fn paging(page : Int, total : Int, page_size : Int) -> Pager {
   let size = if page_size > 0 { page_size } else { PAGE_SIZE }
   let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
   let last = if on { (total + size - 1) / size - 1 } else { 0 }
-  let page = if page < 0 {
-    0
-  } else if page > last {
-    last
-  } else {
-    page
-  }
+  let page = if page < 0 { 0 } else if page > last { last } else { page }
   { page, size, on, total }
 }
 
@@ -790,13 +784,7 @@ fn Pager::moved(self : Pager, name : String) -> Int? {
     _ => return None
   }
   let last = self.pages() - 1
-  let next = if want < 0 {
-    0
-  } else if want > last {
-    last
-  } else {
-    want
-  }
+  let next = if want < 0 { 0 } else if want > last { last } else { want }
   if next == self.page {
     None
   } else {

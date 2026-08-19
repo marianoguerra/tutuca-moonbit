@@ -52,11 +52,63 @@ pub(all) enum PathStep {
 } derive(Debug, Eq)
 
 ///|
-/// Response routing for a request (host `RequestOpts`). All three names are
-/// optional: with none of them the response arrives as
+/// A leg of an intent's route.
+///
+/// `dyn` walks the dynamic scope — the host tree, from the sender's PARENT
+/// up to the root. `lex` walks the lexical one, the registration chain, whose
+/// handlers are static functions with no state. A route is a list of these,
+/// in the order written, and `[dyn, lex]` when nothing says otherwise.
+pub(all) enum Leg {
+  DYN
+  LEX
+} derive(Debug, Eq)
+
+///|
+pub fn Leg::ordinal(self : Leg) -> Int {
+  match self {
+    DYN => 0
+    LEX => 1
+  }
+}
+
+///|
+pub fn Leg::from(self : Int) -> Leg {
+  match self {
+    0 => DYN
+    1 => LEX
+    _ => panic()
+  }
+}
+
+///|
+/// Answer routing for an intent (host `IntentOpts`).
+///
+/// Three outcome names rather than v1's `on-res`, because v2 has three
+/// outcomes and not two: a handler replied, a handler failed, or the route
+/// ended with nobody answering. The combined `[result, error]` payload — and
+/// the bug where a split arm read the wrong slot — is gone with `on-res`.
+///
+/// A sender expects an answer if and only if it names one of these. That is
+/// what makes an intent a request rather than a notification, and nothing
+/// declares it separately.
+pub(all) struct IntentOpts {
+  route : Array[Leg]
+  on_ok : String?
+  on_error : String?
+  on_unhandled : String?
+  live_path : Bool
+} derive(Debug, Eq)
+
+///|
+/// v1. Response routing for a request (host `RequestOpts`). All three names
+/// are optional: with none of them the response arrives as
 /// handle-event(response, <request name>, [result, error]); with `on-ok` /
 /// `on-error` it arrives at those names carrying just the value; `on-res`
 /// renames the combined form.
+///
+/// Superseded by `intent-opts`. Kept for the length of the migration so a
+/// guest built against 0.7 still describes something this contract has; it
+/// goes when `request` does.
 pub(all) struct RequestOpts {
   on_ok : String?
   on_error : String?
@@ -72,7 +124,517 @@ pub fn log(level : LogLevel, msg : String) -> Unit {
 }
 
 ///|
-/// Bubble a message to the parent component in the host tree.
+/// Dispatch an intent along `opts.route`, from this instance's position.
+///
+/// The `dyn` leg starts at this component's PARENT, so a component never
+/// re-enters its own handler and a cycle needs two of them. The answer, if
+/// any, arrives as a later handle-event(receive, ...) — an answer is an
+/// ordinary message and a handler cannot tell it from one a parent sent.
+///
+/// This is what `emit` and `request` both became: one channel, and the route
+/// says which scope answers rather than the verb saying it.
+pub fn intent(
+  name : String,
+  args : Array[@values.Value],
+  opts : IntentOpts,
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let ptr = mbt_ffi_str2ptr(name)
+
+  let address = mbt_ffi_malloc(args.length() * 16)
+  for index = 0; index < args.length(); index = index + 1 {
+    let iter_elem : @values.Value = args[index]
+    let iter_base = address + index * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload1) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload1)
+
+        ()
+      }
+      Text(payload2) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr3 = mbt_ffi_str2ptr(payload2)
+        mbt_ffi_store32(iter_base + 12, payload2.length())
+        mbt_ffi_store32(iter_base + 8, ptr3)
+        cleanup_list.push(ptr3)
+
+        ()
+      }
+      List(payload4) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload5) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload6) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+
+  let address7 = mbt_ffi_malloc(opts.route.length() * 1)
+  for index8 = 0; index8 < opts.route.length(); index8 = index8 + 1 {
+    let iter_elem : Leg = opts.route[index8]
+    let iter_base = address7 + index8 * 1
+    mbt_ffi_store8(iter_base + 0, iter_elem.ordinal())
+  }
+
+  let (lowered, lowered12, lowered13) = match opts.on_ok {
+    None => (0, 0, 0)
+    Some(payload10) => {
+      let ptr11 = mbt_ffi_str2ptr(payload10)
+      cleanup_list.push(ptr11)
+
+      (1, ptr11, payload10.length())
+    }
+  }
+
+  let (lowered17, lowered18, lowered19) = match opts.on_error {
+    None => (0, 0, 0)
+    Some(payload15) => {
+      let ptr16 = mbt_ffi_str2ptr(payload15)
+      cleanup_list.push(ptr16)
+
+      (1, ptr16, payload15.length())
+    }
+  }
+
+  let (lowered23, lowered24, lowered25) = match opts.on_unhandled {
+    None => (0, 0, 0)
+    Some(payload21) => {
+      let ptr22 = mbt_ffi_str2ptr(payload21)
+      cleanup_list.push(ptr22)
+
+      (1, ptr22, payload21.length())
+    }
+  }
+  wasmImportIntent(
+    ptr,
+    name.length(),
+    address,
+    args.length(),
+    address7,
+    opts.route.length(),
+    lowered,
+    lowered12,
+    lowered13,
+    lowered17,
+    lowered18,
+    lowered19,
+    lowered23,
+    lowered24,
+    lowered25,
+    if opts.live_path {
+      1
+    } else {
+      0
+    },
+  )
+  mbt_ffi_free(ptr)
+  mbt_ffi_free(address)
+  mbt_ffi_free(address7)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Dispatch an intent AT a descendant, which then walks from there — the
+/// targeted twin of `intent`, and what `bubble-at` became.
+pub fn intent_at(
+  path : Array[PathStep],
+  name : String,
+  args : Array[@values.Value],
+  opts : IntentOpts,
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+  let return_area = mbt_ffi_malloc(72)
+
+  let address = mbt_ffi_malloc(path.length() * 20)
+  for index = 0; index < path.length(); index = index + 1 {
+    let iter_elem : PathStep = path[index]
+    let iter_base = address + index * 20
+
+    match iter_elem {
+      Field(payload) => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        let ptr = mbt_ffi_str2ptr(payload)
+        mbt_ffi_store32(iter_base + 8, payload.length())
+        mbt_ffi_store32(iter_base + 4, ptr)
+        cleanup_list.push(ptr)
+
+        ()
+      }
+      Item(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+
+        let ptr1 = mbt_ffi_str2ptr(payload0.field)
+        mbt_ffi_store32(iter_base + 8, payload0.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr1)
+
+        let ptr2 = mbt_ffi_str2ptr(payload0.key)
+        mbt_ffi_store32(iter_base + 16, payload0.key.length())
+        mbt_ffi_store32(iter_base + 12, ptr2)
+        cleanup_list.push(ptr1)
+        cleanup_list.push(ptr2)
+
+        ()
+      }
+      At(payload3) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+
+        let ptr4 = mbt_ffi_str2ptr(payload3.field)
+        mbt_ffi_store32(iter_base + 8, payload3.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr4)
+        mbt_ffi_store32(iter_base + 12, payload3.index.reinterpret_as_int())
+        cleanup_list.push(ptr4)
+
+        ()
+      }
+    }
+  }
+  mbt_ffi_store32(return_area + 4, path.length())
+  mbt_ffi_store32(return_area + 0, address)
+
+  let ptr5 = mbt_ffi_str2ptr(name)
+  mbt_ffi_store32(return_area + 12, name.length())
+  mbt_ffi_store32(return_area + 8, ptr5)
+
+  let address14 = mbt_ffi_malloc(args.length() * 16)
+  for index15 = 0; index15 < args.length(); index15 = index15 + 1 {
+    let iter_elem : @values.Value = args[index15]
+    let iter_base = address14 + index15 * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload7) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload7 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload8) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload8)
+
+        ()
+      }
+      Text(payload9) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr10 = mbt_ffi_str2ptr(payload9)
+        mbt_ffi_store32(iter_base + 12, payload9.length())
+        mbt_ffi_store32(iter_base + 8, ptr10)
+        cleanup_list.push(ptr10)
+
+        ()
+      }
+      List(payload11) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload11.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload12) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload12.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload13) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload13.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+  mbt_ffi_store32(return_area + 20, args.length())
+  mbt_ffi_store32(return_area + 16, address14)
+
+  let address16 = mbt_ffi_malloc(opts.route.length() * 1)
+  for index17 = 0; index17 < opts.route.length(); index17 = index17 + 1 {
+    let iter_elem : Leg = opts.route[index17]
+    let iter_base = address16 + index17 * 1
+    mbt_ffi_store8(iter_base + 0, iter_elem.ordinal())
+  }
+  mbt_ffi_store32(return_area + 28, opts.route.length())
+  mbt_ffi_store32(return_area + 24, address16)
+
+  match opts.on_ok {
+    None => {
+      mbt_ffi_store8(return_area + 32, 0)
+
+      ()
+    }
+    Some(payload19) => {
+      mbt_ffi_store8(return_area + 32, 1)
+
+      let ptr20 = mbt_ffi_str2ptr(payload19)
+      mbt_ffi_store32(return_area + 40, payload19.length())
+      mbt_ffi_store32(return_area + 36, ptr20)
+      cleanup_list.push(ptr20)
+
+      ()
+    }
+  }
+
+  match opts.on_error {
+    None => {
+      mbt_ffi_store8(return_area + 44, 0)
+
+      ()
+    }
+    Some(payload22) => {
+      mbt_ffi_store8(return_area + 44, 1)
+
+      let ptr23 = mbt_ffi_str2ptr(payload22)
+      mbt_ffi_store32(return_area + 52, payload22.length())
+      mbt_ffi_store32(return_area + 48, ptr23)
+      cleanup_list.push(ptr23)
+
+      ()
+    }
+  }
+
+  match opts.on_unhandled {
+    None => {
+      mbt_ffi_store8(return_area + 56, 0)
+
+      ()
+    }
+    Some(payload25) => {
+      mbt_ffi_store8(return_area + 56, 1)
+
+      let ptr26 = mbt_ffi_str2ptr(payload25)
+      mbt_ffi_store32(return_area + 64, payload25.length())
+      mbt_ffi_store32(return_area + 60, ptr26)
+      cleanup_list.push(ptr26)
+
+      ()
+    }
+  }
+  mbt_ffi_store8(return_area + 68, if opts.live_path { 1 } else { 0 })
+  wasmImportIntentAt(return_area)
+  mbt_ffi_free(return_area)
+  mbt_ffi_free(address)
+  mbt_ffi_free(ptr5)
+  mbt_ffi_free(address14)
+  mbt_ffi_free(address16)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Pass the message being handled on as an intent, or — while handling an
+/// intent — continue its walk after this position.
+///
+/// The answer target does not move: a handler further up answers whoever
+/// dispatched, not whoever forwarded. That, and not having to rebuild the
+/// arguments, is the whole of what makes this different from dispatching the
+/// intent again. An empty `args` means "the ones that arrived"; an empty
+/// `route` means "the one the walk is already on".
+pub fn forward(args : Array[@values.Value], opts : IntentOpts) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let address = mbt_ffi_malloc(args.length() * 16)
+  for index = 0; index < args.length(); index = index + 1 {
+    let iter_elem : @values.Value = args[index]
+    let iter_base = address + index * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload1) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload1)
+
+        ()
+      }
+      Text(payload2) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr = mbt_ffi_str2ptr(payload2)
+        mbt_ffi_store32(iter_base + 12, payload2.length())
+        mbt_ffi_store32(iter_base + 8, ptr)
+        cleanup_list.push(ptr)
+
+        ()
+      }
+      List(payload3) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload3.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload4) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload5) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+
+  let address6 = mbt_ffi_malloc(opts.route.length() * 1)
+  for index7 = 0; index7 < opts.route.length(); index7 = index7 + 1 {
+    let iter_elem : Leg = opts.route[index7]
+    let iter_base = address6 + index7 * 1
+    mbt_ffi_store8(iter_base + 0, iter_elem.ordinal())
+  }
+
+  let (lowered, lowered11, lowered12) = match opts.on_ok {
+    None => (0, 0, 0)
+    Some(payload9) => {
+      let ptr10 = mbt_ffi_str2ptr(payload9)
+      cleanup_list.push(ptr10)
+
+      (1, ptr10, payload9.length())
+    }
+  }
+
+  let (lowered16, lowered17, lowered18) = match opts.on_error {
+    None => (0, 0, 0)
+    Some(payload14) => {
+      let ptr15 = mbt_ffi_str2ptr(payload14)
+      cleanup_list.push(ptr15)
+
+      (1, ptr15, payload14.length())
+    }
+  }
+
+  let (lowered22, lowered23, lowered24) = match opts.on_unhandled {
+    None => (0, 0, 0)
+    Some(payload20) => {
+      let ptr21 = mbt_ffi_str2ptr(payload20)
+      cleanup_list.push(ptr21)
+
+      (1, ptr21, payload20.length())
+    }
+  }
+  wasmImportForward(
+    address,
+    args.length(),
+    address6,
+    opts.route.length(),
+    lowered,
+    lowered11,
+    lowered12,
+    lowered16,
+    lowered17,
+    lowered18,
+    lowered22,
+    lowered23,
+    lowered24,
+    if opts.live_path {
+      1
+    } else {
+      0
+    },
+  )
+  mbt_ffi_free(address)
+  mbt_ffi_free(address6)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Answer the intent this handler received, and end the walk. The answer
+/// arrives at the sender as `<name>Ok`.
+pub fn reply(v : @values.Value) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let (lowered, lowered6, lowered7) = match v {
+    Nil => (0, 0L, 0)
+    Boolean(payload0) => (1, Int::to_int64(if payload0 { 1 } else { 0 }), 0)
+    Number(payload1) => (2, payload1.reinterpret_as_int64(), 0)
+    Text(payload2) => {
+      let ptr = mbt_ffi_str2ptr(payload2)
+      cleanup_list.push(ptr)
+
+      (3, Int::to_int64(ptr), payload2.length())
+    }
+    List(payload3) => (4, payload3.reinterpret_as_int64(), 0)
+    Map(payload4) => (5, payload4.reinterpret_as_int64(), 0)
+    Instance(payload5) => (6, payload5.reinterpret_as_int64(), 0)
+  }
+  wasmImportReply(lowered, lowered6, lowered7)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Answer it with a failure, and end the walk: `<name>Error`.
+pub fn fail(e : @values.Value) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let (lowered, lowered6, lowered7) = match e {
+    Nil => (0, 0L, 0)
+    Boolean(payload0) => (1, Int::to_int64(if payload0 { 1 } else { 0 }), 0)
+    Number(payload1) => (2, payload1.reinterpret_as_int64(), 0)
+    Text(payload2) => {
+      let ptr = mbt_ffi_str2ptr(payload2)
+      cleanup_list.push(ptr)
+
+      (3, Int::to_int64(ptr), payload2.length())
+    }
+    List(payload3) => (4, payload3.reinterpret_as_int64(), 0)
+    Map(payload4) => (5, payload4.reinterpret_as_int64(), 0)
+    Instance(payload5) => (6, payload5.reinterpret_as_int64(), 0)
+  }
+  wasmImportFail(lowered, lowered6, lowered7)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// v1. Bubble a message to the parent component in the host tree.
+///
+/// Superseded by `intent` with a `dyn` route. Kept for the length of the
+/// migration; it goes in the contract step.
 pub fn emit(name : String, args : Array[@values.Value]) -> Unit {
   let cleanup_list : Array[Int] = []
 
@@ -332,8 +894,8 @@ pub fn send_at(
 }
 
 ///|
-/// Raise a bubble AT a descendant, which then travels up through it — the
-/// targeted twin of `emit`.
+/// v1. Raise a bubble AT a descendant, which then travels up through it —
+/// the targeted twin of `emit`. Superseded by `intent-at`.
 pub fn bubble_at(
   path : Array[PathStep],
   name : String,
@@ -457,8 +1019,11 @@ pub fn bubble_at(
 }
 
 ///|
-/// Stop the message being handled from travelling any further up the tree
-/// (host `ctx.stop-propagation`). Only meaningful while handling a bubble.
+/// End the walk with no answer — "served, and no answer". The sender hears
+/// nothing, even if it named an outcome, which is what separates this from
+/// letting the route run out.
+///
+/// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
 pub fn stop_propagation() -> Unit {
   wasmImportStopPropagation()
 }
@@ -473,6 +1038,10 @@ pub fn stop_propagation() -> Unit {
 /// place a guest asks for something it cannot do itself, so the host decides
 /// — by the requester's path, at the moment of the call, not by anything the
 /// manifest claimed. A refusal arrives as an error response.
+/// v1. Superseded by `intent` with a `lex` route — the scope chain is
+/// exactly what a request searched, and the paragraph above is now a
+/// statement about which LEG rather than about which verb. Kept for the
+/// length of the migration.
 pub fn request(
   name : String,
   args : Array[@values.Value],
