@@ -72,6 +72,27 @@ pub let event_object_steps : Array[String] = [
 pub let event_data_terminals : Array[String] = ["dataset", "detail"]
 
 ///|
+/// Layer 1's computed accessors, by name.
+///
+/// These are NOT properties of anything. A DOM `Event` has no `value` at all:
+/// `value` is computed by the glue — the checked state on a checkbox, the
+/// picked file's metadata on a file input, the `detail` on a `CustomEvent`, the
+/// input's string otherwise — and `isSend` is `key == "Enter"`. So no
+/// specification can answer for them and no generated table carries them.
+///
+/// Here, in the leaf package, because THREE places need the same list and had
+/// three copies of it: the runtime resolver (`render/dom_event.mbt`) asks
+/// whether a name shadows the path walk, the generator (`viewgen/surface.mbt`)
+/// asks what it decodes to, and the migration asks which bare names are event
+/// reads. Three copies of one vocabulary is three ways to disagree about
+/// `e.value`.
+pub let event_accessors : Array[String] = [
+  "value", "valueAsInt", "valueAsFloat", "key", "keyCode", "isAlt", "isShift", "isCtrl",
+  "isCmd", "isUpKey", "isDownKey", "isSend", "isCancel", "isTabKey", "dragInfo",
+  "dragKey", "dragValue", "dragType",
+]
+
+///|
 /// What a path walk answers.
 pub(all) enum EventPathVerdict {
   PathOk

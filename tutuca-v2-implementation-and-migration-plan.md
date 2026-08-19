@@ -87,7 +87,7 @@ Two consequences worth stating outright.
 
 **Phase 5 — migration**
 
-- [ ] 18. [Build `tutuca migrate`](#18-build-tutuca-migrate)
+- [x] 18. [Build `tutuca migrate`](#18-build-tutuca-migrate)
 - [ ] 19. [Migrate the repository's own code](#19-migrate-the-repositorys-own-code)
 
 **Phase 6 — words**
@@ -1314,6 +1314,64 @@ those files, rather than half-editing them.
 **Validation.** Run it over a copy of `storybook/examples/`, then `moon check`
 and `moon test`. The tool is done when task 19 needs no hand edits outside its
 reported list.
+
+**Done.** `cli/migrate.mbt` + the shell half in `cmd/main`, 15 tests. Over a
+copy of `storybook/examples/`: **31 rewritten, 5 to read, 2 refused** — and
+both refusals are exactly the two `Response(…)` arms.
+
+**Three answers, not two, and the middle one is the point.** `files` is
+deterministic and complete; `reports` is rewritten AND something only a person
+can judge; `refused` is not rewritten at all. A codemod that is 95% right on
+500 sites leaves 25 broken ones in a diff nobody reads, so a file this cannot
+handle COMPLETELY is refused **whole** and left byte-for-byte as it was.
+
+**The block language moves through the PARSER and the PRINTER**, not through
+the text. The grammar is pinned by parse-print-parse (task 7), which is exactly
+the property a rewrite needs: what comes out is what the parser accepts, not
+what a substitution happened to produce. A `bubble` effect becomes `intent dyn`
+and a `request` becomes `intent lex` — including inside an `if`, which a
+top-level-only walk would have missed and which has a test.
+
+The state block moves textually, on the declaration keyword only, because
+`statedef` has a parser and no printer — inventing one to move two words would
+be a second spelling of the schema to keep in step forever. Bounded by
+POSITION: a field called `bubbles` and the word in a doc comment are left
+alone, with a test.
+
+**Three things the first working version got wrong, each caught by running it:**
+
+- **It rewrote `*_gen.mbt` files.** `AGENTS.md` is explicit, and the reason
+  applies exactly to a codemod: an edit there survives until the next
+  `gen-views` and then silently does not. Now skipped, with a test.
+- **The `ctx.bubble` rewrite produced code that does not compile.** It emitted
+  a `ctx.intent_dyn(` marker for a human to finish — which is half-editing, the
+  one thing the tool must not do. Now the closing paren is found by MATCHING
+  and the route is inserted properly, so `ctx.bubble("x", [f(g(1))])` comes out
+  right; unbalanced parens refuse the file.
+- **It reindented every script block**, because the printer emits at column 0.
+  That turns a two-word change into a diff nobody reads — the same failure the
+  refusals exist to prevent, one line at a time. The block's own indent and its
+  tail are preserved, and `communication.html` now differs by exactly the one
+  line that should differ.
+
+**What it reports rather than rewrites**, all three from the plan: a `ctx.send`
+in a file (the widening changed what it does, and the tool cannot know which
+names are mutators without the schema); a `ctx.request` whose opts do not map
+one for one; and a bare `@on` argument that is not an accessor — a latent v1
+bug that read as `Null` at run time, which the rewrite surfaces rather than
+guesses at.
+
+`on_res_name` refuses outright: v2 has no field for the combined arm, so a
+mechanical rewrite could silently drop a routing decision.
+
+**One consolidation came with it.** The accessor vocabulary had THREE copies —
+the runtime resolver, the generator, and now the codemod. It is
+`@eventpath.event_accessors` once, and all three read it.
+
+`migrate` takes no default root, unlike `gen-views` and the CSS commands.
+Running a codemod over a whole project without saying so is not the ordinary
+case, and a person who meant one file should not get all of them from a missing
+argument.
 
 ## 19. Migrate the repository's own code
 

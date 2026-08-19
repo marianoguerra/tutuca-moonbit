@@ -236,6 +236,30 @@ let commands : Array[CommandSpec] = [
   // ahead-of-time project can ship a stylesheet holding only what it uses. Two
   // commands rather than one flag, because the stylesheet set is the whole
   // decision: stock Tailwind, or Tailwind plus margaui's components.
+  // The v1 -> v2 codemod (migrate.mbt). Worth a command because the work is
+  // large, mechanical and repeated across this repository, the examples, the
+  // site and every downstream project — and because the interesting half is
+  // what it REFUSES, which a person doing it by hand would not have listed.
+  {
+    name: "migrate",
+    describe: "Rewrite v1 sources to v2, and list what needs a human.",
+    flags: [
+      flag(
+        "dry-run",
+        type_="boolean",
+        description="Print what would change instead of writing it.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "path",
+        required=true,
+        description=".html and .mbt files, or directories holding them.",
+        note="A file the tool cannot handle COMPLETELY is refused whole and left exactly as it was — never half-edited. The refusals are the work list.",
+      ),
+    ],
+  },
   {
     name: "gen-tailwind-css",
     describe: "Compile the classes a project's views use into CSS, against stock Tailwind.",

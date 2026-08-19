@@ -8,6 +8,13 @@
 // component — in an ahead-of-time port that is the compiler's job.
 import {
   "marianoguerra/tutuca/anode",
+  // `tutuca migrate` rewrites the block language through its PARSER and its
+  // PRINTER rather than through the text — the grammar is pinned by
+  // parse-print-parse, which is exactly the property a rewrite needs.
+  "marianoguerra/tutuca/tscript",
+  // ...and the ONE accessor vocabulary, so the codemod cannot disagree with
+  // the resolver and the generator about what `e.value` is.
+  "marianoguerra/tutuca/eventpath",
   "marianoguerra/tutuca/lint",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/viewgen",

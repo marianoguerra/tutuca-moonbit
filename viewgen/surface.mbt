@@ -503,11 +503,7 @@ fn check_event_arg(
 /// — so a check against the specifications alone would warn about the most
 /// common read in the language.
 fn event_root_names() -> Array[String] {
-  let out : Array[String] = [
-    "value", "valueAsInt", "valueAsFloat", "key", "keyCode", "isAlt", "isShift",
-    "isCtrl", "isCmd", "isUpKey", "isDownKey", "isSend", "isCancel", "isTabKey",
-    "dragInfo", "dragKey", "dragValue", "dragType",
-  ]
+  let out : Array[String] = @eventpath.event_accessors.copy()
   for row in @eventpath.dom_interfaces {
     // Only the EVENT side of the table: an `Element`'s properties are reachable
     // through `e.target`, not off the root.

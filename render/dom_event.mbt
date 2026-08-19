@@ -99,31 +99,15 @@ fn event_field(e : DomEvent, name : String) -> @tutuca.Value {
 ///|
 /// Whether `name` is one of layer 1's computed accessors.
 ///
-/// A list rather than "did `event_field` answer non-Null", because those are
-/// different questions: `e.value` on an empty input is legitimately `Str("")`
-/// and `e.isAlt` is legitimately `Bool(false)`, and an accessor that answered
-/// falsily would fall through to layer 2 if the test were the ANSWER rather
-/// than the NAME.
+/// Asked of the NAME rather than of the answer, because those are different
+/// questions: `e.value` on an empty input is legitimately `Str("")` and
+/// `e.isAlt` is legitimately `Bool(false)`, and an accessor that answered
+/// falsily would fall through to layer 2 if the test were the ANSWER.
+///
+/// The list is `@eventpath.event_accessors` — one vocabulary, in the one place
+/// three packages can reach.
 fn is_computed_accessor(name : String) -> Bool {
-  name
-  is ("value"
-  | "valueAsInt"
-  | "valueAsFloat"
-  | "key"
-  | "keyCode"
-  | "isAlt"
-  | "isShift"
-  | "isCtrl"
-  | "isCmd"
-  | "isUpKey"
-  | "isDownKey"
-  | "isSend"
-  | "isCancel"
-  | "isTabKey"
-  | "dragInfo"
-  | "dragKey"
-  | "dragValue"
-  | "dragType")
+  @eventpath.event_accessors.contains(name)
 }
 
 ///|

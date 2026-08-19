@@ -89,6 +89,8 @@ pub fn iso8601_utc(UInt64) -> String
 
 pub fn lex_compare(String, String) -> Int
 
+pub fn migrate_source(String, String) -> MigratePlan
+
 pub fn new_guest_success(String, String) -> String
 
 pub fn new_guest_target_exists(GlobalOpts, String) -> Emit
@@ -193,6 +195,12 @@ pub(all) struct GuestScaffoldPlan {
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)
 
+pub(all) struct MigratePlan {
+  files : Array[(String, String)]
+  reports : Array[String]
+  refused : Array[String]
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Outcome {
   Done(Emit)
   Feedback(GlobalOpts, message~ : String?)
@@ -202,6 +210,7 @@ pub(all) enum Outcome {
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
+  Migrate(GlobalOpts, roots~ : Array[String], dry_run~ : Bool)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ParsedArgs {

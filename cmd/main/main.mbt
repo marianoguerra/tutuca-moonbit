@@ -550,6 +550,137 @@ async fn refresh_watch_css(
 }
 
 ///|
+/// The files `migrate` walks: `.html` and `.mbt`, anywhere under the roots.
+///
+/// A WIDER net than `collect_view_files` casts, deliberately. That one wants
+/// view files — an `.html` with a generated sibling — because a page is not a
+/// view. This one wants everything a v1 spelling can be written in, and the
+/// codemod's own answer for a file with nothing to migrate is "nothing", so a
+/// page costs a read and no edit.
+async fn collect_migrate_files(paths : Array[String]) -> Array[String] noraise {
+  let found : Array[String] = []
+  let seen : Map[String, Bool] = Map([])
+  for p in paths {
+    let kind = @fs.kind(p) catch { _ => continue }
+    if kind is Directory {
+      scan_migrate_dir(p, found, seen)
+    } else if (p.has_suffix(".html") || p.has_suffix(".mbt")) &&
+      !seen.contains(p) {
+      seen[p] = true
+      found.push(p)
+    }
+  }
+  found
+}
+
+///|
+async fn scan_migrate_dir(
+  dir : String,
+  found : Array[String],
+  seen : Map[String, Bool],
+) -> Unit noraise {
+  let names = @fs.readdir(dir) catch { _ => return }
+  for n in names {
+    if skip_dir(n) {
+      continue
+    }
+    let full = if dir.has_suffix("/") { dir + n } else { dir + "/" + n }
+    let kind = @fs.kind(full) catch { _ => continue }
+    if kind is Directory {
+      scan_migrate_dir(full, found, seen)
+    } else if (full.has_suffix(".html") || full.has_suffix(".mbt")) &&
+      !seen.contains(full) {
+      seen[full] = true
+      found.push(full)
+    }
+  }
+}
+
+///|
+/// `tutuca migrate` — read, rewrite, and say what needs a person.
+///
+/// The REPORT is the deliverable as much as the rewrite is. A run that
+/// rewrites forty files and refuses three has done its job; the three are the
+/// work, and printing them last is what makes them the last thing read.
+async fn run_migrate(
+  opts : @cli.GlobalOpts,
+  roots : Array[String],
+  dry_run : Bool,
+) -> Unit noraise {
+  let paths = collect_migrate_files(roots)
+  if paths.is_empty() {
+    emit_and_exit(
+      @cli.error_emit(
+        opts,
+        @cli.err(
+          @cli.CODE_USAGE_MISSING_ARGUMENT,
+          "no .html or .mbt files under " + roots.join(", "),
+        ),
+      ),
+    )
+    return
+  }
+  let written : Array[String] = []
+  let reports : Array[String] = []
+  let refused : Array[String] = []
+  let out = StringBuilder::new()
+  for path in paths {
+    let source = @fs.read_file(path).text() catch { _ => continue }
+    let plan = @cli.migrate_source(path, source)
+    for r in plan.reports {
+      reports.push(r)
+    }
+    for r in plan.refused {
+      refused.push(r)
+    }
+    for f in plan.files {
+      if dry_run {
+        out.write_string("--- " + f.0 + "\n" + f.1 + "\n")
+      } else {
+        // A write that fails is reported and the run goes on: one unwritable
+        // file should not lose the forty that did move, and the count at the
+        // end is what says how many did.
+        @fs.write_file(f.0, f.1, create_mode=CreateOrTruncate) catch {
+          e => {
+            refused.push(f.0 + ": cannot write — " + e.to_string())
+            continue
+          }
+        }
+      }
+      written.push(f.0)
+    }
+  }
+  out.write_string(
+    written.length().to_string() +
+    " file(s) " +
+    (if dry_run { "would change" } else { "rewritten" }) +
+    ", " +
+    reports.length().to_string() +
+    " to read, " +
+    refused.length().to_string() +
+    " refused\n",
+  )
+  if !reports.is_empty() {
+    out.write_string(
+      "\nread these — the rewrite changed something only a person can judge:\n",
+    )
+    for r in reports {
+      out.write_string("  " + r + "\n")
+    }
+  }
+  if !refused.is_empty() {
+    out.write_string(
+      "\nREFUSED — left exactly as they were, because a complete rewrite needs a decision:\n",
+    )
+    for r in refused {
+      out.write_string("  " + r + "\n")
+    }
+  }
+  // Exit 0 either way: a refusal is the tool working, not failing.
+  emit_and_exit({ out: out.to_string(), err: "", exit_code: 0 })
+}
+
+///|
 /// Every view file a watched path contributes.
 ///
 /// An explicit .html path is taken at its word; a directory contributes the
@@ -771,5 +902,6 @@ async fn main {
       run_gen_views(opts, roots, out, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
+    Migrate(opts, roots~, dry_run~) => run_migrate(opts, roots, dry_run)
   }
 }

@@ -16,6 +16,8 @@ pub fn dom_prop_ty(String, String) -> DomPropTy?
 
 pub fn dom_props_of(String) -> Array[String]
 
+pub let event_accessors : Array[String]
+
 pub let event_data_terminals : Array[String]
 
 pub let event_object_steps : Array[String]
