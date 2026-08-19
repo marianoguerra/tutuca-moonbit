@@ -186,6 +186,9 @@ fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
 pub fn Val::eval(self : Val, stack : &Stack) -> Value {
   match self {
     Const(lit~, ..) => lit_value(lit)
+    // The one case that reads something outside the value language. The stack
+    // decides what a segment means; this only says which segments were written.
+    EventPath(segments) => stack.lookup_event_path(segments)
     StrTpl(parts) => {
       let buf = StringBuilder::new()
       for part in parts {

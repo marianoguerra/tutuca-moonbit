@@ -42,6 +42,15 @@ pub(all) struct Surface {
   methods : Array[String]
   /// State fields read at a view's root scope (see the caveat in emit.mbt).
   fields : Array[String]
+  /// ADVISORY findings the events pass turned up — an `e.` path naming a
+  /// property no event interface has, and a bare name in an argument slot.
+  ///
+  /// Here rather than raised because both describe code that WORKS: a rooted
+  /// path to a vendor property may be deliberate, and a bare name is v1's
+  /// spelling, of which this repository has 522. `gen-views` prints them and
+  /// carries on, which is the order every diagnostic that touches existing
+  /// code lands in.
+  hints : Array[String]
   /// Constant `id` attributes, sorted.
   ids : Array[String]
   /// `@when` handler names on an `@each`, sorted. Split from the other alter
@@ -100,6 +109,13 @@ pub suberror GenError {
   /// A constant `id` inside an `@each` body. The loop emits the body once per
   /// item, so the id is not unique the moment the sequence holds two.
   IdInLoop(view~ : String, id~ : String)
+  /// An `e.` path with a step the object-step allow-list does not carry.
+  ///
+  /// An ERROR, and it has to be: the path can never resolve, so reporting it
+  /// as a warning would leave a view reading `Null` forever. `step` is the
+  /// first one that leaves, which is the useful half — `e.target` is fine and
+  /// `e.target.ownerDocument` is where it went wrong.
+  BadEventPath(view~ : String, site~ : String, path~ : String, step~ : String)
   /// A view call site disagrees with the schema about what a message carries.
   ///
   /// v2's `receive` bucket holds a view's name and a parent's, so a name can

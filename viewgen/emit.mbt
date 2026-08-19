@@ -633,6 +633,16 @@ fn emit_module_compiled(
     Some(p) => p
     None => ProgramIndex::of(file, name)
   }
+  // The events pass's advisory findings, joined to the schema check's. Both
+  // describe code that works — a rooted path to a vendor property, a v1 bare
+  // name — so both are printed and neither stops a build.
+  for compiled_comp in compiled.components {
+    for h in compiled_comp.surface.hints {
+      if !hints.contains(h) {
+        hints.push(h)
+      }
+    }
+  }
   for compiled_comp in compiled.components {
     let comp = compiled_comp.raw
     let cname = comp.component_name(name)
@@ -731,6 +741,7 @@ fn emit_state_only(
     enriches: [],
     enrich_scopes: [],
     loop_withs: [],
+    hints: [],
   }
   // A schema-only file has no call sites, so the `receive` merge has nothing
   // to merge and nothing to disagree with.

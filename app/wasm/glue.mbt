@@ -28,6 +28,14 @@ extern "wasm" fn tdom_add_listener(root : @core.Any, name : String) -> Unit = "t
 extern "wasm" fn tdom_json_stringify(v : @core.Any) -> @core.Any = "tdom" "json_stringify"
 
 ///|
+/// The LEAF of an allowlisted path, as JSON text, or `""` for anything that
+/// must not cross. The wasm-gc twin of `app/browser`'s `leaf_json_ffi`, and the
+/// shape test is the same one for the same reason: an `Element` stringifies to
+/// `{}`, so a converter that trusted `JSON.stringify` would answer an empty map
+/// for `e.target` where the design says `Null`.
+extern "wasm" fn tdom_leaf_json(obj : @core.Any, name : String) -> @core.Any = "tdom" "leaf_json"
+
+///|
 /// First selected file's {name,size,type,lastModified} as JSON text; "" when
 /// no file is selected.
 extern "wasm" fn tdom_file_meta(input : @core.Any) -> @core.Any = "tdom" "file_meta"
@@ -138,6 +146,35 @@ fn event_ctrl_or_cmd(ev : @core.Any) -> Bool {
 }
 
 ///|
+/// Walk an already-allowlisted path off the live event, converting the LEAF.
+///
+/// The wasm-gc twin of `app/browser`'s `event_path_reader`, and it has to be a
+/// twin rather than shared code: one reaches the DOM through mizchi/js's
+/// `@core.Any` and a small `tdom` FFI, the other through `extern "js"`.
+///
+/// **The allowlist is not checked here.** `@render.event_path` checks it before
+/// this is ever called, so one place decides and this backend cannot forget to
+/// ask.
+fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
+  @render.EventPathReader(segments => {
+    let mut cur = ev
+    for i, seg in segments {
+      if i == segments.length() - 1 {
+        return json_value_str(to_str(tdom_leaf_json(cur, seg)))
+      }
+      if !tdom_has_prop(cur, seg) {
+        return Null
+      }
+      cur = cur._get(seg)
+      if @core.is_nullish(cur) {
+        return Null
+      }
+    }
+    Null
+  })
+}
+
+///|
 /// Translate a raw browser event into the backend-agnostic DomEvent.
 fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
   @render.DomEvent::new(
@@ -149,6 +186,7 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
     shift=tdom_get_bool(ev, "shiftKey"),
     ctrl_or_cmd=event_ctrl_or_cmd(ev),
     meta=tdom_get_bool(ev, "metaKey"),
+    read_path=event_path_reader(ev),
   )
 }
 

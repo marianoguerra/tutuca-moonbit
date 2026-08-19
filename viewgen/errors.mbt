@@ -23,6 +23,10 @@ pub fn GenError::message(self : GenError) -> String {
         Some(s) => " — did you mean `.\{s}`?"
         None => "; declare it in the <script type=\"tutuca/state\"> block"
       })
+    BadEventPath(view~, site~, path~, step~) =>
+      "view \"\{view}\": `\{site}=\"… \{path}\"` — `\{step}` is not a step an event path may go through. The steps that are: " +
+      @eventpath.event_object_steps.join(", ") +
+      ". Anything else leads out of the event and into the page; ask the host for it with an intent instead"
     PayloadDisagrees(name~, declared~, written~, sites~) =>
       "`\{name}` is declared in the state block as `\{declared}` and called from \{sites} as `\{written}` — the schema declares what a message carries, so the call sites have to match it"
     IdInLoop(view~, id~) =>

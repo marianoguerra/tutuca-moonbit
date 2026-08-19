@@ -130,6 +130,8 @@ priv struct Collect {
   /// walk, read by the events pass; eids restart per view, so walk_view
   /// clears it before each walk.
   value_kinds : Map[Int, ArgType]
+  /// Advisory findings the events pass turned up; see `Surface.hints`.
+  hints : Array[String]
 }
 
 ///|
@@ -144,6 +146,7 @@ fn Collect::new() -> Collect {
     enrich_scopes: Set([], capacity=4),
     loop_withs: Set([], capacity=4),
     value_kinds: Map([]),
+    hints: [],
   }
 }
 
@@ -387,28 +390,141 @@ fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
     Const(lit=LNum(_), ..) => VDouble
     Const(lit=LStr(_), ..) => VString
     Const(lit=LBool(_), ..) => VBool
-    Name(name) =>
-      match name {
-        "value" => value_kind
-        "key" => VString
-        "valueAsInt" | "valueAsFloat" | "keyCode" => VDouble
-        "isAlt"
-        | "isShift"
-        | "isCtrl"
-        | "isCmd"
-        | "isUpKey"
-        | "isDownKey"
-        | "isSend"
-        | "isCancel"
-        | "isTabKey" => VBool
-        // The drag names answer Null when no drag is in flight, so none of
-        // them is the unwrapped type it looks like — `dragKey` is a Value the
-        // way `@key` is, and `dragType` is only a String mid-drag.
-        "dragInfo" | "dragKey" | "dragValue" | "dragType" => VValue
-        _ => VValue
-      }
+    // v1's bare name and v2's rooted path are the SAME read, so they get the
+    // same answer from the same table — including the `value_kind` the host
+    // element's static `type` attribute decided. Reimplementing the inference
+    // for the new spelling is exactly how the two would drift.
+    Name(name) => accessor_type(name, value_kind)
+    EventPath([one]) => accessor_type(one, value_kind)
+    // A longer path is a layer-2 read, and nothing knows its type: the DOM
+    // property table could answer for a rooted one, but not for a path through
+    // `detail` or `dataset`, where the shape is the application's. `Value` is
+    // the honest answer for all of them.
+    EventPath(_) => VValue
     _ => VValue
   }
+}
+
+///|
+/// The type one of layer 1's computed accessors decodes to.
+fn accessor_type(name : String, value_kind : ArgType) -> ArgType {
+  match name {
+    "value" => value_kind
+    "key" => VString
+    "valueAsInt" | "valueAsFloat" | "keyCode" => VDouble
+    "isAlt"
+    | "isShift"
+    | "isCtrl"
+    | "isCmd"
+    | "isUpKey"
+    | "isDownKey"
+    | "isSend"
+    | "isCancel"
+    | "isTabKey" => VBool
+    // The drag names answer Null when no drag is in flight, so none of
+    // them is the unwrapped type it looks like — `dragKey` is a Value the
+    // way `@key` is, and `dragType` is only a String mid-drag.
+    "dragInfo" | "dragKey" | "dragValue" | "dragType" => VValue
+    _ => VValue
+  }
+}
+
+///|
+/// The three things an `@on` argument can be wrong about.
+///
+/// All three are about the `e.` boundary, which is why they are here rather
+/// than in `tscript/check`: that package checks the BLOCK language, and a call
+/// site is written in a view.
+///
+/// One is fatal and two are hints, and the split is the same one `docs/` uses
+/// for every diagnostic that touches existing code — a rule whose warned-about
+/// code already works cannot break a build on the day it lands.
+fn check_event_arg(
+  val : @tutuca.Val,
+  view_name : String,
+  site : String,
+  hints : Array[String],
+) -> Unit raise GenError {
+  match val {
+    EventPath(segments) => {
+      let path = "e." + segments.join(".")
+      // BAD_EVENT_PATH — an ERROR, because the path can never resolve and a
+      // warning would leave a view reading `Null` forever.
+      match @eventpath.check_event_path(segments) {
+        BadStep(step~, ..) =>
+          raise BadEventPath(view=view_name, site~, path~, step~)
+        PathOk => ()
+      }
+      // UNKNOWN_EVENT_PROP — a HINT. `e.target.someVendorThing` may be
+      // deliberate, and `e.target.valeu` is a typing mistake; the difference
+      // is not one a generator can tell, so it names the closest match and
+      // leaves the decision.
+      //
+      // Asked of the ROOT segment only, and against the union of every
+      // interface the table carries rather than against the one this event
+      // actually is. Mapping `@on.click` to `MouseEvent` needs a second
+      // generated table (webref's `ed/events/`), and the union already catches
+      // the case worth catching — a name no event interface anywhere has.
+      guard segments.length() == 1 else { return }
+      let name = segments[0]
+      if is_known_event_root(name) {
+        return
+      }
+      let near = @statedef.nearest(name, event_root_names())
+      let did_you_mean = match near {
+        Some(alt) => " — did you mean `e." + alt + "`?"
+        None => ""
+      }
+      hints.push(
+        "view \{view_name}: `\{site}=\"… \{path}\"` — no event interface has a `\{name}` property\{did_you_mean}",
+      )
+    }
+    // BARE_ARG — a HINT for now, and an ERROR after the migration.
+    //
+    // v1 spells an event read as a bare name and this repository has 522 of
+    // them, so turning it on today would break every view in it before the
+    // codemod has run. The plan's task 19 is where it flips; until then this
+    // says the same thing without stopping a build.
+    Name(name) =>
+      hints.push(
+        "view \{view_name}: `\{site}=\"… \{name}\"` — a bare name in an event argument is a v1 spelling. Write `e.\{name}` for an event read, `.field` for state, or `@bind` for a binding",
+      )
+    _ => ()
+  }
+}
+
+///|
+/// Every name a rooted one-segment `e.` path may legitimately carry: the
+/// framework's computed accessors, plus every property any event interface in
+/// the generated table declares.
+///
+/// The accessors have to be in it because they are not properties of anything
+/// — `e.value` is computed by the glue and a DOM `Event` has no `value` at all
+/// — so a check against the specifications alone would warn about the most
+/// common read in the language.
+fn event_root_names() -> Array[String] {
+  let out : Array[String] = [
+    "value", "valueAsInt", "valueAsFloat", "key", "keyCode", "isAlt", "isShift",
+    "isCtrl", "isCmd", "isUpKey", "isDownKey", "isSend", "isCancel", "isTabKey",
+    "dragInfo", "dragKey", "dragValue", "dragType",
+  ]
+  for row in @eventpath.dom_interfaces {
+    // Only the EVENT side of the table: an `Element`'s properties are reachable
+    // through `e.target`, not off the root.
+    if row.0.has_suffix("Event") {
+      for p in @eventpath.dom_props_of(row.0) {
+        if !out.contains(p) {
+          out.push(p)
+        }
+      }
+    }
+  }
+  out
+}
+
+///|
+fn is_known_event_root(name : String) -> Bool {
+  event_root_names().contains(name)
 }
 
 ///|
@@ -473,6 +589,7 @@ fn walk_view(
           let shape = h.handler.args.map(a => arg_type_of(a, value_kind))
           for a in h.handler.args {
             walk_val(a, c, false)
+            check_event_arg(a, view_name, site, c.hints)
           }
           match inputs.get(name) {
             None => inputs[name] = { name, args: Some(shape), sites: [site] }
@@ -508,6 +625,9 @@ fn finish_surface(c : Collect, inputs : Map[String, InputSig]) -> Surface {
     enriches: sorted(c.enriches),
     enrich_scopes: sorted(c.enrich_scopes),
     loop_withs: sorted(c.loop_withs),
+    // NOT sorted: a hint reads best in the order the views were walked, which
+    // is the order an author reads the file.
+    hints: c.hints,
   }
 }
 

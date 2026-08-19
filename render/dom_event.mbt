@@ -6,6 +6,7 @@
 pub fn DomEvent::new(
   name~ : String,
   value? : @tutuca.Value = Null,
+  read_path? : EventPathReader,
   key? : String = "",
   key_code? : Int = 0,
   alt? : Bool = false,
@@ -14,7 +15,18 @@ pub fn DomEvent::new(
   meta? : Bool = false,
   drag_info? : @tutuca.Value = Null,
 ) -> DomEvent {
-  { name, value, key, key_code, alt, shift, ctrl_or_cmd, meta, drag_info }
+  {
+    name,
+    value,
+    key,
+    key_code,
+    alt,
+    shift,
+    ctrl_or_cmd,
+    meta,
+    drag_info,
+    read_path,
+  }
 }
 
 ///|
@@ -81,5 +93,66 @@ fn event_field(e : DomEvent, name : String) -> @tutuca.Value {
     "dragType" => drag_field(e.drag_info, "type")
     // target / event / ctx: not exposed (DOM objects are not Values)
     _ => Null
+  }
+}
+
+///|
+/// Whether `name` is one of layer 1's computed accessors.
+///
+/// A list rather than "did `event_field` answer non-Null", because those are
+/// different questions: `e.value` on an empty input is legitimately `Str("")`
+/// and `e.isAlt` is legitimately `Bool(false)`, and an accessor that answered
+/// falsily would fall through to layer 2 if the test were the ANSWER rather
+/// than the NAME.
+fn is_computed_accessor(name : String) -> Bool {
+  name
+  is ("value"
+  | "valueAsInt"
+  | "valueAsFloat"
+  | "key"
+  | "keyCode"
+  | "isAlt"
+  | "isShift"
+  | "isCtrl"
+  | "isCmd"
+  | "isUpKey"
+  | "isDownKey"
+  | "isSend"
+  | "isCancel"
+  | "isTabKey"
+  | "dragInfo"
+  | "dragKey"
+  | "dragValue"
+  | "dragType")
+}
+
+///|
+/// Resolve `e.<segments>`, in the two layers the design gives it.
+///
+/// **Layer 1 is the computed accessors, and it SHADOWS layer 2.** That order
+/// is the whole of what makes this work, and it is asserted in a test rather
+/// than trusted to a comment: a DOM `Event` has no `value` property at all.
+/// `value` is computed — the checked state on a checkbox, the picked file's
+/// metadata on a file input, the `detail` on a `CustomEvent`, the input's
+/// string otherwise — so a path walk consulted first would answer `Null` for
+/// every one of the repository's `e.value` call sites and every form in it
+/// would stop working.
+///
+/// **Layer 2 is the allowlisted walk**, and the allowlist is checked HERE.
+/// A backend's resolver only ever sees a path that was already permitted, so
+/// one place decides and no backend can forget to ask.
+pub fn event_path(e : DomEvent, segments : Array[String]) -> @tutuca.Value {
+  // Layer 1. Only a single segment can be a computed accessor: they are
+  // framework names, not properties of anything, so `e.value.length` is not a
+  // read of a shorter one.
+  if segments.length() == 1 && is_computed_accessor(segments[0]) {
+    return event_field(e, segments[0])
+  }
+  guard @eventpath.check_event_path(segments) is PathOk else { return Null }
+  match e.read_path {
+    Some(EventPathReader(read)) => read(segments)
+    // No resolver: a test's event, or a backend that has none. A path that
+    // does not resolve is Null, which is the same answer.
+    None => Null
   }
 }

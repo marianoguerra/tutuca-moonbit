@@ -40,6 +40,7 @@ pub suberror GenError {
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
   IdInLoop(view~ : String, id~ : String)
+  BadEventPath(view~ : String, site~ : String, path~ : String, step~ : String)
   PayloadDisagrees(name~ : String, declared~ : String, written~ : String, sites~ : String)
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
   NotIterable(view~ : String, expr~ : String, ty~ : String)
@@ -79,6 +80,7 @@ pub(all) struct Surface {
   inputs : Array[InputSig]
   methods : Array[String]
   fields : Array[String]
+  hints : Array[String]
   ids : Array[String]
   whens : Array[String]
   enriches : Array[String]

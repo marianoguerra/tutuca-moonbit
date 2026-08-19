@@ -1,0 +1,23 @@
+// What an `e.<path>` may traverse, and what its leaf is.
+//
+// Two tables that answer two different questions about the same path, and they
+// are here TOGETHER and here ALONE for one reason: three packages need them and
+// no two of those three can import each other.
+//
+//   - `render` resolves a path at run time, against a live DOM event.
+//   - `viewgen` reports on one at build time, walking the compiled views.
+//   - `tscript/check` would too, if the block language ever grew one.
+//
+// `viewgen` is pure text-in/text-out and ships to a browser as the playground's
+// generator; making it import `render` — and with it `vdom`, `component` and
+// `sinks` — to reach two lookup tables would put a DOM abstraction in a package
+// that never touches a DOM. So the tables moved down here instead, where they
+// depend on nothing.
+//
+// The two halves stay distinct, and the distinction is the point:
+// `dom_props_gen.mbt` is FETCHED from the specifications and says what exists;
+// `event_paths.mbt` is ARGUED and says what may be reached. Neither may answer
+// the other's question. See `dyncomp/SECURITY.md` §9.
+import {
+  "moonbitlang/core/debug",
+}

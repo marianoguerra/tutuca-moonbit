@@ -201,3 +201,94 @@ test "a $name in an alter position is a method, not a bucket entry" {
   assert_eq(s.methods, ["visible"])
   assert_eq(s.whens, [])
 }
+
+// -- v2: the `e.` boundary ---------------------------------------------------
+
+///|
+/// The generation error a view fails with, or "" when it generates.
+fn view_err(view : String) -> String {
+  try {
+    surface_of(view) |> ignore
+    ""
+  } catch {
+    e => e.message()
+  }
+}
+
+///|
+/// The advisory findings a view turns up.
+fn view_hints(view : String) -> Array[String] raise {
+  surface_of(view).hints
+}
+
+///|
+test "an e. path in an argument slot parses and types" {
+  let s = surface_of("<input @on.input=\"setIt e.value\">")
+  assert_eq(s.inputs.length(), 1)
+  assert_eq(s.inputs[0].name, "setIt")
+  // The accessor's own type, from layer 1's table — an `e.` path does not
+  // make the argument opaque.
+  assert_eq(s.inputs[0].args, Some([VString]))
+}
+
+///|
+test "a path off the allowlist is a build error, naming the step" {
+  assert_eq(
+    view_err(
+      "<button @on.click=\"go e.target.ownerDocument.defaultView.localStorage.length\">x</button>",
+    ),
+    "view \"main\": `@on.click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` is not a step an event path may go through. The steps that are: currentTarget, dataTransfer, dataset, detail, relatedTarget, target. Anything else leads out of the event and into the page; ask the host for it with an intent instead",
+  )
+  assert_eq(
+    view_err("<button @on.click=\"go e.target.form.action\">x</button>"),
+    "view \"main\": `@on.click=\"… e.target.form.action\"` — `form` is not a step an event path may go through. The steps that are: currentTarget, dataTransfer, dataset, detail, relatedTarget, target. Anything else leads out of the event and into the page; ask the host for it with an intent instead",
+  )
+  // ...and a permitted one generates.
+  assert_eq(view_err("<button @on.click=\"go e.target.value\">x</button>"), "")
+  assert_eq(
+    view_err("<button @on.click=\"go e.target.dataset.rowId\">x</button>"),
+    "",
+  )
+  assert_eq(view_err("<button @on.click=\"go e.detail.a.b.c\">x</button>"), "")
+}
+
+///|
+test "a rooted path naming no known property is a hint, with the nearest" {
+  let hints = view_hints("<button @on.click=\"go e.valeu\">x</button>")
+  assert_eq(hints.length(), 1)
+  assert_eq(
+    hints[0],
+    "view main: `@on.click=\"… e.valeu\"` — no event interface has a `valeu` property — did you mean `e.value`?",
+  )
+  // A computed accessor is known even though no specification has it: `value`
+  // is the glue's, and a check against the specs alone would warn about the
+  // most common read in the language.
+  assert_eq(view_hints("<button @on.click=\"go e.value\">x</button>"), [])
+  assert_eq(view_hints("<button @on.click=\"go e.isCtrl\">x</button>"), [])
+  // ...and a real one from the generated table.
+  assert_eq(view_hints("<button @on.click=\"go e.deltaY\">x</button>"), [])
+  assert_eq(view_hints("<button @on.click=\"go e.pointerId\">x</button>"), [])
+}
+
+///|
+test "a bare name in an argument slot is a hint, until the migration" {
+  // v1's spelling, of which this repository has 522. An ERROR here would break
+  // every view in it before the codemod has run, so it says the same thing
+  // without stopping a build; the plan's task 19 is where it flips.
+  let hints = view_hints("<input @on.input=\"setIt value\">")
+  assert_eq(hints.length(), 1)
+  assert_eq(
+    hints[0],
+    "view main: `@on.input=\"… value\"` — a bare name in an event argument is a v1 spelling. Write `e.value` for an event read, `.field` for state, or `@bind` for a binding",
+  )
+  // The three prefixed spellings say nothing.
+  assert_eq(view_hints("<input @on.input=\"setIt e.value\">"), [])
+  assert_eq(view_hints("<input @on.input=\"setIt .draft\">"), [])
+}
+
+///|
+test "an e. path is refused outside an argument slot" {
+  // The group table is where this is decided: a `@text=\"e.value\"` would be a
+  // render-time read of an event that is not happening.
+  assert_true(view_err("<p @text=\"e.value\"></p>") != "")
+}

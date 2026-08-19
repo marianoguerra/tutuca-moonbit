@@ -48,6 +48,13 @@ priv enum Kind {
   /// answers, and a value slot spells a call with `$`. Widening it further is
   /// what the expression language does, not this table.
   KApp
+  /// `e.<path>` — a read of the event being handled.
+  ///
+  /// Admitted in the EVENT ARGUMENT group and nowhere else, which is the whole
+  /// of what makes it safe to have. A `@text="e.value"` would be a render-time
+  /// read of an event that is not happening, and the group table below is
+  /// where that is refused rather than in a special case somewhere.
+  KEvent
 }
 
 ///|
@@ -59,7 +66,14 @@ priv enum Group {
   GSequence
   GProvide
   GField
-  GValue
+  /// What an `@on` handler ARGUMENT may be.
+  ///
+  /// This used to be `GValue` and is the same set plus `KEvent`. It is the ONE
+  /// group an event read belongs to: a `@text="e.value"` would be a
+  /// render-time read of an event that is not happening, and this table is
+  /// where that is refused — not a special case somewhere downstream. `GValue`
+  /// had no other user, so it was renamed rather than joined.
+  GEventArg
   GAll
 }
 
@@ -79,6 +93,7 @@ fn kind_of(val : @tutuca.Val) -> Kind? {
     TypeName(_) => Some(KType)
     Name(_) | HandlerName(..) => Some(KName)
     App(..) => Some(KApp)
+    EventPath(_) => Some(KEvent)
   }
 }
 
@@ -93,7 +108,9 @@ fn in_group(kind : Kind, group : Group) -> Bool {
     GSequence => kind is (KField | KDyn)
     GProvide => kind is (KField | KSeq)
     GField => kind is (KField | KMethod | KConst | KSeq)
-    GValue => kind is (KField | KMethod | KBind | KDyn | KName | KType | KConst)
+    GEventArg =>
+      kind
+      is (KField | KMethod | KBind | KDyn | KName | KType | KConst | KEvent)
     GAll =>
       kind
       is (KField
@@ -278,6 +295,29 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
       }
       if s == "true" || s == "false" {
         return Some(Const(lit=LBool(s == "true"), from_macro=false))
+      }
+      // `e.<path>` — a read of the event being handled. Recognized HERE, in
+      // the bare-name arm, and only for the exact root `e.`: a field named
+      // `each` or a name `event` is an ordinary name, and the check is on the
+      // dot rather than on the prefix so it cannot swallow one.
+      //
+      // Every segment must be an identifier. `e.` with nothing after it, or a
+      // segment that is not a name, is None — the caller reports it as a bad
+      // handler argument, which is what it is.
+      if s.has_prefix("e.") {
+        let segments : Array[String] = []
+        for seg in s[2:].to_owned().split(".") {
+          let name = seg.to_owned()
+          if !is_valid_val_id(name) {
+            return None
+          }
+          segments.push(name)
+        }
+        return if segments.is_empty() {
+          None
+        } else {
+          Some(EventPath(segments))
+        }
       }
       if c0 is ('a'..='z') {
         return mk_id(s, n => Name(n))
@@ -517,7 +557,7 @@ fn parse_handler(
   for i in 1..<tokens.length() {
     let tok = tokens[i]
     match parse_tok(tok, ctx) {
-      Some(val) if val_in_group(val, GValue) => args.push(val)
+      Some(val) if val_in_group(val, GEventArg) => args.push(val)
       _ => {
         if report {
           ctx.issue(BadHandlerArg, tok.text, tok.span)

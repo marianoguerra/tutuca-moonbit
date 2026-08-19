@@ -4,6 +4,9 @@
 ///|
 fn val_source(val : Val) -> String {
   match val {
+    // `e` is the root and never a segment, so it is written back rather than
+    // stored — there is no `Val` that means "the event".
+    EventPath(segments) => "e." + segments.join(".")
     Const(lit~, ..) =>
       match lit {
         LStr(s) => escape_str_literal(s)

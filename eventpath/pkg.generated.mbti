@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/eventpath"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn check_event_path(Array[String]) -> EventPathVerdict
+
+pub fn dom_interface_known(String) -> Bool
+
+pub let dom_interfaces : Array[(String, DomInterface)]
+
+pub fn dom_prop_ty(String, String) -> DomPropTy?
+
+pub fn dom_props_of(String) -> Array[String]
+
+pub let event_data_terminals : Array[String]
+
+pub let event_object_steps : Array[String]
+
+// Errors
+
+// Types and methods
+pub(all) struct DomInterface {
+  inherits : String?
+  props : Array[(String, DomPropTy)]
+}
+
+pub(all) enum DomPropTy {
+  PText
+  PNum
+  PBool
+  PObj(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum EventPathVerdict {
+  PathOk
+  BadStep(step~ : String, index~ : Int)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

@@ -78,7 +78,7 @@ Two consequences worth stating outright.
 
 - [x] 13. [Generate the DOM property table](#13-generate-the-dom-property-table)
 - [x] 14. [Curate the object-step allowlist](#14-curate-the-object-step-allowlist)
-- [ ] 15. [`e.` resolution in the glue and the slot parser](#15-e-resolution-in-the-glue-and-the-slot-parser)
+- [x] 15. [`e.` resolution in the glue and the slot parser](#15-e-resolution-in-the-glue-and-the-slot-parser)
 
 **Phase 4 — dynamic components**
 
@@ -164,7 +164,7 @@ six.
   single security decision by the number of interfaces for steps (`target`,
   `currentTarget`, `relatedTarget`, `detail`, `dataset`, `dataTransfer`) that
   are the same steps whichever interface carries them. It lives in
-  `render/event_paths.mbt` (task 14) beside a second, smaller set — the
+  `eventpath/event_paths.mbt` (task 14) beside a second, smaller set — the
   author-data terminals `dataset` and `detail`, below which traversal is free.
   The generated per-interface table (task 13) answers the other question, does
   this property exist and what type is it, and neither table may answer the
@@ -895,7 +895,7 @@ and what is its type. It is the type oracle for layer 1 and the lint source for
 layer 2.
 
 **Key files.** New `scripts/fetch-dom-props.mjs`, new
-`render/dom_props_gen.mbt`, `dev/tasks.mbt` (a `dom-props` task), `AGENTS.md`
+`eventpath/dom_props_gen.mbt`, `dev/tasks.mbt` (a `dom-props` task), `AGENTS.md`
 (the task table and the generated-file rules).
 
 **Risks.**
@@ -909,7 +909,7 @@ layer 2.
 reproducible is not checked in. Then a test that `value` on
 `HTMLInputElement` types as it does today.
 
-**Done.** `scripts/fetch-dom-props.mjs` → `render/dom_props_gen.mbt`: **115
+**Done.** `scripts/fetch-dom-props.mjs` → `eventpath/dom_props_gen.mbt`: **115
 interfaces, 913 properties**, from `w3c/webref`'s `ed/idl` — WebIDL that Reffy
 extracted from each spec's own text, so it cannot disagree with the prose the
 way a transcription can. `WEBREF_COMMIT` pins it. Ten specs are fetched; which
@@ -950,7 +950,7 @@ attribute on the type says what happens when JavaScript ASSIGNS null to it. An
 out as `PObj("[LegacyNullToEmptyString] DOMString")` — the exact kind of silent
 wrongness the plan's test asks for.
 
-`render/dom_props.mbt` is the lookup: `dom_prop_ty` walks `inherits` (the table
+`eventpath/dom_props.mbt` is the lookup: `dom_prop_ty` walks `inherits` (the table
 stores what each interface DECLARES, so flattening would have multiplied its
 size and said nothing more), `dom_props_of` collects the chain for a "did you
 mean", and `dom_interface_known` answers the scope question. Seven tests, and
@@ -972,7 +972,7 @@ This is the one security decision in the release. It is also the only list in
 the repository that cannot be generated, which makes it the only one that can
 grow by accident.
 
-**Key files.** A new `render/event_paths.mbt`, and a section in
+**Key files.** A new `eventpath/event_paths.mbt`, and a section in
 `dyncomp/SECURITY.md` with the file-and-line evidence that convention requires.
 
 **Risks.**
@@ -989,7 +989,7 @@ deliberate edit to an assertion. A second test walking known escape paths and
 asserting each is refused. Add both to `dyncomp/SECURITY.md`'s "What to check
 when changing this".
 
-**Done.** `render/event_paths.mbt`: `event_object_steps` — six entries,
+**Done.** `eventpath/event_paths.mbt`: `event_object_steps` — six entries,
 `target`, `currentTarget`, `relatedTarget`, `detail`, `dataset`, `dataTransfer`
 — beside `event_data_terminals` (`dataset`, `detail`) and `check_event_path`,
 which walks a path and refuses at the first traversed step that is not on the
@@ -1063,6 +1063,91 @@ prefixes). They live in `tscript/check` with the other two, and
 accessor, a test for `e.detail.unicode`, a test that `e.target` alone is `Null`,
 and the refusal tests from task 14. Plus one `check_test.mbt` case per finding
 above, asserting the exact message.
+
+**Done, and one structural change came first.** Tasks 13 and 14 put both tables
+in `render/`. The findings below have to run at BUILD time, where there is no
+DOM — and `viewgen` is pure text-in/text-out and ships to a browser as the
+playground's generator. Making it import `render`, and with it `vdom`,
+`component` and `sinks`, to reach two lookup tables would put a DOM abstraction
+in a package that never touches one. **So both tables moved to a new leaf
+package, `eventpath/`**, which depends on nothing. `render` and `viewgen` each
+import it; neither drags the other. `AGENTS.md`, `SECURITY.md` and the two task
+sections above now say `eventpath/`.
+
+**`Val` gains `EventPath(Array[String])`** — the one case in that enum that
+names something outside the value language. Every other case reads state, a
+binding or a literal; this reads the event. That is why the root is written:
+**`e` is a namespace and never a value**, so there is no `Val` that means "the
+event" and nothing can accidentally pass one along.
+
+**The slot parser** recognizes `e.<path>` in the bare-name arm, on the exact
+root `e.` — a field called `each` or a name `event` is untouched, because the
+test is on the dot. `Kind` gains `KEvent` and `GValue` became **`GEventArg`**,
+which is the same set plus `KEvent`: an event read is legal in exactly one
+place, and the group table is where a `@text="e.value"` is refused rather than
+a special case downstream. `GValue` had no other user, so it was renamed rather
+than joined.
+
+**`Stack` gains `lookup_event_path`**, deliberately NOT routed through
+`lookup_name`. A bind shadows an event field there; an `e.` path names the event
+outright and nothing may shadow it. The v1 bare `value` is still shadowable by
+an `@each` bind called `value` — the two spellings now mean different things,
+which is one more reason v2 asks for the prefix.
+
+**The risk held, and it has the test the plan asked for.** `event_path` tries
+layer 1 first and a test drives both to prove the order: `e.value` on an event
+whose resolver would answer a marker still reads the computed value, and the
+resolver is reachable in the same test so the assertion is about ORDER and not
+about absence. The shadow test is on the **name**, not the answer — `e.value` on
+an empty input is legitimately `Str("")` and `e.isAlt` is legitimately
+`Bool(false)`, and an implementation that fell through when layer 1 answered
+falsily would send both to layer 2.
+
+**The allowlist is checked once, in `event_path`, before either backend's
+resolver is called.** A test asserts a refused path never reaches the resolver
+at all. One place decides, and a backend cannot forget to ask.
+
+**Both glues, and a rule neither of them could skip.** `app/browser` and
+`app/wasm` each grew an `EventPathReader` that walks the live event and converts
+only the LEAF. The leaf test is on the **shape**, not on stringify-ability: an
+`Element` stringifies to `{}` — its own enumerable properties, of which it has
+none — so a converter that trusted `JSON.stringify` would answer `Map({})` for
+`e.target` where the design says `Null`. A primitive, an array or a plain object
+crosses; a host object does not. That is what makes `e.target` and
+`e.target.dataset` `Null` while `e.target.dataset.rowId` is text.
+
+**The three findings, in `viewgen` rather than `tscript/check`.** They are about
+the `e.` boundary, and a call site is written in a VIEW — `tscript/check` checks
+the block language, and every other view finding (`UnknownStateField`,
+`IdInLoop`, `AlwaysTruthy`) already lives here.
+
+- **`BadEventPath` — an error.** The path can never resolve, so a warning would
+  leave a view reading `Null` forever. It names the first step that leaves,
+  which is the useful half, and lists the six that are allowed.
+- **`UNKNOWN_EVENT_PROP` — a hint**, naming the closest match. Asked of the root
+  segment against the union of every event interface the table carries plus the
+  computed accessors, rather than against the one interface this event actually
+  is: mapping `@on.click` to `MouseEvent` needs a second generated table
+  (webref's `ed/events/`), and the union already catches the case worth
+  catching. The accessors have to be in it, because `e.value` is the glue's and
+  no specification has it — a check against the specs alone would warn about the
+  most common read in the language.
+- **`BARE_ARG` — a hint for now, an error in task 19.** v1 spells an event read
+  as a bare name and this repository has 522 of them; an error today would break
+  every view before the codemod has run.
+
+**`Surface` gains `hints`**, joined into `gen-views`' existing advisory channel.
+
+**The measurement: 40 bare-argument hints across the repository, and zero build
+errors.** No view here writes a path off the allowlist, and the 40 are task 19's
+worklist — produced by the checker rather than by grep.
+
+**The plan's risk about payload inference held by not being touched.**
+`arg_type_of` routes both `Name(n)` and `EventPath([n])` through one
+`accessor_type`, so the host element's static `type` attribute still decides
+`value`'s type in exactly one place. A longer path is `VValue`: the table could
+answer for a rooted one, but not through `detail` or `dataset`, where the shape
+is the application's.
 
 ## 16. WIT 0.8.0 and the host bridge
 

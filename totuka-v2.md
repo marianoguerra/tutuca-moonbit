@@ -1375,7 +1375,7 @@ reported trouble.
   entry would then need its own argument in a place nobody reads twice; the
   steps that can escalate — `target`, `currentTarget`, `relatedTarget`,
   `detail`, `dataset`, `dataTransfer` — are the same steps whichever interface
-  carries them. The list lives in `render/event_paths.mbt` beside a second,
+  carries them. The list lives in `eventpath/event_paths.mbt` beside a second,
   smaller set: the **author-data terminals**, `dataset` and `detail`, below
   which traversal is free because there is no host object left to escalate into.
   Two tables, two questions: this one says whether a step may be traversed and

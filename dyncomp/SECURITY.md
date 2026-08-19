@@ -756,7 +756,7 @@ template has just read the window.
 
 ### The list, and where it lives
 
-`render/event_paths.mbt` — `event_object_steps`, six entries:
+`eventpath/event_paths.mbt` — `event_object_steps`, six entries:
 `target`, `currentTarget`, `relatedTarget`, `detail`, `dataset`,
 `dataTransfer`. `check_event_path` walks a path and refuses at the first
 traversed step that is not one of them, naming the step and its index.
@@ -779,13 +779,13 @@ because that is a judgment about authority rather than a fact about the
 platform.
 
 So it is argued, and being argued makes it the only list in the repository that
-can grow by accident. `render/event_paths_test.mbt` asserts the **exact** list,
+can grow by accident. `eventpath/event_paths_test.mbt` asserts the **exact** list,
 so a seventh entry fails a test in a diff that names it, and walks six known
 escape paths asserting each is refused at the right step.
 
 ### The second fence
 
-`render/dom_props_gen.mbt` deliberately carries no `Window` and no `Document`.
+`eventpath/dom_props_gen.mbt` deliberately carries no `Window` and no `Document`.
 No allowlisted step lands on either, so a path through one has no typed
 continuation — a second reason the `localStorage` line above is refused, after
 this list's first. Two tests assert those absences, so neither can drift into
@@ -827,7 +827,7 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
 - **Adding a step to `event_object_steps`**: what does it reach, and can a path
   through it get out of the event and into the page? Ask it of the whole PATH
   and not of the step — `target` is fine and `target.ownerDocument` is the
-  window two reads later. The exact-list test in `render/event_paths_test.mbt`
+  window two reads later. The exact-list test in `eventpath/event_paths_test.mbt`
   will fail; make the diff that changes it carry the argument, and add an
   escape-path case for whatever the new step's neighbours are. This is the one
   allow-list here that no specification can check for you.

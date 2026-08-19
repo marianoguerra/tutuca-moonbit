@@ -286,6 +286,7 @@ pub(all) enum Val {
   Field(String)
   Method(String)
   SeqAccess(seq~ : String, key~ : String)
+  EventPath(Array[String])
 } derive(Eq, @debug.Debug)
 pub fn Val::eval(Self, &Stack) -> Value
 pub fn Val::eval_as_handler(Self, &Stack) -> Value
@@ -395,6 +396,7 @@ pub(open) trait Obj {
 
 pub(open) trait Stack {
   fn lookup_name(Self, String) -> Value = _
+  fn lookup_event_path(Self, Array[String]) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _

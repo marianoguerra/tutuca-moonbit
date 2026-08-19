@@ -128,7 +128,7 @@ binary inside the `_build` they delete.
 | `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` — which is how `guests/table` sat in one list and not the other, built by nothing |
 | `guest-harness` | build every guest bundle, then run the node harnesses in `dyncomp/test/` over them — the only runtime coverage the guest ABI and the table codec have. Not in `ci`: needs wasm-tools + jco |
 | `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
-| `dom-props` | regenerate `render/dom_props_gen.mbt` from the browser specs' machine-extracted IDL (`w3c/webref`, pinned in `scripts/fetch-dom-props.mjs`), format, then drift-check (needs network). The type oracle an `e.<path>` is checked against — does this event interface have this property, and what is its type. Same rule as the sanitizer baseline and for the same reason: **never hand-transcribe it** |
+| `dom-props` | regenerate `eventpath/dom_props_gen.mbt` from the browser specs' machine-extracted IDL (`w3c/webref`, pinned in `scripts/fetch-dom-props.mjs`), format, then drift-check (needs network). The type oracle an `e.<path>` is checked against — does this event interface have this property, and what is its type. Same rule as the sanitizer baseline and for the same reason: **never hand-transcribe it** |
 | `dyncomp-storybook` | assemble `dist/dyncomp-storybook/` — the gallery of every component every loaded bundle declares, once per named `init` — with every sample bundle beside it. Out of `dist` for the same reason `universal` is: the guests need wasm-tools + jco |
 | `guest-template-embed` | regenerate `cli/guest_template_gen.mbt` — the guest tree `tutuca new-guest` writes out — from `guests/counter` (bindings + SDK) + `dyncomp/wit` (the contract) + `guests/template` (the overlay that carries the `{{name}}` placeholders); `dist` runs it beside `skill-embed` |
 | `check-guest-template` | scaffold a guest with that embed and `moon check --deny-warn` it; part of `ci`, and the only coverage `new-guest` has (CI never builds a real guest — `guests` needs wasm-tools and jco) |
@@ -278,7 +278,7 @@ Two more generated-from-upstream files live elsewhere and follow the same rule:
   compares the generator's UNFORMATTED output against a file `moon fmt` has
   reformatted, so it reports "stale" on content that is byte-identical.
 
-- `render/dom_props_gen.mbt` — every property an event path can reach, with its
+- `eventpath/dom_props_gen.mbt` — every property an event path can reach, with its
   type, from the **machine-extracted WebIDL in `w3c/webref`'s `ed/idl/`** at the
   commit pinned in `scripts/fetch-dom-props.mjs`. Regenerate with the
   `dom-props` task, which has the same three steps and the same `--check`
@@ -292,7 +292,7 @@ Two more generated-from-upstream files live elsewhere and follow the same rule:
   dropped property is a lint that fires on correct code.
 
   It is a **type oracle and not a permission list**. Whether a step may be
-  traversed at all is `render/event_paths.mbt`'s question, and the two are
+  traversed at all is `eventpath/event_paths.mbt`'s question, and the two are
   separate because one is fetched and the other is argued.
 
 A fourth vendored-from-upstream tree follows the same rule from the other end —

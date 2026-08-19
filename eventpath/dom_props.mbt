@@ -8,7 +8,7 @@
 // times larger and said nothing more.
 //
 // It is a TYPE ORACLE and not a permission list. Whether a step may be
-// traversed at all is `render/event_paths.mbt`'s question, and the two are
+// traversed at all is `eventpath/event_paths.mbt`'s question, and the two are
 // deliberately separate: this one is fetched and that one is argued.
 
 ///|

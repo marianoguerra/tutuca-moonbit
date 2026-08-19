@@ -58,12 +58,41 @@ pub(all) struct DomEvent {
   /// by the app while a drag is in flight; the `dragInfo` handler arg, and
   /// the three narrow ones read off it (`dragKey`/`dragValue`/`dragType`).
   drag_info : @tutuca.Value
+  /// Layer 2: read an ALREADY-ALLOWLISTED path off the live event.
+  ///
+  /// A `DomEvent` is a snapshot of the few things v1 needed, and an `e.` path
+  /// can name anything the specifications give an event — so the glue that
+  /// built this supplies a closure that reads the real object. The js and the
+  /// wasm-gc backends each have one; a `DomEvent` built by a test has none,
+  /// and a path through it answers `Null`, which is what a path that does not
+  /// resolve answers anyway.
+  ///
+  /// The ALLOWLIST IS NOT ITS JOB. `event_path` in `dom_event.mbt` checks the
+  /// path before calling this, so a resolver only ever sees a walk that was
+  /// already permitted — one place decides, and a backend cannot forget to
+  /// ask.
+  read_path : EventPathReader?
 } derive(Debug)
+
+///|
+/// Layer 2's resolver, as a named type.
+///
+/// A newtype rather than a bare closure because `DomEvent` derives `Debug` and
+/// a function has none. Printing it as `<reader>` is the honest answer: what a
+/// reader DOES is read the live DOM, and there is nothing about it a snapshot
+/// could show.
+pub(all) struct EventPathReader((Array[String]) -> @tutuca.Value)
+
+///|
+pub impl @debug.Debug for EventPathReader with fn to_repr(_self) {
+  @debug.Repr::Repr("<reader>")
+}
 
 ///|
 declare pub fn DomEvent::new(
   name~ : String,
   value? : @tutuca.Value,
+  read_path? : EventPathReader,
   key? : String,
   key_code? : Int,
   alt? : Bool,

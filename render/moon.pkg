@@ -11,8 +11,10 @@ import {
   "marianoguerra/tutuca/sinks",
   "moonbitlang/core/json",
   "moonbitlang/core/strconv",
-  // `DomPropTy` derives Debug — the generated table is data, and a table
-  // nobody can print is a table nobody can debug a lint against.
+  // The two event-path tables. They live in their own leaf package because
+  // `viewgen` needs them too and must not import a DOM abstraction to get
+  // them — see `eventpath/moon.pkg`.
+  "marianoguerra/tutuca/eventpath",
   "moonbitlang/core/debug",
 }
 

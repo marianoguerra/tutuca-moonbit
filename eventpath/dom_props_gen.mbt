@@ -7,7 +7,7 @@
 // inherits from Event or Element, plus DataTransfer, DataTransferItem, DataTransferItemList, DOMStringMap, FileList, File, Blob, Touch, TouchList.
 //
 // `Window` and `Document` are deliberately absent. No allowlisted object step
-// lands on either (`render/event_paths.mbt`), so a path through one has no
+// lands on either (`eventpath/event_paths.mbt`), so a path through one has no
 // typed continuation here — which is the second reason it is refused, after the
 // allowlist's first.
 

@@ -7,6 +7,10 @@
 // and cmd/main does the I/O.
 import {
   "marianoguerra/tutuca/core" @tutuca,
+  // The two event-path tables. A leaf package precisely so this one can reach
+  // them without importing `render` and, with it, a DOM abstraction — see
+  // `eventpath/moon.pkg`.
+  "marianoguerra/tutuca/eventpath",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",

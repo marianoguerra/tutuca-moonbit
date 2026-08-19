@@ -1,4 +1,4 @@
-// Regenerate `render/dom_props_gen.mbt` from the browser specifications' own
+// Regenerate `eventpath/dom_props_gen.mbt` from the browser specifications' own
 // machine-extracted WebIDL.
 //
 // The table answers two questions about an `e.<path>` — does this interface
@@ -34,7 +34,7 @@ import { fileURLToPath } from "node:url";
 export const WEBREF_COMMIT = "b706309000d646ba04ab2dcd79b4967db547f4cf";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "render/dom_props_gen.mbt");
+const OUT = join(ROOT, "eventpath/dom_props_gen.mbt");
 
 const RAW = (f) =>
   `https://raw.githubusercontent.com/w3c/webref/${WEBREF_COMMIT}/ed/idl/${f}`;
@@ -326,7 +326,7 @@ export async function generate() {
 // inherits from ${ROOTS.join(" or ")}, plus ${EXTRA.join(", ")}.
 //
 // \`Window\` and \`Document\` are deliberately absent. No allowlisted object step
-// lands on either (\`render/event_paths.mbt\`), so a path through one has no
+// lands on either (\`eventpath/event_paths.mbt\`), so a path through one has no
 // typed continuation here — which is the second reason it is refused, after the
 // allowlist's first.
 

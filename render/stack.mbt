@@ -110,6 +110,22 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
 }
 
 ///|
+/// `e.<segments>`: the two-layer resolve, and NOT a name lookup.
+///
+/// Deliberately not routed through `lookup_name`, which is where a bind
+/// shadows an event field. An `e.` path names the event outright, so nothing
+/// may shadow it — that is the point of writing the root. The v1 spelling, a
+/// bare `value`, still goes through `lookup_name` and is still shadowable by an
+/// `@each` bind called `value`; the two spellings mean different things, which
+/// is one more reason v2 asks for the prefix.
+pub impl @tutuca.Stack for RenderStack with fn lookup_event_path(self, segments) {
+  match self.event {
+    Some(e) => event_path(e, segments)
+    None => Null
+  }
+}
+
+///|
 pub impl @tutuca.Stack for RenderStack with fn lookup_bind(self, name) {
   self.lookup_bind_chain(name)
 }

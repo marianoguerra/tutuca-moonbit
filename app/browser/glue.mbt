@@ -118,6 +118,47 @@ fn js_value(v : @core.Any) -> @tutuca.Value {
 }
 
 ///|
+/// Walk an already-allowlisted path off the live event, converting the LEAF.
+///
+/// Every step happens on the JS side and nothing but the leaf crosses, which
+/// is the design's rule: a step in the middle is a host object and stays one.
+/// A path that does not resolve, or whose leaf is not representable, is `Null`
+/// — `js_value` answers that for anything it cannot read as a scalar or as a
+/// JSON-able payload.
+///
+/// **The allowlist is not checked here.** `@render.event_path` checks it before
+/// this is ever called, so one place decides and this backend cannot forget to
+/// ask. Do not add a second check: a second one is a second place to disagree.
+fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
+  @render.EventPathReader(segments => {
+    let mut cur = ev
+    for i, seg in segments {
+      // The leaf crosses; everything before it stays on the DOM side, which is
+      // the design's rule — a step in the middle is a host object and remains
+      // one.
+      if i == segments.length() - 1 {
+        return json_leaf(leaf_json_ffi(cur, seg))
+      }
+      if !has_prop_ffi(cur, seg) {
+        return Null
+      }
+      cur = get_prop_ffi(cur, seg)
+    }
+    Null
+  })
+}
+
+///|
+/// A leaf's JSON text as a `Value`. Empty means "did not cross".
+fn json_leaf(s : String) -> @tutuca.Value {
+  if s == "" {
+    return Null
+  }
+  let j = @json.parse(s) catch { _ => return Null }
+  @tutuca.Value::from_json(j)
+}
+
+///|
 /// Translate a raw browser event into the backend-agnostic DomEvent.
 fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
   @render.DomEvent::new(
@@ -129,6 +170,7 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
     shift=event_bool_ffi(ev, "shiftKey"),
     ctrl_or_cmd=event_ctrl_or_cmd_ffi(ev),
     meta=event_bool_ffi(ev, "metaKey"),
+    read_path=event_path_reader(ev),
   )
 }
 
@@ -139,6 +181,40 @@ extern "js" fn prevent_default_ffi(e : @core.Any) -> Unit =
 ///|
 extern "js" fn has_prop_ffi(o : @core.Any, name : String) -> Bool =
   #|(o, n) => n in o
+
+///|
+/// One property read, for the allowlisted path walk.
+///
+/// `?.` rather than a bare index because a step that resolved to `null` on the
+/// way down would otherwise throw here, and the answer to "this path does not
+/// resolve" is `Null` rather than an exception in a click handler.
+extern "js" fn get_prop_ffi(o : @core.Any, name : String) -> @core.Any =
+  #|(o, n) => o?.[n]
+
+///|
+/// The LEAF of an allowlisted path, as JSON text, or `""` for anything that
+/// must not cross.
+///
+/// **This is where "an `e.` path always produces a `Value`" is enforced**, and
+/// it is a stricter test than "can this be stringified". An `Element`
+/// stringifies to `{}` — its own enumerable properties, of which it has none —
+/// so a converter that trusted `JSON.stringify` would answer `Map({})` for
+/// `e.target` where the design says `Null`. So the test is on the SHAPE: a
+/// primitive, an array, or a plain object crosses, and a host object does not.
+///
+/// That is what makes `e.target` and `e.target.dataset` `Null` while
+/// `e.target.dataset.rowId` is text and `e.dataTransfer.types` is a list.
+extern "js" fn leaf_json_ffi(o : @core.Any, name : String) -> String =
+  #|(o, n) => {
+  #|  const v = o?.[n];
+  #|  if (v === null || v === undefined) return "";
+  #|  const t = typeof v;
+  #|  if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
+  #|  if (t !== "object") return "";
+  #|  const p = Object.getPrototypeOf(v);
+  #|  if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
+  #|  try { return JSON.stringify(v) ?? ""; } catch { return ""; }
+  #|}
 
 ///|
 extern "js" fn get_int_ffi(o : @core.Any, name : String) -> Int =

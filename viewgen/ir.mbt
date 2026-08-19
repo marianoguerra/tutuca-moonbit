@@ -172,6 +172,8 @@ fn val_expr(val : @tutuca.Val) -> String {
     // a table, so there is no enum for the generated module to name.
     App(name~, args~) =>
       "App(name=\{quote(name)}, args=[" + args.map(val_expr).join(", ") + "])"
+    EventPath(segments) =>
+      "EventPath([" + segments.map(seg => quote(seg)).join(", ") + "])"
     Name(n) => "Name(\{quote(n)})"
     HandlerName(name~, ns~) => {
       let ns_name = match ns {

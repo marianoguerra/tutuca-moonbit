@@ -113,6 +113,21 @@ export function createTdomImports(getExports) {
     try_set_prop: (o, k, v) => { try { o[k] = v; return true; } catch { return false; } },
     json_parse: (s) => JSON.parse(s),
     json_stringify: (v) => { try { return JSON.stringify(v) ?? ""; } catch { return ""; } },
+    // The LEAF of an allowlisted `e.` path, as JSON text, or "" for anything
+    // that must not cross. A stricter test than "can this be stringified": an
+    // Element stringifies to `{}` — its own enumerable properties, of which it
+    // has none — so trusting JSON.stringify would answer an empty map for
+    // `e.target` where the design says Null. The test is on the SHAPE.
+    leaf_json: (o, k) => {
+      const v = o?.[k];
+      if (v === null || v === undefined) return "";
+      const t = typeof v;
+      if (t === "string" || t === "number" || t === "boolean") return JSON.stringify(v);
+      if (t !== "object") return "";
+      const p = Object.getPrototypeOf(v);
+      if (!Array.isArray(v) && p !== Object.prototype && p !== null) return "";
+      try { return JSON.stringify(v) ?? ""; } catch { return ""; }
+    },
     dropped_files: (ev) => registerDroppedFiles(ev),
     file_meta: (t) => {
       const f = t.files && t.files[0];

@@ -68,6 +68,20 @@ pub(all) enum Val {
   Field(String) // .name
   Method(String) // $name
   SeqAccess(seq~ : String, key~ : String) // .seq[.key] (both plain fields)
+  /// `e.value`, `e.target.dataset.rowId` — a rooted path into the DOM event
+  /// that is being handled. The segments, without the `e`.
+  ///
+  /// v2's, and the one thing in this enum that names something OUTSIDE the
+  /// value language: every other case reads state, a binding or a literal, and
+  /// this one reads the event. That is why it is spelled with a root — `e` is
+  /// a NAMESPACE and never a value (`totuka-v2.md` §7), so there is no `Val`
+  /// that means "the event" and nothing can accidentally pass one along.
+  ///
+  /// What a path may traverse is `@eventpath.check_event_path`'s question, and
+  /// what its leaf converts to is the DOM property table's. Neither is asked
+  /// here: this is the parsed FORM, and a form that carried its own permission
+  /// check would be a second place for the rule to live.
+  EventPath(Array[String])
 } derive(Debug, Eq)
 
 ///|
@@ -362,6 +376,18 @@ declare pub impl Debug for Value
 /// get_handler_for returns Null when no handler is registered.
 pub(open) trait Stack {
   fn lookup_name(Self, String) -> Value = _
+  /// Resolve `e.<segments>` against the event being handled.
+  ///
+  /// Separate from `lookup_name` because it asks a different question of a
+  /// different thing: a name is looked up in the value language's own scopes,
+  /// and this reaches OUT of them, at the one boundary where a view touches
+  /// the DOM. Keeping them apart is what stops a bind or a field from ever
+  /// shadowing an event read, or the other way round.
+  ///
+  /// Defaults to `Null`, so a stack with no event — every test that drives a
+  /// handler with plain values — answers the same thing a path that does not
+  /// resolve does.
+  fn lookup_event_path(Self, Array[String]) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
@@ -371,6 +397,11 @@ pub(open) trait Stack {
 
 ///|
 impl Stack with fn lookup_name(_self, _name) {
+  Null
+}
+
+///|
+impl Stack with fn lookup_event_path(_self, _segments) {
   Null
 }
 

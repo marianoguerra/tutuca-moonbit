@@ -267,7 +267,7 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "dom-props",
-      about: "regenerate render/dom_props_gen.mbt from the browser specs' machine-extracted IDL, then drift-check (needs network)",
+      about: "regenerate eventpath/dom_props_gen.mbt from the browser specs' machine-extracted IDL, then drift-check (needs network)",
       // The type oracle an `e.<path>` is checked against. Same shape as
       // `sanitizer-defaults` above and for the same reason: the table has to
       // come from the specifications rather than from a summary of them, and
@@ -287,7 +287,7 @@ pub fn tasks() -> Array[Task] {
           label: "drift check · DOM properties match the specs",
           prog: "git",
           args: [
-            "diff", "--exit-code", "HEAD", "--", "render/dom_props_gen.mbt",
+            "diff", "--exit-code", "HEAD", "--", "eventpath/dom_props_gen.mbt",
           ],
         },
       ],
