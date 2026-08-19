@@ -29,6 +29,7 @@ pub(all) enum Severity {
 
 pub(all) struct Surface {
   inputs : Map[String, Array[@statedef.StateTy?]]
+  knows_views : Bool
 } derive(Eq, @debug.Debug)
 pub fn Surface::empty() -> Self
 

@@ -59,6 +59,15 @@ const cards = [
     })),
 ];
 
+// The host half of the payload, imported from the assembled folder so this
+// runs the same `card-wasm.js` the page loads rather than a copy of it.
+const { loadGuest } = await import(
+  pathToFileURL(join(OUT, "card-wasm.js")).href
+);
+
+/** The base64 the compiler answers with, as the bytes `loadGuest` takes. */
+const bytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+
 let failed = 0;
 for (const ex of cards) {
   const report = JSON.parse(globalThis.__tutucard.check(ex.source, "Card"));
@@ -91,6 +100,22 @@ for (const ex of cards) {
   // usually a card to rewrite rather than a backend to extend.
   for (const r of build.refusals) {
     console.log(`  note  ${ex.name}: refused ${r.kind} ${r.name} — ${r.reason}`);
+  }
+  // …and it INSTANTIATES against the host that ships beside it.
+  //
+  // The third gate, and the one the first two cannot stand in for: a card's
+  // import section is decided by the effects it performs, so `intent lex
+  // 'loadQuote'` puts `tutuca:component/control#intent` in a module that
+  // checks and compiles perfectly — and `abi.mjs` binds imports BY NAME, so a
+  // host missing that key throws at instantiation rather than dropping the
+  // effect. Which is how step 7 of the tutorial shipped as a card that
+  // compiled and would not mount.
+  try {
+    await loadGuest(bytes(build.wasm), build.descriptor, "check");
+  } catch (e) {
+    console.error(`✗ ${ex.name}: does not instantiate — ${e.message}`);
+    failed++;
+    continue;
   }
   console.log(
     `ok      ${ex.name} (${report.component}, ${(build.size / 1024).toFixed(1)} KB)`,

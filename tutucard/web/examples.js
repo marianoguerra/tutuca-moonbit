@@ -231,7 +231,7 @@ export const EXAMPLES = [
 `,
   },
   {
-    name: "requests",
+    name: "intents",
     source: `<script type="tutuca/state">
   state Feed {
     rows   : Array[Any]
@@ -241,75 +241,97 @@ export const EXAMPLES = [
     busy   : Bool
   }
 
-  receive Feed { Init }
-
-  /// A response arm is named after the REQUEST it answers, and every one of
-  /// them takes the same pair: a result and an error, exactly one of which is
-  /// Null. \`Any\` on both halves, because what a host produces is the host's
-  /// business rather than the schema's.
-  response Feed {
-    Rows(Any, Any)
-    Echo(Any, Any)
-    Fail(Any, Any)
+  /// The ANSWERS live here, with every other message, because an answer IS a
+  /// message: it arrives in the same bucket a parent's would and a handler
+  /// cannot tell the difference. Declaring them is what makes \`rows\` a
+  /// request rather than a notification — a sender expects an answer if and
+  /// only if it declares an arm for one, and nobody writes that down twice.
+  ///
+  /// Three outcomes, three arms, each with its own shape. \`Any\` on the
+  /// payloads, because what a host produces is the host's business rather
+  /// than the schema's.
+  receive Feed {
+    Init
+    RowsOk(Any)
+    RowsError(Any)
+    RowsUnhandled
+    EchoOk(Any)
+    EchoError(Any)
+    EchoUnhandled
   }
 </script>
 
 <script type="tutuca/script">
-  /// \`request\` hands a NAME to the host and the host answers whenever it can.
+  /// \`intent\` hands a NAME to a ROUTE, and whatever is on that route answers
+  /// whenever it can. \`lex\` is the leg that searches the handlers registered
+  /// on the host — what v1 of this framework spelled \`request\`, before the
+  /// verb stopped deciding which scope answers.
+  ///
   /// It is an EFFECT, so it goes out only if the whole transition finished — a
   /// card never asks for something on the strength of a state it did not reach.
   ///
-  /// This page answers three names: \`rows\`, \`echo\` and \`fail\`. It answers them
-  /// late and out of a fixture, which is what a playground can honestly offer;
-  /// a page with a real fetch registers the same names against it and the card
-  /// does not change.
+  /// This page answers two names late and out of a fixture, which is what a
+  /// playground can honestly offer; a page with a real fetch registers the
+  /// same names against it and the card does not change.
   receive init {
-    request 'rows'
+    intent lex 'rows'
     .busy = true
   }
 
-  on reload {
-    request 'rows'
+  receive reload {
+    intent lex 'rows'
     .busy = true
     .error = ''
   }
 
   /// Whatever follows the name is the PAYLOAD. \`echo\` answers with the first
   /// thing it was handed, so what comes back is what went out.
-  on echoQuery {
-    request 'echo' .query
+  receive echoQuery {
+    intent lex 'echo' .query
     .busy = true
   }
 
-  /// The error path, with nothing mocked. A name no host answers arrives here
-  /// the same way this one does: an unclaimed request is not a crash.
-  on breakIt {
-    request 'fail'
+  /// The third outcome, with nothing mocked: this name is on no route, so the
+  /// walk runs out and nobody answered. Not a crash, and — the part v1 could
+  /// not say — not a failure either.
+  receive breakIt {
+    intent lex 'nothingAnswersThis'
     .busy = true
     .error = ''
   }
 
-  response rows(res, err) {
+  /// One arm per outcome, and each gets only what it is about. v1 sent one
+  /// payload carrying BOTH a result and an error, exactly one of which was
+  /// Null, and every arm began by working out which. The branch is gone with
+  /// the pair.
+  receive rowsOk(res) {
     .busy = false
-    if (null? err) {
-      .rows = res
-    } else {
-      .error = str err
-    }
+    .rows = res
   }
 
-  response echo(res, err) {
-    .busy = false
-    if (null? err) {
-      .echoed = str res
-    } else {
-      .error = str err
-    }
-  }
-
-  response fail(res, err) {
+  receive rowsError(err) {
     .busy = false
     .error = str err
+  }
+
+  receive rowsUnhandled {
+    .busy = false
+    .error = 'nothing on this page answers \`rows\`'
+  }
+
+  receive echoOk(res) {
+    .busy = false
+    .echoed = str res
+  }
+
+  receive echoError(err) {
+    .busy = false
+    .error = str err
+  }
+
+  receive echoUnhandled {
+    .busy = false
+    .error = 'nothing on this page answers \`echo\`'
   }
 </script>
 

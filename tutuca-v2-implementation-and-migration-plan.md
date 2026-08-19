@@ -94,7 +94,7 @@ Two consequences worth stating outright.
 
 - [x] 20. [The skill](#20-the-skill)
 - [x] 21. [`docs/`, `README`, `AGENTS.md`](#21-docs-readme-agentsmd)
-- [ ] 22. [The landing site and the playground](#22-the-landing-site-and-the-playground)
+- [x] 22. [The landing site and the playground](#22-the-landing-site-and-the-playground)
 
 **Phase 7 — prove it**
 
@@ -1687,6 +1687,80 @@ most people read. They are also the least covered by `moon check`.
 
 **Validation.** `just dev playground` and `just dev tutucard-playground`. Then
 open `dist/` and click through the tutorial.
+
+**Done.** The prose moved, and then the page turned out not to work — which is
+the part worth reading.
+
+**The prose.** `cards.html`'s effect list is the two-channel one (`send` /
+`sendAt` addressed, `intent` / `forward` / `reply` / `fail` / `stop` routed),
+with the distinction stated where the list ends. Step 7 was "`request` is the
+fourth channel"; it is now `intent`, its route, its two legs, and the three
+outcomes — and the paragraph under the card says what the card is actually
+showing, which is `loadQuoteUnhandled`: the route ran out, nobody claimed it,
+and that is a different sentence from a fetch that broke. The declarations
+table lost two rows and gained one; the statement crib lost `bubble` and
+`request` and gained the five v2 effects. `tut-7-response.html` is
+`tut-7-intent.html`. The one starter card that was about this — `requests` —
+is `intents`, and the fixtures the card page registers are `IntentFn`s now
+(`playground/playground_intents`), a list per name because the leg walks.
+`index.html`'s personal-site blurb, and the `#requests` anchor, moved with them.
+
+**Three bugs, and none of them were prose.**
+
+1. **Every site card had stopped loading.** `on` merged into `receive`, so the
+   codemod turned `on warmer { … }` into `receive warmer { … }` — correct, and
+   behaviourally identical. But the checker then demanded a schema `receive`
+   case for `warmer`, and a view's handler name is not declared in a schema.
+   `check.mbt` already had the rule (a `receive` the surface says the views
+   send takes its types from the call sites); what it lacked was the
+   distinction between "I walked the templates and they send nothing" and "I
+   have no templates". `Surface::empty()` is the second, and it is what a card,
+   a bare block and a test all pass. It now says so — `knows_views : Bool` —
+   and NO_SUCH_MESSAGE is reported only by a caller in a position to know. Two
+   tests pin both halves. 7 of 10 tutorial cards did not load before this; all
+   10 do now.
+
+2. **The card that step 7 is built around compiled and could not mount.** A
+   card's import section is decided by the effects it performs, so
+   `intent lex 'loadQuote'` puts `tutuca:component/control#intent` in the
+   module — and `abi.mjs` binds imports BY NAME, so a host without that key
+   throws at instantiation. `tutucard/web/card-wasm.js` had none of v2's four.
+   It has them now (`intent`, `forward`, `reply`, `fail`, plus `intentAt`
+   stubbed like `bubbleAt`), its bucket table has `intent` as the fifth case,
+   and `cardguest.mbt` decodes them into the `ControlMsg` arms that were
+   already waiting — including `route_opts`, which turns the ABI's one integer
+   back into an `IntentOpts`. `reply` and `fail` are decoded before the name
+   guard, because they carry no name and would otherwise be dropped for
+   lacking a field they never have.
+
+3. **`personal_site.mbt` was half migrated.** Its answer arm was
+   `Receive("loadDataOk", …)` and its handler was an `IntentFn`, but its sender
+   was still `ctx.request` — so the example dispatched a `Response` nothing
+   matched. A task-19 miss, and the kind the codemod's per-component refusal
+   was meant to prevent: this file is in no moon package, so `moon check` never
+   saw it.
+
+**A gate, so the second one cannot happen again.**
+`tutucard/build/check-examples.mjs` checked and compiled every card. It now
+also **instantiates** each one against the `card-wasm.js` that ships beside it.
+Verified by breaking the host on purpose: it reports
+`does not instantiate — host does not implement tutuca:component/control#intent`,
+which is the sentence that would have caught this before a reader did.
+
+**Validated.** `just dev tutucard-playground` — 35/35 cards check, compile and
+instantiate; regions checks pass. `just dev check-examples` — 13/13 playground
+examples compile. `moon check` clean on all three targets; `moon test`
+1608/1608 (one new test).
+
+**Not validated, and why.** `just dev playground` cannot run here:
+`playground/build/toolchain.json` pins moonc `v0.10.7+bc794d341` and this
+machine has `v0.10.8+8606a5800`, so the payload's baked core bundles do not
+link against the vendored in-browser compiler. Forced past the guard, the
+generation half of `check-viewgen-tab.mjs` passes for the examples it reaches
+and the LINK half fails, which is exactly what the pin exists to prevent. That
+is a toolchain pin to bump, not a v2 change to make; `check-examples` covers
+the same example sources through `moon check` and is the half that runs in
+`ci`.
 
 ## 23. Measure the walk
 

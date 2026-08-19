@@ -54,8 +54,8 @@ fn cx_tree_item_comp() -> @component.Component {
       AreChildsVisible =>
         Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
     },
-    // a raw `match msg`: Bubble is raised by component code, so the views
-    // cannot declare it and TreeItemMsg cannot type it
+    // a raw `match msg`: an Intent arrives because a walk routed here, so the
+    // views cannot declare it and TreeItemMsg cannot type it
     update=(s, msg, ctx) => match msg {
       Receive("onItemClick", _) => {
         let mut self_v : @tutuca.Value = Null

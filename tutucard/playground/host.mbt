@@ -189,61 +189,76 @@ extern "js" fn set_timeout(cb : () -> Unit, ms : Int) -> Unit =
   #|(cb, ms) => { setTimeout(cb, ms) }
 
 ///|
-/// The requests this page answers, for every card it mounts.
+/// The intents this page answers, for every card it mounts.
 ///
-/// Three fixtures, and they are fixtures rather than an API: a card asks for a
-/// NAME and the host decides what that name means, so what a page registers is
+/// Three fixtures, and they are fixtures rather than an API: a card names a
+/// JOB and the host decides what that name means, so what a page registers is
 /// the page's business. This one is a playground, so what it can honestly
 /// offer is canned data — `rows` answers a list, `echo` answers the first
-/// thing it was handed, and `fail` answers an error. A card that wants a real
-/// fetch belongs in a page that has one.
+/// thing it was handed, and `fail` fails. A card that wants a real fetch
+/// belongs in a page that has one.
 ///
-/// **A name that is not here still answers**, with an error, which is what the
-/// runtime does with any request nobody claimed — so registering these takes
-/// nothing away from a card demonstrating the unanswered path.
+/// **A name that is not here answers nothing at all**, and that is the point
+/// rather than a gap: the `lex` leg runs out, nobody claimed the intent, and
+/// the card hears `<name>Unhandled` — which is a different sentence from
+/// `fail`'s, and the one v1 had no way to say. Registering these three takes
+/// nothing away from a card demonstrating that path; it is what makes the
+/// contrast visible on one page.
 ///
-/// They answer LATE, and that is the point rather than a simulation detail: a
-/// request that lands before the transaction finishes never shows a card its
+/// A list per name, because the leg WALKS: a handler that answers `Pass`
+/// declines and the next one is tried. One each here, and the shape is the
+/// point — a scope can hold several.
+///
+/// They answer LATE, and that is the point rather than a simulation detail: an
+/// answer that lands before the transaction finishes never shows a card its
 /// own loading state, which is the half of asynchrony a card author has to
 /// write for. `gen` is the mount they were built for; a card that has been
 /// torn down since gets no answer, because there is nobody left to tell.
-fn playground_requests(
+fn playground_intents(
   slot : Slot,
   gen : Int,
-) -> Map[String, @component.RequestFn] {
+) -> Map[String, Array[@component.IntentFn]] {
   fn later(ms : Int, f : () -> Unit) -> Unit {
     set_timeout(() => if slot.gen == gen { f() }, ms)
   }
 
   {
-    "rows": @component.RequestFn((_args, respond) => {
-      later(500, () => {
-        respond(
-          Ok(
-            @tutuca.Value::List([
-              Map({
-                "title": Str("Tutuca"),
-                "description": Str("A SPA framework that fits in your head"),
-              }),
-              Map({
-                "title": Str("MoonBit"),
-                "description": Str("The language this port is written in"),
-              }),
-              Map({
-                "title": Str("Borges"),
-                "description": Str("Wrote the list the other examples iterate"),
-              }),
-            ]),
-          ),
-        )
-      })
-    }),
-    "echo": @component.RequestFn((args, respond) => {
-      later(300, () => respond(Ok(args.get(0).unwrap_or(Null))))
-    }),
-    "fail": @component.RequestFn((_args, respond) => {
-      later(500, () => respond(Err(Str("the host said no"))))
-    }),
+    "rows": [
+      @component.IntentFn((_call, answer) => {
+        later(500, () => {
+          answer(
+            Ok(
+              @tutuca.Value::List([
+                Map({
+                  "title": Str("Tutuca"),
+                  "description": Str("A SPA framework that fits in your head"),
+                }),
+                Map({
+                  "title": Str("MoonBit"),
+                  "description": Str("The language this port is written in"),
+                }),
+                Map({
+                  "title": Str("Borges"),
+                  "description": Str(
+                    "Wrote the list the other examples iterate",
+                  ),
+                }),
+              ]),
+            ),
+          )
+        })
+      }),
+    ],
+    "echo": [
+      @component.IntentFn((call, answer) => {
+        later(300, () => answer(Ok(call.args.get(0).unwrap_or(Null))))
+      }),
+    ],
+    "fail": [
+      @component.IntentFn((_call, answer) => {
+        later(500, () => answer(Failed(Str("the host said no"))))
+      }),
+    ],
   }
 }
 

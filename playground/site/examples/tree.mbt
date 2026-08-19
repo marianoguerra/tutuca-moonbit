@@ -18,12 +18,13 @@ fn tree_item_comp() -> @component.Component {
       AreChildsVisible =>
         Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
     },
-    // A raw `match msg`: this component handles a Bubble, which the views
-    // cannot declare, so `TreeItemMsg::from_dispatch` cannot type it.
+    // A raw `match msg`: this component answers an Intent, which arrives
+    // because a walk routed here rather than because a view named it — so the
+    // views cannot declare it and `TreeItemMsg::from_dispatch` cannot type it.
     update=(s, msg, ctx) => match msg {
-      // emit an event any ancestor may observe (payload: this item's own
-      // instance value, read off the dispatch path — its leaf is self),
-      // then toggle self
+      // raise an intent along the `dyn` leg — the ancestors, from this
+      // component's PARENT up (payload: this item's own instance value, read
+      // off the dispatch path, whose leaf is self) — then toggle self
       Receive("onItemClick", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
@@ -33,8 +34,8 @@ fn tree_item_comp() -> @component.Component {
         ctx.intent("treeItemSelected", [self_v], @tutuca.IntentOpts::new(route=[Dyn]))
         Next({ ..s, isOpen: !s.isOpen })
       }
-      // a TreeItem between the source and the root sees the event and passes
-      // it on unchanged (returning None = no change)
+      // a TreeItem between the source and the root is an OBSERVER: it sees
+      // the intent, does not reply, and the walk goes on to its own parent
       Intent("treeItemSelected", _) => Unhandled
       _ => Unhandled
     },

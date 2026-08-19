@@ -165,10 +165,11 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
     Some(Number(n, ..)) => Some(n.to_int())
     _ => None
   }
-  // Five kinds now. `bubble-at` is the only one the generator still cannot
-  // emit, so `card-wasm.js` binds that import to nothing and it never reaches
-  // this list. `request` carries the interpreter's own `RequestOpts::new()`,
-  // which is the only shape a compiled card can ask for.
+  // `bubble-at` and `intent-at` are the two the generator still cannot emit,
+  // so `card-wasm.js` binds those imports to nothing and neither reaches this
+  // list. `request` carries a plain `RequestOpts::new()`, which is the only
+  // shape a compiled card can ask for; an intent's route DOES cross, because
+  // it is the one thing a card writes at the call site.
   let msgs : Array[@dyncomp.ControlMsg] = []
   match o.get("msgs") {
     Some(Array(items)) =>
@@ -178,13 +179,31 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
           msgs.push(StopPropagation)
           continue
         }
-        let name = match m.get("name") {
-          Some(String(s)) => s
-          _ => continue
-        }
         let args = match m.get("args") {
           Some(Array(items)) => items.map(v => @tutuca.Value::from_json(v))
           _ => []
+        }
+        // The three that carry no NAME, because they act on the intent that
+        // arrived rather than starting one. Handled before the name guard, or
+        // a `reply` would be dropped for lacking a field it never has.
+        match m.get("kind") {
+          Some(String("forward")) => {
+            msgs.push(Forward(args, route_opts(m.get("route"))))
+            continue
+          }
+          Some(String("reply")) => {
+            msgs.push(Reply(args.get(0).unwrap_or(Null)))
+            continue
+          }
+          Some(String("fail")) => {
+            msgs.push(Fail(args.get(0).unwrap_or(Null)))
+            continue
+          }
+          _ => ()
+        }
+        let name = match m.get("name") {
+          Some(String(s)) => s
+          _ => continue
         }
         match m.get("kind") {
           Some(String("emit")) => msgs.push(Emit(name, args))
@@ -193,12 +212,37 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
             msgs.push(Request(name, args, @tutuca.RequestOpts::new()))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
+          Some(String("intent")) =>
+            msgs.push(Intent(name, args, route_opts(m.get("route"))))
           _ => ()
         }
       }
     _ => ()
   }
   { handled, next, msgs }
+}
+
+///|
+/// An intent's route, as the ABI numbers it (`@abi.route_*` in the card
+/// backend, and the same closed set in `dyncomp/host/wasm/abi.mjs`).
+///
+/// The set is closed — two legs, in one of two orders, or one of them, or
+/// neither — so it crosses as one integer rather than a list. `route_none` is
+/// "the card wrote no leg", and the default route is where that is decided:
+/// `IntentOpts::new()` with no argument, which is the one place `dyn lex` is
+/// written down.
+fn route_opts(j : Json?) -> @tutuca.IntentOpts {
+  match j {
+    Some(Number(n, ..)) =>
+      match n.to_int() {
+        1 => @tutuca.IntentOpts::new(route=[Dyn])
+        2 => @tutuca.IntentOpts::new(route=[Lex])
+        3 => @tutuca.IntentOpts::new(route=[Dyn, Lex])
+        4 => @tutuca.IntentOpts::new(route=[Lex, Dyn])
+        _ => @tutuca.IntentOpts::new()
+      }
+    _ => @tutuca.IntentOpts::new()
+  }
 }
 
 ///|
@@ -360,7 +404,7 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   // compiled one had `request` refused until recently and so had nowhere to
   // ask.
   let slot = slot_of(id)
-  scope.register_request_handlers(playground_requests(slot, slot.gen))
+  scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let policy = card_policy()
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)

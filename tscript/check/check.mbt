@@ -71,7 +71,7 @@ fn C::warn(
 
 ///|
 pub fn Surface::empty() -> Surface {
-  { inputs: Map([]) }
+  { inputs: Map([]), knows_views: false }
 }
 
 ///|
@@ -338,6 +338,15 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
   // name takes its parameter types where an `on` did — from the call sites —
   // and reporting `NO_SUCH_MESSAGE` for it would make the migration from `on`
   // to `receive` require a schema edit per handler.
+  // A `receive` the surface cannot speak for. Either the views send this name
+  // and its parameters take their types from the call sites, or the caller has
+  // no views at all and is in no position to call the name undeclared.
+  if found.is_empty() && d.kind is DReceive && !self.surface.knows_views {
+    for p in d.params {
+      self.params[p.name] = None
+    }
+    return
+  }
   if found.is_empty() &&
     d.kind is DReceive &&
     self.surface.inputs.get(d.name) is Some(types) {

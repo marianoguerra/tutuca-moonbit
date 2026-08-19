@@ -49,6 +49,7 @@ fn views() -> @check.Surface {
       "dropAt": [Some(TInt(width=32, signed=true))],
       "show": [Some(TText)],
     },
+    knows_views: true,
   }
 }
 

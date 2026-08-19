@@ -56,6 +56,24 @@ fn messages(block : String) -> Array[String] raise {
   @check.check(decls, def_of(schema())).map(f => f.message)
 }
 
+///|
+/// The messages reported with a view surface in hand — the caller that IS in a
+/// position to say a `receive` name is answered by nothing.
+fn messages_with_views(
+  block : String,
+  views : Array[String],
+) -> Array[String] raise {
+  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  for v in views {
+    inputs[v] = [None]
+  }
+  let decls = @tscript.parse_script(block)
+  @check.check(decls, def_of(schema()), surface={ inputs, knows_views: true }).map(f => {
+      f.message
+    },
+  )
+}
+
 // -- fields -----------------------------------------------------------------
 
 ///|
@@ -122,14 +140,41 @@ test "a message handler's parameters come from the schema, exactly" {
 
 ///|
 test "a handler for a message the schema does not declare" {
-  assert_eq(messages("receive resetTP(n) { .count = n }"), [
+  // With the views in hand: the surface says nothing sends `resetTP`, and the
+  // schema declares no case for it, so nothing can raise this handler.
+  assert_eq(messages_with_views("receive resetTP(n) { .count = n }", []), [
     "the schema declares no `receive` case `resetTP` — did you mean `resetTo`?",
   ])
   // The buckets are separate questions: a `bubble` case is not a `receive`.
-  assert_eq(messages("receive rowPicked(i) { .count = i }"), [
+  assert_eq(messages_with_views("receive rowPicked(i) { .count = i }", []), [
     "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/state\"> block",
   ])
   assert_eq(codes("bubble rowPicked(i) { .count = i }"), [])
+}
+
+///|
+/// The other half of the same rule, and the one that broke every card on the
+/// tutorial page.
+///
+/// `on` merged into `receive`, so a `receive` name is now either a view's or a
+/// schema case's. A caller with no views in hand cannot tell which, and
+/// `Surface::empty()` is exactly that caller — a card, a block on its own, a
+/// test. Reporting NO_SUCH_MESSAGE there is the checker asserting knowledge it
+/// has just said it lacks, and it made `receive warmer { send 'nudge' 1 }`
+/// — an `on` handler the codemod moved, unchanged in behaviour — an error.
+test "an unknown surface does not call a `receive` undeclared" {
+  assert_eq(codes("receive resetTP(n) { .count = n }"), [])
+  // The view SENDS it, so it is a view's name and takes its types from there
+  // — opaque here, which is what a real join of disagreeing call sites gives.
+  assert_eq(
+    codes_with_views("receive warmer(by) { .count = by }", ["warmer"]),
+    [],
+  )
+  // The view does NOT send it and no schema case declares it: with the views
+  // in hand, that is a handler nothing can raise.
+  assert_eq(codes_with_views("receive warmer(by) { .count = by }", []), [
+    "NO_SUCH_MESSAGE",
+  ])
 }
 
 // -- names and applications -------------------------------------------------
@@ -326,7 +371,10 @@ test "an on handler's argument types come from the views' call sites" {
   assert_eq(@check.check(decls, def_of(schema())).length(), 0)
   // With the call site saying `@on.click="add 1"`, the parameter is a number
   // and writing it into a string field is caught.
-  let surface : @check.Surface = { inputs: { "add": [Some(TFloat)] } }
+  let surface : @check.Surface = {
+    inputs: { "add": [Some(TFloat)] },
+    knows_views: true,
+  }
   assert_eq(
     @check.check(decls, def_of(schema()), surface~).map(f => f.message),
     ["this place is String, but the value is Double"],
@@ -336,7 +384,10 @@ test "an on handler's argument types come from the views' call sites" {
 ///|
 test "a parameter list that disagrees with the call sites" {
   let decls = @tscript.parse_script("on add(d, e) { .count = d }")
-  let surface : @check.Surface = { inputs: { "add": [Some(TFloat)] } }
+  let surface : @check.Surface = {
+    inputs: { "add": [Some(TFloat)] },
+    knows_views: true,
+  }
   assert_eq(
     @check.check(decls, def_of(schema()), surface~).map(f => f.message),
     ["`add` takes 2 parameter(s) here, but the views call it with 1"],
@@ -348,7 +399,10 @@ test "call sites that disagreed joined to opaque, and stay unchecked" {
   // `join_arg` answers `VValue` when two call sites disagree, which arrives
   // here as None — and None is never wrong.
   let decls = @tscript.parse_script("on add(d) { .name = d }")
-  let surface : @check.Surface = { inputs: { "add": [None] } }
+  let surface : @check.Surface = {
+    inputs: { "add": [None] },
+    knows_views: true,
+  }
   assert_eq(@check.check(decls, def_of(schema()), surface~).length(), 0)
 }
 
@@ -626,7 +680,10 @@ fn codes_with_views(
     inputs[v] = [None]
   }
   let decls = @tscript.parse_script(block)
-  @check.check(decls, def_of(schema()), surface={ inputs, }).map(f => f.code)
+  @check.check(decls, def_of(schema()), surface={ inputs, knows_views: true }).map(f => {
+      f.code
+    },
+  )
 }
 
 ///|
@@ -682,7 +739,7 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   let found = @check.check(
     @tscript.parse_script("on other { .count = 1 }"),
     def_of(schema()),
-    surface={ inputs, },
+    surface={ inputs, knows_views: true },
   )
   assert_eq(found.length(), 1)
   assert_eq(found[0].severity, SWarning)

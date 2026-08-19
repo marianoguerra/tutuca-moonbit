@@ -302,19 +302,25 @@
         </p>
         <mb-card src="./site/cards/tut-6-messages.html" margaui codemirror></mb-card>
         <p>
-          <code>send</code> is one of five effects a body may perform. They are
+          <code>send</code> is one of the effects a body may perform. They are
           the vocabulary a dynamic WebAssembly component already answers with,
-          which is not a coincidence: an interpreted card and a compiled
-          component hand the host the same list, and neither knows what it will
-          do with them.
+          which is not a coincidence: a card and a compiled component hand the
+          host the same list, and neither knows what it will do with them.
         </p>
         <ul>
           <li><code>send 'name' args…</code> — at this component.</li>
-          <li><code>bubble 'name' args…</code> — up the path the event was raised on. A card mounted on its own is the root, so a bubble from one has nowhere to go.</li>
-          <li><code>request 'name'</code> — resolved through the host's registry; a page that registers no handler answers nothing.</li>
           <li><code>sendAt &amp;.rows[k] 'name' args…</code> — at a <em>position</em>. <code>&amp;.rows[k]</code> is the position; <code>.rows[k]</code> is what is there, and the difference is what makes a late answer land on the row that asked for it.</li>
-          <li><code>stop</code> — stop propagation.</li>
+          <li><code>intent [dyn|lex]… 'name' args…</code> — at whoever answers. <code>dyn</code> walks the ancestors, <code>lex</code> walks the handlers registered on the host; with no leg written it walks <code>dyn lex</code>. Step 7.</li>
+          <li><code>forward</code> — hand the message that arrived on to the next hop, keeping its name.</li>
+          <li><code>reply v</code> / <code>fail e</code> — answer an intent that reached you. Either one ends the walk.</li>
+          <li><code>stop</code> — end the walk answering nothing.</li>
         </ul>
+        <p>
+          Two of those are addressed and two are routed, and the distinction is
+          the whole of it: a <strong>message</strong> names one component and
+          stops there; an <strong>intent</strong> names a job and walks until
+          something answers.
+        </p>
         <p>
           Effects go out only if the body finished. A statement that cannot run
           — a missing key, an index past the end, a value of the wrong shape —
@@ -323,43 +329,51 @@
         </p>
       </section>
 
-      <section id="requests">
+      <section id="intents">
         <h3><span class="step">Step 7</span> Asking for what you do not have</h3>
         <p>
-          <code>request</code> is the fourth channel and the only asynchronous
-          one. A handler names a piece of work — <code>request 'loadQuote'</code>
-          — and the <strong>host</strong> answers: the name resolves to a
-          handler registered on the module, not to anything the component can
-          see, which is what lets the same component run against a real fetch
-          in production and a fixture in a test.
+          <code>intent</code> is the second channel, and the asynchronous one. A
+          handler names a piece of work — <code>intent lex 'loadQuote'</code> —
+          and hands it to a <strong>route</strong> rather than to an address.
+          <code>lex</code> is the leg that searches the handlers registered on
+          the host, which is what lets the same component run against a real
+          fetch in production and a fixture in a test. <code>dyn</code> is the
+          other leg: the ancestors, from this component's parent up. Written
+          with no leg, an intent walks <code>dyn lex</code> — try the tree,
+          then the host.
         </p>
         <p>
-          The answer comes back as a <code>response</code> arm, and it carries
-          <em>two</em> values: the result and the error, exactly one of which
-          is <code>Null</code>. There is no exception to catch and no rejected
-          promise — <strong>a failure is a value</strong>, arriving on the same
+          An intent has exactly <em>three</em> ends, and each is its own arm
+          with its own shape: <code>&lt;name&gt;Ok</code> when a hop replied,
+          <code>&lt;name&gt;Error</code> when one failed, and
+          <code>&lt;name&gt;Unhandled</code> when the route ran out with nobody
+          claiming it. They arrive as ordinary <code>receive</code> messages, so
+          a handler cannot tell an answer from a message a parent sent — and
+          does not need to. There is no exception to catch and no rejected
+          promise: <strong>a failure is a value</strong>, arriving on the same
           path as a success, at the component that asked.
         </p>
-        <mb-card src="./site/cards/tut-7-response.html" margaui codemirror></mb-card>
+        <mb-card src="./site/cards/tut-7-intent.html" margaui codemirror></mb-card>
         <p>
-          That card is showing you its error path, live, with nothing mocked:
-          this page registers no handler for <code>loadQuote</code>, and an
-          unanswered name is not a crash. The runtime replies
-          <code>Err("Request not found: loadQuote")</code> down the ordinary
-          error path, so a typo in a request name and a network failure arrive
-          in the same place, in the same shape. Give the card a
-          <code>response</code> arm and it handles both.
+          That card is showing you its third arm, live, with nothing mocked:
+          this page registers no handler for <code>loadQuote</code>, so the
+          route runs out and the card hears
+          <code>loadQuoteUnhandled</code>. Not an error — nobody claimed it,
+          which is a different sentence, and the one v1 of this framework could
+          not say. It made every declining handler invent a failure, so a page
+          with no fetch and a fetch that broke read identically.
         </p>
         <p>
-          Two things the block deliberately does not carry.
-          <code>RequestOpts</code> — per-call response names, and whether a
-          path is pinned at request time or re-resolved on arrival — stays in
-          MoonBit, because it is the part a small language would model badly.
-          And <code>bubble</code>, the third channel, needs an ancestor to
-          reach: a card mounted on its own <em>is</em> the root, so a bubble
-          from one has nowhere to go. Both are the same rule as everywhere else
-          on this page — a card is one component, and what needs a tree needs a
-          module.
+          Two things the block deliberately does not carry. An intent's
+          <em>options</em> — naming the three answers yourself, and whether a
+          path is pinned at dispatch time or re-resolved on arrival — stay in
+          MoonBit, because they are the part a small language would model badly;
+          written with none, the generator fills them in from the three arms the
+          schema declares. And <code>intent dyn</code> needs an ancestor to
+          reach: a card mounted on its own <em>is</em> the root, so the
+          <code>dyn</code> leg from one has nowhere to walk. Both are the same
+          rule as everywhere else on this page — a card is one component, and
+          what needs a tree needs a module.
         </p>
       </section>
 
@@ -529,8 +543,7 @@
           <tbody>
             <tr><td><code>on name(a, b)</code></td><td>statements</td><td>an <code>@on</code> name a view writes</td></tr>
             <tr><td><code>receive name(a)</code></td><td>statements</td><td>a case of the schema's <code>receive</code></td></tr>
-            <tr><td><code>bubble name(a)</code></td><td>statements</td><td>a case of the schema's <code>bubble</code></td></tr>
-            <tr><td><code>response name(a)</code></td><td>statements</td><td>a case of the schema's <code>response</code></td></tr>
+            <tr><td><code>intent name(a)</code></td><td>statements</td><td>a case of the schema's <code>intent</code> — an intent that walked here</td></tr>
             <tr><td><code>compute name</code></td><td>one expression</td><td><code>$name</code> in a value slot</td></tr>
             <tr><td><code>pred name</code></td><td>one expression</td><td>a condition slot, or <code>@when</code></td></tr>
             <tr><td><code>invariant name</code></td><td>one expression</td><td>the same, plus every transition</td></tr>
@@ -542,7 +555,7 @@
           A <code>///</code> comment above a declaration is its documentation
           and travels with it. There is no <code>when</code> keyword: a filter
           and a boolean <code>compute</code> are the same construct, so
-          <code>@when</code> is a <em>use</em> of a <code>pred</code>. The four
+          <code>@when</code> is a <em>use</em> of a <code>pred</code>. The three
           transition kinds take contract clauses between the name and the body
           — <code>on push requires canPush ensures moved { … }</code> — each
           naming a <code>pred</code>, at most one of each.
@@ -560,9 +573,11 @@ new Label                   build a value at its zero,
 @cur.text = 'hi'            fill it in through `@cur`,
 .labels.push @cur           then put it somewhere
 send 'flash' .msg           an effect
-bubble 'picked' @key
 sendAt &amp;.rows[k] 'done' 1
-request 'load'    stop
+intent dyn 'picked' @key    …routed rather than addressed
+intent lex 'load'
+forward           reply v
+fail e            stop
 if cond { … } else { … }    a branch, else optional</code></pre>
         <p>
           A place can be nested — <code>.a.b</code> and <code>.a[k].b</code>

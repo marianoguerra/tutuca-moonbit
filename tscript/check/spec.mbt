@@ -48,10 +48,25 @@ pub(all) enum Severity {
 /// answer one the templates never mention.
 pub(all) struct Surface {
   inputs : Map[String, Array[@statedef.StateTy?]]
+  /// Whether the caller HAS the views, or merely has none to show.
+  ///
+  /// An empty `inputs` means two different things and the checker has to tell
+  /// them apart. From `viewgen` it means "I walked the templates and they send
+  /// nothing" — a `receive` with no schema case is then answering a message
+  /// nothing can send, which is the finding. From a caller with no views in
+  /// hand (a block on its own, a card, a test) it means "I do not know", and
+  /// reporting the same finding would be the checker asserting knowledge it
+  /// has just said it lacks.
+  ///
+  /// It only became load-bearing when `on` merged into `receive`: an `on`
+  /// handler's name was never checked against anything, so an absent surface
+  /// cost nothing.
+  knows_views : Bool
 } derive(Debug, Eq)
 
 ///|
-/// A surface that knows nothing — every `on` handler's arguments opaque.
+/// A surface that knows nothing — every handler's arguments opaque, and no
+/// claim about which names the views send.
 ///
 /// What a caller with no views in hand passes, and what makes the checker
 /// usable on a block alone.

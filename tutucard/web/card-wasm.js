@@ -129,8 +129,41 @@ export async function loadGuest(bytes, descriptor, key = "default") {
             args: args.map((a) => guestToJson(a, arena.cells)),
             opts,
           }),
-        // Still nothing a card can emit: the generator has no `bubbleAt` and no
-        // `after`, and a stub is what an unreachable import costs.
+        // v2's four. A compiled card emits every one of these — `intent lex
+        // 'loadQuote'` is step 7 of the tutorial — and an import the host does
+        // not implement is an instantiation error, not a silently dropped
+        // effect. `route` is the closed set as one number (`@abi.route_*`),
+        // which is why it crosses as a plain integer rather than a list.
+        intent: (name, args, route) =>
+          control.push({
+            kind: "intent",
+            name,
+            args: args.map((a) => guestToJson(a, arena.cells)),
+            route,
+          }),
+        // An empty `args` means "the ones that arrived", which is the same
+        // thing `forward` with no arguments means — so there is no third state
+        // and nothing to carry a discriminant for.
+        forward: (args, route) =>
+          control.push({
+            kind: "forward",
+            args: args.map((a) => guestToJson(a, arena.cells)),
+            route,
+          }),
+        reply: (args) =>
+          control.push({
+            kind: "reply",
+            args: args.map((a) => guestToJson(a, arena.cells)),
+          }),
+        fail: (args) =>
+          control.push({
+            kind: "fail",
+            args: args.map((a) => guestToJson(a, arena.cells)),
+          }),
+        // Still nothing a card can emit: the generator has no `bubbleAt`, no
+        // `intentAt` and no `after`, and a stub is what an unreachable import
+        // costs.
+        intentAt: () => {},
         bubbleAt: () => {},
         after: () => {},
         makeInstance: () => 0n,
@@ -175,7 +208,10 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     },
     dispatch(handle, bucketInt, name, argsJson) {
       control = [];
-      const bucket = ["input", "receive", "response", "bubble"][bucketInt] ?? "input";
+      // The WIT's `bucket` order, and `intent` is last so the four that were
+      // there keep their numbers.
+      const bucket =
+        ["input", "receive", "response", "bubble", "intent"][bucketInt] ?? "input";
       const inst = table.get(handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
       const result = inst.handleEvent(bucket, name, JSON.parse(argsJson).map(to));

@@ -300,8 +300,9 @@ let counter = counter_component()</code></pre>
         <h4>Personal Site</h4>
         <p>
           A filterable list of entries with category and role facets, sorting, and a
-          solo/unsolo (alt-click) interaction. Data loads through a request handler
-          after mount.
+          solo/unsolo (alt-click) interaction. Data loads through an
+          <code>intent lex</code> raised after mount, answered by a handler
+          registered on the module.
         </p>
         <mb-playground
           src="./site/examples/personal_site.mbt"

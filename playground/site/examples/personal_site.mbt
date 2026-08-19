@@ -1,11 +1,12 @@
 // Personal site: a filterable list of entries with category/role facets,
-// sorting, and a solo/unsolo (alt-click) interaction; fixture data loads via a
-// request handler dispatched on `init` after mount.
+// sorting, and a solo/unsolo (alt-click) interaction; fixture data loads
+// through an `intent lex` raised on `init` after mount.
 //
 // The three components' views live in the View tab (personal_site.html) and
 // arrive compiled — alt_url_views(), p_s_entry_views(), root_views(). Root's
-// `update` keeps a raw `match msg`: it also answers Receive/Response, which a
-// view cannot declare, so the generated RootMsg cannot type them.
+// `update` keeps a raw `match msg`: it also answers the messages an intent's
+// three outcomes arrive as, which a view cannot declare, so the generated
+// RootMsg cannot type them.
 
 // Reads of an entry's fields go straight through `@tutuca.Value::field` plus a
 // coercer — `e.field("startYear").int()`. The three `obj_str`/`obj_int`/
@@ -395,7 +396,10 @@ fn root_comp() -> @component.Component {
           })
         }
         Receive("init", _) => {
-          ctx.request("loadData", [], @tutuca.RequestOpts::new())
+          // `lex`: the answer comes from a handler registered in the SCOPE, not
+          // from a component up the tree. `loadDataOk` above is the arm it
+          // lands in, named for the outcome rather than for the ask.
+          ctx.intent("loadData", [], @tutuca.IntentOpts::new(route=[Lex]))
           Next(s)
         }
         _ => Unhandled
