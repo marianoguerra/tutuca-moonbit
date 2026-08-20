@@ -4,7 +4,132 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.24.0] - 2026-08-20
+
+**v2 only.** 0.23.0 shipped the two-channel model as a *migration*: the contract
+kept v1's verbs, the generator downgraded a v1 spelling to a hint, and
+`tutuca migrate` moved downstream code. The codemod is gone, this repository and
+its guests are on v2, and what is left of v1 is a second grammar the parser, the
+resolver, the generator, the schema, the card compiler and the WIT all still
+carried for no reader. This release removes it.
+
+**Every guest bundle needs rebuilding, and there is no compatibility path.** A
+`.tutuca.tar.gz` built against `tutuca:component@0.7.0` or `@0.8.0` no longer
+loads: the host refuses it by its export namespace with a message saying to
+rebuild. That retires the promise 0.23.0 made deliberately, and it is the whole
+cost of this release.
+
+### Removed
+
+- **v1's dispatch surface, everywhere it survived.** `Dispatch::Input` /
+  `Bubble` / `Response`; the schema's `bubble` and `response` buckets and the
+  `bubbles` / `responses` manifest keys; `HandlerNamespace::Input`; the
+  generated `<T>Bubble` / `<T>Response` enums; `Ctx::is_answer`; and the
+  `bubble` / `request` effect verbs in both the MoonBit backend and the card
+  compiler. The block language stopped accepting `on` / `bubble` / `response`
+  declarations before this release; the error messages that still offered them
+  now agree with the parser.
+
+- **The dyncomp v1 bridge.** `DynObj::obj_handler` translated between the host's
+  two buckets and the wire's five — an intent going out as `bubble`, an answer
+  disambiguated by `is_answer`, an unclaimed `Receive` retried as `input`. All
+  of it is gone; the bucket goes out as it came in. With it went `GuestBucket`,
+  `RequestOpts`, and the `Emit` / `BubbleAt` / `Request` control messages.
+
+- **`docs/two-channels.md`** — the design argument for a change that has
+  shipped. `skill/tutuca/messages-and-intents.md` is the authoring guide it
+  argued for; the source comments no longer cite section numbers.
+
+### Changed
+
+- **WIT is `tutuca:component@0.9.0`**, manifest `apiVersion` 7 → 8. `emit`,
+  `bubble-at`, `request` and `request-opts` are gone from `control`, and
+  `bucket` is `{ receive, intent }` — which RENUMBERS the cases, and is why the
+  api version moves with it. `guest.handle-request` is now `serve-intent`
+  answering `serve-result`, and the manifest key `requests` is `serves`: a
+  bundle's own handlers are intents on the `lex` leg, and they are named that
+  way now.
+
+- **A bare event argument is a build error.** `@on.input="setStr value"` was
+  v1's spelling and had been a hint since 0.23.0; it is `BareEventArg` now, and
+  the message names all three sigils (`e.` the event, `.` state, `@` a
+  binding). Every `@on` argument in the repository moved with it, and one
+  guest's answer arm had to be renamed: a bundle that spelled a request and its
+  answer both `triple` now collides, because one bucket holds both — the answer
+  is `tripled`. The runtime fallback went with it: `lookup_name` no longer reaches
+  the event's fields, so the shadowing rule where an `@each` bind named `value`
+  quietly beat the DOM event is not a rule any more — the two spellings that
+  needed telling apart are now one.
+
+- **`SchemaInfo.inputs` is `view_handlers`.** Same data — the `@on` names the
+  views raise — under a name that is not the deleted bucket's. `bubbles` and
+  `responses` are gone from it and from the schema fingerprint, so every
+  fingerprint changes and stored guest state from an older release is refused
+  rather than misread.
+
+### Fixed
+
+Each of these was a live defect the compatibility layer was hiding:
+
+- **The wasm host never implemented `intent`, `intent-at`, `forward`, `reply`
+  or `fail`.** The WIT declared all five and the generated bindings exposed
+  them, but `dyncomp/host/wasm/loader.mjs` bound none — so a guest that
+  dispatched an intent failed to instantiate. Every guest in the repo was still
+  written against `emit` / `request` because that was all that worked.
+
+- **The core-module ABI's `intent` did not match the contract.**
+  `dyncomp/host/wasm/abi.mjs` declared `intent(string, list<value>, u32)` — a
+  compact route code, which is what the card compiler emits — where the WIT
+  says `intent-opts`, a record carrying the route AND the three answer names.
+  A wit-bindgen guest lowers that to sixteen i32s; the import binds by NAME, so
+  eleven of them were read as something else. The symptom was subtle and worth
+  naming: an intent whose route happened to be the default still walked, and
+  one that named `on-ok` answered nobody, silently. `abi.mjs` now spells the
+  record the contract does, and the card compiler builds it.
+
+- **The card runtime imported `tutuca:component/values@0.7.0`** while its own
+  ABI table pinned `@0.8.0`. It only linked because the host strips versions
+  before looking an import up.
+
+- **`tutucard`'s escape vocabulary had no `intent`.** `escape_role` matched
+  `on` / `receive` / `bubble` / `response`, so a `card_intent_*` escape could
+  not be recognized at all, while `dispatch.mbt` built only `receive` and
+  `intent` arms.
+
+- **`bench-views` had been broken since its input was deleted**, so the
+  benchmark corpus was stale — it still spelled event arguments the v1 way
+  while its own sources did not. Regenerating it surfaced a second fault: the
+  builder never qualified a view file's `<script type="tutuca/script">` with
+  `for=`, so concatenating two files that each had one produced a corpus that
+  could not be split.
+
+- **`statedef/info` and `dyncomp/host/bundle` never passed `intents` through**
+  to `SchemaInfo`, so a schema declaring `intent { … }` reported none.
+
+- **`cmd/card-corpus` emitted the same corpus twice**, under `cases` and
+  `casesV2`, and `cmd/conformance` told readers to add cases to a `cases_v2()`
+  that does not exist. The card conformance harness also injected a capitalized
+  variant name beside its lower-case twin, which the schema then refused as a
+  duplicate — 11 of its cases had been failing.
+
+- **`tutuca migrate`** — the one-way v1→v2 codemod added in 0.23.0 is gone,
+  along with `cli/migrate.mbt` and the `Migrate` command variant. It was a
+  migration tool with a migration behind it: the repository, the examples, the
+  site and the guests are on v2, and a codemod nobody runs is a second grammar
+  to keep parse-print-parse honest for no reader. A v1 codebase that still
+  needs moving runs the **0.23.0** binary, which has it; what that run refuses
+  is still the work list.
+
+  `cli` no longer imports `tscript` or `eventpath` — the codemod was the only
+  thing in it that parsed the block language or needed the accessor vocabulary.
+
+- **The skill documented v1's bare event argument.** `events.md` and the
+  pattern files spelled an event read `@on.input="setStr value"`. Every `@on`
+  example in `skill/` now carries the sigil, and `events.md` documents what was
+  missing entirely: the two resolution layers (the computed accessors, which
+  shadow the walk), the six allowlisted path steps behind
+  `e.target.dataset.x` / `e.detail.x`, and `BadEventPath` as the error for a
+  path that leaves the event.
 
 ## [0.23.0] - 2026-08-20
 
