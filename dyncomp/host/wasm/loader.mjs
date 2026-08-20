@@ -576,6 +576,11 @@ export function createTcompImports(getExports) {
     }
     for (const component of manifest.components ?? []) {
       for (const view of component.views ?? []) {
+        // A card compiled straight to a bundle has no view files to hydrate
+        // from: `tutucard/wasm/manifest.mbt` projects the `<template>`s into
+        // `html` already, because there is no archive there, only a page that
+        // has the card. Leave that shape alone; only a `src` names a file.
+        if (typeof view.html === "string") continue;
         const name = String(view.src ?? "").split("/").pop();
         const bytes = files[name];
         if (!name || !bytes) {

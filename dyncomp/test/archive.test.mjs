@@ -3,11 +3,13 @@ import { gzipSync } from "node:zlib";
 import test from "node:test";
 
 import {
+  createTcompImports,
   gunzip,
   readCompressedResponse,
   requireDescriptor,
   untar,
 } from "../host/wasm/loader.mjs";
+import { registerDroppedFiles } from "../../app/wasm/loader.mjs";
 
 const encoder = new TextEncoder();
 
@@ -107,4 +109,85 @@ test("fetched archives are bounded while the response is read", async () => {
     }), { compressedBytes: 1024 }),
     /too large: 2048 compressed bytes/,
   );
+});
+
+// Unpack one in-memory archive through the dropped-file path and answer with
+// what the host was told. The stub core module is four bytes of magic and no
+// world, so `instantiate` always refuses it — which is the point: the refusal
+// comes from `finishLoad`, and `hydrateManifest` has already run by then. An
+// archive that reaches the world check is an archive whose manifest hydrated.
+async function loadOutcome(manifest, extraFiles = []) {
+  const descriptor = { core: "main.wasm", world: "card", manifest };
+  const gz = gzipSync(archive([
+    ["bundle/tutuca.json", JSON.stringify(descriptor)],
+    ["bundle/main.wasm", new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])],
+    ...extraFiles,
+  ]));
+  const told = [];
+  const imports = createTcompImports(() => ({
+    dyncomp_on_loaded: (_loadId, _id, json) => told.push(json),
+    dyncomp_on_load_error: (_loadId, message) => told.push(message),
+    refresh_margaui: () => {},
+  }));
+  const dropped = JSON.parse(registerDroppedFiles({
+    dataTransfer: { files: [new File([gz], "bundle.tutuca.tar.gz")] },
+  }));
+  // The loader reports a failed load by console.error as well as by calling
+  // the host back; the callback is what is under test, so keep the stack out
+  // of the suite's output rather than let a deliberate failure look like one.
+  const noise = console.error;
+  console.error = () => {};
+  try {
+    imports.load_dropped(dropped[0].id, 1);
+    for (let i = 0; i < 200 && told.length === 0; i++) {
+      await new Promise((resume) => setTimeout(resume, 10));
+    }
+  } finally {
+    console.error = noise;
+  }
+  return told[0] ?? "the load never reported back";
+}
+
+// A card compiled straight to a bundle has no view files beside its manifest:
+// `tutucard/wasm/manifest.mbt` projects each `<template>` into `html`, and
+// `packBundle` tars that manifest as it stands. Hydration used to read
+// `view.src` off every view unconditionally, so every such card — which is to
+// say every card with a view at all — died before it could be instantiated.
+test("a manifest whose views are already html hydrates untouched", async () => {
+  const outcome = await loadOutcome({
+    manifestVersion: 1,
+    components: [{ name: "card", views: [{ name: "main", html: "<div>hi</div>" }] }],
+  });
+  assert.doesNotMatch(outcome, /static manifest view is missing/);
+  assert.match(outcome, /unsupported world/);
+});
+
+// ...and the archive shape still gets the check it always had: a view that
+// names a file is a view whose file has to be there.
+test("a manifest view naming an absent file is still refused", async () => {
+  const outcome = await loadOutcome({
+    manifestVersion: 1,
+    components: [{ name: "card", views: [{ name: "main", src: "views/gone.html" }] }],
+  });
+  assert.match(outcome, /static manifest view is missing from archive: views\/gone.html/);
+});
+
+// Both shapes in one component, which is what a bundle that grew an inline
+// view alongside its files looks like: each view takes its own path.
+test("html and src views hydrate side by side", async () => {
+  const outcome = await loadOutcome(
+    {
+      manifestVersion: 1,
+      components: [{
+        name: "card",
+        views: [
+          { name: "main", html: "<div>inline</div>" },
+          { name: "row", src: "views/row.html" },
+        ],
+      }],
+    },
+    [["bundle/row.html", "<div>from file</div>"]],
+  );
+  assert.doesNotMatch(outcome, /static manifest view is missing/);
+  assert.match(outcome, /unsupported world/);
 });
