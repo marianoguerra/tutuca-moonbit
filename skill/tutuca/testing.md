@@ -328,6 +328,256 @@ test "counter: immutability — one render per interaction" {
 }
 ```
 
+## Testing a CARD: `<script type="tutuca/test">`
+
+Everything above is the ahead-of-time path: a view file, `gen-views`, a
+`ModuleDef`, and `moon test` over `@harness`. A **card** is the other
+thing a `.html` file can be — one file the browser compiles to a
+`tutuca:component@0.9.0` wasm module with no MoonBit toolchain on the
+page. There is no `moon test` there and no MoonBit to write a test in,
+so a card declares its tests as a **fifth block**, in JSON, beside its
+schema and its handlers.
+
+Use this when the file is a card. Use `moon test` + `@harness` when it
+is a view file compiled by `gen-views`. The block is inert on the
+ahead-of-time path — `gen-views` ignores it, exactly as it ignores
+`<script type="tutuca/wax">` — so a file carrying one is a file with a
+block that path skips.
+
+### The block
+
+```html
+<script type="tutuca/state">
+  state Counter { count: Int, step: Int }
+</script>
+
+<script type="tutuca/script">
+  receive init { .step = 1 }
+  receive inc  { .count += .step }
+  compute label { $'the count is {.count}' }
+</script>
+
+<script type="tutuca/test">
+{
+  "two clicks add two": {
+    "steps": [
+      { "send": "init" },
+      { "click": "button.inc" },
+      { "click": "button.inc" },
+      { "expect": "text",  "at": "output", "is": "2" },
+      { "expect": "text",  "at": "p", "is": "the count is 2" },
+      { "expect": "state", "at": ".count", "is": 2 }
+    ]
+  }
+}
+</script>
+
+<template id="Counter">
+  <div>
+    <button class="inc" @on.click="inc">+</button>
+    <output @text=".count"></output>
+    <p @text="$label"></p>
+  </div>
+</template>
+```
+
+One object of **named scenes**, the same shape `tutuca/init` has. Each
+scene is `{ "steps": [ … ] }` plus four optional keys:
+
+| key | means |
+| --- | --- |
+| `"component": "TodoItem"` | which component to mount. Optional for a card with one; required for a card with several |
+| `"init": "fresh"` | start from a `tutuca/init` fixture |
+| `"args": { "count": 3 }` | start from these field values (written over the fixture, if there is one) |
+| `"intents": { … }` | answer the intents this card raises — see below |
+| `"raw": true` | keep the renderer's `data-cid` / `§…§` bookkeeping in the reported HTML |
+
+**`send "init"` is usually the first step.** tutuca has no lifecycle:
+`receive init` runs because a HOST dispatches it, and in a scene the
+scene is the host.
+
+### The verbs
+
+One key per step names the verb and carries the selector. `"nth"` picks
+among matches and is `0` when unwritten.
+
+| step | does |
+| --- | --- |
+| `{ "click": "button.inc" }` | click it |
+| `{ "click": "li.todo", "nth": 2 }` | click the third match |
+| `{ "type": "input.draft", "value": "milk" }` | an `input` event carrying the text |
+| `{ "key": "input.draft", "is": "Enter" }` | a `keydown` |
+| `{ "check": "input.done", "is": true }` | toggle a checkbox |
+| `{ "fire": "section", "event": "emoji-click", "value": { "u": "😀" } }` | any event, custom ones included |
+| `{ "drag": "li.todo", "from": 0, "to": 2 }` | a full drag gesture |
+| `{ "send": "init", "args": [1, "two"] }` | a host dispatch at the root |
+
+A step naming two verbs is refused: an object's keys have no order, so
+`{ "click": …, "type": … }` does not say which happens first.
+
+### The readers
+
+Reads are all spelled `expect`, naming what to read.
+
+| step | reads |
+| --- | --- |
+| `{ "expect": "text", "at": "output", "is": "2" }` | text content, whitespace collapsed |
+| `{ "expect": "texts", "at": "li.todo", "is": ["milk", "eggs"] }` | every match's text |
+| `{ "expect": "attr", "at": "a.home", "name": "href", "is": "/here" }` | an attribute |
+| `{ "expect": "prop", "at": "input", "name": "value", "is": "hi" }` | a **property** — form state (`value`, `checked`, `disabled`) is set as one, not as an attribute |
+| `{ "expect": "value", "at": "input.draft", "is": "" }` | an input's value |
+| `{ "expect": "checked", "at": "input.done", "is": true }` | a checkbox |
+| `{ "expect": "count", "at": "li.todo", "is": 3 }` | how many match |
+| `{ "expect": "state", "at": ".count", "is": 2 }` | the settled state at a place |
+| `{ "expect": "state", "is": { "count": 2, "step": 1 } }` | …or all of it |
+| `{ "expect": "html", "contains": "class=\"done\"" }` | the rendered markup |
+| `{ "expect": "renders", "is": 1 }` | renders so far — assert batching |
+| `{ "expect": "refused", "is": [] }` | what the previous step refused |
+
+`"at"` for `state` is a dotted place: `.count`, `.rows[0].label`,
+`.byId['a'].n`. A bare key (`.rows[a]`) is refused rather than guessed
+at, because the block language already has a spelling for "the key held
+in `.a`".
+
+`"contains"` works on `text` and `html` only. Everywhere else `"is"`
+says what you mean exactly.
+
+### Assert on `refused`, not just on the DOM
+
+Clicking a button whose `requires` declines changes nothing. So does
+clicking a selector that matches nothing. **From the DOM they are
+identical**, which means a scene written against a typo passes.
+
+```json
+{ "a guarded button stays guarded": { "steps": [
+  { "click": "button.publish" },
+  { "expect": "refused", "is": ["REQUIRES at `publish`"] },
+  { "expect": "count", "at": "li.published", "is": 0 }
+] } }
+```
+
+Every scene reports its refusals whether or not a step asked, so a
+`requires` that fired unexpectedly is visible even in a scene that never
+mentions it.
+
+### Selectors are ONE compound selector
+
+A tag plus any number of `#id`, `.class` and `[attr]` qualifiers —
+`input.draft`, `[data-dragtype]`, `#tab-dnd`. **There is no descendant
+combinator and no list.** `.pane .row` is refused when the block is
+read, rather than silently matching nothing at run time. To scope, pick
+a class the target itself carries.
+
+### Leave `is` out to RECORD
+
+An expectation with no answer never fails: the runner reads it and hands
+the answer back. Write the drive first, look at what the component
+actually did, then keep the answers you meant.
+
+```json
+{ "what does it even do": { "steps": [
+  { "type": "input.draft", "value": "milk" },
+  { "click": "button.add" },
+  { "expect": "texts", "at": "li.todo" },
+  { "expect": "state" }
+] } }
+```
+
+### What comes back
+
+Assertions are optional; the read-back is not. **A scene with no
+`expect` at all is a drive**, and it still answers everything — which is
+the shape to write when you have just generated a card and want to see
+it work:
+
+```json
+{
+  "ok": false,
+  "ran": 2,
+  "failed": 1,
+  "scenes": {
+    "two clicks add two": {
+      "ok": true,
+      "component": "Counter",
+      "html": "<div><button class=\"inc\">+</button><output>2</output>…</div>",
+      "state": { "count": 2, "step": 1 },
+      "styles": "…",
+      "activity": [ { "kind": "receive", "name": "inc", … } ],
+      "refusals": [],
+      "steps": [
+        { "at": 0, "ok": true },
+        { "at": 3, "ok": true, "got": "2", "want": "2" }
+      ]
+    }
+  }
+}
+```
+
+`html` is **cleaned**: the renderer's `data-cid` / `data-eid` stamps and
+its `§…§` boundary comments come off, so what you read is the markup and
+a snapshot does not move because a component id did. `"raw": true` on
+the scene keeps them, for debugging the renderer rather than the card.
+
+A scene that could not be mounted at all carries an `error` instead —
+and the other scenes still run, so one bad `"component"` does not hide
+nine working scenes.
+
+### Running them
+
+**In the card playground**, the Tests pane runs every scene on each
+recompile and lists what disagreed, step by step. It drives the module
+already on the page, so it is neither a second compile nor a disturbance
+to the card in the preview beside it.
+
+**Headless**, through the card runtime's own `card-wasm.js` — no
+browser, no server, no `moon`:
+
+```js
+import { readFileSync } from "node:fs";
+// The card runtime is a classic script that installs globalThis.__tutucard.
+(0, eval)(readFileSync("tutucard.js", "utf8"));
+const { driveCard } = await import("./card-wasm.js");
+
+const report = await driveCard(readFileSync("counter.html", "utf8"), "Counter");
+for (const [name, scene] of Object.entries(report.scenes)) {
+  if (scene.ok) continue;
+  for (const step of scene.steps) {
+    if (!step.ok) console.error(`${name} step ${step.at}: ${step.why}`);
+  }
+  console.error(scene.html);
+}
+```
+
+Pass `{ scenes: "<json>" }` to drive a card that declares **no** test
+block — the situation anything that has just written one is in.
+
+### Intents answer synchronously
+
+A card raising `intent lex 'rows'` is asking a host for something, and
+in a scene the scene is the host:
+
+```json
+{ "the list loads": { "intents": {
+    "rows": { "ok": [{ "title": "Tutuca" }] },
+    "boom": { "failed": "network is down" },
+    "shrug": "pass"
+  },
+  "steps": [
+    { "send": "init" },
+    { "expect": "count", "at": "li.row", "is": 1 }
+  ] } }
+```
+
+The three answers an intent has, and no fourth. **A name with no fixture
+answers nothing at all** — the route runs out, nobody claims it, and the
+card hears `<name>Unhandled`. That is a different sentence from a
+failure's and the path a test is likeliest to leave uncovered: nothing
+in a card raises it, only the absence of an answer does.
+
+They answer at once, not late. A page's fixtures answer on a timer
+because a card author has to write for a loading state; a runner has
+nothing to wait with.
+
 ## See also
 
 - [core.md](./core.md) — *Verifying changes*, *Event Handling*,

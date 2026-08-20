@@ -243,6 +243,22 @@ declare pub fn render(
 /// the node itself is a meta comment.
 declare pub fn clean_vdom(v : @vdom.Vdom) -> @vdom.Vdom?
 
+///|
+/// Whether `name` is one of the renderer's own bookkeeping attributes rather
+/// than something a view wrote.
+///
+/// Public because `clean_vdom` is not the only place a tree gets cleaned: a
+/// headless driver holds a serialized DOM rather than a `Vdom`, and the whole
+/// point of this predicate is that the list lives in ONE place. A second copy
+/// of it somewhere else is a stamp that stops being stripped the day a new one
+/// is added here.
+declare pub fn is_internal_attr(name : String) -> Bool
+
+///|
+/// Whether a comment is one of the renderer's `§…§` boundary markers. The
+/// other half of the pair above, and public for the same reason.
+declare pub fn is_meta_comment(text : String) -> Bool
+
 // ---------------------------------------------------------------------------
 // Event-path reconstruction (JS Path.fromNodeAndEventName): walk up from an
 // event target reading §…§ metas and data-* stamps, crossing component

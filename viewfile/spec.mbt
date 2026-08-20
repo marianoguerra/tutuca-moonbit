@@ -107,6 +107,19 @@ pub(all) struct ViewFile {
   /// ignore — which is what makes this additive rather than a fourth thing
   /// every backend has to answer for.
   wax : Array[ScriptBlock]
+  /// The `<script type="tutuca/test">` scenes, parsed, in block order.
+  ///
+  /// Parsed here rather than handed back raw, and that puts it on the state
+  /// and init side of this file's one asymmetry rather than the script side.
+  /// The rule is the same one: a block is parsed here when it is
+  /// SELF-CONTAINED. A scene is — JSON in, `Scene`s out — because what it
+  /// names are selectors and message names, and neither is checkable against a
+  /// schema this package would have to grow a checker to hold.
+  ///
+  /// Not per component. A scene NAMES the component it mounts, because a card
+  /// declaring two of them has scenes that drive one and scenes that drive the
+  /// other, and a `for=` would say the second could not exist.
+  tests : Array[@scenedef.Scene]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -155,6 +168,14 @@ pub suberror FileError {
   BadStateBlock(line~ : Int, message~ : String)
   /// The init block does not fit the schema.
   BadInitBlock(line~ : Int, message~ : String)
+  /// Two `<script type="tutuca/test">` blocks in one file. The same rule the
+  /// state block has, and for a plainer reason: the block is one JSON object,
+  /// and two of them would have to be merged in an order the file does not
+  /// state.
+  DuplicateTestBlock
+  /// The test block does not read as scenes. `line` is the line in the HTML
+  /// file, not in the block, for the reason `BadInitBlock` gives.
+  BadTestBlock(line~ : Int, message~ : String)
 }
 
 ///|

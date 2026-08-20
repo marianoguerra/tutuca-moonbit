@@ -57,6 +57,7 @@
             <button class="tab" data-part="script" role="tab">handlers</button>
             <button class="tab" data-part="views" role="tab">views</button>
             <button class="tab" data-part="macros" role="tab">macros</button>
+            <button class="tab" data-part="tests" role="tab">tests</button>
           </div>
           <!-- The views and macros tabs have tabs of their own: a card has one
                state block and one script block, and as many views and macros
@@ -90,6 +91,20 @@
         <pre id="state" class="json"></pre>
         <h2>Activity</h2>
         <ol id="activity" class="activity"></ol>
+      </section>
+
+      <!-- What the card DOES, as opposed to what it looks like. The preview
+           beside this proves the card renders; until something pressed a
+           button there was no way to find out whether pressing one worked.
+           Each scene is mounted on an in-memory DOM through the module already
+           on this page, so nothing here is a second compile and nothing here
+           disturbs the card you are looking at. -->
+      <section class="pane">
+        <h2>
+          Tests
+          <span id="scenes-note" class="note"></span>
+        </h2>
+        <ul id="scenes" class="issues"></ul>
       </section>
 
       <!-- The OTHER backend. The card above is interpreted; this compiles the

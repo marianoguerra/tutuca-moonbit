@@ -19,6 +19,10 @@ pub fn event_path(DomEvent, Array[String]) -> @core.Value
 
 pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int, stop_on_no_event? : Bool) -> EventDispatch?
 
+pub fn is_internal_attr(String) -> Bool
+
+pub fn is_meta_comment(String) -> Bool
+
 pub fn render(@anode.ANode, RenderStack, RenderCtx) -> @vdom.Vdom?
 
 pub fn render_root(@core.Value, RenderStack, RenderCtx) -> @vdom.Vdom?

@@ -17,6 +17,9 @@ pub fn FileError::message(self : FileError) -> String {
     UnclosedTemplate(what) => "unclosed <template\{what}>"
     DuplicateStateBlock =>
       "two <script type=\"tutuca/state\"> blocks — one file declares one schema, with one `state` per component"
+    DuplicateTestBlock =>
+      "two <script type=\"tutuca/test\"> blocks — one file declares one object of scenes, and two would have to be merged in an order the file does not state"
+    BadTestBlock(line~, message~) => "line \{line}: \{message}"
     DuplicateScriptBlock("") =>
       "two unqualified <script type=\"tutuca/script\"> blocks — a block is written about ONE component, so name each one with `for=\"Comp\"`"
     DuplicateScriptBlock(comp) =>

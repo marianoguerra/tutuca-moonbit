@@ -254,3 +254,74 @@ test "a script block does not make a schema-only file into a view" {
   assert_eq(vs.state.length(), 1)
   assert_true(vs.script_for("") is Some(_))
 }
+
+///|
+/// The fifth block. Lifted out like the other four — its text never counts as
+/// stray and never reaches a view — and PARSED, so a scene that is wrong is
+/// wrong on the line of the `.html`.
+test "a test block is lifted out and parsed" {
+  let f = @viewfile.split_file(
+    (
+      #|<script type="tutuca/state">
+      #|  state Counter { count: Int }
+      #|</script>
+      #|<script type="tutuca/test">
+      #|{ "it counts": { "steps": [
+      #|  { "click": "button.inc" },
+      #|  { "expect": "text", "at": "output", "is": "1" }
+      #|] } }
+      #|</script>
+      #|<template id="Counter"><button class="inc"></button><output></output></template>
+    ),
+    name="Counter",
+  )
+  assert_eq(f.tests.length(), 1)
+  inspect(f.tests[0].name, content="it counts")
+  assert_eq(f.tests[0].steps.length(), 2)
+  // ...and it left no trace in the view it sits beside.
+  inspect(
+    f.components[0].views[0].source,
+    content="<button class=\"inc\"></button><output></output>",
+  )
+}
+
+///|
+/// A malformed scene reports the line of the FILE, not of the block — which is
+/// the whole reason this is parsed here rather than handed back raw.
+test "a bad scene is reported on the line of the html file" {
+  let src =
+    #|<script type="tutuca/state">
+    #|  state Counter { count: Int }
+    #|</script>
+    #|
+    #|<script type="tutuca/test">
+    #|{ "it counts": { "steps": [ { "clik": "button" } ] } }
+    #|</script>
+    #|<template id="Counter"><b></b></template>
+  inspect(
+    file_err(src),
+    content="line 5: test block: scene `it counts`, step 0: names no verb — a step is one of `click`, `type`, `key`, `check`, `fire`, `drag`, `send` or `expect`, so did you mean `click`?",
+  )
+}
+
+///|
+test "two test blocks are one too many" {
+  let src =
+    #|<script type="tutuca/test">{}</script>
+    #|<script type="tutuca/test">{}</script>
+    #|<template id="C"><b></b></template>
+  inspect(
+    file_err(src),
+    content="two <script type=\"tutuca/test\"> blocks — one file declares one object of scenes, and two would have to be merged in an order the file does not state",
+  )
+}
+
+///|
+fn file_err(src : String) -> String {
+  try {
+    @viewfile.split_file(src, name="C") |> ignore
+    "no error"
+  } catch {
+    e => e.message()
+  }
+}

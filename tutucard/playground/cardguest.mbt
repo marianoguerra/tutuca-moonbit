@@ -482,3 +482,61 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
     "diagnostics": Json::array(bundle.diagnostics().map(Json::string)),
   }).stringify()
 }
+
+///|
+/// Drive the instantiated card's scenes, headless, and answer the report.
+///
+/// The other thing a compiled card is good for, and the one a page cannot do:
+/// `mount_compiled` puts a card on a SCREEN, which proves it renders and
+/// proves nothing about what it does when pressed. This mounts the same
+/// bundle on the in-memory DOM instead, runs the block's steps through the
+/// same transactor, and hands back the rendered HTML — so a card can be
+/// checked by something with no page at all, which is what a build step and an
+/// agent both are.
+///
+/// `scenes_json` overrides the card's own `<script type="tutuca/test">` block.
+/// Empty means "use the block", and an override is what lets a card that
+/// declares no tests be driven anyway — the case an agent is in when it has
+/// just written one and wants to see what it does.
+///
+/// The manifest travels from the SAME compile the module came from, for the
+/// reason `mount_compiled` gives: a manifest's field list is the order
+/// `get-field` answers in, so one paired with a different module is a bundle
+/// whose halves disagree.
+pub fn drive(
+  key : String,
+  manifest_json : String,
+  source : String,
+  scenes_json : String,
+) -> String {
+  guard cardguest_ready(key) else {
+    return drive_failed("no compiled card is instantiated on this page")
+  }
+  let scenes = if scenes_json != "" {
+    @scenedef.parse_scenes(scenes_json) catch {
+      e => return drive_failed(e.message())
+    }
+  } else {
+    let file = @viewfile.split_file(source, name="Card") catch {
+      e => return drive_failed(e.message())
+    }
+    file.tests
+  }
+  let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
+    e => return drive_failed(e.message())
+  }
+  @drive.report_json(@drive.run(CardGuest::{ key, }, manifest, scenes)).stringify()
+}
+
+///|
+/// A failure that stopped every scene, in the shape the report has — so a
+/// caller reads one thing rather than two.
+fn drive_failed(msg : String) -> String {
+  Json::object({
+    "ok": Json::boolean(false),
+    "ran": Json::number(0),
+    "failed": Json::number(0),
+    "error": Json::string(msg),
+    "scenes": Json::object({}),
+  }).stringify()
+}

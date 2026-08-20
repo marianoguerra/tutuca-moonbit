@@ -3,7 +3,7 @@
 // §…§ boundary metas and internal data-* stamps, keeping user content only.
 
 ///|
-fn is_internal_attr(name : String) -> Bool {
+pub fn is_internal_attr(name : String) -> Bool {
   name == "data-nid" ||
   name == "data-cid" ||
   name == "data-eid" ||
@@ -13,7 +13,7 @@ fn is_internal_attr(name : String) -> Bool {
 }
 
 ///|
-fn is_meta_comment(text : String) -> Bool {
+pub fn is_meta_comment(text : String) -> Bool {
   text.length() > 0 && text[0] is '§'
 }
 

@@ -20,8 +20,7 @@ pub fn mount(
   root : String,
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> Harness raise {
-  let doc = @memdom.document()
-  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let (doc, container) = new_mount()
   let app = @app.App::from_module(
     m,
     root,
@@ -29,7 +28,39 @@ pub fn mount(
     @vdom.RenderOpts::new(doc),
     args~,
   )
+  Harness::over(app, container)
+}
+
+///|
+/// The verbs, over an app somebody else mounted.
+///
+/// `mount` is the answer for a `ModuleDef`, which is what an ahead-of-time
+/// build produces. It is not the only way an app comes to exist: a dyncomp
+/// BUNDLE is registered into a scope and its root instance is made from the
+/// manifest, and a card compiled in a browser is exactly that — so a driver
+/// for one has an `App[MemNode]` in hand and no `ModuleDef` anywhere.
+///
+/// Everything below this line is written against the two fields and nothing
+/// else, so handing them in is all it takes. The alternative was a second copy
+/// of the selector engine and the twenty verbs beside it, which is how two
+/// implementations of "click the third row" start disagreeing about what
+/// `nth` counts.
+pub fn Harness::over(
+  app : @app.App[@memdom.MemNode],
+  container : @memdom.MemNode,
+) -> Harness {
   { app, container }
+}
+
+///|
+/// A fresh memdom document and the `<div>` an app mounts into.
+///
+/// The mount container is a real element rather than the document itself
+/// because the renderer replaces its children, and a document's children are
+/// not a component's to own.
+pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode) {
+  let doc = @memdom.document()
+  (doc, @vdom.DomNode::create_element(doc, "DIV", None, None))
 }
 
 ///|

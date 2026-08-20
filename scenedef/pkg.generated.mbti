@@ -1,0 +1,98 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/scenedef"
+
+import {
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn parse_place(String) -> Array[@core.Step] raise PlaceError
+
+pub fn parse_scenes(String) -> Array[Scene] raise SceneError
+
+// Errors
+pub suberror PlaceError {
+  PlaceError(String)
+}
+pub fn PlaceError::message(Self) -> String
+
+pub suberror SceneError {
+  NotJson(String)
+  NotScenes
+  SceneNotObject(String)
+  NoSteps(String)
+  StepNotObject(scene~ : String, at~ : Int)
+  NoVerb(scene~ : String, at~ : Int, suggestion~ : String?)
+  TwoVerbs(scene~ : String, at~ : Int, first~ : String, second~ : String)
+  MissingKey(scene~ : String, at~ : Int, verb~ : String, key~ : String)
+  BadType(scene~ : String, at~ : Int, key~ : String, want~ : String, got~ : String)
+  NoSuchReader(scene~ : String, at~ : Int, reader~ : String, suggestion~ : String?)
+  BadSelector(scene~ : String, at~ : Int, sel~ : String, why~ : String)
+  BadPlace(scene~ : String, at~ : Int, place~ : String, why~ : String)
+  BadIntent(scene~ : String, name~ : String, why~ : String)
+  NotContainable(scene~ : String, at~ : Int, reader~ : String)
+}
+pub fn SceneError::message(Self) -> String
+pub impl Show for SceneError
+
+// Types and methods
+pub(all) enum Answer {
+  AOk(@core.Value)
+  AFailed(@core.Value)
+  APass
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Expect {
+  reader : Reader
+  sel : String
+  place : Array[@core.Step]
+  name : String
+  nth : Int
+  want : Want?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Reader {
+  RText
+  RTexts
+  RAttr
+  RProp
+  RValue
+  RChecked
+  RCount
+  RState
+  RHtml
+  RRenders
+  RRefused
+} derive(Eq, @debug.Debug)
+pub fn Reader::word(Self) -> String
+
+pub(all) struct Scene {
+  name : String
+  component : String
+  init : String
+  args : Map[String, @core.Value]
+  intents : Map[String, Answer]
+  raw : Bool
+  steps : Array[Step]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Step {
+  Click(sel~ : String, nth~ : Int)
+  Type(sel~ : String, value~ : String, nth~ : Int)
+  Key(sel~ : String, key~ : String, value~ : @core.Value?, nth~ : Int)
+  Check(sel~ : String, checked~ : Bool, nth~ : Int)
+  Fire(sel~ : String, event~ : String, value~ : @core.Value?, key~ : String, nth~ : Int)
+  Drag(sel~ : String, from~ : Int, to~ : Int)
+  Send(name~ : String, args~ : Array[@core.Value])
+  Read(Expect)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Want {
+  WIs(@core.Value)
+  WContains(String)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

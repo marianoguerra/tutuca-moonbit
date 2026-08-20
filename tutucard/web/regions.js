@@ -31,9 +31,15 @@
  * would otherwise show it as a view called `field` of a component called
  * `macro`.
  *
+ * `tests` is the `<script type="tutuca/test">` block: what the card claims it
+ * does, as scenes. One per file like `state` and `script`, and null when the
+ * card declares none — which is most cards, and which the pane shows as empty
+ * rather than hiding, for the reason the script pane does.
+ *
  * @typedef {{
  *   state: Region | null,
  *   script: Region | null,
+ *   tests: Region | null,
  *   views: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
  *   macros: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
  * }} Parts
@@ -65,6 +71,11 @@ export function parts(source) {
   const script = element(
     source,
     /<script\s+type="tutuca\/script"[^>]*>/g,
+    "</script>",
+  );
+  const tests = element(
+    source,
+    /<script\s+type="tutuca\/test"\s*>/g,
     "</script>",
   );
   const views = [];
@@ -102,6 +113,7 @@ export function parts(source) {
   return {
     state: state && strip(state),
     script: script && strip(script),
+    tests: tests && strip(tests),
     views,
     macros,
   };

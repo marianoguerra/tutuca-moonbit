@@ -69,6 +69,14 @@ fn slot_of(id : String) -> Slot {
 /// page's one card", which is what an embedded example needs: it arrives and
 /// leaves with its element, and several live side by side.
 ///
+/// `drive` is the other thing to do with a compiled card, and the one no page
+/// is needed for: `mountCompiled` puts it on a screen, which proves it renders
+/// and proves nothing about what it does when pressed. `drive` mounts the same
+/// bundle on the IN-MEMORY DOM, runs the card's `<script type="tutuca/test">`
+/// scenes through the same transactor, and answers the rendered HTML — so the
+/// same bundle that serves this page also answers to `node`, which is what a
+/// build step and an agent both are.
+///
 /// `compile` and `mountCompiled` are the two halves of showing a card. There
 /// used to be a `load` and a `mount` between them that parsed a card and ran it
 /// where it stood, and there is no interpreter to do that any more: a card is
@@ -86,6 +94,7 @@ pub fn install() -> Unit {
     id => unmount_at(id),
     id => classes_at(id),
     (id, manifest) => mount_compiled(id, manifest),
+    (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
   )
 }
 
@@ -99,8 +108,9 @@ extern "js" fn publish(
   unmount : (String) -> Unit,
   classes_at : (String) -> String,
   mount_compiled : (String, String) -> String,
+  drive : (String, String, String, String) -> String,
 ) -> Unit =
-  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled } }
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive } }
 
 ///|
 /// Tear a card down and forget its mount point.

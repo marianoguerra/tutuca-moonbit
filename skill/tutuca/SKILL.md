@@ -1,6 +1,6 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the `<script type="tutuca/script">` handler block (`new` / `@cur` value building, `requires` / `ensures` / `invariant` contracts, `format` sentences and the refusal channel); the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
+description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the `<script type="tutuca/script">` handler block (`new` / `@cur` value building, `requires` / `ensures` / `invariant` contracts, `format` sentences and the refusal channel); the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package, and a card's `<script type="tutuca/test">` scene block driven headlessly; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
 ---
 
 # Tutuca (MoonBit port)
@@ -71,7 +71,7 @@ When authoring tutuca code, also load this if available:
 | Drag & drop, dynamic bindings (`*x`), pseudo-`x`, custom collections via the `Obj` trait | [advanced.md](./advanced.md)   |
 | Setting up MargaUI styling — `collect_classes()`, the MoonBit compile step, `inject_style` | [margaui.md](./margaui.md)     |
 | Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |
-| Authoring tests — `moon test` blocks, the `@harness` mount/drive/read API, designing handlers for testability | [testing.md](./testing.md) |
+| Authoring tests — `moon test` blocks, the `@harness` mount/drive/read API, designing handlers for testability; and a CARD's `<script type="tutuca/test">` scene block: the verbs, the readers, record mode, and driving one headlessly | [testing.md](./testing.md) |
 | Authoring in an in-browser playground — generated names without the CLI, the view+code pair convention, verifying without `moon` | [playground.md](./playground.md) |
 | Task-oriented recipes — iteration, filtering, conditional content, conditional attributes, dynamic vars, composition, events, adding a storybook example, a complete todo app | [patterns/README.md](./patterns/README.md) |
 

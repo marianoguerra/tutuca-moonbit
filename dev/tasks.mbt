@@ -392,7 +392,7 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "tutucard-playground",
-      about: "assemble dist/tutucard/ (the card playground, which carries the card compiler and no MoonBit one): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card checks AND compiles",
+      about: "assemble dist/tutucard/ (the card playground, which carries the card compiler and no MoonBit one): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card checks AND compiles AND that every scene its `tutuca/test` block declares passes",
       commands: [
         // No MoonBit compiler, no worker, no prebuilt .mi/.core closure and no
         // toolchain pin — a card is parsed and mounted, so what ships is the
@@ -415,6 +415,16 @@ pub fn tasks() -> Array[Task] {
           label: "check · starter cards load",
           prog: "node",
           args: ["tutucard/build/check-examples.mjs"],
+        },
+        // …and every scene every card DECLARES. The three gates above prove a
+        // card loads: it checks, it compiles, the host takes the bytes. None of
+        // them presses a button, so a card whose `inc` adds two passes all
+        // three. This mounts each card on the in-memory DOM and runs the steps
+        // its `<script type="tutuca/test">` block names.
+        {
+          label: "check · card scenes pass",
+          prog: "node",
+          args: ["tutucard/build/run-tests.mjs"],
         },
         // The structured view EDITS the card by character offset, which is the
         // one part of this page that can corrupt what an author typed. Held to

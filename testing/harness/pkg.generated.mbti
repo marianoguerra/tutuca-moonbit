@@ -15,6 +15,8 @@ pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value]) -> 
 
 pub fn mount_example(@component.ModuleDef, String) -> Harness raise
 
+pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode)
+
 pub fn no_refusals(() -> Unit raise) -> Unit raise
 
 pub fn refusals_while(() -> Unit raise) -> Array[@core.Refusal] raise
@@ -39,6 +41,7 @@ pub fn Harness::fire(Self, String, @render.DomEvent, nth? : Int) -> Unit raise
 pub fn Harness::html(Self) -> String
 pub fn Harness::key_down(Self, String, String, value? : @core.Value, nth? : Int) -> Unit raise
 pub fn Harness::ns_of(Self, String, nth? : Int) -> String raise
+pub fn Harness::over(@app.App[@memdom.MemNode], @memdom.MemNode) -> Self
 pub fn Harness::prop(Self, String, String, nth? : Int) -> @vdom.AttrValue? raise
 pub fn Harness::render_count(Self) -> Int
 pub fn Harness::send_at_root(Self, String, args? : Array[@core.Value]) -> Unit

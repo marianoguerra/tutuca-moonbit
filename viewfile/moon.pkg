@@ -15,6 +15,7 @@
 // and that asymmetry is deliberate rather than unfinished — see `ViewFile`.
 import {
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/scenedef",
   "moonbit-community/html/src" @html5,
   "moonbitlang/core/debug",
 }

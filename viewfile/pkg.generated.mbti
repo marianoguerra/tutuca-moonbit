@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/viewfile"
 
 import {
+  "marianoguerra/tutuca/scenedef",
   "marianoguerra/tutuca/statedef",
   "moonbitlang/core/debug",
 }
@@ -23,6 +24,8 @@ pub suberror FileError {
   DuplicateWaxBlock(String)
   BadStateBlock(line~ : Int, message~ : String)
   BadInitBlock(line~ : Int, message~ : String)
+  DuplicateTestBlock
+  BadTestBlock(line~ : Int, message~ : String)
 }
 pub fn FileError::message(Self) -> String
 
@@ -57,6 +60,7 @@ pub(all) struct ViewFile {
   init : Array[(String, @statedef.InitState)]
   scripts : Array[ScriptBlock]
   wax : Array[ScriptBlock]
+  tests : Array[@scenedef.Scene]
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
 pub fn ViewFile::wax_for(Self, String) -> Block?

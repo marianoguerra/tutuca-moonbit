@@ -1,0 +1,54 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutucard/drive"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/host",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const ACTIVITY_CAP : Int = 200
+
+pub fn clean_html(@memdom.MemNode) -> String
+
+pub fn drive_scene(@harness.Harness, @scenedef.Scene) -> SceneResult
+
+pub fn report_json(Array[SceneResult]) -> Json
+
+pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String) -> Array[SceneResult]
+
+// Errors
+pub suberror MountError {
+  MountError(String)
+}
+pub fn MountError::message(Self) -> String
+
+// Types and methods
+pub(all) struct SceneResult {
+  name : String
+  component : String
+  ok : Bool
+  html : String
+  state : @core.Value
+  styles : String
+  activity : Array[Json]
+  refusals : Array[String]
+  steps : Array[StepResult]
+  error : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct StepResult {
+  at : Int
+  ok : Bool
+  got : @core.Value?
+  want : @core.Value?
+  why : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

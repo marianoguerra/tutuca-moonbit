@@ -1,0 +1,36 @@
+// Driving a card, headless.
+//
+// A card is mounted by registering its compiled module as an ordinary dyncomp
+// bundle and making an instance the root of an app. `tutucard/playground`
+// already does that, against a real page. This does the same against the
+// in-memory DOM — which is the whole difference, and the reason it is here
+// rather than in that package: memdom runs on every backend, so a scene needs
+// no browser, no server and no toolchain.
+//
+// It takes a `&Guest` rather than a card. That keeps the wasm out of it: what
+// mounts here is whatever answers the guest protocol, so `moon test` drives
+// this against an in-process fake and the page drives it against an
+// instantiated module, and neither knows which the other is.
+//
+// The verbs are `testing/harness`'s. This decides WHICH verb a step is and
+// what its answer means; it does not decide what "click the third row" does,
+// because two implementations of that is how two of them start disagreeing.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
+  "marianoguerra/tutuca/dyncomp/policy",
+  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+} for "test"

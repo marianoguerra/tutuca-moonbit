@@ -62,6 +62,21 @@ const SCRIPT_TYPE = "tutuca/script"
 const WAX_TYPE = "tutuca/wax"
 
 ///|
+/// The `type=` that marks a `<script>` as the file's scenes.
+///
+/// JSON, the way the init block is, and for the same two reasons: a block a
+/// machine has to write is a block with a grammar a machine already has, and a
+/// block validated where the file is SPLIT puts a mistake on the line of the
+/// `.html` the author has open rather than on a line of the block.
+///
+/// What it says is the card's tests. Whether anything runs them is a property
+/// of the consumer rather than of the file: `tutucard` drives a scene on the
+/// in-memory DOM and `gen-views` ignores the block entirely — exactly as it
+/// ignores `tutuca/wax` — which is what makes this additive rather than a
+/// fifth thing every backend has to answer for.
+const TEST_TYPE = "tutuca/test"
+
+///|
 /// A `<style>` element's span in the source, plus its extracted text.
 priv struct StyleRegion {
   start : Int // offset of '<'
@@ -285,6 +300,7 @@ pub fn split_file(
   let mut stray : Char? = None
   let mut state_src : (String, Int)? = None
   let mut init_src : (String, Int)? = None
+  let mut test_src : (String, Int)? = None
   let script_srcs : Array[(String, String, Int)] = []
   let wax_srcs : Array[(String, String, Int)] = []
   let mut at_eof = false
@@ -362,6 +378,22 @@ pub fn split_file(
             wax_srcs.push((for_comp, text, content_at))
             styles.push({ start: before, end_, text: "", kind: SLifted })
           }
+          // The scenes. Parsed here, the way the init block is, because a
+          // scene block IS self-contained: JSON in, `Scene`s out, and the only
+          // thing this adds is the line map that puts a mistake on the file
+          // the author has open. It carries no `for=`: a scene NAMES the
+          // component it mounts, because a card with two of them has scenes
+          // that drive one and scenes that drive the other, and splitting the
+          // block per component would say the second could not exist.
+          "script" if attr_of(attrs, "type") is Some(TEST_TYPE) => {
+            let content_at = after
+            let (text, end_) = read_raw(tok, "script")
+            if test_src is Some(_) {
+              raise DuplicateTestBlock
+            }
+            test_src = Some((text, content_at))
+            styles.push({ start: before, end_, text: "", kind: SLifted })
+          }
           "style" => {
             let (text, end_) = read_raw(tok, "style")
             // Inside a template: that view's style. At file level:
@@ -403,6 +435,7 @@ pub fn split_file(
   let global_style = collect_style(styles, SGlobal)
   let state = parse_state_block(chars, state_src, name)
   let init = parse_init_block(chars, init_src, state)
+  let tests = parse_test_block(chars, test_src)
   let scripts = script_blocks(chars, script_srcs)
   // The same shape, and deliberately the same function: an escape block is a
   // script block that happens to be in another language.
@@ -415,7 +448,7 @@ pub fn split_file(
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
     if is_blank(src) {
-      return { components: [], macros: [], state, init, scripts, wax }
+      return { components: [], macros: [], state, init, scripts, wax, tests }
     }
     return {
       components: [
@@ -437,6 +470,7 @@ pub fn split_file(
       init,
       scripts,
       wax,
+      tests,
     }
   }
   if stray is Some(c) {
@@ -550,7 +584,7 @@ pub fn split_file(
       },
     })
   }
-  { components, macros, state, init, scripts, wax }
+  { components, macros, state, init, scripts, wax, tests }
 }
 
 ///|
@@ -608,6 +642,23 @@ fn parse_init_block(
     }
   }
   out
+}
+
+///|
+/// Parse the test block, mapping an error onto the line of the HTML file.
+///
+/// Unlike the init block this needs no schema: a scene names selectors and
+/// message names, and neither is checkable against a state record. What it
+/// DOES check is the shape — the verbs, the readers, the selectors and the
+/// places — which is the half a machine writing one gets wrong.
+fn parse_test_block(
+  chars : Array[Char],
+  src : (String, Int)?,
+) -> Array[@scenedef.Scene] raise FileError {
+  guard src is Some((text, at)) else { return [] }
+  @scenedef.parse_scenes(text) catch {
+    e => raise BadTestBlock(line=line_at(chars, at), message=e.message())
+  }
 }
 
 ///|

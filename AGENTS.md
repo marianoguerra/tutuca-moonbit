@@ -389,6 +389,18 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   / `value_of` / `html` / `render_count` / `drive_value` read the re-rendered DOM
   and settled root value back. See `testing/harness/harness_test.mbt` for the
   shape; the `storybook/examples/*_test.mbt` suite is the worked reference.
+- A **card** — the `.html` the browser compiles to a wasm module with no MoonBit
+  toolchain — has no `moon test` to run and no MoonBit to write a test in, so it
+  declares its tests as a fifth block: `<script type="tutuca/test">`, JSON, in
+  the shape `tutuca/init` already has. `scenedef/` parses it (target-agnostic,
+  so its error messages are `moon test`-able), `viewfile` lifts and validates it
+  at split time so a mistake lands on the line of the `.html`, and
+  `tutucard/drive/` mounts the card on memdom and runs the steps through
+  `@harness`'s own verbs. It reaches a page as `__tutucard.drive` (the ninth
+  entry point, beside `check` / `compile` / `mountCompiled`) and `driveCard` in
+  `tutucard/web/card-wasm.js`; the playground's Tests pane and
+  `tutucard/build/run-tests.mjs` are the two callers. `gen-views` ignores the
+  block, exactly as it ignores `tutuca/wax`.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

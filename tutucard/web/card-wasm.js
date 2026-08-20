@@ -373,6 +373,69 @@ export async function mountCard(previewId, source, name, { allowWax = false } = 
   };
 }
 
+/**
+ * Drive a card's scenes and answer what each one did.
+ *
+ * The same first three steps `mountCard` takes — check, compile, instantiate —
+ * and then `drive` instead of `mountCompiled`. The difference is where the
+ * card lands: `mountCompiled` needs an element on a page, and this mounts on
+ * the in-memory DOM, so nothing here touches `document` and the whole sequence
+ * runs under `node` against the same bundle that serves the page.
+ *
+ * That is the point rather than a bonus. A card can be shown, and showing it
+ * proves it renders; until something pressed a button there was no way to find
+ * out what it DID. This presses the buttons the card's own
+ * `<script type="tutuca/test">` block names, and hands back the rendered HTML.
+ *
+ * `scenes` overrides that block — pass a JSON string to drive a card that
+ * declares no tests at all, which is the situation anything that just
+ * GENERATED a card is in.
+ *
+ *   { ok, ran, failed, scenes: { "<name>": { ok, html, state, steps, … } } }
+ *   { ok: false, error, line, start, end }   // it did not compile
+ *
+ * A scene with no `expect` in it never fails and still answers its `html` and
+ * `state`. Writing the drive first and reading what happened is the intended
+ * order.
+ */
+export async function driveCard(source, name, { allowWax = false, scenes = "", key = "drive" } = {}) {
+  let checked;
+  try {
+    checked = JSON.parse(globalThis.__tutucard.check(source, name));
+  } catch (e) {
+    return { ok: false, error: String(e), line: 1, start: 0, end: 0 };
+  }
+  if (!checked.ok) return checked;
+
+  let build;
+  try {
+    build = JSON.parse(globalThis.__tutucard.compile(source, name, allowWax));
+  } catch (e) {
+    build = { ok: false, error: String(e) };
+  }
+  if (!build.ok) return { ...checked, ok: false, error: build.error, build };
+
+  await loadGuest(b64ToBytes(build.wasm), build.descriptor, key);
+  const report = JSON.parse(
+    globalThis.__tutucard.drive(
+      key,
+      JSON.stringify(build.manifest),
+      source,
+      scenes,
+    ),
+  );
+  // The compiler's own two lists travel with the report: a scene that fails
+  // because its handler was REFUSED is not a scene that disagrees with the
+  // component, and a reader with only the verdict cannot tell.
+  return {
+    ...report,
+    issues: checked.issues ?? [],
+    refusals: build.refusals ?? [],
+    escapes: build.escapes ?? [],
+    build,
+  };
+}
+
 /** A `.tutuca.tar.gz` for a compiled card, as a Blob. */
 export async function packBundle(report, wasmBytes) {
   const descriptor = { ...report.descriptor, manifest: report.manifest };

@@ -26,6 +26,12 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard/wasm",
+  // Driving a card rather than showing one: the same bundle, mounted on the
+  // in-memory DOM. Backend-agnostic, so what it proves is provable with no
+  // page — which is the whole point of it being reachable from here.
+  "marianoguerra/tutuca/tutucard/drive",
+  "marianoguerra/tutuca/scenedef",
+  "marianoguerra/tutuca/viewfile",
   // What the compiled card is mounted AS: an ordinary dyncomp bundle. The
   // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is
   // what this page will accept from one.

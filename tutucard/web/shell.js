@@ -28,6 +28,8 @@ const els = {
   issues: $("issues"),
   compiled: $("compiled"),
   refusals: $("refusals"),
+  scenes: $("scenes"),
+  scenesNote: $("scenes-note"),
   wasmSize: $("wasm-size"),
   download: $("download"),
   load: $("load"),
@@ -411,6 +413,91 @@ async function reload() {
   // WAX and the download come from the module on the page rather than from a
   // second compile of the same source.
   showBuild(report.build);
+  drawScenes(src, report);
+}
+
+/**
+ * Run the card's scenes and draw what each one did.
+ *
+ * Through the module ALREADY ON THIS PAGE. `mountCard` installed the
+ * instantiated guest under the preview's key and handed back the manifest that
+ * came out of the same compile, so this is neither a second compile nor a
+ * second instantiation — it is the same guest, asked to build some more
+ * instances. Each scene gets its own scope and its own in-memory DOM, so
+ * nothing it drives touches the card in the preview beside it.
+ *
+ * A card with no `<script type="tutuca/test">` block says so and stops. That is
+ * most cards: a starter that teaches one directive has nothing to drive, and a
+ * panel nagging about it would be a panel people learn to ignore.
+ */
+function drawScenes(src, report) {
+  els.scenes.replaceChildren();
+  els.scenesNote.textContent = "";
+  if (!report.ok || !report.mounted || !report.build?.ok) return;
+  if (!src.includes('type="tutuca/test"')) {
+    els.scenesNote.textContent = "no <script type=\"tutuca/test\"> block";
+    return;
+  }
+  let out;
+  try {
+    out = JSON.parse(
+      globalThis.__tutucard.drive(
+        "preview",
+        JSON.stringify(report.build.manifest),
+        src,
+        "",
+      ),
+    );
+  } catch (e) {
+    els.scenesNote.textContent = String(e);
+    return;
+  }
+  if (out.error) {
+    els.scenesNote.textContent = out.error;
+    return;
+  }
+  els.scenesNote.textContent =
+    out.failed === 0
+      ? `${out.ran} passing`
+      : `${out.failed} of ${out.ran} failing`;
+  for (const [name, scene] of Object.entries(out.scenes)) {
+    els.scenes.append(sceneRow(name, scene));
+    if (scene.ok) continue;
+    // Only the steps that disagreed, and each says both values. A report that
+    // said "scene 2 failed" would send you back to the card to work out what
+    // it did instead, which is the thing this panel exists to save.
+    if (scene.error) {
+      els.scenes.append(stepRow("", scene.error));
+      continue;
+    }
+    for (const step of scene.steps) {
+      if (!step.ok) els.scenes.append(stepRow(`step ${step.at}`, step.why));
+    }
+  }
+}
+
+function sceneRow(name, scene) {
+  const li = document.createElement("li");
+  li.className = scene.ok ? "issue" : "issue bad";
+  const code = document.createElement("span");
+  code.className = "code";
+  code.textContent = scene.ok ? "ok" : "fail";
+  const msg = document.createElement("span");
+  msg.textContent = name;
+  li.append(code, msg);
+  return li;
+}
+
+function stepRow(where, why) {
+  const li = document.createElement("li");
+  li.className = "issue warn";
+  const code = document.createElement("span");
+  code.className = "code";
+  code.textContent = where;
+  const msg = document.createElement("span");
+  msg.textContent = why;
+  li.append(code, msg);
+  return li;
 }
 
 /**
@@ -466,6 +553,7 @@ function currentRegion() {
   const p = parts(source());
   if (ui.part === "state") return p.state;
   if (ui.part === "script") return p.script;
+  if (ui.part === "tests") return p.tests;
   const list = listOf(p);
   return list.items[Math.min(list.index, list.items.length - 1)] ?? null;
 }
@@ -477,6 +565,8 @@ const MISSING = {
     'no <script type="tutuca/script"> block yet — add one in the raw view',
   views: "no <template> yet",
   macros: "no <template id=\"macro:…\"> yet — a macro is markup this file can call by name",
+  tests:
+    'no <script type="tutuca/test"> block yet — add one in the raw view, and the Tests pane will drive it',
 };
 
 /** Put the current part in the pane. */

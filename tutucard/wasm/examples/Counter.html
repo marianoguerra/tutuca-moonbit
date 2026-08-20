@@ -42,6 +42,32 @@
   pred positive { .count > 0 }
 </script>
 
+<script type="tutuca/test">
+{
+  "two clicks add two": {
+    "steps": [
+      { "send": "init" },
+      { "click": "button", "nth": 1 },
+      { "click": "button", "nth": 1 },
+      { "expect": "text",  "at": "output", "is": "2" },
+      { "expect": "text",  "at": "p", "is": "the count is 2" },
+      { "expect": "state", "at": ".count", "is": 2 },
+      { "expect": "refused", "is": [] }
+    ]
+  },
+  "reset takes its own button away": {
+    "steps": [
+      { "send": "init" },
+      { "click": "button", "nth": 1 },
+      { "expect": "count", "at": "button", "is": 3 },
+      { "click": "button", "nth": 2 },
+      { "expect": "text",  "at": "output", "is": "0" },
+      { "expect": "count", "at": "button", "is": 2 }
+    ]
+  }
+}
+</script>
+
 <template id="Counter">
   <div>
     <button @on.click="dec">-</button>

@@ -1,0 +1,22 @@
+// Scenes: what a card's `<script type="tutuca/test">` block says, as data.
+//
+// The same shape `statedef/init_block.mbt` has for `tutuca/init`, and for the
+// same reason: a block that is JSON is a block a generator can write and an
+// agent can read back, and validating it where the file is split is what puts
+// a mistake on the line of the `.html` the author has open rather than on a
+// line of the block.
+//
+// Pure and target-agnostic — text in, a `Scene` out, never a DOM and never an
+// app. What DRIVES a scene needs a mounted component and lives elsewhere; what
+// a scene SAYS is checkable by `moon test` on every backend, which is where the
+// error messages are worth testing.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/debug",
+} for "test"
