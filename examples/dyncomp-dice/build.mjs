@@ -3,7 +3,7 @@
 //
 //   moon build --target wasm-gc --release page   the host page
 //   moon-wasm-opt -Oz                            shrink it
-//   copy two loaders out of .mooncakes           the JS a wasm-gc page needs
+//   copy the loaders out of .mooncakes           the JS a wasm-gc page needs
 //   node dice/build.mjs && dice/pack.mjs         the local guest -> one archive
 //
 // Then: python3 -m http.server 8099 -d dist
@@ -156,6 +156,33 @@ writeFileSync(
   join(dist, "dyncomp-loader.mjs"),
   dyncompLoader.replaceAll(FROM, TO),
 );
+
+// The dyncomp loader `import()`s this lazily, from inside the method that binds
+// a bundle — so a page that loads no bundle never asks for it and the build
+// looks clean without it. It is the same shape of miss the tutuca site had:
+// the copy list held the specifiers written at the TOP of the file and none of
+// the ones behind a lazy import in a method.
+copyFileSync(join(tutuca, "dyncomp/host/wasm/abi.mjs"), join(dist, "abi.mjs"));
+
+// So the list is not the check. Reading what landed is: resolve every relative
+// specifier — static AND dynamic — in the JS now sitting in dist/, and fail if
+// one of them is not there. That turns "the copy list is wrong" into a build
+// error instead of a 404 a reader finds by clicking.
+const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["'](\.[^"']*)["']/g;
+const missing = [];
+const scan = ["loader.mjs", "app-loader.mjs", "dyncomp-loader.mjs", "abi.mjs"];
+for (const mjs of scan.filter((m) => existsSync(join(dist, m)))) {
+  const src = readFileSync(join(dist, mjs), "utf8");
+  for (const [, spec] of src.matchAll(SPECIFIER)) {
+    const target = join(dist, dirname(mjs), spec);
+    if (!existsSync(target)) missing.push(`  ${mjs} imports "${spec}" — not in dist/`);
+  }
+}
+if (missing.length > 0) {
+  console.error("build: dist/ is missing modules its own JS imports:");
+  console.error(missing.join("\n"));
+  process.exit(1);
+}
 
 // --- 4. the guest ----------------------------------------------------------
 

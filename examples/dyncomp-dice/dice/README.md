@@ -11,7 +11,7 @@ else is yours:
 
 | path | what it is |
 | --- | --- |
-| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.7.0`. The host generates its side from this same file. |
+| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.8.0`. The host generates its side from this same file. |
 | `gen/`, `interface/`, `world/` | `wit-bindgen moonbit` output, checked in — so building needs no wit-bindgen |
 | `gen/interface/tutuca/component/guest/sdk.mbt` | the guest SDK: implements every generated `declare` over the `DynComponent` trait |
 | `gen/interface/tutuca/component/guest/dice.mbt` | **yours**: the behavior |
