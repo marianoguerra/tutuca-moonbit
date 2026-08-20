@@ -1,0 +1,51 @@
+<script type="tutuca/state">
+  /// A counter with a rule, and a test block that watches the rule hold.
+  state Guarded {
+    /// How far it has counted.
+    n: Int
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Count one more, while there is room.
+  receive bump requires room {
+    .n += 1
+  }
+
+  /// True while there is room left.
+  ///
+  /// The `///` says what the rule IS; the `format` says what went wrong this
+  /// time, and is what reaches a driver through `control.log`.
+  pred room
+    format $'the counter is full at {.n}' { .n < 3 }
+</script>
+
+<script type="tutuca/test">
+{
+  "the guard stops it at three": {
+    "steps": [
+      { "click": "button" },
+      { "click": "button" },
+      { "click": "button" },
+      { "expect": "text", "at": "output", "is": "3" },
+      { "click": "button" },
+      { "expect": "text", "at": "output", "is": "3" },
+      { "expect": "log", "contains": "precondition `room` does not hold" }
+    ]
+  },
+  "and says nothing while it holds": {
+    "steps": [
+      { "click": "button" },
+      { "expect": "text", "at": "output", "is": "1" },
+      { "expect": "log", "is": [] }
+    ]
+  }
+}
+</script>
+
+<template id="Guarded">
+  <div>
+    <button @on.click="bump">+</button>
+    <output @text=".n"></output>
+  </div>
+</template>

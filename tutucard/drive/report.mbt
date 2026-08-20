@@ -37,6 +37,7 @@ fn scene_json(r : SceneResult) -> Json {
     "styles": Json::string(r.styles),
     "activity": Json::array(r.activity),
     "refusals": Json::array(r.refusals.map(Json::string)),
+    "log": Json::array(r.log.map(Json::string)),
     "steps": Json::array(r.steps.map(step_json)),
   }
   // Only when there is one: a scene that ran has no error, and an empty string

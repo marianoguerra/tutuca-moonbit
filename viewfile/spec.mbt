@@ -120,6 +120,15 @@ pub(all) struct ViewFile {
   /// declaring two of them has scenes that drive one and scenes that drive the
   /// other, and a `for=` would say the second could not exist.
   tests : Array[@scenedef.Scene]
+  /// The component a host mounts when it is told no other name — the one whose
+  /// `<template>` carries `data-root`. Empty when no template does, and then
+  /// the root is `components[0]`, the first in the file.
+  ///
+  /// A NAME rather than a reordering of `components`, because that list's order
+  /// is load-bearing elsewhere: a file-level `<style>` belongs to the component
+  /// at index 0, so moving the root to the front would move a stylesheet as a
+  /// side effect of saying which component is the interesting one.
+  root : String
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -168,6 +177,9 @@ pub suberror FileError {
   BadStateBlock(line~ : Int, message~ : String)
   /// The init block does not fit the schema.
   BadInitBlock(line~ : Int, message~ : String)
+  /// Two `<template>`s carry `data-root`. A file has one root, and two markers
+  /// do not say which — the same reason two state blocks are refused.
+  TwoRoots(String, String)
   /// Two `<script type="tutuca/test">` blocks in one file. The same rule the
   /// state block has, and for a plainer reason: the block is one JSON object,
   /// and two of them would have to be merged in an order the file does not

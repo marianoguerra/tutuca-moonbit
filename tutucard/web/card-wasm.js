@@ -93,6 +93,18 @@ function jsonToGuest(j, put) {
 export async function loadGuest(bytes, descriptor, key = "default") {
   const arena = makeArena();
   let control = [];
+  // What the card SAID. `control.log` is the one call on the control interface
+  // no capability gates, and for a compiled card it carries the thing an author
+  // is most likely to get wrong and least able to see: a `requires`, an
+  // `ensures` or an `invariant` that did not hold, with its own `format`
+  // sentence evaluated over the state that was rejected.
+  //
+  // It used to go to the console and nowhere else, which is fine for a page a
+  // person is looking at and useless to anything driving the card headlessly —
+  // a declined guard and a click that missed look identical from the DOM, and
+  // this is the only thing that tells them apart. So it is kept as well as
+  // printed, and `takeLog()` hands it to whoever is watching.
+  const logLines = [];
   // The same spelling `dyncomp/host/wasm/loader.mjs` uses, so `glue.mbt`'s
   // `path_step` and `cardguest.mbt`'s read one shape and not two.
   // WIT `intent-opts`, as the bridge's JSON — the same shape and the same
@@ -116,7 +128,10 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     {
       "tutuca:component/values": arena.api,
       "tutuca:component/control": {
-        log: (level, msg) => console.log(`[card ${level}]`, msg),
+        log: (level, msg) => {
+          logLines.push(`${level}: ${msg}`);
+          console.log(`[card ${level}]`, msg);
+        },
         send: (name, args) =>
           control.push({ kind: "send", name, args: args.map((a) => guestToJson(a, arena.cells)) }),
         stopPropagation: () => control.push({ kind: "stopPropagation" }),
@@ -192,6 +207,14 @@ export async function loadGuest(bytes, descriptor, key = "default") {
   // element holds one card.
   globalThis.__cardguest = globalThis.__cardguest ?? {};
   globalThis.__cardguest[key] = {
+    /// Everything the card has logged since this was last asked, and empty
+    /// afterwards. Taken rather than read, so a driver reads one step's lines
+    /// without also reading the previous step's.
+    takeLog() {
+      const out = logLines.join("\n");
+      logLines.length = 0;
+      return out;
+    },
     create(component, argsJson) {
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, to(v)]);
       const h = register(new root.guest.Instance(component, args));

@@ -109,10 +109,26 @@ pub(all) enum Reader {
   RRenders
   /// The refusals raised since the previous step.
   ///
-  /// The reader that makes a scene about a guarded button mean anything:
-  /// clicking a button whose `requires` declines changes nothing, and so does
-  /// clicking a selector that matches nothing. Only this tells them apart.
+  /// The host-side channel: a message no component claims, a path that does not
+  /// resolve. For a CARD it is usually empty and that is not a bug — a compiled
+  /// guest is asked about every `receive` by name and answers `unhandled`
+  /// rather than declining, so the host has nothing to refuse. What a card says
+  /// instead is `RLog`.
   RRefused
+  /// What the card LOGGED since the previous step.
+  ///
+  /// This is the reader that makes a scene about a guarded button mean
+  /// something, and it has to be a second one because a card and a host
+  /// component report a declined rule differently. A host component raises a
+  /// structured `Refusal`; a compiled card has no shape to put one in on the
+  /// guest boundary, so a `requires`, an `ensures` or an `invariant` that did
+  /// not hold crosses as `control.log` — the one call on the control interface
+  /// no capability gates — carrying the rule's own `format` sentence evaluated
+  /// over the state that was rejected.
+  ///
+  /// Without it, a declined guard and a click that missed are the same thing
+  /// seen from the DOM: nothing moved.
+  RLog
 } derive(Eq, @debug.Debug)
 
 ///|

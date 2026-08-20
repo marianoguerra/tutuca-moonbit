@@ -24,6 +24,7 @@ pub suberror FileError {
   DuplicateWaxBlock(String)
   BadStateBlock(line~ : Int, message~ : String)
   BadInitBlock(line~ : Int, message~ : String)
+  TwoRoots(String, String)
   DuplicateTestBlock
   BadTestBlock(line~ : Int, message~ : String)
 }
@@ -61,6 +62,7 @@ pub(all) struct ViewFile {
   scripts : Array[ScriptBlock]
   wax : Array[ScriptBlock]
   tests : Array[@scenedef.Scene]
+  root : String
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
 pub fn ViewFile::wax_for(Self, String) -> Block?

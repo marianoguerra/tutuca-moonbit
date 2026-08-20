@@ -25,7 +25,8 @@ fn run_step(
   scene : @scenedef.Scene,
   at : Int,
   step : @scenedef.Step,
-) -> (StepResult, Array[String]) {
+  take_log : () -> Array[String],
+) -> (StepResult, Array[String], Array[String]) {
   let mut result : StepResult = { at, ok: true, got: None, want: None, why: "" }
   let refused = @harness.refusals_while(() => {
     match step {
@@ -36,22 +37,47 @@ fn run_step(
     // A verb that raises is a selector that matched nothing, which is the one
     // failure the harness reports by raising rather than by doing nothing.
     e =>
-      return ({ at, ok: false, got: None, want: None, why: e.to_string() }, [])
+      return (
+        { at, ok: false, got: None, want: None, why: e.to_string() },
+        [],
+        take_log(),
+      )
   }
   let lines = refused.map(r => r.to_line())
   // A reader that asked about refusals has to be told the ones raised by its
   // OWN step, which is nothing — it is asking about the step before it. Judged
   // again with the lines in hand rather than threaded through, because only
   // this reader wants them and only after the drive that produced them.
+  // Accumulated until READ, rather than reset every step.
+  //
+  // "What the step before this one refused" is precise and is the wrong rule:
+  // a scene clicks the guarded button, checks the DOM did not move, and only
+  // then asks what happened — by which time a per-step window has already
+  // closed. Reading is what empties them, so `{ "expect": "log" }` answers
+  // everything since the last time a scene asked.
+  let logged = take_log()
+  for l in logged {
+    prev_log.val.push(l)
+  }
+  for r in lines {
+    prev_refusals.val.push(r)
+  }
   match step {
     Read(e) =>
-      if e.reader is RRefused {
-        result = judge(h, scene, at, e, prev_refusals.val)
+      match e.reader {
+        RRefused => {
+          result = judge(h, scene, at, e, prev_refusals.val)
+          prev_refusals.val = []
+        }
+        RLog => {
+          result = judge(h, scene, at, e, prev_refusals.val)
+          prev_log.val = []
+        }
+        _ => ()
       }
     _ => ()
   }
-  prev_refusals.val = lines
-  (result, lines)
+  (result, lines, logged)
 }
 
 ///|
@@ -63,9 +89,15 @@ fn run_step(
 let prev_refusals : Ref[Array[String]] = Ref([])
 
 ///|
+/// What the previous step logged, for the reader that asks. Same shape and
+/// same reason as the refusals above.
+let prev_log : Ref[Array[String]] = Ref([])
+
+///|
 /// Forget the previous scene's refusals.
 fn reset_refusals() -> Unit {
   prev_refusals.val = []
+  prev_log.val = []
 }
 
 ///|
@@ -115,7 +147,7 @@ fn judge(
     // to run a drive you have not written the answers to yet.
     None => { at, ok: true, got: Some(got), want: None, why: "" }
     Some(WIs(want)) =>
-      if got == want {
+      if same(got, want) {
         { at, ok: true, got: Some(got), want: Some(want), why: "" }
       } else {
         {
@@ -193,6 +225,7 @@ fn read(
       )
     RRenders => Num(h.render_count().to_double())
     RRefused => List(refused.map(r => Str(r)))
+    RLog => List(prev_log.val.map(l => Str(l)))
   }
 }
 
@@ -214,4 +247,47 @@ fn of_attr(v : @vdom.AttrValue) -> @tutuca.Value {
 /// written rather than the way MoonBit debugs.
 fn show(v : @tutuca.Value) -> String {
   v.to_json().stringify()
+}
+
+///|
+/// Whether a read answered what the block asked for.
+///
+/// Compared as JSON rather than as `Value`, and that is not a shortcut. What a
+/// scene writes is JSON, so what it MEANS is a JSON value — and the two are not
+/// the same thing on this side: a component instance is `Value::Obj`, which
+/// projects to its declared fields and can never be `Eq` to the `Value::Map` a
+/// block's `{ "count": 2 }` parses into, however identically the two print.
+/// `{ "expect": "state" }` with no place is exactly that comparison, so
+/// comparing values would make the whole-state form permanently false.
+///
+/// Objects compare UNORDERED. A `Value::Map` is insertion-ordered and a block
+/// is written by a person, so requiring the two to agree on the order of two
+/// keys would fail a scene for a reason that is not about the component.
+fn same(got : @tutuca.Value, want : @tutuca.Value) -> Bool {
+  json_eq(got.to_json(), want.to_json())
+}
+
+///|
+fn json_eq(a : Json, b : Json) -> Bool {
+  match (a, b) {
+    (Object(x), Object(y)) => {
+      if x.length() != y.length() {
+        return false
+      }
+      for k, v in x {
+        guard y.get(k) is Some(w) && json_eq(v, w) else { return false }
+      }
+      true
+    }
+    (Array(x), Array(y)) => {
+      if x.length() != y.length() {
+        return false
+      }
+      for i, v in x {
+        guard json_eq(v, y[i]) else { return false }
+      }
+      true
+    }
+    _ => a == b
+  }
 }

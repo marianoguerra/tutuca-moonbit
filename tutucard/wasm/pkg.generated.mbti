@@ -23,11 +23,13 @@ pub fn GenError::message(Self) -> String
 // Types and methods
 pub(all) struct Checked {
   component : String
+  components : Array[String]
   issues : Array[Issue]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Compiled {
   component : String
+  components : Array[String]
   wasm : Bytes
   wat : String
   wax : String
@@ -39,6 +41,7 @@ pub(all) struct Compiled {
 }
 
 pub(all) struct Escape {
+  comp : String
   kind : String
   name : String
   fn_name : String
@@ -47,6 +50,7 @@ pub(all) struct Escape {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Issue {
+  comp : String
   code : String
   message : String
   line : Int
@@ -54,6 +58,7 @@ pub(all) struct Issue {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Refusal {
+  comp : String
   kind : String
   name : String
   reason : String

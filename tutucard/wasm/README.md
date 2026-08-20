@@ -60,6 +60,33 @@ Every map is a **`jv_ordered_map`** and every set a `jv_ordered_set`, because
 tutuca's `Value::Map` is MoonBit's `Map` and the renderer's `@each` indexes one
 directly — see the note at the bottom.
 
+**Components.** As many as the file declares. `viewfile` has always allowed
+several — one `state` each in the one state block, one
+`<script type="tutuca/script" for="Comp">` each, `<template id="Comp:main">` —
+and this backend turned such a file away whole until it learned to number them.
+
+Inside the module a component IS an index: its slot in `tc_types`, its arm of
+the constructor, its arm of `handle-event` and `call-method`. The constructor
+was always handed the component's NAME and threw it away; it reads it now, with
+the `tc_str_in` / `tc_is` pair every dispatch arm already used. An instance says
+which component it is through `jv_record_definition` — the record carries its
+own type, every successor keeps it, and each `jv_record_type_create` allocates a
+fresh one, so identity is a pointer compare rather than a hidden field or a side
+table three places would have to keep in step.
+
+`get_field` and `with_field` needed nothing: they are `jv_record_get` and
+`jv_record_try_set`, and the record already knows its own schema.
+
+The ROOT — what a host mounts when told no other name — is the first component
+in the file, or the one whose `<template>` carries `data-root`. The manifest
+lists it first, because every mount site takes the head of `components`. It also
+names `moduleName` and the descriptor's `core`.
+
+What a card still cannot do is **build a child while it runs**. `new` makes a
+declared `record`, not an instance, and `control.make-instance` is imported by
+nothing this generator emits — so a card composes children something else
+created. A TodoMVC whose `add` handler makes a todo is not yet expressible.
+
 **Declarations.** `receive`, `intent`, `compute`, `pred`,
 `invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses
 that attach to a transition.
@@ -269,6 +296,18 @@ get_count(s)          -> &jv_value            // the field
 set_count(s, v)       -> &jv_record_value     // the successor, schema-checked
 num_count(s)          -> f64                  // Int and Double fields only
 ```
+
+A card declaring SEVERAL components qualifies these — `get_Row_label`,
+`set_Row_done` — because one module cannot hold two `get_label`. A card
+declaring one does not, and that is deliberate: these names are documented as
+what an escape author writes with, and a card that has not changed must not lose
+its escape block to a feature it does not use. The binding name takes the same
+optional segment: `card_Row_receive_toggle` as well as `card_receive_toggle`.
+
+Two escape blocks defining the same helper is a `BadEscape` naming both
+components. It has to be caught here — every block is spliced into one module,
+so Wax would see a duplicate definition and this would report `BadModule`, whose
+message says "this is a cardwasm bug". It is not; the card's author typed both.
 
 These are the difference between an escape being writable and being a research
 project: the generator reaches a field through `tc_get(s, tc_const_str(7))`, and

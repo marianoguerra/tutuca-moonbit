@@ -23,8 +23,21 @@ priv suberror Bail {
 ///|
 /// Everything the emitters share while building one card's module.
 priv struct Gen {
+  /// SHARED across every component of one card. Interning is content-addressed,
+  /// so two components' `"toggle"` is one constant, and the data segment and
+  /// the `#[start]` that builds it are laid down once for the module.
   pool : @abi.Pool
   comp : String
+  /// This component's position in the module: which arm of the constructor
+  /// builds it, which arm of the dispatch answers for it, and which slot of
+  /// `tc_types` holds its record type.
+  idx : Int
+  /// Whether the FILE declares more than one component.
+  ///
+  /// The only thing that decides whether a generated name is qualified — see
+  /// `Gen::sym`. False for every card that has ever compiled, and then every
+  /// name is what it was.
+  many : Bool
   /// The state fields, in declaration order. A field's INDEX is its cell's
   /// position, and nothing else addresses one.
   fields : Array[@statedef.FieldDef]
@@ -33,6 +46,9 @@ priv struct Gen {
   /// The value-returning declarations a body may call bare: `compute`,
   /// `pred`, `invariant`.
   callables : Map[String, @tscript.Decl]
+  /// SHARED, like the pool: `Compiled.refusals` is one list for the card, and
+  /// components are compiled one after another into it. Each entry names its
+  /// own component, which is what keeps two `toggle`s apart.
   refusals : Array[Refusal]
   /// Set when a body compiles an effect, so the module imports `control` only
   /// if it uses it. A guest chooses what it imports, and an import it does not
@@ -73,6 +89,27 @@ priv struct Gen {
 }
 
 ///|
+/// A generated module-level name, qualified by component when the file needs it.
+///
+/// `many` is false for a card that declares one component, and then this is the
+/// IDENTITY — which is the whole compatibility story. `get_count` / `set_count`
+/// / `num_count` are documented as what an escape author writes with, and
+/// `card_<role>_<name>` is a name somebody typed; a card that has not changed
+/// must not lose its escape block to a feature it does not use.
+///
+/// A card that declares several is new surface, so the qualified branch owes
+/// nothing to anybody. It stays under the same reserved prefix, so the screen
+/// that stops an escape defining into `get_` still stops it defining into
+/// `get_TodoItem_`.
+fn Gen::sym(self : Gen, stem : String, name : String) -> String {
+  if self.many {
+    stem + self.comp + "_" + name
+  } else {
+    stem + name
+  }
+}
+
+///|
 fn Gen::fresh(self : Gen, stem : String) -> String {
   self.temp = self.temp + 1
   stem + "_" + self.temp.to_string()
@@ -88,6 +125,7 @@ fn Gen::refuse(
   span : @tscript.Span,
 ) -> Unit {
   self.refusals.push({
+    comp: self.comp,
     kind,
     name,
     reason,
@@ -141,189 +179,254 @@ pub fn compile(
   let file = @viewfile.split_file(source, name~) catch {
     e => raise BadCard(e.message())
   }
-  guard file.components.length() <= 1 else {
-    raise BadCard(
-      "a card is one component, but this file declares " +
-      file.components.map(c => "`" + c.component_name(name) + "`").join(", "),
-    )
-  }
-  guard file.components.get(0) is Some(views) else {
+  guard file.components.get(0) is Some(root_views) else {
     raise BadCard(
       "a card needs at least one <template>: state and script describe a component, and a view is what makes one visible",
     )
   }
-  let comp = views.component_name(name)
-  // A card with no `<script type="tutuca/state">` block is a card with no
-  // fields, and it used to be turned away whole. That was wrong twice over:
-  // `tutucard.load` mounts one happily, so the two backends disagreed about
-  // what a card IS; and `viewfile` has a name for the shape — a SCHEMA-LESS
-  // file, whose views are built at runtime — so it is a thing people write.
-  //
-  // What comes out is a guest with an empty `jv_record` type: `get-field`
-  // answers `none` for everything, `with-field` refuses everything, and any
-  // handler the script declares is refused for naming a field that does not
-  // exist. All of which is the truth about a card with no state, and all of
-  // which the host can act on.
-  let def = match file.state.get(0) {
-    Some(d) => d
-    None =>
-      {
-        source_name: comp,
-        component: comp,
-        fields: [],
-        receive: [],
-        intent: [],
-        types: [],
-        doc: None,
-      }
+  // The root: what a `data-root` marker names, or the first component in the
+  // file. `components[0]` stays what it always was — a file-level `<style>`
+  // belongs to it — so the marker moves which component a HOST mounts and
+  // nothing else.
+  let components = file.components.map(v => v.component_name(name))
+  let root = if file.root != "" && components.contains(file.root) {
+    file.root
+  } else {
+    root_views.component_name(name)
   }
-  let block = file.script_for(comp)
-  let decls : Array[@tscript.Decl] = match block {
-    Some(b) =>
-      @tscript.parse_script(b.text) catch {
-        e =>
-          raise BadCard(
+  let many = file.components.length() > 1
+  // SHARED across every component: one data segment, one `#[start]` interning
+  // it, and one list of refusals — which is what `Compiled` carries. Interning
+  // is content-addressed, so two components saying `"toggle"` is one constant.
+  let pool = @abi.Pool::new()
+  let refusals : Array[Refusal] = []
+  let comps : Array[Comp] = []
+  for idx, views in file.components {
+    let comp = views.component_name(name)
+    // A card with no `<script type="tutuca/state">` block is a card with no
+    // fields, and it used to be turned away whole. That was wrong twice over:
+    // `tutucard.load` mounts one happily, so the two backends disagreed about
+    // what a card IS; and `viewfile` has a name for the shape — a SCHEMA-LESS
+    // file, whose views are built at runtime — so it is a thing people write.
+    //
+    // What comes out is a guest with an empty `jv_record` type: `get-field`
+    // answers `none` for everything, `with-field` refuses everything, and any
+    // handler the script declares is refused for naming a field that does not
+    // exist. All of which is the truth about a card with no state, and all of
+    // which the host can act on.
+    let def = match state_for(file, comp, name) {
+      Some(d) => d
+      None =>
+        {
+          source_name: comp,
+          component: comp,
+          fields: [],
+          receive: [],
+          intent: [],
+          types: [],
+          doc: None,
+        }
+    }
+    let block = script_for(file, comp)
+    let decls : Array[@tscript.Decl] = match block {
+      Some(b) =>
+        @tscript.parse_script(b.text) catch {
+          e =>
+            raise BadCard(
+              "line " +
+              (b.line + line_of(b.text, e.span().start) - 1).to_string() +
+              ": " +
+              e.message(),
+            )
+        }
+      None => []
+    }
+    // The CHECKER, before a single instruction is built.
+    //
+    // `tutucard.load` runs this and reports the findings beside the card; the
+    // generator used to skip it and go straight to codegen, which meant a card
+    // saying `.count = nope` reached `expr.mbt` and was refused there — by
+    // name, with a worse reason than the checker's, and with the rest of the
+    // card still compiling around it.
+    //
+    // A name that resolves to nothing is not a feature this backend has yet to
+    // implement; it is a card that does not typecheck, and the honest answer is
+    // to reject it rather than to emit a module with a hole where a handler
+    // should be. So the findings are errors here, spelled in the checker's own
+    // words and pointing at the card's own columns.
+    match block {
+      Some(b) => {
+        let bad : Array[String] = []
+        for f in @check.check(decls, def) {
+          // A warning is not a card that does not typecheck. The paragraph
+          // above argues that a name resolving to nothing should be rejected
+          // rather than compiled around, and that argument is about ERRORS; the
+          // one warning the checker has (`NO_VIEW_HANDLER`) reports code that
+          // behaves exactly as it did before, so stopping a build for it would
+          // break every card that upgrades.
+          if f.severity is SWarning {
+            continue
+          }
+          bad.push(
             "line " +
-            (b.line + line_of(b.text, e.span().start) - 1).to_string() +
-            ": " +
-            e.message(),
+            (b.line + line_of(b.text, f.span.start) - 1).to_string() +
+            " [" +
+            f.code +
+            "]: " +
+            f.message,
           )
-      }
-    None => []
-  }
-  // The CHECKER, before a single instruction is built.
-  //
-  // `tutucard.load` runs this and reports the findings beside the card; the
-  // generator used to skip it and go straight to codegen, which meant a card
-  // saying `.count = nope` reached `expr.mbt` and was refused there — by name,
-  // with a worse reason than the checker's, and with the rest of the card
-  // still compiling around it.
-  //
-  // A name that resolves to nothing is not a feature this backend has yet to
-  // implement; it is a card that does not typecheck, and the honest answer is
-  // to reject it rather than to emit a module with a hole where a handler
-  // should be. So the findings are errors here, spelled in the checker's own
-  // words and pointing at the card's own columns.
-  match block {
-    Some(b) => {
-      let bad : Array[String] = []
-      for f in @check.check(decls, def) {
-        // A warning is not a card that does not typecheck. The paragraph above
-        // argues that a name resolving to nothing should be rejected rather
-        // than compiled around, and that argument is about ERRORS; the one
-        // warning the checker has (`NO_VIEW_HANDLER`) reports code that
-        // behaves exactly as it did before, so stopping a build for it would
-        // break every card that upgrades.
-        if f.severity is SWarning {
-          continue
         }
-        bad.push(
-          "line " +
-          (b.line + line_of(b.text, f.span.start) - 1).to_string() +
-          " [" +
-          f.code +
-          "]: " +
-          f.message,
+        guard bad.is_empty() else { raise BadScript(bad) }
+      }
+      None => ()
+    }
+    let g : Gen = {
+      pool,
+      comp,
+      idx,
+      many,
+      fields: def.fields,
+      index: Map([]),
+      def,
+      callables: Map([]),
+      refusals,
+      uses_control: false,
+      uses_values: false,
+      uses_num: false,
+      uses_send_at: false,
+      uses_routed_effects: false,
+      uses_contract_log: false,
+      escapes: Map([]),
+      temp: 0,
+      block_line: match block {
+        Some(b) => b.line
+        None => 1
+      },
+      block_offset: match block {
+        Some(b) => b.offset
+        None => 0
+      },
+      block_text: match block {
+        Some(b) => b.text
+        None => ""
+      },
+    }
+    for i, f in def.fields {
+      g.index[f.name] = i
+    }
+    // Every declaration that answers through `call-method`, which is now five
+    // kinds rather than three: the two enrichers reach a view through the Alter
+    // namespace and used to reach nothing at all.
+    //
+    // An enricher's name is NOT callable from an expression, and does not
+    // become so by being in here: `tscript/check` answers `NO_NAME` for a bare
+    // one — "a bare name is a parameter, a builtin, or a `pred` or `compute`
+    // this block declares" — so a card that tried would be rejected before a
+    // single instruction was built.
+    for d in decls {
+      if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
+        g.callables[d.name] = d
+      }
+    }
+    // The escape block, parsed and screened BEFORE anything is emitted — so
+    // that the fixpoint over the callables and the dispatch chains already know
+    // which names a hand-written function answers.
+    let escape_fields : Array[@abi.Field] = match wax_for(file, comp) {
+      Some(b) if allow_wax => {
+        let (fields, defined) = parse_escape(
+          b.text,
+          "<" + comp + ".wax>",
+          comp~,
         )
-      }
-      guard bad.is_empty() else { raise BadScript(bad) }
-    }
-    None => ()
-  }
-  let g : Gen = {
-    pool: @abi.Pool::new(),
-    comp,
-    fields: def.fields,
-    index: Map([]),
-    def,
-    callables: Map([]),
-    refusals: [],
-    uses_control: false,
-    uses_values: false,
-    uses_num: false,
-    uses_send_at: false,
-    uses_routed_effects: false,
-    uses_contract_log: false,
-    escapes: Map([]),
-    temp: 0,
-    block_line: match block {
-      Some(b) => b.line
-      None => 1
-    },
-    block_offset: match block {
-      Some(b) => b.offset
-      None => 0
-    },
-    block_text: match block {
-      Some(b) => b.text
-      None => ""
-    },
-  }
-  for i, f in def.fields {
-    g.index[f.name] = i
-  }
-  // Every declaration that answers through `call-method`, which is now five
-  // kinds rather than three: the two enrichers reach a view through the Alter
-  // namespace and used to reach nothing at all.
-  //
-  // An enricher's name is NOT callable from an expression, and does not become
-  // so by being in here: `tscript/check` answers `NO_NAME` for a bare one — "a
-  // bare name is a parameter, a builtin, or a `pred` or `compute` this block
-  // declares" — so a card that tried would be rejected before a single
-  // instruction was built.
-  for d in decls {
-    if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
-      g.callables[d.name] = d
-    }
-  }
-  // The escape block, parsed and screened BEFORE anything is emitted — so that
-  // the fixpoint over the callables and the dispatch chains already know which
-  // names a hand-written function answers.
-  let escape_fields : Array[@abi.Field] = match file.wax_for(comp) {
-    Some(b) if allow_wax => {
-      let (fields, defined) = parse_escape(b.text, "<" + comp + ".wax>")
-      for e in defined {
-        // A helper carries no kind and answers no declaration; it is there for
-        // the functions that do.
-        if e.kind != "" {
-          g.escapes[e.kind + " " + e.name] = e
+        for e in defined {
+          // A helper carries no kind and answers no declaration; it is there
+          // for the functions that do.
+          if e.kind != "" {
+            g.escapes[e.kind + " " + e.name] = e
+          }
         }
+        // AN ESCAPE MAY DO ANYTHING, and the generator cannot know what.
+        //
+        // Every other one of these flags is inferred from what a compiled body
+        // actually said — a card that performs no effect imports no `control`,
+        // one that never writes `num` carries no parser. A hand-written
+        // function is opaque to all of that: it may call `tcx_send`, it may
+        // build a map, it may reach for `tc_int`. So the whole vocabulary the
+        // documentation promises is made available, and the import section
+        // widens to match.
+        //
+        // That widening is the real cost of the escape hatch and the reason
+        // `allow_wax` is a host's decision rather than a card's: a card with a
+        // block like this asks for `control` whether or not it uses it, and a
+        // host reads the import section to know what a guest can do.
+        g.uses_control = true
+        g.uses_values = true
+        g.uses_num = true
+        g.uses_send_at = true
+        fields
       }
-      // AN ESCAPE MAY DO ANYTHING, and the generator cannot know what.
-      //
-      // Every other one of these flags is inferred from what a compiled body
-      // actually said — a card that performs no effect imports no `control`,
-      // one that never writes `num` carries no parser. A hand-written function
-      // is opaque to all of that: it may call `tcx_send`, it may build a map,
-      // it may reach for `tc_int`. So the whole vocabulary the documentation
-      // promises is made available, and the import section widens to match.
-      //
-      // That widening is the real cost of the escape hatch and the reason
-      // `allow_wax` is a host's decision rather than a card's: a card with a
-      // block like this asks for `control` whether or not it uses it, and a
-      // host reads the import section to know what a guest can do.
-      g.uses_control = true
-      g.uses_values = true
-      g.uses_num = true
-      g.uses_send_at = true
-      fields
+      // A block the host did not allow is REFUSED rather than ignored. A card
+      // whose escape silently did nothing would be a card whose author cannot
+      // tell "the host said no" from "I spelled the function wrong".
+      Some(b) => {
+        g.refusals.push({
+          comp,
+          kind: "wax",
+          name: comp,
+          reason: "this host compiles cards without their `<script type=\"tutuca/wax\"> block — whether a card may carry hand-written code is the host's decision, and this one did not grant it",
+          line: b.line,
+          span: { start: b.offset, end_: b.offset + b.text.length() },
+        })
+        []
+      }
+      None => []
     }
-    // A block the host did not allow is REFUSED rather than ignored. A card
-    // whose escape silently did nothing would be a card whose author cannot
-    // tell "the host said no" from "I spelled the function wrong".
-    Some(b) => {
-      g.refusals.push({
-        kind: "wax",
-        name: comp,
-        reason: "this host compiles cards without their `<script type=\"tutuca/wax\">` block — whether a card may carry hand-written code is the host's decision, and this one did not grant it",
-        line: b.line,
-        span: { start: b.offset, end_: b.offset + b.text.length() },
-      })
-      []
-    }
-    None => []
+    comps.push({ g, decls, escape_fields })
   }
-  let module_ = emit_module(g, decls, escape_fields)
+  // Two escape blocks defining the same function.
+  //
+  // Every block's fields are spliced into ONE module, so two components each
+  // writing `fn round_half_up(...)` is a duplicate definition — which Wax
+  // rejects, and which this backend would report as `BadModule`, the error
+  // whose message says "this is a cardwasm bug". It is not: the card's author
+  // typed both. So it is caught here, named, and reported as what it is.
+  let seen : Map[String, String] = Map([])
+  let clashes : Array[String] = []
+  for c in comps {
+    for f in c.escape_fields {
+      match f.desc {
+        Func(name~, ..) =>
+          match seen.get(name.name) {
+            Some(first) =>
+              clashes.push(
+                "`" +
+                name.name +
+                "` is defined by both `" +
+                first +
+                "` and `" +
+                c.g.comp +
+                "` — every escape block is spliced into one module, so a helper two components both want needs one name each",
+              )
+            None => seen[name.name] = c.g.comp
+          }
+        _ => ()
+      }
+    }
+  }
+  guard clashes.is_empty() else { raise BadEscape(clashes) }
+  // The root's own `Gen` and views, which is not `comps[0]` when a `data-root`
+  // marker moved it. `emit_module` still leads with `comps[0]` — the module's
+  // shared pool and flags live on whichever it holds — but everything a host
+  // READS about this card is named after the root.
+  let mut root_g = comps[0].g
+  for c in comps {
+    if c.g.comp == root {
+      root_g = c.g
+    }
+  }
+  let g = root_g
+  let comp = root
+  let module_ = emit_module(comps)
   let session = @compile.Session::new()
   let checked = session.check(module_)
   let reports = session.reports()
@@ -338,13 +441,21 @@ pub fn compile(
   let wax = @waxfacade.render(module_, @trivia.Context::new())
   {
     component: comp,
+    components,
     wasm,
     wat,
     wax,
     refusals: g.refusals,
-    escapes: escape_list(g, decls),
-    fields: def.fields.map(f => f.name),
-    manifest: manifest_json(g, decls, views, file),
+    // Every component's escapes, not just the root's: `Compiled.escapes` is a
+    // report about the CARD, the same way `refusals` is.
+    escapes: comps
+    .map(c => escape_list(c.g, c.decls))
+    .fold(init=[], (a, b) => a + b),
+    // The ROOT's fields. A host reading this is asking about the component it
+    // is going to mount; the rest are in the manifest, per component, where a
+    // host that wants them can ask by name.
+    fields: g.def.fields.map(f => f.name),
+    manifest: manifest_json(comps, file, g),
     descriptor: Json::object({
       "world": Json::string("tutuca:component@0.9.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
@@ -359,15 +470,36 @@ pub fn compile(
 // the module
 
 ///|
-fn emit_module(
-  g : Gen,
-  decls : Array[@tscript.Decl],
-  escape_fields : Array[@abi.Field],
-) -> @ast.LocModule raise GenError {
+fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
+  let g = comps[0].g
   // Bodies first: every one of them interns constants, and neither the data
   // segment nor the `#[start]` that builds them can be laid down until the pool
   // has stopped growing.
-  let card = card_fields(g, decls, escape_fields)
+  // Every component's bodies, and the union of what they used. A flag is set
+  // while a body compiles, so `uses_control` for the MODULE is true when any
+  // component's body performed an effect — and the import section is a
+  // statement about the module.
+  let card = card_fields(comps)
+  for c in comps {
+    if c.g.uses_control {
+      g.uses_control = true
+    }
+    if c.g.uses_values {
+      g.uses_values = true
+    }
+    if c.g.uses_num {
+      g.uses_num = true
+    }
+    if c.g.uses_send_at {
+      g.uses_send_at = true
+    }
+    if c.g.uses_routed_effects {
+      g.uses_routed_effects = true
+    }
+    if c.g.uses_contract_log {
+      g.uses_contract_log = true
+    }
+  }
   let alloc = runtime_fields()
   let fs : @ast.LocModule = []
   // The stdlib first: Wax resolves in one pass, so a name must be defined
@@ -508,7 +640,9 @@ fn emit_module(
     uses_num=g.uses_num,
     uses_send_at=g.uses_send_at,
     uses_contract_log=g.uses_contract_log,
-    uses_escape=g.escapes.length() > 0 || !escape_fields.is_empty(),
+    uses_escape=comps
+      .iter()
+      .any(c => c.g.escapes.length() > 0 || !c.escape_fields.is_empty()),
   ) catch {
     e => raise BadModule(e.reasons())
   }
@@ -523,11 +657,36 @@ fn emit_module(
 
 ///|
 /// The half of the module the card decides.
-fn card_fields(
-  g : Gen,
-  decls : Array[@tscript.Decl],
-  escape_fields : Array[@abi.Field],
-) -> Array[@abi.Field] {
+/// One component on its way into the module: its `Gen`, what its block
+/// declared, and what its escape block answered.
+///
+/// Three parallel arrays would say the same thing and let two of them get out
+/// of step. They are indexed together everywhere they are read.
+priv struct Comp {
+  g : Gen
+  decls : Array[@tscript.Decl]
+  escape_fields : Array[@abi.Field]
+}
+
+///|
+/// Every function the module carries, in the order Wax resolves them.
+///
+/// A card used to be one component, so this took one `Gen` and read like it.
+/// It takes the list now, and the shape of the list is what the file says:
+/// what is emitted PER COMPONENT — its schema, its accessors, its callables,
+/// its escapes, its dispatch arms — sits inside a loop, and what the module has
+/// exactly one of — the exports, the flush, `#[start]`, the post-returns —
+/// sits outside it.
+///
+/// The ordering constraint that shaped this is unchanged and now applies across
+/// components: `#[start]` interns the constant pool AND builds the schemas, so
+/// it cannot be assembled until every body of every component has stopped
+/// interning. Which is why it is still last.
+fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
+  // The first component's `Gen` answers for the module wherever a
+  // module-level decision needs one: they share a pool, a refusal list and —
+  // after the union below — the same view of what the card uses.
+  let g = comps[0].g
   let fs : Array[@abi.Field] = []
 
   // -- the schema ----------------------------------------------------------
@@ -549,50 +708,118 @@ fn card_fields(
   // asked for one, so it needs the arena — and one that cannot must not import
   // it. Asked of the DECLARED types rather than of what the handlers do,
   // because the host reads a field the handlers never touch.
-  for f in g.fields {
-    if compound_ty(f.ty) {
-      g.uses_values = true
-    }
-  }
+  // One schema per component, PUSHED IN ORDER: a component's index is its slot
+  // in `tc_types`, and that index is what the constructor's arm and the
+  // dispatch's arm are numbered by. `sch` is bound once and reset per
+  // component, because `#[start]` is one function and a second `let` of the
+  // same name is a binding Wax will not resolve.
   let schema : Array[@abi.I] = [let_("sch", call("jv_record_schema_empty", []))]
-  for f in g.fields {
-    match jv_type_of(g, f) {
-      Some(ty) =>
-        schema.push(
-          set(
-            "sch",
-            call("jv_record_schema_add", [
-              get("sch"),
-              text_const_str(g.pool, f.name),
-              ty,
-              zero_value(g, f),
-            ]),
-          ),
-        )
-      None => ()
+  for c in comps {
+    let cg = c.g
+    for f in cg.fields {
+      if compound_ty(f.ty) {
+        cg.uses_values = true
+      }
     }
+    schema.push(set("sch", call("jv_record_schema_empty", [])))
+    for f in cg.fields {
+      match jv_type_of(cg, f) {
+        Some(ty) =>
+          schema.push(
+            set(
+              "sch",
+              call("jv_record_schema_add", [
+                get("sch"),
+                text_const_str(cg.pool, f.name),
+                ty,
+                zero_value(cg, f),
+              ]),
+            ),
+          )
+        None => ()
+      }
+    }
+    schema.push(
+      call("tc_type_add", [
+        call("jv_record_type_create", [
+          text_const_str(cg.pool, cg.comp),
+          get("sch"),
+        ]),
+      ]),
+    )
   }
-  schema.push(
-    set(
-      "tc_state_type",
-      call("jv_record_type_create", [text_const_str(g.pool, g.comp), get("sch")]),
-    ),
-  )
 
   // -- the exports ---------------------------------------------------------
+  //
+  // The constructor is handed the COMPONENT NAME and used to throw it away,
+  // which was honest while a card was one component and a lie the moment it
+  // stopped being. It reads it now, with the same pair every dispatch arm
+  // already uses: `tc_str_in` lifts the (pointer, length), `tc_is` compares it
+  // against a pool index. Each component's name is already interned — it is
+  // the name its record type was created with.
+  //
+  // A name the bundle does not declare builds the ROOT. That is what a
+  // one-component card did for every name it was ever handed, and it keeps a
+  // host that guesses wrong from getting nothing at all.
+  let ctor_body : Array[@abi.I] = if comps.length() == 1 {
+    [
+      call("resource_new", [
+        call("tc_intern", [
+          call("tc_apply_args", [
+            call("tc_zero_of", [i32c(0)]),
+            get("ap"),
+            get("al"),
+          ]),
+        ]),
+      ]),
+    ]
+  } else {
+    let arms : Array[@abi.I] = [
+      let_("name", call("tc_str_in", [get("np"), get("nl")])),
+    ]
+    for c in comps {
+      arms.push(
+        if_(
+          call("tc_is", [get("name"), i32c(c.g.pool.string_index(c.g.comp))]),
+          [
+            ret(
+              Some(
+                call("resource_new", [
+                  call("tc_intern", [
+                    call("tc_apply_args", [
+                      call("tc_zero_of", [i32c(c.g.idx)]),
+                      get("ap"),
+                      get("al"),
+                    ]),
+                  ]),
+                ]),
+              ),
+            ),
+          ],
+          [],
+        ),
+      )
+    }
+    arms.push(
+      call("resource_new", [
+        call("tc_intern", [
+          call("tc_apply_args", [
+            call("tc_zero_of", [i32c(0)]),
+            get("ap"),
+            get("al"),
+          ]),
+        ]),
+      ]),
+    )
+    arms
+  }
   fs.push(
     func(
       "ctor",
       params=[("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
       results=[i32_],
       export_as=@abi.guest_iface + "#[constructor]instance",
-      body=[
-        call("resource_new", [
-          call("tc_intern", [
-            call("tc_apply_args", [call("tc_zero", []), get("ap"), get("al")]),
-          ]),
-        ]),
-      ],
+      body=ctor_body,
     ),
   )
 
@@ -715,32 +942,36 @@ fn card_fields(
   // `uses_control` is set while compiling the bodies, so this reads it after
   // the callables and the dispatch chains are built — which is why the
   // function is pushed here and the decision made below.
+  // Per component, in order, and the order WITHIN a component is the whole of
+  // what its escape can reach.
+  //
   // The callables first: a handler's `requires`, and a body that calls one
-  // bare, both need to know which of them survived.
-  for f in callable_fields(g, decls) {
-    fs.push(f)
-  }
-  // THEN the escape, and the order is the whole of what it can reach. Wax
+  // bare, both need to know which of them survived. THEN the escape — Wax
   // resolves in one pass, so a function may call anything defined ahead of it
   // and nothing defined after: an escape sits behind the stdlib, the runtime,
   // the per-field accessors and the compiled `cm_*` callables — so it can call
   // every one of those — and ahead of the dispatch chains, so those can call
   // it. That is exactly the reach an escape should have and no more.
-  if !escape_fields.is_empty() {
-    for f in escape_prelude(g) {
+  for c in comps {
+    for f in callable_fields(c.g, c.decls) {
       fs.push(f)
     }
-    for f in escape_fields {
-      fs.push(f)
-    }
-    // …and the `cm_<name>` forwarders last, so every call site that reaches a
-    // callable reaches an escaped one the same way.
-    for f in escape_wrappers(g) {
-      fs.push(f)
+    if !c.escape_fields.is_empty() {
+      for f in escape_prelude(c.g) {
+        fs.push(f)
+      }
+      for f in c.escape_fields {
+        fs.push(f)
+      }
+      // …and the `cm_<name>` forwarders last, so every call site that reaches
+      // a callable reaches an escaped one the same way.
+      for f in escape_wrappers(c.g) {
+        fs.push(f)
+      }
     }
   }
-  fs.push(handle_event_fn(g, decls))
-  fs.push(call_method_fn(g, decls))
+  fs.push(handle_event_fn(comps))
+  fs.push(call_method_fn(comps))
   if g.uses_control {
     // Before `tc_flush`, which calls it: Wax resolves in one pass.
     if g.uses_routed_effects {

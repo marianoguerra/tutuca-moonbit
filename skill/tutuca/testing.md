@@ -432,7 +432,8 @@ Reads are all spelled `expect`, naming what to read.
 | `{ "expect": "state", "is": { "count": 2, "step": 1 } }` | …or all of it |
 | `{ "expect": "html", "contains": "class=\"done\"" }` | the rendered markup |
 | `{ "expect": "renders", "is": 1 }` | renders so far — assert batching |
-| `{ "expect": "refused", "is": [] }` | what the previous step refused |
+| `{ "expect": "log", "contains": "does not hold" }` | what the card has SAID since you last asked |
+| `{ "expect": "refused", "is": [] }` | what the HOST refused since you last asked |
 
 `"at"` for `state` is a dotted place: `.count`, `.rows[0].label`,
 `.byId['a'].n`. A bare key (`.rows[a]`) is refused rather than guessed
@@ -442,23 +443,54 @@ in `.a`".
 `"contains"` works on `text` and `html` only. Everywhere else `"is"`
 says what you mean exactly.
 
-### Assert on `refused`, not just on the DOM
+### Assert on `log`, not just on the DOM
 
 Clicking a button whose `requires` declines changes nothing. So does
 clicking a selector that matches nothing. **From the DOM they are
 identical**, which means a scene written against a typo passes.
 
-```json
-{ "a guarded button stays guarded": { "steps": [
-  { "click": "button.publish" },
-  { "expect": "refused", "is": ["REQUIRES at `publish`"] },
-  { "expect": "count", "at": "li.published", "is": 0 }
-] } }
+For a card, the thing that tells them apart is `log`. A `requires`, an
+`ensures` or an `invariant` that does not hold makes the transition not
+happen, and the card says so through `control.log` — carrying the rule's
+own `format` sentence, evaluated over the state that was rejected:
+
+```html
+<script type="tutuca/script">
+  receive bump requires room { .n += 1 }
+  pred room
+    format $'the counter is full at {.n}' { .n < 3 }
+</script>
+
+<script type="tutuca/test">
+{
+  "the guard stops it at three": { "steps": [
+    { "click": "button" }, { "click": "button" }, { "click": "button" },
+    { "expect": "text", "at": "output", "is": "3" },
+    { "click": "button" },
+    { "expect": "text", "at": "output", "is": "3" },
+    { "expect": "log", "contains": "precondition `room` does not hold" }
+  ] },
+  "and says nothing while it holds": { "steps": [
+    { "click": "button" },
+    { "expect": "log", "is": [] }
+  ] }
+}
+</script>
 ```
 
-Every scene reports its refusals whether or not a step asked, so a
-`requires` that fired unexpectedly is visible even in a scene that never
-mentions it.
+**`refused` is the HOST's channel, and for a card it is usually empty.**
+That is not a gap to work around — it is what the two sides mean. A host
+component that no arm answers raises a structured `Refusal`; a compiled
+guest is asked about every `receive` by name and answers `unhandled`
+instead, so the host has nothing to refuse and falls back to the field
+mutator. Reach for `refused` when driving a **module** through
+`@harness`, and for `log` when driving a **card**.
+
+Both accumulate until read: `{ "expect": "log" }` answers everything
+since the last time a scene asked, so the check does not have to sit in
+the step immediately after the click. Each also appears whole in the
+scene's report (`log`, `refusals`), so a rule that fired unexpectedly is
+visible even in a scene that never mentions it.
 
 ### Selectors are ONE compound selector
 
@@ -503,6 +535,7 @@ it work:
       "state": { "count": 2, "step": 1 },
       "styles": "…",
       "activity": [ { "kind": "receive", "name": "inc", … } ],
+      "log": [],
       "refusals": [],
       "steps": [
         { "at": 0, "ok": true },
@@ -521,6 +554,77 @@ the scene keeps them, for debugging the renderer rather than the card.
 A scene that could not be mounted at all carries an `error` instead —
 and the other scenes still run, so one bad `"component"` does not hide
 nine working scenes.
+
+### A card may declare more than one component
+
+One file, several components — the same device a view file has always
+used, and a `TodoItem` belongs beside the `TodoList` that renders it
+rather than in a file of its own:
+
+```html
+<script type="tutuca/state">
+  state Board { title: String, tally: Int }
+  state Row   { label: String, done: Bool }
+</script>
+
+<script type="tutuca/script" for="Board">
+  receive bump { .tally += 1 }
+  compute caption { $'{.title}: {.tally}' }
+</script>
+
+<script type="tutuca/script" for="Row">
+  receive toggle { .done = not .done }
+  compute caption { if .done { 'done' } else { .label } }
+</script>
+
+<template id="Board:main"> … </template>
+<template id="Row:main">   … </template>
+```
+
+- One `state` per component in the **one** state block.
+- One `<script type="tutuca/script" for="Comp">` each. A bare block with
+  no `for=` is only unambiguous when the file declares one component; with
+  several, name every block.
+- `<template id="Comp:view">`, or `<template id="Comp">` for its `main`.
+- The two are genuinely separate: separate schemas (a `Row` has no
+  `.tally`), separate dispatch (a `Board` answers `unhandled` to
+  `toggle`), and the same name may mean different things in each.
+
+**The root** — what a host mounts when told no other name — is the first
+component in the file. `data-root` on a `<template>` overrides that, for
+the file where the order you want to read is not the order you want
+mounted:
+
+    <template id="Row:main"> … </template>
+    <template id="Board:main" data-root> … </template>
+
+A scene names the component it drives, so one block tests both:
+
+```json
+{
+  "the board counts": {
+    "component": "Board", "args": { "title": "Sprint" },
+    "steps": [
+      { "click": "button.bump" },
+      { "expect": "text", "at": "h1.title", "is": "Sprint: 1" }
+    ]
+  },
+  "a row strikes itself through": {
+    "component": "Row", "args": { "label": "write it" },
+    "steps": [
+      { "click": "li.row" },
+      { "expect": "text", "at": "li.row", "is": "done" }
+    ]
+  }
+}
+```
+
+> **A card still cannot BUILD a child at run time.** `new TodoItem` is not
+> a thing the block language says — `new` builds a declared `record`, not
+> a component instance — so a card composes children that something else
+> created, and a TodoMVC whose `add` handler makes a todo is not yet
+> expressible. Declaring both components in one file, mounting either, and
+> testing both is what works today.
 
 ### Running them
 

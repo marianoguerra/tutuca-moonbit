@@ -47,3 +47,9 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
+
+// The blackbox tests reach `check_card` through the package's own face, so the
+// shapes they pin are the ones a caller gets.
+import {
+  "moonbitlang/core/debug",
+} for "test"

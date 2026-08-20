@@ -401,6 +401,26 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   `tutucard/web/card-wasm.js`; the playground's Tests pane and
   `tutucard/build/run-tests.mjs` are the two callers. `gen-views` ignores the
   block, exactly as it ignores `tutuca/wax`.
+- A card's `refused` is usually EMPTY, and that is the contract rather than a
+  gap: `dyncomp/host/dynobj.mbt`'s `obj_handler` never gates a `Receive`, so a
+  guest answers `unhandled` and the host has nothing to refuse. What a compiled
+  card says instead is `control.log` — a `requires` / `ensures` / `invariant`
+  that did not hold, carrying the rule's own `format` sentence — which
+  `card-wasm.js` keeps as well as prints and a scene reads with `expect: log`.
+  Reach for `refused` when driving a MODULE and `log` when driving a CARD.
+- **A card may declare more than one component.** `viewfile` always allowed it;
+  `tutucard/wasm` refused it until the module learned to number them. One
+  `state` each in the one state block, one `<script ... for="Comp">` each,
+  `<template id="Comp:main">`. Inside the module a component is an index: its
+  slot in `tc_types`, its arm of the constructor, its arm of `handle-event` —
+  and an instance says which it is through `jv_record_definition`, a pointer
+  compare against the record type it was built from. Generated names are
+  qualified (`cm_Row_caption`) only when the file declares several, so every
+  card that ever compiled still compiles byte-identically. The ROOT is the
+  first component in the file, or the one whose `<template>` carries
+  `data-root`; the manifest lists it first, because a host takes the head.
+  What a card still cannot do is BUILD a child while it runs — `new` makes a
+  declared record, not an instance.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

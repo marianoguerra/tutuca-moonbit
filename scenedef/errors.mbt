@@ -36,7 +36,7 @@ pub fn SceneError::message(self : SceneError) -> String {
       (match suggestion {
         Some(s) => " — did you mean `\{s}`?"
         None =>
-          "; the readers are text, texts, attr, prop, value, checked, count, state, html, renders and refused"
+          "; the readers are text, texts, attr, prop, value, checked, count, state, html, renders, refused and log"
       })
     BadSelector(scene~, at~, sel~, why~) =>
       at_(scene, at) + "`\{sel}` is not a selector this can mean: \{why}"

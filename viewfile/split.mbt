@@ -448,7 +448,16 @@ pub fn split_file(
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
     if is_blank(src) {
-      return { components: [], macros: [], state, init, scripts, wax, tests }
+      return {
+        components: [],
+        macros: [],
+        state,
+        init,
+        scripts,
+        wax,
+        tests,
+        root: "",
+      }
     }
     return {
       components: [
@@ -471,6 +480,7 @@ pub fn split_file(
       scripts,
       wax,
       tests,
+      root: "",
     }
   }
   if stray is Some(c) {
@@ -483,6 +493,7 @@ pub fn split_file(
   // Component name -> its views, in first-seen order.
   let order : Array[String] = []
   let by_comp : Map[String, Array[RawView]] = Map([])
+  let mut root_marked : String? = None
   let mut saw_named = false
   let mut saw_unnamed = false
   for t in templates {
@@ -526,6 +537,21 @@ pub fn split_file(
     }
     if saw_named && saw_unnamed {
       raise MixedViewIds
+    }
+    // `data-root` names the component a host mounts when it is told no other
+    // name. Absent from every card ever written, and absent from most that will
+    // be: a file's FIRST component is the root, which is the only answer a card
+    // with one has and the obvious one for a card whose list comes first. The
+    // marker exists for the file where it does not — a `TodoItem` declared
+    // above the `TodoList` that renders it, because that is the order the
+    // author found readable.
+    for a in t.attrs {
+      if a.name == "data-root" {
+        if root_marked is Some(other) {
+          raise TwoRoots(other, comp)
+        }
+        root_marked = Some(comp)
+      }
     }
     // One lookup, not a `contains` followed by a `get` that had to be guarded
     // against the None the `contains` already ruled out. `order` is appended to
@@ -584,7 +610,16 @@ pub fn split_file(
       },
     })
   }
-  { components, macros, state, init, scripts, wax, tests }
+  {
+    components,
+    macros,
+    state,
+    init,
+    scripts,
+    wax,
+    tests,
+    root: root_marked.unwrap_or(""),
+  }
 }
 
 ///|

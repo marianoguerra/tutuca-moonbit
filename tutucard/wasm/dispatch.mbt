@@ -101,7 +101,7 @@ fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
         survived[d.name] = d
         fields.push(
           func(
-            callable_fn(d.name),
+            callable_fn(g, d.name),
             params=[("s", rec_), ("args", args_)],
             results=[jv_],
             body=body_,
@@ -258,7 +258,9 @@ fn escape_transition(
       out.push(
         if_(
           eq(
-            call("tc_truthy", [call(callable_fn(a.name), [get("s"), nullref()])]),
+            call("tc_truthy", [
+              call(callable_fn(g, a.name), [get("s"), nullref()]),
+            ]),
             i32c(0),
           ),
           declined(Precondition, a.name, "s"),
@@ -292,7 +294,7 @@ fn escape_transition(
     out.push(
       if_(
         eq(
-          call("tc_truthy", [call(callable_fn(name), [get("t"), nullref()])]),
+          call("tc_truthy", [call(callable_fn(g, name), [get("t"), nullref()])]),
           i32c(0),
         ),
         declined(kind, name, "t"),
@@ -317,7 +319,58 @@ fn escape_transition(
 
 ///|
 /// `instance.handle-event`: the two buckets, and the transitions in each.
-fn handle_event_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
+fn handle_event_fn(comps : Array[Comp]) -> @abi.Field {
+  let all : Array[@abi.I] = []
+  for c in comps {
+    let arms = handle_event_arms(c.g, c.decls)
+    if arms.is_empty() {
+      continue
+    }
+    // Which component this instance IS. A card with one has one arm and the
+    // test is a pointer compare that always holds; a card with several needs
+    // it, because `handle-event` is handed a HANDLE and two components can
+    // answer the same name.
+    if comps.length() == 1 {
+      for i in arms {
+        all.push(i)
+      }
+    } else {
+      all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
+    }
+  }
+  all.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(0)]))
+  all.push(i32c(@abi.ret_handle_event))
+  // The instance, the name and the arguments are lifted ONCE, ahead of every
+  // arm. A card with twelve handlers used to compare twelve times against
+  // linear memory; it now builds one `utf8_string` and compares hashes.
+  let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
+  if comps.length() > 1 {
+    body.push(let_("c", call("tc_comp_of", [get("s")])))
+  }
+  body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
+  body.push(let_("args", call("tc_args_lift", [get("ap"), get("al")])))
+  for i in all {
+    body.push(i)
+  }
+  func(
+    "handle_event",
+    params=[
+      ("h", i32_),
+      ("b", i32_),
+      ("np", i32_),
+      ("nl", i32_),
+      ("ap", i32_),
+      ("al", i32_),
+    ],
+    results=[i32_],
+    export_as=@abi.guest_iface + "#[method]instance.handle-event",
+    body~,
+  )
+}
+
+///|
+/// One component's bucket blocks, without the lifting or the fallthrough.
+fn handle_event_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
   let invariants = decls
     .filter(d => d.kind is DInvariant && g.callables.get(d.name) is Some(_))
     .map(d => d.name)
@@ -388,33 +441,7 @@ fn handle_event_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
       arms.push(if_(eq(get("b"), i32c(bucket)), inner, []))
     }
   }
-  arms.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(0)]))
-  arms.push(i32c(@abi.ret_handle_event))
-  // The instance, the name and the arguments are lifted ONCE, ahead of every
-  // arm. A card with twelve handlers used to compare twelve times against
-  // linear memory; it now builds one `utf8_string` and compares hashes.
-  let body : Array[@abi.I] = [
-    let_("s", call("tc_deref", [get("h")])),
-    let_("name", call("tc_str_in", [get("np"), get("nl")])),
-    let_("args", call("tc_args_lift", [get("ap"), get("al")])),
-  ]
-  for i in arms {
-    body.push(i)
-  }
-  func(
-    "handle_event",
-    params=[
-      ("h", i32_),
-      ("b", i32_),
-      ("np", i32_),
-      ("nl", i32_),
-      ("ap", i32_),
-      ("al", i32_),
-    ],
-    results=[i32_],
-    export_as=@abi.guest_iface + "#[method]instance.handle-event",
-    body~,
-  )
+  arms
 }
 
 ///|
@@ -610,7 +637,9 @@ fn transition(
       out.push(
         if_(
           eq(
-            call("tc_truthy", [call(callable_fn(a.name), [get("s"), nullref()])]),
+            call("tc_truthy", [
+              call(callable_fn(g, a.name), [get("s"), nullref()]),
+            ]),
             i32c(0),
           ),
           declined(Precondition, a.name, "s"),
@@ -667,7 +696,7 @@ fn transition(
     out.push(
       if_(
         eq(
-          call("tc_truthy", [call(callable_fn(name), [get("t"), nullref()])]),
+          call("tc_truthy", [call(callable_fn(g, name), [get("t"), nullref()])]),
           i32c(0),
         ),
         declined(kind, name, "t"),
@@ -703,7 +732,49 @@ fn transition(
 
 ///|
 /// `instance.call-method`: the value-returning declarations, by name.
-fn call_method_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
+///
+/// Gated on which component the handle IS, exactly as `handle-event` is, and
+/// for the same reason: two components can each declare a `total`.
+fn call_method_fn(comps : Array[Comp]) -> @abi.Field {
+  let all : Array[@abi.I] = []
+  for c in comps {
+    let arms = call_method_arms(c.g, c.decls)
+    if arms.is_empty() {
+      continue
+    }
+    if comps.length() == 1 {
+      for i in arms {
+        all.push(i)
+      }
+    } else {
+      all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
+    }
+  }
+  all.push(
+    mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]),
+  )
+  all.push(i32c(@abi.ret_call_method))
+  let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
+  if comps.length() > 1 {
+    body.push(let_("c", call("tc_comp_of", [get("s")])))
+  }
+  body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
+  body.push(let_("args", call("tc_args_lift", [get("ap"), get("al")])))
+  for i in all {
+    body.push(i)
+  }
+  func(
+    "call_method",
+    params=[("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
+    results=[i32_],
+    export_as=@abi.guest_iface + "#[method]instance.call-method",
+    body~,
+  )
+}
+
+///|
+/// One component's method arms, without the lifting or the fallthrough.
+fn call_method_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
   // Every name this card answers a method call with: the ones it compiled, and
   // the ones its escape block answered. Both reach the same `cm_<name>` —
   // `escape_wrappers` is what makes that true — so the arm is one shape.
@@ -728,7 +799,7 @@ fn call_method_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
         call("tc_is", [get("name"), i32c(g.pool.string_index(name))]),
         [
           set("tc_fail", i32c(0)),
-          let_("v", call(callable_fn(name), [get("s"), get("args")])),
+          let_("v", call(callable_fn(g, name), [get("s"), get("args")])),
           // A body that could not finish answers nothing, which on this
           // boundary is nil — the same `ANothing` the corpus's value cases
           // name.
@@ -751,23 +822,5 @@ fn call_method_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
       ),
     )
   }
-  arms.push(
-    mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]),
-  )
-  arms.push(i32c(@abi.ret_call_method))
-  let body : Array[@abi.I] = [
-    let_("s", call("tc_deref", [get("h")])),
-    let_("name", call("tc_str_in", [get("np"), get("nl")])),
-    let_("args", call("tc_args_lift", [get("ap"), get("al")])),
-  ]
-  for i in arms {
-    body.push(i)
-  }
-  func(
-    "call_method",
-    params=[("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
-    results=[i32_],
-    export_as=@abi.guest_iface + "#[method]instance.call-method",
-    body~,
-  )
+  arms
 }

@@ -48,9 +48,18 @@ let reserved_prefixes : Array[String] = [
 /// `#[card.on]` would mean teaching the Wax front end about cards. A function
 /// called `card_receive_inc` answers the `receive inc` a card declares, and a function
 /// called anything else is a helper the escapes may call.
-fn escape_role(fn_name : String) -> (String, String)? {
+fn escape_role(fn_name : String, comp? : String = "") -> (String, String)? {
   guard fn_name.has_prefix("card_") else { return None }
-  let rest = fn_name[5:].to_owned()
+  let mut rest = fn_name[5:].to_owned()
+  // `card_TodoItem_receive_inc` as well as `card_receive_inc`. A file with two
+  // components has two escape blocks in one module, and two of them answering
+  // `receive inc` need two function names — but the generator cannot rename
+  // what an author typed, because the bodies call helpers by name. So the
+  // author writes the longer form, and the component segment comes off here
+  // before the role scan that has always followed.
+  if comp != "" && rest.has_prefix(comp + "_") {
+    rest = rest[comp.length() + 1:].to_owned()
+  }
   for word in ["receive", "intent", "compute", "pred", "invariant"] {
     if rest.has_prefix(word + "_") {
       let name = rest[word.length() + 1:].to_owned()
@@ -87,6 +96,7 @@ priv struct EscapeFn {
 fn parse_escape(
   src : String,
   fname : String,
+  comp? : String = "",
 ) -> (Array[@abi.Field], Array[EscapeFn]) raise GenError {
   let r = @waxfacade.parse_string(src, fname~)
   guard r.module_ is Some(fields) else {
@@ -125,7 +135,7 @@ fn parse_escape(
             )
           }
         }
-        match escape_role(name.name) {
+        match escape_role(name.name, comp~) {
           Some(pair) => {
             let (kind, decl) = pair
             defined.push({ fn_name: name.name, kind, name: decl })
@@ -185,20 +195,23 @@ fn escape_prelude(g : Gen) -> Array[@abi.Field] {
   for f in g.fields {
     let key = text_const_str(g.pool, f.name)
     fs.push(
-      func("get_" + f.name, params=[("s", rec_)], results=[jv_], body=[
+      func(g.sym("get_", f.name), params=[("s", rec_)], results=[jv_], body=[
         call("tc_get", [get("s"), key]),
       ]),
     )
     fs.push(
-      func("set_" + f.name, params=[("s", rec_), ("v", jv_)], results=[rec_], body=[
-        call("tc_set", [get("s"), key, g.coerce(f.name, get("v"))]),
-      ]),
+      func(
+        g.sym("set_", f.name),
+        params=[("s", rec_), ("v", jv_)],
+        results=[rec_],
+        body=[call("tc_set", [get("s"), key, g.coerce(f.name, get("v"))])],
+      ),
     )
     // Arithmetic is the common case and `tc_num_of(get_x(s))` is the common
     // line, so a number field gets the shorter one too.
     if f.ty is (TInt(..) | TFloat) {
       fs.push(
-        func("num_" + f.name, params=[("s", rec_)], results=[f64_], body=[
+        func(g.sym("num_", f.name), params=[("s", rec_)], results=[f64_], body=[
           call("tc_num_of", [call("tc_get", [get("s"), key])]),
         ]),
       )
@@ -228,7 +241,7 @@ fn escape_wrappers(g : Gen) -> Array[@abi.Field] {
     }
     fs.push(
       func(
-        callable_fn(e.name),
+        callable_fn(g, e.name),
         params=[("s", rec_), ("args", args_)],
         results=[jv_],
         body=[call(e.fn_name, [get("s"), get("args")])],
@@ -250,7 +263,10 @@ fn escape_list(g : Gen, decls : Array[@tscript.Decl]) -> Array[Escape] {
   for _key, e in g.escapes {
     let mut why = ""
     for r in g.refusals {
-      if r.name == e.name && r.kind == e.kind {
+      // Scoped to THIS component: a file with two of them can refuse the same
+      // name in each, and the reason one was turned away is not the reason the
+      // other was.
+      if r.comp == g.comp && r.name == e.name && r.kind == e.kind {
         why = r.reason
       }
     }
@@ -258,6 +274,7 @@ fn escape_list(g : Gen, decls : Array[@tscript.Decl]) -> Array[Escape] {
       .iter()
       .any(d => d.name == e.name && @tscript.kind_word(d.kind) == e.kind)
     out.push({
+      comp: g.comp,
       kind: e.kind,
       name: e.name,
       fn_name: e.fn_name,

@@ -89,7 +89,8 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
         None => ()
       }
       match self.g.callables.get(name) {
-        Some(_) => return call(callable_fn(name), [get(self.state), nullref()])
+        Some(_) =>
+          return call(callable_fn(self.g, name), [get(self.state), nullref()])
         None => ()
       }
       self.bail(
@@ -251,7 +252,7 @@ fn ECtx::apply(
       for a in args {
         cells.push(self.expr(a))
       }
-      return call(callable_fn(name), [get(self.state), arg_list(cells)])
+      return call(callable_fn(self.g, name), [get(self.state), arg_list(cells)])
     }
     None => ()
   }
@@ -404,8 +405,12 @@ fn ECtx::chain(
 
 ///|
 /// The wasm function one of this card's callables compiles to.
-fn callable_fn(name : String) -> String {
-  "cm_" + name
+///
+/// Qualified by component when the file declares several — two of them can each
+/// declare a `compute total`, and a module cannot hold two `cm_total`. For a
+/// card with one component this is `cm_<name>`, exactly as it always was.
+fn callable_fn(g : Gen, name : String) -> String {
+  g.sym("cm_", name)
 }
 
 ///|

@@ -28,6 +28,20 @@ extern "js" fn cardguest_ready(key : String) -> Bool =
   #|(key) => !!(globalThis.__cardguest && globalThis.__cardguest[key])
 
 ///|
+/// Everything the instantiated card has logged since this was last asked.
+///
+/// `control.log` is the one call on the control interface no capability gates,
+/// and for a compiled card it carries the thing an author is most likely to get
+/// wrong: a `requires`, an `ensures` or an `invariant` that did not hold, with
+/// the rule's own `format` sentence evaluated over the state that was rejected.
+/// A host component raises a structured `Refusal` for the same event; a guest
+/// has no shape to put one in, so this is the whole of what a card can say —
+/// and a driver that could not read it could not tell a declined guard from a
+/// click that missed.
+extern "js" fn cardguest_take_log(key : String) -> String =
+  #|(key) => globalThis.__cardguest[key].takeLog()
+
+///|
 extern "js" fn cardguest_create(
   key : String,
   component : String,
@@ -525,7 +539,16 @@ pub fn drive(
   let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
-  @drive.report_json(@drive.run(CardGuest::{ key, }, manifest, scenes)).stringify()
+  @drive.report_json(
+    @drive.run(CardGuest::{ key, }, manifest, scenes, take_log=() => {
+      let raw = cardguest_take_log(key)
+      if raw == "" {
+        []
+      } else {
+        raw.split("\n").map(l => l.to_string()).collect()
+      }
+    }),
+  ).stringify()
 }
 
 ///|

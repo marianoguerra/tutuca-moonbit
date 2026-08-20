@@ -18,6 +18,13 @@
 /// back to the mutator the declared field implies — which is exactly what a
 /// guest that never declared the handler would do.
 pub(all) struct Refusal {
+  /// Which component declared it.
+  ///
+  /// A card used to be one component, so a refusal naming `toggle` named
+  /// exactly one declaration. A file holding a `TodoList` and a `TodoItem` can
+  /// have a `toggle` in each, and a panel listing them without this says the
+  /// same sentence twice about two different mistakes.
+  comp : String
   /// The declaration's kind word: `on`, `receive`, `compute`, … or `field`
   /// for a state field whose type has no cell representation.
   kind : String
@@ -39,6 +46,8 @@ pub(all) struct Refusal {
 /// name and handed back nothing. A `<script type="tutuca/wax">` block is where
 /// what it handed back goes.
 pub(all) struct Escape {
+  /// Which component's block answered it. Same reason `Refusal` carries one.
+  comp : String
   /// The declaration's kind word: `on`, `receive`, `compute`, …
   kind : String
   name : String
@@ -66,7 +75,14 @@ pub(all) struct Escape {
 /// order `get-field` answers in. A bundle whose three parts were assembled
 /// separately is a bundle whose parts can disagree.
 pub(all) struct Compiled {
+  /// The ROOT — the component a host mounts when it is told no other name, and
+  /// the one `module_name` and the descriptor's `core` are named after.
   component : String
+  /// Every component the module carries, in file order. One entry for every
+  /// card that has ever compiled, and the reason this is a list rather than a
+  /// second name: a card is a bundle, and a bundle has always been able to
+  /// declare several.
+  components : Array[String]
   /// A `tutuca:component@0.9.0` core module. No component wrapper, no
   /// JavaScript: `dyncomp/host/wasm/abi.mjs` instantiates this directly.
   wasm : Bytes

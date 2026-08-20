@@ -14,6 +14,7 @@ pub fn Reader::word(self : Reader) -> String {
     RHtml => "html"
     RRenders => "renders"
     RRefused => "refused"
+    RLog => "log"
   }
 }
 
@@ -31,6 +32,7 @@ let readers : Array[Reader] = [
   RHtml,
   RRenders,
   RRefused,
+  RLog,
 ]
 
 ///|
@@ -264,7 +266,7 @@ fn expect_of(
           e => raise BadPlace(scene~, at~, place=raw_at, why=e.message())
         }
       }
-    RHtml | RRenders | RRefused => ()
+    RHtml | RRenders | RRefused | RLog => ()
     _ => {
       if raw_at == "" {
         raise MissingKey(scene~, at~, verb="expect " + word, key="at")
@@ -279,7 +281,7 @@ fn expect_of(
       // Only the two readers that answer a string can be approximate. For
       // anything else `is` says what is meant, and a `contains` over a number
       // would be a comparison nobody wrote on purpose.
-      if reader is (RHtml | RText) {
+      if reader is (RHtml | RText | RLog) {
         Some(WContains(s))
       } else {
         raise NotContainable(scene~, at~, reader=word)

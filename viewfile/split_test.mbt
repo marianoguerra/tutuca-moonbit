@@ -325,3 +325,35 @@ fn file_err(src : String) -> String {
     e => e.message()
   }
 }
+
+///|
+/// `data-root` names the component a host mounts. Absent, the first in the
+/// file is the root — which is the only answer a card with one has.
+test "data-root names the root, and its absence means the first" {
+  let two =
+    #|<template id="Row:main"><li></li></template>
+    #|<template id="Board:main"><section></section></template>
+  inspect(@viewfile.split_file(two, name="C").root, content="")
+  let marked =
+    #|<template id="Row:main"><li></li></template>
+    #|<template id="Board:main" data-root><section></section></template>
+  inspect(@viewfile.split_file(marked, name="C").root, content="Board")
+  // …and the marker does NOT reorder the components: a file-level <style>
+  // belongs to the one at index 0, so moving the root would move a stylesheet
+  // as a side effect of saying which component is the interesting one.
+  let f = @viewfile.split_file(marked, name="C")
+  @debug.assert_eq(f.components.map(c => c.name), ["Row", "Board"])
+}
+
+///|
+test "two roots do not say which" {
+  inspect(
+    file_err(
+      (
+        #|<template id="A:main" data-root><b></b></template>
+        #|<template id="B:main" data-root><b></b></template>
+      ),
+    ),
+    content="two <template>s carry `data-root` (`A` and `B`) — a file has one root, and two markers do not say which",
+  )
+}

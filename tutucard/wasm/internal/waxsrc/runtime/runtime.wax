@@ -38,9 +38,15 @@ let tc_consts: &?pv_vector = null;
 // why `cabi_post_*` is still a no-op.
 let tc_insts: &?pv_vector = null;
 
-// The card's state type, built by the generated `#[start]` because its schema
-// is the one thing here a card decides.
-let tc_state_type: &?jv_record_type = null;
+// The card's state types, one per component the file declares, in the order the
+// manifest lists them — built by the generated `#[start]` because a schema is
+// the one thing here a card decides.
+//
+// A vector rather than a global, because a card is a BUNDLE: `viewfile` has
+// always let one file declare several components, and the constructor is handed
+// the name of the one it is to build. One entry for a card that declares one,
+// which is what every card did before this.
+let tc_types: &?pv_vector = null;
 
 // Set when a body did something with no answer — a division by zero, an index
 // past the end of a list. The language answers `None` for these and the
@@ -73,6 +79,7 @@ let tc_s_object: &?utf8_string = null;
 
 fn tc_init() {
     tc_consts = pv_empty();
+    tc_types = pv_empty();
     tc_insts = pv_empty();
     tc_effects = pv_empty();
     tc_s_true = utf8_from_bytes("true");
@@ -1222,7 +1229,34 @@ fn tc_args_lift(ap: i32, al: i32) -> &?pv_vector {
 // The zero instance. Every field at the default its declared type gives it,
 // which is `jv_record_default` reading the schema the generated `#[start]`
 // built.
-fn tc_zero() -> &jv_record_value { jv_record_default(tc_state_type!) }
+fn tc_type_add(t: &jv_record_type) { tc_types = pv_push(tc_types!, t); }
+
+fn tc_type_at(i: i32) -> &jv_record_type {
+    let (found, v) = pv_get(tc_types!, i);
+    if found == 0 { unreachable; }
+    v! as &jv_record_type
+}
+
+fn tc_zero_of(i: i32) -> &jv_record_value { jv_record_default(tc_type_at(i)) }
+
+// Which component an instance IS, as the index every arm is numbered by.
+//
+// The record carries the answer already: `definition` is a field on the value's
+// own struct, every successor keeps it (`jv_record_try_set`), and each
+// `jv_record_type_create` allocates a fresh one — so identity is a pointer
+// compare, over a list that is as long as the card has components. No hidden
+// field, and no side table that three separate places would have to agree to
+// keep up to date.
+fn tc_comp_of(s: &jv_record_value) -> i32 {
+    let d = jv_record_definition(s);
+    let n = pv_count(tc_types!);
+    let i: i32 = 0;
+    while i <s n {
+        if tc_type_at(i) == d { return i; }
+        i = i + 1;
+    }
+    -1
+}
 
 // The constructor's `args`: a `list<tuple<string, value>>`, stride 24, the name
 // at +0 as (pointer, length) and the value cell at +8.

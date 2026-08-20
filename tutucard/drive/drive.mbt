@@ -6,8 +6,9 @@ pub fn run(
   manifest : @dyncomp.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String = "",
+  take_log? : () -> Array[String] = () => [],
 ) -> Array[SceneResult] {
-  scenes.map(s => run_one(guest, manifest, s, root))
+  scenes.map(s => run_one(guest, manifest, s, root, take_log))
 }
 
 ///|
@@ -23,6 +24,7 @@ fn run_one(
   manifest : @dyncomp.DynManifest,
   scene : @scenedef.Scene,
   root : String,
+  take_log : () -> Array[String],
 ) -> SceneResult {
   let failed = (why : String) => SceneResult::{
     name: scene.name,
@@ -34,6 +36,7 @@ fn run_one(
     activity: [],
     refusals: [],
     steps: [],
+    log: [],
     error: why,
   }
   let scope = @component.ComponentStack::new()
@@ -95,7 +98,7 @@ fn run_one(
   |> ignore
   app.start()
   let h = @harness.Harness::over(app, container)
-  let out = { ..drive_scene(h, scene), component: comp, activity }
+  let out = { ..drive_scene(h, scene, take_log~), component: comp, activity }
   // Both halves of a mounted app are reference cycles the native backend does
   // not reclaim, and a block of scenes mounts one each.
   h.destroy()
@@ -118,6 +121,7 @@ fn run_one(
 pub fn drive_scene(
   h : @harness.Harness,
   scene : @scenedef.Scene,
+  take_log? : () -> Array[String] = () => [],
 ) -> SceneResult {
   reset_refusals()
   // Every refusal the whole scene raised, so a report can show the ones no
@@ -125,12 +129,16 @@ pub fn drive_scene(
   // out of a failure too, which is what keeps one scene's guard out of the
   // next one's report.
   let all_refusals : Array[String] = []
+  let all_log : Array[String] = []
   let steps : Array[StepResult] = []
   let mut ok = true
   for at, step in scene.steps {
-    let (result, refused) = run_step(h, scene, at, step)
+    let (result, refused, logged) = run_step(h, scene, at, step, take_log)
     for r in refused {
       all_refusals.push(r)
+    }
+    for l in logged {
+      all_log.push(l)
     }
     if !result.ok {
       ok = false
@@ -150,6 +158,7 @@ pub fn drive_scene(
     styles: h.styles(),
     activity: [],
     refusals: all_refusals,
+    log: all_log,
     steps,
     error: "",
   }

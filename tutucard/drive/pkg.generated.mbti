@@ -15,11 +15,11 @@ pub const ACTIVITY_CAP : Int = 200
 
 pub fn clean_html(@memdom.MemNode) -> String
 
-pub fn drive_scene(@harness.Harness, @scenedef.Scene) -> SceneResult
+pub fn drive_scene(@harness.Harness, @scenedef.Scene, take_log? : () -> Array[String]) -> SceneResult
 
 pub fn report_json(Array[SceneResult]) -> Json
 
-pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String) -> Array[SceneResult]
+pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String]) -> Array[SceneResult]
 
 // Errors
 pub suberror MountError {
@@ -37,6 +37,7 @@ pub(all) struct SceneResult {
   styles : String
   activity : Array[Json]
   refusals : Array[String]
+  log : Array[String]
   steps : Array[StepResult]
   error : String
 } derive(Eq, @debug.Debug)

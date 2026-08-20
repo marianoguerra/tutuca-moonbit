@@ -1226,8 +1226,14 @@ export const EXAMPLES = [
 
 <!-- A macro is pure template expansion: no state, no handlers, no lifecycle.
      \`@on.click="inc"\` inside one calls \`inc\` on the COMPONENT it expanded
-     into, which is the whole difference from a child component — and the
-     reason a card can have macros while it cannot have children.
+     into, which is the whole difference from a child component.
+
+     A card may DECLARE several components now — one \`state\` each, one
+     \`<script ... for="Comp">\` each, \`<template id="Comp:main">\` — and a
+     host may mount any of them. What it still cannot do is BUILD one while it
+     runs: \`new\` makes a declared record, not an instance, so a card composes
+     children something else created. A macro needs none of that, which is why
+     it was always the answer here.
 
      These lived in MoonBit until a card could hold one: the demo they come
      from (storybook/examples/macros) registers them with \`macros=\` and

@@ -776,3 +776,78 @@ test("the whole module stays small enough to be worth compiling in a page", asyn
   // watches the floor separately, so a regression tells you which half moved.
   assert.ok(bytes < 56 * 1024, `core module is ${bytes} bytes`);
 });
+
+// ---------------------------------------------------------------------------
+// A card that declares more than one component.
+//
+// `viewfile` has always let one file declare several — `<template id="Row:main">`,
+// `<script type="tutuca/script" for="Row">`, one `state` each — and this backend
+// turned such a file away whole. It was the one restriction with nothing under
+// it: `DynManifest.components` was already an array, `Bundle::make_instance`
+// already resolved by name, and the constructor was already handed the name of
+// the component it was to build and threw it away.
+//
+// What these pin is that the two components are genuinely SEPARATE inside one
+// module: separate schemas, separate dispatch, separate generated names.
+
+test("a card may declare more than one component", async () => {
+  const { manifest } = await load("Two");
+  assert.deepEqual(manifest.components.map((c) => c.name), ["Board", "Row"]);
+  // Bundle-level facts stay bundle-level, and are named after the ROOT — the
+  // first template in the file, which is what a host mounts when told no name.
+  assert.equal(manifest.moduleName, "boardcard");
+  const [board, row] = manifest.components;
+  assert.deepEqual(board.fields.map((f) => f.name), ["title", "tally"]);
+  assert.deepEqual(row.fields.map((f) => f.name), ["label", "done"]);
+  assert.deepEqual(board.receives, ["bump"]);
+  assert.deepEqual(row.receives, ["toggle"]);
+});
+
+test("each component is built by name, with its own schema", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", [["title", text("Sprint")]]);
+  const row = new root.guest.Instance("Row", [["label", text("write it")]]);
+  assert.deepEqual(board.getField("title"), text("Sprint"));
+  assert.deepEqual(board.getField("tally"), num(0));
+  assert.deepEqual(row.getField("label"), text("write it"));
+  assert.deepEqual(row.getField("done"), { tag: "boolean", val: false });
+  // The schemas do not leak into one another: a field of the other component
+  // is `none` here, exactly as a field of no component would be.
+  assert.equal(board.getField("label"), undefined);
+  assert.equal(row.getField("tally"), undefined);
+});
+
+test("a dispatch lands on the component that declared it, and nowhere else", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", [["title", text("Sprint")]]);
+  const row = new root.guest.Instance("Row", [["label", text("write it")]]);
+  const bumped = board.handleEvent("receive", "bump", []);
+  assert.equal(bumped.tag, "changed");
+  assert.deepEqual(bumped.val.getField("tally"), num(1));
+  const toggled = row.handleEvent("receive", "toggle", []);
+  assert.equal(toggled.tag, "changed");
+  assert.deepEqual(toggled.val.getField("done"), { tag: "boolean", val: true });
+  // The crux. `handle-event` is handed a HANDLE, not a component name, so the
+  // module has to work out which component an instance is before it picks an
+  // arm — otherwise a `Board` would answer `toggle` and write a field it does
+  // not have. It answers `unhandled`, which is what lets the host fall back.
+  assert.deepEqual(board.handleEvent("receive", "toggle", []), { tag: "unhandled" });
+  assert.deepEqual(row.handleEvent("receive", "bump", []), { tag: "unhandled" });
+});
+
+test("two components may declare the same name and mean different things", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", [
+    ["title", text("Sprint")],
+    ["tally", num(3)],
+  ]);
+  const row = new root.guest.Instance("Row", [["label", text("write it")]]);
+  // Both declare `compute caption`. One module cannot hold two `cm_caption`,
+  // so a generated name carries its component when the file needs it to — and
+  // does not when it does not, which is what keeps every card that ever
+  // compiled compiling.
+  assert.deepEqual(board.callMethod("caption", []), text("Sprint: 3"));
+  assert.deepEqual(row.callMethod("caption", []), text("write it"));
+  const toggled = row.handleEvent("receive", "toggle", []);
+  assert.deepEqual(toggled.val.callMethod("caption", []), text("done"));
+});

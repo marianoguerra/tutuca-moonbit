@@ -43,7 +43,11 @@ pub(all) struct SceneResult {
   /// Every committed transaction, in order.
   activity : Array[Json]
   /// Everything refused while the scene ran, as the lines a refusal prints.
+  /// The HOST's channel, and usually empty for a card — see `RLog`.
   refusals : Array[String]
+  /// Everything the guest logged while the scene ran, in order. For a card
+  /// this is where a declined `requires` / `ensures` / `invariant` shows up.
+  log : Array[String]
   steps : Array[StepResult]
   /// Set when the scene could not be mounted at all, which is a different
   /// answer from a scene that ran and disagreed.
@@ -71,11 +75,16 @@ pub const ACTIVITY_CAP : Int = 200
 /// component that does not exist should still report the other nine — the same
 /// argument `check` makes for showing a card with issues rather than refusing
 /// to show one at all.
+/// `take_log` drains whatever the guest has said since it was last asked —
+/// `control.log`, which is where a compiled card reports a rule that did not
+/// hold. Empty by default, because a host component has no such channel: it
+/// raises a structured `Refusal` instead, and that is what `refused` reads.
 declare pub fn run(
   guest : &@dyncomp.Guest,
   manifest : @dyncomp.DynManifest,
   scenes : Array[@scenedef.Scene],
   root? : String,
+  take_log? : () -> Array[String],
 ) -> Array[SceneResult]
 
 ///|
@@ -85,6 +94,7 @@ declare pub fn run(
 declare pub fn drive_scene(
   h : @harness.Harness,
   scene : @scenedef.Scene,
+  take_log? : () -> Array[String],
 ) -> SceneResult
 
 ///|
