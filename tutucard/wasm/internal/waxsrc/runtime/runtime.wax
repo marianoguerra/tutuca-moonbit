@@ -1186,19 +1186,31 @@ const tc_tag_text: i32 = 3;
 // a card that holds children and no collections still imports no arena.
 const tc_tag_instance: i32 = 6;
 
+// Where a joined payload is unflattened. Above `tc_in` (256) and below the
+// constant pool (1024), which is the gap the return areas leave.
+const tc_joined: i32 = 320;
+
+// The JOINED form of a value, as `with-field` receives it: every case of the
+// variant widened to one (i64, i32) pair.
+//
+// It used to answer the four SCALAR cases and null for everything else, which
+// is why handing a card a list through `with-field` was refused — the lift
+// produced null, and null is not a vector however the field is declared. That
+// was true of every card since the arena landed, and it is what a host writing
+// a child back into a list runs into.
+//
+// The fix is not a fifth arm: it is to stop having two lifts. The joined triple
+// is written into a cell and handed to `tc_lift_cell`, which is defined by
+// whichever lowering half this build got — so a card with an arena reads a
+// list here and a card without one still carries no code that mentions one.
 fn tc_lift_flat(kind: i32, p64: i64, p32: i32) -> &jv_value {
-    if kind == tc_tag_bool {
-        if (p64 & 0xff) as i32 != 0 { return jv_bool(1); }
-        return jv_bool(0);
-    }
-    if kind == tc_tag_num {
-        return jv_f64(p64.from_bits());
-    }
-    if kind == tc_tag_text {
-        return jv_string(tc_str_in((p64 & 0xffffffff) as i32, p32));
-    }
-    if kind == tc_tag_instance { return jv_i64(p64); }
-    jv_null()
+    mem.store32(tc_joined, kind);
+    mem.store64(tc_joined + 8, p64);
+    // Only text has a second half. Writing it unconditionally would clear the
+    // high 32 bits of an i64 — a child token above 2^32 would come back as a
+    // different child.
+    if kind == tc_tag_text { mem.store32(tc_joined + 12, p32); }
+    tc_lift_cell(tc_joined)
 }
 
 // The four scalar tags of a wire cell. `tc_lift_cell`, which also knows the

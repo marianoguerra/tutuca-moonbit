@@ -424,9 +424,20 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   nothing else, and it is a scalar on the wire so a card with children and no
   collections still imports no value arena. `card-wasm.js` turns a token into
   the `{"$dyn": {handle, comp}}` marker `loader.mjs` already used, and
-  `CardGuest::json_to_value` wraps it through the bundle. What a card still
-  cannot do is BUILD one while it runs — `new` makes a declared record, not an
-  instance, and nothing imports `control.make-instance`.
+  `CardGuest::json_to_value` wraps it through the bundle.
+- A card BUILDS one with `new <Component>` naming a sibling: the target holds an
+  argument map and the marker `cur_comp`, `@cur.f = v` accumulates into it, and
+  the child is made at the first READ of `@cur` through `control.make-instance`
+  — which only such a card imports, and which carries the optional
+  `runtime/make_child.wax`. Reading or writing THROUGH a child slot is refused
+  at compile time (`refuse_into_child`), because the instance is the host's and
+  the guest holds only a token. `tutucard/wasm/examples/Todos.html` is the
+  worked TodoMVC, with scenes that drive it.
+- Turned up on the way: `with-field` of a COMPOUND value was refused for every
+  card since the arena landed. The joined `(i64, i32)` payload was lifted by a
+  scalars-only reader, so a list handed in became null and the schema refused
+  it. `tc_lift_flat` writes the triple into a cell and delegates to
+  `tc_lift_cell` now, so there is one lift rather than two.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

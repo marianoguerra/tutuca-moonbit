@@ -1,0 +1,74 @@
+// `new <Component>` — a same-bundle child, made by the host and held by token.
+//
+// An OPTIONAL half, like `parse_num.wax` and `send_at.wax`: only a card that
+// builds a child carries any of it, and only such a card imports
+// `control.make-instance`. That conditionality is the point rather than a
+// saving — a host reads the import section to know what a guest can do, and a
+// card that composes children something else made should not be claiming it can
+// make its own.
+//
+// WHAT A TOKEN IS. The host assigns it, it is the only instance-token space,
+// and it comes back as `values.value`'s `%instance` case — which this runtime
+// carries as `jv_i64`, free because tutuca has exactly one number and this
+// builds `jv_f64` for all of it. See `tc_tag_instance` in runtime.wax.
+//
+// WHEN THE CHILD EXISTS. Not yet. The Component Model forbids re-entering a
+// component while a call into it is active, so the host reserves the token,
+// queues the construction, and builds it after the current guest call returns.
+// A guest therefore cannot look INTO a child it just made, which is not a
+// limitation this file could lift and is why reading through a child slot is
+// refused at compile time rather than failing here.
+
+// `tc_make_instance` is emitted by the GENERATOR, beside the other `control`
+// imports, rather than declared here. Every other name on that interface is —
+// `ctl_send`, `ctl_log`, the routed four — and one module declaring the same
+// interface twice, once from a source file and once from a builder, is a
+// difference nobody reading the import section would expect to find.
+
+// The args block being written, and how far along it is. A module-level pair
+// rather than a parameter because `jv_ordered_map_each` takes a context of its
+// own and this is simpler than threading a second one through it.
+type tc_child_ctx = { base: i32, at: mut i32 };
+
+// One `tuple<string, value>` of the list: the key's (pointer, length) at +0 and
+// +4, and the value's 16-byte cell at +8. The same 24-byte stride
+// `tc_apply_args` reads, which is what makes this its exact inverse.
+fn tc_child_arg(context: &?eq, key: &utf8_string, value: &jv_value) {
+    let ctx = context! as &tc_child_ctx;
+    let slot = ctx.base + ctx.at * 24;
+    mem.store32(slot, tc_str_out(key));
+    mem.store32(slot + 4, utf8_byte_length(key));
+    tc_lower(value, slot + 8);
+    ctx.at = ctx.at + 1;
+}
+
+// Ask the host for a child of `name`, built with `args`, and answer its token.
+//
+// The allocation is never freed, like every other one here: the bump allocator
+// has no free and an instance lives for the mount. The args are read by the
+// host during THIS call, so the block only has to outlive the import.
+fn tc_child(name: &utf8_string, args: &jv_ordered_map_value) -> &jv_value {
+    let n = jv_ordered_map_count(args);
+    let base = alloc(n * 24, 8);
+    let ctx: &tc_child_ctx = { base, at: 0 };
+    jv_ordered_map_each(args, ctx, tc_child_arg);
+    jv_i64(tc_make_instance(tc_str_out(name), utf8_byte_length(name), base, n))
+}
+
+// A PENDING child, materialized.
+//
+// `new TodoItem` does not build anything: it puts an empty ordered map in the
+// target local and remembers which component the map is arguments FOR. The
+// child is made at the first READ of `@cur`, which is the last moment the
+// arguments can still be added to — and the only moment they are all in.
+//
+// `idx` is the component name's index in the constant pool, so the name costs
+// nothing to carry: it is already interned as its record type's.
+fn tc_child_of(idx: i32, v: &?jv_value) -> &jv_value {
+    let m = tc_target(v);
+    if jv_kind(m) != jv_kind_ordered_map {
+        tc_fail = 1;
+        return jv_null();
+    }
+    tc_child(tc_const_str(idx), jv_require_ordered_map(m))
+}

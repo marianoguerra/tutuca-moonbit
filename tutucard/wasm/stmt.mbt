@@ -35,6 +35,55 @@ fn Gen::field_ty(self : Gen, name : String) -> @statedef.StateTy? {
 }
 
 ///|
+/// Refuse a path that descends INTO a child instance.
+///
+/// `.items[0].text` reads a token and answers null; `.focus.text = 'x'` writes
+/// into a value that is not a record and abandons the transition. Both fail
+/// silently at run time, which is the worst of the three outcomes available —
+/// a card author sees a handler that does nothing and no reason why.
+///
+/// It is not a gap this backend could close. A child belongs to the HOST: the
+/// guest holds a token, the instance is constructed after the current call
+/// returns, and there is nothing on the boundary for a guest to read a child's
+/// field through. A card reaches a child by SENDING it a message.
+///
+/// The walk stops at the first type it cannot follow. That is deliberate: a
+/// `record` field's members are not in `index`, and refusing what it cannot see
+/// would turn "this backend does not know" into "you may not".
+fn ECtx::refuse_into_child(
+  self : ECtx,
+  name : String,
+  steps : Array[@tscript.PathStep],
+  span : @tscript.Span,
+) -> Unit raise Bail {
+  guard self.g.field_ty(name) is Some(ty) else { return }
+  let mut at = ty
+  for i, st in steps {
+    if at is TComp(_) {
+      self.bail(
+        "`." +
+        name +
+        "` holds a child component, and a card cannot read or write through one — the instance belongs to the host and a guest holds only a token. Send it a message instead",
+        span,
+      )
+      return
+    }
+    ignore(i)
+    match (at, st) {
+      (TList(e), PIndex(_)) => at = e
+      (TOMap(v), PIndex(_)) => at = v
+      (TOption(inner), _) => {
+        at = inner
+        continue
+      }
+      // Anything else — a record's member, an `Any`, a variant's payload — is
+      // a type this walk does not follow, and stopping is the honest answer.
+      _ => return
+    }
+  }
+}
+
+///|
 /// A value on its way into a field, truncated if the field is an integer.
 ///
 /// The schema cannot do this. tutuca has ONE number type, so an `Int` field and
@@ -96,6 +145,19 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
     // can name is a refusal where the interpreter abandons the transition, so
     // the card is told when it compiles instead of when it runs.
     SNew(ty~, span~) => {
+      // A SIBLING component first, because a component and a record can share
+      // a name and the child is the more surprising one to have shadowed —
+      // the same order `statedef` resolves a field's type in.
+      if ty.args.is_empty() && self.g.siblings.contains(ty.name) {
+        self.uses_target = true
+        self.uses_child = true
+        self.g.uses_children = true
+        return [
+          // Pending: an empty argument map, and the component it is for.
+          set(target_local, call("jv_ordered_map_empty", [])),
+          set(child_local, i32c(self.g.pool.string_index(ty.name))),
+        ]
+      }
       guard @info.zero_of_ref(self.g.def, ty) is Some(zero) else {
         self.bail(
           "`new " + ty.to_source() + "` names a type this card does not declare",
@@ -104,7 +166,12 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
         return []
       }
       self.uses_target = true
-      [set(target_local, const_value(self.g, zero))]
+      [
+        set(target_local, const_value(self.g, zero)),
+        // Not a child. A second `new` starts over, and starting over has to
+        // clear the marker too or a record would materialize as one.
+        set(child_local, i32c(-1)),
+      ]
     }
   }
 }
@@ -124,6 +191,7 @@ fn ECtx::assign(
   value : @tscript.Expr,
   _span : @tscript.Span,
 ) -> Array[@abi.I] raise Bail {
+  self.refuse_into_child(name, steps, _span)
   let out : Array[@abi.I] = []
   let field = text_const_str(self.g.pool, name)
 
@@ -237,6 +305,20 @@ fn ECtx::assign_bind(
 /// agree on, so reading `@cur` after a one-armed `new` is `NO_TARGET`. See
 /// README.md.
 let target_local : String = "cur"
+
+///|
+/// The local that says WHICH component the target's arguments are for.
+///
+/// `-1` for every `new` the language had before children — a declared record,
+/// which is a value and not a pending anything. A component's constant-pool
+/// index otherwise, which costs nothing to carry: the name is already interned
+/// as its record type's.
+///
+/// A second local rather than a tag inside the value, because the value is an
+/// ordinary ordered map while it is pending — that is what lets
+/// `@cur.text = .draft` be the read-modify-write it already was, with no arm
+/// taught about children.
+let child_local : String = "cur_comp"
 
 ///|
 /// `@cur = e`, and the same through a path.

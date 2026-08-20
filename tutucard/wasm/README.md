@@ -97,10 +97,36 @@ bare sibling name, which `statedef` resolves to one — holds it, `with-field`
 puts one there, `get-field` reads it back, and a successor keeps it because
 `jv_record_set` shares every part it did not change.
 
-What a card still cannot do is **build** one while it runs. `new` makes a
-declared `record`, not an instance, and nothing this generator emits imports
-`control.make-instance` — so a card composes children something else created. A
-TodoMVC whose `add` handler makes a todo is not yet expressible.
+**And a card builds one.** `new <Component>` names a SIBLING — `new Todo` beside
+`state Todo` — and the child is made by the host through
+`control.make-instance`, which only such a card imports. A card that composes
+children something else created names nothing on that interface, and the import
+section is what a host reads to know which it has.
+
+Nothing is built at the `new`. It opens an argument map for the component and
+remembers which one; `@cur.text = .draft` accumulates into it, unchanged from
+the read-modify-write it already was; and the child is made at the first READ of
+`@cur` — the last moment the arguments can still change and the first moment
+they are all in. Materializing rebinds the target to the token, so pushing
+`@cur` twice pushes one child rather than making two. A `new` of a declared
+record clears the marker, so a record can never materialize as a component.
+
+The token is reserved during the guest call and the instance constructed after
+it returns, because the Component Model forbids re-entering a component while a
+call into it is active. So a guest cannot look INTO a child it just made — and
+that is why reading or writing THROUGH a child slot is refused when the card
+compiles rather than failing silently when it runs:
+
+```
+receive peek { .note = .rows[0].text }
+// refused receive peek: `.rows` holds a child component, and a card cannot
+// read or write through one — the instance belongs to the host and a guest
+// holds only a token. Send it a message instead
+```
+
+The walk stops at the first type it cannot follow, so a `record` member is not
+refused for being unrecognized: "this backend does not know" and "you may not"
+are different answers.
 
 **Declarations.** `receive`, `intent`, `compute`, `pred`,
 `invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses
@@ -437,6 +463,21 @@ nothing, arithmetic on a String, and `@cur` read before any `new`. Nothing is
 refused any more, and the adapter asserts that: the refusal count used to be a
 number allowed only to shrink, and a number with nothing left in it is better
 spelled as the empty list.
+
+## A bug this turned up
+
+`with-field` receives a value JOINED — every case of `values.value` widened to
+one `(i64, i32)` pair — and the lift that read that pair knew the four scalar
+cases and answered nil for the rest. So a host handing a card a LIST got null,
+null is not a vector however the field is declared, and the write was refused.
+Every card, every list, since the arena landed; `Cart`'s `history` could be
+built by the card and never handed back to it.
+
+It surfaced here because a child inside a list is written back as the parent's
+WHOLE list, so a row that toggles is a list handed in. The fix is not a fifth
+arm: the joined triple is written into a cell and handed to `tc_lift_cell`,
+which is defined by whichever lowering half the build got — so there is one lift
+again, and a card without an arena still carries no code that mentions one.
 
 ## Known deviations
 

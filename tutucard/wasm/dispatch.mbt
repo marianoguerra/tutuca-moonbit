@@ -80,6 +80,7 @@ fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
         kind: @tscript.kind_word(d.kind),
         name: d.name,
         uses_target: false,
+        uses_child: false,
       }
       g.temp = 0
       let sink = g.refusals.length()
@@ -225,6 +226,7 @@ fn escape_transition(
     kind: e.kind,
     name: e.name,
     uses_target: false,
+    uses_child: false,
   }
   let unchanged = [
     mem("store32", [i32c(@abi.ret_handle_event), i32c(1)]),
@@ -517,6 +519,7 @@ fn ECtx::contract_log(
     kind: self.kind,
     name: self.name,
     uses_target: false,
+    uses_child: false,
   }
   let fmt = match self.g.callables.get(rule) {
     Some(rd) => rd.format
@@ -593,6 +596,7 @@ fn transition(
     kind: @tscript.kind_word(d.kind),
     name: d.name,
     uses_target: false,
+    uses_child: false,
   }
   let unchanged = [
     mem("store32", [i32c(@abi.ret_handle_event), i32c(1)]),
@@ -661,6 +665,13 @@ fn transition(
     // `&?jv_value`, and it starts null. "No `new` has run yet" is that null
     // rather than a second flag beside it — see `tc_target`.
     out.push(let_zero(target_local, refopt_("jv_value")))
+  }
+  if ctx.uses_target {
+    // Beside the target, because every `new` writes it: a `new` of a declared
+    // record clears it, so that a record cannot materialize as a child, and
+    // that clear needs somewhere to write whether or not this body ever builds
+    // one. `-1` is "nothing pending".
+    out.push(let_(child_local, i32c(-1)))
   }
   for i in body_ {
     out.push(i)

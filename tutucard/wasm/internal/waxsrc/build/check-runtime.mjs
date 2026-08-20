@@ -43,13 +43,17 @@ fn alloc(size: i32, align: i32) -> i32 {
     heap = end;
     base
 }
+// Emitted by the GENERATOR beside the other \`control\` imports, and stubbed
+// here for the same reason \`alloc\` is: this script compiles \`runtime/\` on its
+// own, and a name a card's module supplies has to come from somewhere.
+fn tc_make_instance(np: i32, nl: i32, ap: i32, al: i32) -> i64 { 0 }
 `;
 
 // Carried only by a card that uses what is in them, and appended after the
 // lowering half. Checked here unconditionally: the point of this script is to
 // compile every line of `runtime/`, and a piece only some cards get is exactly
 // the piece a typo hides in.
-const OPTIONAL = ["parse_num.wax", "send_at.wax", "contract_log.wax", "escape_help.wax"];
+const OPTIONAL = ["parse_num.wax", "send_at.wax", "contract_log.wax", "make_child.wax", "escape_help.wax"];
 
 function build(lowering) {
   const parts = [];

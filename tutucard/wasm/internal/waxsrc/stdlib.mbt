@@ -78,6 +78,7 @@ pub fn runtime_wax_fields(
   uses_num? : Bool = false,
   uses_send_at? : Bool = false,
   uses_contract_log? : Bool = false,
+  uses_children? : Bool = false,
   uses_escape? : Bool = false,
 ) -> Array[@abi.Field] raise BadSource {
   let which = if uses_values { "lower_values.wax" } else { "lower_scalar.wax" }
@@ -90,6 +91,9 @@ pub fn runtime_wax_fields(
   }
   if uses_contract_log {
     extra.push("contract_log.wax")
+  }
+  if uses_children {
+    extra.push("make_child.wax")
   }
   if uses_escape {
     extra.push("escape_help.wax")

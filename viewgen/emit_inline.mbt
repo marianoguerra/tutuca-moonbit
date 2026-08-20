@@ -74,7 +74,7 @@ fn inline_surface(surface : Surface) -> @check.Surface {
       None => []
     }
   }
-  { inputs, knows_views: true }
+  { inputs, knows_views: true, comps: [] }
 }
 
 ///|

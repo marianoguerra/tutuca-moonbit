@@ -91,7 +91,12 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     // its handlers are unchecked — the same trade a view file with no schema
     // makes.
     guard state_for(file, comp, name) is Some(def) else { continue }
-    for f in @check.check(decls, def) {
+    for
+      f in @check.check(decls, def, surface={
+        inputs: Map([]),
+        knows_views: false,
+        comps: components,
+      }) {
       // The checker's warnings are listed here rather than dropped — this is
       // the reporting face, and a warning is worth showing. `compile.mbt` is
       // the one that decides what stops a build, and it skips them.

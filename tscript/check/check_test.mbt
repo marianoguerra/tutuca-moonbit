@@ -67,10 +67,11 @@ fn messages_with_views(
     inputs[v] = [None]
   }
   let decls = @tscript.parse_script(block)
-  @check.check(decls, def_of(schema()), surface={ inputs, knows_views: true }).map(f => {
-      f.message
-    },
-  )
+  @check.check(decls, def_of(schema()), surface={
+    inputs,
+    knows_views: true,
+    comps: [],
+  }).map(f => f.message)
 }
 
 // -- fields -----------------------------------------------------------------
@@ -375,6 +376,7 @@ test "an on handler's argument types come from the views' call sites" {
   let surface : @check.Surface = {
     inputs: { "add": [Some(TFloat)] },
     knows_views: true,
+    comps: [],
   }
   assert_eq(
     @check.check(decls, def_of(schema()), surface~).map(f => f.message),
@@ -388,6 +390,7 @@ test "a parameter list that disagrees with the call sites" {
   let surface : @check.Surface = {
     inputs: { "add": [Some(TFloat)] },
     knows_views: true,
+    comps: [],
   }
   assert_eq(
     @check.check(decls, def_of(schema()), surface~).map(f => f.message),
@@ -403,6 +406,7 @@ test "call sites that disagreed joined to opaque, and stay unchecked" {
   let surface : @check.Surface = {
     inputs: { "add": [None] },
     knows_views: true,
+    comps: [],
   }
   assert_eq(@check.check(decls, def_of(schema()), surface~).length(), 0)
 }
@@ -681,10 +685,11 @@ fn codes_with_views(
     inputs[v] = [None]
   }
   let decls = @tscript.parse_script(block)
-  @check.check(decls, def_of(schema()), surface={ inputs, knows_views: true }).map(f => {
-      f.code
-    },
-  )
+  @check.check(decls, def_of(schema()), surface={
+    inputs,
+    knows_views: true,
+    comps: [],
+  }).map(f => f.code)
 }
 
 ///|
@@ -744,7 +749,7 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   let found = @check.check(
     @tscript.parse_script("receive resetTo(n) { .count = n }"),
     def_of(schema()),
-    surface={ inputs, knows_views: true },
+    surface={ inputs, knows_views: true, comps: [] },
   )
   assert_eq(found.length(), 1)
   assert_eq(found[0].severity, SWarning)

@@ -71,7 +71,7 @@ fn C::warn(
 
 ///|
 pub fn Surface::empty() -> Surface {
-  { inputs: Map([]), knows_views: false }
+  { inputs: Map([]), knows_views: false, comps: [] }
 }
 
 ///|
@@ -537,6 +537,13 @@ pub fn resolve_ty_ref(
 fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
   match resolve_ty_ref(self.def, t) {
     Some(r) => Some(r)
+    // A SIBLING component: `new TodoItem` beside `state TodoItem`. Opaque
+    // rather than unknown — `TSet(None)` is what the target already means for
+    // "a target whose type nothing here knows", and every read through it is
+    // already refused on that basis. What is lost is "TodoItem has no field
+    // `txet`", and getting it back means handing this checker every sibling's
+    // schema rather than only its name.
+    None if t.args.is_empty() && self.surface.comps.contains(t.name) => None
     None => {
       self.say(
         "NO_TYPE",

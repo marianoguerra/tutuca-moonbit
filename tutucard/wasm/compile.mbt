@@ -32,6 +32,9 @@ priv struct Gen {
   /// builds it, which arm of the dispatch answers for it, and which slot of
   /// `tc_types` holds its record type.
   idx : Int
+  /// Every component the FILE declares, so `new TodoItem` resolves to the
+  /// sibling rather than to a type this component's schema does not have.
+  siblings : Array[String]
   /// Whether the FILE declares more than one component.
   ///
   /// The only thing that decides whether a generated name is qualified — see
@@ -76,6 +79,9 @@ priv struct Gen {
   /// something to say. Unlike the two above this one reaches the import
   /// section: saying it needs `control.log`.
   mut uses_contract_log : Bool
+  /// Set when a body builds a child — `new <Component>` — so the module
+  /// imports `control.make-instance` and carries `make_child.wax` only then.
+  mut uses_children : Bool
   /// The declarations this card's `<script type="tutuca/wax">` block answers,
   /// by kind word and name. A name in here takes the dispatch arm the block
   /// language would have had, and its `Refusal` becomes an `Escape`.
@@ -257,7 +263,14 @@ pub fn compile(
     match block {
       Some(b) => {
         let bad : Array[String] = []
-        for f in @check.check(decls, def) {
+        for
+          f in @check.check(
+            decls,
+            def,
+            // The siblings, so `new TodoItem` is the child and not a type this
+            // component's schema is missing.
+            surface={ inputs: Map([]), knows_views: false, comps: components },
+          ) {
           // A warning is not a card that does not typecheck. The paragraph
           // above argues that a name resolving to nothing should be rejected
           // rather than compiled around, and that argument is about ERRORS; the
@@ -285,6 +298,7 @@ pub fn compile(
       comp,
       idx,
       many,
+      siblings: components,
       fields: def.fields,
       index: Map([]),
       def,
@@ -296,6 +310,7 @@ pub fn compile(
       uses_send_at: false,
       uses_routed_effects: false,
       uses_contract_log: false,
+      uses_children: false,
       escapes: Map([]),
       temp: 0,
       block_line: match block {
@@ -496,6 +511,9 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
     if c.g.uses_routed_effects {
       g.uses_routed_effects = true
     }
+    if c.g.uses_children {
+      g.uses_children = true
+    }
     if c.g.uses_contract_log {
       g.uses_contract_log = true
     }
@@ -554,6 +572,29 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
         (Some("p"), i32_),
         (Some("l"), i32_),
       ]),
+    )
+  }
+  // Only a card that BUILDS a child asks for this one, and asking for it is the
+  // whole claim: a card that composes children something else made imports
+  // nothing here, and a host reads the import section to know which it has.
+  //
+  // No capability gates it (`abi.mjs` binds it with no `cap`), because a child
+  // of the same bundle is not a reach outside it — the component it names has
+  // to be one this manifest declares.
+  if g.uses_children {
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "make-instance",
+        as_=Some("tc_make_instance"),
+        params=[
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+        ],
+        results=[i64_],
+      ),
     )
   }
   // The routed effects. Emitted only when a card performs one, so a card that
@@ -640,6 +681,7 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
     uses_num=g.uses_num,
     uses_send_at=g.uses_send_at,
     uses_contract_log=g.uses_contract_log,
+    uses_children=g.uses_children,
     uses_escape=comps
       .iter()
       .any(c => c.g.escapes.length() > 0 || !c.escape_fields.is_empty()),

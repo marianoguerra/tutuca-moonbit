@@ -135,6 +135,37 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     onUnhandled: o?.onUnhandled ?? null,
     livePath: !!o?.livePath,
   });
+  // `{inst, comp}` rather than the instance alone, because a CHILD token has to
+  // come back out as a marker naming its component — a handle says which
+  // instance, not which kind. A successor keeps its predecessor's component:
+  // `with-field` and a `changed` dispatch both answer the same kind of thing
+  // they were handed.
+  //
+  // Declared HERE rather than after `instantiate`, because the control imports
+  // below close over it: `makeInstance` reserves a handle in this table.
+  const table = new Map();
+  let nextHandle = 1;
+  const register = (inst, comp) => {
+    const h = nextHandle++;
+    table.set(h, { inst, comp });
+    return h;
+  };
+  const instOf = (handle) => table.get(handle)?.inst;
+  const compOf = (handle) => table.get(handle)?.comp ?? "";
+
+  // Children whose token has been handed out and whose instance does not exist
+  // yet. See `makeInstance`.
+  const pendingChildren = [];
+  const drainChildren = () => {
+    while (pendingChildren.length) {
+      const { handle, component, args } = pendingChildren.shift();
+      const entry = table.get(handle);
+      // A token dropped before it was drained is a child nobody kept; building
+      // it now would be building something with no one to hold it.
+      if (entry) entry.inst = new root.guest.Instance(component, args);
+    }
+  };
+
   const stepToJson = (s) =>
     s.tag === "field"
       ? { field: s.val }
@@ -197,27 +228,28 @@ export async function loadGuest(bytes, descriptor, key = "default") {
         // no `after`, and a stub is what an unreachable import costs.
         intentAt: () => {},
         after: () => {},
-        makeInstance: () => 0n,
-        dropInstance: () => {},
+        // A same-bundle child factory. The token IS the handle in the table
+        // beside this one — the only instance-token space a card has.
+        //
+        // The Component Model forbids re-entering a component while a call
+        // into it is active, so the token is RESERVED here and the child is
+        // constructed after the current guest call returns. `drainChildren`
+        // runs before `arena.clear()`, because the args captured here are
+        // arena cells and clearing first would build the child out of nothing.
+        makeInstance: (component, args) => {
+          const h = nextHandle++;
+          table.set(h, { inst: null, comp: component });
+          pendingChildren.push({ handle: h, component, args });
+          return BigInt(h);
+        },
+        dropInstance: (token) => {
+          table.delete(Number(token));
+        },
       },
     },
     { ...descriptor, policy: { grants: [] } },
   );
 
-  // `{inst, comp}` rather than the instance alone, because a CHILD token has to
-  // come back out as a marker naming its component — a handle says which
-  // instance, not which kind. A successor keeps its predecessor's component:
-  // `with-field` and a `changed` dispatch both answer the same kind of thing
-  // they were handed.
-  const table = new Map();
-  let nextHandle = 1;
-  const register = (inst, comp) => {
-    const h = nextHandle++;
-    table.set(h, { inst, comp });
-    return h;
-  };
-  const instOf = (handle) => table.get(handle)?.inst;
-  const compOf = (handle) => table.get(handle)?.comp ?? "";
   const to = (j) => jsonToGuest(j, arena.put);
   const from = (v) => guestToJson(v, arena.cells, table);
 
@@ -243,12 +275,14 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     create(component, argsJson) {
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, to(v)]);
       const h = register(new root.guest.Instance(component, args), component);
+      drainChildren();
       arena.clear();
       return h;
     },
     getField(handle, name) {
       const v = instOf(handle)?.getField(name);
       const out = v === undefined ? "" : JSON.stringify(from(v));
+      drainChildren();
       arena.clear();
       return out;
     },
@@ -269,6 +303,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
             : null,
         msgs: control,
       });
+      drainChildren();
       arena.clear();
       control = [];
       return out;
@@ -278,6 +313,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       if (!inst) return "";
       const v = inst.callMethod(name, JSON.parse(argsJson).map(to));
       const out = JSON.stringify(from(v));
+      drainChildren();
       arena.clear();
       return out;
     },
@@ -285,6 +321,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       const inst = instOf(handle);
       if (!inst) return -1;
       const next = inst.withField(name, to(JSON.parse(valueJson)));
+      drainChildren();
       arena.clear();
       return next === undefined ? -1 : register(next, compOf(handle));
     },

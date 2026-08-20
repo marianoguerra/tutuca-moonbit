@@ -58,7 +58,7 @@ const RUNTIME_ORDER = ["runtime.wax"];
 const LOWER_ORDER = ["lower_scalar.wax", "lower_values.wax"];
 // Carried only by a card that uses what is in them. Zero, one or several, in
 // this order, after the lowering half. See runtime/parse_num.wax.
-const OPTIONAL_ORDER = ["parse_num.wax", "send_at.wax", "contract_log.wax", "escape_help.wax"];
+const OPTIONAL_ORDER = ["parse_num.wax", "send_at.wax", "contract_log.wax", "make_child.wax", "escape_help.wax"];
 
 const parts = ORDER.map((name) => [name, readFileSync(join(VENDOR, name), "utf8")]);
 const runtimeParts = RUNTIME_ORDER.map((n) => [n, readFileSync(join(RUNTIME, n), "utf8")]);

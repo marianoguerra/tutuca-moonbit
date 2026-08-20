@@ -46,6 +46,9 @@ priv struct ECtx {
   /// only for a body that has one. An unused local is a lint, and a lint in
   /// generated code is a thing nobody can act on.
   mut uses_target : Bool
+  /// Set when a body writes `new <Component>`, so the transition declares the
+  /// second local that says WHICH component the target's arguments are for.
+  mut uses_child : Bool
 }
 
 ///|
@@ -157,7 +160,9 @@ fn ECtx::read(
   match place.root {
     PState(name) =>
       match self.g.index.get(name) {
-        Some(_) =>
+        Some(_) => {
+          // …but not INTO a child. See `refuse_into_child`.
+          self.refuse_into_child(name, place.steps, span)
           // Down through the steps, one `tc_step` each. A step that addresses
           // nothing reads null and the rest read null off that, which is
           // `Path::lookup` answering None at the first unresolvable step.
@@ -165,6 +170,7 @@ fn ECtx::read(
             call("tc_get", [get(self.state), text_const_str(self.g.pool, name)]),
             place.steps,
           )
+        }
         None => {
           self.bail("this card's state declares no field `" + name + "`", span)
           call("tc_null", [])
@@ -188,7 +194,35 @@ fn ECtx::read(
     // the reason the local is nullable.
     PBind(name) if name == @tscript.target_bind => {
       self.uses_target = true
-      self.walk(call("tc_target", [get(target_local)]), place.steps)
+      // A PENDING child is materialized HERE, at the first read, because that
+      // is the last moment its arguments can still be added to and the first
+      // moment they are all in. `new` builds nothing; it puts an empty
+      // ordered map in the target and remembers which component the map is
+      // arguments FOR, and `@cur.text = .draft` accumulates into it.
+      //
+      // Materializing rebinds the target to the TOKEN and clears the marker,
+      // so pushing `@cur` twice pushes one child rather than making two.
+      //
+      // A card that writes no `new <Component>` emits none of this: the
+      // marker local does not exist, and neither does the branch.
+      let read = if self.uses_child {
+        if_val(
+          jv_,
+          ges(get(child_local), i32c(0)),
+          [
+            set(
+              target_local,
+              call("tc_child_of", [get(child_local), get(target_local)]),
+            ),
+            set(child_local, i32c(-1)),
+            call("tc_target", [get(target_local)]),
+          ],
+          [call("tc_target", [get(target_local)])],
+        )
+      } else {
+        call("tc_target", [get(target_local)])
+      }
+      self.walk(read, place.steps)
     }
     // The row a `@when` filter or an enricher is called about. These DO arrive
     // at a compiled declaration — `component/instance.mbt` passes them

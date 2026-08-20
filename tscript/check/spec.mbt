@@ -60,6 +60,15 @@ pub(all) struct Surface {
   /// handler's name was never checked against anything, so an absent surface
   /// cost nothing.
   knows_views : Bool
+  /// The SIBLING components declared beside this one, so `new TodoItem` reads
+  /// as "build the child" rather than as a type this block does not declare.
+  ///
+  /// Names only. What a sibling's fields are is a thing the checker could be
+  /// told and is not: a pending child's fields are its own, and checking them
+  /// here would mean carrying every sibling's schema through a surface that
+  /// exists to describe THIS one. `TSet(None)` — opaque — is the honest answer
+  /// until that is worth paying for.
+  comps : Array[String]
 } derive(Debug, Eq)
 
 ///|

@@ -624,12 +624,27 @@ sibling — and such a field carries a real child instance across the
 boundary: a scene reads an empty one as `null`, and a filled one is the
 child, not a number.
 
-> **A card still cannot BUILD a child at run time.** `new TodoItem` is not
-> a thing the block language says — `new` builds a declared `record`, not
-> a component instance — so a card composes children that something else
-> created, and a TodoMVC whose `add` handler makes a todo is not yet
-> expressible. Declaring both components in one file, holding one in a
-> slot, mounting either, and testing both is what works today.
+A handler **builds** one with `new <Component>` naming a sibling — the
+same `new` / `@cur` shape a declared `record` uses:
+
+```
+receive add requires typed {
+  new Todo
+  @cur.text = .draft
+  @cur.done = false
+  .items.push @cur
+  .draft = ''
+}
+```
+
+Nothing is built at the `new`: it opens an argument map for the sibling,
+`@cur.text` fills it in, and the child is made when `@cur` is READ — the
+push. Reading it twice does not make two.
+
+> **A card cannot read or write THROUGH a child.** `.items[0].text` is
+> refused when the card compiles: the instance belongs to the host and the
+> card holds a token. Send it a message instead — which is what clicking
+> the row does.
 
 ### Running them
 

@@ -19,7 +19,7 @@ pub let runtime_files : Array[(String, String)]
 
 pub let runtime_src : String
 
-pub fn runtime_wax_fields(Bool, uses_num? : Bool, uses_send_at? : Bool, uses_contract_log? : Bool, uses_escape? : Bool) -> Array[@basic.Annotated[@ast.ModuleField[@basic.Location], @basic.Location]] raise BadSource
+pub fn runtime_wax_fields(Bool, uses_num? : Bool, uses_send_at? : Bool, uses_contract_log? : Bool, uses_children? : Bool, uses_escape? : Bool) -> Array[@basic.Annotated[@ast.ModuleField[@basic.Location], @basic.Location]] raise BadSource
 
 pub fn stdlib_fields() -> Array[@basic.Annotated[@ast.ModuleField[@basic.Location], @basic.Location]] raise BadSource
 

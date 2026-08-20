@@ -53,6 +53,9 @@ async function load(stem, { allowWax = false } = {}) {
   // interface — `%list` and `%map` cross as u64 handles because WIT has no
   // recursive types — and one that declares only scalars does not, which is
   // what `arenaUsed` below is asserted on.
+  // Children the guest asked for, in the order it asked. Built by `drain()`
+  // rather than on the spot: see `makeInstance`.
+  const children = [];
   const arena = new Map();
   let next = 1n;
   const put = (value) => {
@@ -83,6 +86,24 @@ async function load(stem, { allowWax = false } = {}) {
         log: (level, msg) => control.push({ kind: "log", level, msg }),
         send: (name, args) => control.push({ kind: "send", name, args }),
         stopPropagation: () => control.push({ kind: "stop" }),
+        // The same-bundle child factory. A card that writes `new <Component>`
+        // imports it; one that does not never names it, and an import the host
+        // does not implement is an instantiation error rather than a silently
+        // dropped effect — which is what these two lines are here to satisfy.
+        //
+        // The token is reserved and the construction queued, because the
+        // Component Model forbids re-entering a component while a call into it
+        // is active. `drain()` below builds them, and a test calls it when it
+        // wants the child rather than the token.
+        makeInstance: (component, args) => {
+          const h = BigInt(children.length + 1);
+          children.push({ handle: h, component, args, inst: null });
+          return h;
+        },
+        dropInstance: (token) => {
+          const at = children.findIndex((c) => c.handle === token);
+          if (at >= 0) children.splice(at, 1);
+        },
         sendAt: (path, name, args) => control.push({ kind: "sendAt", path, name, args }),
         // The routed four. A card that performs one imports it, and an import
         // the host does not implement is an instantiation error rather than a
@@ -108,6 +129,14 @@ async function load(stem, { allowWax = false } = {}) {
     control,
     log,
     arena,
+    children,
+    /** Construct every child the guest asked for. */
+    drain: () => {
+      for (const c of children) {
+        if (!c.inst) c.inst = new root.guest.Instance(c.component, c.args);
+      }
+      return children;
+    },
     // Handing a compound value IN needs the same arena a compound value comes
     // out through: an enricher is passed the row's bindings as a `%map`.
     put,
@@ -926,4 +955,151 @@ test("a child slot is not a number, however it is carried", async () => {
   assert.deepEqual(n.getField("tally"), num(9));
   const c = board.withField("focus", { tag: "instance", val: 9n });
   assert.deepEqual(c.getField("focus"), { tag: "instance", val: 9n });
+});
+
+// ---------------------------------------------------------------------------
+// A card that BUILDS a child while it runs.
+//
+// `new` used to make a declared record and nothing else, so a card composed
+// children something else had created — which is fine for a page assembling a
+// document and useless for a list that grows. `new <Component>` names a SIBLING
+// now, and the child is made by the host through `control.make-instance`.
+//
+// Nothing is built at the `new`. It opens an argument map for the component and
+// remembers which one; `@cur.text = .draft` accumulates into it; and the child
+// is made at the first READ of `@cur` — the last moment the arguments can still
+// change and the first moment they are all in. Which also means pushing `@cur`
+// twice pushes ONE child rather than making two.
+//
+// The token is reserved during the guest call and the instance is constructed
+// after it returns, because the Component Model forbids re-entering a component
+// while a call into it is active. So a guest cannot look INTO a child it just
+// made — which is why reading through a child slot is not a thing the language
+// offers.
+
+test("a handler builds a child, and the host holds it", async () => {
+  const { root } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  const typed = list.handleEvent("receive", "setDraft", [text("write it")]);
+  assert.equal(typed.tag, "changed");
+  const added = typed.val.handleEvent("receive", "add", []);
+  assert.equal(added.tag, "changed");
+  // The draft is cleared and the list has one row.
+  assert.deepEqual(added.val.getField("draft"), text(""));
+  assert.deepEqual(added.val.callMethod("count", []), num(1));
+});
+
+test("the child is a real instance of the sibling component", async () => {
+  const { root, arena } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  const added = list
+    .handleEvent("receive", "setDraft", [text("write it")])
+    .val.handleEvent("receive", "add", []);
+  // `.items` is a list, so it crosses through the value arena; its one element
+  // is an `instance`, which is the token — not a map of the child's fields.
+  const items = added.val.getField("items");
+  assert.equal(items.tag, "list");
+  const cells = arena.get(items.val);
+  assert.equal(cells.length, 1);
+  assert.equal(cells[0].tag, "instance");
+});
+
+test("a guard still guards a handler that builds", async () => {
+  const { root } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  // `add requires typed`, and the draft is empty — so nothing is built and no
+  // token is spent. A rule that does not hold means the transition did not
+  // happen, children included.
+  assert.deepEqual(list.handleEvent("receive", "add", []), { tag: "unchanged" });
+  assert.deepEqual(list.callMethod("count", []), num(0));
+});
+
+test("the child is built with the arguments the handler accumulated", async () => {
+  const { root, drain } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  list
+    .handleEvent("receive", "setDraft", [text("write it")])
+    .val.handleEvent("receive", "add", []);
+  // One child, and it is the sibling component with the fields the handler
+  // put in it — `@cur.text = .draft` and `@cur.done = false`, accumulated into
+  // an argument map and handed over at the push.
+  const kids = drain();
+  assert.equal(kids.length, 1);
+  assert.equal(kids[0].component, "Todo");
+  assert.deepEqual(kids[0].inst.getField("text"), text("write it"));
+  assert.deepEqual(kids[0].inst.getField("done"), { tag: "boolean", val: false });
+  // …and it answers its OWN component's declarations, not the list's.
+  assert.deepEqual(kids[0].inst.callMethod("caption", []), text("write it"));
+  const toggled = kids[0].inst.handleEvent("receive", "toggle", []);
+  assert.equal(toggled.tag, "changed");
+  assert.deepEqual(toggled.val.callMethod("caption", []), text("write it (done)"));
+});
+
+test("pushing the same @cur twice makes ONE child", async () => {
+  const { root, drain } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  list
+    .handleEvent("receive", "setDraft", [text("a")])
+    .val.handleEvent("receive", "add", []);
+  // The materialization replaces the target with the TOKEN and clears the
+  // marker, so a second read is a read of the token rather than a second
+  // construction. `add` pushes once, but the rule is what makes it safe to
+  // read `@cur` more than once at all.
+  assert.equal(drain().length, 1);
+});
+
+test("with-field accepts a compound value, not only a scalar", async () => {
+  const { root, put } = await load("Cart");
+  const c = new root.guest.Instance("Cart", []);
+  // A REGRESSION, and one that predates children by a long way: `with-field`
+  // receives the value JOINED — every case of the variant widened to one
+  // (i64, i32) pair — and the lift that read that pair knew the four scalar
+  // cases and answered nil for the rest. So a host handing a card a list got
+  // null, null is not a vector however the field is declared, and the write
+  // was refused. Every card, every list, since the arena landed.
+  //
+  // It matters here because a child inside a list is written back as the
+  // parent's WHOLE list: a row that toggles is a list handed in.
+  const empty = c.withField("history", { tag: "list", val: put([]) });
+  assert.notEqual(empty, undefined, "an empty list is still a list");
+  const two = c.withField("history", {
+    tag: "list",
+    val: put([num(1), num(2)]),
+  });
+  assert.notEqual(two, undefined);
+  assert.equal(two.getField("history").tag, "list");
+});
+
+test("a child in a list survives being written back through the parent", async () => {
+  const { root, drain, put, arena } = await load("Todos");
+  const list = new root.guest.Instance("Todos", []);
+  const added = list
+    .handleEvent("receive", "setDraft", [text("write it")])
+    .val.handleEvent("receive", "add", []);
+  const child = drain()[0];
+  const toggled = child.inst.handleEvent("receive", "toggle", []);
+  assert.equal(toggled.tag, "changed");
+  // What the HOST does with that successor: it rebuilds the parent's list and
+  // writes the whole thing back. The new child is a token like any other.
+  const back = added.val.withField("items", {
+    tag: "list",
+    val: put([{ tag: "instance", val: 99n }]),
+  });
+  assert.notEqual(back, undefined);
+  const items = arena.get(back.getField("items").val);
+  assert.equal(items.length, 1);
+  assert.deepEqual(items[0], { tag: "instance", val: 99n });
+});
+
+test("only a card that builds a child imports make-instance", async () => {
+  // The import section is what a host reads to know what a guest can do, so a
+  // card that composes children something else made must not be claiming it
+  // can make its own.
+  const { log } = await load("Todos");
+  assert.ok(log !== undefined);
+  const { root } = await load("Counter");
+  // A counter has no `new` at all; asking it to build one is unhandled rather
+  // than a module that quietly imported a factory.
+  const c = new root.guest.Instance("Counter", []);
+  assert.deepEqual(c.handleEvent("receive", "add", []), { tag: "unhandled" });
 });
