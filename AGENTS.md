@@ -419,8 +419,14 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   card that ever compiled still compiles byte-identically. The ROOT is the
   first component in the file, or the one whose `<template>` carries
   `data-root`; the manifest lists it first, because a host takes the head.
-  What a card still cannot do is BUILD a child while it runs — `new` makes a
-  declared record, not an instance.
+  A card may also CARRY a child: `values.value`'s `%instance(u64)` is lowered
+  and lifted as `jv_i64`, which is free because the runtime builds `jv_f64` and
+  nothing else, and it is a scalar on the wire so a card with children and no
+  collections still imports no value arena. `card-wasm.js` turns a token into
+  the `{"$dyn": {handle, comp}}` marker `loader.mjs` already used, and
+  `CardGuest::json_to_value` wraps it through the bundle. What a card still
+  cannot do is BUILD one while it runs — `new` makes a declared record, not an
+  instance, and nothing imports `control.make-instance`.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

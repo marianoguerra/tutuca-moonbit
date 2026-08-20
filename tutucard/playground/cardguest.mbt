@@ -131,6 +131,64 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
 /// bundle id.
 struct CardGuest {
   key : String
+  /// The bundle this guest was registered as, once it has been.
+  ///
+  /// Set after `register_bundle` and before the first instance is made, which
+  /// is the only order that works: a child token arriving from the guest is a
+  /// handle and a component NAME, and only the bundle knows how to wrap that
+  /// pair as a `DynObj` the render stack will place. A guest that has not been
+  /// registered yet cannot receive one, because nothing has called it.
+  registered : Ref[@dyncomp.Bundle?]
+}
+
+///|
+/// Bridge JSON into a Value, wrapping a child marker as the instance it stands
+/// for — at ANY depth, lists and maps included.
+///
+/// `{"$dyn": {"handle": n, "comp": s}}` is the shape both hosts write, so this
+/// is `dyncomp/host/wasm/glue.mbt`'s `json_to_value` with a different bundle
+/// behind it. A card used to need none of it: the generator emitted no
+/// `make-instance`, so a guest value was never another instance.
+fn CardGuest::json_to_value(self : CardGuest, j : Json) -> @tutuca.Value {
+  match j {
+    Object(o) =>
+      match o.get("$dyn") {
+        Some(Object(m)) => {
+          let handle = match m.get("handle") {
+            Some(Number(n, ..)) => n.to_int()
+            _ => return Null
+          }
+          let comp = match m.get("comp") {
+            Some(String(c)) => c
+            _ => return Null
+          }
+          match self.registered.val {
+            Some(bundle) =>
+              match bundle.wrap_instance(comp, handle) {
+                Some(v) => v
+                None => Null
+              }
+            None => Null
+          }
+        }
+        _ => {
+          let out : Map[String, @tutuca.Value] = Map([])
+          for name, v in o {
+            out[name] = self.json_to_value(v)
+          }
+          Map(out)
+        }
+      }
+    Array(items) => List(items.map(v => self.json_to_value(v)))
+    _ => @tutuca.Value::from_json(j)
+  }
+}
+
+///|
+/// The same, from the bridge's raw string.
+fn CardGuest::value_of(self : CardGuest, s : String) -> @tutuca.Value {
+  let j = @json.parse(s) catch { _ => return Null }
+  self.json_to_value(j)
 }
 
 ///|
@@ -144,7 +202,7 @@ impl @dyncomp.Guest for CardGuest with fn get_field(self, handle, name) {
   if raw == "" {
     None
   } else {
-    Some(value_of(raw))
+    Some(self.value_of(raw))
   }
 }
 
@@ -326,7 +384,7 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 
 ///|
 impl @dyncomp.Guest for CardGuest with fn call_method(self, handle, name, args) {
-  value_of(cardguest_call_method(self.key, handle, name, list_json(args)))
+  self.value_of(cardguest_call_method(self.key, handle, name, list_json(args)))
 }
 
 ///|
@@ -439,9 +497,14 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   let slot = slot_of(id)
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let policy = card_policy()
+  // The guest is built BEFORE it is registered and told about the bundle
+  // afterwards, which is the only order available: `register_bundle` takes the
+  // guest, and the guest needs the bundle to wrap a child token. Nothing can
+  // call the guest in between.
+  let guest = CardGuest::{ key: id, registered: Ref::new(None) }
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
-    @dyncomp.register_bundle(scope, CardGuest::{ key: id }, manifest, policy~)
+    @dyncomp.register_bundle(scope, guest, manifest, policy~)
   } catch {
     // Registration has one failure mode from a page's point of view — the
     // bundle was refused — and one thing worth showing: why. The reasons are a
@@ -449,6 +512,7 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
     // sentence about mounting.
     e => return mount_failed(e.message())
   }
+  guest.registered.val = Some(bundle)
   guard bundle.component_names() is [component, ..] else {
     return mount_failed("the manifest declares no component to mount")
   }
@@ -539,15 +603,22 @@ pub fn drive(
   let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
+  let guest = CardGuest::{ key, registered: Ref::new(None) }
   @drive.report_json(
-    @drive.run(CardGuest::{ key, }, manifest, scenes, take_log=() => {
-      let raw = cardguest_take_log(key)
-      if raw == "" {
-        []
-      } else {
-        raw.split("\n").map(l => l.to_string()).collect()
-      }
-    }),
+    @drive.run(
+      guest,
+      manifest,
+      scenes,
+      on_bundle=b => guest.registered.val = Some(b),
+      take_log=() => {
+        let raw = cardguest_take_log(key)
+        if raw == "" {
+          []
+        } else {
+          raw.split("\n").map(l => l.to_string()).collect()
+        }
+      },
+    ),
   ).stringify()
 }
 

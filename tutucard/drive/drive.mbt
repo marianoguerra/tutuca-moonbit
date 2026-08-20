@@ -7,8 +7,9 @@ pub fn run(
   scenes : Array[@scenedef.Scene],
   root? : String = "",
   take_log? : () -> Array[String] = () => [],
+  on_bundle? : (@dyncomp.Bundle) -> Unit = _b => (),
 ) -> Array[SceneResult] {
-  scenes.map(s => run_one(guest, manifest, s, root, take_log))
+  scenes.map(s => run_one(guest, manifest, s, root, take_log, on_bundle))
 }
 
 ///|
@@ -25,6 +26,7 @@ fn run_one(
   scene : @scenedef.Scene,
   root : String,
   take_log : () -> Array[String],
+  on_bundle : (@dyncomp.Bundle) -> Unit,
 ) -> SceneResult {
   let failed = (why : String) => SceneResult::{
     name: scene.name,
@@ -49,6 +51,10 @@ fn run_one(
   ) catch {
     e => return failed(e.message())
   }
+  // A guest that has to know which bundle it was registered as is told here.
+  // A scene registers its OWN, so a guest still holding the previous scene's
+  // would wrap this scene's child tokens through a bundle left behind.
+  on_bundle(bundle)
   // The component: the scene's own, then the caller's root, then the first the
   // manifest declares — which is the first `<template>` in the file, and the
   // only answer a card with one component has.

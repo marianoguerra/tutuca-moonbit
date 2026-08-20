@@ -85,6 +85,7 @@ declare pub fn run(
   scenes : Array[@scenedef.Scene],
   root? : String,
   take_log? : () -> Array[String],
+  on_bundle? : (@dyncomp.Bundle) -> Unit,
 ) -> Array[SceneResult]
 
 ///|

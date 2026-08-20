@@ -619,12 +619,17 @@ A scene names the component it drives, so one block tests both:
 }
 ```
 
+A component may hold another as a **slot** — `focus: Row` names the
+sibling — and such a field carries a real child instance across the
+boundary: a scene reads an empty one as `null`, and a filled one is the
+child, not a number.
+
 > **A card still cannot BUILD a child at run time.** `new TodoItem` is not
 > a thing the block language says — `new` builds a declared `record`, not
 > a component instance — so a card composes children that something else
 > created, and a TodoMVC whose `add` handler makes a todo is not yet
-> expressible. Declaring both components in one file, mounting either, and
-> testing both is what works today.
+> expressible. Declaring both components in one file, holding one in a
+> slot, mounting either, and testing both is what works today.
 
 ### Running them
 

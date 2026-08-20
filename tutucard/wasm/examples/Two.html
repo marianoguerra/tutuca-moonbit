@@ -7,6 +7,13 @@
     title: String
     /// How many rows have been counted.
     tally: Int
+    /// A child slot: the row this board is looking at.
+    ///
+    /// `Row` is the sibling declared below, so this is `Component[Row]` without
+    /// having to say so. A card cannot BUILD one — `new` makes a declared
+    /// record, not an instance — but it can hold one a host put here, and that
+    /// is what makes a child token something worth being able to carry.
+    focus: Row
   }
 
   /// A row of the board, declared here rather than in a file of its own —
@@ -69,7 +76,7 @@
     "component": "Board",
     "steps": [
       { "send": "toggle" },
-      { "expect": "state", "is": { "title": "", "tally": 0 } },
+      { "expect": "state", "is": { "title": "", "tally": 0, "focus": null } },
       { "send": "bump" },
       { "expect": "state", "at": ".tally", "is": 1 }
     ]

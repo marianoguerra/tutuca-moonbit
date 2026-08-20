@@ -774,7 +774,23 @@ test("the whole module stays small enough to be worth compiling in a page", asyn
   // whether or not it builds a list. The card's own code is still hundreds of
   // bytes, which is what this tripwire is actually watching; `gen/stdlib_test.mbt`
   // watches the floor separately, so a regression tells you which half moved.
-  assert.ok(bytes < 56 * 1024, `core module is ${bytes} bytes`);
+  //
+  // Re-baselined from 56 KB when the runtime learned two things, and BOTH are
+  // floor rather than slope — they are in the shared runtime, and Wax emits
+  // every function it is handed:
+  //
+  //   +223 bytes  `tc_types` and its four helpers, so a module can carry more
+  //               than one component's schema. A card that declares one calls
+  //               `tc_zero_of` and `tc_type_add` and never `tc_comp_of`, but it
+  //               carries all four.
+  //   + 85 bytes  the `%instance` tag in `tc_lower_scalar` / `tc_lift_flat` /
+  //               `tc_lift_scalar_cell`, so a child token survives the wire.
+  //
+  // Both could be carved into conditional pieces the way `parse_num.wax` and
+  // `send_at.wax` are — that is the answer if the floor becomes a problem —
+  // but the two cost 308 bytes between them and carving arms out of three
+  // shared functions means duplicating all three.
+  assert.ok(bytes < 58 * 1024, `core module is ${bytes} bytes`);
 });
 
 // ---------------------------------------------------------------------------
@@ -797,7 +813,7 @@ test("a card may declare more than one component", async () => {
   // first template in the file, which is what a host mounts when told no name.
   assert.equal(manifest.moduleName, "boardcard");
   const [board, row] = manifest.components;
-  assert.deepEqual(board.fields.map((f) => f.name), ["title", "tally"]);
+  assert.deepEqual(board.fields.map((f) => f.name), ["title", "tally", "focus"]);
   assert.deepEqual(row.fields.map((f) => f.name), ["label", "done"]);
   assert.deepEqual(board.receives, ["bump"]);
   assert.deepEqual(row.receives, ["toggle"]);
@@ -850,4 +866,64 @@ test("two components may declare the same name and mean different things", async
   assert.deepEqual(row.callMethod("caption", []), text("write it"));
   const toggled = row.handleEvent("receive", "toggle", []);
   assert.deepEqual(toggled.val.callMethod("caption", []), text("done"));
+});
+
+// ---------------------------------------------------------------------------
+// A child instance across the boundary.
+//
+// `values.value` has always had a seventh case — `%instance(u64)`, a
+// same-bundle child as the token `guest.instance` hands out — and a compiled
+// card could neither read one nor write one: `tc_lower_scalar` knew four tags
+// and `tc_lift_scalar_cell` knew the same four, so a token handed in came back
+// as nil.
+//
+// It is carried as `jv_i64`, which costs nothing: this runtime builds `jv_f64`
+// and nothing else, because tutuca has exactly one number — so an i64 inside a
+// card's value tree can only ever be a child token. And it is a SCALAR on the
+// wire rather than an arena handle, so a card holding children and no
+// collections still imports no value arena.
+//
+// What a card still cannot do is MAKE one. `new` builds a declared record, not
+// an instance, and nothing this generator emits imports `control.make-instance`.
+// So these hand a token IN and read it back — which is exactly the half a host
+// needs before it can hand a card a child at all.
+
+test("a child token survives with-field and get-field", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", [["title", text("Sprint")]]);
+  // An empty slot is nil, not a zero.
+  assert.deepEqual(board.getField("focus"), { tag: "nil" });
+  const withChild = board.withField("focus", { tag: "instance", val: 7n });
+  assert.notEqual(withChild, undefined);
+  assert.deepEqual(withChild.getField("focus"), { tag: "instance", val: 7n });
+  // The predecessor is untouched — a child is a field like any other, and
+  // `with-field` is still copy-on-write.
+  assert.deepEqual(board.getField("focus"), { tag: "nil" });
+  // …and the fields beside it are undisturbed.
+  assert.deepEqual(withChild.getField("title"), text("Sprint"));
+});
+
+test("a child token survives a transition that rebuilds the state", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", [["title", text("Sprint")]]);
+  const withChild = board.withField("focus", { tag: "instance", val: 3n });
+  // `bump` writes `.tally` and says nothing about `.focus`, so the successor
+  // shares the slot with its predecessor rather than dropping it. That is what
+  // `jv_record_set` sharing every part it did not change means for a token.
+  const bumped = withChild.handleEvent("receive", "bump", []);
+  assert.equal(bumped.tag, "changed");
+  assert.deepEqual(bumped.val.getField("tally"), num(1));
+  assert.deepEqual(bumped.val.getField("focus"), { tag: "instance", val: 3n });
+});
+
+test("a child slot is not a number, however it is carried", async () => {
+  const { root } = await load("Two");
+  const board = new root.guest.Instance("Board", []);
+  // The tag is what distinguishes them on the wire, and the guest keeps it:
+  // a token read back is an `instance`, never the `number` an i64 would be if
+  // the two shared a case.
+  const n = board.withField("tally", num(9));
+  assert.deepEqual(n.getField("tally"), num(9));
+  const c = board.withField("focus", { tag: "instance", val: 9n });
+  assert.deepEqual(c.getField("focus"), { tag: "instance", val: 9n });
 });

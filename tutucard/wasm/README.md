@@ -82,10 +82,25 @@ in the file, or the one whose `<template>` carries `data-root`. The manifest
 lists it first, because every mount site takes the head of `components`. It also
 names `moduleName` and the descriptor's `core`.
 
-What a card still cannot do is **build a child while it runs**. `new` makes a
-declared `record`, not an instance, and `control.make-instance` is imported by
-nothing this generator emits — so a card composes children something else
-created. A TodoMVC whose `add` handler makes a todo is not yet expressible.
+**A child instance crosses the boundary.** `values.value`'s seventh case is
+`%instance(u64)` — a same-bundle child, as the token `guest.instance` hands out
+— and a compiled card could neither read one nor write one: the lowering knew
+four tags and the lifting knew the same four, so a token handed in came back as
+nil.
+
+It is carried as `jv_i64`, and that is free rather than clever: this runtime
+builds `jv_f64` and nothing else, because tutuca has exactly one number, so an
+i64 inside a card's value tree can only be a child token. It is a SCALAR on the
+wire rather than a handle into the value arena, so a card holding children and
+no collections still imports no arena. A declared `Component[Row]` slot — or a
+bare sibling name, which `statedef` resolves to one — holds it, `with-field`
+puts one there, `get-field` reads it back, and a successor keeps it because
+`jv_record_set` shares every part it did not change.
+
+What a card still cannot do is **build** one while it runs. `new` makes a
+declared `record`, not an instance, and nothing this generator emits imports
+`control.make-instance` — so a card composes children something else created. A
+TodoMVC whose `add` handler makes a todo is not yet expressible.
 
 **Declarations.** `receive`, `intent`, `compute`, `pred`,
 `invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses

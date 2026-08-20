@@ -1173,6 +1173,18 @@ const tc_tag_nil: i32 = 0;
 const tc_tag_bool: i32 = 1;
 const tc_tag_num: i32 = 2;
 const tc_tag_text: i32 = 3;
+// `values.value`'s seventh case: a same-bundle CHILD instance, as the
+// host-assigned token `guest.instance` hands out.
+//
+// Carried as `jv_i64`, which is free: this runtime builds `jv_f64` and nothing
+// else — tutuca has exactly one number — so an i64 in a card's value tree can
+// only ever be a child token, and needs no tag of its own inside the guest to
+// stay distinguishable from a count.
+//
+// Here rather than beside `tc_tag_list` in `lower_values.wax` because a child
+// is a SCALAR on the wire: it is a token, not a handle into the value arena, so
+// a card that holds children and no collections still imports no arena.
+const tc_tag_instance: i32 = 6;
 
 fn tc_lift_flat(kind: i32, p64: i64, p32: i32) -> &jv_value {
     if kind == tc_tag_bool {
@@ -1185,6 +1197,7 @@ fn tc_lift_flat(kind: i32, p64: i64, p32: i32) -> &jv_value {
     if kind == tc_tag_text {
         return jv_string(tc_str_in((p64 & 0xffffffff) as i32, p32));
     }
+    if kind == tc_tag_instance { return jv_i64(p64); }
     jv_null()
 }
 
@@ -1203,6 +1216,7 @@ fn tc_lift_scalar_cell(p: i32) -> &jv_value {
     if kind == tc_tag_text {
         return jv_string(tc_str_in(mem.load32(p + 8), mem.load32(p + 12)));
     }
+    if kind == tc_tag_instance { return jv_i64(mem.load64(p + 8)); }
     jv_null()
 }
 
@@ -1354,6 +1368,11 @@ fn tc_lower_scalar(v: &jv_value, dest: i32) -> i32 {
         mem.store32(dest, tc_tag_text);
         mem.store32(dest + 8, tc_str_out(s));
         mem.store32(dest + 12, utf8_byte_length(s));
+        return 1;
+    }
+    if k == jv_kind_i64 {
+        mem.store32(dest, tc_tag_instance);
+        mem.store64(dest + 8, jv_require_i64(v));
         return 1;
     }
     0

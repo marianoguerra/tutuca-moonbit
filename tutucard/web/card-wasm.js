@@ -48,7 +48,7 @@ function makeArena() {
 }
 
 /** A guest `value` as the plain JSON `@tutuca.Value::to_json` speaks. */
-function guestToJson(v, cells) {
+function guestToJson(v, cells, table) {
   if (v === undefined) return null;
   switch (v.tag) {
     case "nil":
@@ -58,13 +58,26 @@ function guestToJson(v, cells) {
     case "text":
       return v.val;
     case "list":
-      return (cells.get(v.val) ?? []).map((x) => guestToJson(x, cells));
+      return (cells.get(v.val) ?? []).map((x) => guestToJson(x, cells, table));
     case "map": {
       const out = {};
-      for (const [k, x] of cells.get(v.val) ?? new Map()) out[k] = guestToJson(x, cells);
+      for (const [k, x] of cells.get(v.val) ?? new Map())
+        out[k] = guestToJson(x, cells, table);
       return out;
     }
-    // An `instance` is a same-bundle child, which a compiled card never makes.
+    // A same-bundle CHILD, as the token the host handed the guest. It crosses
+    // to the MoonBit side as the marker `dyncomp/host/wasm/loader.mjs` uses,
+    // and `cardguest.mbt` turns that back into a `DynObj` through the bundle —
+    // which is the only thing that knows how to wrap a handle as a component.
+    //
+    // The component NAME travels with it because the marker needs one: a
+    // handle says which instance, not which kind, and the host has to know
+    // what it is wrapping.
+    case "instance": {
+      const h = Number(v.val);
+      const entry = table?.get(h);
+      return entry ? { $dyn: { handle: h, comp: entry.comp } } : null;
+    }
     default:
       return null;
   }
@@ -77,6 +90,11 @@ function jsonToGuest(j, put) {
   if (typeof j === "number") return { tag: "number", val: j };
   if (typeof j === "string") return { tag: "text", val: j };
   if (Array.isArray(j)) return { tag: "list", val: put(j.map((x) => jsonToGuest(x, put))) };
+  // The marker back into a token. Same spelling as `loader.mjs`, so a guest
+  // reads one shape whichever host it is running under.
+  if (j.$dyn && typeof j.$dyn.handle === "number") {
+    return { tag: "instance", val: BigInt(j.$dyn.handle) };
+  }
   const m = new Map();
   for (const [k, v] of Object.entries(j)) m.set(k, jsonToGuest(v, put));
   return { tag: "map", val: put(m) };
@@ -186,15 +204,22 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     { ...descriptor, policy: { grants: [] } },
   );
 
+  // `{inst, comp}` rather than the instance alone, because a CHILD token has to
+  // come back out as a marker naming its component — a handle says which
+  // instance, not which kind. A successor keeps its predecessor's component:
+  // `with-field` and a `changed` dispatch both answer the same kind of thing
+  // they were handed.
   const table = new Map();
   let nextHandle = 1;
-  const register = (inst) => {
+  const register = (inst, comp) => {
     const h = nextHandle++;
-    table.set(h, inst);
+    table.set(h, { inst, comp });
     return h;
   };
+  const instOf = (handle) => table.get(handle)?.inst;
+  const compOf = (handle) => table.get(handle)?.comp ?? "";
   const to = (j) => jsonToGuest(j, arena.put);
-  const from = (v) => guestToJson(v, arena.cells);
+  const from = (v) => guestToJson(v, arena.cells, table);
 
   // KEYED, and it used to be one global object. That was fine while exactly one
   // compiled card existed on a page — the "run the module" pane, pressed
@@ -217,12 +242,12 @@ export async function loadGuest(bytes, descriptor, key = "default") {
     },
     create(component, argsJson) {
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, to(v)]);
-      const h = register(new root.guest.Instance(component, args));
+      const h = register(new root.guest.Instance(component, args), component);
       arena.clear();
       return h;
     },
     getField(handle, name) {
-      const v = table.get(handle)?.getField(name);
+      const v = instOf(handle)?.getField(name);
       const out = v === undefined ? "" : JSON.stringify(from(v));
       arena.clear();
       return out;
@@ -233,12 +258,15 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       // there keep their numbers.
       const bucket =
         ["receive", "intent"][bucketInt] ?? "receive";
-      const inst = table.get(handle);
+      const inst = instOf(handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
       const result = inst.handleEvent(bucket, name, JSON.parse(argsJson).map(to));
       const out = JSON.stringify({
         handled: result.tag !== "unhandled",
-        next: result.tag === "changed" ? register(result.val) : null,
+        next:
+          result.tag === "changed"
+            ? register(result.val, compOf(handle))
+            : null,
         msgs: control,
       });
       arena.clear();
@@ -246,7 +274,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       return out;
     },
     callMethod(handle, name, argsJson) {
-      const inst = table.get(handle);
+      const inst = instOf(handle);
       if (!inst) return "";
       const v = inst.callMethod(name, JSON.parse(argsJson).map(to));
       const out = JSON.stringify(from(v));
@@ -254,11 +282,11 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       return out;
     },
     withField(handle, name, valueJson) {
-      const inst = table.get(handle);
+      const inst = instOf(handle);
       if (!inst) return -1;
       const next = inst.withField(name, to(JSON.parse(valueJson)));
       arena.clear();
-      return next === undefined ? -1 : register(next);
+      return next === undefined ? -1 : register(next, compOf(handle));
     },
   };
   return root;
