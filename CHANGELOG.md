@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.1] - 2026-08-20
+
+### Fixed
+
+- **Every compiled card with a view failed to load.** `tutucard/wasm` projects
+  each `<template>` into an `html` string on the manifest and `packBundle` tars
+  that manifest as it stands, because a compiled card has no archive to read
+  views out of — only a page that has the card. The universal host's
+  `hydrateManifest` read `view.src` off every view regardless, so the name came
+  out `""`, the lookup missed, and the load died with `static manifest view is
+  missing from archive: undefined`. Since a bare template IS the main view, that
+  was every card rather than an unlucky few. A view that already carries its
+  markup is now left alone; one that names a file is still refused by name when
+  the file is absent.
+
+  It shipped because nothing exercised the branch. There are two shapes through
+  `hydrateManifest`: the guest-bundle path, where a view is a file the manifest
+  points at with a `src` — which `examples/dyncomp-dice` proves end to end — and
+  the card path, which had no coverage at all, since `dyncomp/test/archive.test.mjs`
+  stopped at `untar` / `gunzip` / `requireDescriptor`. It now drives a gzipped
+  archive built in memory through the dropped-file seam, which needed no new
+  export: `createTcompImports` and `registerDroppedFiles` were already public and
+  neither touches the DOM. Both shapes are checked where they diverge.
+
 ## [0.24.0] - 2026-08-20
 
 **v2 only.** 0.23.0 shipped the two-channel model as a *migration*: the contract
