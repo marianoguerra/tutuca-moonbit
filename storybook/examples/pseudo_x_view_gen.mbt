@@ -402,7 +402,7 @@ impl @component.Fields for ItemSelectState with fn schema() {
       @component.FieldInfo::new("options", TyList(TyAny)),
       @component.FieldInfo::new("current", TyText),
     ],
-    inputs=["setCurrent"],
+    view_handlers=["setCurrent"],
     view_names=["main"],
   )
 }

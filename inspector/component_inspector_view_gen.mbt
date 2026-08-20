@@ -336,7 +336,7 @@ impl @component.Fields for CompViewState with fn schema() {
       @component.FieldInfo::new("rawView", TyText),
       @component.FieldInfo::new("isExpanded", TyBool),
     ],
-    inputs=["toggle"],
+    view_handlers=["toggle"],
     methods=["arrowText"],
     view_names=["main"],
   )
@@ -602,7 +602,7 @@ impl @component.Fields for CompSectionState with fn schema() {
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("label", TyText),
     ],
-    inputs=["nextPage", "prevPage", "toggle"],
+    view_handlers=["nextPage", "prevPage", "toggle"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",

@@ -326,11 +326,11 @@ fn emit_schema(
     }
     out.write_string("    ],\n")
   }
-  out.write_string(out_channel("inputs", surface.inputs.map(i => i.name)))
+  out.write_string(
+    out_channel("view_handlers", surface.inputs.map(i => i.name)),
+  )
   out.write_string(out_channel("receives", def.receive.map(m => m.name)))
   out.write_string(out_channel("intents", def.intent.map(m => m.name)))
-  out.write_string(out_channel("bubbles", def.bubble.map(m => m.name)))
-  out.write_string(out_channel("responses", def.response.map(m => m.name)))
   out.write_string(out_channel("methods", declared_methods(surface)))
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))

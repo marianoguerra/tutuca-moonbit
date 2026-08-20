@@ -1,15 +1,15 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "mastodonlib",
-  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data \u2014 no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",
+  "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data — no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
   "capabilities": [
     {
       "cap": "cap-external-urls",
-      "reason": "avatars, profile headers and attachment previews from the configured media origin \u2014 which serves a remote account's pictures too, under /cache/, because the server proxies what it federates \u2014 and profile / hashtag / permalink links to the configured web origin. Neither origin is a literal in this bundle: the views name them through `mediaOrigin` and `webOrigin`, which the HOST binds, and the records only ever supply the path."
+      "reason": "avatars, profile headers and attachment previews from the configured media origin — which serves a remote account's pictures too, under /cache/, because the server proxies what it federates — and profile / hashtag / permalink links to the configured web origin. Neither origin is a literal in this bundle: the views name them through `mediaOrigin` and `webOrigin`, which the HOST binds, and the records only ever supply the path."
     }
   ],
   "config": [
@@ -23,20 +23,20 @@
       "name": "webOrigin",
       "type": "origin",
       "default": "https://mastodon.social/",
-      "doc": "Where this instance's pages are: a profile, a hashtag, and the permalink of a post that is local to it. Remote profiles are here too, because the server renders them at its own address \u2014 a remote POST is not, and stays selectable text."
+      "doc": "Where this instance's pages are: a profile, a hashtag, and the permalink of a post that is local to it. Remote profiles are here too, because the server renders them at its own address — a remote POST is not, and stays selectable text."
     },
     {
       "name": "instanceName",
       "type": "text",
       "default": "mastodon.social",
-      "doc": "The server this reader belongs to, as a person writes it. Prose only \u2014 the full @user@server handle, a link's tooltip, and the visible text of a permalink. Never an origin: a text variable cannot reach a view, which is what keeps it from becoming one."
+      "doc": "The server this reader belongs to, as a person writes it. Prose only — the full @user@server handle, a link's tooltip, and the visible text of a permalink. Never an origin: a text variable cannot reach a view, which is what keeps it from becoming one."
     }
   ],
   "stringEncoding": "utf16",
   "components": [
     {
       "name": "Scope",
-      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an instance that only sees what it federates. Not an error and not a warning \u2014 the sentence that turns a count into a claim a reader can check.",
+      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an instance that only sees what it federates. Not an error and not a warning — the sentence that turns a count into a claim a reader can check.",
       "keywords": [
         "scope",
         "coverage",
@@ -49,7 +49,7 @@
       "messageDocs": [
         {
           "name": "summary",
-          "doc": "Everything this scope discloses, as one line \u2014 the card's tooltip."
+          "doc": "Everything this scope discloses, as one line — the card's tooltip."
         },
         {
           "name": "hasAny",
@@ -101,7 +101,7 @@
         {
           "name": "truncatedBy",
           "ty": 1,
-          "doc": "What stopped it, in the caller's own words \u2014 `limit`, `depth`.",
+          "doc": "What stopped it, in the caller's own words — `limit`, `depth`.",
           "required": false
         },
         {
@@ -118,13 +118,11 @@
         }
       ],
       "receives": [],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "summary"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "a federated timeline",
@@ -137,7 +135,8 @@
           "doc": "What a thread leaves out, which is where a card looks most complete and is least so."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     },
     {
       "name": "Status",
@@ -171,7 +170,7 @@
         },
         {
           "name": "reply",
-          "doc": "Answer this post. There is no composer here, so it is only the announcement \u2014 a `replyTo` bubble carrying the id."
+          "doc": "Answer this post. There is no composer here, so it is only the announcement — a `replyTo` bubble carrying the id."
         },
         {
           "name": "toggleFold",
@@ -215,7 +214,7 @@
         },
         {
           "name": "voted",
-          "doc": "A poll under this post was voted in. It passes straight through \u2014 only a component with a network can post a vote."
+          "doc": "A poll under this post was voted in. It passes straight through — only a component with a network can post a vote."
         },
         {
           "name": "unvoted",
@@ -235,7 +234,7 @@
         },
         {
           "name": "foldTitle",
-          "doc": "What the fold button will do, spelled out \u2014 its label is a glyph."
+          "doc": "What the fold button will do, spelled out — its label is a glyph."
         },
         {
           "name": "owned",
@@ -304,7 +303,7 @@
         {
           "name": "url",
           "ty": 0,
-          "doc": "The status's canonical url, as the record carries it. For a post from another server this is all there is \u2014 no view can name that origin \u2014 so it stays text.",
+          "doc": "The status's canonical url, as the record carries it. For a post from another server this is all there is — no view can name that origin — so it stays text.",
           "required": false
         },
         {
@@ -322,7 +321,7 @@
         {
           "name": "avatar",
           "ty": 0,
-          "doc": "The author's picture, as the full url the record carries. Drawn when it is on files.mastodon.social \u2014 the origin the view names, which a remote account's picture is on too, because the server proxies what it federates.",
+          "doc": "The author's picture, as the full url the record carries. Drawn when it is on files.mastodon.social — the origin the view names, which a remote account's picture is on too, because the server proxies what it federates.",
           "required": false
         },
         {
@@ -473,12 +472,42 @@
         {
           "name": "owned",
           "ty": 2,
-          "doc": "Whether this post is a row inside a larger surface \u2014 a thread, a feed \u2014 rather than standing on its own. A row draws smaller and borderless, inside the column that owns it.",
+          "doc": "Whether this post is a row inside a larger surface — a thread, a feed — rather than standing on its own. A row draws smaller and borderless, inside the column that owns it.",
           "required": false
         }
       ],
       "receives": [],
-      "bubbles": [
+      "methods": [
+        "summary",
+        "revealLabel",
+        "boostTitle",
+        "foldTitle"
+      ],
+      "whens": [],
+      "inits": [
+        {
+          "name": "announcement",
+          "argsJson": "{\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}",
+          "doc": "A real public record: seven hashtags the server resolved, and a link nobody here can follow — its origin belongs to whoever posted it, so it is shortened text with the whole url in the tooltip."
+        },
+        {
+          "name": "with pictures",
+          "argsJson": "{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}",
+          "doc": "A real public record whose whole body is a picture: an avatar and an attachment, both on the one origin the views name, and a described image so the ALT badge shows."
+        },
+        {
+          "name": "from another server",
+          "argsJson": "{\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}",
+          "doc": "A post federated in from floss.social. Its pictures still draw — the server proxies them under /cache/ on the origin the views name — and its permalink does not, because that page is on floss.social."
+        },
+        {
+          "name": "a poll behind a warning",
+          "argsJson": "{\"id\": \"117090000000000001\", \"url\": \"https://mastodon.social/@alice/117090000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"content\": \"ok @bob, settle it: does an untrusted component get to load pictures at all? #wasm\", \"spoilerText\": \"mild opinions about capability design\", \"createdAt\": \"2026-08-13T09:41:00Z\", \"visibility\": \"private\", \"tags\": [\"wasm\"], \"mentions\": [\"bob@other.test\"], \"poll\": {\"options\": [{\"title\": \"yes, if the view names the origin\", \"votesCount\": 41}, {\"title\": \"no, an image is a GET it chose\", \"votesCount\": 17}, {\"title\": \"only from the host's own origin\", \"votesCount\": 8}], \"votesCount\": 66, \"votersCount\": 66, \"expiresAt\": \"2026-08-15T09:41:00Z\", \"expired\": false, \"multiple\": false, \"voted\": false, \"ownVotes\": []}, \"repliesCount\": 5, \"reblogsCount\": 0, \"favouritesCount\": 12}",
+          "doc": "A followers-only post with a content warning, a mention, a hashtag and a poll: the body waits for Show more, the poll is a child component, and the boost button refuses because Mastodon does not let anybody boost this visibility."
+        }
+      ],
+      "style": "",
+      "intents": [
         "favourited",
         "unfavourited",
         "boosted",
@@ -489,38 +518,7 @@
         "folded",
         "unfolded"
       ],
-      "responses": [],
-      "methods": [
-        "summary",
-        "revealLabel",
-        "boostTitle",
-        "foldTitle"
-      ],
-      "whens": [],
-      "requests": [],
-      "inits": [
-        {
-          "name": "announcement",
-          "argsJson": "{\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}",
-          "doc": "A real public record: seven hashtags the server resolved, and a link nobody here can follow \u2014 its origin belongs to whoever posted it, so it is shortened text with the whole url in the tooltip."
-        },
-        {
-          "name": "with pictures",
-          "argsJson": "{\"id\": \"117089037536611184\", \"url\": \"https://mastodon.social/@warandpeas/117089037536611184\", \"acct\": \"warandpeas\", \"displayName\": \"War and Peas\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/233/670/original/c051f22ff243a7a5.jpg\", \"content\": \"\", \"createdAt\": \"2026-08-13T16:02:05.349Z\", \"media\": [{\"description\": \"4 panel comic by War and Peas. 1. Panel: Two aliens look through the window of a house. One of them goes, \\\"This must be the alpha species of the planet.\\\" 2. Panel: They present an alien gift to an orange cat who sits on the top of a couch and say \\\"We come in peace.\\\" 3. Panel: The alien gift sits next to the cat who looks at it. 4. Panel: The cat pushes the gift off the couch.\", \"previewUrl\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/small/e1d5dd0142a42d1d.jpeg\", \"url\": \"https://files.mastodon.social/media_attachments/files/117/089/037/306/986/460/original/e1d5dd0142a42d1d.jpeg\", \"type\": \"image\"}], \"repliesCount\": 2, \"reblogsCount\": 119, \"favouritesCount\": 204}",
-          "doc": "A real public record whose whole body is a picture: an avatar and an attachment, both on the one origin the views name, and a described image so the ALT badge shows."
-        },
-        {
-          "name": "from another server",
-          "argsJson": "{\"id\": \"117088598872448386\", \"url\": \"https://floss.social/@servo/117088597479886002\", \"acct\": \"servo@floss.social\", \"displayName\": \"Servo\", \"avatar\": \"https://files.mastodon.social/cache/accounts/avatars/109/678/940/117/082/909/original/c3434ec91ea114b5.jpg\", \"content\": \"CSS Grid is now enabled by default in Servo\\n\\nOne of the most powerful web layout systems is now available in an independent Rust web engine. It's powered by the library Taffy & enabled thanks to Nico Burns.\\n\\nA huge milestone for CSS layout in Servo!\", \"createdAt\": \"2026-08-13T14:10:10.000Z\", \"media\": [{\"description\": \"Generic social image with a Servo logo over a gradient that reads \\\"CSS Grid is now enabled by default\\\"\", \"previewUrl\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/small/ebfe18d7cda616d6.webp\", \"url\": \"https://files.mastodon.social/cache/media_attachments/files/117/088/598/741/202/066/original/ebfe18d7cda616d6.webp\", \"type\": \"image\"}], \"repliesCount\": 4, \"reblogsCount\": 108, \"favouritesCount\": 162}",
-          "doc": "A post federated in from floss.social. Its pictures still draw \u2014 the server proxies them under /cache/ on the origin the views name \u2014 and its permalink does not, because that page is on floss.social."
-        },
-        {
-          "name": "a poll behind a warning",
-          "argsJson": "{\"id\": \"117090000000000001\", \"url\": \"https://mastodon.social/@alice/117090000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"content\": \"ok @bob, settle it: does an untrusted component get to load pictures at all? #wasm\", \"spoilerText\": \"mild opinions about capability design\", \"createdAt\": \"2026-08-13T09:41:00Z\", \"visibility\": \"private\", \"tags\": [\"wasm\"], \"mentions\": [\"bob@other.test\"], \"poll\": {\"options\": [{\"title\": \"yes, if the view names the origin\", \"votesCount\": 41}, {\"title\": \"no, an image is a GET it chose\", \"votesCount\": 17}, {\"title\": \"only from the host's own origin\", \"votesCount\": 8}], \"votesCount\": 66, \"votersCount\": 66, \"expiresAt\": \"2026-08-15T09:41:00Z\", \"expired\": false, \"multiple\": false, \"voted\": false, \"ownVotes\": []}, \"repliesCount\": 5, \"reblogsCount\": 0, \"favouritesCount\": 12}",
-          "doc": "A followers-only post with a content warning, a mention, a hashtag and a poll: the body waits for Show more, the poll is a child component, and the boost button refuses because Mastodon does not let anybody boost this visibility."
-        }
-      ],
-      "style": ""
+      "serves": []
     },
     {
       "name": "Poll",
@@ -620,7 +618,7 @@
         {
           "name": "votersCount",
           "ty": 1,
-          "doc": "How many people voted \u2014 fewer than votesCount when the poll is multiple choice.",
+          "doc": "How many people voted — fewer than votesCount when the poll is multiple choice.",
           "required": false
         },
         {
@@ -659,16 +657,10 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "voted",
-        "unvoted"
-      ],
-      "responses": [],
       "methods": [
         "summary"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "open",
@@ -681,7 +673,12 @@
           "doc": "A closed poll with a pick already in it: every share drawn, the leading option marked, and no vote left to cast."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "voted",
+        "unvoted"
+      ],
+      "serves": []
     },
     {
       "name": "Thread",
@@ -698,7 +695,7 @@
       "messageDocs": [
         {
           "name": "folded",
-          "doc": "A row folded its replies away \u2014 the thread is what knows which rows those are, so it drops them and stops the bubble here."
+          "doc": "A row folded its replies away — the thread is what knows which rows those are, so it drops them and stops the bubble here."
         },
         {
           "name": "unfolded",
@@ -742,7 +739,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -758,7 +755,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -804,7 +801,7 @@
         {
           "name": "posts",
           "ty": 1,
-          "doc": "The conversation in reading order, each post { id, url, acct, displayName, avatar, content, spoilerText, createdAt, visibility, tags, mentions, media, poll, repliesCount, reblogsCount, favouritesCount, depth } \u2014 depth being how deep in the reply tree it sits.",
+          "doc": "The conversation in reading order, each post { id, url, acct, displayName, avatar, content, spoilerText, createdAt, visibility, tags, mentions, media, poll, repliesCount, reblogsCount, favouritesCount, depth } — depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
@@ -816,7 +813,7 @@
         {
           "name": "scope",
           "ty": 3,
-          "doc": "What this conversation does not show \u2014 the depth the caller asked for, and the replies this instance has never federated. Same record shape a Timeline's scope takes.",
+          "doc": "What this conversation does not show — the depth the caller asked for, and the replies this instance has never federated. Same record shape a Timeline's scope takes.",
           "required": false
         },
         {
@@ -831,15 +828,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "folded",
-        "unfolded",
-        "favourited",
-        "unfavourited",
-        "boosted",
-        "unboosted"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "paged",
@@ -849,11 +837,10 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "conversation",
-          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}]}",
+          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}]}",
           "doc": "A five-post conversation three levels deep, focused on its root, and federated: two of the five are on another server, so two of the five permalinks are text."
         },
         {
@@ -863,11 +850,20 @@
         },
         {
           "name": "a page at a time",
-          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}], \"pageSize\": 3}",
+          "argsJson": "{\"focus\": \"117091000000000001\", \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000002\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000002\", \"content\": \"@alice does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"mentions\": [\"alice\"], \"repliesCount\": 1, \"favouritesCount\": 18, \"depth\": 1}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}, {\"id\": \"117091000000000004\", \"acct\": \"bob@other.test\", \"displayName\": \"Bob Beta\", \"url\": \"https://other.test/@bob/117091000000000004\", \"content\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"favouritesCount\": 7, \"depth\": 3}, {\"id\": \"117091000000000005\", \"acct\": \"carol\", \"displayName\": \"Carol Gamma\", \"url\": \"https://mastodon.social/@carol/117091000000000005\", \"content\": \"how big is one of these bundles? #wasm\", \"tags\": [\"wasm\"], \"createdAt\": \"2026-08-11T15:30:00Z\", \"favouritesCount\": 3, \"depth\": 1}], \"pageSize\": 3}",
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "folded",
+        "unfolded",
+        "favourited",
+        "unfavourited",
+        "boosted",
+        "unboosted"
+      ],
+      "serves": []
     },
     {
       "name": "Timeline",
@@ -885,7 +881,7 @@
       "messageDocs": [
         {
           "name": "setQuery",
-          "doc": "Filter the column by what the reader typed \u2014 matched against the body, the content warning, the name and the handle."
+          "doc": "Filter the column by what the reader typed — matched against the body, the content warning, the name and the handle."
         },
         {
           "name": "clearQuery",
@@ -933,7 +929,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -949,7 +945,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -1001,7 +997,7 @@
         {
           "name": "title",
           "ty": 0,
-          "doc": "The heading over the column \u2014 \"Trending\", a hashtag, a server's name.",
+          "doc": "The heading over the column — \"Trending\", a hashtag, a server's name.",
           "required": false
         },
         {
@@ -1028,7 +1024,7 @@
         {
           "name": "scope",
           "ty": 4,
-          "doc": "What this page does not cover. Written as a plain record \u2014 the keys are the Scope component's own field names \u2014 and drawn only when there is something to disclose.",
+          "doc": "What this page does not cover. Written as a plain record — the keys are the Scope component's own field names — and drawn only when there is something to disclose.",
           "required": false
         },
         {
@@ -1043,14 +1039,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "favourited",
-        "unfavourited",
-        "boosted",
-        "unboosted",
-        "replyTo"
-      ],
-      "responses": [],
       "methods": [
         "countLabel",
         "mediaLabel",
@@ -1061,7 +1049,6 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "trending",
@@ -1084,7 +1071,15 @@
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "favourited",
+        "unfavourited",
+        "boosted",
+        "unboosted",
+        "replyTo"
+      ],
+      "serves": []
     },
     {
       "name": "Profile",
@@ -1117,7 +1112,7 @@
         },
         {
           "name": "followLabel",
-          "doc": "What the follow button says right now \u2014 a locked account asks rather than follows."
+          "doc": "What the follow button says right now — a locked account asks rather than follows."
         },
         {
           "name": "favourited",
@@ -1145,7 +1140,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -1161,7 +1156,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -1320,16 +1315,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "followed",
-        "unfollowed",
-        "favourited",
-        "unfavourited",
-        "boosted",
-        "unboosted",
-        "replyTo"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "followLabel",
@@ -1340,25 +1325,34 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "mastodon",
           "argsJson": "{\"displayName\": \"Mastodon\", \"acct\": \"Mastodon\", \"note\": \"Our mission is to connect the world through thriving online communities.\\n\\nThis is the primary account for the Mastodon project.\\n\\nFor technical software updates, follow @MastodonEngineering\\n\\nFor news and updates on the Mastodon servers that we operate (like this one!), follow @staff\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"header\": \"https://files.mastodon.social/accounts/headers/000/013/179/original/1375be116fbe0f1d.png\", \"followersCount\": 877054, \"followingCount\": 51, \"statusesCount\": 560, \"createdAt\": \"2016-11-23T00:00:00.000Z\", \"fields\": [{\"name\": \"Homepage\", \"value\": \"https://joinmastodon.org\", \"verified\": true}, {\"name\": \"Source Code\", \"value\": \"https://github.com/mastodon\", \"verified\": true}, {\"name\": \"Blog\", \"value\": \"https://blog.joinmastodon.org\", \"verified\": true}, {\"name\": \"Donate\", \"value\": \"https://joinmastodon.org/sponsors#donate\", \"verified\": true}], \"posts\": [{\"id\": \"117083691112770390\", \"url\": \"https://mastodon.social/@Mastodon/117083691112770390\", \"acct\": \"Mastodon\", \"displayName\": \"Mastodon\", \"avatar\": \"https://files.mastodon.social/accounts/avatars/000/013/179/original/b4ceb19c9c54ec7e.png\", \"content\": \"Today we're sharing additional guidelines about our Trade Mark Policy based on community feedback that we received.\\n\\nThe new guidelines, and more background about these changes, are available on our blog:\\nhttps://blog.joinmastodon.org/2026/08/sharing-guidelines-about-mastodons-trade-mark-policy/\\n\\n#Mastodon #Fediverse #SocialWeb #FediDev #MastoDev #FediAdmin #MastoAdmin\", \"createdAt\": \"2026-08-12T17:22:25.361Z\", \"tags\": [\"mastodon\", \"fediverse\", \"socialweb\", \"fedidev\", \"mastodev\", \"fediadmin\", \"mastoadmin\"], \"repliesCount\": 10, \"reblogsCount\": 89, \"favouritesCount\": 92}]}",
-          "doc": "The real account, fetched from the public API: a header, an avatar, four verified metadata links and six-figure counts \u2014 the picture path end to end."
+          "doc": "The real account, fetched from the public API: a header, an avatar, four verified metadata links and six-figure counts — the picture path end to end."
         },
         {
           "name": "alice",
-          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}]}",
+          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}]}",
           "doc": "An account with no pictures at all, so the initials and the flat band are what shows, and locked, so the button asks instead of following."
         },
         {
           "name": "a page at a time",
-          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}], \"pageSize\": 1}",
+          "argsJson": "{\"displayName\": \"Alice Alpha\", \"acct\": \"alice\", \"note\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followingCount\": 312, \"statusesCount\": 2870, \"createdAt\": \"2019-04-02T00:00:00.000Z\", \"locked\": true, \"fields\": [{\"name\": \"Code\", \"value\": \"https://codeberg.org/alice\", \"verified\": true}, {\"name\": \"Pronouns\", \"value\": \"they/them\", \"verified\": false}], \"posts\": [{\"id\": \"117091000000000001\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000001\", \"content\": \"shipped it: components that register into a running app at runtime, as wasm. write-up at https://tutuca.dev/dyncomp #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"tags\": [\"wasm\"], \"repliesCount\": 2, \"reblogsCount\": 34, \"favouritesCount\": 128, \"depth\": 0}, {\"id\": \"117091000000000003\", \"acct\": \"alice\", \"displayName\": \"Alice Alpha\", \"url\": \"https://mastodon.social/@alice/117091000000000003\", \"content\": \"@bob no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"mentions\": [\"bob@other.test\"], \"repliesCount\": 1, \"favouritesCount\": 44, \"depth\": 2}], \"pageSize\": 1}",
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "followed",
+        "unfollowed",
+        "favourited",
+        "unfavourited",
+        "boosted",
+        "unboosted",
+        "replyTo"
+      ],
+      "serves": []
     }
   ]
 }

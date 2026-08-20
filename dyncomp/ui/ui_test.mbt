@@ -72,7 +72,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   _args,
 ) {
   match (bucket, name) {
-    (Input, "inc") =>
+    (Receive, "inc") =>
       {
         handled: true,
         next: Some(
@@ -83,8 +83,8 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
         ),
         msgs: [],
       }
-    // the guest's own text handler: `@on.input="jot value"`
-    (Input, "jot") =>
+    // the guest's own text handler: `@on.input="jot e.value"`
+    (Receive, "jot") =>
       match _args {
         [Str(text), ..] =>
           {
@@ -122,8 +122,8 @@ impl @dyncomp.Guest for StubGuest with fn with_field(self, handle, name, v) {
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn handle_request(_self, name, _args) {
-  Err(Str("no such request: \{name}"))
+impl @dyncomp.Guest for StubGuest with fn serve_intent(_self, name, _args) {
+  Err(Str("no such service: \{name}"))
 }
 
 ///|
@@ -172,7 +172,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         views: [
           {
             name: "main",
-            html: "<div class=\"the-counter\"><span class=\"guest-count\" @text=\".count\"></span><button class=\"guest-inc\" @on.click=\"inc\">+</button><input class=\"guest-note\" :value=\".note\" @on.input=\"jot value\" /></div>",
+            html: "<div class=\"the-counter\"><span class=\"guest-count\" @text=\".count\"></span><button class=\"guest-inc\" @on.click=\"inc\">+</button><input class=\"guest-note\" :value=\".note\" @on.input=\"jot e.value\" /></div>",
           },
         ],
         types: [
@@ -213,13 +213,11 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         ],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [
           {
             name: "at-three",

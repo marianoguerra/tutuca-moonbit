@@ -182,7 +182,7 @@ impl @component.Fields for ItemState with fn schema() {
       @component.FieldInfo::new("completed", TyBool),
       @component.FieldInfo::new("text", TyText),
     ],
-    inputs=["setCompleted", "setText"],
+    view_handlers=["setCompleted", "setText"],
     view_names=["main"],
   )
 }
@@ -363,7 +363,7 @@ impl @component.Fields for ItemsState with fn schema() {
     name="Items",
     fingerprint="a304f0a44033a68f",
     fields=[@component.FieldInfo::new("items", TyList(TyAny))],
-    inputs=["onAddItem", "removeInItemsAt"],
+    view_handlers=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
   )
 }

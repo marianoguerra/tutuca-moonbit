@@ -2,7 +2,7 @@
 //
 // Teaches: hosting a web component (<emoji-picker> from
 // emoji-picker-element, loaded by the demo page) and reacting to its
-// CustomEvent. `@on.emoji-click="onEmojiClick value"` — the app glue maps a
+// CustomEvent. `@on.emoji-click="onEmojiClick e.value"` — the app glue maps a
 // CustomEvent's `detail` object to `value` as a Value::Map, so the handler
 // reads `.unicode` off it like the JS handler read `detail.unicode`.
 

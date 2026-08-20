@@ -510,7 +510,7 @@ pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 
 ///|
 pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse? {
-  parse_handler(s, ctx, Input, allow_args=true, report=true)
+  parse_handler(s, ctx, Receive, allow_args=true, report=true)
 }
 
 ///|

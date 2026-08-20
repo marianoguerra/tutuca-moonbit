@@ -233,7 +233,7 @@ fn item_select_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setCurrent", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setCurrent", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

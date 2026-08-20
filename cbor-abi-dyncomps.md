@@ -22,7 +22,7 @@ the path that preserves multi-language support:
   copying bytes between memories, and invoking its exports.
 
 Do not replace the current WIT ABI in one step. Add `core-cbor@1` beside the
-existing `tutuca:component@0.7.0` ABI, prove it with MoonBit and Rust guests,
+existing `tutuca:component@0.9.0` ABI, prove it with MoonBit and Rust guests,
 measure it, and make it the default only after the acceptance gates in this
 document pass.
 

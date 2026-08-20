@@ -7,7 +7,7 @@
 //
 // A card is parsed and mounted, so what ships is the runtime and the page — AND
 // a compiler, which is new. `tutucard/wasm` turns the same card into a
-// `tutuca:component@0.8.0` core wasm module, and it is a MoonBit library in
+// `tutuca:component@0.9.0` core wasm module, and it is a MoonBit library in
 // this bundle rather than a payload fetched beside it: `marianoguerra/wax` plus
 // the Wax standard library it vendors, which is why `abi.mjs` and
 // `card-wasm.js` are copied too.

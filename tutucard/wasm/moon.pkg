@@ -1,4 +1,4 @@
-// The card-to-wasm backend: a tutucard `.html` in, a `tutuca:component@0.7.0`
+// The card-to-wasm backend: a tutucard `.html` in, a `tutuca:component@0.9.0`
 // core wasm module out.
 //
 // One of TWO backends over `tscript`'s one AST: the MoonBit emitter

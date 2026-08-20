@@ -216,7 +216,7 @@ impl @component.Fields for JsonSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonSelector",
     fingerprint="1fda30c503ad8d0e",
-    inputs=[
+    view_handlers=[
       "setToArray", "setToBool", "setToNull", "setToNumber", "setToObject", "setToString",
     ],
     view_names=["main"],
@@ -448,7 +448,7 @@ impl @component.Fields for JsonBoolState with fn schema() {
     name="JsonBool",
     fingerprint="52537a69fb1aed35",
     fields=[@component.FieldInfo::new("value", TyBool)],
-    inputs=["toggleValue"],
+    view_handlers=["toggleValue"],
     view_names=["main"],
   )
 }
@@ -619,7 +619,7 @@ impl @component.Fields for JsonStringState with fn schema() {
     name="JsonString",
     fingerprint="7e15bdab8f977d4f",
     fields=[@component.FieldInfo::new("value", TyText)],
-    inputs=["setValue"],
+    view_handlers=["setValue"],
     view_names=["main"],
   )
 }
@@ -795,7 +795,7 @@ impl @component.Fields for JsonNumberState with fn schema() {
       @component.FieldInfo::new("strValue", TyText),
       @component.FieldInfo::new("value", TyFloat),
     ],
-    inputs=["setRawValue"],
+    view_handlers=["setRawValue"],
     view_names=["main"],
   )
 }
@@ -990,7 +990,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
     name="JsonArray",
     fingerprint="0de9c01b2912a1d0",
     fields=[@component.FieldInfo::new("items", TyList(TyAny))],
-    inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )
 }
@@ -1168,7 +1168,7 @@ impl @component.Fields for JsonObjectKeyValState with fn schema() {
       @component.FieldInfo::new("key", TyText),
       @component.FieldInfo::new("value", TyAny),
     ],
-    inputs=["setKey"],
+    view_handlers=["setKey"],
     view_names=["main"],
   )
 }
@@ -1363,7 +1363,7 @@ impl @component.Fields for JsonObjectState with fn schema() {
     name="JsonObject",
     fingerprint="d710dac99231860a",
     fields=[@component.FieldInfo::new("items", TyList(TyAny))],
-    inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )
 }

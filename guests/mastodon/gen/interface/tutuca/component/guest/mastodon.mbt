@@ -1174,7 +1174,7 @@ impl DynComponent for Poll with fn get_field(self, name) {
 /// `POST /api/v1/polls/:id/votes`. This bundle has no network and is only saying
 /// what happened.
 impl DynComponent for Poll with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT && name == "vote" else { return Unhandled }
+  guard bucket is RECEIVE && name == "vote" else { return Unhandled }
   guard args is [@values.Value::Number(n), ..] else { return Unhandled }
   let i = n.to_int()
   let d = self.data
@@ -1194,10 +1194,16 @@ impl DynComponent for Poll with fn handle(self, bucket, name, args) {
   } else {
     [i]
   }
-  @control.emit(if picked { "unvoted" } else { "voted" }, [
+  @control.intent(if picked { "unvoted" } else { "voted" }, [
     vtext(self.status_id),
     vnum(i),
-  ])
+  ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
   Changed({ ..self, data: { ..d, own_votes, } } as &DynComponent)
 }
 
@@ -1432,7 +1438,7 @@ impl DynComponent for Status with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Status with fn handle(self, bucket, name, _args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     // Optimistic, and announced: the flag is THIS row's — it returns its own
     // successor, and the host writes it home into whatever list holds it — while
@@ -1441,14 +1447,20 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
     // with a network connection should do about it. This bundle has no network
     // and is only saying what happened.
     "toggleFavourite" => {
-      @control.emit(
+      @control.intent(
         if self.favourited {
           "unfavourited"
         } else {
           "favourited"
         },
         [vtext(self.toot.id)],
-      )
+      {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, favourited: !self.favourited } as &DynComponent)
     }
     "toggleBoost" => {
@@ -1456,20 +1468,32 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
       // is no boosting: mastodon.social draws the button struck through and
       // refuses the click, and so does this.
       guard self.can_boost() else { return Unchanged }
-      @control.emit(if self.reblogged { "unboosted" } else { "boosted" }, [
+      @control.intent(if self.reblogged { "unboosted" } else { "boosted" }, [
         vtext(self.toot.id),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, reblogged: !self.reblogged } as &DynComponent)
     }
     "toggleBookmark" => {
-      @control.emit(
+      @control.intent(
         if self.bookmarked {
           "unbookmarked"
         } else {
           "bookmarked"
         },
         [vtext(self.toot.id)],
-      )
+      {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, bookmarked: !self.bookmarked } as &DynComponent)
     }
     // Opening a content warning is this reader's, is nobody else's business and
@@ -1481,7 +1505,13 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
     // There is no composer here, so replying is entirely an announcement: this
     // bundle says which post was answered and whoever holds it opens something.
     "reply" => {
-      @control.emit("replyTo", [vtext(self.toot.id)])
+      @control.intent("replyTo", [vtext(self.toot.id)], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Unchanged
     }
     // The fold flag is THIS row's, and the bubble is what the thread above
@@ -1490,9 +1520,15 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
     // they are not the same fact.
     "toggleFold" => {
       guard self.foldable > 0 else { return Unchanged }
-      @control.emit(if self.folded { "unfolded" } else { "folded" }, [
+      @control.intent(if self.folded { "unfolded" } else { "folded" }, [
         vtext(self.toot.id),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, folded: !self.folded } as &DynComponent)
     }
     _ => Unhandled
@@ -2334,13 +2370,13 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
   // everything else that reaches it came up from a row. A page moves nothing
   // but which rows are drawn, so no row is rebuilt and nothing is announced —
   // there is nobody above who could act on "the reader turned a page".
-  if bucket is INPUT && is_page_message(name) {
+  if bucket is RECEIVE && is_page_message(name) {
     return match self.pager().moved(name) {
       Some(page) => Changed({ ..self, page, } as &DynComponent)
       None => Unchanged
     }
   }
-  guard bucket is BUBBLE else { return Unhandled }
+  guard bucket is INTENT else { return Unhandled }
   guard args is [@values.Value::Text(id), ..] else { return Unhandled }
   guard id != "" && self.has(id) else { return Unchanged }
   match name {
@@ -2572,7 +2608,7 @@ impl DynComponent for Timeline with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Timeline with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     // The filter does NOT rebuild the rows: the children are built once and the
     // filter chooses among them, so what a reader did to a row is still there
@@ -2832,14 +2868,20 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
     // Same shape as a row's favourite: the flag moves, the follower count
     // follows it through `bump`, and the bubble is what a host would turn into
     // the follow it alone is allowed to write.
-    (INPUT, "toggleFollow") => {
-      @control.emit(if self.following { "unfollowed" } else { "followed" }, [
+    (RECEIVE, "toggleFollow") => {
+      @control.intent(if self.following { "unfollowed" } else { "followed" }, [
         vtext(self.acct),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, following: !self.following } as &DynComponent)
     }
     // The pager under the account's posts.
-    (INPUT, _) => {
+    (RECEIVE, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)

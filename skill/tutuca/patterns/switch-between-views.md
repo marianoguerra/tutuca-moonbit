@@ -13,7 +13,7 @@ one with no suffix.
 
 <template id="Note"><p @text=".title"></p></template>
 <template id="Note:edit">
-  <input :value=".title" @on.input="setTitle value">
+  <input :value=".title" @on.input="setTitle e.value">
 </template>
 ```
 

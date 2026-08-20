@@ -478,7 +478,7 @@ pub fn DefError::message(self : DefError) -> String {
   match self {
     Syntax(msg~, ..) => "state block: \{msg}"
     UnknownDecl(got~, ..) =>
-      "state block: `\{got}` is not a declaration — expected state, struct, enum, receive, intent, bubble or response"
+      "state block: `\{got}` is not a declaration — expected state, struct, enum, receive or intent"
     DuplicateComponent(name~, ..) =>
       "state block: two `state` declarations named `\{name}`; one component declares one state"
     MixedStateNames(..) =>

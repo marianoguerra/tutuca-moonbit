@@ -46,12 +46,14 @@ const drainChildren = () => {
 };
 const control = {
   log: () => {},
-  emit: (name, args) => controlBuf.push({ kind: 'emit', name, args }),
   send: (name, args) => controlBuf.push({ kind: 'send', name, args }),
   sendAt: (path, name, args) => controlBuf.push({ kind: 'sendAt', path, name, args }),
-  bubbleAt: (path, name, args) => controlBuf.push({ kind: 'bubbleAt', path, name, args }),
+  intent: (name, args, opts) => controlBuf.push({ kind: 'intent', name, args, opts }),
+  intentAt: (path, name, args, opts) => controlBuf.push({ kind: 'intentAt', path, name, args, opts }),
+  forward: (args, opts) => controlBuf.push({ kind: 'forward', args, opts }),
+  reply: (v) => controlBuf.push({ kind: 'reply', value: v }),
+  fail: (e) => controlBuf.push({ kind: 'fail', value: e }),
   stopPropagation: () => controlBuf.push({ kind: 'stopPropagation' }),
-  request: (name, args, opts) => controlBuf.push({ kind: 'request', name, args, opts }),
   makeInstance: (component, args) => {
     const t = nextChild++;
     pendingChildren.push({ token: t, component, args });
@@ -69,9 +71,9 @@ before(async () => {
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.8.0': values,
+    'tutuca:component/values@0.9.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.8.0': control,
+    'tutuca:component/control@0.9.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -94,7 +96,7 @@ before(async () => {
 
 test('manifest declares the component, its views and its state', () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 7);
+  assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
@@ -116,16 +118,18 @@ test('manifest declares the component, its views and its state', () => {
   assert.equal(comp.types[1].kind, 'ty-list');
   assert.equal(comp.types[1].elem, 0);
   assert.equal(comp.handlers, undefined);
-  assert.deepEqual(comp.receives, ['init', 'sum']);
-  assert.deepEqual(comp.bubbles, []);
-  assert.deepEqual(comp.responses, ['doubled', 'triple']);
+  // `doubled` and `triple` are ANSWERS, and an answer is an ordinary message:
+  // it arrives in `receives` beside the ones a parent sends.
+  assert.deepEqual(comp.receives, ['init', 'sum', 'doubled', 'tripled']);
+  assert.equal(comp.bubbles, undefined);
+  assert.equal(comp.responses, undefined);
   assert.deepEqual(comp.methods, ['label']);
   assert.deepEqual(comp.whens, ['nonZero']);
-  // this component serves no requests; the Pair declares the bundle's one
-  assert.deepEqual(comp.requests, []);
-  assert.deepEqual(m.components[1].requests, ['triple']);
-  // input handler names are NOT declared: the host reads them off the views
-  assert.equal(comp.inputHandlers, undefined);
+  // this component serves no intents; the Pair declares the bundle's one
+  assert.deepEqual(comp.serves, []);
+  assert.deepEqual(m.components[1].serves, ['triple']);
+  // view handler names are NOT declared: the host reads them off the views
+  assert.equal(comp.viewHandlers, undefined);
   assert.equal(comp.views[0].name, 'main');
   assert.match(comp.views[0].html, /@on\.click="inc"/);
   assert.match(comp.views[0].html, /@text="\.count"/);
@@ -146,7 +150,7 @@ test('the manifest carries what a catalog and a model read', () => {
   assert.match(comp.doc, /buttons that raise and lower it/);
   assert.ok(comp.keywords.includes('tally'));
   assert.equal(comp.category, 'input');
-  // one flat table the host merges by name over the six bucket lists
+  // one flat table the host merges by name over the bucket lists
   const docs = Object.fromEntries(comp.messageDocs.map((d) => [d.name, d.doc]));
   assert.equal(docs.inc, 'Add one.');
   assert.equal(docs.label, 'The count as a sentence, for a view.');
@@ -164,19 +168,19 @@ test('instances are independent and constructor args apply', () => {
 
 test('handle-event is functional: new instance out, old unchanged', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
-  const a2 = a.handleEvent('input', 'inc', []);
+  const a2 = a.handleEvent('receive', 'inc', []);
   assert.ok(a2 instanceof guest.Instance);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 11 });
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
-  assert.equal(a.handleEvent('input', 'unknown', []), undefined);
+  assert.equal(a.handleEvent('receive', 'unknown', []), undefined);
   assert.equal(a.handleEvent('receive', 'init', []), undefined);
 });
 
 test('handle-event distinguishes unknown names from handled no-ops', () => {
   const a = new guest.Instance('Counter', []);
-  assert.deepEqual(rawHandleEvent.call(a, 'input', 'unknown', []), { tag: 'unhandled' });
+  assert.deepEqual(rawHandleEvent.call(a, 'receive', 'unknown', []), { tag: 'unhandled' });
   assert.deepEqual(rawHandleEvent.call(a, 'receive', 'init', []), { tag: 'unchanged' });
-  const result = rawHandleEvent.call(a, 'input', 'inc', []);
+  const result = rawHandleEvent.call(a, 'receive', 'inc', []);
   assert.equal(result.tag, 'changed');
   assert.ok(result.val instanceof guest.Instance);
 });
@@ -186,7 +190,7 @@ test('the declared fields ARE the projection: no to-json, no eq', () => {
   // declares instead (Value::to_json / Obj::obj_eq over obj_schema), so a
   // guest states its shape once and cannot restate it wrongly.
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 5 }]]);
-  const c = a.handleEvent('input', 'inc', []);
+  const c = a.handleEvent('receive', 'inc', []);
   assert.equal(a.toJson, undefined);
   assert.equal(a.eq, undefined);
   assert.deepEqual(c.getField('count'), { tag: 'number', val: 6 });
@@ -196,54 +200,57 @@ test('the declared fields ARE the projection: no to-json, no eq', () => {
 
 test('history crosses as an arena list; label is a callable method', () => {
   const a = new guest.Instance('Counter', []);
-  const a1 = a.handleEvent('input', 'inc', []);
-  const a2 = a1.handleEvent('input', 'inc', []);
+  const a1 = a.handleEvent('receive', 'inc', []);
+  const a2 = a1.handleEvent('receive', 'inc', []);
   const hist = a2.getField('history');
   assert.equal(hist.tag, 'list');
   assert.deepEqual(arena.get(hist.val).map((v) => v.val), [0, 1]);
   assert.deepEqual(a2.callMethod('label', []), { tag: 'text', val: 'count is 2' });
 });
 
-test('input "double" buffers a control request; the response applies it', () => {
+test('"double" raises a lex intent, and its answer applies', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 21 }]]);
   controlBuf = [];
-  assert.equal(a.handleEvent('input', 'double', []), undefined);
+  assert.equal(a.handleEvent('receive', 'double', []), undefined);
   assert.equal(controlBuf.length, 1);
-  assert.equal(controlBuf[0].kind, 'request');
+  assert.equal(controlBuf[0].kind, 'intent');
   assert.equal(controlBuf[0].name, 'double');
   assert.deepEqual(controlBuf[0].args[0], { tag: 'number', val: 21 });
   // the guest asked for the answer at a name of its own, carrying just the
-  // value (host RequestOpts.on_ok_name)
+  // value (the intent opts' on_ok name)
   assert.equal(controlBuf[0].opts.onOk, 'doubled');
   assert.equal(controlBuf[0].opts.livePath, false);
-  const a2 = a.handleEvent('response', 'doubled', [{ tag: 'number', val: 42 }]);
+  const a2 = a.handleEvent('receive', 'doubled', [{ tag: 'number', val: 42 }]);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 42 });
 });
 
-test('the bundle serves its own requests', () => {
+test('the bundle serves its own intents', () => {
   // "triple" is declared by the Pair and answered here, in the guest — the
   // host registers it into the bundle's scope and calls back in
-  const ok = guest.handleRequest('triple', [{ tag: 'number', val: 7 }]);
+  const ok = guest.serveIntent('triple', [{ tag: 'number', val: 7 }]);
   assert.deepEqual(ok, { tag: 'ok', val: { tag: 'number', val: 21 } });
-  const err = guest.handleRequest('nope', []);
+  const err = guest.serveIntent('nope', []);
   assert.equal(err.tag, 'err');
 });
 
-test('a guest emits a bubble, and a guest parent stops it', () => {
+test('a guest raises an intent, and a guest parent ends the walk', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 4 }]]);
   controlBuf = [];
-  assert.equal(a.handleEvent('input', 'announce', []), undefined);
-  assert.deepEqual(controlBuf, [
-    { kind: 'emit', name: 'counted', args: [{ tag: 'number', val: 4 }] },
-  ]);
-  // the Pair hears that bubble one level up: it swaps its children and stops
-  // the message from travelling further
+  assert.equal(a.handleEvent('receive', 'announce', []), undefined);
+  assert.equal(controlBuf.length, 1);
+  assert.equal(controlBuf[0].kind, 'intent');
+  assert.equal(controlBuf[0].name, 'counted');
+  assert.deepEqual(controlBuf[0].args, [{ tag: 'number', val: 4 }]);
+  // it walks the `dyn` leg: the sender's parent first, then up
+  assert.deepEqual(controlBuf[0].opts.route, ['dyn']);
+  // the Pair answers it one level up: it swaps its children and ends the walk
+  // so the intent travels no further
   const p = new guest.Instance('Pair', []);
   drainChildren();
   const left = p.getField('left');
   const right = p.getField('right');
   controlBuf = [];
-  const p2 = p.handleEvent('bubble', 'counted', [{ tag: 'number', val: 4 }]);
+  const p2 = p.handleEvent('intent', 'counted', [{ tag: 'number', val: 4 }]);
   assert.deepEqual(controlBuf, [{ kind: 'stopPropagation' }]);
   assert.deepEqual(p2.getField('left'), right);
   assert.deepEqual(p2.getField('right'), left);
@@ -253,7 +260,7 @@ test('a guest addresses its own subtree with send-at', () => {
   const p = new guest.Instance('Pair', []);
   drainChildren();
   controlBuf = [];
-  assert.equal(p.handleEvent('input', 'zeroLeft', []), undefined);
+  assert.equal(p.handleEvent('receive', 'zeroLeft', []), undefined);
   assert.equal(controlBuf.length, 1);
   const [msg] = controlBuf;
   assert.equal(msg.kind, 'sendAt');

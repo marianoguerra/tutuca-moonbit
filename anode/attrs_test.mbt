@@ -98,7 +98,7 @@ test "@if with only @then leaves else unset" {
 ///|
 test "events register data-eid and handler args" {
   let (root, px) = aparse(
-    "<button @on.click=\"myHandler @v .f true 42 12.5 MyType value\">go</button>",
+    "<button @on.click=\"myHandler @v .f true 42 12.5 MyType e.value\">go</button>",
   )
   guard! root is Dom(d)
   guard! d.attrs is ConstAttrs(m)
@@ -109,7 +109,7 @@ test "events register data-eid and handler args" {
   assert_eq(ev.handlers.length(), 1)
   let h = ev.handlers[0]
   assert_eq(h.name, "click")
-  assert_true(h.handler.handler is HandlerName(name="myHandler", ns=Input))
+  assert_true(h.handler.handler is HandlerName(name="myHandler", ns=Receive))
   assert_eq(h.handler.args.length(), 7)
   assert_true(h.handler.args[0] is Bind("v"))
   assert_true(h.handler.args[1] is Field("f"))
@@ -117,13 +117,13 @@ test "events register data-eid and handler args" {
   assert_true(h.handler.args[3] is Const(lit=LNum(42), ..))
   assert_true(h.handler.args[4] is Const(lit=LNum(12.5), ..))
   assert_true(h.handler.args[5] is TypeName("MyType"))
-  assert_true(h.handler.args[6] is Name("value"))
+  assert_true(h.handler.args[6] is EventPath(["value"]))
 }
 
 ///|
 test "two events on one node share the same eid" {
   let (root, px) = aparse(
-    "<input @on.input=\"h1 value\" @on.keydown+send=\"h2\" />",
+    "<input @on.input=\"h1 e.value\" @on.keydown+send=\"h2\" />",
   )
   guard! root is Dom(d)
   guard! d.attrs is ConstAttrs(m)

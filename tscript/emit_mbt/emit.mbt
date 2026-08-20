@@ -52,9 +52,11 @@ priv struct E {
   /// Every name this component has an arm for, so an `intent` can be told
   /// which of the three outcomes its sender is waiting for.
   ///
-  /// The design's section 6 says a sender expects an answer if and only if its
-  /// schema declares `<name>Ok`, `<name>Error` or `<name>Unhandled`. This set
-  /// is the schema's `receive` variant PLUS the block's own message
+  /// A sender expects an answer if and only if its schema declares
+  /// `<name>Ok`, `<name>Error` or `<name>Unhandled` — three separately named
+  /// outcomes, each with its own payload, and each an ordinary addressed
+  /// message when it lands. This set is the schema's `receive` variant PLUS
+  /// the block's own message
   /// declarations, because both are arms and the rule is about having one —
   /// and because a block may answer a name the schema does not carry, now that
   /// a `receive` can take its types from the views.
@@ -1271,7 +1273,7 @@ fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
 /// `IntentOpts::new`'s keyword arguments — or "" when it declared none.
 ///
 /// This is where "a sender expects an answer if and only if it declares an
-/// answer arm" (`docs/two-channels.md` section 6) becomes code. Nobody writes these;
+/// answer arm" becomes code. Nobody writes these;
 /// the generator computes them, which is exactly the design's claim that the
 /// notification/request split needs no declaration.
 fn E::outcomes(self : E, msg : String) -> String {
@@ -1365,10 +1367,6 @@ fn E::effect(
   let payload = "[" + rest.join(", ") + "]"
   match name {
     "send" => "\{pad}effects.push(() => ctx.send(\{quote(msg)}, \{payload}))\n"
-    "bubble" =>
-      "\{pad}effects.push(() => ctx.bubble(\{quote(msg)}, \{payload}))\n"
-    "request" =>
-      "\{pad}effects.push(() => ctx.request(\{quote(msg)}, \{payload}, @tutuca.RequestOpts::new()))\n"
     "intent" =>
       "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, Some(self.outcomes(msg)))}))\n"
     _ =>

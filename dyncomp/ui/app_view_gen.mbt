@@ -274,7 +274,7 @@ impl @component.Fields for PaletteRowState with fn schema() {
       @component.FieldInfo::new("category", TyText),
       @component.FieldInfo::new("selected", TyBool),
     ],
-    inputs=["pick"],
+    view_handlers=["pick"],
     receives=["setSelected"],
     intents=["componentPicked"],
     view_names=["main"],
@@ -509,7 +509,7 @@ impl @component.Fields for CommandBarState with fn schema() {
       @component.FieldInfo::new("configure", TyBool),
       @component.FieldInfo::new("emptyMessage", TyText),
     ],
-    inputs=["close", "nav", "setQuery"],
+    view_handlers=["close", "nav", "setQuery"],
     receives=["setCursor"],
     view_names=["main"],
   )
@@ -814,7 +814,7 @@ impl @component.Fields for SchemaFieldState with fn schema() {
       @component.FieldInfo::new("choices", TyList(TyAny)),
       @component.FieldInfo::new("error", TyText),
     ],
-    inputs=["edit"],
+    view_handlers=["edit"],
     intents=["fieldEdited"],
     view_names=["main"],
   )
@@ -1075,7 +1075,7 @@ impl @component.Fields for SchemaFormState with fn schema() {
       @component.FieldInfo::new("error", TyText),
       @component.FieldInfo::new("submitLabel", TyText),
     ],
-    inputs=["cancel", "create", "useInit"],
+    view_handlers=["cancel", "create", "useInit"],
     receives=["showErrors"],
     view_names=["main"],
   )
@@ -1334,7 +1334,7 @@ impl @component.Fields for ConfigPanelState with fn schema() {
       @component.FieldInfo::new("target", TyComp(None)),
       @component.FieldInfo::new("form", TyComp(None)),
     ],
-    inputs=["close"],
+    view_handlers=["close"],
     intents=["closeConfig"],
     view_names=["main"],
   )
@@ -1607,7 +1607,7 @@ impl @component.Fields for UniversalAppState with fn schema() {
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("devTools", TyComp(None)),
     ],
-    inputs=["filesDropped", "openCommand", "toggleMode"],
+    view_handlers=["filesDropped", "openCommand", "toggleMode"],
     receives=["catalogChanged", "restoreTree"],
     methods=["modeLabel"],
     view_names=["main"],

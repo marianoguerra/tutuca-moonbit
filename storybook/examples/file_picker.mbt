@@ -1,6 +1,6 @@
 // Port of docs/examples/file-picker.js.
 //
-// Teaches: reading a file input. `@on.change="onPickFile value"` — the app
+// Teaches: reading a file input. `@on.change="onPickFile e.value"` — the app
 // glue turns the chosen File's synchronously-available metadata
 // (name/size/type/lastModified) into a Value::Map, which is what the JS
 // handler read off `event.target.files[0]`. No file selected -> Null.

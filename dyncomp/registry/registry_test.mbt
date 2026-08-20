@@ -45,8 +45,8 @@ impl @dyncomp.Guest for StubGuest with fn with_field(_self, _handle, _name, _v) 
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn handle_request(_self, name, _args) {
-  Err(Str("no such request: \{name}"))
+impl @dyncomp.Guest for StubGuest with fn serve_intent(_self, name, _args) {
+  Err(Str("no such service: \{name}"))
 }
 
 ///|
@@ -107,13 +107,11 @@ fn counter_bundle() -> @dyncomp.DynManifest {
         fields: [plain("count", 0, doc="The current value.")],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: ["label"],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [
           {
             name: "at-three",
@@ -151,7 +149,7 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         views: [
           {
             name: "main",
-            html: "<div><input @on.input=\"setDraft value\" /><button @on.click=\"add\">Add</button></div>",
+            html: "<div><input @on.input=\"setDraft e.value\" /><button @on.click=\"add\">Add</button></div>",
           },
         ],
         types: [ty("ty-text"), ty("ty-record")],
@@ -161,13 +159,11 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         ],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [],
         style: "",
       },
@@ -210,7 +206,9 @@ test "a descriptor carries what a chooser needs" {
   // asymmetry the contract has everywhere
   debug_inspect(
     d.messages.map(m => "\{m.bucket}:\{m.name}"),
-    content="[\"input:inc\", \"method:label\"]",
+    content=(
+      #|["receive:inc", "method:label"]
+    ),
   )
   // the flat message-docs table spread back over the buckets it describes
   debug_inspect(
@@ -353,10 +351,15 @@ test "member matches do not compound" {
   debug_inspect(
     hits[0].why,
     content=(
-      #|["described as containing \"add\"", "input \"add\""]
+      #|["described as containing \"add\"", "receive \"add\""]
     ),
   )
-  debug_inspect(hits[1].why, content="[\"input \\\"inc\\\"\"]")
+  debug_inspect(
+    hits[1].why,
+    content=(
+      #|["receive \"inc\""]
+    ),
+  )
 }
 
 ///|

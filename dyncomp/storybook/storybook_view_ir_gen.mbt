@@ -57,7 +57,7 @@ fn story_nav_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="pick", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="pick", ns=Receive))]],
   )
 }
 
@@ -196,7 +196,7 @@ fn story_card_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="rebuild", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="rebuild", ns=Receive))]],
   )
 }
 
@@ -307,7 +307,7 @@ fn story_card_details_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="rebuild", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="rebuild", ns=Receive))]],
   )
 }
 
@@ -588,20 +588,20 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="showAll", ns=Input))],
+      [@anode.on("click", HandlerName(name="showAll", ns=Receive))],
       [
-        @anode.on("input", HandlerName(name="chooseTheme", ns=Input), args=[
+        @anode.on("input", HandlerName(name="chooseTheme", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleWide", ns=Input))],
-      [@anode.on("click", HandlerName(name="toggleDetails", ns=Input))],
+      [@anode.on("click", HandlerName(name="toggleWide", ns=Receive))],
+      [@anode.on("click", HandlerName(name="toggleDetails", ns=Receive))],
       [
-        @anode.on("drop", HandlerName(name="filesDropped", ns=Input), args=[
+        @anode.on("drop", HandlerName(name="filesDropped", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

@@ -80,17 +80,17 @@ fn attribute_binding_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setStr", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setStr", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setRawNumber", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setRawNumber", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setBool", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setBool", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
@@ -197,7 +197,7 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="toggleIsActive", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="toggleIsActive", ns=Receive))]],
   )
 }
 
@@ -293,16 +293,16 @@ fn event_modifiers_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="onInput", ns=Input), args=[
+        @anode.on("input", HandlerName(name="onInput", ns=Receive), args=[
           EventPath(["value"]),
         ]),
         @anode.on(
           "keydown",
-          HandlerName(name="setLastSentSearch", ns=Input),
+          HandlerName(name="setLastSentSearch", ns=Receive),
           args=[EventPath(["value"])],
           modifiers=["send"],
         ),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],
@@ -421,8 +421,8 @@ fn show_hide_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="toggleIsOpen", ns=Input))],
-      [@anode.on("click", HandlerName(name="incCount", ns=Input))],
+      [@anode.on("click", HandlerName(name="toggleIsOpen", ns=Receive))],
+      [@anode.on("click", HandlerName(name="incCount", ns=Receive))],
     ],
   )
 }

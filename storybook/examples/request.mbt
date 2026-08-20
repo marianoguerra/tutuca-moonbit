@@ -10,7 +10,7 @@
 // 2. Intents on the `lex` leg are CALLBACK-style here, not async/await. An
 //    IntentFn is `(call, answer) -> Unit`; it calls `answer(Ok(v))`,
 //    `answer(Failed(e))` or `answer(Pass)` whenever it is done — immediately,
-//    or from a real fetch's callback. `Pass` is the one v1 could not say: a
+//    or from a real fetch's callback. `Pass` is the one that matters: a
 //    handler with nothing to contribute DECLINES, and the walk goes on to the
 //    next one instead of it having to invent an error.
 //
@@ -55,9 +55,9 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
         }
         // THREE outcomes, three arms, each with its own shape.
         //
-        // v1 had a fourth: a combined `[res, err]` payload that the default
-        // arm received and a split arm read the wrong slot of. It is gone, and
-        // so is the bug — there is no arm here that can be handed both.
+        // There is deliberately no fourth. A combined `[res, err]` payload is
+        // one an arm has to tell apart, which is one an arm can read the wrong
+        // slot of; no arm here can be handed both.
         Receive("loadDataOk", [res, ..]) =>
           Next(entries_from_response(s, entry, res))
         Receive("loadDataError", args) => {
@@ -159,9 +159,9 @@ pub fn failing_request_handlers() -> Map[String, Array[@component.IntentFn]] {
 }
 
 ///|
-/// A scope that DECLINES — the answer v1 had no word for.
+/// A scope that DECLINES — which is what `Pass` is for.
 ///
-/// A `RequestFn` had to respond, so a handler with nothing to contribute could
+/// A handler that MUST respond has no way to decline, so one with nothing to contribute could
 /// only invent an error. An `IntentFn` answers `Pass`, the walk goes on, and
 /// when the route runs out the sender hears `loadDataUnhandled` — which is a
 /// different sentence from "it failed" and is what the third arm above draws.

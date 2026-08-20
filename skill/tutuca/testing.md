@@ -207,8 +207,9 @@ test "a scope that DECLINES is not a scope that failed" {
   synchronously — the parameterized-module pattern
   (`request_module(intents? = fixture_intent_handlers())`, see *The
   ModuleDef convention* in [core.md](./core.md)). Test all three answers:
-  `Pass` from every handler is what produces `<name>Unhandled`, and that
-  path is the one v1 could not express.
+  `Pass` from every handler is what produces `<name>Unhandled`, and it is
+  the path a test is likeliest to leave uncovered: nothing in the component
+  raises it, only the absence of an answer does.
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
   call the child's extracted update fn directly on a state value.
@@ -224,7 +225,7 @@ test "a scope that DECLINES is not a scope that failed" {
 
 ## Custom events and file inputs
 
-Anything the glue would map to `value` can be fired directly with
+Anything the glue would map to `e.value` can be fired directly with
 `h.fire` and a `@render.DomEvent`:
 
 ```moonbit nocheck
@@ -277,7 +278,7 @@ input. Nothing reports it either; the dispatch lands and does nothing.
 **Good — named arg:**
 
 ```html
-<input @on.input="setCount valueAsInt" />
+<input @on.input="setCount e.valueAsInt" />
 ```
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
@@ -292,7 +293,7 @@ the extracted update fn.
 The built-in named args are listed in
 [events.md](./events.md#handler-arguments). There is always a narrower arg,
 because the port's glue narrows the classic exceptions too: file inputs and
-custom events deliver plain `Map` metadata as `value`.
+custom events deliver plain `Map` metadata as `e.value`.
 
 ## Worked example
 

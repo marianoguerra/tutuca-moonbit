@@ -17,8 +17,8 @@ and a named `<template>` per component:
 <template id="Item">
   <div class="flex gap-3 items-center">
     <input type="checkbox" class="checkbox" :checked=".completed"
-      @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value"
+      @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value"
       :disabled=".completed">
   </div>
 </template>
@@ -51,10 +51,10 @@ handlers:
 ///|
 fn todo_item_comp() -> @component.Component {
   item_component(init=ItemState::{ completed: false, text: "do the thing" })
-  // no update: `setCompleted value` and `setText value` are served by the
+  // no update: `setCompleted e.value` and `setText e.value` are served by the
   // generated mutators. If you do want an update arm, the typed cases are
-  // SetCompleted(Bool) and SetText(String) — `value` infers Bool on a
-  // checkbox (core.md "Generated `Msg` payload types").
+  // SetCompleted(Bool) and SetText(String) — `e.value` infers Bool on a
+  // checkbox (events.md "Generated `Msg` payload types").
 }
 
 fn todo_items_comp(item : @component.Component) -> @component.Component {

@@ -98,7 +98,7 @@ fn next_u32() -> UInt {
 /// not change. `control.request` is still in the contract, and the host
 /// translates it, which is what keeps a bundle built against 0.7 loading.
 ///
-/// One answer is new and worth having here. A `RequestFn` HAD to respond, so a
+/// One answer is worth having here. A handler that MUST respond cannot decline, so a
 /// handler with nothing to contribute could only invent an error; this one
 /// could answer `Pass` and let the route run out, and the page would hear
 /// `rollUnhandled` — "nothing on this page rolls dice", which is a different

@@ -93,7 +93,7 @@ pub(all) enum HandlerBucket {
 } derive(Eq, @debug.Debug)
 
 pub(all) enum HandlerNamespace {
-  Input
+  Receive
   Alter
 } derive(Eq, @debug.Debug)
 
@@ -207,11 +207,9 @@ pub(all) struct SchemaInfo {
   name : String
   fingerprint : String
   fields : Array[FieldInfo]
-  inputs : Array[String]
+  view_handlers : Array[String]
   receives : Array[String]
   intents : Array[String]
-  bubbles : Array[String]
-  responses : Array[String]
   methods : Array[String]
   ids : Array[String]
   view_names : Array[String]
@@ -219,7 +217,7 @@ pub(all) struct SchemaInfo {
 }
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], inputs? : Array[String], receives? : Array[String], intents? : Array[String], bubbles? : Array[String], responses? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {
@@ -345,7 +343,6 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
-  fn is_answer(Self) -> Bool = _
   fn send(Self, String, Array[Value]) -> Unit = _
   fn send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
   fn intent(Self, String, Array[Value], IntentOpts) -> Unit = _

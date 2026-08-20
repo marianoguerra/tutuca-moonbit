@@ -14,8 +14,8 @@
 pub(all) enum ControlMsg {
   Send(String, Array[@tutuca.Value])
   SendAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
-  /// v2. `Emit` and `Request` both became this: one channel, and the ROUTE in
-  /// the opts says which scope answers rather than the verb saying it.
+  /// One routed channel: the ROUTE in the opts says which scope answers,
+  /// rather than the verb saying it.
   Intent(String, Array[@tutuca.Value], @tutuca.IntentOpts)
   IntentAt(
     Array[@tutuca.Step],
@@ -29,10 +29,6 @@ pub(all) enum ControlMsg {
   Reply(@tutuca.Value)
   Fail(@tutuca.Value)
   StopPropagation
-  /// v1, and all three go in the contract step.
-  Emit(String, Array[@tutuca.Value])
-  BubbleAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
-  Request(String, Array[@tutuca.Value], RequestOpts)
 } derive(Debug, Eq)
 
 ///|
@@ -46,58 +42,15 @@ pub(all) struct DispatchResult {
 } derive(Debug, Eq)
 
 ///|
-/// The WIT's `request-opts`, which a bundle built against 0.7 still sends.
+/// The wire number of a dispatch bucket: its case index in the WIT's `bucket`
+/// enum.
 ///
-/// It used to be `@tutuca.RequestOpts` — the host's own authoring type — and
-/// v2 deleted that, because a host handler writes `IntentOpts` now and the
-/// combined `[res, err]` arm `on_res_name` selected is gone with the bug it
-/// caused. The record survives HERE, as what it always was on this side: a
-/// wire shape somebody else's build fills in. `DynObj` translates it to an
-/// `IntentOpts` on the `lex` leg, which is what a `request` was.
-pub(all) struct RequestOpts {
-  on_ok_name : String?
-  on_error_name : String?
-  on_res_name : String?
-  live_path : Bool
-} derive(Debug, Eq)
-
-///|
-pub fn RequestOpts::new(
-  on_ok_name? : String,
-  on_error_name? : String,
-  on_res_name? : String,
-  live_path? : Bool = false,
-) -> RequestOpts {
-  { on_ok_name, on_error_name, on_res_name, live_path }
-}
-
-///|
-/// The bucket a GUEST is dispatched through: the WIT's `bucket` enum, in its
-/// case order.
-///
-/// It is deliberately NOT `@tutuca.HandlerBucket`, which v2 cut to two. A
-/// loaded bundle is somebody else's build against a published contract — a
-/// `.tutuca.tar.gz` compiled last year still has its view names in the `input`
-/// bucket, and deleting the case here would stop it loading rather than
-/// migrate it. So the host's buckets are two and the wire's are five, and
-/// `DynObj::obj_handler` is the one place that translates.
-pub(all) enum GuestBucket {
-  Input
-  Receive
-  Response
-  Bubble
-  Intent
-} derive(Debug, Eq)
-
-///|
-/// Its case index, which is its wire number.
-pub fn GuestBucket::ordinal(self : GuestBucket) -> Int {
-  match self {
-    Input => 0
-    Receive => 1
-    Response => 2
-    Bubble => 3
-    Intent => 4
+/// The host's buckets and the wire's are the same two, so there is no separate
+/// enum here and nothing to translate — this is a numbering, not a vocabulary.
+pub fn bucket_ordinal(b : @tutuca.HandlerBucket) -> Int {
+  match b {
+    Receive => 0
+    Intent => 1
   }
 }
 
@@ -108,15 +61,16 @@ pub(open) trait Guest {
   fn dispatch(
     Self,
     handle : Int,
-    bucket : GuestBucket,
+    bucket : @tutuca.HandlerBucket,
     name : String,
     args : Array[@tutuca.Value],
   ) -> DispatchResult
   fn call_method(Self, handle : Int, name : String, args : Array[@tutuca.Value]) -> @tutuca.Value
   fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?
-  /// Serve one of the requests the bundle declares. Synchronous, like every
-  /// call across this boundary: a guest that must wait asks the host instead.
-  fn handle_request(Self, name : String, args : Array[@tutuca.Value]) -> Result[
+  /// Serve one of the intents the bundle declares on its own scope.
+  /// Synchronous, like every call across this boundary: a guest that must wait
+  /// dispatches an intent of its own and lets the host do the waiting.
+  fn serve_intent(Self, name : String, args : Array[@tutuca.Value]) -> Result[
     @tutuca.Value,
     @tutuca.Value,
   ]

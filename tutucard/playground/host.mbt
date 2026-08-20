@@ -201,7 +201,7 @@ extern "js" fn set_timeout(cb : () -> Unit, ms : Int) -> Unit =
 /// **A name that is not here answers nothing at all**, and that is the point
 /// rather than a gap: the `lex` leg runs out, nobody claimed the intent, and
 /// the card hears `<name>Unhandled` — which is a different sentence from
-/// `fail`'s, and the one v1 had no way to say. Registering these three takes
+/// `fail`'s, and the one a must-answer handler could not say. Registering these takes
 /// nothing away from a card demonstrating that path; it is what makes the
 /// contrast visible on one page.
 ///
@@ -330,7 +330,7 @@ fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
 // the compiler
 
 ///|
-/// Compile a card to a `tutuca:component@0.8.0` core wasm module.
+/// Compile a card to a `tutuca:component@0.9.0` core wasm module.
 ///
 /// The same card the page is already interpreting, put through the OTHER
 /// backend — so the two answers sit side by side and a difference between them

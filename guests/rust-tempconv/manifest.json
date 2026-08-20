@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "rusttemplib",
   "doc": "The polyglot proof: the same contract, in Rust, with no tutuca code.",
   "version": "0.4.0",
@@ -86,8 +86,7 @@
       "receives": [
         "init"
       ],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "cText",
         "fText",
@@ -95,7 +94,6 @@
         "note"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "body-heat",
@@ -103,7 +101,8 @@
           "doc": "Starts at body temperature."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     }
   ]
 }

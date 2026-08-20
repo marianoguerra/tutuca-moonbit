@@ -10,7 +10,7 @@
 //
 // There is no drop-zone code here. A drop is an ordinary tutuca event: the app
 // bridge registers the dropped files and hands their descriptors to the handler
-// as `value` (`@on.drop="filesDropped value"` in storybook.html), which loads
+// as `value` (`@on.drop="filesDropped e.value"` in storybook.html), which loads
 // one by id through the tcomp bridge.
 
 import { instantiate } from "./app-loader.mjs";

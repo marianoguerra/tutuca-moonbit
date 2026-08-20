@@ -28,7 +28,7 @@ fn counter_module() -> @component.ModuleDef {
           #|  <button class="btn-error" @on.click="dec">-</button>
           #|  <div class="stat-value" @text=".count"></div>
           #|  <button class="btn-success" @on.click="inc">+</button>
-          #|  <input class="label-input" :value=".label" @on.input="setLabel value">
+          #|  <input class="label-input" :value=".label" @on.input="setLabel e.value">
           #|</div>
         ),
       ),
@@ -127,7 +127,7 @@ impl @component.Fields for CounterState with fn schema() {
       @component.FieldInfo::new("count", TyInt),
       @component.FieldInfo::new("label", TyText),
     ],
-    inputs=["dec", "inc", "setLabel"],
+    view_handlers=["dec", "inc", "setLabel"],
     view_names=["main"],
   )
 }

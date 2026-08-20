@@ -42,12 +42,14 @@ let nextToken = 1n;
 
 const control = {
   log: () => {},
-  emit: (name, args) => emitted.push([name, args]),
   send: () => {},
   sendAt: () => {},
-  bubbleAt: () => {},
+  intent: (name, args) => emitted.push([name, args]),
+  intentAt: (path, name, args) => emitted.push([name, args]),
+  forward: () => {},
+  reply: () => {},
+  fail: () => {},
   stopPropagation: () => emitted.push(['stopPropagation', []]),
-  request: () => {},
   after: () => {},
   makeInstance: (component, args) => {
     const token = nextToken++;
@@ -162,9 +164,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.8.0': values,
+    'tutuca:component/values@0.9.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.8.0': control,
+    'tutuca:component/control@0.9.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -187,7 +189,7 @@ before(async () => {
 
 test('the static manifest declares five components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 7);
+  assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'blueskylib');
   // the one thing this bundle asks a host for, and it asks with a reason: the
   // origins its views name are the whole of its network reach, and a host that
@@ -207,7 +209,7 @@ test('the static manifest declares five components and asks for one capability',
     // it, and the three embeds that used to render as bare text
     'repostedBy', 'pinned', 'labels', 'external', 'quote', 'video',
   ]);
-  assert.deepEqual(post.bubbles, ['liked', 'unliked', 'reposted', 'unreposted', 'folded', 'unfolded']);
+  assert.deepEqual(post.intents, ['liked', 'unliked', 'reposted', 'unreposted', 'folded', 'unfolded']);
   // `pageSize` is the one field the three list-shaped components share and the
   // leaves do not: a column of messages is the thing that can arrive too long
   // to draw, and a single message is not.
@@ -224,9 +226,9 @@ test('the static manifest declares five components and asks for one capability',
   assert.deepEqual(scope.fields.map((f) => f.name), ['truncated', 'truncatedBy', 'more', 'notes']);
   assert.deepEqual(profile.fields.map((f) => f.name).slice(-3), ['createdAt', 'pinnedPost', 'pageSize']);
   // the thread's bubbles are the ones it HEARS from its rows
-  assert.deepEqual(thread.bubbles, ['folded', 'unfolded', 'liked', 'unliked', 'reposted', 'unreposted']);
-  assert.deepEqual(feed.bubbles, ['liked', 'unliked', 'reposted', 'unreposted']);
-  assert.deepEqual(profile.bubbles, ['followed', 'unfollowed', 'liked', 'unliked', 'reposted', 'unreposted']);
+  assert.deepEqual(thread.intents, ['folded', 'unfolded', 'liked', 'unliked', 'reposted', 'unreposted']);
+  assert.deepEqual(feed.intents, ['liked', 'unliked', 'reposted', 'unreposted']);
+  assert.deepEqual(profile.intents, ['followed', 'unfollowed', 'liked', 'unliked', 'reposted', 'unreposted']);
   // a `scope` field is a plain record whose keys ARE the Scope component's own
   // field names, so the two cannot drift without this failing
   const scopeFields = new Set(scope.fields.map((f) => f.name));
@@ -388,7 +390,7 @@ test('liking is optimistic and announced, and leaves the record count alone', { 
 
   // on its own, a post is not `owned`, so it keeps the answer itself
   assert.equal(field(p, 'owned'), false);
-  p = p.handleEvent('input', 'toggleLike', []);
+  p = p.handleEvent('receive', 'toggleLike', []);
   assert.equal(field(p, 'liked'), true);
   assert.equal(field(p, 'likes'), '100');
   // the count the record came with is untouched, so a refused write needs no
@@ -397,19 +399,19 @@ test('liking is optimistic and announced, and leaves the record count alone', { 
   assert.deepEqual(emitted, [['liked', [{ tag: 'text', val: uri }]]]);
 
   emitted.length = 0;
-  p = p.handleEvent('input', 'toggleLike', []);
+  p = p.handleEvent('receive', 'toggleLike', []);
   assert.equal(field(p, 'liked'), false);
   assert.equal(field(p, 'likes'), '99');
   assert.deepEqual(emitted.map(([n]) => n), ['unliked']);
 
   // a message with nothing under it has no fold to toggle
   emitted.length = 0;
-  assert.equal(p.handleEvent('input', 'toggleFold', []), undefined);
+  assert.equal(p.handleEvent('receive', 'toggleFold', []), undefined);
   assert.deepEqual(emitted, []);
 
   // a name this component does not answer falls through to the host, which is
   // what `unhandled` is for
-  assert.equal(p.handleEvent('input', 'somethingElse', []), undefined);
+  assert.equal(p.handleEvent('receive', 'somethingElse', []), undefined);
   // and its state is exactly the declared fields, so it does not persist
   assert.deepEqual([...p.persist()], []);
 });
@@ -444,7 +446,7 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
 
   // The row keeps its own flag — it returns a successor — AND announces, because
   // the thread is the only one that knows what sits under it.
-  const folded = child(rows[1]).handleEvent('input', 'toggleFold', []);
+  const folded = child(rows[1]).handleEvent('receive', 'toggleFold', []);
   assert.notEqual(folded, undefined);
   assert.equal(field(folded, 'folded'), true);
   assert.equal(field(folded, 'foldLabel'), '+1');
@@ -455,7 +457,7 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
   // that has no use for it.
   emitted.length = 0;
   const t2 = writeRow(t, 1, folded)
-    .handleEvent('bubble', 'folded', [text('at://b/app.bsky.feed.post/2')]);
+    .handleEvent('intent', 'folded', [text('at://b/app.bsky.feed.post/2')]);
   assert.deepEqual(rowField(t2, 'name'), ['Alice', 'Bob', 'Carol']);
   assert.deepEqual(rowField(t2, 'folded'), [false, true, false]);
   assert.deepEqual(rowField(t2, 'foldLabel'), ['−', '+1', '−']);
@@ -472,13 +474,13 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
 
   // folding the root takes everything below it
   const rootRow = child(field(t2, 'rows')[0]);
-  const rootFolded = writeRow(t2, 0, rootRow.handleEvent('input', 'toggleFold', []))
-    .handleEvent('bubble', 'folded', [text('at://a/app.bsky.feed.post/1')]);
+  const rootFolded = writeRow(t2, 0, rootRow.handleEvent('receive', 'toggleFold', []))
+    .handleEvent('intent', 'folded', [text('at://a/app.bsky.feed.post/1')]);
   assert.deepEqual(rowField(rootFolded, 'name'), ['Alice']);
   // and unfolding puts them back
   const back = rootFolded
-    .handleEvent('bubble', 'unfolded', [text('at://a/app.bsky.feed.post/1')])
-    .handleEvent('bubble', 'unfolded', [text('at://b/app.bsky.feed.post/2')]);
+    .handleEvent('intent', 'unfolded', [text('at://a/app.bsky.feed.post/1')])
+    .handleEvent('intent', 'unfolded', [text('at://b/app.bsky.feed.post/2')]);
   assert.equal(field(back, 'rows').length, 4);
 });
 
@@ -490,7 +492,7 @@ test('a row keeps its own like, and still announces it', { skip: !built }, () =>
   // successor. The thread has nothing to add — it does not handle the bubble at
   // all, and does not stop it: only whoever is above can write the record.
   const row = child(field(t, 'rows')[0]);
-  const liked = row.handleEvent('input', 'toggleLike', []);
+  const liked = row.handleEvent('receive', 'toggleLike', []);
   assert.notEqual(liked, undefined);
   assert.equal(field(liked, 'liked'), true);
   // the count the record came with is untouched; the flag is added on top
@@ -503,14 +505,14 @@ test('a row keeps its own like, and still announces it', { skip: !built }, () =>
   assert.deepEqual(rowField(t2, 'liked'), [true, false, false, false]);
   assert.deepEqual(rowField(t2, 'likes'), ['1', '0', '0', '0']);
   // the thread neither claimed the bubble nor stopped it
-  assert.equal(t2.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.equal(t2.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.deepEqual(emitted, []);
 
-  const unliked = child(field(t2, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  const unliked = child(field(t2, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
   assert.equal(field(unliked, 'liked'), false);
 
   // a repost is the same shape, and lands on a different row
-  const reposted = child(field(t2, 'rows')[3]).handleEvent('input', 'toggleRepost', []);
+  const reposted = child(field(t2, 'rows')[3]).handleEvent('receive', 'toggleRepost', []);
   const t3 = writeRow(t2, 3, reposted);
   assert.deepEqual(rowField(t3, 'reposted'), [false, false, false, true]);
   // and the like three rows up is still there, because nothing was rebuilt
@@ -559,7 +561,7 @@ test('a profile counts a follow on top of the number the record came with', { sk
   assert.equal(field(p, 'postsLabel'), '2.8K');
   assert.equal(p.callMethod('followLabel', []).val, 'Follow');
 
-  p = p.handleEvent('input', 'toggleFollow', []);
+  p = p.handleEvent('receive', 'toggleFollow', []);
   assert.equal(field(p, 'following'), true);
   assert.equal(field(p, 'followersLabel'), '12K');
   assert.equal(field(p, 'followersCount'), 12400);
@@ -576,10 +578,10 @@ test('a profile counts a follow on top of the number the record came with', { sk
   // A row of the feed keeps its own like, exactly as a row of a thread does.
   // The feed itself has nothing to add — no fold, so nothing it alone knows —
   // so it does not handle the bubble and does not stop it.
-  const liked = child(field(p, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  const liked = child(field(p, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
   const withLike = writeRow(p, 0, liked);
   assert.deepEqual(rowField(withLike, 'liked'), [true, false]);
-  assert.equal(p.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.equal(p.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.match(p.callMethod('summary', []).val, /^Alice Alpha @alice\.bsky\.social — 12K followers/);
 });
 
@@ -762,9 +764,9 @@ test('a feed is a list, and says what the list left out', { skip: !built }, () =
 
   // a row of a feed keeps its own like and the feed does not claim the bubble,
   // the same way a profile's feed behaves
-  const liked = child(field(f, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  const liked = child(field(f, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
   assert.deepEqual(rowField(writeRow(f, 0, liked), 'liked'), [true, false, false]);
-  assert.equal(f.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.equal(f.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
 
   // rewriting the messages rebuilds the rows and keeps the scope: a new list is
   // not a new claim about what was covered
@@ -812,34 +814,34 @@ test('a long feed is paged, and a page is not a rebuild', { skip: !built }, () =
 
   // A button that would not move answers `unchanged` rather than rebuilding the
   // same page, and a name the pager does not know keeps travelling.
-  assert.equal(f.handleEvent('input', 'prevPage', []), undefined);
-  assert.equal(f.handleEvent('input', 'somethingElse', []), undefined);
+  assert.equal(f.handleEvent('receive', 'prevPage', []), undefined);
+  assert.equal(f.handleEvent('receive', 'somethingElse', []), undefined);
 
   const first = field(f, 'rows');
-  f = f.handleEvent('input', 'nextPage', []);
+  f = f.handleEvent('receive', 'nextPage', []);
   assert.deepEqual(rowField(f, 'text'), ['message 3', 'message 4', 'message 5']);
   assert.equal(f.callMethod('atFirst', []).val, false);
 
   // The host writes a successor home by its position IN THE PAGE — position 0
   // here is message 3 — so the write-back and the render have to agree about
   // which rows those are.
-  const liked = child(field(f, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  const liked = child(field(f, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
   f = writeRow(f, 0, liked);
   assert.deepEqual(rowField(f, 'liked'), [true, false, false]);
 
   // Page back: the rows are the same children, not rebuilt ones, so the like
   // three rows on is still where the reader left it.
-  f = f.handleEvent('input', 'prevPage', []);
+  f = f.handleEvent('receive', 'prevPage', []);
   assert.deepEqual(field(f, 'rows'), first);
   assert.deepEqual(rowField(f, 'liked'), [false, false, false]);
-  assert.deepEqual(rowField(f.handleEvent('input', 'nextPage', []), 'liked'), [true, false, false]);
+  assert.deepEqual(rowField(f.handleEvent('receive', 'nextPage', []), 'liked'), [true, false, false]);
 
   // the last page is the short one, and it says so
-  const end = f.handleEvent('input', 'lastPage', []);
+  const end = f.handleEvent('receive', 'lastPage', []);
   assert.deepEqual(rowField(end, 'text'), ['message 6']);
   assert.equal(end.callMethod('rangeLabel', []).val, '7–7 of 7');
   assert.equal(end.callMethod('atLast', []).val, true);
-  assert.equal(end.handleEvent('input', 'nextPage', []), undefined);
+  assert.equal(end.handleEvent('receive', 'nextPage', []), undefined);
 
   // A new list starts at its beginning, and so does a window a host just chose.
   assert.equal(field(end.withField('posts', manyPosts()), 'page'), 1);
@@ -853,12 +855,12 @@ test('a thread pages what the folds left, and a profile pages its messages', { s
   const posts = MANY.map((m, i) => ({ ...m, depth: i === 0 ? 0 : 1 }));
   let t = instance('Thread', [['posts', list(posts.map(message))], ['pageSize', num(3)]]);
   assert.equal(field(t, 'pageCount'), 3);
-  t = t.handleEvent('input', 'lastPage', []);
+  t = t.handleEvent('receive', 'lastPage', []);
   assert.deepEqual(rowField(t, 'text'), ['message 6']);
 
   // Folding the root hides the six under it, which leaves one page — and the
   // stored page comes back inside it rather than showing nothing.
-  t = t.handleEvent('bubble', 'folded', [text(posts[0].uri)]);
+  t = t.handleEvent('intent', 'folded', [text(posts[0].uri)]);
   assert.equal(field(t, 'pageCount'), 1);
   assert.equal(t.callMethod('paged', []).val, false);
   assert.deepEqual(rowField(t, 'text'), ['message 0']);
@@ -871,10 +873,10 @@ test('a thread pages what the folds left, and a profile pages its messages', { s
   ]);
   assert.equal(field(p, 'pageCount'), 2);
   assert.equal(p.callMethod('rangeLabel', []).val, '1–4 of 7');
-  assert.deepEqual(rowField(p.handleEvent('input', 'nextPage', []), 'text'),
+  assert.deepEqual(rowField(p.handleEvent('receive', 'nextPage', []), 'text'),
     ['message 4', 'message 5', 'message 6']);
   // and its own button still works, which is the arm the pager was added beside
-  assert.notEqual(p.handleEvent('input', 'toggleFollow', []), undefined);
+  assert.notEqual(p.handleEvent('receive', 'toggleFollow', []), undefined);
 });
 
 test('a thread carries a scope too, and keeps it across a rewrite', { skip: !built }, () => {

@@ -260,7 +260,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
       @component.FieldInfo::new("isLoading", TyBool),
       @component.FieldInfo::new("error", TyAny),
     ],
-    inputs=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
+    view_handlers=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
     receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
     view_names=["main"],
   )

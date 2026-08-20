@@ -22,7 +22,7 @@ wit_bindgen::generate!({
 });
 
 use exports::tutuca::component::guest::{
-    Bucket, EventResult, Guest, GuestInstance, Instance, RequestResult,
+    Bucket, EventResult, Guest, GuestInstance, Instance, ServeResult,
 };
 use tutuca::component::values::Value;
 
@@ -31,9 +31,9 @@ struct Component;
 impl Guest for Component {
     type Instance = TempConv;
 
-    /// This bundle serves no requests of its own.
-    fn handle_request(name: String, _args: Vec<Value>) -> RequestResult {
-        RequestResult::Err(Value::Text(format!("rusttemplib: no request {name}")))
+    /// This bundle serves no intents of its own.
+    fn serve_intent(name: String, _args: Vec<Value>) -> ServeResult {
+        ServeResult::Err(Value::Text(format!("rusttemplib: no service {name}")))
     }
 }
 
@@ -270,7 +270,7 @@ impl GuestInstance for TempConv {
         // There is no "setCelsius" case: `celsius` is a declared field, so the
         // host generates the mutator and writes it through `with_field`. A
         // handler here would be the same assignment written twice.
-        if !matches!(b, Bucket::Input) {
+        if !matches!(b, Bucket::Receive) {
             return EventResult::Unhandled;
         }
         match name.as_str() {

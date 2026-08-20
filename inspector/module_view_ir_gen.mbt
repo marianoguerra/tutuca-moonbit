@@ -32,7 +32,7 @@ fn rich_sample_main_view_ir() -> @anode.View {
         loop_with_val=HandlerName(name="rows", ns=Alter),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="inc", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="inc", ns=Receive))]],
   )
 }
 
@@ -46,7 +46,7 @@ fn rich_sample_compact_view_ir() -> @anode.View {
       @anode.h("i", [], [@anode.dyn_text(Method("label"))]),
       @anode.h("i", [], [@anode.dyn_text(Method("double"))]),
     ]),
-    [[@anode.on("click", HandlerName(name="reset", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="reset", ns=Receive))]],
   )
 }
 
@@ -144,7 +144,7 @@ fn sample_card_main_view_ir() -> @anode.View {
     @anode.h("div", [@anode.attr("class", "card"), @anode.eid(0)], [
       @anode.dyn_text(Method("label")),
     ]),
-    [[@anode.on("click", HandlerName(name="bump", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="bump", ns=Receive))]],
   )
 }
 

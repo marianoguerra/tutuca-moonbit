@@ -228,7 +228,7 @@ fn comp_view_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="toggle", ns=Input), args=[
+        @anode.on("click", HandlerName(name="toggle", ns=Receive), args=[
           EventPath(["isCtrl"]),
         ]),
       ],
@@ -404,12 +404,12 @@ fn comp_section_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="toggle", ns=Input), args=[
+        @anode.on("click", HandlerName(name="toggle", ns=Receive), args=[
           EventPath(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Input))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Input))],
+      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
+      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
     ],
   )
 }

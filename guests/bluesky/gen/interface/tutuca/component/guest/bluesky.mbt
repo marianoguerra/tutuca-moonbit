@@ -1167,7 +1167,7 @@ fn facets_value(facets : Array[Facet]) -> @values.Value {
 
 ///|
 impl DynComponent for Post with fn handle(self, bucket, name, _args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     // Optimistic, and announced: the flag is THIS row's — it returns its own
     // successor, and the host writes it home into whatever list holds it — while
@@ -1176,15 +1176,27 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
     // what somebody with a network connection should do about it. This bundle
     // has no network and is only saying what happened.
     "toggleLike" => {
-      @control.emit(if self.liked { "unliked" } else { "liked" }, [
+      @control.intent(if self.liked { "unliked" } else { "liked" }, [
         vtext(self.msg.uri),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, liked: !self.liked } as &DynComponent)
     }
     "toggleRepost" => {
-      @control.emit(if self.reposted { "unreposted" } else { "reposted" }, [
+      @control.intent(if self.reposted { "unreposted" } else { "reposted" }, [
         vtext(self.msg.uri),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, reposted: !self.reposted } as &DynComponent)
     }
     // The fold flag is THIS row's too, and the bubble is what the thread above
@@ -1193,9 +1205,15 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
     // they are not the same fact.
     "toggleFold" => {
       guard self.foldable > 0 else { return Unchanged }
-      @control.emit(if self.folded { "unfolded" } else { "folded" }, [
+      @control.intent(if self.folded { "unfolded" } else { "folded" }, [
         vtext(self.msg.uri),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, folded: !self.folded } as &DynComponent)
     }
     _ => Unhandled
@@ -2024,13 +2042,13 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
   // everything else that reaches it came up from a row. A page moves nothing
   // but which rows are drawn, so no row is rebuilt and nothing is announced —
   // there is nobody above who could act on "the reader turned a page".
-  if bucket is INPUT && is_page_message(name) {
+  if bucket is RECEIVE && is_page_message(name) {
     return match self.pager().moved(name) {
       Some(page) => Changed({ ..self, page, } as &DynComponent)
       None => Unchanged
     }
   }
-  guard bucket is BUBBLE else { return Unhandled }
+  guard bucket is INTENT else { return Unhandled }
   guard args is [@values.Value::Text(uri), ..] else { return Unhandled }
   guard uri != "" && self.has(uri) else { return Unchanged }
   match name {
@@ -2263,7 +2281,7 @@ impl DynComponent for Feed with fn get_field(self, name) {
 /// A feed's only input of its own is the pager: everything else that reaches it
 /// came up from a row, and a row's like is the row's.
 impl DynComponent for Feed with fn handle(self, bucket, name, _args) {
-  guard bucket is INPUT && is_page_message(name) else { return Unhandled }
+  guard bucket is RECEIVE && is_page_message(name) else { return Unhandled }
   match self.pager().moved(name) {
     Some(page) => Changed({ ..self, page, } as &DynComponent)
     None => Unchanged
@@ -2462,14 +2480,20 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
     // Same shape as a row's like: the flag moves, the follower count follows
     // it through `bump`, and the bubble is what a host would turn into the
     // `app.bsky.graph.follow` record it alone is allowed to write.
-    (INPUT, "toggleFollow") => {
-      @control.emit(if self.following { "unfollowed" } else { "followed" }, [
+    (RECEIVE, "toggleFollow") => {
+      @control.intent(if self.following { "unfollowed" } else { "followed" }, [
         vtext(self.handle),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, following: !self.following } as &DynComponent)
     }
     // The pager under the account's messages.
-    (INPUT, _) => {
+    (RECEIVE, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)

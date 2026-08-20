@@ -194,7 +194,7 @@ impl @component.Fields for PersonState with fn schema() {
       @component.FieldInfo::new("email", TyText),
       @component.FieldInfo::new("active", TyBool),
     ],
-    inputs=["setActive", "setEmail", "setName"],
+    view_handlers=["setActive", "setEmail", "setName"],
     view_names=["main"],
   )
 }
@@ -530,7 +530,7 @@ impl @component.Fields for NaivePeopleState with fn schema() {
       @component.FieldInfo::new("page", TyInt),
       @component.FieldInfo::new("pageSize", TyInt),
     ],
-    inputs=["next", "prev", "removeInItemsAt", "search"],
+    view_handlers=["next", "prev", "removeInItemsAt", "search"],
     view_names=["main"],
   )
 }

@@ -7,7 +7,7 @@ let counter_html : String =
   #|    <button id="inc" @on.click="add 1">+1</button>
   #|    <button id="dec" @on.click="add -1">-1</button>
   #|    <button id="reset" @on.click="resetCount">reset</button>
-  #|    <input id="label" :value=".label" @on.input="setLabel value"
+  #|    <input id="label" :value=".label" @on.input="setLabel e.value"
   #|           @on.keydown+send="setLabel 'sent!'">
   #|    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
   #|  </div>
@@ -44,9 +44,9 @@ test "value's type follows the host element: checkbox Bool, file Value" {
   let s = surface_of(
     (
       #|<div>
-      #|  <input type="checkbox" @on.input="setDone value">
-      #|  <input type="file" @on.change="onPick value">
-      #|  <input type="text" @on.input="setName value">
+      #|  <input type="checkbox" @on.input="setDone e.value">
+      #|  <input type="file" @on.change="onPick e.value">
+      #|  <input type="text" @on.input="setName e.value">
       #|</div>
     ),
   )
@@ -59,7 +59,7 @@ test "value's type follows the host element: checkbox Bool, file Value" {
 ///|
 test "a dynamic :type keeps the default String inference for value" {
   // Only a static type attribute is visible at generation time.
-  let s = surface_of("<input :type=\".kind\" @on.input=\"setIt value\">")
+  let s = surface_of("<input :type=\".kind\" @on.input=\"setIt e.value\">")
   assert_eq(s.inputs[0].args, Some([VString]))
 }
 
@@ -68,8 +68,8 @@ test "checkbox and text call sites of one handler join to Value" {
   let s = surface_of(
     (
       #|<div>
-      #|  <input type="checkbox" @on.input="setIt value">
-      #|  <input @on.input="setIt value">
+      #|  <input type="checkbox" @on.input="setIt e.value">
+      #|  <input @on.input="setIt e.value">
       #|</div>
     ),
   )
@@ -111,7 +111,7 @@ test "$name is a method in a value position and refused in an event one" {
   assert_eq(s.methods, ["label"])
   assert_eq(s.inputs.map(i => i.name), ["inc"])
   // In an event position it is the SAME dispatch as the bare name
-  // (app/app.mbt collapses both into push_input), so the sigil claims a
+  // (app/app.mbt pushes both as one `Receive`), so the sigil claims a
   // distinction that does not exist and is refused.
   try surface_of("<button @on.click=\"$inc\">x</button>") |> ignore catch {
     MethodInEventPosition(name~, site~, ..) => {
@@ -271,19 +271,18 @@ test "a rooted path naming no known property is a hint, with the nearest" {
 }
 
 ///|
-test "a bare name in an argument slot is a hint, until the migration" {
-  // v1's spelling, of which this repository has 522. An ERROR here would break
-  // every view in it before the codemod has run, so it says the same thing
-  // without stopping a build; the plan's task 19 is where it flips.
-  let hints = view_hints("<input @on.input=\"setIt value\">")
-  assert_eq(hints.length(), 1)
+test "a bare name in an argument slot is a build error" {
+  // It names nothing: there is no scope to look it up in, so it would resolve
+  // to `Null` and the handler would be handed a hole with nothing reporting
+  // it. The message names all three sigils rather than assuming the event.
   assert_eq(
-    hints[0],
-    "view main: `@on.input=\"… value\"` — a bare name in an event argument is a v1 spelling. Write `e.value` for an event read, `.field` for state, or `@bind` for a binding",
+    view_err("<input @on.input=\"setIt value\">"),
+    "view \"main\": `@on.input=\"… value\"` — an argument needs a sigil saying where it reads from. Write `e.value` for the event, `.value` for state, or `@value` for a binding",
   )
-  // The three prefixed spellings say nothing.
+  // The three prefixed spellings are accepted, and say nothing.
   assert_eq(view_hints("<input @on.input=\"setIt e.value\">"), [])
   assert_eq(view_hints("<input @on.input=\"setIt .draft\">"), [])
+  assert_eq(view_err("<input @on.input=\"setIt .draft\">"), "")
 }
 
 ///|

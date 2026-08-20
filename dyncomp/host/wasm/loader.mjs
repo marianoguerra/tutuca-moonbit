@@ -380,26 +380,38 @@ export function createTcompImports(getExports) {
       : s.tag === "item"
         ? { item: [s.val.field, s.val.key] }
         : { at: [s.val.field, Number(s.val.index)] };
+  // WIT `intent-opts`. `route` is a list of the `leg` enum, which jco lowers to
+  // the case names; an empty one means "the default", which the HOST supplies
+  // so a guest that says nothing cannot disagree with it.
   const optsToJson = (o) => ({
+    route: (o?.route ?? []).map((leg) => (typeof leg === "string" ? leg : leg?.tag)),
     onOk: o?.onOk ?? null,
     onError: o?.onError ?? null,
-    onRes: o?.onRes ?? null,
+    onUnhandled: o?.onUnhandled ?? null,
     livePath: !!o?.livePath,
   });
   const controlImpl = {
     log: (level, msg) => console.log(`[guest ${level}]`, msg),
-    emit: (name, args) => controlBuf.push({ kind: "emit", name, args: args.map(guestToJson) }),
     send: (name, args) => controlBuf.push({ kind: "send", name, args: args.map(guestToJson) }),
     sendAt: (path, name, args) => controlBuf.push({
       kind: "sendAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
     }),
-    bubbleAt: (path, name, args) => controlBuf.push({
-      kind: "bubbleAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
+    intent: (name, args, opts) => controlBuf.push({
+      kind: "intent", name, args: args.map(guestToJson), opts: optsToJson(opts),
     }),
+    intentAt: (path, name, args, opts) => controlBuf.push({
+      kind: "intentAt", path: path.map(stepToJson), name,
+      args: args.map(guestToJson), opts: optsToJson(opts),
+    }),
+    // Empty `args` means "the ones that arrived" and an empty `route` means
+    // "the one the walk is already on"; both are decided host-side, so both
+    // cross as they came.
+    forward: (args, opts) => controlBuf.push({
+      kind: "forward", args: args.map(guestToJson), opts: optsToJson(opts),
+    }),
+    reply: (v) => controlBuf.push({ kind: "reply", value: guestToJson(v) }),
+    fail: (e) => controlBuf.push({ kind: "fail", value: guestToJson(e) }),
     stopPropagation: () => controlBuf.push({ kind: "stopPropagation" }),
-    request: (name, args, opts) => controlBuf.push({
-      kind: "request", name, args: args.map(guestToJson), opts: optsToJson(opts),
-    }),
     // same-bundle child factory: the returned token is the bridge handle,
     // the ONLY instance-token space. The Component Model forbids re-entering
     // a component while a call into it is active, so the token is reserved
@@ -489,30 +501,20 @@ export function createTcompImports(getExports) {
       return config[name];
     },
   };
+  // One version, and the unversioned spelling jco 1.25 resolves at runtime.
+  // There are no older keys: a bundle built against an older contract calls
+  // functions this host no longer implements, so binding it would half-work
+  // rather than work. `abi.mjs` refuses such a guest by its export namespace,
+  // which is a legible error rather than a missing import.
   const guestImports = {
-    // jco 1.25 resolves unversioned keys at runtime; provide both spellings
-    // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.8.0": valuesImpl,
-    "tutuca:component/values@0.7.0": valuesImpl,
-    "tutuca:component/values@0.6.0": valuesImpl,
-    "tutuca:component/values@0.5.0": valuesImpl,
+    "tutuca:component/values@0.9.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.8.0": controlImpl,
-    "tutuca:component/control@0.7.0": controlImpl,
-    "tutuca:component/control@0.6.0": controlImpl,
-    "tutuca:component/control@0.5.0": controlImpl,
+    "tutuca:component/control@0.9.0": controlImpl,
     "tutuca:component/env": envImpl,
-    "tutuca:component/env@0.8.0": envImpl,
-    "tutuca:component/env@0.7.0": envImpl,
-    "tutuca:component/env@0.6.0": envImpl,
-    "tutuca:component/env@0.5.0": envImpl,
-    // From 0.7.0 on: `config` is what 0.7.0 ADDED, so an older spelling would
-    // be a key nothing can ever ask for — and one that claimed a bundle built
-    // against 0.6.0 could reach something that did not exist for it.
+    "tutuca:component/env@0.9.0": envImpl,
     "tutuca:component/config": configImpl,
-    "tutuca:component/config@0.8.0": configImpl,
-    "tutuca:component/config@0.7.0": configImpl,
+    "tutuca:component/config@0.9.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
   // functions, so there is nothing for a host to implement and jco asks for
@@ -705,7 +707,7 @@ export function createTcompImports(getExports) {
       return out;
     },
     dispatch: (bundle, handle, bucketInt, name, argsJson) => {
-      const bucket = ["input", "receive", "response", "bubble", "intent"][bucketInt] ?? "input";
+      const bucket = ["receive", "intent"][bucketInt] ?? "receive";
       controlBuf = [];
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
@@ -733,11 +735,11 @@ export function createTcompImports(getExports) {
       return out;
     },
     // a request the BUNDLE serves; module-scoped, so no instance handle
-    handle_request: (bundle, name, argsJson) => {
+    serve_intent: (bundle, name, argsJson) => {
       currentBundle = bundle;
       freezeClock();
       const args = JSON.parse(argsJson).map(jsonToGuest);
-      const res = bundles.get(bundle).guest.handleRequest(name, args);
+      const res = bundles.get(bundle).guest.serveIntent(name, args);
       drainChildren();
       const out = JSON.stringify(
         res.tag === "ok" ? { ok: guestToJson(res.val) } : { err: guestToJson(res.val) },

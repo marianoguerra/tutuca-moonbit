@@ -1,13 +1,8 @@
-// The MoonBit backend, run against the v2 corpus.
+// The MoonBit backend, run against the corpus.
 //
-// The twin of `drive_wbtest.mbt`, over `cases()` and the `Corpus`
-// component. Whitebox for the same reason: what has to agree with the design
-// is `corpus_inline_update`, the package-private function the wrapper
-// composes.
-//
-// The v2 half is a separate file rather than a second loop in the first one
-// because the two corpora carry two vocabularies while both exist. Task 25
-// deletes the v1 pair and this becomes the only one.
+// Over `cases()` and the `Corpus` component. Whitebox because what has to
+// agree with the corpus is `corpus_inline_update`, the package-private
+// function the wrapper composes, and not the wrapper.
 
 ///|
 /// A state map in a stable order, for a failure message.
@@ -95,10 +90,10 @@ test "the MoonBit backend agrees with the v2 corpus" {
   if !failures.is_empty() {
     fail(failures.join("\n"))
   }
-  // Pinned the way the v1 driver's is: the reserved set may shrink, and a
-  // growth is a regression. ZERO is the number worth having here — every v2
-  // case was written against the design rather than against this backend, so
-  // a refusal is the backend failing to express something the design says.
+  // Pinned so the reserved set may shrink and a growth is a regression. ZERO
+  // is the number worth having: every case is written against the corpus's own
+  // vocabulary rather than against this backend, so a refusal means the
+  // backend cannot express something the corpus states.
   @debug.assert_eq(refused.length(), 0, msg=refused.join(", "))
 }
 

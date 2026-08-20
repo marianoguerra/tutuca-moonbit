@@ -1,7 +1,7 @@
 // The compiled card, mounted — the other half of the boundary `card-wasm.js`
 // holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.8.0` core module
+// The page next door compiles a card to a `tutuca:component@0.9.0` core module
 // and hands you the archive. That proves the BYTES are right. It does not prove
 // the module runs, and until something instantiated one and asked it for a
 // field, "this page produced a real guest" was a claim about a download.
@@ -99,11 +99,9 @@ fn fields_json(args : Map[String, @tutuca.Value]) -> String {
 }
 
 ///|
-/// WIT order, which is what the bridge counts in: 0=input, 1=receive,
-/// 2=response, 3=bubble, and 4=intent once the plan's task 16 puts it in the
-/// contract. Nothing dispatches a 4 before then.
-fn bucket_int(bucket : @dyncomp.GuestBucket) -> Int {
-  bucket.ordinal()
+/// WIT order, which is what the bridge counts in: 0=receive, 1=intent.
+fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
+  @dyncomp.bucket_ordinal(bucket)
 }
 
 // --- the Guest impl over __cardguest ---------------------------------------
@@ -159,11 +157,10 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
     Some(Number(n, ..)) => Some(n.to_int())
     _ => None
   }
-  // `bubble-at` and `intent-at` are the two the generator still cannot emit,
-  // so `card-wasm.js` binds those imports to nothing and neither reaches this
-  // list. `request` carries a plain `RequestOpts::new()`, which is the only
-  // shape a compiled card can ask for; an intent's route DOES cross, because
-  // it is the one thing a card writes at the call site.
+  // `intent-at` is the one the generator still cannot emit, so `card-wasm.js`
+  // binds that import to nothing and it never reaches this list. An intent's
+  // `opts` DOES cross, because the route is the one part of it a card writes
+  // at the call site.
   let msgs : Array[@dyncomp.ControlMsg] = []
   match o.get("msgs") {
     Some(Array(items)) =>
@@ -182,15 +179,15 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
         // a `reply` would be dropped for lacking a field it never has.
         match m.get("kind") {
           Some(String("forward")) => {
-            msgs.push(Forward(args, route_opts(m.get("route"))))
+            msgs.push(Forward(args, intent_opts(m.get("opts"))))
             continue
           }
           Some(String("reply")) => {
-            msgs.push(Reply(args.get(0).unwrap_or(Null)))
+            msgs.push(Reply(value_field(m, "value")))
             continue
           }
           Some(String("fail")) => {
-            msgs.push(Fail(args.get(0).unwrap_or(Null)))
+            msgs.push(Fail(value_field(m, "value")))
             continue
           }
           _ => ()
@@ -200,14 +197,11 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
           _ => continue
         }
         match m.get("kind") {
-          Some(String("emit")) => msgs.push(Emit(name, args))
           Some(String("send")) => msgs.push(Send(name, args))
-          Some(String("request")) =>
-            msgs.push(Request(name, args, @dyncomp.RequestOpts::new()))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
           Some(String("intent")) =>
-            msgs.push(Intent(name, args, route_opts(m.get("route"))))
+            msgs.push(Intent(name, args, intent_opts(m.get("opts"))))
           _ => ()
         }
       }
@@ -217,26 +211,59 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
 }
 
 ///|
-/// An intent's route, as the ABI numbers it (`@abi.route_*` in the card
-/// backend, and the same closed set in `dyncomp/host/wasm/abi.mjs`).
-///
-/// The set is closed — two legs, in one of two orders, or one of them, or
-/// neither — so it crosses as one integer rather than a list. `route_none` is
-/// "the card wrote no leg", and the default route is where that is decided:
-/// `IntentOpts::new()` with no argument, which is the one place `dyn lex` is
-/// written down.
-fn route_opts(j : Json?) -> @tutuca.IntentOpts {
-  match j {
-    Some(Number(n, ..)) =>
-      match n.to_int() {
-        1 => @tutuca.IntentOpts::new(route=[Dyn])
-        2 => @tutuca.IntentOpts::new(route=[Lex])
-        3 => @tutuca.IntentOpts::new(route=[Dyn, Lex])
-        4 => @tutuca.IntentOpts::new(route=[Lex, Dyn])
-        _ => @tutuca.IntentOpts::new()
-      }
-    _ => @tutuca.IntentOpts::new()
+/// The one value a `reply` or a `fail` carries, as `card-wasm.js` sends it.
+fn value_field(m : Map[String, Json], key : String) -> @tutuca.Value {
+  match m.get(key) {
+    Some(j) => @tutuca.Value::from_json(j)
+    None => Null
   }
+}
+
+///|
+/// An intent's routing (WIT `intent-opts`), as the bridge's JSON.
+///
+/// The twin of `dyncomp/host/wasm/glue.mbt`'s, and a copy for the same reason
+/// `path_step` is one: that one is the wasm-gc host's and this page is the js
+/// one, and what they share is the JSON rather than the code.
+///
+/// An empty `route` means the DEFAULT, and the default is the host's to
+/// supply — `IntentOpts::new()` with no argument is the one place `dyn lex` is
+/// written down, so a card that wrote no leg cannot disagree with it. A card
+/// never names an answer arm, but the names are read anyway: the shape is the
+/// contract's, not the generator's.
+fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
+  guard j is Some(Object(o)) else { return @tutuca.IntentOpts::new() }
+  let name = (key : String) => {
+    match o.get(key) {
+      Some(String(s)) => Some(s)
+      _ => None
+    }
+  }
+  let route : Array[@tutuca.Leg] = []
+  if o.get("route") is Some(Array(legs)) {
+    for leg in legs {
+      match leg {
+        String("dyn") => route.push(Dyn)
+        String("lex") => route.push(Lex)
+        _ => ()
+      }
+    }
+  }
+  if route.is_empty() {
+    return @tutuca.IntentOpts::new(
+      on_ok_name?=name("onOk"),
+      on_error_name?=name("onError"),
+      on_unhandled_name?=name("onUnhandled"),
+      live_path=o.get("livePath") is Some(True),
+    )
+  }
+  @tutuca.IntentOpts::new(
+    route~,
+    on_ok_name?=name("onOk"),
+    on_error_name?=name("onError"),
+    on_unhandled_name?=name("onUnhandled"),
+    live_path=o.get("livePath") is Some(True),
+  )
 }
 
 ///|
@@ -307,7 +334,7 @@ impl @dyncomp.Guest for CardGuest with fn with_field(self, handle, name, v) {
 /// A card declares no `requests`, so there is no name this could answer to.
 /// Refusing by name is the honest reply, and it is what the host does with any
 /// request nobody claimed.
-impl @dyncomp.Guest for CardGuest with fn handle_request(_self, name, _args) {
+impl @dyncomp.Guest for CardGuest with fn serve_intent(_self, name, _args) {
   Err(
     Str("a compiled card answers no requests, and this one asked for '\{name}'"),
   )
@@ -391,12 +418,10 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   let root_node = @bdom.BrowserNode::from_element(root_el)
   root_node.replace_children()
   let scope = @component.ComponentStack::new()
-  // The page's request fixtures, in the scope OUTSIDE the bundle's own.
-  // `lookup_request` walks child -> parent, so a compiled card's
-  // `request 'rows'` finds its bundle's handlers first — it serves none — and
-  // then these. The interpreted card next door got them by construction; a
-  // compiled one had `request` refused until recently and so had nowhere to
-  // ask.
+  // The page's intent fixtures, in the scope OUTSIDE the bundle's own. The
+  // `lex` leg walks child -> parent, so a compiled card's `intent lex 'rows'`
+  // is offered to its bundle's own handlers first — it registers none — and
+  // then to these.
   let slot = slot_of(id)
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let policy = card_policy()

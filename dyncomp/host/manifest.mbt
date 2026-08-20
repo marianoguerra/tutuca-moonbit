@@ -71,21 +71,18 @@ pub(all) struct DynComponentDef {
   keywords : Array[String]
   /// A grouping for a palette; "" = ungrouped.
   category : String
-  /// Sentences for the names in views / `receives` / `bubbles` /
-  /// `responses` / `methods` / `requests`, merged by name — one table rather
-  /// than a doc field on six parallel lists.
+  /// Sentences for the names in views / `receives` / `intents` / `methods` /
+  /// `serves`, merged by name — one table rather than a doc field on five
+  /// parallel lists.
   message_docs : Map[String, String]
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
   receives : Array[String]
-  /// Every INTENT this component answers. v2's, and the one `bubbles` and
-  /// `responses` fold into: a bubble is a routed dispatch that could search
-  /// only one scope, and a response is the answer to one, which v2 delivers as
-  /// an ordinary message into `receives` instead.
+  /// Every INTENT this component answers — a routed dispatch, offered to each
+  /// hop of a route until something replies. The answer to one comes back as
+  /// an ordinary message, so it is declared in `receives` rather than here.
   intents : Array[String]
-  bubbles : Array[String]
-  responses : Array[String]
   methods : Array[String]
   /// Callables a view's `@when` names (the render-time namespace).
   whens : Array[String]
@@ -100,9 +97,9 @@ pub(all) struct DynComponentDef {
   /// The scope form: called about no row at all, and answering the bindings a
   /// whole subtree is rendered with.
   enrich_scopes : Array[String]
-  /// Requests this BUNDLE serves; registered into its own scope, so its
-  /// components find them before the host's.
-  requests : Array[String]
+  /// Intents this BUNDLE serves; registered into its own scope on the `lex`
+  /// leg, so its components find them before the host's.
+  serves : Array[String]
   /// Named initial states (the guest's `tutuca/init` fixtures).
   inits : Array[DynInitDef]
   style : String
@@ -151,7 +148,7 @@ pub(all) struct DynMacroDef {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 7
+pub let supported_api_version : Int = 8
 
 ///|
 suberror ManifestError {
@@ -574,16 +571,12 @@ pub fn DynManifest::from_json_string(
       types: parse_types(c),
       fields,
       receives: str_array(c, "receives"),
-      // Absent in a 0.7 manifest, which reads as the empty list — a bundle
-      // built before this key existed declares no intents, which is true.
       intents: str_array(c, "intents"),
-      bubbles: str_array(c, "bubbles"),
-      responses: str_array(c, "responses"),
       methods: str_array(c, "methods"),
       whens: str_array(c, "whens"),
       enriches: str_array(c, "enriches"),
       enrich_scopes: str_array(c, "enrichScopes"),
-      requests: str_array(c, "requests"),
+      serves: str_array(c, "serves"),
       inits: parse_inits(c),
       style: str_field(c, "style"),
     })

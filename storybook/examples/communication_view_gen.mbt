@@ -326,7 +326,7 @@ impl @component.Fields for SendReceiveState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
-    inputs=["clearStatus", "setDraft", "submit"],
+    view_handlers=["clearStatus", "setDraft", "submit"],
     receives=["clearDraft"],
     view_names=["main"],
   )
@@ -533,7 +533,7 @@ impl @component.Fields for TreeItemState with fn schema() {
       @component.FieldInfo::new("isOpen", TyBool),
       @component.FieldInfo::new("items", TyList(TyAny)),
     ],
-    inputs=["onItemClick"],
+    view_handlers=["onItemClick"],
     methods=["areChildsVisible"],
     view_names=["main"],
   )

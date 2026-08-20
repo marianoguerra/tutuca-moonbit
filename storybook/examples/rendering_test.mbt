@@ -49,7 +49,7 @@ test "seq-item-access: .byIndex[.currentIndex] and .byKey[.currentKey]" {
 ///|
 test "seq-item-access: moving the range re-renders the item at that index" {
   let h = @harness.mount_example(seq_item_access_module(), "Default")
-  // @on.input="setCurrentIndex valueAsInt" — the event's value, coerced to Int
+  // @on.input="setCurrentIndex e.valueAsInt" — the event's value, coerced to Int
   h.fire("input", @render.DomEvent::new(name="input", value=Str("3")))
   debug_inspect(
     h.texts(".card-title"),

@@ -156,10 +156,10 @@ test "the generated counter tree" {
       #|      ]),
       #|    ]),
       #|    [
-      #|      [@anode.on("click", HandlerName(name="add", ns=Input), args=[@anode.const_num(1.0)])],
-      #|      [@anode.on("click", HandlerName(name="add", ns=Input), args=[@anode.const_num(-1.0)])],
-      #|      [@anode.on("click", HandlerName(name="resetCount", ns=Input))],
-      #|      [@anode.on("input", HandlerName(name="setLabel", ns=Input), args=[Name("value")]), @anode.on("keydown", HandlerName(name="setLabel", ns=Input), args=[@anode.const_str("sent!")], modifiers=["send"])],
+      #|      [@anode.on("click", HandlerName(name="add", ns=Receive), args=[@anode.const_num(1.0)])],
+      #|      [@anode.on("click", HandlerName(name="add", ns=Receive), args=[@anode.const_num(-1.0)])],
+      #|      [@anode.on("click", HandlerName(name="resetCount", ns=Receive))],
+      #|      [@anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[EventPath(["value"])]), @anode.on("keydown", HandlerName(name="setLabel", ns=Receive), args=[@anode.const_str("sent!")], modifiers=["send"])],
       #|    ],
       #|  )
       #|}

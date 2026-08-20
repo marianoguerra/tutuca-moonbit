@@ -37,7 +37,7 @@ test "a hand-built tree is the parsed tree" {
       Repr(
         @anode.events_of([
           [
-            @anode.on("click", HandlerName(name="add", ns=Input), args=[
+            @anode.on("click", HandlerName(name="add", ns=Receive), args=[
               @anode.const_num(1),
             ]),
             @anode.on("keydown", Method("inc"), modifiers=["send"]),

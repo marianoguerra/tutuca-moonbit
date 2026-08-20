@@ -157,7 +157,7 @@ pub(all) struct HandlerParse {
 } derive(Debug, Eq)
 
 ///|
-/// `$name` → Method, bare name → HandlerName(Input); args allowed, a bad arg
+/// `$name` → Method, bare name → HandlerName(Receive); args allowed, a bad arg
 /// becomes Const(LNull) and reports an issue.
 declare pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse?
 

@@ -8,7 +8,7 @@ the same machinery as the components you compiled in.
 Two roles, one contract. **Hosting** is `dyncomp/`. **Writing** a component is
 `tutuca new-guest`. The contract between them is one file,
 [`../dyncomp/wit/tutuca-component.wit`](../dyncomp/wit/tutuca-component.wit) —
-`tutuca:component@0.6.0`.
+`tutuca:component@0.9.0`.
 
 The full design is in [`../dyncomp/DESIGN.md`](../dyncomp/DESIGN.md); what a
 loaded bundle can and cannot do is in
@@ -146,8 +146,8 @@ pub fn mount() -> Unit {
     session=Some(@uiw.session_in_local_storage(prefix="my-app:")),
     // bundles to offer as buttons; empty draws none
     samples=[{ label: "clock", url: "./clock.tutuca.tar.gz" }],
-    // services this host lends to what it hosts
-    requests=my_requests(),
+    // services this host lends to what it hosts, as `lex`-leg handlers
+    intents=my_intents(),
     // what you will ACCEPT from a bundle. Defaults to `untrusted`: no
     // capabilities, no bundle CSS. A bundle that asks for something you do
     // not grant is refused rather than degraded, so raising this is a
@@ -194,7 +194,7 @@ The world imports no WASI. That is not a packaging accident, it is the sandbox:
 no filesystem, no network, no sockets, no environment, no subprocess, and no
 clock or entropy beyond what a capability grant supplies. The default tier is
 the one the design is *for* — a bundle there can still declare components, ship
-views, hold state, handle events, nest children and serve its own requests. Most
+views, hold state, handle events, nest children and serve its own intents. Most
 sample guests run under it unchanged; the two that display other people's
 records ask for one capability, and what it buys them is below.
 

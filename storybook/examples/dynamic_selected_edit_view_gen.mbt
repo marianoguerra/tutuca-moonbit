@@ -194,7 +194,7 @@ impl @component.Fields for DseRootState with fn schema() {
       @component.FieldInfo::new("selectedKey", TyText),
       @component.FieldInfo::new("editor", TyComp(Some("Editor"))),
     ],
-    inputs=["selectItem"],
+    view_handlers=["selectItem"],
     view_names=["main"],
   )
 }
@@ -430,7 +430,7 @@ impl @component.Fields for DseEntryState with fn schema() {
     name="DseEntry",
     fingerprint="b9c226f2b409fd38",
     fields=[@component.FieldInfo::new("name", TyText)],
-    inputs=["setName"],
+    view_handlers=["setName"],
     view_names=["main", "edit"],
   )
 }

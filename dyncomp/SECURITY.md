@@ -43,7 +43,7 @@ properties follow from the contract's shape rather than from the wasm engine:
   `log` is collected during `handle-event` and applied by the HOST afterwards,
   through the dispatching `&Ctx` (`host/dynobj.mbt`, `obj_handler`). The guest
   does not act; it asks, and the host chooses.
-- **Paths are relative only.** `send-at` / `bubble-at` address the dispatching
+- **Paths are relative only.** `send-at` / `intent-at` address the dispatching
   instance's own subtree. Absolute paths are deliberately absent from the WIT,
   so a component cannot address the tree it happens to be mounted in.
 - **`make-instance` is same-bundle only**, in the host-assigned token space.
@@ -735,7 +735,7 @@ authority the host granted by compiling it — and nothing on the other end
 declared it, which is what principle 4 forbids.
 
 An `@on` handler's arguments are where a view reaches the DOM. In v2 they are
-written `e.<path>` (`docs/two-channels.md` §7), and two rules bound what a path can be.
+written `e.<path>`, and two rules bound what a path can be.
 
 **Rule 1: an `e.` path always produces a `Value`.** Never an element, never a
 document, never a host object. A leaf that is not representable is `Null`, so
@@ -793,8 +793,7 @@ being an accident.
 
 ### What a component does when it needs more
 
-It **dispatches an intent** and the host answers (`docs/two-channels.md` §7,
-*Privileged information is an intent, not a path*). The two channels differ in
+It **dispatches an intent** and the host answers. The two channels differ in
 exactly the way that matters here: an event path has no caller to authorize —
 a view is compiled data, so nothing is on the other end — while an intent
 carries `IntentCall.from`, and a host holding that can decide. Capability is

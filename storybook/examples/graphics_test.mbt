@@ -93,7 +93,7 @@ test "mathml-formula: the formula renders as real MathML" {
 ///|
 test "mathml-formula: editing a coefficient re-renders the <mn> and the verdict" {
   let h = @harness.mount_example(mathml_formula_module(), "Two roots")
-  // @on.input="setC valueAsInt" — the raw event value, coerced to an Int
+  // @on.input="setC e.valueAsInt" — the raw event value, coerced to an Int
   h.type_into(".in-c", "5")
   inspect(h.text(".m-c"), content="5")
   inspect(h.text(".disc"), content="-11") // 9 - 20

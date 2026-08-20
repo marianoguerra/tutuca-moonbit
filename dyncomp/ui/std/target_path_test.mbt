@@ -37,7 +37,7 @@ impl @component.Fields for SpikeState with fn schema() {
       @component.FieldInfo::new("mode", TyText),
       @component.FieldInfo::new("status", TyText),
     ],
-    inputs=["place", "useStack"],
+    view_handlers=["place", "useStack"],
   )
 }
 

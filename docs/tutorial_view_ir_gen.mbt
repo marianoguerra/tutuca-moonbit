@@ -36,8 +36,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="dec", ns=Input))],
-      [@anode.on("click", HandlerName(name="inc", ns=Input))],
+      [@anode.on("click", HandlerName(name="dec", ns=Receive))],
+      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
     ],
   )
 }
@@ -166,11 +166,11 @@ fn profile_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleWaving", ns=Input))],
+      [@anode.on("click", HandlerName(name="toggleWaving", ns=Receive))],
     ],
   )
 }
@@ -252,16 +252,16 @@ fn search_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
           EventPath(["value"]),
         ]),
         @anode.on(
           "keydown",
-          HandlerName(name="setSent", ns=Input),
+          HandlerName(name="setSent", ns=Receive),
           args=[EventPath(["value"])],
           modifiers=["send"],
         ),
-        @anode.on("keydown", HandlerName(name="resetDraft", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetDraft", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],
@@ -362,7 +362,7 @@ fn toggle_main_view_ir() -> @anode.View {
         ]),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="toggleOn", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="toggleOn", ns=Receive))]],
   )
 }
 
@@ -720,11 +720,11 @@ fn chat_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="submit", ns=Input))],
+      [@anode.on("click", HandlerName(name="submit", ns=Receive))],
     ],
   )
 }

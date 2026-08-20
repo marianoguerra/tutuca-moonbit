@@ -39,7 +39,7 @@ pub fn locale() -> String {
 ///|
 /// From a PRNG the HOST seeds per instance and records, so a session
 /// replays. NOT cryptographic: a guest that needs unpredictability an
-/// attacker cannot reproduce asks the host through `control.request`.
+/// attacker cannot reproduce asks the host with an intent on the `lex` leg.
 /// Requires `cap-random`.
 pub fn random_u64() -> UInt64 {
   let result : Int64 = wasmImportRandomU64()

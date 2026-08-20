@@ -276,7 +276,7 @@ impl @component.Fields for BarChartState with fn schema() {
     name="BarChart",
     fingerprint="b384ef4ca1a7f956",
     fields=[@component.FieldInfo::new("values", TyList(TyAny))],
-    inputs=["addBar", "randomize", "removeBar"],
+    view_handlers=["addBar", "randomize", "removeBar"],
     methods=["hasRoom", "hasSpare"],
     view_names=["main"],
   )

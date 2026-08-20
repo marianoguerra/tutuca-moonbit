@@ -57,7 +57,7 @@ impl DynComponent for Todo with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Todo with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     // There is no "setDraft" case: `draft` is a declared field, so the host
     // generates `setDraft` from the schema and writes it through `with_field`

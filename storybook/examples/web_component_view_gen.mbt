@@ -191,7 +191,7 @@ impl @component.Fields for EmojiPickerState with fn schema() {
       @component.FieldInfo::new("current", TyAny),
       @component.FieldInfo::new("isPickerVisible", TyBool),
     ],
-    inputs=["onEmojiClick", "toggleIsPickerVisible"],
+    view_handlers=["onEmojiClick", "toggleIsPickerVisible"],
     view_names=["main"],
   )
 }

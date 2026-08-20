@@ -13,7 +13,7 @@ fn text_editor() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><input :value=\".text\" @on.input=\"setText value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount valueAsInt\">n</button></div>",
+        raw_view="<div><input :value=\".text\" @on.input=\"setText e.value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount e.valueAsInt\">n</button></div>",
       ),
     },
     name="Editor",
@@ -113,12 +113,12 @@ test "click+ctrl gate and valueAsInt coercion" {
 }
 
 ///|
-test "@each `value` bind shadows the DOM event's value" {
+test "`e.value` reads the event and `@value` reads the @each item" {
   let list = @component.component(
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<ul><li @each=\".items\"><button @on.click=\"pick value\">x</button></li></ul>",
+        raw_view="<ul><li @each=\".items\"><button @on.click=\"pick e.value\">x</button></li></ul>",
       ),
     },
     name="Picker",
@@ -136,7 +136,43 @@ test "@each `value` bind shadows the DOM event's value" {
   guard find_el(container, "BUTTON", nth=1) is Some(btn) else {
     fail("no second button")
   }
-  // the event carries a value, but the @each item bind must win
+  // `e.value` names the event outright, so the event's value is what arrives —
+  // the `@each` item bind cannot shadow it, which is the point of the root.
+  // The bare spelling this used to test could mean either, decided by whether
+  // an enclosing loop happened to bind the name; it is a build error now.
+  assert_true(
+    a.dispatch(
+      btn,
+      @render.DomEvent::new(name="click", value=Str("from-event")),
+    ),
+  )
+  assert_true(field_v(a, "picked") == Str("from-event"))
+}
+
+///|
+test "`@value` in an event argument reads the @each item, not the event" {
+  let list = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<ul><li @each=\".items\"><button @on.click=\"pick @value\">x</button></li></ul>",
+      ),
+    },
+    name="Picker",
+    init=PickerState::{ items: [], picked: "" },
+    update=(s : PickerState, msg, _ctx) => {
+      match msg {
+        Receive("pick", [Str(p)]) => Next({ ..s, picked: p })
+        _ => Unhandled
+      }
+    },
+  )
+  let (a, container) = mk_app(list, {
+    "items": List([Str("alpha"), Str("beta")]),
+  })
+  guard find_el(container, "BUTTON", nth=1) is Some(btn) else {
+    fail("no second button")
+  }
   assert_true(
     a.dispatch(
       btn,

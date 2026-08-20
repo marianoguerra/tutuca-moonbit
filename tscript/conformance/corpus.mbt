@@ -22,8 +22,7 @@
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
-  /// v1: `send`, `bubble`, `request`, `sendAt`, or `stop`.
-  /// v2: `send`, `sendAt`, `intent`, `forward`, `reply`, `fail`, or `stop`.
+  /// One of `send`, `sendAt`, `intent`, `forward`, `reply`, `fail`, or `stop`.
   kind : String
   /// The message name. Empty for `stop`, and for `forward`, `reply` and
   /// `fail`, which carry none — a `forward` re-dispatches the name that
@@ -34,7 +33,7 @@ pub(all) struct CaseEffect {
   /// Written RESOLVED — a bare `intent 'save'` records `dyn lex` — because the
   /// default route is exactly the kind of thing two backends can agree to
   /// disagree about while every case with an explicit route passes. Empty for
-  /// every other effect, and for every v1 case.
+  /// every other effect.
   route : String
 } derive(Debug, Eq)
 
@@ -397,17 +396,17 @@ pub fn value_cases() -> Array[ValueCase] {
 // Written BEFORE either backend can run them, which is the whole reason they
 // are here. A corpus written after the backends records what the backends
 // agreed on; a corpus written first records what the design said, and the
-// backends have to come to it. `docs/two-channels.md` is that design.
+// backends have to come to it. The two-channel model is that design.
 //
 // Nothing consumes `cases()` yet. The projection (`cmd/conformance`) and
-// the two adapters pick it up in the plan's tasks 10 and 11, and `cases()`
+// the two adapters pick it up, and `cases()`
 // goes away when they do. Until then these rows are data with one test on
 // them — that the batch is still all here and still says what it says.
 //
 // WHAT IS NOT HERE, and why. A case is ONE transition: one handler, one
 // dispatch, one successor, one effect list. So a row can say what a body
 // EMITS, and cannot say where it goes. These belong to the transactor's own
-// suite instead (the plan's task 4), and listing them here is what stops them
+// suite instead, and listing them here is what stops them
 // from being forgotten in the gap between the two files:
 //
 //   - an observer above a replier, and the replier ending the walk;
@@ -422,9 +421,10 @@ pub fn value_cases() -> Array[ValueCase] {
 //     and the walk performs it, and no single transition contains both.
 
 ///|
-/// The two buckets. v1 had five: `Input` folded into `Receive` (a message is a
-/// message whoever sent it), and `Bubble` and `Response` folded into `Intent`
-/// (a route is a route whichever scope it walks).
+/// The two buckets, and the whole of the split. `Receive` is ADDRESSED: it
+/// names one component and stops there, whoever sent the message and whether
+/// it is a first word or an answer. `Intent` is ROUTED: it names a job and
+/// walks until something answers, whichever legs the route lists.
 pub(all) enum Bucket {
   BReceive
   BIntent
@@ -570,12 +570,11 @@ pub fn cases() -> Array[Case] {
       "nope",
       after=None,
     ),
-    // The merge, stated as a case. In v1 this row's twin is `an input name no
-    // arm answers is not this bucket's business`: `resetTo` was declared in
-    // the RECEIVE bucket, so an `Input` dispatch of it found nothing. v2 has
-    // one bucket for both, so the same dispatch now lands — which is the
-    // widening in the design's section 2, and the one behaviour change a
-    // migration can trip over.
+    // One bucket, stated as a case. `resetTo` is declared in the schema's
+    // receive bucket and reached here by the name a view raises: there is no
+    // second bucket for view names, so a name declared once answers both a
+    // parent's `ctx.send` and the view's own `@on`. The row above is the same
+    // dispatch with a name nothing declares, which lands nowhere.
     recv_case(
       "a view name and a schema-declared name share one bucket",
       "receive resetTo(n) { .count = n }",

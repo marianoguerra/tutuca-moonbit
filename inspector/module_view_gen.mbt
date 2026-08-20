@@ -303,7 +303,7 @@ impl @component.Fields for RichSampleState with fn schema() {
       @component.FieldInfo::new("tags", TyList(TyAny)),
       @component.FieldInfo::new("open", TyBool),
     ],
-    inputs=["inc", "reset"],
+    view_handlers=["inc", "reset"],
     receives=["ping", "onData"],
     intents=["onChild"],
     methods=["double", "label"],
@@ -513,7 +513,7 @@ impl @component.Fields for SampleCardState with fn schema() {
       @component.FieldInfo::new("tags", TyList(TyAny)),
       @component.FieldInfo::new("open", TyBool),
     ],
-    inputs=["bump"],
+    view_handlers=["bump"],
     methods=["label"],
     view_names=["main"],
   )

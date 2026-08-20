@@ -155,21 +155,21 @@ fn text_list(xs : Array[String]) -> @values.Value {
 ///|
 impl DynComponent for TableView with fn handle(self, bucket, name, args) {
   match (bucket, name) {
-    (INPUT, "nextPage") =>
+    (RECEIVE, "nextPage") =>
       Changed(
         self.retable(self.table, self.page + 1, self.sort, self.descending)
         as &DynComponent,
       )
-    (INPUT, "prevPage") =>
+    (RECEIVE, "prevPage") =>
       Changed(
         self.retable(self.table, self.page - 1, self.sort, self.descending)
         as &DynComponent,
       )
-    (INPUT, "firstPage") =>
+    (RECEIVE, "firstPage") =>
       Changed(
         self.retable(self.table, 0, self.sort, self.descending) as &DynComponent,
       )
-    (INPUT, "lastPage") =>
+    (RECEIVE, "lastPage") =>
       Changed(
         self.retable(
           self.table,
@@ -182,7 +182,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
     // The view passes the column id: `@on.click="sortBy @value"` over `.ids`.
     // Clicking the column already sorted reverses it, which is what every
     // table in the world does and what nobody thinks to ask for.
-    (INPUT, "sortBy") =>
+    (RECEIVE, "sortBy") =>
       match args {
         [@values.Value::Text(id), ..] => {
           let descending = if self.sort == id {

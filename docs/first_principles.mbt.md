@@ -360,7 +360,7 @@ test "templates: directives become structure, events are hoisted out" {
   debug_inspect(
     px.events[0].handlers[0].handler.handler,
     content=(
-      #|HandlerName(name="hello", ns=Input)
+      #|HandlerName(name="hello", ns=Receive)
     ),
   )
 }

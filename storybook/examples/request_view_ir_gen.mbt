@@ -100,15 +100,15 @@ fn request_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="loadAnotherWay", ns=Input))],
-      [@anode.on("click", HandlerName(name="toggleView", ns=Input))],
+      [@anode.on("click", HandlerName(name="loadAnotherWay", ns=Receive))],
+      [@anode.on("click", HandlerName(name="toggleView", ns=Receive))],
     ],
   )
 }

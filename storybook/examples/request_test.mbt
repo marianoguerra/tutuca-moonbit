@@ -32,14 +32,14 @@ test "request-example: the SAME component with a failing handler takes the error
   h.send_at_root("init")
   inspect(h.find_all(".card-title").length(), content="0")
   // The answer arrives as `loadDataError`, which is its OWN name and its own
-  // shape. v1 sent one combined `[res, err]` payload to a default arm, and a
+  // shape. A combined `[res, err]` payload on a default arm would mean a
   // split arm that matched it read the wrong slot.
   inspect(h.find_all(".loading").length(), content="0")
 }
 
 ///|
 test "request-example: a scope that DECLINES is not a scope that failed" {
-  // The answer v1 had no word for. A `RequestFn` had to respond, so a handler
+  // The third outcome. A handler that MUST respond has no way to decline, so
   // with nothing to contribute could only invent an error; an `IntentFn`
   // answers `Pass`, the walk goes on, and the route runs out.
   //

@@ -22,7 +22,7 @@ the child land back on the owner — without forwarding events up by hand.
   <p @text=".text"></p>
 </template>
 <template id="Sheet:edit">
-  <input class="input" :value=".text" @on.input="setText value" />
+  <input class="input" :value=".text" @on.input="setText e.value" />
 </template>
 
 <template id="Toolbar">

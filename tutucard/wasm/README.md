@@ -1,6 +1,6 @@
 # tutucard/wasm
 
-Compile a [tutucard](../) `.html` file into a `tutuca:component@0.7.0` **core
+Compile a [tutucard](../) `.html` file into a `tutuca:component@0.9.0` **core
 wasm module**, in the browser, with no MoonBit toolchain anywhere on the page.
 
 ```
@@ -60,7 +60,7 @@ Every map is a **`jv_ordered_map`** and every set a `jv_ordered_set`, because
 tutuca's `Value::Map` is MoonBit's `Map` and the renderer's `@each` indexes one
 directly — see the note at the bottom.
 
-**Declarations.** `on`, `receive`, `bubble`, `response`, `compute`, `pred`,
+**Declarations.** `receive`, `intent`, `compute`, `pred`,
 `invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses
 that attach to a transition.
 
@@ -96,7 +96,7 @@ keep it.
 **Statements.** `.field = e`, `+=`, `-=`, the same through a path
 (`.a[k].b = e`), `if … else …`, the collection mutators `push`, `insertAt`,
 `setAt`, `deleteAt`, `add`, `remove`, `toggle`, `new T`, and the effects
-`send`, `bubble`, `request`, `sendAt` and `stop`.
+`send`, `sendAt`, `intent`, `forward`, `reply`, `fail` and `stop`.
 
 `sendAt` addresses a PLACE — `&.rows[k].label` — and a place is reified rather
 than read, because a position survives the root being rebuilt and that is what
@@ -107,13 +107,6 @@ keyed step becomes is decided at RUN time, because `.rows[k]` and `.panes[k]`
 are the same syntax: a text key is an `item`, a whole non-negative number is an
 `at`, and anything else is not a key at all and abandons the transition. One
 form is refused — see below.
-
-`request` was the last thing the corpus caught this backend not doing, and what
-made it look hard was the `request-opts` record. It is not one the block
-language can write: `request 'name' args…` is all there is to say, and the
-language has no way to say anything else — so the record lowers to a
-row of constant zeros at the flush, and the answer arrives in the `response`
-bucket under the request's own name, which this backend already dispatched.
 
 **Expressions.** Literals, `$'…'` templates, `.field` and a path into one, a
 declaration's parameters, a bare or applied `compute`/`pred`/`invariant`,
@@ -137,7 +130,7 @@ at all. It is not correctly rounded — see the deviations below.
 ### `new`, and the one binding a handler owns
 
 ```
-on receipt {
+receive receipt {
   new Line
   @cur.what = .item
   @cur.qty  = .qty
@@ -165,11 +158,11 @@ merges the target across an `if` and keeps only what both arms agree on
 `@cur` after that is `NO_TARGET`.
 
 ```
-on leak {
+receive leak {
   if .n > 0 { new L }
   .xs.push @cur          // rejected: NO_TARGET
 }
-on both {
+receive both {
   if .n > 0 { new L } else { new L }
   .xs.push @cur          // fine, and both arms built the same type
 }
@@ -233,11 +226,11 @@ module is built out of anyway:
 ```html
 <script type="tutuca/script">
   /// Checks, and REFUSED: a `sendAt` whose key is read from live state.
-  on ping { sendAt &.rows[.sel] 'ping' }
+  receive ping { sendAt &.rows[.sel] 'ping' }
 </script>
 
 <script type="tutuca/wax">
-  fn card_on_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
+  fn card_receive_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
       tcx_send(utf8_from_bytes("ping"), tc_args1(get_sel(s)));
       null
   }
@@ -245,7 +238,7 @@ module is built out of anyway:
 ```
 
 **A name, not an attribute.** `card_<role>_<name>` binds a function to a
-declaration — `on`, `receive`, `bubble`, `response`, `compute`, `pred`,
+declaration — `receive`, `intent`, `compute`, `pred`,
 `invariant`. Anything else is a helper the escapes may call. Wax's attributes
 are Wax's, and inventing a `#[card.on]` would mean teaching its front end about
 cards.
@@ -282,7 +275,7 @@ project: the generator reaches a field through `tc_get(s, tc_const_str(7))`, and
 `7` is a constant-pool index only the generator knows.
 
 `runtime/escape_help.wax` adds the short list of things that were awkward —
-`tcx_fail()`, `tcx_send` / `tcx_bubble` / `tcx_request` / `tcx_stop`,
+`tcx_fail()`, `tcx_send` / `tcx_stop`,
 `tcx_str("literal")`, `tcx_int`, `tcx_failed()`. Everything else is already the
 right shape and needs no wrapper: `tc_num` / `tc_bool` / `tc_text` / `tc_null`
 for values, `tc_add`…`tc_mod` for arithmetic **with tutuca's semantics** (a
@@ -475,8 +468,10 @@ whole function's identifiers built at one location collapse its locals onto one
 slot. Wax refuses that outright (`AmbiguousBinding`), and `@build.Spans` is
 upstream's answer to it; `dsl.mbt`'s `id` is a thin wrapper over one.
 
-`reference/counter.wax` is the canonical ABI hand-written once, in ~180 readable
-lines. It is no longer a **diff target** — it holds its state as `values.value`
-cells in linear memory, which is what this did before the state became a
-`jv_record` — but the export names, the return areas, the joined `with-field`
-payload and the three-way `event-result` have not moved.
+There used to be a `reference/counter.wax` beside this — the canonical ABI
+hand-written once, in ~180 readable lines. It went with the contract it was
+written against: it held its state as `values.value` cells in linear memory,
+which is what this did before the state became a `jv_record`, and it exported
+the five-case `bucket` enum. What it demonstrated — the export names, the return
+areas, the joined `with-field` payload and the three-way `event-result` — is
+unchanged, and `dispatch.mbt` is where those are now read off.

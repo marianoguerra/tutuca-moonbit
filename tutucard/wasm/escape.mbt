@@ -46,15 +46,12 @@ let reserved_prefixes : Array[String] = [
 /// A NAME rather than an attribute, and that is the whole of the binding: Wax's
 /// attributes are its own (`#[export]`, `#[import]`) and inventing a
 /// `#[card.on]` would mean teaching the Wax front end about cards. A function
-/// called `card_on_inc` answers the `on inc` a card declares, and a function
+/// called `card_receive_inc` answers the `receive inc` a card declares, and a function
 /// called anything else is a helper the escapes may call.
 fn escape_role(fn_name : String) -> (String, String)? {
   guard fn_name.has_prefix("card_") else { return None }
   let rest = fn_name[5:].to_owned()
-  for
-    word in [
-      "on", "receive", "bubble", "response", "compute", "pred", "invariant",
-    ] {
+  for word in ["receive", "intent", "compute", "pred", "invariant"] {
     if rest.has_prefix(word + "_") {
       let name = rest[word.length() + 1:].to_owned()
       if name != "" {
@@ -69,7 +66,7 @@ fn escape_role(fn_name : String) -> (String, String)? {
 /// Whether a kind word names a transition — which decides what the function
 /// answers and where the dispatch arm goes.
 fn escape_is_transition(kind : String) -> Bool {
-  kind is ("on" | "receive" | "bubble" | "response")
+  kind is ("receive" | "intent")
 }
 
 ///|

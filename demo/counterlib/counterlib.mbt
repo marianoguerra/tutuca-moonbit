@@ -74,7 +74,7 @@ test "the component takes its kinds from the schema, not the seed value" {
   assert_eq(si.field_names(), ["label", "count", "history"])
   // The names `update` answers — unknowable by reflection, since update is
   // one opaque pattern match.
-  assert_eq(si.inputs, ["add", "resetCount", "setLabel"])
+  assert_eq(si.view_handlers, ["add", "resetCount", "setLabel"])
   assert_eq(si.receives, ["resetTo"])
   assert_eq(si.init_names, ["fresh", "with-history"])
   assert_eq(si.view_names, ["main"])

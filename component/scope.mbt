@@ -143,9 +143,10 @@ pub fn ComponentStack::register_intent_handlers(
   for k, hs in handlers {
     match self.intents.get(k) {
       // Appended rather than replaced: two registrations of one name are two
-      // candidates, in registration order, and the walk asks both. v1's `reqs`
-      // overwrote, because a `RequestFn` could not decline and so the second
-      // one could only ever shadow the first.
+      // candidates, in registration order, and the walk asks both. Replacing
+      // would only make sense if a handler had to answer; because an
+      // `IntentFn` may answer `Pass` and decline, the second registration is a
+      // fallback rather than a shadow.
       Some(existing) => existing.append(hs)
       None => self.intents[k] = hs.copy()
     }

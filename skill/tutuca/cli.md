@@ -99,7 +99,7 @@ For `--name Counter` the module declares `counter_views()` /
 `component()` as `views~` / `common_style~` / `global_style~`),
 `CounterInput` + `CounterMsg` with `CounterMsg::from_dispatch` (payload types
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
-`Add(Double)`, `setLabel value` -> `SetLabel(String)` — `value` becomes
+`Add(Double)`, `setLabel e.value` -> `SetLabel(String)` — `e.value` becomes
 `Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
 element's static `type` — anything unresolvable
 -> `@tutuca.Value`), and `CounterMethod`, the `$`-callables the views name
@@ -182,6 +182,7 @@ unknown-handler errors above:
 | `NotIterable` | `@each` needs a collection, but the expression is a scalar |
 | `NotRenderable` | `<x render>` needs a component, but the field is not a slot |
 | `MethodInEventPosition` | a `$name` in an `@on` position; write it bare |
+| `BadEventPath` | an `e.<path>` argument traverses a step off the allowlist (`e.target.form.action`); the message names the step and the six that are allowed |
 
 **Lint findings** are printed one per line, as
 `CODE (level) <Component>/<view>: message` — for example
@@ -220,9 +221,9 @@ Two diagnostics are not lint codes:
   file. Legitimate for a component whose views are built in MoonBit, and also
   what a mistyped component name looks like, which is why it is reported rather
   than passed in silence.
-- `message-case (warning)` — a `receive` / `intent` / `bubble` / `response`
-  case declared in a spelling nothing else uses: `Nudge` where every handler
-  and call site writes `nudge`. Both spellings compile to the same message, so
+- `message-case (warning)` — a `receive` or `intent` case declared in a
+  spelling nothing else uses: `Nudge` where every handler and call site writes
+  `nudge`. Both spellings compile to the same message, so
   this is a warning and the module is still generated; the fix is always the
   name the warning prints.
 

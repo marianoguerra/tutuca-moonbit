@@ -13,7 +13,7 @@
 ///     "msgs": [{kind,name,args,...}]},
 ///     where a msg may also carry `path` (relative steps) or `opts` (request
 ///     routing) — see control_msg below
-///   - handle_request returns {"ok": value} or {"err": value}
+///   - serve_intent returns {"ok": value} or {"err": value}
 ///   - with_field returns -1 for none, else the successor handle
 ///   - bucket ints follow WIT order: 0=input, 1=receive, 2=response, 3=bubble
 
@@ -57,11 +57,11 @@ extern "wasm" fn tcomp_with_field(
 ) -> Int = "tcomp" "with_field"
 
 ///|
-extern "wasm" fn tcomp_handle_request(
+extern "wasm" fn tcomp_serve_intent(
   bundle : Int,
   name : String,
   args_json : String,
-) -> String = "tcomp" "handle_request"
+) -> String = "tcomp" "serve_intent"
 
 ///|
 /// Load a bundle from a file the user DROPPED, by the id the drop event's
@@ -209,12 +209,12 @@ fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
 }
 
 ///|
-fn bucket_int(bucket : @dyncomp.GuestBucket) -> Int {
-  bucket.ordinal()
+fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
+  @dyncomp.bucket_ordinal(bucket)
 }
 
 ///|
-/// One relative path step of a `send-at` / `bubble-at` (WIT `path-step`, as
+/// One relative path step of a `send-at` / `intent-at` (WIT `path-step`, as
 /// the bridge's JSON: `{"field": "left"}`, `{"item": ["seq", "k"]}` or
 /// `{"at": ["seq", 3]}`).
 fn path_step(j : Json) -> @tutuca.Step? {
@@ -253,24 +253,55 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 }
 
 ///|
-/// A request's response routing (WIT `request-opts`), defaulted the way
-/// `RequestOpts::new()` does when the guest sends nothing.
-fn request_opts(j : Json?) -> @dyncomp.RequestOpts {
-  guard j is Some(Object(o)) else { return @dyncomp.RequestOpts::new() }
-  let name = (key : String) => {
-    match o.get(key) {
-      Some(String(s)) => Some(s)
-      _ => None
+/// One buffered call's `value` field, for the two that carry a value and no
+/// name (WIT `reply` / `fail`).
+fn WasmGuest::value_field(
+  self : WasmGuest,
+  m : Map[String, Json],
+  key : String,
+) -> @tutuca.Value {
+  match m.get(key) {
+    Some(j) => self.json_to_value(j)
+    None => Null
+  }
+}
+
+///|
+/// An intent's routing (WIT `intent-opts`), as the bridge's JSON.
+///
+/// An empty `route` means the DEFAULT, and the default is the host's to
+/// supply — `IntentOpts::new` spells it in exactly one place, so a guest that
+/// says nothing cannot disagree with it.
+fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
+  guard j is Some(Object(o)) else { return @tutuca.IntentOpts::new() }
+  let name = (key : String) => match o.get(key) {
+    Some(String(s)) => Some(s)
+    _ => None
+  }
+  let route : Array[@tutuca.Leg] = []
+  if o.get("route") is Some(Array(legs)) {
+    for leg in legs {
+      match leg {
+        String("dyn") => route.push(Dyn)
+        String("lex") => route.push(Lex)
+        _ => ()
+      }
     }
   }
-  @dyncomp.RequestOpts::new(
+  if route.is_empty() {
+    return @tutuca.IntentOpts::new(
+      on_ok_name?=name("onOk"),
+      on_error_name?=name("onError"),
+      on_unhandled_name?=name("onUnhandled"),
+      live_path=o.get("livePath") is Some(True),
+    )
+  }
+  @tutuca.IntentOpts::new(
+    route~,
     on_ok_name?=name("onOk"),
     on_error_name?=name("onError"),
-    on_res_name?=name("onRes"),
-    live_path=match o.get("livePath") {
-      Some(True) => true
-      _ => false
-    },
+    on_unhandled_name?=name("onUnhandled"),
+    live_path=o.get("livePath") is Some(True),
   )
 }
 
@@ -327,23 +358,47 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
           msgs.push(StopPropagation)
           continue
         }
-        let name = match m.get("name") {
-          Some(String(s)) => s
-          _ => continue
-        }
         let args = match m.get("args") {
           Some(Array(items)) => items.map(v => self.json_to_value(v))
           _ => []
         }
+        // The three that carry no NAME, because they act on the intent that
+        // arrived rather than starting one. Matched before the name guard, or
+        // a `reply` would be dropped for lacking a field it never has.
         match m.get("kind") {
-          Some(String("emit")) => msgs.push(Emit(name, args))
+          Some(String("forward")) => {
+            msgs.push(Forward(args, intent_opts(m.get("opts"))))
+            continue
+          }
+          Some(String("reply")) => {
+            msgs.push(Reply(self.value_field(m, "value")))
+            continue
+          }
+          Some(String("fail")) => {
+            msgs.push(Fail(self.value_field(m, "value")))
+            continue
+          }
+          _ => ()
+        }
+        let name = match m.get("name") {
+          Some(String(s)) => s
+          _ => continue
+        }
+        match m.get("kind") {
           Some(String("send")) => msgs.push(Send(name, args))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
-          Some(String("bubbleAt")) =>
-            msgs.push(BubbleAt(path_steps(m.get("path")), name, args))
-          Some(String("request")) =>
-            msgs.push(Request(name, args, request_opts(m.get("opts"))))
+          Some(String("intent")) =>
+            msgs.push(Intent(name, args, intent_opts(m.get("opts"))))
+          Some(String("intentAt")) =>
+            msgs.push(
+              IntentAt(
+                path_steps(m.get("path")),
+                name,
+                args,
+                intent_opts(m.get("opts")),
+              ),
+            )
           _ => ()
         }
       }
@@ -378,11 +433,11 @@ pub impl @dyncomp.Guest for WasmGuest with fn with_field(self, handle, name, v) 
 }
 
 ///|
-pub impl @dyncomp.Guest for WasmGuest with fn handle_request(self, name, args) {
-  let raw = tcomp_handle_request(self.bundle, name, args_json(args))
+pub impl @dyncomp.Guest for WasmGuest with fn serve_intent(self, name, args) {
+  let raw = tcomp_serve_intent(self.bundle, name, args_json(args))
   let j = @json.parse(raw) catch {
     _ => {
-      bad_payload("handle_request", raw)
+      bad_payload("serve_intent", raw)
       return Err(Str("guest request \{name} returned invalid JSON"))
     }
   }
@@ -592,7 +647,7 @@ pub fn load_url(path : @tutuca.DispatchPath, url : String) -> Int {
 
 ///|
 /// Load a dropped `.tutuca.tar.gz` bundle: `file_id` is what the drop event's
-/// value named (`@on.drop="loadDropped value"` -> a list of file descriptors),
+/// value named (`@on.drop="loadDropped e.value"` -> a list of file descriptors),
 /// and completion messages dispatch at `path` like `load_url`.
 ///
 /// This is the whole of what the universal demo's page-level JS used to do:

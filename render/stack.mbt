@@ -96,28 +96,25 @@ fn RenderStack::lookup_bind_chain(
 }
 
 ///|
+/// A bare name resolves against the BIND chain and nothing else.
+///
+/// It used to fall through to the event's fields when no bind matched, which
+/// made `value` mean the DOM event's value in some scopes and an `@each`
+/// bind's in others — the same text, two readings, decided by whichever
+/// enclosing loop happened to name its bind. `gen-views` now refuses a bare
+/// argument outright (`BareEventArg`), so the fallback answered nothing a
+/// compiled view could still ask for, and removing it is what makes the
+/// shadowing question disappear rather than be documented.
 pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
-  match self.lookup_bind_chain(name) {
-    // binds shadow event fields (an @each `value` bind wins over the DOM
-    // event's value, like JS bind-frame lookup running before ctx.lookupName)
-    Null =>
-      match self.event {
-        Some(e) => event_field(e, name)
-        None => Null
-      }
-    v => v
-  }
+  self.lookup_bind_chain(name)
 }
 
 ///|
 /// `e.<segments>`: the two-layer resolve, and NOT a name lookup.
 ///
-/// Deliberately not routed through `lookup_name`, which is where a bind
-/// shadows an event field. An `e.` path names the event outright, so nothing
-/// may shadow it — that is the point of writing the root. The v1 spelling, a
-/// bare `value`, still goes through `lookup_name` and is still shadowable by an
-/// `@each` bind called `value`; the two spellings mean different things, which
-/// is one more reason v2 asks for the prefix.
+/// Deliberately not routed through `lookup_name`: an `e.` path names the event
+/// outright, so a bind cannot shadow it. That is the point of writing the root,
+/// and it is why the root is required.
 pub impl @tutuca.Stack for RenderStack with fn lookup_event_path(self, segments) {
   match self.event {
     Some(e) => event_path(e, segments)

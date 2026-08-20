@@ -23,23 +23,20 @@
 /// Dispatch buckets a handler can live in (semantics.md §6). Alter is
 /// render-time only and never dispatched, so it is not a bucket here.
 ///
-/// TWO of these, which is the whole of v2. `Receive` holds every ADDRESSED
-/// message whoever sent it — a view, a parent, the host, or an answer to an
-/// intent; `Intent` holds every ROUTED one, dispatched by somebody who named a
-/// job rather than a target.
+/// TWO of these, and one question separates them: does the sender know who
+/// handles this? `Receive` holds every ADDRESSED message whoever sent it — a
+/// view, a parent, the host, or an answer to an intent; `Intent` holds every
+/// ROUTED one, dispatched by somebody who named a job rather than a target.
 ///
-/// v1 had five. `Input` folded into `Receive` (a view's name is addressed at
-/// the component the view belongs to, which is what `send` means), and `Bubble`
-/// and `Response` folded into `Intent` (both were routes, spelled as verbs).
-/// The three lived here through the migration so every commit compiled; this
-/// is the commit that took them out (`docs/two-channels.md` §10).
+/// A view's name is addressed at the component the view belongs to, which is
+/// what `send` means, so there is no separate bucket for one.
 pub(all) enum HandlerBucket {
   Receive // addressed: a view, ctx.send, the host, an answer
   Intent // routed: dispatched by someone who did not name a target
 } derive(Debug, Eq)
 
 ///|
-/// A leg of an intent's route (`docs/two-channels.md` §3).
+/// A leg of an intent's route.
 ///
 /// `Dyn` walks the dynamic scope — the dispatch path, from the sender's PARENT
 /// up to the root, one `pop_step()` per hop — and its handlers are component
@@ -72,14 +69,14 @@ pub fn route_label(route : Array[Leg]) -> String {
 ///|
 /// Options for `Ctx::intent`.
 ///
-/// Three fields carry over from v1's `RequestOpts` unchanged in meaning: the
-/// two answer names the sender declared, and `live_path`, which opts out of
-/// pinning field-resolved keys at dispatch time. Two are v2's own. `route` is
-/// the walk itself, which v1 could not carry because each of its two channels
-/// had exactly one. And `on_unhandled_name` is the third outcome
-/// (`docs/two-channels.md` §6): the route ended with no reply, which is not the same
-/// answer as a handler failing. What is NOT here is `on_res_name`, the
-/// combined `[res, err]` arm — gone with the bug it caused.
+/// `route` is the walk itself. The three answer names are the three ways a walk
+/// can end, and each carries its own payload: a hop replied, a hop failed, or
+/// the route ran out with nobody answering — which is not the same answer as a
+/// handler failing. `live_path` opts out of pinning field-resolved keys at
+/// dispatch time.
+///
+/// There is deliberately no combined result-or-error arm. An outcome a handler
+/// has to discriminate is one it can discriminate wrongly.
 pub(all) struct IntentOpts {
   /// The legs to walk, in order. `[Dyn, Lex]` when nothing says otherwise.
   route : Array[Leg]
@@ -99,18 +96,17 @@ declare pub fn IntentOpts::new(
 ) -> IntentOpts
 
 ///|
-/// What a static intent handler is handed (`docs/two-channels.md` §10).
+/// What a static intent handler is handed.
 ///
-/// `from` is the sender's position, and it is the field v1's `RequestFn` never
-/// had. A host reads it to decide whether the sender may ask — which is what
-/// `dyncomp/SECURITY.md` §5 says it cannot do today — and the walk needs it
-/// anyway to route the answer, so the handler gets it for free.
+/// `from` is the sender's position. A host reads it to decide whether the
+/// sender may ask — which is what `dyncomp/SECURITY.md` §5 says it cannot do
+/// today — and the walk needs it anyway to route the answer, so the handler
+/// gets it for free.
 ///
-/// This lives in `core` rather than beside `Dispatch` in `component`, where
-/// the design's section 10 lists it, for a mechanical reason: `transactor`
-/// constructs one and `component` consumes one, and neither imports the other.
-/// It is pure data over `core`'s own types, so this is the only place both can
-/// see it.
+/// This lives in `core` rather than beside `Dispatch` in `component` for a
+/// mechanical reason: `transactor` constructs one and `component` consumes one,
+/// and neither imports the other. It is pure data over `core`'s own types, so
+/// this is the only place both can see it.
 pub(all) struct IntentCall {
   name : String
   args : Array[Value]
@@ -120,11 +116,10 @@ pub(all) struct IntentCall {
 ///|
 /// What a static intent handler answers.
 ///
-/// `Pass` is the case `RequestFn` does not have and the walk needs: a
-/// `RequestFn` MUST answer, so a handler that has nothing to say has to invent
-/// an error. An `IntentFn` may decline, and the walk goes on to the next
-/// handler — the same freedom a component's `update` arm has when it answers
-/// `Unhandled`.
+/// `Pass` is the case a walk needs: a handler that has nothing to say declines,
+/// and the walk goes on to the next one — the same freedom a component's
+/// `update` arm has when it answers `Unhandled`. Without it, a handler with
+/// nothing to contribute could only invent an error.
 pub(all) enum IntentAnswer {
   Ok(Value)
   Failed(Value)
@@ -141,17 +136,6 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
-  /// Whether the message being handled is an ANSWER the runtime wrote — the
-  /// `<name>Ok` / `<name>Error` / `<name>Unhandled` a walk produced — rather
-  /// than one somebody sent.
-  ///
-  /// A component never needs this: the design's claim is that an answer is a
-  /// message and a handler cannot tell, which is what makes one bucket enough.
-  /// A BRIDGE to a foreign contract does need it, because v1 gave the two
-  /// different buckets and a bundle built against v1 may have used one name for
-  /// both — `input triple` for the click and `response triple` for its answer.
-  /// `dyncomp/host/dynobj.mbt` is the caller, and the only one.
-  fn is_answer(Self) -> Bool = _
   fn send(Self, name : String, args : Array[Value]) -> Unit = _
   fn send_at_path(Self, path : DispatchPath, name : String, args : Array[Value]) -> Unit = _
   /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
@@ -201,16 +185,11 @@ impl Ctx with fn name(_self) {
 }
 
 ///|
-/// `ctx.send` is `send_at_path` at the ctx's OWN path, and `ctx.bubble` is
-/// `bubble_at_path` there — which is what the transactor's ctx used to say
-/// twice, once as a default that did nothing and once as an implementation.
-/// Spelling them here leaves one pair of methods to implement, and no way for
-/// the relative and absolute forms to disagree about what "here" means.
-impl Ctx with fn is_answer(_self) {
-  false
-}
-
-///|
+/// `ctx.send` is `send_at_path` at the ctx's OWN path — which is what the
+/// transactor's ctx used to say twice, once as a default that did nothing and
+/// once as an implementation. Spelling it here leaves one method to implement,
+/// and no way for the relative and absolute forms to disagree about what
+/// "here" means.
 impl Ctx with fn send(self, name, args) {
   self.send_at_path(self.path(), name, args)
 }

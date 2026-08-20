@@ -246,7 +246,7 @@ impl @component.Fields for CounterState with fn schema() {
       @component.FieldInfo::new("count", TyInt),
       @component.FieldInfo::new("history", TyList(TyInt)),
     ],
-    inputs=["add", "resetCount", "setLabel"],
+    view_handlers=["add", "resetCount", "setLabel"],
     receives=["resetTo"],
     ids=["count", "dec", "history", "inc", "label", "reset"],
     view_names=["main"],

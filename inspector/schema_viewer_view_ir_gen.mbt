@@ -45,7 +45,7 @@ fn schema_viewer_main_view_ir() -> @anode.View {
         @anode.show(Field("showRaw"), @anode.render(2, Field("raw")), id=3),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="toggleShowRaw", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="toggleShowRaw", ns=Receive))]],
   )
 }
 

@@ -13,18 +13,6 @@ pub fn wasmExportConstructorInstance(
 
 ///|
 #doc(hidden)
-pub fn wasmExportHandleRequest(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int {
-  @guest.wasmExportHandleRequest(p0, p1, p2, p3)
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportHandleRequestPostReturn(p0 : Int) -> Unit {
-  @guest.wasmExportHandleRequestPostReturn(p0)
-}
-
-///|
-#doc(hidden)
 pub fn wasmExportInstanceDtor(handle : Int) -> Unit {
   @guest.wasmExportInstanceDtor(handle)
 }
@@ -95,6 +83,18 @@ pub fn wasmExportMethodInstanceWithField(
   p5 : Int,
 ) -> Int {
   @guest.wasmExportMethodInstanceWithField(p0, p1, p2, p3, p4, p5)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportServeIntent(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int {
+  @guest.wasmExportServeIntent(p0, p1, p2, p3)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportServeIntentPostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportServeIntentPostReturn(p0)
 }
 
 ///|

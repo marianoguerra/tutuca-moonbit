@@ -120,11 +120,10 @@ test "component inspector: sections toggle one by one and all at once" {
   // names are raised from MoonBit, never written in a view, so nothing at
   // runtime can recover them.
   //
-  // TWO sections where v1 drew three, and the third is absent rather than
-  // empty — the view hides a section with no rows, so the buckets v2 folded
-  // away simply stop being drawn. Nothing here had to learn about the merge.
+  // One section per non-empty group: the view hides a section with no rows, so
+  // a bucket this component does not use is absent rather than empty.
   @debug.assert_eq(h.texts(".comp-section"), [
-    "Fields", "Methods", "Update", "Receive", "Intent", "Alter", "Views",
+    "Fields", "Methods", "View handlers", "Receive", "Intent", "Alter", "Views",
   ])
   // Fields starts expanded (4 rows), name sections collapsed
   inspect(h.find_all(".comp-field").length(), content="4")

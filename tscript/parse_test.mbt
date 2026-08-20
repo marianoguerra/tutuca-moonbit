@@ -310,7 +310,7 @@ test "$ is a method handler, a bare name is an input handler" {
   guard! @tscript.parse_input_handler("$inc", ctx) is Some(h1)
   assert_true(h1.handler is Method("inc"))
   guard! @tscript.parse_input_handler("dec", ctx) is Some(h2)
-  assert_true(h2.handler is HandlerName(name="dec", ns=Input))
+  assert_true(h2.handler is HandlerName(name="dec", ns=Receive))
 }
 
 ///|
@@ -463,7 +463,7 @@ test "handler arg accepts a quoted literal with spaces" {
   // parse_input_handler (EventHandler lives in attribute.js, out of scope).
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("showView 'detail mode'", ctx) is Some(h)
-  assert_true(h.handler is HandlerName(name="showView", ns=Input))
+  assert_true(h.handler is HandlerName(name="showView", ns=Receive))
   assert_eq(h.args.length(), 1)
   assert_true(h.args[0] is Const(lit=LStr("detail mode"), ..))
 }

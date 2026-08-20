@@ -37,7 +37,7 @@ fn counter_comp() -> @component.Component {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel value\"></div>",
+        raw_view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel e.value\"></div>",
       ),
     },
     name="Counter",
@@ -139,7 +139,7 @@ test "browser: real drag events run the drag lifecycle" {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed dragInfo\">zone</div></div>",
+        raw_view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed e.dragInfo\">zone</div></div>",
       ),
     },
     name="DropBoard",

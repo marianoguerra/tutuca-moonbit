@@ -4,7 +4,7 @@
 // 5.5 MB `moonc` worker, a prebuilt `.mi`/`.core` bundle per target, and a
 // toolchain pin asserted at assemble time — because it compiles the user's
 // MoonBit in the browser. A card needs none of that: `tutucard/wasm` turns the
-// source into a `tutuca:component@0.7.0` core wasm module, and that compiler is
+// source into a `tutuca:component@0.9.0` core wasm module, and that compiler is
 // a MoonBit LIBRARY in this bundle rather than a payload fetched beside it.
 //
 // COMPILING used to be the second answer to a card and interpreting was the

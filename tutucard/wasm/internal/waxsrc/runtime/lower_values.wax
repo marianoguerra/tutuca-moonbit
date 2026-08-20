@@ -15,7 +15,7 @@
 // one call each way, but they need a JSON writer and reader inside the guest
 // and the stdlib has neither. Walking the arena needs no serializer at all.
 
-import "tutuca:component/values@0.7.0" {
+import "tutuca:component/values@0.9.0" {
     #[import = "list-new"]
     fn tc_list_new() -> i64;
     #[import = "list-push"]

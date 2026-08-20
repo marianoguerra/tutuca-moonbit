@@ -3,14 +3,14 @@
     <h2 class="card-title text-base">todos</h2>
     <div class="join w-full">
       <button class="btn btn-sm join-item toggle-all" title="toggle all" @on.click="toggleAll">v</button>
-      <input class="input input-bordered input-sm join-item grow new-todo" placeholder="What needs to be done?" :value="$draft" @on.input="typeDraft value" @on.keydown+send="addOnEnter isSend" />
+      <input class="input input-bordered input-sm join-item grow new-todo" placeholder="What needs to be done?" :value="$draft" @on.input="typeDraft e.value" @on.keydown+send="addOnEnter e.isSend" />
       <button class="btn btn-sm btn-primary join-item add" @on.click="add">Add</button>
     </div>
     <ul class="flex flex-col gap-1" @hide="empty? .items">
       <li class="flex gap-2 items-center todo-row" @each=".items" @when="matchesFilter">
         <input type="checkbox" class="checkbox checkbox-sm toggle" :checked="@value.done" @on.input="toggleAt @key" />
         <span class="grow text-sm todo-text" @hide="@value.editing" @text="@value.text" @on.dblclick="startEdit @key"></span>
-        <input class="input input-bordered input-xs grow edit" @show="@value.editing" :value="$editText" @on.input="typeEdit value" @on.keydown+send="commitEdit" @on.keydown+cancel="cancelEdit" @on.blur="commitEdit" />
+        <input class="input input-bordered input-xs grow edit" @show="@value.editing" :value="$editText" @on.input="typeEdit e.value" @on.keydown+send="commitEdit" @on.keydown+cancel="cancelEdit" @on.blur="commitEdit" />
         <button class="btn btn-ghost btn-xs btn-circle destroy" @on.click="removeAt @key">x</button>
       </li>
     </ul>

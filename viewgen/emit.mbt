@@ -637,8 +637,8 @@ fn emit_module_compiled(
     None => ProgramIndex::of(file, name)
   }
   // The events pass's advisory findings, joined to the schema check's. Both
-  // describe code that works — a rooted path to a vendor property, a v1 bare
-  // name — so both are printed and neither stops a build.
+  // describe code that works — a rooted path to a vendor property, a bare name
+  // nothing declares — so both are printed and neither stops a build.
   for compiled_comp in compiled.components {
     for h in compiled_comp.surface.hints {
       if !hints.contains(h) {

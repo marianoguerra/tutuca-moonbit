@@ -69,17 +69,17 @@ fn person_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setEmail", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setEmail", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setActive", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setActive", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
@@ -309,17 +309,17 @@ fn naive_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Input))],
-      [@anode.on("click", HandlerName(name="next", ns=Input))],
+      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
+      [@anode.on("click", HandlerName(name="next", ns=Receive))],
     ],
   )
 }
@@ -516,17 +516,17 @@ fn shared_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Input))],
-      [@anode.on("click", HandlerName(name="next", ns=Input))],
+      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
+      [@anode.on("click", HandlerName(name="next", ns=Receive))],
     ],
   )
 }
@@ -628,17 +628,17 @@ fn coupled_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Input))],
-      [@anode.on("click", HandlerName(name="next", ns=Input))],
+      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
+      [@anode.on("click", HandlerName(name="next", ns=Receive))],
     ],
   )
 }

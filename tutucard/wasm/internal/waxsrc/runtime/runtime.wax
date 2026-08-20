@@ -995,21 +995,19 @@ fn tc_deref(h: i32) -> &jv_record_value {
 // reach the host: `control` is imported conditionally, so a card that performs
 // no effect has no import to call and nothing here mentions one.
 
+// Kind 1 and 3 are the two an addressed effect needs; 5 carries a path as
+// well. The numbers are not contiguous because two of them named effects that
+// no longer exist, and renumbering would silently change what an already-built
+// card means to a host that reads the same table.
 const tc_e_send: i32 = 1;
-const tc_e_bubble: i32 = 2;
 const tc_e_stop: i32 = 3;
-// A `request` buffers exactly like the other three, and carries exactly what
-// the block language gives it: a name and arguments. The `request-opts` record
-// the import also takes is the interpreter's `RequestOpts::new()` — three
-// absent names and a false — so it is constants at the flush and nothing here.
-const tc_e_request: i32 = 4;
 
 const tc_e_send_at: i32 = 5;
 
-// v2. `intent` and `forward` carry a ROUTE, which is one small integer because
-// the set of routes is closed (see `@abi.route_*`). `reply` and `fail` carry
-// one value and no name — the walk addresses them — so their argument list has
-// exactly one entry and their name is the empty string.
+// The routed four. `intent` and `forward` carry a ROUTE, which is one small
+// integer because the set of routes is closed (see `@abi.route_*`). `reply` and
+// `fail` carry one value and no name — the walk addresses them — so their
+// argument list has exactly one entry and their name is the empty string.
 const tc_e_intent: i32 = 6;
 const tc_e_forward: i32 = 7;
 const tc_e_reply: i32 = 8;

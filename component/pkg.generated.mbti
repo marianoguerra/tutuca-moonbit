@@ -73,9 +73,6 @@ pub fn Components::register(Self, Component) -> Unit
 pub(all) enum Dispatch {
   Receive(String, Array[@core.Value])
   Intent(String, Array[@core.Value])
-  Input(String, Array[@core.Value])
-  Bubble(String, Array[@core.Value])
-  Response(String, Array[@core.Value])
 }
 
 pub(all) struct DynBinds {

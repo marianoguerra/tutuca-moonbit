@@ -1,4 +1,4 @@
-// Card in, `tutuca:component@0.8.0` core module out.
+// Card in, `tutuca:component@0.9.0` core module out.
 //
 // The pipeline is the card runtime's, with one stage swapped:
 //
@@ -50,11 +50,11 @@ priv struct Gen {
   /// Set when a body compiles `sendAt`, which is the only effect that carries a
   /// path — and the only one that needs the reifying half of the runtime.
   mut uses_send_at : Bool
-  /// Whether any of v2's four effects compiled — `intent`, `forward`, `reply`
-  /// or `fail`. One flag rather than four, because a card that says one of
-  /// them is a v2 card and the host that hosts it provides all four; a v1 card
-  /// says none and imports none, which is the property worth keeping.
-  mut uses_v2_effects : Bool
+  /// Whether any of the four ROUTED effects compiled — `intent`, `forward`,
+  /// `reply` or `fail`. One flag rather than four, because a host that
+  /// provides one provides all four, and a card that reaches for none should
+  /// not import them.
+  mut uses_routed_effects : Bool
   /// Set when a transition has a `requires`, an `ensures` or an invariant to
   /// check — which is when there is something that can decline, and so
   /// something to say. Unlike the two above this one reaches the import
@@ -173,8 +173,6 @@ pub fn compile(
         fields: [],
         receive: [],
         intent: [],
-        bubble: [],
-        response: [],
         types: [],
         doc: None,
       }
@@ -244,7 +242,7 @@ pub fn compile(
     uses_values: false,
     uses_num: false,
     uses_send_at: false,
-    uses_v2_effects: false,
+    uses_routed_effects: false,
     uses_contract_log: false,
     escapes: Map([]),
     temp: 0,
@@ -348,7 +346,7 @@ pub fn compile(
     fields: def.fields.map(f => f.name),
     manifest: manifest_json(g, decls, views, file),
     descriptor: Json::object({
-      "world": Json::string("tutuca:component@0.8.0"),
+      "world": Json::string("tutuca:component@0.9.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
       // as a data segment is bytes, and `abi.mjs` implements both.
       "encoding": Json::string("utf8"),
@@ -395,14 +393,6 @@ fn emit_module(
   )
   if g.uses_control {
     fs.push(
-      @build.import_func(@abi.control_iface, "emit", as_=Some("ctl_emit"), params=[
-        (Some("np"), i32_),
-        (Some("nl"), i32_),
-        (Some("ap"), i32_),
-        (Some("al"), i32_),
-      ]),
-    )
-    fs.push(
       @build.import_func(@abi.control_iface, "send", as_=Some("ctl_send"), params=[
         (Some("np"), i32_),
         (Some("nl"), i32_),
@@ -415,35 +405,6 @@ fn emit_module(
         @abi.control_iface,
         "stop-propagation",
         as_=Some("ctl_stop"),
-      ),
-    )
-    // Fourteen i32s, which is what `(string, list<value>, request-opts)`
-    // flattens to: two for the name, two for the arguments, three per
-    // `option<string>` (a discriminant and the joined string payload) and one
-    // for `live-path`. Under the canonical ABI's sixteen, so it stays flat
-    // rather than going indirect through a pointer — `dyncomp/host/wasm/abi.mjs`
-    // is where that limit lives and where these params were read off.
-    fs.push(
-      @build.import_func(
-        @abi.control_iface,
-        "request",
-        as_=Some("ctl_request"),
-        params=[
-          (Some("np"), i32_),
-          (Some("nl"), i32_),
-          (Some("ap"), i32_),
-          (Some("al"), i32_),
-          (Some("ok_d"), i32_),
-          (Some("ok_p"), i32_),
-          (Some("ok_l"), i32_),
-          (Some("er_d"), i32_),
-          (Some("er_p"), i32_),
-          (Some("er_l"), i32_),
-          (Some("rs_d"), i32_),
-          (Some("rs_p"), i32_),
-          (Some("rs_l"), i32_),
-          (Some("live"), i32_),
-        ],
       ),
     )
   }
@@ -463,19 +424,23 @@ fn emit_module(
       ]),
     )
   }
-  // v2's four. Emitted only when a card performs one, so a v1 card's import
-  // section is exactly what it was — which is what keeps an old bundle
-  // loadable by a host that has not been rebuilt.
-  if g.uses_v2_effects {
+  // The routed effects. Emitted only when a card performs one, so a card that
+  // only sends imports only `send` — the import section is what the card
+  // actually reaches for, and no more.
+  if g.uses_routed_effects {
     fs.push(
-      @build.import_func(@abi.control_iface, "intent", as_=Some("ctl_intent"), params=[
-        (Some("np"), i32_),
-        (Some("nl"), i32_),
-        (Some("ap"), i32_),
-        (Some("al"), i32_),
-        // The route, as `@abi.route_*`. One i32 because the set is closed.
-        (Some("rt"), i32_),
-      ]),
+      @build.import_func(
+        @abi.control_iface,
+        "intent",
+        as_=Some("ctl_intent"),
+        params=[
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+          ..intent_opts_params(),
+        ],
+      ),
     )
     fs.push(
       @build.import_func(
@@ -488,21 +453,29 @@ fn emit_module(
           // encode and no discriminant to carry.
           (Some("ap"), i32_),
           (Some("al"), i32_),
-          (Some("rt"), i32_),
+          ..intent_opts_params(),
         ],
       ),
     )
+    // `reply` and `fail` each take ONE `value`, not a list of them, and a
+    // `value` flattens to three core values rather than to a pointer: the
+    // discriminant, the joined payload (a f64, a handle or a string's pointer
+    // all fit an i64), and the string case's length.
     fs.push(
-      @build.import_func(@abi.control_iface, "reply", as_=Some("ctl_reply"), params=[
-        (Some("ap"), i32_),
-        (Some("al"), i32_),
-      ]),
+      @build.import_func(
+        @abi.control_iface,
+        "reply",
+        as_=Some("ctl_reply"),
+        params=[..value_params()],
+      ),
     )
     fs.push(
-      @build.import_func(@abi.control_iface, "fail", as_=Some("ctl_fail"), params=[
-        (Some("ap"), i32_),
-        (Some("al"), i32_),
-      ]),
+      @build.import_func(
+        @abi.control_iface,
+        "fail",
+        as_=Some("ctl_fail"),
+        params=[..value_params()],
+      ),
     )
   }
   if g.uses_send_at {
@@ -723,14 +696,14 @@ fn card_fields(
   // bundle-served request is a second thing the manifest would have to declare.
   fs.push(
     func(
-      "handle_request",
+      "serve_intent",
       params=[("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
       results=[i32_],
-      export_as=@abi.guest_iface + "#handle-request",
+      export_as=@abi.guest_iface + "#serve-intent",
       body=[
-        mem("fill", [i32c(@abi.ret_handle_request), i32c(0), i32c(24)]),
-        mem("store32", [i32c(@abi.ret_handle_request), i32c(1)]),
-        i32c(@abi.ret_handle_request),
+        mem("fill", [i32c(@abi.ret_serve_intent), i32c(0), i32c(24)]),
+        mem("store32", [i32c(@abi.ret_serve_intent), i32c(1)]),
+        i32c(@abi.ret_serve_intent),
       ],
     ),
   )
@@ -769,7 +742,11 @@ fn card_fields(
   fs.push(handle_event_fn(g, decls))
   fs.push(call_method_fn(g, decls))
   if g.uses_control {
-    fs.push(flush_fn(g.uses_send_at, g.uses_v2_effects))
+    // Before `tc_flush`, which calls it: Wax resolves in one pass.
+    if g.uses_routed_effects {
+      fs.push(route_out_fn())
+    }
+    fs.push(flush_fn(g.uses_send_at, g.uses_routed_effects))
   }
 
   // `#[start]`, assembled now that NOTHING else will intern a constant: one
@@ -794,7 +771,7 @@ fn card_fields(
       @abi.guest_iface + "#[method]instance.get-field",
       @abi.guest_iface + "#[method]instance.call-method",
       @abi.guest_iface + "#[method]instance.persist",
-      @abi.guest_iface + "#handle-request",
+      @abi.guest_iface + "#serve-intent",
     ] {
     fs.push(
       func(
@@ -806,6 +783,92 @@ fn card_fields(
     )
   }
   fs
+}
+
+///|
+/// WIT `intent-opts`, flattened: `route` as a (pointer, length) pair, then
+/// three `option<string>` answer names — each a discriminant and the string's
+/// two slots — and then `live-path`.
+///
+/// Twelve core values, which is why `intent` takes exactly sixteen: the
+/// canonical ABI spills at seventeen, and a card that also passed a path would
+/// be over. `intent-at` is the one this generator cannot emit, and that is the
+/// arithmetic behind it rather than an oversight.
+fn intent_opts_params() -> Array[(String?, @abi.VT)] {
+  [
+    (Some("rp"), i32_),
+    (Some("rl"), i32_),
+    (Some("ok_d"), i32_),
+    (Some("ok_p"), i32_),
+    (Some("ok_l"), i32_),
+    (Some("er_d"), i32_),
+    (Some("er_p"), i32_),
+    (Some("er_l"), i32_),
+    (Some("un_d"), i32_),
+    (Some("un_p"), i32_),
+    (Some("un_l"), i32_),
+    (Some("live"), i32_),
+  ]
+}
+
+///|
+/// The ten of those a CARD always passes as zero.
+///
+/// A card names no answer arm and asks for no live path: `on-ok`, `on-error`
+/// and `on-unhandled` are `none` — discriminant 0, and the two payload slots
+/// of a case that has no payload are dead — and `live-path` is false. The
+/// answer names come from the schema, which is where a card says them.
+fn none_opts() -> Array[@abi.I] {
+  Array::makei(10, _ => i32c(0))
+}
+
+///|
+/// One `value`, flattened: the discriminant, the joined payload, and the one
+/// slot only the `text` case uses.
+fn value_params() -> Array[(String?, @abi.VT)] {
+  [(Some("tag"), i32_), (Some("p64"), i64_), (Some("p32"), i32_)]
+}
+
+///|
+/// The same three, read out of a 16-byte cell at `p`.
+///
+/// The cell is what `tc_lower` writes and what a `list<value>` is made of, and
+/// its layout is the flat one rearranged: the discriminant at +0, the payload
+/// at +8. `text` puts its pointer at +8 and its length at +12, so the i64 load
+/// picks the pointer up in its low half — which is where the host reads it
+/// from, since the joined slot is truncated to i32 for that case.
+fn value_args(p : @abi.I) -> Array[@abi.I] {
+  [
+    mem("load32", [p]),
+    mem("load64", [add(p, i32c(8))]),
+    mem("load32", [add(p, i32c(12))]),
+  ]
+}
+
+///|
+/// `tc_route_out` — lower a route CODE to the `list<leg>` the WIT asks for,
+/// answering its length.
+///
+/// The bytes go to `@abi.route_buf`, which the caller passes as the pointer.
+/// One `store32` rather than one `store8` per leg: a route is at most two
+/// bytes, the buffer is four wide and only `rl` of them is ever read, so the
+/// whole list is one little-endian word — `lex` is 0x01, `dyn lex` is 0x0100,
+/// `lex dyn` is 0x0001 and `dyn` is 0x00.
+fn route_out_fn() -> @abi.Field {
+  func("tc_route_out", params=[("code", i32_)], results=[i32_], body=[
+    let_("w", i32c(0)),
+    if_(eq(get("code"), i32c(@abi.route_lex)), [set("w", i32c(0x01))], []),
+    if_(eq(get("code"), i32c(@abi.route_lex_dyn)), [set("w", i32c(0x01))], []),
+    if_(eq(get("code"), i32c(@abi.route_dyn_lex)), [set("w", i32c(0x0100))], []),
+    mem("store32", [i32c(@abi.route_buf), get("w")]),
+    // `route_none` is the EMPTY list — "the card wrote no leg" — and the
+    // host is what turns that into the default. The two-leg codes are the
+    // two above `route_lex`.
+    let_("n", i32c(1)),
+    if_(eq(get("code"), i32c(@abi.route_none)), [set("n", i32c(0))], []),
+    if_(ges(get("code"), i32c(@abi.route_dyn_lex)), [set("n", i32c(2))], []),
+    ret(Some(get("n"))),
+  ])
 }
 
 ///|
@@ -822,38 +885,6 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
     if_(
       eq(get("k"), i32c(1)),
       [call("ctl_send", [get("np"), get("nl"), get("ap"), get("al")])],
-      [],
-    ),
-    if_(
-      eq(get("k"), i32c(2)),
-      [call("ctl_emit", [get("np"), get("nl"), get("ap"), get("al")])],
-      [],
-    ),
-    // `request-opts` as the interpreter builds it: `RequestOpts::new()` names
-    // no `on-ok`, no `on-error` and no `on-res`, and does not ask for a live
-    // path. Three `none` discriminants with dead pointer/length slots, and a
-    // false. The response arrives at the request's own name, in the `response`
-    // bucket, which this card already dispatches.
-    if_(
-      eq(get("k"), i32c(4)),
-      [
-        call("ctl_request", [
-          get("np"),
-          get("nl"),
-          get("ap"),
-          get("al"),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-          i32c(0),
-        ]),
-      ],
       [],
     ),
   ]
@@ -879,17 +910,30 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
     )
   }
   if uses_v2 {
+    // The route is lowered HERE, for the same reason a `sendAt`'s path is:
+    // what it lowers to is linear memory the host reads during this call and
+    // nothing owns afterwards. `tc_route_out` writes the bytes and answers the
+    // length; `@abi.route_buf` is where it wrote them.
     arms.push(
       if_(
         eq(get("k"), i32c(6)),
         [
-          call("ctl_intent", [
-            get("np"),
-            get("nl"),
-            get("ap"),
-            get("al"),
-            call("tc_effect_route", [get("i")]),
-          ]),
+          let_(
+            "rl",
+            call("tc_route_out", [call("tc_effect_route", [get("i")])]),
+          ),
+          call(
+            "ctl_intent",
+            [
+              get("np"),
+              get("nl"),
+              get("ap"),
+              get("al"),
+              i32c(@abi.route_buf),
+              get("rl"),
+              ..none_opts(),
+            ],
+          ),
         ],
         [],
       ),
@@ -898,20 +942,32 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
       if_(
         eq(get("k"), i32c(7)),
         [
-          call("ctl_forward", [
-            get("ap"),
-            get("al"),
-            call("tc_effect_route", [get("i")]),
-          ]),
+          let_(
+            "rl",
+            call("tc_route_out", [call("tc_effect_route", [get("i")])]),
+          ),
+          call(
+            "ctl_forward",
+            [
+              get("ap"),
+              get("al"),
+              i32c(@abi.route_buf),
+              get("rl"),
+              ..none_opts(),
+            ],
+          ),
         ],
         [],
       ),
     )
+    // One `value` each, and the buffer holds it as a one-element `list<value>`
+    // — `reply` and `fail` are compiled from an expression that has to be
+    // there — so the cell to flatten is the one at `ap`.
     arms.push(
-      if_(eq(get("k"), i32c(8)), [call("ctl_reply", [get("ap"), get("al")])], []),
+      if_(eq(get("k"), i32c(8)), [call("ctl_reply", value_args(get("ap")))], []),
     )
     arms.push(
-      if_(eq(get("k"), i32c(9)), [call("ctl_fail", [get("ap"), get("al")])], []),
+      if_(eq(get("k"), i32c(9)), [call("ctl_fail", value_args(get("ap")))], []),
     )
   }
   func("tc_flush", body=[

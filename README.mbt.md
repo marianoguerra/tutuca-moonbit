@@ -125,7 +125,7 @@ The payoff is in `update` (see `demo/counterlib/` for the worked example):
 ```mbt nocheck
 update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
   Some(Add(d)) => ...          // `d` is a Double: `@on.click="add 1"`
-  Some(SetLabel(l)) => ...     // `l` is a String: `@on.input="setLabel value"`
+  Some(SetLabel(l)) => ...     // `l` is a String: `@on.input="setLabel e.value"`
   Some(ResetCount) => Unhandled
   Some(Unknown(_, _)) | None => Unhandled
 }

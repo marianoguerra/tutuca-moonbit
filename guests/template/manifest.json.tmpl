@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "{{name}}",
   "doc": "A tutuca:component bundle.",
   "version": "0.1.0",
@@ -31,11 +31,10 @@
         { "name": "label", "ty": 1, "doc": "What to call it.", "required": false, "constraint": null }
       ],
       "receives": ["set"],
-      "bubbles": ["counted"],
-      "responses": [],
+      "intents": ["counted"],
       "methods": ["caption"],
       "whens": [],
-      "requests": [],
+      "serves": [],
       "inits": [],
       "style": ""
     }

@@ -183,10 +183,10 @@ impl @component.Fields for PanelState with fn schema() {
 
 ///|
 test "a view raises a message, and the lexical leg answers an intent" {
-  // Two halves in one drive. The DOM entry pushes a `Receive` — v1 had a
-  // separate `Input` for a view's name, and one bucket holds both now — and
-  // `ScopeIntents` resolves the `lex` leg through the component's REGISTRATION
-  // scope, answering with the whole chain instead of one handler.
+  // Two halves in one drive. The DOM entry pushes a `Receive`, the ADDRESSED
+  // bucket that holds a view's own `@on` name and a parent's `ctx.send` alike,
+  // and `ScopeIntents` resolves the `lex` leg through the component's
+  // REGISTRATION scope, answering with the whole chain instead of one handler.
   let asked : Array[String] = []
   let scope = @component.ComponentStack::new()
   scope.register_intent_handlers({

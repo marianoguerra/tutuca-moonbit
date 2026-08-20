@@ -353,7 +353,8 @@ fn root_comp() -> @component.Component {
         Receive("onToggleFeaturedFirst", _) =>
           Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
         // The ANSWER, named for its outcome and carrying only what it is
-        // about. v1 sent one payload holding a result AND an error.
+        // about: three arms, three payloads, and no arm handed both a result
+        // and an error to tell apart.
         Receive("loadDataOk", args) => {
           let entries = match args {
             [List(a), ..] => a

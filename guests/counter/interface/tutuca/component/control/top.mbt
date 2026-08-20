@@ -83,10 +83,9 @@ pub fn Leg::from(self : Int) -> Leg {
 ///|
 /// Answer routing for an intent (host `IntentOpts`).
 ///
-/// Three outcome names rather than v1's `on-res`, because v2 has three
-/// outcomes and not two: a handler replied, a handler failed, or the route
-/// ended with nobody answering. The combined `[result, error]` payload — and
-/// the bug where a split arm read the wrong slot — is gone with `on-res`.
+/// Three outcome names, because an intent has three outcomes: a handler
+/// replied, a handler failed, or the route ended with nobody answering. Each
+/// carries its own payload, so no arm has to discriminate a combined one.
 ///
 /// A sender expects an answer if and only if it names one of these. That is
 /// what makes an intent a request rather than a notification, and nothing
@@ -96,23 +95,6 @@ pub(all) struct IntentOpts {
   on_ok : String?
   on_error : String?
   on_unhandled : String?
-  live_path : Bool
-} derive(Debug, Eq)
-
-///|
-/// v1. Response routing for a request (host `RequestOpts`). All three names
-/// are optional: with none of them the response arrives as
-/// handle-event(response, <request name>, [result, error]); with `on-ok` /
-/// `on-error` it arrives at those names carrying just the value; `on-res`
-/// renames the combined form.
-///
-/// Superseded by `intent-opts`. Kept for the length of the migration so a
-/// guest built against 0.7 still describes something this contract has; it
-/// goes when `request` does.
-pub(all) struct RequestOpts {
-  on_ok : String?
-  on_error : String?
-  on_res : String?
   live_path : Bool
 } derive(Debug, Eq)
 
@@ -131,8 +113,8 @@ pub fn log(level : LogLevel, msg : String) -> Unit {
 /// any, arrives as a later handle-event(receive, ...) — an answer is an
 /// ordinary message and a handler cannot tell it from one a parent sent.
 ///
-/// This is what `emit` and `request` both became: one channel, and the route
-/// says which scope answers rather than the verb saying it.
+/// One channel: the route says which scope answers, rather than the verb
+/// saying it.
 pub fn intent(
   name : String,
   args : Array[@values.Value],
@@ -263,7 +245,7 @@ pub fn intent(
 
 ///|
 /// Dispatch an intent AT a descendant, which then walks from there — the
-/// targeted twin of `intent`, and what `bubble-at` became.
+/// targeted twin of `intent`.
 pub fn intent_at(
   path : Array[PathStep],
   name : String,
@@ -631,76 +613,6 @@ pub fn fail(e : @values.Value) -> Unit {
 }
 
 ///|
-/// v1. Bubble a message to the parent component in the host tree.
-///
-/// Superseded by `intent` with a `dyn` route. Kept for the length of the
-/// migration; it goes in the contract step.
-pub fn emit(name : String, args : Array[@values.Value]) -> Unit {
-  let cleanup_list : Array[Int] = []
-
-  let ptr = mbt_ffi_str2ptr(name)
-
-  let address = mbt_ffi_malloc(args.length() * 16)
-  for index = 0; index < args.length(); index = index + 1 {
-    let iter_elem : @values.Value = args[index]
-    let iter_base = address + index * 16
-
-    match iter_elem {
-      Nil => {
-        mbt_ffi_store8(iter_base + 0, 0)
-
-        ()
-      }
-      Boolean(payload0) => {
-        mbt_ffi_store8(iter_base + 0, 1)
-        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
-
-        ()
-      }
-      Number(payload1) => {
-        mbt_ffi_store8(iter_base + 0, 2)
-        mbt_ffi_storef64(iter_base + 8, payload1)
-
-        ()
-      }
-      Text(payload2) => {
-        mbt_ffi_store8(iter_base + 0, 3)
-
-        let ptr3 = mbt_ffi_str2ptr(payload2)
-        mbt_ffi_store32(iter_base + 12, payload2.length())
-        mbt_ffi_store32(iter_base + 8, ptr3)
-        cleanup_list.push(ptr3)
-
-        ()
-      }
-      List(payload4) => {
-        mbt_ffi_store8(iter_base + 0, 4)
-        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
-
-        ()
-      }
-      Map(payload5) => {
-        mbt_ffi_store8(iter_base + 0, 5)
-        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
-
-        ()
-      }
-      Instance(payload6) => {
-        mbt_ffi_store8(iter_base + 0, 6)
-        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
-
-        ()
-      }
-    }
-  }
-  wasmImportEmit(ptr, name.length(), address, args.length())
-  mbt_ffi_free(ptr)
-  mbt_ffi_free(address)
-
-  cleanup_list.each(mbt_ffi_free)
-}
-
-///|
 /// Send a message to self: arrives as a later handle-event(receive, name, ...).
 pub fn send(name : String, args : Array[@values.Value]) -> Unit {
   let cleanup_list : Array[Int] = []
@@ -894,131 +806,6 @@ pub fn send_at(
 }
 
 ///|
-/// v1. Raise a bubble AT a descendant, which then travels up through it —
-/// the targeted twin of `emit`. Superseded by `intent-at`.
-pub fn bubble_at(
-  path : Array[PathStep],
-  name : String,
-  args : Array[@values.Value],
-) -> Unit {
-  let cleanup_list : Array[Int] = []
-
-  let address = mbt_ffi_malloc(path.length() * 20)
-  for index = 0; index < path.length(); index = index + 1 {
-    let iter_elem : PathStep = path[index]
-    let iter_base = address + index * 20
-
-    match iter_elem {
-      Field(payload) => {
-        mbt_ffi_store8(iter_base + 0, 0)
-
-        let ptr = mbt_ffi_str2ptr(payload)
-        mbt_ffi_store32(iter_base + 8, payload.length())
-        mbt_ffi_store32(iter_base + 4, ptr)
-        cleanup_list.push(ptr)
-
-        ()
-      }
-      Item(payload0) => {
-        mbt_ffi_store8(iter_base + 0, 1)
-
-        let ptr1 = mbt_ffi_str2ptr(payload0.field)
-        mbt_ffi_store32(iter_base + 8, payload0.field.length())
-        mbt_ffi_store32(iter_base + 4, ptr1)
-
-        let ptr2 = mbt_ffi_str2ptr(payload0.key)
-        mbt_ffi_store32(iter_base + 16, payload0.key.length())
-        mbt_ffi_store32(iter_base + 12, ptr2)
-        cleanup_list.push(ptr1)
-        cleanup_list.push(ptr2)
-
-        ()
-      }
-      At(payload3) => {
-        mbt_ffi_store8(iter_base + 0, 2)
-
-        let ptr4 = mbt_ffi_str2ptr(payload3.field)
-        mbt_ffi_store32(iter_base + 8, payload3.field.length())
-        mbt_ffi_store32(iter_base + 4, ptr4)
-        mbt_ffi_store32(iter_base + 12, payload3.index.reinterpret_as_int())
-        cleanup_list.push(ptr4)
-
-        ()
-      }
-    }
-  }
-
-  let ptr5 = mbt_ffi_str2ptr(name)
-
-  let address14 = mbt_ffi_malloc(args.length() * 16)
-  for index15 = 0; index15 < args.length(); index15 = index15 + 1 {
-    let iter_elem : @values.Value = args[index15]
-    let iter_base = address14 + index15 * 16
-
-    match iter_elem {
-      Nil => {
-        mbt_ffi_store8(iter_base + 0, 0)
-
-        ()
-      }
-      Boolean(payload7) => {
-        mbt_ffi_store8(iter_base + 0, 1)
-        mbt_ffi_store8(iter_base + 8, if payload7 { 1 } else { 0 })
-
-        ()
-      }
-      Number(payload8) => {
-        mbt_ffi_store8(iter_base + 0, 2)
-        mbt_ffi_storef64(iter_base + 8, payload8)
-
-        ()
-      }
-      Text(payload9) => {
-        mbt_ffi_store8(iter_base + 0, 3)
-
-        let ptr10 = mbt_ffi_str2ptr(payload9)
-        mbt_ffi_store32(iter_base + 12, payload9.length())
-        mbt_ffi_store32(iter_base + 8, ptr10)
-        cleanup_list.push(ptr10)
-
-        ()
-      }
-      List(payload11) => {
-        mbt_ffi_store8(iter_base + 0, 4)
-        mbt_ffi_store64(iter_base + 8, payload11.reinterpret_as_int64())
-
-        ()
-      }
-      Map(payload12) => {
-        mbt_ffi_store8(iter_base + 0, 5)
-        mbt_ffi_store64(iter_base + 8, payload12.reinterpret_as_int64())
-
-        ()
-      }
-      Instance(payload13) => {
-        mbt_ffi_store8(iter_base + 0, 6)
-        mbt_ffi_store64(iter_base + 8, payload13.reinterpret_as_int64())
-
-        ()
-      }
-    }
-  }
-  wasmImportBubbleAt(
-    address,
-    path.length(),
-    ptr5,
-    name.length(),
-    address14,
-    args.length(),
-  )
-  mbt_ffi_free(address)
-  mbt_ffi_free(ptr5)
-  mbt_ffi_free(address14)
-
-  cleanup_list.each(mbt_ffi_free)
-}
-
-///|
 /// End the walk with no answer — "served, and no answer". The sender hears
 /// nothing, even if it named an outcome, which is what separates this from
 /// letting the route run out.
@@ -1026,138 +813,6 @@ pub fn bubble_at(
 /// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
 pub fn stop_propagation() -> Unit {
   wasmImportStopPropagation()
-}
-
-///|
-/// Fire a request handler — one the static manifest says this bundle serves,
-/// or, failing that, one the HOST registered. The
-/// response arrives as a later handle-event(response, ...), routed by `opts`.
-///
-/// A bundle's OWN handlers run inside the guest, so they inherit the guest's
-/// (absent) authority and need no policy. Reaching a HOST handler is the one
-/// place a guest asks for something it cannot do itself, so the host decides
-/// — by the requester's path, at the moment of the call, not by anything the
-/// manifest claimed. A refusal arrives as an error response.
-/// v1. Superseded by `intent` with a `lex` route — the scope chain is
-/// exactly what a request searched, and the paragraph above is now a
-/// statement about which LEG rather than about which verb. Kept for the
-/// length of the migration.
-pub fn request(
-  name : String,
-  args : Array[@values.Value],
-  opts : RequestOpts,
-) -> Unit {
-  let cleanup_list : Array[Int] = []
-
-  let ptr = mbt_ffi_str2ptr(name)
-
-  let address = mbt_ffi_malloc(args.length() * 16)
-  for index = 0; index < args.length(); index = index + 1 {
-    let iter_elem : @values.Value = args[index]
-    let iter_base = address + index * 16
-
-    match iter_elem {
-      Nil => {
-        mbt_ffi_store8(iter_base + 0, 0)
-
-        ()
-      }
-      Boolean(payload0) => {
-        mbt_ffi_store8(iter_base + 0, 1)
-        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
-
-        ()
-      }
-      Number(payload1) => {
-        mbt_ffi_store8(iter_base + 0, 2)
-        mbt_ffi_storef64(iter_base + 8, payload1)
-
-        ()
-      }
-      Text(payload2) => {
-        mbt_ffi_store8(iter_base + 0, 3)
-
-        let ptr3 = mbt_ffi_str2ptr(payload2)
-        mbt_ffi_store32(iter_base + 12, payload2.length())
-        mbt_ffi_store32(iter_base + 8, ptr3)
-        cleanup_list.push(ptr3)
-
-        ()
-      }
-      List(payload4) => {
-        mbt_ffi_store8(iter_base + 0, 4)
-        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
-
-        ()
-      }
-      Map(payload5) => {
-        mbt_ffi_store8(iter_base + 0, 5)
-        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
-
-        ()
-      }
-      Instance(payload6) => {
-        mbt_ffi_store8(iter_base + 0, 6)
-        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
-
-        ()
-      }
-    }
-  }
-
-  let (lowered, lowered10, lowered11) = match opts.on_ok {
-    None => (0, 0, 0)
-    Some(payload8) => {
-      let ptr9 = mbt_ffi_str2ptr(payload8)
-      cleanup_list.push(ptr9)
-
-      (1, ptr9, payload8.length())
-    }
-  }
-
-  let (lowered15, lowered16, lowered17) = match opts.on_error {
-    None => (0, 0, 0)
-    Some(payload13) => {
-      let ptr14 = mbt_ffi_str2ptr(payload13)
-      cleanup_list.push(ptr14)
-
-      (1, ptr14, payload13.length())
-    }
-  }
-
-  let (lowered21, lowered22, lowered23) = match opts.on_res {
-    None => (0, 0, 0)
-    Some(payload19) => {
-      let ptr20 = mbt_ffi_str2ptr(payload19)
-      cleanup_list.push(ptr20)
-
-      (1, ptr20, payload19.length())
-    }
-  }
-  wasmImportRequest(
-    ptr,
-    name.length(),
-    address,
-    args.length(),
-    lowered,
-    lowered10,
-    lowered11,
-    lowered15,
-    lowered16,
-    lowered17,
-    lowered21,
-    lowered22,
-    lowered23,
-    if opts.live_path {
-      1
-    } else {
-      0
-    },
-  )
-  mbt_ffi_free(ptr)
-  mbt_ffi_free(address)
-
-  cleanup_list.each(mbt_ffi_free)
 }
 
 ///|

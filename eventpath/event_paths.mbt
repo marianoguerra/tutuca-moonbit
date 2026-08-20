@@ -80,11 +80,11 @@ pub let event_data_terminals : Array[String] = ["dataset", "detail"]
 /// input's string otherwise — and `isSend` is `key == "Enter"`. So no
 /// specification can answer for them and no generated table carries them.
 ///
-/// Here, in the leaf package, because THREE places need the same list and had
-/// three copies of it: the runtime resolver (`render/dom_event.mbt`) asks
-/// whether a name shadows the path walk, the generator (`viewgen/surface.mbt`)
-/// asks what it decodes to, and the migration asks which bare names are event
-/// reads. Three copies of one vocabulary is three ways to disagree about
+/// Here, in the leaf package, because more than one place needs the same list
+/// and had a copy of it: the runtime resolver (`render/dom_event.mbt`) asks
+/// whether a name shadows the path walk, and the generator
+/// (`viewgen/surface.mbt`) asks both what it decodes to and whether a bare name
+/// is an event read. Two copies of one vocabulary is two ways to disagree about
 /// `e.value`.
 pub let event_accessors : Array[String] = [
   "value", "valueAsInt", "valueAsFloat", "key", "keyCode", "isAlt", "isShift", "isCtrl",

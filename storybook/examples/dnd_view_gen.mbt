@@ -218,7 +218,7 @@ impl @component.Fields for DnDExampleState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
     ],
-    inputs=["onDropOnItem", "resetQuery", "setQuery"],
+    view_handlers=["onDropOnItem", "resetQuery", "setQuery"],
     view_names=["main"],
   )
 }

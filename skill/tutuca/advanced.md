@@ -14,7 +14,7 @@ everything else, `core.md` is the right place.
   draggable="true"
   data-dragtype="my-item"
   data-droptarget="my-item"
-  @on.drop="onDrop @key dragKey"
+  @on.drop="onDrop @key e.dragKey"
 ></div>
 ```
 
@@ -42,12 +42,12 @@ over the source's `@each` binds — and every dispatch while the drag is
 active can ask it for something, even though `drop` fires on the target
 row.
 
-Ask for the narrow name, the way `valueAsInt` sits beside `value`:
-`dragKey` is the source row's `@key`, `dragValue` the dragged value,
-`dragType` the type it declared. Each is `Null` when no drag is in
+Ask for the narrow name, the way `e.valueAsInt` sits beside `e.value`:
+`e.dragKey` is the source row's `@key`, `e.dragValue` the dragged value,
+`e.dragType` the type it declared. Each is `Null` when no drag is in
 flight, so a `Msg` case carries `@tutuca.Value` for it.
 
-`dragInfo` is the whole capture beside them, for a handler that needs a
+`e.dragInfo` is the whole capture beside them, for a handler that needs a
 bind the three do not name — and it is a wider argument in every sense,
 since reading one off it means applying a function:
 

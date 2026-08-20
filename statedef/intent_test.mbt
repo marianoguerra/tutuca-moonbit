@@ -1,9 +1,8 @@
 // The state block's `intent` variant.
 //
-// v2's third message word and the last one it needs: `receive` declares every
+// The second message word and the last one needed: `receive` declares every
 // MESSAGE the component accepts beyond the ones its own views send, and
-// `intent` declares every INTENT it answers. `bubble` and `response` still
-// parse and go in the plan's task 25.
+// `intent` declares every INTENT it answers.
 
 ///|
 fn parse_one(src : String) -> @statedef.StateDef raise {
@@ -22,24 +21,23 @@ test "intent declares a bucket beside receive" {
   assert_eq(d.receive.map(m => m.name), ["reset", "loadRowsOk"])
   assert_eq(d.intent.map(m => m.name), ["rowPicked", "saveDraft"])
   assert_eq(d.intent[1].payload.length(), 1)
-  // The two v1 buckets are still parseable and simply empty here.
-  assert_eq(d.bubble.length(), 0)
-  assert_eq(d.response.length(), 0)
 }
 
 ///|
-test "the v1 buckets still parse beside it" {
-  let d = parse_one(
-    (
-      #|state Board { rows: Array[Any] }
-      #|bubble   Board { rowPicked(Int) }
-      #|response Board { loadRows(Array[Any]) }
-      #|intent   Board { saveDraft(String) }
-    ),
-  )
-  assert_eq(d.bubble.map(m => m.name), ["rowPicked"])
-  assert_eq(d.response.map(m => m.name), ["loadRows"])
-  assert_eq(d.intent.map(m => m.name), ["saveDraft"])
+test "the declaration words are exactly receive and intent" {
+  // There are two buckets and two words for them. A third is not a bucket
+  // nobody uses — it is a parse error, which is what keeps the schema and the
+  // dispatch model from drifting apart.
+  for word in ["bubble", "response", "on"] {
+    let src = "state Board { rows: Array[Any] }\n\{word} Board { rowPicked(Int) }"
+    let failed = try {
+      parse_one(src) |> ignore
+      false
+    } catch {
+      _ => true
+    }
+    assert_true(failed)
+  }
 }
 
 ///|
@@ -73,6 +71,6 @@ test "an unknown declaration word names the five that are legal" {
   // message — and a word added to the match without being added to both is a
   // parser that accepts something it says it does not.
   assert_eq(
-    msg, "state block: `stat` is not a declaration — expected state, struct, enum, receive, intent, bubble or response",
+    msg, "state block: `stat` is not a declaration — expected state, struct, enum, receive or intent",
   )
 }

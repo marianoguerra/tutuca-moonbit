@@ -92,7 +92,7 @@ a method a PARENT calls, say — is a `pred` or a `compute` in the
 Every declared field becomes a struct field of the generated state type, and
 the field's **kind** decides which camelCase mutators come with it. The
 generated names keep their **JS spelling** — that is what makes views port
-verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery value"`,
+verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery e.value"`,
 `@on.click="toggleView"` all call generated mutators.
 
 | Field kind | MoonBit type | Extra auto-generated mutators (for field `x`) |

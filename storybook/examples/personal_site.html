@@ -78,12 +78,12 @@
         <span class="font-semibold text-sm pt-1">Categories</span>
         <div class="cat-facets flex flex-wrap gap-2">
           <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-            :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onCategoryToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Roles</span>
         <div class="role-facets flex flex-wrap gap-2">
           <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-            :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onRoleToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Sort By</span>
         <div class="flex flex-wrap items-center gap-2">

@@ -20,14 +20,6 @@
 // Both halves of it — the transitions and the value bodies — cross the same way.
 
 ///|
-fn bucket_name(b : @conformance.Bucket) -> String {
-  match b {
-    BReceive => "receive"
-    BIntent => "intent"
-  }
-}
-
-///|
 fn role_name(r : @conformance.ValueRole) -> String {
   match r {
     VMethod => "method"
@@ -43,8 +35,8 @@ fn effect_json(e : @conformance.CaseEffect) -> Json {
     "kind": Json::string(e.kind),
     "name": Json::string(e.name),
     "args": Json::array(e.args.map(a => a.to_json())),
-    // Empty for every v1 effect; `intent` and `forward` are the two that
-    // carry one, and the card adapter reads it in the plan's task 11.
+    // Empty for an addressed effect; `intent` and `forward` are the two that
+    // carry one, and the card adapter reads it.
     "route": Json::string(e.route),
   })
 }
@@ -134,35 +126,12 @@ fn main raise {
     }
   }
 
+  // Every case shares one schema, so `component_of` answers `C` for all of
+  // them and the harness builds one card per case.
   let rows : Array[Json] = []
   for c in @conformance.cases() {
     guard component_of(c.name, c.schema) is Some(comp) else { continue }
     rows.push(
-      Json::object({
-        "name": Json::string(c.name),
-        "schema": Json::string(c.schema),
-        "script": Json::string(c.script),
-        "component": Json::string(comp),
-        "bucket": Json::string(bucket_name(c.bucket)),
-        "handler": Json::string(c.handler),
-        "args": Json::array(c.args.map(a => a.to_json())),
-        "before": state_json(c.before),
-        "after": match c.after {
-          Some(m) => state_json(m)
-          None => Json::null()
-        },
-        "effects": Json::array(c.effects.map(effect_json)),
-      }),
-    )
-  }
-
-  // The v2 table. Same shape, its own key, and its own component per case —
-  // every v2 case shares one schema, so `component_of` answers `C` for all of
-  // them and the harness builds one card per case exactly as it does above.
-  let v2_rows : Array[Json] = []
-  for c in @conformance.cases() {
-    guard component_of(c.name, c.schema) is Some(comp) else { continue }
-    v2_rows.push(
       Json::object({
         "name": Json::string(c.name),
         "schema": Json::string(c.schema),
@@ -231,16 +200,13 @@ fn main raise {
     out,
     Json::object({
       "cases": Json::array(rows),
-      "casesV2": Json::array(v2_rows),
       "valueCases": Json::array(value_rows),
     }).stringify(),
   )
   println(
     "wrote " +
     rows.length().to_string() +
-    " cases, " +
-    v2_rows.length().to_string() +
-    " v2 cases and " +
+    " cases and " +
     value_rows.length().to_string() +
     " value cases to " +
     out,

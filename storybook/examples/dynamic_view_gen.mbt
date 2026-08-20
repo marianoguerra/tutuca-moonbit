@@ -189,7 +189,7 @@ impl @component.Fields for SelectorEntryState with fn schema() {
       @component.FieldInfo::new("value", TyText),
       @component.FieldInfo::new("label", TyText),
     ],
-    inputs=["setLabel", "setValue"],
+    view_handlers=["setLabel", "setValue"],
     view_names=["main"],
   )
 }
@@ -374,7 +374,7 @@ impl @component.Fields for SelectorState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("selectedValue", TyAny),
     ],
-    inputs=["setSelectedValue"],
+    view_handlers=["setSelectedValue"],
     view_names=["main"],
   )
 }
@@ -574,7 +574,7 @@ impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
     ],
-    inputs=["onAddItem", "removeInItemsAt"],
+    view_handlers=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
   )
 }
@@ -740,7 +740,7 @@ impl @component.Fields for SheetState with fn schema() {
     name="Sheet",
     fingerprint="8f72a9bbe8472900",
     fields=[@component.FieldInfo::new("title", TyText)],
-    inputs=["setTitle"],
+    view_handlers=["setTitle"],
     view_names=["main"],
   )
 }

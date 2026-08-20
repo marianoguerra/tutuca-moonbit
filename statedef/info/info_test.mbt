@@ -177,19 +177,17 @@ test "the schema description carries the declaration's own channels" {
     (
       #|state Board { rows: Array[Any], loading: Bool }
       #|receive  Board { reset, focusRow(Int) }
-      #|bubble   Board { rowPicked(Int) }
-      #|response Board { loadRows(Array[Any]) }
+      #|intent   Board { rowPicked(Int), loadRows }
     ),
   )
   let si = @info.schema_info(def, name="Board")
   assert_eq(si.name, "Board")
   assert_eq(si.field_names(), ["rows", "loading"])
   assert_eq(si.receives, ["reset", "focusRow"])
-  assert_eq(si.bubbles, ["rowPicked"])
-  assert_eq(si.responses, ["loadRows"])
+  assert_eq(si.intents, ["rowPicked", "loadRows"])
   // What the VIEWS contribute is absent until a caller supplies it — and
   // absent is the honest answer for a schema nobody has views for yet.
-  assert_eq(si.inputs, [])
+  assert_eq(si.view_handlers, [])
   assert_eq(si.view_names, [])
   // The fingerprint is the one-element one the emitter writes, so a card and
   // a generated component of the same schema land in the same bucket.
@@ -202,13 +200,13 @@ test "the description takes the views' half from its caller" {
   let si = @info.schema_info(
     def,
     name="C",
-    inputs=["add", "reset"],
+    view_handlers=["add", "reset"],
     methods=["label"],
     ids=["count"],
     view_names=["main", "row"],
     init_names=["fresh"],
   )
-  assert_eq(si.inputs, ["add", "reset"])
+  assert_eq(si.view_handlers, ["add", "reset"])
   assert_eq(si.methods, ["label"])
   assert_eq(si.ids, ["count"])
   assert_eq(si.view_names, ["main", "row"])

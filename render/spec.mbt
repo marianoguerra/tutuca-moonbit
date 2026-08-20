@@ -60,9 +60,9 @@ pub(all) struct DomEvent {
   drag_info : @tutuca.Value
   /// Layer 2: read an ALREADY-ALLOWLISTED path off the live event.
   ///
-  /// A `DomEvent` is a snapshot of the few things v1 needed, and an `e.` path
-  /// can name anything the specifications give an event — so the glue that
-  /// built this supplies a closure that reads the real object. The js and the
+  /// A `DomEvent` is a snapshot of a few fixed fields, and an `e.` path can
+  /// name anything the specifications give an event — so the glue that built
+  /// this supplies a closure that reads the real object. The js and the
   /// wasm-gc backends each have one; a `DomEvent` built by a test has none,
   /// and a path through it answers `Null`, which is what a path that does not
   /// resolve answers anyway.

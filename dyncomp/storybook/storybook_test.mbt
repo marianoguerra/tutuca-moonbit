@@ -65,7 +65,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   _args,
 ) {
   match (bucket, name) {
-    (Input, "inc") =>
+    (Receive, "inc") =>
       {
         handled: true,
         next: Some(
@@ -96,8 +96,8 @@ impl @dyncomp.Guest for StubGuest with fn with_field(_self, _h, _name, _v) {
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn handle_request(_self, name, _args) {
-  Err(Str("no such request: \{name}"))
+impl @dyncomp.Guest for StubGuest with fn serve_intent(_self, name, _args) {
+  Err(Str("no such service: \{name}"))
 }
 
 ///|
@@ -165,13 +165,11 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         ],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [
           {
             name: "at-three",
@@ -210,13 +208,11 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         ],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [
           {
             name: "greeting",

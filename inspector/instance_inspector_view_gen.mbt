@@ -273,7 +273,7 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeName", TyText),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -541,7 +541,7 @@ impl @component.Fields for InstanceExplorerState with fn schema() {
       @component.FieldInfo::new("componentView", TyAny),
       @component.FieldInfo::new("hasComponent", TyBool),
     ],
-    inputs=["setActiveTab"],
+    view_handlers=["setActiveTab"],
     view_names=["main"],
   )
 }

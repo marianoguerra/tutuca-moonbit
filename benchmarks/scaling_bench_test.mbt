@@ -21,19 +21,19 @@ test "scaling corpus shape" {
   inspect(
     giant_1x.length(),
     content=(
-      #|54461
+      #|53603
     ),
   )
   inspect(
     giant_2x.length(),
     content=(
-      #|108885
+      #|107169
     ),
   )
   inspect(
     giant_4x.length(),
     content=(
-      #|217733
+      #|214301
     ),
   )
   // One view however big, and it stays compilable at every size.

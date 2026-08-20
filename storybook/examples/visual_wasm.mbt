@@ -112,7 +112,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
-          "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"setFromRawValue value\" /></div>",
+          "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"setFromRawValue e.value\" /></div>",
       ),
     },
     name~,
@@ -158,7 +158,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
       ),
       "editor": @anode.View::new(
         "editor",
-        raw_view="<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
+        raw_view="<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType e.value\">" +
           "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
           "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>",
       ),
@@ -653,9 +653,9 @@ fn vw_memory_comp() -> @component.Component {
         raw_view=(
           #|<div class="flex gap-3 items-center memory">
           #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
-          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="setNFromString value" /></label>
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="setNFromString e.value" /></label>
           #|  <label class="input input-ghost outline-0 items-baseline h-auto">Max Pages
-          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="setMFromString value" /></label>
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="setMFromString e.value" /></label>
           #|</div>
         ),
       ),
@@ -753,7 +753,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "main": @anode.View::new(
         "main",
         raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
-          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"setFilter value\" />" +
+          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"setFilter e.value\" />" +
           "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
           "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
           // DIVERGENCE: pass @value (the id) directly instead of reading it off the

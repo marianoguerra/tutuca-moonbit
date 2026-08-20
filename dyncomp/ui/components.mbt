@@ -22,8 +22,8 @@ fn palette_row_comp() -> @component.Component {
           Some(SetSelected(selected)) => Next({ ..s, selected, })
           // The merged `Receive` now carries this component's own VIEW names as
           // well as the schema's, so `Unknown` no longer covers everything this
-          // match has nothing to say about. They are answered by the Input match
-          // beside this one, and task 19 folds the two into one.
+          // match has nothing to say about. They are answered by the match
+          // beside this one.
           _ => Unhandled
         }
     }
@@ -167,8 +167,8 @@ fn schema_form_comp() -> @component.Component {
       }
       // The merged `Receive` now carries this component's own VIEW names as
       // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the Input match
-      // beside this one, and task 19 folds the two into one.
+      // match has nothing to say about. They are answered by the match
+      // beside this one.
       _ => ()
     }
     match SchemaFormReceive::from_dispatch(msg) {
@@ -188,8 +188,8 @@ fn schema_form_comp() -> @component.Component {
       }
       // The merged `Receive` now carries this component's own VIEW names as
       // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the Input match
-      // beside this one, and task 19 folds the two into one.
+      // match has nothing to say about. They are answered by the match
+      // beside this one.
       _ => ()
     }
     match msg {

@@ -1040,15 +1040,15 @@ impl @component.Fields for SwapAState with fn schema() {
 
 ///|
 test "the widening: an addressed message reaches a generated mutator too" {
-  // v1 gates `swap` and the generated mutators on `Input`, which is a split by
-  // ORIGIN and not by message: `@on.click="setTitle 'x'"` reaches the setter
-  // and a parent's `ctx.send("setTitle", …)` to the same component does not,
-  // though the two are the same message. v2 has one bucket for both.
+  // `swap` and the generated mutators answer `Receive`, the ADDRESSED bucket,
+  // and nothing narrower. `@on.click="setTitle 'x'"` from the component's own
+  // view and a parent's `ctx.send("setTitle", …)` to the same component are the
+  // same message, so both reach the setter; gating on where the message came
+  // from would admit one and refuse the other. Both arms below assert that.
   //
-  // This is the one behaviour change a migration can trip over: a v1 `ctx.send`
-  // whose name collides with a generated mutator does nothing today and
-  // mutates after this. The migration tool reports those call sites; nothing
-  // here can.
+  // The consequence worth knowing: a `ctx.send` whose name happens to collide
+  // with a generated mutator MUTATES. Names are the whole addressing scheme,
+  // so a parent that did not mean the setter must not use the setter's name.
   let comp = todo_comp()
   let root : @tutuca.Value = Map({ "todo": comp.make({ "title": Str("a") }) })
   let p = @tutuca.Path::new(steps=[FieldStep("todo")])
@@ -1069,7 +1069,7 @@ test "the widening: an addressed message reaches a generated mutator too" {
     Str("via-send"),
   )
   // And NOT up a route. A generated mutator answers a message at home; it is
-  // not an answer to a question a descendant asked (design section 5).
+  // not an answer to a question a descendant asked.
   assert_eq(
     title(p.update(root, Intent, "setTitle", [Str("via-intent")])),
     Str("a"),
@@ -1087,9 +1087,9 @@ fn pass_fn(log : Array[String], tag : String) -> @component.IntentFn {
 
 ///|
 test "lookup_intent walks the scope chain and answers with the whole chain" {
-  // v1's `lookup_request` took the FIRST match, because a `RequestFn` had to answer
-  // and a second one could only shadow it. An `IntentFn` may `Pass`, so every
-  // candidate is a candidate — innermost frame first.
+  // Every handler visible for the name, innermost frame first — not just the
+  // first match. An `IntentFn` may `Pass`, so a handler that declines is not
+  // the end of the walk and every later candidate still has to be reachable.
   let log : Array[String] = []
   let root = @component.ComponentStack::new()
   root.register_intent_handlers({ "loadRows": [pass_fn(log, "root")] })

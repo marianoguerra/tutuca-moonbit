@@ -202,7 +202,7 @@ impl @component.Fields for SwatchPickerState with fn schema() {
       @component.FieldInfo::new("color", TyText),
       @component.FieldInfo::new("palette", TyList(TyAny)),
     ],
-    inputs=["setColor"],
+    view_handlers=["setColor"],
     view_names=["main"],
   )
 }
@@ -421,7 +421,7 @@ impl @component.Fields for QuadraticState with fn schema() {
       @component.FieldInfo::new("b", TyInt),
       @component.FieldInfo::new("c", TyInt),
     ],
-    inputs=["setA", "setB", "setC"],
+    view_handlers=["setA", "setB", "setC"],
     methods=["classify", "discriminant"],
     view_names=["main"],
   )

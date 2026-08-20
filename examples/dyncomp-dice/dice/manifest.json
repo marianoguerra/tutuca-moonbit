@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "dice",
   "doc": "A die you roll. It asks the host for the number, because it cannot make one.",
   "version": "0.1.0",
@@ -12,20 +12,62 @@
     {
       "name": "Dice",
       "doc": "A die you roll. It asks the host for the number, because it has no way to make one.",
-      "keywords": ["dice", "die", "random", "roll", "game", "chance"],
+      "keywords": [
+        "dice",
+        "die",
+        "random",
+        "roll",
+        "game",
+        "chance"
+      ],
       "category": "input",
       "messageDocs": [
-        { "name": "roll", "doc": "Ask the host for a number and show it." },
-        { "name": "clear", "doc": "Forget every roll." },
-        { "name": "rolled", "doc": "The host answered with a face." },
-        { "name": "rollFailed", "doc": "The host would not roll." },
-        { "name": "caption", "doc": "The die and its face as one sentence." },
-        { "name": "isMax", "doc": "Was this roll the highest face?" }
+        {
+          "name": "roll",
+          "doc": "Ask the host for a number and show it."
+        },
+        {
+          "name": "clear",
+          "doc": "Forget every roll."
+        },
+        {
+          "name": "rolled",
+          "doc": "The host answered with a face."
+        },
+        {
+          "name": "rollFailed",
+          "doc": "The host would not roll."
+        },
+        {
+          "name": "caption",
+          "doc": "The die and its face as one sentence."
+        },
+        {
+          "name": "isMax",
+          "doc": "Was this roll the highest face?"
+        }
       ],
-      "views": [{ "name": "main", "src": "views/Dice.main.html" }],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Dice.main.html"
+        }
+      ],
       "types": [
-        { "kind": "ty-float", "elem": null, "items": [], "name": "", "members": [] },
-        { "kind": "ty-list", "elem": 0, "items": [], "name": "", "members": [] }
+        {
+          "kind": "ty-float",
+          "elem": null,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        }
       ],
       "fields": [
         {
@@ -33,7 +75,10 @@
           "ty": 0,
           "doc": "How many faces. Six unless you say otherwise.",
           "required": false,
-          "constraint": { "min": 2, "max": 100 }
+          "constraint": {
+            "min": 2,
+            "max": 100
+          }
         },
         {
           "name": "last",
@@ -50,16 +95,29 @@
           "constraint": null
         }
       ],
-      "receives": ["init"],
-      "bubbles": ["rolled"],
-      "responses": ["rolled", "rollFailed"],
-      "methods": ["caption"],
-      "whens": ["isMax"],
-      "requests": [],
-      "inits": [
-        { "name": "d20", "argsJson": "{\"faces\": 20}", "doc": "A twenty-sided die." }
+      "receives": [
+        "init",
+        "rolled",
+        "rollFailed"
       ],
-      "style": ""
+      "methods": [
+        "caption"
+      ],
+      "whens": [
+        "isMax"
+      ],
+      "inits": [
+        {
+          "name": "d20",
+          "argsJson": "{\"faces\": 20}",
+          "doc": "A twenty-sided die."
+        }
+      ],
+      "style": "",
+      "intents": [
+        "rolled"
+      ],
+      "serves": []
     }
   ]
 }

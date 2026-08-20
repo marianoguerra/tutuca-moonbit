@@ -11,9 +11,8 @@
 /// registry trait.
 ///
 /// It answers with the whole chain rather than with one handler, because a
-/// declining handler hands the intent to its parent scope (`docs/two-channels.md`
-/// section 17). Resolution goes through the component's REGISTRATION scope
-/// rather than its instance — which is where v1's `ScopeRequests` looked too,
+/// declining handler hands the intent to its parent scope. Resolution goes through the component's REGISTRATION scope
+/// rather than its instance — which is where the scope's handlers live,
 /// and the one thing about the `lex` leg that did not change.
 pub(all) struct ScopeIntents {
   comps : @component.Components
@@ -114,10 +113,9 @@ fn run_handlers(
         }
       None => ()
     }
-    // A view raises a MESSAGE (`docs/two-channels.md` section 7), addressed to the
-    // component that owns the view. v1 dispatched an `Input` here, which is
-    // the same thing under a name that said who sent it rather than what it
-    // was. The early exit above — `stop_on_no_event` in
+    // A view raises a MESSAGE, addressed to the component that owns the view:
+    // that is what `send` means, so there is no separate bucket for one. The
+    // early exit above — `stop_on_no_event` in
     // `render/from_node_and_event_name` — is untouched, so an unanswered name
     // still costs one lookup.
     let _ = tx.push_send(ed.path, name, args)

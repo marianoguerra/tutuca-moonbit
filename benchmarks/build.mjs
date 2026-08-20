@@ -23,7 +23,6 @@ const root = join(dirname(new URL(import.meta.url).pathname), "..");
 // (path relative to the repo root, component-name prefix)
 const VIEWS = [
   ["demo/counterlib/counter.html", "DemoCounter"],
-  ["demo/universal_wasm/universal_wasm.html", "DemoUniversal"],
   ["storybook/examples/basics.html", "SbBasics"],
   ["storybook/examples/collections.html", "SbCollections"],
   ["storybook/examples/communication.html", "SbCommunication"],
@@ -104,6 +103,21 @@ function prefixTemplates(source, prefix, path) {
   return out + source.slice(at);
 }
 
+// `<script type="tutuca/script">` -> `<script type="tutuca/script" for="<Prefix>">`.
+//
+// A block is written about ONE component, so the corpus — which concatenates
+// every view file in the repo — cannot hold two unqualified ones. A bare
+// `<template>` becomes `id="<Prefix>"` above, so the file's single unnamed
+// component is `<Prefix>`, and that is what its block is about. A block that
+// already names its component is left alone: the name it carries is one
+// `prefixTemplates` has already rewritten.
+function prefixScripts(source, prefix) {
+  return source.replace(
+    /<script type="tutuca\/script"(\s*)>/g,
+    `<script type="tutuca/script" for="${prefix}">`,
+  );
+}
+
 // A view file's `tutuca/state` and `tutuca/init` blocks, removed. See the
 // call site for why the concatenated corpus cannot keep them.
 function stripStateBlocks(source) {
@@ -153,7 +167,7 @@ for (const [path, prefix] of VIEWS) {
   // otherwise take for an opening tag and slice a "body" from.
   const source = stripStateBlocks(readFileSync(join(root, path), "utf8"));
   manyParts.push(`<!-- ${path} (${prefix}) -->`);
-  manyParts.push(prefixTemplates(source, prefix, path).trimEnd());
+  manyParts.push(prefixScripts(prefixTemplates(source, prefix, path), prefix).trimEnd());
   for (const body of templateBodies(source)) {
     bodyCount = bodyCount + 1;
     bodyParts.push(`  <!-- ${path} -->`);

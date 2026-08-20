@@ -208,32 +208,32 @@ fn composability_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("todo"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("json"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("tree"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("personalSite"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("dnd"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
           @anode.const_str("visualWasm"),
         ]),
       ],

@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "counterlib",
-  "doc": "Sample counters \u2014 the reference bundle for the tutuca:component contract.",
+  "doc": "Sample counters — the reference bundle for the tutuca:component contract.",
   "version": "0.4.0",
   "homepage": "",
   "authors": [],
@@ -90,20 +90,17 @@
       ],
       "receives": [
         "init",
-        "sum"
-      ],
-      "bubbles": [],
-      "responses": [
+        "sum",
         "doubled",
-        "triple"
+        "tripled"
       ],
+      "intents": [],
       "methods": [
         "label"
       ],
       "whens": [
         "nonZero"
       ],
-      "requests": [],
       "inits": [
         {
           "name": "with-history",
@@ -111,7 +108,8 @@
           "doc": "Starts at three, with the first three counts already behind it."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     },
     {
       "name": "Pair",
@@ -167,17 +165,16 @@
       "receives": [
         "init"
       ],
-      "bubbles": [
-        "counted"
-      ],
-      "responses": [],
       "methods": [],
       "whens": [],
-      "requests": [
-        "triple"
-      ],
       "inits": [],
-      "style": ""
+      "style": "",
+      "intents": [
+        "counted"
+      ],
+      "serves": [
+        "triple"
+      ]
     }
   ]
 }

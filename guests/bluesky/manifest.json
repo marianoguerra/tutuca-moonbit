@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "blueskylib",
-  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data \u2014 no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
+  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data — no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
@@ -16,7 +16,7 @@
   "components": [
     {
       "name": "Scope",
-      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an index that only holds part of the world. Not an error and not a warning \u2014 the sentence that turns a count into a claim a reader can check.",
+      "doc": "What the answer beside it does NOT cover: a cap that stopped it, a page nobody read, an index that only holds part of the world. Not an error and not a warning — the sentence that turns a count into a claim a reader can check.",
       "keywords": [
         "scope",
         "coverage",
@@ -29,7 +29,7 @@
       "messageDocs": [
         {
           "name": "summary",
-          "doc": "Everything this scope discloses, as one line \u2014 the card's tooltip."
+          "doc": "Everything this scope discloses, as one line — the card's tooltip."
         },
         {
           "name": "hasAny",
@@ -81,7 +81,7 @@
         {
           "name": "truncatedBy",
           "ty": 1,
-          "doc": "What stopped it, in the caller's own words \u2014 `limit`, `depth`.",
+          "doc": "What stopped it, in the caller's own words — `limit`, `depth`.",
           "required": false
         },
         {
@@ -98,13 +98,11 @@
         }
       ],
       "receives": [],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "summary"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "a search that stopped early",
@@ -117,7 +115,8 @@
           "doc": "What a thread leaves out, which is where a card looks most complete and is least so."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     },
     {
       "name": "Post",
@@ -174,7 +173,7 @@
         },
         {
           "name": "foldTitle",
-          "doc": "What the fold button will do, spelled out \u2014 its label is a glyph."
+          "doc": "What the fold button will do, spelled out — its label is a glyph."
         },
         {
           "name": "owned",
@@ -186,7 +185,7 @@
         },
         {
           "name": "labelTitle",
-          "doc": "Every label on the record, as one sentence \u2014 the chip row's tooltip."
+          "doc": "Every label on the record, as one sentence — the chip row's tooltip."
         }
       ],
       "views": [
@@ -307,7 +306,7 @@
         {
           "name": "avatar",
           "ty": 0,
-          "doc": "The author's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app \u2014 the origin the view names \u2014 and the initials show through when it is not.",
+          "doc": "The author's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app — the origin the view names — and the initials show through when it is not.",
           "required": false
         },
         {
@@ -380,12 +379,12 @@
           "name": "owned",
           "ty": 6,
           "required": false,
-          "doc": "Whether this message is a row inside a larger surface \u2014 a thread, a feed \u2014 rather than standing on its own. A row draws smaller. It keeps its own like / repost / fold either way."
+          "doc": "Whether this message is a row inside a larger surface — a thread, a feed — rather than standing on its own. A row draws smaller. It keeps its own like / repost / fold either way."
         },
         {
           "name": "repostedBy",
           "ty": 0,
-          "doc": "The handle of the account that reposted this message into the feed it arrived in; empty when nobody did. Drawn as a line ABOVE the card \u2014 the author is never rewritten, because the message is still the message.",
+          "doc": "The handle of the account that reposted this message into the feed it arrived in; empty when nobody did. Drawn as a line ABOVE the card — the author is never rewritten, because the message is still the message.",
           "required": false
         },
         {
@@ -397,13 +396,13 @@
         {
           "name": "labels",
           "ty": 7,
-          "doc": "Moderation label values on the record (`porn`, `graphic-media`, `!warn`, \u2026), as the labellers set them. Named, never acted on: which labels mean \"hide this\" depends on the reader's own preferences and on which labellers they subscribe to, and neither is in this bundle's reach.",
+          "doc": "Moderation label values on the record (`porn`, `graphic-media`, `!warn`, …), as the labellers set them. Named, never acted on: which labels mean \"hide this\" depends on the reader's own preferences and on which labellers they subscribe to, and neither is in this bundle's reach.",
           "required": false
         },
         {
           "name": "external",
           "ty": 8,
-          "doc": "An unfurled link, as `{ uri, title, description, thumb }`. The uri is a target and never a link \u2014 the poster chose that origin, so no view can name it \u2014 while the thumbnail is re-hosted by the AppView and is drawn when it is on cdn.bsky.app.",
+          "doc": "An unfurled link, as `{ uri, title, description, thumb }`. The uri is a target and never a link — the poster chose that origin, so no view can name it — while the thumbnail is re-hosted by the AppView and is drawn when it is on cdn.bsky.app.",
           "required": false
         },
         {
@@ -415,26 +414,16 @@
         {
           "name": "video",
           "ty": 10,
-          "doc": "An attached video, as `{ thumb, alt }`. There is no player \u2014 a playlist is a fetch this bundle cannot make \u2014 so a video is its poster frame on the CDN and its alt text.",
+          "doc": "An attached video, as `{ thumb, alt }`. There is no player — a playlist is a fetch this bundle cannot make — so a video is its poster frame on the CDN and its alt text.",
           "required": false
         }
       ],
       "receives": [],
-      "bubbles": [
-        "liked",
-        "unliked",
-        "reposted",
-        "unreposted",
-        "folded",
-        "unfolded"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "foldTitle"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "announcement",
@@ -443,30 +432,39 @@
         },
         {
           "name": "with pictures",
-          "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}",
+          "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can — turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}",
           "doc": "A real public record, fetched from the app.bsky API: an avatar and an image thumbnail, both on cdn.bsky.app, plus a permalink that goes somewhere."
         },
         {
           "name": "reposted, with a link card",
           "argsJson": "{\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3kfff\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"the write-up everyone kept asking for is finally out\", \"createdAt\": \"2026-08-12T08:40:00Z\", \"repostedBy\": \"alice.bsky.social\", \"external\": {\"uri\": \"https://tutuca.dev/blog/dynamic-components\", \"title\": \"Dynamic components, end to end\", \"description\": \"How an untrusted WebAssembly bundle draws a card in an app it has never met, and what it is allowed to reach while doing it.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:carol0000000000000000000/bafkreiexamplelinkcardthumbnail0000000000000000000000000\"}, \"replyCount\": 3, \"repostCount\": 41, \"likeCount\": 260}",
-          "doc": "Somebody else's post, in your feed because Alice reposted it \u2014 the attribution the card had no field for \u2014 with an unfurled link under the text."
+          "doc": "Somebody else's post, in your feed because Alice reposted it — the attribution the card had no field for — with an unfurled link under the text."
         },
         {
           "name": "a quote post, labelled",
           "argsJson": "{\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kggg\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"this is the clearest statement of the problem I have read\", \"createdAt\": \"2026-08-12T11:05:00Z\", \"pinned\": true, \"labels\": [\"!warn\", \"spam\"], \"quote\": {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about\", \"createdAt\": \"2026-08-11T14:03:00Z\"}, \"replyCount\": 1, \"likeCount\": 88}",
-          "doc": "A pinned quote post carrying two labels \u2014 the three things a card used to draw as if they were not there."
+          "doc": "A pinned quote post carrying two labels — the three things a card used to draw as if they were not there."
         },
         {
           "name": "a video, and no player",
           "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mvvv\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"a sneak peek at what we have been building\", \"createdAt\": \"2026-08-12T16:20:00Z\", \"video\": {\"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\", \"alt\": \"a screen recording of a component being dropped into a running page\"}, \"replyCount\": 41, \"repostCount\": 180, \"likeCount\": 2400}",
-          "doc": "The post that drew as bare text before this bundle knew what `app.bsky.embed.video` was: the poster frame the CDN serves, its alt text, and no player \u2014 a playlist is a fetch this bundle cannot make."
+          "doc": "The post that drew as bare text before this bundle knew what `app.bsky.embed.video` was: the poster frame the CDN serves, its alt text, and no player — a playlist is a fetch this bundle cannot make."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "liked",
+        "unliked",
+        "reposted",
+        "unreposted",
+        "folded",
+        "unfolded"
+      ],
+      "serves": []
     },
     {
       "name": "Feed",
-      "doc": "A list of messages that is not a conversation: a timeline, one account's posts, a page of search results. Each row is a Post standing on its own \u2014 no reply rails, nothing to fold \u2014 with a Scope under it saying what the page left out.",
+      "doc": "A list of messages that is not a conversation: a timeline, one account's posts, a page of search results. Each row is a Post standing on its own — no reply rails, nothing to fold — with a Scope under it saying what the page left out.",
       "keywords": [
         "bluesky",
         "atproto",
@@ -520,7 +518,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -536,7 +534,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -582,7 +580,7 @@
         {
           "name": "title",
           "ty": 3,
-          "doc": "What this list IS \u2014 \"@bsky.app \u2014 posts and replies\", `search: \"wasm\"`. A feed is the one surface here that cannot say what it is from its own contents: three flat messages are three flat messages whether they came from a timeline, an author or a search, so whoever asked for them is the one who says. Empty leaves the summary line standing on its own.",
+          "doc": "What this list IS — \"@bsky.app — posts and replies\", `search: \"wasm\"`. A feed is the one surface here that cannot say what it is from its own contents: three flat messages are three flat messages whether they came from a timeline, an author or a search, so whoever asked for them is the one who says. Empty leaves the summary line standing on its own.",
           "required": false
         },
         {
@@ -594,7 +592,7 @@
         {
           "name": "scope",
           "ty": 2,
-          "doc": "What this page does not cover. Written as a plain record \u2014 the keys are the Scope component's own field names \u2014 and drawn only when there is something to disclose.",
+          "doc": "What this page does not cover. Written as a plain record — the keys are the Scope component's own field names — and drawn only when there is something to disclose.",
           "required": false
         },
         {
@@ -609,13 +607,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "liked",
-        "unliked",
-        "reposted",
-        "unreposted"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "paged",
@@ -625,12 +616,11 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "a timeline",
           "argsJson": "{\"title\": \"Your timeline\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"pinned\": true, \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3kfff\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"the write-up everyone kept asking for is finally out\", \"createdAt\": \"2026-08-12T08:40:00Z\", \"repostedBy\": \"alice.bsky.social\", \"external\": {\"uri\": \"https://tutuca.dev/blog/dynamic-components\", \"title\": \"Dynamic components, end to end\", \"description\": \"How an untrusted WebAssembly bundle draws a card in an app it has never met.\"}, \"replyCount\": 3, \"repostCount\": 41, \"likeCount\": 260}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kggg\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"this is the clearest statement of the problem I have read\", \"createdAt\": \"2026-08-12T11:05:00Z\", \"labels\": [\"!warn\"], \"quote\": {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about\", \"createdAt\": \"2026-08-11T14:03:00Z\"}, \"replyCount\": 1, \"likeCount\": 88}], \"scope\": {\"truncated\": true, \"truncatedBy\": \"limit\", \"more\": true, \"notes\": [\"25 of an unknown total; the service does not say how many there are\"]}}",
-          "doc": "Three messages that are a list and not a conversation: one pinned, one reposted in by somebody you follow, one quoting a fourth \u2014 and a scope saying the page stopped at a cap."
+          "doc": "Three messages that are a list and not a conversation: one pinned, one reposted in by somebody you follow, one quoting a fourth — and a scope saying the page stopped at a cap."
         },
         {
           "name": "a page at a time",
@@ -638,7 +628,14 @@
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "liked",
+        "unliked",
+        "reposted",
+        "unreposted"
+      ],
+      "serves": []
     },
     {
       "name": "Thread",
@@ -655,7 +652,7 @@
       "messageDocs": [
         {
           "name": "folded",
-          "doc": "A row folded its replies away \u2014 the thread is what knows which rows those are, so it drops them and stops the bubble here."
+          "doc": "A row folded its replies away — the thread is what knows which rows those are, so it drops them and stops the bubble here."
         },
         {
           "name": "unfolded",
@@ -699,7 +696,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -715,7 +712,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -761,7 +758,7 @@
         {
           "name": "posts",
           "ty": 1,
-          "doc": "The conversation in reading order, each message { uri, displayName, handle, avatar, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } \u2014 depth being how deep in the reply tree it sits.",
+          "doc": "The conversation in reading order, each message { uri, displayName, handle, avatar, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } — depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
@@ -773,7 +770,7 @@
         {
           "name": "scope",
           "ty": 3,
-          "doc": "What this conversation does not show \u2014 the depth the caller asked for and the one the service applied. Written as a plain record whose keys are the Scope component's own field names.",
+          "doc": "What this conversation does not show — the depth the caller asked for and the one the service applied. Written as a plain record whose keys are the Scope component's own field names.",
           "required": false
         },
         {
@@ -788,15 +785,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "folded",
-        "unfolded",
-        "liked",
-        "unliked",
-        "reposted",
-        "unreposted"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "paged",
@@ -806,11 +794,10 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "conversation",
-          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}]}",
+          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}]}",
           "doc": "A five-message conversation three levels deep, focused on its root."
         },
         {
@@ -820,11 +807,20 @@
         },
         {
           "name": "a page at a time",
-          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}], \"pageSize\": 3}",
+          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}], \"pageSize\": 3}",
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "folded",
+        "unfolded",
+        "liked",
+        "unliked",
+        "reposted",
+        "unreposted"
+      ],
+      "serves": []
     },
     {
       "name": "Profile",
@@ -897,7 +893,7 @@
         },
         {
           "name": "paged",
-          "doc": "Whether this list is long enough to be shown a page at a time \u2014 what the footer is drawn on. A short one draws no pager at all."
+          "doc": "Whether this list is long enough to be shown a page at a time — what the footer is drawn on. A short one draws no pager at all."
         },
         {
           "name": "atFirst",
@@ -913,7 +909,7 @@
         },
         {
           "name": "rangeLabel",
-          "doc": "Which rows this page holds \u2014 \u201c26\u201350 of 340\u201d \u2014 because a page number does not say."
+          "doc": "Which rows this page holds — “26–50 of 340” — because a page number does not say."
         }
       ],
       "views": [
@@ -1032,7 +1028,7 @@
         {
           "name": "pinnedPost",
           "ty": 0,
-          "doc": "The at:// uri of the message this account pinned to its profile. The uri and not the message: `getProfiles` answers with a strong ref, so the content is one more request away and this bundle makes none \u2014 what a card can honestly offer is the link.",
+          "doc": "The at:// uri of the message this account pinned to its profile. The uri and not the message: `getProfiles` answers with a strong ref, so the content is one more request away and this bundle makes none — what a card can honestly offer is the link.",
           "required": false
         },
         {
@@ -1047,15 +1043,6 @@
         }
       ],
       "receives": [],
-      "bubbles": [
-        "followed",
-        "unfollowed",
-        "liked",
-        "unliked",
-        "reposted",
-        "unreposted"
-      ],
-      "responses": [],
       "methods": [
         "summary",
         "followLabel",
@@ -1066,7 +1053,6 @@
         "rangeLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "alice",
@@ -1076,7 +1062,7 @@
         {
           "name": "with pictures",
           "argsJson": "{\"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"description\": \"official Bluesky account (check username\\ud83d\\udc46)\\n\\nBugs, feature requests, feedback: support@bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"banner\": \"https://cdn.bsky.app/img/banner/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreichzyovokfzmymz36p5jibbjrhsur6n7hjnzxrpbt5jaydp2szvna\", \"followersCount\": 34504327, \"followsCount\": 11, \"postsCount\": 806, \"posts\": [{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \\u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}, {\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mpok7nkjtc2o\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"wait a minute\", \"createdAt\": \"2026-07-02T17:21:51.498Z\", \"images\": [{\"alt\": \"two spidermen pointing at each other\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihlfz7eeyynraq3zqhozs4q3l3wabewbjevjb5jgophbtcjj7eijm\"}], \"replyCount\": 5, \"repostCount\": 3, \"likeCount\": 48}], \"createdAt\": \"2023-04-12T00:00:00Z\"}",
-          "doc": "The same account the message came from, with its banner and its two most recent messages \u2014 the picture path end to end."
+          "doc": "The same account the message came from, with its banner and its two most recent messages — the picture path end to end."
         },
         {
           "name": "a page at a time",
@@ -1084,7 +1070,16 @@
           "doc": "The same records with a page size asked for, which is how a card pages a list that is not long enough to page itself: two rows, a footer, and everything a reader did to a row still there when the page comes back."
         }
       ],
-      "style": ""
+      "style": "",
+      "intents": [
+        "followed",
+        "unfollowed",
+        "liked",
+        "unliked",
+        "reposted",
+        "unreposted"
+      ],
+      "serves": []
     }
   ]
 }

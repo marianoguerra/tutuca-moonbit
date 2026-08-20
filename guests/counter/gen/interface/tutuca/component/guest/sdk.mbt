@@ -138,17 +138,18 @@ pub fn text_of(state : FixedArray[Byte]) -> String {
 ///|
 pub(all) struct DynModule {
   components : Array[ComponentFactory]
-  /// Requests this bundle SERVES (the static manifest lists their names).
-  /// Module-scoped, because a service belongs to the bundle
-  /// rather than to any one instance; the default answers "no such request".
-  serve : (String, Array[@values.Value]) -> RequestResult
+  /// Intents this bundle SERVES on its own scope (the static manifest lists
+  /// their names under `serves`). Module-scoped, because a service belongs to
+  /// the bundle rather than to any one instance; the default answers
+  /// "no such service".
+  serve : (String, Array[@values.Value]) -> ServeResult
 }
 
 ///|
-/// A module with no request service — the shape most guests want.
+/// A module that serves no intents of its own — the shape most guests want.
 pub fn module_def(
   components : Array[ComponentFactory],
-  serve? : (String, Array[@values.Value]) -> RequestResult = no_requests,
+  serve? : (String, Array[@values.Value]) -> ServeResult = no_serves,
 ) -> DynModule {
   { components, serve }
 }
@@ -184,17 +185,14 @@ fn state_of(inst : Instance) -> &DynComponent {
 // --- implementations of the generated declares ---
 
 ///|
-/// `DynModule::serve` for a bundle that declares no `requests` of its own.
-fn no_requests(name : String, _args : Array[@values.Value]) -> RequestResult {
-  RequestResult::Err(@values.Value::Text("no such request: \{name}"))
+/// `DynModule::serve` for a bundle that declares no `serves` of its own.
+fn no_serves(name : String, _args : Array[@values.Value]) -> ServeResult {
+  ServeResult::Err(@values.Value::Text("no such service: \{name}"))
 }
 
 ///|
-/// Serve a request the bundle declared (WIT `handle-request`).
-pub fn handle_request(
-  name : String,
-  args : Array[@values.Value],
-) -> RequestResult {
+/// Serve an intent the bundle declared (WIT `serve-intent`).
+pub fn serve_intent(name : String, args : Array[@values.Value]) -> ServeResult {
   (module_.serve)(name, args)
 }
 

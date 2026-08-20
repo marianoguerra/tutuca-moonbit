@@ -390,16 +390,15 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
 ///|
 /// The bucket a `swap` and a generated mutator answer.
 ///
-/// v1 gates them on `Input`, and the design's section 2 argues that is a split
-/// by ORIGIN rather than by message: `@on.click="setQuery e.value"` reaches the
-/// generated setter and a parent's `ctx.send("setQuery", …)` to the same
-/// component does not, though the two are the same message. v2 has one bucket
-/// for both, so both reach it — **the widening**, and the one behaviour change
-/// a migration can trip over.
+/// `Receive` is the ADDRESSED bucket, and it is the only one. It covers both
+/// `@on.click="setQuery e.value"` from the component's own view and a parent's
+/// `ctx.send("setQuery", …)` to the same component: one message, so one bucket
+/// answers it. Splitting on where the message came from would let the view's
+/// name through and turn the parent's away, though the two say the same thing.
 ///
 /// `Intent` is deliberately NOT in here. A generated mutator answers a message
-/// at home and never an intent up a route (design section 5): an ancestor's
-/// setter is not an answer to a question a descendant asked.
+/// at home and never an intent walking a route: an ancestor's setter is not an
+/// answer to a question a descendant asked.
 fn answers_at_home(bucket : @tutuca.HandlerBucket) -> Bool {
   bucket is Receive
 }
@@ -441,11 +440,10 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Unchanged => return Some(self.to_value())
             Unhandled => false
           }
-          // Where the migration bridge was: a `Receive` no arm claimed used to
-          // be offered again as an `Input`, so 393 v1 arms kept working while
-          // task 19 rewrote them. Both the second match and the bucket it
-          // matched are gone — a view's name and a parent's `send` are one
-          // message now, and one offer is what one message costs.
+          // ONE offer. A view's name and a parent's `send` are the same
+          // message, so a `Receive` no arm claimed goes straight to the
+          // generated mutators rather than being offered a second time under
+          // another bucket.
           ignore(answered)
         }
         None => ()

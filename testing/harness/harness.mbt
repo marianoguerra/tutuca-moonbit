@@ -380,7 +380,7 @@ pub fn Harness::click(
 }
 
 ///|
-/// An `input` event carrying `value` — what `@on.input="setX value"` reads.
+/// An `input` event carrying `value` — what `@on.input="setX e.value"` reads.
 pub fn Harness::type_into(
   self : Harness,
   sel : String,

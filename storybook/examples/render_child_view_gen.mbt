@@ -312,7 +312,7 @@ impl @component.Fields for EntryState with fn schema() {
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
     ],
-    inputs=["setDescription", "setTitle"],
+    view_handlers=["setDescription", "setTitle"],
     methods=["containsText"],
     view_names=["main", "edit"],
   )

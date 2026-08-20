@@ -97,8 +97,6 @@ pub(all) struct StateDef {
   fields : Array[FieldDef]
   receive : Array[MsgDef]
   intent : Array[MsgDef]
-  bubble : Array[MsgDef]
-  response : Array[MsgDef]
   types : Array[UserTy]
   doc : String?
 } derive(Eq, @debug.Debug)

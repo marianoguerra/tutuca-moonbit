@@ -236,7 +236,7 @@ impl @component.Fields for PushViewState with fn schema() {
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("view", TyText),
     ],
-    inputs=["resetQuery", "setQuery", "toggleView"],
+    view_handlers=["resetQuery", "setQuery", "toggleView"],
     methods=["getToggleLabel"],
     view_names=["main"],
   )
@@ -472,7 +472,7 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
       @component.FieldInfo::new("currentKey", TyAny),
       @component.FieldInfo::new("currentIndex", TyInt),
     ],
-    inputs=["setCurrentIndex", "setCurrentKey"],
+    view_handlers=["setCurrentIndex", "setCurrentKey"],
     methods=["getMaxIndex"],
     view_names=["main"],
   )
@@ -701,7 +701,7 @@ impl @component.Fields for PaginationState with fn schema() {
       @component.FieldInfo::new("page", TyInt),
       @component.FieldInfo::new("pageSize", TyInt),
     ],
-    inputs=["next", "prev"],
+    view_handlers=["next", "prev"],
     methods=["isFirstPage", "isLastPage", "pageLabel"],
     view_names=["main"],
   )

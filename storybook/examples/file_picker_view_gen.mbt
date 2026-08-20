@@ -216,7 +216,7 @@ impl @component.Fields for FilePickerState with fn schema() {
       @component.FieldInfo::new("lastModified", TyFloat),
       @component.FieldInfo::new("hasFile", TyBool),
     ],
-    inputs=["onPickFile"],
+    view_handlers=["onPickFile"],
     methods=["lastModifiedLabel", "sizeLabel", "typeLabel"],
     view_names=["main"],
   )

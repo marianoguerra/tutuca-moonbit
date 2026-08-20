@@ -37,14 +37,14 @@
   // 1. A name the script block declared and this backend REFUSED. The refusal
   //    stays in the list — it is why this function exists — and the dispatch
   //    arm is this one's.
-  fn card_on_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
+  fn card_receive_ping(s: &jv_record_value, args: &?pv_vector) -> &?jv_record_value {
       tcx_send(utf8_from_bytes("ping"), tc_args1(get_sel(s)));
       null
   }
 
   // 2. A name the script block never declared at all, which is legal: an
   //    escape may ADD a handler as readily as replace one.
-  fn card_on_accumulate(s: &jv_record_value, args: &?pv_vector)
+  fn card_receive_accumulate(s: &jv_record_value, args: &?pv_vector)
       -> &?jv_record_value {
       let by = tc_num_of(tc_arg_at(args, 0));
       if by < 0.0 {

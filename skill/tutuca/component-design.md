@@ -123,7 +123,7 @@ own events, `send`/`receive`,
 
 - **Do handle every DOM event with tutuca's built-in `@on.` handlers — including
   custom events fired by web components.** `@on.click`, `@on.input`,
-  `@on.<custom-event>` (the event `detail` surfaces as `value`) keep the event
+  `@on.<custom-event>` (the event `detail` surfaces as `e.value`) keep the event
   inside the model, so it flows through a handler and returns a new state.
   **Don't reach in from the outside with `addEventListener`** — a listener
   attached out of band mutates state the owning component can't see and bypasses

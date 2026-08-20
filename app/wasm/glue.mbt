@@ -89,7 +89,7 @@ fn prevent_default(ev : @core.Any) -> Unit {
 fn event_value(ev : @core.Any) -> @tutuca.Value {
   // An external drop is the one event whose payload is neither on the target
   // nor in `detail`: the files hang off dataTransfer, and they are what
-  // `@on.drop="load value"` is asking for.
+  // `@on.drop="load e.value"` is asking for.
   if to_str(ev._get("type")) == "drop" {
     let files = json_value(tdom_dropped_files(ev))
     if !(files is Null) {

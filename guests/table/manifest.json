@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "tablelib",
-  "doc": "A typed data table \u2014 the reference consumer of the shared tutuca:component/tables vocabulary.",
+  "doc": "A typed data table — the reference consumer of the shared tutuca:component/tables vocabulary.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
@@ -95,8 +95,7 @@
         "load",
         "clear"
       ],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "sortedBy",
         "sortMark",
@@ -105,7 +104,6 @@
         "summary"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "cities",
@@ -113,7 +111,8 @@
           "doc": "Four cities across all four column types, one population missing, paged three at a time."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     }
   ]
 }

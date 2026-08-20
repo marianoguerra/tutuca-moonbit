@@ -20,12 +20,14 @@ const built = existsSync(fileURLToPath(new URL('todomvc.component.js', jsDir)));
 
 const control = {
   log: () => {},
-  emit: () => {},
   send: () => {},
   sendAt: () => {},
-  bubbleAt: () => {},
+  intent: (name, args, opts) => controlBuf.push({ kind: 'intent', name, args, opts }),
+  intentAt: (path, name, args, opts) => controlBuf.push({ kind: 'intentAt', path, name, args, opts }),
+  forward: (args, opts) => controlBuf.push({ kind: 'forward', args, opts }),
+  reply: (v) => controlBuf.push({ kind: 'reply', value: v }),
+  fail: (e) => controlBuf.push({ kind: 'fail', value: e }),
   stopPropagation: () => {},
-  request: () => {},
   after: () => {},
   makeInstance: () => 0n,
   dropInstance: () => {},
@@ -56,7 +58,7 @@ const rows = (v) =>
   arena.get(v.val).map((m) => Object.fromEntries([...arena.get(m.val)].map(([k, x]) => [k, x.val])));
 /// Type a task and add it, the way the view does.
 const add = (inst, what) =>
-  inst.handleEvent('input', 'typeDraft', [text(what)]).handleEvent('input', 'add', []);
+  inst.handleEvent('receive', 'typeDraft', [text(what)]).handleEvent('receive', 'add', []);
 /// What the `@when` filter answers for row `i` — the host calls this per item
 /// while iterating, which is why a filtered list keeps the real indices.
 const shown = (inst) =>
@@ -73,9 +75,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.8.0': values,
+    'tutuca:component/values@0.9.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.8.0': control,
+    'tutuca:component/control@0.9.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -91,7 +93,7 @@ before(async () => {
 
 test('the static manifest declares the component schema', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 7);
+  assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'todomvclib');
   const [c] = m.components;
   assert.equal(c.name, 'TodoMvc');
@@ -111,24 +113,24 @@ test('add, toggle, toggle-all and clear-completed', { skip: !built }, () => {
   t = add(t, 'write the guest');
   t = add(t, 'build the bundle');
   // a blank draft adds nothing
-  assert.equal(t.handleEvent('input', 'add', []), undefined);
+  assert.equal(t.handleEvent('receive', 'add', []), undefined);
   assert.deepEqual(rows(t.getField('items')).map((r) => r.text), [
     'write the guest',
     'build the bundle',
   ]);
 
-  t = t.handleEvent('input', 'toggleAt', [num(0)]);
+  t = t.handleEvent('receive', 'toggleAt', [num(0)]);
   assert.deepEqual(rows(t.getField('items')).map((r) => r.done), [true, false]);
   assert.deepEqual(t.callMethod('countLeft', []), text('1 item left'));
 
   // toggle-all turns everything on, then off again once it all is
-  t = t.handleEvent('input', 'toggleAll', []);
+  t = t.handleEvent('receive', 'toggleAll', []);
   assert.deepEqual(rows(t.getField('items')).map((r) => r.done), [true, true]);
   assert.deepEqual(t.callMethod('countLeft', []), text('0 items left'));
-  const off = t.handleEvent('input', 'toggleAll', []);
+  const off = t.handleEvent('receive', 'toggleAll', []);
   assert.deepEqual(rows(off.getField('items')).map((r) => r.done), [false, false]);
 
-  const cleared = t.handleEvent('input', 'clearCompleted', []);
+  const cleared = t.handleEvent('receive', 'clearCompleted', []);
   assert.deepEqual(rows(cleared.getField('items')), []);
 });
 
@@ -137,7 +139,7 @@ test('filtering happens in the @when, so the real indices survive', { skip: !bui
   t = add(t, 'one');
   t = add(t, 'two');
   t = add(t, 'three');
-  t = t.handleEvent('input', 'toggleAt', [num(1)]);
+  t = t.handleEvent('receive', 'toggleAt', [num(1)]);
 
   // the filter is a DECLARED field, so switching it is the host writing
   // through with-field — no guest handler is involved
@@ -152,7 +154,7 @@ test('filtering happens in the @when, so the real indices survive', { skip: !bui
 
   // and while filtered, a per-row handler still names the row by its index in
   // the WHOLE list, which is what makes the filter free
-  const removed = done.handleEvent('input', 'removeAt', [num(1)]);
+  const removed = done.handleEvent('receive', 'removeAt', [num(1)]);
   assert.deepEqual(rows(removed.getField('items')).map((r) => r.text), ['one', 'three']);
 });
 
@@ -161,25 +163,25 @@ test('editing in place: open, type, commit — or empty it and it is gone', { sk
   t = add(t, 'first');
   t = add(t, 'second');
 
-  t = t.handleEvent('input', 'startEdit', [num(1)]);
+  t = t.handleEvent('receive', 'startEdit', [num(1)]);
   // the row says it is being edited, which is how the view swaps the label
   // for a box without the host knowing anything about editing
   assert.deepEqual(rows(t.getField('items')).map((r) => r.editing), [false, true]);
   assert.deepEqual(t.callMethod('editText', []), text('second'));
 
-  t = t.handleEvent('input', 'typeEdit', [text('second, edited')]);
-  const kept = t.handleEvent('input', 'commitEdit', [bool(true)]);
+  t = t.handleEvent('receive', 'typeEdit', [text('second, edited')]);
+  const kept = t.handleEvent('receive', 'commitEdit', [bool(true)]);
   assert.deepEqual(rows(kept.getField('items')).map((r) => r.text), ['first', 'second, edited']);
   assert.deepEqual(rows(kept.getField('items')).map((r) => r.editing), [false, false]);
 
   // abandoning keeps what was there
-  const abandoned = t.handleEvent('input', 'cancelEdit', []);
+  const abandoned = t.handleEvent('receive', 'cancelEdit', []);
   assert.deepEqual(rows(abandoned.getField('items')).map((r) => r.text), ['first', 'second']);
 
   // committing an empty row deletes it, as TodoMVC specifies
   const emptied = t
-    .handleEvent('input', 'typeEdit', [text('   ')])
-    .handleEvent('input', 'commitEdit', [bool(true)]);
+    .handleEvent('receive', 'typeEdit', [text('   ')])
+    .handleEvent('receive', 'commitEdit', [bool(true)]);
   assert.deepEqual(rows(emptied.getField('items')).map((r) => r.text), ['first']);
 });
 
@@ -187,9 +189,9 @@ test('persist keeps what the declared fields do not', { skip: !built }, () => {
   let t = new guest.Instance('TodoMvc', []);
   t = add(t, 'shopping');
   t = t.withField('filter', text('active'));
-  t = t.handleEvent('input', 'typeDraft', [text('half-typed thought')]);
-  t = t.handleEvent('input', 'startEdit', [num(0)]);
-  t = t.handleEvent('input', 'typeEdit', [text('shopping list')]);
+  t = t.handleEvent('receive', 'typeDraft', [text('half-typed thought')]);
+  t = t.handleEvent('receive', 'startEdit', [num(0)]);
+  t = t.handleEvent('receive', 'typeEdit', [text('shopping list')]);
 
   const back = guest.Instance.restore('TodoMvc', t.persist());
   // the declared half

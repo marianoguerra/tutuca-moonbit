@@ -52,11 +52,11 @@ fn nested_state_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="toggleLabel", ns=Input), args=[
+        @anode.on("click", HandlerName(name="toggleLabel", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="bumpPriority", ns=Input))],
+      [@anode.on("click", HandlerName(name="bumpPriority", ns=Receive))],
     ],
   )
 }

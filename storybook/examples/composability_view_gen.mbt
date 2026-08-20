@@ -221,7 +221,7 @@ impl @component.Fields for ComposabilityState with fn schema() {
       @component.FieldInfo::new("visualWasm", TyComp(Some("Module"))),
       @component.FieldInfo::new("dnd", TyComp(None)),
     ],
-    inputs=["setActiveSection"],
+    view_handlers=["setActiveSection"],
     ids=[
       "tab-dnd", "tab-json", "tab-personal-site", "tab-todo", "tab-tree", "tab-visual-wasm",
     ],

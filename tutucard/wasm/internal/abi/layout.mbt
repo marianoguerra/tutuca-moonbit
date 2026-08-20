@@ -67,7 +67,22 @@ pub let ret_persist : Int = 128
 
 ///|
 /// `request-result` — 24 bytes, the payload `value` at +8.
-pub let ret_handle_request : Int = 144
+pub let ret_serve_intent : Int = 144
+
+///|
+/// The two bytes an intent's `route` is lowered into — `list<leg>`, one byte
+/// per leg.
+///
+/// Not a return area but the same kind of thing: a fixed scratch the host
+/// reads during ONE call and never after, so one of it is enough. A route is
+/// at most two legs (the closed table below), the bytes are written at flush
+/// time immediately before `control.intent` or `control.forward` is called,
+/// and the host has lifted the list by the time that call returns.
+///
+/// 176 rather than the next multiple of anything: `ret_serve_intent` is 24
+/// bytes from 144, and the runtime's own scratch starts at 192 (`tc_flat` in
+/// `runtime/lower_values.wax`). This is the gap between them.
+pub let route_buf : Int = 176
 
 ///|
 /// Where the constant pool starts. Everything below it is return areas.
@@ -75,47 +90,43 @@ pub let pool_base : Int = 1024
 
 ///|
 /// The guest world's names, spelled once.
-pub let guest_iface : String = "tutuca:component/guest@0.8.0"
+pub let guest_iface : String = "tutuca:component/guest@0.9.0"
 
 ///|
 /// The namespace an exported resource's intrinsics are imported from.
-pub let resource_iface : String = "[export]tutuca:component/guest@0.8.0"
+pub let resource_iface : String = "[export]tutuca:component/guest@0.9.0"
 
 ///|
-pub let control_iface : String = "tutuca:component/control@0.8.0"
+pub let control_iface : String = "tutuca:component/control@0.9.0"
 
 ///|
-/// The buckets `handle-event` is called with, in WIT order.
-pub let bucket_input : Int = 0
+/// The buckets `handle-event` is called with, in WIT order. Two, and a case's
+/// position is its wire number.
+pub let bucket_receive : Int = 0
 
 ///|
-pub let bucket_receive : Int = 1
-
-///|
-pub let bucket_response : Int = 2
-
-///|
-pub let bucket_bubble : Int = 3
-
-///|
-/// v2's routed bucket. Its number is the next one in WIT order, and the plan's
-/// task 16 is what puts it in the WIT — until then no bundle can be called
-/// with it, and this is the number that arrives when one is.
-pub let bucket_intent : Int = 4
+/// The routed bucket: a dispatch offered to each hop of a route until
+/// something answers.
+pub let bucket_intent : Int = 1
 
 ///|
 /// A route, as one small integer.
 ///
-/// The set is closed — two legs, in one of two orders, or one of them, or
-/// none — so a code is a fairer wire form than a list would be, and it costs
-/// one i32 rather than a pointer and a length into linear memory. The design's
-/// section 3 is what closes it: the leg words are a closed set and the parser
-/// reads them until it finds a literal.
+/// This is the COMPILER's compact form and nothing else: the set is closed —
+/// two legs, in one of two orders, or one of them, or none — so the generator
+/// carries a code through `tc_effect_route` rather than a pointer and a
+/// length. The design's section 3 is what closes it: the leg words are a
+/// closed set and the parser reads them until it finds a literal.
 ///
-/// EMPTY is not "no legs"; it is "not written", and the default lives in
-/// `@tutuca.IntentOpts::new`. Task 16 decides the WIT's own spelling; if it
-/// lands on a `list<leg>`, this is the table that has to move rather than be
-/// copied.
+/// The WIRE form is the WIT's, which is `list<leg>` inside `intent-opts`. A
+/// code is lowered to that list at the boundary — one byte per leg at
+/// `route_buf`, `dyn` = 0 and `lex` = 1 — by `flush_fn`, which is the only
+/// place the two spellings meet.
+///
+/// EMPTY is not "no legs"; it is "not written", so it lowers to a list of
+/// length ZERO rather than to a default this side invented: the default lives
+/// in `@tutuca.IntentOpts::new`, host-side, and a guest that says nothing
+/// cannot disagree with it.
 pub let route_none : Int = 0
 
 ///|

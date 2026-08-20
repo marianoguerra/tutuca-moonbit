@@ -178,7 +178,7 @@ impl @component.Fields for CounterState with fn schema() {
     name="Counter",
     fingerprint="f7a8ad505b493502",
     fields=[@component.FieldInfo::new("count", TyInt)],
-    inputs=["dec", "inc"],
+    view_handlers=["dec", "inc"],
     view_names=["main"],
   )
 }
@@ -360,7 +360,7 @@ impl @component.Fields for ProfileState with fn schema() {
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("waving", TyBool),
     ],
-    inputs=["setName", "toggleWaving"],
+    view_handlers=["setName", "toggleWaving"],
     view_names=["main"],
   )
 }
@@ -549,7 +549,7 @@ impl @component.Fields for SearchState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("sent", TyText),
     ],
-    inputs=["resetDraft", "setDraft", "setSent"],
+    view_handlers=["resetDraft", "setDraft", "setSent"],
     view_names=["main"],
   )
 }
@@ -720,7 +720,7 @@ impl @component.Fields for ToggleState with fn schema() {
       @component.FieldInfo::new("on", TyBool),
       @component.FieldInfo::new("message", TyAny),
     ],
-    inputs=["toggleOn"],
+    view_handlers=["toggleOn"],
     view_names=["main"],
   )
 }
@@ -1230,7 +1230,7 @@ impl @component.Fields for ChatState with fn schema() {
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
-    inputs=["setDraft", "submit"],
+    view_handlers=["setDraft", "submit"],
     view_names=["main"],
   )
 }

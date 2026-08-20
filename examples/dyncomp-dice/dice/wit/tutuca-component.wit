@@ -23,7 +23,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.8.0;
+package tutuca:component@0.9.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -209,9 +209,9 @@ interface tables {
     values(col-values),
   }
 
-  // ── Failure. A variant rather than a `result`, matching `request-result`
-  //    below: an outcome this contract NAMES is one both ends can match on,
-  //    and one an agent can be told how to correct.
+  // ── Failure. A variant rather than a `result`: an outcome this contract
+  //    NAMES is one both ends can match on, and one an agent can be told how
+  //    to correct.
 
   record type-mismatch { column: string, expected: col-type, got: col-type }
   record width-mismatch { expected: u32, got: u32 }
@@ -258,7 +258,7 @@ interface env {
 
   /// From a PRNG the HOST seeds per instance and records, so a session
   /// replays. NOT cryptographic: a guest that needs unpredictability an
-  /// attacker cannot reproduce asks the host through `control.request`.
+  /// attacker cannot reproduce asks the host with an intent on the `lex` leg.
   /// Requires `cap-random`.
   random-u64: func() -> u64;
 
@@ -294,7 +294,7 @@ interface config {
 
 /// Framework services available to a running handler. Calls are buffered by
 /// the host and applied through the dispatching handler's context when
-/// `handle-event` returns (tutuca ctx.bubble / ctx.send / ctx.request).
+/// `handle-event` returns (tutuca ctx.send / ctx.intent).
 /// `log` is immediate and always legal.
 interface control {
   use values.{value};
@@ -327,10 +327,9 @@ interface control {
 
   /// Answer routing for an intent (host `IntentOpts`).
   ///
-  /// Three outcome names rather than v1's `on-res`, because v2 has three
-  /// outcomes and not two: a handler replied, a handler failed, or the route
-  /// ended with nobody answering. The combined `[result, error]` payload — and
-  /// the bug where a split arm read the wrong slot — is gone with `on-res`.
+  /// Three outcome names, because an intent has three outcomes: a handler
+  /// replied, a handler failed, or the route ended with nobody answering. Each
+  /// carries its own payload, so no arm has to discriminate a combined one.
   ///
   /// A sender expects an answer if and only if it names one of these. That is
   /// what makes an intent a request rather than a notification, and nothing
@@ -348,24 +347,6 @@ interface control {
     live-path: bool,
   }
 
-  /// v1. Response routing for a request (host `RequestOpts`). All three names
-  /// are optional: with none of them the response arrives as
-  /// handle-event(response, <request name>, [result, error]); with `on-ok` /
-  /// `on-error` it arrives at those names carrying just the value; `on-res`
-  /// renames the combined form.
-  ///
-  /// Superseded by `intent-opts`. Kept for the length of the migration so a
-  /// guest built against 0.7 still describes something this contract has; it
-  /// goes when `request` does.
-  record request-opts {
-    on-ok: option<string>,
-    on-error: option<string>,
-    on-res: option<string>,
-    /// Resolve the responding component by its path as it is WHEN THE RESPONSE
-    /// ARRIVES rather than pinning the keys at request time (host `live_path`).
-    live-path: bool,
-  }
-
   /// Dispatch an intent along `opts.route`, from this instance's position.
   ///
   /// The `dyn` leg starts at this component's PARENT, so a component never
@@ -373,12 +354,12 @@ interface control {
   /// any, arrives as a later handle-event(receive, ...) — an answer is an
   /// ordinary message and a handler cannot tell it from one a parent sent.
   ///
-  /// This is what `emit` and `request` both became: one channel, and the route
-  /// says which scope answers rather than the verb saying it.
+  /// One channel: the route says which scope answers, rather than the verb
+  /// saying it.
   intent: func(name: string, args: list<value>, opts: intent-opts);
 
   /// Dispatch an intent AT a descendant, which then walks from there — the
-  /// targeted twin of `intent`, and what `bubble-at` became.
+  /// targeted twin of `intent`.
   intent-at: func(path: list<path-step>, name: string, args: list<value>, opts: intent-opts);
 
   /// Pass the message being handled on as an intent, or — while handling an
@@ -398,12 +379,6 @@ interface control {
   /// Answer it with a failure, and end the walk: `<name>Error`.
   fail: func(e: value);
 
-  /// v1. Bubble a message to the parent component in the host tree.
-  ///
-  /// Superseded by `intent` with a `dyn` route. Kept for the length of the
-  /// migration; it goes in the contract step.
-  emit: func(name: string, args: list<value>);
-
   /// Send a message to self: arrives as a later handle-event(receive, name, ...).
   send: func(name: string, args: list<value>);
 
@@ -412,31 +387,12 @@ interface control {
   /// `[field("left")]` for the child a `left` field holds.
   send-at: func(path: list<path-step>, name: string, args: list<value>);
 
-  /// v1. Raise a bubble AT a descendant, which then travels up through it —
-  /// the targeted twin of `emit`. Superseded by `intent-at`.
-  bubble-at: func(path: list<path-step>, name: string, args: list<value>);
-
   /// End the walk with no answer — "served, and no answer". The sender hears
   /// nothing, even if it named an outcome, which is what separates this from
   /// letting the route run out.
   ///
   /// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
   stop-propagation: func();
-
-  /// Fire a request handler — one the static manifest says this bundle serves,
-  /// or, failing that, one the HOST registered. The
-  /// response arrives as a later handle-event(response, ...), routed by `opts`.
-  ///
-  /// A bundle's OWN handlers run inside the guest, so they inherit the guest's
-  /// (absent) authority and need no policy. Reaching a HOST handler is the one
-  /// place a guest asks for something it cannot do itself, so the host decides
-  /// — by the requester's path, at the moment of the call, not by anything the
-  /// manifest claimed. A refusal arrives as an error response.
-  /// v1. Superseded by `intent` with a `lex` route — the scope chain is
-  /// exactly what a request searched, and the paragraph above is now a
-  /// statement about which LEG rather than about which verb. Kept for the
-  /// length of the migration.
-  request: func(name: string, args: list<value>, opts: request-opts);
 
   /// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
   /// later handle-event(receive, ...). Buffered like the rest; the host owns
@@ -459,32 +415,39 @@ interface control {
 interface guest {
   use values.{value};
 
-  /// The answer to a request this bundle serves. Synchronous, because every
-  /// call across this boundary is: a guest that needs to wait asks the host
-  /// instead (`control.request`).
-  variant request-result {
+  /// The answer to an intent this bundle SERVES. Synchronous, because every
+  /// call across this boundary is: a guest that needs to wait dispatches an
+  /// intent of its own and lets the host do the waiting.
+  variant serve-result {
     ok(value),
     err(value),
   }
 
-  /// Serve one of the `requests` the static manifest declares. Module-scoped:
-  /// a request is a service the BUNDLE provides, not state an
-  /// instance holds.
-  handle-request: func(name: string, args: list<value>) -> request-result;
+  /// Serve one of the `serves` the static manifest declares.
+  ///
+  /// These are the bundle's own handlers on the `lex` leg — its components
+  /// reach them before the host's, and a host component never sees them at
+  /// all, which is what makes a bundle's services its own. Module-scoped: a
+  /// service is something the BUNDLE provides, not state an instance holds.
+  ///
+  /// It cannot decline. A handler with nothing to say answers `err`, and the
+  /// walk ends here either way; declining is `IntentAnswer::Pass`, which only
+  /// a host-side handler can give.
+  serve-intent: func(name: string, args: list<value>) -> serve-result;
 
   /// The dispatch buckets a handler can live in.
   ///
-  /// `intent` is v2's and is LAST on purpose: a case's position is its wire
-  /// number, so appending leaves `input`..`bubble` where a 0.7 bundle already
-  /// reads them. v2 has two of these — `receive` for an addressed message
-  /// whoever sent it, `intent` for a routed one — and the other three fold
-  /// into them in the contract step.
-  enum bucket { input, receive, response, bubble, intent }
+  /// Two, and the difference is who decides where a dispatch lands: `receive`
+  /// is an addressed message, which stops at the component it names, and
+  /// `intent` is a routed one, which walks until something answers. A case's
+  /// position is its wire number.
+  enum bucket { receive, intent }
 
   /// Whether a dispatch name belonged to the guest, independently of whether
   /// it changed state. `unhandled` lets the host fall back to the mutator a
-  /// declared field implies; `unchanged` is a real handler that only emitted,
-  /// requested, stopped propagation, or deliberately did nothing.
+  /// declared field implies; `unchanged` is a real handler that only dispatched
+  /// an intent, sent a message, stopped propagation, or deliberately did
+  /// nothing.
   variant event-result {
     unhandled,
     unchanged,
@@ -517,14 +480,16 @@ interface guest {
     get-field: func(name: string) -> option<value>;
 
     /// Self in, self out. The result distinguishes "not my name" from a
-    /// handled event that caused no state change. The `bubble` bucket is how a guest
-    /// component hears from a guest child of its own (`control.emit` one level
-    /// down); the host walks it up exactly as it does between host components.
+    /// handled event that caused no state change. The `intent` bucket is how a
+    /// guest component hears one raised by a guest child of its own
+    /// (`control.intent` one level down); the host walks the route exactly as
+    /// it does between host components.
     ///
     /// There is no event object: what a handler needs from the DOM event is
-    /// named in the view (`@on.input="setName value"`) and arrives evaluated
-    /// in `args`, which is also how a host component receives it — `event`,
-    /// `target` and `ctx` are not handler arguments in tutuca.
+    /// named in the view (`@on.input="setName e.value"`) and arrives evaluated
+    /// in `args`, which is also how a host component receives it. A DOM object
+    /// is not a value, so `event` and `ctx` are not handler arguments in
+    /// tutuca; the event itself is reached through the `e.` path.
     handle-event: func(b: bucket, name: string,
                        args: list<value>) -> event-result;
 

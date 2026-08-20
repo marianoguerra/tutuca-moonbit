@@ -601,10 +601,10 @@ fn build_shell(
   )
   sb.write_string(
     "<input class=\"input input-sm flex-1 min-w-0\" type=\"search\" placeholder=\"Filter\"" +
-    " :value=\".filter\" @on.input=\"onFilter value\" @on.keydown+cancel=\"onClearFilter\" />",
+    " :value=\".filter\" @on.input=\"onFilter e.value\" @on.keydown+cancel=\"onClearFilter\" />",
   )
   sb.write_string(
-    "<select class=\"select select-sm w-auto\" title=\"Theme\" :value=\".theme\" @on.input=\"onSelectTheme value\">",
+    "<select class=\"select select-sm w-auto\" title=\"Theme\" :value=\".theme\" @on.input=\"onSelectTheme e.value\">",
   )
   for name in margaui_themes() {
     sb.write_string("<option value=\"\{name}\">\{name}</option>")
@@ -752,7 +752,7 @@ fn build_shell(
       // The section list IS the shape, so it is what the fingerprint hashes.
       fingerprint="shell\{num_sections}x\{filter_text.length()}",
       fields=field_names.map(n => @component.FieldInfo::new(n, TyAny)),
-      inputs=[
+      view_handlers=[
         "onClearFilter", "onFilter", "onFocusClose", "onFocusStory", "onSelect",
         "onSelectTheme", "onToggleSection",
       ],

@@ -40,44 +40,55 @@ impl DynComponent for Counter with fn get_field(self, name) {
 ///|
 impl DynComponent for Counter with fn handle(self, bucket, name, args) {
   match (bucket, name) {
-    (INPUT, "inc") => Changed(self.next(self.count + 1.0) as &DynComponent)
-    (INPUT, "dec") => Changed(self.next(self.count - 1.0) as &DynComponent)
+    (RECEIVE, "inc") => Changed(self.next(self.count + 1.0) as &DynComponent)
+    (RECEIVE, "dec") => Changed(self.next(self.count - 1.0) as &DynComponent)
     // a request the HOST serves; `on_ok` routes the answer to a handler of
     // its own, which then carries just the value instead of [result, error]
-    (INPUT, "double") => {
-      @control.request("double", [@values.Value::Number(self.count)], {
+    (RECEIVE, "double") => {
+      @control.intent("double", [@values.Value::Number(self.count)], {
+        route: [LEX],
         on_ok: Some("doubled"),
         on_error: None,
-        on_res: None,
+        on_unhandled: None,
         live_path: false,
       })
       Unchanged
     }
-    (RESPONSE, "doubled") =>
+    (RECEIVE, "doubled") =>
       match args {
         [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
         _ => Unchanged
       }
-    // a request this BUNDLE serves (dyn_module's `serve`), which its own
-    // components find before any host handler of the same name
-    (INPUT, "triple") => {
-      @control.request("triple", [@values.Value::Number(self.count)], {
-        on_ok: None,
+    // an intent this BUNDLE serves (dyn_module's `serve`), which its own
+    // components reach before any host handler of the same name.
+    //
+    // The ANSWER is named `tripled`, not `triple`. One bucket holds both the
+    // click and the answer, so reusing the name would collide: the first arm
+    // would take the answer and dispatch the intent all over again.
+    (RECEIVE, "triple") => {
+      @control.intent("triple", [@values.Value::Number(self.count)], {
+        route: [LEX],
+        on_ok: Some("tripled"),
         on_error: None,
-        on_res: None,
+        on_unhandled: None,
         live_path: false,
       })
       Unchanged
     }
-    (RESPONSE, "triple") =>
+    (RECEIVE, "tripled") =>
       match args {
-        // no on_ok: response args are [result, error]
         [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
         _ => Unchanged
       }
     // tell whoever is above: a Pair parent hears this, and so would the host
-    (INPUT, "announce") => {
-      @control.emit("counted", [@values.Value::Number(self.count)])
+    (RECEIVE, "announce") => {
+      @control.intent("counted", [@values.Value::Number(self.count)], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Unchanged
     }
     // boundary exercise: sum a host list of numbers (guest -> values import)
@@ -170,13 +181,13 @@ impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
     // a child announced itself: swap the two, and keep the bubble from
     // travelling further up (the host would hear it otherwise)
-    (BUBBLE, "counted") => {
+    (INTENT, "counted") => {
       @control.stop_propagation()
       Changed({ left: self.right, right: self.left } as &DynComponent)
     }
     // reach INTO this component's own subtree: `.left` is the child the left
     // field holds, and "sum" is its receive handler
-    (INPUT, "zeroLeft") => {
+    (RECEIVE, "zeroLeft") => {
       @control.send_at([@control.PathStep::Field("left")], "sum", [
         @values.Value::List(@values.list_new()),
       ])
@@ -216,12 +227,12 @@ fn make_pair(_args : Array[(String, @values.Value)]) -> &DynComponent {
 ///|
 /// The bundle's own request handlers, which its components reach before any
 /// host handler of the same name (the static manifest declares `requests`).
-fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
+fn serve_intent_impl(name : String, args : Array[@values.Value]) -> ServeResult {
   match (name, args) {
     ("triple", [@values.Value::Number(n), ..]) =>
-      RequestResult::Ok(@values.Value::Number(n * 3.0))
+      ServeResult::Ok(@values.Value::Number(n * 3.0))
     _ =>
-      RequestResult::Err(@values.Value::Text("counterlib: no request \{name}"))
+      ServeResult::Err(@values.Value::Text("counterlib: no service \{name}"))
   }
 }
 
@@ -234,6 +245,6 @@ fn dyn_module() -> DynModule {
     // be that list written twice.
     [dyn_comp("Counter", make_counter), dyn_comp("Pair", make_pair)],
     // the bundle's own request service (WIT handle-request)
-    serve=serve_request,
+    serve=serve_intent_impl,
   )
 }

@@ -1,14 +1,15 @@
-// The intent walk (`docs/two-channels.md` sections 3, 5 and 6).
+// The intent walk.
 //
-// v1 has two routed channels and one hop each: `push_bubble` pops one step per
-// hop until the root, and `push_request` resolves one static handler and calls
-// it. v2 has one channel and a ROUTE, so the two collapse into a walk that may
-// visit many positions before one of them answers.
+// An intent names a job, not a component, and carries a ROUTE: a list of legs
+// to try. `Dyn` walks the dispatch path from the sender's PARENT up to the
+// root; `Lex` walks the registration scope chain. One dispatch may therefore
+// visit many positions before one of them answers, and this file owns that
+// traversal.
 //
 // Three things end a walk, and the file is organized around them: a handler
 // replies or fails (`answer_walk`), a handler stops (`end_walk_unanswered`),
 // or the route runs out (`exhaust_walk`). Everything else — every handler that
-// merely runs — continues it, which is the design's one rule.
+// merely runs — continues it, which is the one rule.
 
 ///|
 pub fn Transactor::push_intent(
@@ -24,10 +25,9 @@ pub fn Transactor::push_intent(
     None => @tutuca.IntentOpts::new()
   }
   // Track on the sender NOW — during its handler, while its self-unit is still
-  // held — so its counter cannot reach zero before the walk registers. v1's
-  // `push_request` does the same thing for the same reason; what is new is that
-  // the unit is held for a WALK rather than for one call, and released once
-  // however the walk ends.
+  // held — so its counter cannot reach zero before the walk registers. The unit
+  // is held for the whole WALK rather than for one call, and released exactly
+  // once however the walk ends.
   let release = match parent {
     Some(p) => Some(p.completion().track())
     None => None
@@ -75,7 +75,7 @@ fn Transactor::advance_walk(self : Transactor, w : IntentWalk) -> Unit {
       Lex => {
         // The whole leg, inside the transaction that is already running: the
         // handlers come back as a chain and a `Pass` moves to the next one
-        // with a call rather than a queue step (`docs/two-channels.md` section 17).
+        // with a call rather than a queue step.
         let leaf = w.origin.to_transaction_path().lookup(self.root)
         let handlers = match leaf {
           Some(l) => self.intents.intents_for(l, w.name)
@@ -127,9 +127,9 @@ fn Transactor::queue_hop(self : Transactor, w : IntentWalk) -> Unit {
 /// Ask the lexical chain, one handler at a time, stopping at the first that
 /// does not decline.
 ///
-/// Continuation-passing because a static handler may answer later — that is
-/// what `RequestHandler` already is, and the walk does not get to assume
-/// otherwise. A synchronous `Pass` therefore costs one call and one frame.
+/// Continuation-passing because an `IntentHandler` is handed a callback and may
+/// answer later; the walk does not get to assume it answers before returning. A
+/// synchronous `Pass` therefore costs one call and one frame.
 fn Transactor::try_lex(
   self : Transactor,
   w : IntentWalk,
@@ -204,7 +204,7 @@ fn Transactor::answer_walk(
 }
 
 ///|
-/// The route ended with no reply (`docs/two-channels.md` section 6).
+/// The route ended with no reply.
 ///
 /// Three shapes, and which one applies is decided by what the SENDER declared,
 /// not by anything a handler did. A sender that declared nothing is sending a
@@ -255,8 +255,8 @@ fn Transactor::end_walk_unanswered(self : Transactor, w : IntentWalk) -> Unit {
 /// the sender's unit to it.
 ///
 /// The sender's path is pinned against the root the walk started from unless
-/// `live_path` says otherwise, exactly as v1 pins a response path: the answer
-/// must reach the item that asked, even if a key changed while the walk ran.
+/// `live_path` says otherwise: the answer must reach the item that asked, even
+/// if a key changed while the walk ran.
 fn Transactor::deliver_answer(
   self : Transactor,
   w : IntentWalk,

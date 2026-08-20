@@ -682,7 +682,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -944,7 +944,7 @@ impl @component.Fields for JsonObjectState with fn schema() {
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",

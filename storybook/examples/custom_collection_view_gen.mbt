@@ -173,7 +173,7 @@ impl @component.Fields for PlaylistState with fn schema() {
     name="Playlist",
     fingerprint="225a6bf21d2bb3ae",
     fields=[@component.FieldInfo::new("songs", TyAny)],
-    inputs=["removeSong"],
+    view_handlers=["removeSong"],
     view_names=["main"],
   )
 }

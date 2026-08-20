@@ -86,7 +86,7 @@ pub fn intent_dyn(h : @harness.Harness, depth : Int) -> Int {
 /// The scope for `intent_lex`: `n` handlers that DECLINE, then one that answers.
 ///
 /// A list per name is what the `lex` leg walks, and `Pass` is what makes a list
-/// worth having — a v1 `RequestFn` had to respond, so a handler with nothing to
+/// worth having — a handler that must respond has no way to decline, so one with nothing to
 /// contribute could only invent an error and there was nothing to walk past.
 fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
   let fns : Array[@component.IntentFn] = []

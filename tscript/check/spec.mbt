@@ -13,13 +13,11 @@ pub(all) struct Finding {
   message : String
   /// Whether a build should stop for this.
   ///
-  /// Every finding was fatal until v2, and every finding still IS except one:
-  /// `NO_VIEW_HANDLER` reports a view name the block neither answers nor
-  /// forwards, and that code behaves exactly as v1 behaves — it does nothing.
-  /// A rule whose warned-about code is already correct cannot be an error
-  /// without breaking every project that upgrades, which is why the design
-  /// (`docs/two-channels.md` section 7) lands it as a warning and leaves the strict
-  /// mode to be decided from a corpus rather than from a document.
+  /// Every finding is fatal except one: `NO_VIEW_HANDLER` reports a view name
+  /// the block neither answers nor forwards, and such a name is not broken —
+  /// it does nothing, which is sometimes exactly what was meant. A rule whose
+  /// reported code still behaves correctly is a warning, and whether a strict
+  /// mode should promote it is a question for the corpus to answer.
   severity : Severity
   /// Where, in the block's own coordinates. `@viewfile.Block` carries the
   /// offset that rebases it onto the file.

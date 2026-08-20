@@ -30,7 +30,7 @@ const CARD = [
   "</script>",
   "",
   '<script type="tutuca/script">',
-  "  on bump { .n += 1 }",
+  "  receive bump { .n += 1 }",
   "</script>",
   "",
   '<template id="Counter">',
@@ -44,7 +44,7 @@ const CARD = [
 
 const p = R.parts(CARD);
 check("the state block is sliced exactly", p.state.text, "\n  state Counter { n: Int }\n");
-check("the script block is sliced exactly", p.script.text, "\n  on bump { .n += 1 }\n");
+check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
 check("views are named by the half after the colon", p.views.map((v) => v.name), ["main", "row"]);
 check("a view's text is its own", p.views[1].text, "\n  <b>row</b>\n");
 
@@ -63,7 +63,7 @@ check(
 // Splicing is the whole edit path: the structured view writes through it.
 check(
   "a splice replaces only its own region",
-  R.splice(CARD, p.script, "\n  on bump { .n += 2 }\n"),
+  R.splice(CARD, p.script, "\n  receive bump { .n += 2 }\n"),
   CARD.replace(".n += 1", ".n += 2"),
 );
 

@@ -80,19 +80,19 @@ fn loader_bar_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
+        @anode.on("click", HandlerName(name="loadSample", ns=Receive), args=[
           BindMember(name="value", prop="url"),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="typeUrl", ns=Input), args=[
+        @anode.on("input", HandlerName(name="typeUrl", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="loadUrl", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="loadUrl", ns=Receive), modifiers=[
           "send",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="loadUrl", ns=Input))],
+      [@anode.on("click", HandlerName(name="loadUrl", ns=Receive))],
     ],
   )
 }

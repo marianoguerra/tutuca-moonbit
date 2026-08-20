@@ -209,7 +209,7 @@ impl @component.Fields for SchemaViewerState with fn schema() {
       @component.FieldInfo::new("rawSchema", TyAny),
       @component.FieldInfo::new("showRaw", TyBool),
     ],
-    inputs=["toggleShowRaw"],
+    view_handlers=["toggleShowRaw"],
     methods=["toggleLabel"],
     view_names=["main"],
   )

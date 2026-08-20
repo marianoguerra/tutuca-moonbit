@@ -37,7 +37,6 @@ fn schema() -> String {
     #|  blob   : Any
     #|}
     #|receive Counter { resetTo(Int), rename(String, Int) }
-    #|bubble  Counter { rowPicked(Int) }
     #|intent  Counter { rowPicked(Int), save(String) }
   )
 }
@@ -713,9 +712,10 @@ test "forward passes on the message this body is handling" {
 
 ///|
 test "reply and fail are not dynamic message names" {
-  // v1 asked "is the first argument a literal" of every effect but `stop`,
-  // which was the same set. `reply 1` would have been reported as a dynamic
-  // message name; it names no message at all.
+  // "Is the first argument a literal message name?" is asked only of the
+  // effects that NAME a message. `reply`, `fail` and `forward` name none — an
+  // answer is addressed by the walk and a `forward` re-dispatches the name
+  // that arrived — so asking would report `reply 1` as a dynamic message name.
   assert_eq(codes("intent rowPicked(k) { reply 1 }"), [])
   assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
   assert_eq(codes("intent rowPicked(k) { fail .name }"), [])

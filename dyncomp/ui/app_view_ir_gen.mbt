@@ -71,7 +71,7 @@ fn palette_row_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="pick", ns=Input), args=[
+        @anode.on("click", HandlerName(name="pick", ns=Receive), args=[
           EventPath(["isCtrl"]),
         ]),
       ],
@@ -223,14 +223,14 @@ fn command_bar_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="nav", ns=Input), args=[
+        @anode.on("keydown", HandlerName(name="nav", ns=Receive), args=[
           EventPath(["key"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="close", ns=Input))],
+      [@anode.on("click", HandlerName(name="close", ns=Receive))],
     ],
   )
 }
@@ -432,27 +432,27 @@ fn schema_field_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
@@ -600,12 +600,12 @@ fn schema_form_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="useInit", ns=Input), args=[
+        @anode.on("click", HandlerName(name="useInit", ns=Receive), args=[
           BindMember(name="value", prop="name"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="create", ns=Input))],
-      [@anode.on("click", HandlerName(name="cancel", ns=Input))],
+      [@anode.on("click", HandlerName(name="create", ns=Receive))],
+      [@anode.on("click", HandlerName(name="cancel", ns=Receive))],
     ],
   )
 }
@@ -723,7 +723,7 @@ fn config_panel_main_view_ir() -> @anode.View {
         @anode.render(1, Field("form")),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="close", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="close", ns=Receive))]],
   )
 }
 
@@ -862,10 +862,10 @@ fn universal_app_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="openCommand", ns=Input))],
-      [@anode.on("click", HandlerName(name="toggleMode", ns=Input))],
+      [@anode.on("click", HandlerName(name="openCommand", ns=Receive))],
+      [@anode.on("click", HandlerName(name="toggleMode", ns=Receive))],
       [
-        @anode.on("drop", HandlerName(name="filesDropped", ns=Input), args=[
+        @anode.on("drop", HandlerName(name="filesDropped", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

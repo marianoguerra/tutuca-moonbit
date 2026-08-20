@@ -169,15 +169,15 @@ pub(all) struct DynProducer {
 ///|
 /// All effectful dispatches in one enum — the typed-state `update` bucket
 /// pattern-matches it like a TEA Msg. The payload is (handler name, args).
-/// v2 has TWO of these — `Receive` for an addressed message and `Intent` for a
-/// routed one — and the other three fold into them exactly as the buckets do
-/// (`@tutuca.HandlerBucket`). The five coexist only while the migration runs.
+///
+/// TWO of these, mirroring `@tutuca.HandlerBucket`: `Receive` for an ADDRESSED
+/// message, whoever sent it, and `Intent` for a ROUTED one. An arm matches on
+/// what the dispatch IS, never on where it came from — a view's `@on` name and
+/// a parent's `ctx.send` of that name are the same message and reach the same
+/// arm.
 pub(all) enum Dispatch {
   Receive(String, Array[@tutuca.Value])
   Intent(String, Array[@tutuca.Value])
-  Input(String, Array[@tutuca.Value])
-  Bubble(String, Array[@tutuca.Value])
-  Response(String, Array[@tutuca.Value])
 }
 
 ///|
@@ -241,11 +241,10 @@ declare pub fn LoopWith::new(
 ///
 /// It receives an `IntentCall` — carrying `from`, the sender's position, which
 /// is what lets a host decide whether this sender may ask — and it may answer
-/// `Pass`. v1's `RequestFn`, which this replaced, could do neither: it MUST
-/// answer, so one with nothing to say had to invent an error, while a
-/// declining intent handler hands the intent to its parent scope. That is the
-/// whole of why `lookup_intent` is a walk and v1's `lookup_request` was a
-/// lookup.
+/// `Pass`. `Pass` DECLINES: a handler with nothing to say hands the intent to
+/// its parent scope instead of inventing an error to satisfy an obligation to
+/// answer. That is the whole of why `lookup_intent` is a walk rather than a
+/// lookup — declining only means something if there is somewhere left to go.
 pub(all) struct IntentFn(
   (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
 )
@@ -471,15 +470,15 @@ declare pub fn ComponentStack::register_intent_handlers(
 ///|
 /// Every handler for `name` visible from this scope, innermost frame first.
 ///
-/// A LIST rather than the first match, and that is the whole difference from
-/// v1's `lookup_request`. `IntentAnswer::Pass` means a declining handler hands
-/// the intent to its parent scope, so the walk needs every candidate — and it
-/// asks them itself, inside the transaction already running, which is why this
-/// returns them rather than taking a continuation (`docs/two-channels.md` section 17).
+/// A LIST rather than the first match, because `IntentAnswer::Pass` means a
+/// declining handler hands the intent to its parent scope: the walk needs every
+/// candidate, not just the innermost one. It asks them itself, inside the
+/// transaction already running, which is why this returns them rather than
+/// taking a continuation.
 ///
-/// A frame may hold several for one name, which v1's single-slot registry
-/// could not: two modules registered into one scope both offering `loadRows`
-/// was a disagreement then and is an ordered pair of candidates now.
+/// A single frame may hold several handlers for one name, and that is not an
+/// error: two modules registered into one scope both offering `loadRows` is an
+/// ordered pair of candidates, the second reached when the first passes.
 declare pub fn ComponentStack::lookup_intent(
   self : ComponentStack,
   name : String,

@@ -50,7 +50,7 @@ That declared shape is what makes both layers possible from one core.
 
 | package | status | responsibility |
 |---|---|---|
-| `dyncomp/wit` | v0.6.0 | the runtime behavior contract; static declaration lives in each bundle |
+| `dyncomp/wit` | v0.9.0 | the runtime behavior contract; static declaration lives in each bundle |
 | `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
 | `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |
@@ -68,7 +68,7 @@ is made of.
 ### `dyncomp/registry` — the catalog
 
 `ComponentRef { module, name }` → `Descriptor { doc, keywords, category,
-schema, inits, raises, bubbles, provenance }`, plus `search(query, limit)`
+schema, inits, raises, intents, provenance }`, plus `search(query, limit)`
 ranking over name, title, summary, keywords and field names.
 
 This is what v0.3 of the contract was for. Before it, a component was a name
@@ -197,9 +197,9 @@ six-op patch algebra (`AddNode`/`RemoveNode`/`MoveNode`/`SetProps`/`BindInstance
 `SetData`), applied atomically, as "the seam both layers drive". It was built,
 and it is gone.
 
-What replaced it is the runtime `core/` already had. A `+` bubbles to the app;
-`ctx.target_path()` is the FIXED path of the component that raised it, however
-many components the bubble passed on the way up; the app holds that path across
+What replaced it is the runtime `core/` already had. A `+` raises an intent that
+walks to the app; `ctx.target_path()` is the FIXED path of the component that
+raised it, however many hops the walk took; the app holds that path across
 dispatches and `send_at_path`s the answer back to exactly that component. Asking
 and answering are two separate dispatches — a bar opens over the whole page, the
 choice comes later — and the path is the whole mechanism.
@@ -258,7 +258,7 @@ outline:
 - `agent/session` — a session over `registry` plus the component tree. The
   operations are the ones the human layer already uses: address a component by
   path, send it a message, read its declared fields back. A user interaction
-  that bubbles to the app becomes an agent event in A2UI's `action` shape.
+  that reaches the app becomes an agent event in A2UI's `action` shape.
 - `agent/agui` — the AG-UI event encoding. `STATE_DELTA` is the open question:
   a diff over the component tree's schema projection rather than over a
   document, and nothing has been written for it yet.

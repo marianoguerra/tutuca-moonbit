@@ -46,7 +46,7 @@ pub(all) struct Surface {
   /// property no event interface has, and a bare name in an argument slot.
   ///
   /// Here rather than raised because both describe code that WORKS: a rooted
-  /// path to a vendor property may be deliberate, and a bare name is v1's
+  /// path to a vendor property may be deliberate, and a bare name is the
   /// spelling, of which this repository has 522. `gen-views` prints them and
   /// carries on, which is the order every diagnostic that touches existing
   /// code lands in.
@@ -95,9 +95,14 @@ pub suberror GenError {
   /// A schema-only file has no views to compile into a tree.
   NoViewsToCompile
   /// A `$name` in an `@on` handler position. It dispatches identically to
-  /// the bare name (app/app.mbt collapses both into `push_input`), so the
+  /// the bare name (app/app.mbt collapses both into one `push_send`), so the
   /// sigil suggests a second mechanism that does not exist.
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
+  /// A bare name in an `@on` ARGUMENT position, where a sigil says where the
+  /// value comes from: `e.` the event, `.` state, `@` a binding. A bare one
+  /// names nothing and resolves to `Null`, silently, which is why it is an
+  /// error rather than a warning.
+  BareEventArg(view~ : String, name~ : String, site~ : String)
   /// A view reads a name the schema does not declare. THE headline check:
   /// this used to render as null in the browser.
   UnknownStateField(
@@ -118,11 +123,11 @@ pub suberror GenError {
   BadEventPath(view~ : String, site~ : String, path~ : String, step~ : String)
   /// A view call site disagrees with the schema about what a message carries.
   ///
-  /// v2's `receive` bucket holds a view's name and a parent's, so a name can
-  /// be in both places at once — and when it is, the schema declares the
-  /// payload and the views have to match it. v1 cannot report this at all: the
-  /// two names live in two enums (`<T>Msg` and `<T>Receive`) and nothing ever
-  /// compares them.
+  /// The `receive` bucket holds a view's name and a parent's, so one name can
+  /// be declared in the schema and written at a view call site at once — and
+  /// when it is, the schema declares the payload and the views have to match
+  /// it. Keeping the two in separate namespaces would make this unreportable,
+  /// because nothing would ever compare them.
   PayloadDisagrees(
     name~ : String,
     declared~ : String,

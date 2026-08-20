@@ -93,14 +93,14 @@ fn universal_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="add", ns=Input), args=[
+        @anode.on("click", HandlerName(name="add", ns=Receive), args=[
           EventPath(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="pick", ns=Input))],
-      [@anode.on("click", HandlerName(name="remove", ns=Input))],
+      [@anode.on("click", HandlerName(name="pick", ns=Receive))],
+      [@anode.on("click", HandlerName(name="remove", ns=Receive))],
       [
-        @anode.on("drop", HandlerName(name="dropped", ns=Input), args=[
+        @anode.on("drop", HandlerName(name="dropped", ns=Receive), args=[
           EventPath(["dragInfo"]),
         ]),
       ],
@@ -262,11 +262,11 @@ fn stack_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="insertAt", ns=Input), args=[
+        @anode.on("click", HandlerName(name="insertAt", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="appendCell", ns=Input))],
+      [@anode.on("click", HandlerName(name="appendCell", ns=Receive))],
     ],
   )
 }
@@ -437,10 +437,10 @@ fn grid_edit_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="addColBefore", ns=Input))],
-      [@anode.on("click", HandlerName(name="addColAfter", ns=Input))],
-      [@anode.on("click", HandlerName(name="addRowBefore", ns=Input))],
-      [@anode.on("click", HandlerName(name="addRowAfter", ns=Input))],
+      [@anode.on("click", HandlerName(name="addColBefore", ns=Receive))],
+      [@anode.on("click", HandlerName(name="addColAfter", ns=Receive))],
+      [@anode.on("click", HandlerName(name="addRowBefore", ns=Receive))],
+      [@anode.on("click", HandlerName(name="addRowAfter", ns=Receive))],
     ],
   )
 }
@@ -541,16 +541,16 @@ fn tab_page_tabname_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="doneRename", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="doneRename", ns=Receive), modifiers=[
           "send",
         ]),
-        @anode.on("keydown", HandlerName(name="cancelRename", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="cancelRename", ns=Receive), modifiers=[
           "cancel",
         ]),
-        @anode.on("focusout", HandlerName(name="doneRename", ns=Input)),
+        @anode.on("focusout", HandlerName(name="doneRename", ns=Receive)),
       ],
     ],
   )
@@ -660,7 +660,7 @@ fn tabs_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="activate", ns=Input), args=[
+        @anode.on("click", HandlerName(name="activate", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
@@ -743,13 +743,13 @@ fn tabs_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="activate", ns=Input), args=[
+        @anode.on("click", HandlerName(name="activate", ns=Receive), args=[
           Bind("key"),
           EventPath(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="addTab", ns=Input))],
-      [@anode.on("click", HandlerName(name="closeActive", ns=Input))],
+      [@anode.on("click", HandlerName(name="addTab", ns=Receive))],
+      [@anode.on("click", HandlerName(name="closeActive", ns=Receive))],
     ],
   )
 }
@@ -932,7 +932,7 @@ fn textarea_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setText", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setText", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

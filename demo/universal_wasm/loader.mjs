@@ -11,7 +11,7 @@
 //
 // There is no drop-zone code here. A drop is an ordinary tutuca event: the app
 // bridge registers the dropped files and hands their descriptors to the handler
-// as `value` (`@on.drop="loadDropped value"` in universal_wasm.html), which
+// as `value` (`@on.drop="loadDropped e.value"` in universal_wasm.html), which
 // loads one by id through the tcomp bridge. What this file used to do — a
 // document-level listener reaching into dataTransfer.files, with its own load-id
 // space — is now something every tutuca app gets from the framework.

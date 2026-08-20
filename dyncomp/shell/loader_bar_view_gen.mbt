@@ -328,7 +328,7 @@ impl @component.Fields for LoaderBarState with fn schema() {
       @component.FieldInfo::new("showUrl", TyBool),
       @component.FieldInfo::new("samples", TyList(TyRecord("Sample"))),
     ],
-    inputs=["loadSample", "loadUrl", "typeUrl"],
+    view_handlers=["loadSample", "loadUrl", "typeUrl"],
     receives=["filesDropped", "dyncompLoaded", "dyncompError"],
     intents=["catalogChanged"],
     view_names=["main"],

@@ -64,13 +64,16 @@ pub(all) struct SchemaInfo {
   fingerprint : String
   fields : Array[FieldInfo]
   /// The `@on` handler names the views raise.
-  inputs : Array[String]
+  ///
+  /// Distinct from `receives` — which is what the SCHEMA declares — because the
+  /// two have different sources, not different destinations: both are addressed
+  /// messages and both land in the `Receive` bucket. A component whose views
+  /// arrive at runtime has no generator to state these, so the component layer
+  /// recovers them from the compiled views instead.
+  view_handlers : Array[String]
   receives : Array[String]
-  /// The ROUTED names this component answers. v2's, and the one `bubbles` and
-  /// `responses` fold into — both go in the contract step.
+  /// The ROUTED names this component answers.
   intents : Array[String]
-  bubbles : Array[String]
-  responses : Array[String]
   /// `$name` callables in VALUE positions.
   methods : Array[String]
   /// Constant element ids — the selectors a test addresses.
@@ -109,7 +112,7 @@ declare pub fn mutator_name(verb : String, field : String) -> String
 /// to empty.
 ///
 /// Empty is a real answer here, and a different one from absent: it says the
-/// component raises no `bubble`, not that nobody looked.
+/// component answers no intent, not that nobody looked.
 ///
 /// `name` defaults to empty because a hand-written descriptor is already being
 /// passed to a `component(name~ = ...)` that knows it; the component layer
@@ -118,11 +121,9 @@ declare pub fn SchemaInfo::new(
   name? : String,
   fingerprint~ : String,
   fields? : Array[FieldInfo],
-  inputs? : Array[String],
+  view_handlers? : Array[String],
   receives? : Array[String],
   intents? : Array[String],
-  bubbles? : Array[String],
-  responses? : Array[String],
   methods? : Array[String],
   ids? : Array[String],
   view_names? : Array[String],

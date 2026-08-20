@@ -1,7 +1,7 @@
 // The v2 batch, held in place.
 //
 // Nothing runs `cases()` yet — the two backends cannot compile a v2 body
-// until the plan's tasks 10 and 11 — so this is what stands between a case
+// until an adapter picks it up — so this is what stands between a case
 // somebody wrote and a case somebody quietly dropped while making the tree
 // compile again. It pins the roster and the effect vocabulary, and nothing
 // about the ANSWERS, which are the backends' job to reach.

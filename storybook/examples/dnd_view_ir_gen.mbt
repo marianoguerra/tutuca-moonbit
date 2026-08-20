@@ -62,15 +62,15 @@ fn dn_d_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],
       [
-        @anode.on("drop", HandlerName(name="onDropOnItem", ns=Input), args=[
+        @anode.on("drop", HandlerName(name="onDropOnItem", ns=Receive), args=[
           Bind("key"),
           EventPath(["dragInfo"]),
         ]),

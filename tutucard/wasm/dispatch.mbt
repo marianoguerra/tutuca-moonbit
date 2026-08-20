@@ -316,7 +316,7 @@ fn escape_transition(
 }
 
 ///|
-/// `instance.handle-event`: the four buckets, and the transitions in each.
+/// `instance.handle-event`: the two buckets, and the transitions in each.
 fn handle_event_fn(g : Gen, decls : Array[@tscript.Decl]) -> @abi.Field {
   let invariants = decls
     .filter(d => d.kind is DInvariant && g.callables.get(d.name) is Some(_))

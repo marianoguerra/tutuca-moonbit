@@ -138,20 +138,20 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 
 ///|
 impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
-  // the Pair's own buckets: it hears its children's bubbles and addresses them
-  // by relative path
+  // the Pair's own buckets: it answers its children's intents and addresses
+  // them by relative path
   if self.pairs.get(handle) is Some((l, r)) {
     return match (bucket, name) {
-      // a child announced itself: swap the two, and keep the bubble from
-      // reaching the host shell above
-      (Bubble, "counted") =>
+      // a child announced itself: swap the two, and end the walk so the intent
+      // does not reach the host shell above
+      (Intent, "counted") =>
         {
           handled: true,
           next: Some(self.alloc_pair(r, l)),
           msgs: [StopPropagation],
         }
       // reach INTO the subtree: `.left` is the child the left field holds
-      (Input, "resetLeft") =>
+      (Receive, "resetLeft") =>
         {
           handled: true,
           next: None,
@@ -165,52 +165,71 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
   }
   let count = self.counters.get(handle).unwrap()
   match (bucket, name) {
-    (Input, "inc") =>
+    (Receive, "inc") =>
       { handled: true, next: Some(self.next_of(handle, count + 1.0)), msgs: [] }
-    (Input, "dec") =>
+    (Receive, "dec") =>
       { handled: true, next: Some(self.next_of(handle, count - 1.0)), msgs: [] }
-    // the response comes back at "doubled" with just the value (on_ok_name)
-    (Input, "double") =>
+    // the answer comes back at "doubled" with just the value (on_ok_name)
+    (Receive, "double") =>
       {
         handled: true,
         next: None,
         msgs: [
-          Request(
+          Intent(
             "double",
             [Num(count)],
-            RequestOpts::new(on_ok_name="doubled"),
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="doubled"),
           ),
         ],
       }
-    (Response, "doubled") =>
+    (Receive, "doubled") =>
       match args {
         [Num(n), ..] =>
           { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
         _ => { handled: true, next: None, msgs: [] }
       }
-    // a request the BUNDLE serves (see handle_request), not the host
-    (Input, "triple") =>
+    // an intent the BUNDLE serves on its own scope (see serve_intent), not
+    // one the host answers
+    (Receive, "triple") =>
       {
         handled: true,
         next: None,
-        msgs: [Request("triple", [Num(count)], RequestOpts::new())],
+        msgs: [
+          Intent(
+            "triple",
+            [Num(count)],
+            @tutuca.IntentOpts::new(route=[Lex], on_ok_name="tripled"),
+          ),
+        ],
       }
-    (Response, "triple") =>
+    (Receive, "tripled") =>
       match args {
         [Num(n), ..] =>
           { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
         _ => { handled: true, next: None, msgs: [] }
       }
-    (Input, "notify") =>
+    (Receive, "notify") =>
       {
         handled: true,
         next: None,
-        msgs: [Emit("counterChanged", [Str("changed!")])],
+        msgs: [
+          Intent(
+            "counterChanged",
+            [Str("changed!")],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
       }
-    // bubbles to whatever is above: a Pair parent, or the host shell
-    (Input, "announce") =>
-      { handled: true, next: None, msgs: [Emit("counted", [Num(count)])] }
-    (Input, "reset") =>
+    // walks up to whatever is above: a Pair parent, or the host shell
+    (Receive, "announce") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent("counted", [Num(count)], @tutuca.IntentOpts::new(route=[Dyn])),
+        ],
+      }
+    (Receive, "reset") =>
       { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [] }
     (Receive, "setTo") =>
       match args {
@@ -223,12 +242,12 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
 }
 
 ///|
-/// The bundle's own request service: its components find it before the host's.
-impl Guest for FakeGuest with fn handle_request(self, name, args) {
+/// The bundle's own service: its components reach it before the host's.
+impl Guest for FakeGuest with fn serve_intent(self, name, args) {
   self.served.push(name)
   match (name, args) {
     ("triple", [Num(n), ..]) => Ok(Num(n * 3.0))
-    _ => Err(Str("no such request: \{name}"))
+    _ => Err(Str("no such service: \{name}"))
   }
 }
 
@@ -399,13 +418,11 @@ fn counter_manifest() -> DynManifest {
         // field implies, and the host answers it
         receives: ["init", "setTo"],
         intents: [],
-        bubbles: [],
-        responses: ["doubled", "triple"],
         methods: ["label"],
         whens: ["nonZero"],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         // a named initial state a host can offer instead of a bare instance
         inits: [
           {
@@ -443,15 +460,13 @@ fn counter_manifest() -> DynManifest {
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
         receives: [],
-        intents: [],
-        bubbles: ["counted"],
-        responses: [],
+        intents: ["counted"],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
         // the bundle serves this one itself; the host never sees the name
-        requests: ["triple"],
+        serves: ["triple"],
         inits: [],
         style: "",
       },
@@ -490,13 +505,11 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("title", 0), plain_field("body", 1)],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [],
         style: "",
       },
@@ -561,7 +574,7 @@ impl @component.Fields for FillerState with fn schema() {
     name="Filler",
     fingerprint="filler-1",
     fields=[@component.FieldInfo::new("note", TyText)],
-    inputs=["bump"],
+    view_handlers=["bump"],
   )
 }
 
@@ -914,7 +927,7 @@ test "inputs are read off the compiled views, not declared" {
   // every @on handler the view names, and nothing else: `setCount` is a
   // mutator the schema implies, not a name the guest answers
   debug_inspect(
-    schema.inputs,
+    schema.view_handlers,
     content=(
       #|[
       #|  "dec",
@@ -1042,13 +1055,13 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 7, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 8, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
     #|             {"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "count", "ty": 0}, {"name": "history", "ty": 1}],
-    #|   "receives": ["init"], "bubbles": [], "responses": ["double"],
+    #|   "receives": ["init", "double"], "intents": [],
     #|   "methods": ["label"], "style": ""}]}
   let m = DynManifest::from_json_string(json)
   inspect(m.module_name, content="counterlib")
@@ -1256,7 +1269,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs, constraints and capability requests" {
   let json =
-    #|{"apiVersion": 7, "moduleName": "formlib",
+    #|{"apiVersion": 8, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
     #|                  {"cap": "cap-teleport", "reason": "?"}],
@@ -1271,7 +1284,7 @@ test "catalog metadata parses: docs, constraints and capability requests" {
     #|               "constraint": {"maxLen": 254, "format": "email",
     #|                              "enumJson": "", "defaultJson": "\"a@b.c\"",
     #|                              "pattern": ""}}],
-    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "receives": [], "intents": [], "methods": [],
     #|   "inits": [{"name": "blank", "argsJson": "{}", "doc": "Nothing filled in."}],
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
@@ -1320,10 +1333,10 @@ test "catalog metadata parses: docs, constraints and capability requests" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 7, "moduleName": "bare", "components": [
+    #|{"apiVersion": 8, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
-    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
   inspect(m.doc, content="")
@@ -1335,11 +1348,11 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 7, "moduleName": "m", "components": [
+    #|{"apiVersion": 8, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
-    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
   let fields = m.components[0].field_infos()
@@ -1422,13 +1435,11 @@ test "a bundle's views are linted at load" {
         fields: [],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         methods: [],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [],
         style: "",
       },
@@ -1498,15 +1509,13 @@ test "a `$method` the manifest never declared is reported at load" {
         fields: [plain_field("count", 0)],
         receives: [],
         intents: [],
-        bubbles: [],
-        responses: [],
         // `$setCount` is absent on purpose: it is the mutator the `count` field
         // implies, so the host answers it and it must NOT be reported
         methods: ["boxStyle"],
         whens: [],
         enriches: [],
         enrich_scopes: [],
-        requests: [],
+        serves: [],
         inits: [],
         style: "",
       },

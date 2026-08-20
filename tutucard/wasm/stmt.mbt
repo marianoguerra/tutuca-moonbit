@@ -461,16 +461,17 @@ fn ECtx::mutate_target(
 }
 
 ///|
-/// The effects a compiled body may perform — all five of them.
+/// The effects a compiled body may perform.
 ///
-/// A `request` needed less than it looked like: the block language gives one a
-/// name and arguments and nothing else, and the interpreter hands the host
-/// `RequestOpts::new()` for the rest (`tutucard/obj.mbt`), so the record lowers
-/// to a row of constant zeros at the flush.
+/// An `intent` needs less than it looks like: the block language gives one a
+/// name, arguments and a ROUTE, and the route is the only part written at the
+/// call site — the answer names come from the schema.
 ///
-/// A `sendAt` needed more. Its first argument is a PLACE, which is reified into
+/// A `sendAt` needs more. Its first argument is a PLACE, which is reified into
 /// `control.path-step`s rather than read — see `send_at_effect`.
-/// A route as the one integer the wire carries (`@abi.route_*`).
+/// A route as the one small integer the effect buffer carries
+/// (`@abi.route_*`). The WIRE form is the WIT's `list<leg>`, which `flush_fn`
+/// lowers this code to.
 ///
 /// Written as WRITTEN: an empty route is `route_none`, not `dyn lex`. The
 /// default lives in `@tutuca.IntentOpts::new`, and a compiler that resolved it
@@ -520,7 +521,7 @@ fn ECtx::effect(
       return []
     }
     self.g.uses_control = true
-    self.g.uses_v2_effects = true
+    self.g.uses_routed_effects = true
     let pl = self.g.fresh("pl")
     return [
       let_(pl, arg_list([self.expr(args[0])])),
@@ -533,7 +534,7 @@ fn ECtx::effect(
   }
   if name == "forward" {
     self.g.uses_control = true
-    self.g.uses_v2_effects = true
+    self.g.uses_routed_effects = true
     let pl = self.g.fresh("pl")
     let amended : Array[@abi.I] = []
     for a in args {
@@ -549,7 +550,7 @@ fn ECtx::effect(
       ]),
     ]
   }
-  guard name is ("send" | "bubble" | "request" | "intent") else {
+  guard name is ("send" | "intent") else {
     self.bail(
       "`" +
       name +
@@ -564,7 +565,7 @@ fn ECtx::effect(
   }
   self.g.uses_control = true
   if name == "intent" {
-    self.g.uses_v2_effects = true
+    self.g.uses_routed_effects = true
   }
   let msg = self.g.fresh("msg")
   let pl = self.g.fresh("pl")
@@ -590,17 +591,7 @@ fn ECtx::effect(
         i32c(route_code(route)),
       ])
     } else {
-      call("tc_effect_push", [
-        i32c(
-          match name {
-            "bubble" => 2
-            "request" => 4
-            _ => 1
-          },
-        ),
-        get(msg),
-        get(pl),
-      ])
+      call("tc_effect_push", [i32c(1), get(msg), get(pl)])
     },
   ]
 }

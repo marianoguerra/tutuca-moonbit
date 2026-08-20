@@ -95,6 +95,16 @@ export async function loadGuest(bytes, descriptor, key = "default") {
   let control = [];
   // The same spelling `dyncomp/host/wasm/loader.mjs` uses, so `glue.mbt`'s
   // `path_step` and `cardguest.mbt`'s read one shape and not two.
+  // WIT `intent-opts`, as the bridge's JSON — the same shape and the same
+  // spelling `loader.mjs` uses, so `cardguest.mbt` and `glue.mbt` read one
+  // thing. `route` lifts to the `leg` enum's own case names.
+  const optsToJson = (o) => ({
+    route: (o?.route ?? []).map((leg) => (typeof leg === "string" ? leg : leg?.tag)),
+    onOk: o?.onOk ?? null,
+    onError: o?.onError ?? null,
+    onUnhandled: o?.onUnhandled ?? null,
+    livePath: !!o?.livePath,
+  });
   const stepToJson = (s) =>
     s.tag === "field"
       ? { field: s.val }
@@ -107,14 +117,12 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       "tutuca:component/values": arena.api,
       "tutuca:component/control": {
         log: (level, msg) => console.log(`[card ${level}]`, msg),
-        emit: (name, args) =>
-          control.push({ kind: "emit", name, args: args.map((a) => guestToJson(a, arena.cells)) }),
         send: (name, args) =>
           control.push({ kind: "send", name, args: args.map((a) => guestToJson(a, arena.cells)) }),
         stopPropagation: () => control.push({ kind: "stopPropagation" }),
-        // `sendAt` and `request` are things a compiled card can now do, so they
-        // are collected rather than swallowed. `path` arrives as lifted
-        // `path-step` variants; `cardguest.mbt` turns them back into steps.
+        // `sendAt` is something a compiled card can do, so it is collected
+        // rather than swallowed. `path` arrives as lifted `path-step`
+        // variants; `cardguest.mbt` turns them back into steps.
         sendAt: (path, name, args) =>
           control.push({
             kind: "sendAt",
@@ -122,49 +130,39 @@ export async function loadGuest(bytes, descriptor, key = "default") {
             name,
             args: args.map((a) => guestToJson(a, arena.cells)),
           }),
-        request: (name, args, opts) =>
-          control.push({
-            kind: "request",
-            name,
-            args: args.map((a) => guestToJson(a, arena.cells)),
-            opts,
-          }),
-        // v2's four. A compiled card emits every one of these — `intent lex
+        // The routed four. A compiled card emits every one of these — `intent lex
         // 'loadQuote'` is step 7 of the tutorial — and an import the host does
         // not implement is an instantiation error, not a silently dropped
-        // effect. `route` is the closed set as one number (`@abi.route_*`),
-        // which is why it crosses as a plain integer rather than a list.
-        intent: (name, args, route) =>
+        // effect.
+        //
+        // `opts` is WIT `intent-opts` lifted, and it crosses as the same JSON
+        // `dyncomp/host/wasm/loader.mjs` sends: a `route` list of leg names, an
+        // empty one meaning "the card wrote no leg" for the host to resolve.
+        intent: (name, args, opts) =>
           control.push({
             kind: "intent",
             name,
             args: args.map((a) => guestToJson(a, arena.cells)),
-            route,
+            opts: optsToJson(opts),
           }),
         // An empty `args` means "the ones that arrived", which is the same
         // thing `forward` with no arguments means — so there is no third state
         // and nothing to carry a discriminant for.
-        forward: (args, route) =>
+        forward: (args, opts) =>
           control.push({
             kind: "forward",
             args: args.map((a) => guestToJson(a, arena.cells)),
-            route,
+            opts: optsToJson(opts),
           }),
-        reply: (args) =>
-          control.push({
-            kind: "reply",
-            args: args.map((a) => guestToJson(a, arena.cells)),
-          }),
-        fail: (args) =>
-          control.push({
-            kind: "fail",
-            args: args.map((a) => guestToJson(a, arena.cells)),
-          }),
-        // Still nothing a card can emit: the generator has no `bubbleAt`, no
-        // `intentAt` and no `after`, and a stub is what an unreachable import
-        // costs.
+        // ONE value each, not a list of them: the walk addresses a `reply`, so
+        // there is nothing for it to name and nothing to amend.
+        reply: (v) =>
+          control.push({ kind: "reply", value: guestToJson(v, arena.cells) }),
+        fail: (e) =>
+          control.push({ kind: "fail", value: guestToJson(e, arena.cells) }),
+        // Still nothing a card can emit: the generator has no `intentAt` and
+        // no `after`, and a stub is what an unreachable import costs.
         intentAt: () => {},
-        bubbleAt: () => {},
         after: () => {},
         makeInstance: () => 0n,
         dropInstance: () => {},
@@ -211,7 +209,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       // The WIT's `bucket` order, and `intent` is last so the four that were
       // there keep their numbers.
       const bucket =
-        ["input", "receive", "response", "bubble", "intent"][bucketInt] ?? "input";
+        ["receive", "intent"][bucketInt] ?? "receive";
       const inst = table.get(handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
       const result = inst.handleEvent(bucket, name, JSON.parse(argsJson).map(to));

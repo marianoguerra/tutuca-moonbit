@@ -115,9 +115,9 @@ fn instance_fields_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Input))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Input))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Input))],
+      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
+      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
+      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
     ],
   )
 }
@@ -370,12 +370,12 @@ fn instance_explorer_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="setActiveTab", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveTab", ns=Receive), args=[
           @anode.const_str("instance"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveTab", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setActiveTab", ns=Receive), args=[
           @anode.const_str("component"),
         ]),
       ],

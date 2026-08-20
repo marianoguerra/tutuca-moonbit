@@ -28,10 +28,9 @@
 ///
 /// It receives an `IntentCall` — which carries `from`, the sender's position,
 /// so a host can decide whether this sender may ask — rather than a bare
-/// argument list, and it may answer `Pass`. v1's `RequestHandler`, which this
-/// replaced, could do neither: a request handler MUST respond, so one with
-/// nothing to say had to invent an error, while a declining intent handler
-/// simply hands the intent to the next one.
+/// argument list, and it may answer `Pass`. `Pass` DECLINES: a handler with
+/// nothing to say hands the intent to the next one rather than inventing an
+/// error to discharge an obligation to respond.
 pub(all) struct IntentHandler(
   (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
 )
@@ -41,7 +40,7 @@ pub(all) struct IntentHandler(
 ///
 /// It answers with the WHOLE chain rather than the first match, innermost
 /// scope first, and that shape is the "`lex` walks" decision from
-/// `docs/two-channels.md` section 17: a declining handler hands the intent to its
+/// the intent walk: a declining handler hands the intent to its
 /// parent scope, so the walk needs every candidate and not the first one. The
 /// transactor asks each in turn INSIDE the transaction that is already
 /// running, so a `Pass` costs a call rather than a queue step — which is why
@@ -65,14 +64,13 @@ pub impl Intents for NoIntents
 
 ///|
 /// How many positions one intent may walk before the runtime cuts it off
-/// (`docs/two-channels.md` section 17).
+///.
 ///
 /// A cycle breaker, not a tuning knob. A legitimate route is bounded by tree
 /// depth plus scope depth and nothing in the corpus is near this; reaching it
-/// means two components are forwarding to each other, which v1's
-/// single-component loop could not produce. It is a different number from
-/// `settle`'s `max_turns`, which bounds the whole QUEUE rather than one chain,
-/// and it does not replace it.
+/// means two components are forwarding to each other, a loop only a multi-hop
+/// walk can build. It is a different number from `settle`'s `max_turns`, which
+/// bounds the whole QUEUE rather than one chain, and it does not replace it.
 pub const INTENT_DEPTH : Int = 64
 
 ///|
@@ -122,14 +120,15 @@ declare fn Completion::release_self(self : Completion) -> Unit
 /// What an observer record describes (JS observeKind strings as an enum).
 pub(all) enum ObserveKind {
   Receive
-  /// One hop of an intent's walk — the kind v1's `Bubble`, `Response` and
-  /// `Request` all collapsed into once the walk owned all three.
+  /// One hop of an intent's walk. Travelling up the tree, asking a registered
+  /// handler and carrying an answer back are all the same event here, because
+  /// they are all one hop of one walk.
   Intent
   /// A message the RUNTIME wrote: the `<name>Ok`, `<name>Error` or
   /// `<name>Unhandled` a walk produced. It is an ordinary message and the
-  /// component cannot tell it from one a parent sent — which is the design's
-  /// claim — so the distinction lives here, where an inspector needs it and a
-  /// handler never sees it.
+  /// component cannot tell it from one a parent sent, which is deliberate: the
+  /// distinction lives here, where an inspector needs it, and a handler never
+  /// sees it.
   Answer
 } derive(Debug, Eq)
 
@@ -216,12 +215,15 @@ pub struct Transaction {
   parent : Transaction?
   /// The walk this transaction is one hop of, shared BY REFERENCE with every
   /// other hop of the same intent. That sharing is what makes the one-shot
-  /// answer per intent rather than per hop, which is the thing v1's per-request
-  /// `responded` flag could not express because v1 had one hop.
+  /// answer per intent rather than per hop — a walk has many hops, and only
+  /// the first reply counts.
   priv walk : IntentWalk?
   /// Whether the runtime wrote this message: the `<name>Ok` / `<name>Error` /
-  /// `<name>Unhandled` a walk produced. Read by the observer, and by
-  /// `Ctx::is_answer` for the one caller that bridges to a foreign contract.
+  /// `<name>Unhandled` a walk produced.
+  ///
+  /// Read by the OBSERVER, and by nothing a component can reach: an answer is
+  /// an ordinary message and a handler cannot tell it from one a parent sent.
+  /// An inspector is outside that claim and needs to label the two.
   is_answer : Bool
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
@@ -311,11 +313,10 @@ declare pub fn Transactor::push_send(
 ///|
 /// One intent's whole walk, as state shared across its hops.
 ///
-/// v1's `Transaction.bubbles : Bool` is the field this replaces, and the two
-/// answer different questions. A boolean can say "keep going up"; it cannot say
-/// WHERE the walk is — which leg, how far along it, and whether the one answer
-/// the walk is allowed has already been given. A route is a list and a
-/// position, so this is a list and a position.
+/// A flag would be enough to say "keep going up"; it cannot say WHERE the walk
+/// is — which leg, how far along it, and whether the one answer the walk is
+/// allowed has already been given. A route is a list and a position, so this is
+/// a list and a position.
 pub struct IntentWalk {
   name : String
   /// The legs, in the order written. `[Dyn, Lex]` when nothing said otherwise.
@@ -338,8 +339,9 @@ pub struct IntentWalk {
   /// not. Without it a sender that waits for settlement would see the walk
   /// finish and the answer still in flight.
   priv mut release : (() -> Unit)?
-  /// The one-shot. Per INTENT and across hops, which is the difference from
-  /// v1's per-request `responded`.
+  /// The one-shot: an intent gets one answer. Per INTENT and shared across
+  /// every hop of the walk, not per hop — otherwise each handler along the
+  /// route could answer once and the sender would hear several.
   mut answered : Bool
   /// Ended by `stop`: served, and no answer.
   mut stopped : Bool

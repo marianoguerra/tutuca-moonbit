@@ -117,14 +117,6 @@ pub(all) enum Outcome {
   /// files, calls `collect_view_classes` and then the compiler, and writes the
   /// result.
   GenCss(GlobalOpts, plan~ : CssPlan)
-  /// Rewrite v1 sources to v2 (migrate.mbt). The core decides the roots and
-  /// the flag; the shell expands them, reads each file, calls `migrate_source`
-  /// and writes what came back — or, under `dry_run`, prints it.
-  ///
-  /// The same split every other command here takes, and it matters more for
-  /// this one than for most: a codemod that decided what to write AND wrote it
-  /// would have no way to be tested on a file that does not exist.
-  Migrate(GlobalOpts, roots~ : Array[String], dry_run~ : Bool)
 } derive(Debug, Eq)
 
 ///|

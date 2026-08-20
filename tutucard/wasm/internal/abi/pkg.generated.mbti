@@ -8,15 +8,9 @@ import {
 }
 
 // Values
-pub let bucket_bubble : Int
-
-pub let bucket_input : Int
-
 pub let bucket_intent : Int
 
 pub let bucket_receive : Int
-
-pub let bucket_response : Int
 
 pub let cell_size : Int
 
@@ -38,13 +32,15 @@ pub let ret_get_field : Int
 
 pub let ret_handle_event : Int
 
-pub let ret_handle_request : Int
-
 pub let ret_persist : Int
 
 pub let ret_restore : Int
 
+pub let ret_serve_intent : Int
+
 pub let ret_with_field : Int
+
+pub let route_buf : Int
 
 pub let route_dyn : Int
 

@@ -310,7 +310,7 @@ impl @component.Fields for UniversalState with fn schema() {
     name="Universal",
     fingerprint="b53b58aba7326121",
     fields=[@component.FieldInfo::new("child", TyComp(None))],
-    inputs=["add", "dropped", "pick", "remove"],
+    view_handlers=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
     intents=["addRequested", "configRequested"],
     methods=["label"],
@@ -556,7 +556,7 @@ impl @component.Fields for StackState with fn schema() {
       @component.FieldInfo::new("padding", TyInt),
       @component.FieldInfo::new("wrap", TyBool),
     ],
-    inputs=["appendCell", "insertAt"],
+    view_handlers=["appendCell", "insertAt"],
     methods=["isRow", "style"],
     view_names=["main", "edit"],
   )
@@ -805,7 +805,7 @@ impl @component.Fields for GridState with fn schema() {
       @component.FieldInfo::new("gap", TyInt),
       @component.FieldInfo::new("padding", TyInt),
     ],
-    inputs=["addColAfter", "addColBefore", "addRowAfter", "addRowBefore"],
+    view_handlers=["addColAfter", "addColBefore", "addRowAfter", "addRowBefore"],
     methods=["style"],
     view_names=["main", "edit"],
   )
@@ -1062,7 +1062,7 @@ impl @component.Fields for TabPageState with fn schema() {
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),
     ],
-    inputs=["cancelRename", "doneRename", "setLabel"],
+    view_handlers=["cancelRename", "doneRename", "setLabel"],
     intents=["doneRename", "cancelRename"],
     view_names=["main", "tabname"],
   )
@@ -1309,7 +1309,7 @@ impl @component.Fields for TabsState with fn schema() {
       @component.FieldInfo::new("renaming", TyBool),
       @component.FieldInfo::new("original", TyText),
     ],
-    inputs=["activate", "addTab", "closeActive"],
+    view_handlers=["activate", "addTab", "closeActive"],
     view_names=["main", "edit"],
   )
 }
@@ -1577,7 +1577,7 @@ impl @component.Fields for TextareaState with fn schema() {
       @component.FieldInfo::new("rows", TyInt),
       @component.FieldInfo::new("placeholder", TyText),
     ],
-    inputs=["setText"],
+    view_handlers=["setText"],
     view_names=["main"],
   )
 }

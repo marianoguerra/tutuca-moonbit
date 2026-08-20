@@ -16,7 +16,7 @@ component names in the view source:
 | In the view file | Generated |
 | ---------------- | --------- |
 | `<template id="Items">` / `state Items` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
-| the `@on` names the templates use | `ItemsMsg` + `ItemsMsg::from_dispatch` (payload types per the table in [core.md](./core.md) *Generated `Msg` payload types*) |
+| the `@on` names the templates use | `ItemsMsg` + `ItemsMsg::from_dispatch` (payload types per the table in [events.md](./events.md) *Generated `Msg` payload types*) |
 | the `$`-callables / `@when` / `@enrich-with` names | `ItemsMethod`, `ItemsWhen`, … — one enum per bucket, carrying the names the script block does not answer (see [cli.md](./cli.md)) |
 
 Name **every** template (`<template id="Counter">`) so one view source

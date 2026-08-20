@@ -99,13 +99,7 @@ fn message_case_diagnostics(
 ) -> Array[String] {
   let out : Array[String] = []
   let where_ = def.component_name(fallback)
-  for
-    pair in [
-      ("receive", def.receive),
-      ("intent", def.intent),
-      ("bubble", def.bubble),
-      ("response", def.response),
-    ] {
+  for pair in [("receive", def.receive), ("intent", def.intent)] {
     for m in pair.1 {
       if m.source_name != m.name {
         out.push(

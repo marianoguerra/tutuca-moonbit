@@ -10,7 +10,7 @@
 
 <template>
   <section>
-    <input type="file" @on.change="onPickFile value">
+    <input type="file" @on.change="onPickFile e.value">
     <p @hide=".hasFile">No file selected yet.</p>
     <dl @show=".hasFile">
       <dt>Name</dt><dd @text=".name"></dd>
@@ -29,7 +29,7 @@ while the view keeps reading `.type` — the codec keys by the runtime name.
 fn file_picker_comp() -> @component.Component {
   file_picker_component(
     update=(s, msg, _ctx) => match msg {
-      // for a file input, `value` is the picked file's metadata as a Map
+      // for a file input, `e.value` is the picked file's metadata as a Map
       // (name/size/type/lastModified); Null when no file is selected
       Receive("onPickFile", [Map(meta), ..]) =>
         Next({
@@ -47,7 +47,7 @@ fn file_picker_comp() -> @component.Component {
 
 The value layer deliberately exposes no DOM objects, so the app glue maps
 the chosen `File`'s synchronously-available metadata into a plain `Map`
-delivered as `value` — no `event.target.files` digging (this differs from
+delivered as `e.value` — no `event.target.files` digging in host JS (this differs from
 the JS docs, where the handler takes `event`). The file's *contents* are
 not in the metadata — read those host-side (JS FFI) and feed the result
 back in through an `intent lex` or `app.send_at_root`. Flatten

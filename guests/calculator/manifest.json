@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "calclib",
   "doc": "A calculator, as a loadable component.",
   "version": "0.4.0",
@@ -85,13 +85,11 @@
       "receives": [
         "init"
       ],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "pendingLabel"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "answer",
@@ -99,7 +97,8 @@
           "doc": "Starts showing the answer to everything."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     }
   ]
 }

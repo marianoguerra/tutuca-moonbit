@@ -7,7 +7,7 @@
 /// machinery. What stays is the part that is genuinely this page's: which
 /// bundles it offers, whether it remembers a session, and the wasm-gc export
 /// list. (The sample `double` service it lends to what it hosts is
-/// `@shell.sample_host_requests` — the storybook page offers the same one.)
+/// `@shell.sample_host_intents` — the storybook page offers the same one.)
 ///
 /// An export list is per-package `link` configuration and cannot come from a
 /// dependency, so the five entry points are re-exported here as one-line

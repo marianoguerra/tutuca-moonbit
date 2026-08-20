@@ -134,7 +134,7 @@ impl DynComponent for Game with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Game with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     // The loop `@key` a per-square handler carries. It arrives as a number
     // because a list's key is its index.

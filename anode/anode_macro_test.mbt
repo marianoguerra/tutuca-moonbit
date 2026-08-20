@@ -31,7 +31,7 @@ fn compile_view(
 test "expand simple macro" {
   let m = mk_macro(
     { "value": ".text", "oninput": "$setText" },
-    "<input :value=\"^value\" @on.input=\"^oninput value\" />",
+    "<input :value=\"^value\" @on.input=\"^oninput e.value\" />",
   )
   let px = @anode.ParseContext::new()
   let n = m.expand(
@@ -57,7 +57,7 @@ test "expand simple macro" {
 test "expand nested macro" {
   let input_macro = mk_macro(
     { "value": ".text", "oninput": "$setText" },
-    "<input :value=\"^value\" @on.input=\"^oninput value\" />",
+    "<input :value=\"^value\" @on.input=\"^oninput e.value\" />",
   )
   let outer_macro = mk_macro(
     { "value": ".title" },

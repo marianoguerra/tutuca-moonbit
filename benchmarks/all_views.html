@@ -2,6 +2,24 @@
 <!-- Every view .html in the repo, component names prefixed per file. -->
 <!-- demo/counterlib/counter.html (DemoCounter) -->
 
+<script type="tutuca/script" for="DemoCounter">
+  /// Move the counter by `d`, remembering where it landed.
+  /// 
+  /// `.count` reads the value the line above wrote: a statement rebinds the
+  /// state, so the push records where the counter ENDED rather than where it
+  /// started.
+  receive add(d) {
+    .count += d
+    .history.push .count
+  }
+
+  /// The same move, addressed by name rather than by a click.
+  receive resetTo(n) {
+    .count = n
+    .history.push .count
+  }
+</script>
+
 
 <template id="DemoCounter">
   <style>font-family: sans-serif</style>
@@ -10,38 +28,9 @@
     <button id="inc" @on.click="add 1">+1</button>
     <button id="dec" @on.click="add -1">-1</button>
     <button id="reset" @on.click="resetCount">reset</button>
-    <input id="label" :value=".label" @on.input="setLabel value" @on.keydown+send="setLabel 'sent!'">
+    <input id="label" :value=".label" @on.input="setLabel e.value" @on.keydown+send="setLabel 'sent!'">
     <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
   </div>
-</template>
-<!-- demo/universal_wasm/universal_wasm.html (DemoUniversal) -->
-
-<!-- The samples are here for convenience during development: the same archive
-     a drop would carry, named by URL instead. Loading one that is already
-     registered HOT-SWAPS it, and the catalog answers with the new components
-     immediately.
-
-     Behind `?test`, because they are for working on this page rather than for
-     using it. Dropping a bundle is NOT behind it: that is what the page is
-     for, and the whole viewport stays a drop target either way. -->
-<template id="DemoUniversalHostTools">
-  <span class="host-tools flex items-center gap-2">
-    <div class="join" @show=".samples">
-      <button class="btn btn-xs join-item load-counter"
-              @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
-      <button class="btn btn-xs join-item load-todo"
-              @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
-      <button class="btn btn-xs join-item load-todomvc"
-              @on.click="loadSample './examples/todomvc.tutuca.tar.gz'">todomvc</button>
-      <button class="btn btn-xs join-item load-calc"
-              @on.click="loadSample './examples/calculator.tutuca.tar.gz'">calculator</button>
-      <button class="btn btn-xs join-item load-ttt"
-              @on.click="loadSample './examples/tictactoe.tutuca.tar.gz'">tic-tac-toe</button>
-      <button class="btn btn-xs join-item load-rust"
-              @on.click="loadSample './examples/rust-tempconv.tutuca.tar.gz'">rust temp</button>
-    </div>
-    <span class="text-xs opacity-60 host-status" @text=".status"></span>
-  </span>
 </template>
 <!-- storybook/examples/basics.html (SbBasics) -->
 
@@ -63,11 +52,17 @@
     <div class="raw" @dangerouslysetinnerhtml=".content"></div>
   </section>
 </template>
+
+<template id="SbBasicsSetInnerMd">
+  <section>
+    <div class="md" @setinnermd=".source"></div>
+  </section>
+</template>
 <!-- storybook/examples/collections.html (SbCollections) -->
 
 <template id="SbCollectionsRenderWithScope">
   <section class="flex flex-col gap-3">
-    <input class="input" :value=".text" @on.input="setText value">
+    <input class="input" :value=".text" @on.input="setText e.value">
     <div @enrich-with="enrichScope">
       <p>Text: <span class="v-text" @text=".text"></span></p>
       <p>Len: <span class="v-len" @text="@len"></span></p>
@@ -78,7 +73,7 @@
 <template id="SbCollectionsListFilterEnrich">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
@@ -90,7 +85,7 @@
 <template id="SbCollectionsListFilterEnrichWith">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem" @enrich-with="enrichItem" @loop-with="getIterData">
@@ -101,6 +96,28 @@
 </template>
 <!-- storybook/examples/communication.html (SbCommunication) -->
 
+<script type="tutuca/script" for="Status">
+  /// Show a message, and remember how many have come through.
+  receive flash(m) {
+    .message = m
+    .count += 1
+  }
+
+  /// Stop showing it. The count is a running total and does not reset.
+  receive clear {
+    .message = ''
+  }
+</script>
+
+<script type="tutuca/script" for="SendReceive">
+  /// Empty the input. `submit` cannot join it here: addressing the sibling by
+  /// path is what that handler is FOR, and a path is what this block does not
+  /// spell.
+  receive clearDraft {
+    .draft = ''
+  }
+</script>
+
 <template id="SbCommunicationStatus">
   <div class="alert alert-info" @show="truthy? .message">
     <span class="msg" @text=".message"></span>
@@ -110,7 +127,7 @@
 <template id="SbCommunicationSendReceive">
   <section class="flex flex-col gap-2">
     <x render=".status"></x>
-    <input class="input" :value=".draft" @on.input="setDraft value"
+    <input class="input" :value=".draft" @on.input="setDraft e.value"
       @on.keydown+send="submit"
       placeholder="Type a message and press Enter">
     <div class="flex gap-2">
@@ -177,6 +194,16 @@
 </template>
 <!-- storybook/examples/conditionals.html (SbConditionals) -->
 
+<script type="tutuca/script" for="TrafficLight">
+  /// Step to the next colour, wrapping at the end of the cycle.
+  /// 
+  /// The three names are the `$light` method's business, not this one's: the
+  /// handler only ever moves an index, so `mod 3` is all it needs to know.
+  receive nextLight {
+    .lightIndex = (.lightIndex + 1) mod 3
+  }
+</script>
+
 <template id="SbConditionalsTrafficLight">
   <section class="flex flex-col gap-2">
     <button class="btn btn-primary" @on.click="nextLight">Next light</button>
@@ -216,7 +243,7 @@
 <template id="SbConditionalsListAndFilter">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem">
@@ -226,6 +253,19 @@
   </section>
 </template>
 <!-- storybook/examples/counter.html (SbCounter) -->
+
+<script type="tutuca/script" for="SbCounter">
+  /// One step up, one step down. Both are `@on` names the views write, and
+  /// neither reads anything but the field it moves — which is the whole of
+  /// what a counter is.
+  receive inc {
+    .count += 1
+  }
+
+  receive dec {
+    .count -= 1
+  }
+</script>
 
 <template id="SbCounter">
   <div class="join join-vertical">
@@ -256,14 +296,14 @@
 <template id="SbDnd">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"
         draggable="true"
         data-dragtype="my-list-item"
         data-droptarget="my-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <span class="k" @text="@key"></span>: <x text="@value"></x>
       </div>
     </div>
@@ -281,12 +321,12 @@
 
 <template id="SbDynamicSelectorEntry">
   <div class="flex gap-3">
-    <input class="input val" :value=".value" @on.input="setValue value">
-    <input class="input lbl" :value=".label" @on.input="setLabel value">
+    <input class="input val" :value=".value" @on.input="setValue e.value">
+    <input class="input lbl" :value=".label" @on.input="setLabel e.value">
   </div>
 </template>
 <template id="SbDynamicSelector">
-  <select class="select" :value=".selectedValue" @on.input="setSelectedValue value">
+  <select class="select" :value=".selectedValue" @on.input="setSelectedValue e.value">
     <option @each="*entries" :value="@value.value" @text="@value.label"></option>
   </select>
 </template>
@@ -307,7 +347,7 @@
 <template id="SbDynamicSheet">
   <div class="card bg-base-200 p-3 gap-2 sheet">
     <span class="text-xs opacity-60 tag">Sheet (rendered via *active)</span>
-    <input class="input input-bordered title" :value=".title" @on.input="setTitle value">
+    <input class="input input-bordered title" :value=".title" @on.input="setTitle e.value">
   </div>
 </template>
 <template id="SbDynamicToolbar">
@@ -361,14 +401,14 @@
   </div>
 </template>
 <template id="SbDynamicSelectedEditDseEntry"><span class="font-mono entry" @text=".name"></span></template>
-<template id="SbDynamicSelectedEditDseEntry:edit"><input class="input input-bordered w-full edit-name" :value=".name" @on.input="setName value" placeholder="Entry name"></template>
+<template id="SbDynamicSelectedEditDseEntry:edit"><input class="input input-bordered w-full edit-name" :value=".name" @on.input="setName e.value" placeholder="Entry name"></template>
 <!-- storybook/examples/file_picker.html (SbFilePicker) -->
 
 <template id="SbFilePicker">
   <section class="flex flex-col gap-3">
     <label class="flex flex-col gap-1">
       <span>Pick a file</span>
-      <input type="file" class="file-input" @on.change="onPickFile value">
+      <input type="file" class="file-input" @on.change="onPickFile e.value">
     </label>
 
     <table class="table" @show=".hasFile">
@@ -387,10 +427,10 @@
 
 <template id="SbFilterPaginatePerson">
   <div class="person flex gap-2 items-center grow">
-    <input class="input input-sm grow name" :value=".name" @on.input="setName value" placeholder="name">
-    <input class="input input-sm grow email" :value=".email" @on.input="setEmail value" placeholder="email">
+    <input class="input input-sm grow name" :value=".name" @on.input="setName e.value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="setEmail e.value" placeholder="email">
     <label class="label cursor-pointer gap-1 chk-label">
-      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive value">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive e.value">
       active
     </label>
   </div>
@@ -405,7 +445,7 @@
 
 <template id="SbFilterPaginateNaivePeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -423,7 +463,7 @@
 
 <template id="SbFilterPaginateSharedPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -441,7 +481,7 @@
 
 <template id="SbFilterPaginateCoupledPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -473,9 +513,9 @@
 <template id="SbGraphicsQuadratic">
   <div class="flex flex-col gap-3">
     <div class="flex gap-3 text-sm">
-      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA valueAsInt"></label>
-      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB valueAsInt"></label>
-      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC valueAsInt"></label>
+      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA e.valueAsInt"></label>
+      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB e.valueAsInt"></label>
+      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC e.valueAsInt"></label>
     </div>
     <math display="block">
       <mn class="m-a" @text=".a"></mn>
@@ -499,7 +539,7 @@
 <template id="SbJsonJsonSelector">
   <div class="join gap-3 font-mono json-selector">
     <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="setToNull">null</button>
-    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool isCtrl">bool</button>
+    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool e.isCtrl">bool</button>
     <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="setToNumber">0</button>
     <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="setToString">""</button>
     <button class="btn btn-sm btn-soft btn-info to-array" @on.click="setToArray">[]</button>
@@ -520,10 +560,10 @@
   </button>
 </template>
 <template id="SbJsonJsonString">
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
 </template>
 <template id="SbJsonJsonNumber">
-  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue value">
+  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
 </template>
 <template id="SbJsonJsonArray">
   <style>[data-draggingover="json-list-item"] {
@@ -536,7 +576,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-list-item" data-droptarget="json-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -545,7 +585,7 @@
 </template>
 <template id="SbJsonJsonObjectKeyVal">
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -561,7 +601,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -596,6 +636,18 @@
 </template>
 <!-- storybook/examples/personal_site.html (SbPersonalSite) -->
 
+<script type="tutuca/script" for="Root">
+  /// Ask for the data. Nothing else moves — the entries arrive as an ordinary
+  /// message, `loadDataOk`, which sorts them and collects the facets, and that
+  /// is a MoonBit handler.
+  /// 
+  /// `lex` is the leg: the answer comes from a handler registered in the
+  /// SCOPE, which is where the module puts its fixture.
+  receive init {
+    intent lex 'loadData'
+  }
+</script>
+
 <template id="SbPersonalSiteAltUrl">
   <a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
 </template>
@@ -625,12 +677,12 @@
         <span class="font-semibold text-sm pt-1">Categories</span>
         <div class="cat-facets flex flex-wrap gap-2">
           <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-            :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onCategoryToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Roles</span>
         <div class="role-facets flex flex-wrap gap-2">
           <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-            :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onRoleToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Sort By</span>
         <div class="flex flex-wrap items-center gap-2">
@@ -680,7 +732,7 @@
   <option :value=".value" @text=".label"></option>
 </template>
 <template id="SbPseudoXItemSelect">
-  <select class="select" :value=".current" @on.input="setCurrent value">
+  <select class="select" :value=".current" @on.input="setCurrent e.value">
     <option @x render-each=".options"></option>
   </select>
 </template>
@@ -691,6 +743,20 @@
   </div>
 </template>
 <!-- storybook/examples/render_child.html (SbRenderChild) -->
+
+<script type="tutuca/script" for="Entry">
+  /// Whether this entry matches a query, for a parent's `@when` filter.
+  /// 
+  /// It used to be a `func` in the state block — the one thing that put
+  /// behaviour in a block whose own header says it holds none. It is a
+  /// callable, so it lives with the callables.
+  /// 
+  /// No view of Entry calls it: a parent's `@when` does, holding Entry
+  /// instances and knowing nothing of their fields. That is why the block says
+  /// `for="Entry"` — this file declares four components, and a `.title` here
+  /// has to mean exactly one of them.
+  pred containsText(q) { (contains (lower .title) (lower q)) or (contains (lower .description) (lower q)) }
+</script>
 
 <template id="SbRenderChildGreeting">
   <p class="p-2 border rounded">
@@ -715,8 +781,8 @@
 <template id="SbRenderChildEntry:edit">
   <div class="card bg-base-100 shadow-sm gap-3">
     <div class="card-body">
-      <input class="input title" :value=".title" @on.input="setTitle value">
-      <input class="input desc" :value=".description" @on.input="setDescription value">
+      <input class="input title" :value=".title" @on.input="setTitle e.value">
+      <input class="input desc" :value=".description" @on.input="setDescription e.value">
     </div>
   </div>
 </template>
@@ -728,11 +794,36 @@
 </template>
 <!-- storybook/examples/rendering.html (SbRendering) -->
 
+<script type="tutuca/script" for="PushView">
+  /// Flip the pushed view name. The label under the button is `$getToggleLabel`
+  /// and stays in MoonBit — a `compute` is answered while rendering, and this
+  /// runs after.
+  receive toggleView {
+    .view = if .view is 'main' { 'edit' } else { 'main' }
+  }
+</script>
+
+<script type="tutuca/script" for="Pagination">
+  /// Step back, never past the first page.
+  receive prev {
+    .page = max 0 (.page - 1)
+  }
+
+  /// Step forward, never past the last one.
+  /// 
+  /// `((len .items) - 1) / .pageSize` is the last page's index with its
+  /// fraction still on it — the field is an Int and takes the whole part, so
+  /// the division needs no ceiling of its own.
+  receive next {
+    .page = min (.page + 1) (((len .items) - 1) / .pageSize)
+  }
+</script>
+
 <template id="SbRenderingPushView">
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="toggleView"></button>
     </div>
@@ -744,9 +835,9 @@
 <template id="SbRenderingSeqItemAccess">
   <section class="flex flex-col gap-3">
     <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-      @on.input="setCurrentIndex valueAsInt">
+      @on.input="setCurrentIndex e.valueAsInt">
     <x render=".byIndex[.currentIndex]"></x>
-    <select class="select" :value=".currentKey" @on.input="setCurrentKey value">
+    <select class="select" :value=".currentKey" @on.input="setCurrentKey e.value">
       <option @each=".byKey" :value="@key" @text="@value.title"></option>
     </select>
     <x render=".byKey[.currentKey]"></x>
@@ -769,12 +860,36 @@
 </template>
 <!-- storybook/examples/request.html (SbRequest) -->
 
+<script type="tutuca/script" for="SbRequest">
+  /// Flip the pushed view name.
+  receive toggleView {
+    .view = if .view is 'main' { 'edit' } else { 'main' }
+  }
+
+  /// Dispatch the intent and say so. `intent` is an effect here, which means
+  /// it goes out only if the whole body finished — a message sent beside a
+  /// transition that did not happen is the one outcome nobody can reason
+  /// about afterwards.
+  /// 
+  /// `lex` is the leg: the answer comes from a handler REGISTERED IN THE
+  /// SCOPE, not from a component up the tree. That is what v1 spelled
+  /// `request`, and writing it as a route is the whole change — the verb no
+  /// longer decides which scope answers.
+  /// 
+  /// No opts here. The three answer arms are in the schema, so the generator
+  /// already knows where the answer goes.
+  receive init {
+    intent lex 'loadData'
+    .isLoading = true
+  }
+</script>
+
 <template id="SbRequest">
   <section class="flex flex-col gap-3">
     <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>
     <div class="flex justify-between" @hide=".isLoading">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
       <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="toggleView"></button>
@@ -787,11 +902,19 @@
 </template>
 <!-- storybook/examples/state_and_updates.html (SbStateAndUpdates) -->
 
+<script type="tutuca/script" for="ShowHide">
+  /// The panel's own counter. `toggleIsOpen` is not here because it is not
+  /// written anywhere: a Bool field generates its own toggle.
+  receive incCount {
+    .count += 1
+  }
+</script>
+
 <template id="SbStateAndUpdatesAttributeBinding">
   <section class="flex flex-col gap-3">
-    <input class="input s" :value=".str" @on.input="setStr value" :title="$'Content is {.str}'">
-    <input class="input n" type="number" :value=".num" @on.input="setRawNumber value">
-    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool value">
+    <input class="input s" :value=".str" @on.input="setStr e.value" :title="$'Content is {.str}'">
+    <input class="input n" type="number" :value=".num" @on.input="setRawNumber e.value">
+    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool e.value">
     <p>String: <span class="o-str" @text=".str"></span></p>
     <p>Number: <span class="o-num" @text=".num"></span></p>
     <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
@@ -811,8 +934,8 @@
 <template id="SbStateAndUpdatesEventModifiers">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="onInput value"
-      @on.keydown+send="setLastSentSearch value"
+      @on.input="onInput e.value"
+      @on.keydown+send="setLastSentSearch e.value"
       @on.keydown+cancel="resetQuery"
       placeholder="Search Query (Enter to send, Esc to clear)">
     <p class="sent" @show="truthy? .lastSentSearch">
@@ -876,8 +999,8 @@ border-radius: 0.5rem;
 
 <template id="SbTodoItem">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
 </template>
 <template id="SbTodoItems">
@@ -894,7 +1017,7 @@ border-radius: 0.5rem;
 <!-- storybook/examples/web_component.html (SbWebComponent) -->
 
 <template id="SbWebComponent">
-  <section @on.emoji-click="onEmojiClick value" class="join join-vertical gap-3 items-center">
+  <section @on.emoji-click="onEmojiClick e.value" class="join join-vertical gap-3 items-center">
     <p class="hint" @hide="truthy? .current">
       Select the <em>Toggle Picker</em> button and select an emoji, it will be
       displayed here
@@ -909,6 +1032,18 @@ border-radius: 0.5rem;
 </template>
 <!-- playground/site/examples/composability.html (SiteComposability) -->
 
+<script type="tutuca/script" for="Counter">
+  /// Six components share this file, so a script block says which one it
+  /// answers for — a `.count` here has to mean exactly one state.
+  receive inc {
+    .count += 1
+  }
+
+  receive dec {
+    .count -= 1
+  }
+</script>
+
 <!-- Every component in the module keeps its views in this one file; the
      `<template id="Name">` says which component each belongs to. -->
 <template id="SiteComposabilityCounter">
@@ -921,8 +1056,8 @@ border-radius: 0.5rem;
 
 <template id="SiteComposabilityItem">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
 </template>
 
@@ -986,6 +1121,19 @@ border-radius: 0.5rem;
 </template>
 <!-- playground/site/examples/counter.html (SiteCounter) -->
 
+<script type="tutuca/script" for="SiteCounter">
+  /// The behaviour, in the same file as the state and the view. `gen-views`
+  /// compiles this block into MoonBit and the component composes it ahead of
+  /// the `update~` you pass — so a counter needs no `update~` at all.
+  receive inc {
+    .count += 1
+  }
+
+  receive dec {
+    .count -= 1
+  }
+</script>
+
 <template id="SiteCounterCounter">
   <div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
     <button @on.click="dec">-</button>
@@ -998,14 +1146,14 @@ border-radius: 0.5rem;
 <template id="SiteDndDnDExample">
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"
         draggable="true"
         data-dragtype="my-list-item"
         data-droptarget="my-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <span class="k" @text="@key"></span>: <x text="@value"></x>
       </div>
     </div>
@@ -1031,10 +1179,10 @@ border-radius: 0.5rem;
 
 <template id="SiteFilterPaginatePerson">
   <div class="person flex gap-2 items-center grow">
-    <input class="input input-sm grow name" :value=".name" @on.input="setName value" placeholder="name">
-    <input class="input input-sm grow email" :value=".email" @on.input="setEmail value" placeholder="email">
+    <input class="input input-sm grow name" :value=".name" @on.input="setName e.value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="setEmail e.value" placeholder="email">
     <label class="label cursor-pointer gap-1 chk-label">
-      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive value">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive e.value">
       active
     </label>
   </div>
@@ -1045,7 +1193,7 @@ border-radius: 0.5rem;
      on purpose — the diff between them IS the lesson. -->
 <template id="SiteFilterPaginateNaivePeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -1063,7 +1211,7 @@ border-radius: 0.5rem;
 
 <template id="SiteFilterPaginateSharedPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -1081,7 +1229,7 @@ border-radius: 0.5rem;
 
 <template id="SiteFilterPaginateCoupledPeople">
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -1114,17 +1262,17 @@ border-radius: 0.5rem;
 </template>
 
 <template id="SiteJsonJsonString">
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
 </template>
 
 <template id="SiteJsonJsonNumber">
-  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue value">
+  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
 </template>
 
 <template id="SiteJsonJsonSelector">
   <div class="join gap-3 font-mono json-selector">
     <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="setToNull">null</button>
-    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool isCtrl">bool</button>
+    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool e.isCtrl">bool</button>
     <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="setToNumber">0</button>
     <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="setToString">""</button>
     <button class="btn btn-sm btn-soft btn-info to-array" @on.click="setToArray">[]</button>
@@ -1139,7 +1287,7 @@ border-radius: 0.5rem;
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-list-item" data-droptarget="json-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -1155,7 +1303,7 @@ border-radius: 0.5rem;
 
 <template id="SiteJsonJsonObjectKeyVal">
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -1168,7 +1316,7 @@ border-radius: 0.5rem;
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -1214,12 +1362,12 @@ border-radius: 0.5rem;
         <span class="font-semibold text-sm pt-1">Categories</span>
         <div class="cat-facets flex flex-wrap gap-2">
           <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-            :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onCategoryToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Roles</span>
         <div class="role-facets flex flex-wrap gap-2">
           <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-            :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onRoleToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Sort By</span>
         <div class="flex flex-wrap items-center gap-2">
@@ -1252,7 +1400,7 @@ border-radius: 0.5rem;
 
 <template id="SiteTextInputGreeter">
   <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input="setName value" placeholder="your name">
+    <input :value=".name" @on.input="setName e.value" placeholder="your name">
     <p>Hello, <b @text=".name"></b>!</p>
   </div>
 </template>
@@ -1260,8 +1408,8 @@ border-radius: 0.5rem;
 
 <template id="SiteTodoItem">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
 </template>
 <template id="SiteTodoItems">

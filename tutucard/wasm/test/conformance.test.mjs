@@ -46,29 +46,25 @@ const CORPUS = DUMP.cases;
 // `enrich` / `enrichScope` gap lived — both were absent from the generator
 // entirely, with no refusal to show for it.
 const VALUE_CORPUS = DUMP.valueCases;
-// The v2 half: two buckets, four new effects, and a route on two of them.
-const CORPUS_V2 = DUMP.casesV2;
 
 // The declaration kind each bucket dispatches, which is the word a refusal is
 // reported under.
 const KIND = {
-  input: "on",
   receive: "receive",
-  bubble: "bubble",
-  response: "response",
   intent: "intent",
 };
 
-// A route as the wire carries it (`@abi.route_*`, an i32 because the set is
-// closed) against the words the corpus writes. The card compiler holds the
-// same table from the other side; this is the second half of it, and the
-// reason it can be a table at all is that the design's leg words are closed.
-// Index 0 is `route_none` — "not written" — and it resolves to the DEFAULT,
-// which is why it and index 3 read the same. That is the whole reason the
+// A route as the wire carries it — WIT `list<leg>`, lifted to the leg names —
+// against the words the corpus writes.
+//
+// An EMPTY list is "the card wrote no leg", and resolving that is the HOST's
+// job: the default is `dyn lex`, spelled in exactly one place
+// (`IntentOpts::new`), and this stands in for it. That is the whole reason the
 // corpus stores a route resolved: the default is the one thing two backends
 // can agree to disagree about while every explicit route passes, so both are
 // made to say `dyn lex` out loud.
-const ROUTE = ["dyn lex", "dyn", "lex", "dyn lex", "lex dyn"];
+const routeWords = (opts) =>
+  opts.route.length ? opts.route.join(" ") : "dyn lex";
 
 /**
  * A v2 case as a card's state block.
@@ -90,8 +86,16 @@ function schemaOf(c) {
     const l = line.trim();
     if (placed || !l.startsWith(word + " ")) return line;
     placed = true;
+    // `variant`/`declVariant` are VARIANT cases, so they are capitalized;
+    // a state block declares the dispatched spelling, which starts lower.
+    // statedef normalizes the two to one name, so testing for the capitalized
+    // form finds nothing and appends a duplicate the schema then refuses.
+    const declared = (v) => {
+      const n = v.split("(")[0];
+      return n.charAt(0).toLowerCase() + n.slice(1);
+    };
     const missing = want.filter(
-      (v) => !new RegExp(`\\b${v.split("(")[0]}\\b`).test(l),
+      (v) => !new RegExp(`\\b${declared(v)}\\b`).test(l),
     );
     return missing.length
       ? line.replace(/\}\s*$/, `, ${missing.join(", ")} }`)
@@ -188,22 +192,17 @@ async function build(c, i, source) {
         // what the corpus asserts is the successor and the effects. The
         // interpreter's adapter quiets its `warn_hook` for the same reason.
         log: () => {},
-        emit: (name, args) => effects.push({ kind: "bubble", name, args }),
         send: (name, args) => effects.push({ kind: "send", name, args }),
         stopPropagation: () => effects.push({ kind: "stop", name: "", args: [] }),
-        // The `opts` a compiled card sends is always `RequestOpts::new()`, which
-        // is what the interpreter hands `ctx.request` too — so the corpus, which
-        // records a request as a name and its arguments, has nothing to say
-        // about it and neither does this.
-        request: (name, args, _opts) => effects.push({ kind: "request", name, args }),
-        // v2's four. `intent` and `forward` carry a route; `reply` and `fail`
-        // carry one value and no name, because the walk addresses them.
-        intent: (name, args, route) =>
-          effects.push({ kind: "intent", name, args, route: ROUTE[route] ?? "" }),
-        forward: (args, route) =>
-          effects.push({ kind: "forward", name: "", args, route: ROUTE[route] ?? "" }),
-        reply: (args) => effects.push({ kind: "reply", name: "", args }),
-        fail: (args) => effects.push({ kind: "fail", name: "", args }),
+        // The routed four. `intent` and `forward` carry `intent-opts`, of
+        // which a card only ever writes the route; `reply` and `fail` carry
+        // ONE value and no name, because the walk addresses them.
+        intent: (name, args, opts) =>
+          effects.push({ kind: "intent", name, args, route: routeWords(opts) }),
+        forward: (args, opts) =>
+          effects.push({ kind: "forward", name: "", args, route: routeWords(opts) }),
+        reply: (v) => effects.push({ kind: "reply", name: "", args: [v] }),
+        fail: (e) => effects.push({ kind: "fail", name: "", args: [e] }),
       },
     },
     { ...descriptor, core: `${stem}.wasm` },
@@ -212,110 +211,6 @@ async function build(c, i, source) {
 }
 
 const results = { passed: [], refused: [], rejected: [], failed: [] };
-
-test("the wasm backend agrees with the conformance corpus", async () => {
-  for (const [i, c] of CORPUS.entries()) {
-    const b = await build(c, i);
-    if (b.error) {
-      // A card the CHECKER turns away is not a gap in this backend: it does
-      // not typecheck, which is true of every backend and would be true of a
-      // hand-written module. The corpus has one such row — a name that
-      // resolves to nothing — and the interpreter abandons the transition at
-      // run time where this says so when the card is compiled.
-      if (b.error.startsWith("rejected:")) {
-        results.rejected.push(`${c.name}: ${b.error.slice("rejected:".length).trim()}`);
-      } else {
-        results.failed.push(`${c.name}: did not compile — ${b.error.trim()}`);
-      }
-      continue;
-    }
-    const { root, arena, put, effects, log } = b;
-
-    // Refused by name, with the reason, in the CLI's log. A refused handler is
-    // absent from the module, so the host hears `unhandled` and falls back —
-    // which is a real answer, just not one this corpus row is about.
-    if (log.includes(`refused ${KIND[c.bucket]} ${c.handler}`)) {
-      results.refused.push(c.name);
-      continue;
-    }
-
-    const ctorArgs = Object.entries(c.before).map(([k, v]) => [k, toWire(v, put)]);
-    let inst;
-    try {
-      inst = new root.guest.Instance(c.component, ctorArgs);
-    } catch (e) {
-      results.failed.push(`${c.name}: the constructor threw — ${e.message}`);
-      continue;
-    }
-
-    let res;
-    try {
-      res = inst.handleEvent(c.bucket, c.handler, c.args.map((a) => toWire(a, put)));
-    } catch (e) {
-      results.failed.push(`${c.name}: the dispatch threw — ${e.message}`);
-      continue;
-    }
-
-    // What a host observes: the state it renders next. `after: null` means the
-    // transition did not happen, and the state it renders is the one it had.
-    const wantState = c.after ?? c.before;
-    const after = res.tag === "changed" ? res.val : inst;
-    const got = {};
-    for (const k of Object.keys(wantState)) {
-      got[k] = fromWire(after.getField(k), arena);
-    }
-
-    const problems = [];
-    try {
-      assert.deepEqual(got, wantState);
-    } catch {
-      problems.push(
-        `state is ${JSON.stringify(got)}, want ${JSON.stringify(wantState)}`,
-      );
-    }
-    const gotEffects = effects.map((e) => ({
-      kind: e.kind,
-      name: e.name,
-      args: e.args.map((a) => fromWire(a, arena)),
-    }));
-    // The corpus carries a `route` on every effect now, and every v1 effect's
-    // is empty — the two that have one are v2's. Dropped here rather than
-    // compared, so this loop keeps asking exactly what it asked before.
-    const wantEffects = c.effects.map(({ route: _r, ...rest }) => rest);
-    try {
-      assert.deepEqual(gotEffects, wantEffects);
-    } catch {
-      problems.push(
-        `effects are ${JSON.stringify(gotEffects)}, want ${JSON.stringify(wantEffects)}`,
-      );
-    }
-    if (problems.length) results.failed.push(`${c.name}: ${problems.join("; ")}`);
-    else results.passed.push(c.name);
-  }
-
-  console.log(
-    `corpus: ${results.passed.length} passed, ` +
-      `${results.rejected.length} rejected as invalid, ` +
-      `${results.refused.length} refused, ${results.failed.length} failed ` +
-      `(of ${CORPUS.length})`,
-  );
-  if (results.rejected.length) {
-    console.log("rejected (the card does not check):\n  " + results.rejected.join("\n  "));
-  }
-  if (results.refused.length) {
-    console.log("refused:\n  " + results.refused.join("\n  "));
-  }
-  if (results.failed.length) {
-    console.log("failed:\n  " + results.failed.join("\n  "));
-  }
-  assert.deepEqual(results.failed, []);
-  // And nothing in the corpus is refused any more. This used to be a COUNT
-  // that was only allowed to shrink, because `request` sat here and there was
-  // no date on when it would not. It does not sit here now, so the honest
-  // assertion is the empty one: a refusal reaching this table again is a
-  // feature the language has and this backend has stopped having.
-  assert.deepEqual(results.refused, []);
-});
 
 // ---------------------------------------------------------------------------
 
@@ -416,18 +311,13 @@ test("the wasm backend agrees with the corpus about value bodies", async () => {
 
 // ---------------------------------------------------------------------------
 
-test("the wasm backend agrees with the v2 conformance corpus", async () => {
-  // The same drive as the v1 loop above, over `casesV2`. A separate test
-  // rather than a second pass through the first one, for the reason the two
-  // corpora are separate at all: they carry two vocabularies while both exist,
-  // and the plan's task 25 deletes the first.
-  //
+test("the wasm backend agrees with the conformance corpus", async () => {
   // ZERO refusals is asserted here, and it is a stronger claim than the v1
   // loop's: every v2 case was written against the design rather than against
   // either backend, so a refusal is this backend failing to express something
   // the design says — not a gap it has yet to close.
   const passed = [], refused = [], failed = [];
-  for (const [i, c] of CORPUS_V2.entries()) {
+  for (const [i, c] of CORPUS.entries()) {
     const b = await build(
       c,
       `v2_${i}`,
@@ -493,7 +383,7 @@ test("the wasm backend agrees with the v2 conformance corpus", async () => {
 
   console.log(
     `v2 corpus: ${passed.length} passed, ${refused.length} refused, ` +
-      `${failed.length} failed (of ${CORPUS_V2.length})`,
+      `${failed.length} failed (of ${CORPUS.length})`,
   );
   if (failed.length) console.log("failed:\n  " + failed.join("\n  "));
   if (refused.length) console.log("refused:\n  " + refused.join("\n  "));
@@ -519,14 +409,14 @@ test("a map field keeps its contents AND its insertion order", async () => {
     null,
     "maporder",
     `<script type="tutuca/state">\n  state M { m: Map[String, Int] }\n</` +
-      `script>\n<script type="tutuca/script">\n  on put(k, v) { .m.setAt k v }\n  on drop(k) { .m.deleteAt k }\n</` +
+      `script>\n<script type="tutuca/script">\n  receive put(k, v) { .m.setAt k v }\n  receive drop(k) { .m.deleteAt k }\n</` +
       `script>\n<template id="M"><div></div></template>\n`,
   );
   assert.equal(b.error, undefined);
   const { root, arena } = b;
 
   const put = (c, k, v) => {
-    const r = c.handleEvent("input", "put", [
+    const r = c.handleEvent("receive", "put", [
       { tag: "text", val: k },
       { tag: "number", val: v },
     ]);
@@ -542,7 +432,7 @@ test("a map field keeps its contents AND its insertion order", async () => {
   assert.deepEqual(keys(put(c, "mango", 99)), ORDER);
 
   // Removing drops it, and re-adding appends at the end.
-  let d = c.handleEvent("input", "drop", [{ tag: "text", val: "mango" }]).val;
+  let d = c.handleEvent("receive", "drop", [{ tag: "text", val: "mango" }]).val;
   assert.deepEqual(keys(d), ORDER.filter((k) => k !== "mango"));
   assert.deepEqual(keys(put(d, "mango", 1)), [
     ...ORDER.filter((k) => k !== "mango"),

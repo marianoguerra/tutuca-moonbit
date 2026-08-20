@@ -106,17 +106,17 @@ fn state_editor_row_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["valueAsFloat"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Input), args=[
+        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

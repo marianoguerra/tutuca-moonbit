@@ -253,9 +253,9 @@ pub(all) enum QueryResult {
 } derive(Debug, Eq)
 
 ///|
-/// ── Failure. A variant rather than a `result`, matching `request-result`
-///    below: an outcome this contract NAMES is one both ends can match on,
-///    and one an agent can be told how to correct.
+/// ── Failure. A variant rather than a `result`: an outcome this contract
+///    NAMES is one both ends can match on, and one an agent can be told how
+///    to correct.
 pub(all) struct TypeMismatch {
   column : String
   expected : ColType

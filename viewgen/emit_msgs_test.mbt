@@ -49,19 +49,13 @@ test "a declared receive bucket gets an enum, a decode and a sender" {
 
 ///|
 test "each bucket decodes only its own dispatch arm" {
-  let src = msgs_src(
-    "receive Chat { tick }\nbubble Chat { Changed(Int) }\nresponse Chat { Loaded(String) }",
-  )
+  let src = msgs_src("receive Chat { tick }\nintent Chat { Changed(Int) }")
   assert_true(src.contains("guard d is Receive(name, args)"))
-  assert_true(src.contains("guard d is Bubble(name, args)"))
-  assert_true(src.contains("guard d is Response(name, args)"))
-  assert_true(src.contains("pub fn ChatBubble::bubble(self : ChatBubble"))
-  assert_true(src.contains("ctx.bubble(name, args)"))
-  // A response is raised by the host answering a request, never by the
-  // component, so it gets a decode but no sender.
-  assert_true(src.contains("pub(all) enum ChatResponse {"))
-  assert_false(src.contains("ChatResponse::send"))
-  assert_false(src.contains("ChatResponse::bubble"))
+  assert_true(src.contains("guard d is Intent(name, args)"))
+  // Two buckets, two enums, and neither decodes the other's arm.
+  assert_true(src.contains("pub(all) enum ChatIntent {"))
+  assert_false(src.contains("ChatReceive::from_dispatch(Intent"))
+  assert_false(src.contains("ChatIntent::from_dispatch(Receive"))
 }
 
 ///|
@@ -206,7 +200,7 @@ fn merge_err(bucket_decls : String, view_body : String) -> String {
 
 ///|
 test "the receive bucket merges the schema with the view names" {
-  // v1 puts these in two enums — `<T>Msg` from the views, `<T>Receive` from the
+  // A view name and a schema-declared name are ONE enum — `<T>Receive` from the
   // schema — and nothing relates them. v2 has ONE bucket for a message whoever
   // sent it, so one enum holds both.
   let src = merged_src(
@@ -245,7 +239,7 @@ test "a view name the schema also declares is declared once, by the schema" {
 
 ///|
 test "a call site that disagrees with the schema is a build error" {
-  // THE new error. v1 cannot report it: the view's `bump` is a `ChatMsg`
+  // THE error the merge buys. Two enums could not report it: the view's `bump`
   // variant and the schema's is a `ChatReceive` variant, and nothing in the
   // generator ever puts the two side by side.
   //

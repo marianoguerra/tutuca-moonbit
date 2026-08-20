@@ -73,9 +73,8 @@ pub fn PathChanges::send(
 }
 
 ///|
-/// Dispatch an intent from the built path. What v1 spelled `bubble` here, and
-/// what its `request` had no builder form for at all: one method, and the
-/// route says which scope answers.
+/// Dispatch an intent from the built path — the routed twin of `send`. One
+/// method, and the route says which scope answers.
 pub fn PathChanges::intent(
   self : PathChanges,
   name : String,

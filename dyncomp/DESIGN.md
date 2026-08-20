@@ -1,7 +1,7 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.6.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.9.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
 
@@ -211,7 +211,7 @@ JavaScript at page authority and a warning was not an isolation boundary.
 |---|---|
 | its views (tutuca template source) | which `@on` names those views raise — the host reads them off the compiled views |
 | its fields, over a flat type table | how to project them to JSON, or how to compare two instances — the host does both from the schema |
-| `receives` / `bubbles` / `responses` | input names: `event-result` distinguishes a guest handler from a host mutator dynamically |
+| `receives` / `intents` | the names a guest answers: `event-result` distinguishes a guest handler from a host mutator dynamically |
 | — | how messages are routed — that is the transactor's |
 | `methods` and `whens` (`@when` filters) | — |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |

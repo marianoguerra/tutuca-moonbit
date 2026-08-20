@@ -177,7 +177,7 @@ fn val_expr(val : @tutuca.Val) -> String {
     Name(n) => "Name(\{quote(n)})"
     HandlerName(name~, ns~) => {
       let ns_name = match ns {
-        Input => "Input"
+        Receive => "Receive"
         Alter => "Alter"
       }
       "HandlerName(name=\{quote(name)}, ns=\{ns_name})"

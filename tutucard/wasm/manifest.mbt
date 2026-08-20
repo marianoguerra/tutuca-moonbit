@@ -99,7 +99,7 @@ fn manifest_json(
   // evaluator, which is a thing to add deliberately rather than in passing.
   Json::object({
     "manifestVersion": Json::number(1),
-    "apiVersion": Json::number(7),
+    "apiVersion": Json::number(8),
     "moduleName": Json::string(g.comp.to_lower() + "card"),
     "doc": Json::string(g.def.doc.unwrap_or("")),
     "version": Json::string("0.1.0"),
@@ -125,12 +125,6 @@ fn manifest_json(
         "fields": Json::array(fields),
         "receives": strings(compiled(DReceive)),
         "intents": strings(compiled(DIntent)),
-        // The keys a 0.7 host still reads. Always empty now — this backend has
-        // no bucket to fill them from — and present rather than dropped
-        // because a host that indexes them should find a list and not a
-        // missing key.
-        "bubbles": Json::array([]),
-        "responses": Json::array([]),
         "methods": strings(
           compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
         ),

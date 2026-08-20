@@ -29,14 +29,15 @@
 /// joins `@show` and `@hide` as a USE of a predicate.
 pub(all) enum DeclKind {
   /// An ADDRESSED name: a case of the schema's `receive` variant, or a name a
-  /// view writes. v1 spelled those two `receive` and `on`; they are one word
-  /// now, because a view's name is addressed at the component the view belongs
-  /// to and that is what `send` means.
+  /// view writes. One word for both, because a view's name is addressed at the
+  /// component the view belongs to and that is exactly what `send` means — the
+  /// message is the same message whoever raised it.
   DReceive
-  /// A ROUTED name: a case of the schema's `intent` variant. The one v1's
-  /// `bubble` and `response` folded into — a bubble was a routed dispatch that
-  /// could only search one scope, and a response was the answer to one, which
-  /// arrives as an ordinary message now.
+  /// A ROUTED name: a case of the schema's `intent` variant. It names a JOB
+  /// rather than a component, and the route decides who is asked — travelling
+  /// up the tree and searching the registration scope chain are two legs of
+  /// one mechanism, not two kinds of name. The ANSWER is not declared here: it
+  /// arrives at the sender as an ordinary addressed message.
   DIntent
   /// A `$name` in a value position. One expression.
   DCompute
@@ -409,8 +410,8 @@ declare pub fn collection_method(name : String) -> Int?
 /// None when the name is not an effect.
 ///
 /// They cover the shape that dominates the corpus — a message plus a flag set,
-/// as in `receive init { request 'loadData'; .isLoading = true }`. There is no
-/// `walk_path` and no `RequestOpts`: choosing a request's options and walking
-/// the dispatch path are the parts a small language would model badly, and
-/// they stay in MoonBit.
+/// as in `receive init { intent lex 'loadData'; .isLoading = true }`. There is
+/// no `walk_path` and no way to name an intent's answer arms here: those and
+/// walking the dispatch path are the parts a small language would model badly,
+/// and they stay in MoonBit.
 declare pub fn effect_min_arity(name : String) -> Int?

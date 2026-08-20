@@ -22,11 +22,9 @@ pub fn SchemaInfo::new(
   name? : String = "",
   fingerprint~ : String,
   fields? : Array[FieldInfo] = [],
-  inputs? : Array[String] = [],
+  view_handlers? : Array[String] = [],
   receives? : Array[String] = [],
   intents? : Array[String] = [],
-  bubbles? : Array[String] = [],
-  responses? : Array[String] = [],
   methods? : Array[String] = [],
   ids? : Array[String] = [],
   view_names? : Array[String] = [],
@@ -36,11 +34,9 @@ pub fn SchemaInfo::new(
     name,
     fingerprint,
     fields,
-    inputs,
+    view_handlers,
     receives,
     intents,
-    bubbles,
-    responses,
     methods,
     ids,
     view_names,
@@ -92,12 +88,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
   for
     pair in [
       ("r", self.receives),
-      // A new letter rather than reusing one: the fingerprint is what tells
-      // two schemas apart, and a name moving from `bubbles` to `intents` IS a
-      // different schema.
       ("i", self.intents),
-      ("b", self.bubbles),
-      ("p", self.responses),
       ("c", self.methods),
       ("v", self.view_names),
     ] {

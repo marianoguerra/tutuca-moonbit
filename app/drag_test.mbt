@@ -22,8 +22,8 @@ fn board_comp() -> @component.Component {
         "main",
         raw_view="<div>" +
           "<ul><li @each=\".cards\" draggable=\"true\" data-dragtype=\"card\"><x text=\"@value\"></x></li></ul>" +
-          "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
-          "<div id=\"nzone\" data-droptarget=\"\" @on.drop=\"narrow dragKey dragValue dragType\">narrow</div>" +
+          "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped e.dragInfo\">zone</div>" +
+          "<div id=\"nzone\" data-droptarget=\"\" @on.drop=\"narrow e.dragKey e.dragValue e.dragType\">narrow</div>" +
           "</div>",
       ),
     },

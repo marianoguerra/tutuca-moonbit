@@ -594,7 +594,7 @@ impl @component.Fields for RootState with fn schema() {
       @component.FieldInfo::new("sortByEnd", TyBool),
       @component.FieldInfo::new("sortAsc", TyBool),
     ],
-    inputs=[
+    view_handlers=[
       "clearFilters", "onCategoryToggle", "onRoleToggle", "onToggleFeaturedFirst",
       "onToggleSortAsc", "onToggleSortByEnd",
     ],

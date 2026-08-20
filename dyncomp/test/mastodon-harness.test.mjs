@@ -74,12 +74,14 @@ const config = {
 
 const control = {
   log: () => {},
-  emit: (name, args) => emitted.push([name, args]),
   send: () => {},
   sendAt: () => {},
-  bubbleAt: () => {},
+  intent: (name, args) => emitted.push([name, args]),
+  intentAt: (path, name, args) => emitted.push([name, args]),
+  forward: () => {},
+  reply: () => {},
+  fail: () => {},
   stopPropagation: () => emitted.push(['stopPropagation', []]),
-  request: () => {},
   after: () => {},
   makeInstance: (component, args) => {
     const token = nextToken++;
@@ -173,11 +175,11 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.8.0': values,
+    'tutuca:component/values@0.9.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.8.0': control,
+    'tutuca:component/control@0.9.0': control,
     'tutuca:component/control': control,
-    'tutuca:component/config@0.8.0': config,
+    'tutuca:component/config@0.9.0': config,
     'tutuca:component/config': config,
   });
   guest = root.guest;
@@ -200,7 +202,7 @@ before(async () => {
 
 test('the static manifest declares six components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 7);
+  assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'mastodonlib');
   // the one thing this bundle asks a host for, and it asks with a reason: the
   // origins its views name are the whole of its network reach
@@ -227,11 +229,11 @@ test('the static manifest declares six components and asks for one capability', 
     ['Scope', 'Status', 'Poll', 'Thread', 'Timeline', 'Profile']);
 
   const [scope, status, poll, thread, timeline, profile] = m.components;
-  assert.deepEqual(status.bubbles, [
+  assert.deepEqual(status.intents, [
     'favourited', 'unfavourited', 'boosted', 'unboosted',
     'bookmarked', 'unbookmarked', 'replyTo', 'folded', 'unfolded',
   ]);
-  assert.deepEqual(poll.bubbles, ['voted', 'unvoted']);
+  assert.deepEqual(poll.intents, ['voted', 'unvoted']);
   // `pageSize` is the one field the three list-shaped components share and the
   // leaves do not: a column of posts is the thing that can arrive too long to
   // draw, and a single post is not.
@@ -422,7 +424,7 @@ test('favouriting is optimistic and announced, and leaves the record count alone
   assert.equal(field(s, 'favourites'), '99');
   assert.equal(field(s, 'owned'), false);
 
-  s = s.handleEvent('input', 'toggleFavourite', []);
+  s = s.handleEvent('receive', 'toggleFavourite', []);
   assert.equal(field(s, 'favourited'), true);
   assert.equal(field(s, 'favourites'), '100');
   // the count the record came with is untouched, so a refused write needs no
@@ -431,19 +433,19 @@ test('favouriting is optimistic and announced, and leaves the record count alone
   assert.deepEqual(emitted, [['favourited', [{ tag: 'text', val: '117' }]]]);
 
   emitted.length = 0;
-  s = s.handleEvent('input', 'toggleFavourite', []);
+  s = s.handleEvent('receive', 'toggleFavourite', []);
   assert.equal(field(s, 'favourited'), false);
   assert.deepEqual(emitted.map(([n]) => n), ['unfavourited']);
 
   // replying has no composer here, so it is only the announcement — and it
   // changes nothing, which is what `unchanged` is for
   emitted.length = 0;
-  assert.equal(s.handleEvent('input', 'reply', []), undefined);
+  assert.equal(s.handleEvent('receive', 'reply', []), undefined);
   assert.deepEqual(emitted.map(([n]) => n), ['replyTo']);
 
   // a name this component does not answer falls through to the host
   emitted.length = 0;
-  assert.equal(s.handleEvent('input', 'somethingElse', []), undefined);
+  assert.equal(s.handleEvent('receive', 'somethingElse', []), undefined);
   assert.deepEqual(emitted, []);
   // and its state is exactly the declared fields, so it does not persist
   assert.deepEqual([...s.persist()], []);
@@ -453,14 +455,14 @@ test('a post nobody may boost refuses to be boosted', { skip: !built }, () => {
   for (const visibility of ['private', 'direct']) {
     emitted.length = 0;
     const s = instance('Status', { id: '1', visibility, reblogsCount: 4 });
-    assert.equal(s.handleEvent('input', 'toggleBoost', []), undefined);
+    assert.equal(s.handleEvent('receive', 'toggleBoost', []), undefined);
     assert.deepEqual(emitted, [], visibility);
     assert.match(s.callMethod('boostTitle', []).val, /does not allow boosting/);
   }
   // and one anybody may is boosted the way a favourite is favourited
   emitted.length = 0;
   const open = instance('Status', { id: '1', visibility: 'public', reblogsCount: 4 })
-    .handleEvent('input', 'toggleBoost', []);
+    .handleEvent('receive', 'toggleBoost', []);
   assert.equal(field(open, 'reblogs'), '5');
   assert.deepEqual(emitted.map(([n]) => n), ['boosted']);
 });
@@ -472,7 +474,7 @@ test('a content warning hides the body until the reader asks, and says nothing a
   assert.equal(field(s, 'bodyShown'), false);
   assert.equal(s.callMethod('revealLabel', []).val, 'Show more');
 
-  s = s.handleEvent('input', 'toggleReveal', []);
+  s = s.handleEvent('receive', 'toggleReveal', []);
   assert.equal(field(s, 'bodyShown'), true);
   assert.equal(s.callMethod('revealLabel', []).val, 'Show less');
   // unlike a favourite there is nothing for a host to write, so nothing is said
@@ -481,7 +483,7 @@ test('a content warning hides the body until the reader asks, and says nothing a
   // a post with no warning has nothing to open
   const plainPost = instance('Status', { content: 'no warning here' });
   assert.equal(field(plainPost, 'bodyShown'), true);
-  assert.equal(plainPost.handleEvent('input', 'toggleReveal', []), undefined);
+  assert.equal(plainPost.handleEvent('receive', 'toggleReveal', []), undefined);
 });
 
 const POLL = {
@@ -513,7 +515,7 @@ test('a poll is a child component, and it owns which option is picked', { skip: 
   assert.deepEqual(field(poll, 'optionItems').map((o) => o.share), [62, 25, 12]);
 
   emitted.length = 0;
-  const voted = poll.handleEvent('input', 'vote', [num(1)]);
+  const voted = poll.handleEvent('receive', 'vote', [num(1)]);
   assert.notEqual(voted, undefined);
   assert.equal(field(voted, 'showResults'), true);
   assert.deepEqual(field(voted, 'ownVotes'), [1]);
@@ -529,26 +531,26 @@ test('a poll is a child component, and it owns which option is picked', { skip: 
   assert.deepEqual(emitted, [['voted', [{ tag: 'text', val: '117' }, { tag: 'number', val: 1 }]]]);
 
   // one choice replaces the previous one rather than adding to it
-  const moved = voted.handleEvent('input', 'vote', [num(0)]);
+  const moved = voted.handleEvent('receive', 'vote', [num(0)]);
   assert.deepEqual(field(moved, 'ownVotes'), [0]);
   assert.equal(field(moved, 'totalLabel'), '67 votes');
   // and picking the same one again takes it back
-  assert.deepEqual(field(voted.handleEvent('input', 'vote', [num(1)]), 'ownVotes'), []);
+  assert.deepEqual(field(voted.handleEvent('receive', 'vote', [num(1)]), 'ownVotes'), []);
 
   // a multiple-choice poll adds instead of replacing
   const multi = instance('Poll', { statusId: '1', ...POLL, multiple: true })
-    .handleEvent('input', 'vote', [num(0)])
-    .handleEvent('input', 'vote', [num(2)]);
+    .handleEvent('receive', 'vote', [num(0)])
+    .handleEvent('receive', 'vote', [num(2)]);
   assert.deepEqual(field(multi, 'ownVotes'), [0, 2]);
   assert.equal(field(multi, 'openLabel'), 'Pick any');
 
   // a closed poll shows its results and refuses a vote
   const closed = instance('Poll', { statusId: '1', ...POLL, expired: true });
   assert.equal(field(closed, 'showResults'), true);
-  assert.equal(closed.handleEvent('input', 'vote', [num(0)]), undefined);
+  assert.equal(closed.handleEvent('receive', 'vote', [num(0)]), undefined);
   assert.equal(field(closed, 'stateLabel'), 'Closed');
   // and an index that is not an option is refused rather than crashing
-  assert.equal(instance('Poll', { statusId: '1', ...POLL }).handleEvent('input', 'vote', [num(9)]), undefined);
+  assert.equal(instance('Poll', { statusId: '1', ...POLL }).handleEvent('receive', 'vote', [num(9)]), undefined);
 });
 
 test('a post without a poll builds no child', { skip: !built }, () => {
@@ -588,7 +590,7 @@ test("folding is the row's flag and the thread's filter, not one or the other", 
 
   // The row keeps its own flag — it returns a successor — AND announces, because
   // the thread is the only one that knows what sits under it.
-  const folded = child(rows[1]).handleEvent('input', 'toggleFold', []);
+  const folded = child(rows[1]).handleEvent('receive', 'toggleFold', []);
   assert.equal(field(folded, 'folded'), true);
   assert.equal(field(folded, 'foldLabel'), '+1');
   assert.deepEqual(emitted, [['folded', [{ tag: 'text', val: '2' }]]]);
@@ -597,7 +599,7 @@ test("folding is the row's flag and the thread's filter, not one or the other", 
   // drops what was under it and keeps the bubble from travelling on to a page
   // that has no use for it.
   emitted.length = 0;
-  const t2 = writeRow(t, 1, folded).handleEvent('bubble', 'folded', [text('2')]);
+  const t2 = writeRow(t, 1, folded).handleEvent('intent', 'folded', [text('2')]);
   assert.deepEqual(rowField(t2, 'name'), ['Alice', 'Bob', 'Carol']);
   assert.equal(t2.callMethod('summary', []).val, '4 posts · 1 folded away');
   assert.deepEqual(emitted.map(([n]) => n), ['stopPropagation']);
@@ -609,9 +611,9 @@ test("folding is the row's flag and the thread's filter, not one or the other", 
   assert.equal(after[2], rows[3]);
 
   // unfolding puts them back
-  assert.equal(field(t2.handleEvent('bubble', 'unfolded', [text('2')]), 'rows').length, 4);
+  assert.equal(field(t2.handleEvent('intent', 'unfolded', [text('2')]), 'rows').length, 4);
   // and a bubble naming a post this thread does not have is not its to act on
-  assert.equal(t2.handleEvent('bubble', 'folded', [text('nope')]), undefined);
+  assert.equal(t2.handleEvent('intent', 'folded', [text('nope')]), undefined);
 });
 
 test('a row keeps its own favourite, and still announces it', { skip: !built }, () => {
@@ -621,7 +623,7 @@ test('a row keeps its own favourite, and still announces it', { skip: !built }, 
   // The row is the one that changed, so the row is the one that returns a
   // successor. The thread has nothing to add — it does not handle the bubble at
   // all, and does not stop it: only whoever is above can write the record.
-  const liked = child(field(t, 'rows')[0]).handleEvent('input', 'toggleFavourite', []);
+  const liked = child(field(t, 'rows')[0]).handleEvent('receive', 'toggleFavourite', []);
   assert.equal(field(liked, 'favourited'), true);
   assert.equal(field(liked, 'favouritesCount'), 0);
   assert.equal(field(liked, 'favourites'), '1');
@@ -630,7 +632,7 @@ test('a row keeps its own favourite, and still announces it', { skip: !built }, 
   emitted.length = 0;
   const t2 = writeRow(t, 0, liked);
   assert.deepEqual(rowField(t2, 'favourited'), [true, false, false, false]);
-  assert.equal(t2.handleEvent('bubble', 'favourited', [text('1')]), undefined);
+  assert.equal(t2.handleEvent('intent', 'favourited', [text('1')]), undefined);
   assert.deepEqual(emitted, []);
 });
 
@@ -667,32 +669,32 @@ test('a timeline filters among rows it already built, so nothing a reader did is
 
   const before = field(tl, 'rows');
   // favourite the middle row, and write the successor home
-  const liked = child(before[1]).handleEvent('input', 'toggleFavourite', []);
+  const liked = child(before[1]).handleEvent('receive', 'toggleFavourite', []);
   tl = writeRow(tl, 1, liked);
 
   // filtering it out and back does NOT rebuild it: the children are built once
   // and the filter chooses among them
-  tl = tl.handleEvent('input', 'setQuery', [text('war and peas')]);
+  tl = tl.handleEvent('receive', 'setQuery', [text('war and peas')]);
   assert.deepEqual(rowField(tl, 'name'), ['War and Peas']);
   assert.equal(tl.callMethod('countLabel', []).val, '1 of 3 posts');
-  tl = tl.handleEvent('input', 'clearQuery', []);
+  tl = tl.handleEvent('receive', 'clearQuery', []);
   assert.deepEqual(rowField(tl, 'favourited'), [false, true, false]);
 
   // the search reads the body, the name and the handle
-  assert.deepEqual(rowField(tl.handleEvent('input', 'setQuery', [text('TRADE MARK')]), 'name'), ['Mastodon']);
-  assert.deepEqual(rowField(tl.handleEvent('input', 'setQuery', [text('mcc')]), 'name'), ['mcc']);
+  assert.deepEqual(rowField(tl.handleEvent('receive', 'setQuery', [text('TRADE MARK')]), 'name'), ['Mastodon']);
+  assert.deepEqual(rowField(tl.handleEvent('receive', 'setQuery', [text('mcc')]), 'name'), ['mcc']);
   // and nothing matching is an empty state rather than a wrong one
-  const none = tl.handleEvent('input', 'setQuery', [text('zzz')]);
+  const none = tl.handleEvent('receive', 'setQuery', [text('zzz')]);
   assert.deepEqual(field(none, 'rows'), []);
   assert.equal(field(none, 'isEmpty'), true);
 
   // media-only is the other filter, and it is not text
-  const media = tl.handleEvent('input', 'toggleMediaOnly', []);
+  const media = tl.handleEvent('receive', 'toggleMediaOnly', []);
   assert.deepEqual(rowField(media, 'name'), ['War and Peas', 'mcc']);
   assert.equal(media.callMethod('mediaLabel', []).val, '✓ media only');
   assert.equal(field(media, 'isFiltered'), true);
   // and the favourite is still on the row the filter hid
-  assert.deepEqual(rowField(media.handleEvent('input', 'toggleMediaOnly', []), 'favourited'), [false, true, false]);
+  assert.deepEqual(rowField(media.handleEvent('receive', 'toggleMediaOnly', []), 'favourited'), [false, true, false]);
 });
 
 /// Seven posts, so a page size of three makes three pages and a last one that
@@ -727,70 +729,70 @@ test('a long column is paged, and a page is not a filter', { skip: !built }, () 
 
   // A button that would not move answers `unchanged` rather than rebuilding the
   // same page, which is what keeps a held-down « from churning the tree.
-  assert.equal(tl.handleEvent('input', 'firstPage', []), undefined);
-  assert.equal(tl.handleEvent('input', 'prevPage', []), undefined);
+  assert.equal(tl.handleEvent('receive', 'firstPage', []), undefined);
+  assert.equal(tl.handleEvent('receive', 'prevPage', []), undefined);
 
-  tl = tl.handleEvent('input', 'nextPage', []);
+  tl = tl.handleEvent('receive', 'nextPage', []);
   assert.deepEqual(rowField(tl, 'content'), ['post 3', 'post 4', 'post 5']);
   assert.equal(tl.callMethod('rangeLabel', []).val, '4–6 of 7');
   assert.equal(tl.callMethod('atFirst', []).val, false);
 
   // the last page is the short one, and it says so
-  tl = tl.handleEvent('input', 'lastPage', []);
+  tl = tl.handleEvent('receive', 'lastPage', []);
   assert.deepEqual(rowField(tl, 'content'), ['post 6']);
   assert.equal(tl.callMethod('rangeLabel', []).val, '7–7 of 7');
   assert.equal(tl.callMethod('atLast', []).val, true);
-  assert.equal(tl.handleEvent('input', 'nextPage', []), undefined);
+  assert.equal(tl.handleEvent('receive', 'nextPage', []), undefined);
 
   // A name the pager does not know still travels: `unhandled` is what lets a
   // host hear a message this component was never going to answer.
-  assert.equal(tl.handleEvent('input', 'somethingElse', []), undefined);
+  assert.equal(tl.handleEvent('receive', 'somethingElse', []), undefined);
 });
 
 test('a row keeps what a reader did to it across a page turn', { skip: !built }, () => {
   let tl = instance('Timeline', { title: 'Trending', posts: MANY, pageSize: 3 });
   const first = field(tl, 'rows');
-  tl = tl.handleEvent('input', 'nextPage', []);
+  tl = tl.handleEvent('receive', 'nextPage', []);
 
   // The host writes a successor home by its position IN THE PAGE — position 0
   // here is post 3 — so the write-back and the render have to agree about which
   // rows those are.
-  const liked = child(field(tl, 'rows')[0]).handleEvent('input', 'toggleFavourite', []);
+  const liked = child(field(tl, 'rows')[0]).handleEvent('receive', 'toggleFavourite', []);
   tl = writeRow(tl, 0, liked);
   assert.deepEqual(rowField(tl, 'favourited'), [true, false, false]);
 
   // Page back: the rows are the same children, not rebuilt ones, and the
   // favourite is still on the row that has it.
-  tl = tl.handleEvent('input', 'prevPage', []);
+  tl = tl.handleEvent('receive', 'prevPage', []);
   assert.deepEqual(field(tl, 'rows'), first);
   assert.deepEqual(rowField(tl, 'favourited'), [false, false, false]);
-  assert.deepEqual(rowField(tl.handleEvent('input', 'nextPage', []), 'favourited'), [true, false, false]);
+  assert.deepEqual(rowField(tl.handleEvent('receive', 'nextPage', []), 'favourited'), [true, false, false]);
 });
 
 test('filtering a paged column takes it back to the first page', { skip: !built }, () => {
   let tl = instance('Timeline', { title: 'Trending', posts: MANY, pageSize: 3 })
-    .handleEvent('input', 'lastPage', []);
+    .handleEvent('receive', 'lastPage', []);
   assert.equal(field(tl, 'page'), 3);
 
   // A filter makes a different list, and page three of the old one is a
   // position in a column that is not there any more.
-  tl = tl.handleEvent('input', 'setQuery', [text('post')]);
+  tl = tl.handleEvent('receive', 'setQuery', [text('post')]);
   assert.equal(field(tl, 'page'), 1);
   assert.equal(field(tl, 'pageCount'), 3);
 
   // A narrower filter leaves one page, and the pager puts itself away.
-  const one = tl.handleEvent('input', 'setQuery', [text('post 4')]);
+  const one = tl.handleEvent('receive', 'setQuery', [text('post 4')]);
   assert.equal(one.callMethod('paged', []).val, false);
   assert.deepEqual(rowField(one, 'content'), ['post 4']);
   // and an empty result is still empty rather than "there is more on page two"
-  const none = tl.handleEvent('input', 'setQuery', [text('zzz')]);
+  const none = tl.handleEvent('receive', 'setQuery', [text('zzz')]);
   assert.equal(field(none, 'isEmpty'), true);
   assert.deepEqual(field(none, 'rows'), []);
 
   // A host writing the size home does the same: a window it just chose is not
   // one this reader has been anywhere in.
   const resized = instance('Timeline', { posts: MANY, pageSize: 3 })
-    .handleEvent('input', 'lastPage', [])
+    .handleEvent('receive', 'lastPage', [])
     .withField('pageSize', num(2));
   assert.equal(field(resized, 'page'), 1);
   assert.equal(field(resized, 'pageCount'), 4);
@@ -802,12 +804,12 @@ test('a thread pages what the folds left, and a profile pages its posts', { skip
   const posts = MANY.map((p, i) => ({ ...p, depth: i === 0 ? 0 : 1 }));
   let th = instance('Thread', { posts, pageSize: 3 });
   assert.equal(field(th, 'pageCount'), 3);
-  th = th.handleEvent('input', 'lastPage', []);
+  th = th.handleEvent('receive', 'lastPage', []);
   assert.deepEqual(rowField(th, 'content'), ['post 6']);
 
   // Folding the root hides the six under it, which leaves one page — and the
   // stored page comes back inside it rather than showing nothing.
-  th = th.handleEvent('bubble', 'folded', [text('100')]);
+  th = th.handleEvent('intent', 'folded', [text('100')]);
   assert.equal(field(th, 'pageCount'), 1);
   assert.equal(th.callMethod('paged', []).val, false);
   assert.deepEqual(rowField(th, 'content'), ['post 0']);
@@ -816,9 +818,9 @@ test('a thread pages what the folds left, and a profile pages its posts', { skip
   const p = instance('Profile', { acct: 'alice', posts: MANY, pageSize: 4 });
   assert.equal(field(p, 'pageCount'), 2);
   assert.equal(p.callMethod('rangeLabel', []).val, '1–4 of 7');
-  assert.deepEqual(rowField(p.handleEvent('input', 'nextPage', []), 'content'), ['post 4', 'post 5', 'post 6']);
+  assert.deepEqual(rowField(p.handleEvent('receive', 'nextPage', []), 'content'), ['post 4', 'post 5', 'post 6']);
   // and its own button still works, which is the arm the pager was added beside
-  assert.notEqual(p.handleEvent('input', 'toggleFollow', []), undefined);
+  assert.notEqual(p.handleEvent('receive', 'toggleFollow', []), undefined);
 });
 
 test('a profile counts a follow on top of the number the record came with', { skip: !built }, () => {
@@ -852,7 +854,7 @@ test('a profile counts a follow on top of the number the record came with', { sk
     { name: 'Pronouns', value: 'they/them', target: 'they/them', verified: false },
   ]);
 
-  p = p.handleEvent('input', 'toggleFollow', []);
+  p = p.handleEvent('receive', 'toggleFollow', []);
   assert.equal(field(p, 'following'), true);
   assert.equal(field(p, 'followersCount'), 877054);
   assert.equal(p.callMethod('followLabel', []).val, 'Following');

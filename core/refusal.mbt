@@ -51,7 +51,7 @@ pub(all) enum RefusalCode {
   /// An intent walked more positions than `INTENT_DEPTH` allows, so it was cut
   /// off. Not a rule anybody wrote: a route is bounded by tree depth plus
   /// scope depth, so reaching the limit means the walk is a cycle — two
-  /// components forwarding to each other, which v1's single-component loop
+  /// components forwarding to each other, which a single-component loop
   /// could not produce.
   IntentDepth
 } derive(Eq, Debug)

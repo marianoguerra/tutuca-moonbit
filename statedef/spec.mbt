@@ -73,7 +73,7 @@ pub(all) struct FieldDef {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// One case of a receive, intent, bubble, or response bucket.
+/// One case of a receive or intent bucket.
 pub(all) struct MsgDef {
   /// The case name exactly as the author wrote it.
   source_name : String
@@ -118,16 +118,12 @@ pub(all) struct StateDef {
   component : String
   fields : Array[FieldDef]
   /// Every MESSAGE the component accepts beyond the ones its own views send:
-  /// what a parent sends it, what the host sends it, and every answer it reads
-  /// (`docs/two-channels.md` section 9).
+  /// what a parent sends it, what the host sends it, and every answer it reads.
   receive : Array[MsgDef]
-  /// Every INTENT it answers. v2's, and the one variant `bubble` and
-  /// `response` fold into: a bubble is a routed dispatch that could search only
-  /// one scope, and a response is the answer to one, which v2 delivers as an
-  /// ordinary message into `receive` instead. Both go in task 25.
+  /// Every INTENT it answers — a routed dispatch, offered to each hop of a
+  /// route until something replies. An answer to one comes back as an ordinary
+  /// message, so it is declared in `receive` rather than here.
   intent : Array[MsgDef]
-  bubble : Array[MsgDef]
-  response : Array[MsgDef]
   types : Array[UserTy]
   doc : String?
 } derive(Eq, @debug.Debug)

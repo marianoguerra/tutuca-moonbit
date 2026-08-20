@@ -258,9 +258,8 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   match t.obs_matched {
     Some(matched) =>
       // An answer is an ordinary `Receive` and the handler cannot tell it from
-      // one a parent sent — which is the design's claim, so the bucket must
-      // not know. An INSPECTOR needs to know, and this is the only place that
-      // does.
+      // one a parent sent — that is the claim, so the bucket must not know. An
+      // INSPECTOR needs to know, and this is the only place that does.
       self.emit(
         if t.is_answer {
           Answer
@@ -443,13 +442,8 @@ impl @tutuca.Ctx for EventContext with fn walk_path(self, callback) {
 }
 
 ///|
-impl @tutuca.Ctx for EventContext with fn is_answer(self) {
-  self.txn.is_answer
-}
-
-///|
 impl @tutuca.Ctx for EventContext with fn stop_propagation(self) {
-  // "served, and no answer" (`docs/two-channels.md` section 6). The walk ends and the
+  // "served, and no answer". The walk ends and the
   // sender is told nothing, even when it declared an arm — which is exactly
   // what separates `stop` from letting the route run out.
   match self.txn.walk {
@@ -498,7 +492,7 @@ impl @tutuca.Ctx for EventContext with fn forward(self, args, opts) {
         None => ()
       }
       match opts {
-        // Narrowing a route that is already walking. `docs/two-channels.md` section 18
+        // Narrowing a route that is already walking. the intent walk
         // asks whether this should be allowed at all; until it is answered,
         // the straightforward reading is the one implemented — the rest of the
         // route becomes what the forwarder named.

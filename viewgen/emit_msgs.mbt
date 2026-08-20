@@ -1,11 +1,10 @@
 // Emitting the declared message buckets.
 //
-// The views can type the Input bucket, because every input name is written
-// in an `@on` attribute. They cannot type the other three: a Receive is
-// raised by `ctx.send`, a Bubble by `ctx.bubble` and a Response by the host
-// answering a `ctx.request`, all from MoonBit code the views never see. So
-// until the schema, those three were string-keyed `Array[Value]` end to end
-// — the one place the generator had nothing to say.
+// The views can type every name an `@on` attribute writes. They cannot type
+// what arrives from anywhere else: a message raised by `ctx.send`, an intent
+// raised by `ctx.intent`, or the answer a walk produced, all from MoonBit code
+// the views never see. Without the schema those were string-keyed
+// `Array[Value]` end to end — the one place the generator had nothing to say.
 //
 // Declaring them buys both directions at once: a typed decode on the way in
 // (`CounterReceive::from_dispatch`) and a typed raise on the way out
@@ -15,11 +14,10 @@
 ///|
 /// The declared buckets, if the schema declares any.
 ///
-/// v2 has two of these and v1 had three, and the interesting one is `Receive`:
-/// it is the schema's `receive` variant **merged with the view names**, because
-/// v2 has one bucket for a message whoever sent it. `Intent` is the schema's
-/// `intent` variant. `Bubble` and `Response` are still emitted and go in the
-/// plan's task 25.
+/// Two, and the interesting one is `Receive`: it is the schema's `receive`
+/// variant **merged with the view names**, because one bucket holds every
+/// addressed message whoever sent it. `Intent` is the schema's `intent`
+/// variant.
 fn emit_msgs(
   t : String,
   def : @statedef.StateDef,
@@ -35,8 +33,6 @@ fn emit_msgs(
     out,
   )
   emit_bucket_enum(t, "Intent", "Intent", def.intent, def, out)
-  emit_bucket_enum(t, "Bubble", "Bubble", def.bubble, def, out)
-  emit_bucket_enum(t, "Response", "Response", def.response, def, out)
 }
 
 ///|
@@ -45,8 +41,8 @@ fn emit_msgs(
 ///
 /// **This is the merge**, and it is where the design's new build error comes
 /// from. A name in BOTH places is checked: the schema declares the payload and
-/// the call sites have to match it. v1 cannot report that, because the two
-/// names live in two enums and nothing compares them.
+/// the call sites have to match it. Two separate enums could not report that,
+/// because nothing would compare them.
 ///
 /// A view-only name is typed from what the call sites wrote, exactly as
 /// `<T>Msg` types it — one inference, read from `InputSig` in both places.

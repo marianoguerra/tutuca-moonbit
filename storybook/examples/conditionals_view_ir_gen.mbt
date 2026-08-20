@@ -51,7 +51,7 @@ fn traffic_light_main_view_ir() -> @anode.View {
         ),
       ]),
     ]),
-    [[@anode.on("click", HandlerName(name="nextLight", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="nextLight", ns=Receive))]],
   )
 }
 
@@ -259,17 +259,17 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
           @anode.const_str("overview"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
           @anode.const_str("features"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
           @anode.const_str("pricing"),
         ]),
       ],
@@ -369,10 +369,10 @@ fn list_and_filter_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],

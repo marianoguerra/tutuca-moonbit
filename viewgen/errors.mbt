@@ -15,6 +15,8 @@ pub fn GenError::message(self : GenError) -> String {
       "\"\{name}\" is not usable as a component name: expected a name starting with a letter and made of letters, digits and underscores"
     MethodInEventPosition(view~, name~, site~) =>
       "view \"\{view}\": `\{site}=\"$\{name}\"` — drop the `$`. In an event position a `$name` and a bare name are the SAME dispatch, so the sigil claims a distinction that is not there; `$` belongs in value positions (@text, @show, an attribute)"
+    BareEventArg(view~, name~, site~) =>
+      "view \"\{view}\": `\{site}=\"… \{name}\"` — an argument needs a sigil saying where it reads from. Write `e.\{name}` for the event, `.\{name}` for state, or `@\{name}` for a binding"
     NoViewsToCompile =>
       "this file declares a schema and no <template>, so it has no views to compile"
     UnknownStateField(view~, name~, scope~, suggestion~) =>

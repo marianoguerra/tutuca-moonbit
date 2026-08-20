@@ -69,14 +69,14 @@ fn push_view_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
           "cancel",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleView", ns=Input))],
+      [@anode.on("click", HandlerName(name="toggleView", ns=Receive))],
     ],
   )
 }
@@ -243,12 +243,12 @@ fn seq_item_access_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setCurrentIndex", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setCurrentIndex", ns=Receive), args=[
           EventPath(["valueAsInt"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setCurrentKey", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setCurrentKey", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],
@@ -377,8 +377,8 @@ fn pagination_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="prev", ns=Input))],
-      [@anode.on("click", HandlerName(name="next", ns=Input))],
+      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
+      [@anode.on("click", HandlerName(name="next", ns=Receive))],
     ],
   )
 }

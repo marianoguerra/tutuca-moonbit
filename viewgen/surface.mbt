@@ -9,7 +9,7 @@
 //
 // Handler names come from px.events rather than a tree walk because the
 // parser has already resolved them into @core.HandlerParse values (bare name
-// -> HandlerName(ns=Input), `$name` -> Method), so there is no attribute
+// -> HandlerName(ns=Receive), `$name` -> Method), so there is no attribute
 // syntax left to re-interpret here.
 
 ///|
@@ -390,11 +390,8 @@ fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
     Const(lit=LNum(_), ..) => VDouble
     Const(lit=LStr(_), ..) => VString
     Const(lit=LBool(_), ..) => VBool
-    // v1's bare name and v2's rooted path are the SAME read, so they get the
-    // same answer from the same table — including the `value_kind` the host
-    // element's static `type` attribute decided. Reimplementing the inference
-    // for the new spelling is exactly how the two would drift.
-    Name(name) => accessor_type(name, value_kind)
+    // A rooted one-segment path decodes through the accessor table, including
+    // the `value_kind` the host element's static `type` attribute decided.
     EventPath([one]) => accessor_type(one, value_kind)
     // A longer path is a layer-2 read, and nothing knows its type: the DOM
     // property table could answer for a rooted one, but not for a path through
@@ -479,16 +476,13 @@ fn check_event_arg(
         "view \{view_name}: `\{site}=\"… \{path}\"` — no event interface has a `\{name}` property\{did_you_mean}",
       )
     }
-    // BARE_ARG — a HINT for now, and an ERROR after the migration.
+    // BARE_ARG — an ERROR, and it has to be one.
     //
-    // v1 spells an event read as a bare name and this repository has 522 of
-    // them, so turning it on today would break every view in it before the
-    // codemod has run. The plan's task 19 is where it flips; until then this
-    // says the same thing without stopping a build.
-    Name(name) =>
-      hints.push(
-        "view \{view_name}: `\{site}=\"… \{name}\"` — a bare name in an event argument is a v1 spelling. Write `e.\{name}` for an event read, `.field` for state, or `@bind` for a binding",
-      )
+    // A bare name in an argument slot names nothing: the resolver has no
+    // scope to look it up in and answers `Null`, the dispatch lands, and the
+    // handler is handed a hole. Nothing reports it at run time, which is
+    // exactly the failure a generator is for.
+    Name(name) => raise BareEventArg(view=view_name, name~, site~)
     _ => ()
   }
 }
@@ -572,8 +566,8 @@ fn walk_view(
       let site = "@on." + h.name
       match h.handler.handler {
         // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
-        // Method into one string and hands both to `push_input`, so the two
-        // spellings are the same dispatch — including for the generated
+        // Method into one string and pushes both as the same `Receive`, so the
+        // two spellings are the same dispatch — including for the generated
         // mutators, which answer to either. The sigil therefore claims a
         // distinction that does not exist, and readers reasonably infer one.
         // `$` keeps its meaning where it has one: a value position, where

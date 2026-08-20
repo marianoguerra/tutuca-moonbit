@@ -108,9 +108,9 @@ fn bar_chart_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="randomize", ns=Input))],
-      [@anode.on("click", HandlerName(name="addBar", ns=Input))],
-      [@anode.on("click", HandlerName(name="removeBar", ns=Input))],
+      [@anode.on("click", HandlerName(name="randomize", ns=Receive))],
+      [@anode.on("click", HandlerName(name="addBar", ns=Receive))],
+      [@anode.on("click", HandlerName(name="removeBar", ns=Receive))],
     ],
   )
 }

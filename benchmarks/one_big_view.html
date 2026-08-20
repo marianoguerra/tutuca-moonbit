@@ -8,27 +8,9 @@
     <button id="inc" @on.click="add 1">+1</button>
     <button id="dec" @on.click="add -1">-1</button>
     <button id="reset" @on.click="resetCount">reset</button>
-    <input id="label" :value=".label" @on.input="setLabel value" @on.keydown+send="setLabel 'sent!'">
+    <input id="label" :value=".label" @on.input="setLabel e.value" @on.keydown+send="setLabel 'sent!'">
     <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
   </div>
-  <!-- demo/universal_wasm/universal_wasm.html -->
-  <span class="host-tools flex items-center gap-2">
-    <div class="join" @show=".samples">
-      <button class="btn btn-xs join-item load-counter"
-              @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
-      <button class="btn btn-xs join-item load-todo"
-              @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
-      <button class="btn btn-xs join-item load-todomvc"
-              @on.click="loadSample './examples/todomvc.tutuca.tar.gz'">todomvc</button>
-      <button class="btn btn-xs join-item load-calc"
-              @on.click="loadSample './examples/calculator.tutuca.tar.gz'">calculator</button>
-      <button class="btn btn-xs join-item load-ttt"
-              @on.click="loadSample './examples/tictactoe.tutuca.tar.gz'">tic-tac-toe</button>
-      <button class="btn btn-xs join-item load-rust"
-              @on.click="loadSample './examples/rust-tempconv.tutuca.tar.gz'">rust temp</button>
-    </div>
-    <span class="text-xs opacity-60 host-status" @text=".status"></span>
-  </span>
   <!-- storybook/examples/basics.html -->
 
   <!-- storybook/examples/basics.html -->
@@ -45,9 +27,13 @@
   <section>
     <div class="raw" @dangerouslysetinnerhtml=".content"></div>
   </section>
+  <!-- storybook/examples/basics.html -->
+  <section>
+    <div class="md" @setinnermd=".source"></div>
+  </section>
   <!-- storybook/examples/collections.html -->
   <section class="flex flex-col gap-3">
-    <input class="input" :value=".text" @on.input="setText value">
+    <input class="input" :value=".text" @on.input="setText e.value">
     <div @enrich-with="enrichScope">
       <p>Text: <span class="v-text" @text=".text"></span></p>
       <p>Len: <span class="v-len" @text="@len"></span></p>
@@ -57,7 +43,7 @@
   <!-- storybook/examples/collections.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
@@ -68,7 +54,7 @@
   <!-- storybook/examples/collections.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem" @enrich-with="enrichItem" @loop-with="getIterData">
@@ -84,7 +70,7 @@
   <!-- storybook/examples/communication.html -->
   <section class="flex flex-col gap-2">
     <x render=".status"></x>
-    <input class="input" :value=".draft" @on.input="setDraft value"
+    <input class="input" :value=".draft" @on.input="setDraft e.value"
       @on.keydown+send="submit"
       placeholder="Type a message and press Enter">
     <div class="flex gap-2">
@@ -180,7 +166,7 @@
   <!-- storybook/examples/conditionals.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <ul>
       <li @each=".items" @when="filterItem">
@@ -212,14 +198,14 @@
   <!-- storybook/examples/dnd.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"
         draggable="true"
         data-dragtype="my-list-item"
         data-droptarget="my-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <span class="k" @text="@key"></span>: <x text="@value"></x>
       </div>
     </div>
@@ -234,11 +220,11 @@
   </style>
   <!-- storybook/examples/dynamic.html -->
   <div class="flex gap-3">
-    <input class="input val" :value=".value" @on.input="setValue value">
-    <input class="input lbl" :value=".label" @on.input="setLabel value">
+    <input class="input val" :value=".value" @on.input="setValue e.value">
+    <input class="input lbl" :value=".label" @on.input="setLabel e.value">
   </div>
   <!-- storybook/examples/dynamic.html -->
-  <select class="select" :value=".selectedValue" @on.input="setSelectedValue value">
+  <select class="select" :value=".selectedValue" @on.input="setSelectedValue e.value">
     <option @each="*entries" :value="@value.value" @text="@value.label"></option>
   </select>
   <!-- storybook/examples/dynamic.html -->
@@ -257,7 +243,7 @@
   <!-- storybook/examples/dynamic.html -->
   <div class="card bg-base-200 p-3 gap-2 sheet">
     <span class="text-xs opacity-60 tag">Sheet (rendered via *active)</span>
-    <input class="input input-bordered title" :value=".title" @on.input="setTitle value">
+    <input class="input input-bordered title" :value=".title" @on.input="setTitle e.value">
   </div>
   <!-- storybook/examples/dynamic.html -->
   <div class="border border-dashed border-warning rounded p-3 gap-2 toolbar">
@@ -305,12 +291,12 @@
   <!-- storybook/examples/dynamic_selected_edit.html -->
 <span class="font-mono entry" @text=".name"></span>
   <!-- storybook/examples/dynamic_selected_edit.html -->
-<input class="input input-bordered w-full edit-name" :value=".name" @on.input="setName value" placeholder="Entry name">
+<input class="input input-bordered w-full edit-name" :value=".name" @on.input="setName e.value" placeholder="Entry name">
   <!-- storybook/examples/file_picker.html -->
   <section class="flex flex-col gap-3">
     <label class="flex flex-col gap-1">
       <span>Pick a file</span>
-      <input type="file" class="file-input" @on.change="onPickFile value">
+      <input type="file" class="file-input" @on.change="onPickFile e.value">
     </label>
 
     <table class="table" @show=".hasFile">
@@ -326,10 +312,10 @@
   </section>
   <!-- storybook/examples/filter_paginate.html -->
   <div class="person flex gap-2 items-center grow">
-    <input class="input input-sm grow name" :value=".name" @on.input="setName value" placeholder="name">
-    <input class="input input-sm grow email" :value=".email" @on.input="setEmail value" placeholder="email">
+    <input class="input input-sm grow name" :value=".name" @on.input="setName e.value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="setEmail e.value" placeholder="email">
     <label class="label cursor-pointer gap-1 chk-label">
-      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive value">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive e.value">
       active
     </label>
   </div>
@@ -341,7 +327,7 @@
   </div>
   <!-- storybook/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -357,7 +343,7 @@
   </section>
   <!-- storybook/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -373,7 +359,7 @@
   </section>
   <!-- storybook/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -401,9 +387,9 @@
   <!-- storybook/examples/graphics.html -->
   <div class="flex flex-col gap-3">
     <div class="flex gap-3 text-sm">
-      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA valueAsInt"></label>
-      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB valueAsInt"></label>
-      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC valueAsInt"></label>
+      <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="setA e.valueAsInt"></label>
+      <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="setB e.valueAsInt"></label>
+      <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="setC e.valueAsInt"></label>
     </div>
     <math display="block">
       <mn class="m-a" @text=".a"></mn>
@@ -424,7 +410,7 @@
   <!-- storybook/examples/json.html -->
   <div class="join gap-3 font-mono json-selector">
     <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="setToNull">null</button>
-    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool isCtrl">bool</button>
+    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool e.isCtrl">bool</button>
     <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="setToNumber">0</button>
     <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="setToString">""</button>
     <button class="btn btn-sm btn-soft btn-info to-array" @on.click="setToArray">[]</button>
@@ -442,9 +428,9 @@
     <span @hide=".value">false</span>
   </button>
   <!-- storybook/examples/json.html -->
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
   <!-- storybook/examples/json.html -->
-  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue value">
+  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
   <!-- storybook/examples/json.html -->
   <style>[data-draggingover="json-list-item"] {
   border-top: 4rem solid transparent;
@@ -456,7 +442,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-list-item" data-droptarget="json-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -464,7 +450,7 @@
   </section>
   <!-- storybook/examples/json.html -->
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -479,7 +465,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -532,12 +518,12 @@
         <span class="font-semibold text-sm pt-1">Categories</span>
         <div class="cat-facets flex flex-wrap gap-2">
           <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-            :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onCategoryToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Roles</span>
         <div class="role-facets flex flex-wrap gap-2">
           <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-            :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onRoleToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Sort By</span>
         <div class="flex flex-wrap items-center gap-2">
@@ -581,7 +567,7 @@
   <!-- storybook/examples/pseudo_x.html -->
   <option :value=".value" @text=".label"></option>
   <!-- storybook/examples/pseudo_x.html -->
-  <select class="select" :value=".current" @on.input="setCurrent value">
+  <select class="select" :value=".current" @on.input="setCurrent e.value">
     <option @x render-each=".options"></option>
   </select>
   <!-- storybook/examples/pseudo_x.html -->
@@ -609,8 +595,8 @@
   <!-- storybook/examples/render_child.html -->
   <div class="card bg-base-100 shadow-sm gap-3">
     <div class="card-body">
-      <input class="input title" :value=".title" @on.input="setTitle value">
-      <input class="input desc" :value=".description" @on.input="setDescription value">
+      <input class="input title" :value=".title" @on.input="setTitle e.value">
+      <input class="input desc" :value=".description" @on.input="setDescription e.value">
     </div>
   </div>
   <!-- storybook/examples/render_child.html -->
@@ -622,7 +608,7 @@
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="toggleView"></button>
     </div>
@@ -633,9 +619,9 @@
   <!-- storybook/examples/rendering.html -->
   <section class="flex flex-col gap-3">
     <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-      @on.input="setCurrentIndex valueAsInt">
+      @on.input="setCurrentIndex e.valueAsInt">
     <x render=".byIndex[.currentIndex]"></x>
-    <select class="select" :value=".currentKey" @on.input="setCurrentKey value">
+    <select class="select" :value=".currentKey" @on.input="setCurrentKey e.value">
       <option @each=".byKey" :value="@key" @text="@value.title"></option>
     </select>
     <x render=".byKey[.currentKey]"></x>
@@ -659,7 +645,7 @@
     <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>
     <div class="flex justify-between" @hide=".isLoading">
       <input type="search" class="input" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
       <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="toggleView"></button>
@@ -671,9 +657,9 @@
   </section>
   <!-- storybook/examples/state_and_updates.html -->
   <section class="flex flex-col gap-3">
-    <input class="input s" :value=".str" @on.input="setStr value" :title="$'Content is {.str}'">
-    <input class="input n" type="number" :value=".num" @on.input="setRawNumber value">
-    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool value">
+    <input class="input s" :value=".str" @on.input="setStr e.value" :title="$'Content is {.str}'">
+    <input class="input n" type="number" :value=".num" @on.input="setRawNumber e.value">
+    <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="setBool e.value">
     <p>String: <span class="o-str" @text=".str"></span></p>
     <p>Number: <span class="o-num" @text=".num"></span></p>
     <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
@@ -691,8 +677,8 @@
   <!-- storybook/examples/state_and_updates.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="onInput value"
-      @on.keydown+send="setLastSentSearch value"
+      @on.input="onInput e.value"
+      @on.keydown+send="setLastSentSearch e.value"
       @on.keydown+cancel="resetQuery"
       placeholder="Search Query (Enter to send, Esc to clear)">
     <p class="sent" @show="truthy? .lastSentSearch">
@@ -741,8 +727,8 @@
   </section>
   <!-- storybook/examples/todo.html -->
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
   <!-- storybook/examples/todo.html -->
   <div class="flex flex-col gap-3">
@@ -755,7 +741,7 @@
     </div>
   </div>
   <!-- storybook/examples/web_component.html -->
-  <section @on.emoji-click="onEmojiClick value" class="join join-vertical gap-3 items-center">
+  <section @on.emoji-click="onEmojiClick e.value" class="join join-vertical gap-3 items-center">
     <p class="hint" @hide="truthy? .current">
       Select the <em>Toggle Picker</em> button and select an emoji, it will be
       displayed here
@@ -775,8 +761,8 @@
   </div>
   <!-- playground/site/examples/composability.html -->
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
   <!-- playground/site/examples/composability.html -->
   <div class="flex flex-col gap-3">
@@ -838,14 +824,14 @@
   <!-- playground/site/examples/dnd.html -->
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"
-      @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+      @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
       placeholder="Filter entries">
     <div>
       <div class="cursor-grab row" @each=".items" @when="filterItem"
         draggable="true"
         data-dragtype="my-list-item"
         data-droptarget="my-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <span class="k" @text="@key"></span>: <x text="@value"></x>
       </div>
     </div>
@@ -866,16 +852,16 @@
   </div>
   <!-- playground/site/examples/filter_paginate.html -->
   <div class="person flex gap-2 items-center grow">
-    <input class="input input-sm grow name" :value=".name" @on.input="setName value" placeholder="name">
-    <input class="input input-sm grow email" :value=".email" @on.input="setEmail value" placeholder="email">
+    <input class="input input-sm grow name" :value=".name" @on.input="setName e.value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="setEmail e.value" placeholder="email">
     <label class="label cursor-pointer gap-1 chk-label">
-      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive value">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="setActive e.value">
       active
     </label>
   </div>
   <!-- playground/site/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -891,7 +877,7 @@
   </section>
   <!-- playground/site/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -907,7 +893,7 @@
   </section>
   <!-- playground/site/examples/filter_paginate.html -->
   <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
-    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <input type="search" class="input q" :value=".query" @on.input="search e.value" placeholder="Filter by name or email">
     <ul class="flex flex-col gap-2">
       <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
         <span class="badge badge-neutral" @text="@key"></span>
@@ -933,13 +919,13 @@
     <span @hide=".value">false</span>
   </button>
   <!-- playground/site/examples/json.html -->
-  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue value">
+  <input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="setValue e.value">
   <!-- playground/site/examples/json.html -->
-  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue value">
+  <input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="setRawValue e.value">
   <!-- playground/site/examples/json.html -->
   <div class="join gap-3 font-mono json-selector">
     <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="setToNull">null</button>
-    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool isCtrl">bool</button>
+    <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="setToBool e.isCtrl">bool</button>
     <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="setToNumber">0</button>
     <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="setToString">""</button>
     <button class="btn btn-sm btn-soft btn-info to-array" @on.click="setToArray">[]</button>
@@ -952,7 +938,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-list-item" data-droptarget="json-list-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -966,7 +952,7 @@
   </style>
   <!-- playground/site/examples/json.html -->
   <div class="join gap-3 items-center justify-center json-kv">
-    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey value">
+    <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="setKey e.value">
     <span class="text-xs font-mono text-gray-500 colon">:</span>
     <x render=".value"></x>
   </div>
@@ -977,7 +963,7 @@
       <div class="join gap-3 justify-between items-center group entry" @each=".items"
         draggable="true"
         data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-        @on.drop="onDropOnItem @key dragInfo">
+        @on.drop="onDropOnItem @key e.dragInfo">
         <x render-it></x>
         <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">x</button>
       </div>
@@ -1016,12 +1002,12 @@
         <span class="font-semibold text-sm pt-1">Categories</span>
         <div class="cat-facets flex flex-wrap gap-2">
           <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-            :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onCategoryToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Roles</span>
         <div class="role-facets flex flex-wrap gap-2">
           <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-            :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
+            :class="@btnClass" @on.click="onRoleToggle @key e.isAlt" @text="@value"></button>
         </div>
         <span class="font-semibold text-sm pt-1">Sort By</span>
         <div class="flex flex-wrap items-center gap-2">
@@ -1051,13 +1037,13 @@
   </section>
   <!-- playground/site/examples/text_input.html -->
   <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input="setName value" placeholder="your name">
+    <input :value=".name" @on.input="setName e.value" placeholder="your name">
     <p>Hello, <b @text=".name"></b>!</p>
   </div>
   <!-- playground/site/examples/todo.html -->
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
-    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted e.value">
+    <input class="input" :value=".text" @on.input="setText e.value" :disabled=".completed">
   </div>
   <!-- playground/site/examples/todo.html -->
   <div class="flex flex-col gap-3">

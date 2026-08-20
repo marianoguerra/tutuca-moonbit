@@ -155,14 +155,14 @@ impl DynComponent for TodoMvc with fn with_field(self, name, v) {
 
 ///|
 impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return Unhandled }
+  guard bucket is RECEIVE else { return Unhandled }
   match name {
     "typeDraft" =>
       match text_arg(args) {
         Some(s) => Changed(self.changed(draft=Some(s)))
         None => Unchanged
       }
-    // The Enter key on the new-todo box (`@on.keydown+send="addOnEnter isSend"`)
+    // The Enter key on the new-todo box (`@on.keydown+send="addOnEnter e.isSend"`)
     // and the Add button reach the same place.
     "addOnEnter" =>
       match args {

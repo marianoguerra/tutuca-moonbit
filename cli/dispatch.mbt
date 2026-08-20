@@ -31,7 +31,6 @@ pub fn plan(argv : Array[String]) -> Outcome {
     "gen-tailwind-css" => return run_gen_css(command_args, opts, margaui=false)
     "gen-margaui-css" => return run_gen_css(command_args, opts, margaui=true)
     "watch" => return run_watch(command_args, opts)
-    "migrate" => return run_migrate(command_args, opts)
     _ => ()
   }
   Done(unknown_command(command, opts))

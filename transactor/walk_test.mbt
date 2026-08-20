@@ -1,4 +1,4 @@
-// The intent walk: what v1's bubble_test and request_test each covered half of.
+// The intent walk, end to end: one dispatch that may visit many positions.
 //
 // Every case here is about WHERE the intent goes and what ends it, which is
 // the half `tscript/conformance` cannot state: a corpus case is one transition
@@ -343,8 +343,9 @@ test "a reply ends the walk, so the position above it never runs" {
 ///|
 test "the one-shot is per intent, across hops" {
   // Panel replies. Root would too, and never gets the chance — so there is one
-  // answer and not two. In v1 the equivalent flag is per REQUEST, which is a
-  // distinction that could not arise because a request had one handler.
+  // answer and not two. The one-shot flag lives on the WALK, not on a hop:
+  // with several handlers on the route, a per-hop flag would let each of them
+  // answer once and the sender would hear several.
   let tx = @transactor.Transactor::new(tree("reply", "reply"))
   let seen = trace(tx)
   let _ = tx.push_send(item_at(), "go-answered", [])
@@ -442,7 +443,7 @@ test "forward in an intent body amends what the next position sees" {
 // The lexical leg.
 //
 // Its handlers are static functions with no state, and the thing worth testing
-// is the decision in `docs/two-channels.md` section 17: `lex` WALKS — a declining
+// is the decision in the intent walk: `lex` WALKS — a declining
 // handler hands the intent to the next one — and the walk is resolution rather
 // than dispatch, so a `Pass` produces no transaction.
 
@@ -584,10 +585,10 @@ test "a sender that declared Ok alone hears about an intent nobody answered" {
 
 ///|
 test "the sender stays open until the answer has settled" {
-  // v1 transfers the parent's tracking unit onto the response subtree so a
-  // parent stays open until the whole chain settles. A walk has many hops and
-  // at most one answer, so the unit is held by the WALK and handed to the
-  // answer — this is the test that says which.
+  // The sender's tracking unit is held for the whole walk and then handed to
+  // the answer's subtree, so the sender stays open until the answer itself has
+  // settled. A walk has many hops and at most one answer, so the unit belongs
+  // to the walk rather than to any one hop — this is the test that says so.
   let tx = @transactor.Transactor::new(tree("observe", "reply"))
   let sender = tx.push_send(item_at(), "go-answered", [])
   let settled : Ref[Bool] = { val: false }

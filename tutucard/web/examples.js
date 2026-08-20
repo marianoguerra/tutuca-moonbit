@@ -73,7 +73,7 @@ export const EXAMPLES = [
       </div>
       <label class="flex gap-2 items-center">
         <span class="opacity-70">label</span>
-        <input class="input input-sm w-full" :value=".label" @on.input="setLabel value">
+        <input class="input input-sm w-full" :value=".label" @on.input="setLabel e.value">
       </label>
       <ul class="flex gap-1 flex-wrap">
         <li class="badge badge-sm badge-neutral" @each=".history"><x text="@value"></x></li>
@@ -114,7 +114,7 @@ export const EXAMPLES = [
       <h2 class="card-title">Todos</h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="what needs doing"
-               :value=".draft" @on.input="setDraft value"
+               :value=".draft" @on.input="setDraft e.value"
                @on.keydown+send="addItem">
         <button class="btn btn-sm btn-primary" @on.click="addItem">add</button>
       </div>
@@ -172,7 +172,7 @@ export const EXAMPLES = [
     <div class="card-body gap-3">
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="filter"
-               :value=".query" @on.input="setQuery value">
+               :value=".query" @on.input="setQuery e.value">
         <span class="badge badge-sm badge-neutral"><x text="$caption"></x></span>
       </div>
       <ul class="flex flex-col gap-1">
@@ -350,7 +350,7 @@ export const EXAMPLES = [
       </ul>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="say something"
-               :value=".query" @on.input="setQuery value"
+               :value=".query" @on.input="setQuery e.value"
                @on.keydown+send="echoQuery">
         <button class="btn btn-sm" @on.click="echoQuery">echo it</button>
       </div>
@@ -494,15 +494,15 @@ export const EXAMPLES = [
 <template>
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
-      <input class="input input-sm" :value=".str" @on.input="setStr value"
+      <input class="input input-sm" :value=".str" @on.input="setStr e.value"
              :title="$'Content is {.str}'">
       <!-- \`valueAsInt\` rather than a handler that parses the string: the
            argument names are where a card does its conversions. -->
       <input class="input input-sm" type="number" :value=".num"
-             @on.input="setNum valueAsInt">
+             @on.input="setNum e.valueAsInt">
       <label class="flex gap-2 items-center">
         <input class="checkbox checkbox-sm" type="checkbox" :checked=".bool"
-               @on.input="setBool value">
+               @on.input="setBool e.value">
         bool
       </label>
       <p>String: <span @text=".str"></span></p>
@@ -529,8 +529,8 @@ export const EXAMPLES = [
            schema generated. The modifiers are guards — +send is Enter,
            +cancel is Escape. -->
       <input type="search" class="input input-sm" :value=".query"
-        @on.input="setQuery value"
-        @on.keydown+send="setLastSentSearch value"
+        @on.input="setQuery e.value"
+        @on.keydown+send="setLastSentSearch e.value"
         @on.keydown+cancel="resetQuery"
         placeholder="Search (Enter to send, Esc to clear)">
       <p @show="truthy? .lastSentSearch">
@@ -586,7 +586,7 @@ export const EXAMPLES = [
     <div class="card-body gap-3">
       <label class="flex flex-col gap-1">
         <span class="text-sm opacity-70">Pick a file</span>
-        <input type="file" class="file-input file-input-sm" @on.change="pick value">
+        <input type="file" class="file-input file-input-sm" @on.change="pick e.value">
       </label>
       <table class="table" @show=".hasFile">
         <tbody>
@@ -625,7 +625,7 @@ export const EXAMPLES = [
 <template>
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
-      <input class="input input-sm" :value=".text" @on.input="setText value">
+      <input class="input input-sm" :value=".text" @on.input="setText e.value">
       <div @enrich-with="info">
         <p>Text: <span @text=".text"></span></p>
         <p>Len: <span @text="@len"></span></p>
@@ -670,7 +670,7 @@ export const EXAMPLES = [
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
-        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+        @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
       <ul class="flex flex-col gap-1">
         <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
@@ -738,7 +738,7 @@ export const EXAMPLES = [
 <template>
   <div class="flex gap-3 items-stretch">
     <textarea class="textarea flex-1 font-mono text-xs" spellcheck="false"
-      :value=".source" @on.input="setSource value"></textarea>
+      :value=".source" @on.input="setSource e.value"></textarea>
     <!-- Markdown, rendered straight into the vdom by the render-time filter —
          no handler, no library on the page. -->
     <div class="flex-1 p-3 bg-base-100 rounded overflow-auto"
@@ -810,7 +810,7 @@ export const EXAMPLES = [
       <!-- The escape hatch, named so nobody reaches for it by accident. -->
       <div class="p-2 bg-base-100 rounded" @dangerouslysetinnerhtml=".content"></div>
       <textarea class="textarea font-mono text-xs" :value=".content"
-        @on.input="setContent value"></textarea>
+        @on.input="setContent e.value"></textarea>
     </div>
   </div>
 </template>
@@ -979,13 +979,13 @@ export const EXAMPLES = [
       <div class="flex gap-3 text-sm">
         <label class="flex items-center gap-1">a
           <input type="number" class="input input-sm w-16" :value=".a"
-                 @on.input="setA valueAsInt"></label>
+                 @on.input="setA e.valueAsInt"></label>
         <label class="flex items-center gap-1">b
           <input type="number" class="input input-sm w-16" :value=".b"
-                 @on.input="setB valueAsInt"></label>
+                 @on.input="setB e.valueAsInt"></label>
         <label class="flex items-center gap-1">c
           <input type="number" class="input input-sm w-16" :value=".c"
-                 @on.input="setC valueAsInt"></label>
+                 @on.input="setC e.valueAsInt"></label>
       </div>
       <!-- MathML, namespaced by the subtree it sits in — no directive needed. -->
       <math display="block">
@@ -1056,7 +1056,7 @@ export const EXAMPLES = [
       <h2 class="card-title" @text=".title"></h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="add a label"
-               :value=".draft" @on.input="setDraft value"
+               :value=".draft" @on.input="setDraft e.value"
                @on.keydown+send="addLabel">
         <button class="btn btn-sm btn-primary" @on.click="addLabel">add</button>
       </div>
@@ -1327,7 +1327,7 @@ export const EXAMPLES = [
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
-             @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+             @on.input="setQuery e.value" @on.keydown+cancel="resetQuery"
              placeholder="Filter entries">
       <!-- data-dragtype on the source and data-droptarget on the target pair
            a draggable with where it may land; both are on the same row here,
@@ -1338,7 +1338,7 @@ export const EXAMPLES = [
             draggable="true"
             data-dragtype="reorder-row"
             data-droptarget="reorder-row"
-            @on.drop="moveRow @key dragKey">
+            @on.drop="moveRow @key e.dragKey">
           <span class="opacity-60" @text="@key"></span>
           <x text="@value"></x>
         </li>

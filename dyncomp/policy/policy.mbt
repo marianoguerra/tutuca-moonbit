@@ -103,7 +103,7 @@ pub(all) struct Policy {
 ///|
 /// What an untrusted bundle gets: no capabilities, no stylesheet of its own,
 /// default quotas. It can still declare components, ship views, hold state,
-/// handle events, nest children and serve its own requests — which is to say,
+/// handle events, nest children and serve its own intents — which is to say,
 /// it can still be a component. That is the claim this design is making.
 ///
 /// `CssPolicy::payload()` is the one thing here that is not a refusal, and it is

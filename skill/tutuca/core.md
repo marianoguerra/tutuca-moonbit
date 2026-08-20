@@ -371,7 +371,7 @@ resolves by slot:
   *Event Handling*); anything else triggers a lint warning.
 
 ```html
-<button @on.click="onAddItem value">+</button>
+<button @on.click="onAddItem e.value">+</button>
 <!--                ↑ handler  ↑ arg -->
 ```
 
@@ -520,7 +520,7 @@ carrying here:
 
 - The generated mutator names keep their **JS camelCase spelling** — that is
   what makes views port verbatim: `@on.click="removeInItemsAt @key"`,
-  `@on.input="setQuery value"`, `@on.click="toggleView"` all call generated
+  `@on.input="setQuery e.value"`, `@on.click="toggleView"` all call generated
   mutators. A `compute` entry of the same name wins over the generated one.
 - Emptiness / truthiness / null checks are **not** generated — use the boolean
   predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?` in a conditional
@@ -611,7 +611,7 @@ other inline content, or a loop binding). Both take the same value forms
 ## Attribute Binding
 
 ```html
-<input :value=".str" @on.input="setStr value" />
+<input :value=".str" @on.input="setStr e.value" />
 <a :href=".url" :title="$'Hi {.name}'">link</a>       <!-- string template -->
 <button :class="$'btn {.color}'">x</button>
 ```
@@ -678,25 +678,29 @@ first**: several of these become build errors that way. The usual suspects:
 <button @on.click="inc">+</button>
 
 <!-- pass args by name -->
-<input @on.input="setStr value" />
-<input @on.input="setN valueAsInt" />
-<button @on.click="pick @key isAlt">pick</button>
+<input @on.input="setStr e.value" />
+<input @on.input="setN e.valueAsInt" />
+<button @on.click="pick @key e.isAlt">pick</button>
 ```
 
-Every `@on` handler is written **bare** — a leading `$` is refused in an event
-position. Written args arrive in the handler's `args` array in template order, so
-an arm pattern-matches them directly
+The handler **name** is written bare — a leading `$` is refused in an event
+position. Its **arguments** carry a sigil that says where the value comes from:
+`e.…` reads the DOM event, `.field` reads state, `@bind` reads a binding. (A bare
+argument name says none of the three, so `gen-views` refuses it and names them.)
+Written args arrive in the handler's `args` array in template order, so an arm
+pattern-matches them directly
 (`Receive("search", [Str(q), ..]) => ...`). With generated views each `@on` name
 becomes a case of `<Comp>Msg`, its payload type inferred from what the call site
 writes.
 
-The named args the glue resolves (`value`, `valueAsInt`, `key`, `isCtrl`, …), the
+The accessors the glue computes (`e.value`, `e.valueAsInt`, `e.key`, `e.isCtrl`,
+…), the allowlisted property walk behind `e.target.dataset.x` / `e.detail.x`, the
 `<Comp>Msg` payload-type table, event modifiers, and custom-element events are all
 in **[events.md](./events.md)**. Two things worth knowing before you get there:
 
-- There is **no `event`, `target` or `ctx` argument** — a DOM object is not a
-  `Value`, so each resolves to `Null` and the handler silently receives nothing.
-  Ask for the narrowest named arg instead.
+- There is **no `event` or `ctx` argument** — a DOM object is not a `Value`, so
+  `event` resolves to `Null` and the handler silently receives nothing. Reach the
+  event through `e.` instead.
 - Modifiers are **guards only**, on `keydown` and `click`. `+prevent` / `+stop`
   do not exist and are ignored rather than refused.
 
@@ -795,7 +799,7 @@ Named views are `<template id="Comp:name">` entries in the view file:
 ```html
 <template id="Note"><p @text=".title"></p></template>
 <template id="Note:edit">
-  <input :value=".title" @on.input="setTitle value">
+  <input :value=".title" @on.input="setTitle e.value">
 </template>
 ```
 
@@ -883,10 +887,9 @@ Each maps a trigger to one arm of the **same `update` match**:
 The first two rows are the **same arm** on purpose: a message is addressed at
 one component, and a view is addressed at the component it belongs to. There is
 no arm that tells you a name arrived from a click rather than from a parent's
-`ctx.send` — v1 split those as `Input` and `Receive`, and an `Input` arm now
-matches nothing. It still *compiles* (`Dispatch` keeps the v1 arms while the
-migration runs), so a stale arm goes dead silently rather than failing the
-build.
+`ctx.send`. Splitting them would let a component answer its own view one way and
+an identical `ctx.send` another, which is a component you can neither drive from
+a test nor reuse under a parent that drives it.
 
 The `update` fn is one pattern match over all of them; the framework swaps the
 returned state into the dispatch path (`None` = no change). An intent's three
@@ -910,13 +913,12 @@ component declaring anything, and an `update` arm answering `Unhandled` falls
 through to it rather than swallowing the event. An arm answering `Unchanged`
 stops there — that is the difference between "not mine" and "mine, and no".
 
-The fallback covers **every** addressed name, not just a click. v1 gated `swap`
-and the generated mutators on `Input`, so `@on.click="setQuery value"` reached
-the setter while a parent's `ctx.send("setQuery", …)` to the same component did
-not — the same message, answered or not by where it came from. One bucket means
-both reach it. That widening is the one behaviour change a v1 migration can trip
-over: a name a parent sends now lands on a generated mutator that used to ignore
-it.
+The fallback covers **every** addressed name, not just a click. It keys on the
+name alone, so `@on.click="setQuery e.value"` from this component's own view and
+a parent's `ctx.send("setQuery", …)` reach the same setter — the same message
+answered the same way whichever side raised it. Worth knowing when you declare a
+field: its generated mutator is a name any parent can send, not a private
+convenience for the view.
 
 An `Intent` is deliberately **not** offered this fallback. A generated mutator
 answers a message at home, never an intent walking up a route — an ancestor's

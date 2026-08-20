@@ -2,7 +2,7 @@
   <div class="card-body gap-3">
     <h2 class="card-title text-base" @text="$summary"></h2>
     <div class="join w-full">
-      <input class="input input-bordered input-sm join-item grow" placeholder="Add a task…" :value=".draft" @on.input="setDraft value" @on.keydown="addOnEnter isSend" />
+      <input class="input input-bordered input-sm join-item grow" placeholder="Add a task…" :value=".draft" @on.input="setDraft e.value" @on.keydown="addOnEnter e.isSend" />
       <button class="btn btn-sm btn-primary join-item" @on.click="add">Add</button>
     </div>
     <ul class="flex flex-col gap-1" @hide="empty? .items">

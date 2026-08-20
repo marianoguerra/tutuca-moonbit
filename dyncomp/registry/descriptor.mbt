@@ -28,11 +28,11 @@ pub fn ComponentRef::to_id(self : ComponentRef) -> String {
 
 ///|
 /// One name a component answers to, with whatever the manifest said about it.
-/// The bucket is what tells a caller how to reach it — an `input` is raised by
-/// a view, a `receive` is sent to it, a `bubble` comes from a child.
+/// The bucket is what tells a caller how to reach it — a `receive` is sent to
+/// it, an `intent` is routed until something answers.
 pub(all) struct MessageInfo {
   name : String
-  /// input | receive | bubble | response | method | request
+  /// receive | intent | method | serve
   bucket : String
   doc : String
 } derive(Eq, Debug)
@@ -183,16 +183,17 @@ pub fn describe(bundle : @dyncomp.Bundle, component : String) -> Descriptor? {
     }
   }
   let messages : Array[MessageInfo] = []
-  for m in messages_of(schema.inputs, "input", def.message_docs) {
+  // The names the views raise are `receive`s too — they are addressed at the
+  // component the view belongs to, which is what a send means.
+  for m in messages_of(schema.view_handlers, "receive", def.message_docs) {
     messages.push(m)
   }
   for
     pair in [
       (def.receives, "receive"),
-      (def.bubbles, "bubble"),
-      (def.responses, "response"),
+      (def.intents, "intent"),
       (def.methods, "method"),
-      (def.requests, "request"),
+      (def.serves, "serve"),
     ] {
     for m in messages_of(pair.0, pair.1, def.message_docs) {
       messages.push(m)

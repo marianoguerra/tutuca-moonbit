@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.7.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.9.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
 ///
@@ -9,7 +9,7 @@
 /// fields, its message buckets and its views live in `manifest.json` and
 /// `views/`, as data beside the wasm — so a host can read what a bundle IS
 /// before instantiating it, and an author edits a view as HTML rather than as
-/// a string inside source. That split arrived with `tutuca:component@0.6.0`;
+/// a string inside source. That split arrived with `tutuca:component@0.9.0`;
 /// before it, this file carried a `dice_def()` and the guest exported
 /// `get-manifest`.
 ///
@@ -74,33 +74,34 @@ impl DynComponent for Dice with fn get_field(self, name) {
 ///|
 /// Handle a message. `self` in, the successor out.
 ///
-/// Three answers, not two, and the third is what `tutuca:component@0.6.0`
+/// Three answers, not two, and the third is what `tutuca:component@0.9.0`
 /// added: `Changed(next)` carries a successor, `Unchanged` says the name was
 /// MINE and nothing moved, and `Unhandled` says it was never mine at all. The
 /// 0.5 contract returned `&DynComponent?` and collapsed the last two into one
 /// `None`, which left the host unable to tell a handler that declined from a
 /// component that had no such handler.
 ///
-/// The buckets: INPUT is what this component's own views raise (`@on.click`),
-/// RECEIVE is what a parent sends it, BUBBLE is what a child raised, RESPONSE
+/// The buckets: RECEIVE is what this component's own views raise (`@on.click`),
+/// RECEIVE is what a parent sends it, INTENT is what a child raised, RECEIVE
 /// is an answer to a request this component made.
 impl DynComponent for Dice with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     // The whole point. A request leaves now and the answer comes back later as
-    // a RESPONSE — so this is `Unchanged`: the click was handled, and a die
+    // a RECEIVE — so this is `Unchanged`: the click was handled, and a die
     // that showed a new face before the host had answered would be lying.
-    (INPUT, "roll") => {
-      @control.request("roll", [@values.Value::Number(self.faces)], {
+    (RECEIVE, "roll") => {
+      @control.intent("roll", [@values.Value::Number(self.faces)], {
+        route: [LEX],
         on_ok: Some("rolled"),
         on_error: Some("rollFailed"),
-        on_res: None,
+        on_unhandled: None,
         live_path: false,
       })
       Unchanged
     }
     // `on_ok` means these args carry just the value; without it a response
     // arrives as [result, error] and this would have to unpack both.
-    (RESPONSE, "rolled") =>
+    (RECEIVE, "rolled") =>
       match args {
         [@values.Value::Number(n), ..] => {
           let rolls = self.rolls.copy()
@@ -108,7 +109,13 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
           // Tell whoever holds this die what it came up. It travels UP as a
           // bubble and the host routes it; this component does not know, and
           // must not know, who is listening.
-          @control.emit("rolled", [@values.Value::Number(n)])
+          @control.intent("rolled", [@values.Value::Number(n)], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
           Changed({ ..self, last: n, rolls } as &DynComponent)
         }
         // An answer shaped wrong is still an answer to a question this die
@@ -117,8 +124,8 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
       }
     // A host that refuses to roll is a host that refuses; there is nothing to
     // do about it here, and nothing to show that would not be a made-up face.
-    (RESPONSE, "rollFailed") => Unchanged
-    (INPUT, "clear") =>
+    (RECEIVE, "rollFailed") => Unchanged
+    (RECEIVE, "clear") =>
       Changed({ ..self, last: 0.0, rolls: [] } as &DynComponent)
     (RECEIVE, "init") => Unchanged
     // Everything else is somebody else's message. Saying so — rather than
@@ -183,7 +190,7 @@ impl DynComponent for Dice with fn with_field(self, name, v) {
 }
 
 // `seq_entries` used to live here — an instance offering ITSELF as a sequence
-// for a host `@each` to walk. It went with `tutuca:component@0.6.0` and is not
+// for a host `@each` to walk. It went with `tutuca:component@0.9.0` and is not
 // missed: the view iterates `.rolls`, a declared list field the host already
 // reads through `get_field`, so the second path was a second way to say the
 // same thing and one more thing a guest could get wrong.

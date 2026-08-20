@@ -341,7 +341,7 @@ impl @component.Fields for NestedStateState with fn schema() {
       @component.FieldInfo::new("note", TyOption(TyText)),
       @component.FieldInfo::new("size", TyTuple([TyInt, TyInt])),
     ],
-    inputs=["bumpPriority", "toggleLabel"],
+    view_handlers=["bumpPriority", "toggleLabel"],
     view_names=["main"],
   )
 }

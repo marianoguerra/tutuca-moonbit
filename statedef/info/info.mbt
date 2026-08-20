@@ -137,7 +137,7 @@ fn resolve_ref(
 /// instance answers `obj_schema()` with.
 ///
 /// The channels come from the declaration; everything else is what the VIEWS
-/// contribute, so it arrives from the caller — `inputs` are the `@on` names,
+/// contribute, so it arrives from the caller — `view_handlers` are the `@on` names,
 /// `methods` the `$name` calls, `ids` the constant element ids. A caller with
 /// none of those in hand passes none, which is the honest answer for a schema
 /// nobody has views for yet.
@@ -145,7 +145,7 @@ pub fn schema_info(
   def : @statedef.StateDef,
   name? : String = "",
   fingerprint? : String,
-  inputs? : Array[String] = [],
+  view_handlers? : Array[String] = [],
   methods? : Array[String] = [],
   ids? : Array[String] = [],
   view_names? : Array[String] = [],
@@ -162,10 +162,9 @@ pub fn schema_info(
     name~,
     fingerprint=fp,
     fields~,
-    inputs~,
+    view_handlers~,
     receives=def.receive.map(m => m.name),
-    bubbles=def.bubble.map(m => m.name),
-    responses=def.response.map(m => m.name),
+    intents=def.intent.map(m => m.name),
     methods~,
     ids~,
     view_names~,

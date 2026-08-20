@@ -38,6 +38,7 @@ pub suberror GenError {
   BadComponentName(String)
   NoViewsToCompile
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
+  BareEventArg(view~ : String, name~ : String, site~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
   IdInLoop(view~ : String, id~ : String)
   BadEventPath(view~ : String, site~ : String, path~ : String, step~ : String)

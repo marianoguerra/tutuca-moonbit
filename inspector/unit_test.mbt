@@ -260,12 +260,12 @@ test "component_summary reads fields, buckets, and view sources" {
   assert_false(methods.contains(Str("pushInTags")))
   // `update` is one opaque pattern match at run time, so reflection could
   // only ever say THAT it exists. The schema names what it answers.
-  assert_true(d.get("update") is Some(List([Str("inc"), Str("reset")])))
-  // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so it
-  // sits beside `ping` rather than in a bucket of its own.
+  assert_true(d.get("viewHandlers") is Some(List([Str("inc"), Str("reset")])))
+  // `onData` is an ANSWER, and an answer is an ordinary message — so it sits
+  // beside `ping` rather than in a bucket of its own.
   assert_true(d.get("receive") is Some(List([Str("ping"), Str("onData")])))
   assert_true(d.get("intent") is Some(List([Str("onChild")])))
-  assert_true(d.get("bubble") is Some(List([])))
+  assert_true(d.get("bubble") is None)
   assert_true(d.get("alter") is Some(List([Str("rows")])))
   guard d.get("views") is Some(List(views)) else { fail("no views") }
   inspect(views.length(), content="2")
@@ -281,15 +281,14 @@ test "inspect_component builds one section per non-empty group" {
   assert_true(oget(ci, "compName") is Str("RichSample"))
   inspect(otext(ci, "idText").contains("#"), content="true")
   let labels = olist(ci, "sections").map(s => oget(s, "label"))
-  // Two message sections where v1 drew three, and the third is ABSENT rather
-  // than empty — "one section per non-empty group" is the rule this test
-  // names, and the buckets v2 folded away simply stop being drawn.
+  // One section per NON-EMPTY group, which is why there is no row for a
+  // bucket this component does not use.
   assert_true(
     labels ==
     [
       Str("Fields"),
       Str("Methods"),
-      Str("Update"),
+      Str("View handlers"),
       Str("Receive"),
       Str("Intent"),
       Str("Alter"),
@@ -473,12 +472,11 @@ test "a described component surfaces what reflection cannot" {
   // THE one. At runtime `update` is a single opaque pattern match, so the
   // reflected summary can only report that one exists; the schema knows
   // every name it answers.
-  assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
+  assert_eq(d.get("viewHandlers"), Some(List([Str("inc"), Str("reset")])))
   // Buckets that are invisible without a schema — they are raised from
   // MoonBit, never written in a view.
   assert_eq(d.get("receive"), Some(List([Str("ping"), Str("onData")])))
   assert_eq(d.get("intent"), Some(List([Str("onChild")])))
-  assert_eq(d.get("bubble"), Some(List([])))
   // The selectors a test addresses, and the fixtures it can seed from.
   assert_eq(d.get("ids"), Some(List([Str("counter"), Str("resetBtn")])))
   assert_eq(d.get("fixtures"), Some(List([Str("fresh")])))
@@ -530,19 +528,18 @@ test "a generated component fills every summary row its schema can" {
   // Every row exists, whether or not this component fills it.
   for
     row in [
-      "name", "id", "fingerprint", "fields", "methods", "update", "receive", "bubble",
-      "intent", "response", "swap", "alter", "ids", "fixtures", "views",
+      "name", "id", "fingerprint", "fields", "methods", "viewHandlers", "receive",
+      "intent", "swap", "alter", "ids", "fixtures", "views",
     ] {
     assert_true(d.get(row) is Some(_))
   }
   // ...and every row RichSample declares is actually populated.
   assert_eq(d.get("name"), Some(Str("RichSample")))
-  assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
-  // `onData` is an ANSWER and lands beside `ping`; `onChild` is ROUTED and
-  // has a bucket of its own. Two where v1 drew three.
+  assert_eq(d.get("viewHandlers"), Some(List([Str("inc"), Str("reset")])))
+  // `onData` is an ANSWER and lands beside `ping`; `onChild` is ROUTED and has
+  // a bucket of its own.
   assert_eq(d.get("receive"), Some(List([Str("ping"), Str("onData")])))
   assert_eq(d.get("intent"), Some(List([Str("onChild")])))
-  assert_eq(d.get("bubble"), Some(List([])))
   assert_eq(d.get("methods"), Some(List([Str("double"), Str("label")])))
   // A fingerprint is computed, not merely present: 64 bits of hex.
   guard! d.get("fingerprint") is Some(Str(fp))
@@ -594,7 +591,7 @@ impl @component.Fields for RichState with fn schema() {
       @component.FieldInfo::new("tags", TyList(TyAny)),
       @component.FieldInfo::new("open", TyBool),
     ],
-    inputs=["inc", "reset"],
+    view_handlers=["inc", "reset"],
     // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so
     // it is declared beside `ping` rather than in a bucket of its own.
     receives=["ping", "onData"],
@@ -647,7 +644,7 @@ impl @component.Fields for DescribedState with fn schema() {
       @component.FieldInfo::new("count", TyInt),
       @component.FieldInfo::new("tags", TyList(TyText)),
     ],
-    inputs=["inc", "reset"],
+    view_handlers=["inc", "reset"],
     // `onData` is an ANSWER, and an answer is an ordinary message in v2 — so
     // it is declared beside `ping` rather than in a bucket of its own.
     receives=["ping", "onData"],

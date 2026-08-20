@@ -107,7 +107,7 @@ fn new_component(
 /// what it declares; all three are required, and `gen-views` writes them.
 /// Buckets:
 /// - update: ALL effectful dispatches in one pattern match over Dispatch
-///   (Input/Receive/Bubble/Response), returning the new state (None = no
+///   (Receive/Intent), returning the new state (None = no
 ///   change).
 /// - compute: $-callable value reads ($label in value positions).
 /// - when / enrich / enrich_scope / loop_with: the render-time directive
@@ -381,15 +381,16 @@ pub fn Component::compile(self : Component) -> Unit raise {
       cid=LNum(self.id.to_double()),
     )
   }
-  // `inputs` is the names the VIEWS raise, and a view that has just been
-  // compiled is where they can be read off. The generator states them ahead of
-  // time and this leaves those alone; a component whose views arrive at RUNTIME
-  // (a wasm guest's manifest) has no generator to state them, and recovering
-  // them here is what keeps its descriptor as complete as a compiled one's.
-  if self.schema.inputs.is_empty() {
+  // `view_handlers` is the names the VIEWS raise, and a view that has just
+  // been compiled is where they can be read off. The generator states them
+  // ahead of time and this leaves those alone; a component whose views arrive
+  // at RUNTIME (a wasm guest's manifest) has no generator to state them, and
+  // recovering them here is what keeps its descriptor as complete as a
+  // compiled one's.
+  if self.schema.view_handlers.is_empty() {
     let names = self.view_handler_names()
     if !names.is_empty() {
-      self.schema = { ..self.schema, inputs: names }
+      self.schema = { ..self.schema, view_handlers: names }
     }
   }
   for pname, src in self.raw_provide {
@@ -437,7 +438,7 @@ pub fn Component::view_handler_names(self : Component) -> Array[String] {
           for h in ne.handlers {
             match h.handler.handler {
               HandlerName(name~, ns~) =>
-                if ns is Input && !seen.contains(name) {
+                if ns is Receive && !seen.contains(name) {
                   seen[name] = ()
                   out.push(name)
                 }

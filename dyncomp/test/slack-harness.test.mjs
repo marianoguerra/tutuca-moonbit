@@ -64,12 +64,14 @@ let emitted = [];
 
 const control = {
   log: () => {},
-  emit: (name, args) => emitted.push({ kind: 'emit', name, args }),
   send: (name, args) => emitted.push({ kind: 'send', name, args }),
   sendAt: (path, name, args) => emitted.push({ kind: 'sendAt', path, name, args }),
-  bubbleAt: () => {},
+  intent: (name, args, opts) => emitted.push({ kind: 'intent', name, args, route: opts.route }),
+  intentAt: (path, name, args, opts) => emitted.push({ kind: 'intentAt', path, name, args, opts }),
+  forward: (args, opts) => emitted.push({ kind: 'forward', args, opts }),
+  reply: (v) => emitted.push({ kind: 'reply', value: v }),
+  fail: (e) => emitted.push({ kind: 'fail', value: e }),
   stopPropagation: () => emitted.push({ kind: 'stopPropagation' }),
-  request: (name, args) => emitted.push({ kind: 'request', name, args }),
   after: () => {},
   makeInstance: (component, args) => {
     const token = nextToken++;
@@ -128,9 +130,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.8.0': values,
+    'tutuca:component/values@0.9.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.8.0': control,
+    'tutuca:component/control@0.9.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -140,7 +142,7 @@ before(async () => {
 });
 
 test('the static manifest declares eight nesting components', { skip: !built }, () => {
-  assert.equal(manifest.apiVersion, 7);
+  assert.equal(manifest.apiVersion, 8);
   assert.equal(manifest.moduleName, 'slacklib');
   // nothing ambient — no clock for the timestamps, no entropy for the ids —
   // and one capability, for the pictures, which names its origins in its reason
@@ -189,11 +191,11 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
     assert.equal(ty(name, 'pageSize').kind, 'ty-int', name);
     assert.deepEqual(c.fields.find((f) => f.name === 'pageSize').constraint, { min: 1, max: 500 }, name);
   }
-  // `bubbles` is the bubble-bucket HANDLER surface, the way `receives` is:
-  // Segment EMITS openLink and declares none, and the one component that can
-  // decide what a link or an unfetched thread means declares all three
-  assert.deepEqual(manifest.components.find((c) => c.name === 'Segment').bubbles, []);
-  assert.deepEqual(declared.bubbles, ['openLink', 'reacted', 'openThread']);
+  // `intents` is the routed-bucket HANDLER surface, the way `receives` is:
+  // Segment RAISES openLink and answers none, and the one component that can
+  // decide what a link or an unfetched thread means answers all three
+  assert.deepEqual(manifest.components.find((c) => c.name === 'Segment').intents, []);
+  assert.deepEqual(declared.intents, ['openLink', 'reacted', 'openThread']);
 });
 
 test('a segment composes its classes from independent flags', { skip: !built }, () => {
@@ -215,27 +217,27 @@ test('a segment composes its classes from independent flags', { skip: !built }, 
 
 test('a link segment reports its URL instead of following it', { skip: !built }, () => {
   const link = make('Segment', { text: 'docs', link: true, url: 'https://example.com' });
-  dispatch(link, 'input', 'open', []);
+  dispatch(link, 'receive', 'open', []);
   assert.deepEqual(emitted, [
-    { kind: 'emit', name: 'openLink', args: [text('https://example.com'), text('docs')] },
+    { kind: 'intent', name: 'openLink', args: [text('https://example.com'), text('docs')], route: ['dyn'] },
   ]);
 
   // a run that is not a link has nothing to report
   const plain = make('Segment', { text: 'docs', url: 'https://example.com' });
-  dispatch(plain, 'input', 'open', []);
+  dispatch(plain, 'receive', 'open', []);
   assert.deepEqual(emitted, []);
 });
 
 test('a reaction changes its own count and tells whoever is above', { skip: !built }, () => {
   const r = make('Reaction', { emoji: '👀', count: 2 });
-  const on = dispatch(r, 'input', 'toggle', []);
+  const on = dispatch(r, 'receive', 'toggle', []);
   assert.deepEqual(on.getField('count'), num(3));
   assert.deepEqual(on.getField('reacted'), bool(true));
-  assert.deepEqual(emitted, [{ kind: 'emit', name: 'reacted', args: [text('👀'), bool(true)] }]);
+  assert.deepEqual(emitted, [{ kind: 'intent', name: 'reacted', args: [text('👀'), bool(true)], route: ['dyn'] }]);
 
-  const off = dispatch(on, 'input', 'toggle', []);
+  const off = dispatch(on, 'receive', 'toggle', []);
   assert.deepEqual(off.getField('count'), num(2));
-  assert.deepEqual(emitted, [{ kind: 'emit', name: 'reacted', args: [text('👀'), bool(false)] }]);
+  assert.deepEqual(emitted, [{ kind: 'intent', name: 'reacted', args: [text('👀'), bool(false)], route: ['dyn'] }]);
 });
 
 test('a message builds its body out of segments and reads its own timestamp', { skip: !built }, () => {
@@ -347,7 +349,7 @@ test('a thread forces its replies compact and folds them', { skip: !built }, () 
     assert.deepEqual(r.getField('compact'), bool(true));
   }
 
-  const folded = dispatch(t, 'input', 'toggle', []);
+  const folded = dispatch(t, 'receive', 'toggle', []);
   assert.deepEqual(folded.getField('expanded'), bool(false));
   assert.deepEqual(folded.callMethod('replyLabel', []), text('▸ 2 replies'));
 
@@ -387,28 +389,28 @@ test('the filter box and the ordering toggle reshape what renders', { skip: !bui
   // newest first by the ROOT timestamp, which is what makes a busy thread
   // stay where the conversation started
   assert.deepEqual(authors(c), ['Alan Turing', 'Ada Lovelace', 'Grace Hopper']);
-  const oldest = dispatch(c, 'input', 'toggleOrder', []);
+  const oldest = dispatch(c, 'receive', 'toggleOrder', []);
   assert.deepEqual(authors(oldest), ['Grace Hopper', 'Ada Lovelace', 'Alan Turing']);
   assert.deepEqual(oldest.callMethod('orderLabel', []), text('oldest first'));
 
   // the filter reaches reply text too — "compiler" is in a reply only
-  const filtered = dispatch(c, 'input', 'setQuery', [text('compiler')]);
+  const filtered = dispatch(c, 'receive', 'setQuery', [text('compiler')]);
   assert.deepEqual(authors(filtered), ['Ada Lovelace']);
   assert.deepEqual(filtered.callMethod('countLabel', []), text('1 of 3 conversations'));
 
   // a query nothing matches is the empty state, not an error
-  const none = dispatch(c, 'input', 'setQuery', [text('zzz')]);
+  const none = dispatch(c, 'receive', 'setQuery', [text('zzz')]);
   assert.deepEqual(childrenOf(none, 'threads'), []);
   assert.deepEqual(none.callMethod('isEmpty', []), bool(true));
 
   // and clearing it brings everything back
-  const cleared = dispatch(none, 'input', 'setQuery', [text('')]);
+  const cleared = dispatch(none, 'receive', 'setQuery', [text('')]);
   assert.equal(childrenOf(cleared, 'threads').length, 3);
 });
 
 test('expand-all walks the RENDERED positions, not the stored ones', { skip: !built }, () => {
   const c = make('ChannelHistory', initArgs('ChannelHistory', 'general'));
-  dispatch(c, 'input', 'collapseAll', []);
+  dispatch(c, 'receive', 'collapseAll', []);
   assert.deepEqual(
     emitted.map((m) => [m.kind, m.name, m.path[0].val.index, m.args[0].val]),
     [['sendAt', 'setExpanded', 0, false],
@@ -418,8 +420,8 @@ test('expand-all walks the RENDERED positions, not the stored ones', { skip: !bu
 
   // filtered, it addresses only what is on screen — a path counted against
   // the full list would reach the wrong thread
-  const filtered = dispatch(c, 'input', 'setQuery', [text('compiler')]);
-  dispatch(filtered, 'input', 'expandAll', []);
+  const filtered = dispatch(c, 'receive', 'setQuery', [text('compiler')]);
+  dispatch(filtered, 'receive', 'expandAll', []);
   assert.deepEqual(
     emitted.map((m) => [m.path[0].val.field, m.path[0].val.index, m.args[0].val]),
     [['threads', 0, true]],
@@ -464,31 +466,31 @@ test('a long channel is paged, and a page is not a filter', { skip: !built }, ()
 
   // A button that would not move answers `unchanged`, and a name the pager
   // does not know keeps travelling.
-  assert.equal(dispatch(c, 'input', 'prevPage', []), undefined);
-  assert.equal(dispatch(c, 'input', 'somethingElse', []), undefined);
+  assert.equal(dispatch(c, 'receive', 'prevPage', []), undefined);
+  assert.equal(dispatch(c, 'receive', 'somethingElse', []), undefined);
 
-  c = dispatch(c, 'input', 'nextPage', []);
+  c = dispatch(c, 'receive', 'nextPage', []);
   assert.deepEqual(drawn(c), ['1700000013.000001', '1700000012.000001', '1700000011.000001']);
   assert.deepEqual(c.callMethod('atFirst', []), bool(false));
 
   // Expand-all addresses THIS page: the paths are positions in what the
   // renderer drew, and a reader pressing it means the ones in front of them.
-  dispatch(c, 'input', 'expandAll', []);
+  dispatch(c, 'receive', 'expandAll', []);
   assert.deepEqual(emitted.map((m) => m.path[0].val.index), [0, 1, 2]);
 
   // the last page is the short one, and it says so
-  const end = dispatch(c, 'input', 'lastPage', []);
+  const end = dispatch(c, 'receive', 'lastPage', []);
   assert.deepEqual(drawn(end), ['1700000010.000001']);
   assert.deepEqual(end.callMethod('rangeLabel', []), text('7–7 of 7'));
   assert.deepEqual(end.callMethod('atLast', []), bool(true));
-  assert.equal(dispatch(end, 'input', 'nextPage', []), undefined);
+  assert.equal(dispatch(end, 'receive', 'nextPage', []), undefined);
 
   // Filtering and reordering each make a different list, so page three of the
   // old one is a position in a channel that is not there any more.
-  assert.deepEqual(dispatch(end, 'input', 'setQuery', [text('message')]).getField('page'), num(1));
-  assert.deepEqual(dispatch(end, 'input', 'toggleOrder', []).getField('page'), num(1));
+  assert.deepEqual(dispatch(end, 'receive', 'setQuery', [text('message')]).getField('page'), num(1));
+  assert.deepEqual(dispatch(end, 'receive', 'toggleOrder', []).getField('page'), num(1));
   // and a filter narrow enough to fit on one page puts the pager away
-  const one = dispatch(end, 'input', 'setQuery', [text('message 4')]);
+  const one = dispatch(end, 'receive', 'setQuery', [text('message 4')]);
   assert.deepEqual(one.callMethod('paged', []), bool(false));
   assert.deepEqual(drawn(one), ['1700000014.000001']);
 });
@@ -502,7 +504,7 @@ test('a thread pages its replies, and a file list pages its rows', { skip: !buil
   assert.deepEqual(t.getField('pageCount'), num(3));
   assert.deepEqual(t.callMethod('replyLabel', []), text('▾ 7 of 21 replies'));
   assert.equal(childrenOf(t, 'replies').length, 3);
-  t = dispatch(t, 'input', 'lastPage', []);
+  t = dispatch(t, 'receive', 'lastPage', []);
   assert.deepEqual(t.callMethod('rangeLabel', []), text('7–7 of 7'));
   assert.equal(childrenOf(t, 'replies').length, 1);
 
@@ -518,11 +520,11 @@ test('a thread pages its replies, and a file list pages its rows', { skip: !buil
   let f = make('FileList', { ...initArgs('FileList', 'a channel’s files'), pageSize: 2 });
   assert.deepEqual(f.callMethod('countLabel', []), text('3 files'));
   assert.deepEqual(f.callMethod('rangeLabel', []), text('1–2 of 3'));
-  f = dispatch(f, 'input', 'nextPage', []);
-  dispatch(f, 'input', 'openFile', [num(0)]);
+  f = dispatch(f, 'receive', 'nextPage', []);
+  dispatch(f, 'receive', 'openFile', [num(0)]);
   // position 0 of page two is the third file, which has no permalink to offer
   assert.deepEqual(emitted, []);
-  dispatch(dispatch(f, 'input', 'prevPage', []), 'input', 'openFile', [num(1)]);
+  dispatch(dispatch(f, 'receive', 'prevPage', []), 'receive', 'openFile', [num(1)]);
   assert.equal(emitted[0].name, 'openLink');
   assert.match(emitted[0].args[1].val, /latency\.png/);
 });
@@ -530,14 +532,14 @@ test('a thread pages its replies, and a file list pages its rows', { skip: !buil
 test('a channel catches what its children report', { skip: !built }, () => {
   const c = make('ChannelHistory', initArgs('ChannelHistory', 'general'));
 
-  const opened = dispatch(c, 'bubble', 'openLink', [text('https://example.com'), text('docs')]);
+  const opened = dispatch(c, 'intent', 'openLink', [text('https://example.com'), text('docs')]);
   assert.deepEqual(opened.getField('lastAction'), text('link: https://example.com'));
   // and it stops there: nothing above this component could say more about it
   assert.deepEqual(emitted, [{ kind: 'stopPropagation' }]);
 
-  const reacted = dispatch(c, 'bubble', 'reacted', [text('🎉'), bool(true)]);
+  const reacted = dispatch(c, 'intent', 'reacted', [text('🎉'), bool(true)]);
   assert.deepEqual(reacted.getField('lastAction'), text('reacted 🎉'));
-  const undone = dispatch(c, 'bubble', 'reacted', [text('🎉'), bool(false)]);
+  const undone = dispatch(c, 'intent', 'reacted', [text('🎉'), bool(false)]);
   assert.deepEqual(undone.getField('lastAction'), text('took back 🎉'));
 });
 
@@ -572,11 +574,12 @@ test('a message shows the timestamp every follow-up call takes', { skip: !built 
   // the permalink travels up rather than being followed: a workspace subdomain
   // is not an origin a view can write as a literal, so there is no href to have
   assert.deepEqual(m.callMethod('hasPermalink', []), bool(true));
-  dispatch(m, 'input', 'openPermalink', []);
+  dispatch(m, 'receive', 'openPermalink', []);
   assert.deepEqual(emitted, [{
-    kind: 'emit',
+    kind: 'intent',
     name: 'openLink',
     args: [text('https://acme.slack.com/archives/C0123/p1700000001000001'), text('permalink')],
+    route: ['dyn'],
   }]);
 
   // a message with neither says neither, and offers no button to press
@@ -584,7 +587,7 @@ test('a message shows the timestamp every follow-up call takes', { skip: !built 
   assert.deepEqual(bare.callMethod('hasId', []), bool(false));
   assert.deepEqual(bare.callMethod('hasPermalink', []), bool(false));
   assert.deepEqual(bare.callMethod('idTitle', []), text(''));
-  dispatch(bare, 'input', 'openPermalink', []);
+  dispatch(bare, 'receive', 'openPermalink', []);
   assert.deepEqual(emitted, []);
 });
 
@@ -610,11 +613,12 @@ test('a counted thread with no replies says the call that would fetch them', { s
   assert.deepEqual(t.getField('channelName'), text('general'));
   assert.deepEqual(t.getField('rootTs'), text('1700000001.000001'));
 
-  dispatch(t, 'input', 'openThread', []);
+  dispatch(t, 'receive', 'openThread', []);
   assert.deepEqual(emitted, [{
-    kind: 'emit',
+    kind: 'intent',
     name: 'openThread',
     args: [text('general'), text('1700000001.000001'), num(21)],
+    route: ['dyn'],
   }]);
 
   // a page of a long thread says it is a page rather than claiming the three
@@ -676,8 +680,8 @@ test('a channel history says what it does not cover', { skip: !built }, () => {
   // and the thread's request for its unfetched replies stops here, because this
   // is the component that can name the call
   const t = childrenOf(c, 'threads')[0];
-  dispatch(t, 'input', 'openThread', []);
-  const next = dispatch(c, 'bubble', 'openThread', [text('general'), text('1700000001.000001'), num(21)]);
+  dispatch(t, 'receive', 'openThread', []);
+  const next = dispatch(c, 'intent', 'openThread', [text('general'), text('1700000001.000001'), num(21)]);
   assert.ok(emitted.some((e) => e.kind === 'stopPropagation'));
   assert.deepEqual(
     next.getField('lastAction'),
@@ -709,16 +713,17 @@ test('a file list is metadata, and says so', { skip: !built }, () => {
 
   // a row is opened by its POSITION, because `@key` is what a loop can hand a
   // handler — the view never carries a url it might pass to the wrong component
-  dispatch(f, 'input', 'openFile', [num(1)]);
+  dispatch(f, 'receive', 'openFile', [num(1)]);
   assert.deepEqual(emitted, [{
-    kind: 'emit',
+    kind: 'intent',
     name: 'openLink',
     args: [text('https://acme.slack.com/files/U0124/F0124EFGH/latency.png'), text('latency.png')],
+    route: ['dyn'],
   }]);
   // a row with no link, and a position that is not a row, both do nothing
-  dispatch(f, 'input', 'openFile', [num(2)]);
+  dispatch(f, 'receive', 'openFile', [num(2)]);
   assert.deepEqual(emitted, []);
-  dispatch(f, 'input', 'openFile', [num(9)]);
+  dispatch(f, 'receive', 'openFile', [num(9)]);
   assert.deepEqual(emitted, []);
 
   const empty = make('FileList', { files: [] });

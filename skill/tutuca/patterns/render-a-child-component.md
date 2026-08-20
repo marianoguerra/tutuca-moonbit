@@ -21,7 +21,7 @@ Declare the field with the child's interface name — that makes it a **slot**:
   <p @text=".name"></p>
 </template>
 <template id="Greeting:edit">
-  <input class="input" :value=".name" @on.input="setName value" />
+  <input class="input" :value=".name" @on.input="setName e.value" />
 </template>
 ```
 

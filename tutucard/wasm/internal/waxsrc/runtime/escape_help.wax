@@ -26,18 +26,11 @@
 // and the one thing an escape has no other way to say.
 fn tcx_fail() { tc_fail = 1; }
 
-// The three effects, by name rather than by kind number. Buffered, like every
-// effect: what a body performs before a statement that fails never happens.
+// The addressed effects, by name rather than by kind number. Buffered, like
+// every effect: what a body performs before a statement that fails never
+// happens.
 fn tcx_send(name: &utf8_string, args: &?pv_vector) {
     tc_effect_push(tc_e_send, name, args);
-}
-
-fn tcx_bubble(name: &utf8_string, args: &?pv_vector) {
-    tc_effect_push(tc_e_bubble, name, args);
-}
-
-fn tcx_request(name: &utf8_string, args: &?pv_vector) {
-    tc_effect_push(tc_e_request, name, args);
 }
 
 fn tcx_stop() { tc_effect_push(tc_e_stop, tc_empty_str(), null); }

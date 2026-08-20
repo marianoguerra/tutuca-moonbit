@@ -254,26 +254,6 @@ the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
 no `globalThis` class hand-off. The in-browser playground uses the same compiler
 shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
 
-### The codemod (`tutuca migrate`)
-
-`cli/migrate.mbt` is a one-way codemod from the v1 four-channel surface to v2's
-two, over `.html` view files and the `.mbt` beside them: `bubble` → `intent dyn`,
-`request` → `intent lex`, the combined `[res, err]` response payload → the three
-named answers. Run it with `just cli migrate <paths…>` — it writes; `--dry-run`
-prints what it would change instead. A path may be a file or a directory.
-
-Its governing rule is that it **refuses rather than half-migrates**. A file
-holding a construct the codemod cannot rewrite safely — a `RequestFn`, which is
-a signature change and not a rename; a `.bubble(` call `moon fmt` wrapped across
-lines beside an `.at()` builder — is reported by name with the reason and left
-untouched. Refusal is per COMPONENT, not per file: a `.html` whose `.mbt` twin
-is refused is refused too, because a view rewritten against handlers that were
-not is worse than either half. That rule came from watching it half-migrate
-`request.{html,mbt}` in this repo; failures went from 14 to 2 when it changed.
-
-Refusals mention only code — a v1 name inside a `//` comment is not a reason to
-refuse a file, and `mentions_in_code` is what draws that line.
-
 ### Styling (`css/`)
 
 `css/` is the one place stylesheets live, and it is published — the wasm hosts,

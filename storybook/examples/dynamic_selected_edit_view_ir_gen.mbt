@@ -62,7 +62,7 @@ fn dse_root_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="selectItem", ns=Input), args=[
+        @anode.on("click", HandlerName(name="selectItem", ns=Receive), args=[
           Bind("key"),
         ]),
       ],
@@ -240,7 +240,7 @@ fn dse_entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
           EventPath(["value"]),
         ]),
       ],

@@ -23,27 +23,23 @@ arm of the **same `update` match** in MoonBit:
 
 The first two rows are one bucket, and there is no keyword or arm that
 separates them: a view is addressed at the component it belongs to, which is
-what `send` means. v1 spelled the DOM half `on <name>` / `Input(name, args)`;
-`on` is no longer a declaration kind, and an `Input` arm now matches nothing
-while still compiling.
+what `send` means. Where a name came from is not a question a handler can ask,
+and that is deliberate: a component that answered its own click differently from
+the identical `send` from its parent could be driven neither from a test nor
+from a parent.
 
 A **message** is addressed: it names one component and stops there. An
 **intent** is routed: it names a *thing to be done* and walks until
 something answers or the route runs out. That is the whole distinction —
-the verb no longer decides which scope answers, the route does.
+the verb does not decide which scope answers, the route does.
 
-If you know tutuca v1, the mapping is:
-
-| v1                              | v2                                   |
-| ------------------------------- | ------------------------------------ |
-| `ctx.bubble(name, args)`        | `intent dyn 'name'` — walk ancestors |
-| `ctx.request(name, args, opts)` | `intent lex 'name'` — walk the scope |
-| `ctx.send(name, args)`          | unchanged — `send` / `Receive`       |
-| `Response(name, [res, err])`    | three named answers (see below)      |
-
-`Bubble` and `Response` are **gone** — both were routes wearing a verb's
-clothes, and the route says what they said. `tutuca migrate` moves a v1
-codebase; what it refuses is the work list.
+There is exactly one verb for a walk, and the *route* says where it goes:
+`dyn` up the ancestors, `lex` through the registered scopes, or both. A
+verb per direction would be a route wearing a verb's clothes — the same
+walk named twice, with no way to spell a walk that tries both. For the
+same reason an intent comes back as three named answers rather than one
+reply carrying a result-or-error pair; *Answering an intent*, below, has
+them.
 
 ## Messages — `send`, `sendAt`, `receive`
 
@@ -128,8 +124,8 @@ is written down in exactly one place (`@tutuca.IntentOpts::new`), so
 <script type="tutuca/script">
   receive go {
     intent 'saveDraft' .name        // dyn lex — ancestors, then the scope
-    intent dyn 'picked' .page       // ancestors only  (v1's `bubble`)
-    intent lex 'loadRows'           // the scope only  (v1's `request`)
+    intent dyn 'picked' .page       // ancestors only
+    intent lex 'loadRows'           // the registered scopes only
     intent lex dyn 'saveDraft' .name // legs run in the order written
   }
 </script>
@@ -235,10 +231,11 @@ reads the schema's `receive` list and fills the intent's opts in.
 </script>
 ```
 
-`<name>Unhandled` is the outcome v1 had no word for. A v1 `RequestFn`
-*had* to respond, so a handler with nothing to contribute could only
-invent an error. "Nothing claimed it" and "a handler refused it" are
-different sentences, and now they have different names.
+`<name>Unhandled` is what a route running out means. A handler that must
+answer has no way to say "not mine" — it can only invent an error — which
+is why declining (`Pass`) is a separate answer from failing. "Nothing
+claimed it" and "a handler refused it" are different sentences, so they
+have different names.
 
 The MoonBit arms, for a component that names its own three outcomes
 rather than letting the schema fill them in:
@@ -259,9 +256,9 @@ update=(s : ItemsState, msg, ctx) => match msg {
     )
     Next({ ..s, isLoading: true })
   }
-  // THREE outcomes, three arms, each with its own shape. v1's combined
-  // `[res, err]` payload — and the split arm that read the wrong slot of
-  // it — are both gone.
+  // THREE outcomes, three arms, each with its own shape. One combined
+  // `[res, err]` payload would put both shapes in every arm and leave the
+  // arm to work out which slot was filled.
   Receive("loadDataOk", [res, ..]) =>
     Next({ ..s, isLoading: false, items: res.list() })
   Receive("loadDataError", [Str(e), ..]) =>
@@ -370,8 +367,8 @@ fn fixture_intent_handlers() -> Map[String, Array[@component.IntentFn]] {
 }
 
 ///|
-/// A scope that DECLINES. v1's `RequestFn` had to respond, so this handler
-/// could only have invented an error.
+/// A scope that DECLINES. `Pass` is how a handler says "not mine" without
+/// inventing an error, and it is what makes `<name>Unhandled` reachable.
 fn declining_intent_handlers() -> Map[String, Array[@component.IntentFn]] {
   { "loadData": [IntentFn((_call, answer) => answer(Pass))] }
 }

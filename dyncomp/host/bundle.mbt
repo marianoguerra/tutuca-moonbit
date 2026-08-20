@@ -197,15 +197,15 @@ pub fn register_bundle(
     }
     // The schema the guest DECLARED, which is the whole difference between a
     // guest component that is a name with handlers hanging off it and one the
-    // generic layers can describe, compare, project and mutate. `inputs` is
-    // absent on purpose: `compile()` reads those off the compiled views.
+    // generic layers can describe, compare, project and mutate.
+    // `view_handlers` is absent on purpose: `compile()` reads those off the
+    // compiled views.
     let declared = @component.SchemaInfo::new(
       name=def.name,
       fingerprint="",
       fields=def.field_infos(),
       receives=def.receives,
-      bubbles=def.bubbles,
-      responses=def.responses,
+      intents=def.intents,
       methods=def.methods,
       view_names=def.views.map(v => v.name),
       init_names=def.inits.map(i => i.name),
@@ -231,19 +231,16 @@ pub fn register_bundle(
   // anything the bundle does not serve. A host component never sees these — it
   // is not in this scope — which is what makes a bundle's services its own.
   //
-  // The manifest key is still `requests`, because it is a published contract
-  // and a built bundle fills it in. What changed is this side: a `request` is
-  // an intent on the `lex` leg, so what the manifest names becomes an
-  // `IntentFn`. It cannot answer `Pass` — the guest ABI has no way to decline
-  // — so it answers `Ok` or `Failed` exactly as the `RequestFn` it replaces
-  // did, and the walk ends here whichever it is.
+  // A served name cannot answer `Pass`: the guest ABI has no way to decline,
+  // so it answers `Ok` or `Failed` and the walk ends here whichever it is.
+  // Declining is a host-side handler's privilege.
   let served : Map[String, Array[@component.IntentFn]] = Map([])
   for def in manifest.components {
-    for name in def.requests {
+    for name in def.serves {
       served[name] = [
         IntentFn((call, answer) => {
           answer(
-            match guest.handle_request(name, call.args) {
+            match guest.serve_intent(name, call.args) {
               Ok(v) => Ok(v)
               Err(e) => Failed(e)
             },

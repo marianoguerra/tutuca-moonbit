@@ -118,13 +118,13 @@ pub fn check(
 
 ///|
 /// `NO_VIEW_HANDLER`: a view name the block neither answers nor forwards
-/// (`docs/two-channels.md` section 7).
+///.
 ///
 /// A view name that nothing answers does nothing, which is safe and is also
-/// the shape of a misspelling. In v1 the two are indistinguishable and neither
-/// is reported; the whole rule is that a component states its own vocabulary,
-/// so reading the block tells you every name it answers and every name it lets
-/// out.
+/// the shape of a misspelling — the two are indistinguishable at runtime, so
+/// they are separated here instead. The whole rule is that a component states
+/// its own vocabulary, so reading the block tells you every name it answers
+/// and every name it lets out.
 ///
 /// Answering and forwarding are the same thing here, deliberately: a
 /// `receive save(text) { forward }` IS a declaration, so the rule is about the
@@ -311,12 +311,11 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
     _ => (self.def.receive, "receive")
   }
   let found = cases.filter(m => m.name == d.name)
-  // A `receive` name the VIEWS send needs no schema case. That is the merge:
-  // one bucket holds a view's name and a parent's, and the design's section 9
-  // says the schema declares "every message the component accepts, BEYOND the
-  // ones its own views send". So a `receive` that answers a view name takes
-  // its parameter types from the call sites, which is where v1's `on` took
-  // them.
+  // A `receive` name the VIEWS send needs no schema case. One bucket holds a
+  // view's name and a parent's, and the schema declares every message the
+  // component accepts BEYOND the ones its own views send. So a `receive` that
+  // answers a view name takes its parameter types from the call sites, which
+  // are right there in the same component.
   // A `receive` the surface cannot speak for. Either the views send this name
   // and its parameters take their types from the call sites, or the caller has
   // no views at all and is in no position to call the name undeclared.
@@ -483,10 +482,10 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       // not a literal cannot be checked against anything — nor routed by the
       // generator, which needs it at generation time.
       //
-      // v1 asked this of every effect but `stop`, which was the same set. v2
-      // adds three that carry no name at all: `forward` re-dispatches the one
-      // that arrived, and `reply` and `fail` are addressed by the walk. Asking
-      // them would report `reply 1` as a dynamic message name.
+      // Three effects carry no name at all and are therefore exempt:
+      // `forward` re-dispatches the one that arrived, and `reply` and `fail`
+      // are addressed by the walk. Asking them would report `reply 1` as a
+      // dynamic message name.
       if names_a_message(name) && args.get(0) is Some(a0) && !(a0 is ERef(..)) {
         if !(a0 is ELit(lit=LStr(_), ..)) {
           self.say(

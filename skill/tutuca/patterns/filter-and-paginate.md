@@ -7,7 +7,7 @@ list more than necessary.
 
 ```html
 <section @enrich-with="pagerInfo">          <!-- COUNT pass: runs once -->
-  <input :value=".query" @on.input="search value" />
+  <input :value=".query" @on.input="search e.value" />
   <li @each=".items" @when="onlyMatches" @loop-with="page">  <!-- COLLECT pass -->
     <span @text="@key"></span> <x render-it></x>
     <button @on.click="removeInItemsAt @key">✕</button>

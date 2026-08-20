@@ -6,8 +6,8 @@
 // all of its time. These are those: one short name per construct, so the
 // emitters below read as the Wax they stand for rather than as a tree walk.
 //
-// Nothing here is card-specific. It is the layer `cardwasm/reference/counter.wax`
-// is written in, written out in MoonBit.
+// Nothing here is card-specific. It is the Wax layer a hand-written guest would
+// be written in, written out in MoonBit.
 
 ///|
 fn ins(d : @ast.InstrDesc[@basic.Location]) -> @abi.I {

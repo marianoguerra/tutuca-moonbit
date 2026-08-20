@@ -11,7 +11,7 @@ else is yours:
 
 | path | what it is |
 | --- | --- |
-| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.8.0`. The host generates its side from this same file. |
+| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.9.0`. The host generates its side from this same file. |
 | `gen/`, `interface/`, `world/` | `wit-bindgen moonbit` output, checked in — so building needs no wit-bindgen |
 | `gen/interface/tutuca/component/guest/sdk.mbt` | the guest SDK: implements every generated `declare` over the `DynComponent` trait |
 | `gen/interface/tutuca/component/guest/dice.mbt` | **yours**: the behavior |
@@ -19,7 +19,7 @@ else is yours:
 | `views/Dice.main.html` | **yours**: the view, as a file an editor understands |
 
 The last two used to be a `dice_def()` inside `dice.mbt`, exported through a
-`get-manifest` the guest implemented. `tutuca:component@0.6.0` moved them out:
+`get-manifest` the guest implemented. The contract moved them out:
 a host can now read what a bundle IS without instantiating it, and a view is
 HTML rather than a string inside source.
 

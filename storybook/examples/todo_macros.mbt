@@ -12,7 +12,7 @@
 fn tm_checkbox_macro() -> @anode.Macro {
   {
     defaults: { "value": ".value", "handler": "$setValue" },
-    raw_view: "<input type=\"checkbox\" class=\"checkbox\" :checked=\"^value\" @on.input=\"^handler value\" />",
+    raw_view: "<input type=\"checkbox\" class=\"checkbox\" :checked=\"^value\" @on.input=\"^handler e.value\" />",
   }
 }
 
@@ -20,7 +20,7 @@ fn tm_checkbox_macro() -> @anode.Macro {
 fn tm_input_macro() -> @anode.Macro {
   {
     defaults: { "value": ".value", "handler": "$setValue", "disabled": "false" },
-    raw_view: "<input class=\"input\" :value=\"^value\" @on.input=\"^handler value\" :disabled=\"^disabled\" />",
+    raw_view: "<input class=\"input\" :value=\"^value\" @on.input=\"^handler e.value\" :disabled=\"^disabled\" />",
   }
 }
 

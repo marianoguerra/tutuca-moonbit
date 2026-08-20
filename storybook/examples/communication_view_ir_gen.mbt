@@ -155,15 +155,15 @@ fn send_receive_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Input), args=[
+        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
           EventPath(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="submit", ns=Input), modifiers=[
+        @anode.on("keydown", HandlerName(name="submit", ns=Receive), modifiers=[
           "send",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="submit", ns=Input))],
-      [@anode.on("click", HandlerName(name="clearStatus", ns=Input))],
+      [@anode.on("click", HandlerName(name="submit", ns=Receive))],
+      [@anode.on("click", HandlerName(name="clearStatus", ns=Receive))],
     ],
   )
 }
@@ -299,7 +299,7 @@ fn tree_item_main_view_ir() -> @anode.View {
         ),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="onItemClick", ns=Input))]],
+    [[@anode.on("click", HandlerName(name="onItemClick", ns=Receive))]],
     style="user-select: none;\n.head { cursor: pointer; }\n.head:before { content: \"⏺️\"; margin-right: 0.25rem; }\n.head.type-file:before { content: \"📄️\"; }\n.head.open.type-dir:before { content: \"📂️\"; }\n.head.closed.type-dir:before { content: \"📁️\"; }",
   )
 }

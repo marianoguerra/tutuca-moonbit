@@ -210,7 +210,7 @@ impl @component.Fields for AttributeBindingState with fn schema() {
       @component.FieldInfo::new("bool", TyBool),
       @component.FieldInfo::new("notSet", TyAny),
     ],
-    inputs=["setBool", "setRawNumber", "setStr"],
+    view_handlers=["setBool", "setRawNumber", "setStr"],
     view_names=["main"],
   )
 }
@@ -387,7 +387,7 @@ impl @component.Fields for ConditionalAttributesState with fn schema() {
     name="ConditionalAttributes",
     fingerprint="3a518a385250bb4d",
     fields=[@component.FieldInfo::new("isActive", TyBool)],
-    inputs=["toggleIsActive"],
+    view_handlers=["toggleIsActive"],
     view_names=["main"],
   )
 }
@@ -583,7 +583,7 @@ impl @component.Fields for EventModifiersState with fn schema() {
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("lastSentSearch", TyAny),
     ],
-    inputs=["onInput", "resetQuery", "setLastSentSearch"],
+    view_handlers=["onInput", "resetQuery", "setLastSentSearch"],
     view_names=["main"],
   )
 }
@@ -783,7 +783,7 @@ impl @component.Fields for ShowHideState with fn schema() {
       @component.FieldInfo::new("isOpen", TyBool),
       @component.FieldInfo::new("count", TyInt),
     ],
-    inputs=["incCount", "toggleIsOpen"],
+    view_handlers=["incCount", "toggleIsOpen"],
     methods=["label"],
     view_names=["main"],
   )

@@ -39,9 +39,13 @@ pub struct Builtin {
 }
 
 ///|
-/// Handler namespaces are a fixed enumeration (JS passes "input"/"alter" strings)
+/// Which namespace a handler name is looked up in.
+///
+/// `Receive` is the dispatch side — a name an `@on.<event>` raises, delivered
+/// as an addressed message. `Alter` is the render side, where a name answers a
+/// question about a row instead of changing anything.
 pub(all) enum HandlerNamespace {
-  Input // @on.<event>
+  Receive // @on.<event>
   Alter // @when, @enrich-with, @loop-with
 } derive(Debug, Eq)
 
@@ -74,7 +78,7 @@ pub(all) enum Val {
   /// v2's, and the one thing in this enum that names something OUTSIDE the
   /// value language: every other case reads state, a binding or a literal, and
   /// this one reads the event. That is why it is spelled with a root — `e` is
-  /// a NAMESPACE and never a value (`docs/two-channels.md` §7), so there is no `Val`
+  /// a NAMESPACE and never a value, so there is no `Val`
   /// that means "the event" and nothing can accidentally pass one along.
   ///
   /// What a path may traverse is `@eventpath.check_event_path`'s question, and

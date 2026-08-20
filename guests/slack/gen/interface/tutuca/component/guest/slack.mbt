@@ -262,12 +262,18 @@ impl DynComponent for Segment with fn handle(self, bucket, name, _args) {
     // A link segment cannot navigate: `href` is refused for an untrusted
     // bundle, so the URL travels UP and whoever is above decides. That is the
     // same shape as asking the host for a capability, one level cheaper.
-    (INPUT, "open") => {
+    (RECEIVE, "open") => {
       if self.link && self.url != "" {
-        @control.emit("openLink", [
+        @control.intent("openLink", [
           @values.Value::Text(self.url),
           @values.Value::Text(self.text),
-        ])
+        ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       }
       Unchanged
     }
@@ -359,13 +365,19 @@ impl DynComponent for Reaction with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
     // Both halves: the count is this component's own state, and the fact that
     // somebody reacted is news for whoever is above.
-    (INPUT, "toggle") => {
+    (RECEIVE, "toggle") => {
       let reacted = !self.reacted
       let count = if reacted { self.count + 1.0 } else { self.count - 1.0 }
-      @control.emit("reacted", [
+      @control.intent("reacted", [
         @values.Value::Text(self.emoji),
         @values.Value::Boolean(reacted),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Changed({ ..self, reacted, count } as &DynComponent)
     }
     _ => Unhandled
@@ -603,12 +615,18 @@ impl DynComponent for Message with fn call_method(self, name, _args) {
 /// have — and both are perfectly good things to announce.
 impl DynComponent for Message with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
-    (INPUT, "openPermalink") => {
+    (RECEIVE, "openPermalink") => {
       if self.permalink != "" {
-        @control.emit("openLink", [
+        @control.intent("openLink", [
           @values.Value::Text(self.permalink),
           @values.Value::Text("permalink"),
-        ])
+        ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       }
       Unchanged
     }
@@ -975,18 +993,24 @@ impl DynComponent for Thread with fn call_method(self, name, _args) {
 ///|
 impl DynComponent for Thread with fn handle(self, bucket, name, args) {
   match (bucket, name) {
-    (INPUT, "toggle") =>
+    (RECEIVE, "toggle") =>
       Changed({ ..self, expanded: !self.expanded } as &DynComponent)
     // The replies are not here and this bundle cannot go and get them: it has
     // no network, and the whole point of that is that it is checkable by
     // looking. So it says which two arguments would, and whoever is above is
     // the one that can make the call.
-    (INPUT, "openThread") => {
-      @control.emit("openThread", [
+    (RECEIVE, "openThread") => {
+      @control.intent("openThread", [
         @values.Value::Text(self.channel_name),
         @values.Value::Text(self.root_ts),
         @values.Value::Number(self.reply_count.to_double()),
-      ])
+      ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
       Unchanged
     }
     // What `ChannelHistory`'s expand-all/collapse-all reaches with
@@ -1000,7 +1024,7 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
       }
     // The pager under the replies. A page moves nothing but which of them are
     // drawn, so no child is rebuilt and nothing is announced.
-    (INPUT, _) => {
+    (RECEIVE, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -1488,7 +1512,7 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
     // The row's index, not its url: `@key` is what a loop can hand a handler,
     // and looking the row up here means the view never carries a link it might
     // pass to the wrong component.
-    (INPUT, "openFile") => {
+    (RECEIVE, "openFile") => {
       // The index is into the rows the view was GIVEN, which on page two are
       // not the first rows of the list — so it is read back through the same
       // window that decided them.
@@ -1497,15 +1521,21 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
       if at >= 0 && at < shown.length() {
         let f = self.files[shown[at]]
         if f.permalink != "" {
-          @control.emit("openLink", [
+          @control.intent("openLink", [
             @values.Value::Text(f.permalink),
             @values.Value::Text(f.label),
-          ])
+          ], {
+        route: [DYN],
+        on_ok: None,
+        on_error: None,
+        on_unhandled: None,
+        live_path: false,
+      })
         }
       }
       Unchanged
     }
-    (INPUT, _) => {
+    (RECEIVE, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -1756,40 +1786,40 @@ impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
     // The filter and the ordering each go back to the first page: both make a
     // different list, and page four of the old one is a position in a channel
     // that is not there any more.
-    (INPUT, "setQuery") =>
+    (RECEIVE, "setQuery") =>
       match args {
         [@values.Value::Text(q), ..] =>
           Changed({ ..self, query: q, page: 0 } as &DynComponent)
         _ => Unchanged
       }
-    (INPUT, "toggleOrder") =>
+    (RECEIVE, "toggleOrder") =>
       Changed(
         { ..self, newest_first: !self.newest_first, page: 0 } as &DynComponent,
       )
     // Paging is not a filter: it changes which conversations are drawn and
     // nothing about which ones there are, so no child is rebuilt.
-    (INPUT, "firstPage" | "prevPage" | "nextPage" | "lastPage") =>
+    (RECEIVE, "firstPage" | "prevPage" | "nextPage" | "lastPage") =>
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
         None => Unchanged
       }
-    (INPUT, "expandAll") => {
+    (RECEIVE, "expandAll") => {
       self.set_all_expanded(true)
       Unchanged
     }
-    (INPUT, "collapseAll") => {
+    (RECEIVE, "collapseAll") => {
       self.set_all_expanded(false)
       Unchanged
     }
     // A `Segment` deep inside a reply asked for a URL to be opened. Nothing
     // below here could decide what that means; this component can, and it
     // stops the bubble rather than letting the page hear it too.
-    (BUBBLE, "openLink") => {
+    (INTENT, "openLink") => {
       @control.stop_propagation()
       let url = as_text(args.get(0))
       Changed({ ..self, last_action: "link: \{url}" } as &DynComponent)
     }
-    (BUBBLE, "reacted") => {
+    (INTENT, "reacted") => {
       @control.stop_propagation()
       let emoji = as_text(args.get(0))
       let on = as_bool(args.get(1))
@@ -1799,7 +1829,7 @@ impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
     // A thread with a count and no replies asked for them. This bundle has no
     // network, so what it can do is say the call — with both arguments filled
     // in, which is the whole difference between a dead end and a next step.
-    (BUBBLE, "openThread") => {
+    (INTENT, "openThread") => {
       @control.stop_propagation()
       let channel = as_text(args.get(0))
       let ts = as_text(args.get(1))

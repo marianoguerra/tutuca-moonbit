@@ -123,12 +123,12 @@ fn build() -> @component.ModuleDef {
 
 <template id="Greeter">
   <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input="setName value" placeholder="your name">
+    <input :value=".name" @on.input="setName e.value" placeholder="your name">
     <p>Hello, <b @text=".name"></b>!</p>
   </div>
 </template>
 `,
-    code: `// :value + @on.input="setName value" is a two-way bind through the field's
+    code: `// :value + @on.input="setName e.value" is a two-way bind through the field's
 // generated setName mutator. @text mirrors it live. No handlers needed.
 
 fn build() -> @component.ModuleDef {

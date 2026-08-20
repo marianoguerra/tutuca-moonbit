@@ -6,15 +6,15 @@
     </div>
     <label class="input w-full">
       <span class="label">&#176;C</span>
-      <input class="box-c grow tabular-nums" inputmode="decimal" :value="$cText" @on.input="editC value" />
+      <input class="box-c grow tabular-nums" inputmode="decimal" :value="$cText" @on.input="editC e.value" />
     </label>
     <label class="input w-full">
       <span class="label">&#176;F</span>
-      <input class="box-f grow tabular-nums" inputmode="decimal" :value="$fText" @on.input="editF value" />
+      <input class="box-f grow tabular-nums" inputmode="decimal" :value="$fText" @on.input="editF e.value" />
     </label>
     <label class="input w-full">
       <span class="label">K</span>
-      <input class="box-k grow tabular-nums" inputmode="decimal" :value="$kText" @on.input="editK value" />
+      <input class="box-k grow tabular-nums" inputmode="decimal" :value="$kText" @on.input="editK e.value" />
     </label>
     <div class="join justify-center">
       <button class="btn btn-xs btn-soft join-item preset-freeze" @on.click="preset 0">freezing</button>

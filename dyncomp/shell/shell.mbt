@@ -175,8 +175,8 @@ pub fn loader_bar_comp(
       }
       // The merged `Receive` now carries this component's own VIEW names as
       // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the Input match
-      // beside this one, and task 19 folds the two into one.
+      // match has nothing to say about. They are answered by the match
+      // beside this one.
       _ => Unhandled
     }
   })
@@ -200,8 +200,8 @@ pub fn loader_bar_comp(
 /// out twice.
 /// A LIST per name, because the `lex` leg WALKS: a declining handler hands the
 /// intent to the next one in the scope chain rather than having to answer.
-/// These two decline on a bad argument — see `Pass` below, which is the answer
-/// v1 had no word for.
+/// These two decline on a bad argument — see `Pass` below, the answer that
+/// means "not mine" rather than "this went wrong".
 pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]] {
   {
     "double": [
@@ -211,8 +211,7 @@ pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]] {
           // NOT `Failed`. This handler cannot answer a call shaped like that,
           // and saying so is different from saying the doubling went wrong —
           // `Pass` lets the walk try the next handler, and if none answers the
-          // sender hears `doubleUnhandled` rather than a made-up error. A
-          // `RequestFn` had to respond, so v1 could only invent one.
+          // sender hears `doubleUnhandled` rather than a made-up error.
           _ => answer(Pass)
         }
       }),
@@ -274,7 +273,7 @@ fn next_u32() -> UInt {
 ///
 /// Still `untrusted` — no clock, no timer, no entropy, no CSS of the bundle's
 /// own — plus `cap-external-urls` for these five hosts and nothing else. It is
-/// here beside `sample_host_requests` and for the same reason: both pages ship
+/// here beside `sample_host_intents` and for the same reason: both pages ship
 /// the same archives, so both have to answer the same question, and two copies
 /// of an answer about the network are two copies that can drift apart.
 ///

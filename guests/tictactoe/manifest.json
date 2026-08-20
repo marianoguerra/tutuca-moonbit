@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 7,
+  "apiVersion": 8,
   "moduleName": "gameslib",
   "doc": "Small games, as loadable components.",
   "version": "0.4.0",
@@ -78,13 +78,11 @@
       "receives": [
         "init"
       ],
-      "bubbles": [],
-      "responses": [],
+      "intents": [],
       "methods": [
         "status"
       ],
       "whens": [],
-      "requests": [],
       "inits": [
         {
           "name": "nearly-won",
@@ -92,7 +90,8 @@
           "doc": "One move from a win, for looking at the winning line."
         }
       ],
-      "style": ""
+      "style": "",
+      "serves": []
     }
   ]
 }

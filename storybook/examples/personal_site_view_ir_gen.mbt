@@ -466,21 +466,26 @@ fn root_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="onCategoryToggle", ns=Input), args=[
+        @anode.on("click", HandlerName(name="onCategoryToggle", ns=Receive), args=[
           Bind("key"),
-          Name("isAlt"),
+          EventPath(["isAlt"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="onRoleToggle", ns=Input), args=[
+        @anode.on("click", HandlerName(name="onRoleToggle", ns=Receive), args=[
           Bind("key"),
-          Name("isAlt"),
+          EventPath(["isAlt"]),
         ]),
       ],
-      [@anode.on("change", HandlerName(name="onToggleSortByEnd", ns=Input))],
-      [@anode.on("change", HandlerName(name="onToggleSortAsc", ns=Input))],
-      [@anode.on("change", HandlerName(name="onToggleFeaturedFirst", ns=Input))],
-      [@anode.on("click", HandlerName(name="clearFilters", ns=Input))],
+      [@anode.on("change", HandlerName(name="onToggleSortByEnd", ns=Receive))],
+      [@anode.on("change", HandlerName(name="onToggleSortAsc", ns=Receive))],
+      [
+        @anode.on(
+          "change",
+          HandlerName(name="onToggleFeaturedFirst", ns=Receive),
+        ),
+      ],
+      [@anode.on("click", HandlerName(name="clearFilters", ns=Receive))],
     ],
   )
 }

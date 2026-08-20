@@ -303,7 +303,7 @@ impl @component.Fields for SchemaScalarState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -608,7 +608,7 @@ impl @component.Fields for SchemaObjectState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -913,7 +913,7 @@ impl @component.Fields for SchemaArrayState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -1216,7 +1216,7 @@ impl @component.Fields for SchemaEnumState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
@@ -1523,7 +1523,7 @@ impl @component.Fields for SchemaCombinatorState with fn schema() {
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
     ],
-    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",

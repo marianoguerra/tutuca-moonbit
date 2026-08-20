@@ -227,7 +227,7 @@ impl @component.Fields for StateEditorRowState with fn schema() {
       @component.FieldInfo::new("readonly", TyText),
       @component.FieldInfo::new("editable", TyBool),
     ],
-    inputs=["edit"],
+    view_handlers=["edit"],
     view_names=["main"],
   )
 }

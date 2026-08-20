@@ -190,7 +190,7 @@ impl @component.Fields for RenderWithScopeState with fn schema() {
     name="RenderWithScope",
     fingerprint="0732c2d2c9d0c008",
     fields=[@component.FieldInfo::new("text", TyText)],
-    inputs=["setText"],
+    view_handlers=["setText"],
     view_names=["main"],
   )
 }
@@ -412,7 +412,7 @@ impl @component.Fields for ListFilterEnrichState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
     ],
-    inputs=["resetQuery", "setQuery"],
+    view_handlers=["resetQuery", "setQuery"],
     view_names=["main"],
   )
 }
@@ -657,7 +657,7 @@ impl @component.Fields for ListFilterEnrichWithState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
     ],
-    inputs=["resetQuery", "setQuery"],
+    view_handlers=["resetQuery", "setQuery"],
     view_names=["main"],
   )
 }
