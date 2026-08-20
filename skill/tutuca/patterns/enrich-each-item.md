@@ -4,33 +4,44 @@
 without storing it on the data.
 
 ```html
-<li @each=".items" @enrich-with="enrichItem">
-  <x text="@value"></x> (<x text="@count"></x> characters)
-</li>
+<script type="tutuca/state">
+  state Notes { items: Array[String], picked: Set[String] }
+</script>
+
+<script type="tutuca/script" for="Notes">
+  /// Per-row bindings. What an enricher writes is in scope for that row's
+  /// subtree and nowhere else.
+  enrich enrichItem {
+    @count = len (str @value)
+    @picked = has .picked @value
+  }
+</script>
+
+<template id="Notes">
+  <ul>
+    <li @each=".items" @enrich-with="enrichItem">
+      <input type="checkbox" :checked="@picked" @on.click="toggleInPicked @value">
+      <x text="@value"></x> (<x text="@count"></x> characters)
+    </li>
+  </ul>
+</template>
 ```
 
-```moonbit nocheck
-// nocheck: a bucket argument, not a top-level item
-// generated wrapper: enum-keyed ("enrichItem" -> EnrichItem)
-enrich=e => match e {
-  // (s, binds, key, value, iterData) -> Unit; write into binds
-  EnrichItem =>
-    Some((_s, binds, _key, value, _iter) => match value {
-      Str(item) => binds["count"] = Num(item.length().to_double()) // becomes @count
-      _ => ()
-    }),
-},
-```
+An `enrich` writes `@name` bindings; every name it assigns becomes an
+`@`-prefixed binding for that item's subtree, on top of the `@key` / `@value`
+the loop already bound. It writes bindings and never state — that is the whole
+difference between it and a `receive`.
 
-(Raw `@component.component(...)` call: a string-keyed map,
-`enrich={ "enrichItem": (_s : ListState, binds, _key, value, _iter) =>
-... }`.)
+`@value` is a binding with no declared type, so a builtin that needs one takes
+a coercer: `len (str @value)`, not `len @value`. A row's membership in a set
+elsewhere on the state is what `has` answers — the same key the generated
+`toggleInPicked` writes — and the answer becomes an ordinary binding the
+`:checked` slot reads. Combine freely with `@when` and `@loop-with` on the same
+element.
 
-An `enrich` handler receives a **mutable** `binds` `Map` (seeded with
-`{ key, value }`); every key you write becomes an `@`-prefixed binding for
-that item's subtree. The return type is `Unit`. Combine freely with
-`@when` and `@loop-with` on the same element. Without an `@each` on the
-same element, `@enrich-with` enriches the whole scope instead — that is
-the `enrich_scope` bucket: the handler takes only the state and the
-**returned** `Map` is the bindings (see the bind-text-and-attributes
-recipe).
+Without an `@each` on the same element, `@enrich-with` enriches the whole
+scope instead — that is `enrichScope`, which sees only the state (see
+[bind-text-and-attributes.md](bind-text-and-attributes.md)).
+
+`@cur` is reserved: an enricher's bindings become a view's scope, and the
+`new` target is not something a component may publish.

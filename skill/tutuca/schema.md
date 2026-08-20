@@ -250,6 +250,89 @@ was the one thing that put a callable in a block whose own header says it holds
 data. `for=` names the component the way a `<template id>` does, and is needed
 only in a file that declares more than one.
 
+## The reading vocabulary
+
+The block's expression language is **closed** — sixteen builtins and five
+operator families, and no way to add a seventeenth. That is what makes it
+total, and what lets both backends implement the same thing.
+
+Application is **juxtaposition** and parentheses are required wherever
+precedence would otherwise be implicit: `contains (lower .title) (lower q)`.
+There is no precedence table to remember and none to get wrong.
+
+| builtin | arity | answers |
+| ------- | ----- | ------- |
+| `empty?` `truthy?` `falsy?` `null?` | 1 | the four shape predicates a view slot already spells |
+| `len` | 1 | the size of a text, list, set or map |
+| `has` | 2 | a KEY in a set or map, a VALUE in a list — `has .picked @value` |
+| `contains` | 2 | substring, text only |
+| `min` `max` | 2 | the smaller / larger number |
+| `clamp` | 3 | a number held between two bounds |
+| `int` `num` | 1 | a number as a whole / as itself (a CONVERSION, not a coercion of an `Any`) |
+| `str` | 1 | any value rendered as text |
+| `lower` `upper` `trim` | 1 | the text, folded / trimmed |
+
+The operator families are `and` `or` (chain freely); `is` `is not` `<` `<=`
+`>` `>=` (exactly two operands, so `a < b < c` is refused); `implies`
+(`a implies b` is `(not a) or b`, the shape most cross-field rules take); `+`
+`-`; and `*` `/` `mod`. **Mixing families in one unparenthesized chain is a
+parse error**, and the message names the parentheses to add. `not` negates,
+and `if c { a } else { b }` is an expression — both arms required, because an
+expression has to have a value.
+
+`equals?` is deliberately NOT in the block: `is` says it, and one meaning keeps
+one spelling. (A view slot still spells `equals?`, since it has no operators.)
+
+## Changing a collection
+
+A collection is changed by a statement that names the place and the operation,
+receiver first:
+
+```html
+<script type="tutuca/state">
+  state Playlist { songs: Array[String], tags: Set[String], by: Map[String, String] }
+  receive Playlist { add(String), rename(String), drop(Int), mark(String),
+                     credit(String, String) }
+</script>
+
+<script type="tutuca/script" for="Playlist">
+  receive add(title)   { .songs.push title }
+  receive rename(t)    { .songs.setAt 0 t }
+  receive drop(i)      { .songs.deleteAt i }
+  receive mark(tag)    { .tags.toggle tag }
+  receive credit(k, v) { .by.setAt k v }
+</script>
+```
+
+These mirror the **generated mutators** one for one, with the `In<Field>At`
+infix dropped because the receiver is written: `pushInSongs` is `.songs.push`,
+`setInSongsAt` is `.songs.setAt`, `toggleInTags` is `.tags.toggle`. One idea,
+one spelling, wherever it is written.
+
+| receiver | what it takes |
+| -------- | ------------- |
+| list `Array[T]` | `push v`, `insertAt i v`, `setAt i v`, `deleteAt i` |
+| set `Set[String]` / `Set[Enum]` | `add k`, `remove k`, `toggle k` |
+| map `Map[String, V]` | `setAt k v`, `deleteAt k` |
+
+**Use those spellings.** A few aliases parse — `removeAt`, `delete`, `set`,
+`clear` — and `gen-views` compiles some of them, but a **card** implements the
+canonical names only and refuses the rest with `the interpreter does not
+implement it either`. A handler that runs in a card and refuses under
+`gen-views`, or the other way round, is a spelling problem and nothing deeper.
+
+An index out of range is a **no-op**, not a crash: `setAt`/`deleteAt` past the
+end leave the collection alone, and `insertAt` *at* the length appends, because
+inserting at the end is a real answer.
+
+> **A generated mutator is not a handler.** `removeInItemsAt @key`,
+> `toggleHideCompleted` and `setQuery e.value` are answered by the RUNTIME from
+> the field's declared kind. They are not compiled from the block, so no
+> script-refusal can disable one and no `update` arm is needed to keep one
+> working — a button wired to a mutator works whatever the block does or does
+> not compile. Write a handler only when there is something the mutator does
+> not say.
+
 ## Building a value (`new <Type>` / `@cur`)
 
 The block language has **no literal for an aggregate** — no list, no map, no
@@ -312,14 +395,32 @@ other statement already does. `new <Type>` puts that type's **zero** at the
 built, which is how you copy a row out, edit it and put it back. Note the
 backend limits below before reaching for it.
 
-Three limits belong to the **ahead-of-time backend only** (a card interpreting
-the same block has none of them): a `new` inside an `if` does not outlive the
-branch; writing or reading *through an index* into `@cur` needs a bounds check
-`gen-views` does not emit; and `@cur = expr` needs a `new` in scope above it.
-Each **refuses the arm** rather than miscompiling it — `gen-views` prints
-`<Comp>: <name> stays in MoonBit — <why> (script-refusal)` and the name falls
-through to your `update` match, so write that handler in MoonBit. Nothing
-breaks silently, but a card that runs is not proof the same block compiles.
+### What the ahead-of-time backend refuses
+
+A card INTERPRETS the block and has none of the limits below; `gen-views`
+COMPILES it into MoonBit and has all of them. Each **refuses the arm** rather
+than miscompiling it — it prints
+`<Comp>: <name> stays in MoonBit — <why> (script-refusal)`, drops the name
+from what the block answers, and leaves it in your `update` match to write in
+MoonBit. Nothing breaks silently, but a card that runs is not proof the same
+block compiles.
+
+Around `new` / `@cur`: a `new` inside an `if` does not outlive the branch, and
+`@cur = expr` needs a `new` in scope above it. Writing or reading **through an
+index** — `.songs[i]`, `@cur.moods[0]` — needs a bounds check the backend does
+not emit, wherever the place is rooted; the named collection methods
+(`setAt` / `deleteAt`) carry their own and are the way to say it.
+
+Elsewhere, three things a body may otherwise say:
+
+- **a path into a binding** — `@value.completed`, which is what a `@when` over
+  a list of child component *instances* wants. `@value` whole is fine
+  (`lower @value`, `len (str @value)`, `has .picked @value`).
+- **`sendAt`** — an addressed send. The position is what the backend does not
+  emit; `send` (to self) and `intent` compile.
+- **a coercion `num` cannot make** — `num` converts a number, so a number
+  arriving inside an `Any` (a file input's metadata `Map`, say) is unpacked in
+  MoonBit. `str` renders any value and is not affected.
 
 ## Contracts (`requires` / `ensures` / `invariant`)
 

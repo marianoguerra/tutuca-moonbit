@@ -51,6 +51,11 @@ fn selector_comp() -> @component.Component {
 }
 ```
 
+`provide` / `lookup` are **wiring, not behaviour**: they say where a value
+comes from, which is a fact about how this component was registered rather than
+about what it does, so they are `component()` arguments and the script block has
+nothing to say about them.
+
 `provide` publishes a field under a name; a descendant's `lookup` resolves
 `*name` to the nearest matching producer, falling back to the `default`
 expression when none is in scope (`None` → `null`). `*name` works wherever a

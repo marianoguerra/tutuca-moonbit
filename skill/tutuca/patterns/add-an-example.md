@@ -21,6 +21,12 @@ pub fn foo_module() -> @component.ModuleDef {
 }
 ```
 
+An example is MoonBit because a `ModuleDef` is assembly: it names the
+components a module registers and the arguments an example seeds them with,
+neither of which is a fact any one component's block could state. (A plain
+starting state IS one — `<script type="tutuca/init">` in the view file, read
+back as `<Comp>State::fresh()` / `<comp>_init_args("fresh")`.)
+
 `args` is a `Map[String, Value]` seeding the root instance; a
 component-typed slot must hold a real instance —
 `item.make({...})` (which returns the instance as a `Value`), not a

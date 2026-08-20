@@ -49,6 +49,9 @@ fn toolbar_comp() -> @component.Component {
 }
 ```
 
+Both calls are wiring — where a value comes from, not what a component does —
+so they are `component()` arguments and no script block states them.
+
 Because `*active` resolves to a real **path** (not a copied value), the event
 fired by the `setText` input inside the rendered child is *teleported*: the
 mutation skips the intermediate components and lands on `Workspace.sheet`, so the

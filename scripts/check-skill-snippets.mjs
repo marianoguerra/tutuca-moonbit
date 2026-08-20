@@ -17,6 +17,14 @@
 //   ```moonbit fragment   a body fragment; wrapped in a fn before compiling
 //   ```moonbit nocheck    skipped; REQUIRES a `// nocheck: <reason>` line
 //
+// An ```html view file is generated whether or not a ```moonbit block follows
+// it: a recipe whose whole answer is the view file — a schema and a
+// `tutuca/script` block, with nothing left for MoonBit to do — is the shape
+// these docs aim for, and it would otherwise be the one shape nothing checks.
+// A generation that succeeds but reports a `script-refusal` FAILS here: the
+// module compiles, but an arm the snippet shows in the block would silently
+// fall through to MoonBit, which is the opposite of what the recipe teaches.
+//
 // Run:
 //   moon build --target js playground/viewgen_js   # the generator
 //   node scripts/check-skill-snippets.mjs
@@ -177,6 +185,11 @@ for (const file of markdownFiles(SKILL)) {
       // Only a view FILE is a usable pair half — a bare markup fragment has no
       // schema and no <template>, so it would generate nothing.
       lastHtml = /<template|tutuca\/state/.test(b.body) ? b.body : null;
+      // Generated even when no ```moonbit block follows it. A recipe whose
+      // whole answer is the view file — a schema and a script block, with
+      // nothing left for MoonBit to do — is exactly the shape the patterns
+      // aim for, and it would otherwise be the one shape nothing checks.
+      if (lastHtml !== null) pushHtml(`${rel} § ${b.heading}`, lastHtml);
       continue;
     }
     if (b.lang !== "moonbit") continue;
@@ -221,12 +234,22 @@ function fallbackName(html, i) {
   return m ? m[1] : `View${i}`;
 }
 
-function pushUnit(rel, block) {
+function unitFor(rel) {
   let u = units.find((x) => x.file === rel);
   if (!u) {
     u = { file: rel, name: rel, blocks: [], htmls: [] };
     units.push(u);
   }
+  return u;
+}
+
+function pushHtml(rel, html) {
+  const u = unitFor(rel);
+  if (!u.htmls.includes(html)) u.htmls.push(html);
+}
+
+function pushUnit(rel, block) {
+  const u = unitFor(rel);
   u.blocks.push(block);
   if (block.html !== null && !u.htmls.includes(block.html)) u.htmls.push(block.html);
 }
@@ -252,6 +275,17 @@ try {
       const r = JSON.parse(globalThis.__tutucaViewgen(html, fallbackName(html, i)));
       if (!r.ok) {
         failures.push([u.name, `view generation failed: ${r.error}\n`]);
+        genFailed = true;
+        return;
+      }
+      // A script-refusal is not a generation failure — the module compiles and
+      // the name falls through to MoonBit. It IS a documentation failure: the
+      // snippet shows a block that silently does nothing in a compiled
+      // component, which is the opposite of what these recipes teach. Either
+      // write the arm the block can compile, or show it as the MoonBit half.
+      const refused = (r.hints ?? []).filter((h) => h.includes("script-refusal"));
+      if (refused.length) {
+        failures.push([u.name, `${refused.join("\n")}\n`]);
         genFailed = true;
         return;
       }

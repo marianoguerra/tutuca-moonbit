@@ -10,6 +10,10 @@ shows, and the active tab button is highlighted.
   state Tabs { currentView: String }
 </script>
 
+<script type="tutuca/init">
+{ "fresh": { "currentView": "overview" } }
+</script>
+
 <template id="Tabs">
   <section>
     <div role="tablist" class="tabs">
@@ -26,13 +30,17 @@ shows, and the active tab button is highlighted.
 </template>
 ```
 
-`tabs.mbt` — there are no handlers to write: `setCurrentView` is the mutator
-every text field gets, so the only thing left is the initial state.
+There is no script block and there are no handlers: `setCurrentView` is the
+mutator every text field gets, and the starting value is a **named initial
+state** — a default is a value, so it goes in a block of its own and the
+generator turns it into `TabsState::fresh()`.
+
+`tabs.mbt` — all that is left is naming the fixture:
 
 ```moonbit
 ///|
 fn tabs_comp() -> @component.Component {
-  tabs_component(init={ currentView: "overview" })
+  tabs_component(init=TabsState::fresh())
 }
 ```
 

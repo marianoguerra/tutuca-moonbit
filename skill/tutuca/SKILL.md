@@ -8,9 +8,20 @@ description: Use when authoring or reviewing tutuca components in the MoonBit po
 Tutuca is an immutable-state SPA framework. This skill covers the MoonBit
 port (`marianoguerra/tutuca`): a component is declared in an `.html` view file
 — its state, its templates, its styles — which `tutuca gen-views` compiles
-into a MoonBit module beside it, over the `@tutuca.Value` value layer. What
-you write is the handlers. Modules are `ModuleDef` values, and tests run under
-`moon test`. Read [core.md](./core.md) first for the framework primer.
+into a MoonBit module beside it, over the `@tutuca.Value` value layer.
+
+Behaviour goes in the view file too, in the `<script type="tutuca/script">`
+block beside the schema. **MoonBit is for what that block cannot say** — the
+wiring a component was assembled with (`provide` / `lookup`, `slot_args`,
+macros, `ModuleDef`), and the handful of bodies the block does not spell
+(building a child instance, `@loop-with`, a fold over a sequence, a payload
+unpacked out of an `Any`). A block arm the ahead-of-time backend cannot
+compile is never silently dropped: `gen-views` prints
+`<name> stays in MoonBit — <why> (script-refusal)` and leaves the name to your
+`update` match.
+
+Modules are `ModuleDef` values, and tests run under `moon test`. Read
+[core.md](./core.md) first for the framework primer.
 
 ## Verifying changes
 

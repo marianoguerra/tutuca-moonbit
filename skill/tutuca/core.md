@@ -831,8 +831,26 @@ declarations, and the at-rules that must live in `global_style`: see
 
 ## The handler buckets
 
-Everything you write beside a generated view goes in one of these. This is the
-canonical list; other files link here rather than restating it.
+Everything you write **in MoonBit** beside a generated view goes in one of
+these. This is the canonical list; other files link here rather than restating
+it.
+
+Reach for a bucket third, not first. A name is answered by the first of three
+that claims it, and the buckets are the last:
+
+1. a **generated mutator** — `setX`, `toggleX`, `pushInX`, `removeInXAt`, from
+   the field's declared kind. No code at all.
+2. a **declaration in the `<script type="tutuca/script">` block** — `receive`,
+   `intent`, `compute`, `pred`, `invariant`, `enrich`, `enrichScope`, and the
+   `send` / `sendAt` / `intent` / `forward` effects. A name the block answers
+   is dropped from the generated enum, so the two halves can never both claim
+   one handler.
+3. a **bucket entry**, for what neither of those says: building a child
+   component instance, `@loop-with`, a fold over a whole sequence, a payload
+   unpacked out of an `Any` — and anything `gen-views` prints a
+   `script-refusal` for. The block's own reference, and the list of what the
+   ahead-of-time backend refuses, are in
+   [schema.md](./schema.md#what-the-ahead-of-time-backend-refuses).
 
 | Bucket | Signature | Answers |
 | ------ | --------- | ------- |
@@ -869,7 +887,8 @@ generated wrapper, translate them to the enum match — the wrapper's parameter
 type will not accept a map.
 
 The enums are **closed and view-driven**: their cases come from the names the
-views reference (plus any `func` the schema declares). You cannot pre-declare a
+views reference, plus the `pred` / `compute` / `invariant` names the script
+block declares — minus the ones that block ANSWERS, which need no arm. You cannot pre-declare a
 handler no view calls yet — the constructor doesn't exist. Add the name to the
 view first, regenerate, then write the handler. A bucket the views never use is
 not a parameter at all.
@@ -892,7 +911,8 @@ an identical `ctx.send` another, which is a component you can neither drive from
 a test nor reuse under a parent that drives it.
 
 The `update` fn is one pattern match over all of them; the framework swaps the
-returned state into the dispatch path (`None` = no change). An intent's three
+returned state into the dispatch path (`Next(s)` = the successor, `Unchanged` =
+this arm answered and nothing moved, `Unhandled` = try the next answerer). An intent's three
 answers — `<name>Ok` / `<name>Error` / `<name>Unhandled` — come back as
 ordinary `Receive` arms. The channels — plus `ctx.at()`,
 routes and legs, `forward` / `reply` / `fail`, catch-all arms, and `IntentFn`

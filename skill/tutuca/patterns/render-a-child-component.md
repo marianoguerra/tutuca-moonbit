@@ -36,6 +36,10 @@ fn card_comp() -> @component.Component {
 }
 ```
 
+That call is wiring, not behaviour — the schema already declared the slot;
+`slot_args~` only says what the child is built with, which is the one thing no
+type states.
+
 The child draws its own view from its own fields, so inside `Greeting`'s view
 `@text=".name"` reads the child's `name`. This is the idiomatic way to display
 nested structure: make the nested thing a component and render it, rather than

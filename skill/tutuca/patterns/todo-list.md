@@ -44,8 +44,17 @@ and a named `<template>` per component:
 
 Generation derives every name from the template/interface ids:
 `ItemState` / `ItemsState`, `item_component` / `items_component`,
-`ItemsMsg::from_dispatch`, and the bucket enums. What you write is the
-handlers:
+`ItemsMsg::from_dispatch`, and the bucket enums.
+
+There is no `<script type="tutuca/script">` block here, and this is the recipe
+that shows why one is not always the answer. Each handler below is one of the
+two reasons: **building a child component instance** (`item.make`), which that
+language deliberately has no way to say, and **reading a path into a row**
+(`@value.completed`), which `gen-views` does not compile — the rows are `Item`
+INSTANCES, so the filter has to look inside one. Were `items` a list of plain
+values, `onlyVisible` would be a `pred` in a block and this file would have no
+`when` bucket at all (see [filter-a-list.md](filter-a-list.md)). What is left
+is the handlers:
 
 ```moonbit
 ///|
@@ -117,7 +126,10 @@ Why each piece is the way it is:
   @key` dispatches to the *list*, which owns the collection.
 - **`@when="onlyVisible"`** filters at render time; the `when` bucket is
   a match over a generated enum (a raw `component()` call would take
-  `when={ "onlyVisible": ... }` instead).
+  `when={ "onlyVisible": ... }` instead). The other way to write it is to put
+  the predicate on the CHILD — `pred unfinished { not .completed }` in
+  `Item`'s block — and have this `when` call it on each instance with
+  `value.call_field("unfinished", [])`.
 - **Add / toggle / delete** show the three handler routes: an `update`
   arm (`OnAddItem`), fall-through to a generated mutator
   (`RemoveInItemsAt`, `ToggleHideCompleted`), and the checkbox mutator

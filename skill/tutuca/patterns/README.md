@@ -1,10 +1,33 @@
 # Tutuca — Patterns
 
 Task-oriented recipes: "how do I do X" with a minimal working snippet and the
-one pitfall worth knowing. Each recipe is self-contained and brief — most show
-both halves, the `.html` view file and the MoonBit beside it. For the full
-directive *semantics* behind a pattern, see [core.md](../core.md) and its
-spokes; for field spellings, [schema.md](../schema.md).
+one pitfall worth knowing. Each recipe is self-contained and brief.
+
+**Write it in the view file first.** A component's data goes in the
+`<script type="tutuca/state">` schema and its behaviour in the
+`<script type="tutuca/script">` block beside it — `receive`, `intent`,
+`compute`, `pred`, `invariant`, `enrich`, `enrichScope`, plus the `send` /
+`sendAt` / `intent` / `forward` effects. MoonBit is for what that language
+cannot spell, and every recipe here that shows a MoonBit half says which of
+the two reasons it is:
+
+- **wiring, not behaviour** — `provide` / `lookup`, `slot_args`, macros,
+  `ModuleDef` examples, and the `intents` registered on a scope. These say how
+  a component was assembled, which is not something a component's own block
+  could state.
+- **the block does not spell it** — building a child component instance
+  (`item.make`), `@loop-with` (the one render bucket with no declaration
+  kind), a fold over a whole sequence, and a payload unpacked out of an `Any`.
+
+`gen-views` never silently ignores a block: an arm it cannot compile prints
+`<Comp>: <name> stays in MoonBit — <why> (script-refusal)` and falls through to
+your `update` match. Generated mutators (`setX`, `toggleX`, `pushInX`,
+`removeInXAt`) are answered by the runtime and are never part of that split —
+reach for one before writing any handler at all.
+
+For the full directive *semantics* behind a pattern, see [core.md](../core.md)
+and its spokes; for field spellings and the block's own reference,
+[schema.md](../schema.md).
 
 New to Tutuca? Read [core.md](../core.md) first, then reach here for a specific
 task.
@@ -18,14 +41,14 @@ task.
 ## Iteration & lists
 
 - [Iterate a list](iterate-a-list.md) — render one element per item with `@each` / `render-each`.
-- [Filter a list](filter-a-list.md) — keep only matching items with `@when`.
-- [Enrich each item](enrich-each-item.md) — expose derived per-item values as `@`-bindings.
+- [Filter a list](filter-a-list.md) — keep only matching items with `@when`, which takes a `pred`.
+- [Enrich each item](enrich-each-item.md) — expose derived per-item values as `@`-bindings with `enrich`.
 - [Paginate a list](paginate-a-list.md) — slice the iteration with `@loop-with` `start`/`end`.
 - [Filter and paginate a list](filter-and-paginate.md) — do both with `@loop-with` `keys` (filter-then-slice, identity preserved).
 
 ## Conditional content & attributes
 
-- [Show or hide content](show-or-hide-content.md) — `@show` / `@hide` and the boolean predicates.
+- [Show or hide content](show-or-hide-content.md) — `@show` / `@hide`, the built-in predicates, and a `pred` of your own.
 - [Switch between views](switch-between-views.md) — pick a component's own view with `as=` or `@push-view`.
 - [Conditional attribute value](conditional-attribute-value.md) — set a class/title by condition with `@if` / `@then` / `@else`.
 - [Tabbed interface](tabbed-interface.md) — a `currentView` field + predicates to show the panel and highlight the active tab.
@@ -42,8 +65,8 @@ task.
 
 ## Data & events
 
-- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, scope enrichment.
-- [Handle events](handle-events.md) — `@on.<event>`, handler args, modifiers, custom events.
+- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, `compute` and `enrichScope`.
+- [Handle events](handle-events.md) — `@on.<event>`, `receive` handlers, args, modifiers, custom events.
 - [Read a picked file](file-input.md) — `@on.change="… e.value"` and the file-metadata `Map`.
 
 ## Component communication

@@ -3,19 +3,23 @@
 **Problem:** render one element per item in a list/map field.
 
 ```html
-<!-- a host element per item: @key and @value are bound in the loop -->
-<li @each=".items"><span @text="@key"></span>: <x text="@value"></x></li>
+<script type="tutuca/state">
+  state Feed { items: Array[Any] }   // or Array[String], Map[String, Any], …
+</script>
 
-<!-- a child component per item -->
-<x render-each=".items"></x>
-<div @each=".items"><x render-it></x></div>
+<template id="Feed">
+  <ul>
+    <!-- a host element per item: @key and @value are bound in the loop -->
+    <li @each=".items"><span @text="@key"></span>: <x text="@value"></x></li>
+    <!-- a child component per item -->
+    <x render-each=".items"></x>
+    <div @each=".items"><x render-it></x></div>
+  </ul>
+</template>
 ```
 
-```moonbit
-priv struct ListState {
-  items : Array[@tutuca.Value] // or Array[String], Map[String, ...], …
-}
-```
+There is no MoonBit half: the field is declared in the schema block and the
+loop is a directive, so nothing is left for a handler to do.
 
 `@each` accepts a `.field` or a `*dynamic` (not a `$handler` — a computed
 result has no addressable path for event dispatch). `@key`/`@value` are

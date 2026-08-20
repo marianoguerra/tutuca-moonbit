@@ -8,33 +8,41 @@ one with no suffix.
 
 ```html
 <script type="tutuca/state">
-  state Note { title: String }
+  state Note { title: String, view: String, items: Array[Any] }
 </script>
 
-<template id="Note"><p @text=".title"></p></template>
+<script type="tutuca/script" for="Note">
+  /// Flip the pushed view name. One string field is the whole switch.
+  receive toggleView { .view = if .view is 'main' { 'edit' } else { 'main' } }
+</script>
+
+<template id="Note">
+  <div>
+    <p @text=".title"></p>
+    <button @on.click="toggleView">flip</button>
+
+    <!-- as= picks the view for one <x render> element only -->
+    <x render-each=".items"></x>
+    <x render-each=".items" as="edit"></x>
+    <x render-each=".items" as=".view"></x>   <!-- view chosen by a field at runtime -->
+
+    <!-- @push-view forces a view on every component rendered under the host -->
+    <div @push-view=".view"><x render-each=".items"></x></div>
+  </div>
+</template>
+
 <template id="Note:edit">
   <input :value=".title" @on.input="setTitle e.value">
 </template>
 ```
 
-```moonbit nocheck
-// nocheck: one expression, shown to make the point that nothing else is needed
-note_component() // the generated wrapper passes both views
-```
-
-```html
-<!-- as= picks the view for one <x render> element only -->
-<x render=".value"></x>
-<x render=".value" as="edit"></x>
-<x render=".value" as=".mode"></x>   <!-- view chosen by a field at runtime -->
-
-<!-- @push-view forces a view on every component rendered under the host -->
-<div @push-view=".view"><x render-each=".items"></x></div>
-```
+Nothing else is needed: the generated wrapper passes both views, and `if` in a
+value position (both arms required — an expression has to have a value) is
+enough to write the flip.
 
 `as` applies to the direct component only and falls back to `main` if the view
 is absent. It takes the same value forms as `@push-view` — a literal name
-(`as="edit"`) or a dynamic value (`as=".mode"`, `*dyn`, `@bind`, `$handler`,
+(`as="edit"`) or a dynamic value (`as=".view"`, `*dyn`, `@bind`, `$handler`,
 `$'…'`), evaluated against the host component at render time (for `render-each`,
 once for all items). `@push-view` instead pushes a view name onto the render
 stack so every descendant picks the first matching view (else `main`) — use it

@@ -34,6 +34,9 @@ fn card_macro() -> @anode.Macro {
 <x:card title="Hi"><p>body</p></x:card>  <!-- children fill <x:slot> -->
 ```
 
+A macro is registered from MoonBit because it is expanded at build time by
+code, not by a component — there is no state for a script block to be about.
+
 A macro is pure template expansion — no fields, no handlers. Parameters are
 read as `^name`; calls inside the body (`$handler`, `.field`) resolve against
 the *host* component. Params substitute as source text, so a handler name
