@@ -201,8 +201,10 @@ fn emit_state_struct(
     // BUILT: `\{t}State::{  }` is the only literal the compiler accepts for an
     // empty struct — a bare `{  }` parses as an empty Map — and it then reports
     // that same literal as `unnecessary_annotation`, which the `check` task
-    // turns on. `\{t}State::default()` is a call rather than a literal, so it
-    // satisfies both. See `emit_zero` and the decoder.
+    // turns on. `Default::default()` is a call rather than a literal, so it
+    // satisfies both — and spelled through the trait, because calling it as
+    // `\{t}State::default()` relies on an implicit promotion the compiler now
+    // deprecates. See `emit_zero` and the decoder.
     out.write_string("pub(all) struct \{t}State {} derive(Default)\n\n")
     return
   }
@@ -248,11 +250,12 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
   )
   // The return type names the struct, so a `\{t}State::` prefix is the
   // `unnecessary_annotation` the `check` task turns on. The field-less state
-  // cannot use a literal at all (see `emit_state_struct`) and goes through its
-  // derived `default()` instead.
+  // cannot use a literal at all (see `emit_state_struct`) and goes through the
+  // derived `Default::default()` instead — through the trait, since the
+  // `\{t}State::default()` spelling is a deprecated implicit promotion.
   let carried = def.fields.filter(f => f.ty.in_struct())
   if carried.is_empty() {
-    out.write_string("  \{t}State::default()\n}\n\n")
+    out.write_string("  Default::default()\n}\n\n")
   } else {
     out.write_string("  {\n")
     for f in carried {

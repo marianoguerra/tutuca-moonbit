@@ -24,7 +24,7 @@ pub(all) struct MacrosNoState {} derive(Default)
 ///
 ///   init={ ..MacrosNoState::zero(), label: "Counter" }
 pub fn MacrosNoState::zero() -> MacrosNoState {
-  MacrosNoState::default()
+  Default::default()
 }
 
 ///|
@@ -42,7 +42,7 @@ impl @component.Fields for MacrosNoState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MacrosNoState with fn decode(_f) {
-  Some(MacrosNoState::default())
+  Some(Default::default())
 }
 
 ///|

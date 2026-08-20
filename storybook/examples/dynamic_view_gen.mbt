@@ -762,7 +762,7 @@ pub(all) struct ToolbarState {} derive(Default)
 ///
 ///   init={ ..ToolbarState::zero(), label: "Counter" }
 pub fn ToolbarState::zero() -> ToolbarState {
-  ToolbarState::default()
+  Default::default()
 }
 
 ///|
@@ -780,7 +780,7 @@ impl @component.Fields for ToolbarState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ToolbarState with fn decode(_f) {
-  Some(ToolbarState::default())
+  Some(Default::default())
 }
 
 ///|

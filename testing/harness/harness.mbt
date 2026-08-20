@@ -491,12 +491,8 @@ pub fn refusals_while(body : () -> Unit raise) -> Array[@tutuca.Refusal] raise {
   // Switched off on the way out of a failure too: a driving call that raises —
   // a selector matching nothing — must not leave the channel open for whatever
   // test runs next.
-  body() catch {
-    e => {
-      off()
-      raise e
-    }
-  }
+  errdefer off()
+  body()
   off()
   out
 }

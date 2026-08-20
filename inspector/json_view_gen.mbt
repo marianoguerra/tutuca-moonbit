@@ -24,7 +24,7 @@ pub(all) struct JsonNullState {} derive(Default)
 ///
 ///   init={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
-  JsonNullState::default()
+  Default::default()
 }
 
 ///|
@@ -42,7 +42,7 @@ impl @component.Fields for JsonNullState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNullState with fn decode(_f) {
-  Some(JsonNullState::default())
+  Some(Default::default())
 }
 
 ///|
@@ -322,7 +322,7 @@ pub(all) struct ValueFnState {} derive(Default)
 ///
 ///   init={ ..ValueFnState::zero(), label: "Counter" }
 pub fn ValueFnState::zero() -> ValueFnState {
-  ValueFnState::default()
+  Default::default()
 }
 
 ///|
@@ -340,7 +340,7 @@ impl @component.Fields for ValueFnState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ValueFnState with fn decode(_f) {
-  Some(ValueFnState::default())
+  Some(Default::default())
 }
 
 ///|

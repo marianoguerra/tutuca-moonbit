@@ -24,7 +24,7 @@ pub(all) struct MinimumViableComponentState {} derive(Default)
 ///
 ///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
 pub fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
-  MinimumViableComponentState::default()
+  Default::default()
 }
 
 ///|
@@ -42,7 +42,7 @@ impl @component.Fields for MinimumViableComponentState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MinimumViableComponentState with fn decode(_f) {
-  Some(MinimumViableComponentState::default())
+  Some(Default::default())
 }
 
 ///|
@@ -85,7 +85,7 @@ pub(all) struct StaticViewComponentState {} derive(Default)
 ///
 ///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
 pub fn StaticViewComponentState::zero() -> StaticViewComponentState {
-  StaticViewComponentState::default()
+  Default::default()
 }
 
 ///|
@@ -103,7 +103,7 @@ impl @component.Fields for StaticViewComponentState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StaticViewComponentState with fn decode(_f) {
-  Some(StaticViewComponentState::default())
+  Some(Default::default())
 }
 
 ///|

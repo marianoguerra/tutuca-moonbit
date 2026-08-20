@@ -279,9 +279,10 @@ fn emit_codec(
   // `Some(...)` against a `\{t}State?` return type, so the struct name is
   // inferable and spelling it is `unnecessary_annotation`. The field-less
   // state has no usable literal at all (see `emit_state_struct`) and goes
-  // through its derived `default()`.
+  // through its derived `Default::default()` — through the trait, since the
+  // `\{t}State::default()` spelling is a deprecated implicit promotion.
   if carried.is_empty() {
-    out.write_string("  Some(\{t}State::default())\n}\n\n")
+    out.write_string("  Some(Default::default())\n}\n\n")
     return
   }
   out.write_string("  Some({\n")

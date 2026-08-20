@@ -24,7 +24,7 @@ pub(all) struct StylesExampleState {} derive(Default)
 ///
 ///   init={ ..StylesExampleState::zero(), label: "Counter" }
 pub fn StylesExampleState::zero() -> StylesExampleState {
-  StylesExampleState::default()
+  Default::default()
 }
 
 ///|
@@ -42,7 +42,7 @@ impl @component.Fields for StylesExampleState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleState with fn decode(_f) {
-  Some(StylesExampleState::default())
+  Some(Default::default())
 }
 
 ///|
