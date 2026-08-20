@@ -6,43 +6,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
-
-- **A message case is declared the way it is used: `focusRow`, not
-  `FocusRow`.** The parser always derived both the runtime name and the MoonBit
-  variant from whatever spelling a `receive` / `intent` / `bubble` / `response`
-  case was written in, so the UpperCamel in every schema block was the
-  *generated* variant leaking into the authoring surface — a block reading
-  `FocusRow(Int)` above a handler reading `receive focusRow(n)` and a view
-  writing `send 'focusRow' 3`. Every declaration in the docs, the bundled
-  skill, the playground cards, the storybook, the dyncomp and inspector
-  components and the tutucard examples now reads the way the code around it
-  reads. UpperCamel still parses and still generates the same module, so no
-  existing component breaks.
-
-  One error message improves for free: `PayloadDisagrees` used to report
-  ``declared `Bump(Int)` `` against ``called as `bump(a number, a number)` ``,
-  a mismatch in the half that was not wrong.
-
-- **`gen-views` reports `message-case (warning)`** for a case declared in a
-  spelling nothing else uses — the capital, and `set_label` for the same
-  reason. A warning rather than a refusal: both spellings compile to the same
-  message, and the fix is always the name the warning prints.
-
-### Fixed
-
-- **`@statedef.fingerprint` hashes a declared name normalized**, so recasing a
-  case list is no longer reported as a shape the stored state can no longer be
-  read back into — which is what its own "over SHAPE, not over source text"
-  contract always said. A type name a FIELD refers to is still hashed as
-  written, because a `StateTy` carries that spelling.
-
-- **`@statedef.fingerprint` covers the `intent` bucket**, under the letter `n`.
-  It had been iterating `receive` / `bubble` / `response` only since intents
-  gained their own bucket, so two schemas differing solely in what they
-  answered hashed the same. Every fingerprint moves once with this release.
-
-## [0.23.0] - 2026-08-19
+## [0.23.0] - 2026-08-20
 
 **Every downstream SOURCE tree needs migrating; a compiled bundle does not.**
 This release changes the dispatch model and the buckets a component answers.
@@ -107,6 +71,27 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   (last, so existing discriminants are unchanged) and the four `control` intent
   functions on the host side. Every guest was regenerated.
 
+- **A message case is declared the way it is used: `focusRow`, not
+  `FocusRow`.** The parser always derived both the runtime name and the MoonBit
+  variant from whatever spelling a `receive` / `intent` / `bubble` / `response`
+  case was written in, so the UpperCamel in every schema block was the
+  *generated* variant leaking into the authoring surface — a block reading
+  `FocusRow(Int)` above a handler reading `receive focusRow(n)` and a view
+  writing `send 'focusRow' 3`. Every declaration in the docs, the bundled
+  skill, the playground cards, the storybook, the dyncomp and inspector
+  components and the tutucard examples now reads the way the code around it
+  reads. UpperCamel still parses and still generates the same module, so no
+  existing component breaks.
+
+  One error message improves for free: `PayloadDisagrees` used to report
+  ``declared `Bump(Int)` `` against ``called as `bump(a number, a number)` ``,
+  a mismatch in the half that was not wrong.
+
+- **`gen-views` reports `message-case (warning)`** for a case declared in a
+  spelling nothing else uses — the capital, and `set_label` for the same
+  reason. A warning rather than a refusal: both spellings compile to the same
+  message, and the fix is always the name the warning prints.
+
 ### Removed
 
 - **The v1 dispatch surface is gone.** `HandlerBucket` and `Dispatch` have two
@@ -146,6 +131,19 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   construct it cannot rewrite safely is reported by name with the reason and
   left exactly as it was, and refusal is per COMPONENT so a view is never
   rewritten against handlers that were not. The refusals are the work list.
+
+### Fixed
+
+- **`@statedef.fingerprint` hashes a declared name normalized**, so recasing a
+  case list is no longer reported as a shape the stored state can no longer be
+  read back into — which is what its own "over SHAPE, not over source text"
+  contract always said. A type name a FIELD refers to is still hashed as
+  written, because a `StateTy` carries that spelling.
+
+- **`@statedef.fingerprint` covers the `intent` bucket**, under the letter `n`.
+  It had been iterating `receive` / `bubble` / `response` only since intents
+  gained their own bucket, so two schemas differing solely in what they
+  answered hashed the same. Every fingerprint moves once with this release.
 
 ## [0.22.0] - 2026-08-15
 
@@ -4256,5 +4254,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.23.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
