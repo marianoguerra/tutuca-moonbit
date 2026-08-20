@@ -274,9 +274,11 @@ fn WasmGuest::value_field(
 /// says nothing cannot disagree with it.
 fn intent_opts(j : Json?) -> @tutuca.IntentOpts {
   guard j is Some(Object(o)) else { return @tutuca.IntentOpts::new() }
-  let name = (key : String) => match o.get(key) {
-    Some(String(s)) => Some(s)
-    _ => None
+  let name = (key : String) => {
+    match o.get(key) {
+      Some(String(s)) => Some(s)
+      _ => None
+    }
   }
   let route : Array[@tutuca.Leg] = []
   if o.get("route") is Some(Array(legs)) {
