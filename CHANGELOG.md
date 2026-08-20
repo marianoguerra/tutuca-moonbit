@@ -4,6 +4,70 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-08-20
+
+The script block is where a component's behaviour belongs, and MoonBit is the
+answer for what that language cannot say. This release moves four handlers back
+across that line — they were not refused by design, only missing from the
+emitter — and rewrites the bundled skill, which had been teaching the escape
+hatch as the entrance.
+
+### Added
+
+- **`has` compiles.** The membership read — `has .picked @value`, which every
+  selection list grows — had no arm in the MoonBit backend, so a block a card
+  ran refused under `gen-views`. A set or a map is asked for a KEY, through the
+  display string that `hasIn<X>` writes and `tc_has` reads; a list is searched
+  by equality at its element's own type.
+
+- **An ordered map takes `setAt` / `deleteAt`.** They are what the checker
+  allows and what the card implements — and they mirror the generated
+  `setIn<X>At` / `deleteIn<X>At` mutators. The backend previously took only
+  `set` / `remove` / `delete`, so one backend refused what the other ran over a
+  spelling. All of them are accepted.
+
+- **Three sections in the skill's `schema.md`.** *The reading vocabulary* (the
+  sixteen builtins and five operator families, which the skill never listed),
+  *Changing a collection* (the statement form, the per-type table, the
+  canonical spellings, and the fact that a generated mutator is answered by the
+  runtime and no script-refusal can disable one), and *What the ahead-of-time
+  backend refuses*.
+
+### Fixed
+
+- **A `receive` payload of a collection type emitted a module that did not
+  compile.** The parameter bound raw — a `Value` — while its type stayed the
+  declared `Array[Any]`, so `.items = rows` assigned a `Value` into a typed
+  field and `moonc` rejected the generated file, with nothing between the block
+  and the build to say which arm did it. `Array[Any]` and `Map[String, Any]`
+  now decode through their patterns; any other non-scalar binds raw with its
+  type unknown, so a typed use is refused the way the code always claimed.
+
+- **A `pred` a loop calls reported a refusal for a role nobody asked for.**
+  Every `pred` is folded into the method bucket, because a parent may ask a
+  child for one; a `@when` pred reads `@value`, which the method role cannot
+  hand it, so every filter written the ordinary way printed `stays in MoonBit`
+  about a function no view calls. It is reported now only when a view spells
+  `$name`.
+
+### Changed
+
+- **The bundled skill's patterns lead with the view file.** Nine recipes showed
+  behaviour as a MoonBit bucket argument that the block spells directly — a
+  `@when` is a `pred`, a per-row binding is an `enrich`, a `$name` is a
+  `compute`, a click handler is a `receive`, a message or an intent is an
+  effect. Every recipe that keeps a MoonBit half now says which of the two
+  reasons it is: wiring, or a body the block does not spell. `SKILL.md`,
+  `patterns/README.md` and core.md's bucket section state the same order —
+  generated mutator, then the block, then a bucket.
+
+- **`scripts/check-skill-snippets.mjs` verifies the shape the docs now aim
+  for.** It generated an `html` view file only when a `moonbit` block followed
+  it, so a recipe whose whole answer is the view file was the one shape nothing
+  checked. It generates them all, and a generation reporting a
+  `script-refusal` now fails the check. `playground/viewgen_js` returns the
+  hints it reads.
+
 ## [0.24.1] - 2026-08-20
 
 ### Fixed
