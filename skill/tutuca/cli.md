@@ -214,10 +214,17 @@ A **void element** is one HTML gives no closing tag (`<br>`, `<input>`);
 comment. These are recovery behaviors, so the view still parses — it just does
 not nest the way the source reads.
 
-One diagnostic is not a lint code: `state-without-views (hint)` — a schema
-block with no `<template>` in the file. Legitimate for a component whose views
-are built in MoonBit, and also what a mistyped component name looks like, which
-is why it is reported rather than passed in silence.
+Two diagnostics are not lint codes:
+
+- `state-without-views (hint)` — a schema block with no `<template>` in the
+  file. Legitimate for a component whose views are built in MoonBit, and also
+  what a mistyped component name looks like, which is why it is reported rather
+  than passed in silence.
+- `message-case (warning)` — a `receive` / `intent` / `bubble` / `response`
+  case declared in a spelling nothing else uses: `Nudge` where every handler
+  and call site writes `nudge`. Both spellings compile to the same message, so
+  this is a warning and the module is still generated; the fix is always the
+  name the warning prints.
 
 There is **no** `tutuca-lint-ignore` pragma and no per-line suppression.
 

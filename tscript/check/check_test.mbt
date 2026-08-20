@@ -36,9 +36,9 @@ fn schema() -> String {
     #|  pri    : Priority
     #|  blob   : Any
     #|}
-    #|receive Counter { ResetTo(Int), Rename(String, Int) }
-    #|bubble  Counter { RowPicked(Int) }
-    #|intent  Counter { RowPicked(Int), Save(String) }
+    #|receive Counter { resetTo(Int), rename(String, Int) }
+    #|bubble  Counter { rowPicked(Int) }
+    #|intent  Counter { rowPicked(Int), save(String) }
   )
 }
 

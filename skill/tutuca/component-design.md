@@ -39,7 +39,7 @@ Reach for the *narrowest* channel that does the job, and only move further down
 the ladder when the one above can't express it:
 
 - **The component owns the state needed to respond** → answer it in an
-  **`update` `Input` arm** (or let a generated mutator serve it) — stays
+  **`update` `Receive` arm** (or let a generated mutator serve it) — stays
   self-contained. See
   [core.md](./core.md) *Computed values & predicates*.
 - **You need to reach one known component** → **`send` / `sendAt` / `receive`**,
@@ -64,7 +64,8 @@ the ladder when the one above can't express it:
   know about it → **`provide` / `lookup` (`*name`)** across the tree — the last
   resort. See [advanced.md](./advanced.md).
 
-A compact worked version of the first four (an `Input` arm, `send`/`receive`,
+A compact worked version of the first four (a `Receive` arm for the component's
+own events, `send`/`receive`,
 `intent dyn`, `intent lex`) lives in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 

@@ -176,9 +176,9 @@ test "the schema description carries the declaration's own channels" {
   let def = one(
     (
       #|state Board { rows: Array[Any], loading: Bool }
-      #|receive  Board { Reset, FocusRow(Int) }
-      #|bubble   Board { RowPicked(Int) }
-      #|response Board { LoadRows(Array[Any]) }
+      #|receive  Board { reset, focusRow(Int) }
+      #|bubble   Board { rowPicked(Int) }
+      #|response Board { loadRows(Array[Any]) }
     ),
   )
   let si = @info.schema_info(def, name="Board")

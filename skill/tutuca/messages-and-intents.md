@@ -17,9 +17,15 @@ arm of the **same `update` match** in MoonBit:
 
 | Triggered by                                          | script block        | `update` arm          |
 | ----------------------------------------------------- | ------------------- | --------------------- |
-| DOM event (`@on.click`, `@on.input`, …)               | `on <name>`         | `Input(name, args)`   |
+| DOM event (`@on.click`, `@on.input`, …)               | `receive <name>`    | `Receive(name, args)` |
 | `send 'name' …` / `sendAt &.child 'name' …`           | `receive <name>`    | `Receive(name, args)` |
 | `intent 'name' …` — walks a route                     | `intent <name>`     | `Intent(name, args)`  |
+
+The first two rows are one bucket, and there is no keyword or arm that
+separates them: a view is addressed at the component it belongs to, which is
+what `send` means. v1 spelled the DOM half `on <name>` / `Input(name, args)`;
+`on` is no longer a declaration kind, and an `Input` arm now matches nothing
+while still compiling.
 
 A **message** is addressed: it names one component and stops there. An
 **intent** is routed: it names a *thing to be done* and walks until
@@ -53,7 +59,7 @@ target's `receive <name>` block runs. There is **no built-in lifecycle**
     text : String
     rows : Array[Any]
   }
-  receive { Init, Flash(String) }
+  receive { init, flash(String) }
 </script>
 
 <script type="tutuca/script">
@@ -150,7 +156,7 @@ A component answers an intent with an `intent <name>` handler. Inside it:
 ```html
 <script type="tutuca/state">
   state { count : Int, page : Int }
-  intent { SaveDraft(String), Picked(Int) }
+  intent { saveDraft(String), picked(Int) }
 </script>
 
 <script type="tutuca/script">
@@ -211,10 +217,10 @@ reads the schema's `receive` list and fills the intent's opts in.
 
   /// The three ANSWERS. Declaring them is what wires `loadData` up.
   receive {
-    Init
-    LoadDataOk(Any)
-    LoadDataError(String)
-    LoadDataUnhandled
+    init
+    loadDataOk(Any)
+    loadDataError(String)
+    loadDataUnhandled
   }
 </script>
 
@@ -280,6 +286,9 @@ get depends on which bucket you are in:
   next hop, optionally with new arguments or a narrowed route.
 - **In a `receive` body** it *starts a walk*: the message that arrived
   becomes an intent, keeping its name and payload.
+
+The arms below are ALTERNATIVES, not one block — several spell `saveDraft`
+to show one route each, and a real block declares a name once per bucket.
 
 ```html
 <script type="tutuca/script">
@@ -443,11 +452,15 @@ side-effect-only work like persisting state:
 ```html
 <script type="tutuca/script">
   receive applyFilter(value) {
-    intent lex 'persistState' new { key: 'sectionFilter', value: value }
+    intent lex 'persistState' 'sectionFilter' value
     .filter = value
   }
 </script>
 ```
+
+The payload is plain arguments. There is no record literal to pass one as
+a single value — a record payload is built with `new <Type>` and handed
+over as `@cur` (see [schema.md](./schema.md#building-a-value-new-type--cur)).
 
 Fire several in one body when needed — effects come out in the order
 written, after the transition succeeds.

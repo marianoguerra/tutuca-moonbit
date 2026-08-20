@@ -321,7 +321,7 @@ pub fn LoaderBarMsg::from_dispatch(d : @component.Dispatch) -> LoaderBarMsg? {
 impl @component.Fields for LoaderBarState with fn schema() {
   @component.SchemaInfo::new(
     name="LoaderBar",
-    fingerprint="dc6adfc16098a1fc",
+    fingerprint="e8383c4cbc8a1b3a",
     fields=[
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("url", TyText),

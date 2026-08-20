@@ -31,14 +31,14 @@ fn file_picker_comp() -> @component.Component {
     update=(s, msg, _ctx) => match msg {
       // for a file input, `value` is the picked file's metadata as a Map
       // (name/size/type/lastModified); Null when no file is selected
-      Input("onPickFile", [Map(meta), ..]) =>
+      Receive("onPickFile", [Map(meta), ..]) =>
         Next({
           name: meta.get("name").unwrap_or(Null).str(),
           size: meta.get("size").unwrap_or(Null).num(),
           type_: meta.get("type").unwrap_or(Null).str(),
           hasFile: true,
         })
-      Input("onPickFile", _) => Next({ ..s, hasFile: false })
+      Receive("onPickFile", _) => Next({ ..s, hasFile: false })
       _ => Unhandled
     },
   )

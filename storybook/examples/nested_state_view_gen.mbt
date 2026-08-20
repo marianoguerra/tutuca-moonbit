@@ -332,7 +332,7 @@ pub fn NestedStateMsg::from_dispatch(
 impl @component.Fields for NestedStateState with fn schema() {
   @component.SchemaInfo::new(
     name="NestedState",
-    fingerprint="d68713c84911f05f",
+    fingerprint="722524ed547a30df",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("labels", TyList(TyRecord("Label"))),

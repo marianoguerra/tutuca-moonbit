@@ -32,7 +32,7 @@ fn schema() -> String {
     #|  byKey   : Map[String, String]
     #|  blob    : Any
     #|}
-    #|receive Counter { ResetTo(Int), Rename(String, Int) }
+    #|receive Counter { resetTo(Int), rename(String, Int) }
   )
 }
 
@@ -456,7 +456,7 @@ fn rows_schema() -> String {
     #|  labels : Array[Label]
     #|  grid   : Array[Array[String]]
     #|}
-    #|receive Card { Init }
+    #|receive Card { init }
   )
 }
 

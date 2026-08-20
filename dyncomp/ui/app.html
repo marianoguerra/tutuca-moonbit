@@ -17,11 +17,11 @@
   intent PaletteRow {
     /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
     /// its arguments" rather than "place it with its defaults".
-    ComponentPicked(String, String, Bool)
+    componentPicked(String, String, Bool)
   }
 
   receive PaletteRow {
-    SetSelected(Bool)
+    setSelected(Bool)
   }
 
   /// Search the catalog, over everything else on the page.
@@ -40,7 +40,7 @@
   }
 
   receive CommandBar {
-    SetCursor(Int)
+    setCursor(Int)
   }
 
   /// One control of the generated form.
@@ -63,7 +63,7 @@
   }
 
   intent SchemaField {
-    FieldEdited(String, String)
+    fieldEdited(String, String)
   }
 
   /// A form over a component's declared arguments, generated from the JSON
@@ -85,7 +85,7 @@
   }
 
   receive SchemaForm {
-    ShowErrors(Any)
+    showErrors(Any)
   }
 
   /// The sidebar: what the thing you pointed at can be configured with.
@@ -108,7 +108,7 @@
   }
 
   intent ConfigPanel {
-    CloseConfig
+    closeConfig
   }
 
   /// The universal app: a bar, a root, and whatever chrome is open.
@@ -145,9 +145,9 @@
   receive UniversalApp {
     /// A bundle loaded: the catalog changed, so a bar showing results has to
     /// say so.
-    CatalogChanged(String)
+    catalogChanged(String)
     /// A whole tree, from wherever the shell keeps them.
-    RestoreTree(Any)
+    restoreTree(Any)
   }
 </script>
 

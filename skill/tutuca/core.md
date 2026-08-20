@@ -93,7 +93,7 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   `_ => Unhandled`.
 
   The three are distinct on purpose. Under `S?` both refusals were `None`,
-  so an `Input("setTitle", _) => None` meant to veto fell through to the
+  so a `Receive("setTitle", _) => None` meant to veto fell through to the
   generated setter and the write landed anyway.
 - **The bucket enums are closed and view-driven.** With generated views,
   `compute` / `when` / `enrich` / … are functions over enums whose cases
@@ -363,7 +363,7 @@ prefix to use (`MAYBE_ADD_AT_PREFIX` / `MAYBE_DROP_AT_PREFIX` for the
 A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
 resolves by slot:
 
-- **First slot** — an event name dispatched as `Input(name, args)` to
+- **First slot** — an event name dispatched as `Receive(name, args)` to
   the `update` fn; when no `update` arm claims it, dispatch falls back
   to a generated mutator of the same name. `$name` is for VALUE
   positions, where a `compute` entry answers it.
@@ -429,7 +429,7 @@ my_comp_component(
   // ONE effectful dispatch match: (s, msg, ctx) => Update[S]
   // (Next = successor, Unchanged = mine and no, Unhandled = not mine)
   update=(s, msg, ctx) => match msg {
-    Input("onClick", _) => Next({ ..s, count: s.count + 1 })
+    Receive("onClick", _) => Next({ ..s, count: s.count + 1 })
     Receive("init", _) => {
       ctx.intent("loadData", [], @tutuca.IntentOpts::new(route=[Lex]))
       Some({ ..s, isLoading: true })
@@ -674,7 +674,7 @@ first**: several of these become build errors that way. The usual suspects:
 ## Event Handling
 
 ```html
-<!-- a bare name dispatches an `Input` arm of `update` -->
+<!-- a bare name dispatches a `Receive` arm of `update` -->
 <button @on.click="inc">+</button>
 
 <!-- pass args by name -->
@@ -686,7 +686,7 @@ first**: several of these become build errors that way. The usual suspects:
 Every `@on` handler is written **bare** — a leading `$` is refused in an event
 position. Written args arrive in the handler's `args` array in template order, so
 an arm pattern-matches them directly
-(`Input("search", [Str(q), ..]) => ...`). With generated views each `@on` name
+(`Receive("search", [Str(q), ..]) => ...`). With generated views each `@on` name
 becomes a case of `<Comp>Msg`, its payload type inferred from what the call site
 writes.
 
@@ -834,7 +834,7 @@ canonical list; other files link here rather than restating it.
 | ------ | --------- | ------- |
 | `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event, message and intent; one match over all the channels |
 | `compute` | `(S, Array[Value]) -> Value` | a `$name` in a **value** position — pure, no ctx |
-| `swap` | `(S, Array[Value], &Ctx) -> Value?` | an `Input` that replaces this node with a different **Value** |
+| `swap` | `(S, Array[Value], &Ctx) -> Value?` | a `Receive` that replaces this node with a different **Value** |
 | `when` | `(S, key, value, iterData) -> Bool` | `@when` iteration filters |
 | `enrich` | `(S, binds, key, value, iterData) -> Unit` | `@enrich-with` per-item binds |
 | `enrich_scope` | `(S) -> Map[String, Value]` | scope-level derived binds |
@@ -876,23 +876,30 @@ Each maps a trigger to one arm of the **same `update` match**:
 
 | Triggered by                                      | `update` arm          | Use for                                            |
 | ------------------------------------------------- | --------------------- | -------------------------------------------------- |
-| DOM event (`click`, `input`, …)                   | `Input(name, args)`   | the component handling its own events              |
+| DOM event (`click`, `input`, …)                   | `Receive(name, args)` | the component handling its own events              |
 | `ctx.send(name, args)` — message to a target path | `Receive(name, args)` | addressing one known component (or self)           |
 | `ctx.intent(name, args, opts)` — a routed walk    | `Intent(name, args)`  | work the sender does not address: an ancestor's job (`dyn`) or the scope's (`lex`) |
+
+The first two rows are the **same arm** on purpose: a message is addressed at
+one component, and a view is addressed at the component it belongs to. There is
+no arm that tells you a name arrived from a click rather than from a parent's
+`ctx.send` — v1 split those as `Input` and `Receive`, and an `Input` arm now
+matches nothing. It still *compiles* (`Dispatch` keeps the v1 arms while the
+migration runs), so a stale arm goes dead silently rather than failing the
+build.
 
 The `update` fn is one pattern match over all of them; the framework swaps the
 returned state into the dispatch path (`None` = no change). An intent's three
 answers — `<name>Ok` / `<name>Error` / `<name>Unhandled` — come back as
-ordinary `Receive` arms. The two channels beyond `Input` — plus `ctx.at()`,
+ordinary `Receive` arms. The channels — plus `ctx.at()`,
 routes and legs, `forward` / `reply` / `fail`, catch-all arms, and `IntentFn`
 registration — are in
 [messages-and-intents.md](./messages-and-intents.md); worked snippets in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
-### Dispatch precedence for `Input`
+### Dispatch precedence for an addressed name
 
-An `Input` name is offered to three things, in order
-(`component/instance.mbt:360-408`):
+A `Receive` name is offered to three things, in order:
 
 1. **`swap`**, if it has an entry for that name — it wins over `update`;
 2. **`update`**, if its match claims the name (answers `Next` or `Unchanged`);
@@ -902,6 +909,18 @@ So a view writing `setTitle 'x'` reaches the setter every field gets without the
 component declaring anything, and an `update` arm answering `Unhandled` falls
 through to it rather than swallowing the event. An arm answering `Unchanged`
 stops there — that is the difference between "not mine" and "mine, and no".
+
+The fallback covers **every** addressed name, not just a click. v1 gated `swap`
+and the generated mutators on `Input`, so `@on.click="setQuery value"` reached
+the setter while a parent's `ctx.send("setQuery", …)` to the same component did
+not — the same message, answered or not by where it came from. One bucket means
+both reach it. That widening is the one behaviour change a v1 migration can trip
+over: a name a parent sends now lands on a generated mutator that used to ignore
+it.
+
+An `Intent` is deliberately **not** offered this fallback. A generated mutator
+answers a message at home, never an intent walking up a route — an ancestor's
+setter is not an answer to a question a descendant asked.
 
 ### What `swap` is for
 

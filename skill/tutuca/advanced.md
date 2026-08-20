@@ -27,7 +27,7 @@ priv struct DndState {
 // in the component spec:
 update=(s : DndState, msg, _ctx) => match msg {
   // args = [@key (the TARGET row's key), dragKey (the SOURCE row's)]
-  Input("onDrop", [Num(target), Num(source), ..]) =>
+  Receive("onDrop", [Num(target), Num(source), ..]) =>
     Some({
       items: move_index_to_index(s.items, source.to_int(), target.to_int()),
     })
@@ -54,7 +54,7 @@ since reading one off it means applying a function:
 ```moonbit nocheck
 // nocheck: one bucket argument, not a whole component
 update=(s : DndState, msg, _ctx) => match msg {
-  Input("onDrop", [_, Obj(di), ..]) =>
+  Receive("onDrop", [_, Obj(di), ..]) =>
     // Fn convention: element 0 is the this-slot
     match di.obj_field("lookupBind") {
       Some(Fn(lookup)) =>

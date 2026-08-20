@@ -761,7 +761,7 @@ pub fn ComponentInspectorMethod::name(
 impl @component.Fields for ComponentInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentInspector",
-    fingerprint="e397ea106815c30d",
+    fingerprint="5569f08032fcd7dd",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("compId", TyInt),

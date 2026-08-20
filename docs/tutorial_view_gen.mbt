@@ -1048,7 +1048,7 @@ pub let status_global_style : String = ""
 impl @component.Fields for StatusState with fn schema() {
   @component.SchemaInfo::new(
     name="Status",
-    fingerprint="43bf517e425dc54b",
+    fingerprint="021fd6f2f9e5a82b",
     fields=[@component.FieldInfo::new("message", TyText)],
     receives=["flash"],
     view_names=["main"],
@@ -1361,7 +1361,7 @@ pub let quotes_global_style : String = ""
 impl @component.Fields for QuotesState with fn schema() {
   @component.SchemaInfo::new(
     name="Quotes",
-    fingerprint="839b1f887fb25366",
+    fingerprint="84a0c2156bf600c6",
     fields=[
       @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("isLoading", TyBool),

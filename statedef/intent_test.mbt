@@ -15,8 +15,8 @@ test "intent declares a bucket beside receive" {
   let d = parse_one(
     (
       #|state Board { rows: Array[Any] }
-      #|receive Board { Reset, LoadRowsOk(Array[Any]) }
-      #|intent  Board { RowPicked(Int), SaveDraft(String) }
+      #|receive Board { reset, loadRowsOk(Array[Any]) }
+      #|intent  Board { rowPicked(Int), saveDraft(String) }
     ),
   )
   assert_eq(d.receive.map(m => m.name), ["reset", "loadRowsOk"])
@@ -32,9 +32,9 @@ test "the v1 buckets still parse beside it" {
   let d = parse_one(
     (
       #|state Board { rows: Array[Any] }
-      #|bubble   Board { RowPicked(Int) }
-      #|response Board { LoadRows(Array[Any]) }
-      #|intent   Board { SaveDraft(String) }
+      #|bubble   Board { rowPicked(Int) }
+      #|response Board { loadRows(Array[Any]) }
+      #|intent   Board { saveDraft(String) }
     ),
   )
   assert_eq(d.bubble.map(m => m.name), ["rowPicked"])

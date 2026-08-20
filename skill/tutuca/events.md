@@ -7,7 +7,7 @@ modifiers, or handling a custom element's `CustomEvent`.
 ## Wiring a handler
 
 ```html
-<!-- a bare name dispatches an `Input` arm of `update` -->
+<!-- a bare name dispatches a `Receive` arm of `update` -->
 <button @on.click="inc">+</button>
 <button @on.click="dec">-</button>
 
@@ -24,9 +24,9 @@ would claim a distinction that does not exist. `$` belongs in value positions
 (`@text="$label"`), where a `compute` entry answers it.
 
 Written args arrive in the handler's `args` array in template order — pattern-match
-them directly (`Input("search", [Str(q), ..]) => ...`). For an `update` arm the
+them directly (`Receive("search", [Str(q), ..]) => ...`). For an `update` arm the
 `&Ctx` is the explicit third parameter of the update fn; a `compute` entry gets no
-ctx (it is pure). So `loadAnotherWay` dispatches `Input("loadAnotherWay", [])`
+ctx (it is pure). So `loadAnotherWay` dispatches `Receive("loadAnotherWay", [])`
 plus ctx.
 
 ## Handler arguments
@@ -115,7 +115,7 @@ runtime, arguments that don't match the inferred shape land in
 > metadata `Map` / `Null`). An input whose `type` is dynamic (`:type=".kind"`)
 > keeps the default `String` — if such an input can render as a checkbox at
 > runtime, handle its `value` via the generated mutator or a raw
-> `Input(name, args)` arm rather than a typed case.
+> `Receive(name, args)` arm rather than a typed case.
 
 ## Event modifiers
 
@@ -160,7 +160,7 @@ to a `Value::Map`:
 // the component just hosts the tag and handles its event.
 // `current: any` in the schema
 update=(s, msg, _ctx) => match msg {
-  Input("onEmojiClick", [Map(detail), ..]) =>
+  Receive("onEmojiClick", [Map(detail), ..]) =>
     Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
   _ => Unhandled
 }

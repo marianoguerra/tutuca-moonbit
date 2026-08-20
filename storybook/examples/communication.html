@@ -8,8 +8,8 @@
   /// either one, so the schema is the only place they can be declared — and
   /// declaring them is what lets the script block answer them.
   receive Status {
-    Flash(String)
-    Clear
+    flash(String)
+    clear
   }
 
   state SendReceive {
@@ -19,7 +19,7 @@
 
   /// Sent by `submit` to SELF, so the two call sites share one body.
   receive SendReceive {
-    ClearDraft
+    clearDraft
   }
 
   state TreeItem {

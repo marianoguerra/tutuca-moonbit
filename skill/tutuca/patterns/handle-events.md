@@ -3,7 +3,7 @@
 **Problem:** respond to a DOM event and update state.
 
 ```html
-<button @on.click="inc">+</button>      <!-- bare name = update Input arm -->
+<button @on.click="inc">+</button>      <!-- bare name = update Receive arm -->
 <button @on.click="dec">-</button>        <!-- ...or a generated mutator -->
 
 <!-- pass args by name -->
@@ -20,7 +20,7 @@
 
 Written args arrive in the handler's `args : Array[Value]` in template order.
 The first slot is a handler name — always bare in an event position, and
-dispatched as `Input(name, args)`; `$name` belongs in a VALUE position and is
+dispatched as `Receive(name, args)`; `$name` belongs in a VALUE position and is
 a generation error here. Later slots
 are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `key`,
 `keyCode`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isSend`, `isCancel`,
@@ -49,7 +49,7 @@ runtime args that don't match the inferred shape land in
 *Generated `Msg` payload types*. `value` follows the host element's
 static `type`: `Bool` on a checkbox, metadata `@tutuca.Value` on a file
 input, `String` otherwise (including when `:type` is dynamic — handle
-that case via the generated mutator or a raw `Input` arm).
+that case via the generated mutator or a raw `Receive` arm).
 
 Bind events declaratively with `@on.` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor. A handler

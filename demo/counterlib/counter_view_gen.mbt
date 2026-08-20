@@ -240,7 +240,7 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
-    fingerprint="0528523b0e273a92",
+    fingerprint="3196c310109dcd32",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("count", TyInt),

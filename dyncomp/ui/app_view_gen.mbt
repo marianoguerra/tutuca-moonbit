@@ -265,7 +265,7 @@ pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
 impl @component.Fields for PaletteRowState with fn schema() {
   @component.SchemaInfo::new(
     name="PaletteRow",
-    fingerprint="a7ff9178a560c220",
+    fingerprint="0ddbf64dd21a3457",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -501,7 +501,7 @@ pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
 impl @component.Fields for CommandBarState with fn schema() {
   @component.SchemaInfo::new(
     name="CommandBar",
-    fingerprint="18d79774f4ac3cfd",
+    fingerprint="7a17e59503417a5d",
     fields=[
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("hits", TyList(TyAny)),
@@ -801,7 +801,7 @@ pub fn SchemaFieldMsg::from_dispatch(
 impl @component.Fields for SchemaFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaField",
-    fingerprint="5e462b3100a585bc",
+    fingerprint="d9e3db6b40e5b7c7",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("kind", TyText),
@@ -1064,7 +1064,7 @@ pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
 impl @component.Fields for SchemaFormState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaForm",
-    fingerprint="f557cf850df35d59",
+    fingerprint="dc3e13b649b7ab79",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -1327,7 +1327,7 @@ pub fn ConfigPanelMsg::from_dispatch(
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="ConfigPanel",
-    fingerprint="beddfc2bea243a73",
+    fingerprint="2cf331b19c935d2d",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("mode", TyText),
@@ -1598,7 +1598,7 @@ pub fn UniversalAppMethod::name(self : UniversalAppMethod) -> String {
 impl @component.Fields for UniversalAppState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalApp",
-    fingerprint="5c98c4d7587de605",
+    fingerprint="a7e132d85c3b3345",
     fields=[
       @component.FieldInfo::new("root", TyComp(Some("Universal"))),
       @component.FieldInfo::new("mode", TyText),

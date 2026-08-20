@@ -15,7 +15,7 @@
   intent StoryNav {
     /// (module, component). Two empty strings mean "everything", which is
     /// what the `all` button sends.
-    NavPicked(String, String)
+    navPicked(String, String)
   }
 
   /// One story: a component from a bundle, built with ONE named
@@ -51,7 +51,7 @@
     /// (module, component, init) — build me again from scratch. The card
     /// cannot do it itself: making an instance is the host's job, and this
     /// package is backend-agnostic.
-    RebuildCard(String, String, String)
+    rebuildCard(String, String, String)
   }
 
   /// The gallery: every component every loaded bundle declares, once per
@@ -91,8 +91,8 @@
   receive DyncompStorybook {
     /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
     /// by a host that pushes the news itself, and by every test here.
-    CatalogChanged(String)
-    SetStatus(String)
+    catalogChanged(String)
+    setStatus(String)
   }
 
   intent DyncompStorybook {
@@ -101,7 +101,7 @@
     ///
     /// The loader says what it is DOING in the bar itself; this is only the
     /// part the gallery has to act on.
-    CatalogChanged(String)
+    catalogChanged(String)
   }
 </script>
 

@@ -308,7 +308,7 @@ pub fn UniversalMethod::name(self : UniversalMethod) -> String {
 impl @component.Fields for UniversalState with fn schema() {
   @component.SchemaInfo::new(
     name="Universal",
-    fingerprint="5059592cc08209c4",
+    fingerprint="b53b58aba7326121",
     fields=[@component.FieldInfo::new("child", TyComp(None))],
     inputs=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
@@ -1057,7 +1057,7 @@ pub fn TabPageMsg::from_dispatch(d : @component.Dispatch) -> TabPageMsg? {
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
     name="TabPage",
-    fingerprint="eddcf421a134a1a3",
+    fingerprint="80a9ecf642f91df1",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),

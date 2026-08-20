@@ -583,7 +583,7 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
 impl @component.Fields for RootState with fn schema() {
   @component.SchemaInfo::new(
     name="Root",
-    fingerprint="2501994ece2d6267",
+    fingerprint="699855f09bdfc7a7",
     fields=[
       @component.FieldInfo::new("allEntries", TyList(TyAny)),
       @component.FieldInfo::new("allCategories", TyList(TyText)),

@@ -253,7 +253,7 @@ pub fn StoryNavMsg::from_dispatch(d : @component.Dispatch) -> StoryNavMsg? {
 impl @component.Fields for StoryNavState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryNav",
-    fingerprint="8af78b515c4ca0ed",
+    fingerprint="4c08ac24df963cc8",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -562,7 +562,7 @@ pub fn StoryCardMethod::name(self : StoryCardMethod) -> String {
 impl @component.Fields for StoryCardState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryCard",
-    fingerprint="2e29e01e9a196287",
+    fingerprint="7c6680522acde99f",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("doc", TyText),
@@ -979,7 +979,7 @@ pub fn DyncompStorybookWhen::name(self : DyncompStorybookWhen) -> String {
 impl @component.Fields for DyncompStorybookState with fn schema() {
   @component.SchemaInfo::new(
     name="DyncompStorybook",
-    fingerprint="bfd0a40228d59f1f",
+    fingerprint="e5a15f21dc2fc3fb",
     fields=[
       @component.FieldInfo::new("cards", TyList(TyAny)),
       @component.FieldInfo::new("nav", TyList(TyAny)),

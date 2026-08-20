@@ -151,7 +151,10 @@ fn arg_kind_word(t : ArgType) -> String {
 fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
   let capped = sig.name[0:1].to_owned().to_upper() + sig.name[1:].to_owned()
   {
-    source_name: capped,
+    // As the view wrote it, which is what `source_name` means everywhere else
+    // — a schema declares a case in the spelling its call sites use, and a
+    // view-only name has no other spelling to offer.
+    source_name: sig.name,
     name: sig.name,
     variant: capped,
     // `arg_state_ty` answers None for a shape the inference could not read,
@@ -179,7 +182,7 @@ fn emit_bucket_enum(
     return
   }
   // Guards against a schema whose case names collapse onto one variant.
-  variants_for(msgs.map(m => m.source_name)) |> ignore
+  variants_for(msgs.map(m => m.name)) |> ignore
   let ty = "\{t}\{suffix}"
   let lower = suffix.to_lower()
   out.write_string(

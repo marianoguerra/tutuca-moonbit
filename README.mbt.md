@@ -102,7 +102,7 @@ that spells its types the way MoonBit does, next to the templates that read it:
 ```html
 <script type="tutuca/state">
   state Counter { label: String, count: Int, history: Array[Int] }
-  receive Counter { ResetTo(Int) }
+  receive Counter { resetTo(Int) }
 </script>
 ```
 

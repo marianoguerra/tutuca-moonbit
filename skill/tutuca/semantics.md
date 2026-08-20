@@ -110,7 +110,7 @@ maps to a transactor push:
 
 | Channel                          | Push          | Notes                                              |
 | -------------------------------- | ------------- | -------------------------------------------------- |
-| DOM event → `Input` arm          | `push_input`  | transacted **synchronously**, not queued           |
+| DOM event → `Receive` arm        | `push_send`   | queued, then drained by the same `settle()` before the handler returns |
 | `ctx.send` → `Receive` arm       | `push_send`   | queued; `skip_self` runs no self-handler           |
 | `ctx.intent` → `Intent` arms     | `push_intent` | returns an `IntentWalk`; each hop is its own queued transaction |
 

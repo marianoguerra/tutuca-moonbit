@@ -17,7 +17,7 @@ spells its types the way MoonBit does, alongside the templates that read it:
 ```html
 <script type="tutuca/state">
   state Counter { label: String, count: Int, history: Array[Int] }
-receive Counter { ResetTo(Int) }
+receive Counter { resetTo(Int) }
 </script>
 ```
 
@@ -203,11 +203,18 @@ Two optional variants declare the messages a component receives, beyond the
 ```html
 <script type="tutuca/state">
   state Board { rows: Array[Any], loading: Bool }
-  receive Board { Reset, FocusRow(Int), LoadRowsOk(Array[Any]),
-                  LoadRowsError(String), LoadRowsUnhandled }
-  intent Board { RowPicked(Int) }
+  receive Board { reset, focusRow(Int), loadRowsOk(Array[Any]),
+                  loadRowsError(String), loadRowsUnhandled }
+  intent Board { rowPicked(Int) }
 </script>
 ```
+
+Declare a case the way it is **used**: `focusRow`, not `FocusRow`. The same
+name reappears as `receive focusRow(n)` in the script block and as
+`send 'focusRow' 3` in a view, and the generator makes the UpperCamel MoonBit
+variant (`BoardReceive::FocusRow`) from it — the capital belongs to the
+generated code, not to what you write. An UpperCamel declaration still parses,
+so old blocks keep working; `gen-views` reports it as a `message-case` warning.
 
 `receive` is what something `send`s to this component **by address**; `intent`
 is what reaches it because a walk routed here — a descendant's `intent dyn`, or
@@ -258,7 +265,7 @@ other statement already does. `new <Type>` puts that type's **zero** at the
     songs : Array[Song]
     tags  : Array[String]
   }
-  receive Playlist { Init }
+  receive Playlist { init }
 </script>
 
 <script type="tutuca/script" for="Playlist">

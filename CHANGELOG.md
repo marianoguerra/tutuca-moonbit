@@ -6,6 +6,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A message case is declared the way it is used: `focusRow`, not
+  `FocusRow`.** The parser always derived both the runtime name and the MoonBit
+  variant from whatever spelling a `receive` / `intent` / `bubble` / `response`
+  case was written in, so the UpperCamel in every schema block was the
+  *generated* variant leaking into the authoring surface — a block reading
+  `FocusRow(Int)` above a handler reading `receive focusRow(n)` and a view
+  writing `send 'focusRow' 3`. Every declaration in the docs, the bundled
+  skill, the playground cards, the storybook, the dyncomp and inspector
+  components and the tutucard examples now reads the way the code around it
+  reads. UpperCamel still parses and still generates the same module, so no
+  existing component breaks.
+
+  One error message improves for free: `PayloadDisagrees` used to report
+  ``declared `Bump(Int)` `` against ``called as `bump(a number, a number)` ``,
+  a mismatch in the half that was not wrong.
+
+- **`gen-views` reports `message-case (warning)`** for a case declared in a
+  spelling nothing else uses — the capital, and `set_label` for the same
+  reason. A warning rather than a refusal: both spellings compile to the same
+  message, and the fix is always the name the warning prints.
+
+### Fixed
+
+- **`@statedef.fingerprint` hashes a declared name normalized**, so recasing a
+  case list is no longer reported as a shape the stored state can no longer be
+  read back into — which is what its own "over SHAPE, not over source text"
+  contract always said. A type name a FIELD refers to is still hashed as
+  written, because a `StateTy` carries that spelling.
+
+- **`@statedef.fingerprint` covers the `intent` bucket**, under the letter `n`.
+  It had been iterating `receive` / `bubble` / `response` only since intents
+  gained their own bucket, so two schemas differing solely in what they
+  answered hashed the same. Every fingerprint moves once with this release.
+
 ## [0.23.0] - 2026-08-19
 
 **Every downstream SOURCE tree needs migrating; a compiled bundle does not.**

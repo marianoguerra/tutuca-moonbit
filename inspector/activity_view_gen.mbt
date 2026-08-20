@@ -253,7 +253,7 @@ pub let activity_log_global_style : String = ""
 impl @component.Fields for ActivityLogState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityLog",
-    fingerprint="f21618b58255b88b",
+    fingerprint="a35d26f6c1c04c6b",
     fields=[
       @component.FieldInfo::new("events", TyList(TyAny)),
       @component.FieldInfo::new("hasEvents", TyBool),

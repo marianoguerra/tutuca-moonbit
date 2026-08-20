@@ -122,7 +122,7 @@ pub let status_global_style : String = ""
 impl @component.Fields for StatusState with fn schema() {
   @component.SchemaInfo::new(
     name="Status",
-    fingerprint="451702e1de4e8805",
+    fingerprint="3fc6f4594bd11c05",
     fields=[
       @component.FieldInfo::new("message", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -321,7 +321,7 @@ pub fn SendReceiveMsg::from_dispatch(
 impl @component.Fields for SendReceiveState with fn schema() {
   @component.SchemaInfo::new(
     name="SendReceive",
-    fingerprint="9bd36dcfa38d8897",
+    fingerprint="4d41ff781c54dcb7",
     fields=[
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),

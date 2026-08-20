@@ -69,7 +69,7 @@ loop_with=l => match l {
 },
 ```
 
-(The `search`/`prev`/`next` events are `Input` arms of `update`
+(The `search`/`prev`/`next` events are `Receive` arms of `update`
 that clamp and set `page`, resetting to 0 on every query change.)
 
 Returning **`keys`** (ordered *original* keys) is what makes this work: the

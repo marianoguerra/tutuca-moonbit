@@ -168,7 +168,7 @@ fn counter_schema() -> String {
     #|  tags   : Set[String]
     #|  page   : Int
     #|}
-    #|receive C { ResetTo(Int) }
+    #|receive C { resetTo(Int) }
   )
 }
 
@@ -467,8 +467,8 @@ fn v2_schema() -> String {
     #|  tags   : Set[String]
     #|  page   : Int
     #|}
-    #|receive C { ResetTo(Int), SaveDraftOk(Int), SaveDraftError(String) }
-    #|intent  C { SaveDraft(String), Picked(Int) }
+    #|receive C { resetTo(Int), saveDraftOk(Int), saveDraftError(String) }
+    #|intent  C { saveDraft(String), picked(Int) }
   )
 }
 

@@ -49,6 +49,9 @@ fn view_diagnostics(
         }),
       )
     }
+    for line in message_case_diagnostics(def, fallback) {
+      out.push(line)
+    }
   }
   for comp in file.components {
     let cname = comp.component_name(fallback)
@@ -66,6 +69,48 @@ fn view_diagnostics(
       let _ = @anode.ANode::parse(view.source, px)
       for f in @lint.check_collected(collector) {
         out.push(diagnostic_line(where_, f))
+      }
+    }
+  }
+  out
+}
+
+///|
+/// A message case declared in a spelling nothing else uses.
+///
+/// `MsgDef` keeps three spellings of one name — as written, the runtime name,
+/// and the MoonBit variant — and the parser derives the last two from the
+/// first, so `Init`, `init` and `INIT` all declare the same message. That
+/// tolerance is deliberate and stays; what it costs is a schema that reads
+/// `Init` sitting above a handler that reads `receive init` and a view that
+/// writes `'init'`, which is one mental transform per message for every
+/// reader.
+///
+/// So: declared the way it is used. `source_name != name` is the whole rule,
+/// which catches `set_label` along with the capital — a separator spelling
+/// diverges from the used name for exactly the same reason a capital does.
+///
+/// A hint would be the wrong level — the declaration is not a mistake and
+/// nothing downstream is wrong — but a warning is what gets a house convention
+/// followed, and the fix is always the name the message already prints.
+fn message_case_diagnostics(
+  def : @statedef.StateDef,
+  fallback : String,
+) -> Array[String] {
+  let out : Array[String] = []
+  let where_ = def.component_name(fallback)
+  for
+    pair in [
+      ("receive", def.receive),
+      ("intent", def.intent),
+      ("bubble", def.bubble),
+      ("response", def.response),
+    ] {
+    for m in pair.1 {
+      if m.source_name != m.name {
+        out.push(
+          "message-case (warning) \{where_}: `\{pair.0}` declares `\{m.source_name}`, but every use of it is `\{m.name}` — a handler writes `\{pair.0} \{m.name}` and a view writes `'\{m.name}'`. Declare it `\{m.name}`.",
+        )
       }
     }
   }

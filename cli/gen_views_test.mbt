@@ -281,6 +281,59 @@ test "view-only lint rules report at generation time" {
 }
 
 ///|
+test "a message declared in a spelling nothing uses is reported" {
+  // The schema is the one place a message name is written UPPER and read
+  // lower: the parser derives the runtime name and the MoonBit variant from
+  // whatever was written, so `Init` and `init` declare the same message —
+  // which is exactly why the mismatch can sit there unnoticed while every
+  // handler and every call site writes the other spelling.
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/state">
+      #|  state Thermostat { target: Int }
+      #|  receive Thermostat { Init, Nudge(Int) }
+      #|  intent Thermostat { SetMode(String) }
+      #|</script>
+      #|<template><button @on.click="init">go</button></template>
+    ),
+    name="Thermostat",
+    input="views/thermostat.html",
+    target="views/thermostat_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  inspect(
+    plan.diagnostics.join("\n"),
+    content=(
+      #|message-case (warning) Thermostat: `receive` declares `Init`, but every use of it is `init` — a handler writes `receive init` and a view writes `'init'`. Declare it `init`.
+      #|message-case (warning) Thermostat: `receive` declares `Nudge`, but every use of it is `nudge` — a handler writes `receive nudge` and a view writes `'nudge'`. Declare it `nudge`.
+      #|message-case (warning) Thermostat: `intent` declares `SetMode`, but every use of it is `setMode` — a handler writes `intent setMode` and a view writes `'setMode'`. Declare it `setMode`.
+    ),
+  )
+  // A warning, so the module is still generated.
+  assert_eq(plan.files.length(), 1)
+}
+
+///|
+test "a message declared the way it is used is silent" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/state">
+      #|  state Thermostat { target: Int }
+      #|  receive Thermostat { init, nudge(Int) }
+      #|</script>
+      #|<template><button @on.click="init">go</button></template>
+    ),
+    name="Thermostat",
+    input="views/thermostat.html",
+    target="views/thermostat_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  assert_eq(plan.diagnostics, [])
+}
+
+///|
 test "a clean view produces no diagnostics" {
   let r = @cli.gen_views(
     "<div><button @on.click=\"go\">x</button></div>",

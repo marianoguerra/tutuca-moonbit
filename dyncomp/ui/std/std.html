@@ -23,23 +23,23 @@
   intent Universal {
     /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
     /// configure it" rather than "place it with its defaults".
-    AddRequested(Bool)
+    addRequested(Bool)
     /// The badge was clicked or the config pill was dropped here. Carries
     /// what is held, because the app needs the instance and asking it to
     /// find one by path would be a second way to name the same thing.
-    ConfigRequested(Any)
+    configRequested(Any)
   }
 
   receive Universal {
     /// Hold this. The app builds the instance — it is the only one that can,
     /// since building a guest needs the dyncomp bridge — and hands it over.
-    Hold(Any)
+    hold(Any)
     /// Empty it again, which gives the `+` back rather than deleting a cell.
-    Empty
+    empty
     /// Write these fields into what is held. The app validated them against
     /// the schema first; this only knows that its child is the thing they
     /// belong to, which is exactly what the app cannot know.
-    ApplyConfig(Any)
+    applyConfig(Any)
   }
 
   /// A row or a column. Everything about it is direction, spacing and
@@ -81,9 +81,9 @@
 
   intent TabPage {
     /// The name is settled — Enter, or the box lost focus.
-    DoneRename
+    doneRename
     /// Escape: put the old name back, which only the strip still knows.
-    CancelRename
+    cancelRename
   }
 
   /// A tab strip and one page at a time. `tabs` are TabPages.

@@ -11,7 +11,7 @@ channel picks the `Dispatch` arm:
 // nocheck: a bucket argument, not a top-level item
 // send / receive — deliver to ONE target (self, or ctx.at() for another)
 update=(s : ChatState, msg, ctx) => match msg {
-  Input("submit", _) => {
+  Receive("submit", _) => {
     ctx.at().field("status").send("flash", [Str(s.draft)])
     None
   }
@@ -22,7 +22,7 @@ update=(s : ChatState, msg, ctx) => match msg {
 // intent dyn — walk toward the root; the first ancestor whose Intent arm
 // REPLIES ends the walk, and one that only records it is an observer
 update=(s : LogState, msg, ctx) => match msg {
-  Input("onItemClick", _) => {
+  Receive("onItemClick", _) => {
     ctx.intent("itemSelected", [Str(s.label)], @tutuca.IntentOpts::new(route=[Dyn]))
     None
   }

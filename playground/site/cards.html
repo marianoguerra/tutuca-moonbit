@@ -141,9 +141,10 @@
       <section id="handlers">
         <h3><span class="step">Step 2</span> The script block</h3>
         <p>
-          An <code>on</code> handler answers a name the views write. You reach
-          for one when no mutator is the transition you mean: two fields moving
-          together, an argument that has to be clamped before it lands, a
+          A <code>receive</code> handler answers a name that is addressed at
+          this component — one a view writes, or one another handler sends. You
+          reach for one when no mutator is the transition you mean: two fields
+          moving together, an argument that has to be clamped before it lands, a
           branch.
         </p>
         <p>
@@ -165,8 +166,8 @@
         </p>
         <p>
           Note what <code>step</code> does <em>not</em> say: nowhere is
-          <code>dir</code> annotated. An <code>on</code> handler's argument
-          types are inferred from what the templates write at the call site, so
+          <code>dir</code> annotated. A handler's argument types are inferred
+          from what the templates write at the call site, so
           <code>@on.click="step 1"</code> is what makes it a number — and a
           call site that disagrees with the body is a reported issue, not a
           silent coercion.
@@ -208,8 +209,8 @@
           <code>@each</code> walks a field and binds <code>@key</code> and
           <code>@value</code> for the row. In this card the remove button calls
           <code>removeInSongsAt @key</code> — a generated mutator, straight
-          from the view, with no handler in between — while moving a row is an
-          <code>on</code> handler, because two writes at two positions is
+          from the view, with no handler in between — while moving a row is a
+          <code>receive</code> handler, because two writes at two positions is
           exactly the shape no single mutator has.
         </p>
         <mb-card src="./site/cards/tut-4-lists.html" margaui codemirror></mb-card>
@@ -294,11 +295,14 @@
       <section id="messages">
         <h3><span class="step">Step 6</span> Messages</h3>
         <p>
-          An <code>on</code> handler is named by a view, so the views are where
-          its arguments come from. A <code>receive</code> case is named by
-          nobody the checker can see — it is raised by another handler, by a
-          parent, or by the host at mount — so the schema is the only place it
-          can be declared, and the only place its payload can be typed.
+          One keyword covers both halves of an addressed name, and where the
+          name is <em>written</em> is what decides where its arguments come
+          from. A <code>receive</code> a view names is checked against the call
+          sites, the way <code>step</code> was in step 2. A <code>receive</code>
+          no view names — one raised by another handler, by a parent, or by the
+          host at mount — is seen by nobody the checker can read, so the
+          schema's <code>receive</code> block is the only place it can be
+          declared and the only place its payload can be typed.
         </p>
         <mb-card src="./site/cards/tut-6-messages.html" margaui codemirror></mb-card>
         <p>
@@ -386,12 +390,12 @@
         </p>
         <ul>
           <li>
-            <strong>Precondition</strong> — <code>on push requires canPush
+            <strong>Precondition</strong> — <code>receive push requires canPush
             { … }</code>. Asked before the body runs, against the state as it
             arrived. It does not hold, the transition does not happen.
           </li>
           <li>
-            <strong>Postcondition</strong> — <code>on pushAll requires canPush
+            <strong>Postcondition</strong> — <code>receive pushAll requires canPush
             ensures hereEmpty { … }</code>. Asked after the body ran, against
             where it landed: about what <em>this</em> handler was supposed to
             achieve — the <em>all →</em> button below is the one that has to end
@@ -541,8 +545,7 @@
         <table>
           <thead><tr><th>Keyword</th><th>Body</th><th>Answers</th></tr></thead>
           <tbody>
-            <tr><td><code>on name(a, b)</code></td><td>statements</td><td>an <code>@on</code> name a view writes</td></tr>
-            <tr><td><code>receive name(a)</code></td><td>statements</td><td>a case of the schema's <code>receive</code></td></tr>
+            <tr><td><code>receive name(a, b)</code></td><td>statements</td><td>an ADDRESSED name — one an <code>@on</code> slot writes, or a case of the schema's <code>receive</code></td></tr>
             <tr><td><code>intent name(a)</code></td><td>statements</td><td>a case of the schema's <code>intent</code> — an intent that walked here</td></tr>
             <tr><td><code>compute name</code></td><td>one expression</td><td><code>$name</code> in a value slot</td></tr>
             <tr><td><code>pred name</code></td><td>one expression</td><td>a condition slot, or <code>@when</code></td></tr>
@@ -555,9 +558,9 @@
           A <code>///</code> comment above a declaration is its documentation
           and travels with it. There is no <code>when</code> keyword: a filter
           and a boolean <code>compute</code> are the same construct, so
-          <code>@when</code> is a <em>use</em> of a <code>pred</code>. The three
+          <code>@when</code> is a <em>use</em> of a <code>pred</code>. The two
           transition kinds take contract clauses between the name and the body
-          — <code>on push requires canPush ensures moved { … }</code> — each
+          — <code>receive push requires canPush ensures moved { … }</code> — each
           naming a <code>pred</code>, at most one of each.
         </p>
         <h4>Statements</h4>

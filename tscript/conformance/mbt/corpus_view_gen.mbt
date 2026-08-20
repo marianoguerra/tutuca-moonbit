@@ -340,7 +340,7 @@ pub let corpus_global_style : String = ""
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="57c713b1b66358ec",
+    fingerprint="130517d0ccc30d48",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt),

@@ -19,7 +19,7 @@ fn msgs_src(bucket_decls : String) -> String raise {
 
 ///|
 test "a declared receive bucket gets an enum, a decode and a sender" {
-  let src = msgs_src("receive Chat { Init, Tick, SetAll(String) }")
+  let src = msgs_src("receive Chat { init, tick, setAll(String) }")
   assert_true(src.contains("pub(all) enum ChatReceive {"))
   assert_true(src.contains("  Init\n"))
   assert_true(src.contains("  SetAll(String)\n"))
@@ -50,7 +50,7 @@ test "a declared receive bucket gets an enum, a decode and a sender" {
 ///|
 test "each bucket decodes only its own dispatch arm" {
   let src = msgs_src(
-    "receive Chat { Tick }\nbubble Chat { Changed(Int) }\nresponse Chat { Loaded(String) }",
+    "receive Chat { tick }\nbubble Chat { Changed(Int) }\nresponse Chat { Loaded(String) }",
   )
   assert_true(src.contains("guard d is Receive(name, args)"))
   assert_true(src.contains("guard d is Bubble(name, args)"))
@@ -66,7 +66,7 @@ test "each bucket decodes only its own dispatch arm" {
 
 ///|
 test "an integer payload is range- and integrality-checked, not truncated" {
-  let src = msgs_src("receive Chat { SetCount(Int), SetByte(UInt8) }")
+  let src = msgs_src("receive Chat { setCount(Int), setByte(UInt8) }")
   // 2.5 arriving at an Int handler is a wrong send, and silently truncating
   // it to 2 would hide that — so the guard drops it into Unknown instead.
   assert_true(src.contains("a0.to_int().to_double() == a0"))
@@ -78,7 +78,7 @@ test "an integer payload is range- and integrality-checked, not truncated" {
 
 ///|
 test "a multi-argument message is spelled as a tuple payload" {
-  let src = msgs_src("receive Chat { MoveTo(Int, Int) }")
+  let src = msgs_src("receive Chat { moveTo(Int, Int) }")
   assert_true(src.contains("  MoveTo(Int, Int)\n"))
   assert_true(src.contains("[Num(a0), Num(a1)]"))
   assert_true(src.contains("MoveTo(a0.to_int(), a1.to_int())"))
@@ -210,7 +210,7 @@ test "the receive bucket merges the schema with the view names" {
   // schema — and nothing relates them. v2 has ONE bucket for a message whoever
   // sent it, so one enum holds both.
   let src = merged_src(
-    "receive Chat { Init, SetAll(String) }",
+    "receive Chat { init, setAll(String) }",
     "<button @on.click=\"bump 1\">+</button>" +
     "<button @on.click=\"reset\">0</button>",
   )
@@ -236,7 +236,7 @@ test "a view name the schema also declares is declared once, by the schema" {
   // Not twice. The schema wins, and the payload is the schema's — which is
   // exactly why the disagreement below can be reported at all.
   let src = merged_src(
-    "receive Chat { Bump(Int) }", "<button @on.click=\"bump 1\">+</button>",
+    "receive Chat { bump(Int) }", "<button @on.click=\"bump 1\">+</button>",
   )
   let body = enum_body(src, "ChatReceive")
   assert_true(body.contains("  Bump(Int)\n"))
@@ -248,29 +248,34 @@ test "a call site that disagrees with the schema is a build error" {
   // THE new error. v1 cannot report it: the view's `bump` is a `ChatMsg`
   // variant and the schema's is a `ChatReceive` variant, and nothing in the
   // generator ever puts the two side by side.
+  //
+  // Both halves print the name as written, and the halves match because the
+  // schema declares `bump` the way the call site writes it. A block that still
+  // writes `Bump(Int)` prints that instead — accurate, and the whole reason
+  // `message-case` nudges the declaration into the used spelling.
   assert_eq(
     merge_err(
-      "receive Chat { Bump(Int) }", "<button @on.click=\"bump 1 2\">+</button>",
+      "receive Chat { bump(Int) }", "<button @on.click=\"bump 1 2\">+</button>",
     ),
-    "`bump` is declared in the state block as `Bump(Int)` and called from @on.click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
+    "`bump` is declared in the state block as `bump(Int)` and called from @on.click as `bump(a number, a number)` — the schema declares what a message carries, so the call sites have to match it",
   )
   assert_eq(
     merge_err(
-      "receive Chat { Bump(Int) }", "<button @on.click=\"bump 'x'\">+</button>",
+      "receive Chat { bump(Int) }", "<button @on.click=\"bump 'x'\">+</button>",
     ),
-    "`bump` is declared in the state block as `Bump(Int)` and called from @on.click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
+    "`bump` is declared in the state block as `bump(Int)` and called from @on.click as `bump(text)` — the schema declares what a message carries, so the call sites have to match it",
   )
   // Agreeing is silent, and so is a call site the inference could not read:
   // unknown is not wrong, which is the rule the whole generator turns on.
   assert_eq(
     merge_err(
-      "receive Chat { Bump(Int) }", "<button @on.click=\"bump 1\">+</button>",
+      "receive Chat { bump(Int) }", "<button @on.click=\"bump 1\">+</button>",
     ),
     "",
   )
   assert_eq(
     merge_err(
-      "receive Chat { Bump(Int) }", "<button @on.click=\"bump .n\">+</button>",
+      "receive Chat { bump(Int) }", "<button @on.click=\"bump .n\">+</button>",
     ),
     "",
   )
@@ -278,7 +283,7 @@ test "a call site that disagrees with the schema is a build error" {
 
 ///|
 test "an intent bucket gets an enum, a decode and a dispatch" {
-  let src = msgs_src("intent Chat { RowPicked(Int), SaveDraft(String) }")
+  let src = msgs_src("intent Chat { rowPicked(Int), saveDraft(String) }")
   assert_true(src.contains("pub(all) enum ChatIntent {"))
   assert_true(src.contains("  RowPicked(Int)\n"))
   // Its own bucket, so an intent named `rowPicked` and a message named

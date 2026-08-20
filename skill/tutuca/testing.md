@@ -145,7 +145,7 @@ you want to look at it.
   test "update: dec at unit level" {
     let u = counter_update() // fn () -> (S, Dispatch, &Ctx) -> Update[S]
     // NullCtx for arms that don't dispatch
-    match u(CounterState::{ count: 3 }, Input("dec", []), @tutuca.NullCtx::{  }) {
+    match u(CounterState::{ count: 3 }, Receive("dec", []), @tutuca.NullCtx::{  }) {
       Some(s2) => assert_eq(s2.count, 2)
       None => fail("expected a state change")
     }
@@ -257,7 +257,7 @@ Tutuca templates resolve handler args by name (see
 the most specific named args you need**. With named args the handler
 pattern-matches a plain literal, which a test can pass directly.
 
-Every `@on` handler is written BARE and dispatches an `Input` arm of
+Every `@on` handler is written BARE and dispatches a `Receive` arm of
 `update`. A leading `$` is refused there: in an event position a `$name`
 and a bare name are the same dispatch, so the sigil would claim a
 distinction that does not exist. `$` belongs in a value position
@@ -281,12 +281,12 @@ input. Nothing reports it either; the dispatch lands and does nothing.
 ```
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
-Input("setCount", [Num(n), ..]) => Some({ ..s, count: n.to_int() })
+Receive("setCount", [Num(n), ..]) => Some({ ..s, count: n.to_int() })
 ```
 
 At test time, the "good" form is driven with one call —
 `h.type_into("input", "42")` — and unit-tested with a literal —
-`u(state, Input("setCount", [Num(42)]), @tutuca.NullCtx::{  })` against
+`u(state, Receive("setCount", [Num(42)]), @tutuca.NullCtx::{  })` against
 the extracted update fn.
 
 The built-in named args are listed in
@@ -296,7 +296,7 @@ custom events deliver plain `Map` metadata as `value`.
 
 ## Worked example
 
-Interaction tests covering two `update` `Input` arms and a generated
+Interaction tests covering two `update` `Receive` arms and a generated
 mutator:
 
 ```moonbit nocheck

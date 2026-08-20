@@ -144,7 +144,7 @@ export const EXAMPLES = [
 
   /// The views never write init: the host dispatches it at mount, which
   /// is the only way a card starts anywhere but the schema's zero.
-  receive Filter { Init }
+  receive Filter { init }
 </script>
 
 <script type="tutuca/script">
@@ -194,7 +194,7 @@ export const EXAMPLES = [
 
   /// The views never write these names, so the schema is the only place
   /// they can be declared — and the only place their payloads can be typed.
-  receive Inbox { Note(String), Bump(Int) }
+  receive Inbox { note(String), bump(Int) }
 </script>
 
 <script type="tutuca/script">
@@ -251,13 +251,13 @@ export const EXAMPLES = [
   /// payloads, because what a host produces is the host's business rather
   /// than the schema's.
   receive Feed {
-    Init
-    RowsOk(Any)
-    RowsError(Any)
-    RowsUnhandled
-    EchoOk(Any)
-    EchoError(Any)
-    EchoUnhandled
+    init
+    rowsOk(Any)
+    rowsError(Any)
+    rowsUnhandled
+    echoOk(Any)
+    echoError(Any)
+    echoUnhandled
   }
 </script>
 
@@ -608,7 +608,7 @@ export const EXAMPLES = [
     text : String
   }
 
-  receive RenderWithScope { Init }
+  receive RenderWithScope { init }
 </script>
 
 <script type="tutuca/script">
@@ -644,7 +644,7 @@ export const EXAMPLES = [
     query : String
   }
 
-  receive ListFilterEnrich { Init }
+  receive ListFilterEnrich { init }
 </script>
 
 <script type="tutuca/script">
@@ -690,7 +690,7 @@ export const EXAMPLES = [
     items : Array[String]
   }
 
-  receive Iteration { Init }
+  receive Iteration { init }
 </script>
 
 <script type="tutuca/script">
@@ -723,7 +723,7 @@ export const EXAMPLES = [
     source : String
   }
 
-  receive MdPreview { Init }
+  receive MdPreview { init }
 </script>
 
 <script type="tutuca/script">
@@ -757,7 +757,7 @@ export const EXAMPLES = [
     notSet : Any
   }
 
-  receive TextDirective { Init }
+  receive TextDirective { init }
 </script>
 
 <script type="tutuca/script">
@@ -795,7 +795,7 @@ export const EXAMPLES = [
     content : String
   }
 
-  receive DangerSetInnerHtml { Init }
+  receive DangerSetInnerHtml { init }
 </script>
 
 <script type="tutuca/script">
@@ -901,7 +901,7 @@ export const EXAMPLES = [
     palette : Array[String]
   }
 
-  receive SwatchPicker { Init }
+  receive SwatchPicker { init }
 </script>
 
 <script type="tutuca/script">
@@ -948,7 +948,7 @@ export const EXAMPLES = [
     c : Int
   }
 
-  receive Quadratic { Init }
+  receive Quadratic { init }
 </script>
 
 <script type="tutuca/script">
@@ -1014,7 +1014,7 @@ export const EXAMPLES = [
     labels : Array[Label]
   }
 
-  receive Nested { Init }
+  receive Nested { init }
 </script>
 
 <script type="tutuca/script">
@@ -1083,7 +1083,7 @@ export const EXAMPLES = [
     waiting  : Int
   }
 
-  receive Seats { Init }
+  receive Seats { init }
 </script>
 
 <script type="tutuca/script">
@@ -1215,7 +1215,7 @@ export const EXAMPLES = [
     status : String
   }
 
-  receive MacroDemo { Init }
+  receive MacroDemo { init }
 </script>
 
 <script type="tutuca/script">
@@ -1283,7 +1283,7 @@ export const EXAMPLES = [
     query : String
   }
 
-  receive Reorder { Init }
+  receive Reorder { init }
 </script>
 
 <script type="tutuca/script">

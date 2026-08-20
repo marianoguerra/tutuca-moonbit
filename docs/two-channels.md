@@ -745,9 +745,9 @@ The three message variants become two.
 <!-- v1 -->
 <script type="tutuca/state">
   state Board { rows: Array[Any], loading: Bool }
-  receive  Board { Reset, FocusRow(Int) }
-  bubble   Board { RowPicked(Int) }
-  response Board { LoadRows(Array[Any]) }
+  receive  Board { reset, focusRow(Int) }
+  bubble   Board { rowPicked(Int) }
+  response Board { loadRows(Array[Any]) }
 </script>
 ```
 
@@ -756,16 +756,26 @@ The three message variants become two.
 <script type="tutuca/state">
   state Board { rows: Array[Any], loading: Bool }
   receive Board {
-    Reset, FocusRow(Int),
-    LoadRowsOk(Array[Any]), LoadRowsError(String), LoadRowsUnhandled(String)
+    reset, focusRow(Int),
+    loadRowsOk(Array[Any]), loadRowsError(String), loadRowsUnhandled(String)
   }
-  intent  Board { RowPicked(Int) }
+  intent  Board { rowPicked(Int) }
 </script>
 ```
 
 `receive` declares every **message** the component accepts, beyond the ones its
 own views send: what a parent sends it, what the host sends it, and every answer
 it reads. `intent` declares every **intent** it answers.
+
+A case is declared in the spelling it is **used** in — `focusRow`, not
+`FocusRow`. The parser derives both the runtime name and the MoonBit variant
+from whatever is written (`statedef/names.mbt`), so the two spellings compile to
+the same thing; what the capital cost was a schema reading `FocusRow` above a
+handler reading `receive focusRow(n)` and a view writing `send 'focusRow' 3`,
+one transform per message for every reader. The UpperCamel belongs to the
+generated `BoardReceive::FocusRow`, which is the one place it is not written by
+hand. UpperCamel still parses — `gen-views` reports it as a `message-case`
+warning rather than refusing it, so no existing component breaks.
 
 ## 10. The MoonBit surface
 
@@ -914,7 +924,7 @@ The parent then declares the name as an **intent** and answers it:
 ```html
 <script type="tutuca/state">
   state Panel { total: Int }
-  intent Panel { Inc }
+  intent Panel { inc }
 </script>
 
 <script type="tutuca/script" for="Panel">
@@ -940,7 +950,7 @@ answer, and the walk ends in silence.
   state TreeItem { label: String }
 
   state TreeLog { log: Array[String], count: Int }
-  intent TreeLog { ItemPicked(String) }
+  intent TreeLog { itemPicked(String) }
 </script>
 
 <script type="tutuca/script" for="TreeItem">
@@ -983,8 +993,8 @@ This replaces v1 `request` and `response`.
     error   : String
   }
   receive Rows {
-    Init,
-    LoadRowsOk(Array[Any]), LoadRowsError(String), LoadRowsUnhandled(String)
+    init,
+    loadRowsOk(Array[Any]), loadRowsError(String), loadRowsUnhandled(String)
   }
 </script>
 
@@ -1030,10 +1040,10 @@ string `Request not found: loadRows` in the error slot
     text: String, savedId: String, dirty: Bool, error: String
     queued: Array[String]
   }
-  receive Draft { SaveDraftOk(String), SaveDraftError(String), SaveDraftUnhandled(String) }
+  receive Draft { saveDraftOk(String), saveDraftError(String), saveDraftUnhandled(String) }
 
   state Form { pending: Array[String] }
-  intent Form { SaveDraft(String) }
+  intent Form { saveDraft(String) }
 </script>
 
 <script type="tutuca/script" for="Draft">
@@ -1119,10 +1129,10 @@ A handler on the `dyn` leg has state, so it can answer from that state.
 ```html
 <script type="tutuca/state">
   state Session { user: String }
-  intent Session { CurrentUser }
+  intent Session { currentUser }
 
   state Greeting { name: String }
-  receive Greeting { Init, CurrentUserOk(String), CurrentUserUnhandled }
+  receive Greeting { init, currentUserOk(String), currentUserUnhandled }
 </script>
 
 <script type="tutuca/script" for="Session">
@@ -1210,7 +1220,7 @@ The mapping is mechanical. A tool can do it.
 | `bubble 'name' args` | `intent dyn 'name' args` |
 | `request 'name' args` | `intent lex 'name' args` |
 | `bubble Name { … }` in the state block | `intent Name { … }` |
-| `response Name { LoadRows(…) }` | `receive Name { LoadRowsOk(…), LoadRowsError(String), LoadRowsUnhandled(…) }` |
+| `response Name { loadRows(…) }` | `receive Name { loadRowsOk(…), loadRowsError(String), loadRowsUnhandled(…) }` |
 | `response name(res, err) { … }` | two or three `receive` arms |
 | `@on.click="save"` | unchanged in text; a message at run time |
 | `@on.input="setQuery value"` | `@on.input="setQuery e.value"` — every accessor gains `e.` |

@@ -181,7 +181,7 @@ pub let note_global_style : String = ""
 impl @component.Fields for NoteState with fn schema() {
   @component.SchemaInfo::new(
     name="Note",
-    fingerprint="d75f07689595d50c",
+    fingerprint="14c863a95d3eeaec",
     fields=[@component.FieldInfo::new("text", TyText)],
     receives=["write"],
     view_names=["main"],

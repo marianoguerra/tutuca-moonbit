@@ -5,6 +5,13 @@
 // state can no longer be read back — a hot swap across a fingerprint change
 // has to migrate rather than reinterpret.
 //
+// A DECLARED name is hashed normalized, because its spelling is not part of
+// the shape: `Nudge` and `nudge` declare one message with one runtime name and
+// one variant (`names.mbt`), so a schema that only restyled its case names must
+// hash the same. A name a field REFERS to is not — a `StateTy` carries the
+// spelling the reference was written in, and recasing a type renames something
+// the state itself mentions.
+//
 
 ///|
 /// A stable structural fingerprint of the whole schema.
@@ -13,15 +20,20 @@
 /// reindenting the block does not. What it is for is noticing that a stored
 /// state can no longer be read back — a hot swap across a fingerprint change
 /// has to migrate rather than reinterpret.
+///
+/// Declared names go in normalized, not as written: recasing `Nudge` to
+/// `nudge` leaves one message with the same runtime name and the same variant,
+/// so it is not a shape change. A type name a FIELD refers to is not
+/// normalized — see the header.
 pub fn fingerprint(defs : Array[StateDef]) -> String {
   let sb = StringBuilder::new()
   for def in defs {
-    sb.write_string("i:\{def.source_name};")
+    sb.write_string("i:\{upper_name(def.source_name)};")
     for f in def.fields {
       sb.write_string("f:\{f.name}:\{f.ty.show_source()};")
     }
     for t in def.types {
-      sb.write_string("t:\{t.source_name}:")
+      sb.write_string("t:\{upper_name(t.source_name)}:")
       match t.kind {
         URecord(fs) =>
           for f in fs {
@@ -29,21 +41,31 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
           }
         UEnum(cs) =>
           for c in cs {
-            sb.write_string("\{c.0},")
+            sb.write_string("\{c.1},")
           }
         UVariant(cs) =>
           for c in cs {
             sb.write_string(
-              "\{c.source_name}(\{c.payload.map(p => p.show_source()).join("|")}),",
+              "\{c.name}(\{c.payload.map(p => p.show_source()).join("|")}),",
             )
           }
       }
       sb.write_string(";")
     }
-    for pair in [("r", def.receive), ("b", def.bubble), ("p", def.response)] {
+    // `n` for the intents rather than `i`, which the state name above already
+    // spends. The bucket a name sits in IS part of the shape — a name that
+    // moved from `receive` to `intent` answers a different channel — so all
+    // four are hashed under four distinct letters.
+    for
+      pair in [
+        ("r", def.receive),
+        ("n", def.intent),
+        ("b", def.bubble),
+        ("p", def.response),
+      ] {
       for m in pair.1 {
         sb.write_string(
-          "\{pair.0}:\{m.source_name}(\{m.payload.map(p => p.show_source()).join("|")});",
+          "\{pair.0}:\{m.name}(\{m.payload.map(p => p.show_source()).join("|")});",
         )
       }
     }

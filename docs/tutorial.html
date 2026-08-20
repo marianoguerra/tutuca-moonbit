@@ -35,7 +35,7 @@
   }
 
   receive Status {
-    Flash(String)
+    flash(String)
   }
 
   state Chat {
@@ -57,9 +57,9 @@
   /// shape, instead of one payload carrying a result and an error with exactly
   /// one of them Null.
   receive Quotes {
-    Init
-    LoadQuotesOk(Array[Any])
-    LoadQuotesError(String)
+    init
+    loadQuotesOk(Array[Any])
+    loadQuotesError(String)
   }
 
   state Features {

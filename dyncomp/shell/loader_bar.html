@@ -32,18 +32,18 @@
   receive {
     /// Files the page forwarded — dropped anywhere on it, or on a cell that
     /// handed back what was not its.
-    FilesDropped(Any)
+    filesDropped(Any)
     /// The bridge's own answers, routed here because this is the path that
     /// asked for the load.
-    DyncompLoaded(String)
-    DyncompError(String)
+    dyncompLoaded(String)
+    dyncompError(String)
   }
 
   intent {
     /// The catalog changed. Whatever is above re-reads it — a bar showing
     /// search results, or a gallery showing every configuration — rather than
     /// telling a person to ask again.
-    CatalogChanged(String)
+    catalogChanged(String)
   }
 </script>
 

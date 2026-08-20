@@ -296,7 +296,7 @@ pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
 impl @component.Fields for RichSampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RichSample",
-    fingerprint="f8b4fa14a7af37d1",
+    fingerprint="4e605821900d9496",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),
