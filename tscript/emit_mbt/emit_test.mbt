@@ -214,6 +214,41 @@ test "a scope enricher answers the map, since it is handed none" {
 }
 
 ///|
+test "`has` asks a set and a map for a KEY, and a list for a value" {
+  // Three shapes, one question. The keyed cases go through the display string
+  // because that is the key `hasIn<X>` writes and `tc_has` reads — a member
+  // put in by `addInTags 3` has to be found by `has .tags 3`.
+  let e = out_values(
+    (
+      #|pred inTags { has .tags .label }
+      #|pred inMap { has .byKey .label }
+      #|pred inList { has .history .count }
+    ),
+    methods=["inTags", "inMap", "inList"],
+  )
+  assert_eq(e.answers_methods, ["inTags", "inMap", "inList"])
+  assert_true(
+    e.source.contains(
+      "s.tags.contains((Str(s.label) : @tutuca.Value).to_display_string())",
+    ),
+  )
+  assert_true(
+    e.source.contains(
+      "s.byKey.contains((Str(s.label) : @tutuca.Value).to_display_string())",
+    ),
+  )
+  // The list case compares at the ELEMENT's type, not as a Value.
+  assert_true(e.source.contains("s.history.contains(s.count)"))
+}
+
+///|
+test "`has` refuses a receiver with no membership to ask about" {
+  let e = out_values("pred inLabel { has .label .label }", methods=["inLabel"])
+  assert_eq(e.answers_methods, [])
+  assert_true(e.refusals[0].why.contains("a set, a map or a list"))
+}
+
+///|
 test "a value body nobody asks for is not written" {
   // Roles come from the VIEWS. A `compute` no slot reads is a function nobody
   // calls, and a generated file must not carry one.

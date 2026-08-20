@@ -551,21 +551,38 @@ fn E::arm(
   // unflushed, which is the whole point of it being a queue.
   let types = self.param_types(d, surface)
   for i, p in d.params {
-    let ty = types.get(i).unwrap_or(None)
-    self.params[p.name] = ty
+    let declared = types.get(i).unwrap_or(None)
     // Bound only when the body reads it. The SHAPE is still checked either
     // way — a `setLabel 3` must refuse whether or not the body looks at the
     // argument — but a binding nobody uses is a warning, and a generated file
     // must not be the thing that warns.
     let binder = if uses_name(body, p.name) { p.name } else { "_" }
-    let pat = match ty {
-      Some(TInt(..)) | Some(TFloat) => "Num(\{binder})"
-      Some(TText) => "Str(\{binder})"
-      Some(TBool) => "Bool(\{binder})"
-      // Unknown, or a shape with no pattern worth writing: the raw value.
-      // Using one where a type is wanted is refused below rather than guessed.
-      _ => binder
+    // The pattern that takes a payload APART, and the type the body may then
+    // use it at. The two answers are one decision: a parameter is usable at
+    // its declared type exactly when the pattern below hands the body that
+    // type's MoonBit value.
+    //
+    // `Array[Any]` and `Map[String, Any]` are the shapes a channel actually
+    // carries — an intent's answer above all — and their patterns hand over
+    // `Array[Value]` / `Map[String, Value]`, which IS what the field holds.
+    // Anything else non-scalar (a list of a DECLARED element type, a record, a
+    // set) would need a decode loop this backend does not write, so the
+    // parameter binds raw and its type becomes unknown: a typed use is then
+    // refused with a script-refusal and the arm stays in MoonBit, which is the
+    // honest answer. Keeping the declared type there instead emitted an
+    // assignment of a `Value` into a typed field — a generated module that did
+    // not compile.
+    let (pat, ty) = match declared {
+      Some(TInt(..)) | Some(TFloat) => ("Num(\{binder})", declared)
+      Some(TText) => ("Str(\{binder})", declared)
+      Some(TBool) => ("Bool(\{binder})", declared)
+      Some(TList(TAny)) => ("List(\{binder})", declared)
+      Some(TOMap(TAny)) => ("Map(\{binder})", declared)
+      // `Any` is already a `Value`, so the raw binding is the right one.
+      Some(TAny) | None => (binder, declared)
+      _ => (binder, None)
     }
+    self.params[p.name] = ty
     // An argument of the wrong shape is `Unchanged`, not `Unhandled`: this
     // arm DID claim the name, and letting `add 'x'` fall through to a
     // generated mutator would apply a write the block refused.
@@ -1201,13 +1218,22 @@ fn E::collection_call_at(
       "{ let m = \{recv}.copy(); let k = \{k}; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m }"
     }
     // -- ordered maps -------------------------------------------------------
-    ("set", TOMap(v)) => {
+    // `setAt` / `deleteAt` are the KEYED half of the sequence operations, and
+    // an ordered map takes them for the same reason a list does — they are the
+    // generated `setIn<X>At` / `deleteIn<X>At` mutators with the infix
+    // dropped. The checker (`method_fits`) and the card interpreter both spell
+    // a map that way, so emitting only `set` / `remove` here made one backend
+    // refuse what the other ran.
+    ("set", TOMap(v)) | ("setAt", TOMap(v)) => {
       arity(2)
       let k = self.at(args[0], TText)
       let value = self.at(args[1], v)
       "{ let m = \{recv}.copy(); m[\{k}] = \{value}; m }"
     }
-    ("remove", TOMap(_)) | ("delete", TOMap(_)) => {
+    ("remove", TOMap(_))
+    | ("delete", TOMap(_))
+    | ("deleteAt", TOMap(_))
+    | ("removeAt", TOMap(_)) => {
       arity(1)
       let k = self.at(args[0], TText)
       "{ let m = \{recv}.copy(); m.remove(\{k}); m }"
@@ -1885,6 +1911,37 @@ fn E::app(
       let hay = self.at(args[0], TText)
       let needle = self.at(args[1], TText)
       ("\{hay}.contains(\{needle})", TBool)
+    }
+    // `has` — a key in a set or a map, or a value in a list. Both, because the
+    // interpreter answers both, and the two are one question asked of the two
+    // shapes a collection has.
+    //
+    // The keyed case keys on the DISPLAY string, which is not a detail: it is
+    // the key the generated `hasIn<X>` mutator looks up
+    // (`component/component.mbt`) and the one the card's `tc_has` reads. A set
+    // is Map-backed, so membership is the key being PRESENT — a member whose
+    // value is somehow not `true` is still a member, which is what both other
+    // implementations already answer.
+    ("has", 2) => {
+      let (hay, hay_ty) = self.expr(args[0])
+      match hay_ty {
+        TSet | TFlags(_) | TOMap(_) => {
+          let (needle, needle_ty) = self.expr(args[1])
+          (
+            "\{hay}.contains(\{self.value_of(needle, needle_ty)}.to_display_string())",
+            TBool,
+          )
+        }
+        // A list is searched by EQUALITY, at the element's own type. Every
+        // type the state emitter writes derives `Eq` — the scalars, the
+        // records, the enums, and `Value` itself — so there is no shape this
+        // has to turn down.
+        TList(elem) => ("\{hay}.contains(\{self.at(args[1], elem)})", TBool)
+        _ =>
+          raise Cannot(
+            "`has` asks a set, a map or a list, not `\{hay_ty.show_source()}`",
+          )
+      }
     }
     ("empty?", 1) => {
       let (src, ty) = self.expr(args[0])

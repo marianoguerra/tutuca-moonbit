@@ -680,7 +680,25 @@ fn emit_module_compiled(
         // the design reserves the hardest sixth of the corpus for hand-written
         // MoonBit — but it IS something the author has to read, or they will
         // wonder why the handler they wrote in the block does nothing.
+        //
+        // Except when it is about a role nobody asked for. Every `pred` is
+        // folded into the METHOD bucket, because a parent may ask a child for
+        // one and no view of the child would show it — but a `pred` a loop
+        // calls reads `@value`, which the method role has no way to hand it,
+        // so that copy refuses for every filter written the ordinary way. It
+        // is worth reporting only when a view actually spells `$name`:
+        // `compiled_comp.surface.methods` is the list before the fold, so a
+        // name absent from it that the block answers in its render role is a
+        // method nobody could call.
         for r in e.refusals {
+          if !compiled_comp.surface.methods.contains(r.name) &&
+            (
+              e.answers_whens.contains(r.name) ||
+              e.answers_enriches.contains(r.name) ||
+              e.answers_enrich_scopes.contains(r.name)
+            ) {
+            continue
+          }
           hints.push(
             "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)",
           )
