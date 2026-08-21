@@ -1,5 +1,4 @@
-// Spec for the typed-state component layer (the successor of the JS
-// src/components.js + src/oo.js port): Component definitions built from a
+// Spec for the typed-state component layer: Component definitions built from a
 // plain state struct S with derive(ToJson, FromJson), one Dispatch enum for
 // all effectful buckets, the Components registry, and the lexical
 // ComponentStack registration scope. READONLY by convention: types +
@@ -39,7 +38,7 @@ priv struct FieldSpec {
 
 ///|
 /// Coerce a write: a value of the matching shape passes through; anything
-/// else falls back to the default (the JS warn-and-keep path, silent here).
+/// else falls back to the default (a silent keep-the-default).
 /// FComp accepts any Obj.
 declare fn FieldSpec::coerce_or_default(
   self : FieldSpec,
@@ -75,7 +74,7 @@ declare pub fn schema_mutators(
 ) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
 
 ///|
-/// The JS provide Symbol: a per-(component, provide-name) identity used to
+/// The provide key: a per-(component, provide-name) identity used to
 /// key dynamic-binding frames.
 pub(all) struct ProvideKey {
   comp : Int
@@ -118,7 +117,7 @@ pub(all) struct LookupInfo {
 
 ///|
 /// Resolve (and memoize) the producer's provide key by walking `scope` for the
-/// producer component and its provide entry — JS LookupInfo.getProducerSymbol.
+/// producer component and its provide entry.
 /// Computed once; the scope is stable after compile(). None = unresolved.
 pub fn LookupInfo::resolve_producer_key(
   self : LookupInfo,
@@ -146,7 +145,7 @@ pub fn LookupInfo::resolve_producer_key(
 }
 
 ///|
-/// dynBinds: cons list of frames keyed by ProvideKey (JS ObjectFrame chain).
+/// dynBinds: cons list of frames keyed by ProvideKey.
 pub(all) struct DynBinds {
   binds : Map[ProvideKey, @tutuca.Value]
   parent : DynBinds?
@@ -159,7 +158,7 @@ declare pub fn DynBinds::lookup(
 ) -> @tutuca.Value?
 
 ///|
-/// anode.js resolveDynProducer result: the producer component id plus its
+/// The resolved dynamic producer: the producer component id plus its
 /// own addressing steps to the provided value (spliced by teleporting).
 pub(all) struct DynProducer {
   producer : Int
@@ -184,13 +183,7 @@ pub(all) enum Dispatch {
 /// What an `update` arm answers.
 ///
 /// Three cases because the question has three answers, and an `S?` could only
-/// spell two of them. `None` used to mean BOTH "no arm claimed this name" and
-/// "my arm ran and chose not to change anything", and the dispatch site could
-/// not tell them apart — so an author could not veto a write: an
-/// `Input("setTitle", _) => None` fell through to the generated setter and the
-/// change landed anyway. `Some(s)` where `s` was the same object was the only
-/// way to say "handled, no change", which made `physical_equal` part of the
-/// CONTRACT rather than an optimization the transactor happens to make.
+/// spell two of them.
 ///
 /// The same three the refusal taxonomy names: nothing claimed it, a rule
 /// refused it, nothing changed.
@@ -215,7 +208,7 @@ pub(all) struct LoopCtx {
 }
 
 ///|
-/// The typed @loop-with result (JS { iterData?, start?, end?, keys? }):
+/// The typed @loop-with result:
 /// iter_data flows to every @when/@enrich-with call, start/end slice the
 /// iteration (Array.slice semantics), an explicit keys list takes over
 /// ordering entirely (skipping @when).
@@ -251,7 +244,7 @@ pub(all) struct IntentFn(
 
 ///|
 /// the typed-state half (S, handlers) erased behind the make closure.
-/// `id` comes from a process-global counter (JS _compId) — tests must not
+/// `id` comes from a process-global counter — tests must not
 /// assert absolute ids.
 pub struct Component {
   id : Int
@@ -269,8 +262,7 @@ pub struct Component {
   alter_names : Array[String]
   /// What this component DECLARES. Everything above this line is what a
   /// runtime descriptor could recover by reflection; this is the thing that
-  /// was stated, and it is no longer optional — there is nothing left that
-  /// reconstructs it.
+  /// was stated, and nothing reconstructs it.
   ///
   /// `mut` for ONE reason: `compile()` fills in `inputs` when nothing stated
   /// them, which is the case for a component whose views arrive at runtime
@@ -332,9 +324,7 @@ declare pub fn[S : @tutuca.Fields] component(
 /// lets a handler fall through to `update` or to a generated mutator.
 ///
 /// One generic function rather than one generated per component per bucket:
-/// `gen-views` used to emit this same 14-line loop 143 times across the corpus,
-/// differing only in the two type names and the case list, which the call site
-/// can simply pass.
+/// the two type names and the case list are what the call site passes.
 declare pub fn[E, H] build_bucket(
   all : Array[E],
   name : (E) -> String,
@@ -401,11 +391,11 @@ declare pub fn Component::get_view(
 
 ///|
 /// [data-cid] commonStyle, globalStyle, and per-view [data-cid][data-vid]
-/// blocks (JS compileStyle). String only; injection is app territory.
+/// blocks. String only; injection is app territory.
 declare pub fn Component::compile_style(self : Component) -> String
 
 ///|
-/// The component registry (JS Components): id → Component plus the
+/// The component registry: id → Component plus the
 /// value → component association via Obj::component_id.
 pub struct Components {
   by_id : Map[Int, Component]
@@ -433,12 +423,12 @@ declare pub fn Components::get_comp_for(
 declare pub fn Components::compile_styles(self : Components) -> String
 
 ///|
-/// Sorted class names the compiled views can show, for a margaui scanner
-/// (JS collectAppClassesInSet). tutuca collects; margaui compiles.
+/// Sorted class names the compiled views can show, for a margaui scanner.
+/// tutuca collects; margaui compiles.
 declare pub fn Components::collect_classes(self : Components) -> Array[String]
 
 ///|
-/// Lexical registration scope tree (JS ComponentStack): components, macros
+/// Lexical registration scope tree: components, macros
 /// and request handlers resolve through the parent chain; every registered
 /// component gets a FRESH child scope so siblings' registrations stay
 /// invisible to each other.
@@ -517,7 +507,7 @@ declare pub impl @anode.MacroScope for ComponentStack
 declare pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise
 
 ///|
-/// anode.js resolveDynProducer: which component produces `*name` for `comp`
+/// Resolve the dynamic producer: which component produces `*name` for `comp`
 /// — through its lookup: entry (alias) or its own provide: — plus the
 /// producer's addressing steps to the value.
 declare pub fn resolve_dyn_producer(
@@ -526,7 +516,7 @@ declare pub fn resolve_dyn_producer(
 ) -> DynProducer?
 
 ///|
-/// One renderable example (the JS getExamples() Section item): make `args`
+/// One renderable example (a Section item): make `args`
 /// for `component`, rendered under `view` (None = default view resolution).
 pub(all) struct ExampleDef {
   component : String
@@ -536,11 +526,9 @@ pub(all) struct ExampleDef {
 }
 
 ///|
-/// The module-shape convention (the port of the JS getComponents()/
-/// getExamples() ES-module contract): a native binary cannot load user code,
+/// The module-shape convention: a native binary cannot load user code,
 /// so a "module" is a VALUE user projects build programmatically and hand to
-/// tooling. getTests() joins with the test
-/// runner port.
+/// tooling; the test runner joins with getTests()-style test lists.
 pub(all) struct ModuleDef {
   name : String
   components : Array[Component]

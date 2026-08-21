@@ -1,4 +1,4 @@
-// Path operations (src/path.js Path) over Values, plus the leaf-update core of
+// Path operations over Values, plus the leaf-update core of
 // the transactor (updateRootValue).
 
 ///|
@@ -245,9 +245,7 @@ pub fn Path::update(
     }
     return root
   }
-  // One lookup. There used to be a second, for the literal name `"$unknown"`,
-  // as a catch-all a component could register — a JS-era sentinel that cost a
-  // string lookup on every miss. A typed `update` is one pattern match whose
+  // One lookup. A typed `update` is one pattern match whose
   // `_ => None` already IS the catch-all, and the generated `<C>Msg` hands the
   // unmatched name to an `Unknown(name, args)` arm.
   guard leaf.handler(bucket, name) is Some(Handler(f)) else {
@@ -271,7 +269,8 @@ pub fn Path::update(
   let opened = begin_dispatch(self)
   let out = match f(args, NullCtx::{  }) {
     Some(new_leaf) =>
-      // JS `newLeaf !== curLeaf` parity: a handler that hands back the value
+      // Parity with the original `newLeaf !== curLeaf` check: a handler that
+      // hands back the value
       // it was given skips the rebuild, whether it says so by answering None
       // or by handing the same object back. Neither is a refusal: an arm that
       // answers `None` DECLINED, and the mutator behind it is the design.

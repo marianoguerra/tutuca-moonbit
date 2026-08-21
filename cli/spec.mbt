@@ -144,7 +144,7 @@ pub(all) struct CssPlan {
 } derive(Debug, Eq)
 
 ///|
-/// Top-level dispatcher: the pure port of main() in tools/tutuca.js.
+/// Top-level dispatcher: parse argv into an Outcome for the shell to carry out.
 declare pub fn plan(argv : Array[String]) -> Outcome
 
 ///|
@@ -330,7 +330,7 @@ declare fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// One feedback.jsonl record line: {"ts":...,"version":...,"message":...}
-/// plus trailing newline (tools/cli/commands/feedback.js).
+/// plus trailing newline.
 declare pub fn feedback_record_line(
   ts_iso : String,
   version : String,

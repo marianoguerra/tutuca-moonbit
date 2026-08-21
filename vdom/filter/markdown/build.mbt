@@ -6,18 +6,10 @@ priv struct Build {
   /// One sanitizer, for everything this file emits and for the raw HTML inside
   /// the document alike.
   ///
-  /// There used to be two. The narrowing available was `without_css`, which
-  /// dropped `style` by NAME, and the only `style` this file emits is GFM's
-  /// column alignment — `text-align:left|center|right`, written by
-  /// `Build::table` — so applying it to the whole walk turned a config decision
-  /// about untrusted CSS into a rendering bug in tables. The split was who wrote
-  /// the value, a question a name rule cannot ask.
-  ///
-  /// `anode/sanitize/css` asks it of the value instead, and gets the same answer
-  /// for both authors: `text-align:left` is admitted at the smallest level there
-  /// is, and a payload's `background:url(…)` is not admitted at any. So the
-  /// distinction stopped paying for itself, and `filter_for` narrows once, on the
-  /// way in.
+  /// `anode/sanitize/css` decides by asking who wrote the VALUE:
+  /// `text-align:left` is admitted at the smallest level there is,
+  /// and a payload's `background:url(…)` is not admitted at any. So
+  /// `filter_for` narrows once, on the way in.
   sanitizer : @sanitize.Sanitizer
   /// Link reference definitions, by label, for `RefLink` / `RefImage`.
   defs : Map[String, @md.LinkDefinition]

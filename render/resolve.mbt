@@ -16,7 +16,7 @@ impl ViewResolver for NullViewResolver with fn resolve_view(
 }
 
 ///|
-/// First trail hit wins, then the "main" fallback (JS lookupBestView).
+/// First trail hit wins, then the "main" fallback.
 fn best_name(names : Array[String], has : (String) -> Bool) -> String? {
   for n in names {
     if has(n) {

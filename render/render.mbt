@@ -1,4 +1,4 @@
-// ANode → Vdom traversal (the tree-building third of src/renderer.js; the
+// ANode → Vdom traversal (the tree-building third of the renderer; the
 // component and event thirds are mocked/deferred per render-plan.md).
 
 ///|
@@ -26,7 +26,7 @@ pub fn render(
     Text(d) => Some(@vdom.text(d.val))
     Comment(d) => Some(@vdom.comment(d.val))
     Dom(d) => {
-      // JS keeps null child slots in the array; our Vdom drops suppressed
+      // Upstream keeps null child slots in the array; our Vdom drops suppressed
       // children instead (no null nodes).
       let ns : @vdom.Ns? = match d.ns {
         Some(Svg) => Some(Svg)
@@ -61,7 +61,7 @@ pub fn render(
       Some(built)
     }
     Fragment(d) => Some(@vdom.fragment(render_childs(d.childs, stack, ctx)))
-    // JS RenderTextNode returns the raw evaluated value into the child list;
+    // The raw evaluated value goes into the child list;
     // a null drops out, everything else stringifies.
     RenderText(d) =>
       match d.val.eval(stack) {
@@ -124,10 +124,10 @@ pub fn render(
 
 ///|
 /// `<x render>` / `<x render-it>`: enter a frame on the rendered value and
-/// render the resolved view behind a §Comp§ boundary meta (JS _rValComp).
+/// render the resolved view behind a §Comp§ boundary meta.
 /// An unresolved view suppresses the site; a component whose view renders
 /// nothing emits NO meta — a dangling boundary would make event-path
-/// reconstruction cross an absent component (JS null-body fix).
+/// reconstruction cross an absent component.
 fn render_site(
   value : @tutuca.Value,
   view_val : @tutuca.Val?,
@@ -136,7 +136,7 @@ fn render_site(
   ctx : RenderCtx,
   view? : String = "",
 ) -> @vdom.Vdom? {
-  // The `as=` selector evaluates against the HOST stack (JS evalViewName);
+  // The `as=` selector evaluates against the HOST stack;
   // without one, the `@push-view` trail applies innermost-first.
   //
   // `view~` is neither: a name the MOUNTER chose, which no expression in the
@@ -172,7 +172,7 @@ fn render_site(
             Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
             body,
           ])
-          // JS caches only a rendered (non-null) body.
+          // Cache only a rendered (non-null) body.
           if slot is Some((cache, id)) {
             cache.set(
               id,
@@ -223,7 +223,7 @@ fn value_seq_key(v : @tutuca.Value) -> @tutuca.PathKey {
 }
 
 ///|
-/// `@each` / `<x render-each>` (JS renderEachWhen): run @loop-with for the
+/// `@each` / `<x render-each>`: run @loop-with for the
 /// plan (iterData / start / end / keys), iterate the sequence — an explicit
 /// keys list is authoritative and skips @when; otherwise slice-ranged order
 /// with @when filtering — seed {key, value} binds, run @enrich-with, and
@@ -250,8 +250,8 @@ fn render_each(
   let iter_data = plan.iter_data.unwrap_or(Null)
   let out : Array[@vdom.Vdom] = []
   fn visit(key : @tutuca.Value, value : @tutuca.Value, apply_filter : Bool) {
-    // JS filter.call(it, key, value, iterData); default always-true. A keys
-    // list from @loop-with is authoritative and skips it (JS imKeysIter).
+    // filter.call(it, key, value, iterData); default always-true. A keys
+    // list from @loop-with is authoritative and skips it.
     if apply_filter &&
       filter_h is Some(f) &&
       !call_handler(f, it, [key, value, iter_data]).is_truthy() {
@@ -259,16 +259,15 @@ fn render_each(
     }
     let binds : Map[String, @tutuca.Value] = { "key": key, "value": value }
     if enrich_h is Some(e) {
-      // JS callEnricher(enricher, it, binds, key, value, iterData); the
-      // loop's own binds are restored unconditionally afterwards (the JS
-      // console.assert needs value equality, which the mock skips).
+      // callEnricher(enricher, it, binds, key, value, iterData); the
+      // loop's own binds are restored unconditionally afterwards.
       call_handler(e, it, [Map(binds), key, value, iter_data]) |> ignore
       binds["key"] = key
       binds["value"] = value
     }
     match render(d.node, stack.enter(value, binds, is_frame=false), ctx) {
       Some(v) => {
-        // One §Each§ meta precedes each visible item (JS pushEachEntry); a
+        // One §Each§ meta precedes each visible item; a
         // hidden item leaves neither entry nor dangling meta.
         out.push(Meta::Each(nid=d.node_id, key=value_seq_key(key)).to_comment())
         out.push(v)
@@ -280,8 +279,7 @@ fn render_each(
   match plan.keys {
     Some(ks) =>
       // An explicit key list addresses List, Map and a custom-collection Obj
-      // through the one lookup (@tutuca), so the three used to be spelled out
-      // here and the copies could disagree about what a key resolves to.
+      // through the one lookup (@tutuca).
       for k in ks {
         visit(k, seq.item(value_seq_key(k)), false)
       }
@@ -303,7 +301,7 @@ fn render_each(
             visit(Str(names[i]), m.get(names[i]).unwrap_or(Null), true)
           }
         }
-        // custom seq (JS SEQ_INFO walker): iterate the Obj's ordered entries,
+        // custom seq: iterate the Obj's ordered entries,
         // honoring the @loop-with [start, end) slice and preserving each key.
         Obj(o) =>
           match o.obj_seq_entries() {
@@ -318,9 +316,9 @@ fn render_each(
                 visit(pk.to_value(), v, true)
               }
             }
-            None => () // not a sequence -> empty (unkIter)
+            None => () // not a sequence -> empty
           }
-        // Anything else iterates as empty (JS unkIter).
+        // Anything else iterates as empty.
         _ => ()
       }
   }
@@ -350,7 +348,7 @@ fn eval_attrs(
           Plain(name~, val~) | ConstA(name~, val~) =>
             put(name, value_to_attr(val.eval(stack)))
           If(ia) => {
-            // Unset branch = JS NOT_SET_VAL, which evaluates to null → omit.
+            // Unset branch evaluates to null → omit.
             let branch = if ia.cond_val.eval(stack).is_truthy() {
               ia.then_val
             } else {
@@ -362,10 +360,10 @@ fn eval_attrs(
             }
           }
           RawHtml(val~) => {
-            // JS: { __html: `${val.eval(stack)}` } under the fixed name.
+            // { __html: `${val.eval(stack)}` } under the fixed name.
             let html = match val {
               Some(v) => v.eval(stack).to_display_string()
-              None => "null" // JS NULL_CONST sentinel interpolates to "null"
+              None => "null" // the null sentinel interpolates to "null"
             }
             out["dangerouslySetInnerHTML"] = Html(html)
           }

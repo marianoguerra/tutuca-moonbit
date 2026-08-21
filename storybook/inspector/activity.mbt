@@ -1,15 +1,15 @@
-// Port of src/components/tutuca/activity-inspector.js — reusable display +
+// Reusable display +
 // transform for the transaction-observer "Activity" feature
 // (`@transactor.Transactor::observe`). Host-agnostic: a host wires its own
 // `observe(...)` subscription, converts each `ObserveRecord` with
 // `Inspector::record_to_entry`, and sends the entry to an ActivityLog (its
 // `appendEntry` receive handler prepends and caps the list).
 //
-// Port deviations from the JS original:
+// Deviations:
 // - `ObserveRecord` has no wall-clock timestamp (only `seq`), so the entry's
 //   `time` column defaults to `#seq`; pass `time~` to override.
 // - `ObserveRecord` has no separate handlerName, so the "actual handler that
-//   ran" label is always empty (JS only showed it when it differed anyway).
+//   ran" label is always empty.
 
 ///|
 /// Newest-first cap for an activity log (see ActivityLog `appendEntry`).
@@ -28,8 +28,8 @@ fn activity_entry_comp() -> @component.Component {
 
 ///|
 /// A bounded, newest-first, scrollable list of ActivityEntry rows.
-/// `appendEntry` (a receive handler — JS had it as a method, but here it is
-/// dispatched from a host's observer subscription) prepends the entry and
+/// `appendEntry` (a receive handler dispatched from a host's observer
+/// subscription) prepends the entry and
 /// caps the list. Renders an empty hint until the first entry lands.
 fn activity_log_comp() -> @component.Component {
   activity_log_component(update=(s, msg, _ctx) => {
@@ -58,7 +58,7 @@ pub fn path_keys_label(path_keys : Array[@tutuca.StepKey]) -> String {
 }
 
 ///|
-/// Turn an observer record into an ActivityEntry instance (JS recordToEntry).
+/// Turn an observer record into an ActivityEntry instance.
 /// `inspect` builds the before/after value views (defaults to the plain data
 /// inspector). `path_label` and `time` default to the full path label and
 /// `#seq`.

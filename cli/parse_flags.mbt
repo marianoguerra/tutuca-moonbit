@@ -1,24 +1,9 @@
 // One flag parser, driven by the registry.
 //
-// There used to be six of these — one per command taking flags — each a
-// hand-written `while i < args.length()` with its own `value_of` closure, its
-// own `-h`/`--help` arm and its own unknown-flag error. Six copies of an
-// argument parser is six chances to answer differently, and they did:
-//
-//   * Matching was by PREFIX, so `--output x` took the `--out` branch, found
-//     no `=` and no value under the name `--out`, and reported "--out needs a
-//     value" for a flag the user never wrote. Same for `--namely`,
-//     `--entrypoint`, `--classesx` — anything extending a real flag's name.
-//   * `help_overview.mbt` promises "did you mean" for unknown flags and the
-//     skill's CLI reference even shows the JSON envelope with a `suggestion`
-//     object, but exactly ONE of the nine sites passed one.
-//   * Short forms were per-command trivia: `-o` worked for the CSS commands
-//     because someone wrote the arm, and nowhere else.
-//
-// `registry.mbt` already holds every flag's name, short form, type and enum —
-// it calls itself the single source of truth "for dispatch, `help`, and the
-// `agent-context` schema", and now that is true of parsing too. A flag added
-// there is parsed, suggested and rejected-when-unknown with no second edit.
+// `registry.mbt` holds every flag's name, short form, type and enum — it calls
+// itself the single source of truth "for dispatch, `help`, and the
+// `agent-context` schema", and that is true of parsing too. A flag added there
+// is parsed, suggested and rejected-when-unknown with no second edit.
 
 ///|
 /// What a command's arguments parsed into: every flag by its long name, and

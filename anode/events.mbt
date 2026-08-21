@@ -1,4 +1,4 @@
-// Event registration data (src/anode.js NodeEvents/NodeEvent, parse side
+// Event registration data (parse side
 // only — the runtime modifier wrappers are render territory).
 
 ///|

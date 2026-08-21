@@ -1,4 +1,4 @@
-// Port of docs/examples/pseudo-x.js — the @x escape hatch.
+// The @x escape hatch.
 //
 // The HTML parser strips a literal `<x>` element that is not a legal child of
 // its parent: `<x>` inside `<table>` or `<select>` vanishes before tutuca sees

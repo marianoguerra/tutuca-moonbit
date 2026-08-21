@@ -107,9 +107,7 @@ A browser host chooses its tier through `@uiw.mount(policy=…)`, or
 `@dhw.set_app(…, policy~)` for a page that does its own mounting; `set_policy`
 changes it afterwards, for a host that asks a person first. It applies at LOAD,
 so narrowing it does not retract a bundle already registered — revoking is
-dropping the bundle. Until 0.9.6 there was no such argument and the browser host
-registered everything as untrusted no matter what the page wanted, which made
-the two upper tiers reachable only from a test.
+dropping the bundle.
 
 `control.after` still has no host implementation — the bridge warns rather
 than crashing.
@@ -167,7 +165,7 @@ Two details matter about that refusal:
   already in the shared registry, contributing event names and CSS classes to
   the page that turned them down. There is a test for exactly that.
 
-**Where the refusal used to be weaker than it sounds.** `has_raw_html`
+**Where the refusal is weaker than it sounds.** `has_raw_html`
 (`anode/classes.mbt`) walks `ANode::for_each_child`, and that walk has two blind
 spots on an unexpanded tree. A `MacroCall`'s `node` is `None` until
 `ParseContext::compile` expands it, so a macro BODY is never visited; and
@@ -175,9 +173,8 @@ spots on an unexpanded tree. A `MacroCall`'s `node` is `None` until
 (`parse_context.mbt`, `new_macro_node`) — is not in `for_each_child` at all, so
 a slot's content is never visited either, expanded or not.
 
-The second one was reachable from a guest, and this document used to say that
-`<x:card><div @dangerouslysetinnerhtml=".payload"></div></x:card>` passed
-`check_view` with no refusal. It does not: both walks `check_view` runs —
+`<x:card><div @dangerouslysetinnerhtml=".payload"></div></x:card>` does not
+pass `check_view`: both walks `check_view` runs —
 `@sanitize.Sanitizer::visit` (`anode/sanitize/sanitize.mbt`) and
 `visit_untrusted_view` (`policy/view_authority.mbt`) — descend `MacroData.slots`
 explicitly, and each has a test standing on that (`policy_test.mbt`,
@@ -452,46 +449,35 @@ they cannot execute host code are incompatible requirements.
 one traversal — and there is **no opt-out**: `App::set_sanitizer` re-aims the
 chain and `App::add_filter` adds to it, neither removes it. Not tier-dependent
 either, because there is no legitimate `javascript:` URL in a described view at
-any tier. (Until 0.21 `set_filter(None)` did remove it; `docs/sanitizer.md`,
-"What a host may change, and what it may only narrow", has why that went.)
+any tier.
 
-**The rule used to have a hole where the value was not a string, and the shape
-of that hole is worth keeping.** A view attribute whose value evaluates to a
-list or a map becomes `AttrValue::Data(Json)` (`render/values.mbt`) — the shape
+**The value that is not a string is where URL rules go to die.** A view
+attribute whose value evaluates to
+a list or a map becomes `AttrValue::Data(Json)` (`render/values.mbt`) — the shape
 that makes `:items=".products"` assign a real object to a custom element.
-`UrlFilter` skipped `Data` because a structured value is not a URL string, and
-`set_prop` routed `Data` to property assignment BEFORE consulting
-`never_assign`, the list that contains `href` for exactly this reason. The
-browser then closes the loop: `node.href = <array>` runs the array through the
-IDL setter's ToString, and `["javascript:alert(1)"]` stringifies to
-`javascript:alert(1)`. An untrusted bundle needed only a `list<string>` field
-and `<a :href=".links">`.
+A URL filter that skips `Data` "because a structured value is not a URL string",
+combined with `set_prop` routing `Data` to property assignment before consulting
+`never_assign`, closes a loop in the browser: `node.href = <array>` runs the
+array through the IDL setter's ToString, and `["javascript:alert(1)"]`
+stringifies to `javascript:alert(1)`. An untrusted bundle needs only a
+`list<string>` field and `<a :href=".links">`.
 
-Each layer was locally reasonable and the composition was not, which is the
-failure mode this document exists to catch. The skip was true about the MoonBit
-value and false about the browser's coercion of it; the routing shortcut
-optimized for a case (`Data` is a property by definition) whose exceptions it
-then inherited. Both are fixed independently — the filter drops a structured
-value on a URL attribute on shape alone, and `Data` no longer skips
+Each layer is locally reasonable and the composition need not be, which is the
+failure mode this document exists to catch. The filter therefore drops a
+structured value on a URL attribute on shape alone, and `Data` does not skip
 `never_assign` — because a two-layer defense whose layers share an assumption
 is one layer.
 
-It also outlived the tests because the tests read serialized HTML. The live
-vector on `<form action>` sets a property and leaves no attribute, so
-`to_html().contains("javascript:")` was blind to it by construction. The
+These vectors also leave no attribute behind — on `<form action>` the live one
+sets a property — so a test asserting on serialized HTML
+(`to_html().contains("javascript:")`) is blind to them by construction. The
 regressions assert on the property map.
 
-This glue used to install its own, from when the seam defaulted to absent. It no
-longer does: two filters would mean reports split across two logs, and the app's
-own is installed before `set_app` is ever called. What stays here is
-`take_filter_reports()`, which drains the app's — by render time there is no
-author to tell, so a page that wants to say "this component tried to render a
-`javascript:` URL" reads it from there.
-
-That also retires an honest limit this section used to carry. The install was
-one line inside the wasm glue, which `moon test` never runs, so it was verified
-by inspection like the rest of the `tcomp` bridge. It is now in `App::new`,
-which the suite exercises directly (`app/filter_test.mbt`).
+This glue does not install a filter of its own: two filters would mean reports
+split across two logs, and the app's own is installed before `set_app` is ever
+called. What stays here is `take_filter_reports()`, which drains the app's — by
+render time there is no author to tell, so a page that wants to say "this
+component tried to render a `javascript:` URL" reads it from there.
 
 **Raw markup is refused by default, and a trusted host can grant it.**
 `vdom/filter/markup` sanitizes a payload against the same `SanitizerConfig` and
@@ -499,11 +485,11 @@ hands back described NODES — never a string, because a sanitized string that t
 browser parses a second time is the mutation-XSS vector that has bitten every
 sanitizer which shipped that shape.
 
-What used to be missing was a way for `Policy::check_view` to know that a host
-had installed that filter: a policy saying `raw_markup: true` beside an app
-mounted without it would send the payload straight to `set_inner_html`
-unchecked. So the permission and the filter are now derived from the SAME value.
-`Policy` carries a `Sanitizer`; `Policy::with_sanitizer(config)` replaces it;
+The permission and the filter derive from the SAME value — without that
+coupling, a policy saying `raw_markup: true` beside an app mounted without the
+filter would send the payload straight to `set_inner_html`
+unchecked. `Policy` carries a `Sanitizer`; `Policy::with_sanitizer(config)`
+replaces it;
 and `@markdown.filter_for(sanitizer)` returns the filter that sanitizer
 requires — the markup filter in front of `Baseline` when raw markup is
 permitted, `Baseline` alone when it is not. `set_app` hands the app the policy's
@@ -641,7 +627,7 @@ child → parent.
 no dangerous capability, so they inherit exactly the same limitation as every
 other line of guest code. Nothing to add.
 
-**Host-registered handlers are the open one.** A guest can currently call any of
+**Host-registered handlers are the open one.** A guest can call any of
 them with any arguments. In `demo/universal_wasm` those are `double`,
 `listComponents`, `makeComponent`; in a real app they are whatever the app's
 services are.
@@ -651,10 +637,7 @@ party what it is allowed to do. It is to authorize **at call time, from the
 requester's path**, and let the host decide: the path already identifies the
 caller, and a `DynObj` sitting at it names its bundle.
 
-The plumbing gap **is now filled, and this paragraph used to describe it as
-open.** `RequestFn((Array[Value], (Result[Value, Value]) -> Unit) -> Unit)`
-never received the requester's path, so a host handler had nothing to authorize
-against. Its v2 replacement does: `IntentFn` takes an
+The plumbing supports that: `IntentFn` takes an
 `@tutuca.IntentCall` (`core/path_spec.mbt`), which carries `name`, `args` and
 **`from` — the sender's `DispatchPath`**. `Transactor::push_intent` fills it in
 from the position the intent was dispatched at (`transactor/walk.mbt`), and a
@@ -662,13 +645,7 @@ from the position the intent was dispatched at (`transactor/walk.mbt`), and a
 
 So the mechanism is here and the decision is the host's. What remains open is
 that no host in this repository USES it yet: `demo/universal_wasm` still
-registers `double` / `listComponents` / `makeComponent` for anyone who asks. The
-gap moved from "cannot be written" to "has not been written", which is a
-different sentence and a smaller one.
-
-`RequestFn` and `ctx.request` are still present beside the new channel and are
-deleted in the migration's contract step; until then the old signature is still
-reachable and still cannot authorize.
+registers `double` / `listComponents` / `makeComponent` for anyone who asks.
 
 ## 6. Availability
 

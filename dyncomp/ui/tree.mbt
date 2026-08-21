@@ -7,9 +7,8 @@
 // two namespaces at once: the standard components, compiled in, and whatever a
 // loaded bundle answers for.
 //
-// It lives here rather than in the wasm shell that used to own it because
-// nothing about either namespace is backend-specific. `MakeInstance` was
-// already the seam for "build a loaded component", and `Std` was already the
+// It lives here because nothing about either namespace is backend-specific.
+// `MakeInstance` is the seam for "build a loaded component", and `Std` is the
 // seam for "build a standard one". That is the whole resolver, and having it
 // here means the round trip is a `moon test` away instead of needing a browser.
 

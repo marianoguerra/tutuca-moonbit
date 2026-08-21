@@ -45,8 +45,8 @@ fn materialize(specs : Array[ChildSpec]) -> Array[@anode.ANode] {
 
 ///|
 test "condense leaves no whitespace-only run with a newline" {
-  // NOTE: condense_childs_whites is deliberately NOT idempotent (matching
-  // the JS original): in [" ", " ", " "] the middle space survives pass one
+  // NOTE: condense_childs_whites is deliberately NOT idempotent:
+  // in [" ", " ", " "] the middle space survives pass one
   // as an interior run, then a second pass would see it at the edge and
   // drop it. It runs exactly once per element, so the invariant that holds
   // is the newline one: every interior newline run collapses to " "/"" and

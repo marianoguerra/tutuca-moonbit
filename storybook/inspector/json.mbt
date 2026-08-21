@@ -1,33 +1,22 @@
-// Port of src/components/data/json.js + data/data.js + data/immutable-inspector.js
-// — the generic value inspector, collapsed onto `@tutuca.Value`.
+// The generic value inspector, collapsed onto `@tutuca.Value`.
 //
-// The JS library classifies THREE families of values (plain JSON, JS extras,
-// Immutable.js collections) through a `chain(...)` dispatcher. The port has no
-// JS values: everything is a `@tutuca.Value` (Null / Bool / Num / Str / List /
-// Map / Fn / Obj), so the three JS classifiers collapse into ONE `classify`
-// and the JS-only leaf components map as follows:
+// Everything is a `@tutuca.Value` (Null / Bool / Num / Str / List /
+// Map / Fn / Obj), classified by ONE `classify`, with one leaf component per
+// value kind:
 //
-//   JsonNull                          -> JsonNull        (Value::Null)
-//   JsonBoolean                       -> JsonBoolean     (Value::Bool)
-//   JsonNumber / JsBigInt             -> JsonNumber      (Value::Num)
-//   JsonString / JsSymbol / JsDate /
-//   JsRegExp                          -> JsonString      (Value::Str)
-//   JsonArray / ImList / ImStack /
-//   JsSet / ImSet / ImOSet / ImRange  -> JsonArray       (Value::List)
-//   JsonObject / ImMap / ImOMap /
-//   JsMap / ImRecord                  -> JsonObject      (Value::Map)
-//   JsFunction                        -> ValueFn         (Value::Fn)
-//   JsClassInstance / JsError         -> ValueObj        (Value::Obj — leaf
+//   Value::Null                       -> JsonNull
+//   Value::Bool                       -> JsonBoolean
+//   Value::Num                        -> JsonNumber
+//   Value::Str                        -> JsonString
+//   Value::List                       -> JsonArray
+//   Value::Map                        -> JsonObject
+//   Value::Fn                         -> ValueFn
+//   Value::Obj                        -> ValueObj (leaf
 //     via `obj_debug`; an Obj exposing `obj_seq_entries` renders as
 //     JsonObject rows instead)
-//   JsUndefined                       -> (no undefined; Null)
-//
-// immutable-inspector.js is therefore FOLDED into this file — see the git
-// history of the dynamic-API version for the full mapping notes.
 
 // ---------------------------------------------------------------------------
-// Shared composite machinery (JS compositeFields / compositeMethods /
-// compositeAlter / makeCompositeView), typed: every collapsible/paginated
+// Shared composite machinery, typed: every collapsible/paginated
 // state struct implements the small Composite trait, and the compute/mutate/
 // alter buckets are built generically over it.
 // ---------------------------------------------------------------------------
@@ -126,7 +115,7 @@ fn[S : Composite] has_pagination(s : S) -> Bool {
 }
 
 ///|
-/// The composite `$`-callables, one function each (JS compositeMethods).
+/// The composite `$`-callables, one function each.
 ///
 /// Individually rather than as a bucket map: the buckets are keyed by each
 /// component's own generated Method enum now, so what is shared is the
@@ -182,7 +171,7 @@ fn[S : Composite] composite_page_indicator_text(
 }
 
 ///|
-/// The @loop-with hook slicing the iteration to one page (JS compositeAlter).
+/// The @loop-with hook slicing the iteration to one page.
 fn[S : Composite] composite_page_range(
   s : S,
   _seq : @tutuca.Value,
@@ -294,15 +283,14 @@ fn json_string_comp() -> @component.Component {
 }
 
 ///|
-/// Leaf for `Value::Fn` (stands in for the JS JsFunction component — the port
-/// has no function names/kinds to show).
+/// Leaf for `Value::Fn` (no function names/kinds to show).
 fn value_fn_comp() -> @component.Component {
   value_fn_component()
 }
 
 ///|
 /// Leaf for an opaque `Value::Obj` (no `obj_seq_entries`): its `obj_debug`
-/// text, truncated. Stands in for the JS JsClassInstance/JsError leaves.
+/// text, truncated.
 fn value_obj_comp() -> @component.Component {
   value_obj_component()
 }
@@ -362,7 +350,7 @@ fn json_object_comp() -> @component.Component {
 }
 
 ///|
-/// One key/value row of a composite (also stands in for the JS ImEntry).
+/// One key/value row of a composite.
 fn json_property_comp() -> @component.Component {
   json_property_component()
 }
@@ -372,7 +360,7 @@ fn json_property_comp() -> @component.Component {
 // ---------------------------------------------------------------------------
 
 ///|
-/// JS valueWrapperMethods.toggleIsExpanded: delegate an expand/collapse toggle
+/// Delegate an expand/collapse toggle
 /// to the wrapped value when it supports one; leaf values have no
 /// `isExpanded` so the wrapper stays as-is.
 fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
@@ -383,8 +371,7 @@ fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
 }
 
 ///|
-/// The single top-level value inspector (JS JsonViewer + DataInspector +
-/// ImInspector, collapsed — see the header comment): one `value` field holding
+/// The single top-level value inspector: one `value` field holding
 /// the classified tree, the delegating toggle, and a pass-through view.
 fn data_inspector_comp() -> @component.Component {
   data_inspector_component(update=(s, msg, _ctx) => {
@@ -401,8 +388,7 @@ fn fmt_path_key(k : @tutuca.PathKey) -> String {
 }
 
 ///|
-/// JS classifyData / chain(classifyImmutable, classifyJsExtra, classifyJson):
-/// one classifier over the whole Value enum. Returns the classified component
+/// One classifier over the whole Value enum. Returns the classified component
 /// tree (component instances all the way down), NOT wrapped in DataInspector.
 pub fn Inspector::classify(
   self : Inspector,
@@ -431,8 +417,7 @@ pub fn Inspector::classify(
     // An instance is shown as its own structure, by whichever of the two
     // things it says about itself it has: the sequence entries a custom
     // collection iterates, else the fields it DECLARES. Only an instance that
-    // says neither falls back to the one opaque line of debug text — which
-    // every instance used to get, because nothing could enumerate an `Obj`.
+    // says neither falls back to the one opaque line of debug text.
     Obj(o) => {
       let rows : Array[@tutuca.Value] = []
       match o.obj_seq_entries() {
@@ -451,12 +436,8 @@ pub fn Inspector::classify(
               return self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
           }
       }
-      // ...under the name it CALLS itself. The root row of the instance
-      // inspector has always shown this (`instance_snapshot` reads the same
-      // name off the same schema); a NESTED instance used to lose it here and
-      // render as a bare `Object`, so a JsonArray's children read `Object {1}`
-      // instead of `JsonBoolean {1}` — indistinguishable from a plain Map that
-      // happened to have one key. `InstanceFields` is JsonObject's twin plus
+      // ...under the name it CALLS itself (`instance_snapshot` reads the same
+      // name off the same schema). `InstanceFields` is JsonObject's twin plus
       // the `typeName` this needs.
       let name = match o.obj_schema() {
         Some(s) => s.name
@@ -484,7 +465,7 @@ fn Inspector::property(
 }
 
 ///|
-/// JS DataInspector.Class.fromData: classify + wrap in the DataInspector.
+/// Classify + wrap in the DataInspector.
 fn Inspector::inspect_value(
   self : Inspector,
   v : @tutuca.Value,
@@ -493,15 +474,9 @@ fn Inspector::inspect_value(
 }
 
 ///|
-/// Recursively expand a classified tree so an example renders open (port of
-/// the .dev.js `deepExpand` helpers).
+/// Recursively expand a classified tree so an example renders open.
 ///
-/// The child fields come from the instance's own declaration. They used to be
-/// two literal name lists — `["value", "raw", "child", "ifNode", "thenNode",
-/// "elseNode"]` and `["items", "sections", "components", "events"]` — because
-/// nothing could ask an `Obj` what it held, so every child field used anywhere
-/// in this library had to be enumerated here and a new one silently stopped
-/// expanding.
+/// The child fields come from the instance's own declaration.
 pub fn deep_expand(v : @tutuca.Value) -> @tutuca.Value {
   guard v is Obj(_) else { return v }
   let mut cur = v

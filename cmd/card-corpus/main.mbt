@@ -8,16 +8,9 @@
 //
 //   moon run --target native cmd/card-corpus -- <out.json>
 //
-// A PROJECTION and nothing else. This used to run the interpreter, because the
-// corpus stored an effect as `send flash RStr("ada")` and the wasm adapter sees
-// a name and a list of values — so the values had to be recovered from
-// somewhere, and the only place that had them was a second implementation.
-// That made the compiled backend's conformance harness depend on the
-// interpreter existing, which is a strange thing for a corpus to arrange.
-//
-// The corpus stores the values now (`CaseEffect`), so there is nothing to
-// recover and nothing to run: every field below is copied out of the table.
-// Both halves of it — the transitions and the value bodies — cross the same way.
+// A PROJECTION and nothing else: every field below is copied out of the
+// table. Both halves of it — the transitions and the value bodies — cross the
+// same way.
 
 ///|
 fn role_name(r : @conformance.ValueRole) -> String {

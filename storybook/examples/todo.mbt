@@ -1,9 +1,7 @@
-// Port of docs/examples/todo.js — a list of child components.
+// A list of child components.
 //
-// The JS view passes the component itself as a handler argument
-// (`@on.click="onAddItem Item"`), because JS can put a component in the value
-// world. MoonBit's Value has no component-reference variant, so the handler
-// CAPTURES the `Item` component in its closure instead and the view just calls
+// MoonBit's Value has no component-reference variant, so the handler
+// CAPTURES the `Item` component in its closure and the view just calls
 // `@on.click="onAddItem"`. Same result, one less thing in the value language.
 
 ///|

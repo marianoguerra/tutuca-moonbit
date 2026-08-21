@@ -77,10 +77,8 @@ fn slot_of(id : String) -> Slot {
 /// same bundle that serves this page also answers to `node`, which is what a
 /// build step and an agent both are.
 ///
-/// `compile` and `mountCompiled` are the two halves of showing a card. There
-/// used to be a `load` and a `mount` between them that parsed a card and ran it
-/// where it stood, and there is no interpreter to do that any more: a card is
-/// mounted by compiling it and instantiating the module. Instantiation is
+/// `compile` and `mountCompiled` are the two halves of showing a card: a card
+/// is mounted by compiling it and instantiating the module. Instantiation is
 /// `WebAssembly`, which answers a promise, so the sequence lives in
 /// `web/card-wasm.js` as `mountCard` — the one thing on this boundary that
 /// could not be a synchronous MoonBit call.

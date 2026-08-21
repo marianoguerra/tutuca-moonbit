@@ -19,7 +19,6 @@ test "a state block emits the struct, its zero and its declared field kinds" {
   assert_eq(file.state.length(), 1)
   assert_eq(file.state[0].component, "Counter")
   let src = @viewgen.emit_module("Counter", "counter.html", file)
-  // The struct the author no longer writes.
   assert_true(src.contains("pub(all) struct CounterState {"))
   assert_true(src.contains("  label : String"))
   assert_true(src.contains("  count : Int"))
@@ -127,9 +126,7 @@ test "named types become MoonBit types, and a keyword field escapes" {
   // whose type is already known (see `StateDef::zero_expr`).
   assert_true(src.contains("m: View,"))
   // The runtime name stays `type` — it is what the view reads and what the
-  // fields map carries — so only the MoonBit binding bends. It used to take a
-  // `derive(ToJson(fields(type_(rename="type"))))` to put the name back; the
-  // codec keys by the runtime name directly, so there is no derive at all.
+  // fields map carries — so only the MoonBit binding bends.
   assert_true(src.contains("  type_ : String"))
   assert_false(src.contains("derive(ToJson"))
   assert_true(src.contains("\"type\": Str(s.type_)"))

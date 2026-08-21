@@ -230,12 +230,10 @@ test "a URL attribute is recognized whatever its case" {
 ///|
 /// A structured value bound to a URL attribute is dropped on shape alone.
 ///
-/// This used to be skipped — "a structured value is not a URL string" — which
-/// is true of the MoonBit value and false of what the browser does with it.
-/// `set_prop` routes `Data` down the property path and the IDL setter takes
-/// ToString of the array, so `["javascript:alert(1)"]` became
-/// `javascript:alert(1)`: a live script URL in the host's origin, reachable by
-/// an untrusted bundle with a `list<string>` field and no host cooperation.
+/// A structured value is not a URL string — true of the MoonBit value and
+/// false of what the browser does with it: `set_prop` routes `Data` down the
+/// property path and the IDL setter takes ToString of the array, so
+/// `["javascript:alert(1)"]` arrives as `javascript:alert(1)`.
 test "a structured value bound to a URL attribute is dropped" {
   let payload : Json = ["javascript:alert(1)"]
   for name in ["href", "src", "action", "formaction", "srcset", "ping"] {
@@ -247,7 +245,7 @@ test "a structured value bound to a URL attribute is dropped" {
     debug_inspect(e.attrs.contains(name), content="false")
     debug_inspect(reports.length(), content="1")
   }
-  // Multi-element lists too: `join(",")` is a JS comma expression, so
+  // Multi-element lists too: `join(",")` is a comma expression, so
   // `["javascript:alert(1)","x"]` is every bit as live as the one-element case.
   let two : Json = ["javascript:alert(1)", "x"]
   let (tree, reports) = filtered(el("A", { "href": Data(two) }))

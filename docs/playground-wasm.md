@@ -69,12 +69,11 @@ CompileError: WebAssembly.Module(): Compiling function #67 failed:
 array.new_fixed[0] expected type externref, found local.get of type (ref 1)
 ```
 
-That was the long-standing blocker: `@moonbit/moonc-worker`'s `linkCore` used to
-expose no string-ABI knob at all, so the playground could not ask for a
-consistent link. The compiler pinned in `playground/build/toolchain.json` — the
+The `@moonbit/moonc-worker`'s `linkCore` exposes a string-ABI knob, which the
+playground asks for a consistent link with. The compiler pinned in
+`playground/build/toolchain.json` — the
 ONE toolchain pin, which is where to look for the current version rather than
-here — does expose it (`playground/vendor/moonc-web.d.ts`), which is what
-cleared this.
+here — does expose it (`playground/vendor/moonc-web.d.ts`).
 
 ## One worker, many callers: the target travels with each compile
 

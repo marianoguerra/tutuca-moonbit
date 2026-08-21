@@ -1,5 +1,3 @@
-// Port of docs/examples/list-iteration.js.
-//
 // Teaches: `@each=".items"` repeats the host element once per entry. Inside the
 // loop `@key` is the index (List) or key (Map) and `@value` is the item — local
 // bindings, read with the `@` prefix.

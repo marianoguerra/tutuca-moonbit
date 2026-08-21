@@ -371,8 +371,7 @@ fn page_and_row(page_view : String, row_views : String) -> String {
 ///|
 test "a read inside a loop over CHILD components is checked against that child" {
   // `Array[Row]` names a sibling state, so the element type is the Row
-  // component — a thing one StateDef could never answer, which is why the
-  // loop body used to go opaque and this typo rendered as null.
+  // component — a thing one StateDef could never answer.
   let msg = gen_err(
     page_and_row(
       "<ul><li @each=\".rows\"><x text=\".titel\"></x></li></ul>", "<template id=\"Row\"><span @text=\".title\"></span></template>",

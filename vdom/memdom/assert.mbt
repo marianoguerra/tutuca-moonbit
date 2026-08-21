@@ -1,10 +1,10 @@
 ///|
-/// Structural DOM equality, the contract from the JS suite's assertEqualDom:
+/// Structural DOM equality:
 /// kind, tag, namespace, character data, attribute count + values, children
 /// recursively (plus memdom's raw dangerous_html). Live `props` are
 /// intentionally NOT compared — a morph that removes an attribute leaves a
 /// cleared property behind, exactly like a real DOM node keeps live IDL
-/// state; the JS contract compares attributes only.
+/// state; only attributes are compared.
 pub fn dom_equal(a : MemNode, b : MemNode) -> Bool {
   if a.kind != b.kind ||
     a.tag != b.tag ||

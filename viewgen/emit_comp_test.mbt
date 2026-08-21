@@ -63,9 +63,7 @@ test "a schema-backed component gets a wrapper over component()" {
   assert_false(ir.contains("  compute? :"))
   assert_false(ir.contains("  when? :"))
   // The author's match becomes the map `component()` takes through ONE generic
-  // function, given the case list. This used to be a 14-line loop generated per
-  // component per bucket — 143 of them across the corpus, identical but for the
-  // two type names and the list, which the call site can simply pass.
+  // function, given the case list.
   assert_true(
     ir.contains(
       "@component.build_bucket(([Add] : Array[CounterInput]), CounterInput::name, f)",
@@ -91,11 +89,8 @@ test "a schema-backed component gets a wrapper over component()" {
 }
 
 ///|
-/// A record field used to be the case that got NO direct codec, on the
-/// grounds that it had its own derived ToJson. That left the JSON bridge as
-/// the runtime's answer for it — and a fallback something still needs is a
-/// fallback that cannot be deleted. Nested types now get a codec like every
-/// other shape, and the wrapper names it.
+/// A nested record gets a direct codec like every other shape, and the
+/// wrapper names it.
 test "a nested record still gets a direct codec, named by the wrapper" {
   let f = @viewgen.split_file(
     (
@@ -113,7 +108,7 @@ test "a nested record still gets a direct codec, named by the wrapper" {
   assert_false(ir.contains("encode="))
   assert_false(ir.contains("decode="))
   assert_false(ir.contains("schema="))
-  // The doc comment says where they went, since the signature no longer can.
+  // The doc comment carries the explanation the signature cannot.
   assert_true(
     ir.contains("`CardState` states them\n/// through `@component.Fields`"),
   )

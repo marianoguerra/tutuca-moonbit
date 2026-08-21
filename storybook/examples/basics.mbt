@@ -1,10 +1,10 @@
-// Ports of the four smallest tutorial examples, which exist to show that
+// Four of the smallest tutorial examples, which exist to show that
 // nearly everything about a component is optional:
 //
-//   docs/examples/minimum-viable-component.js — component({}), no view at all
-//   docs/examples/static-view-component.js    — a view, no state
-//   docs/examples/text-directive.js           — @text / <x text>
-//   docs/examples/danger-set-inner-html.js    — the raw-HTML escape hatch
+//   component({})             — no view at all
+//   a static view             — a view, no state
+//   @text / <x text>          — the text directive
+//   set-inner-html            — the raw-HTML escape hatch
 
 ///|
 /// The smallest component there is: no fields, no view, no logic. It renders

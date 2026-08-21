@@ -1,4 +1,4 @@
-// Stack rebuild (JS Path.buildStack + Step.enterFrame): replay the frames
+// Stack rebuild: replay the frames
 // the renderer pushed while rendering down a path, so a handler runs with
 // the binds (`@key`, `@value`, @enrich-with scopes) its element saw. The
 // frame shapes MUST mirror render()'s enter calls exactly:
@@ -30,7 +30,7 @@ fn each_binds(
   let binds : Map[String, @tutuca.Value] = { "key": k, "value": value }
   match enrich_with_val {
     Some(ev) => {
-      // mirror renderer + JS IterInfo.enrichBinds: @loop-with (if any)
+      // mirror the renderer's enrichment: @loop-with (if any)
       // supplies the iterData the enricher sees
       let iter_data = loop_iter_data(stack, seq, when_val, loop_with_val)
       let enricher = ev.eval_as_handler(stack)
@@ -62,7 +62,7 @@ fn step_enter_frame(
     BindStep(binds~) => stack.enter(next, binds.copy(), is_frame=false)
     ScopeBindStep(val~) => {
       // re-evaluate the @enrich-with handler against the rebuilt stack so
-      // its custom binds are present (JS ScopeBindStep.enterFrame)
+      // its custom binds are present
       let handler = val.eval_as_handler(stack)
       let binds : Map[String, @tutuca.Value] = match
         call_handler(handler, stack.it, []) {
@@ -71,8 +71,8 @@ fn step_enter_frame(
       }
       stack.enter(next, binds, is_frame=false)
     }
-    // `next` is the pass-through component value (JS EachBindStep.lookup
-    // returns v): binds carry the item, `it` stays the component
+    // `next` is the pass-through component value: binds carry the item,
+    // `it` stays the component
     EachBindStep(val~, when_val~, enrich_with_val~, loop_with_val~, key~) =>
       stack.enter(
         next,
@@ -86,7 +86,7 @@ fn step_enter_frame(
 pub fn build_stack(path : @tutuca.Path, stack : RenderStack) -> RenderStack? {
   let mut st = stack
   for step in path.steps {
-    guard @tutuca.step_get(st.it, step) is Some(next) else { // bad path item (JS warns and returns null)
+    guard @tutuca.step_get(st.it, step) is Some(next) else { // bad path item (warn and return null)
       return None
     }
     st = step_enter_frame(step, st, next)

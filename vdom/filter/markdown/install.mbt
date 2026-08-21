@@ -44,18 +44,13 @@ pub fn filter_for(sanitizer : @sanitize.Sanitizer) -> &@filter.VdomFilter {
     fs.push(@markup.MarkupFilter::new(sanitizer~))
   }
   fs.push(@markup.SafeMarkupFilter::new(sanitizer~))
-  // Narrowed here, once, which it could not be before. The narrowing available
-  // used to be `without_css`, which dropped `style` by NAME — and the only
-  // `style` markdown emits is GFM's column alignment, `text-align:left`, which
-  // `build.mbt` writes itself. Narrowing the whole filter took both, so
-  // `build.mbt` carried two sanitizers and applied the narrow one only where it
-  // handed a payload to `@markup.html_nodes`.
+  // Narrowed here, once.
   //
   // `CssPolicy::payload()` reads the VALUE, so it does not need to know who
   // wrote it: the alignment is admitted at the smallest level there is, and a
   // `url(…)` is admitted at none. A markdown document is content the app did not
   // write — that is what `@setinnermd` is FOR — so the whole walk gets the
-  // payload policy and `build.mbt` carries one sanitizer again.
+  // payload policy.
   fs.push(
     MdFilter::new(sanitizer=sanitizer.with_css(@safecss.CssPolicy::payload())),
   )

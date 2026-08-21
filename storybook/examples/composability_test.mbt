@@ -1,9 +1,7 @@
 ///|
 /// This example had no test, which is how a dead slot survived: `dnd` is declared
 /// as the bare `component` marker (`DnDExample` has adjacent capitals, which
-/// kebab-case cannot round-trip), so its name comes from `slots~` — and `slots~`
-/// used to be read and dropped for a field the schema already declared. The tab
-/// rendered empty and nothing said so.
+/// kebab-case cannot round-trip), so its name comes from `slots~`.
 ///
 /// Asserting on the CHILD's own markup, not on the slot being non-null: a slot
 /// holding an instance whose view never renders would still be non-null. The

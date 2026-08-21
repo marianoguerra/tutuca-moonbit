@@ -41,7 +41,7 @@ test "scalars project to their JSON Schema types" {
     ),
   )
   // s32 and f64 are different declared types and must stay different here:
-  // reading the kind off a seed value is what used to conflate them.
+  // the kind is read off the declared type, not off a seed value.
   inspect(compact(at(js, "title").unwrap()), content="\"Sample\"")
 }
 

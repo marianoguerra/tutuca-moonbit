@@ -1,5 +1,5 @@
 // has_pending + bounded settle(max_turns): the primitives a time-slicing
-// backend loops on (App::drain_batched, JS _transactNextBatch). Sends with no
+// backend loops on (App::drain_batched). Sends with no
 // matching handler still count as processed transactions, which is all these
 // need — they exercise the queue, not handler effects.
 

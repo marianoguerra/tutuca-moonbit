@@ -1,5 +1,5 @@
 // DomEvent construction + the closed name→field mapping handler args use
-// (JS InputEvent.lookupName, transactor.js:339-378 — update the lint layer
+// (update the lint layer
 // if more names are added).
 
 ///|
@@ -30,8 +30,8 @@ pub fn DomEvent::new(
 }
 
 ///|
-/// JS toNullIfNaN(parseInt/parseFloat(getValue(e))). Full-string parses (the
-/// JS prefix-parse of "12px" → 12 is not mirrored).
+/// NaN parses to null. Full-string parses only (the
+/// prefix-parse of "12px" → 12 is not mirrored).
 fn value_as_num(v : @tutuca.Value, as_int : Bool) -> @tutuca.Value {
   match v {
     Num(n) => if as_int { Num(n.to_int().to_double()) } else { Num(n) }

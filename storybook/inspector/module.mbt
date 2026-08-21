@@ -1,22 +1,19 @@
-// The inspector registry + ModuleDef (port of src/components/index.js and the
-// getExamples entries of the co-located *.dev.js files).
+// The inspector registry + ModuleDef.
 //
-// JS exposed the components as module-level singletons with `fromData`
-// statics; the port groups them behind an `Inspector` value: `Inspector::new`
+// The components are grouped behind an `Inspector` value: `Inspector::new`
 // builds every component once (so instances built by the from-data helpers
-// belong to the same descriptors the module registers) and the JS statics
-// become Inspector methods:
+// belong to the same descriptors the module registers) and exposes them as
+// Inspector methods:
 //
-//   DataInspector.Class.fromData(v)      -> insp.inspect_value(v)
-//   SchemaViewer.Class.fromData(s)       -> insp.schema_view(s)
-//   ComponentInspector.Class.fromData(c) -> insp.inspect_component(c)
-//   InstanceInspector.Class.fromData(i)  -> insp.inspect_instance(i)
-//   InstanceExplorer.Class.fromData(...) -> insp.explore_instance(...)
-//   recordToEntry(record, ...)           -> insp.record_to_entry(record, ...)
+//   insp.inspect_value(v)
+//   insp.schema_view(s)
+//   insp.inspect_component(c)
+//   insp.inspect_instance(i)
+//   insp.explore_instance(...)
+//   insp.record_to_entry(record, ...)
 //
-// NOT PORTED: test-inspector.js (TestReport & co). Its data source was the
-// JS in-app test runner (`tutuca test --json`); `moon test` is the runner in
-// the port, so there is no in-app test-report data to render.
+// NOT INCLUDED: the in-app test report. `moon test` is the runner, so there is
+// no in-app test-report data to render.
 
 ///|
 /// name -> Component, shared by every from-data builder (the same lookup-table
@@ -90,7 +87,7 @@ pub fn Inspector::new() -> Inspector {
 }
 
 ///|
-/// Every inspector component, in registration order (JS getComponents()).
+/// Every inspector component, in registration order.
 ///
 /// Public because a host that renders an inspector view it built itself (the
 /// storybook gallery's Instance tab) has to register these: a rendered
@@ -101,11 +98,11 @@ pub fn Inspector::components(self : Inspector) -> Array[@component.Component] {
 }
 
 // ---------------------------------------------------------------------------
-// build-views.js — per-value inspector builder
+// per-value inspector builder
 // ---------------------------------------------------------------------------
 
 ///|
-/// The views `build_inspector_views` returns (JS buildInspectorViews result).
+/// The views `build_inspector_views` returns.
 /// Absent views are Null; the has_* flags say which tabs a host should show.
 pub struct InspectorViews {
   instance_view : @tutuca.Value
@@ -114,12 +111,10 @@ pub struct InspectorViews {
 }
 
 ///|
-/// Build the inspector views for a single value (port of buildInspectorViews,
-/// adapted to the snapshot approach — and without the JS async test runner,
-/// see the header comment).
+/// Build the inspector views for a single value.
 ///   value         — the instance/value to inspect (e.g. a drive value)
 ///   comps         — a component registry used to resolve the value's
-///                   descriptor (JS `scope.getCompFor(value)`)
+///                   descriptor
 pub fn Inspector::build_inspector_views(
   self : Inspector,
   value : @tutuca.Value,
@@ -138,7 +133,7 @@ pub fn Inspector::build_inspector_views(
 }
 
 // ---------------------------------------------------------------------------
-// Examples (the *.dev.js getExamples entries, a representative subset)
+// Examples (a representative subset)
 // ---------------------------------------------------------------------------
 
 ///|
@@ -154,13 +149,9 @@ fn instance_args(v : @tutuca.Value) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// A sample descriptor exercising every summary channel (RichSample in
-/// component-inspector.dev.js). Only introspected, never registered/rendered.
+/// A sample descriptor exercising every summary channel. Only introspected,
+/// never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
-  // The two `$`-callables this sample used to declare — `label` and `double`
-  // — were `func` declarations in the state block, and `func` is gone: a
-  // callable belongs in the script block with every other callable. No view
-  // here calls them, so nothing is left to answer.
   rich_sample_component(
     update=(s, msg, _ctx) => {
       match msg {
@@ -181,8 +172,7 @@ fn rich_sample_comp() -> @component.Component {
 }
 
 ///|
-/// A small descriptor exercising a few field types (SampleCard in
-/// instance-inspector.dev.js).
+/// A small descriptor exercising a few field types.
 fn sample_card_comp() -> @component.Component {
   sample_card_component(
     compute=m => {

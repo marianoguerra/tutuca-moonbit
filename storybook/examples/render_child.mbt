@@ -1,5 +1,4 @@
-// Ports of docs/examples/render-child.js, docs/examples/entry.js and
-// docs/examples/multiple-views.js — rendering a component from another
+// Rendering a component from another
 // component's field.
 //
 // Teaches: `<x render=".field">` renders a child component held in a field;
@@ -34,16 +33,14 @@ pub fn render_child_module() -> @component.ModuleDef {
 }
 
 ///|
-/// The `Entry` building block (docs/examples/entry.js): a card with a read-only
+/// The `Entry` building block: a card with a read-only
 /// `main` view and an `edit` view whose inputs two-way-bind the same fields.
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
   // `containsText` is declared in this file's `tutuca/script` block, which is
   // what puts it in `EntryMethod` — no view of Entry calls it; the `@when` of
-  // a PARENT does. Its body is compiled from the block now, so there is no
-  // `compute~` argument here: this used to carry a hand-written copy of the
-  // same two `contains` calls, with the note that it would go away when the
-  // emitter landed.
+  // a PARENT does. Its body is compiled from the block, so there is no
+  // `compute~` argument here.
   entry_component(init={
     title: "Entry Title",
     description: "Entry Description",

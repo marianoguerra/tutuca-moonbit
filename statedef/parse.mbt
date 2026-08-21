@@ -523,7 +523,7 @@ fn user_ty_of(d : RawDecl, comp : String, env : Env) -> UserTy raise DefError {
       // One construct, two encodings. Every case payload-free means the value
       // IS its case name, which is what an enum has always encoded as; one
       // payload anywhere makes it a tagged sum. The author writes `enum`
-      // either way, and the split that used to be theirs is the emitter's.
+      // either way.
       let mut has_payload = false
       for c in d.cases {
         if !c.payload.is_empty() {

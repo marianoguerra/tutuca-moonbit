@@ -1,13 +1,6 @@
 // Emitting the per-component `component()` wrapper.
 //
-// A hand-written component definition used to restate what the view file
-// already says: its name, its compiled views, its styles, its codec and its
-// schema. The cost was never the typing — it was that each new static fact
-// the generator learned had to be threaded through every call site by hand,
-// and so it never was: `<v>_schema()` landed in every generated module and
-// was passed by three components.
-//
-// The wrapper inverts that: the generator wires its own output, and the next
+// The wrapper is how the generator wires its own output, and the next
 // fact reaches every component by regenerating. What is left at the call site
 // is the code no generator can write.
 //
@@ -68,9 +61,7 @@ fn emit_wrapper(
     }
   }
   // One branch, because `has_direct_codec` answers true for the whole StateTy
-  // lattice — the shape it used to discriminate was a state the generator
-  // could not convert field by field, which fell back to a JSON bridge that no
-  // longer exists.
+  // lattice.
   let filled = "/// states filled in — its name, its compiled views and its styles. The\n" +
     "/// schema and the codec are not passed at all: `\{s}` states them\n" +
     "/// through `@component.Fields`, and `component()` reads them off the\n" +
@@ -224,8 +215,8 @@ fn bucket_answers(param : String, answered : Answered) -> Array[String] {
 /// None when the block compiled nothing this bucket routes to.
 ///
 /// It is the bucket's own `Map[String, H]`, already built. It is keyed by the
-/// SOURCE name rather than by the bucket enum because the enum no longer
-/// carries these names: they are exactly the ones trimmed out of it, so the
+/// SOURCE name rather than by the bucket enum because the enum carries none
+/// of these names: they are exactly the ones trimmed out of it, so the
 /// author is never asked about them. Both halves land in the same map at the
 /// wrapper, which is where the two are merged.
 fn bucket_router(
@@ -267,9 +258,7 @@ priv struct WrapperBucket {
   enum_ : String
   handler : String
   /// Every case of `enum_`, as the MoonBit array literal the call site passes
-  /// to `@component.build_bucket`. The bucket used to be built by a generated
-  /// function per component that closed over this list; the list is the only
-  /// part that varied, so it is passed instead.
+  /// to `@component.build_bucket`.
   ///
   /// TRIMMED of what the block answers, exactly as `enum_` is — the two have to
   /// agree, since one is the case list of the other. `[]` means the block
@@ -288,10 +277,7 @@ fn WrapperBucket::asks_author(self : WrapperBucket) -> Bool {
 /// The handler buckets, in `component()`'s own order — TRIMMED to the ones the
 /// views actually name.
 ///
-/// It used to emit all six as `Map[String, …]`, on the reasoning that
-/// `Surface` carried no @when/@enrich-with/@loop-with names so trimming could
-/// only ever be partial. It carries them now, and both halves of that change
-/// matter. A bucket the views never use is not a parameter at all, so it
+/// A bucket the views never use is not a parameter at all, so it
 /// cannot be answered by mistake; and the ones that remain are keyed by a
 /// generated enum rather than by a string, so the author writes a match the
 /// compiler checks — which is what makes a `$name` or an `@when` added to a

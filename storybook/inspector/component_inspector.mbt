@@ -1,10 +1,10 @@
-// Port of src/components/tutuca/component-inspector.js — inspect a Component
+// Inspect a Component
 // *descriptor* (the value returned by `@component.component(...)`), not a
 // made instance.
 //
 // A `@component.Component` is not a `@tutuca.Value`, so the inspector takes a
-// SNAPSHOT: `component_summary(comp)` returns a plain Value Map (the port of
-// JS `introspectComponent`) and the components render that. Typed-state
+// SNAPSHOT: `component_summary(comp)` returns a plain Value Map
+// and the components render that. Typed-state
 // deviations:
 // - fields come from `Component::specs` (derived from the init state +
 //   explicit slot specs).
@@ -14,15 +14,12 @@
 // - generated field mutators never appear (they live in their own table).
 
 ///|
-/// The pure snapshot the component inspector renders (JS introspectComponent).
+/// The pure snapshot the component inspector renders.
 ///
-/// One source: what the component DECLARES. There used to be a second — a
-/// description recovered from the runtime descriptor, which is all a JS port
-/// ever had — and it answered for every component without a schema. Every
-/// component has one now, so the reflected path had nothing left to describe
-/// and is gone: field types show the author's WIT spelling rather than a label
-/// reconstructed from a runtime kind, and `update` lists the names it answers
-/// instead of the bare fact that it exists.
+/// One source: what the component DECLARES. Field types show the author's WIT
+/// spelling rather than a label reconstructed from a runtime kind, and
+/// `update` lists the names it answers instead of the bare fact that it
+/// exists.
 pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
   summary_from_schema(comp, comp.schema)
 }
@@ -60,9 +57,7 @@ fn summary_from_schema(
       // The WIT spelling the author wrote, not a label reconstructed from
       // the runtime kind: `list<card>`, not `list`.
       "type": Str(f.ty.show_source()),
-      // Its type's zero, off the SCHEMA. This used to read `Component.specs`,
-      // which a holder of an instance and no registry could not get to — so
-      // the column existed only for a caller that already had the component.
+      // Its type's zero, off the SCHEMA.
       "default": f.default(),
     }
     // What it CONTAINS, which is now a different question from "may a view
@@ -295,8 +290,8 @@ fn Inspector::comp_names_section(
 }
 
 ///|
-/// Build a ComponentInspector instance from a `component_summary` snapshot
-/// (JS ComponentInspector.Class.fromData). Empty groups are omitted.
+/// Build a ComponentInspector instance from a `component_summary` snapshot.
+/// Empty groups are omitted.
 fn Inspector::component_view(
   self : Inspector,
   summary : @tutuca.Value,
@@ -381,7 +376,7 @@ fn Inspector::component_view(
 }
 
 ///|
-/// Snapshot + render in one step (JS ComponentInspector.Class.fromData(comp)).
+/// Snapshot + render in one step.
 pub fn Inspector::inspect_component(
   self : Inspector,
   comp : @component.Component,

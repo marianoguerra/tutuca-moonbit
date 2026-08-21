@@ -1,8 +1,5 @@
-// Ports of:
-//   docs/examples/svg-bar-chart.js — a reactive SVG bar chart
-//   docs/examples/svg-icon-macro.js — parametrized SVG icons as macros
-//
-// Both show SVG rendering straight from a tutuca template: the `<svg>` subtree
+// Two examples showing SVG rendering straight from a tutuca template — a
+// reactive bar chart and parametrized SVG icons as macros. The `<svg>` subtree
 // keeps its namespace, so `<rect>`/`<line>`/`<text>`/`<path>` are real SVG
 // elements and every directive (@each, @loop-with, @enrich-with, :attr, macros)
 // works on them.
@@ -11,7 +8,7 @@
 /// A bar chart driven by a list field. `@loop-with` computes shared layout once,
 /// `@enrich-with` derives each bar's geometry, and the buttons mutate the data.
 ///
-/// PORT DIVERGENCE: JS `randomize` uses `Math.random`. To keep the headless
+/// `randomize` avoids real randomness: to keep the headless
 /// tests deterministic (and because randomness is not the point), this derives
 /// the next heights from the current ones instead — still reactive, still
 /// re-renders the bars, just reproducible.

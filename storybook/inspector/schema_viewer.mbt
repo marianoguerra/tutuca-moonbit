@@ -68,7 +68,7 @@ fn has_array_keywords(m : Map[String, @tutuca.Value]) -> Bool {
 }
 
 ///|
-/// JS classifySchema: dispatch a schema Value to its per-construct component.
+/// Dispatch a schema Value to its per-construct component.
 pub fn Inspector::classify_schema(
   self : Inspector,
   schema : @tutuca.Value,
@@ -108,13 +108,13 @@ pub fn Inspector::classify_schema(
       }
       self.schema_scalar_from(m)
     }
-    // null / non-object schemas render as plain values (JS JsonViewer path)
+    // null / non-object schemas render as plain values
     _ => self.inspect_value(schema)
   }
 }
 
 ///|
-/// JS SchemaViewer.Class.fromData.
+/// Build a schema viewer for the value.
 pub fn Inspector::schema_view(
   self : Inspector,
   schema : @tutuca.Value,

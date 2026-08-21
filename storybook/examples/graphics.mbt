@@ -1,6 +1,5 @@
-// Ports of:
-//   docs/examples/svg-interactive.js — clickable SVG, :attr bindings on shapes
-//   docs/examples/mathml-formula.js  — a reactive MathML formula
+// SVG and MathML rendering: clickable SVG with :attr bindings on shapes, and
+// a reactive MathML formula.
 //
 // SVG and MathML subtrees keep their namespace through the parser, so the usual
 // directives (@each, :attr, @on.click, @if, @enrich-with, macros) all work on

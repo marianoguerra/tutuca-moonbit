@@ -21,10 +21,8 @@
 /// rather than listed, so a property that becomes a presentation attribute is
 /// covered without anyone noticing.
 ///
-/// These used to be refused outright, along with the network sinks, on the
-/// grounds that a value may be dynamic and there was nothing that could tell a
-/// colour from a fetch. `anode/sanitize/css` is that thing, so the CONSTANT
-/// case is now read. See `check_untrusted_attrs`.
+/// These are accepted for the CONSTANT case, because `anode/sanitize/css` can
+/// tell a colour from a fetch. See `check_untrusted_attrs`.
 fn css_sink_attr(name : String) -> Bool {
   name == "style" || @safecss.css_properties.contains(name)
 }

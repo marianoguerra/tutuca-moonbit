@@ -206,16 +206,14 @@ test "setinnerhtml strips event handlers" {
 }
 
 ///|
-/// The `<style>` ELEMENT goes, and a `style` ATTRIBUTE is now read rather than
+/// The `<style>` ELEMENT goes, and a `style` ATTRIBUTE is read rather than
 /// dropped. This is the one rule the safe directives have that the dangerous
 /// one does not.
 ///
-/// It used to be a blunt drop of both names, because the config's vocabulary is
-/// names and `url(…)` lives in a value. `anode/sanitize/css` is what changed:
-/// the attribute's value is parsed against `CssPolicy::payload()` and RE-EMITTED,
-/// so a fetch is refused and a colour is not. The element stays refused, because
-/// a stylesheet is selectors and at-rules as well as declarations and only the
-/// declaration half is built.
+/// The attribute's value is parsed against `CssPolicy::payload()` and
+/// RE-EMITTED, so a fetch is refused and a colour is not. The element stays
+/// refused, because a stylesheet is selectors and at-rules as well as
+/// declarations and only the declaration half is built.
 test "setinnerhtml reads a style attribute and still refuses a style element" {
   let (tree, reports) = run_html(
     "<style>body{display:none}</style><b style=\"background:url(//evil.test/p)\">hi</b>",

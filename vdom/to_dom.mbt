@@ -1,13 +1,12 @@
 ///|
 /// Property names that exist on DOM nodes but whose setters misbehave for our
-/// purposes (mirrors preact/src/diff/props.js setProperty). Forces
+/// purposes. Forces
 /// set_attribute.
 ///
 /// `pub` so `vdom/memdom` can compose it rather than re-type it. The in-memory
 /// DOM has to agree with this list exactly — `has_property` staying truthful
 /// about these names is what makes a morph and a fresh render produce the same
-/// tree — and it used to hold its own copy, so a name added here and not there
-/// broke that invariant silently.
+/// tree.
 pub fn never_assign(name : String) -> Bool {
   name
   is ("width"
@@ -54,7 +53,7 @@ fn[N : DomNode] set_prop(
     match value {
       None => node.replace_children()
       Some(v) => {
-        // JS reads value.__html ?? "" — a non-Html value yields "".
+        // Reads value.__html ?? "" — a non-Html value yields "".
         let html = if v is Html(html) { html } else { "" }
         // Skip the re-parse when the markup is identical (preact does the
         // same).
@@ -69,7 +68,7 @@ fn[N : DomNode] set_prop(
   // that is enforced rather than merely intended. `MdFilter` and
   // `SafeMarkupFilter` remove these attributes as they build the sanitized
   // children, so seeing one HERE means no filter consumed it — a tree rendered
-  // with no filter at all (`RenderCtx` allows that; an `App` no longer does),
+  // with no filter at all (`RenderCtx` allows that; an `App` does not),
   // or through a chain that does not include one.
   //
   // Rendering nothing is the only defensible answer. Setting the payload as
@@ -87,8 +86,8 @@ fn[N : DomNode] set_prop(
     return
   }
   // Structured values are properties by definition — assign without the
-  // `name in node` gate. JS routes them through the gate, but that only
-  // differs pre-upgrade or on authoring mistakes (a list bound to a plain
+  // `name in node` gate. The gate would only
+  // differ pre-upgrade or on authoring mistakes (a list bound to a plain
   // attribute): here the object property is always assigned, which also
   // spares memdom a custom-element registry.
   //

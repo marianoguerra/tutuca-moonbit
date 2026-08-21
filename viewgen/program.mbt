@@ -1,8 +1,7 @@
 // The set of components one generation job can see.
 //
 // Everything else in viewgen answers a question about ONE component: its
-// fields, its handlers, its views. Two questions need more than that, and both
-// of them used to be answered at run time, silently:
+// fields, its handlers, its views. Two questions need more than that:
 //
 //   - `<x render=".slot" as="edit">` — does the component in that slot have an
 //     `edit` view? A miss falls back to that component's `main` view at run

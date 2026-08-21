@@ -1,9 +1,9 @@
-// Spec for the port of tutuca's transactor (src/transactor.js): the four
+// Spec for tutuca's transactor: the four
 // dispatch channels (input / send-receive / bubble / request-response) over
 // the path package's leaf-handler machinery, plus the per-transaction
 // Completion scope (structured-concurrency counters).
 //
-// Differences from JS, by design:
+// Differences from upstream, by design:
 // - No async runtime (moonbitlang/async does not support wasm-gc, the
 //   module's preferred target): request handlers are CALLBACK-style — they
 //   receive a `respond` continuation they may call synchronously or store
@@ -13,8 +13,8 @@
 // - Completion exposes callback subscription (on_settled /
 //   on_subtree_settled) instead of promises.
 // - Handler resolution lives on the leaf (Value::handler, which asks the
-//   instance through Obj); only request handlers use an external registry (in
-//   JS they resolve through the scope chain, not the component).
+//   instance through Obj); only request handlers use an external registry
+//   (upstream they resolve through the scope chain, not the component).
 //
 // walk_path (over Path::resolve_chain, leaf->root) and the ctx.at PathChanges
 // builder have shipped — walk_path is implemented on EventContext
@@ -117,7 +117,7 @@ declare fn Completion::mark_self_settled(self : Completion) -> Unit
 declare fn Completion::release_self(self : Completion) -> Unit
 
 ///|
-/// What an observer record describes (JS observeKind strings as an enum).
+/// What an observer record describes, as an enum.
 pub(all) enum ObserveKind {
   Receive
   /// One hop of an intent's walk. Travelling up the tree, asking a registered
@@ -133,7 +133,7 @@ pub(all) enum ObserveKind {
 } derive(Debug, Eq)
 
 ///|
-/// How the handler was resolved (JS _matched): an exact bucket entry, or
+/// How the handler was resolved: an exact bucket entry, or
 /// nothing (silent no-op).
 ///
 /// There was a third answer, `Unknown`, for the `"$unknown"` catch-all a
@@ -145,7 +145,7 @@ pub(all) enum ObserveMatch {
 } derive(Debug, Eq)
 
 ///|
-/// The kind as the wire/display word (the JS observeKind string).
+/// The kind as the wire/display word.
 declare pub fn ObserveKind::label(self : ObserveKind) -> String
 
 ///|
@@ -171,12 +171,12 @@ declare pub fn ObserveMatch::label(self : ObserveMatch) -> String
 declare pub fn ObserveRecord::to_json(self : ObserveRecord) -> Json
 
 ///|
-/// One normalized record per handler invocation (JS Transactor.observe):
+/// One normalized record per handler invocation:
 /// purely observational — dev tools / storybook activity logs subscribe.
 /// `path` has field-resolved keys pinned against the root the handler read,
 /// so `path_keys` carries concrete keys. `after` is None when the handler
-/// made no change. `seq` is a per-transactor monotonic counter (the JS
-/// timestamp stand-in — wasm-gc has no clock).
+/// made no change. `seq` is a per-transactor monotonic counter (a timestamp
+/// stand-in — wasm-gc has no clock).
 pub(all) struct ObserveRecord {
   kind : ObserveKind
   name : String
@@ -228,7 +228,7 @@ pub struct Transaction {
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
   priv mut finished : Bool
-  // observer capture (JS _matched/_before/_after); obs_matched None means no
+  // observer capture (_matched/_before/_after); obs_matched None means no
   // handler resolution ran (skipSelf sends emit no record)
   priv mut obs_matched : ObserveMatch?
   priv mut obs_before : @tutuca.Value?
@@ -274,7 +274,7 @@ declare pub fn Transactor::observe(
 
 ///|
 /// Run `cb` at the end of every OUTERMOST settle() that processed at least
-/// one transaction (the JS setTimeout-batch analogue): subscribers that
+/// one transaction (the drained-cascade hook): subscribers that
 /// react once per drained cascade — e.g. the App re-render — instead of once
 /// per root swap.
 declare pub fn Transactor::on_drained(
@@ -372,6 +372,6 @@ declare pub fn Transactor::settle(
 ) -> SettleResult
 
 ///|
-/// Whether transactions remain queued (JS hasPendingTransactions): the pending
+/// Whether transactions remain queued: the pending
 /// check a time-slicing backend loops on alongside bounded settle(max_turns).
 declare pub fn Transactor::has_pending(self : Transactor) -> Bool

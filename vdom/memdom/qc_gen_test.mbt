@@ -1,8 +1,8 @@
 // Vdom generators for the property tests: a sized recursive tree generator,
 // a deterministic key-assignment pass, and an LCG-driven mutator that
-// produces realistic (old, new) pairs with localized diffs (port of the
-// approach in test/vdom-genutil.js — independent random pairs would almost
-// always differ at the root and only exercise the replace path).
+// produces realistic (old, new) pairs with localized diffs — independent
+// random pairs would almost
+// always differ at the root and only exercise the replace path.
 
 ///|
 struct Lcg {

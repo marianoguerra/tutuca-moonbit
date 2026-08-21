@@ -114,7 +114,7 @@ DOM by itself:
   `instantiate`'s `makeExtra` hook, so a page that loads no bundles carries
   none of it.
 - **`dyncomp/host/wasm/abi.mjs`** — the canonical ABI for the world, written
-  once host-side (it is what an archive used to ship a copy of). The file above
+  once host-side. The file above
   `import()`s it lazily, only while an archive is actually being unpacked, so a
   page that forgets to serve it beside the other two MOUNTS AND DRAWS and then
   fails on the first bundle with a message about a module nobody mentioned. If

@@ -1,4 +1,4 @@
-// Parse-issue → finding mapping (tools/core/lint-check.js checkParseIssues,
+// Parse-issue → finding mapping (checkParseIssues,
 // PARSE_ISSUES table, classifyBadValue, checkHostBareDirectives).
 
 ///|
@@ -182,29 +182,13 @@ pub fn check_collected(collector : LintCollector) -> Array[Finding] {
       }
     }
   }
-  for pair in collector.deprecations {
-    let (dep, tag) = pair
-    match dep {
-      // TEMPORARY (JS 2026-07-08): remove with the bare x-directive spelling.
-      BareXDirective(op~, name~) =>
-        out.push(
-          finding(
-            DeprecatedBareXDirective,
-            Warn,
-            [("op", op), ("name", name)],
-            tag,
-            Some(AddPrefix(from=name, to="@" + name)),
-          ),
-        )
-    }
-  }
   check_host_bare_directives(collector, out)
   out
 }
 
 ///|
 /// A bare `when`/`show`/… attribute on a host element is probably a dropped
-/// `@` (JS checkHostBareDirectives).
+/// `@`.
 fn check_host_bare_directives(
   collector : LintCollector,
   out : Array[Finding],
@@ -245,7 +229,7 @@ fn check_host_bare_directives(
 }
 
 // ---------------------------------------------------------------------------
-// Bad-value classification (JS classifyBadValue + BINDING_MEMBER_TOO_DEEP_RE)
+// Bad-value classification (classifyBadValue + BINDING_MEMBER_TOO_DEEP_RE)
 
 ///|
 priv enum ExprKind {
@@ -312,7 +296,7 @@ fn has_space_guarded(s : Array[Char], mid : Char) -> Bool {
 }
 
 ///|
-/// JS /\s\?\s.+\s:\s/ — a space-guarded `?` with a space-guarded `:` at least
+/// /\s\?\s.+\s:\s/ — a space-guarded `?` with a space-guarded `:` at least
 /// one character later.
 fn looks_ternary(s : Array[Char]) -> Bool {
   for i in 1..<(s.length() - 1) {

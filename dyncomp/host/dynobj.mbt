@@ -66,14 +66,10 @@ pub let handle_field : String = "__dyncomp_handle"
 /// the object's FIELDS — which for a guest instance is a copy of its state
 /// under a name that no longer refers to it. What crosses has to be the handle.
 ///
-/// It recurses, and that is the whole point. The single top-level `Obj` this
-/// used to special-case covers a scalar `comp` field (the sample counter's
-/// `Pair` holds two that way), and misses every guest whose children sit in a
-/// LIST — where a child that returns a successor is written back as the parent's
-/// whole list, one element of which is the new instance. Without the recursion
-/// that list arrives as plain data, the guest's `with-field` refuses it, and the
-/// interaction silently does nothing: a reaction inside a message counts up in
-/// the guest and not on the screen.
+/// It recurses, and that is the whole point. A scalar `comp` field (the sample
+/// counter's `Pair` holds two that way) is not enough for guests whose children
+/// sit in a LIST — where a child that returns a successor is written back as
+/// the parent's whole list, one element of which is the new instance.
 pub fn child_json(v : @tutuca.Value) -> Json {
   match v {
     Obj(o) =>

@@ -1,17 +1,17 @@
-// Port of docs/examples/json.js — a composable JSON editor built from typed
+// A composable JSON editor built from typed
 // primitives (null/bool/string/number/array/object), 8 mutually-recursive
 // components.
 //
-// TWO PORT PATTERNS worth calling out:
+// TWO PATTERNS worth calling out:
 //
-// 1. Self-replacement. In JS a JsonSelector's `setTo(Comp)` returns
+// 1. Self-replacement. The handler returns
 //    `Comp.make()` — a fresh instance of a DIFFERENT component type, which the
 //    framework swaps in where the selector was. The typed `update` bucket
 //    cannot express that (it returns a new S), so these handlers go in the
 //    `swap` bucket: `(S, args, ctx) -> Value?` — Input-dispatched by name,
 //    returning the replacement node (None = keep).
 //
-// 2. The component-as-argument problem (as in todo.js), but sharper: a selector
+// 2. The component-as-argument problem (as in todo.mbt), but sharper: a selector
 //    must build SIX different component types, and Array/Object build each other
 //    and the selector — mutual recursion that a capture-at-definition closure
 //    can't express. The fix is a `reg` map of name -> Component, populated AFTER
@@ -109,8 +109,7 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
 }
 
 ///|
-/// Move the item currently at `source` to sit just before `target` (JS
-/// `List.moveKeyBeforeKey`).
+/// Move the item currently at `source` to sit just before `target`.
 fn move_before(
   list : Array[@tutuca.Value],
   source : Int,

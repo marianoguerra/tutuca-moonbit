@@ -1,5 +1,4 @@
-// Stack rebuild tests (ports of the buildStack-through-clicks cases in
-// test/path.test.js): reconstruct a path from a rendered DOM, rebuild the
+// Stack rebuild tests: reconstruct a path from a rendered DOM, rebuild the
 // stack, and check the handler-visible binds — including the frame-boundary
 // invariant (@key/@value must NOT leak into a child component).
 
@@ -37,7 +36,7 @@ test "@each binds are visible to a handler in the SAME component" {
   // the EachBindStep scope replays the renderer's {key, value} binds
   assert_true(@tutuca.Stack::lookup_bind(st, "key") is Str("b"))
   assert_true(@tutuca.Stack::lookup_bind(st, "value") is Str("second"))
-  // frame-only: `it` stays the component value (JS EachBindStep pass-through)
+  // frame-only: `it` stays the component value (EachBindStep pass-through)
   assert_true(st.it == state)
 }
 

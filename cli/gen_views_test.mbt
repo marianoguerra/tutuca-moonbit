@@ -117,10 +117,9 @@ test "usage errors" {
     content="tutuca: unknown flag '--nope' for gen-views\n  did you mean '--name'?\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
   )
   // A flag that EXTENDS a real one is UNKNOWN, not a malformed version of it.
-  // Matching was by prefix, so this used to report "--out needs a value" —
-  // naming a flag the user never wrote. No suggestion here because `--output`
-  // is three edits from `--out` and the budget is two; reporting the right
-  // error without a guess beats reporting the wrong error confidently.
+  // No suggestion here because `--output` is three edits from `--out` and the
+  // budget is two; reporting the right error without a guess beats reporting
+  // the wrong error confidently.
   inspect(
     emit_of(plan_gen(["a.html", "--output", "x"])),
     content="tutuca: unknown flag '--output' for gen-views\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
@@ -159,9 +158,8 @@ test "the compiled tree is a second file, unless --no-ir" {
 
 ///|
 test "a macro must be declared in the view file" {
-  // Macros used to be registered from MoonBit, which no generator could
-  // expand; now an undeclared one is an error naming the fix rather than a
-  // view that silently renders `bad macro: card`.
+  // An undeclared macro is an error naming the fix rather than a view that
+  // silently renders `bad macro: card`.
   let r = @cli.gen_views(
     "<x:card :title=\".a\"></x:card>",
     name="Counter",
@@ -258,7 +256,7 @@ test "view-only lint rules report at generation time" {
       #|<template>
       #|  <div>
       #|    <span>unclosed
-      #|    <x render-each=".rows" when="$ok"></x>
+      #|    <x render-each=".rows" @when="$ok"></x>
       #|  </div>
       #|</template>
     ),
@@ -272,7 +270,6 @@ test "view-only lint rules report at generation time" {
     plan.diagnostics.join("\n"),
     content=(
       #|HTML_UNCLOSED_BEFORE_END (warning) LintMe/main: <span> still open when </div> was seen — implicitly closed at line 4, col 3
-      #|DEPRECATED_BARE_X_DIRECTIVE (warning) LintMe/main: 'when' on <x render-each> is deprecated — write '@when' instead
     ),
   )
   // Diagnostics do not stop generation: the emitted types are still sound,

@@ -1,4 +1,4 @@
-// Port of the attribute-directive suites from tutuca test/anode-core.test.js
+// Attribute-directive suites
 // (parse-side assertions): wrapper registration and ordering, @enrich-with
 // scope vs each attachment, @if/@then/@else, and events.
 
@@ -148,8 +148,8 @@ test "unknown directive reports an issue but keeps the element" {
 ///|
 /// A branch that was written and did not parse is reported, where an unwritten
 /// one is not: `@then="btn btn-primary"` is a class list that forgot its
-/// quotes, and the silence it used to get was an element rendered with no class
-/// at all — the mistake a static `class` beside the `@if.class` hides best.
+/// quotes, and a silent render as an element with no class at all is the
+/// mistake a static `class` beside the `@if.class` hides best.
 test "an @if branch that does not parse says so" {
   let issues : Array[@anode.ParseIssue] = []
   let (root, _) = collecting_parse(

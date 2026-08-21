@@ -1,41 +1,23 @@
 // Emitting direct state <-> Value codecs.
 //
-// The runtime used to bridge typed state to the Value world through JSON:
-// `S -> Json -> Value` on the way in and back on the way out, once per state
-// write. This replaced it, and then it was deleted — so what follows is not an
-// optimization over a fallback, it is the only conversion there is.
-//
 // With the schema in hand the conversion is written out field by field, with
-// no intermediate `Json` object. The interesting part was never the allocation
+// no intermediate `Json` object. The interesting part is not the allocation
 // saved but the fields that need NO conversion at all: an `any` or a
-// child-slot field already holds a `@tutuca.Value`, and those cannot survive a
-// JSON round trip — the bridge kept a process-global stash of them purely to
-// smuggle them across. A direct codec never sends them through one.
+// child-slot field already holds a `@tutuca.Value`, and a direct codec never
+// sends it through one.
 //
-// Emitted for EVERY schema-backed component. It used to be emitted only for
-// the ones whose fields all had a direct form, which left the JSON bridge as
-// the answer for the rest — and a fallback that some components still need is
-// a fallback that cannot be deleted. The shapes below therefore cover the
+// Emitted for EVERY schema-backed component. The shapes below cover the
 // whole `StateTy` lattice, `record` / `enum` / `variant` / `option` / `tuple`
 // included.
 //
-// The encodings were read off `derive(ToJson)` rather than invented, because
-// while the JSON bridge still existed the two paths had to agree. The bridge
-// is gone and the state struct derives nothing now, so these ARE the shapes —
-// what a view reads is defined here:
+// The state struct derives nothing, so these ARE the shapes — what a view
+// reads is defined here:
 //
 //   record   {"title": …, "done": …}     keyed by MoonBit field name
 //   enum     "Blue"                      the MoonBit case name
 //   variant  "Ping" | ["SetTo", 7]       bare name, or name-then-payload
 //   option   the value, or NO KEY AT ALL for None
 //   tuple    [1, "a"]
-//
-// Adopting the direct codec was gated on a measurement, because a second
-// encoder has to be kept in step with the derived one: encode came out ~2x and
-// decode ~5x, decode gaining most because the JSON path rebuilt a whole `Json`
-// object just to hand it to `from_json`. The benchmark that measured it went
-// with the bridge it was A/B-ing against — see benchmarks/OPTIMIZATIONS.md,
-// "The state <-> Value codec, retired", which is where those numbers live now.
 
 // ---------------------------------------------------------------------------
 // Converters for the named types, emitted once each

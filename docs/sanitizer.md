@@ -102,11 +102,7 @@ because there is no `innerHTML` *attribute* for it to be about;
 described, so it gets a field. Absent means denied, which is the refusal
 `Policy::check_view` already implemented.
 
-### The baseline was wrong, and going to the spec is what found it
-
-The list was written as "this exact list and no editorializing on it: `base`,
-`embed`, `frame`, `iframe`, `object`, `script`, and SVG's `use`". It came from a
-summary, and the summary was wrong.
+### The baseline comes from the spec, never from a summary
 
 The spec's baseline lists **`script` twice** — once in HTML's namespace and once
 in SVG's. Element identity here is namespace-qualified (`ElementName::key`
@@ -121,7 +117,7 @@ passed `Sanitizer::check` with **no violation at all** — through `check_view`,
 into a registered guest component, and onto the host's page. An SVG `<script>`
 inserted through the DOM executes.
 
-`unsafe_elements` is now held against `spec_baseline_removes` by a test, and
+`unsafe_elements` is held against `spec_baseline_removes` by a test, and
 that array is generated from the spec's own baseline file rather than typed. The
 test asserts *containment*, not equality, because tutuca also refuses `base` —
 a `<base href>` retargets every relative URL on the host's page, which is worth
@@ -549,23 +545,18 @@ Three things worth stating:
   `elements` allow-list under the spec's validity relation, so a merged config
   would raise for exactly the hosts that configured most carefully.
 
-  It used to be `Sanitizer::without_css`, which took `style` in both namespaces
-  and the `style` attribute, because `url()` is egress and a fixed-position
-  overlay is clickjacking and the Sanitizer API's vocabulary is names while both
-  of those live in a value. That was the placeholder until there was a parser.
-
-  There is one now — `anode/sanitize/css`, and `docs/css-validator.md` — so the
-  overlay is `Sanitizer::with_css(@safecss.CssPolicy::payload())`: the `style`
+  There is a CSS parser now — `anode/sanitize/css`, and `docs/css-validator.md`
+  — so the overlay is
+  `Sanitizer::with_css(@safecss.CssPolicy::payload())`: the `style`
   ATTRIBUTE is parsed and re-emitted rather than dropped, and the `<style>`
   ELEMENT stays refused, because a stylesheet is selectors and at-rules as well
   and only the declaration half is built. `without_css()` remains, as
   `with_css(CssPolicy::deny())`.
 - **`@setinnermd` narrows the same way, and it took a value rule to let it.**
-  Doing it at the filter used to take GFM column alignment with it —
+  Doing it at the filter would take GFM column alignment with it —
   `style="text-align:left"`, written by `build.mbt` itself — which is a rendering
-  bug, not a tightening. The split was who authored the value, a question a NAME
-  rule cannot ask, so `Build` carried two sanitizers and handed the narrowed one
-  to `html_nodes`.
+  bug, not a tightening. The split is who authored the value, a question a NAME
+  rule cannot ask.
 
   A value rule does not need to ask it: `text-align:left` is admitted at the
   smallest level there is and a payload's `background:url(…)` is admitted at
@@ -747,8 +738,8 @@ answer on every render. Only the second half, the value, needs the filter.
 `markup`), computed by `render` from anode's attributes using `vdom/filter`'s
 own predicates, memoized on `DomData`, and passed to `filter_elem_hinted`. A
 rule whose bit is clear returns without reading the attribute map at all, which
-for most elements is the whole of what the filter used to do. It took the
-filter's remaining cost from +4%–+33% down inside the measurement noise —
+for most elements removes nearly all of what the filter would otherwise do. The
+filter's remaining cost sits inside the measurement noise —
 `benchmarks/OPTIMIZATIONS.md` §13 has the numbers and the package-boundary
 reasons the type lives in a directory of its own.
 
@@ -783,27 +774,13 @@ the name half was. It needs one of:
   than the one filtering now** — which is a property of the app's API, not of
   the tree. See "What a host may change, and what it may only narrow".
 
-### What the trusted case gave up, and why the default flipped
+### Why the sanitizer is always on, and why hosts may only narrow it
 
-A null filter meant a host app's own views got no URL check, and their dynamic
-values come from application state that routinely includes user-supplied data.
-That was a real loss versus a universal invariant, and the seam originally
-shipped with `None` as the default.
-
-**It no longer does.** `App::new` installs the chain for every app, and the
-argument that settled it: the trusted case was paying nothing and getting
-nothing, while every app that had never heard of the seam was the one carrying
-the risk. A default that is safe and an escape hatch that is one call is the
-right way round; the reverse asks every author to know about a document they
-have not read.
-
-The escape hatch is gone too, now — see the next section for what replaced it,
-and for why "one call" turned out to be the wrong shape for it as well.
-
-### What a host may change, and what it may only narrow
-
-The seam used to be `App::set_filter(&VdomFilter?)`: hand over a filter, or hand
-over `None`. Both halves of that were wrong, and for the same reason.
+`App::new` installs the built-in chain for every app: the trusted case would
+otherwise pay nothing and get nothing, while every app that has never heard of
+the seam carries the risk. A default that is safe and a narrowing API that is
+one call is the right way round; the reverse asks every author to know about a
+document they have not read.
 
 **A filter is opaque.** `&VdomFilter` is a trait object, so "is the one you are
 installing at least as strict as the one it replaces" is not a question any code
@@ -845,21 +822,18 @@ caller the seam was built for. The monotone property is narrower and is the one
 that matters: *the built-in chain always runs, and anything a host adds can only
 remove more.*
 
-**What it costs.** A deliberate `javascript:` URL is no longer expressible —
-accepted, and stated here rather than buried: it was rare, and the alternative
-was an API where every app's defense could be removed by one call somebody wrote
+**What it costs.** A deliberate `javascript:` URL is not expressible —
+accepted, and stated here rather than buried: it is rare, and the alternative
+is an API where every app's defense can be removed by one call somebody writes
 for one link. The other two reasons are answered rather than refused: an
-all-developer-authored tree was "hard to promise" when it was written, and the
-hot render loop was measured away (`@sinks.SinkHints`, `OPTIMIZATIONS.md` §13).
+all-developer-authored tree is hard to promise, and the hot render loop was
+measured away (`@sinks.SinkHints`, `OPTIMIZATIONS.md` §13).
 
-**What it cost the tests**, which is worth writing down because it is the honest
-price: three tests in `app/filter_test.mbt` mounted with `set_filter(None)` to
-pin the SECOND layer — that a directive whose filter never ran renders an empty
-element, and that `set_prop` refuses a structured value on `href`. That
-situation is no longer reachable through an `App`, so those tests are gone. The
-properties are not: they are not app properties at all, and they stay pinned
-where they live, in `render/render_wbtest.mbt` and
-`vdom/memdom/custom_element_test.mbt`.
+**What it means for tests**: the second layer — that a directive whose filter
+never ran renders an empty element, and that `set_prop` refuses a structured
+value on `href` — is not reachable through an `App`, so it is not an app-level
+test. The properties stay pinned where they live, in
+`render/render_wbtest.mbt` and `vdom/memdom/custom_element_test.mbt`.
 
 Unrelated to the filter, and belonging with Pass 1: `set_prop` routes by
 `node.has_property(name)`, and `onclick` *is* a property, so an `:onclick="…"`
@@ -889,161 +863,3 @@ to that set forces the attribute path on plain HTML elements too, which is
 strictly worse. Its existing members are names whose attribute form is the
 correct one, which an event handler's is not.
 
-## Order of work
-
-1. ~~`anode/sanitize`: types, `validate()`, the baseline, the walk, `check()`.~~
-   **Done** — 16 tests, covering the spec's validity table, the baseline holding
-   against a permissive config, the reserved-data-attribute carve-out, and the
-   macro-slot case that the old predicate missed.
-2. ~~`Policy::check_view` runs the sanitizer instead of `has_raw_html`.~~
-   **Done** — the refusal message gained the element and a locator.
-3. ~~The `&VdomFilter` seam with a null default, and the URL rule as the first
-   filter.~~ **Done** — `vdom/filter` (10 tests over the scheme table) plus
-   `App::set_filter` and 3 end-to-end tests through the real render loop. (That
-   seam is now `set_sanitizer` / `add_filter` — see "What a host may change".)
-4. ~~The dyncomp host installs one, so a loaded bundle gets Pass 2 and not only
-   Pass 1.~~ **Done** — `set_app` (`dyncomp/host/wasm/glue.mbt`) calls
-   `set_sanitizer` beside the policy and the GC sweep, and `take_filter_reports()`
-   drains the log. That one line lives in the wasm glue, which `moon test` never
-   runs; it is verified by inspection like the rest of the `tcomp` bridge.
-5. ~~Raw markup re-admitted through the same filter.~~ **Done** —
-   `vdom/filter/markup`, 9 tests. Available to any host that installs it; the
-   case it helps most is a plain tutuca app rendering
-   `@dangerouslysetinnerhtml` over data it did not write.
-6. ~~The event-handler rule at render time, and the vdom behaviour it rests on
-   pinned.~~ **Done** — `HandlerFilter` and `Baseline` (8 tests),
-   `vdom/memdom/event_attr_test.mbt` (5 tests), and the memdom `has_property`
-   fix those depend on. This is the half of the name rule a plain app can
-   reach, since Pass 1 never runs for one.
-7. ~~The filter installed by default, and a `Policy` that carries its own
-   sanitizer.~~ **Done** — `App::new` installs `@filter.Baseline`,
-   `take_reports` moved onto the trait so the default is drainable, and
-   `Policy::with_sanitizer` + `@markdown.filter_for` make raw markup a permission
-   a host can actually grant.
-
-8. ~~The same treatment for raw HTML and SVG, under names that carry no
-   warning.~~ **Done** — `@setinnerhtml` and `@setinnersvg`,
-   `vdom/filter/markup/safe.mbt`, 16 tests, plus the SMIL baseline entries and
-   the `xlink href` fold that writing them turned up. See "HTML and SVG come
-   back the same way" above. No new dependency: the HTML parser was already
-   linked by `MdFilter`, and CSS was dropped rather than parsed precisely so
-   `mizchi/css` did not have to become one yet.
-
-9. ~~A CSS VALUE rule, so `style` and the SVG presentation attributes stop being
-   all-or-nothing.~~ **Done** — `anode/sanitize/css`, 31 tests, over
-   `mizchi/css/token` and a property table generated from the W3C's own CSS
-   extracts. Two ordered levels and three switches; a declaration list is parsed
-   and RE-EMITTED rather than approved. `docs/css-validator.md` is the design,
-   including the two findings that shaped it: the tokenizer does not decode
-   escapes, so `\75 rl(…)` is invisible to any name check over its output and the
-   answer is to refuse the backslash; and re-serializing CSS is SAFE, which is
-   the inverse of the rule this document argues for HTML, because a CSS value
-   reaches the browser as a string it parses either way.
-
-   What it bought, beyond the name: `@setinnerhtml` payloads may paint and lay
-   themselves out again, `Build`'s two-sanitizer split collapsed, and an
-   untrusted dyncomp guest may state a constant `fill="#1da1f2"` or
-   `style="text-align:center"`.
-
-10. ~~The filter stops inspecting elements that cannot concern it.~~ **Done** —
-    `@sinks.SinkHints`, four bits computed off the tree and memoized per
-    element, with `filter_elem_hinted` defaulting to ignoring them so a host's
-    own rule is unaffected. It took Pass 2's measurable cost with it: +4%–+33%
-    on what rebuilds, down to inside the noise (`OPTIMIZATIONS.md` §13). 15
-    tests across `vdom/filter` and `render`, including the two that keep it
-    honest — every rule under `all()` does what `filter_elem` does, and the
-    `data-*` names stamped after the walk concern no rule.
-
-11. ~~The seam takes a policy rather than a filter.~~ **Done** —
-    `App::set_sanitizer` and `App::add_filter` replace `App::set_filter`, so the
-    built-in chain can be re-aimed but not removed and a host's own rule can
-    only ever remove more. See "What a host may change, and what it may only
-    narrow" for the argument, what it costs (a deliberate `javascript:` URL is
-    no longer expressible) and what it does not claim (a policy may still
-    widen — dyncomp's does).
-
-What is left, in rough order of who it helps:
-
-- ~~**An event-handler rule in Pass 2.**~~ **Done** — `HandlerFilter` drops
-  `on*` off `VElem.attrs` before the diff, by name and whatever the value's
-  type, which is what covers the namespaced case above that no accident of
-  routing covers. `Baseline` composes it with the URL rule in ONE traversal
-  rather than through `Chain`, which would walk the tree twice for two rules
-  that both only read `attrs` — worth a type once the filter is installed by
-  default. The dyncomp host installs `Baseline` now; that half is belt-and-
-  braces there, since `check_view` refuses the name at registration, but a rule
-  that only holds when another pass already held is not a second layer. 8 tests.
-
-- ~~**Install the filter by default for a plain app.**~~ **Done** — `App::new`
-  installs `@filter.Baseline`, and `set_filter(None)` was the opt-out — since
-  removed, see "What a host may change, and what it may only narrow". Pass 1
-  runs for a dyncomp guest and nobody else (`Policy::check_view` has a single
-  call site, `dyncomp/host/bundle.mbt`), so before this a plain app had no `on*`
-  defense and no URL defense at all. It is a behaviour change for every existing
-  app — a `javascript:` link stops working, an `onclick` attribute disappears —
-  so it wants a version bump that says so.
-
-  Two things it needed that were not obvious at the plan stage:
-
-  - **`take_reports` moved onto the `VdomFilter` trait**, with a default of
-    none. The filter that drops something is now usually one the host never
-    constructed, so there is no concrete handle to drain; a filter that silently
-    removed things with no way to ask what it removed would answer "why did my
-    link vanish" with nothing. `App::take_filter_reports()` is the accessor.
-  - **`dyncomp`'s glue stopped installing its own.** It held a `Baseline` from
-    when the seam defaulted to absent; that is now redundant with the one every
-    `App` carries, and two would have meant reports split across two logs.
-    `take_filter_reports()` there drains the app's.
-- ~~**Let a `Policy` carry a `SanitizerConfig`**, so a dyncomp host could allow
-  a guest raw markup.~~ **Done** — `Policy` holds a `Sanitizer`, and
-  `Policy::with_sanitizer(config)` replaces it, raising on an invalid one. Both
-  directions work: tighten with an allow-list, or loosen with
-  `raw_markup: true`.
-
-  The precondition that held this back — `Policy::check_view` has no way to know
-  whether the markup filter is installed, so `raw_markup: true` beside an app
-  mounted without it would send the payload straight to `set_inner_html`
-  unchecked — is answered by `@markdown.filter_for`, which takes the sanitizer and
-  returns the filter it needs: the markup filter in front of `Baseline` when raw
-  markup is permitted, `Baseline` alone when it is not. `set_app` calls it, so
-  the permission and the filter are set from the same value and cannot come
-  apart.
-
-  It has to be a function rather than a type-level proof because of the
-  dependency direction: `dyncomp/policy` is a leaf over `anode` and has no
-  business importing `vdom`, so the permission cannot carry evidence about a
-  filter. What is available is to make one function the only place the two are
-  named together, and to test it from both sides — which is what
-  `vdom/filter/markdown/install_test.mbt` does.
-
-  Order inside the chain is load-bearing: the markup filter REPLACES a subtree,
-  so the attribute rules must run after the nodes they inspect exist. Built the
-  other way round, a payload's own `javascript:` URL would survive. There is a
-  test.
-- ~~**The skip set and cache-miss placement**, measured rather than assumed.~~
-  The placement half is **done** — the filter hooks element CONSTRUCTION in
-  `render`, so it is exactly-once and a cached subtree is never re-filtered; see
-  "Doing the work once" for why the cache-miss walk this bullet originally
-  proposed does not work. The skip set split in two, and the NAME half is
-  **done** — `@sinks.SinkHints`, four bits off the tree, memoized per element,
-  which took the filter's measurable cost with it (`OPTIMIZATIONS.md` §13). What
-  is left open is the VALUE half, which needs a checked constant rather than
-  merely a constant one — see "The tree says which rules could apply".
-- **A guest-level end-to-end test.** `app/filter_test.mbt` proves the filter sees
-  what the render loop builds, and a guest's subtree is part of that same tree by
-  construction — so this would add little, and the scaffolding is a whole
-  `DynManifest`. Worth it only if the composition ever stops being obvious.
-- ~~**The spec's default allow-list is not transcribed**.~~ **Done** —
-  `SanitizerConfig::spec_default()`, generated by
-  `scripts/fetch-sanitizer-defaults.mjs` from the spec's machine-readable
-  `builtins/` at a pinned commit. Offered rather than imposed, because it allows
-  no interactive element at all; `default()` is still the baseline. Going to the
-  spec for it is what turned up the SVG `script` hole in the baseline itself.
-- **`on*` names on a namespaced element.** ~~A test pinning the vdom
-  behaviour.~~ **Done** — `vdom/memdom/event_attr_test.mbt`, 5 tests, plus the
-  memdom `has_property` fix they depend on. What they establish is that the
-  HTML case fails by accident of routing while the SVG/MathML case does not fail
-  at all: `uses_prop` excludes namespaced elements, so `<svg onclick="…">` is
-  written verbatim. Pass 1 refuses the name for a guest; a plain app has no
-  static pass, so this is the concrete thing the Pass 2 handler rule below has
-  to cover.

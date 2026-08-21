@@ -4,13 +4,12 @@
 // the chain an App carries runs on every render before anything reaches the
 // DOM, that it is on by default, and that nothing a host can say takes it away.
 //
-// The tests that used to mount with `set_filter(None)` are gone with the call.
-// What they pinned was the SECOND layer — that a directive whose filter never
-// ran renders an empty element, and that `set_prop` refuses a structured value
-// on `href` — and that layer is not an app property: it is pinned where it
-// lives, by `render/render_wbtest.mbt` ("… renders nothing on its own", two of
-// them) and `vdom/memdom/custom_element_test.mbt` ("a structured value does not
-// skip never_assign").
+// The SECOND layer — that a directive whose filter never ran renders an empty
+// element, and that `set_prop` refuses a structured value on `href` — is not an
+// app property: it is pinned where it lives, by `render/render_wbtest.mbt`
+// ("… renders nothing on its own", two of them) and
+// `vdom/memdom/custom_element_test.mbt` ("a structured value does not skip
+// never_assign").
 
 ///|
 priv struct LinkState {
@@ -218,11 +217,9 @@ test "a filter added after mount applies from the next render" {
 // ---------------------------------------------------------------------------
 // Doing the work once.
 //
-// The filter used to run over the FINISHED tree, which meant it re-walked every
-// subtree the render cache had handed back unchanged — O(whole tree) beside a
-// pipeline that is otherwise O(changed). It now runs where a component subtree
-// is BUILT, and stops at nested §Comp§ boundaries because those were filtered
-// at their own sites. These two tests are that claim, counted.
+// The filter runs where a component subtree is BUILT, and stops at nested
+// §Comp§ boundaries because those were filtered at their own sites. These two
+// tests are that claim, counted.
 
 ///|
 /// Counts elements it is shown, so a test can say how much of the tree the
@@ -506,15 +503,6 @@ test "setinnermd re-renders, and the url rule follows the new value" {
 
 // ---------------------------------------------------------------------------
 // The list-valued URL attribute.
-//
-// A `list<string>` field bound to `href` is the shape of a guest field, and
-// every layer between it and the DOM used to wave it through: `value_to_attr`
-// makes it `Data`, `UrlFilter` skipped `Data` because a list is not a URL
-// string, and `set_prop` sent `Data` down the property path AHEAD of the
-// `never_assign` check that lists `href` for exactly this reason. In the
-// browser the IDL setter takes ToString of the array, so a one-element list
-// became its element: a live `javascript:` URL in the host's origin, from an
-// untrusted bundle.
 //
 // These assert on `props`, not on `to_html()`. That is the point: on `<form
 // action>` the live property leaves no attribute behind, so HTML-reading

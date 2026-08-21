@@ -1,4 +1,4 @@
-// Port of test/vdom-diff.test.js: diff and patch, keyed reordering,
+// Diff and patch, keyed reordering,
 // duplicate keys, algorithm corner cases.
 
 ///|

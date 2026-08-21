@@ -1,7 +1,7 @@
-// Ports of:
-//   docs/examples/traffic-light.js  — @show + the binary `equals?` predicate
-//   docs/examples/tabbed-ui.js      — one string field drives the whole UI
-//   docs/examples/list-and-filter.js — @each + @when (a `when` predicate)
+// Conditionals:
+//   @show + the binary `equals?` predicate
+//   one string field drives the whole UI (a tabbed UI)
+//   @each + @when (a `when` predicate)
 
 ///|
 let traffic_lights : Array[String] = ["red", "orange", "green"]

@@ -1,7 +1,7 @@
 // `tutuca storybook` — serve (or copy) the pre-built storybook gallery.
 //
 // The MoonBit port compiles AOT and the native binary cannot load user code,
-// so there is no runtime *.dev.js discovery: the gallery is the compiled
+// so there is no runtime example discovery: the gallery is the compiled
 // example registry baked into a wasm host at build time by
 // `cmd/dev -- dist`. What is left for the CLI is a static file server, so
 // that is all this command is — serve a directory, or copy it with --out.

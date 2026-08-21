@@ -1,4 +1,4 @@
-// Insertion-mode prediction machine (tools/core/htmllinter.js LinterCtx).
+// Insertion-mode prediction machine (the LinterCtx).
 // Implements WHATWG §13.2.6 tree construction at the fidelity needed to
 // predict where the real parser would silently rearrange the DOM: no DOM is
 // built, only the algorithm's bookkeeping (open-elements stack,
@@ -167,7 +167,7 @@ fn Machine::report(
   info : Array[(String, String)],
   suggestion? : Suggestion,
 ) -> Unit {
-  // Binary search the line table (JS offsetToLineCol).
+  // Binary search the line table.
   let ls = self.line_starts
   let mut lo = 0
   let mut hi = ls.length() - 1

@@ -1,8 +1,8 @@
-// Ports of the "Collections" tutorial examples:
+// The "Collections" tutorial examples:
 //
-//   docs/examples/render-with-scope.js       — @enrich-with WITHOUT @each (scope form)
-//   docs/examples/list-filter-enrich.js      — @each + @when + @enrich-with
-//   docs/examples/list-filter-enrich-with.js — + @loop-with (shared per-loop data)
+//   @enrich-with WITHOUT @each (scope form)
+//   @each + @when + @enrich-with
+//   + @loop-with (shared per-loop data)
 //
 // Each render-time directive now has its own TYPED bucket, so the handler
 // signatures say what the renderer hands them (state first, always):

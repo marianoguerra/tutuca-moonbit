@@ -42,7 +42,6 @@ pub(all) enum LintCode {
   UnsupportedExprSyntax
   BindingMemberTooDeep
   XOpIgnoresChildren
-  DeprecatedBareXDirective
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
@@ -69,7 +68,6 @@ pub(all) enum LintCode {
 
 pub(all) struct LintCollector {
   parse_issues : Array[(@anode.ParseIssue, String?)]
-  deprecations : Array[(@anode.DeprecatedSyntax, String?)]
   attrs : Array[AttrsRecord]
 }
 pub fn LintCollector::new() -> Self

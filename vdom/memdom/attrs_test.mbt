@@ -1,4 +1,4 @@
-// Port of test/vdom-attrs-render.test.js: namespace support, attribute
+// Namespace support, attribute
 // routing, order-sensitive value/checked, dangerouslySetInnerHTML.
 
 ///|

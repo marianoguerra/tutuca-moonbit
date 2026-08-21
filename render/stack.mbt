@@ -1,6 +1,6 @@
 // RenderStack: the @tutuca.Stack implementation over component instances.
-// Fields/methods/handlers resolve against the CURRENT item (`it`, per frame —
-// JS reads this.it[name]): Obj instances answer through the Obj trait, plain
+// Fields/methods/handlers resolve against the CURRENT item (`it`, per frame):
+// Obj instances answer through the Obj trait, plain
 // Value::Map keeps the component-less mode working. `@name` binds resolve
 // along the frame chain with frame barriers.
 
@@ -43,7 +43,7 @@ pub fn RenderStack::enter(
 
 ///|
 /// Evaluate the entered component's provides against the post-enter stack
-/// and cons one DynBinds frame (JS _pushProvides). No-op without a registry,
+/// and cons one DynBinds frame. No-op without a registry,
 /// a component, or provides.
 fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   guard self.comps is Some(comps) else { return self }
@@ -69,7 +69,7 @@ pub fn RenderStack::push_view_name(
 }
 
 ///|
-/// The pushed-view trail, innermost first (JS lookupBestView walks it).
+/// The pushed-view trail, innermost first.
 fn RenderStack::view_trail(self : RenderStack) -> Array[String] {
   self.view_names.rev()
 }
@@ -81,7 +81,7 @@ fn RenderStack::lookup_bind_chain(
 ) -> @tutuca.Value {
   match self.binds.get(name) {
     Some(v) => v
-    // A frame is a barrier (JS BindFrame STOP): binds never cross a
+    // A frame is a barrier: binds never cross a
     // component boundary. Scopes are transparent and keep walking.
     None =>
       if self.is_frame {
@@ -97,14 +97,6 @@ fn RenderStack::lookup_bind_chain(
 
 ///|
 /// A bare name resolves against the BIND chain and nothing else.
-///
-/// It used to fall through to the event's fields when no bind matched, which
-/// made `value` mean the DOM event's value in some scopes and an `@each`
-/// bind's in others — the same text, two readings, decided by whichever
-/// enclosing loop happened to name its bind. `gen-views` now refuses a bare
-/// argument outright (`BareEventArg`), so the fallback answered nothing a
-/// compiled view could still ask for, and removing it is what makes the
-/// shadowing question disappear rather than be documented.
 pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
   self.lookup_bind_chain(name)
 }
@@ -157,7 +149,7 @@ pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
 }
 
 ///|
-/// `*name` (JS stack.js lookupDynamic): resolve through the current
+/// `*name`: resolve through the current
 /// component's lookup alias (producer's provide key walked through the
 /// dynBinds chain, else the lookup default) or its own provide.
 pub impl @tutuca.Stack for RenderStack with fn lookup_dynamic(self, name) {
@@ -165,7 +157,7 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_dynamic(self, name) {
   guard comps.get_comp_for(self.it) is Some(comp) else { return Null }
   match comp.lookup.get(name) {
     Some(lk) => {
-      // Memoized on the LookupInfo (JS getProducerSymbol): the scope walk runs
+      // Memoized on the LookupInfo: the scope walk runs
       // once per lookup alias, not on every `*name` read.
       let producer_key : @component.ProvideKey? = lk.resolve_producer_key(
         comp.scope,

@@ -1,4 +1,4 @@
-// End-to-end event-path reconstruction (ports of test/path.test.js): render
+// End-to-end event-path reconstruction: render
 // real views to the in-memory DOM — the metas in the tree are the renderer's
 // own output — then reconstruct from a click target and resolve the path
 // against the state.

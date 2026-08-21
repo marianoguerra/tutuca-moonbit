@@ -1,6 +1,5 @@
-// Whitespace condensing between element children (src/anode.js
-// condenseChildsWhites and friends). Tag names are lowercase here (the HTML
-// parser lowercases; the JS original compared uppercase jsdom names).
+/// Whitespace condensing between element children. Tag names are lowercase
+/// here (the HTML parser lowercases them).
 
 ///|
 let html_block_tags : Set[String] = Set::from_array([
@@ -21,8 +20,8 @@ fn is_block_dom_node(n : ANode) -> Bool {
 }
 
 ///|
-/// Empty Text/Comment produced by condensing (JS isEmptyText matches
-/// CommentNode too via instanceof TextNode).
+/// Empty Text/Comment produced by condensing (Comment matches too, sharing
+/// the Text payload).
 fn is_empty_text(c : ANode) -> Bool {
   c is (Text(d) | Comment(d)) && d.val == ""
 }

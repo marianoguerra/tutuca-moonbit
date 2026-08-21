@@ -1,9 +1,8 @@
 // Emitting the state half of the generated module.
 //
 // This is the section that replaces hand-written code rather than describing
-// it: the struct the author used to write, its derives, the `specs~` map
-// they used to keep in sync by hand, and a zero value so `init` only names
-// what actually differs from it.
+// it: the struct, its derives, the `specs~` map, and a zero value so `init`
+// only names what actually differs from it.
 //
 // Everything here is emitted `priv`. Generated and hand-written .mbt files
 // share a package, so the update function reaches the type without it
@@ -224,9 +223,8 @@ fn emit_state_struct(
     out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
   }
   // No derive, and none needed for a keyword binding either. The view reads
-  // `.type` and the fields map carries "type"; it used to be a
-  // `derive(ToJson(fields(type_(rename="type"))))` that put the name back,
-  // and now it is the codec, which keys by the runtime name directly.
+  // `.type` and the fields map carries "type"; the codec keys by the runtime
+  // name directly.
   out.write_string("}\n\n")
 }
 
@@ -241,11 +239,7 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
     "/// is type-directed, and `init` spreads it to name only what differs:\n" +
     "///\n" +
     "///   init={ ..\{t}State::zero(), label: \"Counter\" }\n" +
-    // `pub`, like the `pub(all)` struct it returns. It used to be private with a
-    // public `<v>_zero_args()` wrapper beside it, whose only real job was to keep
-    // this from reading as unused in a file with no generated `component()`
-    // wrapper to default `init~` from. Making the thing itself public says that
-    // directly, and the encoded form nobody asked for goes away.
+    // `pub`, like the `pub(all)` struct it returns.
     "pub fn \{t}State::zero() -> \{t}State {\n",
   )
   // The return type names the struct, so a `\{t}State::` prefix is the

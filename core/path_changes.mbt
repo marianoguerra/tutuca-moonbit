@@ -1,6 +1,5 @@
 // `ctx.at` — the fluent relative-path builder handlers use to address a
-// sub-path of their own position (JS transactor.js PathChanges / path.js
-// PathBuilder). `ctx.at.field("status").send("flash", args)` sends to the
+// sub-path of their own position. `ctx.at.field("status").send("flash", args)` sends to the
 // handler's path with a FieldStep("status") appended. Builder methods return a
 // fresh PathChanges (immutable), so a base can be reused.
 
@@ -11,7 +10,7 @@ pub struct PathChanges {
 }
 
 ///|
-/// A builder rooted at `ctx`'s dispatch path (JS `get at`). Usually reached
+/// A builder rooted at `ctx`'s dispatch path. Usually reached
 /// through `Ctx::at`, exposed for callers holding a `&Ctx` directly.
 fn PathChanges::of(ctx : &Ctx) -> PathChanges {
   { ctx, steps: [] }
@@ -30,13 +29,13 @@ fn PathChanges::as_path(self : PathChanges) -> Path {
 }
 
 ///|
-/// Descend into field `name` (JS PathBuilder.field).
+/// Descend into field `name`.
 pub fn PathChanges::field(self : PathChanges, name : String) -> PathChanges {
   self.of_path(self.as_path().field(name))
 }
 
 ///|
-/// Descend into element `i` of sequence field `name` (JS PathBuilder.index).
+/// Descend into element `i` of sequence field `name`.
 pub fn PathChanges::index(
   self : PathChanges,
   name : String,
@@ -46,7 +45,7 @@ pub fn PathChanges::index(
 }
 
 ///|
-/// Descend into keyed element `key` of map field `name` (JS PathBuilder.key).
+/// Descend into keyed element `key` of map field `name`.
 pub fn PathChanges::key(
   self : PathChanges,
   name : String,
@@ -57,13 +56,13 @@ pub fn PathChanges::key(
 
 ///|
 /// The absolute dispatch path this builder addresses: the ctx's path with the
-/// accumulated steps appended (JS PathChanges.buildPath).
+/// accumulated steps appended.
 pub fn PathChanges::build_path(self : PathChanges) -> DispatchPath {
   self.ctx.path().concat(self.steps)
 }
 
 ///|
-/// Send `name` at the built path (JS PathChanges.send).
+/// Send `name` at the built path.
 pub fn PathChanges::send(
   self : PathChanges,
   name : String,

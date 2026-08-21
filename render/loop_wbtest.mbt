@@ -1,4 +1,4 @@
-// @loop-with tests (JS renderer.js loop pipeline): keys authority, slice
+// @loop-with tests: keys authority, slice
 // ranges, iterData threading, and render/rebuild mirroring.
 
 ///|

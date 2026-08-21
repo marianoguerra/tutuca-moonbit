@@ -104,7 +104,7 @@ pub suberror GenError {
   /// error rather than a warning.
   BareEventArg(view~ : String, name~ : String, site~ : String)
   /// A view reads a name the schema does not declare. THE headline check:
-  /// this used to render as null in the browser.
+  /// it renders as null in the browser.
   UnknownStateField(
     view~ : String,
     name~ : String,

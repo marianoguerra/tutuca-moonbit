@@ -1,5 +1,4 @@
-// Object/array-valued custom-element properties (JS
-// test/vdom-custom-element.test.js). memdom has no custom-element registry
+// Object/array-valued custom-element properties. memdom has no custom-element registry
 // or setters, so instead of counting setter calls these assert the stored
 // property value across render and morph — `Data` takes the property path
 // rather than setAttribute for every name except the `never_assign` eleven,
@@ -82,7 +81,7 @@ test "object prop update replaces the whole value; removal clears it" {
 
 ///|
 test "equal-content Data does not dirty the diff (value semantics)" {
-  // Divergence from JS documented on AttrValue::Data: diffing is by value,
+  // Divergence documented on AttrValue::Data: diffing is by value,
   // so an equal-content new object produces no prop patch at all.
   let a : Map[String, @vdom.AttrValue] = { "items": Data([1, 2, 3]) }
   let b : Map[String, @vdom.AttrValue] = { "items": Data([1, 2, 3]) }

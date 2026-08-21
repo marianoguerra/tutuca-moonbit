@@ -178,25 +178,17 @@ fn component_json(
       compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
     ),
     "whens": strings(compiled(DPred)),
-    // The two the manifest had no key for, which is half of why a card using
-    // `@enrich-with` used to lose its bindings in silence: the other half was
-    // that nothing compiled them, and a host cannot route to a name it was
-    // never told about.
+    // The two the manifest had no key for: a host cannot route to a name it
+    // was never told about.
     "enriches": strings(compiled(DEnrich)),
     "enrichScopes": strings(compiled(DEnrichScope)),
     "requests": Json::array([]),
     // The card's `<script type="tutuca/init">` fixtures.
     //
-    // This used to emit an empty array, with a comment saying a fixture's
-    // values are MoonBit SOURCE and a manifest wants JSON. That was true of
-    // what the compiler HELD and not of the block, which is JSON and always
-    // was: the source is a projection `statedef` makes for the generator, and
-    // the loss happened on the way here rather than in the file. `InitState`
-    // keeps the values too now, so there is nothing to project.
+    // `InitState` keeps the values, so there is nothing to project.
     //
     // Emitting them is what makes a card's fixtures reachable at all. A scene
-    // naming one — `"init": "fresh"` — read this list and found it empty, so
-    // the key could never resolve for a card however the block was written.
+    // naming one — `"init": "fresh"` — reads this list to resolve the key.
     "inits": Json::array(
       inits.map(st => {
         Json::object({

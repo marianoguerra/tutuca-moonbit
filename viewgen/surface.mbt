@@ -102,9 +102,8 @@ fn issue_message(issue : @anode.ParseIssue) -> String {
 ///|
 /// What a tree walk accumulates.
 ///
-/// A struct rather than the six positional accumulators the walkers used to
-/// thread: the alter buckets pushed it past the point where the argument list
-/// was still readable, and every walker takes all of them anyway.
+/// A struct rather than six positional accumulators: every walker takes all
+/// of them anyway.
 ///
 /// The alter names are split by BUCKET, not gathered into one set, because
 /// each bucket has its own handler signature — `@when` answers Bool, an

@@ -1,4 +1,4 @@
-// Pure half of `tutuca feedback` (tools/cli/commands/feedback.js): help
+// Pure half of `tutuca feedback`: help
 // text, flag parsing, the record line and paths. The shell (cmd/main) does
 // the stdin fallback and the ~/.tutuca/feedback.jsonl append.
 
@@ -20,8 +20,7 @@ let feedback_help_text : String =
   #|  Each record is one JSON object per line: {ts, version, message}.
 
 ///|
-/// Parse `tutuca feedback`'s own args. The JS version lets node:util
-/// parseArgs throw an uncaught stack trace on an unknown flag; here it gets
+/// Parse `tutuca feedback`'s own args. An unknown flag gets
 /// the same coded error the dispatcher uses elsewhere.
 fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome {
   let positionals : Array[String] = []

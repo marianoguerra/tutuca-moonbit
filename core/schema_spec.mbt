@@ -13,9 +13,7 @@
 // schema.mbt.
 
 ///|
-/// What a field carries at runtime. DECLARED, never inferred: reading the kind
-/// off a seed value is what used to make `FInt` vs `FFloat` depend on whether
-/// a double happened to be integral.
+/// What a field carries at runtime. DECLARED, never inferred.
 ///
 /// `FComp` fields hold a child component instance created through the
 /// registration scope; `FSet`/`FOMap` are the Map-backed set / ordered-map
@@ -85,12 +83,6 @@ pub(all) struct SchemaInfo {
 
 ///|
 /// One declared field: its name and its type.
-///
-/// There is nothing to default any more. The five optional parts this used to
-/// take were all recoverable from the type, and letting a caller state them
-/// separately meant letting a caller state them WRONG — a descriptor reading
-/// `("rows", "value-omap", FMap)` named an ordered map and then gave it a plain
-/// map's kind, and nothing could notice.
 declare pub fn FieldInfo::new(name : String, ty : TyInfo) -> FieldInfo
 
 ///|

@@ -1,9 +1,6 @@
-// Ports of:
-//   docs/examples/dynamic-bindings.js — provide / lookup, `*name` as a value
-//   docs/examples/dynamic-path.js     — `*name` as a RENDER TARGET (teleport)
-//
-// A producer publishes a value under a name; any descendant reads it as `*name`
-// without the value being threaded through the components in between. A
+// Dynamic bindings — a producer publishes a value under a name; any
+// descendant reads it as `*name` (provide / lookup), and `*name` also works
+// as a RENDER TARGET (teleport).
 // `provide` must be ADDRESSABLE (a field or a `.seq[.key]` access), because it
 // doubles as the teleport path — a method or a constant is a lint error.
 

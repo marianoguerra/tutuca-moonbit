@@ -210,10 +210,9 @@ pub fn compile(
   for idx, views in file.components {
     let comp = views.component_name(name)
     // A card with no `<script type="tutuca/state">` block is a card with no
-    // fields, and it used to be turned away whole. That was wrong twice over:
-    // `tutucard.load` mounts one happily, so the two backends disagreed about
-    // what a card IS; and `viewfile` has a name for the shape — a SCHEMA-LESS
-    // file, whose views are built at runtime — so it is a thing people write.
+    // fields, and it is accepted: `viewfile` has a name for the shape — a
+    // SCHEMA-LESS file, whose views are built at runtime — so it is a thing
+    // people write.
     //
     // What comes out is a guest with an empty `jv_record` type: `get-field`
     // answers `none` for everything, `with-field` refuses everything, and any
@@ -249,11 +248,7 @@ pub fn compile(
     }
     // The CHECKER, before a single instruction is built.
     //
-    // `tutucard.load` runs this and reports the findings beside the card; the
-    // generator used to skip it and go straight to codegen, which meant a card
-    // saying `.count = nope` reached `expr.mbt` and was refused there — by
-    // name, with a worse reason than the checker's, and with the rest of the
-    // card still compiling around it.
+    // `tutucard.load` runs this and reports the findings beside the card.
     //
     // A name that resolves to nothing is not a feature this backend has yet to
     // implement; it is a card that does not typecheck, and the honest answer is
@@ -329,9 +324,8 @@ pub fn compile(
     for i, f in def.fields {
       g.index[f.name] = i
     }
-    // Every declaration that answers through `call-method`, which is now five
-    // kinds rather than three: the two enrichers reach a view through the Alter
-    // namespace and used to reach nothing at all.
+    // Every declaration that answers through `call-method`, which is five
+    // kinds: the two enrichers reach a view through the Alter namespace.
     //
     // An enricher's name is NOT callable from an expression, and does not
     // become so by being in here: `tscript/check` answers `NO_NAME` for a bare
@@ -723,14 +717,13 @@ priv struct Comp {
 ///|
 /// Every function the module carries, in the order Wax resolves them.
 ///
-/// A card used to be one component, so this took one `Gen` and read like it.
-/// It takes the list now, and the shape of the list is what the file says:
-/// what is emitted PER COMPONENT — its schema, its accessors, its callables,
-/// its escapes, its dispatch arms — sits inside a loop, and what the module has
-/// exactly one of — the exports, the flush, `#[start]`, the post-returns —
-/// sits outside it.
+/// It takes the list of components, and the shape of the list is what the file
+/// says: what is emitted PER COMPONENT — its schema, its accessors, its
+/// callables, its escapes, its dispatch arms — sits inside a loop, and what the
+/// module has exactly one of — the exports, the flush, `#[start]`, the
+/// post-returns — sits outside it.
 ///
-/// The ordering constraint that shaped this is unchanged and now applies across
+/// The ordering constraint that shaped this applies across
 /// components: `#[start]` interns the constant pool AND builds the schemas, so
 /// it cannot be assembled until every body of every component has stopped
 /// interning. Which is why it is still last.
@@ -803,16 +796,13 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
 
   // -- the exports ---------------------------------------------------------
   //
-  // The constructor is handed the COMPONENT NAME and used to throw it away,
-  // which was honest while a card was one component and a lie the moment it
-  // stopped being. It reads it now, with the same pair every dispatch arm
-  // already uses: `tc_str_in` lifts the (pointer, length), `tc_is` compares it
-  // against a pool index. Each component's name is already interned — it is
+  // The constructor reads the COMPONENT NAME with the same pair every dispatch
+  // arm already uses: `tc_str_in` lifts the (pointer, length), `tc_is` compares
+  // it against a pool index. Each component's name is already interned — it is
   // the name its record type was created with.
   //
-  // A name the bundle does not declare builds the ROOT. That is what a
-  // one-component card did for every name it was ever handed, and it keeps a
-  // host that guesses wrong from getting nothing at all.
+  // A name the bundle does not declare builds the ROOT, which keeps a host
+  // that guesses wrong from getting nothing at all.
   let ctor_body : Array[@abi.I] = if comps.length() == 1 {
     [
       call("resource_new", [
@@ -939,9 +929,8 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
         // one (i64, i32) pair that holds any of them, and `tc_lift_flat` reads
         // the halves each case actually uses.
         //
-        // The SCHEMA decides now. A name it does not carry and a value of the
-        // wrong type both answer `none`, where this used to check the name and
-        // then write whatever eight bytes it was handed into the cell.
+        // The SCHEMA decides: a name it does not carry and a value of the
+        // wrong type both answer `none`.
         let_(
           "n",
           call("tc_with_field", [

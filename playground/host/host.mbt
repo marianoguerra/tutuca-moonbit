@@ -87,7 +87,7 @@ pub fn mount(
   publish_inspector(() => state_json(), () => classes_json(), () => {
     activity_json()
   })
-  // tutuca has no lifecycle: the HOST dispatches `init` (JS app.sendAtRoot).
+  // tutuca has no lifecycle: the HOST dispatches `init`.
   app.send_at_root("init") |> ignore
 }
 
@@ -109,10 +109,9 @@ pub fn activity_json() -> String {
 }
 
 ///|
-/// Current root state for the inspector's "State" panel, as JSON — which the
-/// name has claimed all along and only now delivers. A component instance
-/// projects to its declared fields (`Value::to_json`), so the panel shows the
-/// state tree rather than the `Show` rendering the instance used to force.
+/// Current root state for the inspector's "State" panel, as JSON. A component
+/// instance projects to its declared fields (`Value::to_json`), so the panel
+/// shows the state tree.
 pub fn state_json() -> String {
   match current.val {
     Some(app) => app.root_value().to_json().stringify()

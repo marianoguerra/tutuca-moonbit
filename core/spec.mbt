@@ -1,4 +1,4 @@
-// Spec for the port of tutuca's value parser (src/value.js).
+// Spec for tutuca's value parser.
 // READONLY by convention: concrete public data types plus `declare` stubs for
 // every function/method. Implement the declares in separate files; this file
 // and the value_*_test.mbt suites define the contract.
@@ -15,7 +15,7 @@
 // have. The value_/path_ file prefixes are the intended organization.
 
 ///|
-/// Literal constant payload (JS ConstVal.val: string | number | boolean | null)
+/// Literal constant payload (string | number | boolean | null)
 pub(all) enum Lit {
   LNull
   LBool(Bool)
@@ -50,11 +50,11 @@ pub(all) enum HandlerNamespace {
 } derive(Debug, Eq)
 
 ///|
-/// Parsed value AST. One variant per JS BaseVal subclass. `from_macro` ports
-/// ConstVal.fromMacroVar: set when a `^name` macro var resolves to a constant,
+/// Parsed value AST, one variant per original BaseVal subclass. `from_macro`
+/// is set when a `^name` macro var resolves to a constant,
 /// which makes an enclosing template non-literal. StrTpl parts alternate text
 /// constants and placeholder expressions; a `None` part is a placeholder whose
-/// inner expression failed to parse (JS keeps null there).
+/// inner expression failed to parse (kept as null there).
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool)
   StrTpl(Array[Val?])
@@ -89,14 +89,14 @@ pub(all) enum Val {
 } derive(Debug, Eq)
 
 ///|
-/// A concrete sequence key: list index or map key (JS SeqStep.key is int|string)
+/// A concrete sequence key: list index or map key (int|string)
 pub(all) enum PathKey {
   KInt(Int)
   KStr(String)
 } derive(Debug, Eq)
 
 ///|
-/// Path steps (src/path.js). FieldStep/SeqAccessStep are what values address
+/// Path steps. FieldStep/SeqAccessStep are what values address
 /// (Val::to_path_item); SeqStep is a field + concrete key (also the pinned form
 /// of SeqAccessStep); EachRenderItStep is an iterated render target that
 /// compacts to a SeqStep; Bind/ScopeBind/EachBind are frame-only (stack
@@ -115,7 +115,7 @@ pub(all) enum Step {
   ScopeBindStep(val~ : Val)
   // Frame-only: replays the renderer's per-item binds ({key, value} plus any
   // @enrich-with binds) for the @each item addressed by `key`. Carries the
-  // iteration Vals (JS IterInfo) so binds are computed lazily at rebuild
+  // iteration Vals (IterInfo) so binds are computed lazily at rebuild
   // time; loop-with is deferred with the renderer's @loop-with support.
   EachBindStep(
     val~ : Val,
@@ -184,7 +184,7 @@ declare pub fn ObjId::to_hex(self : ObjId) -> String
 /// Value-typed seam (binds, handler args, dynamic lookups, iterated seqs).
 /// Fns returned by obj_field / obj_callable and the Handler returned
 /// by obj_handler are SELF-PRE-BOUND (they close over the concrete Self —
-/// the no-downcast analogue of JS late `this`) and ignore args element 0.
+/// the no-downcast analogue of late-bound `this`) and ignore args element 0.
 /// Every method defaults to an empty/None answer.
 pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
@@ -192,16 +192,16 @@ pub(open) trait Obj {
   fn obj_with_field(Self, name : String, v : Value) -> Value? = _ // COW -> Some(Obj(new_self))
   fn obj_item(Self, key : PathKey) -> Value? = _
   fn obj_with_item(Self, key : PathKey, v : Value) -> Value? = _
-  // Custom-sequence hook (the port of JS SEQ_INFO): ordered (key, value)
+  // Custom-sequence hook (the analogue of SEQ_INFO): ordered (key, value)
   // entries so `@each` can iterate a non-List/Map Obj. None = not a sequence
-  // (the JS unkIter default). Keyed entries use KStr keys ("sk" breadcrumbs),
+  // (the default iteration falls back to empty). Keyed entries use KStr keys ("sk" breadcrumbs),
   // indexed ones KInt ("si"); obj_item resolves the same keys for path lookup.
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
   // The named CALLABLE this instance exposes for evaluation: the render-time
   // buckets (@when / @enrich-with / @loop-with) under Alter, and whatever
   // answers a bare name otherwise. Distinct from obj_handler, which resolves a
   // leaf-UPDATING handler in a dispatch bucket — different question, different
-  // answer, and the near-identical names used to hide that.
+  // answer.
   fn obj_callable(Self, name : String, ns : HandlerNamespace) -> Value? = _
   fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
   // What this instance DECLARES: the one method that makes the nine above
@@ -317,11 +317,7 @@ impl Obj with fn obj_persist_id(_self) {
 ///|
 /// Structural equality over the DECLARED fields, both directions.
 ///
-/// This used to be `false`, and every implementor that wanted real equality
-/// wrote the same probe loop — over its OWN fields, so an `other` carrying
-/// extra ones compared equal, and an implementor that forgot (`DynObj`) got
-/// two instances that never compared equal at all. With a schema in hand the
-/// loop belongs here, once.
+/// With a schema in hand the loop belongs here, once.
 ///
 /// Still `false` without a schema: an Obj that declares nothing has not said
 /// what equality would even range over, and answering `true` for two opaque
@@ -366,7 +362,7 @@ impl Obj with fn obj_debug(self) {
 }
 
 ///|
-/// Structural equality (immutable.js `is`); Fn values are never equal.
+/// Structural equality; Fn values are never equal.
 declare pub impl Eq for Value
 
 ///|
@@ -374,7 +370,7 @@ declare pub impl Eq for Value
 declare pub impl Debug for Value
 
 ///|
-/// Evaluation environment (JS `stack`). Every method defaults to Null so
+/// Evaluation environment (the `stack`). Every method defaults to Null so
 /// implementations (and test mocks) provide only the lookups they use.
 /// lookup_method returns the RESULT of the no-arg call — the stack invokes.
 /// get_handler_for returns Null when no handler is registered.
@@ -435,7 +431,7 @@ impl Stack with fn get_handler_for(_self, _name, _namespace) {
 }
 
 ///|
-/// Stand-in for JS `eval(null)` on values that touch no stack
+/// Stand-in for `eval(null)` on values that touch no stack
 pub(all) struct NullStack {}
 
 ///|
@@ -477,5 +473,5 @@ declare pub fn builtin(name : String) -> Builtin?
 declare pub fn builtin_names() -> Array[String]
 
 ///|
-/// JS sizeOf: Some(length) for Str/List/Map, None for unsized values
+/// size_of: Some(length) for Str/List/Map, None for unsized values
 declare pub fn size_of(v : Value) -> Int?

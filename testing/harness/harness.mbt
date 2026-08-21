@@ -127,7 +127,7 @@ pub fn Harness::destroy(self : Harness[@memdom.MemNode]) -> Unit {
 ///|
 /// The current settled root value — the transactor's root as a `Value`, after
 /// every dispatched interaction has drained. `Null` if the root is not a value
-/// node. The state-oriented read-back that mirrors the JS `drive()` return.
+/// node. The state-oriented read-back of the settled root value.
 pub fn[N] Harness::drive_value(self : Harness[N]) -> @tutuca.Value {
   self.app.root_value()
 }
@@ -448,7 +448,7 @@ pub fn[N : @vdom.DomWalk] Harness::type_into(
 }
 
 ///|
-/// A checkbox `input` event (JS getValue returns `checked` for checkboxes).
+/// A checkbox `input` event (the value read back is `checked` for checkboxes).
 pub fn[N : @vdom.DomWalk] Harness::check(
   self : Harness[N],
   sel : String,
@@ -504,8 +504,8 @@ pub fn[N] Harness::styles(self : Harness[N]) -> String {
 
 ///|
 /// Dispatch a message at the root — the host's job, since tutuca has no
-/// lifecycle. The JS playground calls `app.sendAtRoot("init")` right after
-/// start(); this is the same hook, and it is what makes `receive.init` run.
+/// lifecycle. This is the `app.sendAtRoot("init")` hook, and it is what makes
+/// `receive.init` run.
 pub fn[N] Harness::send_at_root(
   self : Harness[N],
   name : String,

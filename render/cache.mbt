@@ -1,7 +1,5 @@
-// The component render-site cache (the port of src/cache.js's DomCache,
-// adapted to the vdom architecture). JS caches real DOM nodes in a WeakMap
-// keyed by the identity of [node, value, ...dynBindValues]; this caches the
-// rendered `@vdom.Vdom` of a render site (JS _rValComp) and reuses it when
+// The component render-site cache: caches the
+// rendered `@vdom.Vdom` of a render site and reuses it when
 // nothing the site renders from has changed. `@vdom`'s morph then
 // short-circuits the reused subtree through its physical_equal fast path.
 //
@@ -26,7 +24,7 @@
 // returned, and the cache can only ever affect performance.
 //
 // Two generations bound growth (entries not reused in a pass fall out after
-// the next), standing in for the JS WeakMap's GC + periodic evict().
+// the next), standing in for a weak map's GC + periodic evict().
 
 ///|
 /// One cached render site. Everything above `vdom` is what has to still hold

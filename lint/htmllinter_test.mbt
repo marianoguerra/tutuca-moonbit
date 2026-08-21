@@ -1,6 +1,5 @@
-// Port of test/htmllinter.test.js (all describes, including the §A/§B
-// regression pins and §C token-level lints). The JS suite runs each case
-// against two tokenizers; here the WHATWG tokenizer from
+// Linter test cases (all describes, including the §A/§B
+// regression pins and §C token-level lints). The WHATWG tokenizer from
 // moonbit-community/html is the single engine.
 
 ///|

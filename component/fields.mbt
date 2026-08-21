@@ -1,9 +1,4 @@
-// Field specs (the field half of src/oo.js classFromData).
-//
-// There is no `FieldSpec::of_default` any more. It read a field's KIND off the
-// seed value — which is why `FInt` vs `FFloat` used to depend on whether a
-// double happened to be integral — and it existed because a component might
-// arrive without a schema to state the kind instead. None does.
+// Field specs.
 
 ///|
 fn FieldSpec::comp(
@@ -39,7 +34,7 @@ fn FieldSpec::coerce_or_default(
     | (FComp(..), Obj(_)) => v
     (FAny, _) => v
     // A set/omap already in Map shape passes through; a List coerces into a
-    // Map-backed set (JS isetCoercer: array -> ISet). Anything else -> default.
+    // Map-backed set (array -> ISet). Anything else -> default.
     (FSet, Map(_)) | (FOMap, Map(_)) => v
     (FSet, List(items)) => set_value(items)
     _ => self.default

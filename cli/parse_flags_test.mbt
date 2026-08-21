@@ -1,6 +1,4 @@
-// The grammar every command now shares. Pinned here rather than once per
-// command, because that was the problem: six parsers meant six answers, and
-// the differences were invisible until someone hit one.
+// The grammar every command shares.
 
 ///|
 fn emit_of(o : @cli.Outcome) -> @cli.Emit {
@@ -12,9 +10,6 @@ fn emit_of(o : @cli.Outcome) -> @cli.Emit {
 
 ///|
 /// A flag that EXTENDS a real one is unknown, not a malformed version of it.
-///
-/// Matching used to be by prefix, so every one of these reported that the
-/// SHORTER flag was missing a value — naming a flag the user never typed.
 test "a flag that extends a real one is unknown, not a bad value" {
   for
     probe in [
@@ -33,9 +28,8 @@ test "a flag that extends a real one is unknown, not a bad value" {
 
 ///|
 /// `help_overview` promises "did you mean" for unknown flags and the skill's
-/// CLI reference shows the JSON envelope carrying one. Exactly one of the nine
-/// sites used to pass a suggestion; the registry supplies the candidates now,
-/// so every command does.
+/// CLI reference shows the JSON envelope carrying one. The registry supplies
+/// the candidates, so every command does.
 test "an unknown flag suggests a real one, for every command that has flags" {
   for
     probe in [
@@ -52,8 +46,7 @@ test "an unknown flag suggests a real one, for every command that has flags" {
 }
 
 ///|
-/// Both spellings, for every string flag, in every command — `-o` used to work
-/// for the CSS commands only because someone wrote that arm by hand.
+/// Both spellings, for every string flag, in every command.
 test "a string flag takes its value inline or as the next argument" {
   let split = @cli.plan(["gen-views", "a.html", "--name", "Counter"])
   let inline = @cli.plan(["gen-views", "a.html", "--name=Counter"])

@@ -1,8 +1,5 @@
-// Port of docs/examples/composability.js.
-//
-// Teaches: composing independent example apps as fields of one root. The JS
-// module seeds each field with the sub-app's getRoot() instance; the port
-// leans on the designed mechanism instead — a declared slot plus `slot_args~`
+// Teaches: composing independent example apps as fields of one root. A
+// declared slot plus `slot_args~`
 // builds each child through the registration scope at make() time, with the
 // args taken from the sub-module's own ExampleDef (the same seed the
 // standalone example mounts with).

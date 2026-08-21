@@ -35,9 +35,9 @@ fn global_flags_schema() -> Array[FlagSpec] {
 }
 
 ///|
-/// Exit codes this CLI can produce. The JS CLI's 2 (lint findings at error
-/// level) and 3 (render crash) are gone with those commands: a lint failure
-/// here is a compile error, and nothing renders at run time.
+/// Exit codes this CLI can produce. Lint failures are compile errors and
+/// nothing renders at run time, so there is no lint-findings or render-crash
+/// exit code: only 0 and 1 exist.
 fn exit_codes_schema() -> Array[(Int, String)] {
   [(0, "success"), (1, "usage error, or a command failed")]
 }

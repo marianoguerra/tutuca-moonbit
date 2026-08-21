@@ -1,8 +1,8 @@
-// Event-path reconstruction (JS Path.fromNodeAndEventName in src/path.js):
+// Event-path reconstruction:
 // walk up from the event target collecting data-eid stamps and §…§ meta
 // chains, cross component boundaries, resolve one addressing/frame step per
 // crossed component, and find the handlers for the event name. Dynamic-var
-// render targets (DynStep/DynEachStep + pendingDyns) ARE handled here: a
+// render targets (DynStep/DynEachStep + the pending list) ARE handled here: a
 // `<x render="*dyn">` teleports the transaction to where the value really
 // lives (see app/teleport_test.mbt and examples/dynamic.mbt).
 
@@ -73,10 +73,9 @@ fn plain_of(step : @tutuca.Step?, cid : Int) -> @tutuca.DispatchStep? {
 }
 
 ///|
-/// Resolve the dispatch item one collected NodeRef contributes (JS
-/// StepCtx.resolveNode().toPathStep(ctx)). Dynamic render targets produce
+/// Resolve the dispatch item one collected NodeRef contributes. Dynamic render targets produce
 /// Dyn markers whose `interior` arrays start empty — the caller
-/// seeds and grows them while walking (JS pendingDyns).
+/// seeds and grows them while walking.
 fn ref_step(
   comps : &Boundaries,
   cid : Int,
@@ -88,7 +87,7 @@ fn ref_step(
   guard comps.node_for(cid, vid, nid) is Some(anode) else { return None }
   match anode {
     // `<x render-it>` pairs its keyless Comp meta with the NEXT entry, which
-    // must be the enclosing @each's keyed Each meta (JS RenderItNode).
+    // must be the enclosing @each's keyed Each meta.
     RenderIt(_) => {
       guard i + 1 < refs.length() &&
         refs[i + 1].key is Some(key) &&
@@ -183,7 +182,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
   let bubbles = event_bubbles(event_name)
   let event_ids : Array[Int] = []
   let refs : Array[NodeRef] = []
-  // Dyn markers still walking up toward their producer (JS pendingDyns):
+  // Dyn markers still walking up toward their producer:
   // (producer cid, the SAME interior array stored inside the pushed marker —
   // mutations are visible through it).
   let pending : Array[(Int, Array[Int])] = []
@@ -191,7 +190,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
   let mut is_leaf_component = true
   // Cross one component boundary: resolve the handlers (once) and the path
   // step that leaves this component. Returns false to signal "no handler on
-  // the leaf component" — the caller aborts (JS NO_EVENT_INFO).
+  // the leaf component" — the caller aborts.
   fn cross_component(cid : Int, vid : String) -> Bool {
     let mut push_step = true
     if handlers is None && (is_leaf_component || bubbles) {
@@ -258,7 +257,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
         None => ()
       }
       // Meta comments before the element, innermost-first. A non-§ comment
-      // ends the chain; a malformed § meta is skipped (JS warns + skips).
+      // ends the chain; a malformed § meta is skipped.
       let mut saw_comp = false
       let mut sib = cur.prev_sibling()
       while sib is Some(m) && m.node_kind() == 8 {

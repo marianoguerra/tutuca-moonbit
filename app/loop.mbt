@@ -1,10 +1,10 @@
-// The App runtime (src/app.js core): compile the registered components, hold
+// The App runtime: compile the registered components, hold
 // the transactor, re-render on every root swap (full re-render + vdom morph
 // against the previous RenderResult), and dispatch DOM events. Backend
 // generic over DomWalk (memdom on wasm-gc tests, BrowserNode via the js
 // glue). Re-render is batched (one morph per drained cascade, via the dirty
-// flag + on_drained). The JS setTimeout time-slicing scheduler
-// (_transactNextBatch, maxRunTimeMs) is exposed here as App::drain_batched:
+// flag + on_drained). Time-sliced draining is exposed here as
+// App::drain_batched:
 // the pure layer is clock-free, so a backend supplies the yield (setTimeout on
 // js); the default synchronous drain is drain_batched with a no-op yield.
 
@@ -23,7 +23,7 @@ pub struct App[N] {
   mut drag : DragState[N]?
   /// the element currently carrying data-draggingover
   mut cur_drag_over : N?
-  /// Component render-site cache (JS _rValComp DomCache), persisted across
+  /// Component render-site cache, persisted across
   /// passes and generation-rolled each render, so a subtree whose instance did
   /// not change is reused instead of rebuilt.
   render_cache : @render.RenderCache
@@ -88,14 +88,13 @@ pub fn[N : @vdom.DomWalk] App::new(
     //
     // The cost is that every app links the vendored markdown parser, because
     // this call constructs the filter unconditionally and nothing about it is
-    // dead. That used to be escapable by installing a bare `Baseline`; it is
-    // not any more, and the reason is in `set_sanitizer`.
+    // dead — there is no escape hatch, and the reason is in `set_sanitizer`.
     sanitizer: @sanitize.Sanitizer::default(),
     extra_filters: [],
     filter: @mdfilter.default_filter(),
     root_view: view,
   }
-  // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
+  // Batched re-render (the setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
   tx.on_change((_new_root, _old_root) => app.dirty = true)
   tx.on_drained(() => {
@@ -131,8 +130,8 @@ pub fn[N : @vdom.DomWalk] App::from_module(
 }
 
 ///|
-/// Initial render (JS app.start minus listener installation — the backend
-/// glue owns that; see event_names()).
+/// Initial render minus listener installation — the backend
+/// glue owns that; see event_names().
 pub fn[N : @vdom.DomWalk] App::start(self : App[N]) -> Unit {
   self.render_now()
 }
@@ -159,12 +158,10 @@ pub fn[N] App::destroy(self : App[N]) -> Unit {
 }
 
 ///|
-/// Dispatch a message at the ROOT component and drain (JS app.sendAtRoot).
+/// Dispatch a message at the ROOT component and drain.
 ///
 /// Tutuca has no lifecycle: nothing in the framework calls `receive.init`. The
-/// HOST decides when — the JS playground does `app.start(); app.sendAtRoot("init")`,
-/// which is what makes the `init` handler in docs/examples/request-example.js
-/// run. This is that hook.
+/// HOST decides when — this is that hook.
 ///
 /// Goes through the Receive bucket, like any other send, so `receive.init` is an
 /// ordinary handler and not a special case. The returned result makes the
@@ -188,8 +185,8 @@ pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value {
 
 ///|
 /// Drive queued transactions in bounded batches, calling `yield_between` after
-/// each batch that leaves more work — the port of JS App._transactNextBatch's
-/// time-slicing (maxRunTimeMs), count-based instead of clock-based so it runs
+/// each batch that leaves more work — time-slicing,
+/// count-based instead of clock-based so it runs
 /// on every backend. A backend passes a real yield (setTimeout(0) on js) so a
 /// large cascade doesn't block the host between renders; the synchronous
 /// callers can pass a no-op yield. `max_per_batch` bounds transactions processed
@@ -249,10 +246,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 /// A filter is opaque — `&VdomFilter` is a trait object, so "is this one at
 /// least as strict as the one it replaces" is not a question any code here can
 /// ask. An API that takes one can therefore only offer replacement, and
-/// replacement includes removal: the seam that used to be here also took
-/// `None`, and the escape hatch a host reached for to make one deliberate
-/// `javascript:` link work turned off the `on*` rule and the markup sanitizer
-/// with it.
+/// replacement includes removal.
 ///
 /// A sanitizer is a VALUE with structure. Narrowing it is a thing a host can
 /// write down and `SanitizerConfig::validate` can check, and whatever it says,
@@ -362,7 +356,7 @@ pub fn[N] App::take_filter_reports(self : App[N]) -> Array[@filter.Dropped] {
 /// Dispatch one DOM event from its target node; re-render happens through
 /// the on_change subscription as transactions drain. Drag events run the
 /// drag state machine and never abort on a missing handler; every dispatch
-/// while a drag is active carries the dragInfo arg (JS transactInputNow).
+/// while a drag is active carries the dragInfo arg.
 pub fn[N : @vdom.DomWalk] App::dispatch(
   self : App[N],
   node : N,
@@ -393,7 +387,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
 }
 
 ///|
-/// Every event name any registered view listens to (JS genEventNames) — the
+/// Every event name any registered view listens to — the
 /// set the backend glue installs listeners for.
 pub fn[N] App::event_names(self : App[N]) -> Array[String] {
   let seen : Map[String, Unit] = Map([])

@@ -58,11 +58,6 @@ component — is REFUSED by name, with the reason, and comes back as an
 - **[docs/playground-wasm.md](docs/playground-wasm.md)** — how the in-browser
   playground compiles and runs on both backends: the string ABI, the
   worker-per-target rule, and how to verify a change to either.
-- **[docs/card-examples-design.md](docs/card-examples-design.md)** — what a
-  card's `tutuca/init` fixtures would need to describe a state with CHILDREN,
-  and to be arrived at by driving rather than by being written down. A design
-  rather than shipped behaviour; it says so at the top, and it opens with the
-  correction that there should not be a second block.
 - **[docs/generative-dyncomps-in-the-browser-design.md](docs/generative-dyncomps-in-the-browser-design.md)**
   — a design for building a bundle client-side, with no server and no native
   toolchain. A plan rather than a description of shipped behaviour; it says so

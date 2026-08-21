@@ -1,6 +1,6 @@
-// Slot parsing (src/value.js parse functions). Implements the declares in
-// spec.mbt. The JS kind bitmasks become an enum plus per-group membership
-// matches; callers only see the named parse_* functions, as in JS.
+// Slot parsing. Implements the declares in
+// spec.mbt. The kind bitmasks become an enum plus per-group membership
+// matches; callers only see the named parse_* functions.
 //
 // Every diagnostic now carries the span of the TOKEN it is about, which is
 // what lets `@show="empty? Foo"` point at `Foo` rather than at the attribute.
@@ -32,7 +32,7 @@ fn ParseCtx::issue(
 }
 
 ///|
-/// One kind per parsed value (JS K_* bits).
+/// One kind per parsed value (the K_* bits).
 priv enum Kind {
   KConst
   KStrTpl
@@ -58,7 +58,7 @@ priv enum Kind {
 }
 
 ///|
-/// One group per parsing context (JS G_* masks).
+/// One group per parsing context (the G_* masks).
 priv enum Group {
   GBool
   GText
@@ -68,11 +68,9 @@ priv enum Group {
   GField
   /// What an `@on` handler ARGUMENT may be.
   ///
-  /// This used to be `GValue` and is the same set plus `KEvent`. It is the ONE
-  /// group an event read belongs to: a `@text="e.value"` would be a
-  /// render-time read of an event that is not happening, and this table is
-  /// where that is refused — not a special case somewhere downstream. `GValue`
-  /// had no other user, so it was renamed rather than joined.
+  /// It is the ONE group an event read belongs to: a `@text="e.value"` would
+  /// be a render-time read of an event that is not happening, and this table
+  /// is where that is refused — not a special case somewhere downstream.
   GEventArg
   GAll
 }
@@ -151,7 +149,7 @@ fn is_valid_val_id(s : String) -> Bool {
 }
 
 ///|
-/// JS VALID_FLOAT_RE: ^-?[0-9]+(\.[0-9]+)?$
+/// Matches ^-?[0-9]+(\.[0-9]+)?$
 fn is_float_literal(s : String) -> Bool {
   let chars : Array[Char] = s.iter().collect()
   let mut i = if chars.get(0) is Some('-') { 1 } else { 0 }
@@ -562,7 +560,7 @@ fn parse_handler(
         if report {
           ctx.issue(BadHandlerArg, tok.text, tok.span)
         }
-        // The JS shared NULL_CONST_VAL sentinel.
+        // The shared null-const sentinel.
         args.push(Const(lit=LNull, from_macro=false))
       }
     }

@@ -591,9 +591,8 @@ pub fn set_app(
 /// the other half, and it runs between `render_root` and the diff — the one
 /// point where the value is concrete and the DOM is untouched.
 ///
-/// `set_app` no longer installs it: `App::new` does, for every tutuca app.
-/// This glue used to hold its own, from when the seam defaulted to absent. What
-/// that leaves here is the reporting, which is still glue's job — by render
+/// `App::new` installs it, for every tutuca app. What
+/// is here is the reporting, which is still glue's job — by render
 /// time there is no author to report to, since the value may have come from a
 /// guest's state rather than from its template, so a page that wants to say
 /// "this component tried to render a javascript: URL" drains this and shows it.
@@ -650,11 +649,8 @@ pub fn load_url(path : @tutuca.DispatchPath, url : String) -> Int {
 ///|
 /// Load a dropped `.tutuca.tar.gz` bundle: `file_id` is what the drop event's
 /// value named (`@on.drop="loadDropped e.value"` -> a list of file descriptors),
-/// and completion messages dispatch at `path` like `load_url`.
-///
-/// This is the whole of what the universal demo's page-level JS used to do:
-/// the drop is an ordinary tutuca event now, so the handler that acts on it is
-/// an ordinary handler.
+/// and completion messages dispatch at `path` like `load_url`. The drop is an
+/// ordinary tutuca event, so the handler that acts on it is an ordinary handler.
 pub fn load_dropped(path : @tutuca.DispatchPath, file_id : Int) -> Int {
   let id = next_load_at(path)
   tcomp_load_dropped(file_id, id)
@@ -701,7 +697,7 @@ pub fn on_loaded(
     // bundle was refused — and exactly one thing worth showing: why. The
     // reasons are a person's to act on ("this host takes no CSS from a
     // bundle", "no such component"), so they reach the page rather than
-    // collapsing into a generic sentence the way they used to.
+    // collapsing into a generic sentence.
     e => {
       notify(load_id, "dyncompError", [Str(e.message())])
       return

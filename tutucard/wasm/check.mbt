@@ -7,9 +7,6 @@
 // cards loading all want the FINDINGS and none of them want a module.
 //
 // This is the front half of `compile`, stopping where the module would start.
-// It is also what the card loader used to be for — a card was parsed and
-// checked by `tutucard.load` on the way to being interpreted, and with the
-// interpreter gone the checking half has to be reachable on its own.
 
 ///|
 /// One thing wrong with a card, in the FILE's coordinates.

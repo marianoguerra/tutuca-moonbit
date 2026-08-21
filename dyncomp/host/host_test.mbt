@@ -1626,12 +1626,10 @@ test "a same-bundle child is the guest's own, and the host does not fill it" {
 /// as its handle, not as a copy of its fields under a name that no longer
 /// refers to it.
 ///
-/// This is the write half of nesting, and it used to only work one level deep.
-/// A guest whose children sit in a list — a message holding reactions, a channel
-/// holding threads — has a child return a successor, and the host writes the
-/// parent's WHOLE LIST back with the new instance in it. With the single
-/// top-level case that list arrived as plain data, the guest refused it, and the
-/// interaction did nothing at all: the guest counted and the screen did not.
+/// This is the write half of nesting. A guest whose children sit in a list — a
+/// message holding reactions, a channel holding threads — has a child return a
+/// successor, and the host writes the parent's WHOLE LIST back with the new
+/// instance in it.
 test "child_json encodes a nested guest instance at any depth" {
   let fake = FakeGuest::new()
   let (_, bundle) = mount_with_bundle(fake)

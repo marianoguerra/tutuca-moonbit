@@ -1,7 +1,7 @@
 ///|
 /// Diff two attribute maps. Outer `None` = no difference; an inner `None`
-/// value marks a removed attribute (the JS `undefined` marker). Two-pass in
-/// the same order as the JS source so the diff map preserves application
+/// value marks a removed attribute (the `undefined` marker). Two-pass in
+/// the same order as the upstream source so the diff map preserves application
 /// order.
 pub fn diff_props(
   a : Map[String, AttrValue],

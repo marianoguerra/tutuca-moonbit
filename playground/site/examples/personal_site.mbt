@@ -9,9 +9,7 @@
 // RootMsg cannot type them.
 
 // Reads of an entry's fields go straight through `@tutuca.Value::field` plus a
-// coercer — `e.field("startYear").int()`. The three `obj_str`/`obj_int`/
-// `obj_bool` aliases that used to be inlined here from examples/fields.mbt are
-// gone; they were a second name for the same call.
+// coercer — `e.field("startYear").int()`.
 
 // --- personal_site (adapted from examples/personal_site.mbt) ---
 
@@ -93,7 +91,7 @@ fn ps_resort(s : RootState) -> RootState {
 }
 
 ///|
-/// The JS CATEGORY_COLORS table — per-category ring/text classes for an
+/// Per-category ring/text classes for an
 /// UNSELECTED facet button or badge.
 fn ps_category_colors() -> Map[String, String] {
   {
@@ -113,7 +111,7 @@ fn ps_category_colors() -> Map[String, String] {
 }
 
 ///|
-/// The JS CATEGORY_COLORS_SELECTED table — solid background for a SELECTED
+/// Solid background for a SELECTED
 /// facet button (and for entry category badges, which always use it).
 fn ps_category_colors_selected() -> Map[String, String] {
   {
@@ -133,7 +131,8 @@ fn ps_category_colors_selected() -> Map[String, String] {
 }
 
 ///|
-/// JS `getCategoryColor(cat, isSelected)`.
+/// The per-category color: the selected variant when `selected`, else the
+/// unselected one.
 fn ps_category_color(cat : String, selected : Bool) -> String {
   if selected {
     match ps_category_colors_selected().get(cat) {
@@ -150,8 +149,8 @@ fn ps_category_color(cat : String, selected : Bool) -> String {
 
 ///|
 /// All per-category color classes joined into one literal, interpolated into
-/// the `_margauiClasses` decoy view below — same trick as personal-site.js's
-/// CATEGORY_DECOY_CLASSES, so the color tables stay the single source of truth.
+/// the `_margauiClasses` decoy view below, so the color tables stay the single
+/// source of truth.
 fn ps_category_decoy_classes() -> String {
   let parts : Array[String] = []
   for _, v in ps_category_colors() {
@@ -177,7 +176,7 @@ fn ps_entry_comp() -> @component.Component {
   p_s_entry_component(
     name="PSEntry",
     enrich=e => match e {
-      // JS `enrichCategoryBadge`: entry category badges always use the
+      // Entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
       EnrichCategoryBadge =>
         Some((_s, binds, _key, value, _iter) => match value {
@@ -222,7 +221,7 @@ fn ps_entry_comp() -> @component.Component {
 }
 
 ///|
-/// The JS `Entry.Class.fromData` static, as a plain function.
+/// The `fromData` static, as a plain function.
 fn entry_from_data(
   entry : @component.Component,
   alt_url : @component.Component,
@@ -295,8 +294,8 @@ fn root_comp() -> @component.Component {
       "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(s, e),
     },
     enrich={
-      // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
-      // the trailing `cat-btn on|off` tokens are the MB test hooks.
+      // The badge classes compose `btn btn-xs border-0` with the category
+      // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
       "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
@@ -474,7 +473,7 @@ fn ps_facet_toggle(
 }
 
 ///|
-/// The fixture data (in place of the JS remote fetch).
+/// The fixture data the request handler serves instead of a remote fetch.
 fn ps_fixture(
   entry : @component.Component,
   alt_url : @component.Component,

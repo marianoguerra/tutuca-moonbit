@@ -8,17 +8,12 @@
 // keeps the implementation side at "answer `obj_field`, and `obj_schema` if
 // you have one".
 //
-// The container triple — `(List, KInt) | (Map, KStr) | (Obj, obj_item)` — used
-// to be written out at each call site: the renderer's keyed lookup, the stack
-// rebuild, the path traversal, the seq-access evaluator. The evaluator's copy
-// had already lost its `Obj` arm, so `.songs[.currentKey]` returned Null on a
-// custom collection while `@each` iterated it fine. It lives here now.
+// The container triple — `(List, KInt) | (Map, KStr) | (Obj, obj_item)` —
+// lives here, written once.
 //
 // EVERY accessor comes in two forms, and the `_opt` one is the primitive: the
 // total form is `_opt(...).unwrap_or(default)`, never a second match over the
-// same shapes. The two used to live in two files (this one and
-// value_access.mbt) as independent matches — the exact arrangement whose
-// drift the paragraph above is about. Use `_opt` when absent has to be told
+// same shapes. Use `_opt` when absent has to be told
 // apart from present-but-empty, the total form when it does not, and a `match`
 // when the shape distinction is the point.
 
@@ -278,7 +273,7 @@ pub fn Value::size(self : Value, default? : Int = 0) -> Int {
 ///|
 /// The ordered (key, value) entries of any container: a list keyed by index, a
 /// map by name, a custom collection by whatever `obj_seq_entries` says. Empty
-/// for anything that is not one (the JS unkIter default).
+/// for anything that is not one (iteration yields no entries then).
 ///
 /// TOOLING and one-off use: this materializes. The renderer's `@each` keeps
 /// indexing `List` and `Map` directly, because allocating a tuple per item on

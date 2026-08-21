@@ -39,11 +39,9 @@ let spans : @build.Spans = @build.Spans::new(fname="<cardwasm>")
 /// scope for its own initializer. A whole function's identifiers built at one
 /// location collapse its locals onto one slot.
 ///
-/// Wax now REFUSES that outright — `AmbiguousBinding`, raised by `claim_slot`
+/// Wax REFUSES that outright — `AmbiguousBinding`, raised by `claim_slot`
 /// — so the failure mode is a `LowerError` naming the identifier rather than a
-/// module that is quietly wrong. This used to say the opposite, and the older
-/// wording is why: before that check landed, getting this wrong produced
-/// something that ran and misbehaved.
+/// module that is quietly wrong.
 ///
 /// `@build.Spans` is upstream's answer to exactly this, and is what this now
 /// delegates to. Each span it mints is one column on a line of its own, so the

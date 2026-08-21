@@ -227,8 +227,8 @@ fn touch_drag_for(app : @app.App[@wdom.WasmNode]) -> @touchdrag.TouchDrag {
 }
 
 ///|
-/// Install one delegated listener per event name any registered view uses
-/// (JS subscribeToEvents) plus the fixed drag/touch set, so dnd works. The
+/// Install one delegated listener per event name any registered view uses,
+/// plus the fixed drag/touch set, so dnd works. The
 /// listeners are wired on the JS side and call back through `on_event`.
 pub fn install(app : @app.App[@wdom.WasmNode]) -> Unit {
   current_app.val = Some(app)
@@ -325,8 +325,7 @@ pub fn install_styles(
 }
 
 ///|
-/// Upsert a <style id=…> element in the document head (JS extra.js
-/// injectCss). The margaui half of compileClassesToStyle: hand
+/// Upsert a <style id=…> element in the document head. Hand
 /// `app.scope.comps.collect_classes()` to the class compiler on the JS side,
 /// then inject the resulting CSS here (id "margaui-css" by convention).
 pub fn inject_style(doc : @wdom.WasmNode, id : String, css : String) -> Unit {

@@ -124,12 +124,11 @@ fn UniversalUi::place_form(
   // blank form beside it is not consulted — but it has to be RESOLVED here, to
   // the arguments it names.
   //
-  // Leaving it to whatever builds the component is what used to break: placing
-  // CONSTRUCTS and reconfiguring WRITES THROUGH, and only the first of those can
-  // be handed a fixture NAME. The second writes the map field by field, so the
-  // empty map this used to pass meant "write nothing" — which a per-field write
-  // cannot tell apart from "nothing changed". The panel closed and the fixture
-  // silently did nothing.
+  // Placing CONSTRUCTS and reconfiguring WRITES THROUGH, and only the first of
+  // those can be handed a fixture NAME. The second writes the map field by
+  // field, so an empty map means "write nothing" — which a per-field write
+  // cannot tell apart from "nothing changed". The panel would close and the
+  // fixture would silently do nothing.
   //
   // `InitInfo::args` is already decoded host-side, for a loaded bundle as much
   // as a standard component, so resolving costs nothing and nothing crosses the
@@ -388,9 +387,9 @@ fn UniversalUi::app_comp(
       match UniversalAppReceive::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return self.catalog_changed(s, module_)
         Some(RestoreTree(root)) => return restore_tree(s, root)
-        // The merged `Receive` now carries this component's own VIEW names as
-        // well as the schema's, so `Unknown` no longer covers everything this
-        // match has nothing to say about. They are answered by the match
+        // The merged `Receive` carries this component's own VIEW names as
+        // well as the schema's, so `Unknown` covers cases this match has
+        // nothing to say about. They are answered by the match
         // beside this one.
         _ => ()
       }

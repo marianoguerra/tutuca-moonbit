@@ -568,9 +568,7 @@ test "view mode hides every affordance and keeps the page" {
 ///|
 /// The notepad, by composition.
 ///
-/// This is the claim the whole change is for. `guests/rust-notepad` used to be
-/// a bespoke guest whose whole job was this; it is gone, because this is the
-/// same thing built out of a tabbed container and a text area by somebody
+/// A notepad built out of a tabbed container and a text area by somebody
 /// clicking. Nothing here was written for notepads.
 test "a notepad is a tabbed container holding text areas" {
   let h = mount_app()
@@ -705,11 +703,6 @@ test "an absent optional stays absent rather than becoming an empty string" {
 /// does not name survives. A fixture is a statement about arguments, so the
 /// panel has to resolve it to those arguments — handing the NAME down to a
 /// constructor works only on the path where a constructor runs.
-///
-/// It used to pass an empty map on the other path, and a per-field write cannot
-/// tell that apart from "nothing changed": the panel closed and the fixture
-/// silently did nothing. Only ctrl/cmd-clicking a catalog entry — which opens
-/// the form BEFORE placing — ever applied one.
 ///
 /// Resolving at the panel is also what keeps the write-through honest: the
 /// branch below it applies the fixture's arguments field by field to the

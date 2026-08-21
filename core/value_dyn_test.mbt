@@ -103,7 +103,6 @@ test "item reads cover list, map and custom collection through one call" {
   let m : @core.Value = Map({ "k": Num(7) })
   assert_eq(m.key("k"), Num(7))
   assert_eq(m.key("missing", default=Num(0)), Num(0))
-  // ...and the arm that used to be written out per call site
   let r = row("x", tags=[Str("t0"), Str("t1")])
   assert_eq(r.index(1), Str("t1"))
   assert_eq(r.item_opt(KStr("t0")), None)
@@ -284,11 +283,8 @@ impl @core.Stack for DynFieldStack with fn lookup_field_raw(self, name) {
 }
 
 ///|
-/// `.seq[.key]` on a CUSTOM collection.
-///
-/// The seq-access evaluator used to spell the container match out itself and
-/// its copy had lost the `Obj` arm, so an instance that `@each` iterated fine
-/// answered Null here. Both go through one lookup now.
+/// `.seq[.key]` on a CUSTOM collection, resolved through the one shared item
+/// lookup.
 test "seq-access resolves through a custom collection, not only List and Map" {
   let stack = DynFieldStack::{
     fields: {

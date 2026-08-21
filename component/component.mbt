@@ -159,11 +159,8 @@ pub fn[S : @tutuca.Fields] component(
   // default `fi.ty.zero()`, both projections of the declared type, so there is
   // nothing here a caller could state differently from what the block says.
   //
-  // `specs~` used to sit on top of this doing three jobs. Two are gone: a
-  // field's kind is declared, and a slot's component is declared (a sibling
-  // interface, or a `resource` for one from another module). The third — a
-  // child's construction ARGUMENTS — is a value the author picks, which no type
-  // can express, and it is all `slot_args~` carries.
+  // A child's construction ARGUMENTS are a value the author picks, which no
+  // type can express — that is all `slot_args~` carries.
   // A slot the SCHEMA cannot name, in either of the two ways it can fail to.
   // Folded INTO the schema rather than kept beside it, so the descriptor still
   // names every field an instance has — which is what the inspector and
@@ -508,12 +505,12 @@ pub fn schema_mutators(
 }
 
 ///|
-/// Generated per-field mutators (oo.js ClassBuilder), JS camelCase names so
+/// Generated per-field mutators, camelCase names so
 /// views port verbatim: set/reset/len/pushIn/setInAt/deleteInAt/removeInAt for
 /// list/map/omap, toggle for bools, and addIn/deleteIn/removeIn/hasIn/toggleIn
 /// for sets. getInAt is the only deferred accessor.
 ///
-/// NOTE(dropped): JS's `update<X>` and `updateIn<X>At` took a FUNCTION value
+/// NOTE(dropped): the `update<X>` and `updateIn<X>At` mutators took a FUNCTION value
 /// and applied it to the current one. A view can write values and never a
 /// lambda, so no template could ever call either, and outside this package's
 /// own tests the tree had no call site. Worse, the gap between "set a field"
@@ -545,7 +542,7 @@ fn gen_mutators(
             _ => (inst.value)()
           }
         }
-      // Set fields (JS FieldSet.extendProtoForType): membership mutators over
+      // Set fields: membership mutators over
       // the Map-backed set (key = member display string, value Bool(true)).
       FSet => {
         into[mut_name("addIn", name)] = (inst, args) => {
@@ -555,8 +552,7 @@ fn gen_mutators(
             _ => (inst.value)()
           }
         }
-        // JS deleteIn<X> and removeIn<X> alias the same delete (oo.js
-        // extendDeleteInAt, called with the bare uname for sets).
+        // deleteIn<X> and removeIn<X> alias the same delete for sets.
         let delete_member = (inst : FieldBox, args : Array[@tutuca.Value]) => {
           seq_delete(inst, name, args)
         }
@@ -593,8 +589,8 @@ fn gen_mutators(
             _ => (inst.value)()
           }
         }
-        // JS FieldList.insertIn<X>At(i, v): insert v BEFORE index i (oo.js:221).
-        // List-only in JS; harmless on the (currently absent) map case.
+        // insertIn<X>At(i, v): insert v BEFORE index i.
+        // List-only upstream; harmless on the (currently absent) map case.
         into[mut_name("insertIn", name) + "At"] = (inst, args) => {
           match ((inst.get)(name), args) {
             (List(a), [Num(i), v, ..]) => {
@@ -613,11 +609,10 @@ fn gen_mutators(
         into[mut_name("setIn", name) + "At"] = (inst, args) => {
           seq_set(inst, name, args)
         }
-        // JS names these deleteIn<X>At / removeIn<X>At for KEYED fields:
-        // extendProtoForKeyed passes `${uname}At` into extendDeleteInAt
-        // (src/oo.js:201). The bare deleteIn<X> / removeIn<X> spelling is the
-        // SET-field variant, generated in the FSet arm above. Views like
-        // `$removeInItemsAt @key` (docs/examples/todo.js, json.js) depend on it.
+        // The At suffix distinguishes the KEYED-field deleteIn<X>At /
+        // removeIn<X>At spellings; the bare deleteIn<X> / removeIn<X> spelling
+        // is the SET-field variant, generated in the FSet arm above. Views
+        // like `$removeInItemsAt @key` depend on it.
         into[mut_name("deleteIn", name) + "At"] = (inst, args) => {
           seq_delete(inst, name, args)
         }

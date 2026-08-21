@@ -1,13 +1,7 @@
-// A typed struct mixed with Value containers in one tree, driving the
-// scenarios test/transactor.test.js exercises: a live-key selection
+// A typed struct mixed with Value containers in one tree, driving
+// scenarios like: a live-key selection
 // (SeqAccessStep), leaf handlers rebuilding the spine, and pinning a live key
 // so a late response lands where the request was issued.
-//
-// This used to be written against a `PathNode` TRAIT, so that `Sheets` and
-// `App` could be structs too. They are ordinary `Value` containers now: the
-// trait's only production implementation was `Value` itself, and a typed leaf
-// reaches the tree through `Value::Obj` — which is what `Sheet` does here, and
-// what every generated component instance does.
 
 ///|
 priv struct Sheet {

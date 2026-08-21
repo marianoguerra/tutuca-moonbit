@@ -27,10 +27,8 @@ pub let memory_name : String = "mem"
 /// `value` is 16 bytes on the wire: a 1-byte discriminant, padding to the
 /// payload's 8-byte alignment, then 8 bytes of payload.
 ///
-/// This is now ONLY a wire shape. It used to be the guest's own representation
-/// too — an instance was `n` of these end to end and a successor was a
-/// `memory.copy` — and the tags that went with it lived here. They live in
-/// `runtime/runtime.wax` now, beside the code that reads them, because lifting
+/// This is ONLY a wire shape. The tags that go with it live in
+/// `runtime/runtime.wax`, beside the code that reads them, because lifting
 /// and lowering is the only thing left that cares.
 pub let cell_size : Int = 16
 
@@ -180,7 +178,7 @@ pub fn Pool::new() -> Pool {
 ///|
 /// The index of `s` among the interned strings, adding it if it is new.
 ///
-/// An index rather than an address, because a string is no longer read out of
+/// An index rather than an address, because a string is not read out of
 /// memory at each use: `#[start]` builds one `utf8_string` per constant — one
 /// validation and one hash, once — and a use site is `tc_const(i)`.
 pub fn Pool::string_index(self : Pool, s : String) -> Int {

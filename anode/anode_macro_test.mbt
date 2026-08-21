@@ -1,4 +1,4 @@
-// Port of the macro suites from tutuca test/anode.test.js: expansion,
+// Macro suites: expansion,
 // nesting, slots, recursion rejection, and macro-attr source strings.
 
 ///|

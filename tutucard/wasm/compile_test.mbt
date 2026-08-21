@@ -11,10 +11,7 @@
 ///
 /// `tc_flush` is emitted once, for the module, and CALLED from a component's
 /// dispatch chain — so the two halves of the decision have to agree about what
-/// the whole card uses. They did not: the union of every component's `uses_*`
-/// was folded into the first component's `Gen` only after the module had been
-/// assembled, so a card like this one compiled a call to a function nobody had
-/// written and the generated module refused to type-check.
+/// the whole card uses.
 test "an effect in the SECOND component still gets the card's flush" {
   let out = @wasm.compile(
     (

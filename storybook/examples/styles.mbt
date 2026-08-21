@@ -1,5 +1,3 @@
-// Port of docs/examples/styles-example.js.
-//
 // Three style slots, each scoped differently:
 //   style       — this component + THIS view   ([data-cid=N][data-vid="main"])
 //   commonStyle — this component, every view   ([data-cid=N])
@@ -9,8 +7,8 @@
 // (`padding: …`) land directly inside it, so they style the component's ROOT
 // element. Rules written with a selector target descendants instead.
 //
-// JS spells a per-view style as `views: { two: { view, style } }`; MoonBit puts
-// it on the view itself — each @anode.View in `views` carries its own style.
+// A per-view style lives on the view itself — each @anode.View in `views`
+// carries its own style.
 
 ///|
 fn styles_example_comp() -> @component.Component {

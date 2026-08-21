@@ -1,15 +1,6 @@
-// JSON bridge for runtime payloads that cross the JS boundary: CustomEvent
+// JSON bridge for runtime payloads that cross the language boundary: CustomEvent
 // detail objects, file-input metadata (app glue) and structured vdom Data
-// props (render). JS gets this for free — the event payload IS a JS value.
-//
-// It used to carry a second job: a process-global STASH, active inside
-// `with_value_stash`, that smuggled `Obj` and `Fn` values through a JSON round
-// trip as `{"\u{0}tutuca-ref\u{0}": index}` markers into a side array. That
-// existed for exactly one caller — the typed-state bridge, `S -> Json -> Value`
-// and back, which a component with no generated codec fell back to. Every
-// component has a codec now, so the caller is gone and so is the stash, along
-// with the global mutable it needed and the "strictly synchronous" caveat that
-// came with it.
+// props (render).
 
 ///|
 /// Build a Value from parsed JSON. Lossless: every JSON shape has a Value.
@@ -49,18 +40,13 @@ pub impl @json.FromJson for Value with fn from_json(j, _path) {
 /// Json shape of a Value.
 ///
 /// A DESCRIBED instance projects to its declared fields, recursively — which
-/// is what makes a state dump JSON rather than a debug string. It used to
-/// flatten to null along with `Fn`, because nothing could enumerate an `Obj`;
-/// the consequence was a `state_json()` that returned the `Show` rendering and
-/// said so in a comment, and a dyncomp migration path that asked the GUEST to
-/// project its own state (a `to-json` method, since removed from the contract:
-/// a wasm guest declares its fields now, so this walks them like any other).
+/// is what makes a state dump JSON rather than a debug string.
 ///
 /// An instance that declares nothing is still null: with no schema there is
 /// no field list to project, and inventing one is what the schema work
-/// removed. `Fn` stays null unconditionally (JS structured clone would throw
-/// on a function too), so a method or an unrendered handler inside a described
-/// instance projects as null rather than taking the whole object with it.
+/// removed. `Fn` stays null unconditionally, so a method or an unrendered
+/// handler inside a described instance projects as null rather than taking
+/// the whole object with it.
 pub fn Value::to_json(self : Value) -> Json {
   match self {
     Null => Json::null()

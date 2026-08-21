@@ -1,5 +1,5 @@
-// Dyn teleporting tests, ported from test/path.test.js (DynStep internals +
-// the workspace/panel/toolbar/sheet end-to-end scenario, data-side).
+// Dyn teleporting tests: DynStep internals +
+// the workspace/panel/toolbar/sheet end-to-end scenario, data-side.
 
 ///|
 fn plain(step : @core.Step, origin? : Int) -> @core.DispatchStep {
@@ -72,7 +72,8 @@ test "an iterated Dyn over a seq-access dynamic splices unchanged (cannot be ite
 ///|
 test "nested dynamics: spliced steps carry the producer id for outer rewinds" {
   // inner Dyn teleports to producer 5; the outer Dyn's interior includes 5,
-  // so the spliced steps are rewound again (JS stamps _originCid on splices)
+  // so the spliced steps are rewound again (each splice carries its
+  // producer id)
   let p = @core.DispatchPath::new(items=[
     plain(FieldStep("root"), origin=9),
     plain(FieldStep("mid"), origin=5),

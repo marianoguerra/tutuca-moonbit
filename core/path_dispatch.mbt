@@ -1,5 +1,5 @@
-// Dispatch paths (src/path.js compact()/toTransactionPath() over paths that
-// carry DynStep markers and per-step component provenance).
+// Dispatch paths: compact()/to_transaction_path() over paths that
+// carry DynStep markers and per-step component provenance.
 
 ///|
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> DispatchPath {
@@ -54,7 +54,7 @@ pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath {
 
 ///|
 /// The steps a Dyn marker splices into the transaction path in place of the
-/// dropped interior span (JS DynStep/DynEachStep.teleportSteps).
+/// dropped interior span.
 fn teleport_steps(item : DispatchStep) -> Array[Step] {
   match item {
     Plain(..) => []
@@ -69,7 +69,7 @@ fn teleport_steps(item : DispatchStep) -> Array[Step] {
         }
         // A seq-access dynamic (`.a[.b]`) cannot address an iterated item; a
         // key-only step does not exist. Splice unchanged rather than build a
-        // broken step (JS warns here).
+        // broken step.
         _ => steps
       }
   }

@@ -20,8 +20,7 @@
 pub(all) struct Refusal {
   /// Which component declared it.
   ///
-  /// A card used to be one component, so a refusal naming `toggle` named
-  /// exactly one declaration. A file holding a `TodoList` and a `TodoItem` can
+  /// A file holding a `TodoList` and a `TodoItem` can
   /// have a `toggle` in each, and a panel listing them without this says the
   /// same sentence twice about two different mistakes.
   comp : String
@@ -105,7 +104,7 @@ pub(all) struct Compiled {
   /// The `DynManifest` JSON `dyncomp/host.register_bundle` parses.
   manifest : Json
   /// `{ world, encoding, core }` — what an archive carries in place of the
-  /// 200KB of JavaScript `jco transpile` used to put in one.
+  /// 200KB of JavaScript `jco transpile` output.
   descriptor : Json
 }
 

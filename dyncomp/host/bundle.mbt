@@ -729,10 +729,7 @@ pub fn Bundle::wrap_instance(
 /// migrating).
 ///
 /// The projection is `Value::to_json` over the old instance's own schema:
-/// every field it declared, read through `get-field`. The guest used to
-/// project its state itself (`to-json` plus a protocol field to reach it),
-/// which is the same list of fields written a second time, in a second
-/// language, with no check that the two agreed.
+/// every field it declared, read through `get-field`.
 pub fn Bundle::migrate_instance(
   self : Bundle,
   old : @tutuca.Value,

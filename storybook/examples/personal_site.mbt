@@ -1,20 +1,20 @@
-// Port of docs/examples/personal-site.js — a filterable list of entries with
+// A filterable list of entries with
 // category and role facets, sorting, and a solo/unsolo (alt-click) interaction.
 //
-// PORT DIVERGENCES:
+// IMPLEMENTATION NOTES:
 //
-// 1. Sets. The JS uses `ISet` for the selected-category / selected-role facets
-//    (has/add/delete/toggle/size). The MoonBit runtime has no Set field kind
-//    yet, so those facets are modeled as MAP-backed sets here — a `Map` whose
-//    KEYS are the members. The `fp_set_*` helpers give the has/toggle/only/
-//    all-but semantics the JS set mutators provided. Behavior is identical.
+// 1. Sets. The MoonBit runtime has no Set field kind yet, so the
+//    selected-category / selected-role facets are MAP-backed sets here — a
+//    `Map` whose KEYS are the members. The `fp_set_*` helpers give the
+//    has/toggle/only/all-but set semantics. Behavior is identical.
 //
-// 2. Data source. The JS `loadData` fetches a remote JSON file. A headless test
-//    can't, so this ships a compact fixture request handler; the component is
+// 2. Data source. A headless test
+//    can't fetch a remote JSON file, so this ships a compact fixture request
+//    handler; the component is
 //    unchanged (the request implementation lives outside it, the whole point of
 //    request handlers). The host dispatches `init` after start, as always.
 //
-// 3. `currentlyActive` (JS `new Date().getFullYear()`) is dropped — the fixture
+// 3. `currentlyActive` (the current year) is dropped — the fixture
 //    supplies explicit end years so nothing depends on the wall clock.
 
 ///|
@@ -95,7 +95,7 @@ fn ps_resort(s : RootState) -> RootState {
 }
 
 ///|
-/// The JS CATEGORY_COLORS table — per-category ring/text classes for an
+/// Per-category ring/text classes for an
 /// UNSELECTED facet button or badge.
 fn ps_category_colors() -> Map[String, String] {
   {
@@ -115,7 +115,7 @@ fn ps_category_colors() -> Map[String, String] {
 }
 
 ///|
-/// The JS CATEGORY_COLORS_SELECTED table — solid background for a SELECTED
+/// Solid background for a SELECTED
 /// facet button (and for entry category badges, which always use it).
 fn ps_category_colors_selected() -> Map[String, String] {
   {
@@ -135,7 +135,8 @@ fn ps_category_colors_selected() -> Map[String, String] {
 }
 
 ///|
-/// JS `getCategoryColor(cat, isSelected)`.
+/// Pick a category color: the selected variant when `selected`, else the
+/// unselected one.
 fn ps_category_color(cat : String, selected : Bool) -> String {
   if selected {
     match ps_category_colors_selected().get(cat) {
@@ -152,8 +153,8 @@ fn ps_category_color(cat : String, selected : Bool) -> String {
 
 ///|
 /// All per-category color classes joined into one literal, interpolated into
-/// the `_margauiClasses` decoy view below — same trick as personal-site.js's
-/// CATEGORY_DECOY_CLASSES, so the color tables stay the single source of truth.
+/// the `_margauiClasses` decoy view below, so the color tables stay the single
+/// source of truth.
 fn ps_category_decoy_classes() -> String {
   let parts : Array[String] = []
   for _, v in ps_category_colors() {
@@ -175,7 +176,7 @@ fn ps_entry_comp() -> @component.Component {
   ps_entry_component(
     enrich=e => {
       match e {
-        // JS `enrichCategoryBadge`: entry category badges always use the
+        // Entry category badges always use the
         // SELECTED color variant. The `cat` token is the MB test hook.
         EnrichCategoryBadge =>
           Some((_s, binds, _key, value, _iter) => {
@@ -229,7 +230,7 @@ fn ps_entry_comp() -> @component.Component {
 }
 
 ///|
-/// The JS `Entry.Class.fromData` static, as a plain function.
+/// The `fromData` static, as a plain function.
 fn entry_from_data(
   entry : @component.Component,
   alt_url : @component.Component,
@@ -314,8 +315,8 @@ fn root_comp() -> @component.Component {
     },
     enrich=e => {
       match e {
-        // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
-        // the trailing `cat-btn on|off` tokens are the MB test hooks.
+        // The badge classes compose `btn btn-xs border-0` with the category
+        // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
         EnrichCategoryBindings =>
           Some((s, binds, _key, value, _iter) => {
             match value {
@@ -500,7 +501,7 @@ fn ps_facet_toggle(
 }
 
 ///|
-/// The fixture data (in place of the JS remote fetch).
+/// The fixture data the request handler serves instead of a remote fetch.
 fn ps_fixture(
   entry : @component.Component,
   alt_url : @component.Component,

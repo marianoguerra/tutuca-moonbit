@@ -148,12 +148,8 @@ content is raw text to an HTML parser and template content is markup — a
 `Array[Int]` inside a template would be read as an `<Int>` element.
 
 A component with no schema block gets the view half only — no state type, no
-codec and no descriptor. There is no weaker substitute: a `counter_fields` /
-`counter_missing_fields` pair used to be emitted for such a file, because the
-generator could not check a read. It listed the names and left you to assert in
-a test that the state carried them, and it only ever covered a view's ROOT
-scope — a `.field` under an `@each`, `@enrich-with`, push-view or `<x render>`
-was not listed and not checked. A schema-backed component checks every read at
+codec and no descriptor. There is no weaker substitute: a schema-backed
+component checks every read at
 generation time, loop bodies included, so the answer to a file without one is
 to declare the schema.
 
@@ -196,8 +192,7 @@ The codes fall into three families:
 - **Directive rules** — `UNKNOWN_DIRECTIVE`, `UNKNOWN_X_OP`, `UNKNOWN_X_ATTR`,
   `BAD_VALUE`, `UNSUPPORTED_EXPR_SYNTAX`, `BINDING_MEMBER_TOO_DEEP`,
   `X_OP_IGNORES_CHILDREN`.
-- **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`,
-  `DEPRECATED_BARE_X_DIRECTIVE`.
+- **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`.
 - **Structural HTML**, from a WHATWG tokenizer pass over the view text:
   `HTML_TAG_NOT_ALLOWED_IN_PARENT`, `HTML_TEXT_NOT_ALLOWED_IN_PARENT`,
   `HTML_VOID_ELEMENT_HAS_CLOSE_TAG`, `HTML_UNEXPECTED_END_TAG`,

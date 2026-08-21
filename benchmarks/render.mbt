@@ -4,7 +4,7 @@
 //
 // Two axes:
 //
-//   - feature coverage — every ported example in storybook/examples, mounted
+//   - feature coverage — every example in storybook/examples, mounted
 //     with the args the storybook and the CLI mount it with. 50 modules, so
 //     between them every view directive the framework has is rendered at least
 //     once.
@@ -55,7 +55,7 @@ fn mount_render(
 const SKIPPED_EXAMPLE = "lint-errors"
 
 ///|
-/// Every ported example, mounted the way storybook/stories.mbt mounts it. The
+/// Every example, mounted the way storybook/stories.mbt mounts it. The
 /// broad "does anything in the render path regress" number: 50 modules, between
 /// them every view directive the framework has.
 pub fn render_all_examples() -> Int {

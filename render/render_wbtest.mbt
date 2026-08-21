@@ -1,5 +1,4 @@
-// Renderer tests: end-to-end parse → render → memdom → HTML. Ports of the
-// render describes from test/anode-core.test.js, adapted to RenderStack +
+// Renderer tests: end-to-end parse → render → memdom → HTML, over RenderStack +
 // ViewMap (the component-less mocks from render-plan.md).
 
 ///|
@@ -47,9 +46,7 @@ fn render_html(
 ///|
 /// A `RenderCtx` with no cache memoizes nothing: two passes over the same node
 /// build two distinct trees that compare equal. Only a component render SITE
-/// is ever cached (see cache_wbtest.mbt), and only when the ctx carries a cache;
-/// the constant subtrees and constant attribute maps the port used to memoize
-/// are gone and are not coming back with it.
+/// is ever cached (see cache_wbtest.mbt), and only when the ctx carries a cache.
 test "a second render pass reuses nothing, and renders the same thing" {
   let node = parse_node("<p class=\"x\">hi</p>")
   let ctx = RenderCtx::new()
@@ -74,12 +71,12 @@ test "a component render site rebuilds every pass, and tracks its value" {
   let stack = RenderStack::new(v1)
   guard! render_root(v1, stack, ctx) is Some(first)
   guard! render_root(v1, stack, ctx) is Some(second)
-  // An unchanged value no longer buys a reused subtree — a fresh tree that
-  // compares equal is what the differ now has to work from.
+  // An unchanged value buys no reused subtree — a fresh tree that
+  // compares equal is what the differ works from.
   assert_false(physical_equal(first, second))
   assert_true(first.is_equal_to(second))
 
-  // Different values still render distinct trees, as they always did.
+  // Different values render distinct trees.
   let a : @tutuca.Value = Map({ "n": Num(1) })
   let b : @tutuca.Value = Map({ "n": Num(2) })
   guard! render_root(a, RenderStack::new(a), ctx) is Some(ra)
@@ -99,7 +96,7 @@ test "static markup renders through to HTML" {
 
 ///|
 test "boolean attr and comment render" {
-  // vdom serializes AttrValue::Bool(true) as ="true" (JS setAttribute does
+  // vdom serializes AttrValue::Bool(true) as ="true" (setAttribute does
   // the same); the browser treats both spellings identically.
   assert_eq(
     render_html("<details open><!-- note --></details>"),
@@ -191,8 +188,8 @@ test "compiled macro call renders its expansion" {
   v.compile(px, MacroTestScope::{ macros: { "card": card } })
   let stack = RenderStack::new(Map(Map([])))
   let html = to_html(render_view(v, stack, RenderCtx::new()))
-  // View::compile stamps data-vid on the root (JS strips data-* only in
-  // renderToString's cleanAttrs pass, which is not ported).
+  // View::compile stamps data-vid on the root (the headless cleanup that
+  // strips data-* is not ported).
   assert_eq(
     html, "<section data-vid=\"main\"><div class=\"card\"><em>custom</em></div></section>",
   )
@@ -212,7 +209,7 @@ test "RenderStack lookups: binds chain, it fields, view names" {
   // a frame is a barrier: binds never cross a component boundary
   let framed = child.enter(Str("comp"), Map([]))
   assert_true(@tutuca.Stack::lookup_bind(framed, "key") is Null)
-  // fields read the CURRENT item, per frame (JS this.it[name]): a scalar it
+  // fields read the CURRENT item, per frame (this.it[name]): a scalar it
   // has no fields; the root frame's map does
   assert_true(@tutuca.Stack::lookup_field_raw(grand, "title") is Null)
   assert_true(@tutuca.Stack::lookup_field_raw(root, "title") is Str("hello"))
@@ -317,7 +314,7 @@ test "@each renders per item with key/value binds" {
 }
 
 ///|
-// A custom collection (JS SEQ_INFO): iterated by @each through obj_seq_entries,
+// A custom collection: iterated by @each through obj_seq_entries,
 // keyed by insertion order; obj_item resolves the same keys.
 priv struct KeyedList {
   order : Array[String]
@@ -425,8 +422,8 @@ test "loop-less @enrich-with opens a scope frame" {
     ),
   ])
   // data-nid is the Scope wrapper's parse-time stamp on its wrapped node
-  // (id 1: the inner <x text> registered first); JS strips data-* only in
-  // renderToString's cleanAttrs pass, which is not ported.
+  // (id 1: the inner <x text> registered first); the headless cleanup that
+  // strips data-* is not ported.
   assert_eq(
     render_html(
       "<div @enrich-with=\"info\"><x text=\"@label\"></x></div>",

@@ -59,7 +59,7 @@ fn step_put(node : Value, step : Step, child : Value) -> Value? {
 }
 
 ///|
-/// Freeze a field-resolved key against `node` as it is now (JS Step.pinKey):
+/// Freeze a field-resolved key against `node` as it is now:
 /// SeqAccessStep becomes a literal-key SeqStep; every other step (and an
 /// unresolvable key) pins to itself.
 fn step_pin(step : Step, node : Value) -> Step {
@@ -74,7 +74,7 @@ fn step_pin(step : Step, node : Value) -> Step {
 }
 
 ///|
-/// The compact/dispatch projection of one step (JS toAbstractPathStep):
+/// The compact/dispatch projection of one step:
 /// EachRenderItStep abstracts to a plain SeqStep; None drops the step — no
 /// current variant is dropped, the hook exists for future frame-only steps.
 fn step_to_abstract(step : Step) -> Step? {
@@ -86,7 +86,7 @@ fn step_to_abstract(step : Step) -> Step? {
 }
 
 ///|
-/// Generic {field, key?} descriptor (JS Step.toKey). SeqAccessStep reports
+/// Generic {field, key?} descriptor. SeqAccessStep reports
 /// its seq field with no key — the key is live and unknown without a value;
 /// dropping the step instead would shift the indices of later keys.
 fn step_to_key(step : Step) -> StepKey? {
@@ -101,8 +101,8 @@ fn step_to_key(step : Step) -> StepKey? {
 }
 
 ///|
-/// Key a step with the si/sk an `§Each§` meta carried (JS Step.withIndex /
-/// withKey, used by event reconstruction's applyKey): a plain field access
+/// Key a step with the si/sk an `§Each§` meta carried (used by event
+/// reconstruction's applyKey): a plain field access
 /// under a keyed meta addresses the keyed item. Steps that carry their own
 /// key (or no field) are returned unchanged.
 pub fn step_with_key(step : Step, key : PathKey) -> Step {

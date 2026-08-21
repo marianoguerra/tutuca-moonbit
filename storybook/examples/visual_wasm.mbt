@@ -1,9 +1,9 @@
-// Port of docs/examples/visual-wasm.js — a visual editor for WebAssembly
+// A visual editor for WebAssembly
 // modules. The largest example: ~75 components, most produced by FACTORIES
 // (instr / type / instrImmInt), dispatched through lookup tables, with recursive
 // Block/Loop/If nesting and per-component editor/compact views.
 //
-// PORT PATTERNS (all seen in earlier examples, at scale here):
+// PATTERNS (all seen in earlier examples, at scale here):
 //   - factories = plain functions returning components (json, tree)
 //   - a `reg` map for mutual recursion and lookup-table dispatch (json)
 //   - self-replacement handlers: setType / selectInstructionById return a fresh
@@ -11,11 +11,11 @@
 //   - `^handler`/`^onadd` macro indirection (todo-macros)
 //   - editor/compact named views, `:style="$'…'"` (styles, multiple-views)
 //
-// PORT DIVERGENCES:
+// DIVERGENCES:
 //   1. The picker's `selectInstructionById(target)` reads `target.dataset.value`
-//      off the raw DOM element — which the value layer does not expose. Ported
-//      to pass the loop's `@value` (the instruction id) directly, so no DOM
-//      object is needed. The click handler is `selectInstructionById @value`.
+//      off the raw DOM element — which the value layer does not expose, so
+//      the loop's `@value` (the instruction id) is passed directly instead; no
+//      DOM object is needed. The click handler is `selectInstructionById @value`.
 //   2. This required implementing `insertInItemsAt` (the generated list-insert
 //      mutator, which was missing) in the runtime — see component/component.mbt.
 //   3. Self-replacing instances (types, pickers) declare their replacement
@@ -320,8 +320,8 @@ fn vw_all_ids() -> Array[String] {
   for p in vw_imm_instrs() {
     ids.push(p.1)
   }
-  // the control-flow containers are pickable too (this port makes block/loop/if
-  // selectable from the default 'all' list, where the JS only exposed them under
+  // the control-flow containers are pickable too (block/loop/if are
+  // selectable from the default 'all' list, not only under
   // the 'control' category)
   ids.push("block")
   ids.push("loop")
@@ -705,7 +705,7 @@ fn vw_module_comp() -> @component.Component {
 /// everything same-type is typed state.
 fn vw_picker_comp(reg : VwReg) -> @component.Component {
   // (section, handler, radio color class, label class) — colors/label classes
-  // mirror the per-radio margaui classes in the JS original.
+  // mirror the per-radio margaui classes.
   let radios : Array[(String, String, String, String)] = [
     ("all", "$setCurrentAll", "radio-success", "flex gap-2"),
     ("i32", "$setCurrentI32", "radio-info", "flex gap-2"),

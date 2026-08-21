@@ -1,4 +1,4 @@
-// Port of the tokenizeValue suite from tutuca test/value.test.js, plus the
+// Tokenizer suites, plus the
 // spans that suite had nothing to say about.
 
 ///|

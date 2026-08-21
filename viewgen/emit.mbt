@@ -220,10 +220,7 @@ fn emit_msg_arm(out : StringBuilder, sig : InputSig, variant : String) -> Unit {
 /// The second source is not redundant. Most methods a view declares by calling
 /// (`$label`), but a method a PARENT calls — `containsText` on a list item,
 /// which the list's `@when` asks every child regardless of the child's own
-/// shape — appears in no view of the component that answers it. A state block
-/// used to declare those as `func`, which put behaviour in a block whose own
-/// header says it holds none; now they are `pred` and `compute` declarations,
-/// beside every other callable.
+/// shape — appears in no view of the component that answers it.
 fn declared_methods(surface : Surface) -> Array[String] {
   let seen : Map[String, Unit] = Map([])
   let out : Array[String] = []
@@ -309,9 +306,8 @@ fn variant_of(pairs : Array[(String, String)], name : String) -> String {
 ///
 /// The enum is all that is emitted. Turning the author's match over it into
 /// the `Map[String, H]` that `component()` takes is `@component.build_bucket`,
-/// which the generated wrapper calls with the case list — one generic function
-/// instead of the identical 14-line loop this used to write out per component
-/// per bucket, 143 times across the corpus.
+/// which the generated wrapper calls with the case list — one generic
+/// function.
 ///
 /// `answered` drops the names the block handles, on the rule `Answered` states.
 /// A bucket the block answers ENTIRELY loses its enum along with its wrapper
@@ -532,14 +528,6 @@ fn emit_component(
   // -- the declared description --------------------------------------------
   // Last, because it names things every section above declares.
   //
-  // Two things used to be emitted here as well, and both were weaker restatements
-  // of what this descriptor already carries. `<v>_fields` / `<v>_missing_fields`
-  // existed because the generator could not check a field read: they listed the
-  // names and left you to assert, in a test you had to remember to write, that
-  // the state carried them — and only ever covered a view's ROOT scope. A
-  // schema-backed component checks every read at generation time, loop bodies
-  // included. `<T>Id` turned the same `surface.ids` that `SchemaInfo.ids` carries
-  // into an enum that nothing read.
   if state is Some(def_) {
     emit_schema(t, name, def_, surface, views, inits, out)
   }

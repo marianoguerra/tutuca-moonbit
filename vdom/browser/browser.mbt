@@ -3,10 +3,10 @@
 // A fix to any DomNode method here almost certainly applies there too.
 
 ///|
-/// A real DOM node (or document) for the js backend. Wraps the raw JS value;
+/// A real DOM node (or document) for the js backend. Wraps the raw value;
 /// the orphan rule prevents implementing the vdom trait directly on
 /// @dom.Node, and going through @core.Any keeps one uniform representation
-/// for documents, elements, text and fragments — exactly like the JS source.
+/// for documents, elements, text and fragments.
 pub struct BrowserNode(@core.Any)
 
 ///|
@@ -53,7 +53,7 @@ fn attr_to_any(v : @vdom.AttrValue) -> @core.Any {
     Num(d) => @core.any(d)
     Bool(b) => @core.any(b)
     Html(s) | Md(s) | SafeHtml(s) | Svg(s) => @core.any(s)
-    // Structured custom-element property: rebuild the real JS object.
+    // Structured custom-element property: rebuild the real object.
     Data(j) => json_parse_ffi(j.stringify())
   }
 }
@@ -212,7 +212,7 @@ pub impl @vdom.DomNode for BrowserNode with fn namespace_uri(self) {
 }
 
 ///|
-/// Wrap a raw JS value (e.g. an event target) as a node. The caller
+/// Wrap a raw value (e.g. an event target) as a node. The caller
 /// guarantees it is a DOM node.
 pub fn BrowserNode::of_any(v : @core.Any) -> BrowserNode {
   BrowserNode(v)

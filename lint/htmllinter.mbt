@@ -44,7 +44,7 @@ pub fn lint_html(
         m.handle_start_tag(name, raw_name, raw_attrs, self_closing, name_start)
         // The standalone tokenizer lacks the tree constructor's feedback
         // loop: switch content states by tag name, namespace-unaware —
-        // exactly what htmlparser2 did for the JS linter.
+        // exactly what the linter needs.
         if !self_closing {
           match name {
             "script" => tk.switch_to_script_data()
@@ -80,7 +80,7 @@ fn self_closing_artifact(m : Machine, offset : Int) -> Bool {
 
 ///|
 /// Map newly collected tokenizer ParseErrors to findings. Only the codes the
-/// JS linter surfaced are mapped; everything else (charref/doctype noise) is
+/// linter surfaces are mapped; everything else (charref/doctype noise) is
 /// intentionally dropped.
 fn drain_errors(m : Machine, tk : @html5.Tokenizer, from : Int) -> Int {
   let errs = tk.get_errors()

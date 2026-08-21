@@ -124,7 +124,7 @@ test "help routing" {
   let gone = done(["help", "lint"])
   assert_eq(gone.exit_code, 1)
   assert_true(gone.err.contains("Unknown command 'lint'"))
-  // JS quirk preserved: `tutuca help -h` appends --help as the target and
+  // `tutuca help -h` appends --help as the target and
   // fails as an unknown command.
   let quirk = done(["help", "-h"])
   assert_eq(quirk.exit_code, 1)

@@ -42,10 +42,6 @@ pub fn Transactor::observe(
 ///|
 /// Deliver one record, stamping the sequence number and deriving `path_keys`
 /// from the already-pinned path.
-///
-/// The four places a record is BUILT used to be two, and the second — the
-/// outgoing-request record — restated the empty-check, the counter bump and
-/// the delivery loop as well as the fields.
 fn Transactor::emit_record(
   self : Transactor,
   kind : ObserveKind,
@@ -87,7 +83,7 @@ fn Transactor::emit(
     return
   }
   // pin field-resolved keys against the root the handler read, so path_keys
-  // carries concrete keys (JS _emitTransaction)
+  // carries concrete keys
   let path = (match t.txn_path {
     Some(p) => p
     None => t.path.to_transaction_path()
@@ -125,7 +121,7 @@ pub fn Transactor::clear_subscriptions(self : Transactor) -> Unit {
 }
 
 ///|
-/// Queue `t` and make it a tracked unit of `parent`'s subtree (JS _link):
+/// Queue `t` and make it a tracked unit of `parent`'s subtree:
 /// tracking happens while the parent's self-unit is still held, so the
 /// parent's counter can't reach zero before the child registers.
 fn Transactor::link(
@@ -145,10 +141,8 @@ fn Transactor::link(
 }
 
 ///|
-/// One queued dispatch. The channels differ in a field or three — the bucket,
-/// the walk it belongs to, a pre-pinned answer path — and used to say so by
-/// writing all fourteen out, once per channel, so a new field meant finding
-/// every one of them.
+/// One queued dispatch. The channels differ in a field or three: the bucket,
+/// the walk it belongs to, a pre-pinned answer path.
 fn Transactor::mk_txn(
   self : Transactor,
   path : @tutuca.DispatchPath,
@@ -193,7 +187,7 @@ pub fn Transactor::push_send(
 }
 
 ///|
-/// Whether transactions remain queued (JS transactor.hasPendingTransactions).
+/// Whether transactions remain queued.
 /// Lets a backend driver time-slice: `settle(max_turns=n)` a bounded batch,
 /// yield to the host, and loop while this is true. The pure layer stays
 /// clock-free — the actual yield (setTimeout on js) lives in the backend.
@@ -287,7 +281,7 @@ fn Transactor::update_root_value(
     None => t.path.to_transaction_path()
   }
   // a resolved-then-deleted target (pinned response path) is a no-op (still
-  // observed with NoHandler, like the JS nullHandler path)
+  // observed with NoHandler)
   guard txn_path.lookup(cur) is Some(leaf) else {
     t.obs_matched = Some(NoHandler)
     t.mark_settled()
@@ -385,7 +379,7 @@ fn Transaction::after_transaction(self : Transaction) -> Unit {
 
 ///|
 /// The ctx handed to a running handler: implements the path package's Ctx
-/// seam over this transaction (JS EventContext).
+/// seam over this transaction.
 priv struct EventContext {
   txn : Transaction
 }
@@ -407,14 +401,14 @@ impl @tutuca.Ctx for EventContext with fn name(self) {
 
 ///|
 // `send` / `bubble` are not implemented: the trait defaults route them to the
-// two below at `path()`, which is exactly what they used to spell out again.
+// two below at `path()`.
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
   let _ = self.txn.transactor.push_send(path, name, args, parent=self.txn)
 }
 
 ///|
 /// The component instance a chain node carries, with its component id — None
-/// for non-component nodes (JS Components.getCompFor returning null).
+/// for non-component nodes.
 fn node_component(node : @tutuca.Value) -> (Int, @tutuca.Value)? {
   match node {
     Obj(o) =>

@@ -1,6 +1,6 @@
-// Port of docs/examples/lint-errors.js — components with INTENTIONAL lint
-// errors for the linter demo (and the port's semantic-lint fixture; see
-// lint_errors_test.mbt). The JS sections whose rules are statically
+// Components with INTENTIONAL lint
+// errors for the linter demo (and the semantic-lint fixture; see
+// lint_errors_test.mbt). Sections whose rules are statically
 // impossible in MoonBit are dropped: ASYNC_HANDLER, UNKNOWN_COMPONENT_SPEC_KEY,
 // COMP_FIELD_BAD_SHAPE, FIELD_NAME_RESERVED_BY_RECORD, SUGGEST_BINDING_MEMBER
 // and the object-shaped LOOKUP_BAD_SHAPE (LookupSpec is typed — only a
@@ -83,10 +83,6 @@ fn lint_demo_comp() -> @component.Component {
           #|
           #|  <!-- X_OP_IGNORES_CHILDREN: <x render> ignores its children -->
           #|  <x render=".child"><p>hi</p></x>
-          #|
-          #|  <!-- DEPRECATED_BARE_X_DIRECTIVE: bare 'show' on an <x> op is the
-          #|       legacy spelling of '@show' -->
-          #|  <ul @each=".items"><x render-it show=".isOpen"></x></ul>
           #|
           #|  <!-- UNKNOWN_X_OP + MAYBE_DROP_AT_PREFIX: @text as the op is unknown;
           #|       hint suggests dropping the @ -->

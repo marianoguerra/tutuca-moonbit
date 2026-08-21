@@ -48,14 +48,14 @@ pub(all) struct Token {
 } derive(Debug, Eq)
 
 ///|
-/// JS onParseIssue kind — only "bad-value" occurs in value.js; other kinds
+/// Parse-issue kind — only "bad-value" occurs here; other kinds
 /// (x-op, x-attr, …) join this enum when their modules are ported.
 pub(all) enum IssueKind {
   BadValue
 } derive(Debug, Eq)
 
 ///|
-/// What was malformed (JS `info.role`)
+/// What was malformed (the `info.role`)
 pub(all) enum IssueRole {
   BadMacroVar // "macro-var": unknown ^name
   /// "config-var": a `$$name` the host bound nothing to. Separate from
@@ -74,7 +74,7 @@ pub(all) enum IssueRole {
 } derive(Debug, Eq)
 
 ///|
-/// A parse issue, collected on the ParseCtx (JS px.onParseIssue callback).
+/// A parse issue, collected on the ParseCtx.
 ///
 /// `span` is where in the parsed string it went wrong. Before this the whole
 /// diagnostic was `{kind, role, value}` — a role and the offending text, with
@@ -90,7 +90,7 @@ pub(all) struct Issue {
 } derive(Debug, Eq)
 
 ///|
-/// Parse context (JS `px`): macro variables in scope plus collected issues
+/// Parse context (`px`): macro variables in scope plus collected issues
 ///
 /// `config_vars` is the HOST's table, and it is separate from `macro_vars` for
 /// the reason the two sigils are separate: a `^name` resolves to the CALLER's

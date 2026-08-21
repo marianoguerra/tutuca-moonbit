@@ -1,4 +1,4 @@
-// Port of src/components/tutuca/instance-inspector.js — the field → value
+// The field → value
 // rows of a live component instance, plus a tabbed explorer over one
 // instance (values / definition).
 //
@@ -7,18 +7,15 @@
 //   descriptor's specs and values are read through the Obj trait, so every
 //   entry point takes the value plus its Component (or a Components registry
 //   via `build_inspector_views`).
-// - the Tests tab is gone: test-inspector.js is not ported (`moon test` is
-//   the runner here; there is no in-app test-report data source).
+// - the Tests tab is gone: `moon test` is
+//   the runner here; there is no in-app test-report data source.
 
 ///|
 /// The pure snapshot of an instance value: its component name plus a
 /// field → value Map in declaration order.
 ///
-/// Read off the INSTANCE. It used to need the `Component` handed in beside the
-/// value, because a value could not name its own fields — which is why every
-/// entry point below still threads one through, and why an instance whose
-/// registry was not at hand could not be shown at all. `comp` is now only a
-/// label for a value that declares nothing (an opaque guest instance).
+/// Read off the INSTANCE. `comp` is only a label for a value that declares
+/// nothing (an opaque guest instance).
 pub fn instance_snapshot(
   v : @tutuca.Value,
   comp? : @component.Component,
@@ -138,7 +135,7 @@ fn Inspector::instance_fields_from(
 }
 
 ///|
-/// JS InstanceInspector.Class.fromData(instance, comp) for a live instance
+/// Snapshot a live instance
 /// value + its descriptor.
 pub fn Inspector::inspect_instance(
   self : Inspector,

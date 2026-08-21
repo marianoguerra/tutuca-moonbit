@@ -2,9 +2,9 @@
 /// Abstract DOM surface the renderer drives. The document is itself a node:
 /// creation methods are only ever invoked on `RenderOpts::document`.
 ///
-/// `set_property` models the JS `try { node[name] = value } catch {}` —
+/// `set_property` models `try { node[name] = value } catch {}` —
 /// returning `false` makes `set_prop` fall through to the attribute path.
-/// `is_same_node` is JS `===`; adapters whose wrapper values are re-created
+/// `is_same_node` is reference equality; adapters whose wrapper values are re-created
 /// per call must compare the underlying node, so the core never uses
 /// `physical_equal` on trait values.
 pub(open) trait DomNode {
@@ -25,7 +25,7 @@ pub(open) trait DomNode {
   fn is_same_node(Self, Self) -> Bool
   fn set_attribute(Self, name : String, value : String) -> Unit
   fn remove_attribute(Self, String) -> Unit
-  fn has_property(Self, String) -> Bool // JS `name in node`
+  fn has_property(Self, String) -> Bool // `name in node`
   fn set_property(Self, name : String, value : AttrValue) -> Bool
   fn set_inner_html(Self, String) -> Unit
   fn get_inner_html(Self) -> String

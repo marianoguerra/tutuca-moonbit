@@ -24,11 +24,9 @@ pub(all) struct GenPlan {
 ///
 /// This is where view checking happens, and the only place it happens: these
 /// rules need nothing but the view text, and the generator is already parsing
-/// every view. The rules that used to need a live component — which names are
-/// fields, which are methods, what is registered in the scope — are not
-/// deferred to a run-time linter any more; the generated types answer them at
-/// compile time, and what the types cannot express is not worth a second,
-/// weaker check.
+/// every view. Which names are fields, which are methods, what is registered
+/// in the scope — the generated types answer them at compile time, and what
+/// the types cannot express is not worth a second, weaker check.
 fn view_diagnostics(
   file : @viewfile.ViewFile,
   fallback : String,

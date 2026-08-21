@@ -1,5 +1,3 @@
-// Port of docs/examples/counter.js.
-//
 // Teaches: a component with no `update` at all. `inc` and `dec` are both bare
 // `@on` handler names, and both are answered in the file's
 // `<script type="tutuca/script">` block, which `gen-views` compiles into

@@ -15,8 +15,7 @@
 // so nothing can collide and none of them needs a sigil. (`$component`, inside
 // a value, earns its own for the opposite reason.)
 //
-// The field map used to sit here bare, which read better for the common case
-// and is what forced the choice: two shapes in one position need telling apart,
+// Two shapes in one position need telling apart,
 // and the ways are a sigil or sniffing the keys against the schema. The second
 // is decidable — every key is already checked against the declared fields — and
 // its failure mode is a component that later declares a field called `value`
@@ -394,9 +393,7 @@ fn json_src(v : Json) -> String {
 
 ///|
 /// These land in generated MoonBit source, so they are MoonBit string
-/// literals like every other — `quote` is the one that spells them. The copy
-/// that used to live here escaped `"`, `\` and `\n` only, so a default
-/// carrying a tab emitted a literal tab into the module.
+/// literals like every other — `quote` is the one that spells them.
 fn json_quote(s : String) -> String {
   quote(s)
 }

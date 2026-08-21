@@ -1,7 +1,7 @@
-// Shared helpers for the memdom test suites (ports of test/dom.js utilities).
+// Shared helpers for the memdom test suites.
 
 ///|
-/// Fresh (container, opts) pair — the JS setupJsdom + createElement("div").
+/// Fresh (container, opts) pair — a document plus a created "div".
 fn new_env() -> (@memdom.MemNode, @vdom.RenderOpts[@memdom.MemNode]) {
   let d = @memdom.document()
   let c = @vdom.DomNode::create_element(d, "DIV", None, None)
@@ -38,7 +38,7 @@ fn rendered(v : @vdom.Vdom) -> @memdom.MemNode {
 }
 
 ///|
-/// The JS renderVNode: build a standalone subtree without a container.
+/// Build a standalone subtree without a container.
 fn to_dom(v : @vdom.Vdom) -> @memdom.MemNode {
   @vdom.to_dom(v, @vdom.RenderOpts::new(@memdom.document()))
 }

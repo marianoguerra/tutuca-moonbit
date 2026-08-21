@@ -2,8 +2,8 @@
 // @tutuca.Value itself (Value::is_truthy / Value::to_display_string).
 
 ///|
-/// Attribute-position value: None means the attribute is omitted (JS drops
-/// null/undefined/false attrs at patch time).
+/// Attribute-position value: None means the attribute is omitted (null,
+/// undefined and false attrs are dropped at patch time).
 fn value_to_attr(v : @tutuca.Value) -> @vdom.AttrValue? {
   match v {
     Null => None

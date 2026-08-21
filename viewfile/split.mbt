@@ -184,7 +184,6 @@ fn dedent(s : String) -> String {
   } else {
     lines.map(l => if l.length() >= common { l[common:].to_owned() } else { l })
   }
-  // Blank lines at either end, e.g. where a lifted <style> used to be.
   while out.length() > 0 && out[0].trim(chars=" \t") == "" {
     out.remove(0) |> ignore
   }

@@ -1,5 +1,4 @@
-// Presentation cleanup for headless/serialized output (JS renderToString's
-// cleanAttrs pass + the meta strip tests do by regex): drop the renderer's
+// Presentation cleanup for headless/serialized output: drop the renderer's
 // §…§ boundary metas and internal data-* stamps, keeping user content only.
 
 ///|

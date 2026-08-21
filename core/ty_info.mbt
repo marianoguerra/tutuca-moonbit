@@ -1,17 +1,8 @@
 // A declared field's TYPE, as data the runtime can walk.
 //
-// This is the schema's type lattice projected into the value world. It used to
-// arrive here flattened into four independent parts of `FieldInfo` — a `ty`
-// string holding the WIT spelling, a `kind` from a parallel ten-case enum, an
-// `elem` string, a `slot` string and a `members` list — which had two costs.
-//
-// A caller could not DESCEND. An inspector holding `ty = "list<card>"` and
-// `elem = "card"` has two strings and no way to ask what a `card` is, so it
-// stops at the first level. And nothing tied the parts together: a hand-written
-// descriptor picked the spelling and the kind separately, so `("rows",
-// "value-omap", FMap)` was accepted while the kind an ordered map actually has
-// is `FOMap`. Here the spelling and the kind are both FUNCTIONS of the type, so
-// they cannot disagree.
+// This is the schema's type lattice projected into the value world. Here the
+// spelling and the kind are both FUNCTIONS of the type, so they cannot
+// disagree.
 //
 // It is a PROJECTION of `@statedef.StateTy`, not the same enum. Two differences,
 // both because generation-time lookups are not available here: a `flags` set
@@ -126,8 +117,7 @@ pub fn TyInfo::members(self : TyInfo) -> Array[String] {
 /// The runtime kind: how a value of this type is REPRESENTED, once the shape
 /// that distinguishes it no longer matters.
 ///
-/// A projection rather than a stored field, which is the point — the kind used
-/// to be written beside the spelling and could contradict it.
+/// A projection rather than a stored field, which is the point.
 pub fn TyInfo::kind(self : TyInfo) -> FieldKind {
   match self {
     TyBool => FBool
@@ -167,8 +157,7 @@ pub fn TyInfo::kind(self : TyInfo) -> FieldKind {
 /// author chooses rather than anything the schema knows.
 ///
 /// This is what an inspector shows in a field's "default" column, reachable
-/// from a bare `Value` — it used to come off `Component.specs`, which a holder
-/// of an instance and no registry could not get to.
+/// from a bare `Value`.
 pub fn TyInfo::zero(self : TyInfo) -> Value {
   match self {
     TyBool => Bool(false)
@@ -180,13 +169,8 @@ pub fn TyInfo::zero(self : TyInfo) -> Value {
     // empty Map because `{"columns": []}` is a VALID table and `{}` is not:
     // the zero of a table should decode, not fail the first check made of it.
     TyTable => Map({ "columns": List([]) })
-    // Both sets start EMPTY, and the closed one used to not.
-    //
-    // A `flags` field began with every member present, because the type
-    // carried its membership and the zero was written from the type — so a
-    // fresh `visibility` was both `Done` and `Active`, which no author has
-    // ever meant. Spelled `Set[Visibility]` the CONTAINER decides the zero and
-    // the enum decides the membership, which is one idea in each place.
+    // Both sets start EMPTY: the CONTAINER decides the zero and the enum
+    // decides the membership, which is one idea in each place.
     TyFlags(_, _) | TySet => Map(Map([]))
     // A variant's zero is its first case, which this cannot name; an option
     // is absent; a slot is filled by the registration scope at make time.

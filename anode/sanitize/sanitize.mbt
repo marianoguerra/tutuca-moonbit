@@ -152,12 +152,11 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
 /// Neither is a thing the sanitizer's vocabulary can talk about, because the
 /// Sanitizer API decides NAMES and both of those live in a value.
 ///
-/// Deciding it needed a CSS parser. There is one now — `anode/sanitize/css`,
-/// which parses a declaration list and re-emits it rather than approving the
-/// author's bytes — so this is no longer the only answer available. It is kept
-/// because it is still the right answer for a host that wants its guests to
-/// style with its own classes and nothing else, and because it is what every
-/// existing caller of this function asked for.
+/// `anode/sanitize/css` parses a declaration list and re-emits it rather than
+/// approving the author's bytes, so this is not the only answer available. It
+/// is kept because it is still the right answer for a host that wants its
+/// guests to style with its own classes and nothing else, and because it is
+/// what every existing caller of this function asked for.
 ///
 /// What a caller probably wants instead is `with_css`, and in particular
 /// `@safecss.CssPolicy::payload()`: level `Computed` so a payload can lay

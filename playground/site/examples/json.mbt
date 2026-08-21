@@ -100,8 +100,7 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
 }
 
 ///|
-/// Move the item currently at `source` to sit just before `target` (JS
-/// `List.moveKeyBeforeKey`).
+/// Move the item currently at `source` to sit just before `target`.
 fn move_before(
   list : Array[@tutuca.Value],
   source : Int,

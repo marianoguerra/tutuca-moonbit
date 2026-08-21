@@ -1,7 +1,4 @@
-// Port of docs/examples/custom-collection.js.
-//
-// Teaches: making `@each` iterate a CUSTOM collection. JS installs a
-// `SEQ_INFO` walker on the prototype; the MoonBit analogue is implementing
+// Teaches: making `@each` iterate a CUSTOM collection: implement
 // `@tutuca.Obj::obj_seq_entries` — the renderer iterates the entries it
 // returns, keyed (`sk` breadcrumbs) so event paths resolve back to entries.
 // `obj_item` resolves the same keys for seq-access reads.

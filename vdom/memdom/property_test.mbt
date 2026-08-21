@@ -1,4 +1,4 @@
-// QuickCheck properties (port of test/vdom-property.test.js):
+// QuickCheck properties:
 //   1. is_equal_to is an equivalence relation; h() trees never contain
 //      Fragment children (normalization invariant)
 //   2. morphing old -> new produces a DOM structurally equal to a fresh

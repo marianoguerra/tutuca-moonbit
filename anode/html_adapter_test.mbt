@@ -1,4 +1,4 @@
-// Risk-gate smoke suite: parse_fragment must reproduce jsdom
+// Risk-gate smoke suite: parse_fragment must reproduce
 // `template.innerHTML` semantics (template-contents insertion mode). If these
 // fail, the fragment strategy has to change before anything is built on it.
 
@@ -81,8 +81,8 @@ test "html tag names are lowercased, attrs keep order" {
 test "pre keeps whitespace verbatim" {
   let (doc, roots) = @anode.parse_fragment("<pre>\n  x\n</pre>")
   assert_eq(roots.length(), 1)
-  // Note: HTML spec drops ONE newline immediately after <pre>; jsdom does the
-  // same, so the port inherits identical behavior either way.
+  // Note: the HTML spec drops ONE newline immediately after <pre>, so the
+  // behavior is identical either way.
   assert_eq(doc.get_text_content(roots[0]), "  x\n")
 }
 

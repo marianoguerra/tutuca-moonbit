@@ -450,8 +450,8 @@ fn callable_fn(g : Gen, name : String) -> String {
 ///|
 /// A `list<value>` built out of already-compiled cells.
 ///
-/// A `pv_push` fold rather than the `tc_args1..4` family, which is what used to
-/// cap a call at four arguments and a `send` at four payload values. The fold
+/// A `pv_push` fold rather than the `tc_args1..4` family, which caps a call at
+/// four arguments and a `send` at four payload values. The fold
 /// has no arity to run out of, and it is the same shape `const_value`'s `List`
 /// arm already builds a literal with. `tc_args1..4` stay in the runtime: they
 /// are what a hand-written escape reaches for, where a fold would be four lines.

@@ -9,9 +9,7 @@
 //
 // It also pins the generated codec. `nested_state_encode`/`_decode` convert
 // each of these shapes to and from `@tutuca.Value` field by field, and the
-// tests below check the round trip against the `derive(ToJson)` bridge the
-// runtime used to fall back to — the two must agree exactly, because that
-// agreement is what lets the bridge be deleted.
+// tests below check the round trip.
 
 ///|
 /// Flip a label's `done` by index, leaving the rest alone.

@@ -73,8 +73,7 @@ fn section_for(name : String) -> String {
 /// Human title + one-line description for a story, keyed by example name.
 /// Carried here (not on the compiled ExampleModule, which tests and the CLI
 /// share) because it is gallery display metadata — the same reason `section_for`
-/// lives here. Values mirror each JS example's `getExamples()` section
-/// title/description (docs/examples/<name>.js). Unmapped names fall back to the
+/// lives here. Unmapped names fall back to the
 /// id as title with no description.
 fn meta_for(name : String) -> (String, String) {
   match name {
@@ -226,7 +225,7 @@ fn meta_for(name : String) -> (String, String) {
 
 ///|
 /// Every compiled example as a Story, in registry order. Title and description
-/// come from `meta_for` (the human metadata from the JS example's getExamples).
+/// come from `meta_for` (the human metadata for the example).
 pub fn stories() -> Array[Story] {
   let out : Array[Story] = []
   for e in @ex.all_examples() {

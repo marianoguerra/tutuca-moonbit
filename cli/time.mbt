@@ -1,6 +1,6 @@
 ///|
-/// Epoch milliseconds -> ISO-8601 UTC with millisecond precision, matching
-/// JS Date.toISOString() for dates the CLI will ever stamp. Civil-from-days
+/// Epoch milliseconds -> ISO-8601 UTC with millisecond precision.
+/// Civil-from-days
 /// per Howard Hinnant's algorithm; inputs are post-1970 so plain integer
 /// division is enough.
 pub fn iso8601_utc(ms : UInt64) -> String {

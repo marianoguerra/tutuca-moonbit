@@ -245,9 +245,8 @@ have no constructor. Name it in the script block, which is where callables live:
 </script>
 ```
 
-The state block declares no behaviour at all — it used to carry `func`, which
-was the one thing that put a callable in a block whose own header says it holds
-data. `for=` names the component the way a `<template id>` does, and is needed
+The state block declares no behaviour at all — only data.
+`for=` names the component the way a `<template id>` does, and is needed
 only in a file that declares more than one.
 
 ## The reading vocabulary

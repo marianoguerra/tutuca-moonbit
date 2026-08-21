@@ -1,5 +1,5 @@
-// Browser event glue (the listener half of JS App.subscribeToEvents +
-// _dispatchEvent): one listener per event name on the app's root node,
+// Browser event glue (listeners + dispatch): one listener per event name on
+// the app's root node,
 // each translating the raw event into a DomEvent and dispatching from its
 // target, plus drag/touch synthesis (a touch on a [draggable] becomes
 // dragstart/dragover/drop once it moves).
@@ -45,7 +45,8 @@ extern "js" fn event_target_ffi(e : @core.Any) -> @core.Any =
   #|(e) => e.target ?? null
 
 ///|
-/// JS getValue(e): an external drop's files, checkbox -> checked, file input ->
+/// Event value extraction: an external drop's files, checkbox -> checked,
+/// file input ->
 /// the first file's metadata (File objects can't be read synchronously, but
 /// name/size/type/lastModified are available immediately), elements with a
 /// value -> value, else CustomEvent detail.
@@ -262,10 +263,10 @@ fn touch_drag_for(app : @app.App[@browser.BrowserNode]) -> @touchdrag.TouchDrag 
 }
 
 ///|
-/// Install one delegated listener per event name any registered view uses
-/// (JS subscribeToEvents) plus the fixed drag/touch set, dispatching into
+/// Install one delegated listener per event name any registered view uses,
+/// plus the fixed drag/touch set, dispatching into
 /// the app from the event target. dragover/drop are preventDefault-ed so
-/// drops are allowed (simplification: JS prevents only over droptargets).
+/// drops are allowed.
 pub fn install(app : @app.App[@browser.BrowserNode]) -> Unit {
   let root_any = app.root_node.as_any()
   let names = app.event_names()
@@ -313,7 +314,7 @@ extern "js" fn inject_css_ffi(
 
 ///|
 /// Compile every registered component's style into one <style id="tutuca-app">
-/// element in the document head (JS App.recompileStyles/injectCss). Idempotent:
+/// element in the document head. Idempotent:
 /// re-running replaces the element's contents.
 pub fn install_styles(
   app : @app.App[@browser.BrowserNode],
@@ -323,9 +324,8 @@ pub fn install_styles(
 }
 
 ///|
-/// Upsert a <style id=…> element in the document head (JS extra.js
-/// injectCss). The margaui half of compileClassesToStyle: hand
-/// `app.scope.comps.collect_classes()` to the class compiler on the JS side,
+/// Upsert a <style id=…> element in the document head. Hand
+/// `app.scope.comps.collect_classes()` to the class compiler,
 /// then inject the resulting CSS here (id "margaui-css" by convention).
 pub fn inject_style(
   doc : @browser.BrowserNode,

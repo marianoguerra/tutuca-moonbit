@@ -173,9 +173,9 @@ pub fn loader_bar_comp(
         notify(Failed(why), ctx)
         Next({ ..s, status: why })
       }
-      // The merged `Receive` now carries this component's own VIEW names as
-      // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the match
+      // The merged `Receive` carries this component's own VIEW names as
+      // well as the schema's, so `Unknown` covers cases this match has
+      // nothing to say about. They are answered by the match
       // beside this one.
       _ => Unhandled
     }

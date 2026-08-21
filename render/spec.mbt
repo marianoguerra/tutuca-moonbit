@@ -14,7 +14,7 @@
 //    — deferred (see Non-goals in render-plan.md).
 
 ///|
-/// The render stack (JS Stack): the current item (fields/methods/handlers
+/// The render stack: the current item (fields/methods/handlers
 /// resolve against it, per frame — instances via the Obj trait, plain maps
 /// as the component-less fallback), one `@name` binds frame per enter(), the
 /// `@push-view` trail, and the dynamic-binding chain published by component
@@ -24,25 +24,25 @@ pub(all) struct RenderStack {
   binds : Map[String, @tutuca.Value]
   parent : RenderStack?
   view_names : Array[String]
-  /// Frame barrier (JS BindFrame.isFrame): a component boundary is a clean
+  /// Frame barrier: a component boundary is a clean
   /// namespace — an `@name` lookup that misses here STOPS instead of walking
   /// to the parent frame. Scopes (@each items, @enrich-with) are transparent.
   is_frame : Bool
   /// Component registry; None = component-less mode.
   comps : @component.Components?
-  /// Provide frames (JS dynBinds), consed by component-frame enters.
+  /// Provide frames, consed by component-frame enters.
   dyn_binds : @component.DynBinds?
   /// The DOM event being dispatched, when this stack evaluates handler args
-  /// (JS: the InputEvent as the stack's ctx). Bare names that miss the binds
+  /// (the InputEvent as the stack's ctx). Bare names that miss the binds
   /// chain resolve against it (value/key/isCtrl/…).
   event : DomEvent?
 }
 
 ///|
-/// A dispatched DOM event, backend-agnostically extracted (JS InputEvent's
-/// view of the raw event): `value` is JS getValue(e) — checkbox→Bool,
+/// A dispatched DOM event, backend-agnostically extracted:
+/// `value` — checkbox→Bool,
 /// CustomEvent→detail, else target.value — captured at construction by the
-/// backend glue. `ctrl_or_cmd` is JS isCtrl/isCmd: (mac && metaKey) ||
+/// backend glue. `ctrl_or_cmd` is (mac && metaKey) ||
 /// ctrlKey. `drag_info` carries the active DragInfo Obj while a drag is in
 /// flight (the `dragInfo` handler arg); `target`/`event` are not exposed.
 pub(all) struct DomEvent {
@@ -139,7 +139,7 @@ declare pub impl @tutuca.Stack for RenderStack
 ///|
 /// A resolved render site: the view's root node plus the component identity
 /// baked into the §Comp§ boundary meta (cid) and the effective view name
-/// (vid) — what JS _rValComp reads off the matched Component/View pair.
+/// (vid) — the effective view name of the matched Component/View pair.
 pub(all) struct ResolvedView {
   node : @anode.ANode
   cid : Int
@@ -149,27 +149,22 @@ pub(all) struct ResolvedView {
 ///|
 /// `<x render>`/`<x render-it>`'s component and view resolution. Receives
 /// the candidate view names in priority order (the `as=` selector alone, or
-/// the `@push-view` trail innermost-first — JS lookupBestView) and the value
+/// the `@push-view` trail innermost-first) and the value
 /// being rendered; resolvers fall back to "main" and return None to suppress
-/// the site (JS renderIt returns null when no component matches).
+/// the site (a hidden component matches nothing).
 /// Implemented by @component.Components in production.
 pub(open) trait ViewResolver {
   fn resolve_view(Self, Array[String], @tutuca.Value) -> ResolvedView?
 }
 
 ///|
-/// Per-render context (JS Renderer instance state, minus comps).
+/// Per-render context.
 ///
-/// ONE memo, and it is optional. The port used to carry three (component
-/// render sites, constant subtrees, constant attribute maps), and #8 removed
-/// all of them: the other two reached into the AST and made `viewgen` parse
-/// each view two different ways, which is a lot of structure to hold still.
-/// They have not come back. This one is a field, and `None` renders exactly as
-/// the uncached port did.
+/// ONE memo, and it is optional. This one is a field, and `None` renders
+/// exactly as the uncached port did.
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
-  /// Component render-site cache (JS _rValComp DomCache). None = uncached (the
-  /// JS NullDomCache); the App supplies one persisted across passes.
+  /// Component render-site cache. None = uncached; the App supplies one persisted across passes.
   render_cache : RenderCache?
   /// The sanitizing filter, applied to each element as it is CONSTRUCTED.
   ///
@@ -219,8 +214,7 @@ declare pub fn Meta::to_comment_text(self : Meta) -> String
 declare pub fn Meta::parse(text : String) -> Meta?
 
 ///|
-/// Render a value as the app root component (JS renderRoot → _rValComp with
-/// no render-site node): resolve its view, emit the root §Comp§ boundary
+/// Render a value as the app root component: resolve its view, emit the root §Comp§ boundary
 /// meta, render the body. None when unresolved or the body renders nothing.
 ///
 /// `view~` names which view to render the root under; "" is the ordinary
@@ -233,7 +227,7 @@ declare pub fn render_root(
 ) -> @vdom.Vdom?
 
 ///|
-/// Render a parsed node. None = suppressed subtree (JS null: a hidden @show/
+/// Render a parsed node. None = suppressed subtree (a hidden @show/
 /// @hide or an unresolvable render site inside a fragment simply drops out).
 declare pub fn render(
   node : @anode.ANode,
@@ -243,7 +237,7 @@ declare pub fn render(
 
 ///|
 /// A copy of a rendered tree without §…§ metas or internal data-* stamps
-/// (JS renderToString's cleanup) — for headless/snapshot output. None when
+/// — for headless/snapshot output. None when
 /// the node itself is a meta comment.
 declare pub fn clean_vdom(v : @vdom.Vdom) -> @vdom.Vdom?
 
@@ -264,22 +258,21 @@ declare pub fn is_internal_attr(name : String) -> Bool
 declare pub fn is_meta_comment(text : String) -> Bool
 
 // ---------------------------------------------------------------------------
-// Event-path reconstruction (JS Path.fromNodeAndEventName): walk up from an
+// Event-path reconstruction: walk up from an
 // event target reading §…§ metas and data-* stamps, crossing component
 // boundaries, resolving one path step per crossed component. Dynamic-var
 // (`*dyn`) render targets produce Dyn markers, which the dispatch path
 // teleports to the producing component (DispatchPath::to_transaction_path).
 
 ///|
-/// Registry seam for reconstruction (JS Components.getComponentForId +
-/// comp.getNodeForId/getEventForId): resolve a compiled view's parse node /
+/// Registry seam for reconstruction: resolve a compiled view's parse node /
 /// event registrations by (cid, vid, nid|eid). Defaults answer None so test
 /// mocks implement only what they use.
 pub(open) trait Boundaries {
   fn node_for(Self, cid : Int, vid : String, nid : Int) -> @anode.ANode? = _
   fn events_for(Self, cid : Int, vid : String, eid : Int) -> @anode.NodeEvents? = _
   /// Which component produces `*name` for component `cid`, plus the
-  /// producer's addressing steps (anode.js resolveDynProducer). Default None
+  /// producer's addressing steps. Default None
   /// keeps mocks and component-less registries working — dynamic render
   /// targets then simply contribute no step.
   fn dyn_producer(Self, cid : Int, name : String) -> @component.DynProducer? = _
@@ -304,15 +297,15 @@ impl Boundaries with fn dyn_producer(_self, _cid, _name) {
 /// A reconstructed event: the dispatch path (one Plain step per crossed
 /// component, frame-only steps included for stack rebuild) and the handlers
 /// registered for the event name on the innermost element that carried
-/// data-eid. None = no handler on the leaf component (JS NO_EVENT_INFO).
+/// data-eid. None = no handler on the leaf component.
 pub(all) struct EventDispatch {
   path : @tutuca.DispatchPath
   handlers : Array[@anode.NodeEvent]
 }
 
 ///|
-/// Walk up from `node` to `root_node` reconstructing the event path (JS
-/// Path.fromNodeAndEventName). `stop_on_no_event=false` keeps walking even
+/// Walk up from `node` to `root_node` reconstructing the event path.
+/// `stop_on_no_event=false` keeps walking even
 /// when the leaf component has no handler (used by two-way binds).
 declare pub fn[N : @vdom.DomWalk] from_node_and_event_name(
   node : N,
@@ -324,8 +317,8 @@ declare pub fn[N : @vdom.DomWalk] from_node_and_event_name(
 ) -> EventDispatch?
 
 ///|
-/// Rebuild the evaluation stack a rendered path described (JS
-/// Path.buildStack): walk the steps entering the EXACT same frames the
+/// Rebuild the evaluation stack a rendered path described:
+/// walk the steps entering the EXACT same frames the
 /// renderer pushed — one Step kind per render context (component steps are
 /// barriers; Bind/Scope/EachBind replay transparent scopes with lazily
 /// evaluated binds; EachRenderItStep pushes the item scope then the
@@ -336,5 +329,5 @@ declare pub fn build_stack(
   stack : RenderStack,
 ) -> RenderStack?
 
-// NOTE: JS truthiness and `${v}` display moved to the value layer as
+// NOTE: truthiness and `${v}` display moved to the value layer as
 // @tutuca.Value::is_truthy / @tutuca.Value::to_display_string.

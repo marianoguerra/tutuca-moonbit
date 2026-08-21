@@ -1,4 +1,4 @@
-// Observer tests (ports of the transactor.test.js observe section): one
+// Observer tests: one
 // normalized record per handler invocation, pinned path keys, matched
 // classification, bubble-chain visibility, request records, unsubscribe.
 

@@ -1,9 +1,9 @@
-// ANode method surface: the match-based port of the BaseNode class
-// hierarchy's virtual dispatch (src/anode.js). See spec.mbt for contracts.
+// ANode method surface: the match-based equivalent of the BaseNode class
+// hierarchy's virtual dispatch. See spec.mbt for contracts.
 
 ///|
-/// Template whitespace (the JS source's explicit ` \t\n\r` set — narrower
-/// than the value language's JS-\s set in core and the WHATWG tokenizer set
+/// Template whitespace (the explicit ` \t\n\r` set — narrower
+/// than the value language's \s set in core and the WHATWG tokenizer set
 /// in lint, both deliberate).
 fn is_tpl_space(c : Char) -> Bool {
   c is (' ' | '\t' | '\n' | '\r')
@@ -22,7 +22,6 @@ fn is_whitespace_str(s : String) -> Bool {
 ///|
 pub fn ANode::is_whitespace(self : ANode) -> Bool {
   match self {
-    // Comment inherits TextNode's implementation in JS.
     Text(d) | Comment(d) => is_whitespace_str(d.val)
     _ => false
   }
@@ -103,7 +102,7 @@ fn maybe_fragment(childs : Array[ANode]) -> ANode {
 
 ///|
 /// Placeholder used while constructing wrapper nodes before wrap_node runs
-/// (JS constructs wrappers with node=null and assigns right after).
+/// (wrappers are built with node=null and assigned right after).
 fn empty_node() -> ANode {
   Fragment({ childs: [] })
 }

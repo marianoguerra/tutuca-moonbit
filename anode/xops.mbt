@@ -1,5 +1,4 @@
-// <x> special ops (src/anode.js parseXOp / processXExtras / parseRenderEach /
-// the X_OPS table).
+// <x> special ops.
 
 ///|
 priv enum XOp {
@@ -27,14 +26,11 @@ fn XOp::from_name(name : String) -> XOp? {
 }
 
 ///|
-/// Attr names the op handles itself (skipped by process_x_extras). The bare
-/// when/loop-with spellings on render-each are TEMPORARY (deprecated, see
-/// BareXDirective).
+/// Attr names the op handles itself (skipped by process_x_extras).
 fn XOp::consumed(self : XOp, name : String) -> Bool {
   match self {
     OpRender | OpRenderIt => name == "as"
-    OpRenderEach =>
-      name is ("as" | "when" | "loop-with" | "@when" | "@loop-with")
+    OpRenderEach => name is ("as" | "@when" | "@loop-with")
     _ => false
   }
 }
@@ -50,7 +46,7 @@ fn XOp::ignores_children(self : XOp) -> Bool {
 }
 
 ///|
-/// Ops usable as wrapper attrs on other <x> ops (JS X_OPS[..].wrapper).
+/// Ops usable as wrapper attrs on other <x> ops (the X_OPS[..].wrapper set).
 fn xop_wrapper_kind(name : String) -> WrapperKind? {
   match name {
     "show" => Some(Show)
@@ -88,7 +84,7 @@ fn parse_x_op_val(
 ///|
 /// `as=` view selector: a dynamic text value like `@push-view`, but a bare
 /// identifier (which parses as a NameVal outside the text grammar and so
-/// yields None) falls back to a literal const view name for backward compat.
+/// yields None) is a literal const view name.
 fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Val {
   px
   .pval(s, @tscript.parse_text)
@@ -165,28 +161,20 @@ fn process_x_extras(
     if op.consumed(a_name) {
       continue
     }
-    // `@show`/`@hide` directives — and their legacy bare spelling — wrap the
-    // op's output node; the bare form gets a deprecation nudge.
+    // `@show`/`@hide` directives wrap the op's output node; a bare spelling
+    // is an unknown attribute.
     let at_prefixed = a_name is ['@', ..]
     let base_name = if at_prefixed { a_name[1:].to_owned() } else { a_name }
-    let wrapper = if op.wrappable() {
+    let wrapper = if at_prefixed && op.wrappable() {
       xop_wrapper_kind(base_name)
     } else {
       None
     }
     match wrapper {
       Some(kind) => {
-        if !at_prefixed {
-          px.handler.on_deprecated_syntax(
-            BareXDirective(op=op_name, name=base_name),
-            px.current_tag,
-          )
-        }
         // Surface a bad-value issue when the wrapper's bool fails to parse, so
         // the wrapper being dropped below (add_node_if → None) is not silent —
         // matching the regular directive path (AttrParser::directive_value).
-        // JS drops these silently (anode.js:274 parseBool doesn't report, the
-        // TODO at anode.js:317 acknowledges it); the port surfaces it instead.
         let wrapper_val = px.pval(a_value, @tscript.parse_bool)
         if wrapper_val is None {
           px.issue(BadValue(role=Directive(name=base_name), value=a_value))
@@ -196,8 +184,8 @@ fn process_x_extras(
       None => px.issue(UnknownXAttr(op=op_name, name=a_name, value=a_value))
     }
   }
-  // Divergence: JS would wrap even a null op node (rendering later crashes);
-  // here a failed op stays None after its extras reported their issues.
+  // Divergence: a failed op stays None after its extras reported their
+  // issues, rather than being wrapped (which would crash later when rendered).
   guard node is Some(inner) else { return None }
   let mut result = inner
   for i = wrappers.length() - 1; i >= 0; i = i - 1 {
@@ -218,7 +206,7 @@ fn process_x_extras(
 
 ///|
 /// `<x render-each="seq">` is sugar for `@each="seq"` wrapping `<x render-it>`
-/// so there is exactly one iteration mechanism (JS parseRenderEach).
+/// so there is exactly one iteration mechanism.
 /// `@when`/`@loop-with` are read through the directive parser and lifted onto
 /// the EachNode's iter_info.
 fn parse_render_each(
@@ -238,24 +226,8 @@ fn parse_render_each(
   // an `@`-prefixed or bare render-each directive attribute; the bare form
   // works but gets a deprecation nudge
   fn directive_attr(name : String, parse : (String) -> Unit) {
-    let pair : (String, String)? = match get_named_item(attrs, "@" + name) {
-      Some(v) => Some(("@" + name, v))
-      None =>
-        match get_named_item(attrs, name) {
-          Some(v) => Some((name, v))
-          None => None
-        }
-    }
-    match pair {
-      Some((a_name, a_value)) => {
-        if !(a_name is ['@', ..]) {
-          px.handler.on_deprecated_syntax(
-            BareXDirective(op="render-each", name~),
-            px.current_tag,
-          )
-        }
-        parse(a_value)
-      }
+    match get_named_item(attrs, "@" + name) {
+      Some(a_value) => parse(a_value)
       None => ()
     }
   }

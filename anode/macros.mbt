@@ -1,4 +1,4 @@
-// Macro expansion (src/anode.js MacroNode.compile / Macro).
+// Macro expansion.
 
 ///|
 pub fn Macro::expand(self : Macro, px : ParseContext) -> ANode {

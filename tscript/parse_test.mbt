@@ -1,7 +1,7 @@
-// Port of the parsing suites from tutuca test/value.test.js:
+// Parsing suites:
 // string templates, kind-group acceptance/rejection, predicates, $ vs .,
-// parse_field, @name.member, and handler parsing (EventHandler.parse tests
-// port to parse_input_handler — the handler+args shape is identical).
+// parse_field, @name.member, and handler parsing (through
+// parse_input_handler — the handler+args shape is identical).
 
 ///|
 test "string template with interpolation" {
@@ -199,8 +199,7 @@ test "unary predicates parse to a one-argument application" {
 
 ///|
 test "the builtin vocabulary is a table a caller can enumerate" {
-  // The five used to be an enum nothing outside could add to. They are now
-  // rows, and the row is what carries the arity the parser checks against.
+  // The row is what carries the arity the parser checks against.
   assert_eq(@tutuca.builtin_names(), [
     "empty?", "equals?", "falsy?", "null?", "truthy?",
   ])
@@ -459,8 +458,8 @@ test "member reads are not addressable: no path item, no path-bearing slots" {
 
 ///|
 test "handler arg accepts a quoted literal with spaces" {
-  // JS: EventHandler.parse("showView 'detail mode'") — ported to
-  // parse_input_handler (EventHandler lives in attribute.js, out of scope).
+  // The handler+args case, driven through
+  // parse_input_handler.
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("showView 'detail mode'", ctx) is Some(h)
   assert_true(h.handler is HandlerName(name="showView", ns=Receive))

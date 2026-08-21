@@ -1,5 +1,5 @@
-// Port of the <x> op suites from tutuca test/anode.test.js and the node-id
-// registration checks from test/anode-core.test.js.
+// <x> op suites and node-id
+// registration checks.
 
 ///|
 fn xparse(html : String) -> (@anode.ANode?, @anode.ParseContext) {
@@ -17,7 +17,7 @@ test "render-each: no when/loop-with by default" {
 
 ///|
 test "render-each with when" {
-  guard! xparse("<x render-each=\".items\" when=\"$whenH\"></x>").0
+  guard! xparse("<x render-each=\".items\" @when=\"$whenH\"></x>").0
     is Some(Each(e))
   assert_true(e.iter_info.when_val is Some(Method("whenH")))
   assert_true(e.iter_info.loop_with_val is None)
@@ -26,7 +26,7 @@ test "render-each with when" {
 ///|
 test "render-each with when and loop-with" {
   guard! xparse(
-      "<x render-each=\".items\" when=\"$whenH\" loop-with=\"$lwith\"></x>",
+      "<x render-each=\".items\" @when=\"$whenH\" @loop-with=\"$lwith\"></x>",
     ).0
     is Some(Each(e))
   assert_true(e.iter_info.when_val is Some(Method("whenH")))
@@ -48,31 +48,31 @@ test "x text parse error yields null" {
 
 ///|
 test "x render-it with show wraps in Show" {
-  guard! xparse("<x render-it show=\".isOpen\"></x>").0 is Some(Show(w))
+  guard! xparse("<x render-it @show=\".isOpen\"></x>").0 is Some(Show(w))
   assert_true(w.node is RenderIt(_))
 }
 
 ///|
 test "x render-it with hide wraps in Hide" {
-  guard! xparse("<x render-it hide=\".closed\"></x>").0 is Some(Hide(w))
+  guard! xparse("<x render-it @hide=\".closed\"></x>").0 is Some(Hide(w))
   assert_true(w.node is RenderIt(_))
 }
 
 ///|
 test "x text with show wraps in Show" {
-  guard! xparse("<x text=\"'hi'\" show=\".isOpen\"></x>").0 is Some(Show(w))
+  guard! xparse("<x text=\"'hi'\" @show=\".isOpen\"></x>").0 is Some(Show(w))
   assert_true(w.node is RenderText(_))
 }
 
 ///|
 test "x render with show wraps in Show" {
-  guard! xparse("<x render=\".v\" show=\".isOpen\"></x>").0 is Some(Show(_))
+  guard! xparse("<x render=\".v\" @show=\".isOpen\"></x>").0 is Some(Show(_))
 }
 
 ///|
 test "x render-each with show keeps when/loop-with" {
   guard! xparse(
-      "<x render-each=\".items\" when=\"$whenH\" loop-with=\"$lwith\" show=\".isOpen\"></x>",
+      "<x render-each=\".items\" @when=\"$whenH\" @loop-with=\"$lwith\" @show=\".isOpen\"></x>",
     ).0
     is Some(Show(w))
   guard! w.node is Each(e)
@@ -83,7 +83,8 @@ test "x render-each with show keeps when/loop-with" {
 
 ///|
 test "x render-it show then hide: first attr outermost" {
-  guard! xparse("<x render-it show=\".a\" hide=\".b\"></x>").0 is Some(Show(s))
+  guard! xparse("<x render-it @show=\".a\" @hide=\".b\"></x>").0
+    is Some(Show(s))
   guard! s.node is Hide(h)
   assert_true(h.node is RenderIt(_))
 }
@@ -93,7 +94,7 @@ test "@text puts a RenderText first child" {
   guard! xparse("<span @text=\"'hi'\"></span>").0 is Some(Dom(d))
   guard! d.childs[0] is RenderText(t)
   assert_true(t.val is Const(lit=LStr("hi"), ..))
-  // The @text child is unregistered (JS constructs it with a null nodeId).
+  // The @text child is unregistered (constructed with a null nodeId).
   assert_true(t.node_id is None)
 }
 
@@ -142,9 +143,8 @@ test "unknown x op becomes an error comment and reports" {
 
 ///|
 test "x op with unparseable @show reports and drops the wrapper" {
-  // `@show`/`@hide` used as wrapper attrs on an <x> op previously dropped the
-  // wrapper silently when the bool failed to parse (xops.mbt). Now it surfaces
-  // a BadValue(Directive) like the regular directive path, and the inner op
+  // An unparseable `@show`/`@hide` wrapper attr on an <x> op surfaces a
+  // BadValue(Directive) like the regular directive path, and the inner op
   // node survives unwrapped.
   let issues : Array[@anode.ParseIssue] = []
   let (root, _) = collecting_parse("<x text=\"'hi'\" @show=\"%a\"></x>", issues)

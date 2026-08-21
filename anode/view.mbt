@@ -1,4 +1,4 @@
-// View (src/anode.js View, parse side only — render is out of scope).
+// View parsing (parse side only — render is out of scope).
 
 ///|
 /// A view from SOURCE, parsed when `compile` runs.

@@ -1,4 +1,4 @@
-// ParseContext implementation (src/anode.js ParseContext). Subclass hooks are
+// ParseContext implementation. Subclass hooks are
 // the ParseHandler trait (spec.mbt); DOM plumbing (document/Text/Comment) is
 // replaced by html_adapter.mbt.
 
@@ -83,8 +83,8 @@ fn ParseContext::value_ctx(self : ParseContext) -> @tscript.ParseCtx {
 
 ///|
 /// Forward value-layer parse issues collected in val_ctx to the handler
-/// (the JS value parsers call px.onParseIssue directly; the MoonBit value
-/// layer records into ParseCtx.issues instead).
+/// (the MoonBit value layer records into ParseCtx.issues instead of calling
+/// through directly).
 fn ParseContext::drain_value_issues(self : ParseContext) -> Unit {
   guard self.val_ctx is Some(ctx) else { return }
   for issue in ctx.issues {
@@ -115,7 +115,7 @@ fn ParseContext::issue(self : ParseContext, issue : ParseIssue) -> Unit {
 
 ///|
 /// Register a node built from a successfully parsed value; None val means the
-/// parse failed and no node is created (JS addNodeIf).
+/// parse failed and no node is created.
 fn ParseContext::add_node_if(
   self : ParseContext,
   val : @tutuca.Val?,
@@ -132,7 +132,7 @@ fn ParseContext::add_node_if(
 }
 
 ///|
-/// Register a node that carries no value (JS addNode; e.g. RenderItNode).
+/// Register a node that carries no value (e.g. RenderItNode).
 fn ParseContext::add_node(self : ParseContext, make : (Int) -> ANode) -> ANode {
   let node = make(self.nodes.length())
   self.nodes.push(node)
@@ -147,7 +147,7 @@ fn ParseContext::new_macro_node(
   childs : Array[ANode],
 ) -> ANode {
   // The default slot's array is shared with the Fragment BEFORE filling, so
-  // late pushes are visible through slots["_"] (matches the JS aliasing).
+  // late pushes are visible through slots["_"].
   let any_slot : Array[ANode] = []
   let slots : Map[String, ANode] = { "_": Fragment({ childs: any_slot }) }
   for child in childs {

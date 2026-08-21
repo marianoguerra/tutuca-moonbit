@@ -149,14 +149,10 @@ pub fn StateDef::field_of(
 }
 
 ///|
-/// True when this field lives in the state STRUCT — which is now every field.
+/// True when this field lives in the state STRUCT — which is every field.
 ///
-/// A child-component slot used to be excluded: the runtime made it through the
-/// registration scope and kept it in a side map, so `update` and `compute` could
-/// not see it at all. That is why a component wanting to READ its child wrote
-/// the field as `any` instead, giving up the slot's declared component to get a
-/// struct field. A slot is a `@tutuca.Value` field like any other now, seeded
-/// with `Null` and filled at make time, so the two spellings stop competing.
+/// A slot is a `@tutuca.Value` field like any other, seeded with `Null` and
+/// filled at make time.
 pub fn StateTy::in_struct(_self : StateTy) -> Bool {
   true
 }
@@ -165,8 +161,8 @@ pub fn StateTy::in_struct(_self : StateTy) -> Bool {
 pub fn StateTy::is_boolish(self : StateTy) -> Bool {
   // Everything has a truthiness at runtime; this asks whether writing it in
   // a boolean position can ever decide anything. `Value::is_truthy` answers
-  // `true` for List, Map and Obj unconditionally (JS objects are always
-  // truthy), so a container in an `@show` is a test that cannot fail — almost
+  // `true` for List, Map and Obj unconditionally, so a container in an
+  // `@show` is a test that cannot fail — almost
   // always a forgotten `.length` or field read.
   //
   // A string, a number and an enum are NOT in that set even though they are
@@ -276,8 +272,7 @@ pub fn nearest(name : String, names : Array[String]) -> String? {
 
 ///|
 /// Damerau-Levenshtein: adjacent transposition counts as ONE edit, matching
-/// `lint`'s. Plain Levenshtein scores a swap as two, which is why `.lenght`
-/// used to fall outside the limit and suggest nothing — and a swap is the
+/// `lint`'s. Plain Levenshtein scores a swap as two, and a swap is the
 /// typo people actually make.
 fn edit_distance(a : String, b : String) -> Int {
   let (x, y) = (a.to_array(), b.to_array())

@@ -1,11 +1,10 @@
-// Port of docs/examples/request-example.js — async requests.
+// Async requests.
 //
-// TWO PORT NOTES.
+// TWO NOTES.
 //
 // 1. Lifecycle. Tutuca has NO lifecycle: nothing in the framework calls
-//    `receive.init`. The host dispatches it — JS does `app.start();
-//    app.sendAtRoot("init", [])`, and this port adds the same hook,
-//    `App::send_at_root` (app/loop.mbt). `init` is an ordinary receive handler.
+//    `receive.init`. The host dispatches it through the `App::send_at_root`
+//    hook (app/loop.mbt). `init` is an ordinary receive handler.
 //
 // 2. Intents on the `lex` leg are CALLBACK-style here, not async/await. An
 //    IntentFn is `(call, answer) -> Unit`; it calls `answer(Ok(v))`,

@@ -35,7 +35,7 @@ pub impl @transactor.Intents for ScopeIntents with fn intents_for(
 }
 
 ///|
-/// Event-modifier gating (JS compileModifiers, anode.js:809): each modifier
+/// Event-modifier gating: each modifier
 /// is a predicate on the event; a failing one makes the handler a no-op.
 /// Only keydown and click define modifiers; unknown pairs pass (identity).
 fn modifiers_pass(
@@ -61,7 +61,7 @@ fn modifiers_pass(
 }
 
 ///|
-/// Event dispatch (the JS App._dispatchEvent core): reconstruct the path,
+/// Event dispatch: reconstruct the path,
 /// gate each matched handler on its modifiers, evaluate its parsed args
 /// against the rebuilt stack CARRYING the event (so `value`/`key`/`isCtrl`
 /// resolve), push through the Input channel, and drain. Returns false when

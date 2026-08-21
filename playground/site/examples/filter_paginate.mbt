@@ -1,4 +1,4 @@
-// Port of docs/examples/filter-paginate.js — THE richest example: three takes
+// The richest example: three takes
 // on the same feature (filter a list, show one page of the matches), trading
 // simplicity for how many times the list is scanned per render. All three
 // return `keys` (original indices) from @loop-with, so @key keeps each row's

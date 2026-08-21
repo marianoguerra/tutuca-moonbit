@@ -1,4 +1,4 @@
-// Example-based tests over Value trees, ported from test/path.test.js.
+// Example-based tests over Value trees.
 
 ///|
 fn num(n : Double) -> @core.Value {
@@ -17,7 +17,7 @@ fn vmap(m : Map[String, @core.Value]) -> @core.Value {
 
 ///|
 /// The compact projection of a plain path, through the ONE compaction
-/// production uses. `Path` had a `compact` of its own, for JS parity; nothing
+/// production uses. `Path` itself carries no `compact` of its own; nothing
 /// but these tests called it, and a rule with two implementations and one
 /// caller is a rule with somewhere to drift to.
 fn compacted(p : @core.Path) -> @core.Path {
@@ -25,7 +25,7 @@ fn compacted(p : @core.Path) -> @core.Path {
 }
 
 ///|
-/// The Value a path resolves to, Null when unresolvable (JS lookup dval).
+/// The Value a path resolves to, Null when unresolvable (lookup dval).
 fn resolved(p : @core.Path, root : @core.Value) -> @core.Value {
   match p.lookup(root) {
     Some(n) => n

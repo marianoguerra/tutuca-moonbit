@@ -138,10 +138,6 @@ pub(all) enum BadValueRole {
   ValueIssue(@tscript.IssueRole)
 } derive(Eq, @debug.Debug)
 
-pub(all) enum DeprecatedSyntax {
-  BareXDirective(op~ : String, name~ : String)
-} derive(Eq, @debug.Debug)
-
 pub(all) struct DomData {
   tag : String
   attrs : Attrs
@@ -311,6 +307,5 @@ pub(open) trait MacroScope {
 
 pub(open) trait ParseHandler {
   fn on_parse_issue(Self, ParseIssue, String?) -> Unit = _
-  fn on_deprecated_syntax(Self, DeprecatedSyntax, String?) -> Unit = _
   fn on_attributes(Self, AttrParseResult, Bool, String) -> Unit = _
 }

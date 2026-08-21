@@ -69,7 +69,7 @@ pub(all) struct VElem {
 } derive(Eq, Debug)
 
 ///|
-/// DOM nodeType parity with the JS classes: Element 1, Text 3, Comment 8,
+/// DOM nodeType parity: Element 1, Text 3, Comment 8,
 /// DocumentFragment 11.
 pub fn Vdom::node_type(self : Vdom) -> Int {
   match self {
@@ -81,7 +81,7 @@ pub fn Vdom::node_type(self : Vdom) -> Int {
 }
 
 ///|
-/// The reconciliation key: only element nodes carry one (JS `getKey`).
+/// The reconciliation key: only element nodes carry one.
 fn Vdom::key(self : Vdom) -> String? {
   match self {
     Node(el) => el.key
@@ -90,16 +90,15 @@ fn Vdom::key(self : Vdom) -> String? {
 }
 
 ///|
-/// Same tag, namespace and key — morphing may patch in place (JS
-/// `isSameKind`).
+/// Same tag, namespace and key — morphing may patch in place.
 fn VElem::is_same_kind(self : VElem, other : VElem) -> Bool {
   self.tag == other.tag && self.ns == other.ns && self.key == other.key
 }
 
 ///|
-/// Structural equality, identical to the JS `isEqualTo` contract: attrs
+/// Structural equality: attrs
 /// compare by content (order-insensitive), children recursively. Alias for
-/// `==`; kept for API parity with the JS source.
+/// `==`; kept for API parity.
 pub fn Vdom::is_equal_to(self : Vdom, other : Vdom) -> Bool {
   // physical_equal short-circuits a shared subtree in O(1) before the deep
   // compare — the same fast path diff_props uses on attr maps. Nothing in the

@@ -1,9 +1,9 @@
-// Ports of the four macro tutorial examples:
+// The four macro tutorial examples:
 //
-//   docs/examples/macro-static.js      — a macro with no parameters
-//   docs/examples/macro-params.js      — ^params, static vs :dynamic passing
-//   docs/examples/macro-slots.js       — <x:slot>, the default slot
-//   docs/examples/macro-named-slots.js — named slots
+//   a macro with no parameters
+//   ^params, static vs :dynamic passing
+//   <x:slot>, the default slot
+//   named slots
 //
 // A macro is pure template expansion: no state, no lifecycle, no handlers of
 // its own. `@on.click="inc"` inside a macro calls `inc` on the COMPONENT the

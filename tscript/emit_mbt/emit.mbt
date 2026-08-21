@@ -1511,9 +1511,7 @@ fn E::as_value(self : E, e : @tscript.Expr) -> String raise NoWay {
 ///|
 fn E::value_of(self : E, src : String, ty : @statedef.StateTy) -> String {
   // The schema's own projection, which the generated codec is written from
-  // too. A set, a list of records and a tuple all need real conversion, and
-  // this used to pass them through as if they were already Values — which
-  // compiled for the four scalars and for nothing else.
+  // too. A set, a list of records and a tuple all need real conversion.
   let e = self.def.to_value_src(ty, src)
   // Annotated for the scalars, whose constructors are ambiguous in an
   // argument position; the compound forms carry their own annotation.

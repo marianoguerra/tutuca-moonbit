@@ -1,5 +1,4 @@
-// @loop-with plumbing (JS renderer.js makeLoopCtx / unpackLoopResult /
-// normalizeRange): the handler receives (seq, loopCtx) with the component as
+// @loop-with plumbing: the handler receives (seq, loopCtx) with the component as
 // `this` and returns { iterData?, start?, end?, keys? } — iterData flows to
 // @when/@enrich-with, start/end slice the iteration, an explicit keys list
 // takes over ordering entirely (skipping @when).
@@ -8,9 +7,7 @@
 /// The plan for one `@loop-with` loop: the handler is called with
 /// `(seq, loopCtx)` and the component as `this`, and its return decodes
 /// through `@component.LoopWith` — the ONE place that encoding is written
-/// (see component/loop_codec.mbt). The renderer used to keep a `LoopPlan`
-/// of its own here, which was `LoopWith` again, filled by a decoder that had
-/// to guess the same four key names the encoder chose.
+/// (see component/loop_codec.mbt).
 fn loop_plan(
   stack : RenderStack,
   seq : @tutuca.Value,
@@ -38,7 +35,7 @@ fn loop_plan(
 
 ///|
 /// The iterData an @enrich-with sees — SHARED by render_each and the stack
-/// rebuild's each_binds so the two stay mirrored (JS IterInfo.enrichBinds).
+/// rebuild's each_binds so the two stay mirrored.
 fn loop_iter_data(
   stack : RenderStack,
   seq : @tutuca.Value,
@@ -53,7 +50,7 @@ fn loop_iter_data(
 }
 
 ///|
-/// JS Array.slice index semantics: negatives count from the end, clamped.
+/// Array.slice index semantics: negatives count from the end, clamped.
 fn normalize_range(start : Int?, end : Int?, size : Int) -> (Int, Int) {
   fn norm(i : Int) -> Int {
     if i < 0 {

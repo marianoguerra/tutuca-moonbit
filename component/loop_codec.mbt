@@ -6,11 +6,7 @@
 // the renderer builds travels as a Map of Fn-convention closures, and the typed
 // `LoopWith` the handler returns travels as a Map of four optional entries.
 //
-// Both encodings used to be written HALF here and half in `render/loop.mbt`,
-// which meant six string keys ("iterData", "start", "end", "keys", "lookup",
-// "filter") that two packages had to agree on with nothing checking, and a
-// `LoopPlan` in the renderer that was `LoopWith` again with one field made
-// non-optional. Encode and decode sit next to each other now: change a key and
+// Encode and decode sit next to each other: change a key and
 // both sides move together, or neither compiles.
 
 ///|
@@ -43,7 +39,7 @@ pub fn LoopWith::to_value(self : LoopWith) -> @tutuca.Value {
 /// and a wrong-shaped one both read as absent rather than as a zero; a result
 /// that is not a Map at all reads as all-absent through the same calls.
 ///
-/// `seq` supplies the `iter_data` default (`{ seq }`, the JS shape), so a
+/// `seq` supplies the `iter_data` default (`{ seq }`), so a
 /// handler that only sliced still hands `@when` / `@enrich-with` something to
 /// read — and the renderer's no-`@loop-with` path builds the same default
 /// through `LoopWith::new`.

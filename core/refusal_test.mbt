@@ -3,8 +3,7 @@
 // `Path::update` decides between four outcomes and hands back the same root for
 // all four. Two of them are refusals — nothing was there, or nothing answered —
 // and two are DECLINES, which are the intended design and stay silent. These
-// cases are the difference, asserted from outside, because from outside is
-// exactly where it used to be invisible.
+// cases are the difference, asserted from outside.
 
 ///|
 priv struct Note {

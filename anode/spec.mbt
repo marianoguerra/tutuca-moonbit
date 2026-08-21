@@ -1,5 +1,5 @@
-// Spec for the port of tutuca's template-AST layer (src/anode.js) and its
-// attribute layer (src/attribute.js). READONLY by convention: concrete public
+// Spec for tutuca's template-AST layer and its
+// attribute layer. READONLY by convention: concrete public
 // data types plus `declare` stubs for every function/method. Implement the
 // declares in separate files; this file and the anode *_test.mbt suites
 // define the contract.
@@ -13,15 +13,15 @@
 // Namespaces and parse-time diagnostics
 
 ///|
-/// Non-HTML element namespace; None on DomData means HTML (mirrors the JS
-/// `namespace = null` convention for createElement vs createElementNS).
+/// Non-HTML element namespace; None on DomData means HTML (the plain
+/// createElement convention rather than createElementNS).
 pub(all) enum Ns {
   Svg
   MathML
 } derive(Debug, Eq)
 
 ///|
-/// Where a value string failed to parse (JS onParseIssue "bad-value" roles).
+/// Where a value string failed to parse (the "bad-value" roles).
 /// Anode/attr-level roles carry their slot; value-layer failures (macro vars,
 /// handler names, predicates) arrive via @tscript.ParseCtx.issues and are
 /// wrapped as ValueIssue.
@@ -45,21 +45,12 @@ pub(all) enum ParseIssue {
   BadValue(role~ : BadValueRole, value~ : String)
 } derive(Debug, Eq)
 
-///|
-/// Still-valid syntax that the linter nudges away from (JS onDeprecatedSyntax;
-/// the runtime handler stays silent).
-pub(all) enum DeprecatedSyntax {
-  // TEMPORARY (JS note dated 2026-07-08): bare `show`/`hide`/`when`/`loop-with`
-  // attrs on <x> ops are the legacy spelling of the `@`-prefixed directives.
-  BareXDirective(op~ : String, name~ : String)
-} derive(Debug, Eq)
-
 // ---------------------------------------------------------------------------
-// Attribute layer (port of src/attribute.js, parse side)
+// Attribute layer (parse side)
 
 ///|
 /// `@if.<name>` conditional attribute with optional `@then`/`@else` branches
-/// (None = JS NOT_SET_VAL sentinel).
+/// (None = the not-set sentinel).
 pub(all) struct IfAttr {
   name : String
   cond_val : @tutuca.Val
@@ -74,7 +65,7 @@ pub(all) enum AttrItem {
   Plain(name~ : String, val~ : @tutuca.Val)
   /// Constant attribute (plain HTML attr, data-eid, setDataAttr insertions).
   ConstA(name~ : String, val~ : @tutuca.Val)
-  /// `@dangerouslysetinnerhtml` (None val = failed parse, JS keeps the attr).
+  /// `@dangerouslysetinnerhtml` (None val = failed parse, attr kept).
   RawHtml(val~ : @tutuca.Val?)
   /// `@setinnermd`: a markdown source string (None val = failed parse, same
   /// sentinel convention as `RawHtml`).
@@ -112,8 +103,8 @@ pub(all) enum AttrItem {
 
 ///|
 /// An element's parsed attributes: fully-constant attrs collapse to an
-/// evaluated map (JS ConstAttrs), anything dynamic keeps the item list
-/// (JS DynAttrs). @tutuca.Lit doubles as the constant scalar type.
+/// evaluated map (ConstAttrs), anything dynamic keeps the item list
+/// (DynAttrs). @tutuca.Lit doubles as the constant scalar type.
 pub(all) enum Attrs {
   ConstAttrs(Map[String, @tutuca.Lit])
   DynAttrs(Array[AttrItem])
@@ -130,7 +121,7 @@ declare pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs
 declare pub fn Attrs::is_constant(self : Attrs) -> Bool
 
 ///|
-/// Insert/overwrite a data-* attribute (JS setDataAttr on attr containers).
+/// Insert/overwrite a data-* attribute on attr containers.
 declare fn Attrs::set_data_attr(
   self : Attrs,
   key : String,
@@ -138,7 +129,7 @@ declare fn Attrs::set_data_attr(
 ) -> Unit
 
 ///|
-/// Macro-call attrs become SOURCE STRINGS keyed by name (JS toMacroVars):
+/// Macro-call attrs become SOURCE STRINGS keyed by name:
 /// values round-trip through the value layer's original-syntax Show.
 declare fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String]
 
@@ -166,7 +157,7 @@ pub(all) struct WrapperAttr {
 } derive(Debug)
 
 ///|
-/// Result of parsing an element's attribute list (JS AttrParser.parse's
+/// Result of parsing an element's attribute list (the
 /// [pAttrs, wrapperAttrs, textChild] tuple; wrappers is empty instead of null).
 pub(all) struct AttrParseResult {
   attrs : Attrs
@@ -177,7 +168,7 @@ pub(all) struct AttrParseResult {
 ///|
 /// Parse an ordered attribute list (as delivered by the HTML parser).
 /// `parse_all` is the macro-call mode: every `:attr` value parses with the
-/// widest grammar (JS parseMacroAttr) instead of the text grammar.
+/// widest grammar instead of the text grammar.
 declare fn parse_attributes(
   attrs : Array[(String, String)],
   px : ParseContext,
@@ -185,7 +176,7 @@ declare fn parse_attributes(
 ) -> AttrParseResult
 
 ///|
-/// Event handlers registered on an element (JS NodeEvents; data only, the
+/// Event handlers registered on an element (data only, the
 /// runtime modifier wrappers are out of scope). `id` round-trips through the
 /// element's data-eid attribute.
 pub(all) struct NodeEvents {
@@ -194,7 +185,7 @@ pub(all) struct NodeEvents {
 } derive(Debug)
 
 ///|
-/// One `@on.<name>+mod+...` handler (JS NodeEvent, minus compiled modifiers).
+/// One `@on.<name>+mod+...` handler (minus compiled modifiers).
 pub(all) struct NodeEvent {
   name : String
   handler : @tscript.HandlerParse
@@ -202,8 +193,8 @@ pub(all) struct NodeEvent {
 } derive(Debug)
 
 // ---------------------------------------------------------------------------
-// AST (port of the BaseNode class hierarchy as an enum; payload structs are
-// reference types, so tree/registry aliasing matches the JS object graph)
+// AST (the BaseNode class hierarchy as an enum; payload structs are
+// reference types, so tree/registry aliasing matches the object graph)
 
 ///|
 pub(all) struct TextData {
@@ -240,7 +231,7 @@ pub(all) struct FragmentData {
 
 ///|
 /// `<x text=...>` / `@text` output node. node_id is None for the `@text`
-/// directive's child (JS constructs it with a null nodeId, unregistered).
+/// directive's child (built with a null nodeId, unregistered).
 pub(all) struct RenderTextData {
   node_id : Int?
   val : @tutuca.Val
@@ -280,8 +271,8 @@ pub(all) struct SlotData {
 } derive(Debug)
 
 ///|
-/// Iteration spec shared by `@each` and `<x render-each>` (JS IterInfo,
-/// evaluation deferred to the renderer).
+/// Iteration spec shared by `@each` and `<x render-each>` (evaluation
+/// deferred to the renderer).
 pub(all) struct IterInfo {
   val : @tutuca.Val
   mut when_val : @tutuca.Val?
@@ -317,10 +308,10 @@ pub(all) struct MacroData {
 declare pub impl Debug for MacroData
 
 ///|
-/// The template AST. One variant per JS BaseNode subclass.
+/// The template AST. One variant per BaseNode subclass.
 pub(all) enum ANode {
   Text(TextData)
-  Comment(TextData) // JS CommentNode extends TextNode: same payload/behavior
+  Comment(TextData) // same payload/behavior as Text
   Dom(DomData)
   Fragment(FragmentData)
   RenderText(RenderTextData)
@@ -372,13 +363,12 @@ declare fn ANode::set_data_attr(
 declare fn ANode::wrap_node(self : ANode, node : ANode) -> Unit
 
 ///|
-/// Collect the class names a margaui-style scanner can see (the port of JS
-/// ParseCtxClassSetCollector, src/util/parsectx.js): literal `class="…"`
+/// Collect the class names a margaui-style scanner can see: literal `class="…"`
 /// values split on whitespace, plus — for dynamic `:class` and
 /// `@if.class`/`@then`/`@else` — only the literal fragments (Const values
 /// and the Const parts of template strings). Call on COMPILED views so
 /// macro-expanded classes are included; runtime-composed class strings are
-/// invisible (JS handles those with a never-rendered decoy view).
+/// invisible.
 declare pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit
 
 ///|
@@ -418,7 +408,7 @@ declare pub fn View::collect_method_names(
 ) -> Unit
 
 ///|
-/// A single child stays bare; several become a Fragment (JS maybeFragment).
+/// A single child stays bare; several become a Fragment.
 declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 
 // ---------------------------------------------------------------------------
@@ -554,20 +544,19 @@ declare pub fn on(
 /// Normalize insignificant whitespace between element children:
 /// leading/trailing whitespace is dropped; an interior whitespace run with a
 /// newline collapses to a single space, or to nothing between two block-level
-/// elements. Whitespace-only Comments participate exactly like Text (JS
-/// CommentNode inherits TextNode's behavior).
+/// elements. Whitespace-only Comments participate exactly like Text (they
+/// share the Text payload and behavior).
 declare pub fn condense_childs_whites(childs : Array[ANode]) -> Array[ANode]
 
 // ---------------------------------------------------------------------------
-// Parse context (port of JS ParseContext; subclass hooks become a trait)
+// Parse context (subclass hooks become a trait)
 
 ///|
-/// Extension hooks fired during parsing (JS ParseContext method overrides).
+/// Extension hooks fired during parsing (ParseContext method overrides).
 /// Defaults: warn on parse issues, stay silent otherwise — so a live app's
-/// context behaves like the JS base class and the linter overrides all three.
+/// context behaves like the default and the linter overrides both.
 pub(open) trait ParseHandler {
   fn on_parse_issue(Self, ParseIssue, String?) -> Unit = _
-  fn on_deprecated_syntax(Self, DeprecatedSyntax, String?) -> Unit = _
   fn on_attributes(Self, AttrParseResult, Bool, String) -> Unit = _
 }
 
@@ -578,24 +567,19 @@ impl ParseHandler with fn on_parse_issue(_self, issue, current_tag) {
 }
 
 ///|
-impl ParseHandler with fn on_deprecated_syntax(_self, _syntax, _current_tag) {
-
-}
-
-///|
 impl ParseHandler with fn on_attributes(_self, _result, _is_macro_call, _tag) {
 
 }
 
 ///|
-/// The default handler used when none is given (JS base ParseContext).
+/// The default handler used when none is given.
 pub(all) struct WarnHandler {}
 
 ///|
 pub impl ParseHandler for WarnHandler
 
 ///|
-/// Per-macro-expansion state (JS px.frame).
+/// Per-macro-expansion state (px.frame).
 pub(all) struct MacroFrame {
   macro_name : String
   macro_vars : Map[String, String]
@@ -659,7 +643,7 @@ declare fn ParseContext::register_events(self : ParseContext) -> NodeEvents
 ///|
 /// Build a MacroCall from a call site's parsed attrs and children: `<x slot>`
 /// children become named slots, remaining non-whitespace children fill the
-/// default `_` slot (one shared array, matching the JS aliasing).
+/// default `_` slot (one shared array, aliased with the fragment's).
 declare fn ParseContext::new_macro_node(
   self : ParseContext,
   name : String,
@@ -692,13 +676,13 @@ pub(all) struct Macro {
 declare pub fn Macro::expand(self : Macro, px : ParseContext) -> ANode
 
 ///|
-/// Macro lookup environment (JS scope.lookupMacro).
+/// Macro lookup environment.
 pub(open) trait MacroScope {
   fn lookup_macro(Self, String) -> Macro?
 }
 
 ///|
-/// A named template (JS View, parse side: no render). compile() parses the
+/// A named template (parse side: no render). compile() parses the
 /// raw view, stamps data-cid/data-vid and expands macros.
 pub(all) struct View {
   name : String
@@ -771,8 +755,8 @@ declare pub fn View::compile(
 // Parse entry points
 
 ///|
-/// Parse a template string into an AST (JS ANode.parse): empty input yields
+/// Parse a template string into an AST: empty input yields
 /// Comment("Empty View in ANode.parse"); a single root parses directly;
 /// several roots are whitespace-condensed into a fragment. None only when a
-/// single root is an `<x>` op whose value failed to parse (JS returns null).
+/// single root is an `<x>` op whose value failed to parse.
 declare pub fn ANode::parse(html : String, px : ParseContext) -> ANode?

@@ -1,5 +1,4 @@
-// Dynamic-var teleporting end-to-end (ports of test/path.test.js:642-899 and
-// semantics.md §7): Workspace provides `.sheet`; a Toolbar deep in the tree
+// Dynamic-var teleporting end-to-end (semantics.md §7): Workspace provides `.sheet`; a Toolbar deep in the tree
 // renders `*active`; clicking inside the sheet must reconstruct a dispatch
 // path that walks every intermediate component (bubbling) while the
 // TRANSACTION path teleports to the producer's data.

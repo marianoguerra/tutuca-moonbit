@@ -1,4 +1,4 @@
-// Port of test/vdom-select.test.js. memdom implements minimal <select>
+// memdom implements minimal <select>
 // semantics (assigning value selects the first matching option), which makes
 // the renderer's value-after-children ordering and the morph-time value
 // re-application observable.

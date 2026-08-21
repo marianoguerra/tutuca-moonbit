@@ -1,7 +1,7 @@
-// Port of src/components/data/json-schema.js — a high-level JSON-Schema
+// A high-level JSON-Schema
 // viewer. The schema arrives as a `@tutuca.Value` (the parsed JSON document);
 // embedded literal values (const / enum members / default / examples) and the
-// raw-schema toggle render through the DataInspector (JS used JsonViewer).
+// raw-schema toggle render through the DataInspector.
 
 // ---------------------------------------------------------------------------
 // Shared building blocks
@@ -22,7 +22,7 @@ fn schema_str(m : Map[String, @tutuca.Value], k : String) -> String {
 }
 
 ///|
-/// JS metaOf: title/description/deprecated, written into a component-args map.
+/// Title/description/deprecated metadata, written into a component-args map.
 fn schema_meta_into(
   args : Map[String, @tutuca.Value],
   m : Map[String, @tutuca.Value],
@@ -73,7 +73,7 @@ fn combinator_phrasing(kind : String) -> String {
 }
 
 ///|
-/// A `key != null` presence probe (JS `schema.x != null`).
+/// A `key != null` presence probe.
 fn present_nn(m : Map[String, @tutuca.Value], k : String) -> @tutuca.Value? {
   match m.get(k) {
     Some(Null) | None => None
@@ -184,7 +184,7 @@ fn Inspector::value_branch(
 }
 
 ///|
-/// JS collectExtras: cross-cutting keywords that can coexist with any primary
+/// Cross-cutting keywords that can coexist with any primary
 /// type. `primary` names the family the host component already renders.
 fn Inspector::collect_extras(
   self : Inspector,

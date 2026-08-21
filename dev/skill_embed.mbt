@@ -1,8 +1,8 @@
 // Pure half of the `skill-embed` task: turn the skill/tutuca/ file tree into
 // a generated MoonBit source (cli/skill_assets_gen.mbt) embedding every file
 // as a string constant — the bundled-assets story that unblocks the native
-// CLI's `install-skill` (a binary has no package dir to copy from, unlike
-// the JS CLI's findSkillsRoot()). cmd/dev walks + reads the files and hands
+// CLI's `install-skill` (a binary has no package dir to copy from).
+// cmd/dev walks + reads the files and hands
 // them here; this builds the source text.
 
 ///|
@@ -30,7 +30,7 @@ fn escape_mbt_string(s : String) -> String {
 /// Two callers, one shape — `skill-embed` (the Claude-Code skill, written out
 /// by `install-skill`) and `guest-template-embed` (a `tutuca:component` guest
 /// tree, written out by `new-guest`). A binary has no package directory to copy
-/// from, unlike the JS CLI's `findSkillsRoot()`, so anything the CLI hands a
+/// from, so anything the CLI hands a
 /// user has to be compiled into it.
 pub fn assets_source(
   files : Array[(String, String)],

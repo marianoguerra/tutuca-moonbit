@@ -172,7 +172,7 @@ test "untrusted views may state a constant style" {
 
 ///|
 /// A macro body belongs to the host definition, but slot contents belong to
-/// the caller. They are a historically easy traversal gap, so hold this
+/// the caller. They are an easy traversal gap, so hold this
 /// authority check against them explicitly.
 test "untrusted network checks reach macro slots" {
   let refusals = shown(
@@ -828,8 +828,8 @@ test "a bound value carries its own type, and a bad one is loud" {
 }
 
 ///|
-/// `pinned_prefix` used to read only the first part of a template, which
-/// refused a spelling that pins perfectly well.
+/// `pinned_prefix` reads the whole template head, so a literal head split
+/// across parts still pins.
 test "a literal head split across parts still pins" {
   let p = Policy::untrusted().allowing_external_urls(["https://cdn.example"])
   // Two literal parts and then a field: the head is `https://cdn.example/`,

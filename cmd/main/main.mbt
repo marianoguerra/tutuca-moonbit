@@ -23,8 +23,8 @@ async fn emit_and_exit(emit : @cli.Emit) -> Unit noraise {
 }
 
 ///|
-/// Message fallback like the JS CLI: piped stdin when no positional was
-/// given (feedback.js readStdinSync — returns "" on a TTY or a read error).
+/// Message fallback: piped stdin when no positional was
+/// given (returns "" on a TTY or a read error).
 async fn read_stdin_message() -> String noraise {
   if isatty(0) != 0 {
     return ""
@@ -131,8 +131,7 @@ async fn run_install_skill(
     plan.target_rel
   }
   try {
-    // refuse to clobber an existing install unless --force (JS checks for
-    // any .md file under the target)
+    // refuse to clobber an existing install unless --force
     if !plan.force && @fs.exists(target) {
       for pair in plan.files {
         if @fs.exists("\{target}/\{pair.0}") {

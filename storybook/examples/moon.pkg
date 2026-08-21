@@ -11,7 +11,7 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/inspector",
+  "marianoguerra/tutuca/storybook/inspector",
   "moonbitlang/core/cmp",
   "moonbitlang/core/string",
   "moonbitlang/core/json",

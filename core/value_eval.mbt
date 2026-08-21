@@ -1,8 +1,8 @@
-// Val evaluation and Value runtime semantics (src/value.js eval side +
+// Val evaluation and Value runtime semantics (eval side +
 // PREDICATES table + immutable `is`). Implements the declares in spec.mbt.
 
 ///|
-/// Structural equality (immutable.js `is` over our Value shapes). NaN equals
+/// Structural equality over our Value shapes. NaN equals
 /// NaN (Object.is); Fn values compare by reference.
 ///
 /// The identity fast path is not just an optimization of the common case: the
@@ -51,13 +51,11 @@ pub impl Eq for Value with fn equal(self, other) {
 }
 
 ///|
-/// JS sizeOf: `.size` (immutable collections) or `.length` (string/array).
+/// size_of: `.size` (immutable collections) or `.length` (string/array).
 ///
-/// A custom collection answers too, through `obj_size`. It used to be None —
-/// so an instance `@each` iterated happily had no length, `empty?` was always
-/// false for it and the generated `xLen` mutator returned Null. An instance
-/// that is NOT a sequence still answers None, which is the honest reading: a
-/// component has fields, not a size.
+/// A custom collection answers too, through `obj_size`. An
+/// instance that is NOT a sequence still answers None, which is the honest
+/// reading: a component has fields, not a size.
 pub fn size_of(v : Value) -> Int? {
   match v {
     Str(s) => Some(s.length())
@@ -69,7 +67,7 @@ pub fn size_of(v : Value) -> Int? {
 }
 
 ///|
-/// JS truthiness for unsized values; sized values are truthy when non-empty.
+/// Truthiness for unsized values; sized values are truthy when non-empty.
 fn pred_truthy(v : Value) -> Bool {
   match size_of(v) {
     Some(n) => n > 0
@@ -86,8 +84,8 @@ fn pred_truthy(v : Value) -> Bool {
 }
 
 ///|
-/// JS truthiness: Null/false/0/NaN/"" are false; lists, maps and functions
-/// are always true (like JS objects). The `truthy?` predicate differs on
+/// Truthiness: Null/false/0/NaN/"" are false; lists, maps and functions
+/// are always true. The `truthy?` predicate differs on
 /// purpose: it treats empty collections as falsy (see `pred_truthy`).
 pub fn Value::is_truthy(self : Value) -> Bool {
   match self {
@@ -95,21 +93,21 @@ pub fn Value::is_truthy(self : Value) -> Bool {
     Bool(b) => b
     Num(n) => n != 0.0 && n == n // 0 and NaN are falsy
     Str(s) => s != ""
-    List(_) | Map(_) | Fn(_) | Obj(_) => true // JS objects are always truthy
+    List(_) | Map(_) | Fn(_) | Obj(_) => true
   }
 }
 
 ///|
-/// JS `${v}` template-interpolation semantics. Approximations: List joins
-/// elements with ","; Map and Fn render as opaque markers (JS
-/// "[object Object]" / function source are not worth mirroring).
+/// `${v}` template-interpolation semantics. Approximations: List joins
+/// elements with ","; Map and Fn render as opaque markers
+/// ("[object Object]" / function source are not worth mirroring).
 pub fn Value::to_display_string(self : Value) -> String {
   match self {
-    Null => "null" // JS `${null}`
+    Null => "null"
     Bool(b) => if b { "true" } else { "false" }
     Num(n) => num_source(n)
     Str(s) => s
-    // JS Array.join: null elements become "", the rest String()-coerce.
+    // Join semantics: null elements become "", the rest String()-coerce.
     List(items) => items.map(i => tpl_piece(i)).join(",")
     Map(_) => "[object]"
     Fn(_) => "[function]"
@@ -128,7 +126,7 @@ fn lit_value(lit : Lit) -> Value {
 }
 
 ///|
-/// JS number formatting for `${n}` / toString: integral doubles print with
+/// Number formatting for `${n}` / toString: integral doubles print with
 /// no fractional part.
 fn num_source(n : Double) -> String {
   if n != n {
@@ -142,8 +140,8 @@ fn num_source(n : Double) -> String {
 }
 
 ///|
-/// One template piece in StrTpl.eval's join: JS Array.join turns
-/// null/undefined into "" and String()-coerces the rest.
+/// One template piece in StrTpl.eval's join: null turns
+/// into "" and String()-coercion applies to the rest.
 fn tpl_piece(v : Value) -> String {
   match v {
     Null => ""
@@ -154,7 +152,7 @@ fn tpl_piece(v : Value) -> String {
 ///|
 /// A handler nothing answers: warn and hand back `this` unchanged.
 ///
-/// Narrower than it used to be. A view's `@when` / `@enrich-with` /
+/// A view's `@when` / `@enrich-with` /
 /// `@loop-with` names are generated into an enum the author matches
 /// exhaustively, so a name NOBODY wired is a build error now. What is left is
 /// the case the enum cannot rule out — an arm that answers `None`, meaning
@@ -194,7 +192,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
       for part in parts {
         match part {
           Some(v) => buf.write_string(tpl_piece(v.eval(stack)))
-          None => () // failed placeholder: JS join turns null into ""
+          None => () // failed placeholder: joins as the empty string
         }
       }
       Str(buf.to_string())
@@ -217,16 +215,14 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
       }
     // An Uppercase name parses (a handler arg may be written as one, and the
     // linter reads them) but resolves to nothing: a type is not a Value, so
-    // there is nothing for a stack to hand back. `Stack` used to carry a
-    // `lookup_type` for this, defaulted to Null and overridden by no
-    // implementation in the tree — a seam with nobody on the other end.
+    // there is nothing for a stack to hand back.
     TypeName(_) => Null
     Bind(name) => stack.lookup_bind(name)
     BindMember(name~, prop~) =>
       // Bindings hold maps (`@value`), component instances (iterating a seq of
-      // components, e.g. `@text="@value.title"` in docs/examples/seq-item-access.js),
+      // components, e.g. `@text="@value.title"` on a seq of components),
       // or whatever @enrich-with set. A member read off anything else is Null
-      // (JS get/property fallback).
+      // (get/property fallback).
       match stack.lookup_bind(name) {
         Map(m) => m.get(prop).unwrap_or(Null)
         Obj(o) => o.obj_field(prop).unwrap_or(Null)
@@ -238,9 +234,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
     // `$name` in a value slot: the stack invokes and returns the result.
     Method(name) => stack.lookup_method(name)
     // `.seq[.key]`. Through the shared item lookup, which is what makes a
-    // custom collection readable here: this arm used to spell the container
-    // match out itself, and its copy had lost the `Obj` case — so a
-    // `KeyedList` that `@each` iterated fine answered Null through seq-access.
+    // custom collection readable here.
     SeqAccess(seq~, key~) =>
       match stack.lookup_field_raw(key).as_key() {
         Some(k) => stack.lookup_field_raw(seq).item(k)

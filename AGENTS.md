@@ -1,9 +1,7 @@
 # Project Agents.md Guide
 
 This is a [MoonBit](https://docs.moonbitlang.com) project — a port of
-[tutuca](https://github.com/marianoguerra/tutuca). References below to JS files
-like `src/vdom.js`, `src/path.js`, `tools/core/test.js`, or `docs/examples/*.js`
-point at that upstream repo, not at files in this one.
+[tutuca](https://github.com/marianoguerra/tutuca), a JS UI framework.
 
 You can browse and install extra skills here:
 <https://github.com/moonbitlang/skills>
@@ -29,31 +27,20 @@ You can browse and install extra skills here:
   the order of each block is irrelevant. In some refactorings, you can process
   block by block independently.
 
-- Try to keep deprecated blocks in file called `deprecated.mbt` in each
-  directory.
-
 - Files named `*_gen.mbt` are GENERATED and checked in; never hand-edit one.
   Change its source and rerun the task that produces it (`gen-views` for a
   `*_view_gen.mbt` from its `.html`; `skill-embed` for
-  `cli/skill_assets_gen.mbt` from `skill/tutuca/`). `moon fmt` owns the layout
-  of the `*_view_gen.mbt` pair, so the `gen-views` task formats after
-  generating — run the task, not the CLI directly, and the checked-in files
-  stay reproducible. `cli/skill_assets_gen.mbt` works the same way: its task
-  ends in `moon fmt` too, so what is checked in is already what fmt produces
-  and a later `moon fmt` leaves it alone. (This paragraph used to say the
-  opposite — that the file was not fmt-stable and had to be reverted after a
-  `moon fmt` — while `dev/tasks.mbt` said the trailing fmt was there precisely
-  so it would be. The task was right; it was checked by running both.)
+  `cli/skill_assets_gen.mbt` from `skill/tutuca/`). Each generating task ends
+  in `moon fmt`, so what is checked in is already what fmt produces and a
+  later `moon fmt` leaves it alone — run the task, not the CLI directly.
 
 - `dyncomp/` has three documents, and they divide as: `DESIGN.md` is the
   contract and how it maps onto tutuca; `SECURITY.md` is what a loaded bundle
   can and cannot do, with the file/line evidence for each claim; and
   `ARCHITECTURE.md` is the plan for the universal UI and the agent runtime on
-  top. The agent tool surface has no document: the one it had was specified
-  against the `Surface` document that no longer exists, and it was deleted
-  rather than left to mislead.
+  top. The agent tool surface has no document.
   Changing the WIT means checking `SECURITY.md`'s "What to check when changing
-  this" — two of its three findings were fields nobody thought were a channel.
+  this".
 
 - The guest binding trees under `guests/*` — every name in `guests/guests.mjs`
   — are generated and checked in the same way, by `gen-guest-bindings`, from
@@ -125,7 +112,7 @@ binary inside the `_build` they delete.
 | `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen-views` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
-| `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` — which is how `guests/table` sat in one list and not the other, built by nothing |
+| `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` |
 | `guest-harness` | build every guest bundle, then run the node harnesses in `dyncomp/test/` over them — the only runtime coverage the guest ABI and the table codec have. Not in `ci`: needs wasm-tools + jco |
 | `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
 | `dom-props` | regenerate `eventpath/dom_props_gen.mbt` from the browser specs' machine-extracted IDL (`w3c/webref`, pinned in `scripts/fetch-dom-props.mjs`), format, then drift-check (needs network). The type oracle an `e.<path>` is checked against — does this event interface have this property, and what is its type. Same rule as the sanitizer baseline and for the same reason: **never hand-transcribe it** |
@@ -158,10 +145,9 @@ and nowhere else) AND every landing-site example pair
 generating their views with the same generator built to js.
 
 `check-skill` reuses that same js generator for the bundled skill. Nothing else
-compiles `skill/tutuca/`, and it rots: `specs=` / `@component.FieldSpec` outlived
-the parameter's removal by two releases in five files, and the skill ships inside
-the CLI binary, so a wrong snippet is what an agent reads before writing any
-tutuca code. A recipe that shows both halves — an ```` ```html ```` view file then
+compiles `skill/tutuca/`, and it rots — and the skill ships inside the CLI
+binary, so a wrong snippet is what an agent reads before writing any tutuca
+code. A recipe that shows both halves — an ```` ```html ```` view file then
 the ```` ```moonbit ```` that uses it — gets the view half generated and the pair
 compiled together, per markdown SECTION (snippets in one section refer to each
 other; snippets in different sections are unrelated components that would
@@ -315,16 +301,12 @@ it is copied rather than generated, but it is equally not ours to edit:
 
   **Never hand-transcribe an allow-list, and never take one from MDN or a blog
   post.** An entry quietly lost is a component that mysteriously fails to
-  render; one quietly gained is a hole. The first attempt at this list was read
-  off a summary, which dropped SVG's `script` from the baseline — and since
-  element identity is namespace-qualified, `<svg><script>alert(1)</script></svg>`
-  passed the sanitizer with no violation at all. `sanitize_test.mbt` holds
+  render; one quietly gained is a hole. `sanitize_test.mbt` holds
   `unsafe_elements` against the spec's own baseline for that reason.
 
 **Take `tw/*.css` from npm, never from the margaui checkout.** margaui's own
-`tw/README.md` calls its copies a manual mirror and they lag — at v0.5704.0 they
-are still missing the `mauve`/`olive`/`mist`/`taupe` palettes upstream added in
-4.3.2, and still carry the pre-4.3.3 `--font-sans` stack. The compiler is ported from one exact tag
+`tw/README.md` calls its copies a manual mirror, and they lag upstream. The
+compiler is ported from one exact tag
 (`.mooncakes/marianoguerra/tailwindcss/UPSTREAM.md`), so the stylesheets must
 come from that tag or the engine and its data disagree; `fetch-tailwind.mjs`
 fails the build if the two pins drift apart. `compile_margaui` merges both maps,
@@ -376,11 +358,9 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 
 ## Testing components
 
-There is no `tutuca test` command and no ported `expect`/`describe` layer — the
-original JS runner (`tools/core/test.js`) and chai/jest matchers
-(`src/chai-jest.js`) exist only because JS lacked a capable native runner.
-**`moon test` is the runner**, and MoonBit's built-in assertions cover the whole
-jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
+There is no `tutuca test` command — **`moon test` is the runner**, and MoonBit's
+built-in assertions cover the whole jest surface. Author component tests as
+plain `moon test "..." { ... }` blocks:
 
 - Mount and drive a `ModuleDef` on the in-memory DOM with the reusable harness
   `marianoguerra/tutuca/testing/harness` (`@harness`): `mount` / `mount_example`
@@ -408,9 +388,8 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   that did not hold, carrying the rule's own `format` sentence — which
   `card-wasm.js` keeps as well as prints and a scene reads with `expect: log`.
   Reach for `refused` when driving a MODULE and `log` when driving a CARD.
-- **A card may declare more than one component.** `viewfile` always allowed it;
-  `tutucard/wasm` refused it until the module learned to number them. One
-  `state` each in the one state block, one `<script ... for="Comp">` each,
+- **A card may declare more than one component.** One `state` each in the one
+  state block, one `<script ... for="Comp">` each,
   `<template id="Comp:main">`. Inside the module a component is an index: its
   slot in `tc_types`, its arm of the constructor, its arm of `handle-event` —
   and an instance says which it is through `jv_record_definition`, a pointer
@@ -435,15 +414,9 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   worked TodoMVC, with scenes that drive it.
 - **Instances are collected, both halves.** `install_gc` drops the handle a
   successor replaced — which is every interaction, since a guest instance is
-  immutable — and `CardGuest::drop_instance` used to be a no-op, so a card left
-  open grew a table entry per keystroke. A row that is REMOVED is superseded by
-  nothing, so that collector cannot see it; `install_sweep` walks the root and
-  retains what it finds. `tutucard/build/check-instances.mjs` pins both.
-- Turned up on the way: `with-field` of a COMPOUND value was refused for every
-  card since the arena landed. The joined `(i64, i32)` payload was lifted by a
-  scalars-only reader, so a list handed in became null and the schema refused
-  it. `tc_lift_flat` writes the triple into a cell and delegates to
-  `tc_lift_cell` now, so there is one lift rather than two.
+  immutable. A row that is REMOVED is superseded by nothing, so that collector
+  cannot see it; `install_sweep` walks the root and retains what it finds.
+  `tutucard/build/check-instances.mjs` pins both.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

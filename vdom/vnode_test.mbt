@@ -1,4 +1,4 @@
-// Port of test/vdom-vnode.test.js. JS cases about iterable flattening and
+// Cases about iterable flattening and
 // primitive->VText coercion have no analog here: children are typed
 // Array[Vdom] and `text()` is explicit. toDom / render cases live in
 // memdom's test suites.
@@ -206,7 +206,7 @@ test "h: key and namespace extracted from attrs map" {
   guard! @vdom.h("div", attrs={ "key": Str("from-attrs") }, key="labeled")
     is Node(el2)
   assert_true(el2.key is Some("labeled"))
-  // numeric keys are coerced like JS String(key)
+  // numeric keys are coerced like String(key)
   guard! @vdom.h("div", attrs={ "key": AttrValue::int(7) }) is Node(el3)
   assert_true(el3.key is Some("7"))
   // namespace attr entry

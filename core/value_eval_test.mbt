@@ -1,10 +1,10 @@
-// Port of the eval-oriented tests from tutuca test/value.test.js. The JS
-// tests pass ad-hoc mock stack objects; here each mock is a small struct
+// Eval-oriented tests. The originals pass ad-hoc mock stack objects; here each
+// mock is a small struct
 // implementing only the @core.Stack methods it needs (defaults cover the
 // rest, returning Null).
 
 ///|
-/// Mock stack backed by a field map (JS `{ lookupFieldRaw: (n) => ... }`)
+/// Mock stack backed by a field map
 priv struct FieldStack {
   fields : Map[String, @core.Value]
 }
@@ -101,8 +101,8 @@ test "equals? eval compares the field value against the literal" {
 
 ///|
 test "bind member eval reads the member off the resolved binding" {
-  // map-like binding value: member lookup with Null default (this one case
-  // covers both JS paths — immutable `.get` and plain-object property access)
+  // map-like binding value: member lookup with Null default (covers both
+  // original paths — immutable `.get` and plain-object property access)
   let im : BindStack = { bind: Map({ "title": Str("alpha") }) }
   let hit : @core.Val = BindMember(name="value", prop="title")
   assert_true(hit.eval(im) is Str("alpha"))
@@ -139,7 +139,7 @@ test "Value::to_display_string follows JS interpolation" {
   assert_eq(@core.Value::Num(12.5).to_display_string(), "12.5")
   assert_eq(@core.Value::Str("hi").to_display_string(), "hi")
   assert_eq(@core.Value::List([Num(1), Num(2)]).to_display_string(), "1,2")
-  // JS Array.join: null elements join as "", unlike top-level `${null}`
+  // Array.join semantics: null elements join as "", unlike top-level `${null}`
   assert_eq(
     @core.Value::List([Num(1), Null, Num(2)]).to_display_string(),
     "1,,2",

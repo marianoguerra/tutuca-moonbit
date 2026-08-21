@@ -1,4 +1,4 @@
-// Port of docs/examples/_shared-data.js — the sample list (Borges' "Celestial
+// The sample list (Borges' "Celestial
 // Emporium of Benevolent Knowledge" classification of animals) that the
 // iteration examples share.
 

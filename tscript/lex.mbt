@@ -1,4 +1,4 @@
-// The tokenizer (src/value.js VAL_TOKEN_RE / unescapeStr). Implements the
+// The tokenizer. Implements the
 // declares in spec.mbt.
 //
 // Coarse on purpose. A `$'…'` template is one token however much it contains,
@@ -10,14 +10,14 @@
 
 ///|
 fn is_val_space(c : Char) -> Bool {
-  // JS \s (the subset that can occur in attribute values)
+  // \s (the subset that can occur in attribute values)
   c is (' ' | '\t' | '\n' | '\r' | '\u{b}' | '\u{c}' | '\u{a0}')
 }
 
 ///|
 /// Scan a quoted run starting at the opening quote index (the `'`). Returns
 /// the index just past the closing quote, or None when unterminated.
-/// Inside the run `\` escapes the next character (JS `\\.`).
+/// Inside the run `\` escapes the next character (`\\.`).
 fn scan_quoted(chars : Array[Char], open : Int) -> Int? {
   let mut i = open + 1
   while i < chars.length() {
@@ -34,7 +34,7 @@ fn scan_quoted(chars : Array[Char], open : Int) -> Int? {
 /// The single value tokenizer: a `$'…'` template run, a plain `'…'` literal
 /// (escapes kept in the token), or a maximal non-whitespace run. Quoted
 /// alternatives win only at their start; an unterminated quote falls back to
-/// the plain run (mirrors the JS regex alternation).
+/// the plain run.
 pub fn tokenize(s : String) -> Array[Token] {
   let chars : Array[Char] = s.iter().collect()
   let out : Array[Token] = []
@@ -76,7 +76,7 @@ pub fn tokenize(s : String) -> Array[Token] {
 ///|
 /// Within a `'…'` literal the escapable characters are the ones
 /// `escaped_char` names — the delimiter, the backslash, and `n` / `t` / `r`;
-/// every other backslash stays literal (JS unescapeStr).
+/// every other backslash stays literal.
 ///
 /// The inverse, `escape_str_literal`, stays in `core` beside the only thing
 /// that needs it — `impl Show for Val`, which has to live where `Val` does.

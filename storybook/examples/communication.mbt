@@ -1,11 +1,9 @@
-// Ports of:
-//   docs/examples/send-receive.js — ctx.send / ctx.at.field(..).send + receive
-//   docs/examples/tree.js         — recursion, `intent dyn`, and JS `statics`
+// Teaches send/receive messaging (`ctx.send`,
+// `ctx.at.field(..).send` + receive), tree recursion, and `intent dyn`.
 //
 // PORT RULE — where a handler goes in the typed API.
-// JS appends `ctx` as the last argument to EVERY dispatched handler
-// (transactor.js:416), so a `methods.submit(ctx)` can send messages. MoonBit
-// splits the buckets by what they can do:
+// A dispatched handler can always send messages, so a `methods.submit(ctx)`
+// works. MoonBit splits the buckets by what they can do:
 //
 //   update  (S, Dispatch, &Ctx) -> S?     // effectful: Input/Receive/Bubble/
 //                                         // Response arms, may send/bubble
@@ -48,8 +46,7 @@ fn send_receive_comp() -> @component.Component {
       Receive("submit", _) => {
         let text = s.draft.trim().to_owned()
         if text != "" {
-          // message the sibling child by path — JS spells this
-          // `ctx.at.field("status").send("flash", [text])`
+          // message the sibling child by path
           ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
             Str(text),
           ])
@@ -82,11 +79,10 @@ pub fn send_receive_module() -> @component.ModuleDef {
 /// A TreeItem renders its own children with `<x render-each=".items">` — the
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 ///
-/// PORT NOTE — `statics`. JS puts a `fromData` factory in a `statics` bucket and
-/// calls it `TreeItem.Class.fromData(v)`. MoonBit needs no such bucket: a static
+/// Statics. MoonBit needs no statics bucket: a static
 /// is just a plain function (`tree_item_from_data` below) that closes over the
 /// Component and calls `.make(...)`. Nothing in the framework calls statics —
-/// they are plain class methods in JS too.
+/// they are plain functions.
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
     init={ type_: "dir", label: "A Tree Item", isOpen: true, items: [] },
@@ -152,7 +148,7 @@ fn tree_root_comp() -> @component.Component {
 }
 
 ///|
-/// The JS `statics.fromData` factory, as a plain MoonBit function: build a
+/// The `fromData` factory, as a plain MoonBit function: build a
 /// TreeItem (and, recursively, its children) from plain data.
 fn tree_item_from_data(
   comp : @component.Component,

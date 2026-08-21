@@ -1,4 +1,4 @@
-// "Did you mean" suggestions (tools/core/util/closest-name.js): Damerau-
+// "Did you mean" suggestions: Damerau-
 // Levenshtein distance with adjacent transpositions counted as one edit.
 // Inputs are identifier-shaped strings and candidate sets in the tens, so no
 // banded variant is needed.

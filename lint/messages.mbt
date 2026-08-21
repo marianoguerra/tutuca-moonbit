@@ -1,16 +1,14 @@
 // Human messages for lint findings — the render side of the linter, so
 // callers (the CLI, the view generator) do not each reinvent the wording.
 // Moved here from cli/ so the lint package renders its own findings.
-// (Original header:)
-// Human messages for lint findings (port of tools/format/lint.js
-// lintIdToMessage) plus the LintCode → canonical rule-code mapping. The
+// Also holds the LintCode → canonical rule-code mapping. The
 // structural/parse findings arrive as Finding (info pairs); the
 // component checker (lint_component.mbt) builds its messages at report time
 // with the same wording.
 
 ///|
 /// Canonical SCREAMING_SNAKE rule code for a LintCode — the names the
-/// rule catalog (lint_rules.mbt), agent-context and the JS CLI use.
+/// rule catalog (lint_rules.mbt), agent-context and the CLI use.
 pub fn lint_code_name(code : LintCode) -> String {
   match code {
     UnknownDirective => "UNKNOWN_DIRECTIVE"
@@ -20,7 +18,6 @@ pub fn lint_code_name(code : LintCode) -> String {
     UnsupportedExprSyntax => "UNSUPPORTED_EXPR_SYNTAX"
     BindingMemberTooDeep => "BINDING_MEMBER_TOO_DEEP"
     XOpIgnoresChildren => "X_OP_IGNORES_CHILDREN"
-    DeprecatedBareXDirective => "DEPRECATED_BARE_X_DIRECTIVE"
     MaybeAddAtPrefix => "MAYBE_ADD_AT_PREFIX"
     MaybeDropAtPrefix => "MAYBE_DROP_AT_PREFIX"
     UndeclaredMethod => "UNDECLARED_METHOD"
@@ -66,7 +63,7 @@ fn info_or(
 }
 
 ///|
-/// JSON-quote a value the way the JS formatter does (JSON.stringify).
+/// JSON-quote a value the way JSON.stringify does.
 fn q(s : String) -> String {
   s.to_json().stringify()
 }
@@ -154,8 +151,8 @@ fn html_action_phrase(action : String, tag : String, parent : String) -> String 
 }
 
 ///|
-/// Human message for a structural/parse Finding (port of
-/// lintIdToMessage for the codes the lint package emits).
+/// Human message for a structural/parse Finding (for the codes the lint
+/// package emits).
 pub fn finding_message(f : Finding) -> String {
   let info = f.info
   let loc = location_suffix(f.location)
@@ -183,8 +180,6 @@ pub fn finding_message(f : Finding) -> String {
       let low = info_or(info, "tag", "").to_lower()
       "'\{name}' on <\{low}> is a plain attribute, but '@\{name}' is a directive — add the leading '@'"
     }
-    DeprecatedBareXDirective =>
-      "'\{name}' on <x \{op}> is deprecated — write '@\{name}' instead" + tags
     UndeclaredMethod => {
       let closest = info_or(info, "closest", "")
       let hint = if closest == "" {

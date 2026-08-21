@@ -24,7 +24,7 @@ fn is_reflected_prop(name : String) -> Bool {
   // NEVER_ASSIGN members that are still real IDL properties — the core routes
   // them to set_attribute, but `has_property` must stay truthful or a morph
   // and a fresh render disagree. COMPOSED from the core's list rather than
-  // repeated: this used to be a hand-kept copy of it.
+  // repeated.
   @vdom.never_assign(name)
 }
 
@@ -87,7 +87,7 @@ pub impl @vdom.DomNode for MemNode with fn has_property(self, name) {
 /// deviation from a real browser: reflected *boolean* IDL props (`hidden`,
 /// `disabled`) serialize as "true"/"false" instead of presence/absence —
 /// consistent on both render paths, which is what the tests compare.
-/// `throwingProp` is a test-only sentinel for the JS `catch {}` fallback.
+/// `throwingProp` is a test-only sentinel for the `catch {}` fallback.
 pub impl @vdom.DomNode for MemNode with fn set_property(self, name, value) {
   if name == "throwingProp" {
     return false

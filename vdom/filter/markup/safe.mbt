@@ -70,9 +70,7 @@ pub const SAFE_SVG_ATTR : String = "setInnerSvg"
 /// The sanitizer handed in is narrowed on the way in, so a caller cannot
 /// construct this filter with an app's own CSS policy by forgetting to.
 ///
-/// It used to be narrowed by `without_css`, which dropped `style` entirely
-/// because there was no parser to tell a colour from a `url()`. There is one
-/// now, so the narrowing is `CssPolicy::payload()`: a payload may lay itself
+/// The narrowing is `CssPolicy::payload()`: a payload may lay itself
 /// out and paint itself, may point at an SVG gradient it defined, and may not
 /// fetch, overlay, or carry a `<style>` block.
 pub fn SafeMarkupFilter::new(

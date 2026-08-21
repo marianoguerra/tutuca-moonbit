@@ -1,7 +1,7 @@
-// Port of the parse-issue lint cases from tutuca test/lint.test.js (the
+// Parse-issue lint cases (the
 // codes in scope: UNKNOWN_DIRECTIVE/X_OP/X_ATTR, BAD_VALUE,
 // UNSUPPORTED_EXPR_SYNTAX, BINDING_MEMBER_TOO_DEEP, X_OP_IGNORES_CHILDREN,
-// DEPRECATED_BARE_X_DIRECTIVE, MAYBE_ADD/DROP_AT_PREFIX). Where triggering a
+// MAYBE_ADD/DROP_AT_PREFIX). Where triggering a
 // rule needs the value layer, the collector is fed the issue directly.
 
 ///|
@@ -121,22 +121,6 @@ test "binding member too deep gets its own code" {
   // but the classifier must not fire on it).
   let one = synthetic(BadValue(role=Attr(name="title"), value="@item.user"))
   guard! one[0] is { code: BadValue, .. }
-}
-
-///|
-test "deprecated bare x directive warns with add-prefix" {
-  let collector = @lint.LintCollector::new()
-  collector.deprecations.push(
-    (BareXDirective(op="render-each", name="when"), Some("x")),
-  )
-  let findings = @lint.check_collected(collector)
-  guard! findings[0]
-    is {
-      code: DeprecatedBareXDirective,
-      level: Warn,
-      suggestion: Some(AddPrefix(from="when", to="@when")),
-      ..,
-    }
 }
 
 ///|

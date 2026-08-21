@@ -1,6 +1,6 @@
-// Spec for the lint layer: parse-issue-driven rules (tools/core/lint-check.js
-// PARSE_ISSUES table + LintParseContext) and the HTML structural linter
-// (tools/core/htmllinter.js). READONLY by convention: concrete public data
+// Spec for the lint layer: parse-issue-driven rules (the PARSE_ISSUES
+// table + LintParseContext) and the HTML structural linter.
+// READONLY by convention: concrete public data
 // types plus `declare` stubs; implementations live in separate files.
 //
 // Scope: this package RUNS no component-model rules (field/method/provide
@@ -28,7 +28,6 @@ pub(all) enum LintCode {
   UnsupportedExprSyntax
   BindingMemberTooDeep
   XOpIgnoresChildren
-  DeprecatedBareXDirective // TEMPORARY, tied to the bare-x-directive nudge
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
@@ -56,7 +55,7 @@ pub(all) enum LintCode {
 } derive(Debug, Eq)
 
 ///|
-/// Machine-applicable fix suggestions (JS suggestion objects, one variant per
+/// Machine-applicable fix suggestions (one variant per
 /// `kind`).
 pub(all) enum Suggestion {
   ReplaceName(from~ : String, to~ : String)
@@ -77,8 +76,8 @@ pub(all) struct Location {
 } derive(Debug, Eq)
 
 ///|
-/// One lint finding. `info` is freeform key/value detail (JS ad-hoc info
-/// objects); `location` is set by the structural linter (source positions
+/// One lint finding. `info` is freeform key/value detail; `location` is set
+/// by the structural linter (source positions
 /// come from the HTML tokenizer).
 pub(all) struct Finding {
   code : LintCode
@@ -89,7 +88,7 @@ pub(all) struct Finding {
 } derive(Debug, Eq)
 
 ///|
-/// One recorded on_attributes callback (JS LintParseContext.attrs entries).
+/// One recorded on_attributes callback (an attrs entry).
 pub(all) struct AttrsRecord {
   result : @anode.AttrParseResult
   is_macro_call : Bool
@@ -98,10 +97,9 @@ pub(all) struct AttrsRecord {
 
 ///|
 /// ParseHandler that records everything the parser reports, for rule checks
-/// after parsing (JS LintParseContext).
+/// after parsing.
 pub(all) struct LintCollector {
   parse_issues : Array[(@anode.ParseIssue, String?)]
-  deprecations : Array[(@anode.DeprecatedSyntax, String?)]
   attrs : Array[AttrsRecord]
 }
 
@@ -122,12 +120,11 @@ declare pub fn closest_name(
 
 ///|
 /// Map everything a LintCollector captured (parse issues, deprecation nudges,
-/// host bare-directive attrs) to findings (JS checkParseIssues +
-/// checkHostBareDirectives).
+/// host bare-directive attrs) to findings.
 declare pub fn check_collected(collector : LintCollector) -> Array[Finding]
 
 ///|
-/// Structural HTML linter (tools/core/htmllinter.js): tokenizes `html` once
+/// Structural HTML linter: tokenizes `html` once
 /// with the WHATWG tokenizer and runs an insertion-mode prediction machine
 /// over the tokens — no DOM is built. Reports HTML_* findings in source
 /// order. `fragment_context` picks the initial insertion mode (§13.2.4.4;

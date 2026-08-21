@@ -1,4 +1,4 @@
-// Source round-trip (JS per-class toString): every Val prints back as its
+// Source round-trip: every Val prints back as its
 // original syntax. Implements the Show declare in spec.mbt.
 
 ///|
@@ -14,7 +14,8 @@ fn val_source(val : Val) -> String {
         LBool(b) => if b { "true" } else { "false" }
         LNum(n) => num_source(n)
       }
-    // JS StrTplVal has no toString of its own; reconstructing the `$'…'`
+    // The original had no toString of its own for this shape; reconstructing
+    // the `$'…'`
     // source is strictly more useful and keeps macro-attr round-trips sane.
     StrTpl(parts) => {
       let buf = StringBuilder::new()

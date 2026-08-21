@@ -1,6 +1,5 @@
-// Port of the parse-basics and whitespace-condensing suites from tutuca
-// test/anode-core.test.js (the subset that needs no value-layer parsing:
-// plain attributes, fragments, bare @x, whitespace rules).
+// Parse-basics and whitespace-condensing suites (the subset that needs no
+// value-layer parsing: plain attributes, fragments, bare @x, whitespace rules).
 
 ///|
 fn parse(html : String) -> (@anode.ANode, @anode.ParseContext) {
@@ -71,7 +70,7 @@ test "bare @x yields its children as a fragment, single child unwrapped" {
 
 ///|
 test "invalid tag name becomes an error comment" {
-  // "_foo" fails the tag-name check (jsdom would only produce such a tag via
+  // "_foo" fails the tag-name check (such a tag only arises from
   // exotic markup; here an underscore-initial custom tag exercises the path).
   let px = @anode.ParseContext::new()
   guard! @anode.ANode::parse("<p></p>", px) is Some(_)
@@ -146,8 +145,8 @@ test "custom elements count as inline for whitespace purposes" {
 
 ///|
 test "whitespace-only comment condenses like text at the edges" {
-  // CommentNode inherits TextNode's whitespace behavior in JS: a
-  // whitespace-only comment at the edge is condensed and dropped.
+  // A whitespace-only comment condenses like text at the edge
+  // and is dropped.
   let (root, _) = parse("<div><!-- --><p>A</p><p>B</p></div>")
   guard! root is Dom(d)
   assert_eq(d.childs.length(), 2)

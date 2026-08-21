@@ -9,8 +9,7 @@
 // (`.focus`/`.focusValue`) shows one story fullscreen. Selection, the filter,
 // and the focused story sync to the URL query string through the host's
 // `persistState`/`loadState` request handlers (see demo/storybook_wasm), so a
-// gallery link reopens on the same story — the same design the JS storybook
-// uses (src/storybook/mount.js).
+// gallery link reopens on the same story.
 //
 // WHY NOT A TYPED STATE STRUCT: the shell's field set depends on the section
 // list (`sN`/`lN`/`vN` per story, `cK`/`gvK` per section) — no struct can
@@ -37,7 +36,7 @@ fn esc_attr(s : String) -> String {
 
 ///|
 /// The margaui palette names offered by the theme switcher, mirroring
-/// `margaui/dist/themes/*.css` (the JS storybook's MARGAUI_THEMES). Switching a
+/// `margaui/dist/themes/*.css`. Switching a
 /// theme is just flipping `document.documentElement.dataset.theme`; the host's
 /// `applyTheme` handler loads the palette stylesheet on demand (light/dark ship
 /// in margaui's theme.css). Data, not a dependency — nothing imports margaui.
@@ -186,8 +185,7 @@ fn snapshot(
 /// Subsequence match, bounded so a long query can't match by scattering its
 /// characters across an unrelated string. A direct substring always matches;
 /// otherwise the shortest window of the target that contains the query as a
-/// subsequence must fit a small, query-scaled gap budget. Port of the JS
-/// storybook's fuzzyMatch (src/storybook/components.js).
+/// subsequence must fit a small, query-scaled gap budget.
 pub fn fuzzy_match(query : String, target : String) -> Bool {
   let q = query.to_lower().trim().to_owned()
   if q == "" {
@@ -314,7 +312,6 @@ impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
 
 ///|
 /// Every event/message handler of the gallery, dispatched by (bucket, name).
-/// The bodies mirror the JS storybook's mount.js handlers 1:1.
 impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
   self.handler_for(bucket, name)
 }

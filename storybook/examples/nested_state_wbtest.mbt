@@ -1,15 +1,9 @@
-// The generated codec for the named and structural schema types.
+// The generated codec for the named and structural schema types — it IS the
+// definition of what a view reads.
 //
-// It used to be checked against the JSON bridge it replaced: the codec was a
-// second encoder for a shape `derive(ToJson)` already knew how to write, and
-// the two agreeing was what made replacing one with the other safe. The bridge
-// is gone now and the state struct derives nothing, so there is no second
-// encoder to agree with — the codec IS the definition of what a view reads.
-//
-// What is left is the part that still says something: the shapes it produces,
-// pinned, over a state that populates every shape the schema language has — a
-// record, an enum, a variant with and without a payload, a set and an unset
-// option, and a tuple.
+// What is checked is the shapes it produces, pinned, over a state that
+// populates every shape the schema language has — a record, an enum, a variant
+// with and without a payload, a set and an unset option, and a tuple.
 
 ///|
 /// A state with every schema shape populated, and `note` set.

@@ -238,8 +238,8 @@ pub impl VdomFilter for UrlFilter with fn filter_elem(self, el) {
     }
     let raw = value.to_attr_string()
     // A structured value is not a URL string — which is a reason to DROP it,
-    // not to allow it. This used to `continue` on exactly that reasoning. The
-    // reasoning holds about the MoonBit value and fails about the browser:
+    // not to allow it. The reasoning holds about the MoonBit value and fails
+    // about the browser:
     // `set_prop` sends `Data` down the PROPERTY path, the glue does
     // `node.href = <array>`, and the IDL setter's ToString turns
     // `["javascript:alert(1)"]` into `javascript:alert(1)` — a live script URL

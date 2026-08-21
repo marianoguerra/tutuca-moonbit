@@ -1,4 +1,4 @@
-// Interaction tests for the last batch of ported examples:
+// Interaction tests for the newer examples:
 // custom-collection, dynamic-selected-edit, file-picker,
 // web-component-custom-event and composability. lint-errors has no test: it
 // is a fixture whose views are DELIBERATELY invalid, so stories.mbt marks it

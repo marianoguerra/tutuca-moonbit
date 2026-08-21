@@ -1,4 +1,4 @@
-// WHATWG HTML §13 spec-derived data tables (tools/core/htmllinter-tables.js).
+// WHATWG HTML §13 spec-derived data tables.
 // All sets are lowercase except the SVG/MathML camel maps, which preserve case
 // because they exist precisely to detect case-correction by the parser.
 

@@ -207,8 +207,8 @@ fn Machine::start_in_body(
   start : Int,
 ) -> Unit {
   if name is ("html" | "head" | "body" | "frame" | "frameset") {
-    // Rare in fragments; ignore but flag as unexpected. (No parent key: the
-    // JS info object had none here either.)
+    // Rare in fragments; ignore but flag as unexpected. (No parent key in
+    // the info object here.)
     self.report(HtmlTagNotAllowedInParent, Warn, start, [
       ("tag", raw),
       ("mode", self.insertion_mode.to_name()),
@@ -379,8 +379,7 @@ fn Machine::start_in_body(
     self.push_el(raw, NsHtml)
     // §"in body": reached from a table mode via fall-through (the mode is
     // still the table one here), the select parses "in select in table" —
-    // the JS linter shortcuts this to inSelect with an apologetic comment;
-    // this port follows the spec.
+    // not shortcut to plain inSelect; this port follows the spec.
     self.insertion_mode = if self.insertion_mode
       is (InTable | InCaption | InTableBody | InRow | InCell) {
       InSelectInTable

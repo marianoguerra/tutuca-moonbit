@@ -10,7 +10,7 @@ fn run_help(target : String?, opts : GlobalOpts) -> Emit {
         Some(cmd) => {
           // `help help` does not point at `tutuca help`: the reader is already
           // there. Every description, this one included, comes from the
-          // registry — it used to be spelled out a second time here.
+          // registry.
           let more = if name == "help" {
             ""
           } else {

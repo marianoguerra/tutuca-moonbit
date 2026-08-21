@@ -1,12 +1,12 @@
-// Ports of the "State and Updates" tutorial examples:
+// The "State and Updates" tutorial examples:
 //
-//   docs/examples/attribute-binding.js      — :attr bindings + $'templates'
-//   docs/examples/conditional-attributes.js — @if.attr / @then / @else
-//   docs/examples/event-modifiers.js        — @on.keydown+send / +cancel
-//   docs/examples/show-hide.js              — @show / @hide
+//   :attr bindings + $'templates'           (attribute binding)
+//   @if.attr / @then / @else                (conditional attributes)
+//   @on.keydown+send / +cancel              (event modifiers)
+//   @show / @hide
 //
-// Note the event modifiers tutuca actually defines (src/anode.js
-// MOD_WRAPPERS_BY_EVENT): keydown takes send/cancel/ctrl/cmd/meta/alt, click
+// Note the event modifiers tutuca actually defines: keydown takes
+// send/cancel/ctrl/cmd/meta/alt, click
 // takes ctrl/cmd/meta/alt. There is no +stop / +prevent; an unknown modifier is
 // the identity (it does not gate the handler).
 
@@ -18,8 +18,8 @@ fn attribute_binding_comp() -> @component.Component {
   attribute_binding_component(
     init={ str: "hello", num: 42, bool: true, notSet: Null },
     update=(
-      // Parse-and-validate before writing: a bad number leaves state untouched
-      // (JS: `Number.isNaN(n) ? this : this.setNum(n)`). The payload is typed
+      // Parse-and-validate before writing: a bad number leaves state untouched.
+      // The payload is typed
       // `String` by the generator — every call site passes one — so the
       // untyped two-branch unpack is gone.
       s,

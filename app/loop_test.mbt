@@ -138,8 +138,6 @@ test "`e.value` reads the event and `@value` reads the @each item" {
   }
   // `e.value` names the event outright, so the event's value is what arrives —
   // the `@each` item bind cannot shadow it, which is the point of the root.
-  // The bare spelling this used to test could mean either, decided by whether
-  // an enclosing loop happened to bind the name; it is a build error now.
   assert_true(
     a.dispatch(
       btn,

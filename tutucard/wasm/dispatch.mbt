@@ -48,11 +48,8 @@ fn bind_index(kind : @tscript.DeclKind) -> Map[String, Int] {
 /// first pass has run. Two rounds settle every card that is not a cycle, and
 /// the bound is what stops one that is.
 ///
-/// The two enrichers are here rather than absent, which is what they were: they
-/// appeared nowhere in this package at all, so a card using `@enrich-with`
-/// compiled "successfully" and quietly lost its bindings. They answer a MAP
-/// rather than a value, and their bodies are statements that write `@name`
-/// rather than state — see `enrich_body`.
+/// The two enrichers answer a MAP rather than a value, and their bodies are
+/// statements that write `@name` rather than state — see `enrich_body`.
 fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
   let mut out : Array[@abi.Field] = []
   for _round in 0..<4 {
@@ -343,8 +340,7 @@ fn handle_event_fn(comps : Array[Comp]) -> @abi.Field {
   all.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(0)]))
   all.push(i32c(@abi.ret_handle_event))
   // The instance, the name and the arguments are lifted ONCE, ahead of every
-  // arm. A card with twelve handlers used to compare twelve times against
-  // linear memory; it now builds one `utf8_string` and compares hashes.
+  // arm: one `utf8_string` is built and hashes are compared.
   let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
   if comps.length() > 1 {
     body.push(let_("c", call("tc_comp_of", [get("s")])))
@@ -404,9 +400,8 @@ fn handle_event_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
       guard d.kind == kind else { continue }
       // A transition with a VALUE body is not a thing the parser makes
       // (`kind_takes_stmts`), so this is an AST built by hand — and a
-      // declaration that leaves without a `Refusal` is exactly the failure the
-      // two enrichers used to be: absent from the module, absent from the
-      // manifest, and absent from the reason list a host or an author reads.
+      // declaration that leaves without a `Refusal` would be absent from the
+      // module, the manifest, and the reason list a host or an author reads.
       guard d.body is Stmts(ss) else {
         g.refuse(
           @tscript.kind_word(d.kind),

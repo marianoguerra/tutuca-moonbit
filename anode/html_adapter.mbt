@@ -1,8 +1,7 @@
-// Fragment parsing over moonbit-community/html, replacing jsdom's
-// `template.innerHTML` (src/anode.js ParseContext.parseHTML). Wrapping the
+// Fragment parsing over moonbit-community/html. Wrapping the
 // input in a <template> element makes the WHATWG parser use the
-// template-contents insertion mode, which is what innerHTML on a template
-// gives jsdom: content models are not enforced, so bare <tr>, <option>,
+// template-contents insertion mode, where content models are not enforced,
+// so bare <tr>, <option>,
 // <col> and friends survive unwrapped instead of being dropped or
 // foster-parented the way they would be in a <body> context.
 
@@ -10,7 +9,7 @@
 /// Parse `html` as a template fragment. Returns the backing document and the
 /// node ids of the fragment's root nodes.
 ///
-/// Known divergence from jsdom: input containing a literal `</template>`
+/// Known divergence: input containing a literal `</template>`
 /// closes the wrapper early, truncating the fragment.
 pub fn parse_fragment(html : String) -> (@html5.Document, Array[Int]) {
   let doc = @html5.parse("<template>" + html + "</template>")

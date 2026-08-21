@@ -1,5 +1,4 @@
-// Port of the toDom / render / re-render / unmount groups of
-// test/vdom-vnode.test.js and test/vdom-attrs-render.test.js.
+// toDom / render / re-render / unmount coverage.
 
 ///|
 test "toDom: renders text child" {

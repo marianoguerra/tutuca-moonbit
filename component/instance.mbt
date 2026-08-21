@@ -24,13 +24,6 @@ priv struct TypedSpec[S] {
   loop_with : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith]
   generated : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
   /// Direct state <-> fields conversion, field by field.
-  ///
-  /// There used to be a JSON bridge behind these — `S -> Json -> Value` and
-  /// back, inside a process-global stash, because `Obj` and `Fn` cannot
-  /// survive JSON at all. It was the fallback for a component with no declared
-  /// schema to generate a codec from, and measured ~2x slower on encode and
-  /// ~5x on decode. Every component declares
-  /// one now, so there is nothing left to fall back to and the bridge is gone.
   encode : (S) -> Map[String, @tutuca.Value]
   decode : (Map[String, @tutuca.Value]) -> S?
 }
@@ -283,9 +276,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
 ///|
 /// A `$`-callable by name: a `compute` first, then a `generated` one.
 ///
-/// Both `obj_field` and `obj_callable` end in exactly this lookup, and each
-/// used to spell it out — five lines building the same two `Fn` wrappers, with
-/// the same `drop_this` convention to get right twice.
+/// Both `obj_field` and `obj_callable` end in exactly this lookup.
 fn[S] TypedInstance::callable_of(
   self : TypedInstance[S],
   name : String,
@@ -304,7 +295,7 @@ fn[S] TypedInstance::callable_of(
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
   match self.fields.get(name) {
     Some(v) => Some(v)
-    // $-callables surface as self-pre-bound Fns (JS prototype lookup);
+    // $-callables surface as self-pre-bound Fns;
     // callers use the Fn convention (element 0 = this), which we drop
     None => self.callable_of(name)
   }
@@ -491,8 +482,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
 ///
 /// This one line is what an instance owes the generic-access layer. Everything
 /// downstream of it — naming the fields, reading one by kind, structural
-/// equality, the debug rendering, the JSON form — is a default in `@tutuca`,
-/// which is why `obj_eq` and `obj_debug` are no longer written here.
+/// equality, the debug rendering, the JSON form — is a default in `@tutuca`.
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
   match self.spec.comp {
     Some(c) => Some(c.schema)
@@ -533,10 +523,8 @@ fn[S] TypedInstance::seq_field(self : TypedInstance[S]) -> String? {
 /// Ordered entries, so `@each` can iterate an instance as the sequence it
 /// stands for.
 ///
-/// A typed instance used to implement neither this nor `obj_item`, which made
-/// it the LEAST capable of the three `Obj` implementations — `DynObj` forwards
-/// both to its guest, and the guest emitter derived them from the schema. The
-/// host's own instances can be asked the same question off the same schema.
+/// The host's own instances can be asked the same question off the same
+/// schema.
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_seq_entries(self) {
   guard self.seq_field() is Some(name) else { return None }
   Some(self.get(name).entries())

@@ -1,9 +1,8 @@
-// Runtime warning hook: the port's equivalent of the JS console.warn calls
-// sprinkled through the value runtime (mk404Handler, unsupported wraps).
+// Runtime warning hook for non-fatal problems found during evaluation.
 
 ///|
-/// Where runtime warnings go. Defaults to println (the closest portable
-/// analogue of JS console.warn); a host can redirect it — e.g. into an error
+/// Where runtime warnings go. Defaults to println; a host can redirect it —
+/// e.g. into an error
 /// pane or the browser console — without threading a context through eval.
 pub let warn_hook : Ref[(String) -> Unit] = Ref(msg => println(msg))
 

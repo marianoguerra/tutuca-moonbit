@@ -38,7 +38,7 @@ test "personal-site: the facets are the distinct categories and roles" {
 test "personal-site: toggling a category off filters the entries" {
   let h = @harness.mount(personal_site_module(), "Root")
   h.send_at_root("init")
-  // enrich composes the JS margaui classes + the `cat-btn on|off` hooks
+  // enrich composes the margaui classes + the `cat-btn on|off` hooks
   debug_inspect(
     h.attr(".cat-btn", "class", nth=0),
     content=(

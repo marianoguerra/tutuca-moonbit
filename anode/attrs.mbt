@@ -1,6 +1,5 @@
-// Attribute parsing (src/attribute.js). The JS module-level AttrParser
-// singleton becomes a per-call allocation; the [pAttrs, wrapperAttrs,
-// textChild] tuple becomes AttrParseResult (spec.mbt).
+// Attribute parsing. AttrParser is a per-call allocation here; the
+// [pAttrs, wrapperAttrs, textChild] tuple becomes AttrParseResult (spec.mbt).
 
 ///|
 let boolean_attrs : Set[String] = Set::from_array([
@@ -53,7 +52,7 @@ fn AttrParser::parse(
     let (name, value) = pair
     if name is [':', .. rest] {
       // Attribute names arrive lowercased; restore the one camelCase SVG
-      // attribute authored through a dynamic binding (JS special case).
+      // attribute authored through a dynamic binding.
       let attr_name = if name == ":viewbox" {
         "viewBox"
       } else {
@@ -84,7 +83,7 @@ pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs {
     .iter()
     .any(item => {
       match item {
-        // A macro-var-sourced constant stays constant (JS comment).
+        // A macro-var-sourced constant stays constant.
         Plain(val~, ..) => !(val is Const(..))
         RawHtml(_) | RawMarkdown(_) | SafeHtml(_) | SafeSvg(_) | If(_) => true
         ConstA(_) => false
@@ -128,7 +127,7 @@ fn AttrParser::parse_attr(
   }
   match val {
     Some(v) =>
-      // A macro-var-sourced constant stays constant (JS comment):
+      // A macro-var-sourced constant stays constant:
       // attrs_of_items keeps a Plain(Const) in the constant collapse.
       self.items.push(Plain(name~, val=v))
     None => self.px.issue(BadValue(role=Attr(name~), value~))
@@ -177,7 +176,7 @@ fn AttrParser::parse_directive(
   match directive_name {
     "dangerouslysetinnerhtml" => {
       let val = self.directive_value(directive_name, s, @tscript.parse_text)
-      // Pushed even when the value failed to parse (JS keeps the attr with
+      // Pushed even when the value failed to parse (kept with
       // the null-const sentinel).
       self.items.push(RawHtml(val~))
     }
@@ -295,11 +294,11 @@ fn AttrParser::parse_else(self : AttrParser, s : String) -> Unit {
 ///|
 /// A branch value, or None with the reason said out loud.
 ///
-/// An UNSET branch is legal and means "leave the attribute alone" — but a
-/// branch that was written and did not parse used to become the same None, so
-/// `@then="btn btn-primary"` (a class list, missing its quotes) rendered as an
-/// element with no class and nothing to read about why. The conditional itself
-/// already reports a value it cannot parse; this is the other half.
+/// An UNSET branch is legal and means "leave the attribute alone"; a branch
+/// that was written and did not parse must NOT become the same None —
+/// `@then="btn btn-primary"` (a class list, missing its quotes) would render
+/// as an element with no class and nothing to read about why. The conditional
+/// itself already reports a value it cannot parse; this is the other half.
 fn AttrParser::branch_val(
   self : AttrParser,
   branch : String,
@@ -366,7 +365,7 @@ fn Attrs::set_data_attr(self : Attrs, key : String, val : @tutuca.Lit) -> Unit {
 }
 
 ///|
-/// The plain string a constant scalar interpolates to in JS (`${val}`):
+/// The plain string a constant scalar interpolates to (`${val}` style):
 /// numbers/bools/null via the value layer's source rendering, strings as-is.
 fn lit_plain_string(lit : @tutuca.Lit) -> String {
   match lit {
@@ -389,8 +388,8 @@ fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
       for item in items {
         match item {
           Plain(name~, val~) | ConstA(name~, val~) => r[name] = "\{val}"
-          // JS would crash on If (no .val) and stringify RawHtml's null
-          // sentinel; neither occurs in real macro calls — skipped here.
+          // If has no .val and RawHtml's null sentinel would stringify
+          // oddly; neither occurs in real macro calls — skipped here.
           RawHtml(_) | RawMarkdown(_) | SafeHtml(_) | SafeSvg(_) | If(_) => ()
         }
       }

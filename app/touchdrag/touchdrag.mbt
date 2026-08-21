@@ -1,4 +1,4 @@
-// The touch -> drag state machine (JS App._handleTouchEvent): a single touch
+// The touch -> drag state machine: a single touch
 // on a [draggable="true"] element becomes dragstart once it moves >10px,
 // dragover while moving (hit-testing under the finger), drop + dragend on
 // release. Both event-glue twins drive this one implementation.
@@ -9,7 +9,7 @@
 /// `element_from_point(root, x, y)` hit-tests under the finger (the js twin
 /// descends shadow roots, the wasm twin uses plain document.elementFromPoint);
 /// `fire(kind, target)` dispatches a synthetic drag DomEvent into the app at
-/// `target` (a raw JS element, never null).
+/// `target` (a raw element, never null).
 pub(all) struct TouchOps {
   has_prop : (@core.Any, String) -> Bool
   get_int : (@core.Any, String) -> Int

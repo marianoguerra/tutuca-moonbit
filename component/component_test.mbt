@@ -1,4 +1,4 @@
-// Component core tests (ports of oo.test.js / components.test.js subsets):
+// Component core tests:
 // typed-state make/coercion/defaults, generated mutators, the update
 // Dispatch bucket, registration scopes + aliases, provide/lookup
 // compilation, styles, and the hybrid seam (a for_type struct component
@@ -371,7 +371,7 @@ test "compile parses provide/lookup and stamps view ids" {
     lk.default_val is Some(Field("fallback")),
   )
   assert_true(ws.lookup.get("broken") is None)
-  // producer-key memoization (JS LookupInfo._sym): Pending until first resolve,
+  // producer-key memoization: Pending until first resolve,
   // then Done with the producer's provide key — Workspace.active resolves to
   // its own provide "active".
   guard! ws.lookup.get("active") is Some(lk2)
@@ -950,9 +950,8 @@ impl @component.Fields for FacetsOnly with fn schema() {
 ///|
 impl @component.Fields for FacetsOnly with fn encode(_s) {
   // The DECLARATION carries the default, not the type. A `TyFlags` describes
-  // which members are spellable; it used to also mean "all of them, to begin
-  // with", which is why a set was the one field whose zero nobody could
-  // choose. Now the state says so, the same way every other field does.
+  // which members are spellable; the state says the default, the same way
+  // every other field does.
   Map([("sel", Map({ "a": Bool(true), "b": Bool(true) }))])
 }
 

@@ -1,9 +1,7 @@
-// Port of docs/examples/file-picker.js.
-//
 // Teaches: reading a file input. `@on.change="onPickFile e.value"` — the app
 // glue turns the chosen File's synchronously-available metadata
-// (name/size/type/lastModified) into a Value::Map, which is what the JS
-// handler read off `event.target.files[0]`. No file selected -> Null.
+// (name/size/type/lastModified) into a Value::Map, which is what
+// `onPickFile` reads. No file selected -> Null.
 
 ///|
 let file_size_units : Array[String] = ["B", "KB", "MB", "GB", "TB"]
@@ -23,8 +21,8 @@ fn format_size(bytes : Double) -> String {
 }
 
 ///|
-/// Epoch milliseconds -> "YYYY-MM-DD HH:MM UTC" (JS shows a locale string;
-/// the port keeps it locale-independent so tests are stable).
+/// Epoch milliseconds -> "YYYY-MM-DD HH:MM UTC" (locale-independent so tests
+/// are stable).
 fn format_epoch_ms(ms : Double) -> String {
   let total_secs = (ms / 1000).to_int64()
   let days = (total_secs / 86400).to_int()
@@ -55,7 +53,7 @@ fn format_epoch_ms(ms : Double) -> String {
 
 ///|
 /// Copy the picked file's metadata Map into the flattened fields; anything
-/// that is not a metadata Map clears the selection (JS withFile(undefined)).
+/// that is not a metadata Map clears the selection.
 fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
   match file {
     Map(meta) =>

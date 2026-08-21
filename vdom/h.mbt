@@ -11,7 +11,7 @@ pub fn comment(s : String) -> Vdom {
 ///|
 /// Fragments splice into their parent's child list at construction time, so
 /// a normalized tree never contains a Fragment as a child — only as a root.
-/// (Port of the JS `addChild` flattening; MoonBit children are already all
+/// (MoonBit children are already all
 /// `Vdom`, so only the fragment-splicing part remains.)
 fn normalize_childs(childs : Array[Vdom]) -> Array[Vdom] {
   let out : Array[Vdom] = []

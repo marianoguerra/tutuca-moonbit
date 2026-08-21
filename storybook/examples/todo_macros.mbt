@@ -1,4 +1,4 @@
-// Port of docs/examples/todo-macros.js — the to-do app rebuilt with macros for
+// The to-do app rebuilt with macros for
 // its repeated markup: checkbox, input, and button fragments, plus hbox/vbox
 // layout wrappers, factored into reusable templates.
 //
@@ -78,8 +78,8 @@ fn tm_item_comp() -> @component.Component {
 ///|
 /// `:handler="onAddItem"` passes the handler NAME through the macro; the handler
 /// itself captures the `Item` component in its closure (the value language has
-/// no component-reference, so the JS `:arg="Item"` degrades to a harmless
-/// ignored argument here).
+/// no component-reference, so a `:arg="Item"` would degrade to a harmless
+/// ignored argument).
 fn tm_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
     views={

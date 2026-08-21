@@ -132,12 +132,9 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
 ///|
 /// Which instantiated module this guest speaks to.
 ///
-/// The key is the MOUNT POINT's element id, and there used to be no key at all:
-/// a page held one compiled card, deliberately loaded by pressing a button, so
-/// `globalThis.__cardguest` could be one object. Every card is compiled now, and
-/// a page with two `<mb-card>` embeds has two modules with two instance tables
-/// — so a guest has to say which one it means, exactly as `WasmGuest` carries a
-/// bundle id.
+/// The key is the MOUNT POINT's element id: a page with two `<mb-card>` embeds
+/// has two modules with two instance tables, so a guest has to say which one it
+/// means, exactly as `WasmGuest` carries a bundle id.
 struct CardGuest {
   key : String
   /// The bundle this guest was registered as, once it has been.
@@ -156,8 +153,8 @@ struct CardGuest {
 ///
 /// `{"$dyn": {"handle": n, "comp": s}}` is the shape both hosts write, so this
 /// is `dyncomp/host/wasm/glue.mbt`'s `json_to_value` with a different bundle
-/// behind it. A card used to need none of it: the generator emitted no
-/// `make-instance`, so a guest value was never another instance.
+/// behind it. The generator emits `make-instance`, so a guest value can be
+/// another instance.
 fn CardGuest::json_to_value(self : CardGuest, j : Json) -> @tutuca.Value {
   match j {
     Object(o) =>
@@ -438,11 +435,9 @@ impl @dyncomp.Guest for CardGuest with fn restore(_self, _component, _state) {
 ///|
 /// Release one instance.
 ///
-/// It used to do nothing, on the grounds that the table goes with the module —
-/// which is true and was never the whole story. A card is copy-on-write, so
-/// EVERY keystroke supersedes a handle: the host's GC has been collecting them
-/// since it was written and handing them to a guest that dropped nothing, and
-/// a card left open grew a table entry per interaction.
+/// A card is copy-on-write, so EVERY keystroke supersedes a handle: the host's
+/// GC collects them and hands them to a guest that must drop them, or a card
+/// left open grows a table entry per interaction.
 impl @dyncomp.Guest for CardGuest with fn drop_instance(self, handle) {
   cardguest_drop(self.key, handle)
 }
@@ -717,9 +712,7 @@ pub fn mount_compiled(
   // Into the same slot table `unmount` and `classesAt` read, which is what lets
   // those two work over this mount without knowing anything about it.
   slot.app = Some(app)
-  // …and the activity panel, which reads what the transactor saw. This used to
-  // be installed by the interpreted mount next door, and there is no
-  // interpreted mount any more.
+  // …and the activity panel, which reads what the transactor saw.
   app.transactor.observe(record => {
     slot.activity.push(record.to_json())
     if slot.activity.length() > ACTIVITY_CAP {

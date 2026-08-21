@@ -20,9 +20,9 @@ fn palette_row_comp() -> @component.Component {
       Some(Unknown(_, _)) | None =>
         match PaletteRowReceive::from_dispatch(msg) {
           Some(SetSelected(selected)) => Next({ ..s, selected, })
-          // The merged `Receive` now carries this component's own VIEW names as
-          // well as the schema's, so `Unknown` no longer covers everything this
-          // match has nothing to say about. They are answered by the match
+          // The merged `Receive` carries this component's own VIEW names as
+          // well as the schema's, so `Unknown` covers cases this match has
+          // nothing to say about. They are answered by the match
           // beside this one.
           _ => Unhandled
         }
@@ -165,9 +165,9 @@ fn schema_form_comp() -> @component.Component {
         ctx.intent("cancelForm", [], @tutuca.IntentOpts::new(route=[Dyn]))
         return Unchanged
       }
-      // The merged `Receive` now carries this component's own VIEW names as
-      // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the match
+      // The merged `Receive` carries this component's own VIEW names as
+      // well as the schema's, so `Unknown` covers cases this match has
+      // nothing to say about. They are answered by the match
       // beside this one.
       _ => ()
     }
@@ -186,9 +186,9 @@ fn schema_form_comp() -> @component.Component {
         let general = by_field.get("").unwrap_or(Str("")).str()
         return Next({ ..s, fields, error: general })
       }
-      // The merged `Receive` now carries this component's own VIEW names as
-      // well as the schema's, so `Unknown` no longer covers everything this
-      // match has nothing to say about. They are answered by the match
+      // The merged `Receive` carries this component's own VIEW names as
+      // well as the schema's, so `Unknown` covers cases this match has
+      // nothing to say about. They are answered by the match
       // beside this one.
       _ => ()
     }

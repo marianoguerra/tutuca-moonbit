@@ -83,7 +83,7 @@ test "a mixed bucket merges the block's map over the author's" {
 
 ///|
 /// The router is keyed by the SOURCE name, not by the bucket enum — it holds
-/// exactly the names the enum no longer carries, so there is no variant left
+/// exactly the names trimmed out of the enum, so there is no variant left
 /// to spell them with. It is a built map rather than a match for the same
 /// reason: with the two halves disjoint there is nothing to fall through to.
 test "the generated router is a map keyed by source name" {

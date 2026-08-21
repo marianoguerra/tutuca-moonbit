@@ -1,5 +1,5 @@
-// Spec for the port of tutuca's path traversal (src/path.js) plus the
-// leaf-update core of the transactor (src/transactor.js updateRootValue).
+// Spec for tutuca's path traversal plus the
+// leaf-update core of the transactor (updateRootValue).
 // READONLY by convention: concrete public data types plus `declare` stubs.
 // Implement the declares in separate files; this file and the *_test.mbt
 // suites define the contract.
@@ -8,15 +8,14 @@
 // dispatch-path compaction + teleporting via DispatchPath::to_transaction_path
 // below). The pieces that need the view registry, the rendered DOM, or the
 // component stack live one layer up, where they were implemented:
-//   - frame-only steps + stack rebuild (JS enterFrame/buildStack) -> render's
+//   - frame-only steps + stack rebuild -> render's
 //     build_stack (render/build_stack.mbt), one arm per Step kind;
-//   - event-path reconstruction (JS Path.fromNodeAndEventName/fromEvent) ->
+//   - event-path reconstruction ->
 //     render's from_node_and_event_name (render/events.mbt), driven by the
-//     backend glue + App::dispatch (which extract target/event-name, the job
-//     of the JS Path.fromEvent wrapper);
+//     backend glue + App::dispatch (which extract target/event-name);
 //   - dispatch channels (send/bubble/request/response) -> the transactor
 //     package.
-// DynStep teleporting itself (JS toTransactionPath) IS here — see
+// DynStep teleporting itself IS here — see
 // DispatchPath::to_transaction_path.
 
 ///|
@@ -128,7 +127,7 @@ pub(all) enum IntentAnswer {
 } derive(Debug, Eq)
 
 ///|
-/// What a handler can do besides transforming its leaf (JS EventContext).
+/// What a handler can do besides transforming its leaf.
 /// Defined here so Handler can carry it without depending on the transactor;
 /// every method defaults to a no-op so tests and Path::update can run
 /// handlers without a dispatcher. The transactor implements the real thing.
@@ -185,11 +184,9 @@ impl Ctx with fn name(_self) {
 }
 
 ///|
-/// `ctx.send` is `send_at_path` at the ctx's OWN path — which is what the
-/// transactor's ctx used to say twice, once as a default that did nothing and
-/// once as an implementation. Spelling it here leaves one method to implement,
-/// and no way for the relative and absolute forms to disagree about what
-/// "here" means.
+/// `ctx.send` is `send_at_path` at the ctx's OWN path. Spelling it here leaves
+/// one method to implement, and no way for the relative and absolute forms to
+/// disagree about what "here" means.
 impl Ctx with fn send(self, name, args) {
   self.send_at_path(self.path(), name, args)
 }
@@ -247,18 +244,18 @@ impl Ctx with fn walk_path(_self, _callback) {
 }
 
 ///|
-/// A Ctx that dispatches nothing (JS `eval(null)` analogue for handlers).
+/// A Ctx that dispatches nothing (the `eval(null)` analogue for handlers).
 pub(all) struct NullCtx {}
 
 ///|
 pub impl Ctx for NullCtx
 
 ///|
-/// A leaf-update handler, resolved ON the leaf so `self` is pre-bound (the JS
-/// `handler.apply(instance, args)` binds `this` at call time; binding at
+/// A leaf-update handler, resolved ON the leaf so `self` is pre-bound (the
+/// original bound `this` at call time; binding at
 /// resolution time is equivalent — same instance either way). Receives its
-/// args and the dispatch Ctx (JS appends ctx as the last handler argument).
-/// Returns the new leaf, or None for "no change" (the port of the JS
+/// args and the dispatch Ctx (appended as the last handler argument).
+/// Returns the new leaf, or None for "no change" (the analogue of the
 /// `newLeaf !== curLeaf` identity check — answering None lets the traversal
 /// skip the spine rebuild without comparing anything).
 pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
@@ -268,16 +265,6 @@ pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 /// None when unresolvable (missing field, bad index, key field not a key…).
 /// One interpreter over the `value_dyn.mbt` accessors, so step semantics —
 /// especially SeqAccessStep's live key resolution — are written once.
-///
-/// The tree used to be addressed through a `PathNode` TRAIT, so that a node
-/// could be something other than a `Value`. Nothing ever was: the only
-/// implementation outside the tests was `Value` itself, while typed component
-/// instances travelled — as they still do — inside `Value::Obj`. What the
-/// trait did buy was a box per traversal step, an `as_value` unwrap at every
-/// consumer (with an impossible failure branch each time), and a `same_node`
-/// that existed because two boxes carrying the SAME value are not
-/// `physical_equal` — which is the one comparison the whole copy-on-write
-/// design is keyed on.
 declare pub fn step_get(node : Value, step : Step) -> Value?
 
 ///|
@@ -318,12 +305,12 @@ declare pub fn Path::lookup(self : Path, root : Value) -> Value?
 /// Replace the leaf: walk down collecting intermediates, rebuild the spine
 /// bottom-up via step_put (structural sharing). If any step is unresolvable
 /// the SAME `root` object is returned (physically — callers detect "nothing
-/// happened" by `physical_equal`, matching JS setValue).
+/// happened" by `physical_equal`).
 declare pub fn Path::set_value(self : Path, root : Value, v : Value) -> Value
 
 ///|
 /// The nodes entered along the path, root included (index 0), stopping at
-/// the first unresolvable step. JS Path.resolveChain. Powers the
+/// the first unresolvable step. Powers the
 /// transactor's `ctx.walk_path` (leaf→root component walk).
 declare pub fn Path::resolve_chain(self : Path, root : Value) -> Array[Value]
 
@@ -335,7 +322,7 @@ declare pub fn Path::resolve_chain(self : Path, root : Value) -> Array[Value]
 declare pub fn Path::pin_keys(self : Path, root : Value) -> Path
 
 ///|
-/// Flat StepKey list of the addressing steps (JS Path.toKeys). SeqAccessStep
+/// Flat StepKey list of the addressing steps. SeqAccessStep
 /// reports its seq field with no key (the key is live; pin_keys first for a
 /// concrete one) rather than being dropped, which would shift later indices.
 declare pub fn Path::to_keys(self : Path) -> Array[StepKey]

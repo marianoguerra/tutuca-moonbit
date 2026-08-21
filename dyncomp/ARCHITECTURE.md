@@ -308,8 +308,7 @@ What is left, in order:
    per grant.
 4. **Design the agent tool surface** from what the tree actually offers —
    address a component by path, send it a message, read its declared fields
-   back — rather than from the document it used to be specified against. Then
-   Layer 2.
+   back. Then Layer 2.
 
 ## Known gaps in what is built
 

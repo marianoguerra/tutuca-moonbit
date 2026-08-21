@@ -1,11 +1,10 @@
 // Parsed HTML, sanitized into vdom nodes.
 //
-// Split out of `markup.mbt` and made public because `MarkupFilter` is no longer
-// the only caller: `vdom/filter/markdown` needs exactly this for the two places
-// raw HTML survives inside a markdown document (`HtmlBlock` and the HTML
-// comments that are the only thing `HtmlInline` ever holds). One builder rather
-// than two is not tidiness — it is the reason a `<script>` cannot be allowed by
-// one path and refused by the other.
+// `MarkupFilter` is not the only caller: `vdom/filter/markdown` needs exactly
+// this for the two places raw HTML survives inside a markdown document
+// (`HtmlBlock` and the HTML comments that are the only thing `HtmlInline` ever
+// holds). One builder rather than two is not tidiness — it is the reason a
+// `<script>` cannot be allowed by one path and refused by the other.
 
 ///|
 /// Everything the walk needs that does not change as it descends.

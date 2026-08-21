@@ -1,4 +1,4 @@
-// §{json}§ boundary metas (JS Renderer._renderMetadata + path.js metaChain
+// §{json}§ boundary metas (emission + path metaChain
 // parsing). Emission and parsing share this type so they cannot drift.
 
 ///|

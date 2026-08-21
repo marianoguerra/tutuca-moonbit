@@ -1,7 +1,7 @@
 ///|
 /// Value of a virtual-node attribute.
 ///
-/// `Html` carries the markup of `dangerouslySetInnerHTML` (the JS `{ __html }`
+/// `Html` carries the markup of `dangerouslySetInnerHTML` (the `{ __html }`
 /// object); it never reaches `setAttribute` — `set_prop` routes it to
 /// `set_inner_html` first. There is deliberately no `Int` variant: mixing
 /// `Num(0.0)` and a hypothetical `Int(0)` would break `Eq`-based diffing.
@@ -26,10 +26,10 @@
 /// config applies.
 ///
 /// `Data` carries a structured (JSON-shaped) value for object/array-valued
-/// custom-element properties (the JS `h(tag, { items: [1, 2, 3] })` case).
+/// custom-element properties (the `h(tag, { items: [1, 2, 3] })` case).
 /// It ALWAYS takes the property path — a structured value is a property by
 /// definition, never an attribute. Diffing is by VALUE (Json's Eq), a
-/// deliberate divergence from JS, which compares object props by reference
+/// deliberate divergence from upstream, which compares object props by reference
 /// and re-invokes the setter for an equal-content new object.
 pub(all) enum AttrValue {
   Str(String)
@@ -49,7 +49,7 @@ pub fn AttrValue::int(i : Int) -> AttrValue {
 }
 
 ///|
-/// Serialized form written by `set_attribute`, mirroring JS string coercion:
+/// Serialized form written by `set_attribute`, mirroring string coercion:
 /// numbers drop the trailing `.0` for integral values, booleans become
 /// `"true"` / `"false"`.
 pub fn AttrValue::to_attr_string(self : AttrValue) -> String {

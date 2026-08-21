@@ -1,8 +1,8 @@
-// Ports of:
-//   docs/examples/push-view.js       — @push-view + <x render-each> + @when
-//   docs/examples/seq-item-access.js — .seq[.key] item access as a render target
-//   docs/examples/pagination.js      — @loop-with returning a start/end slice
-//   docs/examples/todo.js            — a list of child components
+// Rendering:
+//   @push-view + <x render-each> + @when
+//   .seq[.key] item access as a render target
+//   @loop-with returning a start/end slice
+//   a list of child components
 //
 // Note on building child instances: a Component value carries its own id and is
 // bound to the scope it is registered in, so each module builds ONE `entry_comp()`

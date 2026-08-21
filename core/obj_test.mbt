@@ -23,7 +23,7 @@ impl @core.Obj for Card with fn obj_field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     "tags" => Some(List(self.tags))
-    // methods surface as pre-bound Fns (JS prototype lookup)
+    // methods surface as pre-bound Fns (prototype lookup)
     "shout" => Some(Fn(_args => Str("\{self.title}!")))
     _ => None
   }

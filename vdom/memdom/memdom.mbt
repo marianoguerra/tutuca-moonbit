@@ -126,8 +126,8 @@ pub impl @vdom.DomNode for MemNode with fn create_element(
   ns,
   is_attr,
 ) {
-  // Explicit HTML-namespace requests behave like plain HTML elements
-  // (JS isNamespaced excludes HTML_NS), so normalize at creation.
+  // Explicit HTML-namespace requests behave like plain HTML elements,
+  // so normalize at creation.
   let ns = match ns {
     Some(Other(u)) if u == @vdom.html_ns => None
     other => other

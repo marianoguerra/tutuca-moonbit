@@ -22,7 +22,7 @@ pub(all) struct Story {
   /// LINTED, not rendered, so the pane shows only the Lint panel.
   renderable : Bool
   /// examples with no lifecycle that need a host-dispatched `init` to load
-  /// their data (JS `app.sendAtRoot("init")`); the gallery forwards `init` to
+  /// their data; the gallery forwards `init` to
   /// these panes after mount. Mirrors examples/ ExampleModule.init.
   init : Bool
 }

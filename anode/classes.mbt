@@ -1,10 +1,9 @@
 // Class collection for margaui-style scanners (spec.mbt
-// ANode::collect_classes). Mirrors JS ParseCtxClassSetCollector semantics:
-// only literal class fragments are collected — a NameVal/Field in `:class`
-// contributes nothing.
+// ANode::collect_classes). Only literal class fragments are collected — a
+// NameVal/Field in `:class` contributes nothing.
 
 ///|
-/// Split on any whitespace run (JS `s.split(/\s+/)`).
+/// Split on any whitespace run.
 fn add_classes(s : String, into : Set[String]) -> Unit {
   let buf = StringBuilder::new()
   fn flush() {
@@ -27,7 +26,7 @@ fn add_classes(s : String, into : Set[String]) -> Unit {
 
 ///|
 /// Literal fragments of a class-position value: Const strings whole, and the
-/// Const parts of a template string (JS _maybeAddVal/_maybeAddStrTpl).
+/// Const parts of a template string.
 fn add_val_classes(val : @tutuca.Val, into : Set[String]) -> Unit {
   match val {
     Const(lit=LStr(s), ..) => add_classes(s, into)

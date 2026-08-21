@@ -296,9 +296,9 @@ fn Gallery::root_comp(
       match DyncompStorybookReceive::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
         Some(SetStatus(t)) => return Next({ ..s, status: t })
-        // The merged `Receive` now carries this component's own VIEW names as
-        // well as the schema's, so `Unknown` no longer covers everything this
-        // match has nothing to say about. They are answered by the match
+        // The merged `Receive` carries this component's own VIEW names as
+        // well as the schema's, so `Unknown` covers cases this match has
+        // nothing to say about. They are answered by the match
         // beside this one.
         _ => ()
       }

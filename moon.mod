@@ -43,8 +43,7 @@ import {
 // What `moon publish` ships. Consumers get the library packages, the CLI
 // (cmd/main -> cli/) and the docs; they don't get the demo/playground/guest
 // hosts, the dev tooling, or the storybook — those only make sense inside
-// this repo. storybook/ went the same way as demo/ once nothing published
-// depended on it: `tutuca storybook` serves a pre-built bundle and needs no
+// this repo: `tutuca storybook` serves a pre-built bundle and needs no
 // story registry, and the harness's demo test defines its own module rather
 // than borrowing an example. The storybook packages stay in the repo as
 // demos and as the corpus the lint/view sweeps run over. Check with
@@ -55,14 +54,13 @@ import {
 // may do, the catalog, the JSON Schema projection, and the universal UI over
 // all of it — and a consumer who cannot reach it cannot host a dynamic
 // component at all. It imports nothing that was not already published, and
-// `docs/`, which ships, has always linked into it.
+// `docs/`, which ships, links into it.
 //
 // The one part that stays behind is `dyncomp/test`: its `*.test.mjs` drive real
 // guest bundles out of `guests/*/dist/js`, a path that exists in this repo and
-// in no tarball. The wasm-gc JS import shims are the reverse case — they moved
-// OUT of `demo/` (`app/wasm/loader.mjs`, `dyncomp/host/wasm/loader.mjs`)
-// precisely so that a consumer gets them, since they are the import contract of
-// packages that were already shipping without them.
+// in no tarball. The wasm-gc JS import shims (`app/wasm/loader.mjs`,
+// `dyncomp/host/wasm/loader.mjs`) DO ship: they are the import contract of
+// packages that ship.
 
 // `examples/` is the reverse of everything else in this list: not a part of the
 // project that does not belong in the tarball, but CONSUMERS of the tarball
@@ -84,12 +82,14 @@ options(
     "dev",
     "cmd/dev",
     "cmd/css-bundle",
-    // `cmd/cardwasm` and `cmd/card-corpus` are dev shells over `tutucard/wasm`,
-    // which DOES ship: the compiler is the feature, and a terminal front end
-    // for it is not. `tutucard/wasm/test` stays behind for the reason
-    // `dyncomp/test` does — it drives node against real modules.
+    // `cmd/cardwasm`, `cmd/card-corpus` and `cmd/conformance` are dev shells
+    // over shipping packages (`tutucard/wasm`, `tscript`): the compilers are
+    // the feature, and a terminal front end for them is not.
+    // `tutucard/wasm/test` stays behind for the reason `dyncomp/test` does —
+    // it drives node against real modules.
     "cmd/cardwasm",
     "cmd/card-corpus",
+    "cmd/conformance",
     "tutucard/wasm/test",
     "storybook",
     "package.json",

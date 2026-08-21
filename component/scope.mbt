@@ -1,5 +1,4 @@
-// Components registry + ComponentStack lexical registration scope
-// (src/components.js).
+// Components registry + ComponentStack lexical registration scope.
 
 ///|
 pub fn Components::new() -> Components {
@@ -45,8 +44,7 @@ pub fn Components::compile_styles(self : Components) -> String {
 
 ///|
 /// Every class name the registered components' compiled views can show, for a
-/// margaui-style scanner (the port of JS collectAppClassesInSet, util/
-/// parsectx.js). Walks each component's compiled view roots via
+/// margaui-style scanner. Walks each component's compiled view roots via
 /// ANode::collect_classes; the caller hands the result to a margaui compiler
 /// (the demos pass it to demo/margaui's compile_classes — the MoonBit
 /// marianoguerra/tailwindcss port — then inject the CSS: tutuca collects,

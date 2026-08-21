@@ -1,5 +1,3 @@
-// Port of docs/examples/dynamic-selected-edit.js.
-//
 // Dynamic bindings used as render targets — a single item and a whole
 // sequence. `Root` owns a keyed map of entries and a `selectedKey`; it
 // PRODUCES two dynamics: `items` = `.items` (the whole sequence) and

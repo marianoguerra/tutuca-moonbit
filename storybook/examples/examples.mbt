@@ -1,4 +1,4 @@
-// The registry of ported examples: name -> (ModuleDef, root component).
+// The registry of examples: name -> (ModuleDef, root component).
 //
 // One list, consumed by three things:
 //   - the storybook gallery (storybook/ + storybook/ui) — grouped into sections
@@ -7,7 +7,6 @@
 //   - the view-corpus sweep (gen_views_corpus_test.mbt) — every view through
 //     the generator
 //
-// Names match the JS file they were ported from (docs/examples/<name>.js).
 
 ///|
 pub struct ExampleModule {
@@ -19,12 +18,12 @@ pub struct ExampleModule {
   /// the browser host mounts this one by title
   example_title : String?
   /// dispatched at the root after start() — tutuca has no lifecycle, the host
-  /// decides (JS: app.sendAtRoot("init"))
+  /// decides
   init : Bool
 }
 
 ///|
-/// Every ported example, ordered the way the tutorial introduces them:
+/// Every example, ordered the way the tutorial introduces them:
 /// simplest first.
 pub fn all_examples() -> Array[ExampleModule] {
   [

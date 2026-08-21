@@ -1,4 +1,4 @@
-// Port of docs/examples/filter-paginate.js — THE richest example: three takes
+// The richest example: three takes
 // on the same feature (filter a list, show one page of the matches), trading
 // simplicity for how many times the list is scanned per render. All three
 // return `keys` (original indices) from @loop-with, so @key keeps each row's
@@ -56,10 +56,6 @@ fn fp_match_count(s : NaivePeopleState) -> Int {
 ///|
 /// The buckets every strategy shares: the search/prev/next Input arms as one
 /// `update` fn, and the `onlyMatches` @when predicate.
-///
-/// There used to be a `matchCount` compute here too, "so views could read it".
-/// None did — and a bucket keyed by an enum of the names the views actually
-/// use has no case to put it in, which is how it came to light.
 
 ///|
 fn fp_update() -> (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[

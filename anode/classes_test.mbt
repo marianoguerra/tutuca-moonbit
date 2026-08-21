@@ -1,5 +1,5 @@
 // ANode::collect_classes — the margaui scanner's view of a template
-// (spec.mbt; JS ParseCtxClassSetCollector semantics).
+// (spec.mbt).
 
 ///|
 priv struct NoMacros {}

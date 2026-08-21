@@ -1,4 +1,4 @@
-// Drag support (the _handleDragEvent half of JS app.js; touch synthesis
+// Drag support (touch synthesis
 // lives in the browser glue). dragstart captures a DragInfo from the SOURCE
 // render: the teleported value plus a stack rebuilt WITH frame-only steps,
 // so handlers can read the source's @each binds via dragInfo.lookupBind.
@@ -7,7 +7,7 @@
 // dragInfo arg.
 
 ///|
-/// The `dragInfo` handler argument (JS class DragInfo as an Obj):
+/// The `dragInfo` handler argument:
 /// type / value / lookupBind(name).
 priv struct DragInfoObj {
   drag_type : String

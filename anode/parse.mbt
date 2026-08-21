@@ -1,4 +1,4 @@
-// ANode::parse / from_dom (src/anode.js ANode.parse / ANode.fromDOM).
+// ANode::parse / from_dom.
 
 ///|
 pub fn ANode::parse(html : String, px : ParseContext) -> ANode? {
@@ -36,7 +36,7 @@ fn is_valid_tag_name(tag : String) -> Bool {
 }
 
 ///|
-/// Convert one DOM node (JS ANode.fromDOM) — ANode::parse's recursion
+/// Convert one DOM node — ANode::parse's recursion
 /// worker. None when the node contributes nothing (unsupported node kinds,
 /// failed <x> ops).
 fn ANode::from_dom(
@@ -147,7 +147,7 @@ fn get_named_item(attrs : Array[(String, String)], name : String) -> String? {
 
 ///|
 /// Apply directive wrappers around `node`, last wrapper innermost so the
-/// FIRST directive in source order ends up outermost (JS wrap()).
+/// FIRST directive in source order ends up outermost.
 fn wrap(
   node : ANode,
   px : ParseContext,
@@ -162,9 +162,8 @@ fn wrap(
       }
       // A dropped wrapper here means its directive value failed to parse, which
       // AttrParser::directive_value already reported as BadValue(Directive) when
-      // it built the WrapperAttr — so no second issue is surfaced (the JS TODO
-      // at anode.js:317 exists because JS never reported it at all; the port
-      // does, upstream). The one path that lacked a report — `@show`/`@hide`
+      // it built the WrapperAttr — so no second issue is surfaced here; the one
+      // path that lacked a report — `@show`/`@hide`
       // used as wrapper attrs on an <x> op — is handled in build_x_wrappers.
       None => ()
     }
@@ -173,7 +172,7 @@ fn wrap(
 }
 
 ///|
-/// Build the wrapper node for a directive descriptor (JS makeWrapperNode):
+/// Build the wrapper node for a directive descriptor:
 /// Each/Scope register in px.nodes, Show/Hide/PushView stay unregistered.
 fn make_wrapper_node(data : WrapperAttr, px : ParseContext) -> ANode? {
   let node : ANode? = match data.kind {

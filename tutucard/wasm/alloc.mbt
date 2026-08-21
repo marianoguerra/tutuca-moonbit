@@ -2,14 +2,7 @@
 // decide: the linear-memory allocator, and the constant helpers the expression
 // compiler leans on.
 //
-// This file used to be the WHOLE value runtime — thirty-four functions built as
-// an AST, because a value was a 16-byte `values.value` cell in linear memory
-// and every one of them was pointer arithmetic. A value is now a `&jv_value`,
-// the Wax data stdlib does the work, and tutuca's own semantics over it read
-// far better as Wax source than as MoonBit that assembles Wax: see
-// `runtime/runtime.wax`.
-//
-// What stayed is what the source half CANNOT say. `alloc` needs `heap`, whose
+// What is here is what the source half CANNOT say. `alloc` needs `heap`, whose
 // initial value is the top of a constant pool only the generator knows the size
 // of, and `cabi_realloc` is an export whose name the ABI fixes.
 
@@ -50,10 +43,8 @@ fn runtime_fields() -> Array[@abi.Field] {
   // allocator is a much larger thing to be sure of than everything else here
   // put together.
   //
-  // It now allocates far less than it used to. An expression node was an
-  // allocation here; it is a GC object now, and what is left in linear memory
-  // is only what crosses the ABI boundary — a string on its way out, and
-  // whatever the host lowers on its way in.
+  // What is left in linear memory is only what crosses the ABI boundary — a
+  // string on its way out, and whatever the host lowers on its way in.
   fs.push(
     func("alloc", params=[("size", i32_), ("align", i32_)], results=[i32_], body=[
       let_(

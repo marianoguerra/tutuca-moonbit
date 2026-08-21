@@ -1,4 +1,4 @@
-// Port of test/anode-namespace.test.js: SVG/MathML namespace propagation,
+// SVG/MathML namespace propagation tests:
 // camelCase preservation, and macros inside foreign content.
 
 ///|

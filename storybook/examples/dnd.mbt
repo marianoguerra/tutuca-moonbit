@@ -1,4 +1,4 @@
-// Port of docs/examples/dnd-example.js — reorder a list by dragging.
+// Reorder a list by dragging.
 //
 // How a drop knows what was dragged: `dragstart` captures a DragInfo from the
 // SOURCE render — the dragged value plus the source's rebuilt stack — so the
@@ -8,13 +8,12 @@
 // targets that accept it; the app stamps `data-dragging` / `data-draggingover`
 // for styling.
 //
-// PORT DIVERGENCE — drop geometry. JS also takes the raw DOM event and measures
-// the pointer against the target's bounding box (`dropWasAbove`) to decide
-// whether the row lands above or below the one it was dropped on. MoonBit's
+// Drop geometry: MoonBit's
 // event layer deliberately does not expose DOM objects as Values (there is no
-// `event` / `target` arg; see render/dom_event.mbt), so this port derives the
-// side from the drag DIRECTION instead: dragging downward lands after the
-// target, upward lands before it. Same reorder, no geometry.
+// `event` / `target` arg; see render/dom_event.mbt), so the side is derived
+// from the drag DIRECTION instead of pointer-vs-target geometry: dragging
+// downward lands after the target, upward lands before it. Same reorder, no
+// geometry.
 
 ///|
 /// Move `source` to sit at `target`, shifting the rest — the list equivalent of

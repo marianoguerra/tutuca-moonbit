@@ -16,7 +16,7 @@ test "text-directive: renders fields, a method call, and every value type" {
   inspect(h.text(".v-str"), content="hello")
   // @text PREPENDS: the element's own children survive
   inspect(h.text(".v-num"), content="42 <- text directive is prepended")
-  // a null value renders NOTHING (JS drops null children in vdom addChild)
+  // a null value renders NOTHING
   inspect(h.text(".v-notset"), content="")
   inspect(h.text(".v-method"), content="HELLO")
   // <x text=".bool"> is a bare text node — no element of its own

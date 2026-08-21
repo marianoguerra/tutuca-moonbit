@@ -16,9 +16,8 @@ pub(open) trait VdomFilter {
   /// traverse at all: it filters each element where it CONSTRUCTS it, which is
   /// exactly-once by construction and costs no walk. A filter that owned its
   /// traversal would have to be handed the finished tree, and would then
-  /// re-walk every subtree the render cache returned unchanged, on every render
-  /// — which is what this used to do, and it made the filter O(whole tree)
-  /// where the rest of the pipeline is O(changed).
+  /// re-walk every subtree the render cache returned unchanged, on every
+  /// render.
   ///
   /// Children are already built when this is called. A filter that REPLACES
   /// them (raw markup becoming described nodes) is therefore replacing finished
@@ -126,8 +125,7 @@ pub fn Dropped::to_string(self : Dropped) -> String {
 ///|
 /// What a filter dropped since the host last looked, bounded.
 ///
-/// Every filter needs exactly this and each used to carry its own copy: the
-/// same two fields, the same `64`, the same two methods. Four copies of a
+/// Every filter needs exactly this. Four copies of a
 /// bound is four places for it to become a different bound — and the cap is
 /// the part that matters, since a page rendering a hostile view drops on
 /// every element of every render and an unbounded log is the leak.

@@ -8,17 +8,9 @@
 ///|
 /// One effect a transition performed.
 ///
-/// STRUCTURAL, and it used to be a printed string. The string was chosen so
-/// that no backend's spelling of an effect became the language's — a fair worry
-/// — but it had a cost nobody had to pay until a backend could not be driven
-/// from MoonBit: `tutucard/wasm` sees an effect as a name and a list of values
-/// arriving at a host import, and turning that back into `send flash RStr("a")`
-/// meant reproducing MoonBit's derived `Debug` in JavaScript. So `cmd/corpus`
-/// ran the INTERPRETER to recover the values the corpus had thrown away, and
-/// the compiled backend's conformance harness depended on the interpreter
-/// existing.
+/// STRUCTURAL.
 ///
-/// `kind` is a plain word rather than an enum arm for the original reason: it
+/// `kind` is a plain word rather than an enum arm: it
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
@@ -38,9 +30,9 @@ pub(all) struct CaseEffect {
 } derive(Debug, Eq)
 
 ///|
-/// The printed form — what the corpus used to store, now derived from what it
-/// stores instead. Two adapters still compare against it, because what they
-/// have in hand is a line their own recorder wrote.
+/// The printed form — derived from what the corpus stores. Two adapters still
+/// compare against it, because what they have in hand is a line their own
+/// recorder wrote.
 pub fn CaseEffect::printed(self : CaseEffect) -> String {
   if self.kind == "stop" {
     return "stop"

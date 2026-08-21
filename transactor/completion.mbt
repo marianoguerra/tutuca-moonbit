@@ -1,4 +1,4 @@
-// Counter-based completion scope (JS class Completion, callbacks instead of
+// Counter-based completion scope (callbacks instead of
 // promises).
 
 ///|

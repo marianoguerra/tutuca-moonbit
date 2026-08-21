@@ -1,7 +1,6 @@
 // The single "place with all the tasks" for tutuca-mb. Each task plans an
 // ordered list of steps (spawn a process, or a file op for `dist`); cmd/dev
-// executes them in order and stops on the first failure. This replaces the raw
-// commands previously scattered across AGENTS.md / README / moon.pkg headers.
+// executes them in order and stops on the first failure.
 
 ///|
 /// One command to spawn: `prog` with `args`, announced under `label`.
@@ -18,8 +17,7 @@ pub enum Step {
   Run(Command)
   Mkdir(String)
   Copy(from~ : String, to~ : String)
-  // copy `from` to `to`, replacing the first `old_src` with `new_src` (used to
-  // repoint the demo pages' <script src> at the sibling bundle in dist/).
+  // copy `from` to `to`, replacing the first `old_src` with `new_src`.
   WriteRewritten(
     from~ : String,
     to~ : String,
@@ -506,17 +504,17 @@ fn gen_views_commands() -> Array[Command] {
     ("dyncomp/ui/app.html", Some("UniversalApp")),
     ("dyncomp/ui/std/std.html", None),
     ("dyncomp/storybook/storybook.html", Some("DyncompStorybook")),
-    ("inspector/activity.html", None),
-    ("inspector/json.html", None),
-    ("inspector/component_inspector.html", None),
-    ("inspector/instance_inspector.html", None),
-    ("inspector/state_editor.html", None),
-    ("inspector/schema_components.html", None),
-    ("inspector/schema.html", None),
-    ("inspector/module.html", None),
+    ("storybook/inspector/activity.html", None),
+    ("storybook/inspector/json.html", None),
+    ("storybook/inspector/component_inspector.html", None),
+    ("storybook/inspector/instance_inspector.html", None),
+    ("storybook/inspector/state_editor.html", None),
+    ("storybook/inspector/schema_components.html", None),
+    ("storybook/inspector/schema.html", None),
+    ("storybook/inspector/module.html", None),
     ("docs/tutorial.html", None),
     ("docs/first_principles.html", None),
-    ("inspector/schema_viewer.html", Some("SchemaViewer")),
+    ("storybook/inspector/schema_viewer.html", Some("SchemaViewer")),
     ("storybook/examples/basics.html", None),
     ("storybook/examples/collections.html", None),
     ("storybook/examples/communication.html", None),
@@ -631,10 +629,7 @@ fn build_commands() -> Array[Command] {
 /// Assembled tasks: name -> (about, the steps it plans).
 ///
 /// These cannot be `tasks()` entries because they are not a list of commands —
-/// each builds its plan, with mkdirs, copies and rewrites interleaved. They
-/// used to be a chain of `if name == "…"` in `plan()` AND a hand-written line
-/// each in `help_text()`, which is two lists that had to agree and did not:
-/// `guests` had a branch and no line, so it ran and never appeared in `--help`.
+/// each builds its plan, with mkdirs, copies and rewrites interleaved.
 /// One list, walked by both.
 fn assembled() -> Array[(String, String, () -> Array[Step])] {
   [
@@ -683,8 +678,8 @@ fn composites() -> Array[(String, String, Array[String])] {
     // .html beside it. Catching that before `check` also means the rest of CI
     // runs against modules that provably match their sources.
     //
-    // `skill-embed` is here for exactly the same reason, and was not for a
-    // long time: `cli/skill_assets_gen.mbt` is checked in, compiles whatever it
+    // `skill-embed` is here for exactly the same reason:
+    // `cli/skill_assets_gen.mbt` is checked in, compiles whatever it
     // holds, and ships inside the binary — so a skill doc edited without
     // re-embedding is invisible until somebody runs `tutuca install-skill` and
     // reads the wrong thing. It runs AFTER `gen-views`, because that task ends
@@ -861,10 +856,7 @@ pub fn plan(name : String) -> Array[Step]? {
 ///|
 /// Every guest bundle, in one list.
 ///
-/// ONE list, because there used to be three — this file, the justfile's
-/// `guests` recipe, and `guests/guests.mjs` — and adding a guest to two of
-/// them left `just guests` building a bundle that no longer existed. The
-/// justfile is a thin wrapper over the `guests` task below, and
+/// ONE list. The justfile is a thin wrapper over the `guests` task below, and
 /// `guests/guests.mjs` still owns which names `build-guest.mjs` accepts,
 /// because that is a fact about the script rather than about the build.
 ///
@@ -974,8 +966,7 @@ const UNIVERSAL_WASM = "_build/wasm-gc/release/build/demo/universal_wasm/univers
 /// (examples/*.tutuca.tar.gz) to drop on the page or load by URL. Kept out of
 /// `dist` — the guest bundles need the component toolchain (wasm-tools +
 /// @bytecodealliance/jco; see guests/counter/README.md). This is the ONE page
-/// that hosts runtime-loaded bundles; the storybook gallery used to carry a
-/// second, smaller shell for the same job and no longer does.
+/// that hosts runtime-loaded bundles.
 pub fn universal_steps() -> Array[Step] {
   dyncomp_page_steps(
     label="universal demo",
@@ -1081,8 +1072,7 @@ pub fn skill_embed_steps() -> Array[Step] {
     // The drift check the other two generators have always had, and this one
     // never did. It is the same `HEAD --` form as `gen-views`: compare against
     // the commit, not the index, so a `git add` of a stale module cannot walk
-    // past. Safe to run only because the fmt above leaves this file alone —
-    // AGENTS.md used to claim otherwise, and it was checked.
+    // past. Safe to run only because the fmt above leaves this file alone.
     //
     // What it would have caught: `skill/tutuca/cli.md` lost two sections and
     // every paragraph blank line, and the broken text was embedded and shipped

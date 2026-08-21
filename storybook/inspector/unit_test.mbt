@@ -1,5 +1,5 @@
-// Unit tests over the from-data builders — the port of the pure assertions
-// in the JS *.dev.js getTests. Built instances are read back through the Obj
+// Unit tests over the from-data builders. Built instances are read back
+// through the Obj
 // trait (`obj_field`), and methods are called through the same trait (they
 // surface as self-pre-bound Fns; element 0 is the this-slot).
 
@@ -28,9 +28,7 @@ fn ocall(v : @tutuca.Value, name : String) -> @tutuca.Value {
 fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
   guard v is Obj(o) else { return Null }
   // `Receive`, because that is what a view raises now. This helper stands in
-  // for a click, and in v2 a click is an addressed message — the `Input`
-  // bucket it used to name is v1's word for the same thing, and a v2
-  // component's generated arms no longer answer it.
+  // for a click, and a click is an addressed message.
   guard o.obj_handler(Receive, name) is Some(Handler(f)) else { return Null }
   match f([], @tutuca.NullCtx::{  }) {
     Some(node) => node
@@ -109,10 +107,7 @@ impl @tutuca.Obj for Undescribed with fn obj_debug(_self) {
 }
 
 ///|
-/// An instance shows its DECLARED fields, under its own name. It used to
-/// render as one line of `obj_debug` text no matter what it carried, because
-/// nothing could ask an `Obj` what its fields were — the inspector's headline
-/// limitation — and then as a nameless `Object`, which reads as a plain Map.
+/// An instance shows its DECLARED fields, under its own name.
 test "classify: a described instance opens into its fields" {
   let insp = @inspector.Inspector::new()
   let card = sample_comp().make({ "title": Str("Hello") })
@@ -491,11 +486,9 @@ test "a described component surfaces what reflection cannot" {
 }
 
 ///|
-/// There is no undescribed component to reflect any more. `component()`
-/// requires a schema, so `component_summary` reads one source and the
-/// reflected path it used to fall back to is gone — this pins that the
-/// descriptor really is the declaration, right down to the fixture's own
-/// fingerprint.
+/// `component()` requires a schema, so `component_summary` reads one source —
+/// this pins that the descriptor really is the declaration, right down to the
+/// fixture's own fingerprint.
 test "the summary is the declaration, not a reconstruction" {
   guard @inspector.component_summary(sample_comp()) is Map(d) else {
     fail("summary is not a Map")
@@ -604,11 +597,8 @@ impl @component.Fields for RichState with fn schema() {
 ///|
 /// The `Described` fixture's own state.
 ///
-/// It used to reuse `RichState` and pass a DIFFERENT schema alongside it —
-/// two descriptions of one struct, which the two tests below then asserted
-/// against separately. A schema belongs to the type that has the fields now,
-/// so a second description needs a second type; the disagreement was never
-/// meaningful, only unexpressible before.
+/// A schema belongs to the type that has the fields, so a second description
+/// needs a second type.
 priv struct DescribedState {
   title : String
   count : Int
