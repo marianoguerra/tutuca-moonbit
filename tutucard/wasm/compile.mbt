@@ -485,16 +485,15 @@ pub fn compile(
 // the module
 
 ///|
-fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
+/// Fold every component's `uses_*` into the first component's `Gen`, which is
+/// what answers for the MODULE. A flag is set while a body compiles, so this
+/// says nothing until every body has been compiled — and the module needs the
+/// answer before it decides what to emit, not after: `tc_flush` is emitted for
+/// the card and CALLED from a component's dispatch chain, so a card whose only
+/// effect lives in its SECOND component compiled a call to a function nobody
+/// had written.
+fn union_uses(comps : Array[Comp]) -> Unit {
   let g = comps[0].g
-  // Bodies first: every one of them interns constants, and neither the data
-  // segment nor the `#[start]` that builds them can be laid down until the pool
-  // has stopped growing.
-  // Every component's bodies, and the union of what they used. A flag is set
-  // while a body compiles, so `uses_control` for the MODULE is true when any
-  // component's body performed an effect — and the import section is a
-  // statement about the module.
-  let card = card_fields(comps)
   for c in comps {
     if c.g.uses_control {
       g.uses_control = true
@@ -518,6 +517,17 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
       g.uses_contract_log = true
     }
   }
+}
+
+///|
+fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
+  let g = comps[0].g
+  // Bodies first: every one of them interns constants, and neither the data
+  // segment nor the `#[start]` that builds them can be laid down until the pool
+  // has stopped growing. `card_fields` ends by calling `union_uses`, so by the
+  // time it returns `g` answers for the whole card — which is what the import
+  // section below is a statement about.
+  let card = card_fields(comps)
   let alloc = runtime_fields()
   let fs : @ast.LocModule = []
   // The stdlib first: Wax resolves in one pass, so a name must be defined
@@ -1014,6 +1024,8 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
   }
   fs.push(handle_event_fn(comps))
   fs.push(call_method_fn(comps))
+  // Every body has now compiled, so what the CARD uses is finally knowable.
+  union_uses(comps)
   if g.uses_control {
     // Before `tc_flush`, which calls it: Wax resolves in one pass.
     if g.uses_routed_effects {

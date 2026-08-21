@@ -38,9 +38,11 @@
 // condition slot still takes `$name` rather than a bare predicate application,
 // so `@show="$anyItems"` is how a `pred` is used from a template today.
 //
-// `todo` holds an `Array[String]` because it was written before `new` — a list
-// of RECORDS is what `nested-state` shows, where `new Label` puts the type's
-// zero at `@cur` and the statements under it fill it in.
+// `todo` is the one card with TWO components: the list and the row, a child
+// built at runtime with `new`, and a row that asks the list to drop it with
+// `intent dyn` rather than being handed a callback. `nested-state` is the
+// other half of what `new` is for — a list of plain RECORDS, where `new Label`
+// puts the type's zero at `@cur` and the statements under it fill it in.
 
 export const EXAMPLES = [
   {
@@ -121,51 +123,184 @@ export const EXAMPLES = [
   {
     name: "todo",
     source: `<script type="tutuca/state">
+  /// TWO components in one card: the list, and the row beside it. A file may
+  /// declare as many as it likes — one \`state\` each, one
+  /// \`<script type="tutuca/script" for="…">\` each, one
+  /// \`<template id="…:main">\` each — and the FIRST one is what a host mounts
+  /// when told no other name. A component that only ever appears inside
+  /// another one belongs beside it rather than in a file of its own.
   state Todo {
-    draft : String
-    items : Array[String]
-    done  : Set[String]
+    draft  : String
+    nextId : Int
+    items  : Map[String, TodoItem]
   }
+
+  /// A \`Map\` rather than an \`Array\` because a row has to be able to name
+  /// ITSELF to the list, and an index stops naming the same row the moment
+  /// anything above it is dropped. The key is minted once, at the push, and
+  /// the row carries its own copy — so \`removeItem\` means the same thing
+  /// whenever it arrives.
+  state TodoItem {
+    id      : String
+    text    : String
+    done    : Bool
+    editing : Bool
+    draft   : String
+  }
+
+  /// What a row asks of whoever is above it. \`receive\` is what something
+  /// sends here BY ADDRESS; \`intent\` is what reached here because a walk
+  /// routed it. Declaring the bucket is the whole of the wiring — nothing
+  /// registers a callback and no row holds a reference to the list.
+  intent Todo { removeItem(String) }
 </script>
 
-<script type="tutuca/script">
-  /// Add the draft, unless it is only whitespace. The guard is the whole
-  /// handler: everything else a list needs is a generated mutator.
+<script type="tutuca/script" for="Todo">
+  /// Add the draft, unless it is only whitespace.
+  ///
+  /// \`new TodoItem\` names the SIBLING component and opens an argument map for
+  /// it; \`@cur.…\` fills that in, and the child is made at the moment \`@cur\`
+  /// is read — which is the \`setAt\`. The key is spelled twice rather than
+  /// read back off \`@cur\`, because reading it is what would build the child.
   receive addItem {
     if (trim .draft) is not '' {
-      .items.push (trim .draft)
+      .nextId += 1
+      new TodoItem
+      @cur.id = $'row-{.nextId}'
+      @cur.text = (trim .draft)
+      .items.setAt $'row-{.nextId}' @cur
       .draft = ''
     }
   }
-  receive removeAt(i) { .items.deleteAt i }
+
+  /// The other end of the row's \`intent dyn\`. An \`intent\` arm that changes
+  /// state and does not \`reply\` is an OBSERVER and the walk goes on; this one
+  /// is the last hop anyway, so there is nothing left to observe it.
+  intent removeItem(id) { .items.deleteAt id }
 
   compute caption { $'{(len .items)} item(s)' }
   compute anyItems { not (empty? .items) }
 </script>
 
-<template>
+<script type="tutuca/script" for="TodoItem">
+  receive toggle { .done = not .done }
+
+  /// Double-click the text and the row edits itself: the draft starts as a
+  /// copy, so abandoning it costs nothing. Both halves are the row's own
+  /// business and the list never hears about them.
+  receive startEdit {
+    .draft = .text
+    .editing = true
+  }
+
+  /// Enter commits — unless what is left is only whitespace, in which case the
+  /// row keeps what it had.
+  receive commitEdit {
+    if (trim .draft) is not '' { .text = (trim .draft) }
+    .editing = false
+  }
+
+  /// Escape throws the draft away.
+  receive cancelEdit { .editing = false }
+
+  /// The row does not know the list's shape, or that there IS a list. It names
+  /// the JOB and lets the route find who does it: \`dyn\` walks the dispatch
+  /// path starting at the sender's PARENT — an intent is never offered to the
+  /// component that raised it — and the first hop with a \`removeItem\` arm
+  /// answers. Nothing here would change if the row were nested three deep.
+  receive requestRemove { intent dyn 'removeItem' .id }
+
+  compute label { if .done { $'{.text} (done)' } else { .text } }
+</script>
+
+<script type="tutuca/test">
+{
+  "adding makes rows": {
+    "steps": [
+      { "type": "input.draft", "value": "write it" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.add" },
+      { "expect": "texts", "at": "span.label", "is": ["write it", "ship it"] },
+      { "expect": "text", "at": "span.tally", "is": "2 item(s)" }
+    ]
+  },
+  "a row asks the list to drop it": {
+    "steps": [
+      { "type": "input.draft", "value": "one" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "two" },
+      { "click": "button.add" },
+      { "click": "button.remove" },
+      { "expect": "texts", "at": "span.label", "is": ["two"] },
+      { "expect": "text", "at": "span.tally", "is": "1 item(s)" }
+    ]
+  },
+  "double-click edits the text": {
+    "steps": [
+      { "type": "input.draft", "value": "wrng" },
+      { "click": "button.add" },
+      { "expect": "count", "at": "input.edit", "is": 0 },
+      { "fire": "span.label", "event": "dblclick" },
+      { "expect": "count", "at": "input.edit", "is": 1 },
+      { "type": "input.edit", "value": "right" },
+      { "key": "input.edit", "is": "Enter" },
+      { "expect": "texts", "at": "span.label", "is": ["right"] },
+      { "expect": "count", "at": "input.edit", "is": 0 }
+    ]
+  },
+  "escape leaves the text alone": {
+    "steps": [
+      { "type": "input.draft", "value": "keep" },
+      { "click": "button.add" },
+      { "fire": "span.label", "event": "dblclick" },
+      { "type": "input.edit", "value": "nope" },
+      { "key": "input.edit", "is": "Escape" },
+      { "expect": "texts", "at": "span.label", "is": ["keep"] }
+    ]
+  },
+  "a row strikes itself through": {
+    "steps": [
+      { "type": "input.draft", "value": "a" },
+      { "click": "button.add" },
+      { "click": "input.check" },
+      { "expect": "texts", "at": "span.label", "is": ["a (done)"] }
+    ]
+  }
+}
+</script>
+
+<template id="Todo:main">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <h2 class="card-title">Todos</h2>
       <div class="flex gap-2 items-center">
-        <input class="input input-sm w-full" placeholder="what needs doing"
+        <input class="input input-sm w-full draft" placeholder="what needs doing"
                :value=".draft" @on.input="setDraft e.value"
                @on.keydown+send="addItem">
-        <button class="btn btn-sm btn-primary" @on.click="addItem">add</button>
+        <button class="btn btn-sm btn-primary add" @on.click="addItem">add</button>
       </div>
-      <ul class="flex flex-col gap-2" @show="$anyItems">
-        <li class="flex gap-3 items-center w-full" @each=".items">
-          <input type="checkbox" class="checkbox checkbox-sm"
-                 @on.click="toggleInDone @value">
-          <span class="w-full"><x text="@value"></x></span>
-          <button class="btn btn-xs btn-soft btn-error btn-circle"
-                  @on.click="removeAt @key">&times;</button>
-        </li>
-      </ul>
+      <!-- \`<x render-each>\` renders each item as a component in its own right,
+           with its own state and its own handlers — where \`@each\` would render
+           a value with THIS component's. -->
+      <ul class="flex flex-col gap-2" @show="$anyItems"><x render-each=".items"></x></ul>
       <p class="opacity-60 italic" @hide="$anyItems">nothing yet</p>
-      <span class="badge badge-sm badge-neutral"><x text="$caption"></x></span>
+      <span class="badge badge-sm badge-neutral tally"><x text="$caption"></x></span>
     </div>
   </div>
+</template>
+
+<template id="TodoItem:main">
+  <li class="flex gap-3 items-center w-full">
+    <input type="checkbox" class="checkbox checkbox-sm check" @on.click="toggle">
+    <span class="w-full label" @hide=".editing" @text="$label"
+          @on.dblclick="startEdit"></span>
+    <input class="input input-xs w-full edit" @show=".editing"
+           :value=".draft" @on.input="setDraft e.value"
+           @on.keydown+send="commitEdit" @on.keydown+cancel="cancelEdit">
+    <button class="btn btn-xs btn-soft btn-error btn-circle remove"
+            @on.click="requestRemove">&times;</button>
+  </li>
 </template>
 `,
   },
@@ -1263,12 +1398,12 @@ export const EXAMPLES = [
      \`@on.click="inc"\` inside one calls \`inc\` on the COMPONENT it expanded
      into, which is the whole difference from a child component.
 
-     A card may DECLARE several components now — one \`state\` each, one
-     \`<script ... for="Comp">\` each, \`<template id="Comp:main">\` — and a
-     host may mount any of them. What it still cannot do is BUILD one while it
-     runs: \`new\` makes a declared record, not an instance, so a card composes
-     children something else created. A macro needs none of that, which is why
-     it was always the answer here.
+     A card may declare several components — one \`state\` each, one
+     \`<script ... for="Comp">\` each, \`<template id="Comp:main">\` — and build
+     them while it runs, which is what \`todo\` does. A macro needs none of
+     that: it has nothing to hold and nothing to say, so it expands rather than
+     mounts, and it is still the answer wherever the shape repeats and the
+     STATE does not.
 
      These lived in MoonBit until a card could hold one: the demo they come
      from (storybook/examples/macros) registers them with \`macros=\` and
