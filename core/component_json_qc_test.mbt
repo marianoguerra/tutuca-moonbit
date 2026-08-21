@@ -169,7 +169,7 @@ fn same(a : @core.Value, b : @core.Value) -> Bool {
       true
     }
     (Map(xm), Map(ym)) => {
-      guard xm.size() == ym.size() else { return false }
+      guard xm.length() == ym.length() else { return false }
       for k, x in xm {
         guard ym.get(k) is Some(y) && same(x, y) else { return false }
       }

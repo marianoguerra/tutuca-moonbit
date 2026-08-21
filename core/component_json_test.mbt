@@ -322,10 +322,10 @@ test "a module rides along and comes back" {
       #|Some(RStr("built"))
     ),
   )
-  inspect(
+  debug_inspect(
     seen.val,
     content=(
-      #|Some(some/bundle)
+      #|Some("some/bundle")
     ),
   )
 }

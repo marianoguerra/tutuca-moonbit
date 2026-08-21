@@ -105,7 +105,7 @@ test "a notepad survives being written out and read back" {
 
 ///|
 test "an empty cell stays empty — the case a value-inspecting codec cannot see" {
-  let (h, ui, module_) = mount_restorable()
+  let (h, ui, _) = mount_restorable()
   h.click(".universal-add")
   pick(h, "Stack")
   // A fresh Stack has one empty cell, and nothing in it to recognize.

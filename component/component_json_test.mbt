@@ -237,7 +237,7 @@ test "a component with no scope has nowhere to resolve a name" {
   let unregistered = @component.component(
     views=view("<i>x</i>"),
     name="JLeaf",
-    init=JLeaf::default(),
+    init=(Default::default() : JLeaf),
   )
   let doc : Json = { "$component": "JLeaf" }
   assert_true(unregistered.from_json(doc) is None)
