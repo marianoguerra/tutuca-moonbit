@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.26.0] - 2026-08-21
 
 A component can be instantiated from data. The pieces were all here — `make`
 already coerced an args map and filled defaults, `to_json` already walked an
