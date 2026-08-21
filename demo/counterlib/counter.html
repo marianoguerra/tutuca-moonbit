@@ -32,8 +32,15 @@
 
 <script type="tutuca/init">
 {
-  "fresh":        { "label": "Counter" },
-  "with-history": { "label": "Demo", "count": 3, "history": [1, 2, 3] }
+  "fresh": {
+    "value": { "label": "Counter" },
+    "doc": "A counter nobody has pressed yet.",
+    "default": true
+  },
+  "with-history": {
+    "value": { "label": "Demo", "count": 3, "history": [1, 2, 3] },
+    "doc": "What it looks like after three presses, without pressing three times."
+  }
 }
 </script>
 

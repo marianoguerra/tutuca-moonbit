@@ -7,9 +7,13 @@ import {
 }
 
 // Values
+pub fn parse_answers(Json, String) -> Map[String, Answer] raise SceneError
+
 pub fn parse_place(String) -> Array[@core.Step] raise PlaceError
 
 pub fn parse_scenes(String) -> Array[Scene] raise SceneError
+
+pub fn parse_steps(Json, String) -> Array[Step] raise SceneError
 
 // Errors
 pub suberror PlaceError {

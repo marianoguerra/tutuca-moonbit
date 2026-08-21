@@ -66,6 +66,24 @@
   compute caption { if .done { $'{.text} (done)' } else { .text } }
 </script>
 
+<script type="tutuca/init">
+{
+  "three rows": {
+    "doc": "A list that has been used, arrived at by using it.",
+    "default": true,
+    "drive": [
+      { "type": "input.draft", "value": "write the design" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "read it back" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.add" }
+    ],
+    "value": {}
+  }
+}
+</script>
+
 <script type="tutuca/test">
 {
   "typing and adding makes a row": {
@@ -94,6 +112,16 @@
       { "click": "button.add" },
       { "expect": "texts", "at": "li.todo", "is": ["one", "two"] },
       { "expect": "text",  "at": "output.count", "is": "2" }
+    ]
+  },
+  "a fixture can be arrived at by driving": {
+    "init": "three rows",
+    "steps": [
+      { "expect": "texts", "at": "li.todo",
+        "is": ["write the design", "read it back", "ship it"] },
+      { "expect": "text", "at": "output.count", "is": "3" },
+      { "click": "li.todo", "nth": 1 },
+      { "expect": "text", "at": "li.todo", "nth": 1, "is": "read it back (done)" }
     ]
   },
   "a dropped row goes": {

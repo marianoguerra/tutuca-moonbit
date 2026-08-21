@@ -85,10 +85,13 @@ its failure mode is a component that later ADDS a field called `value` and
 silently changes how its existing fixtures parse. That is a bad trade for one
 level of nesting.
 
-The migration is two files: `demo/counterlib/counter.html` and
-`tutucard/wasm/examples/Guarded.html`. That is the whole of what
-`tutuca/init` has in this repo, which is what makes choosing the better shape
-affordable rather than a breaking change to argue about.
+The migration is four blocks: `demo/counterlib/counter.html`,
+`tutucard/wasm/examples/Guarded.html`, and two in the bundled skill
+(`schema.md`, `patterns/tabbed-interface.md` — the second found by
+`check-skill`, which compiles every snippet, after a grep over `.html` files
+said there were two). That is the whole of what `tutuca/init` has in this
+repository, which is what makes choosing the better shape affordable rather
+than a breaking change to argue about.
 
 ### 2. `drive` — arrive at the state by doing
 

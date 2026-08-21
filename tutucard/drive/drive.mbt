@@ -44,7 +44,6 @@ fn run_one(
     error: why,
   }
   let scope = @component.ComponentStack::new()
-  scope.register_intent_handlers(fixtures(scene))
   let bundle = @dyncomp.register_bundle(
     scope,
     guest,
@@ -85,6 +84,22 @@ fn run_one(
   let args = start_args(bundle, comp, scene) catch {
     e => return failed(e.message())
   }
+  // A fixture may carry its own steps and its own intent answers. The scene's
+  // win where both name one: the scene is the more specific statement, and a
+  // fixture is a starting point rather than a script the scene is inside.
+  let (pre, fixture_intents) = match
+    (if scene.init == "" { None } else { fixture_of(bundle, comp, scene.init) }) {
+    Some(f) => fixture_drive(f)
+    None => ([], Map([]))
+  }
+  let answers : Map[String, @scenedef.Answer] = Map([])
+  for name, a in fixture_intents {
+    answers[name] = a
+  }
+  for name, a in scene.intents {
+    answers[name] = a
+  }
+  scope.register_intent_handlers(fixtures_of(answers))
   guard bundle.make_instance(comp, args~) is Some(inst) else {
     return failed("the guest would not create a `" + comp + "`")
   }
@@ -115,6 +130,12 @@ fn run_one(
   on_app(app)
   app.start()
   let h = @harness.Harness::over(app, container)
+  // The fixture's steps first, and OUTSIDE the report: they are how this state
+  // was reached rather than something the scene did. A scene whose starting
+  // point cannot be built says so as a mount failure, since that is what it is.
+  for step in pre {
+    let _ = run_step(h, scene, -1, step, take_log)
+  }
   let out = { ..drive_scene(h, scene, take_log~), component: comp, activity }
   // Both halves of a mounted app are reference cycles the native backend does
   // not reclaim, and a block of scenes mounts one each.
@@ -189,6 +210,53 @@ pub fn drive_scene(
 /// because a component is built once — `make_instance` is the only place args
 /// reach a guest's constructor, and a card's `init` handler runs against
 /// whatever it was built with.
+fn fixture_of(
+  bundle : @dyncomp.Bundle,
+  comp : String,
+  name : String,
+) -> @dyncomp.DynInitDef? {
+  for def in bundle.manifest().components {
+    if def.name == comp {
+      for i in def.inits {
+        if i.name == name {
+          return Some(i)
+        }
+      }
+    }
+  }
+  None
+}
+
+///|
+/// A fixture's own steps, as the scene vocabulary they were validated as.
+///
+/// They cross the manifest as JSON — a wire format passes through what it does
+/// not interpret — so this is where they become steps again. A fixture that
+/// declares none is an empty list, which is what most are.
+fn fixture_drive(
+  f : @dyncomp.DynInitDef,
+) -> (Array[@scenedef.Step], Map[String, @scenedef.Answer]) {
+  let steps = if f.drive_json == "" {
+    []
+  } else {
+    @scenedef.parse_steps(@json.parse(f.drive_json), "fixture `" + f.name + "`") catch {
+      _ => []
+    }
+  }
+  let answers = if f.intents_json == "" {
+    Map([])
+  } else {
+    @scenedef.parse_answers(
+      @json.parse(f.intents_json),
+      "fixture `" + f.name + "`",
+    ) catch {
+      _ => Map([])
+    }
+  }
+  (steps, answers)
+}
+
+///|
 fn start_args(
   bundle : @dyncomp.Bundle,
   comp : String,
@@ -247,9 +315,11 @@ fn start_args(
 /// `<name>Unhandled`. That is a different sentence from a failure's, and it is
 /// the path a test is likeliest to leave uncovered — nothing in a card raises
 /// it, only the absence of an answer does.
-fn fixtures(scene : @scenedef.Scene) -> Map[String, Array[@component.IntentFn]] {
+fn fixtures_of(
+  intents : Map[String, @scenedef.Answer],
+) -> Map[String, Array[@component.IntentFn]] {
   let out : Map[String, Array[@component.IntentFn]] = Map([])
-  for name, a in scene.intents {
+  for name, a in intents {
     let answer : @tutuca.IntentAnswer = match a {
       AOk(v) => Ok(v)
       AFailed(v) => Failed(v)

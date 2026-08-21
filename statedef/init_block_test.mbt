@@ -22,9 +22,29 @@ fn def_of(src : String) -> @statedef.StateDef raise {
 }
 
 ///|
+/// A block written as bare field maps, in the envelope a fixture actually
+/// takes.
+///
+/// Every test below this line is about the VALUE — which JSON shape each
+/// declared type accepts and what it emits — so they are written as the field
+/// map and wrapped here. The envelope has tests of its own at the bottom,
+/// which call `parse_init` directly.
+fn wrap(init : String) -> String {
+  // Left alone when it is not parseable JSON: the tests that hand this
+  // nonsense are testing that `parse_init` says so.
+  let j = @json.parse(init) catch { _ => return init }
+  guard j is Object(states) else { return init }
+  let out : Map[String, Json] = Map([])
+  for name, fields in states {
+    out[name] = Json::object({ "value": fields })
+  }
+  Json::object(out).stringify()
+}
+
+///|
 /// The fixtures an init block yields against a schema.
 fn inits(schema : String, init : String) -> Array[@statedef.InitState] raise {
-  @statedef.parse_init(init, def_of(schema))
+  @statedef.parse_init(wrap(init), def_of(schema))
 }
 
 ///|
@@ -45,6 +65,19 @@ fn lit(schema : String, init : String, binding : String) -> String raise {
 ///|
 /// The message an init block raises, or "" when it does not raise.
 fn init_err(schema : String, init : String) -> String raise {
+  let d = def_of(schema)
+  try {
+    @statedef.parse_init(wrap(init), d) |> ignore
+    ""
+  } catch {
+    e => e.message()
+  }
+}
+
+///|
+/// The message an init block raises, WITHOUT the envelope helper — for the
+/// tests that are about the block's own shape.
+fn raw_err(schema : String, init : String) -> String raise {
   let d = def_of(schema)
   try {
     @statedef.parse_init(init, d) |> ignore
@@ -267,9 +300,74 @@ test "a block that is not JSON, or not an object of named states" {
     init_err(s, "[1, 2]"),
     "init block: expected an object of named states, e.g. { \"fresh\": { \"count\": 0 } }",
   )
+  // Straight to `parse_init`: this is about the BLOCK's shape, so wrapping it
+  // in an envelope would be the test hiding what it is asking about.
   assert_eq(
-    init_err(s, "{ \"fresh\": 3 }"),
+    raw_err(s, "{ \"fresh\": 3 }"),
     "init block: state `fresh` is not an object of fields",
+  )
+}
+
+///|
+/// The envelope's own rules. Everything above is about a fixture's VALUE; a
+/// fixture is that value plus what a gallery needs to know about it, and the
+/// keys that carry the second half are checked too — a misspelt `doc` silently
+/// dropped is a sentence nobody sees missing.
+test "a fixture is an envelope, and its keys are checked" {
+  let s = scalars()
+  // The whole shape, read back.
+  let out = @statedef.parse_init(
+    (
+      #|{ "fresh": {
+      #|    "value": { "label": "Counter" },
+      #|    "doc": "A counter nobody has pressed yet.",
+      #|    "view": "row",
+      #|    "tags": ["empty"],
+      #|    "default": true,
+      #|    "drive": [ { "click": "button.inc" } ],
+      #|    "intents": { "rows": "pass" }
+      #|} }
+    ),
+    def_of(s),
+  )
+  assert_eq(out.length(), 1)
+  inspect(out[0].doc, content="A counter nobody has pressed yet.")
+  inspect(out[0].view, content="row")
+  @debug.assert_eq(out[0].tags, ["empty"])
+  assert_true(out[0].default_)
+  inspect(out[0].drive.stringify(), content="[{\"click\":\"button.inc\"}]")
+  inspect(out[0].intents.stringify(), content="{\"rows\":\"pass\"}")
+  // …and the value is still checked against the schema, which is the half the
+  // envelope is wrapped around rather than a replacement for.
+  @debug.assert_eq(out[0].fields, [("label", "\"Counter\"")])
+}
+
+///|
+test "a fixture without a value, or with a key that is not one" {
+  let s = scalars()
+  assert_eq(
+    raw_err(s, "{ \"fresh\": { \"label\": \"x\" } }"),
+    "init block: state `fresh` has no key `label`; a fixture takes `value`, `doc`, `view`, `drive`, `intents`, `tags` and `default`",
+  )
+  assert_eq(
+    raw_err(s, "{ \"fresh\": { \"doc\": \"x\" } }"),
+    "init block: state `fresh` has no `value` — a fixture is { \"value\": { …fields… } }, with `doc`, `view`, `drive`, `intents`, `tags` and `default` beside it",
+  )
+  // A near miss is guessed at, the way a misspelt FIELD already is.
+  assert_eq(
+    raw_err(s, "{ \"fresh\": { \"value\": {}, \"dco\": \"x\" } }"),
+    "init block: state `fresh` has no key `dco` — did you mean `doc`?",
+  )
+  assert_eq(
+    raw_err(s, "{ \"fresh\": { \"value\": {}, \"tags\": \"one\" } }"),
+    "init block: state `fresh`'s `tags` should be a list of strings",
+  )
+  // A `drive` is the scene vocabulary, so it is the scene reader that says
+  // what is wrong with one — checked HERE rather than when something runs it.
+  assert_true(
+    raw_err(
+      s, "{ \"fresh\": { \"value\": {}, \"drive\": [ { \"clik\": \"b\" } ] } }",
+    ).contains("names no verb"),
   )
 }
 

@@ -54,6 +54,27 @@ pub fn parse_scenes(source : String) -> Array[Scene] raise SceneError {
 }
 
 ///|
+pub fn parse_steps(
+  steps : Json,
+  where_ : String,
+) -> Array[Step] raise SceneError {
+  guard steps is Array(items) else {
+    raise BadType(
+      scene=where_,
+      at=-1,
+      key="drive",
+      want="a list of steps",
+      got=shape_of(steps),
+    )
+  }
+  let out : Array[Step] = []
+  for i, s in items {
+    out.push(step_of(where_, i, s))
+  }
+  out
+}
+
+///|
 fn scene_of(name : String, body : Json) -> Scene raise SceneError {
   guard body is Object(o) else { raise SceneNotObject(name) }
   let component = str_or(o, "component", "")
@@ -95,10 +116,21 @@ fn intents_of(
   scene : String,
   o : Map[String, Json],
 ) -> Map[String, Answer] raise SceneError {
-  let out : Map[String, Answer] = Map([])
   match o.get("intents") {
-    None => return out
-    Some(Object(m)) =>
+    None => Map([])
+    Some(i) => parse_answers(i, scene)
+  }
+}
+
+///|
+pub fn parse_answers(
+  j : Json,
+  where_ : String,
+) -> Map[String, Answer] raise SceneError {
+  let scene = where_
+  let out : Map[String, Answer] = Map([])
+  match j {
+    Object(m) =>
       for name, a in m {
         out[name] = match a {
           String("pass") => APass
@@ -127,7 +159,7 @@ fn intents_of(
             )
         }
       }
-    Some(other) =>
+    other =>
       raise BadType(
         scene~,
         at=-1,

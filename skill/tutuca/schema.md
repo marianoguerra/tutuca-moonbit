@@ -558,14 +558,37 @@ and not a type:
 
 ```html
 <script type="tutuca/init">
-{ "fresh": { "label": "Counter" },
-  "with-history": { "count": 3, "history": [1, 2, 3] } }
+{ "fresh": { "value": { "label": "Counter" } },
+  "with-history": { "value": { "count": 3, "history": [1, 2, 3] },
+                    "doc": "What it looks like once it has been used." } }
 </script>
 ```
 
-Each is checked against the schema — a fixture setting a field the schema
-dropped fails the build — and becomes `CounterState::fresh()` plus a public
-`counter_init_args("fresh")` for a ModuleDef example.
+A fixture is an **envelope**: `value` holds the field map, and `doc`, `view`,
+`tags`, `default`, `drive` and `intents` sit beside it. Those keys are one level
+above the field names — they describe the fixture where the field names describe
+the component — so none of them needs a sigil, and none can collide with a
+field you declare.
+
+Each `value` is checked against the schema — a fixture setting a field the
+schema dropped fails the build — and becomes `CounterState::fresh()` plus a
+public `counter_init_args("fresh")` for a ModuleDef example.
+
+`drive` is a list of the steps a `tutuca/test` scene takes, run after the value
+is seeded. It is the honest way to write a state a component ARRIVES at:
+
+```html
+<script type="tutuca/init">
+{ "three rows": {
+    "value": {},
+    "doc": "A list that has been used, arrived at by using it.",
+    "drive": [ { "type": "input.draft", "value": "one" },
+               { "click": "button.add" } ] } }
+</script>
+```
+
+A scene then starts from it by name — `"init": "three rows"` — so a state worth
+showing and a state worth testing are written once.
 
 ## Constraints (dynamic components only)
 

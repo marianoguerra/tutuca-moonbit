@@ -59,6 +59,21 @@ pub(all) struct DynInitDef {
   name : String
   args : Map[String, @tutuca.Value]
   doc : String
+  /// Which view to render this state under; "" for the default resolution.
+  view : String
+  /// What a picker filters on.
+  tags : Array[String]
+  /// Whether this is the state to show when nothing names one.
+  default_ : Bool
+  /// Steps to run after the value is seeded, and the intent answers they need
+  /// — carried as JSON rather than parsed.
+  ///
+  /// A manifest is a WIRE format, and passing a thing it does not interpret
+  /// through untouched is what one is for. Parsing them here would mean this
+  /// package knowing the scene vocabulary, which belongs to whoever runs a
+  /// fixture rather than to whoever describes one. "" for a fixture with none.
+  drive_json : String
+  intents_json : String
 } derive(Debug, Eq)
 
 ///|
@@ -501,7 +516,24 @@ fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise ManifestError {
     for k, v in fields {
       args[k] = @tutuca.Value::from_json(v)
     }
-    out.push({ name, args, doc: opt_str(i, "doc") })
+    let tags : Array[String] = []
+    if i.get("tags") is Some(Array(items)) {
+      for t in items {
+        if t is String(t) {
+          tags.push(t)
+        }
+      }
+    }
+    out.push({
+      name,
+      args,
+      doc: opt_str(i, "doc"),
+      view: opt_str(i, "view"),
+      tags,
+      default_: i.get("default") is Some(True),
+      drive_json: opt_str(i, "driveJson"),
+      intents_json: opt_str(i, "intentsJson"),
+    })
   }
   out
 }

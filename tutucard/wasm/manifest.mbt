@@ -213,7 +213,14 @@ fn component_json(
               Json::object(m).stringify()
             },
           ),
-          "doc": Json::string(""),
+          "doc": Json::string(st.doc),
+          "view": Json::string(st.view),
+          "tags": Json::array(st.tags.map(Json::string)),
+          "default": Json::boolean(st.default_),
+          // Through untouched, as the wire format's own note says: what a
+          // fixture's steps MEAN belongs to whoever runs one.
+          "driveJson": Json::string(st.drive.stringify()),
+          "intentsJson": Json::string(st.intents.stringify()),
         })
       }),
     ),

@@ -54,6 +54,10 @@ pub suberror InitError {
   StateNotObject(String)
   NoSuchField(state~ : String, field~ : String, suggestion~ : String?)
   BadValue(state~ : String, field~ : String, want~ : String, got~ : String)
+  NoValue(String)
+  NoSuchKey(state~ : String, key~ : String, suggestion~ : String?)
+  BadKey(state~ : String, key~ : String, want~ : String)
+  BadDrive(state~ : String, message~ : String)
 }
 pub fn InitError::message(Self) -> String
 pub impl Show for InitError
@@ -77,6 +81,12 @@ pub(all) struct InitState {
   name : String
   ident : String
   fields : Array[(String, String)]
+  doc : String
+  view : String
+  tags : Array[String]
+  default_ : Bool
+  drive : Json
+  intents : Json
   args : Map[String, @core.Value]
 } derive(Eq, @debug.Debug)
 

@@ -200,6 +200,26 @@ pub suberror SceneError {
 declare pub fn SceneError::message(self : SceneError) -> String
 
 ///|
+/// Parse a bare list of steps — a fixture's `drive`, which is a scene's step
+/// list without the scene around it.
+///
+/// `where_` is what a message calls the thing they belong to, since they no
+/// longer belong to a scene: "fixture `three rows`" reads the way "scene `…`"
+/// does and lands the reader in the right block.
+declare pub fn parse_steps(
+  steps : Json,
+  where_ : String,
+) -> Array[Step] raise SceneError
+
+///|
+/// Parse an object of named intent answers — a scene's `intents`, or a
+/// fixture's.
+declare pub fn parse_answers(
+  j : Json,
+  where_ : String,
+) -> Map[String, Answer] raise SceneError
+
+///|
 /// Parse a `tutuca/test` block into the scenes it declares.
 ///
 /// Scenes come back in the order the block writes them: a block is read

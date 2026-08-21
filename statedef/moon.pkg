@@ -10,6 +10,7 @@
 // payload-free and payload-bearing cases, and every diagnostic carries a span.
 import {
   "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/scenedef",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/string",

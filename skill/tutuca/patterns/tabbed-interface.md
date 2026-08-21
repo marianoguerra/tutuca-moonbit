@@ -11,7 +11,7 @@ shows, and the active tab button is highlighted.
 </script>
 
 <script type="tutuca/init">
-{ "fresh": { "currentView": "overview" } }
+{ "fresh": { "value": { "currentView": "overview" } } }
 </script>
 
 <template id="Tabs">

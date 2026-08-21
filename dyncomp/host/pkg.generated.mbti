@@ -120,6 +120,11 @@ pub(all) struct DynInitDef {
   name : String
   args : Map[String, @core.Value]
   doc : String
+  view : String
+  tags : Array[String]
+  default_ : Bool
+  drive_json : String
+  intents_json : String
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynMacroDef {
