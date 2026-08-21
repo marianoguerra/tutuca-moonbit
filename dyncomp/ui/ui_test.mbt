@@ -272,7 +272,7 @@ fn catalog() -> @registry.Registry raise {
 /// `make` is the one thing the app cannot do for itself — building a LOADED
 /// component — and here it goes through the bundle registered into the app's
 /// own scope, which is what the wasm bridge does with a real one.
-fn mount_app(guest? : StubGuest) -> @harness.Harness raise {
+fn mount_app(guest? : StubGuest) -> @harness.MemHarness raise {
   let g = match guest {
     Some(x) => x
     None => StubGuest::new()
@@ -302,7 +302,7 @@ fn mount_app(guest? : StubGuest) -> @harness.Harness raise {
 
 ///|
 /// Open the bar and pick the row whose name is `name`.
-fn pick(h : @harness.Harness, name : String) -> Unit raise {
+fn pick(h : @harness.MemHarness, name : String) -> Unit raise {
   h.type_into(".command-input", name)
   let names = h.texts(".row-name")
   let mut at = 0

@@ -4,6 +4,141 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+A component can be instantiated from data. The pieces were all here — `make`
+already coerced an args map and filled defaults, `to_json` already walked an
+instance's declared fields — and what was missing was the one thing that turns a
+projection into a document: a name saying what to build. This release adds it,
+and replaces the bespoke codec the universal UI had been carrying with one that
+reads a field's declared TYPE instead of guessing from its value.
+
+### Added
+
+- **`$component`: a tagged JSON projection, and its inverse.**
+  `@tutuca.Value::to_component_json` writes an instance flat — its declared
+  fields at the top level and a reserved `"$component"` key beside them, plus an
+  optional `"$module"` where a host knows the bundle — and
+  `@tutuca.Value::from_component_json` reads one back. Both walk by
+  `FieldInfo.ty`, so a component-typed field recurses, a list of children
+  recurses element by element, and an object carrying a tag hydrates anywhere
+  the declared type permits an object. The reserved keys cannot collide: a
+  declared field name can never begin with `$`.
+
+  One rule governs everything that does not fit: a field the document omits, a
+  value the type cannot hold, and a `$component` that resolves to nothing all
+  fall back to the component's own default. `Value::to_json` is unchanged — the
+  untagged projection every state dump and snapshot already reads keeps its
+  meaning.
+
+- **`Component::from_json` / `Component::to_json`**, resolving names through the
+  component's own registration scope — the same namespace a view resolves a
+  child through, so a document names a component the way a template does and an
+  alias works in both.
+
+- **`@tutuca.ComponentSource`**, the seam a name resolves through, implemented
+  for `ComponentStack`, `@std.Std` and `@ui.UniversalUi`. A source answers what
+  a name DECLARES (so its fields decode by type) and how to BUILD it; a source
+  that can build a name it cannot describe — a foreign guest — answers only the
+  second, and its fields decode structurally.
+
+- **`UniversalUi::tree_of_json`**, with a `restore~` hook keyed by JSON Pointer
+  for a host whose guests persist their own bytes. The page-tree codec is now
+  backend-agnostic, which is why the round trip has a test: a notepad built by
+  clicking is written out, read back, and still holds what was typed in each
+  tab.
+
+- **An Examples pane, and the tab that feeds it.** The tutucard playground shows
+  the card at every state it says it can be in, one live box per
+  `<script type="tutuca/init">` fixture: seeded from `value`, driven by `drive`,
+  answered by `intents`, rendered under `view`, titled by its name with `doc`
+  underneath. Each is the same module instantiated again in its own scope, so
+  pressing a button in one changes that one and nothing else. The module is
+  compiled once and instantiated per fixture — `loadGuest` takes a `module~`
+  now — which is what makes a gallery affordable on a keystroke debounce.
+
+  The structured editor grew an `examples` tab over the same block. It was the
+  one block with no tab, which is how a card came to have named example states
+  that only the raw view could reach.
+
+- **`testing/harness` is generic over `@vdom.DomWalk`.** `Harness[N]`, with
+  `MemHarness` for the in-memory one every headless test holds. This is what
+  lets a fixture's `drive` steps run on the page the fixture is shown on: the
+  verbs were already written against two fields and a dispatch, and what pinned
+  them to memdom was reaching into `MemNode`'s struct rather than through the
+  trait it already implements. So "click the third row" is one implementation
+  driving both backends rather than two that can disagree about what `nth`
+  counts. `tutucard/drive` exposes it as `seed(h, steps)` — the drive verbs with
+  no report, since a fixture SHOWS and a scene CHECKS.
+
+- **`view~` on `render_root` and `App::new`**, and `view` on a fixture. Which of
+  a component's views to mount it under is the one thing a value cannot say
+  about itself: a `Todo` has a `main` and a `row` over the same fields, and the
+  choice is a fact about the showing. A name the component does not declare
+  falls back to `main`, exactly as every other view name does.
+
+- **`Bundle::default_init`**, and a host that reads it. A fixture marked
+  `default: true` is what the playground and every `<mb-card>` embed now mount
+  when nothing named one, so a card is met the way its author meant rather than
+  at whatever the schema's zero happens to be. Explicit only — a card that marks
+  none still opens at the zero. A `tutuca/test` scene is deliberately NOT
+  affected: a test's starting point is a thing to write down, and a default is
+  what to show someone who has said nothing.
+
+### Fixed
+
+- **An empty cell survives a save.** The universal UI's codec decided whether a
+  field held a component by LOOKING at it, at exactly the moment an empty one
+  holds nothing to recognize — so a `Universal` with no child and a container
+  with no cells were written as scalars and did not come back. Reading the
+  declared type answers without having to look.
+
+- **A container emptied by hand no longer grows a cell back.** `Std::build`
+  fills `children` when the key is absent; the codec now always writes every
+  declared field, so "empty" stays a statement rather than a silence.
+
+- **A card's `view` and `default` were carried and read by nobody.** Both
+  reached `DynInitDef` and stopped there, so a fixture could say which view it
+  wanted and be shown under `main` anyway. Now a mount reads them.
+
+- **A margaui scope carrying a comma styled the wrong element.**
+  `scopeSelector` prefixes by concatenation, so a scope of `#a, #b .c` split
+  into two selectors — the first of them the bare `#a`, which then took the body
+  of every rule the sheet writes about a themed root, `display: none` included.
+  The scope is one selector now, with the alternatives inside `:is()`, and the
+  constraint is written down where it is relied on.
+
+### Changed
+
+- **`@ui/wasm.tree_json` / `tree_of_json` each lose their `path` parameter** —
+  the codec threads the pointer now — and the document they write is the
+  `$component` shape rather than the old `{c, m, f, k, l}`. A session saved by
+  an earlier version opens as an empty page.
+
+- **`@harness.Harness` takes a type parameter.** A call site that named the type
+  says `@harness.MemHarness`; one that inferred it is untouched. `html`,
+  `destroy`, `prop`, `checked_of` and `value_of` stay on the in-memory node,
+  since a browser mount is torn down by its host and its HTML is on screen.
+
+- **`__tutucard.mountCompiled` takes a third argument**, the fixture to mount —
+  `""` for "nothing was named", which is not the same as "no fixture". The JS
+  `mountCard` spells it `init` in its options object.
+
+- **The counter starter card declares four fixtures and a second view**, so the
+  page opens on something the new pane can show.
+
+- **The playground's Mounted panel is a tab in the Preview pane.** They answer
+  the same question about the same card — what it looks like running — so a
+  reader compares them by switching rather than by looking in two places, and
+  the grid is back to two rows of three. `load & mount` switches to the tab it
+  fills, before the instantiate rather than after it.
+
+- **A tab looks like a tab and a button looks like a button.** Every strip on
+  the page was boxed pills, so `wax`/`wat` (which change what is shown) and
+  `download`/`load & mount` (which do something) were indistinguishable. Tabs
+  are names on a rule with the chosen one underlined; the two actions keep the
+  box.
+
 ## [0.25.0] - 2026-08-20
 
 The script block is where a component's behaviour belongs, and MoonBit is the

@@ -11,9 +11,9 @@ import {
 }
 
 // Values
-pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value]) -> Harness raise
+pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value], view? : String) -> Harness[@memdom.MemNode] raise
 
-pub fn mount_example(@component.ModuleDef, String) -> Harness raise
+pub fn mount_example(@component.ModuleDef, String) -> Harness[@memdom.MemNode] raise
 
 pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode)
 
@@ -24,33 +24,34 @@ pub fn refusals_while(() -> Unit raise) -> Array[@core.Refusal] raise
 // Errors
 
 // Types and methods
-pub struct Harness {
-  app : @app.App[@memdom.MemNode]
-  container : @memdom.MemNode
+pub struct Harness[N] {
+  app : @app.App[N]
+  container : N
 }
-pub fn Harness::attr(Self, String, String, nth? : Int) -> String? raise
-pub fn Harness::check(Self, String, Bool, nth? : Int) -> Unit raise
-pub fn Harness::checked_of(Self, String, nth? : Int) -> Bool raise
-pub fn Harness::click(Self, String, nth? : Int) -> Unit raise
-pub fn Harness::destroy(Self) -> Unit
-pub fn Harness::drag(Self, String, Int, Int) -> Unit raise
-pub fn Harness::drive_value(Self) -> @core.Value
-pub fn Harness::find(Self, String, nth? : Int) -> @memdom.MemNode raise
-pub fn Harness::find_all(Self, String) -> Array[@memdom.MemNode]
-pub fn Harness::fire(Self, String, @render.DomEvent, nth? : Int) -> Unit raise
-pub fn Harness::html(Self) -> String
-pub fn Harness::key_down(Self, String, String, value? : @core.Value, nth? : Int) -> Unit raise
-pub fn Harness::ns_of(Self, String, nth? : Int) -> String raise
-pub fn Harness::over(@app.App[@memdom.MemNode], @memdom.MemNode) -> Self
-pub fn Harness::prop(Self, String, String, nth? : Int) -> @vdom.AttrValue? raise
-pub fn Harness::render_count(Self) -> Int
-pub fn Harness::send_at_root(Self, String, args? : Array[@core.Value]) -> Unit
-pub fn Harness::styles(Self) -> String
-pub fn Harness::text(Self, String, nth? : Int) -> String raise
-pub fn Harness::texts(Self, String) -> Array[String]
-pub fn Harness::type_into(Self, String, String, nth? : Int) -> Unit raise
-pub fn Harness::value_of(Self, String, nth? : Int) -> String raise
+pub fn[N : @vdom.DomWalk] Harness::attr(Self[N], String, String, nth? : Int) -> String? raise
+pub fn[N : @vdom.DomWalk] Harness::check(Self[N], String, Bool, nth? : Int) -> Unit raise
+pub fn Harness::checked_of(Self[@memdom.MemNode], String, nth? : Int) -> Bool raise
+pub fn[N : @vdom.DomWalk] Harness::click(Self[N], String, nth? : Int) -> Unit raise
+pub fn Harness::destroy(Self[@memdom.MemNode]) -> Unit
+pub fn[N : @vdom.DomWalk] Harness::drag(Self[N], String, Int, Int) -> Unit raise
+pub fn[N] Harness::drive_value(Self[N]) -> @core.Value
+pub fn[N : @vdom.DomWalk] Harness::find(Self[N], String, nth? : Int) -> N raise
+pub fn[N : @vdom.DomWalk] Harness::find_all(Self[N], String) -> Array[N]
+pub fn[N : @vdom.DomWalk] Harness::fire(Self[N], String, @render.DomEvent, nth? : Int) -> Unit raise
+pub fn Harness::html(Self[@memdom.MemNode]) -> String
+pub fn[N : @vdom.DomWalk] Harness::key_down(Self[N], String, String, value? : @core.Value, nth? : Int) -> Unit raise
+pub fn[N : @vdom.DomWalk] Harness::ns_of(Self[N], String, nth? : Int) -> String raise
+pub fn[N] Harness::over(@app.App[N], N) -> Self[N]
+pub fn Harness::prop(Self[@memdom.MemNode], String, String, nth? : Int) -> @vdom.AttrValue? raise
+pub fn[N] Harness::render_count(Self[N]) -> Int
+pub fn[N] Harness::send_at_root(Self[N], String, args? : Array[@core.Value]) -> Unit
+pub fn[N] Harness::styles(Self[N]) -> String
+pub fn[N : @vdom.DomWalk] Harness::text(Self[N], String, nth? : Int) -> String raise
+pub fn[N : @vdom.DomWalk] Harness::texts(Self[N], String) -> Array[String]
+pub fn[N : @vdom.DomWalk] Harness::type_into(Self[N], String, String, nth? : Int) -> Unit raise
+pub fn Harness::value_of(Self[@memdom.MemNode], String, nth? : Int) -> String raise
 
 // Type aliases
+pub type MemHarness = Harness[@memdom.MemNode]
 
 // Traits

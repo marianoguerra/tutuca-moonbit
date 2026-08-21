@@ -617,7 +617,7 @@ fn filler_comp() -> @component.Component {
 }
 
 ///|
-fn mount_with_bundle(fake : FakeGuest) -> (@harness.Harness, Bundle) raise {
+fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Bundle) raise {
   let h = @harness.mount(shell_module(), "Shell")
   // what a host does after mounting: sweep superseded guest handles at the end
   // of every drained cascade (see install_gc)

@@ -21,7 +21,7 @@ pub fn MountError::message(self : MountError) -> String {
 /// reader runs would otherwise be attributed to the next drive step, and the
 /// report would name the wrong line of the block.
 fn run_step(
-  h : @harness.Harness,
+  h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
   at : Int,
   step : @scenedef.Step,
@@ -101,10 +101,45 @@ fn reset_refusals() -> Unit {
 }
 
 ///|
+/// Run a fixture's own steps against an app somebody else mounted — the drive
+/// verbs with no report.
+///
+/// The other half of `run_one`'s loop, and the half a PAGE needs. A fixture
+/// arrived at by driving is how this state was reached rather than something a
+/// scene did, so there is nothing to judge and nothing to record: a fixture
+/// SHOWS and a scene CHECKS. A `Read` in a fixture's steps is therefore skipped
+/// rather than refused — the block validates as scene steps, and asking one to
+/// carry no assertion would be a second grammar for the sake of a rule that
+/// costs nothing to ignore.
+///
+/// Generic over the node type, which is the whole point: the same eight verbs
+/// drive the in-memory DOM under `moon test` and a real page in a browser, so a
+/// card's fixture is driven on the page it is shown on rather than replayed by
+/// a second implementation of "click the third row".
+///
+/// Raises on the first step whose selector matched nothing — a fixture whose
+/// fourth step missed is a screenshot of something nobody wrote, and the caller
+/// should say so rather than show it.
+pub fn[N : @vdom.DomWalk] seed(
+  h : @harness.Harness[N],
+  steps : Array[@scenedef.Step],
+) -> Unit raise {
+  for step in steps {
+    if step is Read(_) {
+      continue
+    }
+    perform(h, step)
+  }
+}
+
+///|
 /// The drive verbs. Each is one harness call and nothing else: what a click
 /// DOES is the harness's business, and a second opinion about it here is how
 /// two implementations of `nth` start disagreeing.
-fn perform(h : @harness.Harness, step : @scenedef.Step) -> Unit raise {
+fn[N : @vdom.DomWalk] perform(
+  h : @harness.Harness[N],
+  step : @scenedef.Step,
+) -> Unit raise {
   match step {
     Click(sel~, nth~) => h.click(sel, nth~)
     Type(sel~, value~, nth~) => h.type_into(sel, value, nth~)
@@ -133,7 +168,7 @@ fn perform(h : @harness.Harness, step : @scenedef.Step) -> Unit raise {
 /// asked for anything: an expectation written with no answer is the RECORD
 /// form, and what it wants is exactly this.
 fn judge(
-  h : @harness.Harness,
+  h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
   at : Int,
   e : @scenedef.Expect,
@@ -186,7 +221,7 @@ fn judge(
 ///|
 /// Each reader, as the one harness call it stands for.
 fn read(
-  h : @harness.Harness,
+  h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
   e : @scenedef.Expect,
   refused : Array[String],

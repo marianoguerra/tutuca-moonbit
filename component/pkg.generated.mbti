@@ -39,8 +39,10 @@ pub struct Component {
 pub fn Component::compile(Self) -> Unit raise
 pub fn Component::compile_style(Self) -> String
 pub fn Component::for_type(name~ : String, views~ : Map[String, @anode.View], schema~ : @core.SchemaInfo, common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Map[String, LookupSpec], make? : (Map[String, @core.Value]) -> @core.Value) -> Self
+pub fn Component::from_json(Self, Json) -> @core.Value?
 pub fn Component::get_view(Self, String?) -> @anode.View?
 pub fn Component::make(Self, Map[String, @core.Value]) -> @core.Value
+pub fn Component::to_json(Self, @core.Value) -> Json
 pub fn Component::view_handler_names(Self) -> Array[String]
 
 pub struct ComponentStack {
@@ -59,6 +61,7 @@ pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Ma
 pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[IntentFn]]) -> Unit
 pub fn ComponentStack::register_macros(Self, Map[String, @anode.Macro]) -> Unit
 pub impl @anode.MacroScope for ComponentStack
+pub impl @core.ComponentSource for ComponentStack
 
 pub struct Components {
   by_id : Map[Int, Component]

@@ -87,139 +87,62 @@ pub fn session_in_local_storage(prefix~ : String) -> Session {
 // the page cannot fetch again and saying so is better than pretending.
 
 ///|
-/// Whether a value is a component INSTANCE rather than data that happens to be
-/// an object. Only an instance answers a schema.
-fn is_instance(v : @tutuca.Value) -> Bool {
-  v is Obj(_) && v.schema() is Some(_)
-}
-
-///|
 /// The tree as a document, and every guest in it as a snapshot.
 ///
-/// The shape is `{c, m, f, k, l}` — what it is Called, which Module it came
-/// from, its scalar Fields, its component-valued fields (Kids), and its Lists
-/// of components. Split that way because they come back differently: scalars
-/// are constructor arguments, and the other two have to be rebuilt first.
+/// The walk itself is `@tutuca.Value::to_component_json`, which reads each
+/// field's DECLARED type; what is host-specific is the one thing below, and it
+/// is the reason the hook exists at all.
 ///
 /// A GUEST is written as its name and module and nothing else. Its fields are
 /// its own, its children are its own, and what it kept privately is in the
-/// snapshot beside it — walking into it here would be the host claiming to
-/// know a shape the contract says it does not.
+/// snapshot beside it — walking into it here would be the host claiming to know
+/// a shape the contract says it does not. `claim~` runs BEFORE any field of an
+/// instance is read, which is what keeps that promise: a hook that ran after
+/// would already have crossed the boundary once per field.
 pub fn tree_json(
   v : @tutuca.Value,
-  path : String,
   snaps : Map[String, @persist.Snapshot],
 ) -> Json {
-  guard is_instance(v) else { return Json::null() }
-  guard v.schema() is Some(sc) else { return Json::null() }
-  match @dhw.snapshot(v) {
-    Some(snap) => {
-      snaps[path] = snap
-      return Json::object({
-        "c": Json::string(snap.component),
-        "m": Json::string(snap.module_),
-      })
-    }
-    None => ()
-  }
-  let f : Map[String, Json] = Map([])
-  let k : Map[String, Json] = Map([])
-  let l : Map[String, Json] = Map([])
-  for field in sc.fields {
-    let fv = v.field(field.name)
-    if is_instance(fv) {
-      k[field.name] = tree_json(fv, "\{path}/\{field.name}", snaps)
-    } else if fv is List(items) {
-      let mut any_inst = false
-      for item in items {
-        if is_instance(item) {
-          any_inst = true
-          break
-        }
+  v.to_component_json(claim=(inst, at) => {
+    match @dhw.snapshot(inst) {
+      Some(snap) => {
+        snaps[at] = snap
+        let tag : Map[String, Json] = Map([])
+        tag[@tutuca.component_key] = Json::string(snap.component)
+        tag[@tutuca.module_key] = Json::string(snap.module_)
+        Some(Json::object(tag))
       }
-      if any_inst {
-        let out : Array[Json] = []
-        for i, item in items {
-          out.push(tree_json(item, "\{path}/\{field.name}/\{i}", snaps))
-        }
-        l[field.name] = Json::array(out)
-      } else {
-        f[field.name] = fv.to_json()
-      }
-    } else if fv is (Obj(_) | Fn(_)) {
-      // A callable, or an object nothing can name. Skipping it is what keeps
-      // the document to things that can come back.
-      continue
-    } else {
-      f[field.name] = fv.to_json()
+      None => None
     }
-  }
-  Json::object({
-    "c": Json::string(sc.name),
-    "m": Json::string(@ui.builtin_module),
-    "f": Json::object(f),
-    "k": Json::object(k),
-    "l": Json::object(l),
   })
 }
 
 ///|
-fn json_at(j : Json, key : String) -> Json? {
-  if j is Object(m) {
-    m.get(key)
-  } else {
-    None
-  }
-}
-
-///|
-/// A tree back out of its document, with every guest restored from the
-/// snapshot stored beside it.
+/// A tree back out of its document, with every guest restored from the snapshot
+/// stored beside it.
 ///
-/// A guest whose bundle is missing comes back as nothing, which the cell
-/// holding it draws as an empty `+`. The rest of the page still returns, and
-/// dropping that bundle later and reloading fills it in: refusing the whole
-/// session because one component is unavailable would be the wrong trade for
-/// a page whose bundles arrive by hand.
+/// A guest whose bundle is missing comes back as nothing, which the cell holding
+/// it draws as an empty `+`. The rest of the page still returns, and dropping
+/// that bundle later and reloading fills it in: refusing the whole session
+/// because one component is unavailable would be the wrong trade for a page
+/// whose bundles arrive by hand.
 pub fn tree_of_json(
   ui : @ui.UniversalUi,
   j : Json,
-  path : String,
   snaps : Map[String, @persist.Snapshot],
 ) -> @tutuca.Value {
-  guard json_at(j, "c") is Some(String(name)) else { return Null }
-  let module_ = match json_at(j, "m") {
-    Some(String(m)) => m
-    _ => @ui.builtin_module
-  }
-  if module_ != @ui.builtin_module {
-    return match snaps.get(path) {
-      Some(snap) => @dhw.restore(snap).unwrap_or(Null)
-      None => @dhw.make_instance(module_, name).unwrap_or(Null)
-    }
-  }
-  let args : Map[String, @tutuca.Value] = Map([])
-  if json_at(j, "f") is Some(Object(f)) {
-    for key, val in f {
-      args[key] = @tutuca.Value::from_json(val)
-    }
-  }
-  if json_at(j, "k") is Some(Object(k)) {
-    for key, val in k {
-      args[key] = tree_of_json(ui, val, "\{path}/\{key}", snaps)
-    }
-  }
-  if json_at(j, "l") is Some(Object(l)) {
-    for key, val in l {
-      guard val is Array(items) else { continue }
-      let out : Array[@tutuca.Value] = []
-      for i, item in items {
-        out.push(tree_of_json(ui, item, "\{path}/\{key}/\{i}", snaps))
+  ui.tree_of_json(
+    j,
+    // Keyed by WHERE the instance sits, which is the one name that still means
+    // something after a reload. Nothing saved there falls through to a fresh
+    // one, which is what a guest that persists nothing wants anyway.
+    restore=(at, ref_) => {
+      match snaps.get(at) {
+        Some(snap) => @dhw.restore(snap)
+        None => @dhw.make_instance(ref_.module_, ref_.name)
       }
-      args[key] = List(out)
-    }
-  }
-  ui.build_standard(name, args)
+    },
+  )
 }
 
 ///|
@@ -234,9 +157,11 @@ fn save_session() -> Unit {
   let store = session.store
   guard @dhw.app_root_value() is Some(app) else { return }
   let root = app.field("root")
-  guard is_instance(root) else { return }
+  // Nothing mounted yet: writing an empty tree over a good one is the
+  // failure this guard is here to prevent.
+  guard root is Obj(_) && root.schema() is Some(_) else { return }
   let snaps : Map[String, @persist.Snapshot] = Map([])
-  store.set("tree", tree_json(root, "", snaps).stringify())
+  store.set("tree", tree_json(root, snaps).stringify())
   store.set(
     "urls",
     Json::array(host.loaded_urls.map(u => Json::string(u))).stringify(),
@@ -290,7 +215,7 @@ fn restored_tree() -> @tutuca.Value? {
     guard @persist.load(session.store, id) is Some(snap) else { continue }
     snaps[id[3:].to_owned()] = snap
   }
-  match tree_of_json(host.ui, doc, "", snaps) {
+  match tree_of_json(host.ui, doc, snaps) {
     Null => None
     v => Some(v)
   }

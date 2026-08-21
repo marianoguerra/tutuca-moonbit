@@ -93,7 +93,7 @@ pub fn install() -> Unit {
     () => activity_json(),
     id => unmount_at(id),
     id => classes_at(id),
-    (id, manifest) => mount_compiled(id, manifest),
+    (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
   )
 }
@@ -107,7 +107,7 @@ extern "js" fn publish(
   activity : () -> String,
   unmount : (String) -> Unit,
   classes_at : (String) -> String,
-  mount_compiled : (String, String) -> String,
+  mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
 ) -> Unit =
   #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive } }

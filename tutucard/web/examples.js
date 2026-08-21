@@ -62,7 +62,35 @@ export const EXAMPLES = [
   compute summary { $'{.label}: {.count}' }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "fresh": {
+    "doc": "A counter nobody has pressed yet — what a visitor meets.",
+    "default": true,
+    "value": { "label": "Counter" }
+  },
+  "with history": {
+    "doc": "What three presses leave behind, without pressing three times.",
+    "value": { "label": "Demo", "count": 3, "history": [1, 2, 3] }
+  },
+  "counted up": {
+    "doc": "The same three, arrived at by pressing — a fixture can be reached by DOING rather than described.",
+    "value": { "label": "Pressed" },
+    "drive": [
+      { "click": "button.join-item" },
+      { "click": "button.join-item" },
+      { "click": "button.join-item" }
+    ]
+  },
+  "as a row": {
+    "doc": "The same state under the card's other view. Which view to show it as is the one thing a value cannot say about itself.",
+    "view": "row",
+    "value": { "label": "Compact", "count": 7 }
+  }
+}
+</script>
+
+<template id="Counter">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <h2 class="card-title"><x text="$summary"></x></h2>
@@ -79,6 +107,13 @@ export const EXAMPLES = [
         <li class="badge badge-sm badge-neutral" @each=".history"><x text="@value"></x></li>
       </ul>
     </div>
+  </div>
+</template>
+
+<template id="Counter:row">
+  <div class="flex gap-2 items-center">
+    <span class="badge badge-neutral"><x text="$summary"></x></span>
+    <button class="btn btn-xs" @on.click="add 1">+1</button>
   </div>
 </template>
 `,

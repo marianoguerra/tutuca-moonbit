@@ -292,8 +292,10 @@ What is left, in order:
 1. **The rest of Layer 1**: an inspector pane over `Obj::obj_schema`, richer
    form controls (lists, maps, a picker for `TyComp`), a settings panel for a
    container's own properties beyond what the generated form gives, and
-   import/export of a page as JSON — the shell already writes that shape to
-   `localStorage`, so this is mostly exposing it.
+   import/export of a page as JSON. The DOCUMENT for that is built — the page is
+   a tagged `$component` tree (`core/component_json.mbt`), written and read by
+   `UniversalUi::tree_of_json` and its encode twin, which is what the shell now
+   puts in `localStorage`. What is left is the two buttons.
 2. **The security work `policy` names but does not yet do**: the `mizchi/css`
    validator and caller-aware request authorization, which needs `RequestFn` to
    carry the requester's `DispatchPath` (`SECURITY.md` §4–§5). The Sanitizer-API
@@ -317,7 +319,10 @@ Stated here rather than left to be discovered:
   fills a declared foreign `ty-comp` field, and a restore rebuilds the guest
   from its snapshot — which fills the placeholder fresh. What a person put in
   it is lost. Carrying it needs the placeholder's contents in the snapshot,
-  which the host can do and does not yet.
+  which the host can do and does not yet. The codec is no longer the obstacle:
+  `Snapshot.fields` is a flat `Value::from_json` per key
+  (`dyncomp/persist/persist.mbt`), and moving it to `from_component_json` would
+  make a nested instance in that projection come back.
 - **A nested same-bundle child gets no placeholders at all.**
   `Bundle::wrap_instance` runs on every read of such a field, so filling there
   would rebuild the placeholder per read; the fix is a host-side table keyed by

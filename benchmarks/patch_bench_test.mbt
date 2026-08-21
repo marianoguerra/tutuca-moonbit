@@ -8,46 +8,46 @@
 // the tree the change touches.
 
 ///|
-let todo_10 : @harness.Harness = @benchmarks.mount_todo(10)
+let todo_10 : @harness.MemHarness = @benchmarks.mount_todo(10)
 
 ///|
-let todo_100 : @harness.Harness = @benchmarks.mount_todo(100)
+let todo_100 : @harness.MemHarness = @benchmarks.mount_todo(100)
 
 ///|
-let todo_1000 : @harness.Harness = @benchmarks.mount_todo(1000)
+let todo_1000 : @harness.MemHarness = @benchmarks.mount_todo(1000)
 
 ///|
-let noop_10 : @harness.Harness = @benchmarks.mount_todo(10)
+let noop_10 : @harness.MemHarness = @benchmarks.mount_todo(10)
 
 ///|
-let noop_1000 : @harness.Harness = @benchmarks.mount_todo(1000)
+let noop_1000 : @harness.MemHarness = @benchmarks.mount_todo(1000)
 
 ///|
-let add_10 : @harness.Harness = @benchmarks.mount_todo(10)
+let add_10 : @harness.MemHarness = @benchmarks.mount_todo(10)
 
 ///|
-let add_100 : @harness.Harness = @benchmarks.mount_todo(100)
+let add_100 : @harness.MemHarness = @benchmarks.mount_todo(100)
 
 ///|
-let add_1000 : @harness.Harness = @benchmarks.mount_todo(1000)
+let add_1000 : @harness.MemHarness = @benchmarks.mount_todo(1000)
 
 ///|
-let counter : @harness.Harness = @benchmarks.mount_counter()
+let counter : @harness.MemHarness = @benchmarks.mount_counter()
 
 ///|
-let people_100 : @harness.Harness = @benchmarks.mount_people(100)
+let people_100 : @harness.MemHarness = @benchmarks.mount_people(100)
 
 ///|
-let people_1000 : @harness.Harness = @benchmarks.mount_people(1000)
+let people_1000 : @harness.MemHarness = @benchmarks.mount_people(1000)
 
 ///|
-let page_1000 : @harness.Harness = @benchmarks.mount_people(1000)
+let page_1000 : @harness.MemHarness = @benchmarks.mount_people(1000)
 
 ///|
-let json_8x4 : @harness.Harness = @benchmarks.mount_json(8, 4)
+let json_8x4 : @harness.MemHarness = @benchmarks.mount_json(8, 4)
 
 ///|
-let tabs : @harness.Harness = @benchmarks.mount_tabs()
+let tabs : @harness.MemHarness = @benchmarks.mount_tabs()
 
 // --- no change at all -------------------------------------------------------
 

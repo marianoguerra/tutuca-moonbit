@@ -12,7 +12,11 @@ pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
 
+pub let component_key : String
+
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
+
+pub let module_key : String
 
 pub fn mutator_name(String, String) -> String
 
@@ -84,6 +88,12 @@ pub(all) enum FieldKind {
   FSet
   FOMap
 } derive(@debug.Debug)
+
+pub struct FnSource {
+  // private fields
+}
+pub fn FnSource::new((String?, String, Map[String, Value], String) -> Value?, describe? : (String?, String) -> SchemaInfo?) -> Self
+pub impl ComponentSource for FnSource
 
 pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
@@ -303,6 +313,7 @@ pub fn Value::field(Self, String) -> Self
 pub fn Value::field_info(Self, String) -> FieldInfo?
 pub fn Value::field_names(Self) -> Array[String]
 pub fn Value::field_opt(Self, String) -> Self?
+pub fn Value::from_component_json(Json, &ComponentSource) -> Self?
 pub fn Value::from_json(Json) -> Self
 pub fn Value::handler(Self, HandlerBucket, String) -> Handler?
 pub fn Value::identity(Self) -> ObjId?
@@ -324,6 +335,7 @@ pub fn Value::size(Self, default? : Int) -> Int
 pub fn Value::snapshot(Self) -> Map[String, Self]
 pub fn Value::str(Self, default? : String) -> String
 pub fn Value::str_opt(Self) -> String?
+pub fn Value::to_component_json(Self, claim? : (Self, String) -> Json?) -> Json
 pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
 pub fn Value::with_at(Self, Path, Self) -> Self
@@ -339,6 +351,11 @@ pub impl @json.FromJson for Value
 // Type aliases
 
 // Traits
+pub(open) trait ComponentSource {
+  fn describe(Self, String?, String) -> SchemaInfo? = _
+  fn build(Self, String?, String, Map[String, Value], at~ : String) -> Value?
+}
+
 pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _

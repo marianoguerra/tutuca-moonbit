@@ -63,7 +63,7 @@ let tree_chains : Map[Int, @tutuca.Value] = Map([])
 
 ///|
 /// A TreeRoot holding a chain `depth` deep, mounted.
-pub fn mount_tree_chain(depth : Int) -> @harness.Harness {
+pub fn mount_tree_chain(depth : Int) -> @harness.MemHarness {
   let root = items_for(tree_chains, depth, () => tree_chain(depth))
   mounted("tree-chain/\{depth}", tree_module, "TreeRoot", { "root": root })
 }
@@ -75,7 +75,7 @@ pub fn mount_tree_chain(depth : Int) -> @harness.Harness {
 /// index of the level. The selector walk that finds it grows with depth and is
 /// the harness's cost rather than the framework's — `find_cost` is the same
 /// walk on its own, for subtracting rather than guessing.
-pub fn intent_dyn(h : @harness.Harness, depth : Int) -> Int {
+pub fn intent_dyn(h : @harness.MemHarness, depth : Int) -> Int {
   h.click(".head", nth=depth - 1) catch {
     e => fail_patch("intent dyn depth \{depth}", e)
   }
@@ -103,7 +103,7 @@ fn declining_chain(n : Int) -> Map[String, Array[@component.IntentFn]] {
 
 ///|
 /// The request example, against a scope that declines `n` times first.
-pub fn mount_lex_chain(n : Int) -> @harness.Harness {
+pub fn mount_lex_chain(n : Int) -> @harness.MemHarness {
   mounted(
     "lex-chain/\{n}",
     @examples.request_module(intents=declining_chain(n)),
@@ -118,7 +118,7 @@ pub fn mount_lex_chain(n : Int) -> @harness.Harness {
 /// `receive init` is what raises it, so this is one `send_at_root` and then the
 /// whole walk plus the `loadDataOk` that comes back — which is the round trip a
 /// caller actually pays for, not the leg on its own.
-pub fn intent_lex(h : @harness.Harness) -> Int {
+pub fn intent_lex(h : @harness.MemHarness) -> Int {
   h.send_at_root("init")
   h.render_count()
 }
@@ -128,7 +128,7 @@ pub fn intent_lex(h : @harness.Harness) -> Int {
 ///
 /// The counter's `inc` is an ordinary handler, so this is lookup + transition +
 /// patch: the baseline the next one is read against.
-pub fn dispatch_answered(h : @harness.Harness) -> Int {
+pub fn dispatch_answered(h : @harness.MemHarness) -> Int {
   h.send_at_root("inc")
   h.render_count()
 }
@@ -142,7 +142,7 @@ pub fn dispatch_answered(h : @harness.Harness) -> Int {
 /// simplification. Read against `dispatch_answered`: the difference is a
 /// transition and a patch this one does not do, so this number being the
 /// SMALLER of the two is the claim holding.
-pub fn dispatch_unanswered(h : @harness.Harness) -> Int {
+pub fn dispatch_unanswered(h : @harness.MemHarness) -> Int {
   h.send_at_root("noSuchNameAtAll")
   h.render_count()
 }

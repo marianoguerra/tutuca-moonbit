@@ -222,10 +222,14 @@ declare pub fn Meta::parse(text : String) -> Meta?
 /// Render a value as the app root component (JS renderRoot → _rValComp with
 /// no render-site node): resolve its view, emit the root §Comp§ boundary
 /// meta, render the body. None when unresolved or the body renders nothing.
+///
+/// `view~` names which view to render the root under; "" is the ordinary
+/// resolution, and a name the component does not declare falls back to `main`.
 declare pub fn render_root(
   value : @tutuca.Value,
   stack : RenderStack,
   ctx : RenderCtx,
+  view? : String = "",
 ) -> @vdom.Vdom?
 
 ///|

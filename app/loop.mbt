@@ -45,6 +45,15 @@ pub struct App[N] {
   /// Never absent. Every app filters; what an app can change is WHICH policy,
   /// not whether.
   mut filter : &@filter.VdomFilter
+  /// Which of the root component's views to mount it under; "" is the ordinary
+  /// resolution.
+  ///
+  /// The mounter's, not the value's. A component's `main` and its `row` hold
+  /// the same fields, so nothing in the tree can say which one a host meant —
+  /// which is why this is a field on the APP rather than something the root
+  /// value could carry. Only the root: every site below it resolves its own
+  /// view the way it always has.
+  root_view : String
 }
 
 ///|
@@ -53,6 +62,7 @@ pub fn[N : @vdom.DomWalk] App::new(
   root_value : @tutuca.Value,
   root_node : N,
   opts : @vdom.RenderOpts[N],
+  view? : String = "",
 ) -> App[N] raise {
   scope.compile_all()
   let tx = @transactor.Transactor::new(root_value, intents=ScopeIntents::{
@@ -83,6 +93,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     sanitizer: @sanitize.Sanitizer::default(),
     extra_filters: [],
     filter: @mdfilter.default_filter(),
+    root_view: view,
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -107,13 +118,14 @@ pub fn[N : @vdom.DomWalk] App::from_module(
   root_node : N,
   opts : @vdom.RenderOpts[N],
   args? : Map[String, @tutuca.Value] = Map([]),
+  view? : String = "",
 ) -> App[N] raise {
   let scope = @component.ComponentStack::new()
   m.register_into(scope)
   guard scope.lookup_component(root) is Some(comp) else {
     fail("mount: no component named '\{root}' in module '\{m.name}'")
   }
-  let app = App::new(scope, comp.make(args), root_node, opts)
+  let app = App::new(scope, comp.make(args), root_node, opts, view~)
   app.start()
   app
 }
@@ -218,7 +230,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
     render_cache=self.render_cache,
     filter=self.filter,
   )
-  match @render.render_root(root_val, stack, ctx) {
+  match @render.render_root(root_val, stack, ctx, view=self.root_view) {
     Some(vdom) => {
       let prev = self.prev
       self.prev = Some(@vdom.render(vdom, self.root_node, self.opts, prev?))

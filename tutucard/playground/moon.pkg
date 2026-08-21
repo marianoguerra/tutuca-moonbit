@@ -32,6 +32,10 @@ import {
   // page — which is the whole point of it being reachable from here.
   "marianoguerra/tutuca/tutucard/drive",
   "marianoguerra/tutuca/scenedef",
+  // The drive verbs, over the app this page just mounted. A fixture's `drive`
+  // steps run on the REAL DOM through the same harness a scene uses on the
+  // in-memory one, which is what keeps "click the third row" one thing.
+  "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/viewfile",
   // What the compiled card is mounted AS: an ordinary dyncomp bundle. The
   // `&Guest` over the instantiated module is `cardguest.mbt`, and `policy` is

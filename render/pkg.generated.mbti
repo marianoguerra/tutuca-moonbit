@@ -25,7 +25,7 @@ pub fn is_meta_comment(String) -> Bool
 
 pub fn render(@anode.ANode, RenderStack, RenderCtx) -> @vdom.Vdom?
 
-pub fn render_root(@core.Value, RenderStack, RenderCtx) -> @vdom.Vdom?
+pub fn render_root(@core.Value, RenderStack, RenderCtx, view? : String) -> @vdom.Vdom?
 
 // Errors
 

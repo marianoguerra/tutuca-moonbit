@@ -33,6 +33,10 @@ const CARD = [
   "  receive bump { .n += 1 }",
   "</script>",
   "",
+  '<script type="tutuca/init">',
+  '  { "fresh": { "value": { "n": 0 } } }',
+  "</script>",
+  "",
   '<template id="Counter">',
   "  <p>main</p>",
   "</template>",
@@ -45,6 +49,22 @@ const CARD = [
 const p = R.parts(CARD);
 check("the state block is sliced exactly", p.state.text, "\n  state Counter { n: Int }\n");
 check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
+// The examples tab edits this one, and the Examples pane mounts what it names.
+check(
+  "the init block is sliced exactly",
+  p.init.text,
+  '\n  { "fresh": { "value": { "n": 0 } } }\n',
+);
+// …and a card without one says so rather than throwing, which is what the tab's
+// empty state is drawn from.
+check("a card with no init block has none", R.parts("<template><p>x</p></template>").init, null);
+// A new block is the ENVELOPE, not a bare field map: the format has no
+// shorthand, and the thing an author opens is the thing they should copy.
+check(
+  "addInit writes a fixture, not a field map",
+  R.addInit("<template><p>x</p></template>\n").includes('"value": {}'),
+  true,
+);
 check("views are named by the half after the colon", p.views.map((v) => v.name), ["main", "row"]);
 
 // …unless the file declares more than one component, and then the half after

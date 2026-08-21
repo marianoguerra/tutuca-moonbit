@@ -590,6 +590,21 @@ is seeded. It is the honest way to write a state a component ARRIVES at:
 A scene then starts from it by name — `"init": "three rows"` — so a state worth
 showing and a state worth testing are written once.
 
+`view` names which of the component's views to show the fixture under, which is
+the one thing a value cannot say about itself: a `Todo` has a `main` and a `row`
+over the same fields. A name the component does not declare falls back to `main`.
+
+`default: true` marks the fixture a host shows when nothing named one — what a
+visitor meets. A card that marks none mounts at the schema's zero; a card that
+marks one is met the way its author meant. It is a HOST's question, not a test's:
+a `tutuca/test` scene with no `"init"` still starts at the zero, because a
+scene's starting point is a thing to write down.
+
+The tutucard playground reads all of this. The **examples** tab edits the block,
+and the **Examples** pane beside it mounts every fixture as a live card — seeded
+from `value`, driven by `drive`, answered by `intents`, shown under `view`, with
+the fixture's name as the title and its `doc` underneath.
+
 ## Constraints (dynamic components only)
 
 A compiled-in component states its bounds in MoonBit. A **dynamic component**

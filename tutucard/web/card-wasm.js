@@ -107,8 +107,15 @@ function jsonToGuest(j, put) {
  * capability — `abi.mjs` checks the module's IMPORT SECTION rather than
  * anything the manifest claims — so a card that asked for a clock would be
  * refused here rather than quietly given one.
+ *
+ * `module` is the compiled module to instantiate, for a caller that already has
+ * one. Everything else here is per-key already — the arena, the instance table,
+ * `__cardguest[key]` — so N instances off ONE module is what the shape already
+ * supports; what it was missing was a way to say so. The examples pane makes one
+ * instance per fixture of the same card, and compiling the same bytes once per
+ * fixture on a keystroke debounce is the whole cost of that pane.
  */
-export async function loadGuest(bytes, descriptor, key = "default") {
+export async function loadGuest(bytes, descriptor, key = "default", { module } = {}) {
   const arena = makeArena();
   let control = [];
   // What the card SAID. `control.log` is the one call on the control interface
@@ -173,7 +180,7 @@ export async function loadGuest(bytes, descriptor, key = "default") {
         ? { item: [s.val.field, s.val.key] }
         : { at: [s.val.field, Number(s.val.index)] };
   const root = await instantiate(
-    () => WebAssembly.compile(bytes),
+    () => module ?? WebAssembly.compile(bytes),
     {
       "tutuca:component/values": arena.api,
       "tutuca:component/control": {
@@ -445,8 +452,13 @@ export const b64ToBytes = (b64) =>
  *
  * `build` is the compile report, for the panels that show the WAT, the WAX and
  * the download — so a caller that wants those does not compile a second time.
+ *
+ * `init` names one of the card's `tutuca/init` fixtures. "" is not "no fixture"
+ * — it is "nothing was named", and a card that marked one `default` has already
+ * said what to show then. So the ordinary mount shows the card the way its
+ * author meant it to be met.
  */
-export async function mountCard(previewId, source, name, { allowWax = false } = {}) {
+export async function mountCard(previewId, source, name, { allowWax = false, init = "" } = {}) {
   // The CHECKER first, and separately. A card being edited is usually a card
   // with something wrong with it, and the findings are what the editor
   // underlines — `compile` turns such a card away whole, which is right for a
@@ -479,7 +491,11 @@ export async function mountCard(previewId, source, name, { allowWax = false } = 
   // Keyed by the mount point, so two cards on one page are two modules.
   await loadGuest(b64ToBytes(build.wasm), build.descriptor, previewId);
   const mounted = JSON.parse(
-    globalThis.__tutucard.mountCompiled(previewId, JSON.stringify(build.manifest)),
+    globalThis.__tutucard.mountCompiled(
+      previewId,
+      JSON.stringify(build.manifest),
+      init,
+    ),
   );
   return {
     ...checked,
@@ -556,6 +572,16 @@ export async function driveCard(source, name, { allowWax = false, scenes = "", k
     build,
   };
 }
+
+/**
+ * The card's bytes as a `WebAssembly.Module`, for a caller that will instantiate
+ * it more than once.
+ *
+ * Named rather than inlined so the reason for the split has somewhere to live:
+ * compiling is the expensive half and instantiating is the cheap one, and a
+ * gallery of a card's fixtures is the same module N times over.
+ */
+export const compileGuest = (bytes) => WebAssembly.compile(bytes);
 
 /** A `.tutuca.tar.gz` for a compiled card, as a Blob. */
 export async function packBundle(report, wasmBytes) {

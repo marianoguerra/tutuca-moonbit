@@ -706,3 +706,39 @@ pub fn std_module() -> @component.ModuleDef {
 /// What the catalog calls this module. One name, stated once, because both the
 /// registry and the app branch on it.
 pub let module_name : String = "std"
+
+///|
+/// The standard components, as a `ComponentSource`: what a saved page resolves
+/// its `$component` names through.
+///
+/// `build` goes to `Std::build` and not to `Component::make`, which is the
+/// whole reason this impl is here rather than being the generic
+/// `ComponentStack` one: a container comes back USABLE, with the cells its
+/// declared arguments cannot carry. A document written by the codec always
+/// names them, so the invariant only fires for a document written by hand.
+pub impl @tutuca.ComponentSource for Std with fn describe(self, _module_, name) {
+  self.comps.get(name).map(c => c.schema)
+}
+
+///|
+pub impl @tutuca.ComponentSource for Std with fn build(
+  self,
+  _module_,
+  name,
+  args,
+  // `Std` keeps no side table; a host that does wraps this one.
+  at~ : String,
+) {
+  ignore(at)
+  // `Some` only for a name this module declares, so an unknown one falls to
+  // the field's default instead of writing a `Null` over it.
+  self.comps.get(name).map(_c => Std::build(self, name, args))
+}
+
+///|
+/// Whether this module declares `name`. What a caller resolving a bare
+/// component name asks first, so the compiled-in components answer before a
+/// dropped bundle gets a chance to shadow one.
+pub fn Std::declares(self : Std, name : String) -> Bool {
+  self.comps.contains(name)
+}

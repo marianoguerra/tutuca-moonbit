@@ -49,6 +49,7 @@ pub struct Bundle {
 pub fn Bundle::component_names(Self) -> Array[String]
 pub fn Bundle::config(Self) -> Map[String, String]
 pub fn Bundle::def_of(Self, String) -> DynComponentDef?
+pub fn Bundle::default_init(Self, String) -> String
 pub fn Bundle::diagnostics(Self) -> Array[String]
 pub fn Bundle::drop_instance(Self, Int) -> Unit
 pub fn Bundle::init_names(Self, String) -> Array[String]

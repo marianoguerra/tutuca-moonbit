@@ -317,6 +317,8 @@ pub struct UniversalUi {
   configuring : @ref.Ref[@core.DispatchPath?]
 }
 pub fn UniversalUi::build_standard(Self, String, Map[String, @core.Value]) -> @core.Value
+pub fn UniversalUi::tree_of_json(Self, Json, restore? : (String, @registry.ComponentRef) -> @core.Value?) -> @core.Value
+pub impl @core.ComponentSource for UniversalUi
 
 // Type aliases
 pub type MakeInstance = (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?

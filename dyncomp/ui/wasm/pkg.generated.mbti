@@ -26,9 +26,9 @@ pub fn session_in_local_storage(prefix~ : String) -> Session
 
 pub fn state_json() -> String
 
-pub fn tree_json(@marianoguerra/tutuca/core.Value, String, Map[String, @persist.Snapshot]) -> Json
+pub fn tree_json(@marianoguerra/tutuca/core.Value, Map[String, @persist.Snapshot]) -> Json
 
-pub fn tree_of_json(@ui.UniversalUi, Json, String, Map[String, @persist.Snapshot]) -> @marianoguerra/tutuca/core.Value
+pub fn tree_of_json(@ui.UniversalUi, Json, Map[String, @persist.Snapshot]) -> @marianoguerra/tutuca/core.Value
 
 pub fn universal_module(samples? : Array[@shell.LoaderBarSample], intents? : Map[String, Array[@component.IntentFn]]) -> (@component.ModuleDef, @ui.UniversalUi)
 

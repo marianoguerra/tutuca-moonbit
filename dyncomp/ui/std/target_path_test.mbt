@@ -129,7 +129,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
 /// instances carry the id of the `Component` that made them, and a second
 /// `std_components()` would hand back look-alikes the mounted scope cannot
 /// resolve. One pair, threaded through.
-fn mount_std(root : (Std) -> @tutuca.Value) -> (@harness.Harness, Std) raise {
+fn mount_std(root : (Std) -> @tutuca.Value) -> (@harness.MemHarness, Std) raise {
   let (module_, std) = spike_module()
   let h = @harness.mount(module_, "Spike")
   h.send_at_root("setRoot", args=[root(std)])

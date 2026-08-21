@@ -99,7 +99,7 @@ fn run_one(
   for name, a in scene.intents {
     answers[name] = a
   }
-  scope.register_intent_handlers(fixtures_of(answers))
+  scope.register_intent_handlers(intent_handlers(answers))
   guard bundle.make_instance(comp, args~) is Some(inst) else {
     return failed("the guest would not create a `" + comp + "`")
   }
@@ -157,7 +157,7 @@ fn run_one(
 /// facts about how the app came to exist, and this is handed one that already
 /// does.
 pub fn drive_scene(
-  h : @harness.Harness,
+  h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
   take_log? : () -> Array[String] = () => [],
 ) -> SceneResult {
@@ -210,7 +210,7 @@ pub fn drive_scene(
 /// because a component is built once — `make_instance` is the only place args
 /// reach a guest's constructor, and a card's `init` handler runs against
 /// whatever it was built with.
-fn fixture_of(
+pub fn fixture_of(
   bundle : @dyncomp.Bundle,
   comp : String,
   name : String,
@@ -233,7 +233,7 @@ fn fixture_of(
 /// They cross the manifest as JSON — a wire format passes through what it does
 /// not interpret — so this is where they become steps again. A fixture that
 /// declares none is an empty list, which is what most are.
-fn fixture_drive(
+pub fn fixture_drive(
   f : @dyncomp.DynInitDef,
 ) -> (Array[@scenedef.Step], Map[String, @scenedef.Answer]) {
   let steps = if f.drive_json == "" {
@@ -315,7 +315,7 @@ fn start_args(
 /// `<name>Unhandled`. That is a different sentence from a failure's, and it is
 /// the path a test is likeliest to leave uncovered — nothing in a card raises
 /// it, only the absence of an answer does.
-fn fixtures_of(
+pub fn intent_handlers(
   intents : Map[String, @scenedef.Answer],
 ) -> Map[String, Array[@component.IntentFn]] {
   let out : Map[String, Array[@component.IntentFn]] = Map([])

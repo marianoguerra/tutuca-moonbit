@@ -162,10 +162,12 @@ pub struct Std {
 }
 pub fn Std::build(Self, String, Map[String, @core.Value]) -> @core.Value
 pub fn Std::cell(Self) -> @core.Value
+pub fn Std::declares(Self, String) -> Bool
 pub fn Std::grid(Self, cols? : Int, rows? : Int) -> @core.Value
 pub fn Std::resize_grid(Self, GridState, cols~ : Int, rows~ : Int) -> GridState
 pub fn Std::tab_page(Self, label? : String) -> @core.Value
 pub fn Std::tabs(Self, count? : Int) -> @core.Value
+pub impl @core.ComponentSource for Std
 
 pub(all) enum TabPageInput {
   CancelRename

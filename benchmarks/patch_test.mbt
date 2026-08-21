@@ -16,8 +16,8 @@
 /// same root object, so `App::render_now` is never reached. Asserting the
 /// render count here is what keeps that property from silently regressing.
 fn assert_round_trip(
-  h : @harness.Harness,
-  run : (@harness.Harness) -> Int,
+  h : @harness.MemHarness,
+  run : (@harness.MemHarness) -> Int,
   rerenders? : Bool = true,
 ) -> Unit raise {
   let before = h.html()

@@ -230,26 +230,44 @@ textarea:focus {
   gap: 0.4rem;
 }
 
+/* A tab strip: names sharing one rule, with the chosen one underlined.
+ *
+ * A tab and a button are different promises — one says "look at this instead",
+ * the other says "do this" — so they must not look the same. The strip sits on
+ * a line the tabs interrupt: no boxes, no gaps to fall between, and the
+ * selection is a mark under a name rather than a border around it. Buttons
+ * that share the bar (`.download`, `.action`) keep their boxes; see below. */
 .tabs {
   display: flex;
   gap: 0.25rem;
   flex-wrap: wrap;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 0.6rem;
 }
 
 .tab {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--panel);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
   color: var(--dim);
   font: inherit;
   font-size: 0.8rem;
-  padding: 0.2rem 0.6rem;
+  padding: 0.25rem 0.6rem;
+  /* Onto the strip's own line, so the mark replaces it rather than sitting
+     above it. */
+  margin-bottom: -1px;
   cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
 }
 
 .tab.on {
   color: var(--ink);
-  border-color: var(--ink);
+  border-bottom-color: var(--accent);
 }
 
 /* The view tabs sit under the part tabs and are visibly subordinate: a card
@@ -292,6 +310,80 @@ textarea:focus {
   padding: 0.75rem;
   background: var(--panel);
   margin-bottom: 1rem;
+}
+
+/* The note in the preview pane's tab bar sits at the right, the way the
+ * download and load buttons do in the compiler pane's. */
+.tabs > .note {
+  margin-left: auto;
+  align-self: center;
+  margin-bottom: 0.25rem;
+}
+
+/* One box per `tutuca/init` fixture, stacked.
+ *
+ * Deliberately NOT `.preview`: a fixture box carries a title and a sentence
+ * around the mount point, and the mount point is what a card's own styles reach
+ * into. Keeping the chrome outside `.example-mount` is what stops a card's
+ * `h3` rule from restyling the fixture's name — the same reason `.pane > h2` is
+ * a direct-child selector.
+ */
+.example-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.example {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  padding: 0.6rem 0.75rem 0.75rem;
+}
+
+/* The fixture's name IS its title: a fixture already has one, and a second
+ * field for the same job is a field that can disagree with it. */
+.example > h3 {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+/* Which view it is shown under, when the fixture named one. */
+.example-view {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.example > .example-doc {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+
+.example-mount {
+  margin-top: 0.6rem;
+}
+
+/* A fixture that could not be shown — a `drive` step whose selector matched
+ * nothing, most often. The box stays, because the name and the sentence are
+ * still what the reader is looking for. */
+.example.bad {
+  border-color: var(--bad);
+}
+
+.example > .example-why {
+  margin: 0.5rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--bad);
 }
 
 /* The last good render, while the card does not parse. Dimmed rather than
@@ -411,9 +503,23 @@ textarea:focus {
  * those are a choice — and disabled until there is something to act on. Only
  * the FIRST action carries the `auto`: two of them would split the free space
  * and separate the pair rather than move it. */
+/* The two in the compiler bar that DO something rather than switch what is
+ * shown. They keep the box a tab gave up: pressing one downloads an archive or
+ * instantiates a module, and neither is undone by pressing the other. */
 .tab.download,
 .tab.action {
   font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--ink);
+  align-self: center;
+  margin-bottom: 0.25rem;
+}
+
+.tab.download:hover:not([disabled]),
+.tab.action:hover:not([disabled]) {
+  border-color: var(--accent);
 }
 
 .tab.download {

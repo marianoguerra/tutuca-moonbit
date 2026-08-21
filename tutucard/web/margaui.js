@@ -237,6 +237,11 @@ function walk(rules, scope) {
  *  - Anything else is a descendant: `.btn` becomes `.mbc-preview .btn`.
  */
 export function scopeSelector(selectorList, scope) {
+  // `scope` must be ONE selector. It is prefixed by concatenation — `scope + s`
+  // for a themed-root rule, `scope + " " + s` otherwise — so a scope carrying a
+  // top-level comma splits the result into two selectors, the first of which is
+  // the bare scope element with the rule's body applied to IT. Put alternatives
+  // inside `:is(a, b)` instead.
   return splitTopLevel(selectorList)
     .map((sel) => {
       const s = sel.trim();

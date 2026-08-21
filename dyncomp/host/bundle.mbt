@@ -663,6 +663,31 @@ pub fn Bundle::make_init(
 }
 
 ///|
+/// The fixture to show when nothing names one, or "" for the schema's zero.
+///
+/// EXPLICIT only. `docs/card-examples-design.md` weighed "the first is the
+/// default and a marker overrides it" — the rule `data-root` follows — against
+/// a marker alone; the block shipped with a `default` key, and a component that
+/// declares three fixtures and marks none is one saying it has no preference
+/// rather than one whose first fixture was written first. Two marked is the
+/// first the manifest lists, which for a card is the block's names sorted —
+/// arbitrary, and deterministic, which is what matters for a case that is
+/// already a mistake.
+///
+/// A HOST asks this. A test does not: `tutucard/drive` leaves a scene with no
+/// `"init"` at the zero, because a scene's starting point is a thing to write
+/// down and a default is what to show someone who has said nothing.
+pub fn Bundle::default_init(self : Bundle, component : String) -> String {
+  guard self.comps.get(component) is Some((_, _, def)) else { return "" }
+  for i in def.inits {
+    if i.default_ {
+      return i.name
+    }
+  }
+  ""
+}
+
+///|
 /// The named initial states a component declares, in declaration order.
 pub fn Bundle::init_names(self : Bundle, component : String) -> Array[String] {
   match self.comps.get(component) {

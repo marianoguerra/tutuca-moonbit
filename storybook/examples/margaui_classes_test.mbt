@@ -3,7 +3,7 @@
 // demo/storybook_wasm/main.mbt does before handing it to margaui's compiler.
 
 ///|
-fn collected_classes(h : @harness.Harness) -> Set[String] {
+fn collected_classes(h : @harness.MemHarness) -> Set[String] {
   let classes : Set[String] = Set([])
   for _, comp in h.app.scope.comps.by_id {
     for _, view in comp.views {

@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/vdom/memdom",
 }
 
 // Values
@@ -16,55 +17,55 @@ pub let corpora : Array[(String, String)]
 
 pub fn declining_scope(Int) -> Map[String, Array[@component.IntentFn]]
 
-pub fn dispatch_answered(@harness.Harness) -> Int
+pub fn dispatch_answered(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn dispatch_unanswered(@harness.Harness) -> Int
+pub fn dispatch_unanswered(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn find_cost(@harness.Harness, String) -> Int
+pub fn find_cost(@harness.Harness[@memdom.MemNode], String) -> Int
 
 pub fn gen(String) -> Int
 
 pub fn giant_view(Int) -> String
 
-pub fn intent_dyn(@harness.Harness, Int) -> Int
+pub fn intent_dyn(@harness.Harness[@memdom.MemNode], Int) -> Int
 
-pub fn intent_lex(@harness.Harness) -> Int
+pub fn intent_lex(@harness.Harness[@memdom.MemNode]) -> Int
 
 pub fn json_args(Int, Int) -> Map[String, @core.Value]
 
 pub fn list_args(Int) -> Map[String, @core.Value]
 
-pub fn mount_counter() -> @harness.Harness
+pub fn mount_counter() -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_json(Int, Int) -> @harness.Harness
+pub fn mount_json(Int, Int) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_lex_chain(Int) -> @harness.Harness
+pub fn mount_lex_chain(Int) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_people(Int) -> @harness.Harness
+pub fn mount_people(Int) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_tabs() -> @harness.Harness
+pub fn mount_tabs() -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_todo(Int) -> @harness.Harness
+pub fn mount_todo(Int) -> @harness.Harness[@memdom.MemNode]
 
-pub fn mount_tree_chain(Int) -> @harness.Harness
+pub fn mount_tree_chain(Int) -> @harness.Harness[@memdom.MemNode]
 
 pub let one_big_view_body : String
 
-pub fn patch_add_remove(@harness.Harness) -> Int
+pub fn patch_add_remove(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_counter(@harness.Harness) -> Int
+pub fn patch_counter(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_move(@harness.Harness) -> Int
+pub fn patch_move(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_noop(@harness.Harness) -> Int
+pub fn patch_noop(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_page(@harness.Harness) -> Int
+pub fn patch_page(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_refilter(@harness.Harness) -> Int
+pub fn patch_refilter(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_switch_view(@harness.Harness) -> Int
+pub fn patch_switch_view(@harness.Harness[@memdom.MemNode]) -> Int
 
-pub fn patch_toggle(@harness.Harness) -> Int
+pub fn patch_toggle(@harness.Harness[@memdom.MemNode]) -> Int
 
 pub fn patch_workloads() -> Array[(String, () -> Int)]
 

@@ -376,6 +376,24 @@ declare pub fn Component::make(
 ) -> @tutuca.Value
 
 ///|
+/// A tagged JSON document back into an instance, resolved through THIS
+/// component's registration scope — the same namespace a view resolves a child
+/// through, so a document names a component the way a template does.
+///
+/// None for a component that was never registered: `scope` is filled by
+/// `ComponentStack::register_components`, and a `Component` still in hand from
+/// `component()` has nowhere to look a name up.
+declare pub fn Component::from_json(
+  self : Component,
+  j : Json,
+) -> @tutuca.Value?
+
+///|
+/// The inverse. On `Component` for symmetry only — an instance describes
+/// itself, so `@tutuca.Value::to_component_json` is the same call.
+declare pub fn Component::to_json(self : Component, v : @tutuca.Value) -> Json
+
+///|
 declare pub fn Component::get_view(
   self : Component,
   name : String?,
@@ -460,6 +478,13 @@ declare pub fn ComponentStack::lookup_component(
   self : ComponentStack,
   name : String,
 ) -> Component?
+
+///|
+/// A registration scope is where a `$component` name resolves when a document
+/// is read back. `describe` answers the declared schema so a tagged object's
+/// fields decode BY TYPE; `build` goes through `Component::make`, which is
+/// what applies the default-on-absent rule the codec defers to.
+declare pub impl @tutuca.ComponentSource for ComponentStack
 
 ///|
 declare pub fn ComponentStack::register_intent_handlers(

@@ -94,10 +94,43 @@ declare pub fn run(
 /// `activity` come back empty — they are facts about how the app was made, and
 /// this is handed one that already exists.
 declare pub fn drive_scene(
-  h : @harness.Harness,
+  h : @harness.Harness[@memdom.MemNode],
   scene : @scenedef.Scene,
   take_log? : () -> Array[String],
 ) -> SceneResult
+
+///|
+/// Run a fixture's own steps against an app somebody else mounted — the drive
+/// verbs with no report. Generic over the node type, so the same verbs drive
+/// the in-memory DOM and a real page. Raises on a selector that matched
+/// nothing.
+declare pub fn[N : @vdom.DomWalk] seed(
+  h : @harness.Harness[N],
+  steps : Array[@scenedef.Step],
+) -> Unit raise
+
+///|
+/// One component's named fixture, by name. None when neither is declared.
+declare pub fn fixture_of(
+  bundle : @dyncomp.Bundle,
+  comp : String,
+  name : String,
+) -> @dyncomp.DynInitDef?
+
+///|
+/// A fixture's own steps and intent answers, as the scene vocabulary they were
+/// validated as. They cross the manifest as JSON — a wire format passes through
+/// what it does not interpret — so this is where they become steps again.
+declare pub fn fixture_drive(
+  f : @dyncomp.DynInitDef,
+) -> (Array[@scenedef.Step], Map[String, @scenedef.Answer])
+
+///|
+/// Intent answers as handlers that answer AT ONCE. A name with no answer
+/// answers nothing, which is how a card hears `<name>Unhandled`.
+declare pub fn intent_handlers(
+  intents : Map[String, @scenedef.Answer],
+) -> Map[String, Array[@component.IntentFn]]
 
 ///|
 /// The report as the JSON a page or a build step reads.

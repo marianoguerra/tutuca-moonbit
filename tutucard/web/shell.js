@@ -30,6 +30,9 @@ const els = {
   refusals: $("refusals"),
   scenes: $("scenes"),
   scenesNote: $("scenes-note"),
+  examples: $("examples"),
+  examplesNote: $("examples-note"),
+  preview: $("preview"),
   wasmSize: $("wasm-size"),
   download: $("download"),
   load: $("load"),
@@ -55,7 +58,7 @@ const els = {
  * same string. So there is one source of truth and no diffing: a structured
  * edit splices into `source()` and everything redraws from there.
  */
-const ui = { mode: "raw", part: "state", view: 0, macro: 0 };
+const ui = { mode: "raw", part: "state", view: 0, macro: 0, show: "preview" };
 
 /** Debounce, so a fast typist re-mounts on pauses rather than per keystroke. */
 const DEBOUNCE_MS = 180;
@@ -414,6 +417,7 @@ async function reload() {
   // second compile of the same source.
   showBuild(report.build);
   drawScenes(src, report);
+  await drawExamples(report);
 }
 
 /**
@@ -476,6 +480,146 @@ function drawScenes(src, report) {
   }
 }
 
+/**
+ * How many fixtures the pane will mount.
+ *
+ * A bound rather than a budget. Each one is an INSTANTIATION of the card's
+ * module — cheap next to compiling it, and not free — and this runs on the same
+ * debounce as the preview, so a card with fifty fixtures would spend a typist's
+ * pause building fifty apps. The note says how many were left out, because a
+ * panel that silently shows a prefix is a panel that lies about what the card
+ * declares.
+ */
+const EXAMPLE_CAP = 12;
+
+/** The element ids this pane currently owns, in the order it made them. */
+const mountedExamples = [];
+
+/** A fixture name as an element id. */
+const exampleId = (name) =>
+  `example-${name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x"}`;
+
+/**
+ * Mount the card once per `tutuca/init` fixture, each in its own box.
+ *
+ * The preview beside this shows ONE state — the card's `default` fixture, or
+ * its schema's zero. A component is usually interesting at several, and a card
+ * already says which: empty, full, mid-edit, arrived-at-by-driving. This is that
+ * list, live.
+ *
+ * The module is compiled ONCE and instantiated per fixture. That split is the
+ * whole reason this is affordable on a keystroke debounce — `WebAssembly.compile`
+ * is the expensive half, and every box here is the same bytes. Everything a
+ * card guest holds is already keyed by mount point (the arena, the instance
+ * table, `__cardguest[key]`), so N of them side by side is what the shape was
+ * built for.
+ *
+ * Each box is a separate app in a separate scope: pressing a button in one
+ * changes that one and nothing else, and none of them disturbs the preview.
+ */
+async function drawExamples(report) {
+  // Torn down first, and the JS half with it. `unmount` drops the MoonBit slot;
+  // `__cardguest[id]` is the instance table on this side, and a card whose
+  // fixtures get renamed would otherwise strand one entry per name ever used.
+  for (const id of mountedExamples) {
+    globalThis.__tutucard.unmount(id);
+    delete globalThis.__cardguest?.[id];
+  }
+  mountedExamples.length = 0;
+  els.examples.replaceChildren();
+  els.examplesNote.textContent = "";
+  if (!report.ok || !report.mounted || !report.build?.ok) return;
+
+  // The ROOT component's fixtures. The manifest puts the root first, which is
+  // what every mount site on this page means by taking the head of the list.
+  const inits = report.build.manifest.components?.[0]?.inits ?? [];
+  if (inits.length === 0) {
+    els.examplesNote.textContent = 'no <script type="tutuca/init"> fixtures';
+    return;
+  }
+  const shown = inits.slice(0, EXAMPLE_CAP);
+  const { compileGuest, loadGuest, b64ToBytes } = await import("./card-wasm.js");
+  let module_;
+  try {
+    module_ = await compileGuest(b64ToBytes(report.build.wasm));
+  } catch (e) {
+    els.examplesNote.textContent = String(e);
+    return;
+  }
+  for (const init of shown) {
+    const id = exampleId(init.name);
+    const box = exampleBox(id, init);
+    els.examples.append(box);
+    // Mounted one at a time rather than all at once: `mountCompiled` reads the
+    // element out of the document, so the box has to be in it first, and a
+    // fixture that drives has to finish driving before the next one starts —
+    // the harness settles the transactor synchronously and they do not share
+    // one.
+    let out;
+    try {
+      await loadGuest(null, report.build.descriptor, id, { module: module_ });
+      out = JSON.parse(
+        globalThis.__tutucard.mountCompiled(
+          id,
+          JSON.stringify(report.build.manifest),
+          init.name,
+        ),
+      );
+    } catch (e) {
+      out = { ok: false, error: String(e) };
+    }
+    mountedExamples.push(id);
+    // A fixture whose fourth step missed is a screenshot of something nobody
+    // wrote, so it says why in its own box instead of sitting there empty.
+    if (out.ok !== true) {
+      box.classList.add("bad");
+      const why = document.createElement("p");
+      why.className = "example-why";
+      why.textContent = out.error ?? "did not mount";
+      box.append(why);
+    }
+  }
+  els.examplesNote.textContent =
+    shown.length < inits.length
+      ? `${shown.length} of ${inits.length}`
+      : `${inits.length}`;
+}
+
+/** One fixture's card: its name, its sentence, and the element it mounts in. */
+function exampleBox(id, init) {
+  const box = document.createElement("div");
+  box.className = "example";
+  const h = document.createElement("h3");
+  h.textContent = init.name;
+  // Which view it is shown under, when it is not the ordinary one. Worth saying
+  // on the box: two fixtures of the same component rendering differently is
+  // otherwise a mystery rather than a fact the card stated.
+  if (init.view) {
+    const as = document.createElement("span");
+    as.className = "example-view";
+    as.textContent = init.view;
+    h.append(as);
+  }
+  box.append(h);
+  if (init.doc) {
+    const p = document.createElement("p");
+    p.className = "example-doc";
+    p.textContent = init.doc;
+    box.append(p);
+  }
+  const mount = document.createElement("div");
+  mount.className = "example-mount";
+  mount.id = id;
+  // Dark, always, and on the MOUNT rather than on the pane: `scopeCss` rewrites
+  // margaui's `[data-theme="dark"]` onto the scope element itself, and the
+  // scope is this div. Same palette the preview is pinned to, for the same
+  // reason — this shell has one, and a fixture that followed the reader's OS
+  // would be a white card in a dark tool half the time.
+  mount.dataset.theme = "dark";
+  box.append(mount);
+  return box;
+}
+
 function sceneRow(name, scene) {
   const li = document.createElement("li");
   li.className = scene.ok ? "issue" : "issue bad";
@@ -528,7 +672,23 @@ function styleClasses() {
     // tool half the time. An `<mb-card>` embedded in a page that does have both
     // follows the page (`followColorScheme` in web/margaui.js).
     $("preview").dataset.theme = "dark";
-    addClasses(classes, { scope: "#preview", styleId: "card-margaui" });
+    // The examples pane's MOUNT POINTS too, and not the boxes around them:
+    // every box holds the same card, so the class set is already the right one —
+    // what it needed was to be in scope. But margaui's sheet carries Tailwind's
+    // preflight, which is why this is scoped at all, and a scope of `#examples`
+    // would flatten the fixture's own title and sentence exactly the way an
+    // unscoped one flattens the editor. The card's markup starts at
+    // `.example-mount`; the chrome above it is the shell's.
+    addClasses(classes, {
+      // ONE selector, with the alternatives inside `:is`. `scopeSelector`
+      // prefixes by concatenation — `scope + sel` for a `[data-theme…]` rule —
+      // so a scope carrying a top-level comma splits into two selectors, the
+      // first of which is the bare scope element and matches everything the
+      // sheet says about a themed root. That is how `#preview` picked up
+      // `display: none` from the reset.
+      scope: ":is(#preview, #examples .example-mount)",
+      styleId: "card-margaui",
+    });
   }
 }
 
@@ -554,6 +714,7 @@ function currentRegion() {
   if (ui.part === "state") return p.state;
   if (ui.part === "script") return p.script;
   if (ui.part === "tests") return p.tests;
+  if (ui.part === "examples") return p.init;
   const list = listOf(p);
   return list.items[Math.min(list.index, list.items.length - 1)] ?? null;
 }
@@ -567,6 +728,8 @@ const MISSING = {
   macros: "no <template id=\"macro:…\"> yet — a macro is markup this file can call by name",
   tests:
     'no <script type="tutuca/test"> block yet — add one in the raw view, and the Tests pane will drive it',
+  examples:
+    'no <script type="tutuca/init"> block yet — add one in the raw view, and the Examples pane will show each fixture',
 };
 
 /** Put the current part in the pane. */
@@ -715,6 +878,34 @@ function setMode(mode) {
   }
 }
 
+/**
+ * Show one of the two renders of the card.
+ *
+ * `preview` is the module this page compiled and mounted; `mounted` is the same
+ * bytes instantiated through the host's own ABI and registered as an ordinary
+ * dyncomp bundle. Tabs rather than two panes because they answer the same
+ * question about the same card — a reader compares them, and comparing is
+ * switching rather than looking twice.
+ *
+ * The mounted tab is empty until `load & mount` is pressed, which is why that
+ * button switches to it: a tab that shows nothing when you press the thing that
+ * fills it is a tab nobody finds.
+ */
+function setShow(which) {
+  ui.show = which;
+  els.preview.hidden = which !== "preview";
+  els.loaded.hidden = which !== "mounted";
+  // The checker's findings belong to the card and stay; the bundle's belong to
+  // the mount and go with it.
+  els.loadedIssues.hidden = which !== "mounted";
+  els.loadedNote.hidden = which !== "mounted";
+  for (const b of document.querySelectorAll("[data-show]")) {
+    const on = b.dataset.show === which;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", String(on));
+  }
+}
+
 /** Show one part of the card. */
 function setPart(part) {
   ui.part = part;
@@ -847,6 +1038,9 @@ function styleMounted() {
 /** Instantiate the last successful build and mount it. */
 async function loadAndMount() {
   if (!lastBuild) return;
+  // Switched BEFORE the await: instantiating is a promise, and a reader who
+  // pressed the button should be looking at the pane it fills while it fills.
+  setShow("mounted");
   els.loadedNote.textContent = "instantiating…";
   els.loadedNote.className = "note";
   els.loadedIssues.replaceChildren();
@@ -865,6 +1059,7 @@ async function loadAndMount() {
       globalThis.__tutucard.mountCompiled(
         "loaded",
         JSON.stringify(lastBuild.manifest),
+        "",
       ),
     );
   } catch (e) {
@@ -890,6 +1085,10 @@ async function loadAndMount() {
 }
 
 els.load.addEventListener("click", loadAndMount);
+
+for (const b of document.querySelectorAll("[data-show]")) {
+  b.addEventListener("click", () => setShow(b.dataset.show));
+}
 
 for (const b of document.querySelectorAll("[data-out]")) {
   b.addEventListener("click", () => {
@@ -946,6 +1145,10 @@ function boot() {
     els.example.append(opt);
   }
   els.example.addEventListener("change", () => pickExample(els.example.value));
+  // The preview tab, and with it the mounted tab's note and findings hidden:
+  // there is no mount until somebody presses `load & mount`, and a `refused`
+  // note beside a card nobody has instantiated would be about nothing.
+  setShow("preview");
   els.source.addEventListener("input", scheduleReload);
   els.part.addEventListener("input", onPartInput);
   $("mode-raw").addEventListener("click", () => setMode("raw"));

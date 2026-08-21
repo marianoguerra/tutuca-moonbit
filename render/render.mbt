@@ -134,12 +134,21 @@ fn render_site(
   node_id : Int?,
   stack : RenderStack,
   ctx : RenderCtx,
+  view? : String = "",
 ) -> @vdom.Vdom? {
   // The `as=` selector evaluates against the HOST stack (JS evalViewName);
   // without one, the `@push-view` trail applies innermost-first.
-  let names : Array[String] = match view_val {
-    Some(v) => [v.eval(stack).to_display_string()]
-    None => stack.view_trail()
+  //
+  // `view~` is neither: a name the MOUNTER chose, which no expression in the
+  // tree can have said. It is only ever passed at the root, and it wins there
+  // because there is nothing above it to have pushed a trail.
+  let names : Array[String] = if view != "" {
+    [view]
+  } else {
+    match view_val {
+      Some(v) => [v.eval(stack).to_display_string()]
+      None => stack.view_trail()
+    }
   }
   match ctx.view_resolver.resolve_view(names, value) {
     Some(rv) => {
@@ -185,12 +194,22 @@ fn render_site(
 }
 
 ///|
+/// Render the tree from its root.
+///
+/// `view~` names which of the root component's views to render it under, and
+/// "" — the default — is the ordinary resolution every render site uses. It is
+/// the one thing a VALUE cannot say about itself: a `Todo` has a `main` and a
+/// `row`, both over the same fields, and which one it should be shown as is a
+/// fact about the showing rather than about the todo. A name the component does
+/// not declare falls back to `main`, exactly as every other view name does
+/// (`best_name`).
 pub fn render_root(
   value : @tutuca.Value,
   stack : RenderStack,
   ctx : RenderCtx,
+  view? : String = "",
 ) -> @vdom.Vdom? {
-  render_site(value, None, None, stack, ctx)
+  render_site(value, None, None, stack, ctx, view~)
 }
 
 ///|

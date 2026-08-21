@@ -8,10 +8,28 @@
 // real DOM can show.
 
 ///|
-pub struct Harness {
-  app : @app.App[@memdom.MemNode]
-  container : @memdom.MemNode
+/// A mounted app and the element it was mounted into.
+///
+/// Generic over the node type for the same reason `App` is: the verbs below are
+/// written against `@vdom.DomWalk` and nothing else, so the same "click the
+/// third row" drives memdom under `moon test` and a real page in a browser.
+/// That is not a convenience — a second implementation of `nth` is how two of
+/// them start disagreeing, and a card's fixture is DRIVEN on the page it is
+/// shown on.
+pub struct Harness[N] {
+  app : @app.App[N]
+  container : N
 }
+
+///|
+/// The harness over the IN-MEMORY DOM — what `mount` answers, and what every
+/// headless test holds.
+///
+/// Spelled here so a caller can name the type without importing memdom for the
+/// sake of one annotation: a test that mounts a module and a benchmark that
+/// hands one around both want to say "the ordinary harness", and neither has
+/// any other reason to know which node type that is.
+pub type MemHarness = Harness[@memdom.MemNode]
 
 ///|
 /// Build the module's scope, make `root` with `args`, and mount it.
@@ -19,7 +37,8 @@ pub fn mount(
   m : @component.ModuleDef,
   root : String,
   args? : Map[String, @tutuca.Value] = Map([]),
-) -> Harness raise {
+  view? : String = "",
+) -> Harness[@memdom.MemNode] raise {
   let (doc, container) = new_mount()
   let app = @app.App::from_module(
     m,
@@ -27,6 +46,7 @@ pub fn mount(
     container,
     @vdom.RenderOpts::new(doc),
     args~,
+    view~,
   )
   Harness::over(app, container)
 }
@@ -45,10 +65,7 @@ pub fn mount(
 /// of the selector engine and the twenty verbs beside it, which is how two
 /// implementations of "click the third row" start disagreeing about what
 /// `nth` counts.
-pub fn Harness::over(
-  app : @app.App[@memdom.MemNode],
-  container : @memdom.MemNode,
-) -> Harness {
+pub fn[N] Harness::over(app : @app.App[N], container : N) -> Harness[N] {
   { app, container }
 }
 
@@ -75,10 +92,13 @@ pub fn new_mount() -> (@memdom.MemNode, @memdom.MemNode) {
 ///
 /// It also means these tests exercise exactly the examples the CLI renders and
 /// the storybook shows.
-pub fn mount_example(m : @component.ModuleDef, title : String) -> Harness raise {
+pub fn mount_example(
+  m : @component.ModuleDef,
+  title : String,
+) -> Harness[@memdom.MemNode] raise {
   for ex in m.examples {
     if ex.title == title {
-      return mount(m, ex.component, args=ex.args)
+      return mount(m, ex.component, args=ex.args, view=ex.view.unwrap_or(""))
     }
   }
   fail("mount_example: no example titled '\{title}' in module '\{m.name}'")
@@ -86,7 +106,7 @@ pub fn mount_example(m : @component.ModuleDef, title : String) -> Harness raise 
 
 ///|
 /// The mounted DOM, serialized. The wrapping <div> is the mount container.
-pub fn Harness::html(self : Harness) -> String {
+pub fn Harness::html(self : Harness[@memdom.MemNode]) -> String {
   self.container.to_html()
 }
 
@@ -99,7 +119,7 @@ pub fn Harness::html(self : Harness) -> String {
 /// caller that mounts in a loop must tear each one down or it grows until it
 /// is killed. A test that mounts once per case can skip it; the process exits
 /// first.
-pub fn Harness::destroy(self : Harness) -> Unit {
+pub fn Harness::destroy(self : Harness[@memdom.MemNode]) -> Unit {
   self.app.destroy()
   self.container.destroy_tree()
 }
@@ -108,7 +128,7 @@ pub fn Harness::destroy(self : Harness) -> Unit {
 /// The current settled root value — the transactor's root as a `Value`, after
 /// every dispatched interaction has drained. `Null` if the root is not a value
 /// node. The state-oriented read-back that mirrors the JS `drive()` return.
-pub fn Harness::drive_value(self : Harness) -> @tutuca.Value {
+pub fn[N] Harness::drive_value(self : Harness[N]) -> @tutuca.Value {
   self.app.root_value()
 }
 
@@ -167,8 +187,8 @@ fn parse_selector(sel : String) -> Sel {
 }
 
 ///|
-fn node_has_class(n : @memdom.MemNode, want : String) -> Bool {
-  guard n.get_attribute("class") is Some(cls) else { return false }
+fn[N : @vdom.DomWalk] node_has_class(n : N, want : String) -> Bool {
+  guard n.attribute("class") is Some(cls) else { return false }
   for c in cls.split(" ") {
     if c.to_owned() == want {
       return true
@@ -178,12 +198,15 @@ fn node_has_class(n : @memdom.MemNode, want : String) -> Bool {
 }
 
 ///|
-fn matches(n : @memdom.MemNode, s : Sel) -> Bool {
-  guard n.kind is Element else { return false }
-  if s.tag is Some(t) && n.tag.to_lower() != t.to_lower() {
+fn[N : @vdom.DomWalk] matches(n : N, s : Sel) -> Bool {
+  // 1 and 3 are the DOM's own node types, which is what `node_kind` answers on
+  // every backend — memdom maps its enum onto them and a browser node has them
+  // already.
+  guard n.node_kind() == 1 else { return false }
+  if s.tag is Some(t) && @vdom.DomNode::tag_name(n).to_lower() != t.to_lower() {
     return false
   }
-  if s.id is Some(want) && !(n.get_attribute("id") is Some(got) && got == want) {
+  if s.id is Some(want) && !(n.attribute("id") is Some(got) && got == want) {
     return false
   }
   for c in s.classes {
@@ -192,7 +215,7 @@ fn matches(n : @memdom.MemNode, s : Sel) -> Bool {
     }
   }
   for a in s.attrs {
-    if !(n.get_attribute(a) is Some(_)) {
+    if !(n.attribute(a) is Some(_)) {
       return false
     }
   }
@@ -201,17 +224,17 @@ fn matches(n : @memdom.MemNode, s : Sel) -> Bool {
 
 ///|
 /// Elements matching the selector, in document order.
-pub fn Harness::find_all(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::find_all(
+  self : Harness[N],
   sel : String,
-) -> Array[@memdom.MemNode] {
+) -> Array[N] {
   let s = parse_selector(sel)
-  let hits : Array[@memdom.MemNode] = []
-  fn walk(n : @memdom.MemNode) {
+  let hits : Array[N] = []
+  fn walk(n : N) {
     if matches(n, s) {
       hits.push(n)
     }
-    for c in n.childs {
+    for c in @vdom.DomNode::child_nodes(n) {
       walk(c)
     }
   }
@@ -228,15 +251,15 @@ pub fn Harness::find_all(
 /// them away is the dominant cost of driving a big DOM (it showed up as ~4% of
 /// benchmarks/'s update profile before this). A miss still visits everything, so
 /// the count in the failure message is the true total.
-pub fn Harness::find(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::find(
+  self : Harness[N],
   sel : String,
   nth? : Int = 0,
-) -> @memdom.MemNode raise {
+) -> N raise {
   let s = parse_selector(sel)
   let mut seen = 0
-  let mut found : @memdom.MemNode? = None
-  fn walk(n : @memdom.MemNode) {
+  let mut found : N? = None
+  fn walk(n : N) {
     if matches(n, s) {
       if seen == nth {
         found = Some(n)
@@ -244,7 +267,7 @@ pub fn Harness::find(
       }
       seen = seen + 1
     }
-    for c in n.childs {
+    for c in @vdom.DomNode::child_nodes(n) {
       walk(c)
       if found is Some(_) {
         return
@@ -265,8 +288,8 @@ pub fn Harness::find(
 /// a reader sees it, not as the template indented it. This is what most
 /// assertions want; full-HTML snapshots carry meta comments and
 /// data-cid/data-eid bookkeeping that obscure the point.
-pub fn Harness::text(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::text(
+  self : Harness[N],
   sel : String,
   nth? : Int = 0,
 ) -> String raise {
@@ -276,18 +299,21 @@ pub fn Harness::text(
 ///|
 /// The text of every element matching the selector — the shape iteration
 /// assertions want ("the list now reads [a, b, c]").
-pub fn Harness::texts(self : Harness, sel : String) -> Array[String] {
+pub fn[N : @vdom.DomWalk] Harness::texts(
+  self : Harness[N],
+  sel : String,
+) -> Array[String] {
   self.find_all(sel).map(node_text)
 }
 
 ///|
-fn node_text(n : @memdom.MemNode) -> String {
+fn[N : @vdom.DomWalk] node_text(n : N) -> String {
   let sb = StringBuilder()
-  fn walk(n : @memdom.MemNode) {
-    if n.kind is TextNode {
-      sb.write_string(n.data)
+  fn walk(n : N) {
+    if n.node_kind() == 3 {
+      sb.write_string(n.char_data())
     }
-    for c in n.childs {
+    for c in @vdom.DomNode::child_nodes(n) {
       walk(c)
     }
   }
@@ -321,13 +347,13 @@ fn collapse_ws(s : String) -> String {
 ///|
 /// An attribute of the matched element — for asserting :attr bindings and the
 /// @if/@then/@else class swaps.
-pub fn Harness::attr(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::attr(
+  self : Harness[N],
   sel : String,
   name : String,
   nth? : Int = 0,
 ) -> String? raise {
-  self.find(sel, nth~).get_attribute(name)
+  self.find(sel, nth~).attribute(name)
 }
 
 ///|
@@ -335,7 +361,7 @@ pub fn Harness::attr(
 /// `checked`, `disabled`, `selected`) is set as a property, not an attribute —
 /// so `:value=".title"` is read back with this, not with attr().
 pub fn Harness::prop(
-  self : Harness,
+  self : Harness[@memdom.MemNode],
   sel : String,
   name : String,
   nth? : Int = 0,
@@ -347,12 +373,12 @@ pub fn Harness::prop(
 /// The XML namespace the element was created in — "svg" / "mathml" / "html".
 /// Proves an <svg>/<math> subtree really became namespaced elements rather than
 /// HTML elements that merely look like them.
-pub fn Harness::ns_of(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::ns_of(
+  self : Harness[N],
   sel : String,
   nth? : Int = 0,
 ) -> String raise {
-  match self.find(sel, nth~).ns {
+  match @vdom.DomNode::namespace_uri(self.find(sel, nth~)) {
     Some(Svg) => "svg"
     Some(MathMl) => "mathml"
     Some(Other(uri)) => uri
@@ -363,7 +389,7 @@ pub fn Harness::ns_of(
 ///|
 /// The `checked` property of a checkbox — the read-back for `:checked`.
 pub fn Harness::checked_of(
-  self : Harness,
+  self : Harness[@memdom.MemNode],
   sel : String,
   nth? : Int = 0,
 ) -> Bool raise {
@@ -373,7 +399,7 @@ pub fn Harness::checked_of(
 ///|
 /// The `value` property of an input — the read-back for `:value` bindings.
 pub fn Harness::value_of(
-  self : Harness,
+  self : Harness[@memdom.MemNode],
   sel : String,
   nth? : Int = 0,
 ) -> String raise {
@@ -391,8 +417,8 @@ pub fn Harness::value_of(
 /// Dispatch any event at the node matching `sel`. The escape hatch the typed
 /// helpers below are built on — reach for it for keydown modifiers, drag, and
 /// custom events.
-pub fn Harness::fire(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::fire(
+  self : Harness[N],
   sel : String,
   e : @render.DomEvent,
   nth? : Int = 0,
@@ -402,8 +428,8 @@ pub fn Harness::fire(
 }
 
 ///|
-pub fn Harness::click(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::click(
+  self : Harness[N],
   sel : String,
   nth? : Int = 0,
 ) -> Unit raise {
@@ -412,8 +438,8 @@ pub fn Harness::click(
 
 ///|
 /// An `input` event carrying `value` — what `@on.input="setX e.value"` reads.
-pub fn Harness::type_into(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::type_into(
+  self : Harness[N],
   sel : String,
   value : String,
   nth? : Int = 0,
@@ -423,8 +449,8 @@ pub fn Harness::type_into(
 
 ///|
 /// A checkbox `input` event (JS getValue returns `checked` for checkboxes).
-pub fn Harness::check(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::check(
+  self : Harness[N],
   sel : String,
   checked : Bool,
   nth? : Int = 0,
@@ -435,8 +461,8 @@ pub fn Harness::check(
 ///|
 /// A keydown carrying `key` — drives the +send (Enter) / +cancel (Escape)
 /// modifiers.
-pub fn Harness::key_down(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::key_down(
+  self : Harness[N],
   sel : String,
   key : String,
   value? : @tutuca.Value = Null,
@@ -449,8 +475,8 @@ pub fn Harness::key_down(
 /// Run a full drag gesture: dragstart on the source row, dragover the target,
 /// then drop on it. The app's drag state machine captures the DragInfo at
 /// dragstart, which is what the drop handler reads the source key from.
-pub fn Harness::drag(
-  self : Harness,
+pub fn[N : @vdom.DomWalk] Harness::drag(
+  self : Harness[N],
   sel : String,
   from : Int,
   to : Int,
@@ -464,7 +490,7 @@ pub fn Harness::drag(
 ///|
 /// Renders performed so far — proves the batching invariant (one morph per
 /// drained cascade), and that an interaction re-rendered at all.
-pub fn Harness::render_count(self : Harness) -> Int {
+pub fn[N] Harness::render_count(self : Harness[N]) -> Int {
   self.app.render_count
 }
 
@@ -472,7 +498,7 @@ pub fn Harness::render_count(self : Harness) -> Int {
 /// The CSS the scope compiles for every registered component (style +
 /// commonStyle + globalStyle, scoped by data-cid / data-vid). In a browser the
 /// glue injects this into a <style> tag; headless, we assert on it directly.
-pub fn Harness::styles(self : Harness) -> String {
+pub fn[N] Harness::styles(self : Harness[N]) -> String {
   self.app.scope.comps.compile_styles()
 }
 
@@ -480,8 +506,8 @@ pub fn Harness::styles(self : Harness) -> String {
 /// Dispatch a message at the root — the host's job, since tutuca has no
 /// lifecycle. The JS playground calls `app.sendAtRoot("init")` right after
 /// start(); this is the same hook, and it is what makes `receive.init` run.
-pub fn Harness::send_at_root(
-  self : Harness,
+pub fn[N] Harness::send_at_root(
+  self : Harness[N],
   name : String,
   args? : Array[@tutuca.Value] = [],
 ) -> Unit {

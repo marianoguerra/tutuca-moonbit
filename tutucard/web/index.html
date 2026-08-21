@@ -58,6 +58,7 @@
             <button class="tab" data-part="views" role="tab">views</button>
             <button class="tab" data-part="macros" role="tab">macros</button>
             <button class="tab" data-part="tests" role="tab">tests</button>
+            <button class="tab" data-part="examples" role="tab">examples</button>
           </div>
           <!-- The views and macros tabs have tabs of their own: a card has one
                state block and one script block, and as many views and macros
@@ -79,11 +80,27 @@
         </div>
       </section>
 
+      <!-- One card, two backends, one pane.
+           `preview` is the module this page compiled and mounted for you;
+           `mounted` is the same bytes taken the long way round — instantiated
+           through the host's own `abi.mjs` and registered as an ordinary
+           dyncomp bundle, the way a dropped `.tutuca.tar.gz` arrives. They are
+           tabs rather than two panels because they answer the same question
+           about the same card, and a reader wants to compare them rather than
+           watch both. -->
       <section class="pane">
-        <h2>Preview</h2>
+        <div class="tabs" role="tablist" aria-label="what to show">
+          <button id="show-preview" class="tab on" data-show="preview"
+                  role="tab" aria-selected="true">preview</button>
+          <button id="show-mounted" class="tab" data-show="mounted"
+                  role="tab" aria-selected="false">mounted</button>
+          <span id="loaded-note" class="note"></span>
+        </div>
         <div id="preview" class="preview"></div>
+        <div id="loaded" class="preview" hidden></div>
         <h2>Diagnostics</h2>
         <ul id="issues" class="issues"></ul>
+        <ul id="loaded-issues" class="issues"></ul>
       </section>
 
       <section class="pane">
@@ -105,6 +122,21 @@
           <span id="scenes-note" class="note"></span>
         </h2>
         <ul id="scenes" class="issues"></ul>
+      </section>
+
+      <!-- The card at every state it says it can be in. The preview beside
+           this shows ONE — whichever the card's `default` fixture names, or its
+           schema's zero — and a component is usually interesting at several:
+           empty, full, mid-edit, erroring. Each of these is the same module
+           instantiated again with that fixture's `value`, driven by its
+           `drive`, shown under its `view`. They are live: pressing one changes
+           it and nothing else. -->
+      <section class="pane">
+        <h2>
+          Examples
+          <span id="examples-note" class="note"></span>
+        </h2>
+        <div id="examples" class="example-list"></div>
       </section>
 
       <!-- The OTHER backend. The card above is interpreted; this compiles the
@@ -132,19 +164,6 @@
         <pre id="compiled" class="json wasm-out"></pre>
       </section>
 
-      <!-- And the module RUNNING. The pane above proves the bytes; this one
-           instantiates them through the host's own `abi.mjs` and registers the
-           manifest as an ordinary dyncomp bundle, so what is drawn here reached
-           the page the way a dropped `.tutuca.tar.gz` would. Two backends over
-           one card, both on screen: the interpreted preview and this. -->
-      <section class="pane">
-        <h2>
-          Mounted
-          <span id="loaded-note" class="note"></span>
-        </h2>
-        <div id="loaded" class="preview"></div>
-        <ul id="loaded-issues" class="issues"></ul>
-      </section>
     </main>
 
     <script src="./tutucard.js"></script>

@@ -247,7 +247,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
 /// The gallery, mounted empty. `load()` is what a bundle arriving looks like:
 /// register it into the app's own scope, then tell the root the catalog
 /// changed — the same two steps the wasm bridge takes.
-fn mount_gallery() -> (@harness.Harness, () -> Unit raise) raise {
+fn mount_gallery() -> (@harness.MemHarness, () -> Unit raise) raise {
   let guest = StubGuest::new()
   let live : Ref[@dyncomp.Bundle?] = { val: None }
   let reg = @registry.Registry::new()

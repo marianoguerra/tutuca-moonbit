@@ -541,6 +541,29 @@ fn card_policy() -> @policy.Policy {
 }
 
 ///|
+/// The sentence inside a raised failure, without the machinery around it.
+///
+/// `fail` renders as `Failure(<file>:<line>@<pkg> FAILED: <what>)`, which is
+/// right for a `moon test` line and wrong for a card author: the file it names
+/// is the harness's, not theirs, and the only part they can act on is the tail.
+fn why(e : Error) -> String {
+  let s = e.to_string()
+  let marker = "FAILED: "
+  match s.find(marker) {
+    Some(i) => {
+      let rest = s[i + marker.length():].to_owned()
+      // …and the closing paren `Failure(…)` wrapped it in.
+      if rest.has_suffix(")") {
+        rest[0:rest.length() - 1].to_owned()
+      } else {
+        rest
+      }
+    }
+    None => s
+  }
+}
+
+///|
 fn mount_failed(msg : String) -> String {
   Json::object({ "ok": Json::boolean(false), "error": Json::string(msg) }).stringify()
 }
@@ -559,10 +582,21 @@ fn mount_failed(msg : String) -> String {
 /// which is what `App::new` taking a value makes possible. There is nothing for
 /// a wrapper to do here: the card is the whole of what this pane shows.
 ///
+/// `init` names one of the component's `tutuca/init` fixtures, and "" means
+/// "whatever the card would show a visitor" — which is the fixture marked
+/// `default` when there is one, and the schema's zero otherwise. A fixture is
+/// the whole envelope rather than its field map: `value` seeds the instance,
+/// `intents` answers what its steps ask the host, `drive` runs afterwards, and
+/// `view` decides which of the component's views it is shown under.
+///
 /// Answers the same shape the other entry points do — `ok: false` with a reason
 /// a person can act on, since every failure here is either the module being
 /// refused or a manifest the host will not take.
-pub fn mount_compiled(id : String, manifest_json : String) -> String {
+pub fn mount_compiled(
+  id : String,
+  manifest_json : String,
+  init : String,
+) -> String {
   // The same teardown-first order every mount here uses, and for the same
   // reason: the app holds transactor subscriptions and DOM listeners, and
   // pressing the button twice would otherwise leave the first set behind.
@@ -577,12 +611,7 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   let root_node = @bdom.BrowserNode::from_element(root_el)
   root_node.replace_children()
   let scope = @component.ComponentStack::new()
-  // The page's intent fixtures, in the scope OUTSIDE the bundle's own. The
-  // `lex` leg walks child -> parent, so a compiled card's `intent lex 'rows'`
-  // is offered to its bundle's own handlers first — it registers none — and
-  // then to these.
   let slot = slot_of(id)
-  scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let policy = card_policy()
   // The guest is built BEFORE it is registered and told about the bundle
   // afterwards, which is the only order available: `register_bundle` takes the
@@ -603,14 +632,72 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   guard bundle.component_names() is [component, ..] else {
     return mount_failed("the manifest declares no component to mount")
   }
-  guard bundle.make_instance(component) is Some(inst) else {
+  // "" is not "no fixture": it is "nothing was named", and a card that marked
+  // one has already said what to show then.
+  let want = if init == "" { bundle.default_init(component) } else { init }
+  let fixture = if want == "" {
+    None
+  } else {
+    match @drive.fixture_of(bundle, component, want) {
+      Some(f) => Some(f)
+      // Named and missing, which is a different thing from unnamed. The
+      // sentence is `tutucard/drive`'s, because a page and a scene reporting
+      // the same miss two different ways is how a reader learns to distrust
+      // one of them.
+      None => {
+        let names = bundle.init_names(component)
+        return mount_failed(
+          "no `tutuca/init` fixture called `" +
+          want +
+          "` on `" +
+          component +
+          "`" +
+          (if names.is_empty() {
+            "; this component declares none"
+          } else {
+            " — it declares " + names.map(n => "`" + n + "`").join(", ")
+          }),
+        )
+      }
+    }
+  }
+  // The fixture's own intent answers FIRST, and the page's behind them.
+  //
+  // Both are offered in registration order, so this is the precedence rather
+  // than a detail of it: a fixture that answers `rows` means its own three rows
+  // rather than the page's, which is the same rule `tutucard/drive` follows one
+  // level down when a scene and the fixture it starts from both answer a name.
+  // A fixture that answers nothing gets the page's fixtures untouched, which is
+  // every fixture that is not about asking a host for data.
+  let (pre, answers) = match fixture {
+    Some(f) => @drive.fixture_drive(f)
+    None => ([], Map([]))
+  }
+  scope.register_intent_handlers(@drive.intent_handlers(answers))
+  // …and the page's own behind them, in the scope OUTSIDE the bundle's. The
+  // `lex` leg walks child -> parent, so a compiled card's `intent lex 'rows'`
+  // is offered to its bundle's own handlers first — it registers none — and
+  // then to these.
+  scope.register_intent_handlers(playground_intents(slot, slot.gen))
+  let made = match fixture {
+    Some(f) => bundle.make_instance(component, args=f.args)
+    None => bundle.make_instance(component)
+  }
+  guard made is Some(inst) else {
     return mount_failed("the guest would not create a '\{component}'")
+  }
+  // Which view to show it under. The one thing a value cannot say about
+  // itself: a `Todo` has a `main` and a `row`, both over the same fields.
+  let view = match fixture {
+    Some(f) => f.view
+    None => ""
   }
   let app = @app.App::new(
     scope,
     inst.to_value(),
     root_node,
     @bdom.opts_for(doc),
+    view~,
   ) catch {
     _ => return mount_failed("the bundle's views did not compile into an app")
   }
@@ -643,6 +730,26 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   // tutuca has no lifecycle: the HOST dispatches `init`, exactly as it does for
   // the interpreted card in the pane beside this one.
   app.send_at_root("init") |> ignore
+  // …and then the fixture's own steps, if it has any. AFTER `init`, because
+  // they are what a person would have done to a card that had already loaded.
+  //
+  // The verbs are `testing/harness`'s, driving the BrowserNode this just
+  // mounted — the same eight a `tutuca/test` scene uses against the in-memory
+  // DOM. A step whose selector matched nothing is a fixture that cannot be
+  // shown, so it fails the mount rather than leaving a half-driven card on the
+  // page pretending to be the state it names.
+  if !pre.is_empty() {
+    @drive.seed(@harness.Harness::over(app, root_node), pre) catch {
+      e => {
+        // The element goes back to empty as well as the app going away: what is
+        // on it is the card BEFORE the step that missed, and leaving that up
+        // would be the pane showing a state the fixture does not name.
+        teardown(id)
+        root_node.replace_children()
+        return mount_failed("fixture `\{want}`: \{why(e)}")
+      }
+    }
+  }
   Json::object({
     "ok": Json::boolean(true),
     "component": Json::string(component),

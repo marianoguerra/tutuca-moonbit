@@ -14,34 +14,34 @@
 // just the reason the last row is not a power of four.
 
 ///|
-let chain_1 : @harness.Harness = @benchmarks.mount_tree_chain(1)
+let chain_1 : @harness.MemHarness = @benchmarks.mount_tree_chain(1)
 
 ///|
-let chain_4 : @harness.Harness = @benchmarks.mount_tree_chain(4)
+let chain_4 : @harness.MemHarness = @benchmarks.mount_tree_chain(4)
 
 ///|
-let chain_16 : @harness.Harness = @benchmarks.mount_tree_chain(16)
+let chain_16 : @harness.MemHarness = @benchmarks.mount_tree_chain(16)
 
 ///|
-let chain_64 : @harness.Harness = @benchmarks.mount_tree_chain(64)
+let chain_64 : @harness.MemHarness = @benchmarks.mount_tree_chain(64)
 
 ///|
-let lex_0 : @harness.Harness = @benchmarks.mount_lex_chain(0)
+let lex_0 : @harness.MemHarness = @benchmarks.mount_lex_chain(0)
 
 ///|
-let lex_4 : @harness.Harness = @benchmarks.mount_lex_chain(4)
+let lex_4 : @harness.MemHarness = @benchmarks.mount_lex_chain(4)
 
 ///|
-let lex_16 : @harness.Harness = @benchmarks.mount_lex_chain(16)
+let lex_16 : @harness.MemHarness = @benchmarks.mount_lex_chain(16)
 
 ///|
-let lex_48 : @harness.Harness = @benchmarks.mount_lex_chain(48)
+let lex_48 : @harness.MemHarness = @benchmarks.mount_lex_chain(48)
 
 ///|
-let answered : @harness.Harness = @benchmarks.mount_counter()
+let answered : @harness.MemHarness = @benchmarks.mount_counter()
 
 ///|
-let unanswered : @harness.Harness = @benchmarks.mount_counter()
+let unanswered : @harness.MemHarness = @benchmarks.mount_counter()
 
 // --- the `dyn` leg: one hop per ancestor ------------------------------------
 
