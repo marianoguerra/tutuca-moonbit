@@ -90,9 +90,10 @@ export function parts(source) {
     const idAttr = /\bid="([^"]*)"/.exec(m[1]);
     const id = idAttr ? idAttr[1] : "";
     // `Counter:row` is the row view of Counter; a bare id is the component's
-    // main view. The tab shows the VIEW half, since a card is one component.
+    // main view.
     const isMacro = id.startsWith("macro:");
-    const name = id.includes(":") ? id.slice(id.indexOf(":") + 1) : "main";
+    const view = id.includes(":") ? id.slice(id.indexOf(":") + 1) : "main";
+    const comp = id.includes(":") ? id.slice(0, id.indexOf(":")) : "";
     // Where the id's TEXT starts, in file coordinates: past `<template`, into
     // the attributes, past `id="`. Getting this base wrong splices a rename
     // into the middle of the tag, which is not a thing an editor gets to do.
@@ -100,7 +101,8 @@ export function parts(source) {
       ? m.index + OPEN + m[1].indexOf(idAttr[0]) + 'id="'.length
       : -1;
     (isMacro ? macros : views).push({
-      name,
+      name: view,
+      comp,
       id,
       text: source.slice(start, end),
       start,
@@ -110,6 +112,21 @@ export function parts(source) {
     });
     tpl.lastIndex = end;
   }
+  // What each TAB says.
+  //
+  // The view half alone while a card is one component, which is what it always
+  // said: `main` and `row` are the two views of the only thing there is. That
+  // stopped being enough the moment a card could declare two — `Todos:main` and
+  // `Todo:main` are views of different components, and a strip reading
+  // `main` `main` names neither. So the label is decided once the whole file
+  // has been read, because it depends on how many components are IN it.
+  const comps = new Set(views.map((v) => v.comp).filter((c) => c !== ""));
+  if (comps.size > 1) {
+    for (const v of views) {
+      v.name = v.name === "main" ? v.comp : v.id;
+    }
+  }
+
   return {
     state: state && strip(state),
     script: script && strip(script),

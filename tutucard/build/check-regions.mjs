@@ -46,6 +46,36 @@ const p = R.parts(CARD);
 check("the state block is sliced exactly", p.state.text, "\n  state Counter { n: Int }\n");
 check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
 check("views are named by the half after the colon", p.views.map((v) => v.name), ["main", "row"]);
+
+// …unless the file declares more than one component, and then the half after
+// the colon names nothing: two components' `main` views would both be `main`,
+// and a tab strip is what a reader picks a component with.
+const TWO = [
+  '<script type="tutuca/state">',
+  "  state Todos { n: Int }",
+  "  state Todo { t: String }",
+  "</script>",
+  '<template id="Todos:main">',
+  "  <ul></ul>",
+  "</template>",
+  '<template id="Todo:main">',
+  "  <li></li>",
+  "</template>",
+  '<template id="Todo:row">',
+  "  <b></b>",
+  "</template>",
+  "",
+].join("\n");
+check(
+  "a file with two components names its tabs by component",
+  R.parts(TWO).views.map((v) => v.name),
+  ["Todos", "Todo", "Todo:row"],
+);
+check(
+  "…and the ids are untouched, so a rename still splices",
+  R.parts(TWO).views.map((v) => v.id),
+  ["Todos:main", "Todo:main", "Todo:row"],
+);
 check("a view's text is its own", p.views[1].text, "\n  <b>row</b>\n");
 
 // The offsets are what everything else stands on.
