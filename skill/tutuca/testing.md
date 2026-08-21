@@ -675,6 +675,50 @@ for (const [name, scene] of Object.entries(report.scenes)) {
 Pass `{ scenes: "<json>" }` to drive a card that declares **no** test
 block — the situation anything that has just written one is in.
 
+**From a page**, the same `driveCard`. It mounts on the in-memory DOM
+and never touches `document`, so the call that answers under `node`
+answers in a tab, and an agent driving the browser reads the same
+report:
+
+```js
+const report = await driveCard(source, "Counter", { scenes: sceneJson });
+```
+
+Underneath it is `__tutucard.drive(key, manifest, source, scenes)` — the
+card runtime's ninth entry point, beside `check` / `compile` /
+`mountCompiled`. It is synchronous and answers the report as a JSON
+string; `""` for `scenes` means "the card's own block". Call it directly
+only when a compiled card is **already instantiated** under `key`, which
+is the playground's case: the preview's `mountCard` left the guest under
+`"preview"` and handed back the manifest from the same compile, so the
+Tests pane asks that guest to build some more instances rather than
+compiling a second time. Each scene still gets its own scope and its own
+memdom, so nothing it drives touches the card in the preview beside it.
+
+```js
+// only where a card is already mounted; `manifest` is that mount's own
+const out = JSON.parse(
+  globalThis.__tutucard.drive("preview", JSON.stringify(manifest), source, ""),
+);
+```
+
+Two things it will not forgive:
+
+- **A `key` with nothing under it does not get one.** The answer is
+  `{ "ok": false, "error": "no compiled card is instantiated on this page" }`,
+  not a card mounted on your behalf. Instantiation is
+  `WebAssembly.instantiate`, which answers a promise, and a promise is
+  the one thing this boundary cannot carry — which is why `driveCard` is
+  the async one and this is not.
+- **The manifest must come from the compile the module came from.** A
+  manifest's field list is the order `get-field` answers in, so one
+  paired with a different module is a bundle whose halves disagree.
+
+So reach for `__tutucard.drive` when you already hold both — a mounted
+guest and its own manifest — and for `driveCard` everywhere else. It is
+check, compile, instantiate and drive in one call, and doing it by hand
+is those same four steps.
+
 ### Intents answer synchronously
 
 A card raising `intent lex 'rows'` is asking a host for something, and
