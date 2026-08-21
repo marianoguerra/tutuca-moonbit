@@ -9,6 +9,7 @@
 // names map directly onto view and JSON names, sum declarations cover both
 // payload-free and payload-bearing cases, and every diagnostic carries a span.
 import {
+  "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
   "moonbitlang/core/string",

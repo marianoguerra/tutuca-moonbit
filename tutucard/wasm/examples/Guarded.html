@@ -20,6 +20,12 @@
     format $'the counter is full at {.n}' { .n < 3 }
 </script>
 
+<script type="tutuca/init">
+{
+  "nearly full": { "n": 2 }
+}
+</script>
+
 <script type="tutuca/test">
 {
   "the guard stops it at three": {
@@ -30,6 +36,16 @@
       { "expect": "text", "at": "output", "is": "3" },
       { "click": "button" },
       { "expect": "text", "at": "output", "is": "3" },
+      { "expect": "log", "contains": "precondition `room` does not hold" }
+    ]
+  },
+  "a fixture is where a scene starts": {
+    "init": "nearly full",
+    "steps": [
+      { "expect": "text", "at": "output", "is": "2" },
+      { "click": "button" },
+      { "expect": "text", "at": "output", "is": "3" },
+      { "click": "button" },
       { "expect": "log", "contains": "precondition `room` does not hold" }
     ]
   },

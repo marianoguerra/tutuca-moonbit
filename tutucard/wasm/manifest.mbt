@@ -56,7 +56,11 @@ fn manifest_json(
     // order, so the views at `i` are this component's.
     match file.components.get(i) {
       Some(views) => {
-        let entry = component_json(c.g, c.decls, views)
+        // The fixtures checked against THIS component's schema. `file.init`
+        // pairs each with the component it was checked against, which is what
+        // keeps a two-component card's two sets apart.
+        let mine = file.init.filter(p => p.0 == c.g.comp).map(p => p.1)
+        let entry = component_json(c.g, c.decls, views, mine)
         if c.g.comp == root.comp {
           component_defs.push(entry)
         } else {
@@ -98,6 +102,7 @@ fn component_json(
   g : Gen,
   decls : Array[@tscript.Decl],
   views : @viewfile.ViewSet,
+  inits : Array[@statedef.InitState],
 ) -> Json {
   let types : Array[Json] = []
   let ty_index : Map[String, Int] = Map([])
@@ -180,11 +185,38 @@ fn component_json(
     "enriches": strings(compiled(DEnrich)),
     "enrichScopes": strings(compiled(DEnrichScope)),
     "requests": Json::array([]),
-    // `inits` stays empty. A `tutuca/init` block's field values are MoonBit
-    // SOURCE — the generator that consumes them writes them into a `make` call
-    // — and a manifest wants JSON. Projecting one into the other is a small
-    // evaluator, which is a thing to add deliberately rather than in passing.
-    "inits": Json::array([]),
+    // The card's `<script type="tutuca/init">` fixtures.
+    //
+    // This used to emit an empty array, with a comment saying a fixture's
+    // values are MoonBit SOURCE and a manifest wants JSON. That was true of
+    // what the compiler HELD and not of the block, which is JSON and always
+    // was: the source is a projection `statedef` makes for the generator, and
+    // the loss happened on the way here rather than in the file. `InitState`
+    // keeps the values too now, so there is nothing to project.
+    //
+    // Emitting them is what makes a card's fixtures reachable at all. A scene
+    // naming one — `"init": "fresh"` — read this list and found it empty, so
+    // the key could never resolve for a card however the block was written.
+    "inits": Json::array(
+      inits.map(st => {
+        Json::object({
+          "name": Json::string(st.name),
+          // `argsJson`, a STRING, because that is what `parse_inits` reads: the
+          // manifest crosses the JS bridge as JSON and a nested object of values
+          // would have to be told apart from the rest of it.
+          "argsJson": Json::string(
+            {
+              let m : Map[String, Json] = Map([])
+              for k, v in st.args {
+                m[k] = v.to_json()
+              }
+              Json::object(m).stringify()
+            },
+          ),
+          "doc": Json::string(""),
+        })
+      }),
+    ),
     // `split_file` gives a file-level `<style>` to the FIRST component only, so
     // this is already the right value per component rather than a share of one.
     "style": Json::string(views.common_style),

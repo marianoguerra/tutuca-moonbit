@@ -24,6 +24,15 @@ pub(all) struct InitState {
   /// The MoonBit identifier for this fixture.
   ident : String
   fields : Array[(String, String)]
+  /// The same values, as VALUES.
+  ///
+  /// `fields` is MoonBit source because the generator writes it into a `make`
+  /// call, and that projection is lossy in the one direction a runtime needs:
+  /// a card carries its fixtures in a manifest, and a manifest wants JSON.
+  /// Turning source back into JSON is a small evaluator; keeping what was
+  /// already parsed is not, since the block was JSON before either of them
+  /// touched it.
+  args : Map[String, @tutuca.Value]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -103,7 +112,15 @@ pub fn parse_init(
         )
       }
     }
-    out.push({ name, ident: camel_name(name), fields: set })
+    // The declared fields only, so a fixture cannot smuggle a key past the
+    // check above — which has already refused anything the schema lacks.
+    let args : Map[String, @tutuca.Value] = Map([])
+    for f in def.fields {
+      if fields.get(f.name) is Some(v) {
+        args[f.name] = @tutuca.Value::from_json(v)
+      }
+    }
+    out.push({ name, ident: camel_name(name), fields: set, args })
   }
   out
 }

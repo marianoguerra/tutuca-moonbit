@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/statedef"
 
 import {
+  "marianoguerra/tutuca/core",
   "moonbitlang/core/debug",
 }
 
@@ -76,6 +77,7 @@ pub(all) struct InitState {
   name : String
   ident : String
   fields : Array[(String, String)]
+  args : Map[String, @core.Value]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct MsgDef {
