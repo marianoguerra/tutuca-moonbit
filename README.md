@@ -58,6 +58,10 @@ component — is REFUSED by name, with the reason, and comes back as an
 - **[docs/playground-wasm.md](docs/playground-wasm.md)** — how the in-browser
   playground compiles and runs on both backends: the string ABI, the
   worker-per-target rule, and how to verify a change to either.
+- **[docs/card-examples-design.md](docs/card-examples-design.md)** — a proposed
+  sixth card block: named starting states as `$component`-tagged documents, so
+  a gallery, a docs page and a picker share what a card should be shown AS. A
+  design rather than shipped behaviour; it says so at the top.
 - **[docs/generative-dyncomps-in-the-browser-design.md](docs/generative-dyncomps-in-the-browser-design.md)**
   — a design for building a bundle client-side, with no server and no native
   toolchain. A plan rather than a description of shipped behaviour; it says so
