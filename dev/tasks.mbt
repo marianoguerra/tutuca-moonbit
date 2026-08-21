@@ -426,6 +426,14 @@ pub fn tasks() -> Array[Task] {
           prog: "node",
           args: ["tutucard/build/run-tests.mjs"],
         },
+        // …and a card does not grow a table entry per keystroke. Both halves of
+        // the collector: the superseded handle a successor replaced, and the
+        // row that was simply removed and superseded by nothing.
+        {
+          label: "check · card instances are collected",
+          prog: "node",
+          args: ["tutucard/build/check-instances.mjs"],
+        },
         // The structured view EDITS the card by character offset, which is the
         // one part of this page that can corrupt what an author typed. Held to
         // its contract without a browser.

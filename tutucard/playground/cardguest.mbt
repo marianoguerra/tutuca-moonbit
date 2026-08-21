@@ -38,6 +38,15 @@ extern "js" fn cardguest_ready(key : String) -> Bool =
 /// has no shape to put one in, so this is the whole of what a card can say —
 /// and a driver that could not read it could not tell a declined guard from a
 /// click that missed.
+extern "js" fn cardguest_drop(key : String, handle : Int) -> Unit =
+  #|(key, handle) => globalThis.__cardguest[key].dropInstance(handle)
+
+///|
+/// Keep only these handles; drop the rest. Answers how many went.
+extern "js" fn cardguest_retain(key : String, handles_json : String) -> Int =
+  #|(key, handles) => globalThis.__cardguest[key].retain(handles)
+
+///|
 extern "js" fn cardguest_take_log(key : String) -> String =
   #|(key) => globalThis.__cardguest[key].takeLog()
 
@@ -427,10 +436,88 @@ impl @dyncomp.Guest for CardGuest with fn restore(_self, _component, _state) {
 }
 
 ///|
-/// The JS side holds instances in a table keyed by handle and drops the whole
-/// table with the module, so there is nothing to free one at a time.
-impl @dyncomp.Guest for CardGuest with fn drop_instance(_self, _handle) {
+/// Release one instance.
+///
+/// It used to do nothing, on the grounds that the table goes with the module —
+/// which is true and was never the whole story. A card is copy-on-write, so
+/// EVERY keystroke supersedes a handle: the host's GC has been collecting them
+/// since it was written and handing them to a guest that dropped nothing, and
+/// a card left open grew a table entry per interaction.
+impl @dyncomp.Guest for CardGuest with fn drop_instance(self, handle) {
+  cardguest_drop(self.key, handle)
+}
 
+///|
+/// Collect what nothing points at, at the end of every drained cascade.
+///
+/// Installed AFTER `install_gc`, and after the App's own re-render: subscribers
+/// run in subscription order, so by the time this reads the root the superseded
+/// handles are gone and the render that needed them has happened.
+fn install_sweep(
+  key : String,
+  root : () -> @tutuca.Value,
+  tx : @transactor.Transactor,
+) -> Unit {
+  tx.on_drained(() => {
+    let live : Array[Int] = []
+    live_handles(root(), live)
+    cardguest_retain(
+      key,
+      Json::array(live.map(h => Json::number(h.to_double()))).stringify(),
+    )
+    |> ignore
+  })
+}
+
+///|
+/// Every instance handle still reachable from `root`.
+///
+/// The superseded GC collects a handle a SUCCESSOR replaced, which is the
+/// churn. It cannot collect one that was simply dropped: `.items.deleteAt 0`
+/// gives the list a successor and the removed child was never superseded by
+/// anything — it is just gone, and nothing was watching the place it left.
+///
+/// So the other half is reachability, which the host can answer because it
+/// holds the root: walk the tree, keep what is found. A card is one bundle with
+/// one table, which is what makes a sweep affordable here and not in general.
+fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
+  match v {
+    Obj(o) => {
+      match o.obj_field(@dyncomp.handle_field) {
+        Some(Num(h)) => {
+          let handle = h.to_int()
+          // A cycle cannot happen — a child is made before its parent holds it
+          // — but a diamond can: two fields naming one child. Stopping at a
+          // handle already seen keeps the walk linear either way.
+          if out.contains(handle) {
+            return
+          }
+          out.push(handle)
+        }
+        _ => ()
+      }
+      // Into its DECLARED fields, which is the only list of them there is.
+      match o.obj_schema() {
+        Some(sc) =>
+          for f in sc.fields {
+            match o.obj_field(f.name) {
+              Some(fv) => live_handles(fv, out)
+              None => ()
+            }
+          }
+        None => ()
+      }
+    }
+    List(items) =>
+      for item in items {
+        live_handles(item, out)
+      }
+    Map(entries) =>
+      for _k, item in entries {
+        live_handles(item, out)
+      }
+    _ => ()
+  }
 }
 
 // --- mounting --------------------------------------------------------------
@@ -532,6 +619,11 @@ pub fn mount_compiled(id : String, manifest_json : String) -> String {
   // checked at registration and forgotten at render.
   app.set_sanitizer(policy.sanitizer)
   @dyncomp.install_gc(app.transactor)
+  // …and the sweep, after it. `install_gc` drops what a successor replaced;
+  // this drops what nothing points at any more. Subscribers run in
+  // subscription order, so by the time this reads the root the superseded ones
+  // are already gone and the render that needed them has run.
+  install_sweep(id, () => app.root_value(), app.transactor)
   app.start()
   @glue.install(app)
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
@@ -610,6 +702,7 @@ pub fn drive(
       manifest,
       scenes,
       on_bundle=b => guest.registered.val = Some(b),
+      on_app=a => install_sweep(key, () => a.root_value(), a.transactor),
       take_log=() => {
         let raw = cardguest_take_log(key)
         if raw == "" {

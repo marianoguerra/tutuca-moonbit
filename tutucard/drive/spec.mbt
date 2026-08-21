@@ -86,6 +86,7 @@ declare pub fn run(
   root? : String,
   take_log? : () -> Array[String],
   on_bundle? : (@dyncomp.Bundle) -> Unit,
+  on_app? : (@app.App[@memdom.MemNode]) -> Unit,
 ) -> Array[SceneResult]
 
 ///|

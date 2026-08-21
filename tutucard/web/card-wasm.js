@@ -272,6 +272,39 @@ export async function loadGuest(bytes, descriptor, key = "default") {
       logLines.length = 0;
       return out;
     },
+    /** Release one instance. */
+    dropInstance(handle) {
+      table.delete(handle);
+    },
+    /**
+     * Keep only these handles, and answer how many went.
+     *
+     * The sweep half of the collector. A handle a successor replaced is
+     * collected by the host's own GC; one that was simply DROPPED — a row
+     * removed from a list — was never superseded by anything, and nothing was
+     * watching the place it left. Reachability is the only thing that finds it,
+     * and the host holds the root.
+     *
+     * A child whose token has been handed out but whose instance is still
+     * queued is NOT reachable yet and must not be swept — it is about to be
+     * built into the very tree the walk is reading.
+     */
+    /** How many instances the table holds. For a test that watches it grow. */
+    size() {
+      return table.size;
+    },
+    retain(handlesJson) {
+      const keep = new Set(JSON.parse(handlesJson));
+      for (const { handle } of pendingChildren) keep.add(handle);
+      let gone = 0;
+      for (const h of [...table.keys()]) {
+        if (!keep.has(h)) {
+          table.delete(h);
+          gone++;
+        }
+      }
+      return gone;
+    },
     create(component, argsJson) {
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, to(v)]);
       const h = register(new root.guest.Instance(component, args), component);

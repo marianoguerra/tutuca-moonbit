@@ -43,6 +43,15 @@
   pred typed
     format $'nothing to add' { not (empty? .draft) }
 
+  /// Take a row away.
+  ///
+  /// The child's token goes with it, and nothing was superseded — the row was
+  /// not replaced by a successor, it is simply gone. Only reachability finds
+  /// that, which is why the host sweeps from the root.
+  receive drop(i) {
+    .items.deleteAt i
+  }
+
   /// How many rows there are.
   compute count { len .items }
 </script>
@@ -87,6 +96,17 @@
       { "expect": "text",  "at": "output.count", "is": "2" }
     ]
   },
+  "a dropped row goes": {
+    "steps": [
+      { "type": "input.draft", "value": "one" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "two" },
+      { "click": "button.add" },
+      { "click": "button.drop" },
+      { "expect": "texts", "at": "li.todo", "is": ["two"] },
+      { "expect": "text",  "at": "output.count", "is": "1" }
+    ]
+  },
   "an empty draft adds nothing, and says why": {
     "steps": [
       { "click": "button.add" },
@@ -102,6 +122,7 @@
     <input class="draft" :value=".draft" @on.input="setDraft e.value">
     <button class="add" @on.click="add">add</button>
     <ul><x render-each=".items"></x></ul>
+    <button class="drop" @on.click="drop 0">drop the first</button>
     <output class="count" @text="$count"></output>
   </div>
 </template>

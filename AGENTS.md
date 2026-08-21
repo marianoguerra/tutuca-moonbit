@@ -433,6 +433,12 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   at compile time (`refuse_into_child`), because the instance is the host's and
   the guest holds only a token. `tutucard/wasm/examples/Todos.html` is the
   worked TodoMVC, with scenes that drive it.
+- **Instances are collected, both halves.** `install_gc` drops the handle a
+  successor replaced — which is every interaction, since a guest instance is
+  immutable — and `CardGuest::drop_instance` used to be a no-op, so a card left
+  open grew a table entry per keystroke. A row that is REMOVED is superseded by
+  nothing, so that collector cannot see it; `install_sweep` walks the root and
+  retains what it finds. `tutucard/build/check-instances.mjs` pins both.
 - Turned up on the way: `with-field` of a COMPOUND value was refused for every
   card since the arena landed. The joined `(i64, i32)` payload was lifted by a
   scalars-only reader, so a list handed in became null and the schema refused

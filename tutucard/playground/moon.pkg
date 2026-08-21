@@ -23,6 +23,7 @@
 // has already instantiated.
 import {
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/tutucard/wasm",

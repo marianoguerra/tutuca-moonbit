@@ -8,8 +8,9 @@ pub fn run(
   root? : String = "",
   take_log? : () -> Array[String] = () => [],
   on_bundle? : (@dyncomp.Bundle) -> Unit = _b => (),
+  on_app? : (@app.App[@memdom.MemNode]) -> Unit = _a => (),
 ) -> Array[SceneResult] {
-  scenes.map(s => run_one(guest, manifest, s, root, take_log, on_bundle))
+  scenes.map(s => run_one(guest, manifest, s, root, take_log, on_bundle, on_app))
 }
 
 ///|
@@ -27,6 +28,7 @@ fn run_one(
   root : String,
   take_log : () -> Array[String],
   on_bundle : (@dyncomp.Bundle) -> Unit,
+  on_app : (@app.App[@memdom.MemNode]) -> Unit,
 ) -> SceneResult {
   let failed = (why : String) => SceneResult::{
     name: scene.name,
@@ -102,6 +104,15 @@ fn run_one(
     }
   })
   |> ignore
+  // A guest instance is superseded by every transition that answers a
+  // successor, which is every interaction a scene drives — so a scene of fifty
+  // steps leaves fifty dead handles behind without this. It is the host's job
+  // whoever the host is, and a driver is one.
+  @dyncomp.install_gc(app.transactor)
+  // …and whatever else the caller wants to hang on this app. The card driver
+  // installs a reachability sweep here, which needs the root and therefore the
+  // app rather than the bundle.
+  on_app(app)
   app.start()
   let h = @harness.Harness::over(app, container)
   let out = { ..drive_scene(h, scene, take_log~), component: comp, activity }

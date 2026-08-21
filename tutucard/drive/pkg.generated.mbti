@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/tutucard/drive"
 
 import {
+  "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
   "marianoguerra/tutuca/scenedef",
@@ -19,7 +20,7 @@ pub fn drive_scene(@harness.Harness, @scenedef.Scene, take_log? : () -> Array[St
 
 pub fn report_json(Array[SceneResult]) -> Json
 
-pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Bundle) -> Unit) -> Array[SceneResult]
+pub fn run(&@host.Guest, @host.DynManifest, Array[@scenedef.Scene], root? : String, take_log? : () -> Array[String], on_bundle? : (@host.Bundle) -> Unit, on_app? : (@app.App[@memdom.MemNode]) -> Unit) -> Array[SceneResult]
 
 // Errors
 pub suberror MountError {
