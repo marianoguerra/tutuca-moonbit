@@ -27,6 +27,6 @@ description = "A self-contained tutuca universal host, and one guest of its own,
 preferred_target = "wasm-gc"
 
 import {
-  "marianoguerra/tutuca@0.26.0",
+  "marianoguerra/tutuca@0.27.0",
   "mizchi/js@0.12.1",
 }
