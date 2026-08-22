@@ -102,12 +102,6 @@ extern "js" fn cardguest_with_field(
 // `make-instance` to produce one with.
 
 ///|
-fn value_of(s : String) -> @tutuca.Value {
-  let j = @json.parse(s) catch { _ => return Null }
-  @tutuca.Value::from_json(j)
-}
-
-///|
 fn list_json(args : Array[@tutuca.Value]) -> String {
   Json::array(args.map(v => v.to_json())).stringify()
 }
@@ -612,7 +606,7 @@ pub fn mount_compiled(
   // afterwards, which is the only order available: `register_bundle` takes the
   // guest, and the guest needs the bundle to wrap a child token. Nothing can
   // call the guest in between.
-  let guest = CardGuest::{ key: id, registered: Ref::new(None) }
+  let guest = CardGuest::{ key: id, registered: Ref(None) }
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
     @dyncomp.register_bundle(scope, guest, manifest, policy~)
@@ -795,7 +789,7 @@ pub fn drive(
   let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
-  let guest = CardGuest::{ key, registered: Ref::new(None) }
+  let guest = CardGuest::{ key, registered: Ref(None) }
   @drive.report_json(
     @drive.run(
       guest,
@@ -808,7 +802,7 @@ pub fn drive(
         if raw == "" {
           []
         } else {
-          raw.split("\n").map(l => l.to_string()).collect()
+          raw.split("\n").map(l => l.to_owned()).collect()
         }
       },
     ),

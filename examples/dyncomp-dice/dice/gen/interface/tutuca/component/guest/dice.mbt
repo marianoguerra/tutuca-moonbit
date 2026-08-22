@@ -110,12 +110,12 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
           // bubble and the host routes it; this component does not know, and
           // must not know, who is listening.
           @control.intent("rolled", [@values.Value::Number(n)], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+            route: [DYN],
+            on_ok: None,
+            on_error: None,
+            on_unhandled: None,
+            live_path: false,
+          })
           Changed({ ..self, last: n, rolls } as &DynComponent)
         }
         // An answer shaped wrong is still an answer to a question this die

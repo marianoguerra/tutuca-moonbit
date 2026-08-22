@@ -571,7 +571,7 @@ read a single round of it as a signal.
 Where the remaining headroom is:
 
 - **Bucket thrash.** Two structurally equal instances share a bucket and evict
-  each other every pass (`render/cache_test.mbt` pins that this is a thrash and
+  each other every pass (`render/cache_wbtest.mbt` pins that this is a thrash and
   never a wrong subtree). Mixing the innermost loop key into the bucket would
   separate them — the one piece of the old `site_cache_key` that would then have
   a reason to exist. Measure first: on this corpus the todo rows have distinct

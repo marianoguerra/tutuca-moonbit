@@ -1176,27 +1176,39 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
     // what somebody with a network connection should do about it. This bundle
     // has no network and is only saying what happened.
     "toggleLike" => {
-      @control.intent(if self.liked { "unliked" } else { "liked" }, [
-        vtext(self.msg.uri),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.liked {
+          "unliked"
+        } else {
+          "liked"
+        },
+        [vtext(self.msg.uri)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, liked: !self.liked } as &DynComponent)
     }
     "toggleRepost" => {
-      @control.intent(if self.reposted { "unreposted" } else { "reposted" }, [
-        vtext(self.msg.uri),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.reposted {
+          "unreposted"
+        } else {
+          "reposted"
+        },
+        [vtext(self.msg.uri)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, reposted: !self.reposted } as &DynComponent)
     }
     // The fold flag is THIS row's too, and the bubble is what the thread above
@@ -1205,15 +1217,21 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
     // they are not the same fact.
     "toggleFold" => {
       guard self.foldable > 0 else { return Unchanged }
-      @control.intent(if self.folded { "unfolded" } else { "folded" }, [
-        vtext(self.msg.uri),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.folded {
+          "unfolded"
+        } else {
+          "folded"
+        },
+        [vtext(self.msg.uri)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, folded: !self.folded } as &DynComponent)
     }
     _ => Unhandled
@@ -2481,15 +2499,21 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
     // it through `bump`, and the bubble is what a host would turn into the
     // `app.bsky.graph.follow` record it alone is allowed to write.
     (RECEIVE, "toggleFollow") => {
-      @control.intent(if self.following { "unfollowed" } else { "followed" }, [
-        vtext(self.handle),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.following {
+          "unfollowed"
+        } else {
+          "followed"
+        },
+        [vtext(self.handle)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, following: !self.following } as &DynComponent)
     }
     // The pager under the account's messages.

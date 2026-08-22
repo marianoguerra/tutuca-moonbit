@@ -125,7 +125,7 @@ stays fixed as `path` shortens, which is how the answer finds its way
 home, and is also what an intent handler can address directly with
 `ctx.send_at_path(ctx.target_path(), name, args)`.
 
-Walks are bounded by `@tutuca.INTENT_DEPTH` hops; past it the transactor
+Walks are bounded by `@transactor.INTENT_DEPTH` hops; past it the transactor
 refuses with `RefusalCode::IntentDepth` rather than looping.
 
 ## Dynamic-var teleporting

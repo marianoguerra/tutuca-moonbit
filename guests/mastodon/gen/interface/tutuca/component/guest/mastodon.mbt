@@ -1194,16 +1194,21 @@ impl DynComponent for Poll with fn handle(self, bucket, name, args) {
   } else {
     [i]
   }
-  @control.intent(if picked { "unvoted" } else { "voted" }, [
-    vtext(self.status_id),
-    vnum(i),
-  ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+  @control.intent(
+    if picked {
+      "unvoted"
+    } else {
+      "voted"
+    },
+    [vtext(self.status_id), vnum(i)],
+    {
+      route: [DYN],
+      on_ok: None,
+      on_error: None,
+      on_unhandled: None,
+      live_path: false,
+    },
+  )
   Changed({ ..self, data: { ..d, own_votes, } } as &DynComponent)
 }
 
@@ -1454,13 +1459,14 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           "favourited"
         },
         [vtext(self.toot.id)],
-      {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, favourited: !self.favourited } as &DynComponent)
     }
     "toggleBoost" => {
@@ -1468,15 +1474,21 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
       // is no boosting: mastodon.social draws the button struck through and
       // refuses the click, and so does this.
       guard self.can_boost() else { return Unchanged }
-      @control.intent(if self.reblogged { "unboosted" } else { "boosted" }, [
-        vtext(self.toot.id),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.reblogged {
+          "unboosted"
+        } else {
+          "boosted"
+        },
+        [vtext(self.toot.id)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, reblogged: !self.reblogged } as &DynComponent)
     }
     "toggleBookmark" => {
@@ -1487,13 +1499,14 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           "bookmarked"
         },
         [vtext(self.toot.id)],
-      {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, bookmarked: !self.bookmarked } as &DynComponent)
     }
     // Opening a content warning is this reader's, is nobody else's business and
@@ -1520,15 +1533,21 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
     // they are not the same fact.
     "toggleFold" => {
       guard self.foldable > 0 else { return Unchanged }
-      @control.intent(if self.folded { "unfolded" } else { "folded" }, [
-        vtext(self.toot.id),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.folded {
+          "unfolded"
+        } else {
+          "folded"
+        },
+        [vtext(self.toot.id)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, folded: !self.folded } as &DynComponent)
     }
     _ => Unhandled
@@ -2869,15 +2888,21 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
     // follows it through `bump`, and the bubble is what a host would turn into
     // the follow it alone is allowed to write.
     (RECEIVE, "toggleFollow") => {
-      @control.intent(if self.following { "unfollowed" } else { "followed" }, [
-        vtext(self.acct),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        if self.following {
+          "unfollowed"
+        } else {
+          "followed"
+        },
+        [vtext(self.acct)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, following: !self.following } as &DynComponent)
     }
     // The pager under the account's posts.

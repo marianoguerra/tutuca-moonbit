@@ -146,9 +146,7 @@ Also here: the Sanitizer-API config over the ANode tree (`anode/sanitize`, run b
 `check_view`), the untrusted authority walk that refuses direct network/CSS
 sinks while retaining autonomous custom elements, the render-time URL filter
 (`vdom/filter`), and quotas on manifest/archive size. Still to come, and marked
-as such in the code: the `mizchi/css` style validator (until it lands,
-`allow_custom_css` means someone vouched, not that anything checked) and
-content-addressed bundle ids.
+as such in the code: content-addressed bundle ids.
 
 ### `dyncomp/ui/std` — layout as components
 
@@ -296,12 +294,11 @@ What is left, in order:
    a tagged `$component` tree (`core/component_json.mbt`), written and read by
    `UniversalUi::tree_of_json` and its encode twin, which is what the shell now
    puts in `localStorage`. What is left is the two buttons.
-2. **The security work `policy` names but does not yet do**: the `mizchi/css`
-   validator and caller-aware request authorization, which needs `RequestFn` to
-   carry the requester's `DispatchPath` (`SECURITY.md` §4–§5). The Sanitizer-API
-   port landed; what is left of it is the spec's default allow-list and
-   re-admitting raw markup through the render-time filter
-   (`docs/sanitizer.md`).
+2. **The security work `policy` names but does not yet do**: caller-aware
+   request authorization, which needs `RequestFn` to carry the requester's
+   `DispatchPath` (`SECURITY.md` §4–§5). The Sanitizer-API port and the
+   `mizchi/css` style validator have landed (`docs/sanitizer.md`,
+   `docs/css-validator.md`).
 3. **Two debts from the v0.3 bump**: `manifest.capabilities` is now enforced,
    but `control.after` still has no host implementation (it needs a timer the
    transactor owns), and the bridge supplies `env` unconditionally rather than

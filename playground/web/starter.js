@@ -164,7 +164,7 @@ impl @component.Fields for CounterState with fn schema() {
     // hashes the schema instead
     fingerprint="starter-dynamic-counter",
     fields=[@component.FieldInfo::new("count", TyInt)],
-    inputs=["dec", "inc"],
+    view_handlers=["dec", "inc"],
     view_names=["main"],
   )
 }

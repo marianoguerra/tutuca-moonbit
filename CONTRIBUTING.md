@@ -137,7 +137,7 @@ The playground ships as two npm packages, staged and packed from an assembled
 | package | holds | ~size |
 | --- | --- | --- |
 | `@marianoguerra/tutuca-playground` | the shell: `<mb-playground>`, worker, editor, view generator, margaui | 0.5 MB |
-| `@marianoguerra/tutuca-playground-payload` | `manifest.json` + `fs/` — the `.mi`/`.core` bundles user code compiles against | 8.6 MB |
+| `@marianoguerra/tutuca-playground-payload` | `manifest.json` + `fs/` — the `.mi`/`.core` bundles user code compiles against | ~22 MB |
 
 Two packages because they turn over for different reasons — the payload is
 rebuilt whenever the MoonBit toolchain moves, the shell isn't. They unpack into
@@ -185,8 +185,8 @@ storybook are the fallback.
 ## Conventions
 
 See [AGENTS.md](AGENTS.md) for the code-organization, tooling, and
-component-testing conventions (block style, `deprecated.mbt`, the testing
-harness and assertion mapping).
+component-testing conventions (block style, the testing harness and assertion
+mapping).
 
 ## License
 

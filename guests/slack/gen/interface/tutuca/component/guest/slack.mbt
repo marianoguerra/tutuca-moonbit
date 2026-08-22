@@ -264,16 +264,17 @@ impl DynComponent for Segment with fn handle(self, bucket, name, _args) {
     // same shape as asking the host for a capability, one level cheaper.
     (RECEIVE, "open") => {
       if self.link && self.url != "" {
-        @control.intent("openLink", [
-          @values.Value::Text(self.url),
-          @values.Value::Text(self.text),
-        ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+        @control.intent(
+          "openLink",
+          [@values.Value::Text(self.url), @values.Value::Text(self.text)],
+          {
+            route: [DYN],
+            on_ok: None,
+            on_error: None,
+            on_unhandled: None,
+            live_path: false,
+          },
+        )
       }
       Unchanged
     }
@@ -368,16 +369,17 @@ impl DynComponent for Reaction with fn handle(self, bucket, name, _args) {
     (RECEIVE, "toggle") => {
       let reacted = !self.reacted
       let count = if reacted { self.count + 1.0 } else { self.count - 1.0 }
-      @control.intent("reacted", [
-        @values.Value::Text(self.emoji),
-        @values.Value::Boolean(reacted),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        "reacted",
+        [@values.Value::Text(self.emoji), @values.Value::Boolean(reacted)],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Changed({ ..self, reacted, count } as &DynComponent)
     }
     _ => Unhandled
@@ -617,16 +619,20 @@ impl DynComponent for Message with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
     (RECEIVE, "openPermalink") => {
       if self.permalink != "" {
-        @control.intent("openLink", [
-          @values.Value::Text(self.permalink),
-          @values.Value::Text("permalink"),
-        ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+        @control.intent(
+          "openLink",
+          [
+            @values.Value::Text(self.permalink),
+            @values.Value::Text("permalink"),
+          ],
+          {
+            route: [DYN],
+            on_ok: None,
+            on_error: None,
+            on_unhandled: None,
+            live_path: false,
+          },
+        )
       }
       Unchanged
     }
@@ -1000,17 +1006,21 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
     // looking. So it says which two arguments would, and whoever is above is
     // the one that can make the call.
     (RECEIVE, "openThread") => {
-      @control.intent("openThread", [
-        @values.Value::Text(self.channel_name),
-        @values.Value::Text(self.root_ts),
-        @values.Value::Number(self.reply_count.to_double()),
-      ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+      @control.intent(
+        "openThread",
+        [
+          @values.Value::Text(self.channel_name),
+          @values.Value::Text(self.root_ts),
+          @values.Value::Number(self.reply_count.to_double()),
+        ],
+        {
+          route: [DYN],
+          on_ok: None,
+          on_error: None,
+          on_unhandled: None,
+          live_path: false,
+        },
+      )
       Unchanged
     }
     // What `ChannelHistory`'s expand-all/collapse-all reaches with
@@ -1521,16 +1531,17 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
       if at >= 0 && at < shown.length() {
         let f = self.files[shown[at]]
         if f.permalink != "" {
-          @control.intent("openLink", [
-            @values.Value::Text(f.permalink),
-            @values.Value::Text(f.label),
-          ], {
-        route: [DYN],
-        on_ok: None,
-        on_error: None,
-        on_unhandled: None,
-        live_path: false,
-      })
+          @control.intent(
+            "openLink",
+            [@values.Value::Text(f.permalink), @values.Value::Text(f.label)],
+            {
+              route: [DYN],
+              on_ok: None,
+              on_error: None,
+              on_unhandled: None,
+              live_path: false,
+            },
+          )
         }
       }
       Unchanged

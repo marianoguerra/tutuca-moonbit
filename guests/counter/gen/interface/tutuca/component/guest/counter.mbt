@@ -231,8 +231,7 @@ fn serve_intent_impl(name : String, args : Array[@values.Value]) -> ServeResult 
   match (name, args) {
     ("triple", [@values.Value::Number(n), ..]) =>
       ServeResult::Ok(@values.Value::Number(n * 3.0))
-    _ =>
-      ServeResult::Err(@values.Value::Text("counterlib: no service \{name}"))
+    _ => ServeResult::Err(@values.Value::Text("counterlib: no service \{name}"))
   }
 }
 

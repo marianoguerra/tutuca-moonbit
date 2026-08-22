@@ -135,7 +135,7 @@ The `dyn` leg starts at the sender's **parent**, not at the sender: an
 intent is never offered to the component that raised it. (A component
 that wanted to handle it itself would just have written the body inline.)
 
-Walks are depth-bounded — `@tutuca.INTENT_DEPTH` hops, after which the
+Walks are depth-bounded — `@transactor.INTENT_DEPTH` hops, after which the
 runtime refuses with `RefusalCode::IntentDepth` rather than looping.
 
 ## Answering an intent

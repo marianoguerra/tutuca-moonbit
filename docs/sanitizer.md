@@ -488,13 +488,10 @@ unconditionally and reads no field for it.
 
 Three things this cost that were not obvious:
 
-- **`filter_for` moved to `vdom/filter/markdown`.** The chain is
+- **Markdown filtering lives in `vdom/filter/markdown`.** The chain is
   `[MarkupFilter?] → MdFilter → Baseline`, and `markup` cannot express that —
-  the dependency runs `markdown` → `markup` and a cycle is not available. The
-  old entry point in `markup/` was kept deprecated for a while, on the argument
-  that it was still right for a host wanting the raw-markup rule and nothing
-  else; nothing ever called it, and it silently rendered `@setinnermd` as an
-  empty element, so it is gone. Build the pair yourself if you want it:
+  the dependency runs `markdown` → `markup` and a cycle is not available. A
+  host wanting the raw-markup rule and nothing else builds the pair itself:
   `@filter.Chain::new([@markup.MarkupFilter::new(sanitizer~), @filter.Baseline::new()])`.
 - **`set_prop` fails closed on `setInnerMd`** (`vdom/to_dom.mbt`). Reaching it
   means no filter consumed the attribute, and the element is CLEARED. Rendering

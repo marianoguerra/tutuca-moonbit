@@ -599,9 +599,11 @@ fn gen_guest_bindings_commands() -> Array[Command] {
       args: ["guests/gen-bindings.mjs"],
     },
     {
-      label: "drift check · guests/ is reproducible from the WIT",
+      label: "drift check · guests/ + dice are reproducible from the WIT",
       prog: "git",
-      args: ["diff", "--exit-code", "--", "guests"],
+      args: [
+        "diff", "--exit-code", "--", "guests", "examples/dyncomp-dice/dice",
+      ],
     },
   ]
 }
