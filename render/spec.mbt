@@ -78,7 +78,27 @@ pub(all) struct DomEvent {
   /// ever sees a walk that was already permitted — one place decides, and a
   /// backend cannot forget to ask.
   read_path : EventPathReader?
+  /// Call `preventDefault()` on the live event — the `+prevent` modifier.
+  ///
+  /// Like `read_path`, this reaches the REAL event object through a closure
+  /// the glue that built this supplies; a `DomEvent` built by a test has
+  /// none, and the effect is then a no-op rather than a crash.
+  prevent_default : EventEffect?
+  /// Call `stopPropagation()` on the live event — the `+stop` modifier.
+  stop_propagation : EventEffect?
 } derive(Debug)
+
+///|
+/// One live-event side effect, as a named type.
+///
+/// A newtype for the same reason `EventPathReader` is: `DomEvent` derives
+/// `Debug` and a function has none.
+pub(all) struct EventEffect(() -> Unit)
+
+///|
+pub impl @debug.Debug for EventEffect with fn to_repr(_self) {
+  @debug.Repr::Repr("<effect>")
+}
 
 ///|
 /// Layer 2's resolver, as a named type.
@@ -106,6 +126,8 @@ declare pub fn DomEvent::new(
   ctrl_or_cmd? : Bool,
   meta? : Bool,
   drag_info? : @tutuca.Value,
+  prevent_default? : EventEffect,
+  stop_propagation? : EventEffect,
 ) -> DomEvent
 
 ///|

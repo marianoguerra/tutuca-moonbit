@@ -180,6 +180,134 @@ priv struct DropBoardState {
 }
 
 ///|
+/// A real CANCELABLE click, answering whether the browser recorded a
+/// preventDefault against it.
+extern "js" fn click_default_prevented_ffi(node : @core.Any) -> Bool =
+  #|(n) => {
+  #|  const win = n.ownerDocument.defaultView;
+  #|  const ev = new win.Event("click", { bubbles: true, cancelable: true });
+  #|  n.dispatchEvent(ev);
+  #|  return !!ev.defaultPrevented;
+  #|}
+
+///|
+extern "js" fn attach_to_body_ffi(node : @core.Any, doc : @core.Any) -> Unit =
+  #|(n, d) => d.body.appendChild(n)
+
+///|
+/// Put a PLAIN DOM listener above the app's mount, so a test can tell whether
+/// an event left it.
+extern "js" fn watch_document_clicks_ffi(doc : @core.Any) -> Unit =
+  #|(d) => {
+  #|  d.defaultView.__outerSeen = false;
+  #|  d.addEventListener("click", () => {
+  #|    d.defaultView.__outerSeen = true;
+  #|  });
+  #|}
+
+///|
+extern "js" fn outer_seen_ffi(doc : @core.Any) -> Bool =
+  #|(d) => !!d.defaultView.__outerSeen
+
+///|
+priv struct EffectsState {
+  n : Int
+}
+
+///|
+fn effects_comp() -> @component.Component {
+  @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><button class=\"plain\" @on.click=\"bump\">+</button><button class=\"prevented\" @on.click+prevent=\"bump\">p</button><button class=\"stopped\" @on.click+stop=\"bump\">s</button><button class=\"gated\" @on.click+ctrl+prevent=\"bump\">g</button></div>",
+      ),
+    },
+    name="Effects",
+    init=EffectsState::{ n: 0 },
+    update=(s : EffectsState, msg, _ctx) => {
+      match msg {
+        Receive("bump", _) => Next({ n: s.n + 1 })
+        _ => Unhandled
+      }
+    },
+  )
+}
+
+///|
+impl @component.Fields for EffectsState with fn encode(s) {
+  { "n": Num(s.n.to_double()) }
+}
+
+///|
+impl @component.Fields for EffectsState with fn decode(f) {
+  guard f.get("n") is Some(Num(v)) else { return None }
+  Some({ n: v.to_int() })
+}
+
+///|
+impl @component.Fields for EffectsState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="smoke_effects_state", fields=[
+    @component.FieldInfo::new("n", TyInt),
+  ])
+}
+
+///|
+test "browser: +prevent calls preventDefault when the handler runs" {
+  let window = @test_utils.create_happy_window()
+  let doc = window.document()
+  let container = @bdom.BrowserNode::from_element(doc.createElement("div"))
+  let scope = @component.ComponentStack::new()
+  scope.register_components([effects_comp()])
+  guard scope.lookup_component("Effects") is Some(c) else { fail("no Effects") }
+  let a = @app.App::new(scope, c.make(Map([])), container, @bdom.opts_for(doc))
+  a.start()
+  @browser.install(a)
+  // The guarded one: plain click, ctrl missing — the handler never runs, so
+  // neither does its effect. The browser default survives.
+  let gated = query_ffi(container.as_any(), ".gated")
+  assert_false(click_default_prevented_ffi(gated))
+  assert_true(field_v(a, "n") == Num(0))
+  // The prevented one: the handler ran AND the default was prevented.
+  let prevented = query_ffi(container.as_any(), ".prevented")
+  assert_true(click_default_prevented_ffi(prevented))
+  assert_true(field_v(a, "n") == Num(1))
+  // The plain one: no modifier, no prevention.
+  assert_false(
+    click_default_prevented_ffi(query_ffi(container.as_any(), ".plain")),
+  )
+}
+
+///|
+test "browser: +stop keeps the event from leaving the app's mount" {
+  // One delegated listener per app sits on the mount, so by the time a
+  // handler runs the event has ALREADY bubbled to it — +stop cannot un-ring
+  // that bell, and the component's own handler still fires. What it stops is
+  // everything ABOVE the mount: a host page's document listener, an outer
+  // shell's delegated dispatch. That is what this pins.
+  let window = @test_utils.create_happy_window()
+  let doc = window.document()
+  let container = @bdom.BrowserNode::from_element(doc.createElement("div"))
+  attach_to_body_ffi(container.as_any(), doc.as_any())
+  watch_document_clicks_ffi(doc.as_any())
+  let scope = @component.ComponentStack::new()
+  scope.register_components([effects_comp()])
+  guard scope.lookup_component("Effects") is Some(c) else { fail("no Effects") }
+  let a = @app.App::new(scope, c.make(Map([])), container, @bdom.opts_for(doc))
+  a.start()
+  @browser.install(a)
+  // The stopped one: the component's own handler ran, the outside saw nothing.
+  let stopped = query_ffi(container.as_any(), ".stopped")
+  real_click_ffi(stopped)
+  assert_true(field_v(a, "n") == Num(1))
+  assert_false(outer_seen_ffi(doc.as_any()))
+  // The plain one: the outside sees it.
+  real_click_ffi(query_ffi(container.as_any(), ".plain"))
+  assert_true(field_v(a, "n") == Num(2))
+  assert_true(outer_seen_ffi(doc.as_any()))
+}
+
+///|
 impl @component.Fields for SmokeCounterState with fn encode(s) {
   { "n": Num(s.n.to_double()), "label": Str(s.label) }
 }

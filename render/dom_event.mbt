@@ -14,6 +14,8 @@ pub fn DomEvent::new(
   ctrl_or_cmd? : Bool = false,
   meta? : Bool = false,
   drag_info? : @tutuca.Value = Null,
+  prevent_default? : EventEffect,
+  stop_propagation? : EventEffect,
 ) -> DomEvent {
   {
     name,
@@ -26,6 +28,8 @@ pub fn DomEvent::new(
     meta,
     drag_info,
     read_path,
+    prevent_default,
+    stop_propagation,
   }
 }
 

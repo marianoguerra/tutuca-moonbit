@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`+prevent` and `+stop` event modifiers.** The two effect modifiers every
+  JS framework has, and that tutuca's docs explicitly said it did not have:
+  `@on.submit+prevent="save"` now really calls `preventDefault()`, and
+  `@on.click+stop="pick"` calls `stopPropagation()` — on any event, run when
+  the handler runs (after the guard modifiers gate it, per passing handler).
+  Both reach the live event through closures the backend glue supplies on the
+  `DomEvent` (`EventEffect`, the twin of `EventPathReader`); a test's or
+  harness's event carries none and both are no-ops there.
+
+  One architectural consequence worth reading before using `+stop`: events
+  dispatch through ONE delegated listener per app, so a handler runs after the
+  event has already bubbled to the mount. `+stop` keeps the event from leaving
+  the app (a host page's document listener, an outer shell) — it cannot stop
+  the component's own handler from firing, nor silence another `@on.` inside
+  the same app.
+
 ### Changed
 
 - **Event paths are open by default; the allowlist is the safe profile.** An

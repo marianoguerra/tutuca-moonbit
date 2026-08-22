@@ -83,6 +83,13 @@ fn prevent_default(ev : @core.Any) -> Unit {
 }
 
 ///|
+fn stop_propagation(ev : @core.Any) -> Unit {
+  if tdom_has_prop(ev, "stopPropagation") {
+    let _ = ev._call("stopPropagation", [])
+  }
+}
+
+///|
 /// getValue(e): a drop's files, checkbox -> checked, file input -> the first
 /// file's metadata, elements with a value -> value, else CustomEvent detail
 /// (structured payloads ride through the JSON bridge as Value::Map/List).
@@ -187,6 +194,11 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
     ctrl_or_cmd=event_ctrl_or_cmd(ev),
     meta=tdom_get_bool(ev, "metaKey"),
     read_path=event_path_reader(ev),
+    // The +prevent / +stop modifiers: closures over the LIVE event, the
+    // wasm-gc twin of app/browser's. A MoonBit closure over an @core.Any
+    // stays on this side of the boundary, which is all the effect needs.
+    prevent_default=EventEffect(() => prevent_default(ev)),
+    stop_propagation=EventEffect(() => stop_propagation(ev)),
   )
 }
 

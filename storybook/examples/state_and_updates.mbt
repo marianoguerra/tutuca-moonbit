@@ -5,10 +5,11 @@
 //   @on.keydown+send / +cancel              (event modifiers)
 //   @show / @hide
 //
-// Note the event modifiers tutuca actually defines: keydown takes
-// send/cancel/ctrl/cmd/meta/alt, click
-// takes ctrl/cmd/meta/alt. There is no +stop / +prevent; an unknown modifier is
-// the identity (it does not gate the handler).
+// Note the event modifiers tutuca actually defines. Guards: keydown takes
+// send/cancel/ctrl/cmd/meta/alt, click takes ctrl/cmd/meta/alt; an unknown
+// guard is the identity (it does not gate the handler). Effects: +prevent
+// calls preventDefault and +stop calls stopPropagation when the handler
+// runs — on any event, gated by any guards written beside them.
 
 ///|
 /// `:attr=".field"` binds state into any attribute; `$'…{.field}…'` is a string

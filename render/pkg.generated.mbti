@@ -42,13 +42,18 @@ pub(all) struct DomEvent {
   meta : Bool
   drag_info : @core.Value
   read_path : EventPathReader?
+  prevent_default : EventEffect?
+  stop_propagation : EventEffect?
 } derive(@debug.Debug)
-pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value) -> Self
+pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value, prevent_default? : EventEffect, stop_propagation? : EventEffect) -> Self
 
 pub(all) struct EventDispatch {
   path : @core.DispatchPath
   handlers : Array[@anode.NodeEvent]
 }
+
+pub(all) struct EventEffect(() -> Unit)
+pub impl @debug.Debug for EventEffect
 
 pub(all) struct EventPathReader((Array[String]) -> @core.Value)
 pub impl @debug.Debug for EventPathReader

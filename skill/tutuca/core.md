@@ -701,8 +701,10 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 - There is **no `event` or `ctx` argument** — a DOM object is not a `Value`, so
   `event` resolves to `Null` and the handler silently receives nothing. Reach the
   event through `e.` instead.
-- Modifiers are **guards only**, on `keydown` and `click`. `+prevent` / `+stop`
-  do not exist and are ignored rather than refused.
+- Modifiers come in two kinds: **guards** (`+send`, `+cancel`, `+ctrl`, …, on
+  `keydown` and `click`) and **effects** — `+prevent` calls `preventDefault`,
+  `+stop` calls `stopPropagation`, when the handler runs. Details in
+  [events.md](./events.md#event-modifiers).
 
 ## Conditional Display
 

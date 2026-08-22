@@ -37,7 +37,9 @@ pub impl @transactor.Intents for ScopeIntents with fn intents_for(
 ///|
 /// Event-modifier gating: each modifier
 /// is a predicate on the event; a failing one makes the handler a no-op.
-/// Only keydown and click define modifiers; unknown pairs pass (identity).
+/// Only keydown and click define guard modifiers; unknown pairs pass
+/// (identity) — including `+prevent` and `+stop`, which are not guards at all
+/// but EFFECTS, applied by `apply_event_effects` once gating has passed.
 fn modifiers_pass(
   event_name : String,
   modifiers : Array[String],
@@ -58,6 +60,31 @@ fn modifiers_pass(
     }
   }
   true
+}
+
+///|
+/// The effect modifiers: actions on the live event, run when their handler
+/// runs — after the guard modifiers have gated it, and per passing handler,
+/// because two handlers on one element can disagree about whether to prevent.
+///
+/// - `+prevent` calls `preventDefault()` — a form submit that does not
+///   navigate, a link that does not follow. The browser only honors it for a
+///   **cancelable** event; nothing here can or should check that.
+/// - `+stop` calls `stopPropagation()` — the click that would otherwise reach
+///   an outer component's delegated handler does not.
+///
+/// Both need the LIVE event object, which is why the closures ride the
+/// `DomEvent` the backend built (`EventEffect`): a test's or harness's event
+/// carries none, and both effects degrade to no-ops there rather than crashing
+/// a dispatch.
+fn apply_event_effects(modifiers : Array[String], e : @render.DomEvent) -> Unit {
+  for m in modifiers {
+    match m {
+      "prevent" => if e.prevent_default is Some(EventEffect(f)) { f() }
+      "stop" => if e.stop_propagation is Some(EventEffect(f)) { f() }
+      _ => ()
+    }
+  }
 }
 
 ///|
@@ -108,6 +135,7 @@ fn run_handlers(
     if !modifiers_pass(e.name, h.modifiers, e) {
       continue
     }
+    apply_event_effects(h.modifiers, e)
     let name = match h.handler.handler {
       HandlerName(name~, ..) => name
       Method(m) => m

@@ -198,12 +198,13 @@ runtime, arguments that don't match the inferred shape land in
 
 `@on.<event>+<mod>+<mod>=...`
 
-Modifiers are **guards**: a failing one makes the handler a no-op. They are
-defined for two events only, and an unknown event/modifier pair passes through
-as if it were not there (`app/app.mbt:35-54`):
+Modifiers come in two kinds. A **guard** is a predicate: a failing one makes
+the handler a no-op. Guards are defined for two events only, and an unknown
+event/guard pair passes through as if it were not there (`app/app.mbt`,
+`modifiers_pass`):
 
-| Event | Modifiers |
-| ----- | --------- |
+| Event | Guard modifiers |
+| ----- | -------------- |
 | `keydown` | `+send` (Enter), `+cancel` (Escape), `+ctrl`, `+cmd`, `+meta`, `+alt` |
 | `click` | `+ctrl`, `+cmd`, `+meta`, `+alt` |
 
@@ -212,12 +213,33 @@ as if it were not there (`app/app.mbt:35-54`):
 <button @on.click+ctrl="soloOnly">ctrl-click</button>
 ```
 
-> **No effect modifiers.** The JS framework's `+prevent` and `+stop` have no
-> counterpart here, and a modifier the table does not list is silently ignored
-> rather than refused — so `@on.submit+prevent="save"` compiles, runs `save`, and
-> does **not** call `preventDefault`. Porting a view that relied on either, use a
-> form control that does not navigate (a `<button type="button">`) or restructure
-> so the default action is harmless.
+An **effect** is an action on the live event, run when its handler runs — after
+the guards have gated it, and per passing handler, because two handlers on one
+element can disagree about whether to prevent:
+
+- `+prevent` calls `preventDefault()` — a form submit that does not navigate,
+  a link that does not follow. The browser honors it only for a **cancelable**
+  event.
+- `+stop` calls `stopPropagation()` — the click that would otherwise reach an
+  outer component's delegated handler does not.
+
+```html
+<form @on.submit+prevent="save e.value">
+  <input :value=".draft" />
+  <button>save</button>
+</form>
+<nav @on.click+stop="pick @key"><a href="#a">a</a><a href="#b">b</a></nav>
+```
+
+> **What `+stop` stops here.** Events dispatch through ONE delegated listener
+> per app, on the mount — so by the time a handler runs, the event has already
+> bubbled to it, and the component's own handler still fires. What `+stop`
+> keeps in is everything ABOVE the mount: a host page's document listener, an
+> outer shell's delegated dispatch. Inside one app, a child cannot silence a
+> parent's `@on.` by stopping — route around it in state instead.
+
+Both effects need the live event object; a test's or harness's `DomEvent`
+carries none, and both degrade to no-ops there rather than crashing a dispatch.
 
 ## Web components & custom events
 

@@ -173,12 +173,20 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
     ctrl_or_cmd=event_ctrl_or_cmd_ffi(ev),
     meta=event_bool_ffi(ev, "metaKey"),
     read_path=event_path_reader(ev),
+    // The +prevent / +stop modifiers: closures over the LIVE event, so the
+    // app layer can act on it without holding a DOM object.
+    prevent_default=EventEffect(() => prevent_default_ffi(ev)),
+    stop_propagation=EventEffect(() => stop_propagation_ffi(ev)),
   )
 }
 
 ///|
 extern "js" fn prevent_default_ffi(e : @core.Any) -> Unit =
   #|(e) => e.preventDefault && e.preventDefault()
+
+///|
+extern "js" fn stop_propagation_ffi(e : @core.Any) -> Unit =
+  #|(e) => e.stopPropagation && e.stopPropagation()
 
 ///|
 extern "js" fn has_prop_ffi(o : @core.Any, name : String) -> Bool =
