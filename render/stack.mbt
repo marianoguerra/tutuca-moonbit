@@ -10,6 +10,7 @@ pub fn RenderStack::new(
   binds? : Map[String, @tutuca.Value] = Map([]),
   comps? : @component.Components,
   event? : DomEvent,
+  event_paths? : @eventpath.EventPathProfile = Open,
 ) -> RenderStack {
   let stack : RenderStack = {
     it,
@@ -20,6 +21,7 @@ pub fn RenderStack::new(
     comps,
     dyn_binds: None,
     event,
+    event_paths,
   }
   stack.push_provides()
 }
@@ -102,14 +104,19 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
 }
 
 ///|
-/// `e.<segments>`: the two-layer resolve, and NOT a name lookup.
+/// `e.<segments>`: the two-layer resolve, under this stack's profile, and NOT
+/// a name lookup.
 ///
 /// Deliberately not routed through `lookup_name`: an `e.` path names the event
 /// outright, so a bind cannot shadow it. That is the point of writing the root,
 /// and it is why the root is required.
+///
+/// The profile rides the root frame (`enter` spreads it forward like every
+/// other field), so a host that mounts with `Safe` holds every handler arg to
+/// the allowlist without anything at the call site changing.
 pub impl @tutuca.Stack for RenderStack with fn lookup_event_path(self, segments) {
   match self.event {
-    Some(e) => event_path(e, segments)
+    Some(e) => event_path(e, segments, profile=self.event_paths)
     None => Null
   }
 }

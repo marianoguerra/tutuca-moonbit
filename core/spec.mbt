@@ -81,10 +81,11 @@ pub(all) enum Val {
   /// a NAMESPACE and never a value, so there is no `Val`
   /// that means "the event" and nothing can accidentally pass one along.
   ///
-  /// What a path may traverse is `@eventpath.check_event_path`'s question, and
-  /// what its leaf converts to is the DOM property table's. Neither is asked
-  /// here: this is the parsed FORM, and a form that carried its own permission
-  /// check would be a second place for the rule to live.
+  /// What a path may traverse under the SAFE profile is
+  /// `@eventpath`'s question, and what its leaf converts to is the DOM
+  /// property table's. Neither is asked here: this is the parsed FORM, and a
+  /// form that carried its own permission check would be a second place for
+  /// the rule to live.
   EventPath(Array[String])
 } derive(Debug, Eq)
 

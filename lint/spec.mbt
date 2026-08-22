@@ -31,6 +31,13 @@ pub(all) enum LintCode {
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
+  /// An `e.<path>` handler argument traverses a step off the event-path
+  /// allowlist (`e.target.form.action`). A HINT for an author's own views —
+  /// the path resolves under the open profile — because the same step is
+  /// REFUSED for guest-supplied views: a dyncomp host running the safe
+  /// profile refuses the bundle at registration naming this step. See
+  /// `@eventpath.EventPathProfile`.
+  EventPathUnsafeStep
   /// A declared bound the field's type cannot carry — a `max-len` on a number,
   /// a `min`/`max` on text. Raised by the dyncomp host at load.
   InertConstraint

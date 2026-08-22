@@ -55,9 +55,15 @@ test "every computed accessor shadows, including the falsy ones" {
 test "a computed accessor is a whole path, not a first segment" {
   // `value` is a framework name and not a property of anything, so
   // `e.value.length` is not a read of a shorter accessor — it is a path, and
-  // it goes to layer 2 where `value` is not an allowlisted step.
+  // it goes to layer 2. There `value` is not a step on the safe profile's
+  // allowlist, so the two profiles disagree about it: Open (the default)
+  // resolves, Safe refuses.
   let e = evt_with_reader(value=Str("abcd"))
-  assert_eq(@render.event_path(e, ["value", "length"]), Null)
+  assert_eq(
+    @render.event_path(e, ["value", "length"]),
+    Str("layer2:value.length"),
+  )
+  assert_eq(@render.event_path(e, ["value", "length"], profile=Safe), Null)
 }
 
 ///|
@@ -79,10 +85,10 @@ test "layer 2 answers a path the allowlist permits" {
 }
 
 ///|
-test "a refused path never reaches the resolver" {
-  // The allowlist is checked HERE, before the call, so a backend's resolver
-  // only ever sees a walk that was already permitted — one place decides, and
-  // no backend can forget to ask.
+test "the default profile is Open, and it reaches the resolver" {
+  // Open is the default for native component authoring — the views are the
+  // author's own code, so any path resolves. The escape paths the safe
+  // profile refuses are exactly the ones this asserts DO reach the resolver.
   let asked : Array[String] = []
   let e = @render.DomEvent::new(
     name="click",
@@ -95,12 +101,43 @@ test "a refused path never reaches the resolver" {
     @render.event_path(e, [
       "target", "ownerDocument", "defaultView", "localStorage", "length",
     ]),
+    Str("REACHED"),
+  )
+  assert_eq(@render.event_path(e, ["target", "form", "action"]), Str("REACHED"))
+}
+
+///|
+test "a refused path never reaches the resolver under Safe" {
+  // The profile is checked HERE, before the call, so a backend's resolver
+  // only ever sees a walk that was already permitted — one place decides, and
+  // no backend can forget to ask. This is what a host rendering guest-supplied
+  // views runs; see `@eventpath.EventPathProfile`.
+  let asked : Array[String] = []
+  let e = @render.DomEvent::new(
+    name="click",
+    read_path=EventPathReader(segs => {
+      asked.push(segs.join("."))
+      Str("REACHED")
+    }),
+  )
+  assert_eq(
+    @render.event_path(
+      e,
+      ["target", "ownerDocument", "defaultView", "localStorage", "length"],
+      profile=Safe,
+    ),
     Null,
   )
-  assert_eq(@render.event_path(e, ["target", "form", "action"]), Null)
+  assert_eq(
+    @render.event_path(e, ["target", "form", "action"], profile=Safe),
+    Null,
+  )
   assert_eq(asked.length(), 0)
   // ...and a permitted one does reach it.
-  assert_eq(@render.event_path(e, ["target", "id"]), Str("REACHED"))
+  assert_eq(
+    @render.event_path(e, ["target", "id"], profile=Safe),
+    Str("REACHED"),
+  )
   assert_eq(asked, ["target.id"])
 }
 

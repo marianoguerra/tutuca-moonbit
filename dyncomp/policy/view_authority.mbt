@@ -384,3 +384,63 @@ fn Policy::check_untrusted_view_authority(
   visit_untrusted_view(where_, tree, out, self)
   out
 }
+
+///|
+/// Whether an `@on` argument's `e.<path>` may go where it says, under this
+/// policy's event-path profile.
+///
+/// The SAFE profile is the default here — in every tier, because views are
+/// data whoever shipped them, and an off-list traversal step is ambient
+/// authority no guest declared (SECURITY.md §9). A refusal names the step and
+/// its index, so a guest author is told "not allowed to go that far" rather
+/// than "wrong from the start", and points at the intent channel, which is
+/// the way to ask the host for what a path must not take.
+///
+/// This runs at REGISTRATION, over the same shadow parse `screen_view`
+/// lints: refusing here means a bundle that would silently read `Null` every
+/// dispatch never renders at all. The runtime resolver holds the SAME profile
+/// (the bridge hands it to its app), which is the second fence, not a
+/// disagreement waiting to happen.
+pub fn Policy::check_event_paths(
+  self : Policy,
+  where_ : String,
+  events : Array[@anode.NodeEvents],
+) -> Array[Refusal] {
+  if self.event_paths is Open {
+    return []
+  }
+  let out : Array[Refusal] = []
+  for ev in events {
+    for h in ev.handlers {
+      for arg in h.handler.args {
+        guard arg is EventPath(segments) else { continue }
+        guard @eventpath.EventPathProfile::allows(Safe, segments)
+          is BadStep(step~, index~) else {
+          continue
+        }
+        out.push(
+          refusal(
+            where_,
+            "this host's event-path policy refuses '\{step}' (at \{index}) in 'e." +
+            segments.join(".") +
+            "'; an event path may only go through target/currentTarget/relatedTarget/detail/dataset/dataTransfer — ask the host with an intent instead",
+          ),
+        )
+      }
+    }
+  }
+  out
+}
+
+///|
+/// The same policy, with guest-supplied views' event paths OPENED.
+///
+/// The deliberate counterpart to the safe default: a host that decides its
+/// page has no authority worth fencing — or that vouches for its bundles the
+/// way an author vouches for their own views — says so HERE rather than by
+/// editing the allowlist. Like every loosening in this file, it applies to
+/// loads, so bundles already registered keep the answer they were screened
+/// under.
+pub fn Policy::with_open_event_paths(self : Policy) -> Policy {
+  { ..self, event_paths: Open }
+}

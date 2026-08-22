@@ -232,24 +232,32 @@ test "an e. path in an argument slot parses and types" {
 }
 
 ///|
-test "a path off the allowlist is a build error, naming the step" {
-  assert_eq(
-    view_err(
-      "<button @on.click=\"go e.target.ownerDocument.defaultView.localStorage.length\">x</button>",
-    ),
-    "view \"main\": `@on.click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` is not a step an event path may go through. The steps that are: currentTarget, dataTransfer, dataset, detail, relatedTarget, target. Anything else leads out of the event and into the page; ask the host for it with an intent instead",
+test "a path off the allowlist is a hint naming the step, not an error" {
+  // These views are the author's own code: any path resolves under the open
+  // profile they run under, so the generator advises rather than gates. What
+  // the hint says is who WILL refuse the step — a host compiling
+  // guest-supplied views holds its policy's safe profile to this same list
+  // and turns it away at registration.
+  let hints = view_hints(
+    "<button @on.click=\"go e.target.ownerDocument.defaultView.localStorage.length\">x</button>",
   )
+  assert_eq(hints.length(), 1)
+  assert_eq(
+    hints[0],
+    "view main: `@on.click=\"… e.target.ownerDocument.defaultView.localStorage.length\"` — `ownerDocument` (at 1) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of currentTarget, dataTransfer, dataset, detail, relatedTarget, target",
+  )
+  // ...and nothing generates as an error for either escape path.
   assert_eq(
     view_err("<button @on.click=\"go e.target.form.action\">x</button>"),
-    "view \"main\": `@on.click=\"… e.target.form.action\"` — `form` is not a step an event path may go through. The steps that are: currentTarget, dataTransfer, dataset, detail, relatedTarget, target. Anything else leads out of the event and into the page; ask the host for it with an intent instead",
-  )
-  // ...and a permitted one generates.
-  assert_eq(view_err("<button @on.click=\"go e.target.value\">x</button>"), "")
-  assert_eq(
-    view_err("<button @on.click=\"go e.target.dataset.rowId\">x</button>"),
     "",
   )
-  assert_eq(view_err("<button @on.click=\"go e.detail.a.b.c\">x</button>"), "")
+  // A permitted one draws no hint at all.
+  assert_eq(view_hints("<button @on.click=\"go e.target.value\">x</button>"), [])
+  assert_eq(
+    view_hints("<button @on.click=\"go e.target.dataset.rowId\">x</button>"),
+    [],
+  )
+  assert_eq(view_hints("<button @on.click=\"go e.detail.a.b.c\">x</button>"), [])
 }
 
 ///|

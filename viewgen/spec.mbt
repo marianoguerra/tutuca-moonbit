@@ -114,13 +114,6 @@ pub suberror GenError {
   /// A constant `id` inside an `@each` body. The loop emits the body once per
   /// item, so the id is not unique the moment the sequence holds two.
   IdInLoop(view~ : String, id~ : String)
-  /// An `e.` path with a step the object-step allow-list does not carry.
-  ///
-  /// An ERROR, and it has to be: the path can never resolve, so reporting it
-  /// as a warning would leave a view reading `Null` forever. `step` is the
-  /// first one that leaves, which is the useful half — `e.target` is fine and
-  /// `e.target.ownerDocument` is where it went wrong.
-  BadEventPath(view~ : String, site~ : String, path~ : String, step~ : String)
   /// A view call site disagrees with the schema about what a message carries.
   ///
   /// The `receive` bucket holds a view's name and a parent's, so one name can

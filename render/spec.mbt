@@ -36,6 +36,12 @@ pub(all) struct RenderStack {
   /// (the InputEvent as the stack's ctx). Bare names that miss the binds
   /// chain resolve against it (value/key/isCtrl/…).
   event : DomEvent?
+  /// Which rule an `e.<path>` handler argument resolves under — see
+  /// `@eventpath.EventPathProfile`. Open (the default) for an app rendering
+  /// its own views; the dyncomp host hands its apps `Safe`, which is what
+  /// makes the resolver refuse past the allowlist even though nothing at the
+  /// call site did.
+  event_paths : @eventpath.EventPathProfile
 }
 
 ///|
@@ -58,7 +64,7 @@ pub(all) struct DomEvent {
   /// by the app while a drag is in flight; the `dragInfo` handler arg, and
   /// the three narrow ones read off it (`dragKey`/`dragValue`/`dragType`).
   drag_info : @tutuca.Value
-  /// Layer 2: read an ALREADY-ALLOWLISTED path off the live event.
+  /// Layer 2: read an ALREADY-PERMITTED path off the live event.
   ///
   /// A `DomEvent` is a snapshot of a few fixed fields, and an `e.` path can
   /// name anything the specifications give an event — so the glue that built
@@ -68,9 +74,9 @@ pub(all) struct DomEvent {
   /// resolve answers anyway.
   ///
   /// The ALLOWLIST IS NOT ITS JOB. `event_path` in `dom_event.mbt` checks the
-  /// path before calling this, so a resolver only ever sees a walk that was
-  /// already permitted — one place decides, and a backend cannot forget to
-  /// ask.
+  /// path under the caller's profile before calling this, so a resolver only
+  /// ever sees a walk that was already permitted — one place decides, and a
+  /// backend cannot forget to ask.
   read_path : EventPathReader?
 } derive(Debug)
 
@@ -105,12 +111,15 @@ declare pub fn DomEvent::new(
 ///|
 /// Root frame on the rendered value (publishes its provides when a registry
 /// is present). `event` attaches the DOM event whose handler args this stack
-/// will evaluate.
+/// will evaluate. `event_paths` says which rule an `e.<path>` argument
+/// resolves under — Open unless a host that renders guest-supplied views says
+/// otherwise.
 declare pub fn RenderStack::new(
   it : @tutuca.Value,
   binds? : Map[String, @tutuca.Value],
   comps? : @component.Components,
   event? : DomEvent,
+  event_paths? : @eventpath.EventPathProfile,
 ) -> RenderStack
 
 ///|

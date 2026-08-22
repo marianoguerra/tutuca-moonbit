@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Event paths are open by default; the allowlist is the safe profile.** An
+  `e.<path>` handler argument used to be refused at GENERATION time for every
+  traversed step not on `eventpath`'s six-entry allow-list (`BadEventPath`), and
+  answered `Null` at run time for the same. The two rules now answer different
+  questions, because an author's own views and guest-supplied ones are held to
+  different trusts:
+
+  - **Native component authoring is OPEN.** Any path resolves, in viewgen and
+    in the runtime resolver alike — a template is code its author could have
+    written in JS, so gating their reads was ceremony. An off-list step is now
+    reported as advice, twice over: a hint from `viewgen`'s events pass (the
+    `BadEventPath` generation error is gone), and an `EVENT_PATH_UNSAFE_STEP`
+    lint finding from `@lint.check_event_paths`, which `gen-views` prints with
+    the rest of them.
+  - **dyncomp hosts are SAFE, in every tier.** `Policy` carries
+    `event_paths : @eventpath.EventPathProfile` (`Safe` in all three
+    constructors; loosen deliberately with `with_open_event_paths`). It is
+    enforced at registration — `Policy::check_event_paths` refuses a bundle
+    whose views traverse an off-list step, naming step and index, where before
+    the bundle loaded and read `Null` forever — and again at dispatch: the
+    bridge hands the same profile to its app via the new
+    `App::set_event_paths`, so `RenderStack`'s resolver agrees with what
+    registration admitted.
+
+  The list itself, its data terminals, and its exact-list test are unchanged;
+  see `dyncomp/SECURITY.md` §9 for the profile split.
+
 ## [0.26.0] - 2026-08-21
 
 A component can be instantiated from data. The pieces were all here — `make`

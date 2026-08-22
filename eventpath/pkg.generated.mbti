@@ -37,6 +37,12 @@ pub(all) enum DomPropTy {
   PObj(String)
 } derive(Eq, @debug.Debug)
 
+pub(all) enum EventPathProfile {
+  Open
+  Safe
+} derive(Eq, @debug.Debug)
+pub fn EventPathProfile::allows(Self, Array[String]) -> EventPathVerdict
+
 pub(all) enum EventPathVerdict {
   PathOk
   BadStep(step~ : String, index~ : Int)

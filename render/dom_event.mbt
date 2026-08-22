@@ -122,17 +122,24 @@ fn is_computed_accessor(name : String) -> Bool {
 /// every one of the repository's `e.value` call sites and every form in it
 /// would stop working.
 ///
-/// **Layer 2 is the allowlisted walk**, and the allowlist is checked HERE.
-/// A backend's resolver only ever sees a path that was already permitted, so
-/// one place decides and no backend can forget to ask.
-pub fn event_path(e : DomEvent, segments : Array[String]) -> @tutuca.Value {
+/// **Layer 2 is the profiled walk**, and the profile is checked HERE. A
+/// backend's resolver only ever sees a path that was already permitted, so one
+/// place decides and no backend can forget to ask. The OPEN profile — the
+/// default, for an author's own views — lets any path through; the SAFE
+/// profile holds every traversed step to the allowlist and answers `Null`
+/// past it, exactly as every path was held before profiles existed.
+pub fn event_path(
+  e : DomEvent,
+  segments : Array[String],
+  profile? : @eventpath.EventPathProfile = Open,
+) -> @tutuca.Value {
   // Layer 1. Only a single segment can be a computed accessor: they are
   // framework names, not properties of anything, so `e.value.length` is not a
   // read of a shorter one.
   if segments.length() == 1 && is_computed_accessor(segments[0]) {
     return event_field(e, segments[0])
   }
-  guard @eventpath.check_event_path(segments) is PathOk else { return Null }
+  guard profile.allows(segments) is PathOk else { return Null }
   match e.read_path {
     Some(EventPathReader(read)) => read(segments)
     // No resolver: a test's event, or a backend that has none. A path that

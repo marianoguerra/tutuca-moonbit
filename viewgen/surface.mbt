@@ -444,11 +444,24 @@ fn check_event_arg(
   match val {
     EventPath(segments) => {
       let path = "e." + segments.join(".")
-      // BAD_EVENT_PATH — an ERROR, because the path can never resolve and a
-      // warning would leave a view reading `Null` forever.
-      match @eventpath.check_event_path(segments) {
-        BadStep(step~, ..) =>
-          raise BadEventPath(view=view_name, site~, path~, step~)
+      // OFF-LIST STEP — a HINT, not an error. These views are the author's
+      // own code: any path resolves at run time (the OPEN profile), and an
+      // author who wanted `e.target.form.action` could have written the same
+      // read in JS. What the list still governs is guest-supplied views, and
+      // THAT is where the step is refused — a dyncomp host holds its policy's
+      // `event_paths` profile to the allowlist and refuses the bundle at
+      // registration, naming this same step. So the generator advises rather
+      // than gates: it names the step, the six that survive the safe profile,
+      // and who will refuse it.
+      //
+      // The same finding exists as a lint (`EventPathUnsafeStep`) for callers
+      // that report through findings instead of a generation run.
+      match @eventpath.EventPathProfile::allows(Safe, segments) {
+        BadStep(step~, index~) =>
+          hints.push(
+            "view \{view_name}: `\{site}=\"… \{path}\"` — `\{step}` (at \{index}) is off the event-path allowlist. It resolves here, but a host compiling guest-supplied views refuses it: every step through a host object must be one of " +
+            @eventpath.event_object_steps.join(", "),
+          )
         PathOk => ()
       }
       // UNKNOWN_EVENT_PROP — a HINT. `e.target.someVendorThing` may be

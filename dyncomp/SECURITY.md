@@ -718,10 +718,11 @@ written `e.<path>`, and two rules bound what a path can be.
 document, never a host object. A leaf that is not representable is `Null`, so
 `e.target` on its own is `Null`.
 
-**Rule 2: every step through a host object is on an allow-list — not only the
-first.** This is the one that is easy to get wrong, and an earlier draft of the
-design got it wrong: it allowlisted the ROOT segment and let the path run free
-below it. One line shows why that does not hold.
+**Rule 2: under the SAFE event-path profile, every step through a host object
+is on an allow-list — not only the first.** This is the one that is easy to get
+wrong, and an earlier draft of the design got it wrong: it allowlisted the ROOT
+segment and let the path run free below it. One line shows why that does not
+hold.
 
 ```
 e.target.ownerDocument.defaultView.localStorage.length
@@ -730,6 +731,26 @@ e.target.ownerDocument.defaultView.localStorage.length
 `target` is a permitted root, every step after it is an ordinary property read,
 and the leaf is a **number** — so it converts cleanly under rule 1, and a view
 template has just read the window.
+
+### The profile, and who runs which
+
+The allow-list is one of two PROFILES (`@eventpath.EventPathProfile`). `Open`
+lets any path resolve; it is what an app's own views run, because those are
+their author's code and the author could have written the same read in JS — for
+them the generator only reports an off-list step as an `EVENT_PATH_UNSAFE_STEP`
+hint. `Safe` holds every traversed step to the list below, and **it is what
+this host runs, in every tier**: views are data here whoever shipped them.
+`Policy` carries the answer on `event_paths` (loosen deliberately with
+`with_open_event_paths`), and it is enforced TWICE, by agreement:
+
+1. **At registration.** `screen_view`'s shadow parse registers the view's
+   events, and `Policy::check_event_paths` refuses the bundle over an off-list
+   path, naming the step and its index — a guest whose component would have
+   read `Null` on every dispatch never renders at all.
+2. **At dispatch.** The bridge hands the same profile to its app
+   (`set_app` → `App::set_event_paths`), so the runtime resolver answers
+   `Null` past the allowlist even if some other path in — the second fence,
+   not a second opinion.
 
 ### The list, and where it lives
 
@@ -766,7 +787,8 @@ escape paths asserting each is refused at the right step.
 No allowlisted step lands on either, so a path through one has no typed
 continuation — a second reason the `localStorage` line above is refused, after
 this list's first. Two tests assert those absences, so neither can drift into
-being an accident.
+being an accident. (Under `Open` the fence is gone with the gate: an open host's
+own views can read the window, which is the point of opening.)
 
 ### What a component does when it needs more
 
@@ -810,3 +832,10 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
   will fail; make the diff that changes it carry the argument, and add an
   escape-path case for whatever the new step's neighbours are. This is the one
   allow-list here that no specification can check for you.
+- **Loosening `Policy.event_paths`** (or adding a tier constructor): views are
+  data at every tier, which is why all three constructors default to `Safe`. A
+  host that opens its page does so with `with_open_event_paths`, and the
+  registration refusal (`check_event_paths`) and the runtime resolver
+  (`set_app` → `App::set_event_paths`) read the SAME field — a change to one
+  is a change to both by construction, which is what keeps them from
+  disagreeing.

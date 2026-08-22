@@ -65,13 +65,15 @@ fn modifiers_pass(
 /// gate each matched handler on its modifiers, evaluate its parsed args
 /// against the rebuilt stack CARRYING the event (so `value`/`key`/`isCtrl`
 /// resolve), push through the Input channel, and drain. Returns false when
-/// reconstruction found no handler.
+/// reconstruction found no handler. `event_paths` is the app's answer to what
+/// an `e.<path>` argument may read; see `App::set_event_paths`.
 fn[N : @vdom.DomWalk] dispatch_event(
   tx : @transactor.Transactor,
   node : N,
   e : @render.DomEvent,
   root_node : N,
   comps : @component.Components,
+  event_paths : @eventpath.EventPathProfile,
 ) -> Bool {
   guard @render.from_node_and_event_name(node, e.name, root_node, comps)
     is Some(ed) else {
@@ -80,7 +82,7 @@ fn[N : @vdom.DomWalk] dispatch_event(
   if ed.handlers.is_empty() {
     return false
   }
-  run_handlers(tx, ed, e, comps)
+  run_handlers(tx, ed, e, comps, event_paths)
   true
 }
 
@@ -93,8 +95,14 @@ fn run_handlers(
   ed : @render.EventDispatch,
   e : @render.DomEvent,
   comps : @component.Components,
+  event_paths : @eventpath.EventPathProfile,
 ) -> Unit {
-  let root_stack = @render.RenderStack::new(tx.root, comps~, event=e)
+  let root_stack = @render.RenderStack::new(
+    tx.root,
+    comps~,
+    event=e,
+    event_paths~,
+  )
   let arg_stack = @render.build_stack(ed.path.to_transaction_path(), root_stack)
   for h in ed.handlers {
     if !modifiers_pass(e.name, h.modifiers, e) {
@@ -131,6 +139,7 @@ pub fn[N : @vdom.DomWalk] dispatch_dom_event(
   event_name : String,
   root_node : N,
   comps : @component.Components,
+  event_paths? : @eventpath.EventPathProfile = Open,
 ) -> Bool {
   dispatch_event(
     tx,
@@ -138,5 +147,6 @@ pub fn[N : @vdom.DomWalk] dispatch_dom_event(
     @render.DomEvent::new(name=event_name),
     root_node,
     comps,
+    event_paths,
   )
 }

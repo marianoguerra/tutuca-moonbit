@@ -127,9 +127,10 @@ fn js_value(v : @core.Any) -> @tutuca.Value {
 /// — `js_value` answers that for anything it cannot read as a scalar or as a
 /// JSON-able payload.
 ///
-/// **The allowlist is not checked here.** `@render.event_path` checks it before
-/// this is ever called, so one place decides and this backend cannot forget to
-/// ask. Do not add a second check: a second one is a second place to disagree.
+/// **The allowlist is not checked here.** `@render.event_path` checks the
+/// caller's profile before this is ever called, so one place decides and this
+/// backend cannot forget to ask. Do not add a second check: a second one is a
+/// second place to disagree.
 fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
   @render.EventPathReader(segments => {
     let mut cur = ev

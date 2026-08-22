@@ -68,6 +68,12 @@ fn view_diagnostics(
       for f in @lint.check_collected(collector) {
         out.push(diagnostic_line(where_, f))
       }
+      // Event paths: an off-list step resolves under the open profile these
+      // views run under, so it advises rather than refuses — see
+      // `@lint.check_event_paths`.
+      for f in @lint.check_event_paths(px.events) {
+        out.push(diagnostic_line(where_, f))
+      }
     }
   }
   out

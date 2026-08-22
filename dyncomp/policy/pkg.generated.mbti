@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/anode/sanitize/css",
+  "marianoguerra/tutuca/eventpath",
   "moonbitlang/core/debug",
 }
 
@@ -77,10 +78,12 @@ pub(all) struct Policy {
   external_origins : Array[String]
   config : Map[String, ConfigBinding]
   trusts_manifest_config : Bool
+  event_paths : @eventpath.EventPathProfile
 }
 pub fn Policy::allowing_external_urls(Self, Array[String]) -> Self raise InvalidOrigin
 pub fn Policy::allows_raw_markup(Self) -> Bool
 pub fn Policy::check_capabilities(Self, Array[CapabilityReq]) -> Array[Refusal]
+pub fn Policy::check_event_paths(Self, String, Array[@anode.NodeEvents]) -> Array[Refusal]
 pub fn Policy::check_quotas(Self, BundleFacts) -> Array[Refusal]
 pub fn Policy::check_style(Self, String, String) -> Array[Refusal]
 pub fn Policy::check_view(Self, String, @anode.ANode) -> Array[Refusal]
@@ -92,6 +95,7 @@ pub fn Policy::untrusted() -> Self
 pub fn Policy::view_config(Self) -> Map[String, String]
 pub fn Policy::with_config(Self, Array[(String, ConfigBinding)]) -> Self raise InvalidConfig
 pub fn Policy::with_css(Self, @css.CssPolicy) -> Self
+pub fn Policy::with_open_event_paths(Self) -> Self
 pub fn Policy::with_sanitizer(Self, @sanitize.SanitizerConfig) -> Self raise @sanitize.InvalidConfig
 
 pub(all) struct Quotas {

@@ -152,9 +152,9 @@ fn event_ctrl_or_cmd(ev : @core.Any) -> Bool {
 /// twin rather than shared code: one reaches the DOM through mizchi/js's
 /// `@core.Any` and a small `tdom` FFI, the other through `extern "js"`.
 ///
-/// **The allowlist is not checked here.** `@render.event_path` checks it before
-/// this is ever called, so one place decides and this backend cannot forget to
-/// ask.
+/// **The allowlist is not checked here.** `@render.event_path` checks the
+/// caller's profile before this is ever called, so one place decides and this
+/// backend cannot forget to ask.
 fn event_path_reader(ev : @core.Any) -> @render.EventPathReader {
   @render.EventPathReader(segments => {
     let mut cur = ev

@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/eventpath",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
   "moonbitlang/core/debug",
@@ -15,7 +16,7 @@ pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
 
-pub fn event_path(DomEvent, Array[String]) -> @core.Value
+pub fn event_path(DomEvent, Array[String], profile? : @eventpath.EventPathProfile) -> @core.Value
 
 pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int, stop_on_no_event? : Bool) -> EventDispatch?
 
@@ -83,9 +84,10 @@ pub(all) struct RenderStack {
   comps : @component.Components?
   dyn_binds : @component.DynBinds?
   event : DomEvent?
+  event_paths : @eventpath.EventPathProfile
 }
 pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool) -> Self
-pub fn RenderStack::new(@core.Value, binds? : Map[String, @core.Value], comps? : @component.Components, event? : DomEvent) -> Self
+pub fn RenderStack::new(@core.Value, binds? : Map[String, @core.Value], comps? : @component.Components, event? : DomEvent, event_paths? : @eventpath.EventPathProfile) -> Self
 pub fn RenderStack::push_view_name(Self, String) -> Self
 pub impl @core.Stack for RenderStack
 

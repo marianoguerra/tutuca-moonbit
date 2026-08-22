@@ -577,6 +577,12 @@ pub fn set_app(
   // which is what keeps the two from being set from different values — and
   // there is no call that could take the chain away again.
   app.set_sanitizer(policy.sanitizer)
+  // The same answer, for what an `@on` argument's `e.<path>` may read. The
+  // registration screening (`screen_view` → `check_event_paths`) already
+  // refused off-list paths in the views it accepted; this makes the runtime
+  // resolver agree with that decision — the second fence, not a second
+  // opinion.
+  app.set_event_paths(policy.event_paths)
   @dyncomp.install_gc(app.transactor)
 }
 

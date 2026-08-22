@@ -122,3 +122,26 @@ test "an author-data terminal does not retroactively free the steps above it" {
 test "the empty path traverses nothing" {
   assert_eq(@eventpath.check_event_path([]), PathOk)
 }
+
+///|
+/// The Open profile is the default for native authoring: the checker permits
+/// every path, including every one the safe profile refuses. The exact-list
+/// test above stays about `Safe`; these pin that loosening is a PROFILE
+/// decision and not a list edit.
+test "the open profile permits any path" {
+  fn open_ok(segments : Array[String]) -> Unit raise {
+    let verdict = @eventpath.EventPathProfile::allows(@eventpath.Open, segments)
+    assert_eq(verdict, @eventpath.PathOk)
+  }
+
+  // The escape paths, each of which Safe refuses below its named step:
+  open_ok(["target", "ownerDocument", "defaultView", "localStorage", "length"])
+  open_ok(["target", "parentElement", "id"])
+  open_ok(["target", "form", "action"])
+  open_ok(["view", "location", "href"])
+  open_ok(["srcElement", "value"])
+  // And the ordinary ones, which both profiles allow:
+  open_ok(["deltaY"])
+  open_ok(["target", "value"])
+  open_ok(["detail", "a", "b", "c"])
+}

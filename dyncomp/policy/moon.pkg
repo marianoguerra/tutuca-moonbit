@@ -15,6 +15,10 @@ import {
   // presentation attributes are read against — see `view_authority.mbt`
   "marianoguerra/tutuca/anode/sanitize/css" @safecss,
   "marianoguerra/tutuca/core" @tutuca,
+  // The event-path profiles: which rule an `@on` argument's `e.<path>`
+  // resolves under, and the allowlist the safe one holds steps to — see
+  // `view_authority.mbt`'s `check_event_paths`.
+  "marianoguerra/tutuca/eventpath",
   "moonbitlang/core/debug",
   "moonbitlang/core/string",
 }

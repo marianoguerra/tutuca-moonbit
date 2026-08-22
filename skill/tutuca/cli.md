@@ -178,7 +178,6 @@ unknown-handler errors above:
 | `NotIterable` | `@each` needs a collection, but the expression is a scalar |
 | `NotRenderable` | `<x render>` needs a component, but the field is not a slot |
 | `MethodInEventPosition` | a `$name` in an `@on` position; write it bare |
-| `BadEventPath` | an `e.<path>` argument traverses a step off the allowlist (`e.target.form.action`); the message names the step and the six that are allowed |
 
 **Lint findings** are printed one per line, as
 `CODE (level) <Component>/<view>: message` — for example
@@ -187,12 +186,16 @@ Levels are `error`, `warning` and `hint`. The linter is real and it runs **insid
 `gen-views`**; what does not exist is a separate `tutuca lint` command to invoke
 it with.
 
-The codes fall into three families:
+The codes fall into four families:
 
 - **Directive rules** — `UNKNOWN_DIRECTIVE`, `UNKNOWN_X_OP`, `UNKNOWN_X_ATTR`,
   `BAD_VALUE`, `UNSUPPORTED_EXPR_SYNTAX`, `BINDING_MEMBER_TOO_DEEP`,
   `X_OP_IGNORES_CHILDREN`.
 - **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`.
+- **Event paths** — `EVENT_PATH_UNSAFE_STEP`: an `e.<path>` handler argument
+  traverses a step off the allowlist (`e.target.form.action`). It still
+  resolves in your own views; the hint exists because a host compiling
+  guest-supplied views refuses that bundle over the same step.
 - **Structural HTML**, from a WHATWG tokenizer pass over the view text:
   `HTML_TAG_NOT_ALLOWED_IN_PARENT`, `HTML_TEXT_NOT_ALLOWED_IN_PARENT`,
   `HTML_VOID_ELEMENT_HAS_CLOSE_TAG`, `HTML_UNEXPECTED_END_TAG`,

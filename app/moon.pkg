@@ -16,6 +16,10 @@ import {
   // be "here is my filter", and a filter is opaque enough that the API could
   // only offer replacement. See `App::set_sanitizer`.
   "marianoguerra/tutuca/anode/sanitize",
+  // The event-path profiles `set_event_paths` takes and every dispatch hands
+  // to its rebuilt stacks. A leaf package, so the app reaches it without a
+  // DOM abstraction — see `eventpath/moon.pkg`.
+  "marianoguerra/tutuca/eventpath",
 }
 
 import {

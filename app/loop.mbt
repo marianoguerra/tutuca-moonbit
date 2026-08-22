@@ -31,6 +31,11 @@ pub struct App[N] {
   /// that is the only thing a host can say about the built-in rules — see
   /// `set_sanitizer` for why the seam is a policy and not a filter.
   mut sanitizer : @sanitize.Sanitizer
+  /// Which rule an `e.<path>` handler argument resolves under — see
+  /// `@eventpath.EventPathProfile`. Open by default: an app's views are its
+  /// author's own code. A host rendering guest-supplied views (the dyncomp
+  /// bridge does) sets `Safe`, and every dispatch's rebuilt stacks carry it.
+  mut event_paths : @eventpath.EventPathProfile
   /// Rules a host added, run after the built-in chain in the order they were
   /// added. Append-only: nothing can be taken out, and nothing can get in FRONT
   /// of the built-in chain.
@@ -90,6 +95,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     // this call constructs the filter unconditionally and nothing about it is
     // dead — there is no escape hatch, and the reason is in `set_sanitizer`.
     sanitizer: @sanitize.Sanitizer::default(),
+    event_paths: Open,
     extra_filters: [],
     filter: @mdfilter.default_filter(),
     root_view: view,
@@ -293,6 +299,27 @@ pub fn[N] App::set_sanitizer(
 }
 
 ///|
+/// Which rule an `e.<path>` handler argument resolves under, from the next
+/// dispatch on.
+///
+/// Open is what an app starts with and what an author of their own views
+/// wants: the template is code they wrote, and the same read one line out in
+/// JS was never anybody's to gate. `Safe` holds every traversed step of every
+/// handler-arg path to `@eventpath`'s allowlist — a path that goes past it
+/// answers `Null`, exactly as ALL paths did before profiles existed. It is
+/// what a host that renders guest-supplied views sets; the dyncomp bridge
+/// applies its policy's answer in `set_app`, so a page never has to.
+///
+/// Like `set_sanitizer`, this is not retroactive: it governs dispatches, and
+/// an event already in flight finishes under the profile it started with.
+pub fn[N] App::set_event_paths(
+  self : App[N],
+  event_paths : @eventpath.EventPathProfile,
+) -> Unit {
+  self.event_paths = event_paths
+}
+
+///|
 /// Add a rule of the host's own, run after everything built in.
 ///
 /// The only shape an addition can take, and the reason the whole API is
@@ -378,11 +405,18 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
     // dragstart just captured: dispatch with the FRESH dragInfo
     let e3 : @render.DomEvent = { ..e2, drag_info: self.drag_info_value() }
     if !ed.handlers.is_empty() {
-      run_handlers(self.transactor, ed, e3, self.scope.comps)
+      run_handlers(self.transactor, ed, e3, self.scope.comps, self.event_paths)
     }
     true
   } else {
-    dispatch_event(self.transactor, node, e2, self.root_node, self.scope.comps)
+    dispatch_event(
+      self.transactor,
+      node,
+      e2,
+      self.root_node,
+      self.scope.comps,
+      self.event_paths,
+    )
   }
 }
 

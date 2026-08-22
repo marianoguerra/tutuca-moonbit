@@ -504,10 +504,13 @@ fn screen_view(
     line(f)
   }
   // What the host will RENDER is the policy's decision, taken over this same
-  // throwaway tree.
+  // throwaway tree — and what its `@on` arguments may READ is the same
+  // decision, over the events that parse registered. An off-list event path
+  // refuses here, at registration, rather than answering Null every dispatch.
   if tree is Some(t) {
     refuse_if_any(policy.check_view(where_, t))
   }
+  refuse_if_any(policy.check_event_paths(where_, px.events))
 }
 
 ///|

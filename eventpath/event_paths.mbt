@@ -1,11 +1,25 @@
-// Which object-valued steps an `e.<path>` may traverse.
+// Which object-valued steps an `e.<path>` may traverse — under the SAFE
+// profile.
 //
-// **This is the one list in the repository that cannot be generated**, and that
-// makes it the only one that can grow by accident. Every other allow-list here
-// is fetched from a specification at a pinned commit — the sanitizer baseline,
-// the DOM property table beside this file — because a specification says what
-// EXISTS. None of them says what a view template should be allowed to reach,
-// which is a judgment about authority, so this one is argued instead.
+// **The profile question comes first, and its default changed.** An
+// `EventPathProfile` says which rule governs a path: `Open` lets any path
+// resolve and is the default everywhere a view is the AUTHOR'S OWN code — a
+// native component's views compile through `viewgen`, which reports an off-list
+// step as a lint HINT (`lint`'s EventPathUnsafeStep finding), not an error.
+// Someone writing their own template could have written the same read in JS,
+// so holding their paths to this list is ceremony, not safety. `Safe` holds
+// every traversed step to the list below; it is what a host that compiles
+// guest-supplied views runs (`dyncomp/policy` carries it on `Policy`, refuses
+// an off-list path at registration, and hands the same profile to the app so
+// the runtime resolver enforces it too).
+//
+// This file answers the SAFE half only, and that makes it the one list in the
+// repository that cannot be generated, which in turn makes it the only one
+// that can grow by accident. Every other allow-list here is fetched from a
+// specification at a pinned commit — the sanitizer baseline, the DOM property
+// table beside this file — because a specification says what EXISTS. None of
+// them says what a guest's view template should be allowed to reach, which is
+// a judgment about authority, so this one is argued instead.
 //
 // It is the second half of a pair, and the two answer different questions.
 // `dom_props_gen.mbt` answers *does this interface have this property, and what
@@ -28,6 +42,23 @@
 // (`dyncomp/DESIGN.md`, principle 2), so anything reachable here is ambient
 // authority no guest declared — which is what principle 4 of that document
 // forbids. See `dyncomp/SECURITY.md` §9.
+
+///|
+/// Which rule governs an `e.<path>`.
+///
+/// `Open` is the default for native component authoring: the views are the
+/// author's own code, so any path resolves and an off-list step is reported as
+/// a lint hint rather than refused. `Safe` is what a host that compiles
+/// guest-supplied views runs — every traversed step is held to
+/// `event_object_steps`, at registration by `dyncomp/policy` and again at run
+/// time by the resolver that carries this profile.
+pub(all) enum EventPathProfile {
+  /// Any path may resolve; the list below only ADVISES.
+  Open
+  /// Every traversed step must be on the allowlist, with `dataset`/`detail`
+  /// free below it. Guest-supplied views are held to this.
+  Safe
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The object-valued steps a path may traverse.
@@ -106,7 +137,23 @@ pub(all) enum EventPathVerdict {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// Whether every traversed step of `e.<segments>` is allowed.
+/// Whether `e.<segments>` is permitted under this profile.
+///
+/// `Open` permits everything — the caller asked the wrong question, but
+/// cheaply. `Safe` is `check_event_path`.
+pub fn EventPathProfile::allows(
+  self : EventPathProfile,
+  segments : Array[String],
+) -> EventPathVerdict {
+  match self {
+    Open => PathOk
+    Safe => check_event_path(segments)
+  }
+}
+
+///|
+/// Whether every traversed step of `e.<segments>` is allowed — the SAFE
+/// profile's walk.
 ///
 /// The LAST segment is the leaf and is not a traversal — it is converted to a
 /// `Value` and the path ends. Everything before it goes through a host object,

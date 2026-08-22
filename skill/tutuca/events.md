@@ -126,12 +126,15 @@ Two of them — `dataset` and `detail` — are *terminals*: once a path reaches
 author data there is nothing left to escalate into, so everything below them is
 free. `e.detail.a.b.c` works with no framework release.
 
-Anything else is a **generation error** (`BadEventPath`) naming the step:
-`ownerDocument`, `parentNode`, `parentElement`, `children`, `form`, `view`,
-`window`. Each leads out of the event and into the page, and
-`e.target.ownerDocument.defaultView.localStorage.length` is a view template
-reading the host. A view is data the host compiles — including one a dyncomp
-guest supplied — so a permitted root is not a permitted path.
+Anything else resolves, but steps off the **allowlist** and is reported as a
+hint (`EVENT_PATH_UNSAFE_STEP`) naming the step: `ownerDocument`, `parentNode`,
+`parentElement`, `children`, `form`, `view`, `window`. Each leads out of the
+event and into the page. Your own views may read them — you could have written
+the same read in JS — but **a permitted root is not a permitted path** for
+guest-supplied ones: a view is data the host compiles, including one a dyncomp
+guest supplied, so a host running the safe event-path profile refuses such a
+bundle at registration, naming this same step. If a guest component needs
+something a path must not take, it dispatches an intent and the host answers.
 
 Two more rules worth holding:
 

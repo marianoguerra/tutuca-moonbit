@@ -910,3 +910,75 @@ test "a config origin does not widen anything else" {
     ),
   )
 }
+
+///|
+/// The events a parse registered, for the event-path checks below. The same
+/// shadow-parse shape `screen_view` uses: the tree and the events come from
+/// one ParseContext, so a test checks what a host would actually see.
+fn parsed_events(html : String) -> Array[@anode.NodeEvents] {
+  let px = @anode.ParseContext::new()
+  let _ = @anode.ANode::parse(html, px)
+  px.events
+}
+
+///|
+/// The safe profile is the default in EVERY tier constructor, because views
+/// are data here whoever shipped them (SECURITY.md §9): an off-list traversal
+/// step is ambient authority no guest declared.
+test "an off-list event path refuses the bundle at registration" {
+  debug_inspect(Policy::untrusted().event_paths, content="Safe")
+  debug_inspect(Policy::granted().event_paths, content="Safe")
+  debug_inspect(Policy::system().event_paths, content="Safe")
+  let p = Policy::system()
+  // The line SECURITY.md §9 exists for: target is fine, ownerDocument is
+  // where it leaves, and the leaf is a number that converts cleanly.
+  debug_inspect(
+    shown(
+      p.check_event_paths(
+        "Guest/main",
+        parsed_events(
+          "<button @on.click=\"go e.target.ownerDocument.defaultView.localStorage.length\">x</button>",
+        ),
+      ),
+    ),
+    content=(
+      #|["Guest/main: this host's event-path policy refuses 'ownerDocument' (at 1) in 'e.target.ownerDocument.defaultView.localStorage.length'; an event path may only go through target/currentTarget/relatedTarget/detail/dataset/dataTransfer — ask the host with an intent instead"]
+    ),
+  )
+}
+
+///|
+test "paths the safe profile permits refuse nothing, at any tier" {
+  fn clean(p : Policy) -> Unit raise {
+    debug_inspect(
+      p.check_event_paths(
+        "Guest/main",
+        parsed_events(
+          "<input @on.input=\"set e.value\"><button @on.click=\"pick e.target.dataset.rowId\">r</button><button @on.click=\"zoom e.detail.a.b.c\">z</button>",
+        ),
+      ),
+      content="[]",
+    )
+  }
+
+  clean(Policy::untrusted())
+  clean(Policy::granted())
+  clean(Policy::system())
+}
+
+///|
+test "a host may open its page's event paths deliberately" {
+  let open = Policy::untrusted().with_open_event_paths()
+  debug_inspect(open.event_paths, content="Open")
+  debug_inspect(
+    shown(
+      open.check_event_paths(
+        "Guest/main",
+        parsed_events(
+          "<button @on.click=\"go e.target.form.action\">x</button>",
+        ),
+      ),
+    ),
+    content="[]",
+  )
+}

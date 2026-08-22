@@ -21,6 +21,7 @@ pub fn lint_code_name(code : LintCode) -> String {
     MaybeAddAtPrefix => "MAYBE_ADD_AT_PREFIX"
     MaybeDropAtPrefix => "MAYBE_DROP_AT_PREFIX"
     UndeclaredMethod => "UNDECLARED_METHOD"
+    EventPathUnsafeStep => "EVENT_PATH_UNSAFE_STEP"
     InertConstraint => "INERT_CONSTRAINT"
     HtmlTagNameHasUppercase => "HTML_TAG_NAME_HAS_UPPERCASE"
     HtmlSvgTagWillLowercase => "HTML_SVG_TAG_WILL_LOWERCASE"
@@ -202,6 +203,12 @@ pub fn finding_message(f : Finding) -> String {
     }
     BadValue => bad_value_message(info) + tags
     UnsupportedExprSyntax => unsupported_expr_message(info) + tags
+    EventPathUnsafeStep => {
+      let path = info_or(info, "path", "?")
+      let step = info_or(info, "step", "?")
+      "Event path '\{path}' traverses '\{step}', which is off the event-path allowlist — it resolves in an app's own views, but a host compiling guest-supplied views refuses the bundle over it; keep paths to target/currentTarget/relatedTarget/detail/dataset/dataTransfer and ask the host for anything beyond" +
+      tags
+    }
     BindingMemberTooDeep =>
       "Binding member read \{value} goes more than one level deep — only one member is allowed (like '@value.title')" +
       tags

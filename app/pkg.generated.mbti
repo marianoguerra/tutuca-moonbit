@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode/sanitize",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/eventpath",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/vdom",
@@ -12,7 +13,7 @@ import {
 }
 
 // Values
-pub fn[N : @vdom.DomWalk] dispatch_dom_event(@transactor.Transactor, N, String, N, @component.Components) -> Bool
+pub fn[N : @vdom.DomWalk] dispatch_dom_event(@transactor.Transactor, N, String, N, @component.Components, event_paths? : @eventpath.EventPathProfile) -> Bool
 
 // Errors
 
@@ -29,6 +30,7 @@ pub struct App[N] {
   mut cur_drag_over : N?
   render_cache : @render.RenderCache
   mut sanitizer : @sanitize.Sanitizer
+  mut event_paths : @eventpath.EventPathProfile
   extra_filters : Array[&@filter.VdomFilter]
   mut filter : &@filter.VdomFilter
   root_view : String
@@ -42,6 +44,7 @@ pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdo
 pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @core.Value, N, @vdom.RenderOpts[N], view? : String) -> Self[N] raise
 pub fn[N] App::root_value(Self[N]) -> @core.Value
 pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value], max_turns? : Int) -> @transactor.SettleResult
+pub fn[N] App::set_event_paths(Self[N], @eventpath.EventPathProfile) -> Unit
 pub fn[N] App::set_sanitizer(Self[N], @sanitize.Sanitizer) -> Unit
 pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
 pub fn[N] App::take_filter_reports(Self[N]) -> Array[@filter.Dropped]

@@ -98,6 +98,16 @@ pub(all) struct Policy {
   /// otherwise, because the alternative lets a manifest grant itself an
   /// origin by writing one.
   trusts_manifest_config : Bool
+  /// Which rule an `@on` argument's `e.<path>` resolves under — see
+  /// `@eventpath.EventPathProfile`. SAFE in every tier constructor: views are
+  /// data here whoever shipped them, so an off-list traversal step refuses
+  /// the bundle at registration (`check_event_paths`) AND answers `Null` at
+  /// dispatch — the bridge hands the same answer to its app via
+  /// `App::set_event_paths`, so nothing enforces this twice by accident.
+  ///
+  /// A host that wants to open its own page up loosens this deliberately,
+  /// with `with_open_event_paths`.
+  event_paths : @eventpath.EventPathProfile
 }
 
 ///|
@@ -124,6 +134,7 @@ pub fn Policy::untrusted() -> Policy {
     external_origins: [],
     config: Map([]),
     trusts_manifest_config: false,
+    event_paths: Safe,
   }
 }
 
@@ -147,6 +158,7 @@ pub fn Policy::granted() -> Policy {
     external_origins: [],
     config: Map([]),
     trusts_manifest_config: false,
+    event_paths: Safe,
   }
 }
 
@@ -162,6 +174,7 @@ pub fn Policy::system() -> Policy {
     external_origins: [],
     config: Map([]),
     trusts_manifest_config: false,
+    event_paths: Safe,
   }
 }
 
