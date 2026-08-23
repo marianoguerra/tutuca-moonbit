@@ -43,6 +43,17 @@
 // `intent dyn` rather than being handed a callback. `nested-state` is the
 // other half of what `new` is for — a list of plain RECORDS, where `new Label`
 // puts the type's zero at `@cur` and the statements under it fill it in.
+//
+// Every card fills the sections its structured view can edit WHERE THEY MEAN
+// SOMETHING: a `<script type="tutuca/test">` block drives the Tests pane, a
+// `<script type="tutuca/init">` block feeds the Examples pane. Two rules keep
+// those blocks honest. A card whose init handler overwrites a field reaches a
+// different value of it by DRIVING (`drive`) rather than by seeding, because
+// mounting seeds the fixture's value first and dispatches init second; and a
+// SCENE dispatches nothing, so such a card opens its scenes with
+// `{ "send": "init" }`. Cards whose whole point is having no script block
+// (tabs, attributes, modifiers) stay scriptless — a test does not undo a
+// lesson.
 
 export const EXAMPLES = [
   {
@@ -88,6 +99,38 @@ export const EXAMPLES = [
     "doc": "The same state under the card's other view. Which view to show it as is the one thing a value cannot say about itself.",
     "view": "row",
     "value": { "label": "Compact", "count": 7 }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "pressing remembers where it landed": {
+    "steps": [
+      { "type": "input.input-sm", "value": "Counter" },
+      { "expect": "text", "at": "h2.card-title", "is": "Counter: 0" },
+      { "click": "button.join-item" },
+      { "click": "button.join-item" },
+      { "expect": "text", "at": "h2.card-title", "is": "Counter: 2" },
+      { "expect": "texts", "at": "li.badge-neutral", "is": ["1", "2"] }
+    ]
+  },
+  "reset zeroes the count and keeps the history": {
+    "steps": [
+      { "type": "input.input-sm", "value": "Counter" },
+      { "click": "button.join-item" },
+      { "click": "button.join-item" },
+      { "click": "button.btn-ghost" },
+      { "expect": "text", "at": "h2.card-title", "is": "Counter: 0" },
+      { "expect": "state", "at": ".history", "is": [1, 2] }
+    ]
+  },
+  "renaming relabels the summary": {
+    "steps": [
+      { "type": "input.input-sm", "value": "Renamed" },
+      { "expect": "state", "at": ".label", "is": "Renamed" },
+      { "expect": "text", "at": "h2.card-title", "is": "Renamed: 0" }
+    ]
   }
 }
 </script>
@@ -211,6 +254,35 @@ export const EXAMPLES = [
   receive requestRemove { intent dyn 'removeItem' .id }
 
   compute label { if .done { $'{.text} (done)' } else { .text } }
+</script>
+
+<script type="tutuca/init">
+{
+  "empty": {
+    "doc": "A list nobody has used yet — what a visitor meets.",
+    "default": true,
+    "value": {}
+  },
+  "two rows": {
+    "doc": "A list that has been used, arrived at by using it: a row is a CHILD built at runtime with new, and a child is an instance rather than data — so a fixture reaches this state by DOING what a person would have done rather than by writing the items into value.",
+    "value": {},
+    "drive": [
+      { "type": "input.draft", "value": "write the tests" },
+      { "click": "button.add" },
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.add" }
+    ]
+  },
+  "one being edited": {
+    "doc": "Mid-edit, which no amount of seeded state says better than the double-click that gets there.",
+    "value": {},
+    "drive": [
+      { "type": "input.draft", "value": "review the diff" },
+      { "click": "button.add" },
+      { "fire": "span.label", "event": "dblclick" }
+    ]
+  }
+}
 </script>
 
 <script type="tutuca/test">
@@ -337,7 +409,45 @@ export const EXAMPLES = [
   compute caption { $'{(len .names)} name(s)' }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "the whole list": {
+    "doc": "An empty query keeps every row — the init handler fills the names, and the fixture only has to say what the box holds.",
+    "default": true,
+    "value": {}
+  },
+  "narrowed to gr": {
+    "doc": "The same four names behind a query: the fixture seeds the query and the init handler still fills the list, because mounting dispatches init after the value is seeded.",
+    "value": { "query": "gr" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "typing narrows the list": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "count", "at": "li.badge-ghost", "is": 4 },
+      { "expect": "text", "at": "span.badge-neutral", "is": "4 name(s)" },
+      { "type": "input.input-sm", "value": "gr" },
+      { "expect": "texts", "at": "li.badge-ghost", "is": ["Grace Hopper"] },
+      { "expect": "text", "at": "span.badge-neutral", "is": "4 name(s)" },
+      { "type": "input.input-sm", "value": "" },
+      { "expect": "count", "at": "li.badge-ghost", "is": 4 }
+    ]
+  },
+  "matching is case-folded on both sides": {
+    "steps": [
+      { "send": "init" },
+      { "type": "input.input-sm", "value": "HOPPER" },
+      { "expect": "texts", "at": "li.badge-ghost", "is": ["Grace Hopper"] }
+    ]
+  }
+}
+</script>
+
+<template id="Filter">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <div class="flex gap-2 items-center">
@@ -382,7 +492,37 @@ export const EXAMPLES = [
   receive five { send 'bump' 5 }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "quiet start": {
+    "doc": "No headline and an empty tally — what the schema's zero looks like.",
+    "default": true,
+    "value": {}
+  },
+  "a few notes in": {
+    "doc": "The same card after some traffic, without driving it there.",
+    "value": { "status": "hello", "seen": 3 }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "a note updates the headline and the tally": {
+    "steps": [
+      { "expect": "text", "at": "h2.card-title", "is": "" },
+      { "click": "button.join-item" },
+      { "expect": "text", "at": "h2.card-title", "is": "shouted" },
+      { "expect": "state", "at": ".seen", "is": 1 },
+      { "click": "button.btn-primary" },
+      { "expect": "state", "at": ".seen", "is": 6 },
+      { "expect": "text", "at": "span.badge-primary", "is": "6" }
+    ]
+  }
+}
+</script>
+
+<template id="Inbox">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <h2 class="card-title"><x text=".status"></x></h2>
@@ -505,7 +645,66 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "fresh": {
+    "doc": "Nothing asked yet. The page answers rows LATE, so the preview shows its own asking state for half a beat before the rows land.",
+    "default": true,
+    "value": {}
+  },
+  "a feed that travels with the card": {
+    "doc": "A fixture may carry its own intent ANSWERS, which beats both the clock and whatever the page registers — so this card loads filled wherever it runs, page fixtures or none.",
+    "value": {},
+    "intents": {
+      "rows": {
+        "ok": [
+          { "title": "Tutuca", "description": "A SPA framework that fits in your head" },
+          { "title": "MoonBit", "description": "The language this port is written in" }
+        ]
+      }
+    }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the answer fills the list": {
+    "intents": {
+      "rows": {
+        "ok": [
+          { "title": "Tutuca", "description": "A SPA framework that fits in your head" },
+          { "title": "MoonBit", "description": "The language this port is written in" }
+        ]
+      }
+    },
+    "steps": [
+      { "send": "reload" },
+      { "expect": "count", "at": "li.rounded", "is": 2 },
+      { "expect": "texts", "at": "p.font-bold", "is": ["Tutuca", "MoonBit"] },
+      { "expect": "count", "at": "div.alert-error", "is": 0 }
+    ]
+  },
+  "echo hands the payload back": {
+    "intents": { "echo": { "ok": 41 } },
+    "steps": [
+      { "type": "input.input-sm", "value": "hello" },
+      { "key": "input.input-sm", "is": "Enter" },
+      { "expect": "text", "at": "p.badge", "is": "41" }
+    ]
+  },
+  "an unanswered name is silence, not a crash": {
+    "steps": [
+      { "expect": "count", "at": "div.alert-error", "is": 0 },
+      { "click": "button.btn-error" },
+      { "expect": "count", "at": "div.alert-error", "is": 0 },
+      { "expect": "text", "at": "p.opacity-60", "is": "asking the host…" }
+    ]
+  }
+}
+</script>
+
+<template id="Feed">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <p class="opacity-60 italic" @show=".busy">asking the host…</p>
@@ -562,7 +761,50 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "fresh": {
+    "doc": "Red, where every cycle starts.",
+    "default": true,
+    "value": {}
+  },
+  "mid-cycle": {
+    "doc": "One press in.",
+    "value": { "lightIndex": 1 }
+  },
+  "green means go": {
+    "doc": "The last colour before the cycle wraps.",
+    "value": { "lightIndex": 2 }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "it cycles and wraps": {
+    "steps": [
+      { "expect": "text", "at": "code", "is": "red" },
+      { "click": "button.btn-primary" },
+      { "expect": "text", "at": "code", "is": "orange" },
+      { "click": "button.btn-primary" },
+      { "expect": "text", "at": "code", "is": "green" },
+      { "expect": "text", "at": "span", "is": "GO" },
+      { "click": "button.btn-primary" },
+      { "expect": "text", "at": "code", "is": "red" }
+    ]
+  },
+  "the advice follows the light": {
+    "steps": [
+      { "expect": "text", "at": "span", "is": "STOP" },
+      { "expect": "count", "at": "span", "is": 1 },
+      { "click": "button.btn-primary" },
+      { "expect": "text", "at": "span", "is": "SLOW DOWN" }
+    ]
+  }
+}
+</script>
+
+<template id="TrafficLight">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-2">
       <button class="btn btn-primary" @on.click="nextLight">Next light</button>
@@ -586,7 +828,38 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "overview open": {
+    "doc": "The schema's zero is the empty string, under which NO panel shows — a fixture is how a card starts somewhere a visitor can read.",
+    "default": true,
+    "value": { "tab": "overview" }
+  },
+  "pricing open": {
+    "doc": "The same component, one field apart.",
+    "value": { "tab": "pricing" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "a tab switches the panel": {
+    "steps": [
+      { "expect": "count", "at": "div.p-3", "is": 0 },
+      { "click": "button.tab", "nth": 1 },
+      { "expect": "text", "at": "h4", "is": "Features" },
+      { "expect": "count", "at": "div.p-3", "is": 1 },
+      { "expect": "attr", "at": "button.tab", "nth": 1, "name": "class", "is": "tab tab-active" },
+      { "expect": "attr", "at": "button.tab", "nth": 0, "name": "class", "is": "tab" },
+      { "click": "button.tab", "nth": 2 },
+      { "expect": "text", "at": "h4", "is": "Pricing" }
+    ]
+  }
+}
+</script>
+
+<template id="TabbedUI">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <div role="tablist" class="tabs tabs-border">
@@ -635,7 +908,46 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "closed": {
+    "doc": "The panel absent and the button making its offer.",
+    "default": true,
+    "value": {}
+  },
+  "open with history": {
+    "doc": "Open, with a count that survived the closing it never had — both fields in one fixture.",
+    "value": { "isOpen": true, "count": 4 }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the panel is only there while it is open": {
+    "steps": [
+      { "expect": "text", "at": "button.btn-primary", "is": "Show details" },
+      { "expect": "count", "at": "div.p-3", "is": 0 },
+      { "click": "button.btn-primary" },
+      { "expect": "text", "at": "button.btn-primary", "is": "Hide details" },
+      { "expect": "count", "at": "div.p-3", "is": 1 }
+    ]
+  },
+  "the counter keeps counting across a close": {
+    "steps": [
+      { "click": "button.btn-primary" },
+      { "click": "button.btn-sm" },
+      { "click": "button.btn-sm" },
+      { "expect": "state", "at": ".count", "is": 2 },
+      { "click": "button.btn-primary" },
+      { "expect": "count", "at": "div.p-3", "is": 0 },
+      { "expect": "state", "at": ".count", "is": 2 }
+    ]
+  }
+}
+</script>
+
+<template id="ShowHide">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-2">
       <button class="btn btn-primary" @on.click="toggleIsOpen" @text="$label"></button>
@@ -661,7 +973,37 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "blank": {
+    "doc": "Every field at its zero — the inputs and the readouts agree, because both are the same state.",
+    "default": true,
+    "value": {}
+  },
+  "half filled": {
+    "doc": "One fixture showing all three bindings at once.",
+    "value": { "str": "tutuca", "num": 5, "bool": true }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "every binding writes straight through": {
+    "steps": [
+      { "type": "input.input-sm", "nth": 0, "value": "hey" },
+      { "expect": "state", "at": ".str", "is": "hey" },
+      { "expect": "attr", "at": "input.input-sm", "nth": 0, "name": "title", "is": "Content is hey" },
+      { "type": "input.input-sm", "nth": 1, "value": "7" },
+      { "expect": "state", "at": ".num", "is": 7 },
+      { "check": "input.checkbox", "is": true },
+      { "expect": "state", "at": ".bool", "is": true }
+    ]
+  }
+}
+</script>
+
+<template id="AttributeBinding">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input class="input input-sm" :value=".str" @on.input="setStr e.value"
@@ -692,7 +1034,44 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "blank": {
+    "doc": "Nothing typed and nothing sent.",
+    "default": true,
+    "value": {}
+  },
+  "a sent search": {
+    "doc": "The paragraph a +send keydown reveals — seeded, since Any is the one field a fixture may fill with anything.",
+    "value": { "lastSentSearch": "shoes" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "enter sends what the box holds": {
+    "steps": [
+      { "expect": "count", "at": "span.sent", "is": 0 },
+      { "type": "input.input-sm", "value": "shoes" },
+      { "key": "input.input-sm", "is": "Enter", "value": "shoes" },
+      { "expect": "text", "at": "span.sent", "is": "shoes" },
+      { "expect": "state", "at": ".query", "is": "shoes" }
+    ]
+  },
+  "escape clears the box and leaves the sent value alone": {
+    "steps": [
+      { "type": "input.input-sm", "value": "shoes" },
+      { "key": "input.input-sm", "is": "Enter", "value": "shoes" },
+      { "key": "input.input-sm", "is": "Escape" },
+      { "expect": "state", "at": ".query", "is": "" },
+      { "expect": "state", "at": ".lastSentSearch", "is": "shoes" }
+    ]
+  }
+}
+</script>
+
+<template id="EventModifiers">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <!-- Three handlers, no script block: every one of them is a mutator the
@@ -704,7 +1083,7 @@ export const EXAMPLES = [
         @on.keydown+cancel="resetQuery"
         placeholder="Search (Enter to send, Esc to clear)">
       <p @show="truthy? .lastSentSearch">
-        Search: "<span @text=".lastSentSearch"></span>"
+        Search: "<span class="sent" @text=".lastSentSearch"></span>"
       </p>
     </div>
   </section>
@@ -751,7 +1130,21 @@ export const EXAMPLES = [
   compute sizeLabel { $'{(int .size)} bytes' }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "nothing yet": {
+    "doc": "The empty state the card is honest about.",
+    "default": true,
+    "value": {}
+  },
+  "a picked file": {
+    "doc": "The table filled in — what pick(f) copied off the file. A file input itself cannot be driven headless, so this is also how a scene starts when it wants the table.",
+    "value": { "name": "photo.png", "size": 20480, "type": "image/png", "hasFile": true }
+  }
+}
+</script>
+
+<template id="FilePicker">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <label class="flex flex-col gap-1">
@@ -792,14 +1185,44 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "fresh": {
+    "doc": "Hello, as the init handler spells it — and the two bindings its enricher derives.",
+    "default": true,
+    "value": {}
+  },
+  "typed longer": {
+    "doc": "Reached by DOING rather than seeded: the init handler would overwrite a value's text, so a fixture that wants different text drives the box.",
+    "value": {},
+    "drive": [{ "type": "input.input-sm", "value": "tutuca" }]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the subtree reads what the enricher wrote": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "text", "at": "span.len", "is": "5" },
+      { "expect": "text", "at": "span.upper", "is": "HELLO" },
+      { "type": "input.input-sm", "value": "tutuca" },
+      { "expect": "text", "at": "span.len", "is": "6" },
+      { "expect": "text", "at": "span.upper", "is": "TUTUCA" }
+    ]
+  }
+}
+</script>
+
+<template id="RenderWithScope">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input class="input input-sm" :value=".text" @on.input="setText e.value">
       <div @enrich-with="info">
         <p>Text: <span @text=".text"></span></p>
-        <p>Len: <span @text="@len"></span></p>
-        <p>Upper: <span @text="@upper"></span></p>
+        <p>Len: <span class="len" @text="@len"></span></p>
+        <p>Upper: <span class="upper" @text="@upper"></span></p>
       </div>
     </div>
   </section>
@@ -836,7 +1259,36 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "all four": {
+    "doc": "The init handler fills the list; the empty query keeps every row.",
+    "default": true,
+    "value": {}
+  },
+  "narrowed to ga": {
+    "doc": "The same four behind a query — the fixture seeds only what the person would have typed.",
+    "value": { "query": "ga" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the loop asks the block twice per row": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "count", "at": "li", "is": 4 },
+      { "expect": "text", "at": "li", "nth": 0, "contains": "alpha (5 characters)" },
+      { "type": "input.input-sm", "value": "ga" },
+      { "expect": "count", "at": "li", "is": 1 },
+      { "expect": "text", "at": "li", "contains": "gamma (5 characters)" }
+    ]
+  }
+}
+</script>
+
+<template id="ListFilterEnrich">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
@@ -871,7 +1323,20 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/test">
+{
+  "each row binds a key and a value": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "count", "at": "li", "is": 3 },
+      { "expect": "text", "at": "span.badge-neutral", "nth": 1, "is": "1" },
+      { "expect": "text", "at": "li", "nth": 2, "contains": "third" }
+    ]
+  }
+}
+</script>
+
+<template id="Iteration">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-2">
       <!-- The two names a loop binds, and nothing else in the file. -->
@@ -905,7 +1370,37 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "starter document": {
+    "doc": "What the init handler types, already rendered on the right.",
+    "default": true,
+    "value": {}
+  },
+  "a different document": {
+    "doc": "Reached by typing rather than seeded, for the usual reason: init would overwrite the value.",
+    "value": {},
+    "drive": [{ "type": "textarea", "value": "# Cheatsheet\\n\\n- heads\\n- lists\\n" }]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "typing renders markdown live": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "html", "contains": "<h1>" },
+      { "expect": "html", "contains": "<li>of things</li>" },
+      { "type": "textarea", "value": "# Typed\\n\\n- one" },
+      { "expect": "html", "contains": "<h1>Typed</h1>" },
+      { "expect": "html", "contains": "<li>one</li>" }
+    ]
+  }
+}
+</script>
+
+<template id="MdPreview">
   <div class="flex gap-3 items-stretch">
     <textarea class="textarea flex-1 font-mono text-xs" spellcheck="false"
       :value=".source" @on.input="setSource e.value"></textarea>
@@ -944,7 +1439,21 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/test">
+{
+  "what each spelling renders": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "state", "at": ".num", "is": 42 },
+      { "expect": "text", "at": "span", "nth": 3, "is": "42" },
+      { "expect": "text", "at": "span", "nth": 6, "is": "" },
+      { "expect": "text", "at": "span", "nth": 8, "is": "HELLO" }
+    ]
+  }
+}
+</script>
+
+<template id="TextDirective">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
       <span>String:</span> <span @text=".str"></span>
@@ -974,7 +1483,12 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<!-- No \`tutuca/test\` block, and not as an oversight: this card's one directive
+     is @dangerouslysetinnerhtml, which a compiled card may not carry at all —
+     the policy refuses raw markup at every tier, because what it renders cannot
+     be checked before it renders. The card checks and compiles; mounting the
+     bundle is where it stops. -->
+<template id="DangerSetInnerHtml">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <!-- The escape hatch, named so nobody reaches for it by accident. -->
@@ -994,7 +1508,36 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "disabled": {
+    "doc": "The ghost half of both conditional attributes.",
+    "default": true,
+    "value": {}
+  },
+  "enabled": {
+    "doc": "The success half — one field, two attributes following it.",
+    "value": { "isActive": true }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "both attributes follow the flag": {
+    "steps": [
+      { "expect": "attr", "at": "button", "name": "class", "is": "btn btn-ghost" },
+      { "expect": "attr", "at": "button", "name": "title", "is": "Click to enable" },
+      { "click": "button" },
+      { "expect": "attr", "at": "button", "name": "class", "is": "btn btn-success" },
+      { "expect": "attr", "at": "button", "name": "title", "is": "Click to disable" },
+      { "expect": "text", "at": "span", "is": "Enabled" }
+    ]
+  }
+}
+</script>
+
+<template id="ConditionalAttributes">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body">
       <!-- Two @if on one element, so every @then/@else after the first names
@@ -1025,7 +1568,36 @@ export const EXAMPLES = [
   compute label { if .loud { 'quieten it' } else { 'make it loud' } }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "quiet": {
+    "doc": "The scoped rule alone.",
+    "default": true,
+    "value": {}
+  },
+  "loud": {
+    "doc": "The modifier class on, and the whole literal switched with it.",
+    "value": { "loud": true }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the class list switches as a whole literal": {
+    "steps": [
+      { "expect": "attr", "at": "p.mine", "name": "class", "is": "mine" },
+      { "expect": "text", "at": "button.btn-sm", "is": "make it loud" },
+      { "click": "button.btn-sm" },
+      { "expect": "attr", "at": "p.mine", "name": "class", "is": "mine loud" },
+      { "expect": "attr", "at": "p.common", "name": "class", "is": "common" },
+      { "expect": "attr", "at": "p.styled-global", "name": "class", "is": "styled-global" }
+    ]
+  }
+}
+</script>
+
+<template id="Styled">
   <!-- A <style> inside a template belongs to THAT view: the runtime scopes it
        to the component's own nodes, so \`.mine\` here reaches neither the page
        around the card nor another card on it. -->
@@ -1093,7 +1665,38 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "five swatches": {
+    "doc": "Red selected, as the init handler leaves it.",
+    "default": true,
+    "value": {}
+  },
+  "blue picked": {
+    "doc": "The ring moved, without moving it.",
+    "value": { "color": "#3b82f6" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "picking a swatch moves the ring": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "attr", "at": "circle", "nth": 0, "name": "stroke", "is": "#111827" },
+      { "expect": "attr", "at": "circle", "nth": 1, "name": "stroke", "is": "transparent" },
+      { "click": "circle", "nth": 3 },
+      { "expect": "state", "at": ".color", "is": "#3b82f6" },
+      { "expect": "attr", "at": "rect", "name": "fill", "is": "#3b82f6" },
+      { "expect": "attr", "at": "circle", "nth": 0, "name": "stroke", "is": "transparent" },
+      { "expect": "attr", "at": "circle", "nth": 3, "name": "stroke", "is": "#111827" }
+    ]
+  }
+}
+</script>
+
+<template id="SwatchPicker">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-2">
       <svg viewBox="0 0 380 130" role="img">
@@ -1143,7 +1746,42 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "two distinct real roots": {
+    "doc": "What the init handler seeds: 1, −3, 2 — discriminant 1.",
+    "default": true,
+    "value": {}
+  },
+  "repeated root": {
+    "doc": "Reached by typing, since the init handler would overwrite seeded coefficients: b = −2, c = 1 lands the discriminant on zero.",
+    "value": {},
+    "drive": [
+      { "type": "input.input-sm", "nth": 1, "value": "-2" },
+      { "type": "input.input-sm", "nth": 2, "value": "1" }
+    ]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "the verdict follows the coefficients": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "text", "at": "p.verdict", "contains": "1 — two distinct real roots" },
+      { "type": "input.input-sm", "nth": 1, "value": "2" },
+      { "expect": "state", "at": ".b", "is": 2 },
+      { "expect": "text", "at": "p.verdict", "contains": "-4" },
+      { "expect": "text", "at": "p.verdict", "contains": "no real roots" },
+      { "type": "input.input-sm", "nth": 2, "value": "1" },
+      { "expect": "text", "at": "p.verdict", "contains": "one repeated real root" }
+    ]
+  }
+}
+</script>
+
+<template id="Quadratic">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <div class="flex gap-3 text-sm">
@@ -1164,7 +1802,7 @@ export const EXAMPLES = [
         <mn @text=".b"></mn><mo>&#x2062;</mo><mi>x</mi><mo>+</mo>
         <mn @text=".c"></mn><mo>=</mo><mn>0</mn>
       </math>
-      <p>Discriminant: <x text="$discriminant"></x> — <x text="$classify"></x></p>
+      <p class="verdict">Discriminant: <x text="$discriminant"></x> — <x text="$classify"></x></p>
     </div>
   </div>
 </template>
@@ -1220,12 +1858,61 @@ export const EXAMPLES = [
   }
 </script>
 
+<script type="tutuca/init">
+{
+  "seeded by init": {
+    "doc": "Two labels, as the init handler builds them with new.",
+    "default": true,
+    "value": {}
+  },
+  "one added by doing": {
+    "doc": "The third label, arrived at by typing and pressing — a record built at runtime is reached by running what builds it.",
+    "value": {},
+    "drive": [
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.btn-primary" }
+    ]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "init builds two records, one already done": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "count", "at": "li", "is": 2 },
+      { "expect": "text", "at": "button.btn-xs", "nth": 1, "is": "write a handler" },
+      { "expect": "attr", "at": "button.btn-xs", "nth": 1, "name": "class", "is": "btn btn-xs btn-success" }
+    ]
+  },
+  "toggling writes through the nested place": {
+    "steps": [
+      { "send": "init" },
+      { "click": "button.btn-xs", "nth": 1 },
+      { "expect": "state", "at": ".labels[1].done", "is": false },
+      { "expect": "attr", "at": "button.btn-xs", "nth": 1, "name": "class", "is": "btn btn-xs" }
+    ]
+  },
+  "adding appends another record": {
+    "steps": [
+      { "send": "init" },
+      { "type": "input.draft", "value": "ship it" },
+      { "click": "button.btn-primary" },
+      { "expect": "state", "at": ".draft", "is": "" },
+      { "expect": "count", "at": "li", "is": 3 },
+      { "expect": "text", "at": "button.btn-xs", "nth": 2, "is": "ship it" }
+    ]
+  }
+}
+</script>
+
 <template>
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <h2 class="card-title" @text=".title"></h2>
       <div class="flex gap-2 items-center">
-        <input class="input input-sm w-full" placeholder="add a label"
+        <input class="input input-sm w-full draft" placeholder="add a label"
                :value=".draft" @on.input="setDraft e.value"
                @on.keydown+send="addLabel">
         <button class="btn btn-sm btn-primary" @on.click="addLabel">add</button>
@@ -1314,7 +2001,63 @@ export const EXAMPLES = [
   receive overbook { .taken = (.capacity + 1) }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "early doors": {
+    "doc": "Two seated, three waiting — what the init handler seeds.",
+    "default": true,
+    "value": {}
+  },
+  "one from full": {
+    "doc": "Seat everybody, queue one more: the state rush declines from. Reached by driving, since init would overwrite seeded numbers.",
+    "value": {},
+    "drive": [{ "send": "seatAll" }, { "send": "queue" }]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "seat moves one across and says nothing": {
+    "steps": [
+      { "send": "init" },
+      { "send": "seat" },
+      { "expect": "state", "at": ".taken", "is": 3 },
+      { "expect": "state", "at": ".waiting", "is": 2 },
+      { "expect": "log", "is": [] }
+    ]
+  },
+  "a precondition turns the handler away before it moves anybody": {
+    "steps": [
+      { "send": "init" },
+      { "send": "seatAll" },
+      { "expect": "state", "at": ".taken", "is": 5 },
+      { "send": "seat" },
+      { "expect": "state", "at": ".taken", "is": 5 },
+      { "expect": "log", "contains": "its precondition" }
+    ]
+  },
+  "rush abandons whole when more than one waits": {
+    "steps": [
+      { "send": "init" },
+      { "send": "rush" },
+      { "expect": "state", "at": ".taken", "is": 2 },
+      { "expect": "state", "at": ".waiting", "is": 3 },
+      { "expect": "log", "contains": "was abandoned" }
+    ]
+  },
+  "the invariant refuses overbook without being asked": {
+    "steps": [
+      { "send": "init" },
+      { "send": "overbook" },
+      { "expect": "state", "at": ".taken", "is": 2 },
+      { "expect": "log", "contains": "broke the invariant" }
+    ]
+  }
+}
+</script>
+
+<template id="Seats">
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <div class="stats bg-base-100">
@@ -1392,6 +2135,36 @@ export const EXAMPLES = [
   receive init { .status = 'warning' }
 
   receive inc { .count += 1 }
+</script>
+
+<script type="tutuca/init">
+{
+  "fresh": {
+    "doc": "Count at zero and the Live badge reading the status the init handler set.",
+    "default": true,
+    "value": {}
+  },
+  "pressed once": {
+    "doc": "The one field a macro card of this shape owns — macros themselves hold nothing.",
+    "value": { "count": 1 }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "a macro expands into the component around it": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "text", "at": "span.badge-neutral", "is": "New" },
+      { "expect": "attr", "at": "span.badge", "nth": 1, "name": "class", "is": "badge badge-success" },
+      { "expect": "attr", "at": "span.badge", "nth": 2, "name": "class", "is": "badge badge-warning" },
+      { "click": "button.btn-primary" },
+      { "expect": "state", "at": ".count", "is": 1 },
+      { "expect": "text", "at": "p", "nth": 2, "is": "Count: 1" }
+    ]
+  }
+}
 </script>
 
 <!-- A macro is pure template expansion: no state, no handlers, no lifecycle.
@@ -1499,7 +2272,68 @@ export const EXAMPLES = [
   }
 </script>
 
-<template>
+<script type="tutuca/init">
+{
+  "five rows": {
+    "doc": "What the init handler pushes, in order.",
+    "default": true,
+    "value": {}
+  },
+  "filtered to the t rows": {
+    "doc": "Two of five visible. The hidden keys are what a drop still addresses, which is the scene below.",
+    "value": { "query": "the t" }
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "a drop moves the row after the target": {
+    "steps": [
+      { "send": "init" },
+      { "drag": "li.cursor-grab", "from": 0, "to": 2 },
+      { "expect": "state", "at": ".items", "is": [
+        "read the twos",
+        "review the threes",
+        "write the ones",
+        "ship the fours",
+        "plan the fives"
+      ] },
+      { "expect": "text", "at": "li.cursor-grab", "nth": 2, "contains": "write the ones" }
+    ]
+  },
+  "a drop names list places, not screen positions": {
+    "steps": [
+      { "send": "init" },
+      { "type": "input.input-sm", "value": "the t" },
+      { "expect": "count", "at": "li.cursor-grab", "is": 2 },
+      { "drag": "li.cursor-grab", "from": 0, "to": 1 },
+      { "expect": "state", "at": ".items", "is": [
+        "write the ones",
+        "review the threes",
+        "read the twos",
+        "ship the fours",
+        "plan the fives"
+      ] }
+    ]
+  },
+  "dropping a row on itself changes nothing": {
+    "steps": [
+      { "send": "init" },
+      { "drag": "li.cursor-grab", "from": 1, "to": 1 },
+      { "expect": "state", "at": ".items", "is": [
+        "write the ones",
+        "read the twos",
+        "review the threes",
+        "ship the fours",
+        "plan the fives"
+      ] }
+    ]
+  }
+}
+</script>
+
+<template id="Reorder">
   <section class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input type="search" class="input input-sm" :value=".query"
