@@ -6,7 +6,7 @@
     <title>tutuca-mb: a MoonBit SPA framework</title>
     <meta
       name="description"
-      content="tutuca-mb is the MoonBit port of Tutuca — a batteries-included component framework that runs on js, wasm-gc, and native. Edit the examples below and run them live."
+      content="tutuca-mb is a component framework in MoonBit. It runs on js, wasm-gc, and native. Edit the examples on this page and run them."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
@@ -38,9 +38,10 @@
     </nav>
     <header>
       <h1>tutuca-mb</h1>
-      <h2>The SPA framework that fits in your head — now in MoonBit</h2>
+      <h2>A small SPA framework, written in MoonBit</h2>
       <p class="hero-tagline">
-        HTML-first components. Batteries included. One codebase, three backends.
+        You write components as HTML. The framework supplies the rest. One
+        codebase, three backends.
       </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#try-it">Try it live ▸</a>
@@ -48,7 +49,7 @@
         <a class="btn" href="https://github.com/marianoguerra/tutuca-moonbit">GitHub ★</a>
       </div>
       <ul class="hero-highlights">
-        <li>Batteries included</li>
+        <li>All parts included</li>
         <li>Runs on js, wasm-gc &amp; native</li>
         <li>HTML-first</li>
         <li>Reactive value language</li>
@@ -76,32 +77,35 @@ let counter = counter_component()</code></pre>
       <section id="try-it">
         <h2>Try It</h2>
         <p>
-          Every example on this page is a real MoonBit program. Edit it and press
-          <kbd>Ctrl/Cmd + Enter</kbd> (or the Run button) — the MoonBit compiler
-          runs <em>in your browser</em>, links against the tutuca-mb library, and
-          mounts the result live. The first run loads the compiler, so give it a
-          moment; every example after that compiles in a couple of seconds.
+          Every example on this page is a real MoonBit program. Edit an example.
+          Then press <kbd>Ctrl/Cmd + Enter</kbd>, or press the Run button. The
+          MoonBit compiler runs <em>in your browser</em>. It links your program
+          against the tutuca-mb library and mounts the result. The first run
+          loads the compiler. This takes some time. Later examples compile in a
+          few seconds.
         </p>
         <p>
-          Each editor has three tabs. <strong>Component</strong> is the MoonBit
-          the example is written in; <strong>View</strong> is the
-          <code>.html</code> its views live in; <strong>Generated</strong> is
-          what <code>tutuca gen-views</code> makes of that view — the compiled
-          tree plus a typed message enum, compiled as part of the same package.
-          Edit the View tab and watch Generated follow: add an
-          <code>@on</code> handler there and answer it in the same file's
-          <code>tutuca/script</code> block — or leave it unanswered, and the
-          next run fails until the component's <code>match</code> handles it.
+          Each editor has three tabs. <strong>Component</strong> shows the
+          MoonBit code of the example. <strong>View</strong> shows the
+          <code>.html</code> file with its views. <strong>Generated</strong>
+          shows what <code>tutuca gen-views</code> makes from that view: the
+          compiled view tree and a typed message enum, compiled as part of the
+          same package. You can edit the View tab. The Generated tab then
+          changes also. Add an <code>@on</code> handler in the view and answer
+          it in the same file's <code>tutuca/script</code> block. If you do not
+          answer it there, the next run fails until the component's
+          <code>match</code> handles it.
         </p>
         <h3>Hello, Counter</h3>
         <mb-playground
           src="./site/examples/counter.mbt"
           view="./site/examples/counter.html"
         ></mb-playground>
-        <h3>Toggle — no logic needed</h3>
+        <h3>Toggle — no update code</h3>
         <p>
-          A boolean field gets a generated <code>$toggleOpen</code> mutator for
-          free; <code>@show</code> reads it. No hand-written update code.
+          The schema declares a boolean field. The generator makes a
+          <code>$toggleOpen</code> mutator for it. <code>@show</code> reads the
+          field. No hand-written update code is necessary.
         </p>
         <mb-playground
           src="./site/examples/toggle.mbt"
@@ -110,57 +114,59 @@ let counter = counter_component()</code></pre>
 
         <h3>A card — the same file, with no compiler</h3>
         <p>
-          Every example above compiles MoonBit in your browser. This one does
-          not: a <strong>card</strong> is the same view file — schema, script,
-          templates — <em>interpreted</em>, so it parses and mounts in
-          milliseconds against a runtime that is already on this page. Edit it
-          and it re-mounts as you type; there is nothing to run.
+          The examples above compile MoonBit in your browser. This example does
+          not. A <strong>card</strong> is the same view file: schema, script,
+          and templates. The page <em>interprets</em> the card, and the runtime
+          is already on this page. Thus the card parses and mounts in
+          milliseconds. Edit the card. It mounts again while you type. There is
+          no run step.
         </p>
         <p>
-          What you give up is the part the compiler was for. A card cannot name
-          a MoonBit value, so there are no imports, no closures, and no child
-          components built at run time — and every handler has to fit the
-          language in the <code>tutuca/script</code> block. What it keeps is
-          everything else, including the checking: the diagnostics below the
-          preview are the same ones <code>tutuca gen-views</code> reports, with
-          the same line and column.
+          You lose the parts that need the compiler. A card cannot name a
+          MoonBit value. Thus there are no imports, no closures, and no child
+          components built at run time. Every handler must use the language in
+          the <code>tutuca/script</code> block. You keep everything else,
+          including the checks. The diagnostics below the preview are the same
+          ones <code>tutuca gen-views</code> reports. They have the same line
+          and column numbers.
         </p>
         <p>
-          It carries no CSS either. The views name
-          <a href="https://github.com/marianoguerra/margaui">margaui</a>'s
+          The card carries no CSS. Its views name the
+          <a href="https://github.com/marianoguerra/margaui">margaui</a>
           component classes — <code>card</code>, <code>btn</code>,
-          <code>input</code>, <code>badge</code> — with Tailwind utilities
-          beside them, and <code>&lt;mb-card margaui&gt;</code> compiles the
-          ones this card actually used, in your browser.
+          <code>input</code>, <code>badge</code> — with Tailwind utility classes
+          beside them. <code>&lt;mb-card margaui&gt;</code> compiles the classes
+          that this card used. The compilation happens in your browser.
         </p>
         <mb-card src="./site/cards/counter.html" margaui codemirror></mb-card>
         <p>
-          <a href="./cards.html"><strong>The card tutorial</strong></a> builds
-          one of these from an empty schema up, six live examples at a time —
-          the state block and what it generates, the handler language, derived
-          values, loops, messages, and the line past which you want the
-          compiler back. The <a href="./tutucard/">card playground</a> is the
-          same loader with more panels — the state tree, the dispatch log, and
-          a structured editor that shows one block of the file at a time.
+          The <a href="./cards.html"><strong>card tutorial</strong></a> builds a
+          card step by step, with live examples at each step. It covers the
+          state block and its generated code, the handler language, derived
+          values, loops, messages, and the limits of a card. The
+          <a href="./tutucard/">card playground</a> uses the same loader and has
+          more panels: the state tree, the dispatch log, and a structured editor
+          that shows one block of the file at a time.
         </p>
       </section>
 
       <section id="examples">
         <h2>Examples</h2>
         <p>
-          The same examples as the
-          <a href="https://marianoguerra.github.io/tutuca/">Tutuca landing page</a>,
-          ported to MoonBit. Each is editable — change the code and re-run. For
-          the full set compiled ahead of time, see the
+          These examples are ports of the examples on the
+          <a href="https://marianoguerra.github.io/tutuca/">Tutuca landing page</a>.
+          Each example is editable. Change the code and run it again. For the
+          full set, compiled ahead of time, see the
           <a href="./storybook/">storybook gallery</a>.
         </p>
 
         <h3>Basics</h3>
         <h4>To-Do List</h4>
         <p>
-          A list of editable child <code>Item</code> components. <code>&lt;x
-          render-it&gt;</code> renders the loop's current instance; the generated
-          <code>$removeInItemsAt</code> mutator deletes by key.
+          This example shows a list of child <code>Item</code> components. You
+          can edit each item. <code>&lt;x render-it&gt;</code> renders the
+          current instance of the loop. The generated
+          <code>$removeInItemsAt</code> mutator deletes an item by key.
         </p>
         <mb-playground
           src="./site/examples/todo.mbt"
@@ -169,8 +175,10 @@ let counter = counter_component()</code></pre>
 
         <h4>Two-way Text Binding</h4>
         <p>
-          <code>:value</code> reads a field; <code>@on.input="setName e.value"</code>
-          writes it via the generated mutator; <code>@text</code> mirrors it live.
+          <code>:value</code> reads a field.
+          <code>@on.input="setName e.value"</code> writes the field through the
+          generated mutator. <code>@text</code> shows the new value
+          immediately.
         </p>
         <mb-playground
           src="./site/examples/text_input.mbt"
@@ -179,32 +187,37 @@ let counter = counter_component()</code></pre>
 
         <h4>Live Markdown, Sanitized</h4>
         <p>
-          <code>@setinnermd</code> takes a markdown string and replaces the element's
-          children with the nodes it parses to — headings, lists, tables, GFM task
-          lists and footnotes. Type in the left pane and the right one re-renders.
+          <code>@setinnermd</code> takes a markdown string. It replaces the
+          children of the element with the nodes from the parsed string:
+          headings, lists, tables, GFM task lists, and footnotes. Type in the
+          left pane. The right pane then renders again.
         </p>
         <p>
-          Scroll the source past the rule: everything below it is an attack, and none
-          of it executes. SVG <code>&lt;script&gt;</code> (a different element from
-          HTML's, since identity is namespace-qualified), <code>&lt;iframe&gt;</code>,
-          <code>&lt;base&gt;</code>, <code>on*</code> handlers and
-          <code>javascript:</code> URLs all go — judged by the SAME sanitizer that
-          judges every other node in the tree, so there is no markdown-specific
-          allow-list to fall behind. A denied URL drops the <em>attribute</em>, not the
-          element, so the link keeps its words and loses its destination.
+          Scroll the source to the marked rule. The text after the rule is
+          attack markup. None of it runs. The sanitizer removes SVG
+          <code>&lt;script&gt;</code>, <code>&lt;iframe&gt;</code>,
+          <code>&lt;base&gt;</code>, <code>on*</code> handlers, and
+          <code>javascript:</code> URLs. SVG <code>&lt;script&gt;</code> is not
+          the same element as the HTML <code>&lt;script&gt;</code>. Its name
+          includes its namespace. The sanitizer judges every node in the tree
+          with the same rules. Thus there is no allow-list only for markdown.
+          If the sanitizer refuses a URL, it removes the attribute. It keeps the
+          element. The link keeps its text and loses its target.
         </p>
         <p>
-          Two failure modes, both safe, and the demo shows both: markup the block
-          parser recognises becomes an element, gets a verdict, and vanishes with a
-          line in the report log. Markup it does not recognise — a bare
-          <code>&lt;script&gt;</code> among them — never becomes an element at all and
-          stays on the page as visible <em>characters</em>. Text reaches the DOM
-          through <code>createTextNode</code>, so it can never be parsed as markup.
+          There are two failure modes. Both are safe. Markup that the parser
+          knows becomes an element. The sanitizer judges it and removes it. A
+          line in the report log records this. Markup that the parser does not
+          know — a bare <code>&lt;script&gt;</code> is one example — never
+          becomes an element. It stays on the page as visible text. Text
+          reaches the DOM through <code>createTextNode</code>. Thus the browser
+          never parses text as markup.
         </p>
         <p>
-          The markup never becomes a string: the payload is parsed once and built into
-          vdom nodes, and <code>innerHTML</code> is never assigned. That is what
-          removes the second parse a mutation-XSS depends on — see
+          The markup never becomes a string. The payload is parsed one time and
+          built into vdom nodes. The code never assigns
+          <code>innerHTML</code>. This removes the second parse that
+          mutation-XSS needs. See
           <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/sanitizer.md">docs/sanitizer.md</a>.
         </p>
         <mb-playground
@@ -214,39 +227,44 @@ let counter = counter_component()</code></pre>
 
         <h4>HTML and SVG, Sanitized</h4>
         <p>
-          The same argument, about markup itself rather than a source language.
-          <code>@setinnerhtml</code> and <code>@setinnersvg</code> take a string that
-          is already markup — a CMS body, a server-rendered fragment, a chart another
-          program drew — and replace the element's children with the nodes it parses
-          to. This is the case people reach for
-          <code>@dangerouslysetinnerhtml</code> to solve.
+          These two directives are about markup itself, not a source language.
+          <code>@setinnerhtml</code> and <code>@setinnersvg</code> take a
+          string that is already markup: a CMS body, a server-rendered
+          fragment, or a chart that another program drew. They replace the
+          children of the element with the nodes from the parsed string.
+          Developers usually reach for <code>@dangerouslysetinnerhtml</code> to
+          solve this case.
         </p>
         <p>
-          Neither takes a permission, and that is not a shortcut. The dangerous
-          directive needs one because its <em>fallback</em> is
-          <code>innerHTML</code>: mount an app without the filter and the payload goes
-          to the browser unexamined. These two fail closed — no filter, empty element
-          — so there is no unchecked path for a host to permit.
+          You do not give these two directives a permission. This is not a
+          shortcut. The dangerous directive needs a permission because its
+          fallback is <code>innerHTML</code>. If you mount an app without the
+          filter, the payload goes to the browser without checks. These two
+          directives fail closed: with no filter, they show an empty element.
+          Thus there is no unchecked path for a host to permit.
         </p>
         <p>
-          Edit either pane and watch the rule. Below it: <code>&lt;script&gt;</code> in
-          both namespaces, <code>&lt;iframe&gt;</code>, <code>&lt;base&gt;</code>, SVG
-          <code>&lt;use&gt;</code>, <code>on*</code> handlers and
-          <code>javascript:</code> URLs, entity-obfuscated or not. Two are worth
-          opening devtools for. SVG <code>&lt;animate&gt;</code> is refused as an
-          <em>element</em>, not for anything in its value — SMIL writes
-          <code>href</code> in the browser after every check has run, so the
-          <code>href</code> the URL rule inspected is not the one that would navigate.
-          And <code>style</code> is dropped, which is the one rule these two have that
-          <code>@dangerouslysetinnerhtml</code> does not: <code>url(…)</code> is a
-          request to an origin the payload chose, and nothing here parses CSS to tell a
+          Edit either pane and look at the rule. Below the rule:
+          <code>&lt;script&gt;</code> in both namespaces,
+          <code>&lt;iframe&gt;</code>, <code>&lt;base&gt;</code>, SVG
+          <code>&lt;use&gt;</code>, <code>on*</code> handlers, and
+          <code>javascript:</code> URLs, with or without entity obfuscation.
+          Two cases are worth a look in devtools. The sanitizer refuses SVG
+          <code>&lt;animate&gt;</code> as an element, not because of anything
+          in its value. SMIL writes <code>href</code> in the browser after all
+          checks finish. Thus the <code>href</code> that the URL rule checked
+          is not the one that would navigate. Also, the sanitizer removes the
+          <code>style</code> attribute. This is the one rule these two
+          directives add and <code>@dangerouslysetinnerhtml</code> does not
+          have. <code>url(…)</code> requests a resource from an origin that the
+          payload chose. Nothing here parses CSS. Thus it cannot tell a
           background image from a beacon.
         </p>
         <p>
-          The SVG pane's payload has no <code>&lt;svg&gt;</code> root of its own. That
-          is the difference between the two directives: <code>@setinnersvg</code>
-          parses in SVG context, so a bare fragment works and the payload cannot leave
-          the namespace it was promised.
+          The payload in the SVG pane has no <code>&lt;svg&gt;</code> root of
+          its own. This shows the difference between the two directives.
+          <code>@setinnersvg</code> parses in SVG context. A bare fragment
+          works. The payload cannot leave the namespace it was promised.
         </p>
         <mb-playground
           src="./site/examples/markup.mbt"
@@ -255,14 +273,14 @@ let counter = counter_component()</code></pre>
 
         <h3>Interaction Patterns</h3>
         <h4>Tree Navigation</h4>
-        <p>Click folders to toggle them open or closed, and click files to select them.</p>
+        <p>Click a folder to open or close it. Click a file to select it.</p>
         <mb-playground
           src="./site/examples/tree.mbt"
           view="./site/examples/tree.html"
         ></mb-playground>
 
         <h4>Drag and Drop</h4>
-        <p>Drag entries to reorder them, and use the input to filter the list.</p>
+        <p>Drag an entry to change its position. Type in the input to filter the list.</p>
         <mb-playground
           src="./site/examples/dnd.mbt"
           view="./site/examples/dnd.html"
@@ -270,10 +288,11 @@ let counter = counter_component()</code></pre>
 
         <h4>Filter and Paginate</h4>
         <p>
-          Search narrows the list, pages slice the matches, and editing or deleting
-          a row works on the right item even on page 2 of a filtered view —
-          <code>@loop-with</code> returns the matching rows' original
-          <code>keys</code>, so identity survives filtering and paging.
+          The search box narrows the list. The pager shows one part of the
+          matches at a time. You can edit or delete a row on page 2 of a
+          filtered view, and the correct row changes.
+          <code>@loop-with</code> returns the original keys of the matching
+          rows. Thus filtering and paging do not change the identity of a row.
         </p>
         <mb-playground
           src="./site/examples/filter_paginate.mbt"
@@ -282,16 +301,17 @@ let counter = counter_component()</code></pre>
 
         <h4>Web Component &amp; Custom Event</h4>
         <p>
-          Hosting a third-party web component and reacting to its
-          <code>CustomEvent</code> is a core tutuca feature
-          (<code>@on.emoji-click="onEmojiClick e.value"</code>). Because it needs an
-          external custom element loaded on the page, see it running in the
+          tutuca can host a third-party web component and react to its
+          <code>CustomEvent</code>
+          (<code>@on.emoji-click="onEmojiClick e.value"</code>). This is a core
+          tutuca feature. The example needs an external custom element on the
+          page. See it in the
           <a href="./storybook/?story=web-component-custom-event">storybook gallery</a>.
         </p>
 
         <h3>Full Applications</h3>
         <h4>JSON Editor</h4>
-        <p>A recursive editor: every JSON node is a component that renders its children.</p>
+        <p>This is a recursive editor. Every JSON node is a component. Each component renders its children.</p>
         <mb-playground
           src="./site/examples/json.mbt"
           view="./site/examples/json.html"
@@ -299,10 +319,10 @@ let counter = counter_component()</code></pre>
 
         <h4>Personal Site</h4>
         <p>
-          A filterable list of entries with category and role facets, sorting, and a
-          solo/unsolo (alt-click) interaction. Data loads through an
-          <code>intent lex</code> raised after mount, answered by a handler
-          registered on the module.
+          This is a list of entries. You can filter by category and role, sort
+          the entries, and solo or unsolo an entry with alt-click. After mount,
+          the app raises an <code>intent lex</code> to load the data. A handler
+          on the module answers the intent.
         </p>
         <mb-playground
           src="./site/examples/personal_site.mbt"
@@ -311,18 +331,19 @@ let counter = counter_component()</code></pre>
 
         <h4>Visual WebAssembly</h4>
         <p>
-          A larger app: a WebAssembly module editor whose ~19 views are BUILT AT
-          RUNTIME from an instruction table, so it is the one example that cannot
-          compile its views ahead of time. See it running in the
+          This is a larger app. It is an editor for WebAssembly modules. An
+          instruction table builds its approximately 19 views at run time.
+          Thus this is the one example that cannot compile its views ahead of
+          time. See it in the
           <a href="./storybook/?story=visual-wasm">storybook gallery</a>.
         </p>
 
         <h3>Composability</h3>
         <h4>All Together Now</h4>
         <p>
-          Each example exports its components independently, with no knowledge of
-          being composed. This root imports several of them and renders each in its
-          own tab — the glue code is minimal.
+          Every example exports its components independently. No example knows
+          that another example composes it. This root imports several examples.
+          It renders each one in its own tab. The glue code is small.
         </p>
         <mb-playground
           src="./site/examples/composability.mbt"
@@ -331,19 +352,20 @@ let counter = counter_component()</code></pre>
 
         <h4>Storybook</h4>
         <p>
-          A storybook aggregates components in several states under a sidebar, with a
-          live preview and a Lint panel per story. tutuca-mb ships a compiled one:
-          see the <a href="./storybook/">full storybook</a> (also served by
-          <code>./cli/tutuca storybook</code>).
+          A storybook shows components in several states, with a sidebar, a
+          live preview, and a Lint panel for each story. tutuca-mb ships a
+          compiled storybook. See the <a href="./storybook/">full storybook</a>.
+          You can also serve it with
+          <code>./cli/tutuca storybook</code>.
         </p>
 
         <h3>Testing Components</h3>
         <p>
-          tutuca-mb components are plain values, so their methods, input handlers,
-          and iteration logic are unit-testable. Tests run through the toolchain
-          rather than in this browser sandbox — <code>moon test</code> for the
-          library, and the <a href="./storybook/">storybook</a>'s Lint panel for
-          per-component checks.
+          tutuca-mb components are plain values. Thus you can unit-test their
+          methods, input handlers, and loop logic. Tests run in the toolchain,
+          not in this browser sandbox. Use <code>moon test</code> for the
+          library. Use the Lint panel in the
+          <a href="./storybook/">storybook</a> for checks on single components.
         </p>
       </section>
 
@@ -351,28 +373,29 @@ let counter = counter_component()</code></pre>
         <h2>Get Started</h2>
         <p>
           tutuca-mb is the MoonBit port of
-          <a href="https://marianoguerra.github.io/tutuca/">Tutuca</a>. You author
-          components as plain MoonBit values — a name, an HTML-ish view string, and
-          optional fields, methods, and event handlers — and mount them with a host
-          adapter. The same components compile to three backends:
+          <a href="https://marianoguerra.github.io/tutuca/">Tutuca</a>. You
+          write a component as a plain MoonBit value. A component has a name,
+          an HTML-like view string, and optional fields, methods, and event
+          handlers. You mount components with a host adapter. The same
+          components compile to three backends:
         </p>
         <ul>
-          <li><strong>js</strong> — the browser default (what these playgrounds use)</li>
+          <li><strong>js</strong> — the browser default (these playgrounds use it)</li>
           <li><strong>wasm-gc</strong> — the same components as WebAssembly</li>
           <li><strong>native</strong> — the command-line tooling (lint, render, storybook)</li>
         </ul>
         <p>
-          This folder is a self-contained build. Browser demos need a static file
-          server (opening files via <code>file://</code> won't load ES modules):
+          This folder is a complete build. The browser demos need a static file
+          server. ES modules do not load from <code>file://</code> URLs:
         </p>
         <pre><code>python3 -m http.server 8000</code></pre>
-        <p>Then open <a href="http://localhost:8000/">http://localhost:8000/</a> and explore:</p>
+        <p>Then open <a href="http://localhost:8000/">http://localhost:8000/</a> in your browser:</p>
         <ul>
-          <li><a href="./playground/">Full playground</a> — a bigger editor with a state &amp; activity inspector</li>
-          <li><a href="./storybook/">Storybook</a> — the compiled gallery of every ported docs example, with a Lint panel per story</li>
+          <li><a href="./playground/">Full playground</a> — a larger editor with inspectors for state and activity</li>
+          <li><a href="./storybook/">Storybook</a> — the compiled gallery of every ported docs example, with a Lint panel for each story</li>
           <li><a href="./counter/">Counter demo (js)</a> · <a href="./counter-wasm/">(WebAssembly)</a></li>
-          <li><a href="./universal/">Universal wasm loader</a> — drag a single <code>.tutuca.tar.gz</code> bundle onto the page to load and mount its wasm components live (unpacked in-browser, no build step); components authored in MoonBit <em>and</em> Rust render identically. Write one with <code>tutuca new-guest &lt;name&gt;</code>; the contract and the host are in the published package (see <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/dynamic-components.md">docs/dynamic-components.md</a>).</li>
-          <li><a href="./dyncomp-storybook/">Dyncomp storybook</a> — the same loaded bundles as a gallery rather than a blank page: every component every sample declares, once per named initial state, fetched at mount.</li>
+          <li><a href="./universal/">Universal wasm loader</a> — drag a single <code>.tutuca.tar.gz</code> bundle onto the page. The page unpacks the bundle in the browser and mounts its wasm components. No build step is necessary. Components written in MoonBit <em>and</em> Rust render in the same way. Write one with <code>tutuca new-guest &lt;name&gt;</code>. The contract and the host are in the published package (see <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/dynamic-components.md">docs/dynamic-components.md</a>).</li>
+          <li><a href="./dyncomp-storybook/">Dyncomp storybook</a> — a gallery of the loaded bundles, not a blank page. It fetches the samples at mount and shows every component of every sample, once per named initial state.</li>
           <li><code>./cli/tutuca --help</code> — the native command-line tool</li>
         </ul>
       </section>
@@ -380,7 +403,7 @@ let counter = counter_component()</code></pre>
       <section id="whats-next">
         <h2>What's Next</h2>
         <ul>
-          <li><a href="./playground/">Full playground</a> — inspect state and the activity log as you interact</li>
+          <li><a href="./playground/">Full playground</a> — see the state and the activity log while you interact</li>
           <li><a href="./storybook/">Storybook</a> — browse every component in several states</li>
           <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source code</a> — this MoonBit port (the original JS <a href="https://github.com/marianoguerra/tutuca">framework</a>)</li>
         </ul>

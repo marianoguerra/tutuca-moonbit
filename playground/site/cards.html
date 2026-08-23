@@ -6,7 +6,7 @@
     <title>Cards — the tutuca script tutorial</title>
     <meta
       name="description"
-      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Nine live, editable examples."
+      content="Build a tutuca component one file at a time. No compiler is needed: the state block, the tutuca/script block, and the views. Nine live, editable examples."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
@@ -52,29 +52,29 @@
     </nav>
     <header>
       <h1>Cards</h1>
-      <h2>A whole component in one file, with no compiler in the room</h2>
+      <h2>A complete component in one file, interpreted without a compiler</h2>
       <p class="hero-tagline">
-        Eight steps, nine live examples. Edit any of them and it re-mounts as
-        you type.
+        Eight steps, nine live examples. Edit any example, and it re-mounts
+        while you type.
       </p>
     </header>
     <main>
       <section id="start">
         <h2>What a card is</h2>
         <p class="lede">
-          A <strong>card</strong> is a tutuca view file — a state schema, a
-          script block and one or more templates — <em>interpreted</em> instead
-          of compiled. The page you are reading parsed the first example below
-          and mounted it, in your browser, with nothing between the two: no
-          MoonBit compiler, no worker, no build step, no server.
+          A <strong>card</strong> is a tutuca view file: a state schema, a
+          script block, and one or more templates. The page interprets the
+          card. It does not compile it. This page parsed the first example
+          below. Your browser mounted it directly: no MoonBit compiler, no
+          worker, no build step, and no server.
         </p>
         <p>
-          It is the same framework the rest of this site is about, with the
-          compiler taken out. The schema still generates mutators, the checker
-          still reads the script block and reports the same diagnostics with
-          the same line and column, and the views are the views. What changes
-          is <em>when</em> — a card is read at mount rather than at build — and
-          what you give up for it is the subject of
+          This is the same framework as the rest of this site, without the
+          compiler. The schema still generates mutators. The checker still
+          reads the script block and reports the same diagnostics with the
+          same line and column numbers. The views are the views. What changes
+          is <em>when</em>: a card is read at mount rather than at build.
+          What you give up for that is the subject of
           <a href="#limits">the last section</a>.
         </p>
         <p>The file has three kinds of block, and only the last is required:</p>
@@ -82,33 +82,34 @@
 &lt;script type="tutuca/script"&gt;  handlers, derived values
 &lt;template&gt;                     the views</code></pre>
         <p>
-          Every example below is one such file, whole and runnable. The bar
-          above each one shows the component's name and what the checker made
-          of it — <code>ok</code>, or the number of issues, each with a button
-          that selects the exact characters it is about. Break one on purpose:
-          that report is the point, and <strong>reset</strong> puts the
-          original back.
+          Every example below is one such file. Each one is complete and
+          runnable. The bar above each example shows the component name and
+          the checker result: <code>ok</code>, or the number of issues. Each
+          issue has a button. Press it to select the exact characters of that
+          issue. You can break an example on purpose. The checker then reports
+          the problem. Press <strong>reset</strong> to put the original text
+          back.
         </p>
       </section>
 
       <section id="schema">
         <h3><span class="step">Step 1</span> The schema, on its own</h3>
         <p>
-          This card has no script block at all, and still answers three events.
-          Every field a <code>state</code> declares comes with mutators named
-          after it — <code>setName</code>, <code>resetName</code>,
-          <code>nameLen</code> for any field, plus <code>toggleLoud</code>
-          because <code>loud</code> is a <code>Bool</code>. A view calling one
-          is a component that needed no handler.
+          This card has no script block. It still answers three events. Every
+          field that a <code>state</code> block declares gets mutators named
+          after the field: <code>setName</code>, <code>resetName</code>, and
+          <code>nameLen</code>. <code>loud</code> is a <code>Bool</code>, so it
+          also gets <code>toggleLoud</code>. A view that calls a mutator needs
+          no handler.
         </p>
         <mb-card src="./site/cards/tut-1-hello.html" margaui codemirror></mb-card>
         <p>
-          The field's <strong>kind</strong> decides what it generates, and the
-          kind is the declared type rather than a choice at the call site:
+          The field <strong>kind</strong> decides what the field generates. The
+          kind is the declared type. It is not a choice at the call site:
         </p>
         <table>
           <thead>
-            <tr><th>Declared</th><th>What comes with it</th></tr>
+            <tr><th>Declared</th><th>Generated mutators</th></tr>
           </thead>
           <tbody>
             <tr><td><code>Bool</code></td><td><code>toggleX</code></td></tr>
@@ -128,112 +129,113 @@
           </tbody>
         </table>
         <p>
-          Two spellings in that card are worth naming now, because they are the
-          two halves of every view. <code>:value=".name"</code> is a
-          <em>value</em> slot: it reads. <code>@on.input="setName e.value"</code>
-          is a <em>handler</em> slot: the first word is the message to dispatch
-          and the rest are arguments, resolved from the event —
+          That card shows two spellings. They are the two halves of every view.
+          <code>:value=".name"</code> is a <em>value</em> slot: it reads.
+          <code>@on.input="setName e.value"</code> is a <em>handler</em> slot.
+          The first word is the message to dispatch. The other words are
+          arguments. The arguments are resolved from the event:
           <code>value</code>, <code>valueAsInt</code>, <code>key</code>,
-          <code>isAlt</code> and a handful more.
+          <code>isAlt</code>, and more.
         </p>
       </section>
 
       <section id="handlers">
         <h3><span class="step">Step 2</span> The script block</h3>
         <p>
-          A <code>receive</code> handler answers a name that is addressed at
-          this component — one a view writes, or one another handler sends. You
-          reach for one when no mutator is the transition you mean: two fields
-          moving together, an argument that has to be clamped before it lands, a
-          branch.
+          A <code>receive</code> handler answers a name addressed to this
+          component. A view writes such a name, or another handler sends it.
+          Use a handler when no mutator gives the transition you want:
+          two fields change together, or you clamp an argument before you
+          store it, or you need a branch.
         </p>
         <p>
-          Statements end at a newline or a <code>;</code>, and the state they
-          write is rebound as they go — the second line of <code>step</code>
-          below reads what the first one wrote, so the trail records where the
-          counter <em>ended</em>.
+          Statements end at a newline or a <code>;</code>. The handler rebinds
+          the state after each statement. The second line of <code>step</code>
+          below reads what the first line wrote. Thus the trail records where
+          the counter <em>ended</em>.
         </p>
         <mb-card src="./site/cards/tut-2-handlers.html" margaui codemirror></mb-card>
         <p>
-          That card also answers <code>init</code>. A card starts at the
-          schema's zero — an <code>Int</code> is 0, an <code>Array</code> is
-          empty — because there is no MoonBit here to pass a seed in. tutuca
-          has no lifecycle either: nothing in the framework calls an
-          initialiser, the <strong>host</strong> dispatches <code>init</code>
-          at mount, and a card that wants to start somewhere else answers it
-          like any other message. Every card after this one seeds itself that
-          way.
+          That card also answers <code>init</code>. A card starts at the schema
+          zero: an <code>Int</code> is 0 and an <code>Array</code> is empty.
+          There is no MoonBit here to pass a seed through. tutuca also has no
+          lifecycle. Nothing in the framework calls an initialiser. The
+          <strong>host</strong> instead dispatches <code>init</code> at mount,
+          and a card that wants a different start answers it like any other
+          message. Every card after this one seeds itself that way.
         </p>
         <p>
-          Note what <code>step</code> does <em>not</em> say: nowhere is
-          <code>dir</code> annotated. A handler's argument types are inferred
-          from what the templates write at the call site, so
-          <code>@on.click="step 1"</code> is what makes it a number — and a
-          call site that disagrees with the body is a reported issue, not a
-          silent coercion.
+          Note what <code>step</code> does <em>not</em> say: nothing annotates
+          <code>dir</code>. The language infers the argument types from what
+          the templates write at the call site. So
+          <code>@on.click="step 1"</code> makes the argument a number. If a
+          call site does not agree with the body, the checker reports an
+          issue. It does not coerce silently.
         </p>
       </section>
 
       <section id="derived">
         <h3><span class="step">Step 3</span> Values the state does not hold</h3>
         <p>
-          A <code>compute</code> is one expression with a name, called from a
-          template as <code>$name</code>. A <code>pred</code> is the same
-          construct with its answer declared a boolean, which is what lets a
-          condition slot be checked rather than merely evaluated. Neither can
-          assign, so neither can be the reason a render is wrong.
+          A <code>compute</code> is one expression with a name. A template
+          calls it as <code>$name</code>. A <code>pred</code> is the same
+          construct, but its answer is declared as a boolean. A condition slot
+          can therefore check a <code>pred</code>, not only evaluate it.
+          Neither can assign. Thus neither can be the reason a render is wrong.
         </p>
         <mb-card src="./site/cards/tut-3-derived.html" margaui codemirror></mb-card>
         <p>
-          <code>if</code> appears twice in this language and means two things.
-          In a statement body it is a branch and the <code>else</code> is
-          optional. In a value position — a <code>compute</code>, a
-          <code>pred</code>, an interpolation — both arms are required, because
-          an expression has to have a value.
+          <code>if</code> appears twice in this language, with two meanings.
+          In a statement body, <code>if</code> is a branch. There the
+          <code>else</code> part is optional. In a value position (a
+          <code>compute</code>, a <code>pred</code>, an interpolation), both
+          arms are required. An expression must have a value.
         </p>
         <p>
           The <code>$'…'</code> in <code>status</code> is a string template:
-          single quotes with a leading <code>$</code>, and
-          <code>{…}</code> holding any expression. A bare
-          <code>'…'</code> is a plain string literal — it may span lines as it
-          is, and it carries five escapes: <code>\'</code>, <code>\\</code>,
-          <code>\n</code>, <code>\t</code> and <code>\r</code>. Nothing else in a view or
-          a body interpolates — an unquoted <code>{.x}</code> in an attribute
-          is not a template, it is text.
+          single quotes with a leading <code>$</code>, and a
+          <code>{…}</code> holds any expression. A bare
+          <code>'…'</code> is a plain string literal. It can span lines as it
+          is, and it has five escapes: <code>\'</code>, <code>\\</code>,
+          <code>\n</code>, <code>\t</code> and <code>\r</code>. Nothing else in
+          a view or a body interpolates. An unquoted <code>{.x}</code> in an
+          attribute is not a template. It is text.
         </p>
       </section>
 
       <section id="lists">
         <h3><span class="step">Step 4</span> Lists</h3>
         <p>
-          <code>@each</code> walks a field and binds <code>@key</code> and
-          <code>@value</code> for the row. In this card the remove button calls
-          <code>removeInSongsAt @key</code> — a generated mutator, straight
-          from the view, with no handler in between — while moving a row is a
-          <code>receive</code> handler, because two writes at two positions is
-          exactly the shape no single mutator has.
+          <code>@each</code> walks a field. For each row, it binds
+          <code>@key</code> and <code>@value</code>. In this card, the remove
+          button calls <code>removeInSongsAt @key</code>. That is a generated
+          mutator, called directly from the view, with no handler between.
+          Moving a row is instead a <code>receive</code> handler. It writes two
+          positions, and no single mutator does that.
         </p>
         <mb-card src="./site/cards/tut-4-lists.html" margaui codemirror></mb-card>
         <p>
-          Inside a body, a collection is written through its receiver:
-          <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>, with
-          the infix dropped because the receiver is written out. The methods
-          are <code>push</code>, <code>insertAt</code>, <code>setAt</code>,
-          <code>deleteAt</code>/<code>removeAt</code>, <code>clear</code> for
-          sequences and maps, and <code>add</code>,
+          Inside a body, write to a collection through its receiver:
+          <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>.
+          The infix part drops because the receiver is written out.
+          Sequences and maps have these methods:
+          <code>push</code>, <code>insertAt</code>, <code>setAt</code>,
+          <code>deleteAt</code>/<code>removeAt</code>, <code>clear</code>.
+          Sets and maps have these methods:
+          <code>add</code>,
           <code>remove</code>/<code>delete</code>, <code>toggle</code>,
-          <code>set</code> for sets and maps.
+          <code>set</code>.
         </p>
         <p>
-          A list of <em>records</em> needs one more thing, because the language
-          has no literals to write one with: <code>new &lt;Type&gt;</code>
+          A list of <em>records</em> needs one more thing. The language has no
+          literal to write one with. <code>new &lt;Type&gt;</code>
           builds a value at its type's zero and makes it the
-          <strong>active target</strong>, which the statements under it fill in
-          through <code>@cur</code>. Then it is pushed like anything else. This
-          card's <code>songs</code> is an <code>Array[String]</code> and needs
-          none of it; had the schema declared
+          <strong>active target</strong>. The statements under it fill the
+          value in through <code>@cur</code>. Then it is pushed like anything
+          else. This card's <code>songs</code> is an <code>Array[String]</code>
+          and needs none of this. But suppose the schema declared
           <code>struct Song { title : String, plays : Int }</code> and
-          <code>songs : Array[Song]</code>, a row would be built like this:
+          <code>songs : Array[Song]</code>. Then a row is built like this:
         </p>
         <pre><code>receive init {
   new Song
@@ -242,52 +244,51 @@
   .songs.push @cur
 }</code></pre>
         <p>
-          The type is spelled the way the state block spells it —
+          Write the type the way the state block spells it:
           <code>new Song</code>, <code>new Array[String]</code>,
-          <code>new Map[String, Int]</code> — and has to be one that block
-          declares. A <code>new</code> resets the target, so building two rows
-          is two <code>new</code>s; a path into it works, so
-          <code>new Song</code> followed by <code>@cur.tags.push 'rock'</code>
+          <code>new Map[String, Int]</code>. The type must be one that the
+          block declares. A <code>new</code> resets the target. So building two
+          rows takes two <code>new</code>s. A path into the target works too.
+          So <code>new Song</code> followed by <code>@cur.tags.push 'rock'</code>
           fills a list <em>inside</em> the record. <code>@cur</code> belongs to
-          the handler that built it: it is gone when the handler ends, and it
-          never reaches a view, so a template that reads <code>@cur</code> reads
-          nothing.
+          the handler that built it. It is gone when the handler ends, and it
+          never reaches a view. So a template that reads <code>@cur</code>
+          reads nothing.
         </p>
         <p>
           The <code>nested-state</code> card in
-          <a href="./tutucard/">the card playground</a> is that, running: an
-          <code>Array[Label]</code> seeded and grown with <code>new</code>, and
-          a nested write —
-          <code>.labels[key].done = not .labels[key].done</code> — which is the
-          other half of what a record buys and the one pair a view slot cannot
-          spell.
+          <a href="./tutucard/">the card playground</a> shows this live. There,
+          an <code>Array[Label]</code> is seeded and grown with
+          <code>new</code>. That card also makes a nested write,
+          <code>.labels[key].done = not .labels[key].done</code>. That nested
+          write is the other half of what records give you. It is also the one
+          pair a view slot cannot spell.
         </p>
       </section>
 
       <section id="loops">
-        <h3><span class="step">Step 5</span> What a loop asks the block</h3>
+        <h3><span class="step">Step 5</span> How a loop calls the block</h3>
         <p>
-          Two directives on an <code>@each</code> element hand work back to the
-          script. <code>@when</code> names a <code>pred</code> that keeps a row
-          or drops it. <code>@enrich-with</code> names an <code>enrich</code>
-          that answers a question <em>about</em> the row and binds the answer
-          for the template to read.
+          Two directives on an <code>@each</code> element call the script
+          block. <code>@when</code> names a <code>pred</code>. That pred keeps
+          the row or drops it. <code>@enrich-with</code> names an
+          <code>enrich</code>. That enrich answers a question <em>about</em>
+          the row. The loop binds the answer for the template to read.
         </p>
         <mb-card src="./site/cards/tut-5-filter.html" margaui codemirror></mb-card>
         <p>
-          The reason the checkbox reads <code>@picked</code> rather than
-          calling a predicate is a scoping rule worth carrying with you: a
-          <code>compute</code> or a <code>pred</code> called from a
-          <em>value</em> slot is handed the state and its own arguments, and
-          nothing else — <code>@value</code> is not in scope inside one.
-          <code>@when</code> and <code>@enrich-with</code> resolve through the
-          loop instead, so those two <em>are</em> handed the row.
+          The checkbox reads <code>@picked</code> and does not call a
+          predicate. The reason is this scoping rule: a <code>compute</code> or
+          a <code>pred</code> called from a <em>value</em> slot receives only
+          the state and its own arguments. <code>@value</code> is not in scope
+          inside one. <code>@when</code> and <code>@enrich-with</code> resolve
+          through the loop instead. Those two <em>are</em> handed the row.
         </p>
         <p>
-          Which is also why the two directives spell their argument
-          differently. <code>@when="matches"</code> names a predicate bare; it
-          is a name the loop resolves. <code>@show="$any"</code> reads a
-          <em>value</em>, so it carries the <code>$</code> that says a callable
+          This rule is also why the two directives spell their arguments
+          differently. <code>@when="matches"</code> names a predicate bare.
+          The loop resolves that name. <code>@show="$any"</code> reads a
+          <em>value</em>. So it carries the <code>$</code> that says a callable
           answers it.
         </p>
       </section>
@@ -295,89 +296,92 @@
       <section id="messages">
         <h3><span class="step">Step 6</span> Messages</h3>
         <p>
-          One keyword covers both halves of an addressed name, and where the
-          name is <em>written</em> is what decides where its arguments come
-          from. A <code>receive</code> a view names is checked against the call
-          sites, the way <code>step</code> was in step 2. A <code>receive</code>
-          no view names — one raised by another handler, by a parent, or by the
-          host at mount — is seen by nobody the checker can read, so the
-          schema's <code>receive</code> block is the only place it can be
-          declared and the only place its payload can be typed.
+          One keyword covers both halves of an addressed name. Where the name
+          is <em>written</em> decides where its arguments come from. The
+          checker compares a <code>receive</code> that a view names against the
+          call sites, as it did with <code>step</code> in step 2. A
+          <code>receive</code> that no view names is different: another handler
+          raises it, a parent raises it, or the host raises it at mount. The
+          checker cannot read those call sites. So the schema's
+          <code>receive</code> block is the only place to declare it, and the
+          only place to type its payload.
         </p>
         <mb-card src="./site/cards/tut-6-messages.html" margaui codemirror></mb-card>
         <p>
-          <code>send</code> is one of the effects a body may perform. They are
-          the vocabulary a dynamic WebAssembly component already answers with,
-          which is not a coincidence: a card and a compiled component hand the
-          host the same list, and neither knows what it will do with them.
+          <code>send</code> is one of the effects that a body may perform.
+          These effects are the vocabulary that a dynamic WebAssembly component
+          already answers with. This match is deliberate: a card and a compiled
+          component give the host the same effect list. Neither knows what the
+          host will do with them.
         </p>
         <ul>
-          <li><code>send 'name' args…</code> — at this component.</li>
-          <li><code>sendAt &amp;.rows[k] 'name' args…</code> — at a <em>position</em>. <code>&amp;.rows[k]</code> is the position; <code>.rows[k]</code> is what is there, and the difference is what makes a late answer land on the row that asked for it.</li>
-          <li><code>intent [dyn|lex]… 'name' args…</code> — at whoever answers. <code>dyn</code> walks the ancestors, <code>lex</code> walks the handlers registered on the host; with no leg written it walks <code>dyn lex</code>. Step 7.</li>
-          <li><code>forward</code> — hand the message that arrived on to the next hop, keeping its name.</li>
-          <li><code>reply v</code> / <code>fail e</code> — answer an intent that reached you. Either one ends the walk.</li>
-          <li><code>stop</code> — end the walk answering nothing.</li>
+          <li><code>send 'name' args…</code> — to this component.</li>
+          <li><code>sendAt &amp;.rows[k] 'name' args…</code> — to a <em>position</em>. <code>&amp;.rows[k]</code> is the position; <code>.rows[k]</code> is what is there. This difference sends a late answer to the row that asked for it.</li>
+          <li><code>intent [dyn|lex]… 'name' args…</code> — to whoever answers. <code>dyn</code> walks the ancestors. <code>lex</code> walks the handlers registered on the host. With no leg written, the intent walks <code>dyn lex</code>. See step 7.</li>
+          <li><code>forward</code> — pass the arriving message to the next hop. Its name stays.</li>
+          <li><code>reply v</code> / <code>fail e</code> — answer an intent that reached you. Either statement ends the walk.</li>
+          <li><code>stop</code> — end the walk and answer nothing.</li>
         </ul>
         <p>
-          Two of those are addressed and two are routed, and the distinction is
-          the whole of it: a <strong>message</strong> names one component and
-          stops there; an <strong>intent</strong> names a job and walks until
-          something answers.
+          Two of those effects are addressed and two are routed. The
+          distinction matters: a <strong>message</strong> names one component
+          and stops there. An <strong>intent</strong> names a job and walks
+          until something answers.
         </p>
         <p>
-          Effects go out only if the body finished. A statement that cannot run
-          — a missing key, an index past the end, a value of the wrong shape —
-          drops the whole transition, effects included, because half a
-          transition is the one outcome nobody can reason about afterwards.
+          Effects run only if the body finished. A statement that cannot run
+          (a missing key, an index past the end, a value of the wrong shape)
+          drops the whole transition, effects included. Nobody can reason
+          afterwards about half a transition.
         </p>
       </section>
 
       <section id="intents">
-        <h3><span class="step">Step 7</span> Asking for what you do not have</h3>
+        <h3><span class="step">Step 7</span> Ask for what you do not have</h3>
         <p>
-          <code>intent</code> is the second channel, and the asynchronous one. A
-          handler names a piece of work — <code>intent lex 'loadQuote'</code> —
-          and hands it to a <strong>route</strong> rather than to an address.
+          <code>intent</code> is the second channel. It is the asynchronous
+          one. A handler names a piece of work, for example
+          <code>intent lex 'loadQuote'</code>, and gives it to a
+          <strong>route</strong> rather than to an address.
           <code>lex</code> is the leg that searches the handlers registered on
-          the host, which is what lets the same component run against a real
-          fetch in production and a fixture in a test. <code>dyn</code> is the
-          other leg: the ancestors, from this component's parent up. Written
-          with no leg, an intent walks <code>dyn lex</code> — try the tree,
-          then the host.
+          the host. Because of that leg, the same component can run against a
+          real fetch in production and a fixture in a test.
+          <code>dyn</code> is the other leg: the ancestors, from this
+          component's parent upward. Write no leg and the intent walks
+          <code>dyn lex</code>: first the tree, then the host.
         </p>
         <p>
-          An intent has exactly <em>three</em> ends, and each is its own arm
+          An intent has exactly <em>three</em> ends. Each end is its own arm
           with its own shape: <code>&lt;name&gt;Ok</code> when a hop replied,
           <code>&lt;name&gt;Error</code> when one failed, and
           <code>&lt;name&gt;Unhandled</code> when the route ran out with nobody
-          claiming it. They arrive as ordinary <code>receive</code> messages, so
-          a handler cannot tell an answer from a message a parent sent — and
-          does not need to. There is no exception to catch and no rejected
-          promise: <strong>a failure is a value</strong>, arriving on the same
-          path as a success, at the component that asked.
+          claiming it. They arrive as ordinary <code>receive</code> messages.
+          So a handler cannot tell an answer from a message that a parent
+          sent, and does not need to. There is no exception to catch and no
+          rejected promise: <strong>a failure is a value</strong>. It arrives
+          on the same path as a success, at the component that asked.
         </p>
         <mb-card src="./site/cards/tut-7-intent.html" margaui codemirror></mb-card>
         <p>
-          That card is showing you its third arm, live, with nothing mocked:
-          this page registers no handler for <code>loadQuote</code>, so the
-          route runs out and the card hears
-          <code>loadQuoteUnhandled</code>. Not an error — nobody claimed it,
-          which is a different sentence, and the one v1 of this framework could
-          not say. It made every declining handler invent a failure, so a page
-          with no fetch and a fetch that broke read identically.
+          That card shows its third arm live, with nothing mocked. This page
+          registers no handler for <code>loadQuote</code>. The route runs out,
+          and the card hears <code>loadQuoteUnhandled</code>. This result is
+          not an error: nobody claimed the intent, and that is a different
+          statement. Version 1 of this framework could not say it. It made
+          every declining handler invent a failure. So a page with no fetch
+          and a fetch that broke read identically.
         </p>
         <p>
-          Two things the block deliberately does not carry. An intent's
-          <em>options</em> — naming the three answers yourself, and whether a
-          path is pinned at dispatch time or re-resolved on arrival — stay in
-          MoonBit, because they are the part a small language would model badly;
-          written with none, the generator fills them in from the three arms the
-          schema declares. And <code>intent dyn</code> needs an ancestor to
-          reach: a card mounted on its own <em>is</em> the root, so the
-          <code>dyn</code> leg from one has nowhere to walk. Both are the same
-          rule as everywhere else on this page — a card is one component, and
-          what needs a tree needs a module.
+          The block deliberately does not carry two things. First, an intent's
+          <em>options</em> stay in MoonBit. Options name the three answers
+          yourself, and choose whether a path is pinned at dispatch time or
+          resolved again on arrival. A small language would model these parts
+          badly. When you write no options, the generator fills them in from
+          the three arms the schema declares. Second, <code>intent dyn</code>
+          needs an ancestor to reach. A card mounted on its own <em>is</em> the
+          root, so the <code>dyn</code> leg from one has nowhere to walk.
+          Both points follow the same rule as everywhere else on this page:
+          a card is one component, and what needs a tree needs a module.
         </p>
       </section>
 
@@ -385,71 +389,72 @@
         <h3><span class="step">Step 8</span> Invariants, pre- and postconditions</h3>
         <p>
           A <code>pred</code> is where a rule about the state gets a
-          <strong>name</strong>. That is the whole mechanism, and what a rule
+          <strong>name</strong>. That is the whole mechanism. What the rule
           <em>is</em> depends on where you attach it:
         </p>
         <ul>
           <li>
             <strong>Precondition</strong> — <code>receive push requires canPush
-            { … }</code>. Asked before the body runs, against the state as it
-            arrived. It does not hold, the transition does not happen.
+            { … }</code>. The checker asks it before the body runs, against the
+            state as it arrived. If it does not hold, the transition does not
+            happen.
           </li>
           <li>
             <strong>Postcondition</strong> — <code>receive pushAll requires canPush
-            ensures hereEmpty { … }</code>. Asked after the body ran, against
-            where it landed: about what <em>this</em> handler was supposed to
-            achieve — the <em>all →</em> button below is the one that has to end
-            with <code>here</code> at zero. One clause of each kind is the
-            limit, and both on one header is what a transition with something to
-            ask and something to promise looks like.
+            ensures hereEmpty { … }</code>. The checker asks it after the body
+            ran, against where it landed. It states what <em>this</em> handler
+            was supposed to achieve. The <em>all →</em> button below is the one
+            that must end with <code>here</code> at zero. One clause of each
+            kind is the limit. Both clauses on one header describe a transition
+            with something to ask and something to promise.
           </li>
           <li>
             <strong>Invariant</strong> — <code>invariant conserved { … }</code>,
-            declared once at the top level, checked after <em>every</em>
-            transition the block declares, including the ones written later
-            that never mention it. That is what makes it the component's rule
-            rather than a handler's.
+            declared once at the top level. The checker runs it after
+            <em>every</em> transition the block declares, including the ones
+            written later that never mention it. Thus the rule belongs to the
+            component, not to a handler.
           </li>
         </ul>
         <mb-card src="./site/cards/tut-8-contracts.html" margaui codemirror></mb-card>
         <p>
-          None of the three needs a rollback, and that is the framework's doing
-          rather than the contract's: a body either finishes or changes nothing.
-          A rule that does not hold abandons the whole transition — the state
-          the caller passed in is still the state, and the queued effects are
-          dropped with it, so nothing went out about a move that did not
-          happen. That is why a postcondition can be checked <em>after</em> the
-          body: by then the successor exists, but it is a fresh value nobody
-          else has seen and the <code>send</code>s are still a queue.
+          None of the three needs a rollback. The framework gives this, not
+          the contract: a body either finishes or changes nothing. A rule that
+          does not hold abandons the whole transition. The state the caller
+          passed in is still the state. The queued effects drop with it, so
+          nothing went out about a move that did not happen. This is why the
+          checker can check a postcondition <em>after</em> the body: by then
+          the successor exists, but it is a fresh value nobody else has seen,
+          and the <code>send</code>s are still a queue.
         </p>
         <p>
-          <code>implies</code> is in the language for the shape these rules
-          take. <code>a implies b</code> is <code>(not a) or b</code>, it takes
-          exactly two operands, and a chain of them is refused — because
-          "<code>a implies b implies c</code>" is a sentence people write and
-          nobody reads the same way twice.
+          <code>implies</code> is in the language because these rules take
+          that shape. <code>a implies b</code> is <code>(not a) or b</code>.
+          It takes exactly two operands. A chain of them is refused. People
+          write "<code>a implies b implies c</code>", and readers disagree
+          about what it means.
         </p>
         <p>
-          <strong>A refusal is reported, not swallowed.</strong> Press
-          <em>cheat</em>: the numbers do not move, and the console says
+          <strong>The checker reports a refusal. It does not hide one.</strong>
+          Press <em>cheat</em>. The numbers do not move, and the console says
           <code>contract: `cheat` was abandoned — it broke the invariant
           `conserved`: 8 + 1 is not 8 — a token came from nowhere</code>. That
-          report is the point of attaching a rule at all. "The transition did
-          not happen" is already the framework's answer to everything, and it is
-          <em>invisible</em> — a state that did not move looks exactly like a
-          state that had nothing to move. A contract is you saying which of
-          those silences is a bug, and the report is where that reaches a host.
+          report is the main benefit of attaching a rule. "The transition did
+          not happen" is already the framework's answer to everything. But that
+          answer is <em>invisible</em>: a state that did not move looks exactly
+          like a state that had nothing to move. A contract says which of those
+          silences is a bug. The report is where that answer reaches a host.
         </p>
         <p>
-          The half after the colon is the rule's own <code>format</code>: the
-          sentence it says when it does <em>not</em> hold, written above the
-          body and evaluated against the state that was rejected — so the
-          numbers in it are the ones that broke the rule. The <code>///</code>
-          comment and the <code>format</code> do different jobs, which is why a
-          rule wants both: the comment says what the rule <em>is</em>,
-          statically, and the format says what went wrong <em>this time</em>. It
-          is an ordinary <code>$'…'</code> template, so there is no second
-          interpolation syntax to learn, and it describes the false case,
+          The half after the colon is the rule's own <code>format</code>. It is
+          the sentence the rule states when it does <em>not</em> hold. You write
+          it above the body. It is evaluated against the state that was
+          rejected, so the numbers in it are the ones that broke the rule.
+          The <code>///</code> comment and the <code>format</code> do different
+          jobs, which is why a rule uses both. The comment says statically what
+          the rule <em>is</em>. The format says what went wrong <em>this
+          time</em>. It is an ordinary <code>$'…'</code> template, so there is
+          no second interpolation syntax to learn. It describes the false case,
           because a predicate is true when things are fine.
         </p>
         <p>
@@ -457,50 +462,52 @@
           <code>@tutuca.on_refusal</code> switches on a channel that carries the
           code (<code>PRECONDITION</code>, <code>INVARIANT</code>,
           <code>NO_HANDLER</code>, …), what was asked for, which rule said no,
-          that sentence — and the state that was rejected, which is the thing
-          you actually want to look at. It is off until somebody asks, a
-          declining handler is <em>not</em> a refusal (the generated setter
-          behind it is the design), and one dispatch produces at most one
-          record. In a test, <code>@harness.no_refusals(…)</code> turns the
-          channel into a failure, which is what makes a test about a guarded
-          button mean something: clicking one that correctly declines and
+          and that sentence. It also carries the state that was rejected,
+          which is the thing you actually want to look at. The channel is off
+          until someone asks. A declining handler is <em>not</em> a refusal.
+          The generated setter behind it is the design there. One dispatch
+          produces at most one record. In a test,
+          <code>@harness.no_refusals(…)</code> turns the channel into a
+          failure. That failure makes a test about a guarded button mean
+          something. Without it, clicking one that correctly declines and
           clicking one whose selector is a typo both pass today.
         </p>
         <p>
-          The rule stays readable from everywhere it was before: an
+          The rule stays readable from everywhere it was before. An
           <code>invariant</code> is a <code>pred</code> with a role, so
           <code>$conserved</code> still works in a badge and in a
           <code>@when</code>, and a test asserts the same name after a dispatch
-          with an ordinary <code>assert_eq</code>. Two limits worth knowing.
-          A contract takes a <em>name</em> and the rule it names takes no
-          arguments — a rule that needs one is about this dispatch rather than
+          with an ordinary <code>assert_eq</code>. Know two limits. A contract
+          takes a <em>name</em>, and the rule it names takes no arguments.
+          A rule that needs an argument is about this dispatch rather than
           about the component, and <code>if</code> is still where that goes.
-          And an invariant covers the transitions the <em>block</em> declares:
-          the generated setters a card answers by default are not one of them.
+          Also, an invariant covers the transitions the <em>block</em>
+          declares. The generated setters a card answers by default are not
+          among them.
         </p>
       </section>
 
       <section id="styling">
-        <h3>Two ways to make a card look like something</h3>
+        <h3>Two ways to style a card</h3>
         <p>
           Every card on this page is styled by <strong>class name</strong>.
-          None of them carries a line of CSS: the views name
+          None of them contains a line of CSS. The views name
           <a href="https://github.com/marianoguerra/margaui">margaui</a>'s
-          component classes — <code>card</code>, <code>btn</code>,
+          component classes (<code>card</code>, <code>btn</code>,
           <code>input</code>, <code>badge</code>, <code>join</code>,
-          <code>stats</code> — with Tailwind utilities beside them, and the
+          <code>stats</code>) with Tailwind utilities beside them. The
           page compiles them in your browser. The mounted card publishes the
-          class names its views used, and a ~0.5 MB wasm build of the same
-          compiler the CLI's <code>gen-margaui-css</code> uses turns them into
-          CSS.
+          class names its views used. A ~0.5 MB wasm build of the same
+          compiler that the CLI's <code>gen-margaui-css</code> uses turns them
+          into CSS.
         </p>
         <mb-card src="./site/cards/tut-9-styles.html" margaui codemirror></mb-card>
         <p>
-          The other way needs nothing at all. A <code>&lt;template&gt;</code>
-          may hold a <code>&lt;style&gt;</code> block, which the framework
-          scopes to that view — so its rules cannot reach another component,
-          and bare declarations at the top of the block style the view's own
-          root element:
+          The other way needs nothing extra. A <code>&lt;template&gt;</code>
+          may hold a <code>&lt;style&gt;</code> block. The framework scopes it
+          to that view, so its rules cannot reach another component. Bare
+          declarations at the top of the block style the view's own root
+          element:
         </p>
         <pre><code>&lt;template&gt;
   &lt;style&gt;
@@ -511,42 +518,42 @@
   &lt;div class="row"&gt;…&lt;/div&gt;
 &lt;/template&gt;</code></pre>
         <p>
-          Which to reach for is the ordinary question: a class list buys you a
-          design system and costs a compiler, a <code>&lt;style&gt;</code>
-          block costs nothing and buys you what you write. The compiler is
-          opt-in for exactly that reason —
-          <code>&lt;mb-card src="…" margaui&gt;</code>, and a page whose cards
+          Which one to use is the usual question. A class list gives you a
+          design system and costs a compiler. A <code>&lt;style&gt;</code>
+          block costs nothing and styles only what you write. The compiler is
+          opt-in for that reason: write
+          <code>&lt;mb-card src="…" margaui&gt;</code>. A page whose cards
           style themselves never fetches it.
         </p>
         <p>
-          Two things worth knowing if you embed one. The CSS is
-          <strong>scoped to the preview</strong>: margaui's stylesheet carries
-          Tailwind's preflight and a <code>:root</code> theme, so injected as
-          written it would not style the card, it would flatten the page around
-          it. And class names have to be <strong>literal</strong> in the views
-          — the collector reads what the templates say, so a name assembled at
-          run time is a name that never reaches the compiler. That is why
+          Know two things before you embed one. First, the CSS is
+          <strong>scoped to the preview</strong>. margaui's stylesheet carries
+          Tailwind's preflight and a <code>:root</code> theme. Injected as
+          written, it would not style the card. It would restyle the whole page
+          around it. Second, class names must be <strong>literal</strong> in
+          the views. The collector reads what the templates say, so a name
+          assembled at run time never reaches the compiler. This is why
           <code>@if.class</code> switches between whole class lists rather than
           appending a word to one.
         </p>
       </section>
 
       <section id="reference">
-        <h2>The whole language, on one screen</h2>
+        <h2>The complete language, on one screen</h2>
         <p>
-          It is small on purpose, and the two ideas below carry the grammar:
-          <strong>application is juxtaposition</strong>
-          (<code>clamp n 1 10</code>, no commas, no parentheses around the
-          call), and <strong>parentheses are required wherever precedence
-          would otherwise be implicit</strong>. There is no precedence table to
-          remember and none to get wrong.
+          The language is small on purpose, and the two ideas below carry the
+          grammar. First, <strong>application is juxtaposition</strong>
+          (<code>clamp n 1 10</code>, with no commas and no parentheses around
+          the call). Second, <strong>parentheses are required wherever
+          precedence would otherwise be implicit</strong>. There is no
+          precedence table to memorize and none to get wrong.
         </p>
         <h4>Declarations</h4>
         <table>
           <thead><tr><th>Keyword</th><th>Body</th><th>Answers</th></tr></thead>
           <tbody>
-            <tr><td><code>receive name(a, b)</code></td><td>statements</td><td>an ADDRESSED name — one an <code>@on</code> slot writes, or a case of the schema's <code>receive</code></td></tr>
-            <tr><td><code>intent name(a)</code></td><td>statements</td><td>a case of the schema's <code>intent</code> — an intent that walked here</td></tr>
+            <tr><td><code>receive name(a, b)</code></td><td>statements</td><td>an ADDRESSED name: one an <code>@on</code> slot writes, or a case of the schema's <code>receive</code></td></tr>
+            <tr><td><code>intent name(a)</code></td><td>statements</td><td>a case of the schema's <code>intent</code>: an intent that arrived here</td></tr>
             <tr><td><code>compute name</code></td><td>one expression</td><td><code>$name</code> in a value slot</td></tr>
             <tr><td><code>pred name</code></td><td>one expression</td><td>a condition slot, or <code>@when</code></td></tr>
             <tr><td><code>invariant name</code></td><td>one expression</td><td>the same, plus every transition</td></tr>
@@ -556,12 +563,12 @@
         </table>
         <p>
           A <code>///</code> comment above a declaration is its documentation
-          and travels with it. There is no <code>when</code> keyword: a filter
+          and travels with it. There is no <code>when</code> keyword. A filter
           and a boolean <code>compute</code> are the same construct, so
           <code>@when</code> is a <em>use</em> of a <code>pred</code>. The two
-          transition kinds take contract clauses between the name and the body
-          — <code>receive push requires canPush ensures moved { … }</code> — each
-          naming a <code>pred</code>, at most one of each.
+          transition kinds take contract clauses between the name and the body,
+          as in <code>receive push requires canPush ensures moved { … }</code>.
+          Each clause names a <code>pred</code>, with at most one of each kind.
         </p>
         <h4>Statements</h4>
         <pre><code>.count = 0                  assign
@@ -583,9 +590,9 @@ forward           reply v
 fail e            stop
 if cond { … } else { … }    a branch, else optional</code></pre>
         <p>
-          A place can be nested — <code>.a.b</code> and <code>.a[k].b</code>
-          are exactly what a view slot cannot spell, and the reason the block
-          language exists at all.
+          A place can be nested. <code>.a.b</code> and <code>.a[k].b</code>
+          are exactly what a view slot cannot spell. That is the reason the
+          block language exists at all.
         </p>
         <h4>Expressions</h4>
         <table>
@@ -600,26 +607,26 @@ if cond { … } else { … }    a branch, else optional</code></pre>
         </table>
         <p>
           Mixing two families in one unparenthesized chain is a
-          <em>parse</em> error, and the message names the parentheses to add.
-          So <code>a and b and c</code> is fine, <code>a + b * c</code> is
-          refused, and <code>a &lt; b &lt; c</code> is refused too. Prefix
-          <code>not</code> and <code>-</code> negate; a negative literal in an
-          argument list wants its own parentheses
-          (<code>send 'nudge' (-1)</code>), because <code>-</code> is an
+          <em>parse</em> error. The message names the parentheses to add.
+          So <code>a and b and c</code> is fine. <code>a + b * c</code> is
+          refused. <code>a &lt; b &lt; c</code> is refused too. Prefix
+          <code>not</code> and <code>-</code> negate. A negative literal in an
+          argument list needs its own parentheses
+          (<code>send 'nudge' (-1)</code>). The reason: <code>-</code> is an
           operator here rather than part of the number.
         </p>
         <p>
           The atoms are the view's atoms, spelled identically:
           <code>.field</code>, <code>@bind</code>, <code>$method</code>,
           <code>*dyn</code>, <code>'text'</code>, <code>$'…{expr}…'</code>,
-          numbers and booleans. That is deliberate — what is new in a body is
-          operators, statements and nesting, so someone who can read a tutuca
+          numbers and booleans. This is deliberate: what is new in a body is
+          operators, statements and nesting. So someone who can read a tutuca
           view can read a handler without learning a second vocabulary.
         </p>
-        <h4>The reading vocabulary</h4>
+        <h4>The read vocabulary</h4>
         <p>
-          Closed, and closed on purpose: the language is total because it
-          cannot call anything the runtime did not put here.
+          The list is closed, and closed on purpose. The language is total
+          because it cannot call anything the runtime did not put here.
         </p>
         <pre><code>empty? x    truthy? x   falsy? x    null? x
 len xs      has xs k    contains s sub
@@ -630,65 +637,65 @@ str x       lower s     upper s     trim s</code></pre>
       <section id="limits">
         <h2>Where a card stops</h2>
         <p>
-          The line is one sentence long: <strong>a card cannot name a MoonBit
+          The limit is one sentence long: <strong>a card cannot name a MoonBit
           value.</strong> Everything below follows from it.
         </p>
         <ul>
           <li>
             <strong>No imports, no closures, no components built at run
             time.</strong> A handler that walks a dispatch path or constructs a
-            child is a handler the compiler was for.
+            child is a handler that needs the compiler.
           </li>
           <li>
-            <strong>No record literal — but a record.</strong> There is no
+            <strong>No record literal, but a record.</strong> There is no
             syntax for one, because the language has no way to name a value it
             is not building. <code>new Label</code> puts the type's zero at
-            <code>@cur</code> and the statements under it fill it in, so
+            <code>@cur</code>, and the statements under it fill it in. So
             <code>.labels.push @cur</code> is how a list of records grows.
           </li>
           <li>
-            <strong>One component per file.</strong> A file declaring several
-            is refused by name: a card is one component, and several want
+            <strong>One component per file.</strong> The checker refuses a file
+            that declares several, and names them. Several components need
             <code>tutuca gen-views</code> and a module.
           </li>
           <li>
             <strong>No <code>&lt;template&gt;</code>, no card.</strong> State
-            and script describe a component; a view is what makes one visible.
+            and script describe a component. A view makes one visible.
           </li>
           <li>
             <strong>The views are not checked.</strong> The report above each
-            preview is the <em>script</em> block judged against the schema.
-            <code>gen-views</code> checks the templates too — every
-            <code>.field</code> a slot reads, including inside a loop — and a
-            card cannot, because its views are parsed at mount rather than
+            preview judges the <em>script</em> block against the schema.
+            <code>gen-views</code> also checks the templates: every
+            <code>.field</code> a slot reads, including inside a loop. A card
+            cannot do this, because its views are parsed at mount rather than
             compiled. Misspell one in a template here and it reads
-            <code>Null</code> and renders nothing, quietly.
+            <code>Null</code> and renders nothing, with no message.
           </li>
         </ul>
         <p>
           Reach past any of those and you are writing a component. Nothing is
-          thrown away in the move: the same file gains a
+          thrown away in the move. The same file gains a
           <code>tutuca gen-views</code> step, which reads these same three
-          blocks and emits typed MoonBit — the state struct, the codec, the
-          descriptor, the message enums and the compiled view tree — and every
+          blocks and emits typed MoonBit: the state struct, the codec, the
+          descriptor, the message enums and the compiled view tree. Every
           handler the block could compile stays exactly as written. The ones it
           cannot are refused <em>by name</em>, with the reason, and come back
           as an <code>update~</code> argument.
         </p>
         <p>
-          The other direction is worth knowing too. Because a card needs no
-          toolchain, checking one needs no browser: the same runtime this page
-          loads exposes <code>__tutucard.check(source, name)</code>, which
-          answers the report you see above the previews — the component's name
-          and every issue, with lines and character ranges — and mounts
-          nothing. A build step over a directory of cards, or an agent that
+          Know the other direction too. Because a card needs no toolchain,
+          checking one needs no browser. The same runtime this page loads
+          exposes <code>__tutucard.check(source, name)</code>. That call
+          returns the report you see above the previews: the component's name
+          and every issue, with lines and character ranges. It mounts nothing.
+          A build step over a directory of cards, or an agent that
           just generated one, validates with that call and no DOM. It is what
           keeps every example on this page loading.
         </p>
         <h3>Keep going</h3>
         <ul>
-          <li><a href="./tutucard/">The card playground</a> — the same loader with more panels: the state tree, the dispatch log, and a structured editor that shows one block of the file at a time.</li>
-          <li><a href="./">The landing page</a> — the same framework with the compiler in, compiling MoonBit in your browser.</li>
+          <li><a href="./tutucard/">The card playground</a> — the same loader with more panels: the state tree, the dispatch log, and a structured editor. The editor shows one block of the file at a time.</li>
+          <li><a href="./">The landing page</a> — the same framework with the compiler included. It compiles MoonBit in your browser.</li>
           <li><a href="./storybook/">Storybook</a> — every ported example, compiled ahead of time, with a Lint panel per story.</li>
           <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the loader is <code>tutucard/</code>, the language is <code>tscript/</code>.</li>
         </ul>
