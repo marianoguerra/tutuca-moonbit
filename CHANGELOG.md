@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-08-24
+
 ### Fixed
 
 - **A `compute` or `pred` containing `/` or `mod` compiled into a module that
