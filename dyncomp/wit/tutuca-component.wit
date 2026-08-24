@@ -23,7 +23,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.9.0;
+package tutuca:component@0.10.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -386,6 +386,44 @@ interface control {
   /// message arrives as handle-event(receive, ...) at `path`, e.g.
   /// `[field("left")]` for the child a `left` field holds.
   send-at: func(path: list<path-step>, name: string, args: list<value>);
+
+  /// Answer whoever sent the message being handled, under a name this handler
+  /// picks.
+  ///
+  /// An intent answers under a name the runtime derives (`<name>Ok`), because
+  /// its raiser asked a question and declared arms for it. A message carries
+  /// no such expectation and its sender declares no arms, so the replier names
+  /// the reply and the sender handles it like any other message.
+  ///
+  /// The reply reaches the sender's position as pinned when they sent. With
+  /// nobody waiting — a view's own `@on.*`, or the host's send-at-root — the
+  /// host refuses NO_SENDER and nothing is dispatched, which is a refusal the
+  /// guest is not told about: it did what it could, and who was listening was
+  /// never its question.
+  send-reply: func(name: string, args: list<value>);
+
+  /// Read a name this component DECLARED a lookup for — the handler-side twin
+  /// of a view's `*name`.
+  ///
+  /// The only import that answers rather than buffering, and the only one that
+  /// can: everything else here is an effect the host applies after the call,
+  /// and a value a handler is in the middle of using cannot wait for that.
+  ///
+  /// It takes no route, and the omission is the contract rather than a gap.
+  /// The host resolves this component's declared lookups at DISPATCH, along
+  /// the default `[dyn, lex]`, and this reads one of the answers — so a route
+  /// the guest named could not change what came back. Which environments were
+  /// walked is the host's business, the same way the default route is.
+  ///
+  /// `nil` for a name the manifest's `lookup` list does not declare, and for a
+  /// declared one that nothing above supplies and that carries no default.
+  /// There is no error arm: a name nothing supplies is the ordinary case a
+  /// default exists FOR, and a view's `*name` answers it the same way.
+  ///
+  /// No capability gates it. A guest reads what an ancestor deliberately
+  /// published to its subtree and nothing else — the reach its own views
+  /// already had, moved to where a handler can use it.
+  lookup: func(name: string) -> value;
 
   /// End the walk with no answer — "served, and no answer". The sender hears
   /// nothing, even if it named an outcome, which is what separates this from

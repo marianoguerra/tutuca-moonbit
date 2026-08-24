@@ -632,11 +632,11 @@ fn ECtx::effect(
       ]),
     ]
   }
-  guard name is ("send" | "intent") else {
+  guard name is ("send" | "sendReply" | "intent") else {
     self.bail(
       "`" +
       name +
-      "` is not an effect this language has — `send`, `sendAt`, `intent`, `forward`, `reply`, `fail` and `stop` are the ones it does",
+      "` is not an effect this language has — `send`, `sendReply`, `sendAt`, `intent`, `forward`, `reply`, `fail` and `stop` are the ones it does",
       span,
     )
     return []
@@ -673,7 +673,14 @@ fn ECtx::effect(
         i32c(route_code(route)),
       ])
     } else {
-      call("tc_effect_push", [i32c(1), get(msg), get(pl)])
+      // A reply carries a name the way a send does, so it is the same shape
+      // with a different kind — the difference is who it reaches, and that is
+      // the host's to work out.
+      call("tc_effect_push", [
+        i32c(if name == "sendReply" { 10 } else { 1 }),
+        get(msg),
+        get(pl),
+      ])
     },
   ]
 }

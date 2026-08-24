@@ -647,6 +647,30 @@ So the mechanism is here and the decision is the host's. What remains open is
 that no host in this repository USES it yet: `demo/universal_wasm` still
 registers `double` / `listComponents` / `makeComponent` for anyone who asks.
 
+### 5a. `control.lookup`: a map the host filled, not a walk the guest takes
+
+`lookup` is the one function on `control` that answers rather than acting, and
+what makes it safe is that it does not reach anything while it runs.
+
+`dynobj.mbt`'s `obj_handler` resolves this component's DECLARED lookups —
+`DynComponentDef.lookup`, which came from the manifest — through the
+dispatching `&Ctx` BEFORE the guest is entered, and passes the answers in as
+`Guest::dispatch`'s `bindings`. `control.lookup(name)` reads that map. So:
+
+- the set of names is fixed by the manifest, at registration, and a name the
+  bundle did not declare is simply not there;
+- the values are resolved at the guest's OWN position, along the default
+  `[dyn, lex]` route, by the same `ctx.lookup` a host component uses — a
+  binding published to a subtree this instance is not in was never resolved
+  and is not in the map;
+- there is no route parameter, so a guest cannot ask for a different walk than
+  the one the host took, and the WIT says so rather than accepting one and
+  ignoring it.
+
+The reach is therefore exactly what the guest's own VIEWS already had: a view's
+`*name` resolves against the same frames. What 0.10.0 added is a place to use
+it from, not a place to reach.
+
 ## 6. Availability
 
 Guest calls are synchronous, so an infinite loop or a runaway `memory.grow`
@@ -823,6 +847,20 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
   v2's five — `intent`, `intent-at`, `forward`, `reply`, `fail` — are all
   buffered and all applied through the dispatching `&Ctx`, exactly as `emit`
   and `send` are, so a guest is not a special case on any of them.
+  `send-reply` (0.10.0) is buffered like the rest, and reaches
+  `ctx.send_reply`; with nobody waiting the HOST refuses `NO_SENDER` and
+  nothing is dispatched, so a guest cannot address a component by replying to
+  a message nobody sent.
+- Adding a `control` function that ANSWERS: `lookup` (0.10.0) is the only one,
+  and the shape is the whole of why it is safe. It does not reach anything
+  during the call — the host resolves this component's DECLARED lookups before
+  entering the guest and hands the answers in, so `lookup` is a map read over a
+  set the manifest fixed. A name the manifest does not declare is not in the
+  map. That means a guest cannot use it to walk the host tree, to probe for
+  names, or to read a binding published to a subtree it is not in: the reach is
+  what its own views already had, and the host chose it. Anything else that
+  wants to answer should be built the same way, or it is a channel out of the
+  sandbox rather than a value.
 - Adding to `env`: is the answer weaker than the platform's own, and is it
   frozen or seeded so a dispatch still replays?
 - **Adding a step to `event_object_steps`**: what does it reach, and can a path

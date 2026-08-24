@@ -11,7 +11,7 @@ import {
 // Values
 pub let corpus_common_style : String
 
-pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let corpus_global_style : String
 
@@ -23,14 +23,14 @@ pub fn v2_case_name(Int) -> String?
 
 // Types and methods
 pub(all) enum CorpusIntent {
-  Case14(String)
-  Case15(String)
-  Case16(Int)
-  Case17(Int)
-  Case18(String)
-  Case19(String)
+  Case16(String)
+  Case17(String)
+  Case18(Int)
+  Case19(Int)
   Case20(String)
   Case21(String)
+  Case22(String)
+  Case23(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
@@ -57,8 +57,10 @@ pub(all) enum CorpusReceive {
   Case11
   Case12
   Case13
-  Case22(Int)
-  Case23(String)
+  Case14
+  Case15
+  Case24(Int)
+  Case25(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusReceive::from_dispatch(@component.Dispatch) -> Self?

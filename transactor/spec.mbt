@@ -63,6 +63,80 @@ pub(all) struct NoIntents {}
 pub impl Intents for NoIntents
 
 ///|
+/// The name-resolution seam: the two environments a route walks, for the
+/// questions that are not "who handles this intent".
+///
+/// It is a seam for the same reason `Intents` is one. The `dyn` leg is the
+/// RENDER ancestry, which only the renderer can rebuild, and the `lex` leg is
+/// the registration scope, which only the component layer holds — and this
+/// package deliberately imports neither. The app wires an implementation in,
+/// the way it wires `Intents`.
+///
+/// A type is answered as a component ID rather than as a component, because a
+/// component is not something `core` can name. `build` turns one back into an
+/// instance.
+pub(open) trait Names {
+  /// The `dyn` leg: the nearest value published under `name` in the render
+  /// ancestry at `at`, rebuilt from `root`.
+  fn dyn_value(
+    Self,
+    root : @tutuca.Value,
+    at : @tutuca.DispatchPath,
+    name : String,
+  ) -> @tutuca.Value? = _
+  /// The `dyn` leg for a TYPE: the component an ancestor published under
+  /// `name` with `provide {Name: "self"}`.
+  fn dyn_type(
+    Self,
+    root : @tutuca.Value,
+    at : @tutuca.DispatchPath,
+    name : String,
+  ) -> Int? = _
+  /// The `lex` leg: what `name` means in the registration scope of the
+  /// component at `at`.
+  ///
+  /// A scope chain holds components, so a VALUE never answers here. That is
+  /// not a hole: it is why ONE default route serves both a value lookup and a
+  /// type lookup — the leg that cannot answer simply misses.
+  fn lex_type(
+    Self,
+    root : @tutuca.Value,
+    at : @tutuca.DispatchPath,
+    name : String,
+  ) -> Int? = _
+  /// Build an instance of the component `id` names.
+  fn build(Self, id : Int, args : Map[String, @tutuca.Value]) -> @tutuca.Value? = _
+}
+
+///|
+impl Names with fn dyn_value(_self, _root, _at, _name) {
+  None
+}
+
+///|
+impl Names with fn dyn_type(_self, _root, _at, _name) {
+  None
+}
+
+///|
+impl Names with fn lex_type(_self, _root, _at, _name) {
+  None
+}
+
+///|
+impl Names with fn build(_self, _id, _args) {
+  None
+}
+
+///|
+/// Resolves nothing. A transactor driven with no renderer and no registry —
+/// every `Path::update` test — answers the way a route that misses answers.
+pub(all) struct NoNames {}
+
+///|
+pub impl Names for NoNames
+
+///|
 /// How many positions one intent may walk before the runtime cuts it off
 ///.
 ///
@@ -225,6 +299,16 @@ pub struct Transaction {
   /// an ordinary message and a handler cannot tell it from one a parent sent.
   /// An inspector is outside that claim and needs to label the two.
   is_answer : Bool
+  /// Where this message came FROM, and nothing else's business: `ctx.send_reply`
+  /// is the only reader.
+  ///
+  /// `None` when nobody is waiting — a view's own `@on.*`, the host's
+  /// `send_at_root`, an intent's answer — and that is what `NO_SENDER` refuses
+  /// on. The pinned twin is resolved at PUSH time for the same reason an
+  /// intent's answer path is: a reply must reach the sender that asked, even if
+  /// a key moved while the message was in flight.
+  priv origin : @tutuca.DispatchPath?
+  priv origin_pinned : @tutuca.Path?
   priv mut cmpl : Completion?
   priv mut self_settled : Bool
   priv mut finished : Bool
@@ -247,6 +331,7 @@ declare pub fn Transaction::completion(self : Transaction) -> Completion
 /// resolves through the external registry.
 pub struct Transactor {
   priv intents : &Intents
+  priv names : &Names
   mut root : @tutuca.Value
   priv mut queue : Array[Transaction]
   priv mut queue_head : Int
@@ -261,6 +346,7 @@ pub struct Transactor {
 declare pub fn Transactor::new(
   root : @tutuca.Value,
   intents? : &Intents,
+  names? : &Names,
 ) -> Transactor
 
 ///|
@@ -308,6 +394,7 @@ declare pub fn Transactor::push_send(
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
+  origin? : @tutuca.DispatchPath,
 ) -> Transaction
 
 ///|

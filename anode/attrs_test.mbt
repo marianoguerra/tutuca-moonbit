@@ -98,7 +98,9 @@ test "@if with only @then leaves else unset" {
 ///|
 test "events register data-eid and handler args" {
   let (root, px) = aparse(
-    "<button @on.click=\"myHandler @v .f true 42 12.5 MyType e.value\">go</button>",
+    // No `MyType`: a component type is not a value, so a handler argument
+    // cannot be one. A handler that needs a type asks for it by name.
+    "<button @on.click=\"myHandler @v .f true 42 12.5 e.value\">go</button>",
   )
   guard! root is Dom(d)
   guard! d.attrs is ConstAttrs(m)
@@ -110,14 +112,13 @@ test "events register data-eid and handler args" {
   let h = ev.handlers[0]
   assert_eq(h.name, "click")
   assert_true(h.handler.handler is HandlerName(name="myHandler", ns=Receive))
-  assert_eq(h.handler.args.length(), 7)
+  assert_eq(h.handler.args.length(), 6)
   assert_true(h.handler.args[0] is Bind("v"))
   assert_true(h.handler.args[1] is Field("f"))
   assert_true(h.handler.args[2] is Const(lit=LBool(true), ..))
   assert_true(h.handler.args[3] is Const(lit=LNum(42), ..))
   assert_true(h.handler.args[4] is Const(lit=LNum(12.5), ..))
-  assert_true(h.handler.args[5] is TypeName("MyType"))
-  assert_true(h.handler.args[6] is EventPath(["value"]))
+  assert_true(h.handler.args[5] is EventPath(["value"]))
 }
 
 ///|

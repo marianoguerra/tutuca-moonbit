@@ -29,7 +29,9 @@ exactly as its templates do.
 Five declaration keywords and no more — `state`, `struct`, `enum`, and the two
 message buckets `receive` / `intent`. There is no nesting level
 above them: a `<template id>` already says which component a thing belongs to,
-so a second place to say it would be a second place to get it wrong.
+so a second place to say it would be a second place to get it wrong. Inside a
+`state` body, two SECTIONS say where a value comes from — see *Dynamic
+bindings* below.
 
 The schema goes in a `<script>` and not a `<template>`, because script content
 is raw text to an HTML parser and template content is markup — an `Array[Int]`
@@ -228,6 +230,81 @@ declaring them is what makes `intent lex 'loadRows'` a *request* rather than a
 notification. Nobody writes that down twice — the generator reads this list and
 fills the intent's opts in. Channel semantics are in
 [messages-and-intents.md](./messages-and-intents.md).
+
+## Dynamic bindings (`provide` / `lookup`)
+
+For passing a value "context-style" to a deep descendant without threading it
+through every component in between. Two sections inside a `state` body:
+
+```html
+<script type="tutuca/state">
+  state Board {
+    theme: String
+    sheets: Map[String, String]
+    selId: String
+    slot: Slot
+    provide { theme = .theme, sel = .sheets[.selId], Cell = self }
+  }
+  state Slot {
+    made: String
+    lookup { theme, color = 'gray', Cell }
+  }
+</script>
+```
+
+```html
+<template id="Slot"><em :style="$'color: {*theme}'"></em></template>
+```
+
+A **`provide`** publishes a name to the whole subtree below the component,
+re-evaluated every time it renders. A lowercase name publishes a VALUE, and its
+expression must be **addressable** — `.field` or `.seq[.key]` and nothing else
+— because a provide doubles as the path a `<x render="*name">` teleports
+through. There is no shorthand for "the field of the same name": write
+`theme = .theme`.
+
+A **`lookup`** names what it WANTS, not who supplies it. `theme` is the whole
+declaration; `color = 'gray'` adds the fallback used when nothing above
+provides it (without one, a miss reads as null). The local name IS the provided
+name — there is no alias. Because a lookup does not name its producer, **one
+provide name has one producer per scope chain**.
+
+An **uppercase** name publishes a component TYPE rather than a value, and
+`self` is the only thing it can be: `Cell = self` injects this component as
+`Cell` for its whole subtree, so something below that builds a `Cell` gets this
+one rather than whatever is registered under that name. A published type is not
+a render target — it has no path, so `<x render="*Cell">` resolves to nothing.
+
+**A handler reads one too.** `*name` in a script block is the same question the
+view asks, answered at the same position:
+
+```
+receive stamp {
+  .label = $'{.label} ({*theme})'
+}
+```
+
+The host resolves this component's declared lookups before it enters the card
+and the handler reads one of the answers — so a `*name` a body writes and a
+`*name` a template writes get the same value. A `*name` the `state` block does
+not declare is `DYN_NOT_DECLARED`: whether a producer is above you at render
+time is a runtime fact, but whether you ever asked for the name is not.
+
+`$name` is still render-only, and for the reason `*name` no longer is: a
+`compute` really is the render stack's answer, and a body calls one bare.
+
+The provide/lookup declarations themselves reach the host as source text in the
+manifest, and the host evaluates them against the instance while rendering,
+exactly as it does for a component written in MoonBit. Only the handler-side
+read costs the module an import (`control.lookup`), and only a card that writes
+one has it.
+
+`provide` and `lookup` are **not reserved field names** — the section opens on
+the word followed by a brace, so `provide: String` is still a field.
+
+Runtime mechanics, and the `dyn`/`lex` routes a handler resolves a name along:
+[semantics.md](./semantics.md) *Name lookup*. Authoring the MoonBit side:
+[advanced.md](./advanced.md) *Dynamic bindings*.
 
 ## Methods no view calls (`$`-callables)
 

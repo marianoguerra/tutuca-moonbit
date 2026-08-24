@@ -14,7 +14,7 @@ pub fn args_json(Map[String, @core.Value]) -> String
 
 pub let dyncomp_storybook_common_style : String
 
-pub fn dyncomp_storybook_component(name? : String, views? : Map[String, @anode.View], init? : DyncompStorybookState, common_style? : String, global_style? : String, update? : (DyncompStorybookState, @component.Dispatch, &@core.Ctx) -> @component.Update[DyncompStorybookState], compute? : (DyncompStorybookMethod) -> ((DyncompStorybookState, Array[@core.Value]) -> @core.Value)?, swap? : (DyncompStorybookInput) -> ((DyncompStorybookState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (DyncompStorybookWhen) -> ((DyncompStorybookState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn dyncomp_storybook_component(name? : String, views? : Map[String, @anode.View], init? : DyncompStorybookState, common_style? : String, global_style? : String, update? : (DyncompStorybookState, @component.Dispatch, &@core.Ctx) -> @component.Update[DyncompStorybookState], compute? : (DyncompStorybookMethod) -> ((DyncompStorybookState, Array[@core.Value]) -> @core.Value)?, swap? : (DyncompStorybookInput) -> ((DyncompStorybookState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (DyncompStorybookWhen) -> ((DyncompStorybookState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let dyncomp_storybook_global_style : String
 
@@ -28,7 +28,7 @@ pub fn stories_of(@registry.Registry) -> Array[Story]
 
 pub let story_card_common_style : String
 
-pub fn story_card_component(name? : String, views? : Map[String, @anode.View], init? : StoryCardState, common_style? : String, global_style? : String, update? : (StoryCardState, @component.Dispatch, &@core.Ctx) -> @component.Update[StoryCardState], compute? : (StoryCardMethod) -> ((StoryCardState, Array[@core.Value]) -> @core.Value)?, swap? : (StoryCardInput) -> ((StoryCardState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn story_card_component(name? : String, views? : Map[String, @anode.View], init? : StoryCardState, common_style? : String, global_style? : String, update? : (StoryCardState, @component.Dispatch, &@core.Ctx) -> @component.Update[StoryCardState], compute? : (StoryCardMethod) -> ((StoryCardState, Array[@core.Value]) -> @core.Value)?, swap? : (StoryCardInput) -> ((StoryCardState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let story_card_global_style : String
 
@@ -36,7 +36,7 @@ pub fn story_card_views() -> Map[String, @anode.View]
 
 pub let story_nav_common_style : String
 
-pub fn story_nav_component(name? : String, views? : Map[String, @anode.View], init? : StoryNavState, common_style? : String, global_style? : String, update? : (StoryNavState, @component.Dispatch, &@core.Ctx) -> @component.Update[StoryNavState], swap? : (StoryNavInput) -> ((StoryNavState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn story_nav_component(name? : String, views? : Map[String, @anode.View], init? : StoryNavState, common_style? : String, global_style? : String, update? : (StoryNavState, @component.Dispatch, &@core.Ctx) -> @component.Update[StoryNavState], swap? : (StoryNavInput) -> ((StoryNavState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let story_nav_global_style : String
 

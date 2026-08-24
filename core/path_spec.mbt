@@ -66,6 +66,78 @@ pub fn route_label(route : Array[Leg]) -> String {
 }
 
 ///|
+/// The default route is `dyn lex` and is written HERE, once. Every other
+/// package that needs it asks for it rather than spelling two arms of an enum
+/// in its own order — a default route two packages disagree about is the kind
+/// of difference that shows up as a component answering in one build and not
+/// in another.
+///
+/// A function rather than a `let`, because a route is an `Array` and a shared
+/// one could be appended to by whoever received it.
+pub fn default_route() -> Array[Leg] {
+  [Dyn, Lex]
+}
+
+///|
+/// Walk a route's legs in order and answer the first one that resolves.
+///
+/// The one walk every name question shares, whatever it is asking about: the
+/// legs are LAZY, so a leg that is never reached is never paid for, and the
+/// array IS the walk order, so `[Lex, Dyn]` asks the registration scope first.
+/// An empty route answers `None` rather than falling back to the default —
+/// "ask nothing" is a thing a caller can mean.
+///
+/// Generic because the two environments answer different things: a value leg
+/// answers a `Value`, a type leg answers a component id. There is no
+/// unknown-leg arm to write, which is the one place this is simpler than the
+/// JS it is ported from: `Leg` is closed.
+pub fn[T] route_lookup(
+  route : Array[Leg],
+  lex : () -> T?,
+  dyn_ : () -> T?,
+) -> T? {
+  for leg in route {
+    let v = match leg {
+      Dyn => dyn_()
+      Lex => lex()
+    }
+    if v is Some(_) {
+      return v
+    }
+  }
+  None
+}
+
+///|
+/// A name starting `A-Z` reads as a component TYPE; anything else is a value.
+///
+/// One rule, written once, because every layer that carries a name needs the
+/// same partition — the value parser telling a type token from a name, a
+/// `provide` key deciding whether `"self"` is the only legal value, a card's
+/// state block saying the same thing in text. It is also what lets types and
+/// values share one binding frame: their keyspaces cannot collide, so
+/// nearest-ancestor-wins falls out of frame order for both without a second
+/// stack.
+pub fn is_type_name(s : String) -> Bool {
+  s.iter().next() is Some('A'..='Z')
+}
+
+///|
+/// Options for a name lookup: the same legs, the same array-is-walk-order
+/// contract and the same default an intent's route has.
+///
+/// A separate struct from `IntentOpts` because the three answer names and
+/// `live_path` are about a walk that DISPATCHES, and a lookup does not — it
+/// asks a question and gets an answer in the same breath.
+pub(all) struct LookupOpts {
+  /// The legs to walk, in order. `default_route()` when nothing says otherwise.
+  route : Array[Leg]
+} derive(Debug, Eq)
+
+///|
+declare pub fn LookupOpts::new(route? : Array[Leg]) -> LookupOpts
+
+///|
 /// Options for `Ctx::intent`.
 ///
 /// `route` is the walk itself. The three answer names are the three ways a walk
@@ -156,6 +228,36 @@ pub(open) trait Ctx {
   fn forward(Self, args : Array[Value]?, opts : IntentOpts?) -> Unit = _
   /// Answer the intent this handler received, and end the walk.
   fn reply(Self, value : Value) -> Unit = _
+  /// Answer the sender of the MESSAGE being handled, under a name the replier
+  /// picks.
+  ///
+  /// An intent answers under a name the runtime derives (`<name>Ok`), because
+  /// the raiser asked a question and declared arms for it. A message carries no
+  /// such expectation and its sender declares no arms, so the replier names the
+  /// reply and the sender handles it like any other message. Refuses
+  /// `NO_SENDER` when nobody sent this one — a view's own `@on.*`, or the
+  /// host's `send_at_root`. `reply` stays intent-only.
+  fn send_reply(Self, name : String, args : Array[Value]) -> Unit = _
+  /// Resolve a name the way the renderer would, along `opts.route`.
+  ///
+  /// The same two environments an intent walks: `dyn` the render ancestry —
+  /// what an ancestor published with `provide` — and `lex` the registration
+  /// scope. A scope chain holds components, so a VALUE never answers on the
+  /// `lex` leg; that is not a hole but the reason one default route serves both
+  /// this and `make`.
+  ///
+  /// `Null` when every leg misses and the component declares no default.
+  fn lookup(Self, name : String, opts : LookupOpts) -> Value = _
+  /// Resolve a component TYPE along `opts.route` and build one.
+  ///
+  /// The type half of `lookup`, and the only thing a handler can do with a
+  /// resolved type — so there is no `lookup_type` to hold one with. An
+  /// uppercase name is a type (`is_type_name`), a `provide {Cell: "self"}`
+  /// above shadows the registered `Cell` for its whole subtree, and the
+  /// registration scope answers when nothing published one.
+  ///
+  /// `None` — and a `TYPE_NOT_FOUND` refusal — when no leg answers.
+  fn make(Self, name : String, args : Map[String, Value], opts : LookupOpts) -> Value? = _
   /// Answer it with a failure, and end the walk.
   fn fail(Self, error : Value) -> Unit = _
   fn stop_propagation(Self) -> Unit = _
@@ -221,6 +323,23 @@ impl Ctx with fn forward(_self, _args, _opts) {
 ///|
 impl Ctx with fn reply(_self, _value) {
 
+}
+
+///|
+impl Ctx with fn send_reply(_self, _name, _args) {
+
+}
+
+///|
+/// The pure default resolves nothing: a handler run with no dispatcher has no
+/// render ancestry to walk and no registry to ask.
+impl Ctx with fn lookup(_self, _name, _opts) {
+  Null
+}
+
+///|
+impl Ctx with fn make(_self, _name, _args, _opts) {
+  None
 }
 
 ///|

@@ -190,13 +190,9 @@ pub impl Show for Path with fn output(self, logger) {
 }
 
 ///|
-/// The default route is `dyn lex` and is written HERE, once. Every other
-/// package that needs it asks for it rather than spelling two arms of an enum
-/// in its own order — a default route two packages disagree about is the kind
-/// of difference that shows up as a component answering in one build and not
-/// in another.
+/// `route` defaults to `default_route()` — the one place `dyn lex` is written.
 pub fn IntentOpts::new(
-  route? : Array[Leg] = [Dyn, Lex],
+  route? : Array[Leg] = default_route(),
   on_ok_name? : String,
   on_error_name? : String,
   on_unhandled_name? : String,
@@ -283,4 +279,10 @@ pub fn Path::update(
   }
   end_dispatch(opened)
   out
+}
+
+///|
+/// `route` defaults to `default_route()`, the same one an intent takes.
+pub fn LookupOpts::new(route? : Array[Leg] = default_route()) -> LookupOpts {
+  { route, }
 }

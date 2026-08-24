@@ -5,7 +5,7 @@
 // card is loaded through `dyncomp/host/wasm/abi.mjs` and driven. Nothing here
 // knows how the module was produced, so what it proves is not "the generator
 // emitted what the generator meant" but "the host accepts this as a
-// tutuca:component@0.9.0 guest".
+// tutuca:component@0.10.0 guest".
 //
 //   node --test tutucard/wasm/test/
 //
@@ -86,6 +86,10 @@ async function load(stem, { allowWax = false } = {}) {
         log: (level, msg) => control.push({ kind: "log", level, msg }),
         send: (name, args) => control.push({ kind: "send", name, args }),
         stopPropagation: () => control.push({ kind: "stop" }),
+        sendReply: (name, args) => control.push({ kind: "sendReply", name, args }),
+        // Bound and answering nothing: nothing is above this guest, so a
+        // declared lookup would read the default it declares.
+        lookup: () => ({ tag: "nil" }),
         // The same-bundle child factory. A card that writes `new <Component>`
         // imports it; one that does not never names it, and an import the host
         // does not implement is an instantiation error rather than a silently

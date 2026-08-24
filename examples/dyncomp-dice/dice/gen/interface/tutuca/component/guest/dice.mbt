@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.9.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.10.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
 ///
@@ -9,7 +9,7 @@
 /// fields, its message buckets and its views live in `manifest.json` and
 /// `views/`, as data beside the wasm — so a host can read what a bundle IS
 /// before instantiating it, and an author edits a view as HTML rather than as
-/// a string inside source. That split arrived with `tutuca:component@0.9.0`;
+/// a string inside source. That split arrived with `tutuca:component@0.10.0`;
 /// before it, this file carried a `dice_def()` and the guest exported
 /// `get-manifest`.
 ///
@@ -74,7 +74,7 @@ impl DynComponent for Dice with fn get_field(self, name) {
 ///|
 /// Handle a message. `self` in, the successor out.
 ///
-/// Three answers, not two, and the third is what `tutuca:component@0.9.0`
+/// Three answers, not two, and the third is what `tutuca:component@0.10.0`
 /// added: `Changed(next)` carries a successor, `Unchanged` says the name was
 /// MINE and nothing moved, and `Unhandled` says it was never mine at all. The
 /// 0.5 contract returned `&DynComponent?` and collapsed the last two into one
@@ -190,7 +190,7 @@ impl DynComponent for Dice with fn with_field(self, name, v) {
 }
 
 // `seq_entries` used to live here — an instance offering ITSELF as a sequence
-// for a host `@each` to walk. It went with `tutuca:component@0.9.0` and is not
+// for a host `@each` to walk. It went with `tutuca:component@0.10.0` and is not
 // missed: the view iterates `.rolls`, a declared list field the host already
 // reads through `get_field`, so the second path was a second way to say the
 // same thing and one more thing a guest could get wrong.

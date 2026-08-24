@@ -69,7 +69,7 @@ if (!existsSync(manifestPath)) {
 }
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 const descriptor = {
-  world: "tutuca:component@0.9.0",
+  world: "tutuca:component@0.10.0",
   encoding: manifest.stringEncoding ?? "utf16",
   core,
   manifest,

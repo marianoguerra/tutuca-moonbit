@@ -192,6 +192,38 @@ pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise {
 }
 
 ///|
+/// The first component along the chain that PROVIDES `name` — the producer a
+/// consumer never had to name.
+///
+/// Innermost frame first, and within a frame whichever registration answers
+/// first. That is only a well-defined choice while one provide name has one
+/// producer per chain, which is what `PROVIDE_NAME_COLLISION` holds authors to;
+/// with two, this answers the innermost and the checker has already said the
+/// name is ambiguous.
+pub fn ComponentStack::lookup_provider(
+  self : ComponentStack,
+  name : String,
+) -> Component? {
+  for _, comp in self.by_name {
+    if comp.provide.contains(name) {
+      return Some(comp)
+    }
+  }
+  match self.parent {
+    Some(p) => p.lookup_provider(name)
+    None => None
+  }
+}
+
+///|
+/// Where `*name` physically lives: the component that produces it, plus that
+/// component's own steps to the value. What the render-target teleport splices
+/// in.
+///
+/// A consumer no longer names its producer, so the producer is found by scope
+/// search. A published TYPE answers `None` on purpose — a component has no
+/// path, so `<x render="*Board">` must stay unresolvable rather than resolve to
+/// something that cannot be edited through.
 pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
   fn steps_of(val : @tutuca.Val) -> Array[@tutuca.Step] {
     match val.to_path_item() {
@@ -200,13 +232,17 @@ pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
     }
   }
 
-  match comp.lookup.get(name) {
-    Some(lk) =>
+  if @tutuca.is_type_name(name) {
+    return None
+  }
+  match comp.provide.get(name) {
+    Some(p) => Some({ producer: comp.id, steps: steps_of(p.val) })
+    None =>
       match comp.scope {
         Some(s) =>
-          match s.lookup_component(lk.comp_name) {
+          match s.lookup_provider(name) {
             Some(producer) =>
-              match producer.provide.get(lk.provide_name) {
+              match producer.provide.get(name) {
                 Some(p) =>
                   Some({ producer: producer.id, steps: steps_of(p.val) })
                 None => None
@@ -215,21 +251,31 @@ pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
           }
         None => None
       }
+  }
+}
+
+///|
+/// The nearest value published under `name`, walking outward.
+pub fn DynBinds::lookup(self : DynBinds, name : String) -> @tutuca.Value? {
+  match self.binds.get(name) {
+    Some(v) => Some(v)
     None =>
-      match comp.provide.get(name) {
-        Some(p) => Some({ producer: comp.id, steps: steps_of(p.val) })
+      match self.parent {
+        Some(p) => p.lookup(name)
         None => None
       }
   }
 }
 
 ///|
-pub fn DynBinds::lookup(self : DynBinds, key : ProvideKey) -> @tutuca.Value? {
-  match self.binds.get(key) {
-    Some(v) => Some(v)
+/// The nearest component TYPE published under `name`, walking outward. The
+/// same walk as `lookup`, over the frame's other half — see `DynBinds`.
+pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int? {
+  match self.types.get(name) {
+    Some(id) => Some(id)
     None =>
       match self.parent {
-        Some(p) => p.lookup(key)
+        Some(p) => p.lookup_type(name)
         None => None
       }
   }

@@ -74,88 +74,82 @@ declare pub fn schema_mutators(
 ) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
 
 ///|
-/// The provide key: a per-(component, provide-name) identity used to
-/// key dynamic-binding frames.
-pub(all) struct ProvideKey {
-  comp : Int
-  name : String
-} derive(Eq, Hash, Debug)
-
-///|
+/// A provided VALUE: the name it is published under and the addressable
+/// expression that produces it.
+///
+/// There is no key beside the name any more. A lookup names what it WANTS
+/// rather than who provides it, so a frame is keyed by the plain name and the
+/// nearest one wins — which is the whole of what makes a provide an injection
+/// rather than a wire.
 pub(all) struct ProvideInfo {
   name : String
   val : @tutuca.Val
-  key : ProvideKey
 } derive(Debug)
 
 ///|
-/// Raw `lookup:` spec entry: source is "Comp.provideName", default an
-/// optional field expression parsed with parse_field.
+/// Raw `lookup:` entry. A name, and a `default` only when there is one.
+///
+/// A LIST of these rather than a map, because a lookup no longer names a
+/// producer and so has nothing to be keyed BY except its own name. There is no
+/// alias: the local name IS the provided name.
 pub(all) struct LookupSpec {
-  source : String
+  name : String
   default : String?
 } derive(Debug)
 
 ///|
-/// Memoization state for a LookupInfo's resolved producer provide key (JS
-/// LookupInfo._sym: `undefined` = not computed, `null`/symbol once resolved).
-/// `Pending` = not computed; `Done(k)` caches the resolution (including a
-/// negative `None`), so the scope walk runs at most once per lookup alias.
-pub(all) enum ProducerKeyMemo {
-  Pending
-  Done(ProvideKey?)
-} derive(Debug)
-
-///|
-pub(all) struct LookupInfo {
-  name : String
-  comp_name : String
-  provide_name : String
-  default_val : @tutuca.Val?
-  mut producer_key : ProducerKeyMemo
-} derive(Debug)
-
-///|
-/// Resolve (and memoize) the producer's provide key by walking `scope` for the
-/// producer component and its provide entry.
-/// Computed once; the scope is stable after compile(). None = unresolved.
-pub fn LookupInfo::resolve_producer_key(
-  self : LookupInfo,
-  scope : ComponentStack?,
-) -> ProvideKey? {
-  match self.producer_key {
-    Done(k) => k
-    Pending => {
-      let k : ProvideKey? = match scope {
-        Some(s) =>
-          match s.lookup_component(self.comp_name) {
-            Some(producer) =>
-              match producer.provide.get(self.provide_name) {
-                Some(p) => Some(p.key)
-                None => None
-              }
-            None => None
-          }
-        None => None
-      }
-      self.producer_key = Done(k)
-      k
-    }
-  }
+/// A `lookup` entry as written, with no default. The common case, and the one
+/// worth a word rather than a record literal.
+pub fn lookup_name(name : String) -> LookupSpec {
+  { name, default: None }
 }
 
 ///|
-/// dynBinds: cons list of frames keyed by ProvideKey.
+/// A `lookup` entry with a fallback expression, used when no producer is above
+/// the consumer at render time.
+pub fn lookup_or(name : String, default : String) -> LookupSpec {
+  { name, default: Some(default) }
+}
+
+///|
+/// A compiled `lookup` entry: the name wanted, and the expression to fall back
+/// on when nothing above provides it.
+///
+/// Everything that used to be here — the producer's name, the provide's name,
+/// and the sticky memo of the scope walk that joined them — went away with the
+/// qualified `"Producer.name"` target. A lookup that names only itself has
+/// nothing to resolve ahead of time.
+pub(all) struct LookupInfo {
+  name : String
+  default_val : @tutuca.Val?
+} derive(Debug)
+
+///|
+/// One frame of the dynamic-binding stack: what the component being entered
+/// publishes, pushed on entering it and popped with it.
+///
+/// Two maps and not one, which is where this parts company with the JS it is
+/// ported from: there a Class and a value are both "a value" and share an
+/// object. Here a component is not a `Value`, so a published TYPE is carried as
+/// the component's id — the thing `Components` is already keyed by and
+/// `Obj::component_id` already answers. The name rule (`@tutuca.is_type_name`)
+/// still partitions the keyspace, so the two maps behave as one frame: a name
+/// is looked for in exactly one of them, and nearest-ancestor-wins falls out of
+/// frame order for both.
 pub(all) struct DynBinds {
-  binds : Map[ProvideKey, @tutuca.Value]
+  binds : Map[String, @tutuca.Value]
+  types : Map[String, Int]
   parent : DynBinds?
 }
 
 ///|
 declare pub fn DynBinds::lookup(
   self : DynBinds,
-  key : ProvideKey,
+  name : String,
 ) -> @tutuca.Value?
+
+///|
+declare pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int?
 
 ///|
 /// The resolved dynamic producer: the producer component id plus its
@@ -270,8 +264,13 @@ pub struct Component {
   mut schema : SchemaInfo
   mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
-  raw_lookup : Map[String, LookupSpec]
+  raw_lookup : Array[LookupSpec]
   provide : Map[String, ProvideInfo] // filled by compile()
+  /// Component TYPES this component publishes to its subtree, name -> id.
+  /// Kept apart from `provide` because a type is not addressable: it can never
+  /// be a render target, so it must not reach `resolve_dyn_producer` or a
+  /// `*name` read. Filled by compile().
+  provide_type : Map[String, Int]
   lookup : Map[String, LookupInfo] // filled by compile()
   mut scope : ComponentStack?
 }
@@ -312,7 +311,7 @@ declare pub fn[S : @tutuca.Fields] component(
   slots? : Map[String, String],
   slot_args? : Map[String, Map[String, @tutuca.Value]],
   provide? : Map[String, String],
-  lookup? : Map[String, LookupSpec],
+  lookup? : Array[LookupSpec],
 ) -> Component
 
 ///|
@@ -348,7 +347,7 @@ declare pub fn Component::for_type(
   common_style? : String,
   global_style? : String,
   provide? : Map[String, String],
-  lookup? : Map[String, LookupSpec],
+  lookup? : Array[LookupSpec],
   make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
 ) -> Component
 
@@ -470,6 +469,38 @@ declare pub fn ComponentStack::lookup_component(
 ) -> Component?
 
 ///|
+/// The first component along this chain that PROVIDES `name` — the producer a
+/// consumer never had to name.
+///
+/// A lookup names what it wants rather than who supplies it, so the producer
+/// is found by searching the scope. That is a well-defined answer only while
+/// one provide name has one producer per chain, which is what
+/// `PROVIDE_NAME_COLLISION` holds authors to.
+declare pub fn ComponentStack::lookup_provider(
+  self : ComponentStack,
+  name : String,
+) -> Component?
+
+///|
+/// Every name registered along this chain, innermost first.
+declare pub fn ComponentStack::component_names(
+  self : ComponentStack,
+) -> Array[String]
+
+///|
+/// The name-wiring findings for every component in this scope and the scopes
+/// below it: a provide that is not addressable, a published type that is not
+/// `"self"`, two producers of one name, a lookup with no provider, an
+/// uppercase lookup that names no registered component.
+///
+/// Run after `compile_all`. Half of what it reports is the difference between
+/// what was written and what survived compilation, which is exactly why
+/// `compile()` drops a bad declaration instead of raising on it.
+declare pub fn ComponentStack::check_names(
+  self : ComponentStack,
+) -> Array[@lint.Finding]
+
+///|
 /// A registration scope is where a `$component` name resolves when a document
 /// is read back. `describe` answers the declared schema so a tagged object's
 /// fields decode BY TYPE; `build` goes through `Component::make`, which is
@@ -508,8 +539,11 @@ declare pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise
 
 ///|
 /// Resolve the dynamic producer: which component produces `*name` for `comp`
-/// — through its lookup: entry (alias) or its own provide: — plus the
-/// producer's addressing steps to the value.
+/// — its own `provide`, else the nearest one in its registration scope — plus
+/// the producer's addressing steps to the value.
+///
+/// `None` for an uppercase name: a published TYPE has no path, so it can never
+/// be a render target and `<x render="*Board">` must stay unresolvable.
 declare pub fn resolve_dyn_producer(
   comp : Component,
   name : String,

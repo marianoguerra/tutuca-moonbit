@@ -4,13 +4,18 @@ package "marianoguerra/tutuca/component"
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/lint",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub fn[E, H] build_bucket(Array[E], (E) -> String, (E) -> H?) -> Map[String, H]
 
-pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> Update[S], compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
+pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> Update[S], compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[LookupSpec]) -> Component
+
+pub fn lookup_name(String) -> LookupSpec
+
+pub fn lookup_or(String, String) -> LookupSpec
 
 pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
@@ -30,15 +35,16 @@ pub struct Component {
   mut schema : @core.SchemaInfo
   mut make_fn : (Map[String, @core.Value]) -> @core.Value
   raw_provide : Map[String, String]
-  raw_lookup : Map[String, LookupSpec]
+  raw_lookup : Array[LookupSpec]
   provide : Map[String, ProvideInfo]
+  provide_type : Map[String, Int]
   lookup : Map[String, LookupInfo]
   mut scope : ComponentStack?
   // private fields
 }
 pub fn Component::compile(Self) -> Unit raise
 pub fn Component::compile_style(Self) -> String
-pub fn Component::for_type(name~ : String, views~ : Map[String, @anode.View], schema~ : @core.SchemaInfo, common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Map[String, LookupSpec], make? : (Map[String, @core.Value]) -> @core.Value) -> Self
+pub fn Component::for_type(name~ : String, views~ : Map[String, @anode.View], schema~ : @core.SchemaInfo, common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Array[LookupSpec], make? : (Map[String, @core.Value]) -> @core.Value) -> Self
 pub fn Component::from_json(Self, Json) -> @core.Value?
 pub fn Component::get_view(Self, String?) -> @anode.View?
 pub fn Component::make(Self, Map[String, @core.Value]) -> @core.Value
@@ -52,10 +58,13 @@ pub struct ComponentStack {
   intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
+pub fn ComponentStack::check_names(Self) -> Array[@lint.Finding]
 pub fn ComponentStack::compile_all(Self) -> Unit raise
+pub fn ComponentStack::component_names(Self) -> Array[String]
 pub fn ComponentStack::enter(Self) -> Self
 pub fn ComponentStack::lookup_component(Self, String) -> Component?
 pub fn ComponentStack::lookup_intent(Self, String) -> Array[IntentFn]
+pub fn ComponentStack::lookup_provider(Self, String) -> Component?
 pub fn ComponentStack::new(comps? : Components) -> Self
 pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
 pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[IntentFn]]) -> Unit
@@ -79,10 +88,12 @@ pub(all) enum Dispatch {
 }
 
 pub(all) struct DynBinds {
-  binds : Map[ProvideKey, @core.Value]
+  binds : Map[String, @core.Value]
+  types : Map[String, Int]
   parent : DynBinds?
 }
-pub fn DynBinds::lookup(Self, ProvideKey) -> @core.Value?
+pub fn DynBinds::lookup(Self, String) -> @core.Value?
+pub fn DynBinds::lookup_type(Self, String) -> Int?
 
 pub(all) struct DynProducer {
   producer : Int
@@ -106,15 +117,11 @@ pub(all) struct IntentFn((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Uni
 
 pub(all) struct LookupInfo {
   name : String
-  comp_name : String
-  provide_name : String
   default_val : @core.Val?
-  mut producer_key : ProducerKeyMemo
 } derive(@debug.Debug)
-pub fn LookupInfo::resolve_producer_key(Self, ComponentStack?) -> ProvideKey?
 
 pub(all) struct LookupSpec {
-  source : String
+  name : String
   default : String?
 } derive(@debug.Debug)
 
@@ -146,21 +153,10 @@ pub fn ModuleDef::build_scope(Self) -> ComponentStack raise
 pub fn ModuleDef::new(name~ : String, components~ : Array[Component], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
 pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
 
-pub(all) enum ProducerKeyMemo {
-  Pending
-  Done(ProvideKey?)
-} derive(@debug.Debug)
-
 pub(all) struct ProvideInfo {
   name : String
   val : @core.Val
-  key : ProvideKey
 } derive(@debug.Debug)
-
-pub(all) struct ProvideKey {
-  comp : Int
-  name : String
-} derive(Eq, Hash, @debug.Debug)
 
 pub(all) enum Update[S] {
   Unhandled

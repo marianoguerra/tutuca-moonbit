@@ -96,7 +96,7 @@ pub fn counter_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -205,7 +205,7 @@ pub fn profile_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -299,7 +299,7 @@ pub fn search_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -396,7 +396,7 @@ pub fn toggle_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -479,7 +479,7 @@ pub fn fruits_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -561,7 +561,7 @@ pub fn greeting_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -620,7 +620,7 @@ pub fn page_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -680,7 +680,7 @@ pub fn status_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -759,7 +759,7 @@ pub fn chat_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -838,7 +838,7 @@ pub fn quotes_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -911,7 +911,7 @@ pub fn features_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

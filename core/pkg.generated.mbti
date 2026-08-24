@@ -14,7 +14,11 @@ pub fn builtin_names() -> Array[String]
 
 pub let component_key : String
 
+pub fn default_route() -> Array[Leg]
+
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
+
+pub fn is_type_name(String) -> Bool
 
 pub let module_key : String
 
@@ -31,6 +35,8 @@ pub fn refuse(Refusal) -> Unit
 pub fn refusing() -> Bool
 
 pub fn route_label(Array[Leg]) -> String
+
+pub fn[T] route_lookup(Array[Leg], () -> T?, () -> T?) -> T?
 
 pub fn size_of(Value) -> Int?
 
@@ -141,6 +147,11 @@ pub(all) enum Lit {
   LStr(String)
 } derive(Eq, @debug.Debug)
 
+pub(all) struct LookupOpts {
+  route : Array[Leg]
+} derive(Eq, @debug.Debug)
+pub fn LookupOpts::new(route? : Array[Leg]) -> Self
+
 pub(all) struct NullCtx {
 }
 pub impl Ctx for NullCtx
@@ -210,6 +221,8 @@ pub(all) enum RefusalCode {
   Postcondition
   Invariant
   IntentDepth
+  TypeNotFound
+  NoSender
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
 
@@ -366,6 +379,9 @@ pub(open) trait Ctx {
   fn intent_at_path(Self, DispatchPath, String, Array[Value], IntentOpts) -> Unit = _
   fn forward(Self, Array[Value]?, IntentOpts?) -> Unit = _
   fn reply(Self, Value) -> Unit = _
+  fn send_reply(Self, String, Array[Value]) -> Unit = _
+  fn lookup(Self, String, LookupOpts) -> Value = _
+  fn make(Self, String, Map[String, Value], LookupOpts) -> Value? = _
   fn fail(Self, Value) -> Unit = _
   fn stop_propagation(Self) -> Unit = _
   fn at(Self) -> PathChanges = _

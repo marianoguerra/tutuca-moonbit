@@ -2,11 +2,19 @@
 // intent's walk — and the leaf-update core with completion accounting.
 
 ///|
-pub fn Transactor::new(root : @tutuca.Value, intents? : &Intents) -> Transactor {
+pub fn Transactor::new(
+  root : @tutuca.Value,
+  intents? : &Intents,
+  names? : &Names,
+) -> Transactor {
   {
     intents: match intents {
       Some(i) => i
       None => NoIntents::{  }
+    },
+    names: match names {
+      Some(n) => n
+      None => NoNames::{  }
     },
     root,
     queue: [],
@@ -154,6 +162,8 @@ fn Transactor::mk_txn(
   parent? : Transaction,
   walk? : IntentWalk,
   is_answer? : Bool = false,
+  origin? : @tutuca.DispatchPath,
+  origin_pinned? : @tutuca.Path,
 ) -> Transaction {
   {
     transactor: self,
@@ -166,6 +176,8 @@ fn Transactor::mk_txn(
     parent,
     walk,
     is_answer,
+    origin,
+    origin_pinned,
     cmpl: None,
     self_settled: false,
     finished: false,
@@ -176,14 +188,27 @@ fn Transactor::mk_txn(
 }
 
 ///|
+/// `origin` is where the message came FROM, pinned NOW against the current
+/// root: a reply must reach the sender that asked even if a key moves while
+/// the message is in flight. A send with no origin — the host's
+/// `send_at_root`, a view's own `@on.*` — leaves nobody to reply to, which is
+/// what `ctx.send_reply` refuses on.
 pub fn Transactor::push_send(
   self : Transactor,
   path : @tutuca.DispatchPath,
   name : String,
   args : Array[@tutuca.Value],
   parent? : Transaction,
+  origin? : @tutuca.DispatchPath,
 ) -> Transaction {
-  self.link(self.mk_txn(path, Receive, name, args, parent?), parent)
+  let origin_pinned : @tutuca.Path? = match origin {
+    Some(o) => Some(o.to_transaction_path().pin_keys(self.root))
+    None => None
+  }
+  self.link(
+    self.mk_txn(path, Receive, name, args, parent?, origin?, origin_pinned?),
+    parent,
+  )
 }
 
 ///|
@@ -403,7 +428,101 @@ impl @tutuca.Ctx for EventContext with fn name(self) {
 // `send` / `bubble` are not implemented: the trait defaults route them to the
 // two below at `path()`.
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
-  let _ = self.txn.transactor.push_send(path, name, args, parent=self.txn)
+  let _ = self.txn.transactor.push_send(
+    path,
+    name,
+    args,
+    parent=self.txn,
+    origin=self.txn.path,
+  )
+}
+
+///|
+/// Answer whoever sent the message being handled, under a name this handler
+/// picks.
+///
+/// The reply is an ORDINARY message: it lands in the same `receive` bucket and
+/// the sender cannot tell it from any other send. It goes to the sender's
+/// position as pinned at the moment they sent — see `Transactor::push_send`.
+impl @tutuca.Ctx for EventContext with fn send_reply(self, name, args) {
+  let tx = self.txn.transactor
+  match (self.txn.origin, self.txn.origin_pinned) {
+    (Some(origin), pinned) => {
+      let t = tx.mk_txn(
+        origin,
+        Receive,
+        name,
+        args,
+        txn_path?=pinned,
+        parent=self.txn,
+        origin=self.txn.path,
+        origin_pinned=self.txn.path.to_transaction_path().pin_keys(tx.root),
+      )
+      let _ = tx.link(t, Some(self.txn))
+    }
+    // Nobody is waiting. A view's own `@on.*` and the host's `send_at_root`
+    // both arrive with no sender, so there is no position to answer at and
+    // nothing is dispatched.
+    (None, _) =>
+      if @tutuca.refusing() {
+        @tutuca.refuse({
+          code: NoSender,
+          asked: name,
+          rule: "",
+          sentence: "",
+          state: tx.root,
+          path: self.txn.path.to_transaction_path(),
+        })
+      }
+  }
+}
+
+///|
+/// Resolve a name along `opts.route` — the handler-side twin of a view's
+/// `*name` read.
+impl @tutuca.Ctx for EventContext with fn lookup(self, name, opts) {
+  let tx = self.txn.transactor
+  let root = tx.root
+  let at = self.txn.path
+  match
+    @tutuca.route_lookup(
+      opts.route,
+      // The registration scope holds components, so a value never answers
+      // here. Walking the leg anyway is what keeps `route=[Lex]` an honest
+      // miss rather than a silent fallthrough to the other one.
+      () => None,
+      () => tx.names.dyn_value(root, at, name),
+    ) {
+    Some(v) => v
+    None => Null
+  }
+}
+
+///|
+/// Resolve a component type along `opts.route` and build one.
+impl @tutuca.Ctx for EventContext with fn make(self, name, args, opts) {
+  let tx = self.txn.transactor
+  let root = tx.root
+  let at = self.txn.path
+  match
+    @tutuca.route_lookup(opts.route, () => tx.names.lex_type(root, at, name), () => {
+      tx.names.dyn_type(root, at, name)
+    }) {
+    Some(id) => tx.names.build(id, args)
+    None => {
+      if @tutuca.refusing() {
+        @tutuca.refuse({
+          code: TypeNotFound,
+          asked: name,
+          rule: @tutuca.route_label(opts.route),
+          sentence: "",
+          state: root,
+          path: at.to_transaction_path(),
+        })
+      }
+      None
+    }
+  }
 }
 
 ///|

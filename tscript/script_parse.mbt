@@ -160,6 +160,10 @@ pub fn effect_min_arity(name : String) -> Int? {
     "stop" => Some(0)
     // A name plus whatever the message carries.
     "send" => Some(1)
+    // The replier names the reply, so this takes a name too — which is the
+    // whole difference from `reply`, whose name the runtime derives because
+    // its raiser declared arms for one.
+    "sendReply" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
     // `intent` takes a name after its leg words; `forward` takes none, because

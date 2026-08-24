@@ -115,6 +115,23 @@ pub(all) struct DynComponentDef {
   /// Intents this BUNDLE serves; registered into its own scope on the `lex`
   /// leg, so its components find them before the host's.
   serves : Array[String]
+  /// What this component PUBLISHES to its subtree: a name, and the source text
+  /// that produces it.
+  ///
+  /// A lowercase name publishes a VALUE and takes an addressable path
+  /// (`.field`, `.seq[.key]`), because a provide doubles as the path a
+  /// `<x render="*name">` teleports through. An uppercase name publishes the
+  /// component itself as a TYPE, and `"self"` is the only thing it can be.
+  ///
+  /// The host evaluates these against the guest instance while rendering, the
+  /// same way it evaluates one a host component declared — a provide reads a
+  /// field, and reading a guest's field is what `get-field` is for. So a
+  /// bundle gets dynamic bindings with nothing added to the guest ABI.
+  provide : Array[(String, String)]
+  /// What it asks its ancestors for: a name, and the fallback expression to
+  /// use when nothing above provides it (`""` for none). A lookup names what
+  /// it WANTS, not who supplies it.
+  lookup : Array[(String, String)]
   /// Named initial states (the guest's `tutuca/init` fixtures).
   inits : Array[DynInitDef]
   style : String
@@ -299,6 +316,33 @@ fn parse_message_docs(c : Map[String, Json]) -> Map[String, String] {
     if name != "" {
       out[name] = opt_str(d, "doc")
     }
+  }
+  out
+}
+
+///|
+/// One wiring section: `[{"name": …, "source": …}]` for a provide,
+/// `[{"name": …, "default": …}]` for a lookup.
+///
+/// One reader for both, because the two differ only in what the second key is
+/// called and a manifest that spelled them two ways would be two formats. An
+/// entry with no name is dropped: it names nothing, so there is nothing it
+/// could wire.
+fn parse_wiring(c : Map[String, Json], key : String) -> Array[(String, String)] {
+  let out : Array[(String, String)] = []
+  guard c.get(key) is Some(Array(items)) else { return out }
+  for item in items {
+    guard item is Object(d) else { continue }
+    let name = opt_str(d, "name")
+    if name == "" {
+      continue
+    }
+    let value = if key == "provide" {
+      opt_str(d, "source")
+    } else {
+      opt_str(d, "default")
+    }
+    out.push((name, value))
   }
   out
 }
@@ -609,6 +653,8 @@ pub fn DynManifest::from_json_string(
       enriches: str_array(c, "enriches"),
       enrich_scopes: str_array(c, "enrichScopes"),
       serves: str_array(c, "serves"),
+      provide: parse_wiring(c, "provide"),
+      lookup: parse_wiring(c, "lookup"),
       inits: parse_inits(c),
       style: str_field(c, "style"),
     })

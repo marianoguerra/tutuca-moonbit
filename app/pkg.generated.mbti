@@ -59,6 +59,15 @@ pub(all) struct ScopeIntents {
 }
 pub impl @transactor.Intents for ScopeIntents
 
+pub(all) struct ScopeNames {
+  comps : @component.Components
+  mut memo_root : @core.Value?
+  mut memo_at : @core.DispatchPath?
+  mut memo_stack : @render.RenderStack?
+}
+pub fn ScopeNames::new(@component.Components) -> Self
+pub impl @transactor.Names for ScopeNames
+
 // Type aliases
 
 // Traits

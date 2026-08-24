@@ -82,7 +82,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     },
     name="Toolbar",
     init=SeenState::{ seen: false },
-    lookup={ "active": { source: "Workspace.active", default: None } },
+    lookup=[@component.lookup_name("active")],
     update=seen_update(),
   )
   let panel = @component.component(
@@ -254,7 +254,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     },
     name="RowList",
     init=NoState::{  },
-    lookup={ "rows": { source: "Grid.rows", default: None } },
+    lookup=[@component.lookup_name("rows")],
   )
   let grid = @component.component(
     views={
@@ -317,7 +317,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     },
     name="Viewer",
     init=NoState::{  },
-    lookup={ "sel": { source: "Deck.sel", default: None } },
+    lookup=[@component.lookup_name("sel")],
   )
   let deck = @component.component(
     views={
@@ -377,9 +377,7 @@ test "lookup default: a consumer without its producer falls back" {
     },
     name="Lonely",
     init=TeleLonelyState::{  },
-    lookup={
-      "active": { source: "Workspace.active", default: Some(".backup") },
-    },
+    lookup=[@component.lookup_or("active", ".backup")],
   )
   scope.register_components([sheet_comp(), lonely])
   scope.compile_all()

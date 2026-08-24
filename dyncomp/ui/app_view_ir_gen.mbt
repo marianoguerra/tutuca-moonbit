@@ -113,7 +113,7 @@ pub fn palette_row_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -269,7 +269,7 @@ pub fn command_bar_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -494,7 +494,7 @@ pub fn schema_field_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -644,7 +644,7 @@ pub fn schema_form_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -761,7 +761,7 @@ pub fn config_panel_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -908,7 +908,7 @@ pub fn universal_app_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

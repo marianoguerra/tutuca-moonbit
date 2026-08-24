@@ -134,9 +134,7 @@ fn theme_comp() -> @component.Component {
 
 ///|
 fn child_comp() -> @component.Component {
-  child_component(lookup={
-    "color": { source: "Theme.color", default: Some("'gray'") },
-  })
+  child_component(lookup=[@component.lookup_or("color", "'gray'")])
 }
 ```
 
@@ -145,14 +143,18 @@ text). Every provide is evaluated and pushed onto the dynamic stack
 automatically when the producer is entered during render — there is no
 hook to opt in.
 
-A **`lookup`** reads a value the `*name` way: the map key is the name
-used in views (`*color`), the value is a `LookupSpec` —
-`{ source: "Producer.provideName", default: Some("...") }` — where
-`default` supplies a fallback expression for when no producer is in
-scope (`None` → a miss resolves to `null`). (The JS spelling
-`{ for: "...", default: "..." }` becomes `source` here.) A `*name` that
-names the component's own `provide` resolves to the nearest provided
-value (including its own).
+A **`lookup`** names what it WANTS, not who provides it. It is a LIST:
+`@component.lookup_name("color")` is the whole declaration, and
+`@component.lookup_or("color", "'gray'")` adds the fallback expression used
+when no producer is above the consumer (without one, a miss resolves to
+`null`). The local name IS the provided name — there is no alias. A `*name`
+resolves to the nearest binding above, which includes the component's own
+`provide` (pushed on entering it).
+
+Because a lookup does not name its producer, **one provide name has one
+producer per scope chain**. Two components in one chain providing `items` is
+`PROVIDE_NAME_COLLISION`, and that rule is also how the teleport below
+recovers the producer.
 
 ### Dynamic vars as render targets
 
@@ -169,10 +171,11 @@ component-render target and an iteration source:
 A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
 seq-access, nothing else. It is both read as `*name` *and* used as a
 render-target / teleport path, so a `$`-handler or constant — which has no
-path — cannot work. Nothing reports it: `Component::compile` **drops a bad
-`provide` silently** (`component/component.mbt:369`), and the consumer's
-`*name` then resolves to its `default`, or to `null`. If a dynamic binding
-reads as its fallback everywhere, suspect the producer's expression first.
+path — cannot work. `Component::compile` **drops a bad `provide`** rather
+than raising on it, and the consumer's `*name` then resolves to its
+`default`, or to `null`; `ComponentStack::check_names` reports it as
+`PROVIDE_NOT_ADDRESSABLE`. If a dynamic binding reads as its fallback
+everywhere, run the checks and suspect the producer's expression first.
 A `lookup` `default`, by contrast, is only a
 value fallback and accepts the full value grammar, including constants
 like `'gray'`. A `provide` can be a sequence/map item access:
@@ -212,6 +215,47 @@ node) to reconstruct the handler, but the *transaction* is teleported:
 the mutation skips the intermediate components and lands on the
 producer's data. Editing the entry in the consumer and the same entry
 in the producer's own view update in lock-step.
+
+### Publishing a component TYPE
+
+An **uppercase** provide name publishes a component rather than a value, and
+`"self"` is the only thing it can be:
+
+```moonbit nocheck
+// nocheck: a fragment; the surrounding component() call is omitted
+provide={ "Cell": "self", "theme": ".theme" }
+```
+
+That injects the publisher as `Cell` for its whole subtree — a descendant that
+builds a `Cell` gets the publisher's type rather than whatever is registered
+under that name. A handler asks for one by name:
+
+```moonbit nocheck
+// nocheck: a handler fragment; `ctx` is the dispatch ctx
+let cell = ctx.make("Cell", { "label": Str("x") }, @tutuca.LookupOpts::new())
+```
+
+The name goes in the consumer's `lookup` list too, so the checks can see it
+(`UNKNOWN_COMPONENT_NAME` otherwise). Uppercase and lowercase names cannot
+collide, which is why types and values share one binding frame.
+
+A published type is **not** a render target: it has no path, so
+`<x render="*Cell">` stays unresolvable by construction.
+
+### Routes: which environment answers
+
+`ctx.lookup` and `ctx.make` take the same `route` an intent takes — the legs
+in the order written, the first that resolves wins:
+
+| leg   | environment                                                       |
+|-------|-------------------------------------------------------------------|
+| `dyn` | the render ancestry: what an ancestor published with `provide`     |
+| `lex` | the registration scope chain                                       |
+
+`@tutuca.LookupOpts::new()` is `dyn lex`. `route=[Lex]` skips what was
+published and reads the registration; `route=[Dyn]` refuses to fall back to it;
+`route=[]` asks nothing. A VALUE never answers on `lex` — a scope chain holds
+components — which is why one default route serves both calls.
 
 Worked recipes:
 [patterns/share-state-across-the-tree.md](./patterns/share-state-across-the-tree.md)

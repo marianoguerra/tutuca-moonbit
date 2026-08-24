@@ -32,6 +32,8 @@ pub let ret_get_field : Int
 
 pub let ret_handle_event : Int
 
+pub let ret_lookup : Int
+
 pub let ret_persist : Int
 
 pub let ret_restore : Int

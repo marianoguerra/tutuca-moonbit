@@ -40,6 +40,8 @@ const control = {
   reply: (v) => controlBuf.push({ kind: 'reply', value: v }),
   fail: (e) => controlBuf.push({ kind: 'fail', value: e }),
   stopPropagation: () => {},
+  sendReply: () => {},
+  lookup: () => ({ tag: 'nil' }),
   after: () => {},
   makeInstance: () => 0n,
   dropInstance: () => {},
@@ -106,9 +108,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.9.0': values,
+    'tutuca:component/values@0.10.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.9.0': control,
+    'tutuca:component/control@0.10.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;

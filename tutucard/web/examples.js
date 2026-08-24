@@ -1230,6 +1230,107 @@ export const EXAMPLES = [
 `,
   },
   {
+    name: "dynamic-bindings",
+    source: `<script type="tutuca/state">
+  state Palette {
+    theme : String
+    draft : String
+    swatches : Array[Swatch]
+
+    /// Published to everything below, and re-evaluated every render: change
+    /// \`.theme\` and every swatch reads the new value, with nothing threaded
+    /// through it and no message sent.
+    provide { theme = .theme }
+  }
+
+  state Swatch {
+    label : String
+
+    /// What it ASKS FOR, not who supplies it. The default is what it reads
+    /// when nothing above provides one.
+    lookup { theme = 'slate' }
+  }
+
+  receive Palette { init }
+</script>
+
+<script type="tutuca/script" for="Palette">
+  receive init {
+    .theme = 'rose'
+    new Swatch
+    @cur.label = 'first'
+    .swatches.push @cur
+    new Swatch
+    @cur.label = 'second'
+    .swatches.push @cur
+  }
+
+  receive setDraft(t) { .draft = t }
+
+  receive setTheme(t) { .theme = t }
+
+  receive add requires typed {
+    new Swatch
+    @cur.label = .draft
+    .swatches.push @cur
+    .draft = ''
+  }
+
+  pred typed format $'nothing to add' { not (empty? .draft) }
+</script>
+
+<script type="tutuca/init">
+{
+  "two swatches": {
+    "doc": "A theme the rows read, and two rows reading it.",
+    "default": true,
+    "value": {},
+    "drive": [{ "send": "init" }]
+  }
+}
+</script>
+
+<script type="tutuca/test">
+{
+  "every swatch reads the theme, and follows it": {
+    "steps": [
+      { "send": "init" },
+      { "expect": "texts", "at": "span.theme", "is": ["rose", "rose"] },
+      { "type": "input.theme", "value": "amber" },
+      { "expect": "texts", "at": "span.theme", "is": ["amber", "amber"] }
+    ]
+  },
+  "a swatch with nothing above it reads its default": {
+    "component": "Swatch",
+    "args": { "label": "alone" },
+    "steps": [{ "expect": "text", "at": "span.theme", "is": "slate" }]
+  }
+}
+</script>
+
+<template id="Palette">
+  <section class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <label class="text-sm opacity-70">Theme, provided to the whole subtree</label>
+      <input class="theme input input-sm" :value=".theme" @on.input="setTheme e.value">
+      <div class="flex gap-2">
+        <input class="draft input input-sm flex-1" :value=".draft" @on.input="setDraft e.value">
+        <button class="btn btn-sm" @on.click="add">add</button>
+      </div>
+      <ul class="flex flex-col gap-1"><x render-each=".swatches"></x></ul>
+    </div>
+  </section>
+</template>
+
+<template id="Swatch">
+  <li class="row flex gap-2">
+    <span class="label font-medium" @text=".label"></span>
+    <span class="theme badge badge-sm" @text="*theme"></span>
+  </li>
+</template>
+`,
+  },
+  {
     name: "list-enrich",
     source: `<script type="tutuca/state">
   state ListFilterEnrich {

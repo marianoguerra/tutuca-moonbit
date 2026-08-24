@@ -71,3 +71,76 @@ test "an effect in the SECOND component decides the card's imports" {
   )
   assert_true(out.wax.contains("fn ctl_intent("))
 }
+
+///|
+/// The wiring a card declares reaches the manifest as SOURCE TEXT.
+///
+/// Nothing about a dynamic binding crosses the guest ABI: the module a card
+/// compiles to is byte-identical whether or not the card provides anything.
+/// The host parses these expressions and evaluates them against the instance
+/// while rendering, exactly as it does for a component written in MoonBit —
+/// which is why a card gets `provide` / `lookup` with no new import.
+test "a card's provide/lookup sections reach the manifest" {
+  let out = @wasm.compile(
+    (
+      #|<script type="tutuca/state">
+      #|  state Board {
+      #|    theme: String
+      #|    slot: Slot
+      #|    provide { theme = .theme, Cell = self }
+      #|  }
+      #|  state Slot {
+      #|    made: String
+      #|    lookup { theme, color = 'gray', Cell }
+      #|  }
+      #|</script>
+      #|<template id="Board:main"><div><x render=".slot"></x></div></template>
+      #|<template id="Slot:main"><em :style="$'color: {*theme}'"></em></template>
+    ),
+    name="Card",
+  )
+  guard! out.manifest is Object(root)
+  guard! root.get("components") is Some(Array(comps))
+  guard! comps.get(0) is Some(Object(board))
+  guard! comps.get(1) is Some(Object(slot))
+  @debug.assert_eq(
+    board.get("provide"),
+    Some(
+      Json::array([
+        Json::object({
+          "name": Json::string("theme"),
+          "source": Json::string(".theme"),
+        }),
+        Json::object({
+          "name": Json::string("Cell"),
+          "source": Json::string("self"),
+        }),
+      ]),
+    ),
+  )
+  // A lookup with no default carries an empty string, which is the wire's way
+  // of spelling "none" — the manifest is JSON and every other absent string
+  // key spells it the same way.
+  @debug.assert_eq(
+    slot.get("lookup"),
+    Some(
+      Json::array([
+        Json::object({
+          "name": Json::string("theme"),
+          "default": Json::string(""),
+        }),
+        Json::object({
+          "name": Json::string("color"),
+          "default": Json::string("'gray'"),
+        }),
+        Json::object({
+          "name": Json::string("Cell"),
+          "default": Json::string(""),
+        }),
+      ]),
+    ),
+  )
+  // The key the HOST reads. It used to be `requests`, which nothing read, so a
+  // card could not have declared a served intent even in principle.
+  @debug.assert_eq(board.get("serves"), Some(Json::array([])))
+}

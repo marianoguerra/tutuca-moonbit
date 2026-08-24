@@ -28,6 +28,10 @@ pub(all) enum ControlMsg {
   Forward(Array[@tutuca.Value], @tutuca.IntentOpts)
   Reply(@tutuca.Value)
   Fail(@tutuca.Value)
+  /// Answer whoever sent the message being handled, under a name the guest
+  /// picked. An ordinary message, so it buffers like `Send` and the host
+  /// applies it the same way.
+  SendReply(String, Array[@tutuca.Value])
   StopPropagation
 } derive(Debug, Eq)
 
@@ -58,12 +62,22 @@ pub fn bucket_ordinal(b : @tutuca.HandlerBucket) -> Int {
 pub(open) trait Guest {
   fn create(Self, component : String, args : Map[String, @tutuca.Value]) -> Int
   fn get_field(Self, handle : Int, name : String) -> @tutuca.Value?
+  /// Forward one event to the guest.
+  ///
+  /// `bindings` is what this component's DECLARED lookups resolve to, at this
+  /// position, right now — the guest's `control.lookup` reads them and nothing
+  /// else. They are resolved by the caller and passed IN rather than fetched
+  /// during the call, because every other thing a guest asks of the host is an
+  /// effect applied afterwards, and a value a handler is in the middle of
+  /// using cannot wait for that. Empty for a component that declares no
+  /// lookup, which is most of them.
   fn dispatch(
     Self,
     handle : Int,
     bucket : @tutuca.HandlerBucket,
     name : String,
     args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
   ) -> DispatchResult
   fn call_method(Self, handle : Int, name : String, args : Array[@tutuca.Value]) -> @tutuca.Value
   fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?

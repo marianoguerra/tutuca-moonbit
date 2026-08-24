@@ -182,7 +182,31 @@ fn component_json(
     // was never told about.
     "enriches": strings(compiled(DEnrich)),
     "enrichScopes": strings(compiled(DEnrichScope)),
-    "requests": Json::array([]),
+    // A card serves no intent yet: the guest ABI's `serve-intent` is a stub
+    // for one, so there is nothing a name here could reach. The KEY is the one
+    // the host reads (`serves`) rather than a second spelling of it, so the
+    // day a card can serve one, saying so is all it takes.
+    "serves": Json::array([]),
+    // The wiring, projected from the state block's `provide { … }` /
+    // `lookup { … }` sections. The expressions go out as SOURCE TEXT: the host
+    // parses and judges them exactly as it does a host component's, so a card
+    // gets dynamic bindings without the guest ABI learning anything.
+    "provide": Json::array(
+      g.def.provide.map(pd => {
+        Json::object({
+          "name": Json::string(pd.name),
+          "source": Json::string(pd.source),
+        })
+      }),
+    ),
+    "lookup": Json::array(
+      g.def.lookup.map(ld => {
+        Json::object({
+          "name": Json::string(ld.name),
+          "default": Json::string(ld.default.unwrap_or("")),
+        })
+      }),
+    ),
     // The card's `<script type="tutuca/init">` fixtures.
     //
     // `InitState` keeps the values, so there is nothing to project.

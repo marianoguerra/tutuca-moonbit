@@ -742,8 +742,32 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
       self.render_only(name, sigil="$", span)
       None
     }
+    // `*name` in a BODY is the handler-side twin of the same read in a view:
+    // one question — what does this name mean here — answered along the same
+    // `dyn`/`lex` route. `$name` stays render-only, because a `compute` really
+    // is the render stack's answer and a body calls one bare instead.
+    //
+    // What is checked is that the name was DECLARED. Whether a producer is
+    // above this component when it renders is a runtime fact; whether this
+    // component ever asked for the name is not.
     EDyn(name~, span~) => {
-      self.render_only(name, sigil="*", span)
+      if !self.declares_dyn(name) {
+        let known = self.dyn_names()
+        self.say(
+          "DYN_NOT_DECLARED",
+          "`*\{name}` is a dynamic binding this component does not declare — add it to the `state` block's `lookup { … }`, or `provide { … }` it here" +
+          (match @statedef.nearest(name, known) {
+            Some(s) => " — did you mean `*\{s}`?"
+            None =>
+              if known.is_empty() {
+                "; this component declares neither"
+              } else {
+                "; it declares " + known.map(n => "`*" + n + "`").join(", ")
+              }
+          }),
+          span,
+        )
+      }
       None
     }
     EName(name~, span~) => self.name(name, [], span)
@@ -798,12 +822,35 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
 }
 
 ///|
-/// A `$name` or a `*name` written inside a body.
+/// Whether this component asked for `name`, either way round: a `lookup` names
+/// what it wants, and a producer reads its own `provide` by the same spelling.
+fn C::declares_dyn(self : C, name : String) -> Bool {
+  self.def.lookup.iter().any(l => l.name == name) ||
+  self.def.provide.iter().any(p => p.name == name)
+}
+
+///|
+/// Every name a `*` may spell here, for the "did you mean".
+fn C::dyn_names(self : C) -> Array[String] {
+  let out : Array[String] = self.def.lookup.map(l => l.name)
+  for p in self.def.provide {
+    out.push(p.name)
+  }
+  out
+}
+
+///|
+/// A `$name` written inside a body.
 ///
-/// One rule with two messages, because the fixes differ. A `compute` or a
-/// `pred` IS callable from a body — bare, the way a condition slot spells one
-/// — so the finding names the spelling that works. A dynamic binding has no
-/// spelling that works: it belongs to the render stack, and a body has none.
+/// A `compute` or a `pred` IS callable from a body — bare, the way a condition
+/// slot spells one — so the finding names the spelling that works.
+///
+/// `*name` used to share this rule and no longer does: a dynamic binding is
+/// the one question a body CAN ask, because the two environments it walks are
+/// the same two an intent's route walks and the host can answer both from a
+/// handler's position. What a body still cannot do is call a `compute`,
+/// because that really is the render stack's answer and there is no route to
+/// it.
 fn C::render_only(
   self : C,
   name : String,
@@ -811,29 +858,21 @@ fn C::render_only(
   span : @tscript.Span,
 ) -> Unit {
   let head = "`\{sigil}\{name}` is answered by the render stack, and a body runs after one, so it reads Null here"
-  if sigil == "$" {
-    self.say(
-      "RENDER_ONLY",
-      head +
-      (if self.callable.contains(name) {
-        " — this block declares `\{name}`, so call it bare: `\{name}`"
-      } else {
-        match @statedef.nearest(name, self.callable.keys().collect()) {
-          Some(s) =>
-            " — did you mean the `pred` or `compute` `\{s}`, called bare?"
-          None =>
-            "; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name"
-        }
-      }),
-      span,
-    )
-  } else {
-    self.say(
-      "RENDER_ONLY",
-      head + "; a body cannot read a dynamic binding at all",
-      span,
-    )
-  }
+  self.say(
+    "RENDER_ONLY",
+    head +
+    (if self.callable.contains(name) {
+      " — this block declares `\{name}`, so call it bare: `\{name}`"
+    } else {
+      match @statedef.nearest(name, self.callable.keys().collect()) {
+        Some(s) =>
+          " — did you mean the `pred` or `compute` `\{s}`, called bare?"
+        None =>
+          "; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name"
+      }
+    }),
+    span,
+  )
 }
 
 ///|

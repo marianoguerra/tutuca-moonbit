@@ -348,7 +348,7 @@ literal with spaces (escape an interior quote as `\'`).
 | `@x`     | local binding (loop / scope)              | `@key`, `@value`      |
 | `^x`     | macro parameter                           | `^label`              |
 | `*x`     | dynamic binding — see [advanced.md](./advanced.md) | `*theme`          |
-| `Name`   | component type (PascalCase)               | `Item`, `JsonNull`    |
+| `Name`   | component type (PascalCase) — parses, but is in NO value slot: ask for one with `ctx.make("Name", …)` | `Item`, `JsonNull` |
 | `name`   | bare identifier — meaning depends on slot | `dec`, `value`        |
 | `'str'`  | string literal                            | `'btn btn-success'`   |
 | `$'…'`   | string template (`{expr}` interpolation)  | `$'Hi {.name}'`       |
@@ -456,7 +456,7 @@ my_comp_component(
   slot_args={ // the ONE thing no type can state: a child's ctor arguments
     "child": { "label": Str("pick one") },
   },
-  // provide={ ... }, lookup={ ... }   // see advanced.md,
+  // provide={ ... }, lookup=[ ... ]   // see advanced.md,
 )
 ```
 

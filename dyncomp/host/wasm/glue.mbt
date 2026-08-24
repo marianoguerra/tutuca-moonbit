@@ -38,6 +38,7 @@ extern "wasm" fn tcomp_dispatch(
   bucket : Int,
   name : String,
   args_json : String,
+  bindings_json : String,
 ) -> String = "tcomp" "dispatch"
 
 ///|
@@ -329,6 +330,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
   bucket,
   name,
   args,
+  bindings,
 ) {
   let raw = tcomp_dispatch(
     self.bundle,
@@ -336,6 +338,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     bucket_int(bucket),
     name,
     args_json(args),
+    map_json(bindings),
   )
   let empty : @dyncomp.DispatchResult = { handled: false, next: None, msgs: [] }
   let j = @json.parse(raw) catch {
@@ -388,6 +391,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
         }
         match m.get("kind") {
           Some(String("send")) => msgs.push(Send(name, args))
+          Some(String("sendReply")) => msgs.push(SendReply(name, args))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
           Some(String("intent")) =>

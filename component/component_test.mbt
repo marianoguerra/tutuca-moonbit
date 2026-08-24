@@ -350,11 +350,13 @@ test "compile parses provide/lookup and stamps view ids" {
       "active": ".sheet",
       "sel": ".sheets[.selId]",
       "bad": "not a field!",
+      "Cell": "self",
+      "Nope": ".sheet",
     },
-    lookup={
-      "active": { source: "Workspace.active", default: Some(".fallback") },
-      "broken": { source: "nodot", default: None },
-    },
+    lookup=[
+      @component.lookup_or("active", ".fallback"),
+      @component.lookup_name("theme"),
+    ],
   )
   scope.register_components([ws])
   scope.compile_all()
@@ -364,24 +366,24 @@ test "compile parses provide/lookup and stamps view ids" {
     p2.val is SeqAccess(seq="sheets", key="selId"),
   )
   assert_true(ws.provide.get("bad") is None) // bad shape dropped
+  // An uppercase key publishes a TYPE, and lands in the other map. `"self"` is
+  // the only value one can take, so `Nope` is dropped the way `bad` is.
+  assert_true(ws.provide.get("Cell") is None)
+  assert_true(ws.provide_type.get("Cell") == Some(ws.id))
+  assert_true(ws.provide_type.get("Nope") is None)
   assert_true(
     ws.lookup.get("active") is Some(lk) &&
-    lk.comp_name == "Workspace" &&
-    lk.provide_name == "active" &&
     lk.default_val is Some(Field("fallback")),
   )
-  assert_true(ws.lookup.get("broken") is None)
-  // producer-key memoization: Pending until first resolve,
-  // then Done with the producer's provide key — Workspace.active resolves to
-  // its own provide "active".
-  guard! ws.lookup.get("active") is Some(lk2)
-  assert_true(lk2.producer_key is Pending)
-  guard! ws.provide.get("active") is Some(prov)
-  let resolved = lk2.resolve_producer_key(ws.scope)
-  assert_true(resolved == Some(prov.key))
-  assert_true(lk2.producer_key is Done(Some(_)))
-  // second call returns the memoized value
-  assert_true(lk2.resolve_producer_key(ws.scope) == Some(prov.key))
+  // A lookup with no default carries none, and is still declared.
+  assert_true(ws.lookup.get("theme") is Some(lk2) && lk2.default_val is None)
+  // A lookup names what it wants, so its producer is found by scope search
+  // rather than by a name it wrote down.
+  guard! @component.resolve_dyn_producer(ws, "active") is Some(dp)
+  assert_eq(dp.producer, ws.id)
+  assert_true(dp.steps.length() == 1 && dp.steps[0] is FieldStep("sheet"))
+  // A published type has no path, so it can never be a render target.
+  assert_true(@component.resolve_dyn_producer(ws, "Cell") is None)
   // the compiled view stamped data-cid/data-vid on its root
   guard ws.get_view(None) is Some(v) && v.anode is Some(_) else {
     fail("view not compiled")

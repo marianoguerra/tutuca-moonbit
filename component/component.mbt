@@ -60,7 +60,7 @@ fn new_component(
   global_style : String,
   views : Map[String, @anode.View],
   provide : Map[String, String],
-  lookup : Map[String, LookupSpec],
+  lookup : Array[LookupSpec],
   specs : Map[String, FieldSpec],
   swap_names? : Array[String] = [],
   alter_names? : Array[String] = [],
@@ -94,6 +94,7 @@ fn new_component(
     raw_provide: provide,
     raw_lookup: lookup,
     provide: Map([]),
+    provide_type: Map([]),
     lookup: Map([]),
     scope: None,
   }
@@ -139,7 +140,7 @@ pub fn[S : @tutuca.Fields] component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, LookupSpec] = Map([]),
+  lookup? : Array[LookupSpec] = [],
 ) -> Component {
   // The three facts only the author knows — the declared schema and the
   // conversion to and from the fields map — arrive as ONE trait implemented on
@@ -309,7 +310,7 @@ pub fn Component::for_type(
   common_style? : String = "",
   global_style? : String = "",
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, LookupSpec] = Map([]),
+  lookup? : Array[LookupSpec] = [],
   make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
 ) -> Component {
   let comp = new_component(
@@ -351,21 +352,6 @@ pub fn Component::make(
 }
 
 ///|
-fn split_source(s : String) -> (String, String)? {
-  for i in 0..<s.length() {
-    if s[i] is '.' {
-      let a = s[0:i]
-      let b = s[i + 1:]
-      if a.length() > 0 && b.length() > 0 {
-        return Some((a.to_owned(), b.to_owned()))
-      }
-      return None
-    }
-  }
-  None
-}
-
-///|
 pub fn Component::compile(self : Component) -> Unit raise {
   let scope_obj : &@anode.MacroScope = match self.scope {
     Some(s) => s as &@anode.MacroScope
@@ -390,34 +376,34 @@ pub fn Component::compile(self : Component) -> Unit raise {
       self.schema = { ..self.schema, view_handlers: names }
     }
   }
+  // The name rule splits the two keyspaces: an uppercase key publishes a TYPE,
+  // and `"self"` is the only legal value for one — which is what keeps a
+  // published type a component by construction, so the `dyn` leg never has to
+  // trust an arbitrary expression. Anything else is a value, and must be
+  // ADDRESSABLE (`.field` / `.seq[.key]`) because a provide doubles as the
+  // teleport target for `<x render="*name">`.
+  //
+  // Both bad shapes are dropped here rather than raised: what is wrong with a
+  // declaration is a finding, with a name and a place to point at, and
+  // `ComponentStack::check_names` is where they are said.
   for pname, src in self.raw_provide {
-    match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
-      Some(val) =>
-        self.provide[pname] = {
-          name: pname,
-          val,
-          key: { comp: self.id, name: pname },
-        }
-      None => () // bad shape dropped silently (linter territory)
-    }
-  }
-  for lname, spec in self.raw_lookup {
-    match split_source(spec.source) {
-      Some((comp_name, provide_name)) => {
-        let default_val : @tutuca.Val? = match spec.default {
-          Some(d) => @tscript.parse_field(d, @tscript.ParseCtx::new())
-          None => None
-        }
-        self.lookup[lname] = {
-          name: lname,
-          comp_name,
-          provide_name,
-          default_val,
-          producer_key: Pending,
-        }
+    if @tutuca.is_type_name(pname) {
+      if src == "self" {
+        self.provide_type[pname] = self.id
       }
+      continue
+    }
+    match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
+      Some(val) => self.provide[pname] = { name: pname, val }
       None => ()
     }
+  }
+  for spec in self.raw_lookup {
+    let default_val : @tutuca.Val? = match spec.default {
+      Some(d) => @tscript.parse_field(d, @tscript.ParseCtx::new())
+      None => None
+    }
+    self.lookup[spec.name] = { name: spec.name, default_val }
   }
 }
 

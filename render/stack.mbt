@@ -44,20 +44,28 @@ pub fn RenderStack::enter(
 }
 
 ///|
-/// Evaluate the entered component's provides against the post-enter stack
-/// and cons one DynBinds frame. No-op without a registry,
-/// a component, or provides.
+/// Evaluate the entered component's provides against the post-enter stack and
+/// cons one DynBinds frame. No-op without a registry, a component, or
+/// anything to publish.
+///
+/// Values are EVALUATED here and types are copied: a `provide {Cell: "self"}`
+/// is already resolved by `compile()` into the publisher's own id. Both halves
+/// go in the one frame, keyed by plain name — see `DynBinds`.
 fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   guard self.comps is Some(comps) else { return self }
   guard comps.get_comp_for(self.it) is Some(comp) else { return self }
-  if comp.provide.is_empty() {
+  if comp.provide.is_empty() && comp.provide_type.is_empty() {
     return self
   }
-  let binds : Map[@component.ProvideKey, @tutuca.Value] = Map([])
+  let binds : Map[String, @tutuca.Value] = Map([])
   for _, p in comp.provide {
-    binds[p.key] = p.val.eval(self)
+    binds[p.name] = p.val.eval(self)
   }
-  { ..self, dyn_binds: Some({ binds, parent: self.dyn_binds }) }
+  let types : Map[String, Int] = Map([])
+  for tname, cid in comp.provide_type {
+    types[tname] = cid
+  }
+  { ..self, dyn_binds: Some({ binds, types, parent: self.dyn_binds }) }
 }
 
 ///|
@@ -156,44 +164,46 @@ pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
 }
 
 ///|
-/// `*name`: resolve through the current
-/// component's lookup alias (producer's provide key walked through the
-/// dynBinds chain, else the lookup default) or its own provide.
+/// `*name`: the nearest binding above — which INCLUDES this component's own
+/// provides, pushed on entering it — else this component's declared default,
+/// else Null.
+///
+/// One chain walk and no producer resolution: a lookup names what it wants, so
+/// the frame it wants is keyed by that name. The default belongs to the
+/// CONSUMER's declaration and is evaluated against the consumer's stack, which
+/// is why it is consulted only after the whole chain has missed.
 pub impl @tutuca.Stack for RenderStack with fn lookup_dynamic(self, name) {
-  guard self.comps is Some(comps) else { return Null }
-  guard comps.get_comp_for(self.it) is Some(comp) else { return Null }
-  match comp.lookup.get(name) {
-    Some(lk) => {
-      // Memoized on the LookupInfo: the scope walk runs
-      // once per lookup alias, not on every `*name` read.
-      let producer_key : @component.ProvideKey? = lk.resolve_producer_key(
-        comp.scope,
-      )
-      let bound : @tutuca.Value? = match (producer_key, self.dyn_binds) {
-        (Some(key), Some(db)) => db.lookup(key)
-        _ => None
-      }
-      match bound {
-        Some(v) => v
-        None =>
+  let bound : @tutuca.Value? = match self.dyn_binds {
+    Some(db) => db.lookup(name)
+    None => None
+  }
+  match bound {
+    Some(v) => v
+    None => {
+      guard self.comps is Some(comps) else { return Null }
+      guard comps.get_comp_for(self.it) is Some(comp) else { return Null }
+      match comp.lookup.get(name) {
+        Some(lk) =>
           match lk.default_val {
             Some(d) => d.eval(self)
             None => Null
           }
-      }
-    }
-    None =>
-      match comp.provide.get(name) {
-        Some(p) =>
-          match self.dyn_binds {
-            Some(db) =>
-              match db.lookup(p.key) {
-                Some(v) => v
-                None => p.val.eval(self)
-              }
-            None => p.val.eval(self)
-          }
         None => Null
       }
+    }
+  }
+}
+
+///|
+/// The type half of `lookup_dynamic`: the nearest component an ancestor
+/// published under `name` with `provide {Name: "self"}`, as its id.
+///
+/// Not on the `@tutuca.Stack` trait, because the value language has no way to
+/// write one — a type left the value language with `K_TYPE`. A handler asks
+/// for it through `ctx.make`.
+pub fn RenderStack::lookup_dyn_type(self : RenderStack, name : String) -> Int? {
+  match self.dyn_binds {
+    Some(db) => db.lookup_type(name)
+    None => None
   }
 }

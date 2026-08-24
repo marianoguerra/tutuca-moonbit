@@ -60,6 +60,18 @@ pub let ret_restore : Int = 80
 pub let ret_call_method : Int = 96
 
 ///|
+/// `value` — 16 bytes, for the one IMPORT that answers.
+///
+/// `control.lookup` is the only host function a guest calls for a value rather
+/// than for an effect, and a `value` is more core values than a result may
+/// carry — so the guest appends a pointer and the host stores into it. That
+/// makes this a return area like the ones around it, read once during the call
+/// that wrote it, even though the direction is the other way round.
+///
+/// 112 is the gap `ret_call_method` (96, 16 bytes) leaves before `ret_persist`.
+pub let ret_lookup : Int = 112
+
+///|
 /// `list<u8>` — a (pointer, length) pair.
 pub let ret_persist : Int = 128
 
@@ -88,14 +100,14 @@ pub let pool_base : Int = 1024
 
 ///|
 /// The guest world's names, spelled once.
-pub let guest_iface : String = "tutuca:component/guest@0.9.0"
+pub let guest_iface : String = "tutuca:component/guest@0.10.0"
 
 ///|
 /// The namespace an exported resource's intrinsics are imported from.
-pub let resource_iface : String = "[export]tutuca:component/guest@0.9.0"
+pub let resource_iface : String = "[export]tutuca:component/guest@0.10.0"
 
 ///|
-pub let control_iface : String = "tutuca:component/control@0.9.0"
+pub let control_iface : String = "tutuca:component/control@0.10.0"
 
 ///|
 /// The buckets `handle-event` is called with, in WIT order. Two, and a case's

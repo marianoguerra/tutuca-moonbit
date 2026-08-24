@@ -81,7 +81,7 @@ pub fn playlist_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -147,7 +147,7 @@ pub fn song_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

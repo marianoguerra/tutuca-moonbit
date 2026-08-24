@@ -66,7 +66,7 @@ pub fn table_row_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -137,7 +137,7 @@ pub fn item_table_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -194,7 +194,7 @@ pub fn select_option_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -275,7 +275,7 @@ pub fn item_select_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,
@@ -343,7 +343,7 @@ pub fn pseudo_x_demo_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

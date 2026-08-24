@@ -54,6 +54,13 @@ pub(all) enum RefusalCode {
   /// components forwarding to each other, which a single-component loop
   /// could not produce.
   IntentDepth
+  /// `ctx.make` walked its whole route and no leg answered: nothing above
+  /// published the name and nothing is registered under it.
+  TypeNotFound
+  /// `ctx.send_reply` with nobody waiting. A view's own `@on.*` and the host's
+  /// `send_at_root` have no sender, so there is no position to answer at, and
+  /// nothing is dispatched.
+  NoSender
 } derive(Eq, Debug)
 
 ///|
@@ -69,6 +76,8 @@ pub fn RefusalCode::word(self : RefusalCode) -> String {
     Postcondition => "POSTCONDITION"
     Invariant => "INVARIANT"
     IntentDepth => "INTENT_DEPTH"
+    TypeNotFound => "TYPE_NOT_FOUND"
+    NoSender => "NO_SENDER"
   }
 }
 

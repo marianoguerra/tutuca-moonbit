@@ -70,6 +70,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   bucket,
   name,
   _args,
+  _bindings,
 ) {
   match (bucket, name) {
     (Receive, "inc") =>
@@ -218,6 +219,8 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [
           {
             name: "at-three",

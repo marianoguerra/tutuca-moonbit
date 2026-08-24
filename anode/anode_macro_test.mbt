@@ -195,14 +195,16 @@ test "expand macro slot: default and override" {
 test "parse mixed macro attrs round-trip to source strings" {
   let px = @anode.ParseContext::new()
   guard! @anode.ANode::parse(
-      "<x:m class=\"foo\" :name=\"foo\" :type=\"Foo\" :bool=\"false\" :num=\"42\" :str=\"'hi'\" :field=\".bar\" :bind=\"@key\" :seq=\".a[.b]\" :dyn=\"*dynamic\"></x:m>",
+      // No `:type="Foo"`: a component type is not a value, so it is in no
+      // value group and a macro attr cannot carry one — the same edit that
+      // took it out of handler arguments.
+      "<x:m class=\"foo\" :name=\"foo\" :bool=\"false\" :num=\"42\" :str=\"'hi'\" :field=\".bar\" :bind=\"@key\" :seq=\".a[.b]\" :dyn=\"*dynamic\"></x:m>",
       px,
     )
     is Some(MacroCall(m))
   @debug.assert_eq(m.attrs, {
     "class": "'foo'",
     "name": "foo",
-    "type": "Foo",
     "bool": "false",
     "num": "42",
     "str": "'hi'",

@@ -12,7 +12,7 @@ import {
 // Values
 pub let activity_entry_common_style : String
 
-pub fn activity_entry_component(name? : String, views? : Map[String, @anode.View], init? : ActivityEntryState, common_style? : String, global_style? : String, update? : (ActivityEntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[ActivityEntryState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn activity_entry_component(name? : String, views? : Map[String, @anode.View], init? : ActivityEntryState, common_style? : String, global_style? : String, update? : (ActivityEntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[ActivityEntryState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let activity_entry_global_style : String
 
@@ -20,7 +20,7 @@ pub fn activity_entry_views() -> Map[String, @anode.View]
 
 pub let activity_log_common_style : String
 
-pub fn activity_log_component(name? : String, views? : Map[String, @anode.View], init? : ActivityLogState, common_style? : String, global_style? : String, update? : (ActivityLogState, @component.Dispatch, &@core.Ctx) -> @component.Update[ActivityLogState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn activity_log_component(name? : String, views? : Map[String, @anode.View], init? : ActivityLogState, common_style? : String, global_style? : String, update? : (ActivityLogState, @component.Dispatch, &@core.Ctx) -> @component.Update[ActivityLogState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let activity_log_global_style : String
 
@@ -28,7 +28,7 @@ pub fn activity_log_views() -> Map[String, @anode.View]
 
 pub let comp_field_common_style : String
 
-pub fn comp_field_component(name? : String, views? : Map[String, @anode.View], init? : CompFieldState, common_style? : String, global_style? : String, update? : (CompFieldState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompFieldState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn comp_field_component(name? : String, views? : Map[String, @anode.View], init? : CompFieldState, common_style? : String, global_style? : String, update? : (CompFieldState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompFieldState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let comp_field_global_style : String
 
@@ -36,7 +36,7 @@ pub fn comp_field_views() -> Map[String, @anode.View]
 
 pub let comp_name_common_style : String
 
-pub fn comp_name_component(name? : String, views? : Map[String, @anode.View], init? : CompNameState, common_style? : String, global_style? : String, update? : (CompNameState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompNameState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn comp_name_component(name? : String, views? : Map[String, @anode.View], init? : CompNameState, common_style? : String, global_style? : String, update? : (CompNameState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompNameState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let comp_name_global_style : String
 
@@ -44,7 +44,7 @@ pub fn comp_name_views() -> Map[String, @anode.View]
 
 pub let comp_section_common_style : String
 
-pub fn comp_section_component(name? : String, views? : Map[String, @anode.View], init? : CompSectionState, common_style? : String, global_style? : String, update? : (CompSectionState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompSectionState], compute? : (CompSectionMethod) -> ((CompSectionState, Array[@core.Value]) -> @core.Value)?, swap? : (CompSectionInput) -> ((CompSectionState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (CompSectionLoopWith) -> ((CompSectionState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn comp_section_component(name? : String, views? : Map[String, @anode.View], init? : CompSectionState, common_style? : String, global_style? : String, update? : (CompSectionState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompSectionState], compute? : (CompSectionMethod) -> ((CompSectionState, Array[@core.Value]) -> @core.Value)?, swap? : (CompSectionInput) -> ((CompSectionState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (CompSectionLoopWith) -> ((CompSectionState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let comp_section_global_style : String
 
@@ -52,7 +52,7 @@ pub fn comp_section_views() -> Map[String, @anode.View]
 
 pub let comp_view_common_style : String
 
-pub fn comp_view_component(name? : String, views? : Map[String, @anode.View], init? : CompViewState, common_style? : String, global_style? : String, update? : (CompViewState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompViewState], compute? : (CompViewMethod) -> ((CompViewState, Array[@core.Value]) -> @core.Value)?, swap? : (CompViewInput) -> ((CompViewState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn comp_view_component(name? : String, views? : Map[String, @anode.View], init? : CompViewState, common_style? : String, global_style? : String, update? : (CompViewState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompViewState], compute? : (CompViewMethod) -> ((CompViewState, Array[@core.Value]) -> @core.Value)?, swap? : (CompViewInput) -> ((CompViewState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let comp_view_global_style : String
 
@@ -60,7 +60,7 @@ pub fn comp_view_views() -> Map[String, @anode.View]
 
 pub let component_inspector_common_style : String
 
-pub fn component_inspector_component(name? : String, views? : Map[String, @anode.View], init? : ComponentInspectorState, common_style? : String, global_style? : String, update? : (ComponentInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[ComponentInspectorState], compute? : (ComponentInspectorMethod) -> ((ComponentInspectorState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn component_inspector_component(name? : String, views? : Map[String, @anode.View], init? : ComponentInspectorState, common_style? : String, global_style? : String, update? : (ComponentInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[ComponentInspectorState], compute? : (ComponentInspectorMethod) -> ((ComponentInspectorState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let component_inspector_global_style : String
 
@@ -70,7 +70,7 @@ pub fn component_summary(@component.Component) -> @core.Value
 
 pub let data_inspector_common_style : String
 
-pub fn data_inspector_component(name? : String, views? : Map[String, @anode.View], init? : DataInspectorState, common_style? : String, global_style? : String, update? : (DataInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[DataInspectorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn data_inspector_component(name? : String, views? : Map[String, @anode.View], init? : DataInspectorState, common_style? : String, global_style? : String, update? : (DataInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[DataInspectorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let data_inspector_global_style : String
 
@@ -82,7 +82,7 @@ pub fn inspector_module() -> @component.ModuleDef
 
 pub let instance_explorer_common_style : String
 
-pub fn instance_explorer_component(name? : String, views? : Map[String, @anode.View], init? : InstanceExplorerState, common_style? : String, global_style? : String, update? : (InstanceExplorerState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceExplorerState], swap? : (InstanceExplorerInput) -> ((InstanceExplorerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn instance_explorer_component(name? : String, views? : Map[String, @anode.View], init? : InstanceExplorerState, common_style? : String, global_style? : String, update? : (InstanceExplorerState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceExplorerState], swap? : (InstanceExplorerInput) -> ((InstanceExplorerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let instance_explorer_global_style : String
 
@@ -90,7 +90,7 @@ pub fn instance_explorer_views() -> Map[String, @anode.View]
 
 pub let instance_fields_common_style : String
 
-pub fn instance_fields_component(name? : String, views? : Map[String, @anode.View], init? : InstanceFieldsState, common_style? : String, global_style? : String, update? : (InstanceFieldsState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceFieldsState], compute? : (InstanceFieldsMethod) -> ((InstanceFieldsState, Array[@core.Value]) -> @core.Value)?, swap? : (InstanceFieldsInput) -> ((InstanceFieldsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (InstanceFieldsLoopWith) -> ((InstanceFieldsState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn instance_fields_component(name? : String, views? : Map[String, @anode.View], init? : InstanceFieldsState, common_style? : String, global_style? : String, update? : (InstanceFieldsState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceFieldsState], compute? : (InstanceFieldsMethod) -> ((InstanceFieldsState, Array[@core.Value]) -> @core.Value)?, swap? : (InstanceFieldsInput) -> ((InstanceFieldsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (InstanceFieldsLoopWith) -> ((InstanceFieldsState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let instance_fields_global_style : String
 
@@ -98,7 +98,7 @@ pub fn instance_fields_views() -> Map[String, @anode.View]
 
 pub let instance_inspector_common_style : String
 
-pub fn instance_inspector_component(name? : String, views? : Map[String, @anode.View], init? : InstanceInspectorState, common_style? : String, global_style? : String, update? : (InstanceInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceInspectorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn instance_inspector_component(name? : String, views? : Map[String, @anode.View], init? : InstanceInspectorState, common_style? : String, global_style? : String, update? : (InstanceInspectorState, @component.Dispatch, &@core.Ctx) -> @component.Update[InstanceInspectorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let instance_inspector_global_style : String
 
@@ -108,7 +108,7 @@ pub fn instance_snapshot(@core.Value, comp? : @component.Component) -> @core.Val
 
 pub let json_array_common_style : String
 
-pub fn json_array_component(name? : String, views? : Map[String, @anode.View], init? : JsonArrayState, common_style? : String, global_style? : String, update? : (JsonArrayState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonArrayState], compute? : (JsonArrayMethod) -> ((JsonArrayState, Array[@core.Value]) -> @core.Value)?, swap? : (JsonArrayInput) -> ((JsonArrayState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (JsonArrayLoopWith) -> ((JsonArrayState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_array_component(name? : String, views? : Map[String, @anode.View], init? : JsonArrayState, common_style? : String, global_style? : String, update? : (JsonArrayState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonArrayState], compute? : (JsonArrayMethod) -> ((JsonArrayState, Array[@core.Value]) -> @core.Value)?, swap? : (JsonArrayInput) -> ((JsonArrayState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (JsonArrayLoopWith) -> ((JsonArrayState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_array_global_style : String
 
@@ -116,7 +116,7 @@ pub fn json_array_views() -> Map[String, @anode.View]
 
 pub let json_boolean_common_style : String
 
-pub fn json_boolean_component(name? : String, views? : Map[String, @anode.View], init? : JsonBooleanState, common_style? : String, global_style? : String, update? : (JsonBooleanState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonBooleanState], compute? : (JsonBooleanMethod) -> ((JsonBooleanState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_boolean_component(name? : String, views? : Map[String, @anode.View], init? : JsonBooleanState, common_style? : String, global_style? : String, update? : (JsonBooleanState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonBooleanState], compute? : (JsonBooleanMethod) -> ((JsonBooleanState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_boolean_global_style : String
 
@@ -124,7 +124,7 @@ pub fn json_boolean_views() -> Map[String, @anode.View]
 
 pub let json_null_common_style : String
 
-pub fn json_null_component(name? : String, views? : Map[String, @anode.View], init? : JsonNullState, common_style? : String, global_style? : String, update? : (JsonNullState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonNullState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_null_component(name? : String, views? : Map[String, @anode.View], init? : JsonNullState, common_style? : String, global_style? : String, update? : (JsonNullState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonNullState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_null_global_style : String
 
@@ -132,7 +132,7 @@ pub fn json_null_views() -> Map[String, @anode.View]
 
 pub let json_number_common_style : String
 
-pub fn json_number_component(name? : String, views? : Map[String, @anode.View], init? : JsonNumberState, common_style? : String, global_style? : String, update? : (JsonNumberState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonNumberState], compute? : (JsonNumberMethod) -> ((JsonNumberState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_number_component(name? : String, views? : Map[String, @anode.View], init? : JsonNumberState, common_style? : String, global_style? : String, update? : (JsonNumberState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonNumberState], compute? : (JsonNumberMethod) -> ((JsonNumberState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_number_global_style : String
 
@@ -140,7 +140,7 @@ pub fn json_number_views() -> Map[String, @anode.View]
 
 pub let json_object_common_style : String
 
-pub fn json_object_component(name? : String, views? : Map[String, @anode.View], init? : JsonObjectState, common_style? : String, global_style? : String, update? : (JsonObjectState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonObjectState], compute? : (JsonObjectMethod) -> ((JsonObjectState, Array[@core.Value]) -> @core.Value)?, swap? : (JsonObjectInput) -> ((JsonObjectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (JsonObjectLoopWith) -> ((JsonObjectState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_object_component(name? : String, views? : Map[String, @anode.View], init? : JsonObjectState, common_style? : String, global_style? : String, update? : (JsonObjectState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonObjectState], compute? : (JsonObjectMethod) -> ((JsonObjectState, Array[@core.Value]) -> @core.Value)?, swap? : (JsonObjectInput) -> ((JsonObjectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (JsonObjectLoopWith) -> ((JsonObjectState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_object_global_style : String
 
@@ -148,7 +148,7 @@ pub fn json_object_views() -> Map[String, @anode.View]
 
 pub let json_property_common_style : String
 
-pub fn json_property_component(name? : String, views? : Map[String, @anode.View], init? : JsonPropertyState, common_style? : String, global_style? : String, update? : (JsonPropertyState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonPropertyState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_property_component(name? : String, views? : Map[String, @anode.View], init? : JsonPropertyState, common_style? : String, global_style? : String, update? : (JsonPropertyState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonPropertyState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_property_global_style : String
 
@@ -156,7 +156,7 @@ pub fn json_property_views() -> Map[String, @anode.View]
 
 pub let json_string_common_style : String
 
-pub fn json_string_component(name? : String, views? : Map[String, @anode.View], init? : JsonStringState, common_style? : String, global_style? : String, update? : (JsonStringState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonStringState], compute? : (JsonStringMethod) -> ((JsonStringState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn json_string_component(name? : String, views? : Map[String, @anode.View], init? : JsonStringState, common_style? : String, global_style? : String, update? : (JsonStringState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonStringState], compute? : (JsonStringMethod) -> ((JsonStringState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_string_global_style : String
 
@@ -166,7 +166,7 @@ pub fn path_keys_label(Array[@core.StepKey]) -> String
 
 pub let rich_sample_common_style : String
 
-pub fn rich_sample_component(name? : String, views? : Map[String, @anode.View], init? : RichSampleState, common_style? : String, global_style? : String, update? : (RichSampleState, @component.Dispatch, &@core.Ctx) -> @component.Update[RichSampleState], compute? : (RichSampleMethod) -> ((RichSampleState, Array[@core.Value]) -> @core.Value)?, swap? : (RichSampleInput) -> ((RichSampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (RichSampleLoopWith) -> ((RichSampleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn rich_sample_component(name? : String, views? : Map[String, @anode.View], init? : RichSampleState, common_style? : String, global_style? : String, update? : (RichSampleState, @component.Dispatch, &@core.Ctx) -> @component.Update[RichSampleState], compute? : (RichSampleMethod) -> ((RichSampleState, Array[@core.Value]) -> @core.Value)?, swap? : (RichSampleInput) -> ((RichSampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (RichSampleLoopWith) -> ((RichSampleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let rich_sample_global_style : String
 
@@ -174,7 +174,7 @@ pub fn rich_sample_views() -> Map[String, @anode.View]
 
 pub let sample_card_common_style : String
 
-pub fn sample_card_component(name? : String, views? : Map[String, @anode.View], init? : SampleCardState, common_style? : String, global_style? : String, update? : (SampleCardState, @component.Dispatch, &@core.Ctx) -> @component.Update[SampleCardState], compute? : (SampleCardMethod) -> ((SampleCardState, Array[@core.Value]) -> @core.Value)?, swap? : (SampleCardInput) -> ((SampleCardState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn sample_card_component(name? : String, views? : Map[String, @anode.View], init? : SampleCardState, common_style? : String, global_style? : String, update? : (SampleCardState, @component.Dispatch, &@core.Ctx) -> @component.Update[SampleCardState], compute? : (SampleCardMethod) -> ((SampleCardState, Array[@core.Value]) -> @core.Value)?, swap? : (SampleCardInput) -> ((SampleCardState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let sample_card_global_style : String
 
@@ -182,7 +182,7 @@ pub fn sample_card_views() -> Map[String, @anode.View]
 
 pub let schema_array_common_style : String
 
-pub fn schema_array_component(name? : String, views? : Map[String, @anode.View], init? : SchemaArrayState, common_style? : String, global_style? : String, update? : (SchemaArrayState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaArrayState], compute? : (SchemaArrayMethod) -> ((SchemaArrayState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaArrayInput) -> ((SchemaArrayState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaArrayLoopWith) -> ((SchemaArrayState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_array_component(name? : String, views? : Map[String, @anode.View], init? : SchemaArrayState, common_style? : String, global_style? : String, update? : (SchemaArrayState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaArrayState], compute? : (SchemaArrayMethod) -> ((SchemaArrayState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaArrayInput) -> ((SchemaArrayState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaArrayLoopWith) -> ((SchemaArrayState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_array_global_style : String
 
@@ -190,7 +190,7 @@ pub fn schema_array_views() -> Map[String, @anode.View]
 
 pub let schema_boolean_common_style : String
 
-pub fn schema_boolean_component(name? : String, views? : Map[String, @anode.View], init? : SchemaBooleanState, common_style? : String, global_style? : String, update? : (SchemaBooleanState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaBooleanState], compute? : (SchemaBooleanMethod) -> ((SchemaBooleanState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_boolean_component(name? : String, views? : Map[String, @anode.View], init? : SchemaBooleanState, common_style? : String, global_style? : String, update? : (SchemaBooleanState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaBooleanState], compute? : (SchemaBooleanMethod) -> ((SchemaBooleanState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_boolean_global_style : String
 
@@ -198,7 +198,7 @@ pub fn schema_boolean_views() -> Map[String, @anode.View]
 
 pub let schema_branch_common_style : String
 
-pub fn schema_branch_component(name? : String, views? : Map[String, @anode.View], init? : SchemaBranchState, common_style? : String, global_style? : String, update? : (SchemaBranchState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaBranchState], compute? : (SchemaBranchMethod) -> ((SchemaBranchState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_branch_component(name? : String, views? : Map[String, @anode.View], init? : SchemaBranchState, common_style? : String, global_style? : String, update? : (SchemaBranchState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaBranchState], compute? : (SchemaBranchMethod) -> ((SchemaBranchState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_branch_global_style : String
 
@@ -206,7 +206,7 @@ pub fn schema_branch_views() -> Map[String, @anode.View]
 
 pub let schema_combinator_common_style : String
 
-pub fn schema_combinator_component(name? : String, views? : Map[String, @anode.View], init? : SchemaCombinatorState, common_style? : String, global_style? : String, update? : (SchemaCombinatorState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaCombinatorState], compute? : (SchemaCombinatorMethod) -> ((SchemaCombinatorState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaCombinatorInput) -> ((SchemaCombinatorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaCombinatorLoopWith) -> ((SchemaCombinatorState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_combinator_component(name? : String, views? : Map[String, @anode.View], init? : SchemaCombinatorState, common_style? : String, global_style? : String, update? : (SchemaCombinatorState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaCombinatorState], compute? : (SchemaCombinatorMethod) -> ((SchemaCombinatorState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaCombinatorInput) -> ((SchemaCombinatorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaCombinatorLoopWith) -> ((SchemaCombinatorState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_combinator_global_style : String
 
@@ -214,7 +214,7 @@ pub fn schema_combinator_views() -> Map[String, @anode.View]
 
 pub let schema_conditional_common_style : String
 
-pub fn schema_conditional_component(name? : String, views? : Map[String, @anode.View], init? : SchemaConditionalState, common_style? : String, global_style? : String, update? : (SchemaConditionalState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaConditionalState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_conditional_component(name? : String, views? : Map[String, @anode.View], init? : SchemaConditionalState, common_style? : String, global_style? : String, update? : (SchemaConditionalState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaConditionalState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_conditional_global_style : String
 
@@ -222,7 +222,7 @@ pub fn schema_conditional_views() -> Map[String, @anode.View]
 
 pub let schema_const_common_style : String
 
-pub fn schema_const_component(name? : String, views? : Map[String, @anode.View], init? : SchemaConstState, common_style? : String, global_style? : String, update? : (SchemaConstState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaConstState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_const_component(name? : String, views? : Map[String, @anode.View], init? : SchemaConstState, common_style? : String, global_style? : String, update? : (SchemaConstState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaConstState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_const_global_style : String
 
@@ -230,7 +230,7 @@ pub fn schema_const_views() -> Map[String, @anode.View]
 
 pub let schema_enum_common_style : String
 
-pub fn schema_enum_component(name? : String, views? : Map[String, @anode.View], init? : SchemaEnumState, common_style? : String, global_style? : String, update? : (SchemaEnumState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaEnumState], compute? : (SchemaEnumMethod) -> ((SchemaEnumState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaEnumInput) -> ((SchemaEnumState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaEnumLoopWith) -> ((SchemaEnumState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_enum_component(name? : String, views? : Map[String, @anode.View], init? : SchemaEnumState, common_style? : String, global_style? : String, update? : (SchemaEnumState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaEnumState], compute? : (SchemaEnumMethod) -> ((SchemaEnumState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaEnumInput) -> ((SchemaEnumState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaEnumLoopWith) -> ((SchemaEnumState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_enum_global_style : String
 
@@ -238,7 +238,7 @@ pub fn schema_enum_views() -> Map[String, @anode.View]
 
 pub let schema_not_common_style : String
 
-pub fn schema_not_component(name? : String, views? : Map[String, @anode.View], init? : SchemaNotState, common_style? : String, global_style? : String, update? : (SchemaNotState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaNotState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_not_component(name? : String, views? : Map[String, @anode.View], init? : SchemaNotState, common_style? : String, global_style? : String, update? : (SchemaNotState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaNotState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_not_global_style : String
 
@@ -246,7 +246,7 @@ pub fn schema_not_views() -> Map[String, @anode.View]
 
 pub let schema_object_common_style : String
 
-pub fn schema_object_component(name? : String, views? : Map[String, @anode.View], init? : SchemaObjectState, common_style? : String, global_style? : String, update? : (SchemaObjectState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaObjectState], compute? : (SchemaObjectMethod) -> ((SchemaObjectState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaObjectInput) -> ((SchemaObjectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaObjectLoopWith) -> ((SchemaObjectState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_object_component(name? : String, views? : Map[String, @anode.View], init? : SchemaObjectState, common_style? : String, global_style? : String, update? : (SchemaObjectState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaObjectState], compute? : (SchemaObjectMethod) -> ((SchemaObjectState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaObjectInput) -> ((SchemaObjectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaObjectLoopWith) -> ((SchemaObjectState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_object_global_style : String
 
@@ -254,7 +254,7 @@ pub fn schema_object_views() -> Map[String, @anode.View]
 
 pub let schema_property_common_style : String
 
-pub fn schema_property_component(name? : String, views? : Map[String, @anode.View], init? : SchemaPropertyState, common_style? : String, global_style? : String, update? : (SchemaPropertyState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaPropertyState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_property_component(name? : String, views? : Map[String, @anode.View], init? : SchemaPropertyState, common_style? : String, global_style? : String, update? : (SchemaPropertyState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaPropertyState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_property_global_style : String
 
@@ -262,7 +262,7 @@ pub fn schema_property_views() -> Map[String, @anode.View]
 
 pub let schema_ref_common_style : String
 
-pub fn schema_ref_component(name? : String, views? : Map[String, @anode.View], init? : SchemaRefState, common_style? : String, global_style? : String, update? : (SchemaRefState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaRefState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_ref_component(name? : String, views? : Map[String, @anode.View], init? : SchemaRefState, common_style? : String, global_style? : String, update? : (SchemaRefState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaRefState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_ref_global_style : String
 
@@ -270,7 +270,7 @@ pub fn schema_ref_views() -> Map[String, @anode.View]
 
 pub let schema_scalar_common_style : String
 
-pub fn schema_scalar_component(name? : String, views? : Map[String, @anode.View], init? : SchemaScalarState, common_style? : String, global_style? : String, update? : (SchemaScalarState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaScalarState], compute? : (SchemaScalarMethod) -> ((SchemaScalarState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaScalarInput) -> ((SchemaScalarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaScalarLoopWith) -> ((SchemaScalarState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_scalar_component(name? : String, views? : Map[String, @anode.View], init? : SchemaScalarState, common_style? : String, global_style? : String, update? : (SchemaScalarState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaScalarState], compute? : (SchemaScalarMethod) -> ((SchemaScalarState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaScalarInput) -> ((SchemaScalarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (SchemaScalarLoopWith) -> ((SchemaScalarState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_scalar_global_style : String
 
@@ -278,7 +278,7 @@ pub fn schema_scalar_views() -> Map[String, @anode.View]
 
 pub let schema_viewer_common_style : String
 
-pub fn schema_viewer_component(name? : String, views? : Map[String, @anode.View], init? : SchemaViewerState, common_style? : String, global_style? : String, update? : (SchemaViewerState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaViewerState], compute? : (SchemaViewerMethod) -> ((SchemaViewerState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaViewerInput) -> ((SchemaViewerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn schema_viewer_component(name? : String, views? : Map[String, @anode.View], init? : SchemaViewerState, common_style? : String, global_style? : String, update? : (SchemaViewerState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaViewerState], compute? : (SchemaViewerMethod) -> ((SchemaViewerState, Array[@core.Value]) -> @core.Value)?, swap? : (SchemaViewerInput) -> ((SchemaViewerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_viewer_global_style : String
 
@@ -286,13 +286,13 @@ pub fn schema_viewer_views() -> Map[String, @anode.View]
 
 pub let state_editor_common_style : String
 
-pub fn state_editor_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorState, common_style? : String, global_style? : String, update? : (StateEditorState, @component.Dispatch, &@core.Ctx) -> @component.Update[StateEditorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn state_editor_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorState, common_style? : String, global_style? : String, update? : (StateEditorState, @component.Dispatch, &@core.Ctx) -> @component.Update[StateEditorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let state_editor_global_style : String
 
 pub let state_editor_row_common_style : String
 
-pub fn state_editor_row_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorRowState, common_style? : String, global_style? : String, update? : (StateEditorRowState, @component.Dispatch, &@core.Ctx) -> @component.Update[StateEditorRowState], swap? : (StateEditorRowInput) -> ((StateEditorRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn state_editor_row_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorRowState, common_style? : String, global_style? : String, update? : (StateEditorRowState, @component.Dispatch, &@core.Ctx) -> @component.Update[StateEditorRowState], swap? : (StateEditorRowInput) -> ((StateEditorRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let state_editor_row_global_style : String
 
@@ -302,7 +302,7 @@ pub fn state_editor_views() -> Map[String, @anode.View]
 
 pub let value_fn_common_style : String
 
-pub fn value_fn_component(name? : String, views? : Map[String, @anode.View], init? : ValueFnState, common_style? : String, global_style? : String, update? : (ValueFnState, @component.Dispatch, &@core.Ctx) -> @component.Update[ValueFnState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn value_fn_component(name? : String, views? : Map[String, @anode.View], init? : ValueFnState, common_style? : String, global_style? : String, update? : (ValueFnState, @component.Dispatch, &@core.Ctx) -> @component.Update[ValueFnState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let value_fn_global_style : String
 
@@ -310,7 +310,7 @@ pub fn value_fn_views() -> Map[String, @anode.View]
 
 pub let value_obj_common_style : String
 
-pub fn value_obj_component(name? : String, views? : Map[String, @anode.View], init? : ValueObjState, common_style? : String, global_style? : String, update? : (ValueObjState, @component.Dispatch, &@core.Ctx) -> @component.Update[ValueObjState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn value_obj_component(name? : String, views? : Map[String, @anode.View], init? : ValueObjState, common_style? : String, global_style? : String, update? : (ValueObjState, @component.Dispatch, &@core.Ctx) -> @component.Update[ValueObjState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let value_obj_global_style : String
 

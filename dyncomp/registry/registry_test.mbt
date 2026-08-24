@@ -25,6 +25,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   _bucket,
   _name,
   _args,
+  _bindings,
 ) {
   { handled: false, next: None, msgs: [] }
 }
@@ -112,6 +113,8 @@ fn counter_bundle() -> @dyncomp.DynManifest {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [
           {
             name: "at-three",
@@ -169,6 +172,8 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [],
         style: "",
       },

@@ -35,6 +35,9 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
     log: () => {}, send: () => {}, sendAt: () => {},
     intent: () => {}, intentAt: () => {}, forward: () => {},
     reply: () => {}, fail: () => {}, stopPropagation: () => {},
+    // 0.10.0: a reply names itself, and a lookup ANSWERS — a harness with
+    // no ancestor has nothing to answer with, so nil is the truth here.
+    sendReply: () => {}, lookup: () => ({ tag: 'nil' }),
     after: () => {}, makeInstance: () => 0n, dropInstance: () => {},
   };
   const root = await instantiate(
@@ -44,7 +47,7 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
       'tutuca:component/control': control,
     },
     {
-      world: 'tutuca:component@0.9.0',
+      world: 'tutuca:component@0.10.0',
       encoding: 'utf16',
       core: 'counter.component.core.wasm',
     },

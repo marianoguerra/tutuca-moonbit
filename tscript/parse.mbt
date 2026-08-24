@@ -40,6 +40,18 @@ priv enum Kind {
   KBind
   KDyn
   KName
+  /// A bare Uppercase name: a component TYPE.
+  ///
+  /// In NO group, which is the point. A type is not a value — it has no path,
+  /// nothing can be read off it, and it cannot be rendered — so it belongs to
+  /// no value position and a `@on.click="addItem JsonSelector"` is a parse
+  /// error rather than an argument that silently arrives as null. A handler
+  /// that needs one asks for it by name (`ctx.make`), with the name declared
+  /// in `lookup` where a checker can still see it and the scope it resolves
+  /// against.
+  ///
+  /// The kind stays so that such a token still PARSES far enough to be
+  /// reported as what it is.
   KType
   KSeq
   KMethod
@@ -107,19 +119,10 @@ fn in_group(kind : Kind, group : Group) -> Bool {
     GProvide => kind is (KField | KSeq)
     GField => kind is (KField | KMethod | KConst | KSeq)
     GEventArg =>
-      kind
-      is (KField | KMethod | KBind | KDyn | KName | KType | KConst | KEvent)
+      kind is (KField | KMethod | KBind | KDyn | KName | KConst | KEvent)
     GAll =>
       kind
-      is (KField
-      | KMethod
-      | KBind
-      | KDyn
-      | KName
-      | KType
-      | KConst
-      | KStrTpl
-      | KSeq)
+      is (KField | KMethod | KBind | KDyn | KName | KConst | KStrTpl | KSeq)
   }
 }
 

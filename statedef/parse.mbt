@@ -25,6 +25,19 @@ fn P::span(self : P) -> Span {
 }
 
 ///|
+/// The token `n` places ahead, for the one decision that needs a second look:
+/// `provide` opens a wiring section only when a brace follows it, and is an
+/// ordinary field name otherwise.
+fn P::peek_at(self : P, n : Int) -> Tok {
+  let i = self.at + n
+  if i < self.toks.length() {
+    self.toks[i].tok
+  } else {
+    TEof
+  }
+}
+
+///|
 fn P::bump(self : P) -> Token {
   let t = self.toks[self.at]
   if self.at + 1 < self.toks.length() {
@@ -153,6 +166,9 @@ priv struct RawDecl {
   fields : Array[RawField]
   /// Cases, for `enum` and the buckets.
   cases : Array[RawCase]
+  /// The wiring sections, for `state`.
+  provide : Array[ProvideDecl]
+  lookup : Array[LookupDecl]
 }
 
 ///|
@@ -234,9 +250,29 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
     p.expect(TLBrace, "`{` opening the body")
     let fields : Array[RawField] = []
     let cases : Array[RawCase] = []
+    let provide : Array[ProvideDecl] = []
+    let lookup : Array[LookupDecl] = []
     let takes_fields = kind is (RState | RStruct)
     while !(p.peek() is (TRBrace | TEof)) {
+      // Docs first, because a section is documented the way a field is and the
+      // comment sits between the brace and the word.
       let member_doc = p.docs()
+      // A wiring section, which only a `state` may carry: `struct` describes a
+      // value and a value publishes nothing.
+      if p.peek() is TIdent(w) &&
+        (w == "provide" || w == "lookup") &&
+        p.peek_at(1) is TLBrace {
+        let word_at = p.span()
+        p.bump() |> ignore
+        if !(kind is RState) {
+          raise Syntax(
+            msg="`\{w}` says where a value comes from, which only a component can say — move it into a `state`",
+            span=word_at,
+          )
+        }
+        parse_wiring(p, w, provide, lookup)
+        continue
+      }
       let attrs = p.attrs()
       let (mname, mspan) = p.ident(
         if takes_fields {
@@ -275,9 +311,74 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       p.skip_comma()
     }
     p.expect(TRBrace, "`}` closing the body")
-    out.push({ kind, name, name_span, doc, fields, cases })
+    out.push({ kind, name, name_span, doc, fields, cases, provide, lookup })
   }
   out
+}
+
+///|
+/// One `provide { … }` or `lookup { … }` section, already past its word.
+///
+/// The entries differ by exactly one thing: a provide must say what produces
+/// the value, and a lookup names what it wants and MAY say what to fall back
+/// on. The expression itself arrives as one `TExpr` — the lexer found where it
+/// ended and read none of it.
+fn parse_wiring(
+  p : P,
+  word : String,
+  provide : Array[ProvideDecl],
+  lookup : Array[LookupDecl],
+) -> Unit raise DefError {
+  let is_provide = word == "provide"
+  p.expect(TLBrace, "`{` opening the \{word} section")
+  while !(p.peek() is (TRBrace | TEof)) {
+    let (name, span) = p.ident(
+      if is_provide {
+        "the name this component publishes under"
+      } else {
+        "the name this component is asking for"
+      },
+    )
+    let seen = if is_provide {
+      provide.iter().any(e => e.name == name)
+    } else {
+      lookup.iter().any(e => e.name == name)
+    }
+    if seen {
+      raise Syntax(
+        msg="`\{name}` is \{word}d twice, and the second says nothing the first did not",
+        span~,
+      )
+    }
+    let mut expr : String? = None
+    if p.peek() is TEquals {
+      p.bump() |> ignore
+      match p.peek() {
+        TExpr(e) => {
+          p.bump() |> ignore
+          expr = Some(e)
+        }
+        _ => p.fail("an expression after `=`")
+      }
+    }
+    if is_provide {
+      match expr {
+        // Every provide states what produces it. There is no shorthand for
+        // "the field of the same name": a provide is read as a PATH, and one
+        // that has to be inferred is one an author cannot see.
+        None =>
+          raise Syntax(
+            msg="`\{name}` is provided with nothing — write `\{name} = .\{name}`, or `self` to publish this component as a type",
+            span~,
+          )
+        Some(source) => provide.push({ name, source, span })
+      }
+    } else {
+      lookup.push({ name, default: expr, span })
+    }
+    p.skip_comma()
+  }
+  p.expect(TRBrace, "`}` closing the \{word} section")
 }
 
 ///|
@@ -452,6 +553,8 @@ fn build(
     // `func` is gone: a callable is declared in the script block, where every
     // other callable already lives.
     types,
+    provide: d.provide,
+    lookup: d.lookup,
     doc: d.doc,
   }
 }

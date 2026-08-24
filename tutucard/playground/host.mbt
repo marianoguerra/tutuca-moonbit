@@ -338,7 +338,7 @@ fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
 // the compiler
 
 ///|
-/// Compile a card to a `tutuca:component@0.9.0` core wasm module.
+/// Compile a card to a `tutuca:component@0.10.0` core wasm module.
 ///
 /// The same card the page is already interpreting, put through the OTHER
 /// backend — so the two answers sit side by side and a difference between them

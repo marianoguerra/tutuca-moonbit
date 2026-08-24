@@ -112,9 +112,7 @@ fn emit_wrapper(
     ),
   )
   out.write_string(wrapper_opt("provide", "Map[String, String]", "Map([])"))
-  out.write_string(
-    wrapper_opt("lookup", "Map[String, @component.LookupSpec]", "Map([])"),
-  )
+  out.write_string(wrapper_opt("lookup", "Array[@component.LookupSpec]", "[]"))
   // The block first, the author's `update` second, the generated mutators
   // last. `Unhandled` is the only answer that hands the name on: `Unchanged`
   // means the block claimed it and chose not to move, which stops here.

@@ -18,10 +18,10 @@ fn dse_editor_comp() -> @component.Component {
     name="Editor",
     init={ missing: Null },
     // Consumer: forwards to Root's provides — a sequence and a single item.
-    lookup={
-      "items": { source: "Root.items", default: Some(".missing") },
-      "selected": { source: "Root.selected", default: Some(".missing") },
-    },
+    lookup=[
+      @component.lookup_or("items", ".missing"),
+      @component.lookup_or("selected", ".missing"),
+    ],
   )
 }
 

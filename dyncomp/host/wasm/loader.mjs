@@ -318,6 +318,9 @@ export function createTcompImports(getExports) {
 
   // control messages a guest buffers during one dispatch
   let controlBuf = [];
+  // The host's answers to the dispatching component's declared lookups, valid
+  // for the duration of one dispatch. Empty outside one.
+  let bindings = {};
   // children whose construction was requested mid-call (see makeInstance)
   let pendingChildren = [];
   const drainChildren = () => {
@@ -412,6 +415,18 @@ export function createTcompImports(getExports) {
     reply: (v) => controlBuf.push({ kind: "reply", value: guestToJson(v) }),
     fail: (e) => controlBuf.push({ kind: "fail", value: guestToJson(e) }),
     stopPropagation: () => controlBuf.push({ kind: "stopPropagation" }),
+    // A reply names itself, so it carries a name the way a `send` does.
+    sendReply: (name, args) => controlBuf.push({
+      kind: "sendReply", name, args: args.map(guestToJson),
+    }),
+    // The one import that ANSWERS rather than buffering. `bindings` is what
+    // the host resolved this component's declared lookups to before entering
+    // the guest — see the WIT: everything else here is an effect applied
+    // afterwards, and a value a handler is using cannot wait for that.
+    lookup: (name) =>
+      Object.hasOwn(bindings, name)
+        ? jsonToGuest(bindings[name])
+        : { tag: "nil" },
     // same-bundle child factory: the returned token is the bridge handle,
     // the ONLY instance-token space. The Component Model forbids re-entering
     // a component while a call into it is active, so the token is reserved
@@ -508,13 +523,13 @@ export function createTcompImports(getExports) {
   // which is a legible error rather than a missing import.
   const guestImports = {
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.9.0": valuesImpl,
+    "tutuca:component/values@0.10.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.9.0": controlImpl,
+    "tutuca:component/control@0.10.0": controlImpl,
     "tutuca:component/env": envImpl,
-    "tutuca:component/env@0.9.0": envImpl,
+    "tutuca:component/env@0.10.0": envImpl,
     "tutuca:component/config": configImpl,
-    "tutuca:component/config@0.9.0": configImpl,
+    "tutuca:component/config@0.10.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
   // functions, so there is nothing for a host to implement and jco asks for
@@ -711,9 +726,10 @@ export function createTcompImports(getExports) {
       arena.clear();
       return out;
     },
-    dispatch: (bundle, handle, bucketInt, name, argsJson) => {
+    dispatch: (bundle, handle, bucketInt, name, argsJson, bindingsJson) => {
       const bucket = ["receive", "intent"][bucketInt] ?? "receive";
       controlBuf = [];
+      bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
@@ -727,6 +743,7 @@ export function createTcompImports(getExports) {
       });
       arena.clear();
       controlBuf = [];
+      bindings = {};
       return out;
     },
     call_method: (bundle, handle, name, argsJson) => {

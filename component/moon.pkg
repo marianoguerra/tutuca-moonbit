@@ -2,6 +2,11 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/anode",
+  // The finding vocabulary `check_names` raises in. lint owns the CODES for
+  // component-model rules it cannot run itself (see lint/spec.mbt) — this is
+  // the package that runs them. No cycle: lint imports anode and eventpath,
+  // and neither reaches back here.
+  "marianoguerra/tutuca/lint",
   "moonbitlang/core/json",
 }
 

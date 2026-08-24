@@ -118,6 +118,10 @@ function jsonToGuest(j, put) {
 export async function loadGuest(bytes, descriptor, key = "default", { module } = {}) {
   const arena = makeArena();
   let control = [];
+  // The host's answers to this component's declared lookups, valid for the
+  // duration of one dispatch. Empty outside one, and empty for a component
+  // that declares no lookup — which is most of them.
+  let bindings = {};
   // What the card SAID. `control.log` is the one call on the control interface
   // no capability gates, and for a compiled card it carries the thing an author
   // is most likely to get wrong and least able to see: a `requires`, an
@@ -191,6 +195,20 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
         send: (name, args) =>
           control.push({ kind: "send", name, args: args.map((a) => guestToJson(a, arena.cells)) }),
         stopPropagation: () => control.push({ kind: "stopPropagation" }),
+        // A reply names itself, so it carries a name the way a `send` does.
+        sendReply: (name, args) =>
+          control.push({
+            kind: "sendReply",
+            name,
+            args: args.map((a) => guestToJson(a, arena.cells)),
+          }),
+        // The one import that ANSWERS. `bindings` was resolved by the host
+        // before this call, so a name it does not carry is one the manifest
+        // did not declare a lookup for, and `nil` is the truth about it.
+        lookup: (name) =>
+          Object.hasOwn(bindings, name)
+            ? jsonToGuest(bindings[name], arena.put)
+            : { tag: "nil" },
         // `sendAt` is something a compiled card can do, so it is collected
         // rather than swallowed. `path` arrives as lifted `path-step`
         // variants; `cardguest.mbt` turns them back into steps.
@@ -326,8 +344,13 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       arena.clear();
       return out;
     },
-    dispatch(handle, bucketInt, name, argsJson) {
+    dispatch(handle, bucketInt, name, argsJson, bindingsJson) {
       control = [];
+      // What the host resolved this component's declared lookups to, for the
+      // duration of THIS call. `control.lookup` reads them and nothing else —
+      // see the WIT: an effect is applied after the call, and a value a
+      // handler is in the middle of using cannot wait for that.
+      bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       // The WIT's `bucket` order, and `intent` is last so the four that were
       // there keep their numbers.
       const bucket =
@@ -346,6 +369,7 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       drainChildren();
       arena.clear();
       control = [];
+      bindings = {};
       return out;
     },
     callMethod(handle, name, argsJson) {

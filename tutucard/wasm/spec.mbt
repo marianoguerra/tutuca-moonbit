@@ -82,7 +82,7 @@ pub(all) struct Compiled {
   /// second name: a card is a bundle, and a bundle has always been able to
   /// declare several.
   components : Array[String]
-  /// A `tutuca:component@0.9.0` core module. No component wrapper, no
+  /// A `tutuca:component@0.10.0` core module. No component wrapper, no
   /// JavaScript: `dyncomp/host/wasm/abi.mjs` instantiates this directly.
   wasm : Bytes
   /// The same module printed as WAT. Nothing reads it — it is what makes the

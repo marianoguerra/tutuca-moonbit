@@ -1,4 +1,4 @@
-// Card in, `tutuca:component@0.9.0` core module out.
+// Card in, `tutuca:component@0.10.0` core module out.
 //
 // The pipeline is the card runtime's, with one stage swapped:
 //
@@ -82,6 +82,13 @@ priv struct Gen {
   /// Set when a body builds a child — `new <Component>` — so the module
   /// imports `control.make-instance` and carries `make_child.wax` only then.
   mut uses_children : Bool
+  /// Set when a body reads a `*name`, so the module imports `control.lookup`
+  /// and carries the one function that calls it only then.
+  ///
+  /// Same argument as `uses_children`, and the same consequence: the import
+  /// section is what a host reads to know what a guest reaches for, and a card
+  /// that reads no dynamic binding should not appear to.
+  mut uses_lookup : Bool
   /// The declarations this card's `<script type="tutuca/wax">` block answers,
   /// by kind word and name. A name in here takes the dispatch arm the block
   /// language would have had, and its `Refusal` becomes an `Escape`.
@@ -229,6 +236,8 @@ pub fn compile(
           receive: [],
           intent: [],
           types: [],
+          provide: [],
+          lookup: [],
           doc: None,
         }
     }
@@ -300,6 +309,7 @@ pub fn compile(
       callables: Map([]),
       refusals,
       uses_control: false,
+      uses_lookup: false,
       uses_values: false,
       uses_num: false,
       uses_send_at: false,
@@ -466,7 +476,7 @@ pub fn compile(
     fields: g.def.fields.map(f => f.name),
     manifest: manifest_json(comps, file, g),
     descriptor: Json::object({
-      "world": Json::string("tutuca:component@0.9.0"),
+      "world": Json::string("tutuca:component@0.10.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
       // as a data segment is bytes, and `abi.mjs` implements both.
       "encoding": Json::string("utf8"),
@@ -479,6 +489,24 @@ pub fn compile(
 // the module
 
 ///|
+/// `tc_lookup` — read a dynamic binding, the one host call that ANSWERS.
+///
+/// The host stores the `value` into `@abi.ret_lookup` and this lifts it with
+/// the same `tc_lift_cell` an argument list goes through, so a card that can
+/// hold a list reads one back here and a scalar-only card carries no code that
+/// mentions an arena.
+fn lookup_fn() -> @abi.Field {
+  func("tc_lookup", params=[("name", ref_("utf8_string"))], results=[jv_], body=[
+    call("ctl_lookup", [
+      call("tc_str_out", [get("name")]),
+      call("utf8_byte_length", [get("name")]),
+      i32c(@abi.ret_lookup),
+    ]),
+    call("tc_lift_cell", [i32c(@abi.ret_lookup)]),
+  ])
+}
+
+///|
 /// Fold every component's `uses_*` into the first component's `Gen`, which is
 /// what answers for the MODULE. A flag is set while a body compiles, so this
 /// says nothing until every body has been compiled — and the module needs the
@@ -489,6 +517,9 @@ pub fn compile(
 fn union_uses(comps : Array[Comp]) -> Unit {
   let g = comps[0].g
   for c in comps {
+    if c.g.uses_lookup {
+      g.uses_lookup = true
+    }
     if c.g.uses_control {
       g.uses_control = true
     }
@@ -560,6 +591,37 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
         "stop-propagation",
         as_=Some("ctl_stop"),
       ),
+    )
+    // The replier names the reply, so it carries a name the way a `send`
+    // does — and takes the same four core values.
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "send-reply",
+        as_=Some("ctl_send_reply"),
+        params=[
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          (Some("ap"), i32_),
+          (Some("al"), i32_),
+        ],
+      ),
+    )
+  }
+  // Only a card that READS a dynamic binding asks for this one, and it is the
+  // only import here that answers rather than acting: `value` is more core
+  // values than a result may carry, so the third parameter is the pointer the
+  // host stores into.
+  //
+  // Outside the `uses_control` block, because reading a binding is not an
+  // effect — a card that performs none can still read one.
+  if g.uses_lookup {
+    fs.push(
+      @build.import_func(@abi.control_iface, "lookup", as_=Some("ctl_lookup"), params=[
+        (Some("np"), i32_),
+        (Some("nl"), i32_),
+        (Some("ret"), i32_),
+      ]),
     )
   }
   // Only a card that says `sendAt` asks for this one. `control` is already
@@ -694,6 +756,15 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
   }
   for f in runtime {
     fs.push(f)
+  }
+  // Between the runtime and the bodies, which is the only place it can be:
+  // it CALLS `tc_lift_cell` and it is CALLED from a body, Wax resolves names
+  // in one pass, and `card_fields` is where the flag saying a body reads a
+  // binding gets set. So it cannot be emitted inside that list, and it does
+  // not belong in `runtime.wax` either — the import it stands in front of is
+  // conditional, and that file is unconditional.
+  if g.uses_lookup {
+    fs.push(lookup_fn())
   }
   for f in card {
     fs.push(f)
@@ -1159,6 +1230,11 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
     if_(
       eq(get("k"), i32c(1)),
       [call("ctl_send", [get("np"), get("nl"), get("ap"), get("al")])],
+      [],
+    ),
+    if_(
+      eq(get("k"), i32c(10)),
+      [call("ctl_send_reply", [get("np"), get("nl"), get("ap"), get("al")])],
       [],
     ),
   ]

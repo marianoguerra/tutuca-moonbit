@@ -1,7 +1,7 @@
 // The compiled card, mounted — the other half of the boundary `card-wasm.js`
 // holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.9.0` core module
+// The page next door compiles a card to a `tutuca:component@0.10.0` core module
 // and hands you the archive. That proves the BYTES are right. It does not prove
 // the module runs, and until something instantiated one and asked it for a
 // field, "this page produced a real guest" was a claim about a download.
@@ -73,8 +73,9 @@ extern "js" fn cardguest_dispatch(
   bucket : Int,
   name : String,
   args_json : String,
+  bindings_json : String,
 ) -> String =
-  #|(key, handle, bucket, name, args) => globalThis.__cardguest[key].dispatch(handle, bucket, name, args)
+  #|(key, handle, bucket, name, args, bindings) => globalThis.__cardguest[key].dispatch(handle, bucket, name, args, bindings)
 
 ///|
 extern "js" fn cardguest_call_method(
@@ -213,6 +214,7 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
   bucket,
   name,
   args,
+  bindings,
 ) {
   let raw = cardguest_dispatch(
     self.key,
@@ -220,6 +222,7 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
     bucket_int(bucket),
     name,
     list_json(args),
+    bindings_json(bindings),
   )
   let empty : @dyncomp.DispatchResult = { handled: false, next: None, msgs: [] }
   let j = @json.parse(raw) catch { _ => return empty }
@@ -270,6 +273,7 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
         }
         match m.get("kind") {
           Some(String("send")) => msgs.push(Send(name, args))
+          Some(String("sendReply")) => msgs.push(SendReply(name, args))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
           Some(String("intent")) =>
@@ -820,4 +824,16 @@ fn drive_failed(msg : String) -> String {
     "error": Json::string(msg),
     "scenes": Json::object({}),
   }).stringify()
+}
+
+///|
+/// The host's answers to this component's declared lookups, as the JSON the
+/// page's `dispatch` takes. `{}` for a component that declares none, which is
+/// what most cards are.
+fn bindings_json(bindings : Map[String, @tutuca.Value]) -> String {
+  let m : Map[String, Json] = Map([])
+  for k, v in bindings {
+    m[k] = v.to_json()
+  }
+  Json::object(m).stringify()
 }

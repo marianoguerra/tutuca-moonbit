@@ -1393,6 +1393,11 @@ fn E::effect(
   let payload = "[" + rest.join(", ") + "]"
   match name {
     "send" => "\{pad}effects.push(() => ctx.send(\{quote(msg)}, \{payload}))\n"
+    // The replier names the reply, which is the whole difference from `reply`:
+    // an intent's raiser declared arms for an answer and a message's sender
+    // did not, so the name has to come from here.
+    "sendReply" =>
+      "\{pad}effects.push(() => ctx.send_reply(\{quote(msg)}, \{payload}))\n"
     "intent" =>
       "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, Some(self.outcomes(msg)))}))\n"
     _ =>
@@ -1661,10 +1666,15 @@ fn E::expr(
       raise Cannot(
         "`$\{name}` is a `compute`, which a handler cannot call: it is answered by the render stack and a handler runs after one",
       )
-    EDyn(name~, ..) =>
-      raise Cannot(
-        "`*\{name}` is a dynamic binding, which a handler cannot read",
-      )
+    // The handler-side twin of a view's `*name`: the same question, walked
+    // along the same default route, answered from this handler's position.
+    // Opaque (`TAny`) because a dynamic binding is not in the schema and its
+    // type is nobody's to state — which puts it on the same footing as an
+    // event argument, and through the same guard when a type is wanted.
+    EDyn(name~, ..) => {
+      self.uses_ctx = true
+      ("ctx.lookup(\{quote(name)}, @tutuca.LookupOpts::new())", TAny)
+    }
     ERef(..) => raise Cannot("a place is not a value")
   }
 }

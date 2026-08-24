@@ -31,6 +31,16 @@ pub(all) enum LintCode {
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
+  /// The five below are the NAME-WIRING rules: what a component published,
+  /// what it asked for, and whether the two can find each other. They are
+  /// raised by `component`'s `ComponentStack::check_names` rather than here,
+  /// for the reason this file already gives — a component-model rule needs the
+  /// component layer, and lint owns the vocabulary rather than the check.
+  ProvideNotAddressable
+  ProvideTypeBadShape
+  ProvideNameCollision
+  LookupNoProvider
+  UnknownComponentName
   /// An `e.<path>` handler argument traverses a step off the event-path
   /// allowlist (`e.target.form.action`). A HINT for an author's own views —
   /// the path resolves under the open profile — because the same step is

@@ -173,6 +173,17 @@ pub fn register_bundle(
   let child = scope.enter()
   let comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)] = Map([])
   let synthesized = []
+  // The bundle, before it exists. `Component::make` has to be able to build
+  // one of these — that is what a `provide {Cell: "self"}` publishes and what
+  // `ctx.make("Cell", …)` then asks for — and the only thing that can build a
+  // guest instance is the bundle that owns the guest. Since the record is
+  // assembled below from what this loop produces, the closure gets the cell
+  // and the cell gets the bundle at the end.
+  //
+  // A guest instance stays guest-owned either way: this is the host asking the
+  // guest to create one, which is exactly `Bundle::make_instance`, and not the
+  // host building something behind its back.
+  let self_ref : Ref[Bundle?] = { val: None }
   for def in manifest.components {
     refuse_if_any(policy.check_style(def.name, def.style))
     // Guest view HTML arrives at runtime from the manifest, so it is parsed
@@ -217,10 +228,43 @@ pub fn register_bundle(
       ..declared,
       fingerprint: declared.shape_fingerprint(),
     }
+    // The wiring, carried through unread: `Component::compile` is where a
+    // provide's source text is parsed and where its shape is judged, and it
+    // judges a guest's exactly as it judges a host component's. Nothing about
+    // a dynamic binding crosses the guest ABI — the host evaluates the
+    // expression against the instance while rendering, and reading a guest's
+    // field is what `get-field` already does.
+    let provide : Map[String, String] = Map([])
+    for pair in def.provide {
+      provide[pair.0] = pair.1
+    }
+    let lookup : Array[@component.LookupSpec] = def.lookup.map(pair => {
+      let (name, default) = pair
+      if default == "" {
+        @component.lookup_name(name)
+      } else {
+        @component.lookup_or(name, default)
+      }
+    })
+    let made = def.name
     let comp = @component.Component::for_type(
       name=def.name,
       views=cviews,
       schema~,
+      provide~,
+      lookup~,
+      make=args => {
+        match self_ref.val {
+          Some(b) =>
+            match b.make_instance(made, args~) {
+              Some(obj) => obj.to_value()
+              None => Null
+            }
+          // Only reachable while the bundle is still being registered, which is
+          // before anything can hold a reference to ask.
+          None => Null
+        }
+      },
     )
     synthesized.push(comp)
     comps[def.name] = (comp.id, schema, def)
@@ -294,7 +338,15 @@ pub fn register_bundle(
       None => ()
     }
   }
-  {
+  // The name wiring, once the whole bundle is registered and compiled: a
+  // collision needs both producers in the scope, and a lookup with no provider
+  // needs every registration that could have been one. Diagnostics rather than
+  // a refusal — a bundle whose `*name` resolves to nothing still renders, and
+  // what is wrong with it is a list to read.
+  for f in child.check_names() {
+    diagnostic_line(diagnostics, "bundle \{manifest.module_name}", f)
+  }
+  let bundle : Bundle = {
     guest,
     manifest,
     comps,
@@ -304,6 +356,8 @@ pub fn register_bundle(
     config,
     key: bundle_key(manifest, config),
   }
+  self_ref.val = Some(bundle)
+  bundle
 }
 
 ///|

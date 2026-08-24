@@ -81,6 +81,10 @@ pub fn RenderCache::clear(self : RenderCache) -> Unit {
 }
 
 ///|
+/// Physical identity of the FRAME, which covers both halves at once: a frame
+/// is allocated once per component entry and carries the published values and
+/// the published types together, so nothing here has to know that only one of
+/// the two can change between renders.
 fn dyn_binds_eq(a : @component.DynBinds?, b : @component.DynBinds?) -> Bool {
   match (a, b) {
     (None, None) => true

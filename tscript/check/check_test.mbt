@@ -35,6 +35,8 @@ fn schema() -> String {
     #|  byKey  : Map[String, String]
     #|  pri    : Priority
     #|  blob   : Any
+    #|  provide { count = .count }
+    #|  lookup { theme, color = 'gray' }
     #|}
     #|receive Counter { resetTo(Int), rename(String, Int) }
     #|intent  Counter { rowPicked(Int), save(String) }
@@ -337,9 +339,26 @@ test "a `$name` in a body is reported, and the message names the spelling that w
   assert_eq(messages("compute a { $summary }"), [
     "`$summary` is answered by the render stack, and a body runs after one, so it reads Null here; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name",
   ])
-  // A dynamic binding has no spelling that works from a body.
-  assert_eq(messages("receive x { .name = *theme }"), [
-    "`*theme` is answered by the render stack, and a body runs after one, so it reads Null here; a body cannot read a dynamic binding at all",
+}
+
+///|
+test "a `*name` in a body is legal, and checked against what the state declares" {
+  // `*name` is the one render-stack sigil a body CAN ask, because the two
+  // environments it walks are the two an intent's route walks and the host can
+  // answer both from a handler's position. What is checked is that this
+  // component asked for the name — whether a producer is above it when it
+  // renders is a runtime fact, and not this rule's business.
+  // Declared, so it is read and nothing is said.
+  assert_eq(codes("receive x { .name = *theme }"), [])
+  // A producer reads its OWN provide by the same spelling.
+  assert_eq(codes("receive x { .count = *count }"), [])
+  // Undeclared, with a near miss among what is declared.
+  assert_eq(messages("receive x { .name = *colour }"), [
+    "`*colour` is a dynamic binding this component does not declare — add it to the `state` block's `lookup { … }`, or `provide { … }` it here — did you mean `*color`?",
+  ])
+  // Undeclared with nothing near it: the message lists what there is.
+  assert_eq(messages("receive x { .name = *nowhere }"), [
+    "`*nowhere` is a dynamic binding this component does not declare — add it to the `state` block's `lookup { … }`, or `provide { … }` it here; it declares `*theme`, `*color`, `*count`",
   ])
 }
 
@@ -351,7 +370,10 @@ test "every opaque source silences the checks below it" {
   // is therefore unchecked — RENDER_ONLY is the finding about the sigil
   // itself, and nothing follows it about `.count`.
   assert_eq(codes("receive x { .count = $whatever }"), ["RENDER_ONLY"])
-  assert_eq(codes("receive x { .count = *theme }"), ["RENDER_ONLY"])
+  // A `*name` is opaque the same way, and the finding here is about the name
+  // being undeclared rather than about the sigil — nothing follows it about
+  // `.count` either way.
+  assert_eq(codes("receive x { .count = *nosuch }"), ["DYN_NOT_DECLARED"])
   // A binding comes from the slot that uses the declaration, which the block
   // cannot see — and so does everything under it.
   assert_eq(codes("pred p { @value.completed }"), [])

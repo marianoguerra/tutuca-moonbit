@@ -806,6 +806,144 @@ pub fn send_at(
 }
 
 ///|
+/// Answer whoever sent the message being handled, under a name this handler
+/// picks.
+///
+/// An intent answers under a name the runtime derives (`<name>Ok`), because
+/// its raiser asked a question and declared arms for it. A message carries
+/// no such expectation and its sender declares no arms, so the replier names
+/// the reply and the sender handles it like any other message.
+///
+/// The reply reaches the sender's position as pinned when they sent. With
+/// nobody waiting — a view's own `@on.*`, or the host's send-at-root — the
+/// host refuses NO_SENDER and nothing is dispatched, which is a refusal the
+/// guest is not told about: it did what it could, and who was listening was
+/// never its question.
+pub fn send_reply(name : String, args : Array[@values.Value]) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let ptr = mbt_ffi_str2ptr(name)
+
+  let address = mbt_ffi_malloc(args.length() * 16)
+  for index = 0; index < args.length(); index = index + 1 {
+    let iter_elem : @values.Value = args[index]
+    let iter_base = address + index * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload1) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload1)
+
+        ()
+      }
+      Text(payload2) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr3 = mbt_ffi_str2ptr(payload2)
+        mbt_ffi_store32(iter_base + 12, payload2.length())
+        mbt_ffi_store32(iter_base + 8, ptr3)
+        cleanup_list.push(ptr3)
+
+        ()
+      }
+      List(payload4) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload5) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload6) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+  wasmImportSendReply(ptr, name.length(), address, args.length())
+  mbt_ffi_free(ptr)
+  mbt_ffi_free(address)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Read a name this component DECLARED a lookup for — the handler-side twin
+/// of a view's `*name`.
+///
+/// The only import that answers rather than buffering, and the only one that
+/// can: everything else here is an effect the host applies after the call,
+/// and a value a handler is in the middle of using cannot wait for that.
+///
+/// It takes no route, and the omission is the contract rather than a gap.
+/// The host resolves this component's declared lookups at DISPATCH, along
+/// the default `[dyn, lex]`, and this reads one of the answers — so a route
+/// the guest named could not change what came back. Which environments were
+/// walked is the host's business, the same way the default route is.
+///
+/// `nil` for a name the manifest's `lookup` list does not declare, and for a
+/// declared one that nothing above supplies and that carries no default.
+/// There is no error arm: a name nothing supplies is the ordinary case a
+/// default exists FOR, and a view's `*name` answers it the same way.
+///
+/// No capability gates it. A guest reads what an ancestor deliberately
+/// published to its subtree and nothing else — the reach its own views
+/// already had, moved to where a handler can use it.
+pub fn lookup(name : String) -> @values.Value {
+  let ptr = mbt_ffi_str2ptr(name)
+  let return_area = mbt_ffi_malloc(16)
+  wasmImportLookup(ptr, name.length(), return_area)
+
+  let lifted = match mbt_ffi_load8_u(return_area + 0) {
+    0 => @values.Value::Nil
+    1 => @values.Value::Boolean(mbt_ffi_load8_u(return_area + 8) != 0)
+    2 => @values.Value::Number(mbt_ffi_loadf64(return_area + 8))
+    3 => {
+      let result = mbt_ffi_ptr2str(
+        mbt_ffi_load32(return_area + 8),
+        mbt_ffi_load32(return_area + 12),
+      )
+
+      @values.Value::Text(result)
+    }
+    4 =>
+      @values.Value::List(
+        mbt_ffi_load64(return_area + 8).reinterpret_as_uint64(),
+      )
+    5 =>
+      @values.Value::Map(
+        mbt_ffi_load64(return_area + 8).reinterpret_as_uint64(),
+      )
+    6 =>
+      @values.Value::Instance(
+        mbt_ffi_load64(return_area + 8).reinterpret_as_uint64(),
+      )
+    _ => panic()
+  }
+  let ret = lifted
+  mbt_ffi_free(ptr)
+  mbt_ffi_free(return_area)
+  return ret
+}
+
+///|
 /// End the walk with no answer — "served, and no answer". The sender hears
 /// nothing, even if it named an outcome, which is what separates this from
 /// letting the route run out.

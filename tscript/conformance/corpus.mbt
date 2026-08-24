@@ -14,7 +14,8 @@
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
-  /// One of `send`, `sendAt`, `intent`, `forward`, `reply`, `fail`, or `stop`.
+  /// One of `send`, `sendReply`, `sendAt`, `intent`, `forward`, `reply`,
+  /// `fail`, or `stop`.
   kind : String
   /// The message name. Empty for `stop`, and for `forward`, `reply` and
   /// `fail`, which carry none — a `forward` re-dispatches the name that
@@ -657,6 +658,26 @@ pub fn cases() -> Array[Case] {
       after=Some(counter_state()),
       effects=[
         effect("intent", name="saveDraft", args=[Str("ada")], route="lex dyn"),
+      ],
+    ),
+    recv_case(
+      "a reply to a message names itself",
+      "receive ping {\n  sendReply 'pong' .name\n}",
+      "ping",
+      // The transition HAPPENED and changed nothing, which is not the same as
+      // not happening: `after: None` is a refusal, and a handler that only
+      // answers is still a handler that ran.
+      after=Some(with_fields({})),
+      effects=[effect("sendReply", name="pong", args=[Str("ada")])],
+    ),
+    recv_case(
+      "a reply is an effect like the rest, and buffers with them",
+      "receive ping {\n  .count += 1\n  sendReply 'pong' .count\n  send 'flash' .name\n}",
+      "ping",
+      after=Some(with_fields({ "count": Num(1) })),
+      effects=[
+        effect("sendReply", name="pong", args=[Num(1)]),
+        effect("send", name="flash", args=[Str("ada")]),
       ],
     ),
     recv_case(

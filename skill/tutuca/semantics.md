@@ -140,9 +140,56 @@ therefore lands on the producer's data, and the consumer's view of it
 updates in lock-step. Authoring view: *Teleporting* in
 [advanced.md](./advanced.md).
 
+`resolve_dyn_producer` recovers the producer by SCOPE SEARCH: the consumer's
+own `provide` first, then the nearest component in its registration chain that
+provides that name. A consumer does not name its producer, so that search is
+the only way back — and it is well-defined only while one provide name has one
+producer per chain, which is what `PROVIDE_NAME_COLLISION` holds authors to.
+A published TYPE (an uppercase provide name, always `"self"`) resolves to
+nothing here on purpose: a component has no path, so `<x render="*Cell">` stays
+unresolvable rather than resolving to something no edit can land on.
+
 When the producer's `provide` value is a seq-access (`.sheets[.selId]`),
 the teleported steps include a `SeqAccessStep` — which is where async key
 races come from.
+
+## Name lookup — two environments, one route
+
+Type lookup, `provide`/`lookup` and intent routing ask ONE question: what does
+this name mean, and where do I look for it. They share two environments and one
+route vocabulary.
+
+| leg   | environment                                                        |
+|-------|--------------------------------------------------------------------|
+| `dyn` | the render ancestry — `RenderStack.dyn_binds`, keyed by plain NAME  |
+| `lex` | the registration scope chain — `ComponentStack`                     |
+
+`ctx.lookup(name, opts)` and `ctx.make(name, args, opts)` take `opts.route`
+with the same legs, the same array-is-walk-order contract and the same default
+(`@tutuca.default_route()`, `dyn lex`) as `ctx.intent`. `@tutuca.route_lookup`
+is the one walk all of them share: legs in the order written, first non-`None`
+wins, legs evaluated lazily, and an empty route answering nothing rather than
+falling back to the default.
+
+The `lex` leg needs no stack — it is the registration scope of the component
+whose handler is running, which the dispatch position alone identifies. The
+`dyn` leg REBUILDS one from the ctx (`@app.ScopeNames`), because the stack that
+evaluated a handler's arguments is a local in the dispatch pipeline and is gone
+once the body runs, and a `send` or an `intent` transaction never built one.
+The rebuilt path is compacted, so per-item bindings (`@each`,
+`@enrich-with`) are not replayed: a `provide` whose expression reads a loop
+binding is the one case this cannot reproduce.
+
+An UPPERCASE name is a component type and a lowercase one is a value, so the
+two keyspaces cannot collide and one binding frame carries both — the frame
+holds values in `binds` and published component ids in `types`, and
+nearest-ancestor-wins falls out of frame order for each. Types are not in the
+value language at all: `KType` is in no grammar group, so a handler argument or
+a macro attribute cannot be one.
+
+`send` stays ADDRESSED — it walks nothing. It gains `ctx.send_reply(name,
+args)`, which answers whoever sent the message being handled, at the position
+they sent from, pinned at dispatch. `NO_SENDER` when nobody is waiting.
 
 ## Key resolution & async races
 

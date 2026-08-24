@@ -159,8 +159,10 @@ pub(all) enum CorpusReceive {
   Case11
   Case12
   Case13
-  Case22(Int)
-  Case23(String)
+  Case14
+  Case15
+  Case24(Int)
+  Case25(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -196,10 +198,12 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
       ("case11", []) => Case11
       ("case12", []) => Case12
       ("case13", []) => Case13
-      ("case22", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+      ("case14", []) => Case14
+      ("case15", []) => Case15
+      ("case24", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case22(a0.to_int())
-      ("case23", [Str(a0)]) => Case23(a0)
+        a0 <= 2147483647.0 => Case24(a0.to_int())
+      ("case25", [Str(a0)]) => Case25(a0)
       _ => Unknown(name, args)
     },
   )
@@ -225,8 +229,10 @@ pub fn CorpusReceive::to_dispatch(
     Case11 => ("case11", [])
     Case12 => ("case12", [])
     Case13 => ("case13", [])
-    Case22(a0) => ("case22", [Num(a0.to_double())])
-    Case23(a0) => ("case23", [Str(a0)])
+    Case14 => ("case14", [])
+    Case15 => ("case15", [])
+    Case24(a0) => ("case24", [Num(a0.to_double())])
+    Case25(a0) => ("case25", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -248,14 +254,14 @@ pub fn CorpusReceive::send(self : CorpusReceive, ctx : &@tutuca.Ctx) -> Unit {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CorpusIntent {
-  Case14(String)
-  Case15(String)
-  Case16(Int)
-  Case17(Int)
-  Case18(String)
-  Case19(String)
+  Case16(String)
+  Case17(String)
+  Case18(Int)
+  Case19(Int)
   Case20(String)
   Case21(String)
+  Case22(String)
+  Case23(String)
   /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -271,18 +277,18 @@ pub fn CorpusIntent::from_dispatch(d : @component.Dispatch) -> CorpusIntent? {
   guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
-      ("case14", [Str(a0)]) => Case14(a0)
-      ("case15", [Str(a0)]) => Case15(a0)
-      ("case16", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+      ("case16", [Str(a0)]) => Case16(a0)
+      ("case17", [Str(a0)]) => Case17(a0)
+      ("case18", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case16(a0.to_int())
-      ("case17", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 <= 2147483647.0 => Case18(a0.to_int())
+      ("case19", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case17(a0.to_int())
-      ("case18", [Str(a0)]) => Case18(a0)
-      ("case19", [Str(a0)]) => Case19(a0)
+        a0 <= 2147483647.0 => Case19(a0.to_int())
       ("case20", [Str(a0)]) => Case20(a0)
       ("case21", [Str(a0)]) => Case21(a0)
+      ("case22", [Str(a0)]) => Case22(a0)
+      ("case23", [Str(a0)]) => Case23(a0)
       _ => Unknown(name, args)
     },
   )
@@ -294,14 +300,14 @@ pub fn CorpusIntent::to_dispatch(
   self : CorpusIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    Case14(a0) => ("case14", [Str(a0)])
-    Case15(a0) => ("case15", [Str(a0)])
-    Case16(a0) => ("case16", [Num(a0.to_double())])
-    Case17(a0) => ("case17", [Num(a0.to_double())])
-    Case18(a0) => ("case18", [Str(a0)])
-    Case19(a0) => ("case19", [Str(a0)])
+    Case16(a0) => ("case16", [Str(a0)])
+    Case17(a0) => ("case17", [Str(a0)])
+    Case18(a0) => ("case18", [Num(a0.to_double())])
+    Case19(a0) => ("case19", [Num(a0.to_double())])
     Case20(a0) => ("case20", [Str(a0)])
     Case21(a0) => ("case21", [Str(a0)])
+    Case22(a0) => ("case22", [Str(a0)])
+    Case23(a0) => ("case23", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -340,7 +346,7 @@ pub let corpus_global_style : String = ""
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="130517d0ccc30d48",
+    fingerprint="0dfa4db194302eab",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -353,10 +359,11 @@ impl @component.Fields for CorpusState with fn schema() {
     ],
     receives=[
       "case0", "case1", "case2", "case3", "case4", "case5", "case6", "case7", "case8",
-      "case9", "case10", "case11", "case12", "case13", "case22", "case23",
+      "case9", "case10", "case11", "case12", "case13", "case14", "case15", "case24",
+      "case25",
     ],
     intents=[
-      "case14", "case15", "case16", "case17", "case18", "case19", "case20", "case21",
+      "case16", "case17", "case18", "case19", "case20", "case21", "case22", "case23",
     ],
     methods=["hasSome", "small"],
     view_names=["main"],

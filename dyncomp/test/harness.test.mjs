@@ -54,6 +54,8 @@ const control = {
   reply: (v) => controlBuf.push({ kind: 'reply', value: v }),
   fail: (e) => controlBuf.push({ kind: 'fail', value: e }),
   stopPropagation: () => controlBuf.push({ kind: 'stopPropagation' }),
+  sendReply: (name, args) => controlBuf.push({ kind: 'sendReply', name, args }),
+  lookup: () => ({ tag: 'nil' }),
   makeInstance: (component, args) => {
     const t = nextChild++;
     pendingChildren.push({ token: t, component, args });
@@ -71,9 +73,9 @@ before(async () => {
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.9.0': values,
+    'tutuca:component/values@0.10.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.9.0': control,
+    'tutuca:component/control@0.10.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;

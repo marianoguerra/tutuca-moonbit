@@ -125,7 +125,39 @@ pub(all) struct StateDef {
   /// message, so it is declared in `receive` rather than here.
   intent : Array[MsgDef]
   types : Array[UserTy]
+  /// What this component PUBLISHES to its subtree, in declaration order.
+  ///
+  /// Wiring rather than schema, and in the schema block anyway, because a card
+  /// has no other place to say it: the manifest a host reads is a projection
+  /// of this file rather than a second thing to author.
+  provide : Array[ProvideDecl]
+  /// What it asks its ancestors for. A lookup names what it WANTS, not who
+  /// supplies it.
+  lookup : Array[LookupDecl]
   doc : String?
+} derive(Eq, @debug.Debug)
+
+///|
+/// One `provide` entry: a name, and the source text that produces it.
+///
+/// `source` is the value language and is NOT read here — a lowercase name
+/// takes an addressable path (`.field`, `.seq[.key]`), and an uppercase one
+/// publishes a component type, where `self` is the only thing it can be.
+/// Which is which, and whether the text parses, is the component layer's
+/// question; this records what was written and where.
+pub(all) struct ProvideDecl {
+  name : String
+  source : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+/// One `lookup` entry: a name, and the fallback expression to use when nothing
+/// above provides it. There is no alias — the local name IS the provided name.
+pub(all) struct LookupDecl {
+  name : String
+  default : String?
+  span : Span
 } derive(Eq, @debug.Debug)
 
 ///|

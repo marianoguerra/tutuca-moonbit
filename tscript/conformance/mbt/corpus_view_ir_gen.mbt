@@ -192,6 +192,26 @@ fn corpus_inline_update(
     }
     Receive("case13", _args) => {
       let effects : Array[() -> Unit] = []
+      effects.push(() => ctx.send_reply("pong", [(Str(s.name) : @tutuca.Value)]))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case14", _args) => {
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => {
+        ctx.send_reply("pong", [(Num(s.count.to_double()) : @tutuca.Value)])
+      })
+      effects.push(() => ctx.send("flash", [(Str(s.name) : @tutuca.Value)]))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("case15", _args) => {
+      let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
           "loadRows",
@@ -207,7 +227,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case14", args) => {
+    Intent("case16", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
@@ -217,7 +237,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case15", args) => {
+    Intent("case17", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.fail((Str("disk full") : @tutuca.Value)))
@@ -226,12 +246,12 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case16", args) => {
+    Intent("case18", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let s = { ..s, page: k.to_int() }
       Next(s)
     }
-    Intent("case17", args) => {
+    Intent("case19", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, page: k.to_int() }
@@ -241,7 +261,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case18", args) => {
+    Intent("case20", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.reply((Num(1.0) : @tutuca.Value)))
@@ -251,7 +271,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case19", args) => {
+    Intent("case21", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
@@ -261,11 +281,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case20", args) => {
+    Intent("case22", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       guard s.count.to_double() > 0.0 else {
         @tutuca.precondition_failed(
-          handler="case20",
+          handler="case22",
           pred="hasSome",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
@@ -279,14 +299,14 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case21", args) => {
+    Intent("case23", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       guard s.count.to_double() > 5.0 else {
         @tutuca.postcondition_failed(
-          handler="case21",
+          handler="case23",
           pred="small",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
@@ -297,12 +317,12 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case22", args) => {
+    Receive("case24", args) => {
       guard args.get(0) is Some(Num(n)) else { return Unchanged }
       let s = { ..s, count: n.to_int() }
       Next(s)
     }
-    Receive("case23", args) => {
+    Receive("case25", args) => {
       guard args.get(0) is Some(Str(why)) else { return Unchanged }
       let s = { ..s, name: why }
       Next(s)
@@ -363,7 +383,7 @@ pub fn corpus_component(
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, @component.LookupSpec] = Map([]),
+  lookup? : Array[@component.LookupSpec] = [],
 ) -> @component.Component {
   @component.component(
     name~,

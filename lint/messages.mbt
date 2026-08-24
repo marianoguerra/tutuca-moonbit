@@ -21,6 +21,11 @@ pub fn lint_code_name(code : LintCode) -> String {
     MaybeAddAtPrefix => "MAYBE_ADD_AT_PREFIX"
     MaybeDropAtPrefix => "MAYBE_DROP_AT_PREFIX"
     UndeclaredMethod => "UNDECLARED_METHOD"
+    ProvideNotAddressable => "PROVIDE_NOT_ADDRESSABLE"
+    ProvideTypeBadShape => "PROVIDE_TYPE_BAD_SHAPE"
+    ProvideNameCollision => "PROVIDE_NAME_COLLISION"
+    LookupNoProvider => "LOOKUP_NO_PROVIDER"
+    UnknownComponentName => "UNKNOWN_COMPONENT_NAME"
     EventPathUnsafeStep => "EVENT_PATH_UNSAFE_STEP"
     InertConstraint => "INERT_CONSTRAINT"
     HtmlTagNameHasUppercase => "HTML_TAG_NAME_HAS_UPPERCASE"
@@ -180,6 +185,41 @@ pub fn finding_message(f : Finding) -> String {
     MaybeAddAtPrefix => {
       let low = info_or(info, "tag", "").to_lower()
       "'\{name}' on <\{low}> is a plain attribute, but '@\{name}' is a directive — add the leading '@'"
+    }
+    ProvideNotAddressable => {
+      let comp = info_or(info, "comp", "?")
+      "'\{comp}' provides '\{name}' as \{value}, which is not addressable — a provide doubles as the path `<x render=\"*\{name}\">` teleports through, so it must be a field (`.f`) or a seq access (`.s[.k]`); this one is dropped and `*\{name}` resolves to nothing"
+    }
+    ProvideTypeBadShape => {
+      let comp = info_or(info, "comp", "?")
+      "'\{comp}' provides the TYPE '\{name}' as \{value}: an uppercase name publishes a component, and `\"self\"` is the only thing one can be — which is what makes a published type a component by construction rather than by trusting an expression"
+    }
+    ProvideNameCollision => {
+      let comp = info_or(info, "comp", "?")
+      let other = info_or(info, "other", "?")
+      "'\{comp}' and '\{other}' both provide '\{name}' in one scope chain, and a lookup names what it WANTS rather than who provides it — so which one a consumer reaches, and which one an edit through `*\{name}` lands on, is not decidable; rename one"
+    }
+    LookupNoProvider => {
+      let comp = info_or(info, "comp", "?")
+      let has_default = info_or(info, "hasDefault", "false") == "true"
+      let head = "'\{comp}' looks up '\{name}', and nothing in its scope chain provides that name"
+      if has_default {
+        head +
+        " — the declared default is what every read will get, unless a provider that is not registered here renders above it"
+      } else {
+        head + ", and it declares no default, so `*\{name}` is always nothing"
+      }
+    }
+    UnknownComponentName => {
+      let comp = info_or(info, "comp", "?")
+      let closest = info_or(info, "closest", "")
+      let hint = if closest == "" {
+        ""
+      } else {
+        " — did you mean '\{closest}'?"
+      }
+      "'\{comp}' looks up the component type '\{name}', and nothing is registered under that name in its scope" +
+      hint
     }
     UndeclaredMethod => {
       let closest = info_or(info, "closest", "")

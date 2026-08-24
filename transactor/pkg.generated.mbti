@@ -42,6 +42,10 @@ pub(all) struct NoIntents {
 }
 pub impl Intents for NoIntents
 
+pub(all) struct NoNames {
+}
+pub impl Names for NoNames
+
 pub(all) enum ObserveKind {
   Receive
   Intent
@@ -94,12 +98,12 @@ pub struct Transactor {
 }
 pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
-pub fn Transactor::new(@core.Value, intents? : &Intents) -> Self
+pub fn Transactor::new(@core.Value, intents? : &Intents, names? : &Names) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
 pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_intent(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.IntentOpts, parent? : Transaction) -> IntentWalk
-pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction) -> Transaction
+pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, origin? : @core.DispatchPath) -> Transaction
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 
 // Type aliases
@@ -107,4 +111,11 @@ pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 // Traits
 pub(open) trait Intents {
   fn intents_for(Self, @core.Value, String) -> Array[IntentHandler] = _
+}
+
+pub(open) trait Names {
+  fn dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value? = _
+  fn dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
+  fn lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
+  fn build(Self, Int, Map[String, @core.Value]) -> @core.Value? = _
 }

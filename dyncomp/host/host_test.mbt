@@ -137,7 +137,14 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
+impl Guest for FakeGuest with fn dispatch(
+  self,
+  handle,
+  bucket,
+  name,
+  args,
+  bindings,
+) {
   // the Pair's own buckets: it answers its children's intents and addresses
   // them by relative path
   if self.pairs.get(handle) is Some((l, r)) {
@@ -219,6 +226,47 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
             @tutuca.IntentOpts::new(route=[Dyn]),
           ),
         ],
+      }
+    // A HANDLER reading a dynamic binding: the host resolved the declared
+    // lookups before entering, so this is a map read rather than a call back
+    // across the boundary. Announced up so a test can see what it got.
+    (Receive, "readTheme") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "counterChanged",
+            [bindings.get("theme").unwrap_or(Null)],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
+      }
+    // A name the manifest declares no lookup for: the host resolved nothing
+    // for it, so there is nothing here to read.
+    (Receive, "readUndeclared") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [
+          Intent(
+            "counterChanged",
+            [
+              match bindings.get("nosuch") {
+                Some(v) => v
+                None => Str("absent")
+              },
+            ],
+            @tutuca.IntentOpts::new(route=[Dyn]),
+          ),
+        ],
+      }
+    // Answering the sender of a message under a name this handler picked.
+    (Receive, "ping") =>
+      {
+        handled: true,
+        next: None,
+        msgs: [SendReply("pong", [Str("from-guest")])],
       }
     // walks up to whatever is above: a Pair parent, or the host shell
     (Receive, "announce") =>
@@ -399,10 +447,12 @@ fn counter_manifest() -> DynManifest {
               #|  <button class="inc" @on.click="inc">+</button>
               #|  <button class="double" @on.click="double">double</button>
               #|  <button class="notify" @on.click="notify">notify</button>
+              #|  <button class="undeclared" @on.click="readUndeclared">undeclared</button>
               #|  <button class="announce" @on.click="announce">announce</button>
               #|  <button class="triple" @on.click="triple">triple</button>
               #|  <button class="zero" @on.click="setCount 0">zero</button>
               #|  <span class="label" @text="$label"></span>
+              #|  <span class="theme" @text="*theme"></span>
               #|  <ul class="hist"><li class="h" @each=".history" @when="nonZero" @text="@value"></li></ul>
               #|  <input class="kbd" @on.keydown+cancel="reset">
               #|</div>
@@ -423,6 +473,11 @@ fn counter_manifest() -> DynManifest {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        // The bundle publishes its own Counter as a TYPE, so a host component
+        // below it builds THIS one rather than whatever `Counter` is
+        // registered elsewhere.
+        provide: [("Counter", "self")],
+        lookup: [("theme", "'unthemed'")],
         // a named initial state a host can offer instead of a bare instance
         inits: [
           {
@@ -472,6 +527,8 @@ fn counter_manifest() -> DynManifest {
         enrich_scopes: [],
         // the bundle serves this one itself; the host never sees the name
         serves: ["triple"],
+        provide: [],
+        lookup: [],
         inits: [],
         style: "",
       },
@@ -515,6 +572,8 @@ fn counter_manifest() -> DynManifest {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [],
         style: "",
       },
@@ -541,9 +600,20 @@ fn shell_module() -> @component.ModuleDef {
     },
     name="Shell",
     init=TestShellState::{ slot: Null, note: "" },
-    update=(s : TestShellState, msg, _ctx) => {
+    // A HOST component publishing to its subtree, which includes whatever
+    // bundle gets mounted into `.slot`. The guest reads it as `*theme` — see
+    // the manifest's `lookup` — and nothing about that crosses the guest ABI.
+    provide={ "theme": ".note" },
+    update=(s : TestShellState, msg, ctx) => {
       match msg {
         Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
+        // Shell is the SENDER here, so the guest's reply has a position to
+        // reach.
+        Receive("poke", _) => {
+          ctx.at().field("slot").send("ping", [])
+          Unchanged
+        }
+        Receive("pong", [Str(who)]) => Next({ ..s, note: "pong:\{who}" })
         Intent("counterChanged", [v, ..]) => Next({ ..s, note: v.str() })
         // only reached when nothing below stopped the bubble
         Intent("counted", [v, ..]) =>
@@ -939,6 +1009,7 @@ test "inputs are read off the compiled views, not declared" {
       #|  "inc",
       #|  "double",
       #|  "notify",
+      #|  "readUndeclared",
       #|  "announce",
       #|  "triple",
       #|  "setCount",
@@ -1445,6 +1516,8 @@ test "a bundle's views are linted at load" {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [],
         style: "",
       },
@@ -1521,6 +1594,8 @@ test "a `$method` the manifest never declared is reported at load" {
         enriches: [],
         enrich_scopes: [],
         serves: [],
+        provide: [],
+        lookup: [],
         inits: [],
         style: "",
       },
@@ -1994,4 +2069,153 @@ test "a bound name the bundle does not declare is a diagnostic" {
       )
     }),
   )
+}
+
+///|
+/// A guest reads a dynamic binding a HOST ancestor published.
+///
+/// The claim worth pinning: nothing about this crosses the guest ABI. The
+/// manifest carries the `lookup` as source text, `register_bundle` hands it to
+/// the synthesized `Component`, and the host's render stack resolves `*theme`
+/// against the frame `Shell` pushed — the same path a host component's `*name`
+/// takes. The guest is not asked, and does not know.
+test "a guest reads a value a host ancestor provides" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell's `note` starts empty, so the binding is there and holds "".
+  inspect(h.text(".theme"), content="")
+  // An intent that changes what Shell publishes re-renders the guest's read of
+  // it, because a provide is evaluated on every entry rather than captured.
+  h.click(".notify")
+  inspect(h.text(".note"), content="changed!")
+  inspect(h.text(".theme"), content="changed!")
+}
+
+///|
+/// With no producer above it, the declared default is what the guest reads.
+///
+/// Registered but unmounted, so nothing has pushed a frame: this is the
+/// "nobody provides it" case, and a card that names a value nothing supplies
+/// should still render rather than show a hole.
+test "a guest with no provider above it reads its declared default" {
+  collect_superseded()
+  let h = @harness.mount(no_provide_shell(), "Bare")
+  install_gc(h.app.transactor)
+  let fake = FakeGuest::new()
+  let bundle = register_bundle(
+    h.app.scope,
+    fake,
+    counter_manifest(),
+    policy=vouched(),
+  )
+  fake.bundle.val = Some(bundle)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  inspect(h.text(".theme"), content="unthemed")
+}
+
+///|
+/// A shell that publishes nothing, for the default case above.
+fn no_provide_shell() -> @component.ModuleDef {
+  let bare = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div class=\"bare\"><x render=\".slot\"></x></div>",
+      ),
+    },
+    name="Bare",
+    init=TestShellState::{ slot: Null, note: "" },
+    update=(s : TestShellState, msg, _ctx) => {
+      match msg {
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
+        _ => Unhandled
+      }
+    },
+  )
+  @component.ModuleDef::new(name="baretest", components=[bare])
+}
+
+///|
+/// A bundle publishes its own component as a TYPE, and something below it
+/// builds one.
+///
+/// `Component::make` on a guest component is not a hole any more: it goes
+/// through `Bundle::make_instance`, so the instance a `provide {Counter:
+/// "self"}` promises is one the guest actually created and still owns.
+test "a guest component published as a type can be built" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  // Through the BUNDLE's own scope, which is where a bundle's components live:
+  // `register_bundle` enters a child scope, so the app's scope cannot see them
+  // and a host component reaches one only along the `dyn` leg, from inside the
+  // guest's subtree, exactly as the publish intends.
+  guard! bundle.scope.lookup_component("Counter") is Some(comp)
+  let inst = comp.make({ "count": Num(7) })
+  // A real guest instance, not the `Null` a `for_type` component used to yield.
+  assert_true(inst is Obj(_))
+  h.send_at_root("setSlot", args=[inst])
+  inspect(h.text(".count"), content="7")
+  // And it is the SAME bundle's: driving it reaches the guest that made it.
+  h.click(".inc")
+  inspect(h.text(".count"), content="8")
+}
+
+///|
+/// A guest HANDLER reads a dynamic binding an ancestor published.
+///
+/// The view half already worked — a `*theme` in a guest's template resolves
+/// against the frame the host pushed. This is the other half: the host
+/// resolves the component's DECLARED lookups before entering the guest and
+/// hands them in, because everything else a guest asks of the host is an
+/// effect applied after the call, and a value a handler is using cannot wait
+/// for that.
+test "a guest handler reads a declared lookup" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell's `note` — which is what it provides as `theme` — starts empty.
+  h.click(".notify")
+  inspect(h.text(".note"), content="changed!")
+  // The handler now reads what the ancestor publishes, at this position.
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.click(".notify")
+  h.send_at_root("readTheme", args=[])
+  inspect(h.text(".theme"), content="changed!")
+}
+
+///|
+/// A name the manifest declares no lookup for is not in the map.
+///
+/// The set of names is what the component DECLARED, so an undeclared read is
+/// absent rather than null — which is the same distinction the checker draws
+/// when it refuses a `*name` nothing declares.
+test "a guest handler reads nothing for an undeclared name" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  h.click(".undeclared")
+  inspect(h.text(".note"), content="absent")
+}
+
+///|
+/// A guest answers the sender of a message, under a name it picked.
+test "a guest replies to whoever sent it a message" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  h.send_at_root("setSlot", args=[inst.to_value()])
+  // Shell sends, the guest replies, and the reply lands in Shell's `receive`
+  // bucket like any other message.
+  h.send_at_root("poke", args=[])
+  inspect(h.text(".note"), content="pong:from-guest")
 }

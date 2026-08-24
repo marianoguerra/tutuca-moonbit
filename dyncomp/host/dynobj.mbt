@@ -387,7 +387,21 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
       // The host's buckets and the wire's are the SAME two, so there is
       // nothing to translate: the bucket goes out as it came in, and the
       // guest's buffered control calls come back as the host's own.
-      let result = self.guest.dispatch(self.handle, bucket, name, args)
+      // What this component's declared lookups mean HERE, resolved before the
+      // guest is entered. `ctx.lookup` walks the default route, so a card's
+      // `*theme` in a handler reads exactly what a `*theme` in its view would
+      // — the same question, answered at the same position.
+      let bindings : Map[String, @tutuca.Value] = Map([])
+      for pair in self.def.lookup {
+        bindings[pair.0] = ctx.lookup(pair.0, @tutuca.LookupOpts::new())
+      }
+      let result = self.guest.dispatch(
+        self.handle,
+        bucket,
+        name,
+        args,
+        bindings,
+      )
       for msg in result.msgs {
         match msg {
           Send(name, args) => ctx.send(name, args)
@@ -412,6 +426,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
             )
           Reply(v) => ctx.reply(v)
           Fail(e) => ctx.fail(e)
+          SendReply(name, args) => ctx.send_reply(name, args)
           // relative: the guest addresses its own subtree (see ControlMsg)
           SendAt(steps, name, args) =>
             ctx.send_at_path(ctx.path().concat(steps), name, args)

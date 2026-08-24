@@ -4,6 +4,177 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Name lookup is unified under the intent's `dyn`/`lex` routes.** Type
+  lookup, `provide`/`lookup` and intent routing were three answers to one
+  question — what does this name mean, and where do I look for it. They now
+  share two environments and one route vocabulary:
+
+  | leg | environment |
+  |---|---|
+  | `dyn` | the render ancestry (`RenderStack.dyn_binds`) |
+  | `lex` | the registration scope chain (`ComponentStack`) |
+
+  `ctx.lookup(name, opts)` and `ctx.make(name, args, opts)` take `opts.route`
+  with the same legs, the same array-is-walk-order contract and the same
+  default (`@tutuca.default_route()`, `dyn lex`) as `ctx.intent`.
+  `@tutuca.route_lookup` is the one walk all three share. There is no
+  `lookup_type`: the only thing a handler can do with a resolved type is build
+  one, and `core` cannot name a `@component.Component` anyway — which is also
+  what the guest contract already said (`make-instance: func(component:
+  string, …)`).
+
+  The `lex` leg needs no stack. The `dyn` leg rebuilds one lazily from the ctx
+  (`@app.ScopeNames`), because the stack that evaluated a handler's arguments
+  is a local in the dispatch pipeline and is gone once the body runs.
+
+- **Declarations became plain data.**
+
+  ```moonbit
+  provide={ "items": ".items", "Cell": "self" }
+  lookup=[@component.lookup_name("theme"), @component.lookup_or("color", "'gray'")]
+  ```
+
+  A lookup names what it WANTS, not who provides it, so `LookupInfo` loses
+  `comp_name` / `provide_name` and its sticky `ProducerKeyMemo`, `ProvideInfo`
+  loses its `ProvideKey`, and `DynBinds` is keyed by plain name. An uppercase
+  name is a component type; `"self"` is the only legal value for one, which
+  keeps a published type a component by construction. Types and values share
+  one frame because their keyspaces cannot collide.
+
+  Dropping the qualified `"Producer.name"` target means `resolve_dyn_producer`
+  finds the producer by scope search (`ComponentStack::lookup_provider`), which
+  is sound only while one provide name has one producer per chain — hence
+  `PROVIDE_NAME_COLLISION`.
+
+- **Component types left the value language.** `KType` is in no grammar group,
+  which removes them from handler arguments and macro attributes in one edit
+  (`GComponent` never held them, so `<x render=".field">` is untouched). A
+  handler that needs one asks by name.
+
+### Added
+
+- **`ctx.send_reply(name, args)`.** A message carries no expectation of an
+  answer and its sender declares no arms, so the replier names the reply; an
+  intent's answer is named by the runtime (`<name>Ok`) because its raiser did
+  declare arms. The reply is an ordinary message, delivered at the sender's
+  position as pinned at dispatch. Refuses `NO_SENDER` when nobody is waiting —
+  a view's own `@on.*`, or the host's `send_at_root`. `ctx.reply` stays
+  intent-only. `send` itself is unchanged and stays ADDRESSED: it walks
+  nothing.
+
+- **Five name-wiring checks**, in `lint`'s vocabulary and raised from
+  `ComponentStack::check_names`: `PROVIDE_NOT_ADDRESSABLE`,
+  `PROVIDE_TYPE_BAD_SHAPE`, `PROVIDE_NAME_COLLISION`, `LOOKUP_NO_PROVIDER`
+  (an error without a default, a hint with one — whether a provider is above at
+  render time is a runtime fact) and `UNKNOWN_COMPONENT_NAME`. `compile()` still
+  drops a bad declaration rather than raising: what is wrong with one is a
+  finding with a name and a place to point at, and the component renders while
+  the list is read. A dyncomp bundle runs them at registration and reports them
+  in its diagnostics.
+
+- `RefusalCode::TypeNotFound` (`TYPE_NOT_FOUND`, carrying the route it walked)
+  and `RefusalCode::NoSender` (`NO_SENDER`).
+
+- **A card declares its own dynamic bindings.** `provide { … }` and
+  `lookup { … }` are sections of a `state` body, so the one thing the schema
+  block could not say — where a value comes from — is no longer MoonBit-only:
+
+  ```html
+  state Board {
+    theme: String
+    provide { theme = .theme, Cell = self }
+  }
+  state Slot {
+    made: String
+    lookup { theme, color = 'gray', Cell }
+  }
+  ```
+
+  Nothing about this crosses the guest ABI and the compiled module is
+  byte-identical either way: the expressions travel in the manifest as SOURCE
+  TEXT (`DynComponentDef.provide` / `.lookup`), and the host parses and
+  evaluates them against the instance while rendering, exactly as it does for a
+  component written in MoonBit. So a guest reads a value a HOST ancestor
+  published, and the host's own checks run over a bundle's wiring at
+  registration.
+
+  The two words are NOT reserved field names: a section opens on the word
+  followed by a brace, so `provide: String` is still a field.
+
+- **A guest component published as a type can be built.** `Component::make` on
+  a bundle's component used to yield `Null`; it now goes through
+  `Bundle::make_instance`, so the instance a `provide { Counter: "self" }`
+  promises is one the guest actually created and still owns.
+
+- **A card's handlers reach both.** `*name` is legal in a script block now, and
+  is the same question the view one line down asks:
+
+  ```
+  receive stamp { .label = $'{.label} ({*theme})' }
+  receive ping  { sendReply 'pong' .label }
+  ```
+
+  `*name` in a BODY used to be `RENDER_ONLY` — "a body cannot read a dynamic
+  binding at all" — and that was true only while the two environments had no
+  route vocabulary in common. It has one now, so the rule became
+  `DYN_NOT_DECLARED`: whether a producer is above you at render time is a
+  runtime fact, but whether you ever asked for the name is not. `$name` is
+  still render-only, and for the reason `*name` no longer is — a `compute`
+  really is the render stack's answer, and a body calls one bare.
+
+  `sendReply 'name' args…` joins `send` / `sendAt` / `intent` / `forward` /
+  `reply` / `fail` / `stop` as an effect, and is in the conformance corpus, so
+  both backends are held to it.
+
+### Fixed
+
+- **A card could not have declared a served intent, even in principle.** The
+  card manifest emitted `"requests"` and the host read `"serves"`, so the two
+  never met. The key is now the one the host reads.
+
+### BREAKING — the guest contract
+
+`tutuca:component` goes **0.9.0 → 0.10.0**. A bundle built against 0.9.0 calls
+functions this host still implements, but its export namespace carries the old
+version and `abi.mjs` refuses it by that — which is a legible error rather than
+a half-working guest. Rebuild guests against the new WIT.
+
+- **`control.send-reply(name, args)`** — buffered like every other effect and
+  applied through the dispatching `&Ctx`. With nobody waiting the HOST refuses
+  `NO_SENDER`; the guest is not told, because who was listening was never its
+  question.
+- **`control.lookup(name) -> value`** — the first import on this interface that
+  ANSWERS rather than acting, and the shape is why it is safe. It takes no
+  route: the host resolves this component's DECLARED lookups at dispatch, along
+  the default `[dyn, lex]`, and hands them in as `Guest::dispatch`'s new
+  `bindings` parameter — so `lookup` is a map read over a set the manifest
+  fixed, not a walk the guest takes. A name the manifest does not declare is
+  not in the map. See `dyncomp/SECURITY.md` §5a.
+- `Guest::dispatch` takes `bindings : Map[String, Value]`. Every transport and
+  every fake implements it.
+
+### BREAKING
+
+No compat layer.
+
+- `lookup` is a LIST, not a map, and names no producer:
+  `lookup={"color": {source: "Theme.color", default: Some(X)}}` becomes
+  `lookup=[@component.lookup_or("color", X)]`. The local name must equal the
+  provided name; there is no alias, and none was in use.
+- An uppercase token is no longer a value: `@on.click="addItem JsonSelector"`
+  becomes `@on.click="addItem"` plus `ctx.make("JsonSelector", …)`, with the
+  name declared in `lookup` where the checks can see it. A macro attribute
+  cannot carry one either.
+- `ProvideKey`, `ProducerKeyMemo` and `LookupInfo::resolve_producer_key` are
+  gone; `DynBinds` is `{binds, types, parent}` keyed by name.
+- `Transactor::new` takes a `names?` seam beside `intents?`. `App::new` wires
+  it; a bare `Transactor::new` resolves no names, the way it answers no
+  intents.
+
 ## [0.27.0] - 2026-08-22
 
 ### Added

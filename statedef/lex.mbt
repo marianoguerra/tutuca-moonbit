@@ -47,6 +47,15 @@ priv enum Tok {
   TComma
   TQuestion
   TEquals
+  /// A value-language expression, taken WHOLE: `.sheet`, `.items[.selId]`,
+  /// `self`, `'gray'`.
+  ///
+  /// The one place this lexer admits a language that is not its own, and it
+  /// admits it opaquely: inside a `provide { … }` / `lookup { … }` section it
+  /// finds where an expression ENDS and hands the slice on untouched. Reading
+  /// it is `tscript`'s job, which is why a wiring section can carry a `.` and
+  /// a `'` without either meaning anything here.
+  TExpr(String)
   TEof
 } derive(Eq)
 
@@ -83,6 +92,16 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
   let out : Array[Token] = []
   let n = chars.length()
   let mut i = 0
+  // Whether we are inside a `provide { … }` / `lookup { … }` section, and
+  // whether the last token was its `=`. Two flags rather than a mode enum,
+  // because the only thing the mode changes is what may follow an equals sign.
+  //
+  // The trigger is the WORD followed by a brace, which is why `provide` and
+  // `lookup` are not reserved field names: `provide : Text` is still a field,
+  // and nothing had to be taken away from an author to add this.
+  let mut wiring = false
+  let mut pending_wiring = false
+  let mut after_equals = false
   fn push(t : Tok, start : Int, end_ : Int) -> Unit {
     out.push({ tok: t, span: { start, end_ } })
   }
@@ -91,6 +110,55 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
     let c = chars[i]
     if c == ' ' || c == '\t' || c == '\r' || c == '\n' {
       i = i + 1
+      continue
+    }
+    // -- a wiring section's right-hand side ---------------------------------
+    if wiring && after_equals {
+      after_equals = false
+      let start = i
+      let mut j = i
+      let mut depth = 0
+      let mut quoted = false
+      while j < n {
+        let d = chars[j]
+        if quoted {
+          if d == '\\' && j + 1 < n {
+            j = j + 2
+            continue
+          }
+          if d == '\'' {
+            quoted = false
+          }
+          j = j + 1
+          continue
+        }
+        if d == '\'' {
+          quoted = true
+          j = j + 1
+          continue
+        }
+        if d == '[' || d == '(' {
+          depth = depth + 1
+        } else if d == ']' || d == ')' {
+          depth = depth - 1
+        } else if depth == 0 && (d == ',' || d == '}') {
+          break
+        }
+        j = j + 1
+      }
+      let text = StringBuilder::new()
+      for k in start..<j {
+        text.write_char(chars[k])
+      }
+      let expr = text.to_string().trim(chars=" \t\r\n").to_owned()
+      if expr.is_empty() {
+        raise Syntax(msg="`=` with no expression after it", span={
+          start,
+          end_: j,
+        })
+      }
+      push(TExpr(expr), start, j)
+      i = j
       continue
     }
     // -- comments -----------------------------------------------------------
@@ -172,7 +240,23 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       for k in start..<i {
         text.write_char(chars[k])
       }
-      push(TIdent(text.to_string()), start, i)
+      let word = text.to_string()
+      // A wiring section opens on the WORD plus a brace, so the lookahead
+      // stops at the first thing that is not a space.
+      if !wiring && (word == "provide" || word == "lookup") {
+        let mut k = i
+        while k < n &&
+              (
+                chars[k] == ' ' ||
+                chars[k] == '\t' ||
+                chars[k] == '\r' ||
+                chars[k] == '\n'
+              ) {
+          k = k + 1
+        }
+        pending_wiring = k < n && chars[k] == '{'
+      }
+      push(TIdent(word), start, i)
       continue
     }
     // -- punctuation --------------------------------------------------------
@@ -197,6 +281,16 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
           start: i,
           end_: i + 1,
         })
+    }
+    match single {
+      TLBrace =>
+        if pending_wiring {
+          pending_wiring = false
+          wiring = true
+        }
+      TRBrace => wiring = false
+      TEquals => after_equals = wiring
+      _ => ()
     }
     push(single, i, i + 1)
     i = i + 1
@@ -224,6 +318,7 @@ fn Tok::describe(self : Tok) -> String {
     TComma => "`,`"
     TQuestion => "`?`"
     TEquals => "`=`"
+    TExpr(e) => "the expression `\{e}`"
     TEof => "the end of the block"
   }
 }

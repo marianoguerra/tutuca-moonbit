@@ -47,6 +47,11 @@ pub(all) enum LintCode {
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
+  ProvideNotAddressable
+  ProvideTypeBadShape
+  ProvideNameCollision
+  LookupNoProvider
+  UnknownComponentName
   EventPathUnsafeStep
   InertConstraint
   HtmlTagNameHasUppercase

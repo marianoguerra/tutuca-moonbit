@@ -10,11 +10,34 @@ extern "wasm" fn mbt_ffi_free(position : Int) =
   #|(func (param i32) local.get 0 call $moonbit.decref)
 
 ///|
+extern "wasm" fn mbt_ffi_load32(offset : Int) -> Int =
+  #|(func (param i32) (result i32) local.get 0 i32.load)
+
+///|
+extern "wasm" fn mbt_ffi_load64(offset : Int) -> Int64 =
+  #|(func (param i32) (result i64) local.get 0 i64.load)
+
+///|
+extern "wasm" fn mbt_ffi_load8_u(offset : Int) -> Int =
+  #|(func (param i32) (result i32) local.get 0 i32.load8_u)
+
+///|
+extern "wasm" fn mbt_ffi_loadf64(offset : Int) -> Double =
+  #|(func (param i32) (result f64) local.get 0 f64.load)
+
+///|
 extern "wasm" fn mbt_ffi_malloc(size : Int) -> Int =
   #|(func (param i32) (result i32) (local i32)
   #| local.get 0 i32.const 4 i32.add call $moonbit.gc.malloc
   #| local.tee 1 i32.const 0 call $moonbit.init_array8
   #| local.get 1)
+
+///|
+extern "wasm" fn mbt_ffi_ptr2str(ptr : Int, len : Int) -> String =
+  #|(func (param i32) (param i32) (result i32)
+  #| local.get 0
+  #| local.get 1 call $moonbit.init_array16
+  #| local.get 0)
 
 ///|
 extern "wasm" fn mbt_ffi_store32(offset : Int, value : Int) =
@@ -33,13 +56,13 @@ extern "wasm" fn mbt_ffi_storef64(offset : Int, value : Double) =
   #|(func (param i32) (param f64) local.get 0 local.get 1 f64.store)
 
 ///|
-fn wasmImportAfter(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int) = "tutuca:component/control@0.9.0" "after"
+fn wasmImportAfter(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int) = "tutuca:component/control@0.10.0" "after"
 
 ///|
-fn wasmImportDropInstance(p0 : Int64) = "tutuca:component/control@0.9.0" "drop-instance"
+fn wasmImportDropInstance(p0 : Int64) = "tutuca:component/control@0.10.0" "drop-instance"
 
 ///|
-fn wasmImportFail(p0 : Int, p1 : Int64, p2 : Int) = "tutuca:component/control@0.9.0" "fail"
+fn wasmImportFail(p0 : Int, p1 : Int64, p2 : Int) = "tutuca:component/control@0.10.0" "fail"
 
 ///|
 fn wasmImportForward(
@@ -57,7 +80,7 @@ fn wasmImportForward(
   p11 : Int,
   p12 : Int,
   p13 : Int,
-) = "tutuca:component/control@0.9.0" "forward"
+) = "tutuca:component/control@0.10.0" "forward"
 
 ///|
 fn wasmImportIntent(
@@ -77,25 +100,31 @@ fn wasmImportIntent(
   p13 : Int,
   p14 : Int,
   p15 : Int,
-) = "tutuca:component/control@0.9.0" "intent"
+) = "tutuca:component/control@0.10.0" "intent"
 
 ///|
-fn wasmImportIntentAt(p0 : Int) = "tutuca:component/control@0.9.0" "intent-at"
+fn wasmImportIntentAt(p0 : Int) = "tutuca:component/control@0.10.0" "intent-at"
 
 ///|
-fn wasmImportLog(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/control@0.9.0" "log"
+fn wasmImportLog(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/control@0.10.0" "log"
 
 ///|
-fn wasmImportMakeInstance(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int64 = "tutuca:component/control@0.9.0" "make-instance"
+fn wasmImportLookup(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/control@0.10.0" "lookup"
 
 ///|
-fn wasmImportReply(p0 : Int, p1 : Int64, p2 : Int) = "tutuca:component/control@0.9.0" "reply"
+fn wasmImportMakeInstance(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int64 = "tutuca:component/control@0.10.0" "make-instance"
 
 ///|
-fn wasmImportSend(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.9.0" "send"
+fn wasmImportReply(p0 : Int, p1 : Int64, p2 : Int) = "tutuca:component/control@0.10.0" "reply"
 
 ///|
-fn wasmImportSendAt(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int, p5 : Int) = "tutuca:component/control@0.9.0" "send-at"
+fn wasmImportSend(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.10.0" "send"
 
 ///|
-fn wasmImportStopPropagation() = "tutuca:component/control@0.9.0" "stop-propagation"
+fn wasmImportSendAt(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int, p5 : Int) = "tutuca:component/control@0.10.0" "send-at"
+
+///|
+fn wasmImportSendReply(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.10.0" "send-reply"
+
+///|
+fn wasmImportStopPropagation() = "tutuca:component/control@0.10.0" "stop-propagation"

@@ -170,12 +170,17 @@ fn lint_demo_comp() -> @component.Component {
       // path, so a method ($doClick) is rejected.
       "badProvide": "$doClick",
     },
-    lookup={
-      // DYN_ALIAS_NOT_REFERENCED: declared but never read as *unusedDyn
-      "unusedDyn": { source: "Theme.color", default: Some("'gray'") },
-      // LOOKUP_TARGET_MALFORMED: target must be "Producer.provideName"
-      "badTarget": { source: "NoDotHere", default: None },
-    },
+    lookup=[
+      // LOOKUP_NO_PROVIDER (hint): nothing in this scope provides `color`, but
+      // a default carries it — whether a producer is above at render time is a
+      // runtime fact.
+      @component.lookup_or("color", "'gray'"),
+      // LOOKUP_NO_PROVIDER (error): no provider and no default.
+      @component.lookup_name("orphan"),
+      // UNKNOWN_COMPONENT_NAME: an uppercase name is a component type, and
+      // nothing is registered under this one.
+      @component.lookup_name("NoSuchComp"),
+    ],
   )
 }
 

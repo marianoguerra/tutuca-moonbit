@@ -42,12 +42,10 @@ fn editor_comp() -> @component.Component {
 }
 
 ///|
-/// The consumer resolves it by "Component.name", with a fallback expression for
-/// when no producer is in scope.
+/// The consumer names the value it wants, with a fallback expression for when
+/// no producer is in scope.
 fn selector_comp() -> @component.Component {
-  selector_component(lookup={
-    "entries": { source: "Editor.entries", default: Some("[]") },
-  })
+  selector_component(lookup=[@component.lookup_or("entries", "[]")])
 }
 ```
 
@@ -56,13 +54,16 @@ comes from, which is a fact about how this component was registered rather than
 about what it does, so they are `component()` arguments and the script block has
 nothing to say about them.
 
-`provide` publishes a field under a name; a descendant's `lookup` resolves
-`*name` to the nearest matching producer, falling back to the `default`
-expression when none is in scope (`None` → `null`). `*name` works wherever a
-`.field` does, iteration and render targets included.
+`provide` publishes a field under a name; a descendant's `lookup` names that
+same name and resolves `*name` to the nearest binding above, falling back to
+the `default` expression when nothing is in scope (no default → `null`).
+`*name` works wherever a `.field` does, iteration and render targets included.
+The consumer never names the producer, which is why one provide name may have
+only one producer per scope chain.
 
-A `provide` expression must be **addressable** (`.field` or `.seq[.key]`), and a
-bad one is dropped **silently** — if `*name` reads as its fallback everywhere,
-suspect the producer's expression. This is the **read** side; to edit the
+A `provide` expression must be **addressable** (`.field` or `.seq[.key]`), and
+a bad one is dropped rather than raised — `ComponentStack::check_names` reports
+it as `PROVIDE_NOT_ADDRESSABLE`, so if `*name` reads as its fallback
+everywhere, run the checks. This is the **read** side; to edit the
 producer's value through the dynamic, see
 [Edit through a dynamic target](edit-through-a-dynamic-target.md).

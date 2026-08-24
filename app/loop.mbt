@@ -70,9 +70,11 @@ pub fn[N : @vdom.DomWalk] App::new(
   view? : String = "",
 ) -> App[N] raise {
   scope.compile_all()
-  let tx = @transactor.Transactor::new(root_value, intents=ScopeIntents::{
-    comps: scope.comps,
-  })
+  let tx = @transactor.Transactor::new(
+    root_value,
+    intents=ScopeIntents::{ comps: scope.comps },
+    names=ScopeNames::new(scope.comps),
+  )
   let app : App[N] = {
     scope,
     transactor: tx,

@@ -125,14 +125,17 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
       )
       call("tc_null", [])
     }
-    EDyn(name~, span~) => {
-      self.bail(
-        "`*" +
-        name +
-        "` is a dynamic binding, which a compiled card has no scope to read",
-        span,
-      )
-      call("tc_null", [])
+    // The handler-side twin of a view's `*name`. A compiled card DOES have a
+    // scope to read now: the host resolves this component's declared lookups
+    // before it enters the guest and `control.lookup` reads one of the
+    // answers, which is the one import that answers rather than acting.
+    //
+    // A name the manifest declares no lookup for comes back nil, and the
+    // checker has already said so — which is why there is nothing to bail on
+    // here.
+    EDyn(name~, ..) => {
+      self.g.uses_lookup = true
+      call("tc_lookup", [text_const_str(self.g.pool, name)])
     }
     ERef(span~, ..) => {
       self.bail(

@@ -95,6 +95,35 @@ ctx.send("loadData", [])                             // self
 `ctx.send_at_path(path, name, args)` with a `DispatchPath` built by hand,
 e.g. `ctx.path().concat([FieldStep("x")])`.)
 
+### Replying to a message — `sendReply`
+
+An intent's raiser asked a question and declared arms for the answer, so the
+runtime names it (`<name>Ok`). A message carries no such expectation and its
+sender declares no arms, so the **replier names the reply**.
+
+From a script block:
+
+```
+receive ping {
+  sendReply 'pong' .label
+}
+```
+
+…and the MoonBit spelling, which is the same thing:
+
+```moonbit nocheck
+// nocheck: an `update` arm fragment; `ctx` is the dispatch ctx
+Receive("ping", _) => {
+  ctx.send_reply("pong", [Str("from-child")])
+  Unchanged
+}
+```
+
+The reply is an ordinary message delivered to whoever sent this one, at the
+position they sent it from (pinned at dispatch, like an intent's answer). With
+nobody waiting — a view's own `@on.*`, or the host's `send_at_root` — it
+refuses `NO_SENDER` and nothing is dispatched. `ctx.reply` stays intent-only.
+
 **When to send.** Send when *one specific component* must be told
 something: a form telling its email field to focus after a failed submit,
 a list telling item 3 to enter edit mode, a "Reload" button reusing the

@@ -333,7 +333,7 @@ test "counter: immutability — one render per interaction" {
 Everything above is the ahead-of-time path: a view file, `gen-views`, a
 `ModuleDef`, and `moon test` over `@harness`. A **card** is the other
 thing a `.html` file can be — one file the browser compiles to a
-`tutuca:component@0.9.0` wasm module with no MoonBit toolchain on the
+`tutuca:component@0.10.0` wasm module with no MoonBit toolchain on the
 page. There is no `moon test` there and no MoonBit to write a test in,
 so a card declares its tests as a **fifth block**, in JSON, beside its
 schema and its handlers.

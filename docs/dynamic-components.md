@@ -8,7 +8,7 @@ the same machinery as the components you compiled in.
 Two roles, one contract. **Hosting** is `dyncomp/`. **Writing** a component is
 `tutuca new-guest`. The contract between them is one file,
 [`../dyncomp/wit/tutuca-component.wit`](../dyncomp/wit/tutuca-component.wit) —
-`tutuca:component@0.9.0`.
+`tutuca:component@0.10.0`.
 
 The full design is in [`../dyncomp/DESIGN.md`](../dyncomp/DESIGN.md); what a
 loaded bundle can and cannot do is in

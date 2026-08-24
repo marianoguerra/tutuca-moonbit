@@ -41,11 +41,9 @@ fn workspace_comp() -> @component.Component {
 }
 
 ///|
-/// A distant consumer renders it as a target, under its own local name.
+/// A distant consumer names what it wants; the producer is found by scope.
 fn toolbar_comp() -> @component.Component {
-  toolbar_component(lookup={
-    "active": { source: "Workspace.sheet", default: None },
-  })
+  toolbar_component(lookup=[@component.lookup_name("sheet")])
 }
 ```
 

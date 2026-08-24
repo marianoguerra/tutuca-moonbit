@@ -14,12 +14,9 @@ fn selector_entry_comp() -> @component.Component {
 /// `*entries`. The `default` is used only when no producer is in the render
 /// stack.
 fn selector_comp() -> @component.Component {
-  selector_component(init={ items: [], selectedValue: Null }, lookup={
-    "entries": {
-      source: "EntryEditorAndSelector.entries",
-      default: Some(".items"),
-    },
-  })
+  selector_component(init={ items: [], selectedValue: Null }, lookup=[
+    @component.lookup_or("entries", ".items"),
+  ])
 }
 
 ///|
@@ -92,9 +89,7 @@ fn sheet_comp() -> @component.Component {
 ///|
 /// The consumer, far from the producer: it renders a component it does not own.
 fn toolbar_comp() -> @component.Component {
-  toolbar_component(lookup={
-    "active": { source: "Workspace.active", default: Some(".missing") },
-  })
+  toolbar_component(lookup=[@component.lookup_or("active", ".missing")])
 }
 
 ///|

@@ -90,12 +90,24 @@ pub(all) struct InitState {
   args : Map[String, @core.Value]
 } derive(Eq, @debug.Debug)
 
+pub(all) struct LookupDecl {
+  name : String
+  default : String?
+  span : Span
+} derive(Eq, @debug.Debug)
+
 pub(all) struct MsgDef {
   source_name : String
   name : String
   variant : String
   payload : Array[StateTy]
   doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProvideDecl {
+  name : String
+  source : String
+  span : Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Span {
@@ -110,6 +122,8 @@ pub(all) struct StateDef {
   receive : Array[MsgDef]
   intent : Array[MsgDef]
   types : Array[UserTy]
+  provide : Array[ProvideDecl]
+  lookup : Array[LookupDecl]
   doc : String?
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String

@@ -73,6 +73,14 @@ pub impl @tutuca.Ctx for Recorder with fn forward(self, args, opts) {
 }
 
 ///|
+/// The replier names the reply, so it records like a `send` and not like a
+/// `reply`: what the walk addresses is the difference, and a corpus case is
+/// about what the block SAID.
+pub impl @tutuca.Ctx for Recorder with fn send_reply(self, name, args) {
+  self.seen.push(@conformance.show_effect("sendReply " + name, args))
+}
+
+///|
 pub impl @tutuca.Ctx for Recorder with fn reply(self, value) {
   self.seen.push(@conformance.show_effect("reply", [value]))
 }

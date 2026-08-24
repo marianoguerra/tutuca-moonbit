@@ -25,6 +25,8 @@ test "the v2 corpus still holds every case it was written with" {
       #|intent dyn is what v1 spelled bubble
       #|intent lex is what v1 spelled request
       #|intent lex dyn reverses the legs
+      #|a reply to a message names itself
+      #|a reply is an effect like the rest, and buffers with them
       #|effects come out in order, with the state
       #|an intent answered where it arrives
       #|fail answers with an error and ends the walk
@@ -70,8 +72,10 @@ test "the v2 effects use the vocabulary the design gives them" {
   }
 
   inspect(
-    tally(seen, ["fail", "forward", "intent", "reply", "send", "stop"]),
-    content="fail=1 forward=7 intent=5 reply=3 send=1 stop=2",
+    tally(seen, [
+      "fail", "forward", "intent", "reply", "send", "sendReply", "stop",
+    ]),
+    content="fail=1 forward=7 intent=5 reply=3 send=2 sendReply=2 stop=2",
   )
   inspect(
     tally(routes, ["dyn", "dyn lex", "lex", "lex dyn"]),

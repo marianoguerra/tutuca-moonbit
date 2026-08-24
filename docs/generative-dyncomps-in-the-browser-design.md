@@ -7,7 +7,7 @@
 >
 > **A different route to the same place exists and works:**
 > [`cardwasm/`](../cardwasm/README.md) compiles a **tutucard** — the state and
-> script blocks, not MoonBit — straight to a `tutuca:component@0.9.0` core
+> script blocks, not MoonBit — straight to a `tutuca:component@0.10.0` core
 > module, by building a [Wax](https://github.com/marianoguerra/wax-mb) AST and
 > letting `marianoguerra/wax` emit the bytes. That needs no `moonc`, no
 > prebuilt payload, and none of the upstream change step 0 below waits on,
@@ -16,7 +16,7 @@
 > does, and says so by name when you leave the subset. The two designs meet at
 > the mount seam described below, and `cardwasm` implements it.
 
-Producing a `tutuca:component@0.9.0` bundle entirely client-side, with no server
+Producing a `tutuca:component@0.10.0` bundle entirely client-side, with no server
 and no native toolchain.
 
 [`dyncomp/DESIGN.md`](../dyncomp/DESIGN.md) is the contract.
@@ -85,9 +85,9 @@ They are a detour, not a transformation.
 Two further facts make the browser path short:
 
 - **`moonc` already emits canonical-ABI names.** Raw `gen.wasm` imports
-  `tutuca:component/control@0.9.0` `emit` and
-  `[export]tutuca:component/guest@0.9.0` `[resource-new]instance`; it exports
-  `tutuca:component/guest@0.9.0#[method]instance.get-field`, `cabi_post_*`,
+  `tutuca:component/control@0.10.0` `emit` and
+  `[export]tutuca:component/guest@0.10.0` `[resource-new]instance`; it exports
+  `tutuca:component/guest@0.10.0#[method]instance.get-field`, `cabi_post_*`,
   `cabi_realloc` and `memory`. Those names are listed in `gen/moon.pkg` under
   `link.wasm.exports` — the same shape `moonc.linkCore({ exportedFunctions })`
   already takes.
@@ -219,7 +219,7 @@ Beyond the four things above, which `abi.mjs` already owns, skipping
 `embed`/`new` gives up exactly one thing: **build-time WIT conformance
 validation**. The trade:
 
-- The world is fixed and known (`tutuca:component@0.9.0`), and the export list is
+- The world is fixed and known (`tutuca:component@0.10.0`), and the export list is
   generated, not hand-authored per guest.
 - `abi.mjs` binds imports by name against a closed table, so an out-of-contract
   import is refused **at load time, host-side** — which SECURITY.md already
