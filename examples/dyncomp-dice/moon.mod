@@ -13,7 +13,7 @@
 //
 // `mizchi/js` is declared directly because `page/` imports `mizchi/js/core`
 // for the `@core.Any` in `on_event`, and a package may only import from a
-// module its own module declares. It is pinned to the version tutuca 0.26.0
+// module its own module declares. It is pinned to the version tutuca
 // resolves, so there is one copy of it in the graph.
 //
 // Build: node build.mjs  (see README.md — NOT `just`, which lives upstairs)
@@ -28,5 +28,5 @@ preferred_target = "wasm-gc"
 
 import {
   "marianoguerra/tutuca@0.28.1",
-  "mizchi/js@0.12.1",
+  "mizchi/js@0.12.2",
 }

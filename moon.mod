@@ -20,9 +20,9 @@ description = "MoonBit port of the tutuca UI framework (value language, template
 
 import {
   "moonbitlang/quickcheck@0.14.0",
-  "mizchi/js@0.12.1",
-  "mizchi/js_browser@0.12.1",
-  "moonbitlang/async@0.20.3",
+  "mizchi/js@0.12.2",
+  "mizchi/js_browser@0.12.2",
+  "moonbitlang/async@0.21.0",
   "moonbit-community/html@0.1.2",
   "mizchi/fswatch@0.2.1",
   // Only `mizchi/css/token` is used, by `anode/sanitize/css` — a css-syntax-3
@@ -36,8 +36,8 @@ import {
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
   "marianoguerra/wax@0.2.0",
-  "marianoguerra/tailwindcss@0.2.0",
-  "moonbitlang/x@0.4.47",
+  "marianoguerra/tailwindcss@0.3.0",
+  "moonbitlang/x@0.5.1",
 }
 
 // What `moon publish` ships. Consumers get the library packages, the CLI
