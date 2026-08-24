@@ -240,7 +240,17 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
       let prev = self.prev
       self.prev = Some(@vdom.render(vdom, self.root_node, self.opts, prev?))
     }
-    None => ()
+    // The root rendered NOTHING this pass — its view root was omitted by an
+    // `@show`/`@hide`, or every site inside a fragment dropped out. The mount
+    // point has to follow: leaving the previous tree standing made a hidden
+    // component look exactly like a handler that had stopped answering, and
+    // the next Some would then morph against a `prev` describing DOM that is
+    // no longer what the container holds.
+    None =>
+      if self.prev is Some(_) {
+        @vdom.unmount(self.root_node)
+        self.prev = None
+      }
   }
 }
 

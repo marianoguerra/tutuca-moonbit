@@ -49,6 +49,18 @@ priv struct E {
   /// existing `Unchanged` idiom already covers it and a guard on an opaque
   /// value is still refused.
   mut fail : String
+  /// What a runtime guard returns to LEAVE this body early: `Unchanged` in a
+  /// transition, `Null` for a method, `false` for a `@when` — the same three
+  /// answers `fail` spells, plus the one `fail` cannot say, because a
+  /// transition leaves through `Unchanged` while `fail` stays empty there so
+  /// opaque coercions keep being refused rather than guarded.
+  ///
+  /// "" means leaving early is not EXPRESSIBLE: an enricher writes into a map
+  /// it was handed as it goes, so a return keeps the writes already made and
+  /// drops the rest. A construct whose guard needs the door (`/`, `mod`,
+  /// the bounds-checked collection methods) is refused there instead of
+  /// miscompiled — see `leave_token`.
+  mut leave : String
   /// Every name this component has an arm for, so an `intent` can be told
   /// which of the three outcomes its sender is waiting for.
   ///
@@ -123,6 +135,7 @@ pub fn emit(
     binds: Map([]),
     binds_map: "",
     fail: "",
+    leave: "Unchanged",
     tmp: 0,
     guards: Map([]),
     rules: Map([]),
@@ -369,6 +382,15 @@ fn E::value_body(
     // every write when a body cannot finish. Leaving early would keep the ones
     // already made, so nothing here guards: an opaque value used at a type is
     // refused instead, and the refusal names the enricher.
+    REnrich | REnrichScope => ""
+  }
+  // The same three answers, read as the door a runtime guard walks out
+  // through — including the transition's `Unchanged`, which `fail` leaves
+  // empty for. An enricher gets "" too: there is no door, so anything that
+  // needs one is refused (see `leave_token`).
+  self.leave = match role {
+    RMethod => "Null"
+    RWhen => "false"
     REnrich | REnrichScope => ""
   }
   let name = value_fn_name(prefix, role, d.name)
@@ -1171,8 +1193,9 @@ fn E::collection_call_at(
       let v = self.at(args[1], elem)
       // `<=` because inserting AT the length appends, which is a real answer.
       let at = self.hoist("at", i)
+      let out = self.leave_token("`insertAt`")
       self.prelude.push(
-        "guard \{at} >= 0 && \{at} <= \{recv}.length() else { return Unchanged }",
+        "guard \{at} >= 0 && \{at} <= \{recv}.length() else { return \{out} }",
       )
       "(\{recv}[0:\{at}].to_owned() + [\{v}] + \{recv}[\{at}:].to_owned())"
     }
@@ -1180,8 +1203,9 @@ fn E::collection_call_at(
       arity(1)
       let i = self.at(args[0], TInt(width=32, signed=true))
       let at = self.hoist("at", i)
+      let out = self.leave_token("`removeAt`")
       self.prelude.push(
-        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return Unchanged }",
+        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return \{out} }",
       )
       "(\{recv}[0:\{at}].to_owned() + \{recv}[\{at} + 1:].to_owned())"
     }
@@ -1190,8 +1214,9 @@ fn E::collection_call_at(
       let i = self.at(args[0], TInt(width=32, signed=true))
       let v = self.at(args[1], elem)
       let at = self.hoist("at", i)
+      let out = self.leave_token("`setAt`")
       self.prelude.push(
-        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return Unchanged }",
+        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return \{out} }",
       )
       "{ let a = \{recv}.copy(); a[\{at}] = \{v}; a }"
     }
@@ -1450,6 +1475,27 @@ fn E::at(
     }
   }
   self.to_ty(src, got, want)
+}
+
+///|
+/// The token a runtime guard returns to leave this body, or a refusal when
+/// this body has no door.
+///
+/// A transition answers `Unchanged`, a `compute` `Null`, a `@when` `false` —
+/// each the same answer its signature gives a body that cannot finish. An
+/// enricher is the one shape where leaving early is WRONG rather than
+/// impossible: its writes have already landed in the map it was handed, and a
+/// return would keep the ones made while dropping the rest. So the constructs
+/// that need the door — a division by zero, an out-of-bounds collection index
+/// — are refused there at generation time, on the same rule that refuses an
+/// opaque coercion in an enricher.
+fn E::leave_token(self : E, what : String) -> String raise NoWay {
+  guard self.leave != "" else {
+    raise Cannot(
+      "`\{what}` can fail at run time, and surviving that means leaving the body mid-way — which an `enrich` cannot do (the writes before it would be half kept). Do the arithmetic in a transition or a `compute` instead",
+    )
+  }
+  self.leave
 }
 
 ///|
@@ -1849,11 +1895,16 @@ fn E::chain(
       for i, op in ops {
         // A zero divisor is "no change", which is what the interpreter
         // answers. MoonBit's Double division answers Infinity instead, and
-        // `.to_int()` then saturates to 2^31-1 — a number, silently, where the
-        // other backend said the transition did not happen.
+        // `.to_int()` then saturates to 2^31-1 — a number, silently, where
+        // the other backend said the body did not finish. The token to leave
+        // through is the ROLE's: `Unchanged` in a transition, `Null` for a
+        // `compute`, `false` for a `@when`. Emitting the transition's answer
+        // unconditionally compiled a module that did not build — an
+        // `Update` constructor where a `Value` was wanted.
         let rhs = if op == "/" || op == "mod" {
           let d = self.hoist("d\{i}", self.at_num(operands[i + 1]))
-          self.prelude.push("guard \{d} != 0.0 else { return Unchanged }")
+          let out = self.leave_token("a `\{op}`")
+          self.prelude.push("guard \{d} != 0.0 else { return \{out} }")
           d
         } else {
           self.at_num(operands[i + 1])

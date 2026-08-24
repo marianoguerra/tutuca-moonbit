@@ -259,6 +259,70 @@ test "a value body nobody asks for is not written" {
 }
 
 ///|
+test "a zero divisor leaves through the ROLE's answer, not the transition's" {
+  // The bug this covers: `gen-views` emitted the divide-by-zero guard as
+  // `return Unchanged` everywhere, which is an `Update` constructor — so a
+  // `compute` or a `pred` containing `/` produced a module that did not
+  // BUILD. Division in a transition body keeps `Unchanged`; a value body
+  // answers what its signature says a body that cannot finish answers.
+  let e = out_values(
+    (
+      #|compute half { .count / 2 }
+      #|pred overQuota { (.count / 2) > 3 }
+    ),
+    methods=["half", "overQuota"],
+  )
+  assert_eq(e.answers_methods, ["half", "overQuota"])
+  assert_eq(e.refusals.map(r => r.name), [])
+  // A `compute` returns a Value: leaving is `Null`, the same answer an
+  // opaque coercion at a type gets.
+  assert_true(e.source.contains("guard d0 != 0.0 else { return Null }"))
+  // A `@when` returns a Bool.
+  let w = out_values("pred overQuota { (.count / 2) > 3 }", whens=["overQuota"])
+  assert_eq(w.answers_whens, ["overQuota"])
+  assert_true(w.source.contains("guard d0 != 0.0 else { return false }"))
+}
+
+///|
+test "division in a transition still leaves through Unchanged" {
+  // The half of the rule that always worked and must keep working: in a
+  // transition the guard's answer IS `Unchanged`.
+  assert_true(
+    body("receive scale { .ratio = .ratio / .count }").contains(
+      "guard d0 != 0.0 else { return Unchanged }",
+    ),
+  )
+}
+
+///|
+test "an enricher refuses a construct that would have to leave mid-body" {
+  // An enricher writes into the map it was handed as it goes, so no guard can
+  // leave early without keeping the writes already made. A zero divisor has
+  // no in-band answer there — refused with the reason named, like an opaque
+  // coercion, rather than emitted as code that does not build.
+  let e = out_values("enrich row { @half = .count / 2 }", enriches=["row"])
+  assert_eq(e.answers_enriches, [])
+  assert_eq(e.refusals.map(r => r.name), ["row"])
+  assert_true(e.refusals[0].why.contains("an `enrich` cannot"))
+}
+
+///|
+test "a bounds-checked collection method leaves through the role's answer too" {
+  // Same family as the divisor guard: `insertAt` / `removeAt` / `setAt`
+  // bounds-check before they build the fresh array. They are statement-shape,
+  // so the two bodies that reach them are a transition (`Unchanged`) and an
+  // `enrich` (refused — see above).
+  assert_true(
+    body("receive dropOne { .history.deleteAt .count }").contains(
+      "guard at >= 0 && at < s.history.length() else { return Unchanged }",
+    ),
+  )
+  let e = out_values("enrich row { .history.deleteAt .count }", enriches=["row"])
+  assert_eq(e.answers_enriches, [])
+  assert_eq(e.refusals.map(r => r.name), ["row"])
+}
+
+///|
 test "negation is emitted as `!`, which is the spelling moonc does not deprecate" {
   // `not(x)` warns — "Use !expr instead" — and a generated file must not be
   // the thing that warns, let alone the thing that fails a --deny-warn build

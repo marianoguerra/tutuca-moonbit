@@ -146,3 +146,75 @@ test "the channel tells a refused click apart from one that did nothing" {
   assert_eq(refused.map(r => r.to_line()), ["NO_HANDLER at `nope`"])
   inspect(h.text(".stat-value"), content="1")
 }
+
+///|
+/// The gated component: a view whose ROOT element carries the `@show`, so a
+/// hidden state renders nothing at all — the whole tree drops out, not just a
+/// subtree of it.
+priv struct GateState {
+  on : Bool
+}
+
+///|
+impl @component.Fields for GateState with fn encode(s) {
+  { "on": Bool(s.on) }
+}
+
+///|
+impl @component.Fields for GateState with fn decode(f) {
+  guard f.get("on") is Some(Bool(v)) else { return None }
+  Some({ on: v })
+}
+
+///|
+impl @component.Fields for GateState with fn schema() {
+  @component.SchemaInfo::new(
+    fingerprint="harness-gate",
+    fields=[@component.FieldInfo::new("on", TyBool)],
+    view_handlers=["hide", "show"],
+    view_names=["main"],
+  )
+}
+
+///|
+fn gate_module() -> @component.ModuleDef {
+  let comp = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="gate" @show=".on">
+          #|  <button class="hide" @on.click="hide">hide</button>
+          #|  <span class="label">visible</span>
+          #|</div>
+        ),
+      ),
+    },
+    name="Gate",
+    init=GateState::{ on: true },
+    update=(_s : GateState, msg, _ctx) => {
+      match msg {
+        Receive("hide", _) => Next(({ on: false } : GateState))
+        Receive("show", _) => Next(({ on: true } : GateState))
+        _ => Unhandled
+      }
+    },
+  )
+  @component.ModuleDef::new(name="gate", components=[comp])
+}
+
+///|
+test "a root whose view renders nothing takes its DOM with it" {
+  // Regression: a pass where render_root answered None used to leave the
+  // mount point untouched — a component whose root element an `@show` omitted
+  // kept its previous DOM standing, which read exactly like a handler that
+  // had stopped answering.
+  let h = @harness.mount(gate_module(), "Gate")
+  assert_true(h.html().contains("visible"))
+  h.click(".hide")
+  assert_false(h.html().contains("visible"))
+  // And the mount point still works after an empty pass: showing again
+  // renders fresh rather than morphing against a stale result.
+  h.send_at_root("show")
+  assert_true(h.html().contains("visible"))
+}

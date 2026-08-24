@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **A `compute` or `pred` containing `/` or `mod` compiled into a module that
+  did not build.** The MoonBit emitter emitted the divide-by-zero guard as
+  `return Unchanged` — an `Update` constructor — regardless of what the body
+  returns, so a value body carried an `Unchanged` where a `Value` (or a
+  `Bool`) was wanted. The guard now leaves through the ROLE's answer:
+  `Unchanged` in a transition, `Null` for a `compute`, `false` for a `@when`.
+  The bounds-checked collection methods (`insertAt` / `removeAt` /
+  `deleteAt` / `setAt`) had the same defect and get the same fix. An `enrich`
+  cannot leave early without keeping its earlier writes, so those constructs
+  are REFUSED there at generation time with the reason named, on the same rule
+  that already refused opaque coercions in enrichers.
+  (`tscript/emit_mbt/emit.mbt`, regression tests in
+  `tscript/emit_mbt/emit_test.mbt`.)
+
+- **A component whose view root is omitted by `@show`/`@hide` left stale DOM
+  when it was the thing being patched.** When `render_root` answered None —
+  the whole tree dropped out — `App::render_now` did nothing, leaving the
+  previous render standing and `prev` pointing at it; the next non-empty pass
+  then morphed against DOM that no longer matched the container. The mount
+  point is now unmounted and `prev` reset, so a hidden component goes away and
+  re-shows fresh.
+  (`app/loop.mbt`, regression test "a root whose view renders nothing takes
+  its DOM with it" in `testing/harness/harness_test.mbt`.)
+
 ## [0.28.0] - 2026-08-24
 
 ### Changed
