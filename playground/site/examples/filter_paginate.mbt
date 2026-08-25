@@ -93,7 +93,7 @@ fn fp_only_matches() -> Map[
   (NaivePeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
 ] {
   {
-    "onlyMatches": (s, _key, person, _iter) => fp_matches(person, s.query),
+    "onlyMatches": (s, _key, person, _iter, _stack) => fp_matches(person, s.query),
   }
 }
 
@@ -137,10 +137,10 @@ fn naive_people_comp() -> @component.Component {
     update=fp_update(),
     when=w => match w {
       OnlyMatches =>
-        Some((s, _key, person, _iter) => fp_matches(person, s.query))
+        Some((s, _key, person, _iter, _stack) => fp_matches(person, s.query))
     },
     enrich_scope=e => match e {
-      PagerInfo => Some(s => fp_pager_info(s))
+      PagerInfo => Some((s, _stack) => fp_pager_info(s))
     },
     loop_with=l => match l {
       TablePage =>
@@ -174,7 +174,7 @@ fn shared_people_comp() -> @component.Component {
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     when=fp_only_matches(),
-    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
+    enrich_scope={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
     loop_with={
       "page": (s, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {

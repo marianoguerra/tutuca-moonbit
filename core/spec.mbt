@@ -204,6 +204,19 @@ pub(open) trait Obj {
   // leaf-UPDATING handler in a dispatch bucket — different question, different
   // answer.
   fn obj_callable(Self, name : String, ns : HandlerNamespace) -> Value? = _
+  // The two above, asked WITH the stack they are being asked from.
+  //
+  // A `Value::Fn` carries `(Array[Value]) -> Value` and nothing else, so a
+  // body that reads `*name` — a `compute`, a `pred`, a `@when`, an `enrich` —
+  // has no way to ask its environment anything. These are the one seam that
+  // hands it one, and they exist as a PAIR because the two questions already
+  // are one: `obj_field` surfaces a `$compute` as a pre-bound Fn and
+  // `obj_callable` does the same for the render-time buckets.
+  //
+  // Defaulted to the stackless answer, so an `Obj` with nothing to do with a
+  // stack — every hand-written one — implements neither and keeps working.
+  fn obj_method_at(Self, name : String, stack : &Stack) -> Value? = _
+  fn obj_callable_at(Self, name : String, ns : HandlerNamespace, stack : &Stack) -> Value? = _
   fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
   // What this instance DECLARES: the one method that makes the nine above
   // describable. Without it a holder of a bare `Value` can ask for a NAMED
@@ -285,6 +298,18 @@ impl Obj with fn obj_seq_entries(_self) {
 ///|
 impl Obj with fn obj_callable(_self, _name, _ns) {
   None
+}
+
+///|
+/// The stack is what an implementer may WANT; not wanting it is the common
+/// case, so the default is the question asked without it.
+impl Obj with fn obj_method_at(self, name, _stack) {
+  self.obj_field(name)
+}
+
+///|
+impl Obj with fn obj_callable_at(self, name, ns, _stack) {
+  self.obj_callable(name, ns)
 }
 
 ///|

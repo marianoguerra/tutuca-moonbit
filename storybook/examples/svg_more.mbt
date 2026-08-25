@@ -45,7 +45,7 @@ fn bar_chart_comp() -> @component.Component {
       match e {
         // per bar: index + value -> pixel geometry
         Bar =>
-          Some((_s, binds, key, value, iter) => {
+          Some((_s, binds, key, value, iter, _stack) => {
             match (key, value, iter) {
               (Num(k), Num(v), Map(idata)) => {
                 let step = num_of(idata.get("step"), 0.0)

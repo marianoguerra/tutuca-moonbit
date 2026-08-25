@@ -37,6 +37,20 @@ priv struct E {
   /// transitions names the parameter `_ctx`, because a generated file must not
   /// be the thing that warns.
   mut uses_ctx : Bool
+  /// Whether THIS body reached for the render stack — a `*name`, or a sibling
+  /// call that may contain one.
+  ///
+  /// Per BODY, unlike `uses_ctx`, which names one parameter of the ONE
+  /// transition function every arm shares. Treating the two as one flag is
+  /// half of why a `*name` in a value body used to emit a free `ctx`.
+  mut uses_stack : Bool
+  /// Which function is being written: a transition, which is handed a
+  /// `&@tutuca.Ctx`, or one of the four value bodies, which are handed the
+  /// state and the row and a `&@tutuca.Stack`.
+  ///
+  /// Not derivable from `fail` or `leave`: `fail` is "" for the enrich roles
+  /// AND for a transition, so it says something else.
+  mut in_value_body : Bool
   /// `@name` -> the MoonBit expression that reads it, for the bodies that have
   /// bindings at all. A `@when` gets the loop's three; an `enrich` gets those
   /// plus whatever it has written into the binds map.
@@ -132,6 +146,8 @@ pub fn emit(
     params: Map([]),
     prelude: [],
     uses_ctx: false,
+    uses_stack: false,
+    in_value_body: false,
     binds: Map([]),
     binds_map: "",
     fail: "",
@@ -372,6 +388,10 @@ fn E::value_body(
   self.guards = Map([])
   // A target belongs to the body that built it, here as everywhere else.
   self.target = None
+  // Which function this is, and what it has asked of it so far. Both per
+  // BODY: the four signatures below carry a `&@tutuca.Stack` and no `ctx`.
+  self.in_value_body = true
+  self.uses_stack = false
   // What "this value is not that shape" answers, per role. The interpreter
   // answers None and the caller reads it as nothing happened; these are the
   // same statement in each signature.
@@ -398,13 +418,12 @@ fn E::value_body(
   // when no `.field` appears in it.
   let s_used = decl_reads_state(d) || self.decl_calls_sibling(d)
   let sp = if s_used { "s" } else { "_s" }
-  let b = StringBuilder::new()
-  b.write_string("///|\n")
-  b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
-  b.write_string(
-    "`<script type=\"tutuca/script\">` block. GENERATED — edit\n",
-  )
-  b.write_string("/// the block, not this.\n")
+  // The BODY first, the header after. Whether this function needs its `stack`
+  // parameter is only known once the body has been compiled — a `*name` sets
+  // it, and so does a sibling call that may contain one — and a generated file
+  // must not be the thing that warns about an unused parameter.
+  let body = StringBuilder::new()
+  let params : Array[String] = [sp + " : " + self.state_ty]
   match role {
     RMethod => {
       // The arguments a `$name` call site passes. Their types are not known
@@ -412,53 +431,74 @@ fn E::value_body(
       // and a typed use of one is refused exactly as it is in an `on` handler
       // the views call inconsistently.
       let args_used = d.params.length() > 0 && decl_reads_params(d)
-      b.write_string(
-        "fn \{name}(\{sp} : \{self.state_ty}, \{if args_used { "args" } else { "_args" }} : Array[@tutuca.Value]) -> @tutuca.Value {\n",
+      params.push(
+        "\{if args_used { "args" } else { "_args" }} : Array[@tutuca.Value]",
       )
       for i, prm in d.params {
         self.params[prm.name] = None
         if decl_reads_name(d, prm.name) {
-          b.write_string("  let \{prm.name} = args.get(\{i}).unwrap_or(Null)\n")
+          body.write_string(
+            "  let \{prm.name} = args.get(\{i}).unwrap_or(Null)\n",
+          )
         }
       }
       let (src, ty) = self.value_of_body(d)
-      b.write_string(self.flush("  "))
-      b.write_string("  \{self.value_of(src, ty)}\n}\n\n")
+      body.write_string(self.flush("  "))
+      body.write_string("  \{self.value_of(src, ty)}\n")
     }
     RWhen => {
       // The loop's own three, as the renderer passes them. `iterData` is the
       // one a body reads least, and every one of them is named with the
       // underscore when it is not read at all.
       let (kp, vp, ip) = self.bind_params(d)
-      b.write_string(
-        "fn \{name}(\{sp} : \{self.state_ty}, \{kp} : @tutuca.Value, \{vp} : @tutuca.Value, \{ip} : @tutuca.Value) -> Bool {\n",
-      )
+      params.push("\{kp} : @tutuca.Value")
+      params.push("\{vp} : @tutuca.Value")
+      params.push("\{ip} : @tutuca.Value")
       guard d.body is Value(e) else {
         raise Cannot("a `@when` is one expression, not statements")
       }
       let cond = self.at_bool(e)
-      b.write_string(self.flush("  "))
-      b.write_string("  \{cond}\n}\n\n")
+      body.write_string(self.flush("  "))
+      body.write_string("  \{cond}\n")
     }
     REnrich => {
       let (kp, vp, ip) = self.bind_params(d)
       self.binds_map = "binds"
-      b.write_string(
-        "fn \{name}(\{sp} : \{self.state_ty}, binds : Map[String, @tutuca.Value], \{kp} : @tutuca.Value, \{vp} : @tutuca.Value, \{ip} : @tutuca.Value) -> Unit {\n",
-      )
-      b.write_string(self.enrich_stmts(d, "  "))
-      b.write_string("}\n\n")
+      params.push("binds : Map[String, @tutuca.Value]")
+      params.push("\{kp} : @tutuca.Value")
+      params.push("\{vp} : @tutuca.Value")
+      params.push("\{ip} : @tutuca.Value")
+      body.write_string(self.enrich_stmts(d, "  "))
     }
     REnrichScope => {
       self.binds_map = "binds"
-      b.write_string(
-        "fn \{name}(\{sp} : \{self.state_ty}) -> Map[String, @tutuca.Value] {\n",
-      )
-      b.write_string("  let binds : Map[String, @tutuca.Value] = Map([])\n")
-      b.write_string(self.enrich_stmts(d, "  "))
-      b.write_string("  binds\n}\n\n")
+      body.write_string("  let binds : Map[String, @tutuca.Value] = Map([])\n")
+      body.write_string(self.enrich_stmts(d, "  "))
+      body.write_string("  binds\n")
     }
   }
+  // The environment, last in every role. A value body is called BY the render
+  // stack, and `*name` is the one question it has for it — so the parameter is
+  // there whether or not this body asks, and named `_stack` when it does not.
+  params.push(
+    "\{if self.uses_stack { "stack" } else { "_stack" }} : &@tutuca.Stack",
+  )
+  let ret = match role {
+    RMethod => "@tutuca.Value"
+    RWhen => "Bool"
+    REnrich => "Unit"
+    REnrichScope => "Map[String, @tutuca.Value]"
+  }
+  let b = StringBuilder::new()
+  b.write_string("///|\n")
+  b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
+  b.write_string(
+    "`<script type=\"tutuca/script\">` block. GENERATED — edit\n",
+  )
+  b.write_string("/// the block, not this.\n")
+  b.write_string("fn \{name}(\{params.join(", ")}) -> \{ret} {\n")
+  b.write_string(body.to_string())
+  b.write_string("}\n\n")
   b.to_string()
 }
 
@@ -557,6 +597,10 @@ fn E::arm(
   // A target belongs to the body that built it: an arm never starts holding
   // one the arm above it left behind.
   self.target = None
+  // An arm is written into the shared transition function, which is handed a
+  // `&@tutuca.Ctx`. Stated rather than inherited: leaving it implicit is what
+  // let a value body emit `ctx.lookup` into a signature that had no `ctx`.
+  self.in_value_body = false
   let b = StringBuilder::new()
   // `_args` when the declaration takes none: a generated file must not be the
   // thing that warns.
@@ -781,7 +825,7 @@ fn expr_uses(e : @tscript.Expr, name : String) -> Bool {
   match e {
     EName(name=n, ..) => n == name
     ERead(place~, ..) | ERef(place~, ..) => place_uses(place, name)
-    ELit(..) | EMethod(..) | EDyn(..) => false
+    ELit(..) | EMethod(..) | EDyn(..) | EMacroVar(..) | EConfigVar(..) => false
     ETpl(parts~, ..) =>
       parts.iter().any(p => p is TExpr(inner) && expr_uses(inner, name))
     EUnary(operand~, ..) => expr_uses(operand, name)
@@ -1368,6 +1412,40 @@ fn intent_opts(route : Array[@tutuca.Leg], outcomes : String?) -> String {
 }
 
 ///|
+/// The stack a sibling call is handed: this body's own parameter, or the
+/// handler-side twin built from `ctx`.
+///
+/// One `lookup_dynamic` seam, two producers — the render chain a view is being
+/// built on, and the dispatch route a handler is already standing on. A
+/// `NullStack` here instead would make `$dark` answer one thing in a `@show`
+/// and another in the `receive` beside it, silently.
+fn E::stack_arg(self : E) -> String {
+  if self.in_value_body {
+    self.uses_stack = true
+    "stack"
+  } else {
+    self.uses_ctx = true
+    "@tutuca.CtxStack(ctx)"
+  }
+}
+
+///|
+/// The `ctx` a dispatch-time construct needs, or a refusal naming the body
+/// that is not handed one.
+///
+/// The twin of `leave_token`: a construct that needs something the SIGNATURE
+/// does not carry is refused at generation time, by name, rather than emitted
+/// as source that does not build.
+fn E::needs_ctx(self : E, what : String) -> Unit raise NoWay {
+  guard !self.in_value_body else {
+    raise Cannot(
+      "`\{what}` is a dispatch-time effect, and a `compute`, a `pred`, a `@when` and an `enrich` all run while the view is being BUILT — there is no message in flight for one to answer. Raise it from the transition instead",
+    )
+  }
+  self.uses_ctx = true
+}
+
+///|
 fn E::effect(
   self : E,
   name : String,
@@ -1375,7 +1453,7 @@ fn E::effect(
   route : Array[@tutuca.Leg],
   pad : String,
 ) -> String raise NoWay {
-  self.uses_ctx = true
+  self.needs_ctx(name)
   if name == "stop" {
     return "\{pad}effects.push(() => ctx.stop_propagation())\n"
   }
@@ -1660,7 +1738,7 @@ fn E::expr(
       // spelling a body uses, since `$name` belongs to the render stack. The
       // answer is a `@tutuca.Value`, which is what a method returns.
       if !self.params.contains(name) && self.callables.get(name) is Some(f) {
-        return ("\{f}(s, [])", TAny)
+        return ("\{f}(s, [], \{self.stack_arg()})", TAny)
       }
       guard self.params.get(name) is Some(ty) else {
         raise Cannot(
@@ -1717,10 +1795,30 @@ fn E::expr(
     // Opaque (`TAny`) because a dynamic binding is not in the schema and its
     // type is nobody's to state — which puts it on the same footing as an
     // event argument, and through the same guard when a type is wanted.
-    EDyn(name~, ..) => {
-      self.uses_ctx = true
-      ("ctx.lookup(\{quote(name)}, @tutuca.LookupOpts::new())", TAny)
-    }
+    EDyn(name~, ..) =>
+      if self.in_value_body {
+        // A value body is called BY the render stack, so the stack is what
+        // answers — and `stack.lookup_dynamic` is literally the call the
+        // interpreter makes for a `Val::Dyn` in a slot
+        // (`core/value_eval.mbt`), so the two backends answer one question one
+        // way rather than by a table kept in sync.
+        self.uses_stack = true
+        ("stack.lookup_dynamic(\{quote(name)})", TAny)
+      } else {
+        self.uses_ctx = true
+        ("ctx.lookup(\{quote(name)}, @tutuca.LookupOpts::new())", TAny)
+      }
+    // Unreachable behind the checker, which refuses both by name — kept
+    // because an emitter that would otherwise emit nothing is the wrong place
+    // to learn that a pass upstream was skipped.
+    EMacroVar(name~, ..) =>
+      raise Cannot(
+        "`^\{name}` is a macro argument, and a block has no macro slots: it is compiled once for the component rather than expanded at a call site",
+      )
+    EConfigVar(name~, ..) =>
+      raise Cannot(
+        "`$$\{name}` is a value the host bound, and a block is compiled ahead of any host",
+      )
     ERef(..) => raise Cannot("a place is not a value")
   }
 }
@@ -2025,7 +2123,7 @@ fn E::app(
         for a in args {
           vals.push(self.as_value(a))
         }
-        return ("\{f}(s, [\{vals.join(", ")}])", TAny)
+        return ("\{f}(s, [\{vals.join(", ")}], \{self.stack_arg()})", TAny)
       }
       raise Cannot(
         "`\{name}` applied to \{args.length()} argument(s) is not compiled yet — write the handler in MoonBit",

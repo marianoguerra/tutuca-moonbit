@@ -187,6 +187,7 @@ fn bar_chart_inline_update(
 fn bar_chart_compute_hasRoom(
   s : BarChartState,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   (Bool(s.values.length().to_double() < 9.0) : @tutuca.Value)
 }
@@ -197,6 +198,7 @@ fn bar_chart_compute_hasRoom(
 fn bar_chart_compute_hasSpare(
   s : BarChartState,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   (Bool(s.values.length().to_double() > 1.0) : @tutuca.Value)
 }
@@ -206,7 +208,7 @@ fn bar_chart_compute_hasSpare(
 /// GENERATED — edit the block, not this.
 fn bar_chart_inline_compute() -> Map[
   String,
-  (BarChartState, Array[@tutuca.Value]) -> @tutuca.Value,
+  (BarChartState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
 ] {
   {
     "hasRoom": bar_chart_compute_hasRoom,
@@ -244,6 +246,7 @@ pub fn bar_chart_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   loop_with? : (BarChartLoopWith) -> ((
     BarChartState,

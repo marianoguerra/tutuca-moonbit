@@ -40,6 +40,24 @@ Inside the macro body, `^param` reads a parameter. Static attributes
 take the same value forms as any binding — see *Quoting & String
 Literals* in [core.md](./core.md) for the literal-vs-template rules.
 
+A `^param` is a value like any other, so it also works inside a conditional
+slot's expression — this is the `macro:row` idiom:
+
+```html
+<template id="macro:row" data-value="''" data-label="''">
+  <div class="row" @hide="empty? ^value">
+    <span class="k" @text="^label"></span>
+    <b class="v" @text="^value"></b>
+  </div>
+</template>
+```
+
+It has to expand to a single token, which is already the rule everywhere `^` is
+written. A `<script type="tutuca/script">` block cannot write `^param` at all:
+a block is parsed once for the component rather than once per call site, so
+there is no frame to substitute from — pass the value in as a handler argument
+or read it as a field.
+
 Macro params are substituted as **source text**, so a handler name or a
 loop binding threads straight through — the `^handler ^arg` indirection:
 

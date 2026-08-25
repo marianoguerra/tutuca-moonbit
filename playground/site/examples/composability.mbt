@@ -52,7 +52,7 @@ fn cx_tree_item_comp() -> @component.Component {
     },
     compute=m => match m {
       AreChildsVisible =>
-        Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
+        Some((s, _args, _stack) => Bool(s.isOpen && s.items.length() > 0))
     },
     // a raw `match msg`: an Intent arrives because a walk routed here, so the
     // views cannot declare it and TreeItemMsg cannot type it

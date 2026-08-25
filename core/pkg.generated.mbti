@@ -61,6 +61,9 @@ pub struct Builtin {
   apply : (Array[Value]) -> Value
 }
 
+pub struct CtxStack(&Ctx)
+pub impl Stack for CtxStack
+
 pub(all) struct DispatchPath {
   items : Array[DispatchStep]
 } derive(Eq, @debug.Debug)
@@ -323,6 +326,7 @@ pub fn Value::bool(Self, default? : Bool) -> Bool
 pub fn Value::bool_opt(Self) -> Bool?
 pub fn Value::call(Self, Array[Self], this? : Self) -> Self
 pub fn Value::call_field(Self, String, Array[Self]) -> Self
+pub fn Value::callable_at(Self, String, HandlerNamespace, &Stack) -> Self?
 pub fn Value::entries(Self) -> Array[(PathKey, Self)]
 pub fn Value::field(Self, String) -> Self
 pub fn Value::field_info(Self, String) -> FieldInfo?
@@ -343,6 +347,7 @@ pub fn Value::list(Self) -> Array[Self]
 pub fn Value::list_opt(Self) -> Array[Self]?
 pub fn Value::map(Self) -> Map[String, Self]
 pub fn Value::map_opt(Self) -> Map[String, Self]?
+pub fn Value::method_at(Self, String, &Stack) -> Self?
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
 pub fn Value::schema(Self) -> SchemaInfo?
@@ -404,6 +409,8 @@ pub(open) trait Obj {
   fn obj_with_item(Self, PathKey, Value) -> Value? = _
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
   fn obj_callable(Self, String, HandlerNamespace) -> Value? = _
+  fn obj_method_at(Self, String, &Stack) -> Value? = _
+  fn obj_callable_at(Self, String, HandlerNamespace, &Stack) -> Value? = _
   fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
   fn obj_schema(Self) -> SchemaInfo? = _
   fn obj_size(Self) -> Int? = _

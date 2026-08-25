@@ -131,7 +131,11 @@ pub fn json_boolean_component(
   update? : (JsonBooleanState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonBooleanState,
   ],
-  compute? : (JsonBooleanMethod) -> ((JsonBooleanState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (JsonBooleanMethod) -> ((
+    JsonBooleanState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -204,7 +208,11 @@ pub fn json_number_component(
   update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonNumberState,
   ],
-  compute? : (JsonNumberMethod) -> ((JsonNumberState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (JsonNumberMethod) -> ((
+    JsonNumberState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -278,7 +286,11 @@ pub fn json_string_component(
   update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonStringState,
   ],
-  compute? : (JsonStringMethod) -> ((JsonStringState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (JsonStringMethod) -> ((
+    JsonStringState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -563,7 +575,11 @@ pub fn json_array_component(
   update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonArrayState,
   ],
-  compute? : (JsonArrayMethod) -> ((JsonArrayState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (JsonArrayMethod) -> ((
+    JsonArrayState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (JsonArrayInput) -> ((
     JsonArrayState,
     Array[@tutuca.Value],
@@ -759,7 +775,11 @@ pub fn json_object_component(
   update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     JsonObjectState,
   ],
-  compute? : (JsonObjectMethod) -> ((JsonObjectState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (JsonObjectMethod) -> ((
+    JsonObjectState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (JsonObjectInput) -> ((
     JsonObjectState,
     Array[@tutuca.Value],

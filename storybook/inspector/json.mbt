@@ -125,6 +125,7 @@ fn[S : Composite] has_pagination(s : S) -> Bool {
 fn[S : Composite] composite_arrow_text(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   Str(if s.is_expanded() { "▼" } else { "▶" })
 }
@@ -133,6 +134,7 @@ fn[S : Composite] composite_arrow_text(
 fn[S : Composite] composite_is_items_empty(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   Bool(s.items().length() == 0)
 }
@@ -141,6 +143,7 @@ fn[S : Composite] composite_is_items_empty(
 fn[S : Composite] composite_show_pagination(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   Bool(s.is_expanded() && has_pagination(s))
 }
@@ -149,6 +152,7 @@ fn[S : Composite] composite_show_pagination(
 fn[S : Composite] composite_cannot_prev_page(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   Bool(s.current_page() <= 0)
 }
@@ -157,6 +161,7 @@ fn[S : Composite] composite_cannot_prev_page(
 fn[S : Composite] composite_cannot_next_page(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   Bool(s.current_page() >= page_count_of(s) - 1)
 }
@@ -165,6 +170,7 @@ fn[S : Composite] composite_cannot_next_page(
 fn[S : Composite] composite_page_indicator_text(
   s : S,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   let cur = s.current_page() + 1
   Str("\{cur} / \{page_count_of(s)}")
@@ -232,9 +238,10 @@ fn json_null_comp() -> @component.Component {
 fn json_boolean_comp() -> @component.Component {
   json_boolean_component(compute=m => {
     match m {
-      Text => Some((s, _args) => Str(if s.value { "true" } else { "false" }))
+      Text =>
+        Some((s, _args, _stack) => Str(if s.value { "true" } else { "false" }))
       CssClass =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           let color = if s.value { "text-success" } else { "text-warning" }
           Str("font-mono text-sm leading-tight json-boolean \{color}")
         })
@@ -247,7 +254,7 @@ fn json_number_comp() -> @component.Component {
   json_number_component(compute=m => {
     match m {
       Text =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           Str((Num(s.value) : @tutuca.Value).to_display_string())
         })
     }
@@ -277,7 +284,7 @@ fn json_quote(s : String) -> String {
 fn json_string_comp() -> @component.Component {
   json_string_component(compute=m => {
     match m {
-      Text => Some((s, _args) => Str(json_quote(s.value)))
+      Text => Some((s, _args, _stack) => Str(json_quote(s.value)))
     }
   })
 }
@@ -312,8 +319,8 @@ fn json_array_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((_s, _args) => Str("Array"))
-        CountText => Some((s, _args) => Str("(\{s.items.length()})"))
+        TypeText => Some((_s, _args, _stack) => Str("Array"))
+        CountText => Some((s, _args, _stack) => Str("(\{s.items.length()})"))
       }
     },
     loop_with=l => {
@@ -337,8 +344,8 @@ fn json_object_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((_s, _args) => Str("Object"))
-        CountText => Some((s, _args) => Str("{\{s.items.length()}}"))
+        TypeText => Some((_s, _args, _stack) => Str("Object"))
+        CountText => Some((s, _args, _stack) => Str("{\{s.items.length()}}"))
       }
     },
     loop_with=l => {

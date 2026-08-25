@@ -179,7 +179,7 @@ fn ps_entry_comp() -> @component.Component {
       // Entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
       EnrichCategoryBadge =>
-        Some((_s, binds, _key, value, _iter) => match value {
+        Some((_s, binds, _key, value, _iter, _stack) => match value {
           Str(cat) =>
             binds["badgeClass"] = Str(
               "badge badge-sm \{ps_category_color(cat, true)} cat",
@@ -201,14 +201,14 @@ fn ps_entry_comp() -> @component.Component {
     },
     compute=m => match m {
       LangFlag =>
-        Some((s, _args) => if s.lang == "es" {
+        Some((s, _args, _stack) => if s.lang == "es" {
           Str("🇪🇸")
         } else {
           Str("🇬🇧")
         })
-      IsSpanish => Some((s, _args) => Bool(s.lang == "es"))
+      IsSpanish => Some((s, _args, _stack) => Bool(s.lang == "es"))
       YearDisplay =>
-        Some((s, _args) => match s.startYear {
+        Some((s, _args, _stack) => match s.startYear {
           Num(start) =>
             match s.endYear {
               Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
@@ -291,12 +291,12 @@ fn root_comp() -> @component.Component {
       ),
     },
     when={
-      "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(s, e),
+      "filterEntry": (s : RootState, _key, e, _iter, _stack) => ps_filter_entry(s, e),
     },
     enrich={
       // The badge classes compose `btn btn-xs border-0` with the category
       // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => match value {
+      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
             binds["isSelected"] = Bool(selected)
@@ -310,7 +310,7 @@ fn root_comp() -> @component.Component {
       // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
       // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => match value {
+      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter, _stack) => match value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
             binds["btnClass"] = Str(

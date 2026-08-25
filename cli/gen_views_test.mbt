@@ -342,3 +342,111 @@ test "a clean view produces no diagnostics" {
   guard! r is Ok(plan)
   assert_eq(plan.diagnostics, [])
 }
+
+///|
+test "a batch names every file that failed, and writes none of them" {
+  // The defect this covers: `gen-views src/` returned on the FIRST bad file, so
+  // a directory with three problems took three builds to even see the three —
+  // and wrote nothing in the meantime, including for the files that had
+  // already compiled.
+  let r = @cli.gen_views_all(
+    [
+      {
+        input: "views/a.html",
+        target: "views/a_view_gen.mbt",
+        name: "A",
+        source: "<div @nope=\".x\"></div>",
+      },
+      {
+        input: "views/b.html",
+        target: "views/b_view_gen.mbt",
+        name: "B",
+        source: "<button @on.click=\"go\">x</button>",
+      },
+      {
+        input: "views/c.html",
+        target: "views/c_view_gen.mbt",
+        name: "C",
+        source: "<div @nor=\".y\"></div>",
+      },
+    ],
+    ir=false,
+  )
+  guard! r is Err(shape)
+  inspect(shape.code, content="ERR_VIEW_GEN_FAILED")
+  // No single place to name, so `where_` claims none.
+  assert_true(shape.where_ is None)
+  assert_true(
+    shape.message.has_prefix(
+      "2 of 3 view files failed to generate; nothing was written\n",
+    ),
+  )
+  assert_true(shape.message.contains("  views/a.html: "))
+  assert_true(shape.message.contains("  views/c.html: "))
+  // The file that DID compile is not in the message — and there is no plan to
+  // write it from, which is the atomicity half.
+  assert_true(!shape.message.contains("views/b.html"))
+}
+
+///|
+test "one failing file in a batch still reads as one file" {
+  // `where_` has one slot, so it says something only when there is one thing
+  // to say — and then the message is what a single-file run has always given.
+  let r = @cli.gen_views_all(
+    [
+      {
+        input: "views/a.html",
+        target: "views/a_view_gen.mbt",
+        name: "A",
+        source: "<button @on.click=\"go\">x</button>",
+      },
+      {
+        input: "views/b.html",
+        target: "views/b_view_gen.mbt",
+        name: "B",
+        source: "<div @nope=\".x\"></div>",
+      },
+    ],
+    ir=false,
+  )
+  guard! r is Err(shape)
+  inspect(shape.where_, content="Some(views/b.html)")
+  inspect(
+    shape.message,
+    content=(
+      #|views/b.html: view "main": unknown directive '@nope=".x"' on <div>
+    ),
+  )
+}
+
+///|
+test "a file that does not split stops the batch before the emit pass" {
+  // A file that did not split is a hole in the component table, and the emit
+  // pass reads that table — so a cross-file reference below it would report a
+  // SECOND problem that is an artefact of the first. Split failures are
+  // answered on their own.
+  let r = @cli.gen_views_all(
+    [
+      {
+        input: "views/bad.html",
+        target: "views/bad_view_gen.mbt",
+        name: "Bad",
+        source: "<template id=\"macro:card\"><b>",
+      },
+      {
+        input: "views/uses.html",
+        target: "views/uses_view_gen.mbt",
+        name: "Uses",
+        source: "<x:card></x:card>",
+      },
+    ],
+    ir=false,
+  )
+  guard! r is Err(shape)
+  inspect(shape.code, content="ERR_VIEW_GEN_FAILED")
+  // The split failure, alone and named — `uses.html` split fine and was never
+  // emitted, so it says nothing about the macro the hole would have hidden.
+  inspect(shape.where_, content="Some(views/bad.html)")
+  assert_true(shape.message.contains("unclosed <template"))
+  assert_true(!shape.message.contains("views/uses.html"))
+}

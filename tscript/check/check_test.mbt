@@ -308,6 +308,29 @@ test "a binding is assignable only where bindings are produced" {
 // -- the render stack's sigils ----------------------------------------------
 
 ///|
+test "a substituted sigil in a block is refused, and says where it belongs" {
+  // One reason said two ways: a macro is expanded at a CALL SITE and a host
+  // binds its table before any of this is parsed, while a block is parsed once
+  // for the component. `parse_script` takes no context at all, which is that
+  // fact written into the signature — so `^title` here would read Null, and
+  // silently, which is the failure the refusal exists to prevent.
+  //
+  // The grammar accepts both, because a conditional slot is written in this
+  // same language and a slot DOES stand in a macro frame. That asymmetry is
+  // real and is why these two are not in the slot/block "refuse alike" corpus.
+  assert_eq(codes("compute a { ^title }"), ["NO_MACRO_FRAME"])
+  assert_eq(codes("compute a { $$origin }"), ["NO_CONFIG_FRAME"])
+  assert_eq(codes("pred p { empty? ^label }"), ["NO_MACRO_FRAME"])
+  assert_eq(codes("receive x { .name = $$origin }"), ["NO_CONFIG_FRAME"])
+  assert_true(
+    messages("compute a { ^title }")[0].contains("has no macro slots"),
+  )
+  assert_true(
+    messages("compute a { $$origin }")[0].contains("ahead of any host"),
+  )
+}
+
+///|
 test "a `$name` in a body is reported, and the message names the spelling that works" {
   // The trap this rule exists for: `$over` in a body is not a call, it is
   // Null — so the condition is false every time and nothing says so. The

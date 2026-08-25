@@ -56,14 +56,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
   Four things a body writes and a slot still cannot, each refused by name
   rather than by silence: a nested read, an `if` expression, arithmetic, and a
-  bare parameter. `^macro` and `$$config` are substituted whole and stay
-  single-token values — a `^name` re-parses the caller's source and marks the
-  result `from_macro`, which is what decides whether a constant may pin a URL
-  origin, and an expression that quietly lost the mark would be wrong in the
-  one place it matters.
+  bare parameter.
 
-  (`tscript/script_parse.mbt`, `tscript/parse.mbt`, `core/value_builtin.mbt`,
-  `core/value_eval.mbt`, `viewgen/surface.mbt`.)
+  `^macro` and `$$config` are **operands**, so `@hide="empty? ^label"`,
+  `@show="not ^collapsed"` and `@show="$$origin is 'x'"` all say what they
+  read. The grammar has a leaf for each and the substitution happens as the
+  value is lowered, through the same two functions the single-token path calls
+  — one meaning per sigil rather than two that resemble each other. A `^name`
+  expansion is still required to be exactly one token, which is what makes an
+  operand position safe: a single token cannot regroup the expression around
+  it. And `from_macro` rides on the `Const` rather than on the shape above it,
+  so an operator over one cannot lose the mark that decides whether a constant
+  may pin a URL origin (`dyncomp/policy/external_url.mbt`).
+
+  Inside a `<script>` block both are refused by name — `NO_MACRO_FRAME` and
+  `NO_CONFIG_FRAME`. A block is parsed once for the component, with no call
+  site and no host around it (`parse_script` takes no context at all), so a
+  `^title` there would read Null and say nothing. That asymmetry is why the two
+  are not in the slot/block "refuse alike" corpus: they parse in both and are
+  refused in one, and the difference is not grammatical.
+
+  (`tscript/script_spec.mbt`, `tscript/script_parse.mbt`,
+  `tscript/script_print.mbt`, `tscript/check/check.mbt`, `tscript/parse.mbt`,
+  `core/value_builtin.mbt`, `core/value_eval.mbt`, `viewgen/surface.mbt`.)
 
 - **`bad value 'not' in unknown predicate` is gone.** The role phrase was
   spliced in after "in", which reads as a place — and two of the roles are not
@@ -71,6 +86,59 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the rule nor the way out. `UnknownPredicate` and the new `BadExpression` now
   answer with a whole sentence: the vocabulary, or the block grammar's own
   message for what it refused.
+
+- **The four render-time buckets take a trailing `&@tutuca.Stack`.** `compute`,
+  `when`, `enrich` and `enrich_scope` — not `swap`, which answers a dispatch and
+  already carries a `&Ctx`, and not `loop_with`, which no value body compiles
+  into. This is a breaking change to `@component.component`: a hand-written
+  registration adds one `_stack` to each lambda, and `gen-views` writes the
+  parameter for every generated one, naming it `_stack` when the body asks the
+  stack nothing so a generated file is never the thing that warns.
+  (`component/component.mbt`, `component/spec.mbt`, `viewgen/emit_comp.mbt`.)
+
+### Fixed
+
+- **`*name` works in a `compute`, a `pred`, a `@when` and an `enrich`.** It
+  parsed, it checked, and it compiled — into a function body holding a free
+  `ctx`, so a block that read a dynamic binding from a value body produced a
+  module that did not build. `gen-views` said nothing, which made it worse than
+  a refusal: the same binding inside an application was turned down cleanly by
+  the argument-type guard, so it was refused one way and miscompiled the other.
+
+  The cause was a category error rather than a missing check. `ctx.lookup` is a
+  DISPATCH-time question and there is no dispatch in progress while a view is
+  being built — a value body is called BY the render stack, not beside it. So a
+  value body now takes a trailing `&@tutuca.Stack` and reads
+  `stack.lookup_dynamic(name)`, which is literally the call
+  `core/value_eval.mbt` makes for a `Val::Dyn` in a slot. The compiled and the
+  interpreted backends answer one question one way rather than by two tables
+  kept in step, and a `pred` reading `*theme` agrees with the `@text="*theme"`
+  next to it by construction.
+
+  A `compute` a TRANSITION calls as a sibling is the other caller, and it holds
+  a `&@tutuca.Ctx` instead — so it is handed `@tutuca.CtxStack(ctx)`, which
+  walks the intent's `dyn`/`lex` route and answers what a `*name` in this
+  component's view would. One seam, two producers.
+
+  `Value::Fn` carries `(Array[Value]) -> Value` and nothing else, so the stack
+  could not ride in on the existing convention: `@tutuca.Obj` gains
+  `obj_method_at` and `obj_callable_at`, both DEFAULTED to the stackless answer,
+  so every hand-written `Obj` keeps working untouched.
+  (`core/spec.mbt`, `core/ctx_stack.mbt`, `core/value_dyn.mbt`,
+  `render/stack.mbt`, `component/instance.mbt`, `tscript/emit_mbt/emit.mbt`.)
+
+- **`gen-views <dir>` names every file that failed, not the first one.** A batch
+  returned on the first bad file and wrote nothing — not even for the files that
+  had already compiled — so a directory with three problems took three builds to
+  even SEE the three. The run is still atomic, which is the half that was right:
+  the cross-file component table has to be complete or a reference into a file
+  that did not split reads as an absence, and a half-generated tree is the one
+  state nobody can reason about. What changed is that one run now says
+  everything. A single failure keeps the exact `[path] message` shape it has
+  always had, because `where_` has one slot and picking one of three failing
+  files to put in it would be a claim about the other two. A file that fails to
+  SPLIT still stops the batch before the emit pass, for the reason above.
+  (`cli/gen_views.mbt`.)
 
 ### Deprecated
 

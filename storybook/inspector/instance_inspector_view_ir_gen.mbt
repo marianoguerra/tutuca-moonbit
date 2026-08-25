@@ -151,6 +151,7 @@ pub fn instance_fields_component(
   compute? : (InstanceFieldsMethod) -> ((
     InstanceFieldsState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   swap? : (InstanceFieldsInput) -> ((
     InstanceFieldsState,

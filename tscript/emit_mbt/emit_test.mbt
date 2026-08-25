@@ -140,7 +140,7 @@ test "a compute and a pred compile into the functions the generator routes to" {
   assert_eq(e.refusals.map(r => r.name), [])
   assert_true(
     e.source.contains(
-      "fn counter_compute_over(s : CounterState, _args : Array[@tutuca.Value]) -> @tutuca.Value",
+      "fn counter_compute_over(s : CounterState, _args : Array[@tutuca.Value], _stack : &@tutuca.Stack) -> @tutuca.Value",
     ),
   )
   // A `pred` answers yes or no whatever its expression is, so the value that
@@ -161,7 +161,9 @@ test "one body calls another by name, which is how a body spells a callable" {
   )
   assert_eq(e.answers_methods, ["over", "label"])
   // The call, not a second copy of the rule.
-  assert_true(e.source.contains("counter_compute_over(s, []).is_truthy()"))
+  assert_true(
+    e.source.contains("counter_compute_over(s, [], stack).is_truthy()"),
+  )
 }
 
 ///|
@@ -175,7 +177,7 @@ test "a pred used as a @when is compiled again, with the row in scope" {
   assert_eq(e.answers_whens, ["matches"])
   assert_true(
     e.source.contains(
-      "fn counter_when_matches(s : CounterState, _key : @tutuca.Value, value : @tutuca.Value, _iter_data : @tutuca.Value) -> Bool",
+      "fn counter_when_matches(s : CounterState, _key : @tutuca.Value, value : @tutuca.Value, _iter_data : @tutuca.Value, _stack : &@tutuca.Stack) -> Bool",
     ),
   )
   // As a METHOD it cannot: a `$name` call site has no row to hand it, and
@@ -208,7 +210,7 @@ test "a scope enricher answers the map, since it is handed none" {
   assert_eq(e.answers_enrich_scopes, ["info"])
   assert_true(
     e.source.contains(
-      "fn counter_enrich_scope_info(s : CounterState) -> Map[String, @tutuca.Value]",
+      "fn counter_enrich_scope_info(s : CounterState, _stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
     ),
   )
   assert_true(e.source.contains("  binds\n"))
@@ -851,4 +853,110 @@ test "a sentence that would need a guard is dropped, and the record stands" {
     ),
   )
   assert_false(e.source.contains("sentence="))
+}
+
+// -- the render stack a value body is handed -------------------------------
+
+///|
+test "a `*name` in a value body reads the render stack" {
+  // The defect this covers: `pred picked { .title is *currentSectionTitle }`
+  // was accepted with no refusal and emitted `ctx.lookup(...)` into a function
+  // whose parameter list is `(s, args)` — so the generated module did not
+  // BUILD. The cause was a category error, not a missing check: `ctx` is a
+  // DISPATCH context and there is none while a view is being rendered.
+  //
+  // `stack.lookup_dynamic` is literally the call `core/value_eval.mbt` makes
+  // for a `Val::Dyn` in a slot, so the compiled and the interpreted backends
+  // answer one question one way rather than by two tables kept in step.
+  let e = out_values(
+    "pred picked { .label is *sectionTitle }",
+    methods=["picked"],
+    whens=["picked"],
+  )
+  assert_eq(e.refusals.map(r => r.name), [])
+  assert_eq(e.answers_methods, ["picked"])
+  assert_eq(e.answers_whens, ["picked"])
+  assert_true(e.source.contains("stack.lookup_dynamic(\"sectionTitle\")"))
+  // The regression proper: no free `ctx` anywhere in a value body.
+  assert_false(e.source.contains("ctx.lookup"))
+  // Both roles are handed one, and both name it, because they are one body.
+  assert_true(
+    e.source.contains(
+      "fn counter_compute_picked(s : CounterState, _args : Array[@tutuca.Value], stack : &@tutuca.Stack) -> @tutuca.Value",
+    ),
+  )
+  assert_true(
+    e.source.contains(
+      "fn counter_when_picked(s : CounterState, _key : @tutuca.Value, _value : @tutuca.Value, _iter_data : @tutuca.Value, stack : &@tutuca.Stack) -> Bool",
+    ),
+  )
+}
+
+///|
+test "a value body that asks the stack nothing names the parameter `_stack`" {
+  // A generated file must not be the thing that warns — the same rule `s`,
+  // `args` and the loop's three already follow.
+  assert_true(
+    out_values("compute two { 2 }", methods=["two"]).source.contains(
+      "fn counter_compute_two(_s : CounterState, _args : Array[@tutuca.Value], _stack : &@tutuca.Stack) -> @tutuca.Value",
+    ),
+  )
+}
+
+///|
+test "an enricher takes the stack too, in both its shapes" {
+  let e = out_values("enrich row { @t = *theme }", enriches=["row"])
+  assert_eq(e.refusals.map(r => r.name), [])
+  assert_true(
+    e.source.contains(
+      "binds : Map[String, @tutuca.Value], _key : @tutuca.Value, _value : @tutuca.Value, _iter_data : @tutuca.Value, stack : &@tutuca.Stack) -> Unit",
+    ),
+  )
+  assert_true(
+    out_values("enrichScope info { @t = *theme }", enrich_scopes=["info"]).source.contains(
+      "fn counter_enrich_scope_info(_s : CounterState, stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
+    ),
+  )
+}
+
+///|
+test "a transition still reads `*name` through its ctx, and names the parameter" {
+  // The half that always worked, pinned so the split above cannot quietly
+  // take it with it. A transition IS a dispatch, so `ctx.lookup` — which walks
+  // the intent's dyn/lex route from this handler's position — is the right
+  // question there.
+  // `.blob`, not `.label`: an opaque value at a TYPED field is refused in a
+  // transition on a different rule that predates this one, and the point here
+  // is the ctx, not that rule.
+  let e = out("receive rename(a, b) { .blob = *theme }")
+  assert_eq(e.refusals.map(r => r.why), [])
+  assert_true(e.source.contains("ctx.lookup(\"theme\""))
+  assert_true(e.source.contains("\n  ctx : &@tutuca.Ctx,\n"))
+  assert_false(e.source.contains("stack.lookup_dynamic"))
+}
+
+///|
+test "a sibling call carries the stack, and a transition builds one from its ctx" {
+  // One `lookup_dynamic` seam, two producers: the render chain a view is being
+  // built on, and the dispatch route a handler is already standing on. A
+  // `NullStack` here instead would make `$dark` answer one thing in a `@show`
+  // and another in the `receive` beside it, silently.
+  let e = out_values(
+    (
+      #|pred dark { *theme is 'dark' }
+      #|compute cls { if dark { 'a' } else { 'b' } }
+    ),
+    methods=["dark", "cls"],
+  )
+  assert_true(e.source.contains("counter_compute_dark(s, [], stack)"))
+  // The transition side of the same call: it holds a `&Ctx`, so it wears one.
+  assert_true(
+    out_values(
+      (
+        #|pred dark { *theme is 'dark' }
+        #|receive rename(a, b) { if dark { .count = 1 } }
+      ),
+      methods=["dark"],
+    ).source.contains("counter_compute_dark(s, [], @tutuca.CtxStack(ctx))"),
+  )
 }

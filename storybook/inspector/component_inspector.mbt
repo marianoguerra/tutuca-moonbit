@@ -123,7 +123,9 @@ fn comp_view_comp() -> @component.Component {
     compute=m => {
       match m {
         ArrowText =>
-          Some((s, _args) => Str(if s.isExpanded { "▼" } else { "▶" }))
+          Some((s, _args, _stack) => {
+            Str(if s.isExpanded { "▼" } else { "▶" })
+          })
       }
     },
     update=(s, msg, ctx) => {
@@ -187,8 +189,8 @@ fn comp_section_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.label))
-        CountText => Some((s, _args) => Str("(\{s.items.length()})"))
+        TypeText => Some((s, _args, _stack) => Str(s.label))
+        CountText => Some((s, _args, _stack) => Str("(\{s.items.length()})"))
       }
     },
     loop_with=l => {
@@ -259,7 +261,7 @@ fn component_inspector_comp() -> @component.Component {
   component_inspector_component(
     compute=m => {
       match m {
-        IdText => Some((s, _args) => Str("#\{s.compId}"))
+        IdText => Some((s, _args, _stack) => Str("#\{s.compId}"))
       }
     },
     update=(s, msg, _ctx) => {

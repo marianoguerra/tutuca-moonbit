@@ -143,8 +143,12 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_field_raw(self, name) {
 /// `$name` in value position is the RESULT of the no-arg method call, with
 /// the current item as `this` (Obj method Fns are pre-bound and drop it).
 pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {
-  match self.it.field(name) {
-    Fn(_) as f => call_handler(f, self.it, [])
+  // `method_at` rather than `field`: the pre-bound `Fn` a compute surfaces as
+  // carries arguments and nothing else, and a `compute` whose body reads
+  // `*name` has to be handed the stack it is being asked from. That stack is
+  // `self`.
+  match self.it.method_at(name, self) {
+    Some(Fn(_) as f) => call_handler(f, self.it, [])
     _ => Null
   }
 }
@@ -154,7 +158,10 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {
 /// bucket on instances, plain Fn fields on the Map fallback.
 pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
   match self.it {
-    Obj(o) => o.obj_callable(name, ns).unwrap_or(Null)
+    // The render-time twin of `lookup_method` above, and the stack is handed
+    // over for the same reason: a `@when` or an `enrich` reading `*name` is
+    // asking THIS position.
+    Obj(o) => o.obj_callable_at(name, ns, self).unwrap_or(Null)
     _ =>
       match self.it.field(name) {
         Fn(_) as f => f

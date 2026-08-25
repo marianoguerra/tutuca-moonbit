@@ -26,7 +26,7 @@ fn swatch_picker_comp() -> @component.Component {
       // lay each swatch out along a row and ring the selected one; the typed
       // state's current `color` field decides which ring shows
       Swatch =>
-        Some((s, binds, key, value, _iter) => {
+        Some((s, binds, key, value, _iter, _stack) => {
           match key {
             Num(k) => {
               binds["cx"] = Num(32.0 + k * 46.0)
@@ -67,9 +67,10 @@ fn quadratic_comp() -> @component.Component {
   quadratic_component(init={ a: 1, b: -3, c: 2 }, compute=m => {
     match m {
       // b² − 4ac decides how many real roots the equation has
-      Discriminant => Some((s, _args) => Num(discriminant_of(s).to_double()))
+      Discriminant =>
+        Some((s, _args, _stack) => Num(discriminant_of(s).to_double()))
       Classify =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           let d = discriminant_of(s)
           if d > 0 {
             Str("two distinct real roots")

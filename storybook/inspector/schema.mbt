@@ -278,7 +278,7 @@ fn schema_branch_comp() -> @component.Component {
     compute=m => {
       match m {
         LabelCssClass =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Str("font-mono text-sm schema-branch-label \{s.labelClass}")
           })
       }

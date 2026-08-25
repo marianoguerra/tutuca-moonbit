@@ -75,7 +75,11 @@ pub fn schema_viewer_component(
   update? : (SchemaViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaViewerState,
   ],
-  compute? : (SchemaViewerMethod) -> ((SchemaViewerState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaViewerMethod) -> ((
+    SchemaViewerState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (SchemaViewerInput) -> ((
     SchemaViewerState,
     Array[@tutuca.Value],

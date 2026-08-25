@@ -121,8 +121,14 @@ fn place_src(p : Place) -> String {
 /// operand position is written parenthesized or is not written at all.
 fn needs_parens(e : Expr) -> Bool {
   match e {
-    ELit(..) | ETpl(..) | ERead(..) | EMethod(..) | EDyn(..) | EName(..) =>
-      false
+    ELit(..)
+    | ETpl(..)
+    | ERead(..)
+    | EMethod(..)
+    | EDyn(..)
+    | EMacroVar(..)
+    | EConfigVar(..)
+    | EName(..) => false
     ERef(..) => false
     EApp(..) | EChain(..) | EUnary(..) | EIf(..) => true
   }
@@ -166,6 +172,8 @@ fn expr_src(e : Expr) -> String {
     ERead(place~, ..) => place_src(place)
     EMethod(name~, ..) => "$" + name
     EDyn(name~, ..) => "*" + name
+    EMacroVar(name~, ..) => "^" + name
+    EConfigVar(name~, ..) => "$$" + name
     EName(name~, ..) => name
     ERef(place~, ..) => "&" + place_src(place)
     EApp(name~, args~, ..) =>

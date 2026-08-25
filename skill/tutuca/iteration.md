@@ -52,17 +52,17 @@ wrapper types the lambdas, so no annotations are needed:
 // @when: (s, key, value, iterData) -> Bool — true keeps the item
 when=w => match w {
   FilterItem =>
-    Some((s, _key, value, _iter) => value
+    Some((s, _key, value, _iter, _stack) => value
       .str()
       .to_lower()
       .contains(s.query.to_lower())),
 },
-// @enrich-with (with @each): (s, binds, key, value, iterData) -> Unit
+// @enrich-with (with @each): (s, binds, key, value, iterData, stack) -> Unit
 // binds is a MUTABLE Map seeded { key, value } — write into it,
 // the return value is Unit
 enrich=e => match e {
   EnrichItem =>
-    Some((_s, binds, _key, value, _iter) => binds["count"] = Num(
+    Some((_s, binds, _key, value, _iter, _stack) => binds["count"] = Num(
       value.str().length().to_double(),
     )),
 },
@@ -157,7 +157,7 @@ For each render of an element with `@each=".items"`:
       returns `false`, the item is skipped. **Not applied** when the
       handler returned `keys` (those are authoritative).
    2. **`@enrich-with`** — called with
-      `(state, binds, key, value, iter_data)`. `binds` is a **mutable
+      `(state, binds, key, value, iter_data, stack)`. `binds` is a **mutable
       `Map[String, Value]`** seeded with `{ key, value }`; writing into
       it (`binds["count"] = …`) creates `@`-prefixed bindings available
       in the templated children. The return type is `Unit` (and

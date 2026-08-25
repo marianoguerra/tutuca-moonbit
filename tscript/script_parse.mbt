@@ -294,6 +294,8 @@ fn expr_span(e : Expr) -> Span {
     | ERead(span~, ..)
     | EMethod(span~, ..)
     | EDyn(span~, ..)
+    | EMacroVar(span~, ..)
+    | EConfigVar(span~, ..)
     | EName(span~, ..)
     | EApp(span~, ..)
     | EChain(span~, ..)
@@ -827,12 +829,14 @@ fn starts_attached_step(p : P) -> Bool {
 /// wants either takes parentheses — `clamp .x (-1) 5`, `len (*theme)` — which
 /// is the same rule as everywhere else precedence would be implicit.
 ///
-/// `^` is excluded because a macro variable inside a body is unexplored: `^x`
-/// substitutes SOURCE TEXT, and what that means for a body that reads state is
-/// an open question rather than something to answer by accident.
+/// `^` IS included. It substitutes the caller's source, which is required to
+/// be exactly one token, so an operand position is where it fits and grouping
+/// cannot change under it. Whether a BODY may write one is a different
+/// question with a different answer, and `tscript/check` is where it is asked
+/// — a block has no macro frame to substitute from.
 fn starts_argument(t : STok) -> Bool {
   match t {
-    TNum(_) | TStr(_) | TTpl(_) | TDot | TAt | TDollar => true
+    TNum(_) | TStr(_) | TTpl(_) | TDot | TAt | TDollar | TCaret => true
     TLParen => true
     TIdent(_) => true
     _ => false
@@ -939,10 +943,24 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
       let place = parse_place(p, for_ref=false)
       ERead(place~, span=place.span)
     }
-    TDollar => {
+    // `$name` and `$$name` are different questions of different things, and
+    // one peek separates them: a `compute` this component answers, or a value
+    // the host bound before any of this was parsed.
+    TDollar =>
+      if p.peek_at(1) is TDollar {
+        p.bump() |> ignore
+        p.bump() |> ignore
+        let (n, _) = p.ident("a config variable name after `$$`")
+        EConfigVar(name=n, span=p.since(from))
+      } else {
+        p.bump() |> ignore
+        let (n, _) = p.ident("a method name after `$`")
+        EMethod(name=n, span=p.since(from))
+      }
+    TCaret => {
       p.bump() |> ignore
-      let (n, _) = p.ident("a method name after `$`")
-      EMethod(name=n, span=p.since(from))
+      let (n, _) = p.ident("a macro variable name after `^`")
+      EMacroVar(name=n, span=p.since(from))
     }
     TOp("*") => {
       p.bump() |> ignore

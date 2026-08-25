@@ -122,6 +122,8 @@ pub(all) enum Expr {
   ERead(place~ : Place, span~ : Span)
   EMethod(name~ : String, span~ : Span)
   EDyn(name~ : String, span~ : Span)
+  EMacroVar(name~ : String, span~ : Span)
+  EConfigVar(name~ : String, span~ : Span)
   EName(name~ : String, span~ : Span)
   EApp(name~ : String, args~ : Array[Expr], span~ : Span)
   EChain(family~ : OpFamily, ops~ : Array[String], operands~ : Array[Expr], span~ : Span)

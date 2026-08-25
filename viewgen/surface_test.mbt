@@ -346,3 +346,38 @@ test "a retired spelling still compiles, and hints once" {
   assert_true(retired.any(h => h.contains("`equals?`") && h.contains("`is`")))
   assert_true(retired.any(h => h.contains("`falsy?`") && h.contains("`not`")))
 }
+
+///|
+test "a macro argument is an operand in a conditional slot" {
+  // The regression this covers, and the exact shape it broke: a `macro:row`
+  // that hides itself when the value it was handed is empty. `^value` is a
+  // slot value on its own AND a part of an expression, because a `^name`
+  // expands to exactly one token — so an operator over it cannot regroup
+  // anything, and the `from_macro` mark stays on the Const where the origin
+  // rule reads it.
+  //
+  // Nothing else in this repo writes a `^` inside an expression, which is why
+  // the refusal that replaced this passed every test here.
+  let html =
+    #|<template id="macro:row" data-value="''" data-label="''">
+    #|  <div class="row" @hide="empty? ^value">
+    #|    <span @text="^label"></span>
+    #|    <b @show="not (empty? ^value)" @text="^value"></b>
+    #|  </div>
+    #|</template>
+    #|<template>
+    #|  <x:row value=".title" label="'Title'"></x:row>
+    #|  <x:row value=".blurb" label="'Blurb'"></x:row>
+    #|</template>
+  // Before the fix this was
+  //   view "main": `^value` - `^value` is substituted, so it is a whole slot
+  //   value and not a part of an expression on <div>
+  assert_eq(view_err(html), "")
+  // Still refused where there is no frame to substitute FROM: a `^value` with
+  // no macro around it is an unbound macro variable, in an expression exactly
+  // as it is alone.
+  assert_true(
+    view_err("<template><p @hide=\"empty? ^value\">x</p></template>") != "",
+  )
+  assert_true(view_err("<template><p @hide=\"^value\">x</p></template>") != "")
+}

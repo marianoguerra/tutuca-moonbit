@@ -62,7 +62,7 @@ pub fn seeded_app(@registry.Registry, (@registry.ComponentRef, String, Map[Strin
 
 pub let universal_app_common_style : String
 
-pub fn universal_app_component(name? : String, views? : Map[String, @anode.View], init? : UniversalAppState, common_style? : String, global_style? : String, update? : (UniversalAppState, @component.Dispatch, &@core.Ctx) -> @component.Update[UniversalAppState], compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@core.Value]) -> @core.Value)?, swap? : (UniversalAppInput) -> ((UniversalAppState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn universal_app_component(name? : String, views? : Map[String, @anode.View], init? : UniversalAppState, common_style? : String, global_style? : String, update? : (UniversalAppState, @component.Dispatch, &@core.Ctx) -> @component.Update[UniversalAppState], compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (UniversalAppInput) -> ((UniversalAppState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let universal_app_global_style : String
 

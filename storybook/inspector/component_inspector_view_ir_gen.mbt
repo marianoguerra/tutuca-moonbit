@@ -262,7 +262,11 @@ pub fn comp_view_component(
   update? : (CompViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompViewState,
   ],
-  compute? : (CompViewMethod) -> ((CompViewState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (CompViewMethod) -> ((
+    CompViewState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (CompViewInput) -> ((
     CompViewState,
     Array[@tutuca.Value],
@@ -440,7 +444,11 @@ pub fn comp_section_component(
   update? : (CompSectionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     CompSectionState,
   ],
-  compute? : (CompSectionMethod) -> ((CompSectionState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (CompSectionMethod) -> ((
+    CompSectionState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (CompSectionInput) -> ((
     CompSectionState,
     Array[@tutuca.Value],
@@ -579,6 +587,7 @@ pub fn component_inspector_component(
   compute? : (ComponentInspectorMethod) -> ((
     ComponentInspectorState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

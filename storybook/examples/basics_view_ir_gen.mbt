@@ -199,6 +199,7 @@ pub fn text_directive_component(
   compute? : (TextDirectiveMethod) -> ((
     TextDirectiveState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

@@ -651,6 +651,13 @@ test "a slot and a block are one grammar, and refuse alike" {
   // A case that stops agreeing here is the two languages drifting apart again,
   // and the answer is to lift more of the block's parser rather than to
   // special-case the slot.
+  //
+  // `^name` and `$$name` are deliberately NOT in this corpus. They parse in
+  // both front ends — one grammar — and are refused in only one of them,
+  // because the difference is not grammatical: a slot stands in a macro frame
+  // with a host attached and a block does not. `block_err` only parses, so it
+  // would report the checker's refusal as agreement-by-silence. The two
+  // refusals are pinned where they belong, in `tscript/check`.
   for
     src in [
       // the family rules
@@ -679,6 +686,62 @@ test "a slot refuses what only a body can hold, and names the way out" {
   says("if .a { .b } else { .c }", "a slot has no `if`")
   says("empty? .a.b", "a slot reads one level")
   says("(len .items) is (-.n)", "a slot has no arithmetic")
-  says("empty? ^label", "is substituted")
-  says("empty? $$origin", "is substituted")
+}
+
+///|
+test "a substituted value is an operand, and keeps the mark that decides an origin" {
+  // The regression this covers: unifying the slot with the block's grammar
+  // pre-scanned for `^` and `$$` and refused the whole expression, so
+  // `@hide="empty? ^label"` — which parsed at 0.28.1, through the old
+  // predicate-application path — stopped parsing.
+  //
+  // A `^name` expansion is required to be exactly ONE token, so splicing it
+  // where an operand goes cannot regroup the expression around it. And
+  // `from_macro` rides on the `Const` rather than on the shape above it, which
+  // is the half that matters: an operator over one does not lose the mark.
+  let ctx = @tscript.ParseCtx::new(macro_vars={ "label": "'x'" }, config_vars={
+    "origin": "https://files.example/",
+  })
+  guard! @tscript.parse_bool("empty? ^label", ctx)
+    is Some(App(name="empty?", args~))
+  assert_eq(args.length(), 1)
+  assert_true(args[0] is Const(lit=LStr("x"), from_macro=true))
+  // The whole grammar, not just the shape 0.28.1 happened to accept.
+  assert_true(
+    @tscript.parse_bool("not ^label", ctx) is Some(App(name="not", ..)),
+  )
+  assert_true(
+    @tscript.parse_bool("^label is 'x'", ctx) is Some(App(name="is", ..)),
+  )
+  assert_true(
+    @tscript.parse_bool("(empty? ^label) and (empty? $$origin)", ctx)
+    is Some(App(name="and", ..)),
+  )
+  assert_eq(ctx.issues.length(), 0)
+}
+
+///|
+test "a host's value nested under an operator is still the host's" {
+  // The concern the refusal was written for, pinned rather than avoided: the
+  // origin rule reads a Const's own `from_macro`, so nesting cannot launder a
+  // caller's string into a host's or the other way round.
+  let ctx = @tscript.ParseCtx::new(
+    macro_vars={ "u": "'https://evil.example/'" },
+    config_vars={ "origin": "https://files.example/" },
+  )
+  guard! @tscript.parse_bool("$$origin is ^u", ctx) is Some(App(args~, ..))
+  assert_true(args[0] is Const(from_macro=false, ..))
+  assert_true(args[1] is Const(from_macro=true, ..))
+}
+
+///|
+test "a `^` nothing is bound to is an issue inside an expression too" {
+  // Same role, same span discipline as the single-token path — the resolver is
+  // literally the same function.
+  let ctx = @tscript.ParseCtx::new()
+  assert_true(@tscript.parse_bool("empty? ^label", ctx) is None)
+  assert_eq(ctx.issues.length(), 1)
+  assert_eq(ctx.issues[0].role, BadMacroVar)
+  assert_eq(ctx.issues[0].value, "^label")
+  assert_eq(ctx.issues[0].span, { start: 7, end_: 13 })
 }

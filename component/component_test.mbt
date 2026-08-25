@@ -280,7 +280,7 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
         _ => Unhandled
       }
     },
-    compute={ "label": (s : CountOnly, _args) => Str("n=\{s.count}") },
+    compute={ "label": (s : CountOnly, _args, _stack) => Str("n=\{s.count}") },
   )
   let t = comp.make(Map([]))
   guard! t is Obj(o)
@@ -657,17 +657,19 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
     name="Filtered",
     init=FilterState::{ query: "a" },
     when={
-      "keep": (s : FilterState, _key, value, _iter) => {
+      "keep": (s : FilterState, _key, value, _iter, _stack) => {
         value.str().contains(s.query)
       },
     },
     enrich={
-      "annotate": (_s : FilterState, binds, _key, value, _iter) => {
+      "annotate": (_s : FilterState, binds, _key, value, _iter, _stack) => {
         binds["len"] = Num(value.str().length().to_double())
       },
     },
     enrich_scope={
-      "derived": (s : FilterState) => { "upper": Str(s.query.to_upper()) },
+      "derived": (s : FilterState, _stack) => {
+        "upper": Str(s.query.to_upper()),
+      },
     },
     loop_with={
       "page": (_s : FilterState, _seq, _ctx) => {
@@ -1126,4 +1128,71 @@ test "two registrations of one intent name are two candidates, not a shadowing" 
     })
   }
   assert_eq(log.join(","), "first,second")
+}
+
+///|
+/// A stack that answers one dynamic name, so a test can tell "the seam handed
+/// the environment over" from "it handed over a `NullStack`".
+priv struct OneBinding {
+  name : String
+  value : @tutuca.Value
+}
+
+///|
+impl @tutuca.Stack for OneBinding with fn lookup_dynamic(self, name) {
+  if name == self.name {
+    self.value
+  } else {
+    Null
+  }
+}
+
+///|
+test "a compute is handed the stack it is asked from" {
+  // The defect this covers: a `pred`/`compute` reading `*name` compiled into
+  // `ctx.lookup(...)` inside a function with no `ctx` — because `ctx` is a
+  // DISPATCH context and a value body is called while the view is being
+  // rendered. What a value body needs is the render stack, and `Value::Fn`
+  // carries arguments and nothing else — so `obj_method_at` is the seam that
+  // hands one over.
+  let comp = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Themed",
+    init=CountOnly::{ count: 1 },
+    compute={
+      "theme": (_s : CountOnly, _args, stack) => stack.lookup_dynamic("theme"),
+    },
+  )
+  let t = comp.make(Map([]))
+  guard! t is Obj(o)
+  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  guard! o.obj_method_at("theme", stack) is Some(Fn(f))
+  assert_true(f([Null]) == Str("dark"))
+  // Asked WITHOUT one — a `$compute` read off a bare Value, outside any
+  // render — it answers Null rather than guessing. That is the honest answer,
+  // not a hole: there is no ancestry to walk from there.
+  guard! o.obj_field("theme") is Some(Fn(g))
+  assert_true(g([Null]) == Null)
+}
+
+///|
+test "a @when is handed the stack too, through the alter seam" {
+  // A `pred` used as a `@when` and the same `pred` used as `$name` are ONE
+  // body compiled twice, so if one of them can read `*name` both must.
+  let comp = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="ThemedWhen",
+    init=CountOnly::{ count: 1 },
+    when={
+      "isTheme": (_s : CountOnly, _k, value, _iter, stack) => {
+        stack.lookup_dynamic("theme") == value
+      },
+    },
+  )
+  let t = comp.make(Map([]))
+  guard! t is Obj(o)
+  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  guard! o.obj_callable_at("isTheme", Alter, stack) is Some(Fn(f))
+  assert_true(f([Null, Null, Str("dark"), Null]) == Bool(true))
+  assert_true(f([Null, Null, Str("light"), Null]) == Bool(false))
 }

@@ -16,7 +16,7 @@ fn tree_item_comp() -> @component.Component {
     },
     compute=m => match m {
       AreChildsVisible =>
-        Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
+        Some((s, _args, _stack) => Bool(s.isOpen && s.items.length() > 0))
     },
     // A raw `match msg`: this component answers an Intent, which arrives
     // because a walk routed here rather than because a view named it — so the

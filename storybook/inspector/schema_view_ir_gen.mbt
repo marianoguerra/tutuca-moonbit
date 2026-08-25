@@ -177,7 +177,11 @@ pub fn schema_branch_component(
   update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaBranchState,
   ],
-  compute? : (SchemaBranchMethod) -> ((SchemaBranchState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaBranchMethod) -> ((
+    SchemaBranchState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

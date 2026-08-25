@@ -99,10 +99,10 @@ pub fn render_with_scope_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  enrich_scope? : (RenderWithScopeEnrichScope) -> ((RenderWithScopeState) -> Map[
-    String,
-    @tutuca.Value,
-  ])?,
+  enrich_scope? : (RenderWithScopeEnrichScope) -> ((
+    RenderWithScopeState,
+    &@tutuca.Stack,
+  ) -> Map[String, @tutuca.Value])?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -224,6 +224,7 @@ pub fn list_filter_enrich_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   enrich? : (ListFilterEnrichEnrich) -> ((
     ListFilterEnrichState,
@@ -231,6 +232,7 @@ pub fn list_filter_enrich_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -365,6 +367,7 @@ pub fn list_filter_enrich_with_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   enrich? : (ListFilterEnrichWithEnrich) -> ((
     ListFilterEnrichWithState,
@@ -372,6 +375,7 @@ pub fn list_filter_enrich_with_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   loop_with? : (ListFilterEnrichWithLoopWith) -> ((
     ListFilterEnrichWithState,

@@ -337,7 +337,11 @@ pub fn story_card_component(
   update? : (StoryCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StoryCardState,
   ],
-  compute? : (StoryCardMethod) -> ((StoryCardState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (StoryCardMethod) -> ((
+    StoryCardState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (StoryCardInput) -> ((
     StoryCardState,
     Array[@tutuca.Value],
@@ -638,6 +642,7 @@ pub fn dyncomp_storybook_component(
   compute? : (DyncompStorybookMethod) -> ((
     DyncompStorybookState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   swap? : (DyncompStorybookInput) -> ((
     DyncompStorybookState,
@@ -649,6 +654,7 @@ pub fn dyncomp_storybook_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

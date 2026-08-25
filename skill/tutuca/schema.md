@@ -275,14 +275,22 @@ An **uppercase** name publishes a component TYPE rather than a value, and
 one rather than whatever is registered under that name. A published type is not
 a render target — it has no path, so `<x render="*Cell">` resolves to nothing.
 
-**A handler reads one too.** `*name` in a script block is the same question the
-view asks, answered at the same position:
+**A body reads one too — any body.** `*name` in a script block is the same
+question the view asks, answered at the same position, whether the body is a
+transition or a value:
 
 ```
-receive stamp {
-  .label = $'{.label} ({*theme})'
-}
+receive stamp { .label = $'{.label} ({*theme})' }
+pred    onBrand { .accent is *theme }
+compute themeLabel { *theme }
 ```
+
+A transition is answered from its DISPATCH position, along the same `dyn`/`lex`
+route an intent walks. A `compute`, a `pred`, a `@when` and an `enrich` are
+answered from their RENDER position — they are called while the view is being
+built, so the render stack is what has the answer, and it is the same stack a
+`*theme` in a slot beside them reads. Both resolve the same declared `lookup`,
+so the two agree.
 
 The host resolves this component's declared lookups before it enters the card
 and the handler reads one of the answers — so a `*name` a body writes and a

@@ -141,8 +141,8 @@ fn schema_scalar_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeLabel))
-        CountText => Some((_s, _args) => Str(""))
+        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
+        CountText => Some((_s, _args, _stack) => Str(""))
       }
     },
     loop_with=l => {
@@ -182,9 +182,9 @@ fn schema_object_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
         CountText =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             let n = s.items.length()
             Str(if n > 0 { "{\{n}}" } else { "" })
           })
@@ -281,9 +281,9 @@ fn schema_array_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
         CountText =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             let n = s.items.length()
             Str(if n > 0 { "[\{n}]" } else { "" })
           })
@@ -371,9 +371,9 @@ fn schema_enum_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
         CountText =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             let n = s.items.length()
             Str(if n > 0 { "(\{n})" } else { "" })
           })
@@ -427,9 +427,9 @@ fn schema_combinator_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeLabel))
+        TypeText => Some((s, _args, _stack) => Str(s.typeLabel))
         CountText =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             let n = s.items.length()
             Str(if n > 0 { "(\{n})" } else { "" })
           })
@@ -508,7 +508,7 @@ fn schema_boolean_comp() -> @component.Component {
   schema_boolean_component(init={ value: true }, compute=m => {
     match m {
       Text =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           Str(
             if s.value {
               "any value (true)"
@@ -518,7 +518,7 @@ fn schema_boolean_comp() -> @component.Component {
           )
         })
       CssClass =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           let color = if s.value { "text-success" } else { "text-error" }
           Str("font-mono text-sm leading-tight italic schema-boolean \{color}")
         })

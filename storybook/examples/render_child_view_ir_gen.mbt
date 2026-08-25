@@ -218,6 +218,7 @@ pub fn entry_views() -> Map[String, @anode.View] {
 fn entry_compute_containsText(
   s : EntryState,
   args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   let q = args.get(0).unwrap_or(Null)
   guard q is Str(v1) else { return Null }
@@ -233,7 +234,7 @@ fn entry_compute_containsText(
 /// GENERATED — edit the block, not this.
 fn entry_inline_compute() -> Map[
   String,
-  (EntryState, Array[@tutuca.Value]) -> @tutuca.Value,
+  (EntryState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
 ] {
   { "containsText": entry_compute_containsText }
 }

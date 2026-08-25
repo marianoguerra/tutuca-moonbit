@@ -229,3 +229,82 @@ test "an entry is reusable for one pass, then falls out" {
   let after_gap = pass(node, root, scope, cache)
   assert_false(physical_equal(first_child(second), first_child(after_gap)))
 }
+
+///|
+/// A child whose `compute` answers a name an ancestor published, the way a
+/// generated one does: by asking the stack it was handed.
+priv struct ThemedState {
+  label : String
+  child : @tutuca.Value
+}
+
+///|
+impl @component.Fields for ThemedState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="themed_state", fields=[
+    @component.FieldInfo::new("label", TyText),
+    @component.FieldInfo::new("child", TyAny),
+  ])
+}
+
+///|
+impl @component.Fields for ThemedState with fn encode(s) {
+  { "label": Str(s.label), "child": s.child }
+}
+
+///|
+impl @component.Fields for ThemedState with fn decode(f) {
+  guard f.get("label") is Some(Str(l)) else { return None }
+  Some({ label: l, child: f.get("child").unwrap_or(Null) })
+}
+
+///|
+test "a compute reading `*name` is answered by the render chain it is under" {
+  // The parity claim the whole change rests on. `stack.lookup_dynamic` is the
+  // call `core/value_eval.mbt` makes for a `Val::Dyn` in a SLOT, so a `pred`
+  // or a `compute` that reads `*theme` now answers what `@text="*theme"`
+  // beside it would answer — one question, one answer, both backends.
+  //
+  // Before this, the same body compiled to `ctx.lookup(...)` in a function
+  // that had no `ctx`, so the generated module did not build at all.
+  let themed = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<p><x text=\"$themeLabel\"></x>|<x text=\"*theme\"></x></p>",
+      ),
+    },
+    name="Themed",
+    init=ThemedState::{ label: "", child: Null },
+    compute={
+      "themeLabel": (_s : ThemedState, _args, stack) => {
+        stack.lookup_dynamic("theme")
+      },
+    },
+    lookup=[@component.lookup_name("theme")],
+  )
+  let shell = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render=\".child\"></x></div>",
+      ),
+    },
+    name="Shell",
+    init=ThemedState::{ label: "dark", child: Null },
+    provide={ "theme": ".label" },
+  )
+  let scope = @component.ComponentStack::new()
+  scope.register_components([themed, shell])
+  scope.compile_all()
+  let child_fields : Map[String, @tutuca.Value] = { "label": Str("x") }
+  let child = themed.make(child_fields)
+  let shell_fields : Map[String, @tutuca.Value] = {
+    "label": Str("dark"),
+    "child": child,
+  }
+  let root : @tutuca.Value = Map({ "a": shell.make(shell_fields) })
+  let html = to_html(pass(one_slot(), root, scope, RenderCache::new()))
+  // Both halves read "dark": the slot's `*theme` and the compute's
+  // `stack.lookup_dynamic("theme")` are the same question.
+  assert_true(html.contains("dark|dark"))
+}

@@ -138,7 +138,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       }
     },
     compute={
-      "getInputWidth": (s : VwImmState, _args) => {
+      "getInputWidth": (s : VwImmState, _args, _stack) => {
         Str("\{s.rawValue.length() + 2}em")
       },
     },
@@ -443,11 +443,11 @@ fn vw_container_update(
 ///|
 fn vw_container_compute() -> Map[
   String,
-  (VwContainerState, Array[@tutuca.Value]) -> @tutuca.Value,
+  (VwContainerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
 ] {
   {
-    "expandedAndEditing": (s, _args) => Bool(s.expanded && s.editing),
-    "expandedAndReadOnly": (s, _args) => Bool(s.expanded && !s.editing),
+    "expandedAndEditing": (s, _args, _stack) => Bool(s.expanded && s.editing),
+    "expandedAndReadOnly": (s, _args, _stack) => Bool(s.expanded && !s.editing),
   }
 }
 
@@ -727,7 +727,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
   let sections : Map[String, (VwPickerState) -> VwPickerState] = Map([])
   let compute : Map[
     String,
-    (VwPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
+    (VwPickerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
   ] = Map([])
   let cats = vw_categories()
   for r in radios {
@@ -744,7 +744,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         instructions: list.map(x => (Str(x) : @tutuca.Value)),
       }
     }
-    compute["currentIs" + cap(section)] = (s, _args) => {
+    compute["currentIs" + cap(section)] = (s, _args, _stack) => {
       Bool(s.currentSection == section)
     }
   }
@@ -787,7 +787,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       },
     },
     when={
-      "whenMatch": (_s : VwPickerState, _key, value, iter) => {
+      "whenMatch": (_s : VwPickerState, _key, value, iter, _stack) => {
         match (value, iter) {
           (Str(v), Map(idata)) =>
             match idata.get("filter") {

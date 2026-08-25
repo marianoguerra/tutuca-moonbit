@@ -33,7 +33,7 @@ MoonBit's.
 // string-keyed maps instead)
 when=w => match w {
   // the @when predicate: (s, key, value, iterData) -> Bool
-  OnlyMatches => Some((s, _key, person, _iter) => matches(person, s.query)),
+  OnlyMatches => Some((s, _key, person, _iter, _stack) => matches(person, s.query)),
 },
 enrich_scope=e => match e {
   // scope enrich (state only): the COUNT scan — clamp the page, publish

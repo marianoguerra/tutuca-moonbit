@@ -177,7 +177,7 @@ fn sample_card_comp() -> @component.Component {
   sample_card_component(
     compute=m => {
       match m {
-        Label => Some((s, _args) => Str(s.title))
+        Label => Some((s, _args, _stack) => Str(s.title))
       }
     },
     update=(s, msg, _ctx) => {

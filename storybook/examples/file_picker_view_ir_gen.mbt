@@ -112,7 +112,11 @@ pub fn file_picker_component(
   update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     FilePickerState,
   ],
-  compute? : (FilePickerMethod) -> ((FilePickerState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (FilePickerMethod) -> ((
+    FilePickerState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (FilePickerInput) -> ((
     FilePickerState,
     Array[@tutuca.Value],

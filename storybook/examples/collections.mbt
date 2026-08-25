@@ -20,7 +20,7 @@ fn render_with_scope_comp() -> @component.Component {
   render_with_scope_component(init={ text: "Hello" }, enrich_scope=e => {
     match e {
       EnrichScope =>
-        Some(s => {
+        Some((s, _stack) => {
           "len": Num(s.text.length().to_double()),
           "upper": Str(s.text.to_upper()),
         })
@@ -59,7 +59,7 @@ fn list_filter_enrich_comp() -> @component.Component {
     when=w => {
       match w {
         FilterItem =>
-          Some((s, _key, value, _iter) => {
+          Some((s, _key, value, _iter, _stack) => {
             match value {
               Str(item) => item.to_lower().contains(s.query.to_lower())
               _ => true
@@ -70,7 +70,7 @@ fn list_filter_enrich_comp() -> @component.Component {
     enrich=e => {
       match e {
         EnrichItem =>
-          Some((_s, binds, _key, value, _iter) => {
+          Some((_s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(item) => binds["count"] = Num(item.length().to_double())
               _ => ()
@@ -128,7 +128,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
     when=w => {
       match w {
         FilterItem =>
-          Some((_s, _key, value, iter) => {
+          Some((_s, _key, value, iter, _stack) => {
             match (value, iter) {
               (Str(item), Map(iter_data)) =>
                 match iter_data.get("queryLower") {
@@ -143,7 +143,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
     enrich=e => {
       match e {
         EnrichItem =>
-          Some((_s, binds, _key, value, iter) => {
+          Some((_s, binds, _key, value, iter, _stack) => {
             match (value, iter) {
               (Str(item), Map(iter_data)) => {
                 binds["count"] = Num(item.length().to_double())

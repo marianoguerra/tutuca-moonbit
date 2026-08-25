@@ -20,7 +20,7 @@ fn traffic_light_comp() -> @component.Component {
   traffic_light_component(init={ lightIndex: 0 }, compute=m => {
     match m {
       Light =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           Str(traffic_lights[s.lightIndex % traffic_lights.length()])
         })
     }
@@ -82,7 +82,7 @@ fn list_and_filter_comp() -> @component.Component {
   list_and_filter_component(init={ items: [], query: "" }, when=w => {
     match w {
       FilterItem =>
-        Some((s, _key, value, _iter) => {
+        Some((s, _key, value, _iter, _stack) => {
           match value {
             Str(item) => item.to_lower().contains(s.query.to_lower())
             _ => true

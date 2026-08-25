@@ -321,6 +321,12 @@ pub fn gen_views_target(
 ///|
 /// Compile a whole batch into one plan. The only impure parts are reading the
 /// sources and writing the plan, both of which the shell does.
+///
+/// A batch that fails writes NOTHING — not even the files that compiled before
+/// the bad one — because a half-generated tree is the one state nobody can
+/// reason about. What it does not do is stop at the first failure: every file
+/// that failed is named in one run, so fixing a directory takes one build per
+/// round of fixes rather than one per broken file.
 pub fn gen_views_all(
   files : Array[GenInput],
   ir~ : Bool,

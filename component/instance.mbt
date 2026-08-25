@@ -13,14 +13,27 @@ priv struct TypedSpec[S] {
   init : S
   s_fields : Array[String]
   update : ((S, Dispatch, &@tutuca.Ctx) -> Update[S])?
-  compute : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value]
+  compute : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+  ]
   swap : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?]
-  when : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool]
+  when : Map[
+    String,
+    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
+  ]
   enrich : Map[
     String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
+    (
+      S,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+      &@tutuca.Stack,
+    ) -> Unit,
   ]
-  enrich_scope : Map[String, (S) -> Map[String, @tutuca.Value]]
+  enrich_scope : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]]
   loop_with : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith]
   generated : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
   /// Direct state <-> fields conversion, field by field.
@@ -280,9 +293,10 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
 fn[S] TypedInstance::callable_of(
   self : TypedInstance[S],
   name : String,
+  stack : &@tutuca.Stack,
 ) -> @tutuca.Value? {
   match self.spec.compute.get(name) {
-    Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
+    Some(f) => Some(Fn(args => f(self.state, drop_this(args), stack)))
     None =>
       match self.spec.generated.get(name) {
         Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
@@ -296,8 +310,14 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
   match self.fields.get(name) {
     Some(v) => Some(v)
     // $-callables surface as self-pre-bound Fns;
-    // callers use the Fn convention (element 0 = this), which we drop
-    None => self.callable_of(name)
+    // callers use the Fn convention (element 0 = this), which we drop.
+    //
+    // `NullStack` because this caller has none: a `$compute` read off a bare
+    // `Value` — the JSON projection, a path lookup, the inspector — is not
+    // being asked from a render position, so a `*name` inside it has no
+    // ancestry to walk and answers Null. `obj_method_at` below is the seam for
+    // the caller that DOES have one.
+    None => self.callable_of(name, @tutuca.NullStack::{  })
   }
 }
 
@@ -313,8 +333,36 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
+  self.obj_callable_at(name, ns, @tutuca.NullStack::{  })
+}
+
+///|
+/// The `$compute` half, with the stack the caller is asking from.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_method_at(
+  self,
+  name,
+  stack,
+) {
+  match self.fields.get(name) {
+    Some(v) => Some(v)
+    None => self.callable_of(name, stack)
+  }
+}
+
+///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable_at(
+  self,
+  name,
+  ns,
+  stack,
+) {
   // Alter namespace: the four typed render-time buckets first, each adapted
   // to its directive's Fn-convention call shape (element 0 = this).
+  //
+  // Three of the four take `stack` as their last argument, because a `pred`
+  // compiled as a `@when` and the same `pred` compiled as a `$name` are ONE
+  // body — so if one of them can read `*name`, both must. `loop_with` does
+  // not: no value body compiles into it.
   if ns is Alter {
     match self.spec.when.get(name) {
       Some(f) =>
@@ -327,6 +375,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
                 a.get(0).unwrap_or(Null),
                 a.get(1).unwrap_or(Null),
                 a.get(2).unwrap_or(Null),
+                stack,
               ),
             )
           }),
@@ -345,6 +394,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
                   a.get(1).unwrap_or(Null),
                   a.get(2).unwrap_or(Null),
                   a.get(3).unwrap_or(Null),
+                  stack,
                 )
                 Null
               }
@@ -355,7 +405,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
       None => ()
     }
     match self.spec.enrich_scope.get(name) {
-      Some(f) => return Some(Fn(_args => Map(f(self.state))))
+      Some(f) => return Some(Fn(_args => Map(f(self.state, stack))))
       None => ()
     }
     match self.spec.loop_with.get(name) {
@@ -375,7 +425,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
       None => ()
     }
   }
-  self.callable_of(name)
+  self.callable_of(name, stack)
 }
 
 ///|

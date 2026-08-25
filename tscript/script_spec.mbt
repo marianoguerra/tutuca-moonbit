@@ -300,6 +300,21 @@ pub(all) enum Expr {
   /// `*name` — a dynamic binding. Opaque for the same reason, and reported in
   /// a body for the same reason, with no bare spelling to fall back on.
   EDyn(name~ : String, span~ : Span)
+  /// `^name` — a macro argument, substituted from the frame the CALLER opened.
+  ///
+  /// The grammar carries it because a conditional slot and a block body are
+  /// one language, and a slot DOES stand in a macro frame. A block does not:
+  /// `parse_script(source)` takes no context at all, so `^title` there would
+  /// resolve to nothing — `tscript/check` refuses it by name rather than
+  /// letting it read Null.
+  EMacroVar(name~ : String, span~ : Span)
+  /// `$$name` — a value the HOST bound, substituted as a literal and not
+  /// re-parsed. The mirror of `EMacroVar`, and the MARKING is the whole
+  /// difference between them: a `^name` constant is the caller's source and
+  /// carries `from_macro`, a `$$name` constant is the host's and does not.
+  /// That one bit is what decides whether a constant may pin a URL origin
+  /// (`dyncomp/policy/external_url.mbt`).
+  EConfigVar(name~ : String, span~ : Span)
   /// A bare name. In a declaration body it is a parameter; in a handler slot
   /// it is an event argument, resolved against the closed table in
   /// `render/dom_event.mbt`. Never a value in a value slot.

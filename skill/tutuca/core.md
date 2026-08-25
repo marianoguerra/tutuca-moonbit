@@ -79,7 +79,7 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   hands both to `push_input` — so the sigil would claim a distinction
   that does not exist.
 - **Every event handler goes in `update`.** There is one bucket for them,
-  and a view names it bare. A `compute` entry is pure — `(s, args) => Value`
+  and a view names it bare. A `compute` entry is pure — `(s, args, stack) => Value`
   — and exists for the other job: a `$`-callable evaluated in a VALUE
   position (`@text="$label"`), where no event and no ctx exist. The
   `update` fn — `(s, msg, ctx) => Update[S]` — gets the `&Ctx` and can
@@ -358,8 +358,14 @@ Four things a *body* can write and a slot cannot, each refused by name: a
 nested read (`.a.b` — render the child as a component, or name it with a
 `compute`), an `if` expression (`@show`/`@hide` **are** the choice; a value
 that picks between two is `@if.<attr>` with `@then`/`@else`), arithmetic, and a
-bare parameter. `^macro` and `$$config` are substituted whole, so each is a
-slot value on its own rather than a part of a larger expression.
+bare parameter.
+
+`^macro` and `$$config` are ordinary operands here: `@hide="empty? ^label"`,
+`@show="not ^collapsed"`, `@show="$$origin is 'x'"`. They are substituted as
+the value is read, so a `^name` still has to expand to a single token. Going
+the other way, a `<script type="tutuca/script">` block cannot write either one
+— a block is parsed once for the component, with no macro call site and no host
+around it — so read the value in the view and pass it in.
 
 > **Retired spellings.** `equals? a b` is now `a is b`, and `falsy? x` is
 > `not (truthy? x)`. Both still parse — a compiled dyncomp bundle carries its
@@ -470,11 +476,11 @@ my_comp_component(
   // references does not compile (no such constructor), so handlers cannot
   // be pre-declared "for later". A bucket the views never use is not a
   // parameter at all.
-  compute=m => match m { // pure value read, $name: (s, args) => Value
-    Label => Some((s, _args) => Str("n=\{s.count}"))
+  compute=m => match m { // pure value read, $name: (s, args, stack) => Value
+    Label => Some((s, _args, _stack) => Str("n=\{s.count}"))
   },
-  when=w => match w { // @when filters: (s, key, value, iterData) => Bool
-    FilterItem => Some((s, _key, value, _iter) => value.str() != "")
+  when=w => match w { // @when filters: (s, key, value, iterData, stack) => Bool
+    FilterItem => Some((s, _key, value, _iter, _stack) => value.str() != "")
   },
   // enrich= / enrich_scope= / loop_with= — see iteration.md
   // swap= — replace this node with another instance; see The handler buckets
@@ -881,12 +887,21 @@ that claims it, and the buckets are the last:
 | Bucket | Signature | Answers |
 | ------ | --------- | ------- |
 | `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event, message and intent; one match over all the channels |
-| `compute` | `(S, Array[Value]) -> Value` | a `$name` in a **value** position — pure, no ctx |
+| `compute` | `(S, Array[Value], &Stack) -> Value` | a `$name` in a **value** position — pure, no ctx |
 | `swap` | `(S, Array[Value], &Ctx) -> Value?` | a `Receive` that replaces this node with a different **Value** |
-| `when` | `(S, key, value, iterData) -> Bool` | `@when` iteration filters |
-| `enrich` | `(S, binds, key, value, iterData) -> Unit` | `@enrich-with` per-item binds |
-| `enrich_scope` | `(S) -> Map[String, Value]` | scope-level derived binds |
+| `when` | `(S, key, value, iterData, &Stack) -> Bool` | `@when` iteration filters |
+| `enrich` | `(S, binds, key, value, iterData, &Stack) -> Unit` | `@enrich-with` per-item binds |
+| `enrich_scope` | `(S, &Stack) -> Map[String, Value]` | scope-level derived binds |
 | `loop_with` | `(S, seq, LoopCtx) -> LoopWith` | `@loop-with` slicing / filtering / key lists |
+
+The four render-time buckets — `compute`, `when`, `enrich`, `enrich_scope` —
+take a trailing `&@tutuca.Stack`: the render position the body is being asked
+from. `stack.lookup_dynamic(name)` is what answers a `*name` inside one, and it
+is the same call the interpreter makes for a `*name` in a slot beside it, so a
+`pred` and the `@show` that reads it agree. A body that asks nothing of it
+names the parameter `_stack`; `gen-views` writes that for you. `swap` takes a
+`&@tutuca.Ctx` instead, because a swap answers a dispatch rather than a render,
+and `loop_with` takes neither.
 
 ### Two spellings, by call target
 
@@ -895,7 +910,7 @@ function from a generated enum returning the handler as an `Option`:
 
 ```moonbit nocheck
 // nocheck: one bucket argument, not a compilable item
-compute=m => match m { Label => Some((s, _args) => Str("n=\{s.count}")) }
+compute=m => match m { Label => Some((s, _args, _stack) => Str("n=\{s.count}")) }
 ```
 
 Return `None` for a case to leave it unanswered. (That is the bucket's own
@@ -905,7 +920,7 @@ or does not.) The raw
 
 ```moonbit nocheck
 // nocheck: one bucket argument, not a compilable item
-compute={ "label": (s, _args) => Str("n=\{s.count}") }
+compute={ "label": (s, _args, _stack) => Str("n=\{s.count}") }
 ```
 
 Snippets in this skill showing the map form are showing the raw call. With a

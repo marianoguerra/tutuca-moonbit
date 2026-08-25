@@ -220,54 +220,10 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
     return None
   }
   match c0 {
-    '^' => {
-      // ^name macro variable: re-tokenize + re-parse the bound source. A
-      // constant result is marked from_macro so an enclosing template isn't
-      // mistaken for a hand-written placeholderless literal.
-      let name = s[1:].to_owned()
-      match ctx.macro_vars.get(name) {
-        Some(new_s) => {
-          let tokens = tokenize(new_s)
-          if tokens.length() != 1 {
-            return None
-          }
-          // The expansion is parsed against THIS token's span: its own
-          // offsets index the macro's source, which is a different file
-          // position than the one the reader is looking at.
-          match parse_tok({ text: tokens[0].text, span: tok.span }, ctx) {
-            Some(Const(lit~, ..)) => Some(Const(lit~, from_macro=true))
-            other => other
-          }
-        }
-        None => {
-          ctx.issue(BadMacroVar, s, tok.span)
-          None
-        }
-      }
-    }
+    '^' => resolve_macro_var(s[1:].to_owned(), s, tok.span, ctx)
     '$' =>
       if s.get_char(1) is Some('$') {
-        // $$name config variable: a string the HOST bound, substituted here as
-        // a literal. The mirror of `^name` above, and the marking is the whole
-        // difference between them. A `^name` constant is the CALLER's string
-        // wearing a literal's shape, and the caller is the guest, so it is
-        // `from_macro=true` and cannot pin a URL origin. A `$$name` constant is
-        // the HOST's string wearing a literal's shape, and the host is the one
-        // party the origin rule was ever about — so it is `from_macro=false`
-        // and pins, which is the point (dyncomp/policy/external_url.mbt).
-        //
-        // The value is substituted rather than re-parsed: it is text the host
-        // decided, not source the guest wrote, and re-parsing it would let the
-        // host's table smuggle in an expression nobody asked it for.
-        let name = s[2:].to_owned()
-        guard is_valid_val_id(name) else { return None }
-        match ctx.config_vars.get(name) {
-          Some(v) => Some(Const(lit=LStr(v), from_macro=false))
-          None => {
-            ctx.issue(BadConfigVar, s, tok.span)
-            None
-          }
-        }
+        resolve_config_var(s[2:].to_owned(), s, tok.span, ctx)
       } else {
         mk_id(s[1:].to_owned(), n => Method(n))
       }
@@ -447,6 +403,75 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
 }
 
 ///|
+/// `^name` — re-tokenize and re-parse the source the CALLER bound.
+///
+/// A constant result is marked `from_macro` so an enclosing template is not
+/// mistaken for a hand-written placeholderless literal — and, more to the
+/// point, so it cannot pin a URL origin: the caller is the guest, and the
+/// origin rule was only ever about the host (`dyncomp/policy/external_url.mbt`).
+///
+/// The expansion is required to be exactly ONE token. That is what makes a
+/// `^name` usable where an operand goes: a single token cannot regroup the
+/// expression around it.
+///
+/// `said` is the token as WRITTEN (`^name`), which is what a diagnostic quotes.
+fn resolve_macro_var(
+  name : String,
+  said : String,
+  at : Span,
+  ctx : ParseCtx,
+) -> @tutuca.Val? {
+  match ctx.macro_vars.get(name) {
+    Some(new_s) => {
+      let tokens = tokenize(new_s)
+      if tokens.length() != 1 {
+        return None
+      }
+      // The expansion is parsed against THIS token's span: its own offsets
+      // index the macro's source, which is a different file position than the
+      // one the reader is looking at.
+      match parse_tok({ text: tokens[0].text, span: at }, ctx) {
+        Some(Const(lit~, ..)) => Some(Const(lit~, from_macro=true))
+        other => other
+      }
+    }
+    None => {
+      ctx.issue(BadMacroVar, said, at)
+      None
+    }
+  }
+}
+
+///|
+/// `$$name` — a string the HOST bound, substituted here as a literal.
+///
+/// The mirror of `resolve_macro_var`, and the marking is the whole difference
+/// between them. A `^name` constant is the CALLER's string wearing a literal's
+/// shape, and the caller is the guest, so it is `from_macro=true` and cannot
+/// pin a URL origin. A `$$name` constant is the HOST's string wearing a
+/// literal's shape, and the host is the one party the origin rule was ever
+/// about — so it is `from_macro=false` and pins, which is the point.
+///
+/// The value is substituted rather than re-parsed: it is text the host decided,
+/// not source the guest wrote, and re-parsing it would let the host's table
+/// smuggle in an expression nobody asked it for.
+fn resolve_config_var(
+  name : String,
+  said : String,
+  at : Span,
+  ctx : ParseCtx,
+) -> @tutuca.Val? {
+  guard is_valid_val_id(name) else { return None }
+  match ctx.config_vars.get(name) {
+    Some(v) => Some(Const(lit=LStr(v), from_macro=false))
+    None => {
+      ctx.issue(BadConfigVar, said, at)
+      None
+    }
+  }
+}
+
+///|
 /// Parse `s` as a single value and accept it only if its kind is in `group`.
 fn parse_single(s : String, ctx : ParseCtx, group : Group) -> @tutuca.Val? {
   // Not `s.trim()` first: the tokenizer already skips whitespace, and
@@ -475,7 +500,7 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
     if tokens.length() == 0 {
       return None
     }
-    return parse_expression(s, tokens, ctx)
+    return parse_expression(s, ctx)
   }
   match parse_tok(tokens[0], ctx) {
     Some(val) => if val_in_group(val, GBool) { Some(val) } else { None }
@@ -489,31 +514,17 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// Spans index `s` directly: `parse_expr_source` tokenizes the attribute
 /// value itself, so an operand's position is already the one the reader is
 /// looking at and nothing is rebased.
-fn parse_expression(
-  s : String,
-  tokens : Array[Token],
-  ctx : ParseCtx,
-) -> @tutuca.Val? {
-  // `^name` and `$$name` are resolved by SUBSTITUTION, and only the
-  // single-token path does it — a `^` re-parses the caller's source and marks
-  // the result `from_macro`, a `$$` lands the host's string as a literal
-  // WITHOUT re-parsing, and neither survives being handed to a grammar that
-  // has no arm for the sigil. Refused rather than approximated: the mark is
-  // what decides whether a constant may pin a URL origin
-  // (`dyncomp/policy/external_url.mbt`), and an expression that quietly lost
-  // it would be wrong in the one place it matters.
-  for t in tokens {
-    if t.text.has_prefix("^") || t.text.has_prefix("$$") {
-      ctx.issue(
-        BadExpression(
-          why="`\{t.text}` is substituted, so it is a whole slot value and not a part of an expression",
-        ),
-        t.text,
-        t.span,
-      )
-      return None
-    }
-  }
+fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+  // `^name` and `$$name` reach here as ORDINARY OPERANDS, and the grammar has
+  // a leaf for each. They are resolved by substitution during `lower_expr`,
+  // through the same two functions the single-token path calls, which is what
+  // keeps one meaning per sigil rather than two that resemble each other.
+  //
+  // A `^name` expansion is required to be one token, so splicing it where an
+  // operand goes cannot change the grouping around it; and `from_macro` rides
+  // on the `Const` itself rather than on the shape above it, so an operator
+  // over one does not lose the mark that decides whether it may pin a URL
+  // origin (`dyncomp/policy/external_url.mbt`).
   let e = parse_expr_source(s) catch {
     err => {
       ctx.issue(
@@ -605,6 +616,10 @@ fn lower_expr(e : Expr, ctx : ParseCtx, src : String) -> @tutuca.Val? {
       }
     EMethod(name~, ..) => Some(Method(name))
     EDyn(name~, ..) => Some(Dyn(name))
+    // Substituted, not evaluated — the same two resolvers `parse_tok` calls,
+    // so a `^name` in `empty? ^name` means exactly what a `^name` alone means.
+    EMacroVar(name~, span~) => resolve_macro_var(name, "^" + name, span, ctx)
+    EConfigVar(name~, span~) => resolve_config_var(name, "$$" + name, span, ctx)
     EApp(name~, args~, span~) => lower_app(name, args, span, ctx, src)
     EUnary(op=UNot, operand~, span~) =>
       lower_app("not", [operand], span, ctx, src)

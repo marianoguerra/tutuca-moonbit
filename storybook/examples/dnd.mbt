@@ -42,7 +42,7 @@ fn dnd_comp() -> @component.Component {
     when=w => {
       match w {
         FilterItem =>
-          Some((s, _key, value, _iter) => {
+          Some((s, _key, value, _iter, _stack) => {
             match value {
               Str(item) => item.contains(s.query)
               _ => true

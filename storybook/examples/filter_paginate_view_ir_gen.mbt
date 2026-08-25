@@ -360,11 +360,12 @@ pub fn naive_people_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
-  enrich_scope? : (NaivePeopleEnrichScope) -> ((NaivePeopleState) -> Map[
-    String,
-    @tutuca.Value,
-  ])?,
+  enrich_scope? : (NaivePeopleEnrichScope) -> ((
+    NaivePeopleState,
+    &@tutuca.Stack,
+  ) -> Map[String, @tutuca.Value])?,
   loop_with? : (NaivePeopleLoopWith) -> ((
     NaivePeopleState,
     @tutuca.Value,

@@ -105,7 +105,11 @@ pub fn traffic_light_component(
   update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TrafficLightState,
   ],
-  compute? : (TrafficLightMethod) -> ((TrafficLightState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (TrafficLightMethod) -> ((
+    TrafficLightState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (TrafficLightInput) -> ((
     TrafficLightState,
     Array[@tutuca.Value],
@@ -407,6 +411,7 @@ pub fn list_and_filter_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

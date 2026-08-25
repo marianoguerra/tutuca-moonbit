@@ -473,7 +473,11 @@ pub fn show_hide_component(
   update? : (ShowHideState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     ShowHideState,
   ],
-  compute? : (ShowHideMethod) -> ((ShowHideState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (ShowHideMethod) -> ((
+    ShowHideState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (ShowHideInput) -> ((
     ShowHideState,
     Array[@tutuca.Value],

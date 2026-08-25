@@ -337,6 +337,7 @@ fn corpus_inline_update(
 fn corpus_compute_hasSome(
   s : CorpusState,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   (Bool(s.count.to_double() > 0.0) : @tutuca.Value)
 }
@@ -347,6 +348,7 @@ fn corpus_compute_hasSome(
 fn corpus_compute_small(
   s : CorpusState,
   _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   (Bool(s.count.to_double() > 5.0) : @tutuca.Value)
 }
@@ -356,7 +358,7 @@ fn corpus_compute_small(
 /// GENERATED — edit the block, not this.
 fn corpus_inline_compute() -> Map[
   String,
-  (CorpusState, Array[@tutuca.Value]) -> @tutuca.Value,
+  (CorpusState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
 ] {
   { "hasSome": corpus_compute_hasSome, "small": corpus_compute_small }
 }

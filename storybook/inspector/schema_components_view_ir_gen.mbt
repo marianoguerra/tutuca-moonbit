@@ -201,7 +201,11 @@ pub fn schema_scalar_component(
   update? : (SchemaScalarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaScalarState,
   ],
-  compute? : (SchemaScalarMethod) -> ((SchemaScalarState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaScalarMethod) -> ((
+    SchemaScalarState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (SchemaScalarInput) -> ((
     SchemaScalarState,
     Array[@tutuca.Value],
@@ -452,7 +456,11 @@ pub fn schema_object_component(
   update? : (SchemaObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaObjectState,
   ],
-  compute? : (SchemaObjectMethod) -> ((SchemaObjectState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaObjectMethod) -> ((
+    SchemaObjectState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (SchemaObjectInput) -> ((
     SchemaObjectState,
     Array[@tutuca.Value],
@@ -703,7 +711,11 @@ pub fn schema_array_component(
   update? : (SchemaArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaArrayState,
   ],
-  compute? : (SchemaArrayMethod) -> ((SchemaArrayState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaArrayMethod) -> ((
+    SchemaArrayState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (SchemaArrayInput) -> ((
     SchemaArrayState,
     Array[@tutuca.Value],
@@ -949,7 +961,11 @@ pub fn schema_enum_component(
   update? : (SchemaEnumState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     SchemaEnumState,
   ],
-  compute? : (SchemaEnumMethod) -> ((SchemaEnumState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (SchemaEnumMethod) -> ((
+    SchemaEnumState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (SchemaEnumInput) -> ((
     SchemaEnumState,
     Array[@tutuca.Value],
@@ -1202,6 +1218,7 @@ pub fn schema_combinator_component(
   compute? : (SchemaCombinatorMethod) -> ((
     SchemaCombinatorState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   swap? : (SchemaCombinatorInput) -> ((
     SchemaCombinatorState,
@@ -1663,6 +1680,7 @@ pub fn schema_boolean_component(
   compute? : (SchemaBooleanMethod) -> ((
     SchemaBooleanState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

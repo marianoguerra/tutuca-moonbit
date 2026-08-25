@@ -770,6 +770,31 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
       }
       None
     }
+    // The two SUBSTITUTED sigils. Both are legal in view markup and neither is
+    // legal here, for one reason said two ways: a macro is expanded at a call
+    // site and a host binds its table before any of this is parsed, while a
+    // `<script type="tutuca/script">` block is parsed ONCE for the component,
+    // with no call site and no host around it. `parse_script` takes no context
+    // at all, which is that fact in the signature.
+    //
+    // Refused by name rather than resolved to nothing: reading Null is what
+    // this would otherwise do, and silently.
+    EMacroVar(name~, span~) => {
+      self.say(
+        "NO_MACRO_FRAME",
+        "`^\{name}` is a macro argument, and a block has no macro slots — a `<script type=\"tutuca/script\">` block is parsed once for the component, not once per call site. Read it in the view, where a macro frame exists, and pass it in as a handler argument or a field",
+        span,
+      )
+      None
+    }
+    EConfigVar(name~, span~) => {
+      self.say(
+        "NO_CONFIG_FRAME",
+        "`$$\{name}` is a value the host bound, substituted into view markup as it is parsed — and a block is compiled ahead of any host, so there is nothing here to substitute. Read it in the view and pass it in",
+        span,
+      )
+      None
+    }
     EName(name~, span~) => self.name(name, [], span)
     EApp(name~, args~, span~) => self.name(name, args, span)
     EUnary(op~, operand~, span~) =>
@@ -1145,6 +1170,8 @@ fn expr_span(e : @tscript.Expr) -> @tscript.Span {
     | ERead(span~, ..)
     | EMethod(span~, ..)
     | EDyn(span~, ..)
+    | EMacroVar(span~, ..)
+    | EConfigVar(span~, ..)
     | EName(span~, ..)
     | EApp(span~, ..)
     | EChain(span~, ..)

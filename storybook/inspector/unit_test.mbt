@@ -207,8 +207,8 @@ fn sample_comp() -> @component.Component {
     name="RichSample",
     init=RichState::{ title: "", count: 0, tags: [], open: false },
     compute={
-      "label": (s : RichState, _args) => Str(s.title),
-      "double": (s : RichState, _args) => Num((s.count * 2).to_double()),
+      "label": (s : RichState, _args, _stack) => Str(s.title),
+      "double": (s : RichState, _args, _stack) => Num((s.count * 2).to_double()),
     },
     update=(s : RichState, msg, _ctx) => {
       match msg {

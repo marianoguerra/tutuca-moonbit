@@ -220,13 +220,18 @@ pub fn ps_entry_component(
   update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PsEntryState,
   ],
-  compute? : (PsEntryMethod) -> ((PsEntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (PsEntryMethod) -> ((
+    PsEntryState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   enrich? : (PsEntryEnrich) -> ((
     PsEntryState,
     Map[String, @tutuca.Value],
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -549,13 +554,14 @@ pub fn root_component(
   update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RootState,
   ],
-  compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   swap? : (RootInput) -> ((RootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   when? : (RootWhen) -> ((
     RootState,
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   enrich? : (RootEnrich) -> ((
     RootState,
@@ -563,6 +569,7 @@ pub fn root_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

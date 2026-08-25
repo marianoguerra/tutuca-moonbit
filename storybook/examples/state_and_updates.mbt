@@ -142,7 +142,7 @@ fn show_hide_comp() -> @component.Component {
   show_hide_component(init={ isOpen: false, count: 0 }, compute=m => {
     match m {
       Label =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           if s.isOpen {
             Str("Hide details")
           } else {

@@ -301,7 +301,7 @@ fn wrapper_buckets(
     out.push({
       param: "compute",
       enum_: "\{t}Method",
-      handler: "(\{s}, Array[@tutuca.Value]) -> @tutuca.Value",
+      handler: "(\{s}, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value",
       all: cases("compute", methods),
     })
   }
@@ -322,7 +322,7 @@ fn wrapper_buckets(
     out.push({
       param: "when",
       enum_: "\{t}When",
-      handler: "(\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
+      handler: "(\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool",
       all: cases("when", surface.whens),
     })
   }
@@ -330,7 +330,7 @@ fn wrapper_buckets(
     out.push({
       param: "enrich",
       enum_: "\{t}Enrich",
-      handler: "(\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
+      handler: "(\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Unit",
       all: cases("enrich", surface.enriches),
     })
   }
@@ -338,7 +338,7 @@ fn wrapper_buckets(
     out.push({
       param: "enrich_scope",
       enum_: "\{t}EnrichScope",
-      handler: "(\{s}) -> Map[String, @tutuca.Value]",
+      handler: "(\{s}, &@tutuca.Stack) -> Map[String, @tutuca.Value]",
       all: cases("enrich_scope", surface.enrich_scopes),
     })
   }

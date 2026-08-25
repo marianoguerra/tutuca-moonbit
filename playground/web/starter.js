@@ -101,7 +101,9 @@ fn build() -> @component.ModuleDef {
     init=PanelState::{ open: false },
     compute=m => match m {
       Label =>
-        Some((s, _a) => Str(if s.open { "Hide details" } else { "Show details" }))
+        Some((s, _a, _stack) => Str(
+          if s.open { "Hide details" } else { "Show details" },
+        ))
     },
   )
   @component.ModuleDef::new(

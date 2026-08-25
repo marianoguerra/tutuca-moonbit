@@ -179,7 +179,7 @@ fn ps_entry_comp() -> @component.Component {
         // Entry category badges always use the
         // SELECTED color variant. The `cat` token is the MB test hook.
         EnrichCategoryBadge =>
-          Some((_s, binds, _key, value, _iter) => {
+          Some((_s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(cat) =>
                 binds["badgeClass"] = Str(
@@ -205,16 +205,16 @@ fn ps_entry_comp() -> @component.Component {
     compute=m => {
       match m {
         LangFlag =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             if s.lang == "es" {
               Str("🇪🇸")
             } else {
               Str("🇬🇧")
             }
           })
-        IsSpanish => Some((s, _args) => Bool(s.lang == "es"))
+        IsSpanish => Some((s, _args, _stack) => Bool(s.lang == "es"))
         YearDisplay =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             match s.startYear {
               Num(start) =>
                 match s.endYear {
@@ -300,7 +300,7 @@ fn root_comp() -> @component.Component {
     compute=m => {
       match m {
         HasActiveFilters =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Bool(
               s.selectedCategories.length() != s.allCategories.length() ||
               s.selectedRoles.length() != s.allRoles.length(),
@@ -310,7 +310,8 @@ fn root_comp() -> @component.Component {
     },
     when=w => {
       match w {
-        FilterEntry => Some((s, _key, e, _iter) => ps_filter_entry(s, e))
+        FilterEntry =>
+          Some((s, _key, e, _iter, _stack) => ps_filter_entry(s, e))
       }
     },
     enrich=e => {
@@ -318,7 +319,7 @@ fn root_comp() -> @component.Component {
         // The badge classes compose `btn btn-xs border-0` with the category
         // color; the trailing `cat-btn on|off` tokens are the MB test hooks.
         EnrichCategoryBindings =>
-          Some((s, binds, _key, value, _iter) => {
+          Some((s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(cat) => {
                 let selected = s.selectedCategories.contains(cat)
@@ -335,7 +336,7 @@ fn root_comp() -> @component.Component {
         // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
         // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
         EnrichRoleBindings =>
-          Some((s, binds, _key, value, _iter) => {
+          Some((s, binds, _key, value, _iter, _stack) => {
             match value {
               Str(role) => {
                 let selected = s.selectedRoles.contains(role)

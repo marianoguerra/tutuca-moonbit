@@ -83,16 +83,16 @@ fn file_picker_comp() -> @component.Component {
     },
     compute=m => {
       match m {
-        SizeLabel => Some((s, _args) => Str(format_size(s.size)))
+        SizeLabel => Some((s, _args, _stack) => Str(format_size(s.size)))
         TypeLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             match s.type_ {
               "" => Str("unknown")
               t => Str(t)
             }
           })
         LastModifiedLabel =>
-          Some((s, _args) => Str(format_epoch_ms(s.lastModified)))
+          Some((s, _args, _stack) => Str(format_epoch_ms(s.lastModified)))
       }
     },
   )

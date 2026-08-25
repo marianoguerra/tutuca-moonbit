@@ -159,8 +159,9 @@ recovers the producer.
 ### Dynamic vars as render targets
 
 A `*name` dynamic var resolves to a value, so it works anywhere a value
-is read — not just in `:style` / `:class`. In particular it can be a
-component-render target and an iteration source:
+is read — not just in `:style` / `:class`, and including inside a `pred` or a
+`compute` body. In particular it can be a component-render target and an
+iteration source:
 
 ```html
 <x render="*selected"></x>           <!-- render the dynamic's component -->

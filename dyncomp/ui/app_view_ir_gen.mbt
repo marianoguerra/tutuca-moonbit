@@ -899,7 +899,11 @@ pub fn universal_app_component(
   update? : (UniversalAppState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     UniversalAppState,
   ],
-  compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (UniversalAppMethod) -> ((
+    UniversalAppState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (UniversalAppInput) -> ((
     UniversalAppState,
     Array[@tutuca.Value],

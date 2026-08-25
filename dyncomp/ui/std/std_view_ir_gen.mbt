@@ -134,7 +134,11 @@ pub fn universal_component(
   update? : (UniversalState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     UniversalState,
   ],
-  compute? : (UniversalMethod) -> ((UniversalState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (UniversalMethod) -> ((
+    UniversalState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (UniversalInput) -> ((
     UniversalState,
     Array[@tutuca.Value],
@@ -297,7 +301,11 @@ pub fn stack_component(
   update? : (StackState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     StackState,
   ],
-  compute? : (StackMethod) -> ((StackState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (StackMethod) -> ((
+    StackState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (StackInput) -> ((StackState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -471,7 +479,7 @@ pub fn grid_component(
   update? : (GridState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     GridState,
   ],
-  compute? : (GridMethod) -> ((GridState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (GridMethod) -> ((GridState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   swap? : (GridInput) -> ((GridState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -786,6 +794,7 @@ pub fn tabs_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   enrich? : (TabsEnrich) -> ((
     TabsState,
@@ -793,6 +802,7 @@ pub fn tabs_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -883,7 +893,7 @@ pub fn text_component(
   update? : (TextState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TextState,
   ],
-  compute? : (TextMethod) -> ((TextState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (TextMethod) -> ((TextState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

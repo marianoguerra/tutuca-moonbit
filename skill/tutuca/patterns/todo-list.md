@@ -84,7 +84,7 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       // items are Item INSTANCES (Obj values) — read fields off them
       // with the value coercers
       OnlyVisible =>
-        Some((s, _key, value, _iter) => {
+        Some((s, _key, value, _iter, _stack) => {
           !s.hideCompleted || !value.field("completed").bool()
         })
     },

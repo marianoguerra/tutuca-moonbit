@@ -12,7 +12,7 @@ fn build() -> @component.ModuleDef {
     init=DnDExampleState::{ items: [], query: "" },
     when=w => match w {
       FilterItem =>
-        Some((s, _key, item, _iter) => match item {
+        Some((s, _key, item, _iter, _stack) => match item {
           Str(text) => text.contains(s.query)
           _ => true
         })

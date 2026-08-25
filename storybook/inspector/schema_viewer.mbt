@@ -28,7 +28,7 @@ fn schema_viewer_comp() -> @component.Component {
     compute=m => {
       match m {
         ToggleLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Str(if s.showRaw { "high-level view" } else { "raw schema" })
           })
       }

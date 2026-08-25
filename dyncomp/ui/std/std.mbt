@@ -133,7 +133,7 @@ fn universal_comp() -> @component.Component {
   universal_component(
     compute=m => {
       match m {
-        Label => Some((s, _args) => Str(label_of(s.child)))
+        Label => Some((s, _args, _stack) => Str(label_of(s.child)))
       }
     },
     update=(s, msg, ctx) => {
@@ -281,9 +281,11 @@ fn Std::stack_comp(self : Std) -> @component.Component {
     init={ ..StackState::zero(), direction: "column", gap: 8 },
     compute=m => {
       match m {
-        Style => Some((s, _args) => Str(stack_style(s)))
+        Style => Some((s, _args, _stack) => Str(stack_style(s)))
         IsRow =>
-          Some((s, _args) => Bool(direction_css(s.direction).has_prefix("row")))
+          Some((s, _args, _stack) => {
+            Bool(direction_css(s.direction).has_prefix("row"))
+          })
       }
     },
     update=(s, msg, _ctx) => {
@@ -414,7 +416,7 @@ fn Std::grid_comp(self : Std) -> @component.Component {
     init={ ..GridState::zero(), cols: 2, rows: 2, gap: 8 },
     compute=m => {
       match m {
-        Style => Some((s, _args) => Str(grid_style(s)))
+        Style => Some((s, _args, _stack) => Str(grid_style(s)))
       }
     },
     update=(s, msg, _ctx) => {
@@ -535,7 +537,9 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
     when=w => {
       match w {
         IsActivePage =>
-          Some((s, key, _value, _iter) => key.num().to_int() == active_of(s))
+          Some((s, key, _value, _iter, _stack) => {
+            key.num().to_int() == active_of(s)
+          })
       }
     },
     // The strip needs two per-row facts a `compute` cannot answer: it is pure
@@ -545,7 +549,7 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
     enrich=e => {
       match e {
         MarkActive =>
-          Some((s, binds, key, _value, _iter) => {
+          Some((s, binds, key, _value, _iter, _stack) => {
             let here = key.num().to_int() == active_of(s)
             binds["active"] = Bool(here)
             binds["editing"] = Bool(here && s.renaming)
@@ -646,7 +650,7 @@ fn text_comp() -> @component.Component {
   text_component(compute=m => {
     match m {
       Style =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           Str(
             match s.size {
               "small" => "font-size:0.85rem"

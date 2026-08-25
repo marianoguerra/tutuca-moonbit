@@ -137,6 +137,27 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
       self.g.uses_lookup = true
       call("tc_lookup", [text_const_str(self.g.pool, name)])
     }
+    // Both sigils are substituted into VIEW markup, and a card's block is
+    // compiled once with no call site and no host around it. The checker
+    // refuses them first; this is the same sentence where the code is emitted.
+    EMacroVar(name~, span~) => {
+      self.bail(
+        "`^" +
+        name +
+        "` is a macro argument, and a block has no macro slots — read it in the view and pass it in",
+        span,
+      )
+      call("tc_null", [])
+    }
+    EConfigVar(name~, span~) => {
+      self.bail(
+        "`$$" +
+        name +
+        "` is a value the host bound, and a block is compiled ahead of any host — read it in the view and pass it in",
+        span,
+      )
+      call("tc_null", [])
+    }
     ERef(span~, ..) => {
       self.bail(
         "`&.place` denotes a POSITION rather than a value, and `sendAt`'s first argument is the only place one can be written",

@@ -340,7 +340,7 @@ fn UniversalUi::app_comp(
     compute=m => {
       match m {
         ModeLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Str(if s.mode == "edit" { "editing" } else { "viewing" })
           })
       }

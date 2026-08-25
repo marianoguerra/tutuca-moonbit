@@ -90,7 +90,7 @@ test "the generated router is a map keyed by source name" {
   let (_, ir) = bucket_src("compute hasAttachments { .n }")
   assert_true(
     ir.contains(
-      "fn mail_inline_compute() -> Map[String, (MailState, Array[@tutuca.Value]) -> @tutuca.Value] {",
+      "fn mail_inline_compute() -> Map[String, (MailState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value] {",
     ),
   )
   assert_true(ir.contains("\"hasAttachments\": mail_compute_hasAttachments,"))

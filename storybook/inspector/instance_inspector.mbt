@@ -86,8 +86,8 @@ fn instance_fields_comp() -> @component.Component {
         CannotPrevPage => Some(composite_cannot_prev_page)
         CannotNextPage => Some(composite_cannot_next_page)
         PageIndicatorText => Some(composite_page_indicator_text)
-        TypeText => Some((s, _args) => Str(s.typeName))
-        CountText => Some((s, _args) => Str("{\{s.items.length()}}"))
+        TypeText => Some((s, _args, _stack) => Str(s.typeName))
+        CountText => Some((s, _args, _stack) => Str("{\{s.items.length()}}"))
       }
     },
     loop_with=l => {

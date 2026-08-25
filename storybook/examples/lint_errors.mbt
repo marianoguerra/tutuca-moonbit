@@ -162,7 +162,7 @@ fn lint_demo_comp() -> @component.Component {
     },
     when={
       // ALT_HANDLER_NOT_REFERENCED: defined here but never used in a view
-      "unusedAlter": (_s : LintDemoState, _key, _value, _iter) => true,
+      "unusedAlter": (_s : LintDemoState, _key, _value, _iter, _stack) => true,
     },
     provide={
       // PROVIDE_NOT_ADDRESSABLE: a provide must be a field (.f) or

@@ -43,7 +43,7 @@ pub fn fp_greeting_views() -> Map[String, @anode.View]
 
 pub let fruits_common_style : String
 
-pub fn fruits_component(name? : String, views? : Map[String, @anode.View], init? : FruitsState, common_style? : String, global_style? : String, update? : (FruitsState, @component.Dispatch, &@core.Ctx) -> @component.Update[FruitsState], when? : (FruitsWhen) -> ((FruitsState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn fruits_component(name? : String, views? : Map[String, @anode.View], init? : FruitsState, common_style? : String, global_style? : String, update? : (FruitsState, @component.Dispatch, &@core.Ctx) -> @component.Update[FruitsState], when? : (FruitsWhen) -> ((FruitsState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let fruits_global_style : String
 

@@ -117,6 +117,7 @@ pub fn swatch_picker_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Unit)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -317,7 +318,11 @@ pub fn quadratic_component(
   update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     QuadraticState,
   ],
-  compute? : (QuadraticMethod) -> ((QuadraticState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (QuadraticMethod) -> ((
+    QuadraticState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (QuadraticInput) -> ((
     QuadraticState,
     Array[@tutuca.Value],

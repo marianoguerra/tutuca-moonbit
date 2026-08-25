@@ -107,7 +107,7 @@ fn workspace_comp() -> @component.Component {
   workspace_component(provide={ "active": ".sheet" }, compute=m => {
     match m {
       SheetTitle =>
-        Some((s, _args) => {
+        Some((s, _args, _stack) => {
           match s.sheet {
             Obj(o) => o.obj_field("title").unwrap_or(Str(""))
             _ => Str("")

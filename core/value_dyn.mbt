@@ -36,6 +36,35 @@ pub fn Value::field(self : Value, name : String) -> Value {
 }
 
 ///|
+/// A `$name` read, asked with the stack it is being asked from.
+///
+/// The same question `field` asks — a `compute` surfaces as a pre-bound `Fn`
+/// on the instance — with the one thing a `Fn` cannot carry added back: the
+/// environment a body needs to answer a `*name` in it. Everything that is not
+/// an `Obj` answers exactly as `field_opt` does, because only an `Obj` has a
+/// body to run.
+pub fn Value::method_at(self : Value, name : String, stack : &Stack) -> Value? {
+  match self {
+    Obj(o) => o.obj_method_at(name, stack)
+    _ => self.field_opt(name)
+  }
+}
+
+///|
+/// The render-time twin of `method_at`: `@when`, `@enrich-with`, `@loop-with`.
+pub fn Value::callable_at(
+  self : Value,
+  name : String,
+  ns : HandlerNamespace,
+  stack : &Stack,
+) -> Value? {
+  match self {
+    Obj(o) => o.obj_callable_at(name, ns, stack)
+    _ => self.field_opt(name)
+  }
+}
+
+///|
 /// An item by key: a list index, a map key, or whatever a custom collection
 /// resolves through `obj_item`. None when there is no such item.
 pub fn Value::item_opt(self : Value, key : PathKey) -> Value? {

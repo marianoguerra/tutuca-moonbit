@@ -35,7 +35,7 @@ fn push_view_comp() -> @component.Component {
     compute=m => {
       match m {
         GetToggleLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             if s.view == "main" {
               Str("Set Edit Mode")
             } else {
@@ -48,7 +48,9 @@ fn push_view_comp() -> @component.Component {
       match w {
         // the item is an Entry INSTANCE, so the filter calls its own method
         FilterItem =>
-          Some((s, _k, item, _iter) => contains_text_filter(s.query, item))
+          Some((s, _k, item, _iter, _stack) => {
+            contains_text_filter(s.query, item)
+          })
       }
     },
   )
@@ -87,7 +89,7 @@ fn seq_item_access_comp() -> @component.Component {
     compute=m => {
       match m {
         GetMaxIndex =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
           })
       }
@@ -138,9 +140,12 @@ fn pagination_comp() -> @component.Component {
         // No `PageCount`: nothing called `$pageCount`, in a view or out of one.
         // The string-keyed bucket had no way to say so.
         PageLabel =>
-          Some((s, _args) => Str("Page \{s.page + 1} of \{page_count(s)}"))
-        IsFirstPage => Some((s, _args) => Bool(s.page <= 0))
-        IsLastPage => Some((s, _args) => Bool(s.page >= page_count(s) - 1))
+          Some((s, _args, _stack) => {
+            Str("Page \{s.page + 1} of \{page_count(s)}")
+          })
+        IsFirstPage => Some((s, _args, _stack) => Bool(s.page <= 0))
+        IsLastPage =>
+          Some((s, _args, _stack) => Bool(s.page >= page_count(s) - 1))
       }
     },
     loop_with=l => {

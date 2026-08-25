@@ -314,6 +314,14 @@ test "the atoms are the view's atoms" {
   assert_eq(trip("compute a { @value.member }"), "compute a { @value.member }")
   assert_eq(trip("compute a { $method }"), "compute a { $method }")
   assert_eq(trip("compute a { *dyn }"), "compute a { *dyn }")
+  // The two SUBSTITUTED sigils. A block may not hold either — `tscript/check`
+  // refuses them by name — but the GRAMMAR does, because a conditional slot is
+  // written in this language and a slot stands in a macro frame. The printer
+  // has to be total over what parses, or the round trip stops pinning it.
+  assert_eq(trip("compute a { ^macro }"), "compute a { ^macro }")
+  assert_eq(trip("compute a { $$config }"), "compute a { $$config }")
+  assert_eq(trip("pred p { empty? ^label }"), "pred p { empty? ^label }")
+  assert_eq(trip("pred p { $$origin is 'x' }"), "pred p { $$origin is 'x' }")
   assert_eq(trip("compute a { 'text' }"), "compute a { 'text' }")
   assert_eq(trip("compute a { 42 }"), "compute a { 42 }")
   assert_eq(trip("compute a { 2.5 }"), "compute a { 2.5 }")

@@ -192,7 +192,7 @@ fn card_comp() -> @component.Component {
     compute=m => {
       match m {
         RefLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Str(if s.module_ == "" { s.name } else { "\{s.module_}/\{s.name}" })
           })
       }
@@ -236,12 +236,14 @@ fn Gallery::root_comp(
     compute=m => {
       match m {
         LayoutLabel =>
-          Some((s, _args) => Str(if s.wide { "one per row" } else { "grid" }))
+          Some((s, _args, _stack) => {
+            Str(if s.wide { "one per row" } else { "grid" })
+          })
         DetailsLabel =>
-          Some((s, _args) => {
+          Some((s, _args, _stack) => {
             Str(if s.mode == "details" { "hide details" } else { "details" })
           })
-        IsEmpty => Some((s, _args) => Bool(shown_count(s) == 0))
+        IsEmpty => Some((s, _args, _stack) => Bool(shown_count(s) == 0))
       }
     },
     // The filter runs at RENDER time over cards that already exist, which is
@@ -250,7 +252,7 @@ fn Gallery::root_comp(
     // interaction would lose it.
     when=w => {
       match w {
-        Matches => Some((s, _key, item, _iter) => card_matches(s, item))
+        Matches => Some((s, _key, item, _iter, _stack) => card_matches(s, item))
       }
     },
     update=(s, msg, ctx) => {

@@ -134,7 +134,11 @@ pub fn push_view_component(
   update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PushViewState,
   ],
-  compute? : (PushViewMethod) -> ((PushViewState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (PushViewMethod) -> ((
+    PushViewState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (PushViewInput) -> ((
     PushViewState,
     Array[@tutuca.Value],
@@ -145,6 +149,7 @@ pub fn push_view_component(
     @tutuca.Value,
     @tutuca.Value,
     @tutuca.Value,
+    &@tutuca.Stack,
   ) -> Bool)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -285,6 +290,7 @@ pub fn seq_item_access_component(
   compute? : (SeqItemAccessMethod) -> ((
     SeqItemAccessState,
     Array[@tutuca.Value],
+    &@tutuca.Stack,
   ) -> @tutuca.Value)?,
   swap? : (SeqItemAccessInput) -> ((
     SeqItemAccessState,
@@ -450,7 +456,11 @@ pub fn pagination_component(
   update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     PaginationState,
   ],
-  compute? : (PaginationMethod) -> ((PaginationState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (PaginationMethod) -> ((
+    PaginationState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (PaginationInput) -> ((
     PaginationState,
     Array[@tutuca.Value],

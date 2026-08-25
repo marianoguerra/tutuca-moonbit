@@ -40,7 +40,7 @@ copied across unchanged. What changes is the JS *around* the view:
 | `component({name, view, fields, …})` | `@component.component(name~, views~, init~, …)` |
 | `fields: { count: 0 }` | a `derive(ToJson, FromJson)` state struct passed as `init=State::{ count: 0 }` |
 | `fields: { kid: Kid.make({…}) }` | `specs={ "kid": FieldSpec::comp("Kid", args={…}) }` — resolved through the registration scope at `make()` time |
-| `methods: { m() {…} }` | `compute=m => match m { M => Some((s, args) => Value) }` — a value read, **pure**, keyed by the generated `<C>Method` enum |
+| `methods: { m() {…} }` | `compute=m => match m { M => Some((s, args, stack) => Value) }` — a value read, **pure**, keyed by the generated `<C>Method` enum; `stack` is the render position, and `stack.lookup_dynamic(name)` is what a `*name` in the same body reads |
 | `input`/`receive`/`bubble`/`response` | one `update=(s, dispatch, ctx) => S?` match — `None` = no change |
 | `statics: { fromData }` | a plain `fn` — nothing in the framework calls statics, in either language |
 | `@on.click="onAddItem Item"` (a component as an arg) | the handler **captures** the `Component` in its closure; the view just calls `onAddItem` |

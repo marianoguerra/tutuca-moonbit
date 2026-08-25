@@ -330,7 +330,11 @@ pub fn tree_item_component(
   update? : (TreeItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     TreeItemState,
   ],
-  compute? : (TreeItemMethod) -> ((TreeItemState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  compute? : (TreeItemMethod) -> ((
+    TreeItemState,
+    Array[@tutuca.Value],
+    &@tutuca.Stack,
+  ) -> @tutuca.Value)?,
   swap? : (TreeItemInput) -> ((
     TreeItemState,
     Array[@tutuca.Value],
