@@ -12,16 +12,19 @@ import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
-import { ensureCompiler, TOOLCHAIN } from "./fetch-compiler.mjs";
+import {
+  ensureCompiler,
+  installedToolchain,
+  resolveWorkerForBuild,
+  vendoredWorker,
+  TOOLCHAIN,
+} from "./fetch-compiler.mjs";
 import { copyScoped } from "../../scripts/scope-bundle.mjs";
 import { DIRECT } from "./direct-packages.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MOON_HOME = process.env.MOON_HOME || join(process.env.HOME, ".moon");
 const OUT = join(REPO, "dist/playground");
-// The compiler blob is gitignored; fetch the pinned one if a fresh clone
-// hasn't got it yet (see playground/build/fetch-compiler.mjs).
-const WORKER = ensureCompiler();
 const WEB = join(REPO, "playground/web");
 
 // The payload is a PAIR: .mi/.core bundles emitted by the installed moonc, read
@@ -30,21 +33,91 @@ const WEB = join(REPO, "playground/web");
 // nonsense — typically `[E4018] Type X does not implement trait ...Fields`,
 // because a stale reader can't see the impls a newer writer emitted. So check
 // it at the only moment we still know both halves.
+//
+// The pin in toolchain.json is the FAST PATH, not the rule. The rule is that
+// the worker must be built from the installed moonc, and the pin stands in for
+// it because there is no exact-hash selector on npm. When the two disagree —
+// which is what CI does every time the toolchain moves, since
+// cli.moonbitlang.com serves `latest` and nothing else — the pin being stale
+// is not itself a reason to fail: look for a published worker that satisfies
+// the actual rule, and fail only if there is none. What used to happen instead
+// was a red build on every toolchain bump, with the site frozen at whatever
+// commit last matched.
 function assertToolchain() {
-  const got = execSync("moon version --all", { cwd: REPO, encoding: "utf8" });
-  if (got.includes(TOOLCHAIN.moonc)) return;
-  const msg =
-    `toolchain mismatch: playground/build/toolchain.json pins moonc ${TOOLCHAIN.moonc} ` +
-    `(paired with @moonbit/moonc-worker@${TOOLCHAIN.mooncWorker}), but the installed toolchain reports:\n` +
-    `${got}\n` +
-    `The payload bakes the INSTALLED toolchain's core bundles, so a mismatched in-browser\n` +
-    `moonc fails to link user code. Either install the matching toolchain, or bump\n` +
-    `toolchain.json + \`node playground/build/fetch-compiler.mjs --force\` and re-run this.\n` +
-    `Set TUTUCA_ALLOW_TOOLCHAIN_MISMATCH=1 to assemble anyway (the payload may not work).`;
-  if (process.env.TUTUCA_ALLOW_TOOLCHAIN_MISMATCH) console.warn("WARNING: " + msg);
-  else throw new Error(msg);
+  const installed = installedToolchain(REPO);
+  const pinned = {
+    version: TOOLCHAIN.mooncWorker,
+    build: TOOLCHAIN.mooncBuild,
+  };
+  if (installed.moonc && installed.moonc === TOOLCHAIN.moonc) return pinned;
+
+  const stale =
+    `toolchain moved: playground/build/toolchain.json pins moonc ${TOOLCHAIN.moonc} ` +
+    `(paired with @moonbit/moonc-worker@${TOOLCHAIN.mooncWorker}), and the installed toolchain reports:\n` +
+    `${installed.raw}`;
+
+  if (!installed.build) {
+    throw new Error(
+      stale +
+        `\n\`moon version --all\` did not name a moonc build to match a worker against.`,
+    );
+  }
+
+  // Already holding the right blob from an earlier run: nothing to fetch, and
+  // nothing to say beyond the bump.
+  const have = vendoredWorker();
+  if (have && have.endsWith(`+${installed.build}`)) {
+    console.warn(`${stale}\nusing the vendored @moonbit/moonc-worker@${have}`);
+    console.warn(bumpHint(have.split("+")[0], installed));
+    return { version: have.split("+")[0], build: installed.build };
+  }
+
+  console.warn(`${stale}\nlooking for a worker built from ${installed.build} ...`);
+  const found = resolveWorkerForBuild(installed.build, installed.moon);
+  if (!found) {
+    throw new Error(
+      stale +
+        `\nand npm publishes no @moonbit/moonc-worker built from ${installed.build}.\n` +
+        `The payload bakes the INSTALLED toolchain's core bundles, so a mismatched in-browser\n` +
+        `moonc fails to link user code. Install the moonc the pin names, or wait for the\n` +
+        `worker for this one to be published.\n` +
+        `Set TUTUCA_ALLOW_TOOLCHAIN_MISMATCH=1 to assemble anyway (the payload will not work).`,
+    );
+  }
+  console.warn(bumpHint(found, installed));
+  return { version: found, build: installed.build };
 }
-assertToolchain();
+
+/// The edit that makes today's self-heal tomorrow's fast path. Printed rather
+/// than applied: a build step that rewrites a pinned file leaves every CI run
+/// with a dirty tree and no one deciding anything.
+function bumpHint(worker, installed) {
+  return (
+    `\nto make this the pin, set playground/build/toolchain.json to:\n` +
+    `  "mooncWorker": "${worker}",\n` +
+    `  "moonc": "${installed.moonc}",\n` +
+    `  "mooncBuild": "${installed.build}",\n` +
+    `  "moon": "${installed.moon}"\n`
+  );
+}
+
+// What the payload will carry: the pin when it holds, the worker the guard
+// found when it does not.
+let worker = { version: TOOLCHAIN.mooncWorker, build: TOOLCHAIN.mooncBuild };
+try {
+  worker = assertToolchain();
+} catch (e) {
+  if (process.env.TUTUCA_ALLOW_TOOLCHAIN_MISMATCH) {
+    console.warn("WARNING: " + e.message);
+  } else throw e;
+}
+
+// The compiler blob is gitignored; fetch the pinned one if a fresh clone
+// hasn't got it yet (see playground/build/fetch-compiler.mjs). AFTER the guard
+// above, which is what leaves the right blob in place when the pin is the
+// stale half — fetching first would download one worker to replace it with
+// another.
+const WORKER = ensureCompiler(worker);
 
 // The packages a user may import directly. In direct-packages.mjs because
 // `scripts/check-playground-examples.mjs` needs the same list to write the

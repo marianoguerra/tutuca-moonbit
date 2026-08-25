@@ -38,3 +38,7 @@ playground/_examples_check/
 # examples/ builds here and nowhere else, because a fresh clone would have no
 # contract to embed.
 !examples/**/wit/*.wit
+
+# The stamp beside the compiler blob: what worker it is, written by
+# playground/build/fetch-compiler.mjs. Gitignored with the blob it describes.
+playground/vendor/moonc-web.json

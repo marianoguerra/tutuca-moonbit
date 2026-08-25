@@ -48,6 +48,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is true. (`tutucard/wasm/check.mbt`, `tutucard/wasm/compile.mbt`,
   `viewgen/check_state.mbt`, `viewgen/errors.mbt`, `tscript/check/`.)
 
+- **A toolchain release no longer freezes the deployed site.** Every Pages
+  deploy since 2026-08-23 failed, so <https://marianoguerra.github.io/tutuca-moonbit/>
+  served a build that predates 0.29.0 — where `@show=".n < 15"` is not in the
+  slot vocabulary, so every conditional in a card rendered unconditionally. The
+  failure was `assemble.mjs`'s toolchain guard: it compares the installed
+  `moonc` against `playground/build/toolchain.json` and CI installs `latest`,
+  because `cli.moonbitlang.com` serves nothing else. Every toolchain release
+  was a red build until somebody bumped the pin by hand.
+
+  The pin is now the fast path rather than the rule. The rule — the worker must
+  be built from the moonc that is installed — is checkable directly: npm drops
+  SemVer build metadata (`npm view` says `0.1.202608243` for a package whose
+  own `package.json` says `0.1.202608243+f8a486b6f`), so a candidate is checked
+  by downloading it, newest same-day first. It fails only when npm publishes no
+  worker for the installed moonc, and prints the `toolchain.json` edit that
+  makes today's answer tomorrow's fast path rather than writing it — a build
+  step that rewrites a pinned file leaves every CI run with a dirty tree and
+  nobody deciding anything. (`playground/build/fetch-compiler.mjs`,
+  `playground/build/assemble.mjs`, `playground/vendor/README.md`.)
+
 
 ## [0.31.0] - 2026-08-25
 

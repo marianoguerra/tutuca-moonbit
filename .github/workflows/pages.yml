@@ -14,11 +14,13 @@
 # This job installs the LATEST toolchain, because cli.moonbitlang.com serves
 # only `latest`/`nightly` — every dated or versioned identifier we tried 404s,
 # so MOONBIT_INSTALL_VERSION has nothing to point at. The guard is instead at
-# assemble time: `assemble.mjs` compares `moon version --all` against the pin
-# and fails this build rather than deploying a playground that reports
-# nonsense errors on every edit. When it fails, bump toolchain.json and
-# re-fetch (see playground/vendor/README.md) — do not paper over it with
-# TUTUCA_ALLOW_TOOLCHAIN_MISMATCH.
+# assemble time: `assemble.mjs` compares `moon version --all` against the pin,
+# and when they disagree it looks on npm for a worker built from the moonc
+# that IS installed, using that and printing the toolchain.json edit that
+# would make it the pin. It fails only when npm publishes no such worker —
+# rather than deploying a playground that reports nonsense errors on every
+# edit. When it does fail, wait for the worker or install the pinned moonc;
+# do not paper over it with TUTUCA_ALLOW_TOOLCHAIN_MISMATCH.
 name: Deploy dist to GitHub Pages
 
 on:
