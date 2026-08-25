@@ -79,7 +79,7 @@ const STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/storybook_wasm/storybo
 
 ///|
 // moon names the native executable `.exe` on every OS, including Linux.
-const NATIVE_BIN = "_build/native/debug/build/cmd/main/main.exe"
+const NATIVE_BIN = "_build/native/debug/build/cmd/tutuca/tutuca.exe"
 
 ///|
 const DIST = "dist"
@@ -337,7 +337,7 @@ pub fn tasks() -> Array[Task] {
         // needed because the template lives in the binary: regenerate the
         // embed, rebuild, then run what a stranger would get.
         moon("build · native CLI (with the guest template embedded)", [
-          "build", "--target", "native", "cmd/main",
+          "build", "--target", "native", "cmd/tutuca",
         ]),
         {
           label: "check · scaffolded guest compiles",
@@ -549,7 +549,7 @@ fn gen_views_commands() -> Array[Command] {
   let commands = files.map(entry => {
     let (path, name) = entry
     let args = [
-      "run", "--target", "native", "cmd/main", "--", "gen-views", path,
+      "run", "--target", "native", "cmd/tutuca", "--", "gen-views", path,
     ]
     match name {
       Some(n) => {
@@ -612,7 +612,7 @@ fn gen_guest_bindings_commands() -> Array[Command] {
 fn build_commands() -> Array[Command] {
   [
     moon("build · wasm-gc", ["build", "--target", "wasm-gc"]),
-    moon("build · native cli", ["build", "--target", "native", "cmd/main"]),
+    moon("build · native cli", ["build", "--target", "native", "cmd/tutuca"]),
     moon("build · js", ["build", "--target", "js"]),
     // playground/host is not in the default js build set; the playground
     // assembly (dist) needs its host.core, and this doubles as a build-smoke.

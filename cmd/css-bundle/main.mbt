@@ -24,7 +24,7 @@
 /// the `@import` graph and returns entry-relative keys usable with `base = ""`.
 
 ///|
-/// `@env.args()` is core's own answer, and what `cmd/main` and `cmd/dev`
+/// `@env.args()` is core's own answer, and what `cmd/tutuca` and `cmd/dev`
 /// already use; `exit` is one line of libc, so it is declared here rather than
 /// kept as a reason to depend on a package this tool needed nothing else from.
 extern "C" fn exit(code : Int) = "exit"

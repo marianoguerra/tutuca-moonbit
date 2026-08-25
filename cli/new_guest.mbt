@@ -11,7 +11,7 @@
 // the bindings ship generated and drift-checked, and the WIT is the contract
 // rather than something to regenerate against. That also keeps this command
 // inside the CLI's rule that the core decides and the shell only writes —
-// cmd/main spawns no subprocesses.
+// cmd/tutuca spawns no subprocesses.
 //
 // Why a scaffolder rather than a package to depend on: `sdk.mbt` implements the
 // `declare`s in the generated `top.mbt` and defines methods on `Instance`, and

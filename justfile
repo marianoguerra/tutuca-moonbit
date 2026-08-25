@@ -3,7 +3,7 @@
 # not listed here: `just dev <task>`.
 
 dev := "moon run --target native cmd/dev --"
-cli := "moon run --target native cmd/main --"
+cli := "moon run --target native cmd/tutuca --"
 
 # list available recipes
 default:

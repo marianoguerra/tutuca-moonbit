@@ -3,7 +3,7 @@
 //
 // Pure and target-agnostic like viewgen/ and cli/: source text in -> a typed
 // StateDef out, never touching the filesystem. viewgen/ threads the result
-// through view generation; cmd/main does the I/O.
+// through view generation; cmd/tutuca does the I/O.
 //
 // The surface is tutuca's own and the lexer/parser live in this package. State
 // names map directly onto view and JSON names, sum declarations cover both

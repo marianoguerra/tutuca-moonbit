@@ -70,9 +70,22 @@ Live demos, playground and storybook:
 
 ## Install
 
+As a library:
+
 ```sh
 moon add marianoguerra/tutuca
 ```
+
+The CLI (`gen-views`, `watch`, `gen-*-css`, `storybook`, `install-skill`,
+`new-guest`) is the `cmd/tutuca` package, and `moon install` names the binary
+after that package's last segment:
+
+```sh
+moon install marianoguerra/tutuca/cmd/tutuca
+```
+
+That lands `tutuca` in `~/.moon/bin/`, which the MoonBit toolchain already puts
+on your PATH — no symlink needed. Check it with `tutuca help`.
 
 ## Build and test
 

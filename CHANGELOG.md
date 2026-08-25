@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The CLI package is `cmd/tutuca`, so the installed binary is `tutuca`.**
+  `moon install` names the binary after the package's last path segment, and
+  the package was `cmd/main` — so `moon install marianoguerra/tutuca/cmd/main`
+  landed a binary called **`main`** in `~/.moon/bin/`. Nothing on PATH answered
+  to `tutuca`, every command in the docs and in the bundled skill was wrong for
+  a reader who had just installed it, and the workaround was a hand-made
+  symlink. The package is renamed; `moon install marianoguerra/tutuca/cmd/tutuca`
+  now installs `tutuca`.
+
+  Local invocations change with it: `moon run --target native cmd/tutuca -- …`,
+  and the built binary is `_build/native/debug/build/cmd/tutuca/tutuca.exe`.
+  `just` recipes already wrap these. The other `cmd/*` shells keep their names —
+  they are dev tools, excluded from the tarball, and never installed.
+
+  README.md and [skill/tutuca/cli.md](skill/tutuca/cli.md) gained the install
+  command, which neither had.
+
 ## [0.30.0] - 2026-08-25
 
 ### Fixed

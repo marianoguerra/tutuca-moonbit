@@ -344,7 +344,7 @@ The raw `moon` commands below still work and are what the tasks run underneath.
   coverage needs all three: `moon test` (wasm-gc), `moon test --target js`
   (vdom/browser, app/browser — happy-dom based; those two packages are what
   the `test` task passes, and the only ones with js-target tests)
-  and `moon test --target native` (the cli shell: cmd/main).
+  and `moon test --target native` (the cli shell: cmd/tutuca).
   Run `moon check --target js` and `--target native` too before handing off —
   each target surfaces warnings the others don't.
 

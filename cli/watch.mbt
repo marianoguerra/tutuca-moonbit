@@ -6,7 +6,7 @@
 // and the MoonBit compiler is the thing that tells you what broke.
 //
 // Pure like the rest of cli/: this half only decides WHAT to watch and what
-// each changed file should generate. The shell (cmd/main) owns the watcher,
+// each changed file should generate. The shell (cmd/tutuca) owns the watcher,
 // the filesystem and the printing, because a watch loop is nothing but I/O.
 
 ///|

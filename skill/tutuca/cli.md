@@ -4,6 +4,16 @@ The `tutuca` CLI does the work that happens **outside** the compiler:
 generating view modules, watching them, serving the pre-built storybook, and
 installing this skill. Reach this file for command/flag/exit-code details.
 
+## Install
+
+```sh
+moon install marianoguerra/tutuca/cmd/tutuca
+```
+
+`moon install` names the binary after the package's last segment, so this
+installs `tutuca` into `~/.moon/bin/` — already on your PATH from the MoonBit
+toolchain. `tutuca help` confirms it.
+
 ## What this CLI does NOT do, and why
 
 There is no `get`, `list`, `examples`, `show`, `lint` or `render`, and no way
@@ -387,4 +397,4 @@ tutuca feedback < notes.txt
 Each record is one JSON object per line: `{ts, version, message}`.
 Empty input (no positional, no piped stdin) exits **1** with a usage
 error. (The `Feedback` outcome needs stdin/filesystem, so minimal
-embedding shells may opt out — `cmd/main` has the full handling.)
+embedding shells may opt out — `cmd/tutuca` has the full handling.)

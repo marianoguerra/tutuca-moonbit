@@ -4,7 +4,7 @@
 // stop being strings the compiler cannot see.
 //
 // Pure like the rest of cli/: this half parses the flags and turns SOURCE
-// TEXT into GENERATED TEXT. The shell (cmd/main) reads the input file and
+// TEXT into GENERATED TEXT. The shell (cmd/tutuca) reads the input file and
 // writes the plan, the same split `install-skill` uses.
 
 ///|

@@ -41,7 +41,7 @@ import {
 }
 
 // What `moon publish` ships. Consumers get the library packages, the CLI
-// (cmd/main -> cli/) and the docs; they don't get the demo/playground/guest
+// (cmd/tutuca -> cli/) and the docs; they don't get the demo/playground/guest
 // hosts, the dev tooling, or the storybook — those only make sense inside
 // this repo: `tutuca storybook` serves a pre-built bundle and needs no
 // story registry, and the harness's demo test defines its own module rather

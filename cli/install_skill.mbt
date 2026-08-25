@@ -5,7 +5,7 @@
 //
 // The pure core decides everything decidable without a filesystem: flag
 // parsing, help, the dry-run listing, and the write plan. The shell
-// (cmd/main) resolves the base directory, refuses to overwrite existing
+// (cmd/tutuca) resolves the base directory, refuses to overwrite existing
 // skill files unless --force, creates directories and writes.
 
 ///|

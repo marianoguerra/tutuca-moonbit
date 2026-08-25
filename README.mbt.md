@@ -73,7 +73,7 @@ into a companion MoonBit module, so the view's vocabulary stops being strings
 the compiler cannot see:
 
 ```sh
-moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
+moon run --target native cmd/tutuca -- gen-views demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt      (the view vocabulary as types)
 # -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled views + the wrapper)
 # both checked in; regenerate, never edit

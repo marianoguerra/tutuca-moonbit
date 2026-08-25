@@ -1,6 +1,6 @@
 // Native shell for the tutuca CLI: argv/stdout/stderr/stdin/fs/exit only —
 // all command logic lives in the pure marianoguerra/tutuca/cli package.
-// Run with: moon run --target native cmd/main -- <args>
+// Run with: moon run --target native cmd/tutuca -- <args>
 import {
   "marianoguerra/tutuca/cli",
   "marianoguerra/tutuca/css",

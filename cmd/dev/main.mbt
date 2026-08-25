@@ -21,7 +21,7 @@ async fn err(text : String) -> Unit noraise {
 
 ///|
 /// Ensure a directory exists. `@fs.mkdir` raises when the dir already exists,
-/// even with `recursive=true`, so guard on `exists` first (same as cmd/main).
+/// even with `recursive=true`, so guard on `exists` first (same as cmd/tutuca).
 async fn ensure_dir(path : String) -> Int noraise {
   try {
     if !@fs.exists(path) {

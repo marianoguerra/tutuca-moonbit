@@ -1,6 +1,6 @@
 // Pure CLI core: argv in -> Emit (stdout/stderr text + exit code) out. Never
 // touches argv/fs/stdio itself so it stays target-agnostic and testable;
-// cmd/main is the native shell that does I/O.
+// cmd/tutuca is the native shell that does I/O.
 //
 // The dependency list is the honest statement of what this CLI does: it reads
 // view source and writes MoonBit (anode/viewgen/lint), and that is all. No

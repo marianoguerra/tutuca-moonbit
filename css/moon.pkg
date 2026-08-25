@@ -8,7 +8,7 @@
 //
 // Target-agnostic on purpose. compile_sync needs no async runtime, so the wasm
 // demo hosts, the js playground and the native CLI (`tutuca gen-tailwind-css` /
-// `gen-margaui-css`, through cmd/main) all share this one package.
+// `gen-margaui-css`, through cmd/tutuca) all share this one package.
 import {
   "marianoguerra/tailwindcss" @tw,
 }

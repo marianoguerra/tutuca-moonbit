@@ -18,7 +18,7 @@
 //
 // Run:
 //   moon run --target native cmd/dev -- guest-template-embed
-//   moon build --target native cmd/main
+//   moon build --target native cmd/tutuca
 //   node scripts/check-guest-template.mjs
 import { rmSync, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -26,7 +26,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
-const BIN = join(REPO, "_build/native/debug/build/cmd/main/main.exe");
+const BIN = join(REPO, "_build/native/debug/build/cmd/tutuca/tutuca.exe");
 const OUT = join(REPO, "_build/guest-template-check");
 // Two words, so it exercises the kebab -> PascalCase/snake_case split that a
 // one-word name would let slide.
@@ -35,7 +35,7 @@ const NAME = "smoke-check";
 if (!existsSync(BIN)) {
   console.error(
     `check-guest-template: no CLI binary at ${BIN}\n` +
-      "  build it first: moon build --target native cmd/main",
+      "  build it first: moon build --target native cmd/tutuca",
   );
   process.exit(2);
 }
@@ -54,7 +54,7 @@ try {
       "check-guest-template: this binary has no embedded template.\n" +
         "  regenerate and rebuild:\n" +
         "    moon run --target native cmd/dev -- guest-template-embed\n" +
-        "    moon build --target native cmd/main",
+        "    moon build --target native cmd/tutuca",
     );
     process.exit(1);
   }

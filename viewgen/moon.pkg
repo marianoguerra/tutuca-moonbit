@@ -4,7 +4,7 @@
 //
 // Pure and target-agnostic like cli/: source text in -> generated source text
 // out, never touching the filesystem. The `gen-views` CLI command wraps it
-// and cmd/main does the I/O.
+// and cmd/tutuca does the I/O.
 import {
   "marianoguerra/tutuca/core" @tutuca,
   // The two event-path tables. A leaf package precisely so this one can reach

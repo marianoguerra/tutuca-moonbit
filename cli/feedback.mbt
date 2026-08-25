@@ -1,5 +1,5 @@
 // Pure half of `tutuca feedback`: help
-// text, flag parsing, the record line and paths. The shell (cmd/main) does
+// text, flag parsing, the record line and paths. The shell (cmd/tutuca) does
 // the stdin fallback and the ~/.tutuca/feedback.jsonl append.
 
 ///|

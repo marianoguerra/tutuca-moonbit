@@ -6,7 +6,7 @@
 // stylesheet holding exactly the utilities it uses.
 //
 // Pure like the rest of cli/: this half parses the flags and turns SOURCE TEXT
-// into a class set. The shell (cmd/main) walks the tree, reads the files, calls
+// into a class set. The shell (cmd/tutuca) walks the tree, reads the files, calls
 // the compiler and writes the CSS — the same split gen-views uses.
 
 ///|

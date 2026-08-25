@@ -5,7 +5,7 @@
 // `<script type="tutuca/state">` block and the views in its templates. They
 // compile ahead of time into counter_view_gen.mbt by
 //
-//   moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
+//   moon run --target native cmd/tutuca -- gen-views demo/counterlib/counter.html --name Counter
 //
 // so neither the handler names nor the field names below are matched as
 // strings. Adding a field to the schema adds it to CounterState, and a view

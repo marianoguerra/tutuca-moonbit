@@ -12,7 +12,7 @@
 // pre-built gallery, installing the skill, and describing itself.
 //
 // The core is deliberately I/O-free: `plan(argv)` returns an `Outcome` and
-// the native shell (cmd/main) writes stdout/stderr, reads stdin, touches the
+// the native shell (cmd/tutuca) writes stdout/stderr, reads stdin, touches the
 // filesystem and exits. This keeps the core testable on any target.
 
 ///|
@@ -88,7 +88,7 @@ pub(all) enum Outcome {
   /// directories, refuses to clobber without `--force`, and writes.
   NewGuest(GlobalOpts, plan~ : GuestScaffoldPlan)
   /// Serve the pre-built storybook gallery bundle (storybook.mbt). The core
-  /// decides the flags; the shell (cmd/main) resolves the bundle directory,
+  /// decides the flags; the shell (cmd/tutuca) resolves the bundle directory,
   /// starts the static HTTP server, or copies the bundle for `--out`.
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   /// Compile the views under `roots` into MoonBit modules. The core decides
