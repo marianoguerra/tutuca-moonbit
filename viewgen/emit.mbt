@@ -678,6 +678,13 @@ fn emit_module_compiled(
         // `compiled_comp.surface.methods` is the list before the fold, so a
         // name absent from it that the block answers in its render role is a
         // method nobody could call.
+        // Once per SENTENCE, not once per role. A refusal is per name AND
+        // role, which is the right granularity for the decision — but every
+        // `pred` is folded into the method bucket as well as its own, so a
+        // body refused for a reason that is not about the role produces two
+        // byte-identical lines, and a reader has to compare them to find out
+        // they are the same finding.
+        let said : Set[String] = Set([])
         for r in e.refusals {
           if !compiled_comp.surface.methods.contains(r.name) &&
             (
@@ -687,9 +694,10 @@ fn emit_module_compiled(
             ) {
             continue
           }
-          hints.push(
-            "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)",
-          )
+          let line = "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)"
+          if said.add_and_check(line) {
+            hints.push(line)
+          }
         }
         answered = Answered::of(Some(e))
       }
