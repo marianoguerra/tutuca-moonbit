@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-08-25
+
 ### Changed
 
 - **The CLI package is `cmd/tutuca`, so the installed binary is `tutuca`.**
