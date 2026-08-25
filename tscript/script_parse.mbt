@@ -284,6 +284,51 @@ fn is_binary_only(f : OpFamily) -> Bool {
 // Declarations
 
 ///|
+/// Where an expression is. Every case carries its own span; this is the one
+/// place that says so, for a caller holding an `Expr` rather than the token it
+/// came from.
+fn expr_span(e : Expr) -> Span {
+  match e {
+    ELit(span~, ..)
+    | ETpl(span~, ..)
+    | ERead(span~, ..)
+    | EMethod(span~, ..)
+    | EDyn(span~, ..)
+    | EName(span~, ..)
+    | EApp(span~, ..)
+    | EChain(span~, ..)
+    | EUnary(span~, ..)
+    | EIf(span~, ..)
+    | ERef(span~, ..) => span
+  }
+}
+
+///|
+/// One expression, whole — the grammar above with no declaration around it.
+///
+/// This is what lets a CONDITIONAL SLOT be the same language as a block body
+/// rather than a second one that looks like it. `parse_expr` carries no
+/// context: it reaches `parse_operand` / `parse_value` / `parse_place` and
+/// never the declaration or statement vocabulary, so there is nothing for a
+/// slot to supply and nothing for the two callers to disagree about.
+///
+/// The shape is `parse_tpl_parts`'s, which has always parsed an interpolation
+/// this way — a fresh cursor over a bare substring, and a demand that the
+/// whole of it was consumed.
+pub fn parse_expr_source(source : String) -> Expr raise ScriptError {
+  let p : P = { toks: tokenize_script(source), at: 0 }
+  let e = parse_expr(p)
+  if !(p.peek() is TEof) {
+    raise Unexpected(
+      got=tok_name(p.peek()),
+      want="the end of the expression",
+      span=p.span(),
+    )
+  }
+  e
+}
+
+///|
 pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
   let p : P = { toks: tokenize_script(source), at: 0 }
   let out : Array[Decl] = []

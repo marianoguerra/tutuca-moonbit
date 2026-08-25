@@ -367,6 +367,12 @@ declare pub fn ScriptError::span(self : ScriptError) -> Span
 declare pub fn parse_script(source : String) -> Array[Decl] raise ScriptError
 
 ///|
+/// Parse ONE expression, with no declaration around it — the entry a
+/// conditional slot parses through, so that a slot and a block body are the
+/// same language rather than two that resemble each other.
+declare pub fn parse_expr_source(source : String) -> Expr raise ScriptError
+
+///|
 /// Print a declaration back as canonical source. Round-tripping through this
 /// is how the grammar is pinned: parse, print, parse again, and the two ASTs
 /// agree.

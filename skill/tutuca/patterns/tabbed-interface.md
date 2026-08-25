@@ -18,14 +18,14 @@ shows, and the active tab button is highlighted.
   <section>
     <div role="tablist" class="tabs">
       <button role="tab"
-        @if.class="equals? .currentView 'overview'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".currentView is 'overview'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setCurrentView 'overview'">Overview</button>
       <button role="tab"
-        @if.class="equals? .currentView 'pricing'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".currentView is 'pricing'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setCurrentView 'pricing'">Pricing</button>
     </div>
-    <div @show="equals? .currentView 'overview'">…overview…</div>
-    <div @show="equals? .currentView 'pricing'">…pricing…</div>
+    <div @show=".currentView is 'overview'">…overview…</div>
+    <div @show=".currentView is 'pricing'">…pricing…</div>
   </section>
 </template>
 ```
@@ -44,7 +44,7 @@ fn tabs_comp() -> @component.Component {
 }
 ```
 
-One string field is the whole state machine. `equals? .currentView 'overview'`
+One string field is the whole state machine. `.currentView is 'overview'`
 drives both the panel's `@show` and the active-tab class via `@if.class` /
 `@then` / `@else`. Tab clicks call the generated setter with a string-literal arg
 (`@on.click="setCurrentView 'pricing'"`).

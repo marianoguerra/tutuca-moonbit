@@ -326,20 +326,45 @@ defined on the component (or registered with the scope). Logic lives in
 `enrich` / `enrich_scope` / `loop_with`) and is referenced by name; the
 template itself only routes data and events.
 
-The one exception is **boolean predicates** in conditional slots
-(`@show`, `@hide`, `@if.<attr>`): a closed set of operators applied to
-a value, written predicate-first like a handler call —
-`empty?`, `truthy?`, `falsy?`, `null?`, `equals?`. E.g.
-`@hide="empty? .items"`, `@show="truthy? .query"`. A conditional slot
-otherwise accepts the same value forms as `@text` — a plain field
-(`@show=".isOpen"`), a no-arg `compute` (`@show="$canSubmit"`), or a
-loop/scope `@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read
-as a boolean.
+The one exception is **conditional slots** (`@show`, `@hide`,
+`@if.<attr>`), which take a whole **expression** — and it is the *same*
+expression language a `pred` or a `compute` body is written in, with the
+same vocabulary and the same grammar. There is one language, not two that
+resemble each other; see [schema.md](./schema.md#the-reading-vocabulary)
+for the full table, which serves both halves.
 
-`equals?` takes two args and is the idiomatic way to show/hide by name,
-e.g. `@show="equals? .view 'detail'"`. Predicate args (and handler
-args) accept string literals: `'detail'`, or `'two words'` for a
-literal with spaces (escape an interior quote as `\'`).
+```html
+<div @show="not .open">…</div>
+<div @show="not (empty? .kind)">…</div>
+<div @show=".kind is 'a'">…</div>
+<div @show="(len .items) is 1">…</div>
+<div @show=".open and .ready">…</div>
+<div @show="(.n > 0) and .open">…</div>
+```
+
+Application is **juxtaposition** (`empty? .items`, `contains (lower .title) 'x'`)
+and **parentheses are required wherever precedence would otherwise be
+implicit** — so `(.n > 0) and .open` rather than `.n > 0 and .open`, and the
+error message names the parentheses to add. There is no precedence table to
+remember and none to get wrong.
+
+A conditional slot also accepts the plain value forms `@text` does — a field
+(`@show=".isOpen"`), a no-arg `compute` (`@show="$canSubmit"`), or a
+loop/scope `@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read as a
+boolean. String literals are `'detail'`, or `'two words'` for one with spaces
+(escape an interior quote as `\'`).
+
+Four things a *body* can write and a slot cannot, each refused by name: a
+nested read (`.a.b` — render the child as a component, or name it with a
+`compute`), an `if` expression (`@show`/`@hide` **are** the choice; a value
+that picks between two is `@if.<attr>` with `@then`/`@else`), arithmetic, and a
+bare parameter. `^macro` and `$$config` are substituted whole, so each is a
+slot value on its own rather than a part of a larger expression.
+
+> **Retired spellings.** `equals? a b` is now `a is b`, and `falsy? x` is
+> `not (truthy? x)`. Both still parse — a compiled dyncomp bundle carries its
+> view markup as a string and the host parses it at load time — and
+> `gen-views` hints where one is left.
 
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
@@ -353,7 +378,7 @@ literal with spaces (escape an interior quote as `\'`).
 | `'str'`  | string literal                            | `'btn btn-success'`   |
 | `$'…'`   | string template (`{expr}` interpolation)  | `$'Hi {.name}'`       |
 | `.s[.k]` | sequence/map item access                  | `.byKey[.currentKey]` |
-| `pred? .x` | boolean predicate in a conditional slot | `empty? .items`, `equals? .view 'detail'` |
+| `pred? .x` | an expression in a conditional slot | `empty? .items`, `.view is 'detail'`, `not .open` |
 
 `.x` and `$x` are not interchangeable: `.x` only reads a field, `$x`
 only calls a `$`-handler. `gen-views` reports a mismatch and names the
@@ -522,9 +547,9 @@ carrying here:
   what makes views port verbatim: `@on.click="removeInItemsAt @key"`,
   `@on.input="setQuery e.value"`, `@on.click="toggleView"` all call generated
   mutators. A `compute` entry of the same name wins over the generated one.
-- Emptiness / truthiness / null checks are **not** generated — use the boolean
-  predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?` in a conditional
-  slot instead (e.g. `@hide="empty? .x"`, `@show="equals? .view 'detail'"`).
+- Emptiness / truthiness / null checks are **not** generated — use the shape
+  predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
+  `@hide="empty? .x"`, `@show=".view is 'detail'"`).
 
 A field that can hold "anything" is declared `any` (MoonBit `@tutuca.Value`) —
 the dynamic escape hatch inside an otherwise typed struct. That includes fields
@@ -561,9 +586,9 @@ compute={
 <p :title="$'Hello, {$fullName}'" @text="$fullName"></p>
 ```
 
-The boolean predicates (`empty?`, `truthy?`, `falsy?`, `null?`,
-`equals?`) cover single-field checks in conditional slots; reach for a
-`compute` when the condition spans multiple fields or needs derivation.
+The shape predicates (`empty?`, `truthy?`, `null?`) and the operators
+cover conditions in a slot directly; reach for a `compute` when the condition
+needs derivation, or when naming it makes the view read better.
 The handler bodies are typed — no pattern-matching `Value` shapes for
 plain struct fields.
 
@@ -712,8 +737,8 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 <div @show=".isLoading">Loading...</div>
 <div @hide=".isLoading">content</div>
 
-<!-- boolean predicates; equals? compares against a string literal -->
-<div @show="equals? .view 'detail'">detail view</div>
+<!-- an expression; `is` compares against a string literal -->
+<div @show=".view is 'detail'">detail view</div>
 
 <!-- @show / @hide also work as directives on `<x>` render ops:
      wraps the produced node, no extra DOM element. Allowed on

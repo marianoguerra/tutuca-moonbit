@@ -199,16 +199,38 @@ test "unary predicates parse to a one-argument application" {
 
 ///|
 test "the builtin vocabulary is a table a caller can enumerate" {
-  // The row is what carries the arity the parser checks against.
+  // The row is what carries the arity the parser checks against. The list is
+  // ONE list for both languages — the shape predicates, the operators and the
+  // reading builtins — so a name means the same thing in a `@show` and in a
+  // `pred`, which is the whole reason the table stopped being an enum.
   assert_eq(@tutuca.builtin_names(), [
-    "empty?", "equals?", "falsy?", "null?", "truthy?",
+    "<", "<=", ">", ">=", "and", "clamp", "contains", "empty?", "has", "implies",
+    "int", "is", "is not", "len", "lower", "max", "min", "not", "null?", "num", "or",
+    "str", "trim", "truthy?", "upper",
   ])
   guard! @tutuca.builtin("empty?") is Some(b)
   assert_eq(b.name, "empty?")
   assert_eq(b.arity, 1)
-  guard! @tutuca.builtin("equals?") is Some(eq)
+  guard! @tutuca.builtin("is") is Some(eq)
   assert_eq(eq.arity, 2)
   assert_true(@tutuca.builtin("present?") is None)
+}
+
+///|
+test "a retired name still answers, and says what to write instead" {
+  // A compiled dyncomp bundle carries its view markup as a STRING inside the
+  // wasm, and the host parses it at load time. Deleting a spelling would break
+  // a bundle nobody can recompile, so the two that `is` and `not` replaced are
+  // still rows — just not rows a suggestion ever offers.
+  guard! @tutuca.builtin("equals?") is Some(eq)
+  assert_eq(eq.arity, 2)
+  assert_true(@tutuca.builtin("falsy?") is Some(_))
+  assert_true(@tutuca.retired("equals?") is Some(_))
+  assert_true(@tutuca.retired("falsy?") is Some(_))
+  assert_true(@tutuca.retired("empty?") is None)
+  // …and neither is in the vocabulary a "did you mean" ranges over.
+  assert_false(@tutuca.builtin_names().contains("equals?"))
+  assert_false(@tutuca.builtin_names().contains("falsy?"))
 }
 
 ///|
@@ -592,4 +614,71 @@ test "a config origin template renders the url the host pointed at" {
     guard! v.eval(stack) is Str(got)
     assert_eq(got, want)
   }
+}
+
+// -- one language ------------------------------------------------------------
+
+///|
+/// The sentence a conditional slot answers with, or "" when it parsed.
+fn slot_err(src : String) -> String {
+  let ctx = @tscript.ParseCtx::new()
+  @tscript.parse_bool(src, ctx) |> ignore
+  match ctx.issues.get(0) {
+    Some({ role: BadExpression(why~), .. }) => why
+    Some(_) => "issue"
+    None => ""
+  }
+}
+
+///|
+/// The sentence a BLOCK answers with for the same expression, or "".
+fn block_err(src : String) -> String {
+  try {
+    @tscript.parse_script("pred p { \{src} }") |> ignore
+    ""
+  } catch {
+    e => e.message()
+  }
+}
+
+///|
+test "a slot and a block are one grammar, and refuse alike" {
+  // The property this whole change exists for. Each source is put through BOTH
+  // front ends, and they have to agree — not merely both fail, but fail with
+  // the SAME sentence, because there is one grammar and one set of rules about
+  // where parentheses go.
+  //
+  // A case that stops agreeing here is the two languages drifting apart again,
+  // and the answer is to lift more of the block's parser rather than to
+  // special-case the slot.
+  for
+    src in [
+      // the family rules
+      "(not .busy) and (.n > 0)", ".a and .b and .c", ".a is 'x'", ".a is not 'x'",
+      ".a >= .b", ".published implies .title", "not .busy", "not (empty? .kind)",
+      "(len .items) is 1", "len .items is 1", "contains (lower .title) 'x'",
+      // …and the refusals, which are the half worth pinning
+       ".a and .b or .c", "(not .busy) and .n > 0", ".a < .b < .c", ".a implies .b implies .c",
+      ".a + .b * .c",
+    ] {
+    assert_eq((src, slot_err(src)), (src, block_err(src)))
+  }
+}
+
+///|
+test "a slot refuses what only a body can hold, and names the way out" {
+  // `Val` is span-free and flat because it rides inside `Step` and into the
+  // checked-in IR modules. The half of `Expr` it cannot hold stops at the
+  // lowering — with a sentence, never with silence, which is what the old
+  // `bad value 'not' in unknown predicate` failed to give.
+  fn says(src : String, needle : String) -> Unit raise {
+    let why = slot_err(src)
+    assert_true(why.contains(needle))
+  }
+
+  says("if .a { .b } else { .c }", "a slot has no `if`")
+  says("empty? .a.b", "a slot reads one level")
+  says("(len .items) is (-.n)", "a slot has no arithmetic")
+  says("empty? ^label", "is substituted")
+  says("empty? $$origin", "is substituted")
 }

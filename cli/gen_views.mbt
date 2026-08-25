@@ -331,19 +331,26 @@ pub fn gen_views_all(
   // complete or a cross-file reference reads as an absence.
   let split : Array[(GenInput, @viewfile.ViewFile)] = []
   let index = @viewgen.ProgramIndex::new()
+  // What did not generate, in the order the files were given. Collected rather
+  // than returned on sight: a directory run that stops at the first bad file
+  // makes fixing three problems take three builds to even SEE the three.
+  let failures : Array[(String, String)] = []
   for f in files {
     let views = @viewgen.split_file(f.source, name=f.name) catch {
-      e =>
-        return Err(
-          err(
-            CODE_VIEW_GEN_FAILED,
-            "\{f.input}: \{@viewgen.GenError::message(e)}",
-            where_=f.input,
-          ),
-        )
+      e => {
+        failures.push((f.input, @viewgen.GenError::message(e)))
+        continue
+      }
     }
     index.add(views, f.name)
     split.push((f, views))
+  }
+  // A file that did not split leaves a HOLE in the component table, and the
+  // emit pass below reads that table — so a cross-file reference in a file
+  // that did split would read as an absence and report a second problem that
+  // is an artefact of the first. Split failures are answered on their own.
+  if !failures.is_empty() {
+    return Err(batch_error(files.length(), failures))
   }
   for pair in split {
     let (f, views) = pair
@@ -375,17 +382,39 @@ pub fn gen_views_all(
         out.push((gen_views_ir_target(f.target), ir_src))
       }
     } catch {
-      e =>
-        return Err(
-          err(
-            CODE_VIEW_GEN_FAILED,
-            "\{f.input}: \{@viewgen.GenError::message(e)}",
-            where_=f.input,
-          ),
-        )
+      e => failures.push((f.input, @viewgen.GenError::message(e)))
     }
   }
+  // Atomic, and that half was always right: `out` is discarded whole rather
+  // than written in part, because a half-generated tree is the one state
+  // nobody can reason about.
+  if !failures.is_empty() {
+    return Err(batch_error(files.length(), failures))
+  }
   Ok({ files: out, diagnostics })
+}
+
+///|
+/// One coded error for a batch, however many files failed in it.
+///
+/// A SINGLE failure keeps the exact shape a single-file run has always had —
+/// `[path] message` — because a one-file run already says which file it is on
+/// the command line, and prefixing it there would change every existing
+/// message.
+///
+/// Several name themselves in the body instead. `where_` has one slot and
+/// `render_error` prints it as a claim about location, so picking one of three
+/// failing files to put in it would be a claim about the other two.
+fn batch_error(total : Int, failures : Array[(String, String)]) -> ErrShape {
+  if failures.length() == 1 {
+    let (input, why) = failures[0]
+    return err(CODE_VIEW_GEN_FAILED, "\{input}: \{why}", where_=input)
+  }
+  err(
+    CODE_VIEW_GEN_FAILED,
+    "\{failures.length()} of \{total} view files failed to generate; nothing was written\n" +
+    failures.map(f => "  \{f.0}: \{f.1}").join("\n"),
+  )
 }
 
 ///|

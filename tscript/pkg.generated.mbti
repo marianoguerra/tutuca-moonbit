@@ -31,6 +31,8 @@ pub fn parse_bool(String, ParseCtx) -> @core.Val?
 
 pub fn parse_component(String, ParseCtx) -> @core.Val?
 
+pub fn parse_expr_source(String) -> Expr raise ScriptError
+
 pub fn parse_field(String, ParseCtx) -> @core.Val?
 
 pub fn parse_input_handler(String, ParseCtx) -> HandlerParse?
@@ -153,6 +155,7 @@ pub(all) enum IssueRole {
   UnknownPredicate
   PredicateArity(name~ : String, want~ : Int)
   BadPredicateArg
+  BadExpression(why~ : String)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum OpFamily {

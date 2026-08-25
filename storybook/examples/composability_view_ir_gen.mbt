@@ -37,7 +37,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-todo"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("todo"),
                 ]),
@@ -56,7 +56,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-json"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("json"),
                 ]),
@@ -75,7 +75,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-tree"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("tree"),
                 ]),
@@ -94,7 +94,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-personal-site"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("personalSite"),
                 ]),
@@ -113,7 +113,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-dnd"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("dnd"),
                 ]),
@@ -132,7 +132,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-visual-wasm"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
+                App(name="is", args=[
                   Field("activeSection"),
                   @anode.const_str("visualWasm"),
                 ]),
@@ -147,37 +147,28 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
-          Field("activeSection"),
-          @anode.const_str("todo"),
-        ]),
+        App(name="is", args=[Field("activeSection"), @anode.const_str("todo")]),
         @anode.h("div", [@anode.attr("class", "pane-todo")], [
           @anode.render(0, Field("todo")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
-          Field("activeSection"),
-          @anode.const_str("json"),
-        ]),
+        App(name="is", args=[Field("activeSection"), @anode.const_str("json")]),
         @anode.h("div", [@anode.attr("class", "pane-json")], [
           @anode.render(1, Field("json")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
-          Field("activeSection"),
-          @anode.const_str("tree"),
-        ]),
+        App(name="is", args=[Field("activeSection"), @anode.const_str("tree")]),
         @anode.h("div", [@anode.attr("class", "pane-tree")], [
           @anode.render(2, Field("tree")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
+        App(name="is", args=[
           Field("activeSection"),
           @anode.const_str("personalSite"),
         ]),
@@ -187,17 +178,14 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
-          Field("activeSection"),
-          @anode.const_str("dnd"),
-        ]),
+        App(name="is", args=[Field("activeSection"), @anode.const_str("dnd")]),
         @anode.h("div", [@anode.attr("class", "pane-dnd")], [
           @anode.render(4, Field("dnd")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[
+        App(name="is", args=[
           Field("activeSection"),
           @anode.const_str("visualWasm"),
         ]),

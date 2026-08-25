@@ -633,7 +633,7 @@ fn build_shell(
       }
       sb.write_string(
         "<a id=\"nav-\{s.id}\" @show=\".v\{idx}\" title=\"\{esc_attr(s.description)}\"" +
-        " @if.class=\"equals? .active '\{id}'\"" +
+        " @if.class=\".active is '\{id}'\"" +
         " @then=\"'block px-2 py-1 rounded cursor-pointer bg-primary text-primary-content'\"" +
         " @else=\"'block px-2 py-1 rounded cursor-pointer hover:bg-base-200'\"" +
         " @on.click=\"onSelect '\{id}'\">" +
@@ -665,7 +665,7 @@ fn build_shell(
         }
       }
       let id = esc_attr(s.id)
-      sb.write_string("<section @show=\"equals? .active '\{id}'\">")
+      sb.write_string("<section @show=\".active is '\{id}'\">")
       sb.write_string("<div class=\"flex justify-between items-start mb-1\">")
       sb.write_string("<h2 class=\"text-xl font-bold\">\{esc(s.title)}</h2>")
       if s.renderable {
@@ -686,22 +686,22 @@ fn build_shell(
         sb.write_string(
           "<div role=\"tablist\" class=\"tabs tabs-sm mb-2\">" +
           "<a role=\"tab\" class=\"tab story-tab\"" +
-          " @if.class=\"equals? .t\{idx} 'story'\"" +
+          " @if.class=\".t\{idx} is 'story'\"" +
           " @then=\"'tab tab-active story-tab'\" @else=\"'tab story-tab'\"" +
           " @on.click=\"onStoryTab \{idx} 'story'\">Story</a>" +
           "<a role=\"tab\" class=\"tab instance-tab\"" +
-          " @if.class=\"equals? .t\{idx} 'instance'\"" +
+          " @if.class=\".t\{idx} is 'instance'\"" +
           " @then=\"'tab tab-active instance-tab'\" @else=\"'tab instance-tab'\"" +
           " @on.click=\"onStoryTab \{idx} 'instance'\">Instance</a>" +
           "</div>",
         )
         sb.write_string(
-          "<div @show=\"equals? .t\{idx} 'story'\"" +
+          "<div @show=\".t\{idx} is 'story'\"" +
           " class=\"border border-base-300 rounded-lg p-4 bg-base-100\">" +
           "<x render=\".s\{idx}\"></x></div>",
         )
         sb.write_string(
-          "<div @show=\"equals? .t\{idx} 'instance'\"" +
+          "<div @show=\".t\{idx} is 'instance'\"" +
           " class=\"border border-base-300 rounded-lg p-4 bg-base-100 overflow-auto\">" +
           "<x render=\".i\{idx}\"></x></div>",
         )

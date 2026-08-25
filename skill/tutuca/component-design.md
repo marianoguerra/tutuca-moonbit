@@ -139,7 +139,7 @@ own events, `send`/`receive`,
 
 - **Do use inline predicates and auto-generated mutators. Don't hand-write
   `isSelected` / `select` boilerplate.** A single field plus
-  `equals? .activeSection 'todo'` / `empty?` and the generated `$setActiveSection`
+  `.activeSection is 'todo'` / `empty?` and the generated `$setActiveSection`
   / `toggleX` often *is* the whole state machine. → [core.md](./core.md)
   "Computed values & predicates" and "Field Types & Auto-generated API"
 
@@ -160,7 +160,7 @@ own events, `send`/`receive`,
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
   generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
-  with `@on.click="setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
+  with `@on.click="setActiveSection 'todo'"` / `@show=".activeSection is 'todo'"`,
   derive the current value from one field.
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.

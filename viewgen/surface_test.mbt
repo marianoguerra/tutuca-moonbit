@@ -299,3 +299,50 @@ test "an e. path is refused outside an argument slot" {
   // render-time read of an event that is not happening.
   assert_true(view_err("<p @text=\"e.value\"></p>") != "")
 }
+
+///|
+test "an operator is transparent to the surface walk" {
+  // The reason operators lower to `App` rather than to new `Val` cases. Every
+  // walker in the tree already recurses through `App(args~, ..)` and ignores
+  // the name — the statedef collector here, the `UnknownStateField` checker,
+  // the method collector — so nesting an operator changes nothing for any of
+  // them. A `.kind` buried under `not (empty? …)` is still a field the state
+  // must declare, and a `$name` under one is still a method.
+  let s = surface_of(
+    (
+      #|<template>
+      #|  <p @show="not (empty? .kind)">a</p>
+      #|  <p @hide="(len .items) is 1">b</p>
+      #|  <p @show=".open and (.n > 0)">c</p>
+      #|  <p @if.class="not $canSubmit" @then="'on'" @else="'off'">d</p>
+      #|  <p @show=".view is 'detail'">e</p>
+      #|</template>
+    ),
+  )
+  assert_eq(s.fields, ["items", "kind", "n", "open", "view"])
+  assert_eq(s.methods, ["canSubmit"])
+}
+
+///|
+test "a retired spelling still compiles, and hints once" {
+  // Soft retirement: a compiled dyncomp bundle carries its view markup as a
+  // STRING inside the wasm and the host parses it at load time, so a spelling
+  // cannot simply be deleted. It parses, it works, and the hint is the only
+  // thing that tells an author it moved.
+  let s = surface_of(
+    (
+      #|<template>
+      #|  <p @show="equals? .view 'detail'">a</p>
+      #|  <p @hide="equals? .view 'list'">b</p>
+      #|  <p @show="falsy? .open">c</p>
+      #|</template>
+    ),
+  )
+  // It still reads its fields, so nothing downstream is affected.
+  assert_eq(s.fields, ["open", "view"])
+  let retired = s.hints.filter(h => h.contains("retired"))
+  // Two names, two hints — deduped per name, not per use.
+  assert_eq(retired.length(), 2)
+  assert_true(retired.any(h => h.contains("`equals?`") && h.contains("`is`")))
+  assert_true(retired.any(h => h.contains("`falsy?`") && h.contains("`not`")))
+}

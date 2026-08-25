@@ -21,7 +21,7 @@
     <!-- boolean predicates for one-field checks -->
     <p @show="empty? .items">No results</p>
     <p @show="truthy? .query">Searching…</p>
-    <div @show="equals? .query 'detail'">detail view</div>
+    <div @show=".query is 'detail'">detail view</div>
 
     <!-- a pred of your own: `$name`, because this is a value position -->
     <button @show="$canSubmit">Publish</button>
@@ -32,8 +32,10 @@
 </template>
 ```
 
-The closed set of built-in predicates is `empty?`, `truthy?`, `falsy?`,
-`null?`, `equals?` (binary) — semantics in [core.md](../core.md) *Conditional
+A conditional slot takes the same expression language a `pred` body does:
+the shape predicates `empty?`, `truthy?`, `null?`, the operators `not`, `and`,
+`or`, `is`, `is not`, `<`, `<=`, `>`, `>=`, `implies`, and the reading
+builtins — semantics in [core.md](../core.md) *Conditional
 Display*. Anything else is a `pred` in the script block, read as `$name`; the
 `$` sigil is what a value slot spells a callable with, and a bare `canSubmit`
 in a `@show` is a generation error. (Inside a body the same rule inverts: a

@@ -118,8 +118,8 @@ never a lambda — so no template could ever call either. Transforming a value i
 place is what the handler language is for.
 
 Emptiness / truthiness / null checks are not generated — use the boolean
-predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?` in a conditional
-slot instead (e.g. `@hide="empty? .x"`, `@show="equals? .view 'detail'"`).
+predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
+`@hide="empty? .x"`, `@show=".view is 'detail'"`).
 
 > **The kind is declared, not chosen at the call site.** There is no way for a
 > `component()` caller to say a field is a set when the schema says it is a map:
@@ -328,8 +328,9 @@ only in a file that declares more than one.
 
 ## The reading vocabulary
 
-The block's expression language is **closed** — sixteen builtins and five
-operator families, and no way to add a seventeenth. That is what makes it
+The expression language — the block's and a conditional slot's, which are one
+language — is **closed**: fifteen builtins and five operator families, and no
+way to add a sixteenth. That is what makes it
 total, and what lets both backends implement the same thing.
 
 Application is **juxtaposition** and parentheses are required wherever
@@ -338,7 +339,7 @@ There is no precedence table to remember and none to get wrong.
 
 | builtin | arity | answers |
 | ------- | ----- | ------- |
-| `empty?` `truthy?` `falsy?` `null?` | 1 | the four shape predicates a view slot already spells |
+| `empty?` `truthy?` `null?` | 1 | the shape predicates no operator says — `empty?` is total where `(len x) is 0` is not, and `truthy?` treats an empty collection as falsy where a plain read does not |
 | `len` | 1 | the size of a text, list, set or map |
 | `has` | 2 | a KEY in a set or map, a VALUE in a list — `has .picked @value` |
 | `contains` | 2 | substring, text only |
@@ -356,8 +357,19 @@ parse error**, and the message names the parentheses to add. `not` negates,
 and `if c { a } else { b }` is an expression — both arms required, because an
 expression has to have a value.
 
-`equals?` is deliberately NOT in the block: `is` says it, and one meaning keeps
-one spelling. (A view slot still spells `equals?`, since it has no operators.)
+**This table is the CONDITIONAL SLOT's vocabulary too.** `@show`, `@hide` and
+`@if.<attr>` parse through the same grammar and resolve against the same
+table, so `truthy? .items` cannot mean one thing in a `pred` and another in a
+`@show`, and `not (empty? .kind)` is written the same way in both. What a slot
+does not take is the half that needs a body: a nested read, an `if`,
+arithmetic, and a bare parameter — see
+[core.md](./core.md#conditional-display).
+
+`equals?` and `falsy?` are retired: `is` says the first and `not` says the
+second, and one meaning keeps one spelling. Both still parse — a compiled
+dyncomp bundle carries its view markup as a string and the host parses it at
+load time, so a spelling cannot simply be deleted — and `gen-views` hints
+where one is left.
 
 ## Changing a collection
 

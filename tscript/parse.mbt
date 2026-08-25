@@ -462,21 +462,238 @@ fn parse_single(s : String, ctx : ParseCtx, group : Group) -> @tutuca.Val? {
 }
 
 ///|
+/// A conditional slot: ONE expression, in the block's grammar.
+///
+/// A single token still goes through `parse_tok`, so `.isOpen`, `$canSubmit`
+/// and `@isSelected` cost nothing and `^name` / `$$name` keep the substitution
+/// semantics only that path implements. Anything longer is handed to
+/// `parse_expr_source` and lowered — which is what makes a slot and a
+/// block body the same language rather than two that resemble each other.
 pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   let tokens = tokenize(s)
   if tokens.length() != 1 {
-    return if tokens.length() == 0 {
-      None
-    } else {
-      // The trimmed source is what an arity message QUOTES; the spans it
-      // reports with come from the tokens, which index `s` itself.
-      parse_application(s.trim().to_owned(), tokens, ctx)
+    if tokens.length() == 0 {
+      return None
     }
+    return parse_expression(s, tokens, ctx)
   }
   match parse_tok(tokens[0], ctx) {
     Some(val) => if val_in_group(val, GBool) { Some(val) } else { None }
     None => None
   }
+}
+
+///|
+/// The whole of a conditional slot, through the block grammar.
+///
+/// Spans index `s` directly: `parse_expr_source` tokenizes the attribute
+/// value itself, so an operand's position is already the one the reader is
+/// looking at and nothing is rebased.
+fn parse_expression(
+  s : String,
+  tokens : Array[Token],
+  ctx : ParseCtx,
+) -> @tutuca.Val? {
+  // `^name` and `$$name` are resolved by SUBSTITUTION, and only the
+  // single-token path does it — a `^` re-parses the caller's source and marks
+  // the result `from_macro`, a `$$` lands the host's string as a literal
+  // WITHOUT re-parsing, and neither survives being handed to a grammar that
+  // has no arm for the sigil. Refused rather than approximated: the mark is
+  // what decides whether a constant may pin a URL origin
+  // (`dyncomp/policy/external_url.mbt`), and an expression that quietly lost
+  // it would be wrong in the one place it matters.
+  for t in tokens {
+    if t.text.has_prefix("^") || t.text.has_prefix("$$") {
+      ctx.issue(
+        BadExpression(
+          why="`\{t.text}` is substituted, so it is a whole slot value and not a part of an expression",
+        ),
+        t.text,
+        t.span,
+      )
+      return None
+    }
+  }
+  let e = parse_expr_source(s) catch {
+    err => {
+      ctx.issue(
+        BadExpression(why=err.message()),
+        s.trim().to_owned(),
+        err.span(),
+      )
+      return None
+    }
+  }
+  lower_expr(e, ctx, s)
+}
+
+///|
+/// The slice a span covers. Spans index CHARACTERS, which is what `tokenize`
+/// counts, so a diagnostic quotes what the author typed rather than a byte
+/// range that happens to line up in ASCII.
+fn slice_span(src : String, span : Span) -> String {
+  let cs = src.to_array()
+  let lo = if span.start < 0 { 0 } else { span.start }
+  let hi = if span.end_ > cs.length() { cs.length() } else { span.end_ }
+  if hi <= lo {
+    return ""
+  }
+  let b = StringBuilder::new()
+  for i in lo..<hi {
+    b.write_char(cs[i])
+  }
+  b.to_string()
+}
+
+///|
+/// `@tscript.Expr` down to `@tutuca.Val`.
+///
+/// Total, and the refusals are the point. `Val` is span-free and flat because
+/// it is embedded in `Step` and emitted into checked-in IR modules, so the
+/// half of `Expr` that a body can hold and a slot cannot — a nested place, an
+/// `if`, a bare parameter name — stops HERE, with a sentence naming what to
+/// write instead. Everything else lowers, and the operators lower to `App`:
+/// the AST already resolves an application's name at eval time, so an operator
+/// is a row in the vocabulary rather than a case in the enum, and every walker
+/// that already recurses through `App(args~, ..)` keeps working unchanged.
+fn lower_expr(e : Expr, ctx : ParseCtx, src : String) -> @tutuca.Val? {
+  fn refuse(why : String, span : Span) -> @tutuca.Val? {
+    ctx.issue(BadExpression(why~), slice_span(src, span), span)
+    None
+  }
+
+  match e {
+    ELit(lit~, ..) => Some(Const(lit~, from_macro=false))
+    ERead(place~, span~) =>
+      match (place.root, place.steps.length()) {
+        (PState(f), 0) => Some(Field(f))
+        (PBind(b), 0) => Some(Bind(b))
+        (PBind(b), 1) =>
+          match place.steps[0] {
+            PField(m) => Some(BindMember(name=b, prop=m))
+            PIndex(_) =>
+              refuse(
+                "a slot reads a binding's member by name, not by index", span,
+              )
+          }
+        // `.seq[.key]` is the one indexed read a slot has, and only with a
+        // plain field for the key — the pinned form `SeqAccess` can hold.
+        (PState(seq), 1) =>
+          match place.steps[0] {
+            PIndex(ERead(place=k, ..)) if k.steps.is_empty() &&
+              k.root is PState(key) => Some(SeqAccess(seq~, key~))
+            PIndex(_) =>
+              refuse(
+                "a slot indexes by a plain field — write `.\{seq}[.key]`",
+                span,
+              )
+            PField(m) =>
+              refuse(
+                "a slot reads one level, so `.\{seq}.\{m}` has nothing to look in — render the child as a component, or name the read with a `compute`",
+                span,
+              )
+          }
+        (PState(f), _) =>
+          refuse(
+            "a slot reads one level, so `.\{f}` cannot be walked into — render the child as a component, or name the read with a `compute`",
+            span,
+          )
+        (PParam(n), _) =>
+          refuse("`\{n}` is a parameter, and a slot has none", span)
+        (PBind(b), _) =>
+          refuse("a slot reads one member of `@\{b}`, not a path", span)
+      }
+    EMethod(name~, ..) => Some(Method(name))
+    EDyn(name~, ..) => Some(Dyn(name))
+    EApp(name~, args~, span~) => lower_app(name, args, span, ctx, src)
+    EUnary(op=UNot, operand~, span~) =>
+      lower_app("not", [operand], span, ctx, src)
+    EUnary(op=UNeg, span~, ..) =>
+      refuse(
+        "a slot has no arithmetic — name the value with a `compute`", span,
+      )
+    // A chain is left-associative nested application. `a and b and c` is
+    // `and (and a b) c`, which is the grouping `&&` gives it in the compiled
+    // backend, so the two answer alike.
+    EChain(ops~, operands~, span~, ..) => {
+      let mut acc = match lower_expr(operands[0], ctx, src) {
+        Some(v) => v
+        None => return None
+      }
+      for i, op in ops {
+        guard lower_expr(operands[i + 1], ctx, src) is Some(rhs) else {
+          return None
+        }
+        guard @tutuca.builtin(op) is Some(_) else {
+          return refuse("`\{op}` is not a slot operator", span)
+        }
+        acc = App(name=op, args=[acc, rhs])
+      }
+      Some(acc)
+    }
+    EIf(span~, ..) =>
+      refuse(
+        "a slot has no `if` — `@show` / `@hide` ARE the choice, and a value that picks between two needs `@if.<attr>` with `@then` / `@else`",
+        span,
+      )
+    ETpl(span~, ..) =>
+      refuse("a template is text, and a condition is not text", span)
+    // Lowered rather than refused here. A bare name is in NO group a
+    // condition admits, so letting it through means the group check blames the
+    // ARGUMENT it sits in — which is the position the reader is looking at,
+    // and the diagnostic this parser exists to give.
+    EName(name~, span~) =>
+      match name.get_char(0) {
+        Some('A'..='Z') => Some(TypeName(name))
+        Some('a'..='z') => Some(Name(name))
+        _ => refuse("`\{name}` is not a name", span)
+      }
+    ERef(span~, ..) =>
+      refuse("`&` names a position, and a slot reads values", span)
+  }
+}
+
+///|
+/// An application, with its name checked against the one vocabulary and its
+/// arity against that name's row — the checks `parse_application` made, kept
+/// where they were so the diagnostics do not change.
+fn lower_app(
+  name : String,
+  args : Array[Expr],
+  span : Span,
+  ctx : ParseCtx,
+  src : String,
+) -> @tutuca.Val? {
+  // The HEAD is what is unknown, so that is what the span covers — the name
+  // sits at the start of the application, which is what makes this exact.
+  let head : Span = {
+    start: span.start,
+    end_: span.start + name.to_array().length(),
+  }
+  guard @tutuca.builtin(name) is Some(b) else {
+    ctx.issue(UnknownPredicate, name, head)
+    return None
+  }
+  if args.length() != b.arity {
+    // The whole application is what is wrong, so the span runs from the name
+    // to the last argument rather than picking one of them to blame.
+    ctx.issue(PredicateArity(name~, want=b.arity), slice_span(src, span), span)
+    return None
+  }
+  let out : Array[@tutuca.Val] = []
+  for a in args {
+    guard lower_expr(a, ctx, src) is Some(v) else { return None }
+    // The same group the old flat form asked of each argument: a condition
+    // reads a field, a method, a binding, a dynamic, a constant or another
+    // application, and nothing else.
+    guard val_in_group(v, GBool) else {
+      let at = expr_span(a)
+      ctx.issue(BadPredicateArg, slice_span(src, at), at)
+      return None
+    }
+    out.push(v)
+  }
+  Some(App(name~, args=out))
 }
 
 ///|
@@ -569,49 +786,4 @@ fn parse_handler(
     }
   }
   Some({ handler, args })
-}
-
-///|
-/// Head token names the callable, tail are its args parsed individually as
-/// boolean-group values (tokens.length > 1 here).
-///
-/// The name resolves against the builtin vocabulary rather than a closed enum,
-/// so the arity is looked up rather than matched. An argument is itself a
-/// boolean-group value, which now includes another application — but only one
-/// written as a single token, so nesting still needs the parenthesised grammar
-/// the expression language brings rather than arriving here by accident.
-fn parse_application(
-  s : String,
-  tokens : Array[Token],
-  ctx : ParseCtx,
-) -> @tutuca.Val? {
-  let head = tokens[0]
-  let name = head.text
-  guard @tutuca.builtin(name) is Some(b) else {
-    ctx.issue(UnknownPredicate, name, head.span)
-    return None
-  }
-  let arity = tokens.length() - 1
-  if arity != b.arity {
-    // The whole application is what is wrong, so the span runs from the name
-    // to the last argument rather than picking one of them to blame.
-    let last = tokens[tokens.length() - 1]
-    ctx.issue(PredicateArity(name~, want=b.arity), s, {
-      start: head.span.start,
-      end_: last.span.end_,
-    })
-    return None
-  }
-  let args : Array[@tutuca.Val] = []
-  for i in 1..<=arity {
-    let tok = tokens[i]
-    match parse_tok(tok, ctx) {
-      Some(val) if val_in_group(val, GBool) => args.push(val)
-      _ => {
-        ctx.issue(BadPredicateArg, tok.text, tok.span)
-        return None
-      }
-    }
-  }
-  Some(App(name~, args~))
 }

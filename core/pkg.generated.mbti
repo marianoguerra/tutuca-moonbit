@@ -34,6 +34,8 @@ pub fn refuse(Refusal) -> Unit
 
 pub fn refusing() -> Bool
 
+pub fn retired(String) -> String?
+
 pub fn route_label(Array[Leg]) -> String
 
 pub fn[T] route_lookup(Array[Leg], () -> T?, () -> T?) -> T?

@@ -36,17 +36,17 @@ fn traffic_light_main_view_ir() -> @anode.View {
       @anode.h("p", [@anode.attr("class", "advice")], [
         @anode.text("\n    You must\n    "),
         @anode.show(
-          App(name="equals?", args=[Method("light"), @anode.const_str("red")]),
+          App(name="is", args=[Method("light"), @anode.const_str("red")]),
           @anode.h("span", [], [@anode.text("STOP")]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Method("light"), @anode.const_str("orange")]),
+          App(name="is", args=[Method("light"), @anode.const_str("orange")]),
           @anode.h("span", [], [@anode.text("SLOW DOWN")]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Method("light"), @anode.const_str("green")]),
+          App(name="is", args=[Method("light"), @anode.const_str("green")]),
           @anode.h("span", [], [@anode.text("GO")]),
         ),
       ]),
@@ -177,10 +177,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-overview"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
-                  Field("tab"),
-                  @anode.const_str("overview"),
-                ]),
+                App(name="is", args=[Field("tab"), @anode.const_str("overview")]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -196,10 +193,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-features"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
-                  Field("tab"),
-                  @anode.const_str("features"),
-                ]),
+                App(name="is", args=[Field("tab"), @anode.const_str("features")]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -215,10 +209,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-pricing"),
               @anode.if_attr(
                 "class",
-                App(name="equals?", args=[
-                  Field("tab"),
-                  @anode.const_str("pricing"),
-                ]),
+                App(name="is", args=[Field("tab"), @anode.const_str("pricing")]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -230,7 +221,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[Field("tab"), @anode.const_str("overview")]),
+        App(name="is", args=[Field("tab"), @anode.const_str("overview")]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Overview")]),
           @anode.h("p", [], [
@@ -240,7 +231,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[Field("tab"), @anode.const_str("features")]),
+        App(name="is", args=[Field("tab"), @anode.const_str("features")]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Features")]),
           @anode.h("p", [], [
@@ -250,7 +241,7 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="equals?", args=[Field("tab"), @anode.const_str("pricing")]),
+        App(name="is", args=[Field("tab"), @anode.const_str("pricing")]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Pricing")]),
           @anode.h("p", [], [@anode.text("What it costs.")]),

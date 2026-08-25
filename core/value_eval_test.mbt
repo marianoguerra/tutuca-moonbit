@@ -145,3 +145,92 @@ test "Value::to_display_string follows JS interpolation" {
     "1,,2",
   )
 }
+
+///|
+/// A stack that COUNTS the methods it is asked for — the only way to observe
+/// that a short-circuit actually stopped.
+priv struct CountingStack {
+  fields : Map[String, @core.Value]
+  asked : Array[String]
+}
+
+///|
+impl @core.Stack for CountingStack with fn lookup_field_raw(self, name) {
+  self.fields.get(name).unwrap_or(Null)
+}
+
+///|
+impl @core.Stack for CountingStack with fn lookup_method(self, name) {
+  self.asked.push(name)
+  Bool(true)
+}
+
+///|
+test "the operators evaluate through the same table the shape predicates do" {
+  let stack : FieldStack = {
+    fields: {
+      "open": Bool(true),
+      "shut": Bool(false),
+      "items": List([]),
+      "kind": Str("a"),
+      "n": Num(3),
+    },
+  }
+  fn f(n : String) -> @core.Val {
+    Field(n)
+  }
+
+  fn op(name : String, args : Array[@core.Val]) -> @core.Value {
+    @core.Val::App(name~, args~).eval(stack)
+  }
+
+  assert_true(op("not", [f("shut")]) is Bool(true))
+  assert_true(op("not", [f("open")]) is Bool(false))
+  assert_true(op("and", [f("open"), f("shut")]) is Bool(false))
+  assert_true(op("or", [f("open"), f("shut")]) is Bool(true))
+  assert_true(
+    op("is", [f("kind"), Const(lit=LStr("a"), from_macro=false)]) is Bool(true),
+  )
+  assert_true(
+    op("is not", [f("kind"), Const(lit=LStr("b"), from_macro=false)])
+    is Bool(true),
+  )
+  assert_true(
+    op(">", [f("n"), Const(lit=LNum(2), from_macro=false)]) is Bool(true),
+  )
+  assert_true(
+    op("<=", [f("n"), Const(lit=LNum(3), from_macro=false)]) is Bool(true),
+  )
+  assert_true(op("implies", [f("shut"), f("open")]) is Bool(true))
+  assert_true(op("len", [f("items")]) is Num(0))
+  // `and` / `or` coerce with `Value::is_truthy` and NOT `pred_truthy` — the
+  // same coercion the compiled backend's `at_bool` uses — so an EMPTY LIST is
+  // truthy to an operator and falsy to `truthy?`. Both are deliberate, and
+  // this is the pair that says so.
+  assert_true(op("and", [f("items"), f("open")]) is Bool(true))
+  assert_true(op("truthy?", [f("items")]) is Bool(false))
+}
+
+///|
+test "`and` and `or` stop early, so a slot can guard a compute" {
+  // `Builtin::apply` is handed ALREADY-EVALUATED arguments, so a table row
+  // cannot decline to look at its second one. `Val::eval` answers these two
+  // ahead of the table — without which `and (truthy? .items) ($firstLabel)`
+  // would call the compute on an empty list here and not in a compiled
+  // handler, and the two backends would disagree.
+  let stack : CountingStack = {
+    fields: { "open": Bool(true), "shut": Bool(false) },
+    asked: [],
+  }
+  let guarded : @core.Val = App(name="and", args=[Field("shut"), Method("boom")])
+  assert_true(guarded.eval(stack) is Bool(false))
+  assert_eq(stack.asked, [])
+  // …and the other way, `or` stops once the left answers yes.
+  let short : @core.Val = App(name="or", args=[Field("open"), Method("boom")])
+  assert_true(short.eval(stack) is Bool(true))
+  assert_eq(stack.asked, [])
+  // The control: when the left does NOT decide it, the right IS asked.
+  let both : @core.Val = App(name="and", args=[Field("open"), Method("fine")])
+  assert_true(both.eval(stack) is Bool(true))
+  assert_eq(stack.asked, ["fine"])
+}

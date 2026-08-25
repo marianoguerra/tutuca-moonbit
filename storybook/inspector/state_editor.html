@@ -26,13 +26,13 @@
   <label class="flex items-center gap-2 leading-tight state-editor-row">
     <span class="font-mono text-xs w-32 shrink-0 text-right opacity-70 row-name" @text=".name"></span>
     <span class="font-mono text-[0.65rem] w-24 shrink-0 opacity-40 row-type" @text=".type"></span>
-    <input @show="equals? .kind 'bool'"
+    <input @show=".kind is 'bool'"
       type="checkbox" class="checkbox checkbox-xs row-bool"
       :checked=".flag" @on.input="edit e.value">
-    <input @show="equals? .kind 'num'"
+    <input @show=".kind is 'num'"
       type="number" class="input input-xs input-bordered w-40 row-num"
       :value=".num" @on.input="edit e.valueAsFloat">
-    <input @show="equals? .kind 'text'"
+    <input @show=".kind is 'text'"
       type="text" class="input input-xs input-bordered w-64 row-text"
       :value=".text" @on.input="edit e.value">
     <span @hide=".editable"

@@ -51,7 +51,7 @@ The template language uses one-character sigils. Each sigil maps to one way of r
 | `*name` | a **dynamic binding** (provide/lookup) |
 | `.seq[.key]` | sequence/map **item access** |
 | `'text'`, `$'a {.b} c'` | string literal, string template |
-| `truthy? .x`, `equals? .a .b` | predicates (predicate-first): `empty?` / `truthy?` / `falsy?` / `null?` / `equals?` |
+| `truthy? .x`, `.a is .b` | one expression, the same language a `pred` body takes: the shape predicates `empty?` / `truthy?` / `null?`, the operators (`not` `and` `or` `is` `<` `<=` `>` `>=` `implies`) and the reading builtins |
 
 ## Your first component
 

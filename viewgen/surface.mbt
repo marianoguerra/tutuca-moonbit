@@ -71,6 +71,36 @@ fn value_issue_message(role : @tscript.IssueRole) -> String {
     PredicateArity(name~, want~) =>
       "'\{name}' takes \{want} argument" + (if want == 1 { "" } else { "s" })
     BadPredicateArg => "not a valid predicate argument"
+    // Answered as a whole sentence by `value_issue_sentence`; this is the
+    // phrase form nothing should reach.
+    BadExpression(..) => "not a valid expression"
+  }
+}
+
+///|
+/// The roles that answer with a WHOLE SENTENCE rather than a phrase to splice
+/// after "bad value 'x' in".
+///
+/// The splice reads as a place — "in attribute 'class'" — and two of these
+/// roles are not places, they are explanations. `bad value 'not' in unknown
+/// predicate` was the result, which is not even grammatical, and it named
+/// neither the rule nor the way out.
+fn value_issue_sentence(role : @tscript.IssueRole, value : String) -> String? {
+  match role {
+    UnknownPredicate => {
+      let tail = match @tutuca.retired(value) {
+        // A name on its way out: say the one that stays rather than offering
+        // the vocabulary, since the author already knows what they meant.
+        Some(instead) => instead
+        None =>
+          "a conditional takes a name applied to values, and the vocabulary is " +
+          @tutuca.builtin_names().map(n => "`\{n}`").join(" ") +
+          " — name anything else with a `pred` or a `compute` and spell it `$name`"
+      }
+      Some("`\{value}` is not in the vocabulary: \{tail}")
+    }
+    BadExpression(why~) => Some("`\{value}` — \{why}")
+    _ => None
   }
 }
 
@@ -84,6 +114,9 @@ fn issue_message(issue : @anode.ParseIssue) -> String {
       "unknown attribute '\{name}=\"\{value}\"' on <x \{op}>"
     XOpIgnoresChildren(op~) => "<x \{op}> ignores its children"
     BadValue(role~, value~) => {
+      if role is ValueIssue(r) && value_issue_sentence(r, value) is Some(said) {
+        return said
+      }
       let what = match role {
         XOp(op~) => "<x \{op}>"
         Attr(name~) => "attribute '\{name}'"
@@ -131,6 +164,10 @@ priv struct Collect {
   value_kinds : Map[Int, ArgType]
   /// Advisory findings the events pass turned up; see `Surface.hints`.
   hints : Array[String]
+  /// The view being walked, for a hint raised from inside the value walk —
+  /// which is the whole tree below a directive and has no other way to say
+  /// where it is.
+  mut view : String
 }
 
 ///|
@@ -146,6 +183,7 @@ fn Collect::new() -> Collect {
     loop_withs: Set([], capacity=4),
     value_kinds: Map([]),
     hints: [],
+    view: "",
   }
 }
 
@@ -180,10 +218,26 @@ fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
           None => ()
         }
       }
-    App(args~, ..) =>
+    App(name~, args~) => {
+      // A name that still answers but is no longer the spelling. A HINT and
+      // never an error: the row is still there on purpose — a compiled bundle
+      // carries its markup as a string and the host parses it at load time —
+      // so this is the only thing that tells an author the retirement
+      // happened.
+      //
+      // Once per name per view, not once per use. The migration is a
+      // find-and-replace over a spelling; ninety-four copies of one sentence
+      // would bury every other hint in the run.
+      if @tutuca.retired(name) is Some(instead) {
+        let said = "view \{c.view}: `\{name}` is retired — \{instead}"
+        if !c.hints.contains(said) {
+          c.hints.push(said)
+        }
+      }
       for a in args {
         walk_val(a, c, root_scope)
       }
+    }
     _ => ()
   }
 }
@@ -568,6 +622,7 @@ fn walk_view(
   // Eids restart at 0 for every view's ParseContext, so a stale entry from
   // the previous view must not leak into this one's events pass.
   c.value_kinds.clear()
+  c.view = view_name
   walk_node(root, c, true, false)
   if c.loop_ids.length() > 0 {
     // Sorted so the message does not depend on set iteration order.

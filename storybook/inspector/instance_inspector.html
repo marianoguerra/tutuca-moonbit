@@ -51,24 +51,24 @@
   <div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
     <div role="tablist" class="tabs">
       <a role="tab"
-        @if.class="equals? .activeTab 'instance'"
+        @if.class=".activeTab is 'instance'"
         @then="'tab tab-active tab-instance'"
         @else="'tab tab-instance'"
         @on.click="setActiveTab 'instance'">
         Instance
       </a>
       <a role="tab" @show=".hasComponent"
-        @if.class="equals? .activeTab 'component'"
+        @if.class=".activeTab is 'component'"
         @then="'tab tab-active tab-component'"
         @else="'tab tab-component'"
         @on.click="setActiveTab 'component'">
         Component
       </a>
     </div>
-    <div @show="equals? .activeTab 'instance'">
+    <div @show=".activeTab is 'instance'">
       <x render=".instanceView"></x>
     </div>
-    <div @show="equals? .activeTab 'component'">
+    <div @show=".activeTab is 'component'">
       <div @show=".hasComponent"><x render=".componentView"></x></div>
       <div @hide=".hasComponent" class="text-base-content/50 text-xs">
         Pass the Component descriptor to inspect its definition.

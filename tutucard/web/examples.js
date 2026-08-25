@@ -811,9 +811,9 @@ export const EXAMPLES = [
       <p>Light is: <code @text="$light"></code></p>
       <p class="advice">
         You must
-        <span @show="equals? $light 'red'">STOP</span>
-        <span @show="equals? $light 'orange'">SLOW DOWN</span>
-        <span @show="equals? $light 'green'">GO</span>
+        <span @show="$light is 'red'">STOP</span>
+        <span @show="$light is 'orange'">SLOW DOWN</span>
+        <span @show="$light is 'green'">GO</span>
       </p>
     </div>
   </section>
@@ -864,22 +864,22 @@ export const EXAMPLES = [
     <div class="card-body gap-3">
       <div role="tablist" class="tabs tabs-border">
         <button role="tab"
-          @if.class="equals? .tab 'overview'" @then="'tab tab-active'" @else="'tab'"
+          @if.class=".tab is 'overview'" @then="'tab tab-active'" @else="'tab'"
           @on.click="setTab 'overview'">Overview</button>
         <button role="tab"
-          @if.class="equals? .tab 'features'" @then="'tab tab-active'" @else="'tab'"
+          @if.class=".tab is 'features'" @then="'tab tab-active'" @else="'tab'"
           @on.click="setTab 'features'">Features</button>
         <button role="tab"
-          @if.class="equals? .tab 'pricing'" @then="'tab tab-active'" @else="'tab'"
+          @if.class=".tab is 'pricing'" @then="'tab tab-active'" @else="'tab'"
           @on.click="setTab 'pricing'">Pricing</button>
       </div>
-      <div class="p-3" @show="equals? .tab 'overview'">
+      <div class="p-3" @show=".tab is 'overview'">
         <h4>Overview</h4><p>A short summary of what this product does.</p>
       </div>
-      <div class="p-3" @show="equals? .tab 'features'">
+      <div class="p-3" @show=".tab is 'features'">
         <h4>Features</h4><p>The list of features lives on this tab.</p>
       </div>
-      <div class="p-3" @show="equals? .tab 'pricing'">
+      <div class="p-3" @show=".tab is 'pricing'">
         <h4>Pricing</h4><p>What it costs.</p>
       </div>
     </div>

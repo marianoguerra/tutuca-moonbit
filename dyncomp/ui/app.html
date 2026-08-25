@@ -201,16 +201,16 @@
     </span>
     <span class="text-[0.65rem] opacity-60 field-doc" @show="truthy? .doc" @text=".doc"></span>
 
-    <input @show="equals? .kind 'bool'"
+    <input @show=".kind is 'bool'"
            type="checkbox" class="checkbox checkbox-xs field-bool"
            :checked=".flag" @on.input="edit e.value">
-    <input @show="equals? .kind 'number'"
+    <input @show=".kind is 'number'"
            type="number" class="input input-xs input-bordered field-number"
            :value=".num" @on.input="edit e.value">
-    <input @show="equals? .kind 'string'"
+    <input @show=".kind is 'string'"
            type="text" class="input input-xs input-bordered field-string"
            :value=".text" @on.input="edit e.value">
-    <select @show="equals? .kind 'enum'"
+    <select @show=".kind is 'enum'"
             class="select select-xs select-bordered field-enum"
             :value=".text" @on.input="edit e.value">
       <option @each=".choices" :value="@value" @text="@value"></option>
@@ -218,7 +218,7 @@
     <!-- A compound the vocabulary has no control for is edited as JSON. That
          is honest rather than lazy: a list-of-records editor is a real feature
          and drawing three text boxes would be pretending to be one. -->
-    <textarea @show="equals? .kind 'json'"
+    <textarea @show=".kind is 'json'"
               class="textarea textarea-xs textarea-bordered font-mono field-json"
               rows="2" :value=".text" @on.input="edit e.value"></textarea>
 
@@ -255,7 +255,7 @@
       <span class="font-mono text-sm grow config-title" @text=".title"></span>
       <button class="btn btn-xs btn-circle btn-ghost config-close" @on.click="close">×</button>
     </div>
-    <p class="text-[0.65rem] opacity-50 italic config-moved" @show="equals? .mode 'view'">
+    <p class="text-[0.65rem] opacity-50 italic config-moved" @show=".mode is 'view'">
       It is being configured here, so the page shows a placeholder until you close this.
     </p>
     <x render=".target" as="config"></x>

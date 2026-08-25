@@ -71,6 +71,12 @@ pub(all) enum IssueRole {
   /// look the arity up in an enum.
   PredicateArity(name~ : String, want~ : Int)
   BadPredicateArg // "predicate-arg"
+  /// "expression": a conditional slot whose expression the grammar refused,
+  /// or which parsed into something a slot cannot hold. Carries the sentence
+  /// rather than a code, because the sentence comes from the BLOCK grammar —
+  /// the two languages are one, so a slot reports what a body would report
+  /// instead of a translation of it.
+  BadExpression(why~ : String)
 } derive(Debug, Eq)
 
 ///|

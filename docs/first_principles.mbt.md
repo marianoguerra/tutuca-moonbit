@@ -107,7 +107,7 @@ form:
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool) // 'text', 42, true
   StrTpl(Array[Val?]) // $'a {.b} c'
-  App(name~ : String, args~ : Array[Val]) // truthy? .x / equals? .a .b
+  App(name~ : String, args~ : Array[Val]) // truthy? .x / .a is .b
   Name(String) // bare lowercase: input handler / event arg
   HandlerName(name~ : String, ns~ : HandlerNamespace)
   TypeName(String) // bare Uppercase

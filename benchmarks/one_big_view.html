@@ -104,30 +104,30 @@
   <section class="flex flex-col gap-4">
     <div role="tablist" class="tabs tabs-border">
       <button role="tab" id="tab-todo"
-        @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'todo'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'todo'">To-Do</button>
       <button role="tab" id="tab-json"
-        @if.class="equals? .activeSection 'json'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'json'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'json'">JSON Editor</button>
       <button role="tab" id="tab-tree"
-        @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'tree'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'tree'">Tree</button>
       <button role="tab" id="tab-personal-site"
-        @if.class="equals? .activeSection 'personalSite'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'personalSite'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'personalSite'">Personal Site</button>
       <button role="tab" id="tab-dnd"
-        @if.class="equals? .activeSection 'dnd'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'dnd'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'dnd'">Drag and Drop</button>
       <button role="tab" id="tab-visual-wasm"
-        @if.class="equals? .activeSection 'visualWasm'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'visualWasm'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'visualWasm'">Visual Wasm</button>
     </div>
-    <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
-    <div class="pane-json" @show="equals? .activeSection 'json'"><x render=".json"></x></div>
-    <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
-    <div class="pane-personal-site" @show="equals? .activeSection 'personalSite'"><x render=".personalSite"></x></div>
-    <div class="pane-dnd" @show="equals? .activeSection 'dnd'"><x render=".dnd"></x></div>
-    <div class="pane-visual-wasm" @show="equals? .activeSection 'visualWasm'"><x render=".visualWasm"></x></div>
+    <div class="pane-todo" @show=".activeSection is 'todo'"><x render=".todo"></x></div>
+    <div class="pane-json" @show=".activeSection is 'json'"><x render=".json"></x></div>
+    <div class="pane-tree" @show=".activeSection is 'tree'"><x render=".tree"></x></div>
+    <div class="pane-personal-site" @show=".activeSection is 'personalSite'"><x render=".personalSite"></x></div>
+    <div class="pane-dnd" @show=".activeSection is 'dnd'"><x render=".dnd"></x></div>
+    <div class="pane-visual-wasm" @show=".activeSection is 'visualWasm'"><x render=".visualWasm"></x></div>
   </section>
   <!-- storybook/examples/conditionals.html -->
   <section class="flex flex-col gap-2">
@@ -135,31 +135,31 @@
     <p>Light is: <code @text="$light"></code></p>
     <p class="advice">
       You must
-      <span @show="equals? $light 'red'">STOP</span>
-      <span @show="equals? $light 'orange'">SLOW DOWN</span>
-      <span @show="equals? $light 'green'">GO</span>
+      <span @show="$light is 'red'">STOP</span>
+      <span @show="$light is 'orange'">SLOW DOWN</span>
+      <span @show="$light is 'green'">GO</span>
     </p>
   </section>
   <!-- storybook/examples/conditionals.html -->
   <section class="flex flex-col gap-3">
     <div role="tablist" class="tabs tabs-border">
       <button role="tab" id="t-overview"
-        @if.class="equals? .tab 'overview'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".tab is 'overview'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setTab 'overview'">Overview</button>
       <button role="tab" id="t-features"
-        @if.class="equals? .tab 'features'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".tab is 'features'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setTab 'features'">Features</button>
       <button role="tab" id="t-pricing"
-        @if.class="equals? .tab 'pricing'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".tab is 'pricing'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setTab 'pricing'">Pricing</button>
     </div>
-    <div class="card p-3 border panel" @show="equals? .tab 'overview'">
+    <div class="card p-3 border panel" @show=".tab is 'overview'">
       <h4>Overview</h4><p>A short summary of what this product does.</p>
     </div>
-    <div class="card p-3 border panel" @show="equals? .tab 'features'">
+    <div class="card p-3 border panel" @show=".tab is 'features'">
       <h4>Features</h4><p>The list of features lives on this tab.</p>
     </div>
-    <div class="card p-3 border panel" @show="equals? .tab 'pricing'">
+    <div class="card p-3 border panel" @show=".tab is 'pricing'">
       <h4>Pricing</h4><p>What it costs.</p>
     </div>
   </section>
@@ -802,18 +802,18 @@
   <section class="flex flex-col gap-4">
     <div role="tablist" class="tabs tabs-border">
       <button role="tab" id="tab-counter"
-        @if.class="equals? .activeSection 'counter'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'counter'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'counter'">Counter</button>
       <button role="tab" id="tab-todo"
-        @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'todo'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'todo'">To-Do</button>
       <button role="tab" id="tab-tree"
-        @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
+        @if.class=".activeSection is 'tree'" @then="'tab tab-active'" @else="'tab'"
         @on.click="setActiveSection 'tree'">Tree</button>
     </div>
-    <div class="pane-counter" @show="equals? .activeSection 'counter'"><x render=".counter"></x></div>
-    <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
-    <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
+    <div class="pane-counter" @show=".activeSection is 'counter'"><x render=".counter"></x></div>
+    <div class="pane-todo" @show=".activeSection is 'todo'"><x render=".todo"></x></div>
+    <div class="pane-tree" @show=".activeSection is 'tree'"><x render=".tree"></x></div>
   </section>
   <!-- playground/site/examples/counter.html -->
   <div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">

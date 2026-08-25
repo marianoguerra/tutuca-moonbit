@@ -336,7 +336,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("bool")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("bool")]),
           @anode.h(
             "input",
             [
@@ -350,7 +350,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("number")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("number")]),
           @anode.h(
             "input",
             [
@@ -364,7 +364,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("string")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("string")]),
           @anode.h(
             "input",
             [
@@ -378,7 +378,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("enum")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("enum")]),
           @anode.h(
             "select",
             [
@@ -405,7 +405,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("json")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("json")]),
           @anode.h(
             "textarea",
             [
@@ -702,7 +702,7 @@ fn config_panel_main_view_ir() -> @anode.View {
         ]),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("mode"), @anode.const_str("view")]),
+          App(name="is", args=[Field("mode"), @anode.const_str("view")]),
           @anode.h(
             "p",
             [

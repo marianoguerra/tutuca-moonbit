@@ -197,6 +197,16 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
       }
       Str(buf.to_string())
     }
+    // `and` / `or` before the table, and this is not an optimization. A
+    // `Builtin`'s `apply` takes arguments that are ALREADY evaluated, so a row
+    // cannot decline to look at its second one — and the compiled backend
+    // emits `&&` / `||`, which does. Answering them here is what keeps
+    // `and (truthy? .items) ($firstLabel)` from calling the compute on an
+    // empty list in one backend and not the other.
+    App(name="and", args~) if args.length() == 2 =>
+      Bool(args[0].eval(stack).is_truthy() && args[1].eval(stack).is_truthy())
+    App(name="or", args~) if args.length() == 2 =>
+      Bool(args[0].eval(stack).is_truthy() || args[1].eval(stack).is_truthy())
     // The parser only builds an `App` whose name resolves and whose argument
     // count matches, so the lookup here cannot fail on anything it produced.
     // It can still miss for an `App` built by hand or decoded from an IR

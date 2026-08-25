@@ -51,7 +51,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("bool")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("bool")]),
           @anode.h(
             "input",
             [
@@ -65,7 +65,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("num")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("num")]),
           @anode.h(
             "input",
             [
@@ -79,7 +79,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="equals?", args=[Field("kind"), @anode.const_str("text")]),
+          App(name="is", args=[Field("kind"), @anode.const_str("text")]),
           @anode.h(
             "input",
             [

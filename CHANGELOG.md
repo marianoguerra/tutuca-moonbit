@@ -6,6 +6,91 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A conditional slot takes the block's expression language.** `@show`,
+  `@hide` and `@if.<attr>` were the one place a closed five-name predicate
+  table stood in for a grammar: `equals? .kind 'a'` parsed and `not .open` did
+  not, while a block body took `not`, `and`, `or`, `is` and the comparisons and
+  refused `equals?`. One idea had two vocabularies and two grammars, and which
+  applied depended on which side of a `<script>` tag you were on.
+
+  They are now one language. A slot parses through
+  `@tscript.parse_expr_source` — the block's own `parse_expr`, promoted out of
+  the declaration parser it never depended on — and lowers to `@tutuca.Val`,
+  so all of this is a slot value:
+
+  ```html
+  <div @show="not .open">…</div>
+  <div @show="not (empty? .kind)">…</div>
+  <div @show="(len .items) is 1">…</div>
+  <div @show=".open and .ready">…</div>
+  <div @show="(.n > 0) and .open">…</div>
+  ```
+
+  Including the grammar's rules, which are the block's: application is
+  juxtaposition, parentheses are required wherever precedence would otherwise
+  be implicit, and mixing operator families in one unparenthesized chain is a
+  parse error naming the parentheses to add. `.n > 0 and .open` is refused and
+  `(.n > 0) and .open` is what it asks for — the same answer a `pred` gets,
+  with the same sentence.
+
+  **The AST did not change.** An operator lowers to `Val::App`, which already
+  carried its name as a string resolved at eval time, so `a and b and c` is
+  `App("and", [App("and", [a, b]), c])` and every walker that recurses through
+  `App(args~, ..)` — the statedef collector, the `UnknownStateField` checker,
+  the method collector, the IR emitter — keeps working untouched. `.open` is
+  still collected out of `not (empty? .open)`. That is what the
+  `enum Pred` → table migration was for: *"the set can grow."*
+
+  `core/value_builtin.mbt` is now the ONE vocabulary, and
+  `tscript/script_builtin.mbt` re-exports it rather than restating it: the
+  operators, the shape predicates, and the block's reading builtins (`len`,
+  `has`, `contains`, `min`, `max`, `clamp`, `int`, `num`, `str`, `lower`,
+  `upper`, `trim`) all resolve in both places against the same rows.
+
+  `and` and `or` short-circuit in `Val::eval` ahead of the table, because a
+  `Builtin`'s `apply` takes arguments that are ALREADY evaluated and the
+  compiled backend emits `&&` / `||`. Without it the two backends would
+  disagree about `and (truthy? .items) ($firstLabel)` on an empty list.
+
+  Four things a body writes and a slot still cannot, each refused by name
+  rather than by silence: a nested read, an `if` expression, arithmetic, and a
+  bare parameter. `^macro` and `$$config` are substituted whole and stay
+  single-token values — a `^name` re-parses the caller's source and marks the
+  result `from_macro`, which is what decides whether a constant may pin a URL
+  origin, and an expression that quietly lost the mark would be wrong in the
+  one place it matters.
+
+  (`tscript/script_parse.mbt`, `tscript/parse.mbt`, `core/value_builtin.mbt`,
+  `core/value_eval.mbt`, `viewgen/surface.mbt`.)
+
+- **`bad value 'not' in unknown predicate` is gone.** The role phrase was
+  spliced in after "in", which reads as a place — and two of the roles are not
+  places but explanations, so the result was ungrammatical and named neither
+  the rule nor the way out. `UnknownPredicate` and the new `BadExpression` now
+  answer with a whole sentence: the vocabulary, or the block grammar's own
+  message for what it refused.
+
+### Deprecated
+
+- **`equals?` and `falsy?` are retired spellings.** `is` says the first and
+  `not` says the second, and one meaning keeps one spelling — the rule that
+  already kept `equals?` out of the block.
+
+  Both still parse, and that is deliberate: a compiled dyncomp bundle carries
+  its view markup as a STRING inside the wasm and the host parses it at load
+  time (`dyncomp/host/manifest.mbt`), so deleting a spelling would break a
+  bundle nobody can recompile. `@tutuca.retired(name)` is the one table saying
+  what to write instead, `gen-views` hints once per name per component, and
+  neither name is in `builtin_names()`, so no "did you mean" ever offers one.
+  They go at the next apiVersion.
+
+  The 109 uses in this repo are migrated — 94 in `.html` views plus the two
+  embedders an `*.html` sweep misses, `tutucard/web/examples.js` (the starter
+  cards) and `storybook/ui/engine.mbt` (view markup built as MoonBit string
+  literals at run time).
+
 ## [0.28.1] - 2026-08-24
 
 ### Fixed
