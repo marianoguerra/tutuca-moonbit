@@ -414,10 +414,10 @@ one spelling, wherever it is written.
 | map `Map[String, V]` | `setAt k v`, `deleteAt k` |
 
 **Use those spellings.** A few aliases parse — `removeAt`, `delete`, `set`,
-`clear` — and `gen-views` compiles some of them, but a **card** implements the
-canonical names only and refuses the rest with `the interpreter does not
-implement it either`. A handler that runs in a card and refuses under
-`gen-views`, or the other way round, is a spelling problem and nothing deeper.
+`clear` — and `gen-views` compiles some of them, but the **card compiler**
+implements the canonical names only and refuses the rest as unsupported. A
+handler that compiles as a card and is refused by `gen-views`, or the other way
+round, may simply be using a non-canonical spelling.
 
 An index out of range is a **no-op**, not a crash: `setAt`/`deleteAt` past the
 end leave the collection alone, and `insertAt` *at* the length appends, because
@@ -495,13 +495,13 @@ backend limits below before reaching for it.
 
 ### What the ahead-of-time backend refuses
 
-A card INTERPRETS the block and has none of the limits below; `gen-views`
-COMPILES it into MoonBit and has all of them. Each **refuses the arm** rather
-than miscompiling it — it prints
+A card compiles the block directly to its component wasm module and supports
+the cases below; the ahead-of-time `gen-views` emitter targets MoonBit and has
+these limits. It **refuses the arm** rather than miscompiling it — it prints
 `<Comp>: <name> stays in MoonBit — <why> (script-refusal)`, drops the name
 from what the block answers, and leaves it in your `update` match to write in
 MoonBit. Nothing breaks silently, but a card that runs is not proof the same
-block compiles.
+block emits to MoonBit.
 
 Around `new` / `@cur`: a `new` inside an `if` does not outlive the branch, and
 `@cur = expr` needs a `new` in scope above it. Writing or reading **through an
@@ -558,9 +558,9 @@ the line `@tutuca.warn` has always printed
 redirect `@tutuca.warn_hook` to collect those in a test or route them to an
 error pane.
 
-Both backends keep them identically — the card interpreter evaluates the rule,
-`gen-views` compiles it into a `guard` in the generated arm, ahead of the
-effect queue's flush.
+Both backends keep them identically — the card compiler emits the rule into the
+component module, while `gen-views` emits a `guard` in the generated MoonBit
+arm, ahead of the effect queue's flush.
 
 Four things to know about the clauses themselves:
 

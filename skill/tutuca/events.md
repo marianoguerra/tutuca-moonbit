@@ -102,8 +102,8 @@ three are the answers a drop usually wants, so the handler neither opens the
 
 All four are `Null` when no drag is in flight, which is why all four carry
 `@tutuca.Value` in a generated `Msg` rather than the type they look like. The
-narrow three are also the ONLY way an interpreted card can read the source row:
-a block cannot apply a function it did not name. Worked example:
+narrow three are also the ONLY way a compiled card can read the source row: a
+block cannot apply a function it did not name. Worked example:
 [advanced.md](./advanced.md#drag-and-drop).
 
 ### Layer 2 — the allowlisted property walk

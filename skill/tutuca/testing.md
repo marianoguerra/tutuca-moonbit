@@ -9,6 +9,10 @@ harness (`marianoguerra/tutuca/testing/harness`, imported as
 `@harness`) mounts a `ModuleDef` as a live app on the in-memory DOM.
 General authoring lives in [core.md](./core.md).
 
+This file also contains the complete Tutucard scene reference. If the
+deliverable is a card, read [tutucard.md](./tutucard.md) for the authoring
+model, then jump to [Testing a CARD](#testing-a-card-script-typetutucatest).
+
 ## Setup
 
 Add the harness to the package's test imports in `moon.pkg`:

@@ -7,8 +7,11 @@ Tutuca is an immutable-state web framework: a component is a plain typed
 (`marianoguerra/tutuca`): the template language is identical to the JS
 original, but everything around the views — component definition, state,
 handlers, testing, CLI — is MoonBit. Read this file when authoring or
-reviewing `@component.component(...)` definitions, view templates, macros,
-or when using the embedded `tutuca` CLI.
+reviewing the **compiled MoonBit path**: `@component.component(...)`
+definitions, generated view modules, `ModuleDef` wiring, view templates,
+macros, or the embedded `tutuca` CLI. For a single-file Tutucard, begin with
+[tutucard.md](./tutucard.md) and return here only for the template notation it
+links to.
 
 > Load the topic files only when the task touches them (the routing
 > table in [SKILL.md](./SKILL.md) has the full descriptions):
@@ -18,7 +21,8 @@ or when using the embedded `tutuca` CLI.
 > [component-design.md](./component-design.md) · [testing.md](./testing.md) ·
 > [cli.md](./cli.md) · [semantics.md](./semantics.md) ·
 > [advanced.md](./advanced.md) · [margaui.md](./margaui.md) ·
-> [playground.md](./playground.md) · [patterns/README.md](./patterns/README.md).
+> [playground.md](./playground.md) · [tutucard.md](./tutucard.md) ·
+> [patterns/README.md](./patterns/README.md).
 
 ## Verifying changes
 
@@ -897,7 +901,7 @@ that claims it, and the buckets are the last:
 The four render-time buckets — `compute`, `when`, `enrich`, `enrich_scope` —
 take a trailing `&@tutuca.Stack`: the render position the body is being asked
 from. `stack.lookup_dynamic(name)` is what answers a `*name` inside one, and it
-is the same call the interpreter makes for a `*name` in a slot beside it, so a
+is the same lookup the card runtime performs for a `*name` in a slot beside it, so a
 `pred` and the `@show` that reads it agree. A body that asks nothing of it
 names the parameter `_stack`; `gen-views` writes that for you. `swap` takes a
 `&@tutuca.Ctx` instead, because a swap answers a dispatch rather than a render,

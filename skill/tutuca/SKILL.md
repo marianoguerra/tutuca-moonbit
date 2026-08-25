@@ -1,81 +1,113 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the `<script type="tutuca/script">` handler block (`new` / `@cur` value building, `requires` / `ensures` / `invariant` contracts, `format` sentences and the refusal channel); the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package, and a card's `<script type="tutuca/test">` scene block driven headlessly; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
+description: Author, review, debug, and test Tutuca MoonBit components and Tutucard single-file UI cards. Use for Tutuca HTML views, state and script blocks, generated view modules, ModuleDef wiring, events, messages and intents, component tests, card scenes, styling, playgrounds, and the tutuca CLI.
 ---
 
-# Tutuca (MoonBit port)
+# Tutuca and Tutucard
 
-Tutuca is an immutable-state SPA framework. This skill covers the MoonBit
-port (`marianoguerra/tutuca`): a component is declared in an `.html` view file
-— its state, its templates, its styles — which `tutuca gen-views` compiles
-into a MoonBit module beside it, over the `@tutuca.Value` value layer.
+Tutuca is an immutable-state UI framework for MoonBit. A view file holds the
+typed state schema, templates, styles, and optionally a small handler language.
+There are two authoring paths over that same file format:
 
-Behaviour goes in the view file too, in the `<script type="tutuca/script">`
-block beside the schema. **MoonBit is for what that block cannot say** — the
-wiring a component was assembled with (`slot_args`, macros, `ModuleDef`;
-`provide` / `lookup` are sections of the `state` body now), and the handful of
-bodies the block does not spell
-(building a child instance, `@loop-with`, a fold over a sequence, a payload
-unpacked out of an `Any`). A block arm the ahead-of-time backend cannot
-compile is never silently dropped: `gen-views` prints
-`<name> stays in MoonBit — <why> (script-refusal)` and leaves the name to your
-`update` match.
+| Path | Choose it when | Build and test |
+|---|---|---|
+| **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen-views` or `tutuca watch`, then `moon check` and `moon test` |
+| **Tutucard** | The UI should remain one portable HTML file and use only the schema, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tutuca/test` scenes |
 
-Modules are `ModuleDef` values, and tests run under `moon test`. Read
-[core.md](./core.md) first for the framework primer.
+Read [tutucard.md](./tutucard.md) first for a card. Read
+[core.md](./core.md) first for a compiled component. Load only the additional
+references needed for the task.
 
-## Verifying changes
+## Working method
 
-After editing a tutuca module, run these before declaring the edit done:
+1. Identify the path from the surrounding files and requested deployment.
+   An HTML file is not necessarily a card: an adjacent generated
+   `*_view_gen.mbt` and MoonBit component builder indicate the compiled path.
+2. Inspect the schema and templates before changing handlers. Generated
+   message and handler enums are view-driven.
+3. Keep behavior in `tutuca/script` when the language expresses it. On the
+   compiled path, use MoonBit for refused script arms and host/module wiring.
+4. Regenerate generated view modules; never edit a `*_gen.mbt` file directly.
+5. Validate the chosen path, including interaction tests for observable
+   behavior and a browser check for visual changes.
+
+## Invariants worth keeping in context
+
+- State is immutable. A handler returns a successor; the transactor commits it
+  and rerenders.
+- `.field` reads state, `$name` calls a derived handler in a value position,
+  and `@name` reads the current render binding. Event handler names are bare.
+- Event handlers belong in `update` on the compiled path. End its dispatch
+  match with `_ => Unhandled`; `Unchanged` vetoes while `Unhandled` falls
+  through to generated mutators.
+- View expressions do not traverse arbitrary state paths. Use a child render,
+  a computed value, or enrichment; a render binding may read one member.
+- Tutuca has no automatic `init` lifecycle. The host or a test must send it.
+- Generated bucket enums are closed over names referenced by the views. Change
+  the view, regenerate, then implement the new arm.
+- Literal class names can be collected for Tailwind/MargaUI. Runtime-assembled
+  class names cannot.
+
+## References by task
+
+### Start and architecture
+
+- [core.md](./core.md) — compiled component primer, generated names,
+  `Component`, `ModuleDef`, handler buckets, rendering, and host mounting.
+- [tutucard.md](./tutucard.md) — card anatomy, capabilities, limits,
+  multi-component cards, authoring loop, and when to graduate to MoonBit.
+- [component-design.md](./component-design.md) — state ownership,
+  responsibilities, composition, and communication choices.
+- [playground.md](./playground.md) — the MoonBit in-browser playground, where
+  view and MoonBit sources compile as a pair. This is distinct from Tutucard.
+
+### Views, state, and behavior
+
+- [schema.md](./schema.md) — state types, records, enums, flags, slots,
+  generated mutators, `tutuca/init`, the script language, `new` and `@cur`,
+  contracts, and script refusals.
+- [events.md](./events.md) — event payloads, generated message types,
+  modifiers, safe event paths, files, and custom events.
+- [iteration.md](./iteration.md) — `@each`, filtering, enrichment,
+  pagination, and custom collections.
+- [messages-and-intents.md](./messages-and-intents.md) — messages, addressed
+  sends, intent routes and outcomes, forwarding, replies, and async delivery.
+- [macros.md](./macros.md) — reusable view markup and slots.
+- [styles.md](./styles.md) — scoped, common, and global component CSS.
+- [advanced.md](./advanced.md) — drag and drop, dynamic bindings, pseudo-`x`,
+  and `Obj` collections.
+- [semantics.md](./semantics.md) — paths, transaction order, dynamic lookup,
+  and keyed async delivery; load for subtle runtime bugs.
+
+### Quality and delivery
+
+- [testing.md](./testing.md) — `moon test`, the in-memory `@harness`, card
+  scene syntax, record mode, intent fixtures, and headless card driving.
+- [margaui.md](./margaui.md) — collecting and compiling Tailwind/MargaUI
+  classes, runtime injection, and literal-class constraints.
+- [cli.md](./cli.md) — installing and using `gen-views`, `watch`, CSS
+  generation, storybook serving, diagnostics, and exit codes.
+- [patterns/README.md](./patterns/README.md) — short task recipes and complete
+  examples; use after choosing the architecture and language path.
+
+## Verification
+
+For a compiled component, regenerate its view and run the project-appropriate
+targets. At minimum:
 
 ```sh
-tutuca gen-views <view>.html --name <Comp>   # …or leave `tutuca watch` running
-moon check                                   # handlers vs state, views vs types
-moon test                                    # @harness interaction tests
+tutuca gen-views path/to/view.html --name Component
+moon check
+moon test
+moon fmt
+moon info
 ```
 
-This is an ahead-of-time port: there is **no `tutuca lint` and no
-`tutuca render`**. An undefined field or an unhandled `@on` handler is a
-*build* error in the generated view module, not a finding from a run-time
-linter you invoke separately — so `moon check` is the lint step. Full recipe in
-[core.md](./core.md#verifying-changes); command details in
-[cli.md](./cli.md).
+Use `tutuca watch` while iterating. In this project, prefer the repository task
+runner described by its `AGENTS.md`; it also checks generated-file drift and
+all supported targets.
 
-## Companion skills
-
-When authoring tutuca code, also load this if available:
-
-- **margaui** — the Tailwind v4 / daisyUI-compatible class library. Reach
-  for it when the project uses MargaUI / Tailwind class lists in `class=` /
-  `:class=`. See [margaui.md](./margaui.md) for how the MoonBit port
-  collects class names and hands them to margaui's compiler — it also
-  carries a starter class vocabulary for when no margaui skill is
-  available.
-
-(The JS skill's `immutable-js` companion does not apply here: state is the
-`@tutuca.Value` enum — `Null` / `Bool` / `Num` / `Str` / `List` / `Map` /
-`Fn` / `Obj` — not immutable.js collections.)
-
-## Routing
-
-| Task                                                                                           | File                            |
-| ---------------------------------------------------------------------------------------------- | ------------------------------- |
-| Authoring views and handlers — the `.html` view file, the handler buckets (`update` / `compute` / `swap` / render), conditional display | [core.md](./core.md)           |
-| Declaring state — the `<script type="tutuca/state">` schema, field spellings (`Array[T]`, `T?`, `Set[String]`, `Array[Any]`), generated mutators, slots, message buckets, `tutuca/init` fixtures — and the `<script type="tutuca/script">` block beside it: `$`-callables, `new` / `@cur`, `requires` / `ensures` / `invariant` contracts, a rule's `format`, and the refusal channel a test reads them through | [schema.md](./schema.md) |
-| `@on.<event>` handlers — handler argument names, generated `<Comp>Msg` payload types, modifiers, custom-element events | [events.md](./events.md) |
-| Iterating lists — `@each` / `render-each`, `@when` filtering, `@enrich-with`, `@loop-with` pagination | [iteration.md](./iteration.md) |
-| Macros — `@anode.Macro` definitions, `<x:name>` calls, slots, registration | [macros.md](./macros.md) |
-| Component CSS — `style` / `common_style` / `global_style` scoping and pitfalls | [styles.md](./styles.md) |
-| Designing components — responsibilities, state ownership, channel choice, do's & don'ts | [component-design.md](./component-design.md) |
-| Embedded CLI commands, flags, exit codes, and every `gen-views` diagnostic (lint codes included) | [cli.md](./cli.md)             |
-| Messages and intents — `send` / `sendAt` / `receive`, `intent` and its `dyn` / `lex` route, `forward` / `reply` / `fail`, the three answers, `IntentFn` registration, catch-all arms | [messages-and-intents.md](./messages-and-intents.md) |
-| Drag & drop, dynamic bindings (`*x`), pseudo-`x`, custom collections via the `Obj` trait | [advanced.md](./advanced.md)   |
-| Setting up MargaUI styling — `collect_classes()`, the MoonBit compile step, `inject_style` | [margaui.md](./margaui.md)     |
-| Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |
-| Authoring tests — `moon test` blocks, the `@harness` mount/drive/read API, designing handlers for testability; and a CARD's `<script type="tutuca/test">` scene block: the verbs, the readers, record mode, and driving one headlessly | [testing.md](./testing.md) |
-| Authoring in an in-browser playground — generated names without the CLI, the view+code pair convention, verifying without `moon` | [playground.md](./playground.md) |
-| Task-oriented recipes — iteration, filtering, conditional content, conditional attributes, dynamic vars, composition, events, adding a storybook example, a complete todo app | [patterns/README.md](./patterns/README.md) |
-
-Read `core.md` first. Reach for the others only when the task touches
-them — each is referenced inline from `core.md` so you'll be pointed
-there when relevant.
+For a card, compile/check it with the card runtime, run every embedded
+`tutuca/test` scene, and inspect the mounted result. See
+[tutucard.md](./tutucard.md#validation) and
+[testing.md](./testing.md#testing-a-card-script-typetutucatest).
