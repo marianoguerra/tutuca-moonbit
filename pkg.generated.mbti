@@ -41,4 +41,6 @@ pub using @core {trait Ctx}
 
 pub using @core {trait Obj}
 
+pub using @core {trait Stack}
+
 // Traits

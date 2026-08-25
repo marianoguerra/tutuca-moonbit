@@ -68,6 +68,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   nobody deciding anything. (`playground/build/fetch-compiler.mjs`,
   `playground/build/assemble.mjs`, `playground/vendor/README.md`.)
 
+- **`.mbti` and the generated guest template match their sources again.**
+  `dyncomp/host`, the root facade and `cli/guest_template_gen.mbt` were left
+  behind by 0.30.0's `call_method` signature change and the WIT edit beside it.
+  Regenerated; no behavior change.
 
 ## [0.31.0] - 2026-08-25
 
