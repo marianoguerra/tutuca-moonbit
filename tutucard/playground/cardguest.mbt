@@ -83,8 +83,9 @@ extern "js" fn cardguest_call_method(
   handle : Int,
   name : String,
   args_json : String,
+  bindings_json : String,
 ) -> String =
-  #|(key, handle, name, args) => globalThis.__cardguest[key].callMethod(handle, name, args)
+  #|(key, handle, name, args, bindings) => globalThis.__cardguest[key].callMethod(handle, name, args, bindings)
 
 ///|
 extern "js" fn cardguest_with_field(
@@ -387,8 +388,22 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn call_method(self, handle, name, args) {
-  self.value_of(cardguest_call_method(self.key, handle, name, list_json(args)))
+impl @dyncomp.Guest for CardGuest with fn call_method(
+  self,
+  handle,
+  name,
+  args,
+  bindings,
+) {
+  self.value_of(
+    cardguest_call_method(
+      self.key,
+      handle,
+      name,
+      list_json(args),
+      bindings_json(bindings),
+    ),
+  )
 }
 
 ///|

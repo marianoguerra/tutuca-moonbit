@@ -372,14 +372,25 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       bindings = {};
       return out;
     },
-    callMethod(handle, name, argsJson) {
+    // `bindings` for the reason `dispatch` has them, resolved for the RENDER
+    // position instead of the dispatch one: a `compute`, a `pred`, a `@when`
+    // or an `enrich` that reads `*name` compiles `control.lookup`, and this is
+    // the only thing that answers it. Set and cleared around the call exactly
+    // as `dispatch` does — a binding must not outlive the call it was resolved
+    // for.
+    callMethod(handle, name, argsJson, bindingsJson) {
       const inst = instOf(handle);
       if (!inst) return "";
-      const v = inst.callMethod(name, JSON.parse(argsJson).map(to));
-      const out = JSON.stringify(from(v));
-      drainChildren();
-      arena.clear();
-      return out;
+      bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
+      try {
+        const v = inst.callMethod(name, JSON.parse(argsJson).map(to));
+        const out = JSON.stringify(from(v));
+        drainChildren();
+        arena.clear();
+        return out;
+      } finally {
+        bindings = {};
+      }
     },
     withField(handle, name, valueJson) {
       const inst = instOf(handle);
