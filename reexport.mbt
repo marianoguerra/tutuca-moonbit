@@ -8,7 +8,12 @@
 // External users importing `marianoguerra/tutuca` get the same friendly facade.
 
 ///|
-pub using @core {type Value, trait Ctx, trait Obj}
+// `Stack` comes with them: the four render-time buckets take a
+// `&@tutuca.Stack` — it is the render position a `*name` in a `compute` or a
+// `pred` is answered from — so a generated component names it in four
+// signatures, and a card that declares one would not compile in the browser
+// without it.
+pub using @core {type Value, trait Ctx, trait Obj, trait Stack}
 
 // The intent types, for the same reason and with the same failure mode.
 //

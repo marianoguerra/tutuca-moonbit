@@ -285,7 +285,7 @@ fn root_comp() -> @component.Component {
         sortAsc: false,
       },
     compute={
-      "hasActiveFilters": (s : RootState, _args) => Bool(
+      "hasActiveFilters": (s : RootState, _args, _stack) => Bool(
         s.selectedCategories.length() != s.allCategories.length() ||
         s.selectedRoles.length() != s.allRoles.length(),
       ),

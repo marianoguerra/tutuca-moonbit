@@ -90,7 +90,7 @@ fn fp_update() -> (
 ///|
 fn fp_only_matches() -> Map[
   String,
-  (NaivePeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  (NaivePeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value, &@tutuca.Stack) -> Bool,
 ] {
   {
     "onlyMatches": (s, _key, person, _iter, _stack) => fp_matches(person, s.query),
@@ -213,7 +213,7 @@ fn coupled_people_comp() -> @component.Component {
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     enrich_scope={
-      "pagerInfo": (s) => {
+      "pagerInfo": (s, _stack) => {
         let all : Array[Int] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
