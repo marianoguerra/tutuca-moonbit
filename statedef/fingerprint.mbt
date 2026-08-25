@@ -26,7 +26,7 @@
 /// so it is not a shape change. A type name a FIELD refers to is not
 /// normalized — see the header.
 pub fn fingerprint(defs : Array[StateDef]) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for def in defs {
     sb.write_string("i:\{upper_name(def.source_name)};")
     for f in def.fields {
@@ -81,7 +81,7 @@ fn fnv1a(s : String) -> UInt64 {
 ///|
 fn hex64(v : UInt64) -> String {
   let digits = "0123456789abcdef".to_array()
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i in 0..<16 {
     let shift = (15 - i) * 4
     sb.write_char(digits[((v >> shift) & 0xfUL).to_int()])

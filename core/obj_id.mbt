@@ -105,7 +105,7 @@ pub fn ObjId::next(self : ObjId) -> ObjId {
 ///|
 pub fn ObjId::to_hex(self : ObjId) -> String {
   let digits = "0123456789abcdef".to_array()
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i in 0..<16 {
     sb.write_char(digits[((self.origin >> ((15 - i) * 4)) & 0xfUL).to_int()])
   }

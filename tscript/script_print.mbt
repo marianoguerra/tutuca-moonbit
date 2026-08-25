@@ -39,7 +39,7 @@ fn assign_word(op : AssignOp) -> String {
 ///|
 /// Escape a string back into a `'…'` literal.
 fn quote_str(s : String) -> String {
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   b.write_char('\'')
   for c in s {
     // A newline in a literal is printed as `\n` rather than as itself: the
@@ -81,7 +81,7 @@ fn lit_src(l : @tutuca.Lit) -> String {
 
 ///|
 fn place_src(p : Place) -> String {
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   match p.root {
     PState(n) => {
       b.write_char('.')
@@ -148,7 +148,7 @@ fn expr_src(e : Expr) -> String {
   match e {
     ELit(lit~, ..) => lit_src(lit)
     ETpl(parts~, ..) => {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       b.write_string("$'")
       for part in parts {
         match part {
@@ -180,7 +180,7 @@ fn expr_src(e : Expr) -> String {
       name + " " + args.map(a => operand_src(a)).join(" ")
     EUnary(op~, operand~, ..) => op_word(op) + operand_src(operand)
     EChain(ops~, operands~, ..) => {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       b.write_string(operand_src(operands[0]))
       for i, op in ops {
         b.write_char(' ')
@@ -244,7 +244,7 @@ fn stmt_src(s : Stmt, indent : String) -> String {
     }
     SNew(ty~, ..) => indent + "new " + ty.to_source()
     SIf(cond~, then_~, else_~, ..) => {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       let inner = indent + "  "
       b.write_string(indent + "if " + expr_src(cond) + " {\n")
       for st in then_ {
@@ -266,7 +266,7 @@ fn stmt_src(s : Stmt, indent : String) -> String {
 
 ///|
 pub fn Decl::to_source(self : Decl) -> String {
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   if self.doc != "" {
     for line in self.doc.split("\n") {
       b.write_string("/// " + line.to_owned() + "\n")

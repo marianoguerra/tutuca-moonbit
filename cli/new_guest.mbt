@@ -91,7 +91,7 @@ pub fn guest_name_check(name : String) -> String? {
 ///|
 /// `temp-conv` -> `TempConv`: the struct and component name.
 pub fn pascal_case(name : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut upper = true
   for c in name {
     if c == '-' {
@@ -111,7 +111,7 @@ pub fn pascal_case(name : String) -> String {
 /// identifier cannot hold a hyphen, and a file named with one cannot be a
 /// module path either.
 pub fn snake_case(name : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for c in name {
     sb.write_char(if c == '-' { '_' } else { c })
   }
@@ -204,7 +204,7 @@ fn run_new_guest(args : Array[String], opts : GlobalOpts) -> Outcome {
     )
   }
   if dry_run {
-    let sb = StringBuilder::new()
+    let sb = StringBuilder()
     sb.write_string("would scaffold guest '\{name}' → \{target}/\n")
     for pair in files {
       sb.write_string("  + \{pair.0}\n")

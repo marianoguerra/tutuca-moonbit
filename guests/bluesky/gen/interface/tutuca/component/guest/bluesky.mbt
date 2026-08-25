@@ -582,7 +582,7 @@ fn ordered_facets(facets : Array[Facet]) -> Array[Facet] {
 
 ///|
 fn slice(chars : Array[Char], from : Int, to : Int) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in from..<to {
     buf.write_char(chars[i])
   }
@@ -737,7 +737,7 @@ fn upper(c : Char) -> Char {
 /// initials off the display name, or off the handle's first two labels.
 fn initials_of(display_name : String, handle : String) -> String {
   let source = if display_name != "" { display_name } else { handle }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut taken = 0
   let mut fresh = true
   for c in source.iter() {
@@ -896,7 +896,7 @@ fn host_of(url : String) -> String {
   } else {
     url
   }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for c in rest.iter() {
     if c == '/' || c == '?' || c == '#' {
       break

@@ -142,7 +142,7 @@ fn node_id_of(n : @anode.ANode) -> Int? {
 ///|
 /// Drop every `data-cid="N"` so two components' output can be compared.
 fn strip_cid(html : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let chars = html.to_array()
   let needle = " data-cid=\"".to_array()
   let mut i = 0

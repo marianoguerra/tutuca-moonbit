@@ -402,7 +402,7 @@ fn parse_segment_simple(
     Scanner::new(text)
   }
   let result : Array[Inline] = []
-  let text_buf = StringBuilder::new()
+  let text_buf = StringBuilder()
   let mut text_start = 0
   while !scanner.is_eof() {
     let pos = scanner.pos
@@ -413,7 +413,7 @@ fn parse_segment_simple(
         scanner.advance(backtick_count)
 
         // Find closing backticks
-        let content_buf = StringBuilder::new()
+        let content_buf = StringBuilder()
         let mut found_closing = false
         while !scanner.is_eof() {
           let closing_count = scanner.count_char('`')

@@ -260,7 +260,7 @@ fn locate_view(
   // takes a COMMON prefix off every line, so what is left of the first one
   // appears verbatim, with the indentation sitting just before the match.
   let first_line = match body.find("\n") {
-    Some(n) => body[0:n].to_string()
+    Some(n) => body[0:n].to_owned()
     None => body
   }
   match source.find(first_line) {
@@ -268,7 +268,7 @@ fn locate_view(
       // Counted over the prefix rather than by indexing into the whole file:
       // `find` answers in the string's own units and `line_of` walks
       // characters, and slicing here is what keeps the two from disagreeing.
-      let prefix = source[0:i].to_string()
+      let prefix = source[0:i].to_owned()
       (
         line_of(prefix, prefix.length()),
         { start: i, end_: i + first_line.length() },

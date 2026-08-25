@@ -573,7 +573,7 @@ fn is_acct_char(c : Char) -> Bool {
 
 ///|
 fn slice(chars : Array[Char], from : Int, to : Int) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in from..<to {
     buf.write_char(chars[i])
   }
@@ -865,7 +865,7 @@ fn upper(c : Char) -> Char {
 /// initials off the display name, or off the handle's first two parts.
 fn initials_of(display_name : String, acct : String) -> String {
   let source = if display_name != "" { display_name } else { acct }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut taken = 0
   let mut fresh = true
   for c in source.iter() {

@@ -146,7 +146,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
         }
         j = j + 1
       }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       for k in start..<j {
         text.write_char(chars[k])
       }
@@ -166,7 +166,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       let doc = i + 2 < n && chars[i + 2] == '/'
       let start = i
       let mut j = if doc { i + 3 } else { i + 2 }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       while j < n && chars[j] != '\n' {
         text.write_char(chars[j])
         j = j + 1
@@ -180,7 +180,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
     // -- strings ------------------------------------------------------------
     if c == '"' {
       let start = i
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       let mut j = i + 1
       let mut closed = false
       while j < n {
@@ -219,7 +219,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
           i = i + 1
         }
       }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       for k in start..<i {
         text.write_char(chars[k])
       }
@@ -236,7 +236,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       while i < n && is_ident_char(chars[i]) {
         i = i + 1
       }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       for k in start..<i {
         text.write_char(chars[k])
       }

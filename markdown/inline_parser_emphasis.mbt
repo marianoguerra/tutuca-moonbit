@@ -75,7 +75,7 @@ fn InlineParser::parse_until_closing_marker(
   marker_count : Int,
 ) -> Array[Inline] {
   let children : Array[Inline] = []
-  let text_buf = StringBuilder::new()
+  let text_buf = StringBuilder()
   let text_start = self.scanner.pos
   while !self.scanner.is_eof() {
     // Check for closing marker

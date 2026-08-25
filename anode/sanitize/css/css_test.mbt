@@ -586,7 +586,7 @@ test "the alignment a GFM table writes survives at every level" {
 /// Generous by design, in the same register as `Policy::check_quotas`: they
 /// catch a runaway, not an author.
 test "the caps bound the work rather than the author" {
-  let long = StringBuilder::new()
+  let long = StringBuilder()
   for i = 0; i < 200; i = i + 1 {
     long.write_string("color:red;")
   }

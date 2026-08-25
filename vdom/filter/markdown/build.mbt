@@ -430,7 +430,7 @@ fn fold_label(s : String) -> String {
 /// `” ```json:file.json ”` keeps the whole first token, which is what upstream's
 /// own info-string convention expects.
 fn first_word(s : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for c in s {
     if c == ' ' || c == '\t' {
       break

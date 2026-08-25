@@ -294,7 +294,7 @@ fn BlockParser::parse_list_item(
   content_offset : Int,
 ) -> ListItem {
   // Parse first line content
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
   self.scanner.append_line_to(content_buf)
   if char_is(self.scanner.peek(), '\n') {
     self.scanner.advance(1)
@@ -421,7 +421,7 @@ fn BlockParser::parse_nested_list_item(
   marker_offset : Int,
   content_offset : Int,
 ) -> ListItem {
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
   self.scanner.append_line_to(content_buf)
   if char_is(self.scanner.peek(), '\n') {
     self.scanner.advance(1)
@@ -476,7 +476,7 @@ fn parse_task_checkbox(content : String) -> (Bool?, String) {
 ///|
 /// Skip first n characters of a string
 fn skip_n_chars(s : String, n : Int) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut i = 0
   for c in s {
     if i >= n {

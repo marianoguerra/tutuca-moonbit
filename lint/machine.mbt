@@ -230,7 +230,7 @@ fn Machine::on_text(self : Machine, start : Int, end : Int) -> Unit {
 
 ///|
 fn Machine::slice(self : Machine, start : Int, end : Int) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in start..<end {
     buf.write_char(self.chars[i])
   }

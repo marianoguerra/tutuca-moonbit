@@ -39,7 +39,7 @@ fn lower(c : Char) -> Char {
 /// "set-label" -> "setLabel". The tutuca runtime name: what a view writes as
 /// `.setLabel` and what the JSON encoding carries.
 pub fn camel_name(name : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut cap = false
   let mut first = true
   for c in name.to_array() {
@@ -57,7 +57,7 @@ pub fn camel_name(name : String) -> String {
 ///|
 /// "set-label" -> "SetLabel". A MoonBit type or enum-variant name.
 pub fn upper_name(name : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut cap = true
   for c in name.to_array() {
     if is_alnum(c) {
@@ -209,7 +209,7 @@ fn component_of(written : String, span : Span) -> String raise DefError {
 /// those functions, and a name they disagreed about would be a link error
 /// nobody could read.
 pub fn value_prefix(name : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut prev_alnum = false
   for i, c in name.to_array() {
     if !is_alnum(c) {

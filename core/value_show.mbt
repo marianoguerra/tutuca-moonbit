@@ -18,7 +18,7 @@ fn val_source(val : Val) -> String {
     // the `$'…'`
     // source is strictly more useful and keeps macro-attr round-trips sane.
     StrTpl(parts) => {
-      let buf = StringBuilder::new()
+      let buf = StringBuilder()
       buf.write_string("$'")
       for part in parts {
         match part {

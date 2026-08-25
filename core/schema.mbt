@@ -77,7 +77,7 @@ pub fn SchemaInfo::field_names(self : SchemaInfo) -> Array[String] {
 /// the other, and each is stable for its own producer, which is all either one
 /// is for.
 pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("i:\{self.name};")
   for f in self.fields {
     sb.write_string("f:\{f.name}:\{f.ty.show_source()};")
@@ -103,7 +103,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
     h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
   }
   let digits = "0123456789abcdef".to_array()
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for i in 0..<16 {
     out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
   }

@@ -188,7 +188,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
     // decides what a segment means; this only says which segments were written.
     EventPath(segments) => stack.lookup_event_path(segments)
     StrTpl(parts) => {
-      let buf = StringBuilder::new()
+      let buf = StringBuilder()
       for part in parts {
         match part {
           Some(v) => buf.write_string(tpl_piece(v.eval(stack)))

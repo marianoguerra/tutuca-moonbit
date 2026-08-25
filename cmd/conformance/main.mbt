@@ -66,8 +66,8 @@ fn main raise {
 /// here would answer a question the schema already answered — and for an
 /// `intent` it would be wrong, since a view raises messages and never intents.
 fn project(cases : Array[@corpus.Case]) -> (String, String) {
-  let decls = StringBuilder::new()
-  let arms = StringBuilder::new()
+  let decls = StringBuilder()
+  let arms = StringBuilder()
   let recv_cases : Array[String] = []
   let intent_cases : Array[String] = []
   let shared : Map[String, String] = Map([])

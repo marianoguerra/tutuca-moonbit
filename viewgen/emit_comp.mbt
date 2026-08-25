@@ -230,7 +230,7 @@ fn bucket_router(
     return None
   }
   let name = "\{v}_inline_\{b.param}"
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   out.write_string("///|\n")
   out.write_string(
     "/// The `\{b.param}` names the `<script type=\"tutuca/script\">` block answers.\n",

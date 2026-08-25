@@ -20,7 +20,7 @@ fn escape_str_into(buf : StringBuilder, s : String) -> Unit {
 ///|
 /// ConstVal.toString quoting: `'…'` with `'` and `\` escaped, one pass.
 fn escape_str_literal(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   buf.write_char('\'')
   escape_str_into(buf, s)
   buf.write_char('\'')

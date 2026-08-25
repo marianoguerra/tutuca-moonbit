@@ -52,7 +52,7 @@ fn type_prefix(name : String) -> String raise GenError {
   if chars.length() == 0 || !is_alpha(chars[0]) {
     raise BadComponentName(name)
   }
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for i, c in chars {
     if !is_alnum(c) && c != '_' {
       raise BadComponentName(name)

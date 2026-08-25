@@ -143,7 +143,7 @@ fn value_text(
   urls : Array[String],
   screen : (String) -> Bool,
 ) -> Result[String, CssReason] {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let mut i = 0
   let n = toks.length()
   let mut wrote = false

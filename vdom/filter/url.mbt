@@ -55,7 +55,7 @@ fn is_script_scheme(scheme : String) -> Bool {
 /// comes before any `/`, `?` or `#` — otherwise `foo/bar:baz` would read as
 /// scheme `foo/bar`.
 pub fn scheme_of(raw : String) -> String? {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut leading = true
   for c in raw {
     // Stripped anywhere, not just at the front.

@@ -270,7 +270,7 @@ async fn run_gen_views(
     }
   }
   if dry_run {
-    let sb = StringBuilder::new()
+    let sb = StringBuilder()
     for pair in plan.files {
       sb.write_string(pair.1)
     }

@@ -102,7 +102,7 @@ pub fn runtime_wax_fields(
   match runtime_cache.get(key) {
     Some(fs) => fs
     None => {
-      let sb = StringBuilder::new()
+      let sb = StringBuilder()
       sb.write_string(runtime_src)
       sb.write_string(lower_src(which))
       for name in extra {

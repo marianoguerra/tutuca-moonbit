@@ -82,7 +82,7 @@ pub fn Bundle::config(self : Bundle) -> Map[String, String] {
 
 ///|
 fn bundle_key(manifest : DynManifest, config : ResolvedConfig) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("m:\{manifest.module_name}\nv:\{manifest.version}\n")
   sb.write_string(config.canonical())
   let mut h : UInt64 = 0xcbf29ce484222325UL
@@ -90,7 +90,7 @@ fn bundle_key(manifest : DynManifest, config : ResolvedConfig) -> String {
     h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
   }
   let digits = "0123456789abcdef".to_array()
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for i in 0..<16 {
     out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
   }

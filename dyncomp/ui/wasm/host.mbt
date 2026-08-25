@@ -361,7 +361,7 @@ pub fn mount(
     app,
     ui,
     session,
-    pending: Set::new(),
+    pending: Set([]),
     loaded_urls: [],
   }
   live.val = Some(host)

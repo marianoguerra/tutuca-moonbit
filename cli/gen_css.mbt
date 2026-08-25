@@ -184,7 +184,7 @@ pub fn gen_css_success(target : String, files~ : Int, classes~ : Int) -> String 
 ///|
 /// `--print-classes` output: one class name per line.
 pub fn class_list_text(classes : Array[String]) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for c in classes {
     sb.write_string(c)
     sb.write_string("\n")

@@ -206,7 +206,7 @@ priv struct Segment {
 /// the host's class scanner reads `class=` LITERALS off the compiled views to
 /// decide which utility CSS to emit, and a string built here is invisible to it.
 fn Segment::seg_class(self : Segment) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   out.write_string("seg")
   if self.bold {
     out.write_string(" font-bold")
@@ -526,7 +526,7 @@ fn avatar_path(avatar : String, origin : String) -> String {
 /// letter — the convention a reader already knows, and the same rule `bluesky`
 /// applies, so a host drawing both does not draw two different kinds of disc.
 fn initials_of(author : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut taken = 0
   let mut fresh = true
   for c in author.iter() {
@@ -1637,7 +1637,7 @@ priv struct ChannelHistory {
 /// Everything a thread says, for the filter: the root's author and body plus
 /// every reply's. Built from the JSON, once, at construction.
 fn thread_text(v : @values.Value) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   fn add_message(m : @values.Value) {
     out.write_string(as_text(field_of(m, "author")))
     out.write_string(" ")

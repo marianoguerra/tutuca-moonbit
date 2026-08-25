@@ -31,7 +31,7 @@ pub(all) struct ResolvedConfig {
 fn ResolvedConfig::canonical(self : ResolvedConfig) -> String {
   let names = self.all.keys().collect()
   names.sort()
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for name in names {
     sb.write_string("\{name}=\{self.all.get(name).unwrap_or("")}\n")
   }

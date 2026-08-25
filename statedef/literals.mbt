@@ -13,7 +13,7 @@
 ///|
 /// A double-quoted MoonBit string literal.
 pub fn quote(s : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_char('"')
   for c in s {
     match c {

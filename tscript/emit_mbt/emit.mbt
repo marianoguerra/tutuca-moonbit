@@ -233,7 +233,7 @@ pub fn emit(
   let source = if arms.is_empty() {
     ""
   } else {
-    let b = StringBuilder::new()
+    let b = StringBuilder()
     b.write_string("///|\n")
     b.write_string(
       "/// The dispatches the `<script type=\"tutuca/script\">` block answers.\n",
@@ -325,7 +325,7 @@ fn E::value_bodies(
   if prefix == "" {
     return out
   }
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   fn take(
     d : @tscript.Decl,
     role : Role,
@@ -422,7 +422,7 @@ fn E::value_body(
   // parameter is only known once the body has been compiled — a `*name` sets
   // it, and so does a sibling call that may contain one — and a generated file
   // must not be the thing that warns about an unused parameter.
-  let body = StringBuilder::new()
+  let body = StringBuilder()
   let params : Array[String] = [sp + " : " + self.state_ty]
   match role {
     RMethod => {
@@ -489,7 +489,7 @@ fn E::value_body(
     REnrich => "Unit"
     REnrichScope => "Map[String, @tutuca.Value]"
   }
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   b.write_string("///|\n")
   b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
   b.write_string(
@@ -555,7 +555,7 @@ fn E::enrich_stmts(
   guard d.body is Stmts(body) else {
     raise Cannot("an enricher is statements, not one expression")
   }
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   for st in body {
     guard st is SAssign(place~, op~, value~, ..) else {
       raise Cannot(
@@ -601,7 +601,7 @@ fn E::arm(
   // `&@tutuca.Ctx`. Stated rather than inherited: leaving it implicit is what
   // let a value body emit `ctx.lookup` into a signature that had no `ctx`.
   self.in_value_body = false
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   // `_args` when the declaration takes none: a generated file must not be the
   // thing that warns.
   let args_binder = if d.params.is_empty() { "_args" } else { "args" }
@@ -670,7 +670,7 @@ fn E::arm(
   // it. Before the flush, so a rule that does not hold leaves the queue
   // unflushed: half a transition is what the queue exists to prevent, and a
   // contract failing is no different from a body not finishing.
-  let after = StringBuilder::new()
+  let after = StringBuilder()
   if d.ensures_ is Some(c) {
     after.write_string(
       self.contract_guard(c.name, "      ", "postcondition_failed", d.name),
@@ -975,7 +975,7 @@ fn E::stmts(
   body : Array[@tscript.Stmt],
   pad : String,
 ) -> String raise NoWay {
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   for s in body {
     b.write_string(self.stmt(s, pad))
   }
@@ -1073,7 +1073,7 @@ fn E::stmt_body(
     }
     SIf(cond~, then_~, else_~, ..) => {
       let c = self.at_bool(cond)
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       // A branch rebinds `s`, so the shadowing has to happen in an EXPRESSION
       // that answers the state — `if … { … } else { s }` — rather than in two
       // statement blocks whose bindings would not escape.
@@ -1710,7 +1710,7 @@ fn E::expr(
         LNull => raise Cannot("`null` has no typed spelling here")
       }
     ETpl(parts~, ..) => {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       b.write_string("(")
       let mut first = true
       for part in parts {
@@ -1939,7 +1939,7 @@ fn E::chain(
 ) -> (String, @statedef.StateTy) raise NoWay {
   match family {
     FLogic => {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       b.write_string("(\{self.at_bool(operands[0])}")
       for i, op in ops {
         b.write_string(if op == "and" { " && " } else { " || " })
@@ -1977,7 +1977,7 @@ fn E::chain(
       // static types decide, exactly as the checker says.
       let (first, tf) = self.expr(operands[0])
       if family is FAdd && tf is TText {
-        let b = StringBuilder::new()
+        let b = StringBuilder()
         b.write_string("(\{first}")
         for i, _op in ops {
           b.write_string(" + \{self.at(operands[i + 1], TText)}")

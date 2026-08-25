@@ -28,7 +28,7 @@ fn BlockParser::try_parse_footnote_definition(
   self.scanner.advance(1)
 
   // Read label (alphanumeric, -, _)
-  let label_buf = StringBuilder::new()
+  let label_buf = StringBuilder()
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
       Some(']') => break
@@ -64,7 +64,7 @@ fn BlockParser::try_parse_footnote_definition(
   }
 
   // Read content (first line + continuation lines with indentation)
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
   self.scanner.append_line_to(content_buf)
   if char_is(self.scanner.peek(), '\n') {
     self.scanner.advance(1)
@@ -136,7 +136,7 @@ fn BlockParser::try_parse_link_definition(
   self.scanner.advance(1)
 
   // Read label
-  let label_buf = StringBuilder::new()
+  let label_buf = StringBuilder()
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
       Some(']') => break
@@ -167,7 +167,7 @@ fn BlockParser::try_parse_link_definition(
   // Read URL
   let url = if char_is(self.scanner.peek(), '<') {
     self.scanner.advance(1)
-    let url_buf = StringBuilder::new()
+    let url_buf = StringBuilder()
     while !self.scanner.is_eof() && !char_is(self.scanner.peek(), '>') {
       match self.scanner.consume() {
         Some(c) => url_buf.write_char(c)
@@ -177,7 +177,7 @@ fn BlockParser::try_parse_link_definition(
     self.scanner.advance(1) // >
     url_buf.to_string()
   } else {
-    let url_buf = StringBuilder::new()
+    let url_buf = StringBuilder()
     while !self.scanner.is_eof() {
       match self.scanner.peek() {
         Some(' ') | Some('\t') | Some('\n') | None => break
@@ -198,7 +198,7 @@ fn BlockParser::try_parse_link_definition(
         Some(c) => c
         None => '"'
       }
-      let title_buf = StringBuilder::new()
+      let title_buf = StringBuilder()
       while !self.scanner.is_eof() && !char_is(self.scanner.peek(), quote) {
         match self.scanner.consume() {
           Some(c) => title_buf.write_char(c)

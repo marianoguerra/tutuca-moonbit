@@ -155,7 +155,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       let doc = i + 2 < n && chars[i + 2] == '/'
       let start = i
       let mut j = if doc { i + 3 } else { i + 2 }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       while j < n && chars[j] != '\n' {
         text.write_char(chars[j])
         j = j + 1
@@ -195,7 +195,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
           i = i + 1
         }
       }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       for k in start..<i {
         text.write_char(chars[k])
       }
@@ -217,7 +217,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       if i < n && chars[i] == '?' {
         i = i + 1
       }
-      let text = StringBuilder::new()
+      let text = StringBuilder()
       for k in start..<i {
         text.write_char(chars[k])
       }
@@ -227,7 +227,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
     }
     // -- punctuation and symbol operators -----------------------------------
     let two : String = if i + 1 < n {
-      let b = StringBuilder::new()
+      let b = StringBuilder()
       b.write_char(c)
       b.write_char(chars[i + 1])
       b.to_string()
@@ -321,7 +321,7 @@ fn scan_string(
   from : Int,
   open : Int,
 ) -> (String, Int) raise ScriptError {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let n = chars.length()
   let mut i = from
   while i < n {

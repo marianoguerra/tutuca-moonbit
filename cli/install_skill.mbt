@@ -77,7 +77,7 @@ fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
   let base_dir = if dot_agents { ".agents/skills" } else { ".claude/skills" }
   let target_rel = "\{base_dir}/tutuca"
   if dry_run {
-    let sb = StringBuilder::new()
+    let sb = StringBuilder()
     let shown = if user { "~/\{target_rel}" } else { target_rel }
     sb.write_string("would install tutuca skill → \{shown}\n")
     for pair in skill_files {

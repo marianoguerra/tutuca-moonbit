@@ -416,7 +416,7 @@ fn dec_val(
       "\{pad}  }\n" +
       "\{pad}}\n"
     TTuple(ts) => {
-      let sb = StringBuilder::new()
+      let sb = StringBuilder()
       sb.write_string(
         "\{pad}guard \{src} is List(\{tmp}) else { return None }\n" +
         "\{pad}guard \{tmp}.length() == \{ts.length()} else { return None }\n",

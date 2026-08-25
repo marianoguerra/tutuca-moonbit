@@ -94,7 +94,7 @@ fn[T] fail_stage(stage : String, e : @viewgen.GenError) -> T {
 /// holding `times` copies of every view body in the repo. `giant_view(1)` is
 /// benchmarks/one_big_view.html; higher counts are the scaling probe.
 pub fn giant_view(times : Int) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("<template id=\"GiantView\">\n")
   for _ in 0..<times {
     sb.write_string(one_big_view_body)

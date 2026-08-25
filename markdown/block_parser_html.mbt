@@ -70,7 +70,7 @@ fn BlockParser::try_parse_html_block(self : BlockParser, start : Int) -> Block? 
     char_is(self.scanner.peek_at(1), '-') &&
     char_is(self.scanner.peek_at(2), '-') {
     self.scanner.restore(peek_pos)
-    let content_buf = StringBuilder::new()
+    let content_buf = StringBuilder()
     while !self.scanner.is_eof() {
       let is_closed = self.scanner.line_contains("-->")
       self.scanner.append_line_to(content_buf)
@@ -100,7 +100,7 @@ fn BlockParser::try_parse_html_block(self : BlockParser, start : Int) -> Block? 
   }
 
   // Read tag name (including hyphen for custom elements)
-  let tag_buf = StringBuilder::new()
+  let tag_buf = StringBuilder()
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
       Some(c) if (c >= 'a' && c <= 'z') ||
@@ -128,7 +128,7 @@ fn BlockParser::try_parse_html_block(self : BlockParser, start : Int) -> Block? 
 
   // Restore to start and read entire HTML block
   self.scanner.restore(peek_pos)
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
 
   // For custom elements, we need to find the closing tag
   let closing_tag = if is_custom && !is_closing {

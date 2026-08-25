@@ -37,7 +37,7 @@ pub fn CssPolicy::declarations(
         screened_urls: [],
       }
   }
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let mut kept = 0
   for run in split_on_semicolons(toks) {
     if kept + dropped.length() >= max_declarations {

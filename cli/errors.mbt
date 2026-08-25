@@ -140,7 +140,7 @@ fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
     let envelope : Json = Json::object({ "error": Json::object(error) })
     envelope.stringify(escape_slash=false) + "\n"
   } else {
-    let buf = StringBuilder::new()
+    let buf = StringBuilder()
     let where_ = match shape.where_ {
       Some(w) => "[\{w}] "
       None => ""

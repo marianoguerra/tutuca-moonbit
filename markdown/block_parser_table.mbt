@@ -165,7 +165,7 @@ fn parse_table_row(
 /// Split table row into cells by |
 fn split_table_cells(line : String) -> Array[String] {
   let cells : Array[String] = []
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut in_escape = false
   for i = 0; i < line.length(); i = i + 1 {
     match line.get_char(i) {

@@ -36,7 +36,7 @@ fn BlockParser::try_parse_fenced_code(
   }
 
   // Read code content until closing fence
-  let code_buf = StringBuilder::new()
+  let code_buf = StringBuilder()
   while !self.scanner.is_eof() {
     let line_indent = self.scanner.count_leading_spaces()
 
@@ -88,7 +88,7 @@ fn BlockParser::try_parse_indented_code(
   start : Int,
 ) -> Block? {
   let leading = Trivia::empty()
-  let code_buf = StringBuilder::new()
+  let code_buf = StringBuilder()
   while !self.scanner.is_eof() {
     let line_start = self.scanner.pos
 

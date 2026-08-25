@@ -184,7 +184,7 @@ fn pinned_prefix(val : @tutuca.Val) -> String? {
   match val {
     Const(lit=LStr(s), from_macro=false) => Some(s)
     StrTpl(parts) => {
-      let buf = StringBuilder::new()
+      let buf = StringBuilder()
       for part in parts {
         guard part is Some(Const(lit=LStr(s), from_macro=false)) else { break }
         buf.write_string(s)
@@ -251,7 +251,7 @@ fn Policy::external_url_refusal(self : Policy, val : @tutuca.Val) -> String? {
 /// where the disagreements live: tab, newline and carriage return are stripped
 /// from ANYWHERE in a URL, and leading controls and spaces are trimmed.
 fn url_shaped(raw : String) -> String? {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut leading = true
   for c in raw {
     if c is ('\t' | '\n' | '\r') {
@@ -315,7 +315,7 @@ fn macro_arg_text(raw : String) -> String? {
 ///|
 /// The text of a value-source string literal, up to its closing quote.
 fn literal_run(rest : StringView, stop_at_brace~ : Bool) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut escaped = false
   for c in rest {
     if escaped {

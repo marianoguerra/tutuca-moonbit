@@ -63,7 +63,7 @@ pub fn tokenize(s : String) -> Array[Token] {
         j
       }
     }
-    let buf = StringBuilder::new()
+    let buf = StringBuilder()
     for k in start..<end {
       buf.write_char(chars[k])
     }
@@ -84,7 +84,7 @@ pub fn tokenize(s : String) -> Array[Token] {
 /// other across the boundary.
 fn unescape_str(s : String) -> String {
   let chars : Array[Char] = s.iter().collect()
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut i = 0
   while i < chars.length() {
     if chars[i] == '\\' &&

@@ -27,7 +27,7 @@ fn BlockParser::try_parse_frontmatter(self : BlockParser) -> Frontmatter? {
   }
 
   // Read YAML content until closing ---
-  let yaml_buf = StringBuilder::new()
+  let yaml_buf = StringBuilder()
   let mut found_closing = false
   while !self.scanner.is_eof() {
     if self.scanner.matches("---") {

@@ -13,7 +13,7 @@
 /// good number of DOM snapshots both depend on: no spaces, keys in this order,
 /// `nid` present-but-null for a site without one.
 pub fn Meta::to_comment_text(self : Meta) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_char('§')
   match self {
     Comp(nid~, cid~, vid~) => {

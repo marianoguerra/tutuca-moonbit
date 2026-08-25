@@ -410,7 +410,7 @@ test "one failing file in a batch still reads as one file" {
     ir=false,
   )
   guard! r is Err(shape)
-  inspect(shape.where_, content="Some(views/b.html)")
+  debug_inspect(shape.where_, content="Some(\"views/b.html\")")
   inspect(
     shape.message,
     content=(
@@ -446,7 +446,7 @@ test "a file that does not split stops the batch before the emit pass" {
   inspect(shape.code, content="ERR_VIEW_GEN_FAILED")
   // The split failure, alone and named — `uses.html` split fine and was never
   // emitted, so it says nothing about the macro the hole would have hidden.
-  inspect(shape.where_, content="Some(views/bad.html)")
+  debug_inspect(shape.where_, content="Some(\"views/bad.html\")")
   assert_true(shape.message.contains("unclosed <template"))
   assert_true(!shape.message.contains("views/uses.html"))
 }

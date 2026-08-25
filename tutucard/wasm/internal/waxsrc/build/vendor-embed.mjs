@@ -98,7 +98,7 @@ ${body}
 /// module ahead of whatever uses it. The order is fixed upstream and mirrored
 /// in \`build/vendor-embed.mjs\`.
 pub let stdlib_src : String = {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for f in stdlib_files {
     sb.write_string(f.1)
     sb.write_string("\\n")
@@ -114,7 +114,7 @@ ${runtimeBody}
 
 ///|
 pub let runtime_src : String = {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for f in runtime_files {
     sb.write_string(f.1)
     sb.write_string("\\n")

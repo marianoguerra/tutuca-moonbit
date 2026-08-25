@@ -119,7 +119,7 @@ pub(all) struct Refusal {
 /// The sentence the author wrote comes LAST and unquoted, because it is the
 /// half a reader is meant to read: everything before it is provenance.
 pub fn Refusal::to_line(self : Refusal) -> String {
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   b.write_string(self.code.word())
   if self.rule != "" {
     b.write_string(" \{self.rule}")

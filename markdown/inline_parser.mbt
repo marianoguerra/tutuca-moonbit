@@ -336,7 +336,7 @@ fn InlineParser::try_parse_code_span(
   self.scanner.advance(backtick_count)
 
   // Find closing backticks
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
   while !self.scanner.is_eof() {
     let closing_count = self.scanner.count_char('`')
     if closing_count == backtick_count {
@@ -397,7 +397,7 @@ fn InlineParser::try_parse_strikethrough(
   self.scanner.advance(2)
 
   // Parse content until closing ~~
-  let content_buf = StringBuilder::new()
+  let content_buf = StringBuilder()
   let content_start = self.scanner.pos
   while !self.scanner.is_eof() {
     if self.scanner.count_char('~') >= 2 {
@@ -464,7 +464,7 @@ fn InlineParser::try_parse_autolink(
   start : Int,
 ) -> Inline? {
   self.scanner.advance(1) // Skip <
-  let url_buf = StringBuilder::new()
+  let url_buf = StringBuilder()
   let mut is_email = false
   while !self.scanner.is_eof() {
     match self.scanner.peek() {

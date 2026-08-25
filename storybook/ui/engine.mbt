@@ -559,7 +559,7 @@ fn build_shell(
   let id_to_field : Map[String, String] = Map([])
   let init_fields : Array[String] = []
   let num_sections = sections.length()
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string("<div>")
   // --- focus overlay: one fullscreen story, rendered from `.focusValue` ---
   sb.write_string(

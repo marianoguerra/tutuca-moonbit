@@ -183,7 +183,7 @@ pub let property_keywords : Map[String, @set.Set[String]] = {
   let out : Map[String, @set.Set[String]] = Map([])
   for row in keyword_rows {
     let words : @set.Set[String] = Set([])
-    let buf = StringBuilder::new()
+    let buf = StringBuilder()
     fn flush() {
       let w = buf.to_string()
       if w != "" {

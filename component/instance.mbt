@@ -333,7 +333,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
-  self.obj_callable_at(name, ns, @tutuca.NullStack::{  })
+  @tutuca.Obj::obj_callable_at(self, name, ns, @tutuca.NullStack::{  })
 }
 
 ///|

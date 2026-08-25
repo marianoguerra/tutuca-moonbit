@@ -1187,7 +1187,7 @@ pub fn css_bundle_steps() -> Array[Step] {
 ///|
 /// Human-readable list of every task (base + ci + dist), for `--help` / unknown.
 pub fn help_text() -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string(
     "Usage: moon run --target native cmd/dev -- <task>\n\nTasks:\n",
   )

@@ -25,7 +25,7 @@ fn scan_start_tag(
   }
   i = i + 1
   let name_start = i
-  let name_buf = StringBuilder::new()
+  let name_buf = StringBuilder()
   while i < span_end && !scan_is_space(chars[i]) && !(chars[i] is ('/' | '>')) {
     name_buf.write_char(chars[i])
     i = i + 1
@@ -40,7 +40,7 @@ fn scan_start_tag(
       break
     }
     let attr_start = i
-    let attr_buf = StringBuilder::new()
+    let attr_buf = StringBuilder()
     while i < span_end &&
           !scan_is_space(chars[i]) &&
           !(chars[i] is ('=' | '/' | '>')) {
@@ -63,7 +63,7 @@ fn scan_start_tag(
       if i < span_end && chars[i] is ('"' | '\'') {
         let quote = chars[i]
         i = i + 1
-        let val_buf = StringBuilder::new()
+        let val_buf = StringBuilder()
         while i < span_end && chars[i] != quote {
           val_buf.write_char(chars[i])
           i = i + 1
@@ -71,7 +71,7 @@ fn scan_start_tag(
         i = i + 1 // closing quote
         value = val_buf.to_string()
       } else {
-        let val_buf = StringBuilder::new()
+        let val_buf = StringBuilder()
         while i < span_end && !scan_is_space(chars[i]) && chars[i] != '>' {
           val_buf.write_char(chars[i])
           i = i + 1

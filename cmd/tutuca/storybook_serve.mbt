@@ -60,7 +60,7 @@ fn content_type_of(path : String) -> String {
 ///|
 /// The path portion before any query string.
 fn strip_query(path : String) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   for ch in path {
     if ch == '?' {
       break

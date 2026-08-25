@@ -9,7 +9,7 @@
 /// Escape a file's contents as a MoonBit double-quoted string literal.
 /// Escaping `\` first also neutralizes `\{` interpolation.
 fn escape_mbt_string(s : String) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for c in s {
     match c {
       '\\' => buf.write_string("\\\\")
@@ -37,7 +37,7 @@ pub fn assets_source(
   var_~ : String,
   banner~ : String,
 ) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   sb.write_string(banner)
   sb.write_string("\n///|\npub let \{var_} : Array[(String, String)] = [\n")
   for pair in files {

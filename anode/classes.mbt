@@ -5,7 +5,7 @@
 ///|
 /// Split on any whitespace run.
 fn add_classes(s : String, into : Set[String]) -> Unit {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   fn flush() {
     let t = buf.to_string()
     if t != "" {

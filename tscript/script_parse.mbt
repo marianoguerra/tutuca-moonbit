@@ -1038,7 +1038,7 @@ fn parse_value_block(p : P) -> Expr raise ScriptError {
 fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError {
   let chars : Array[Char] = raw.iter().collect()
   let out : Array[TplPart] = []
-  let text = StringBuilder::new()
+  let text = StringBuilder()
   let n = chars.length()
   let mut i = 0
   while i < n {
@@ -1053,7 +1053,7 @@ fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError 
           out.push(TText(s))
         }
         text.reset()
-        let inner = StringBuilder::new()
+        let inner = StringBuilder()
         for k in (i + 1)..<j {
           inner.write_char(chars[k])
         }

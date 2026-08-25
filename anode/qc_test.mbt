@@ -112,7 +112,7 @@ test "ANode::parse never panics on directive-free tag soup" {
     "</x:m>", "<x nope=\"v\"></x>",
   ]
   @qc.quick_check_fn(fn(xs : Array[Int]) -> Bool {
-    let buf = StringBuilder::new()
+    let buf = StringBuilder()
     for x in xs {
       let i = if x < 0 { -(x + 1) } else { x }
       buf.write_string(fragments[i % fragments.length()])

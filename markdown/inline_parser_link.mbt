@@ -23,8 +23,8 @@ fn InlineParser::try_parse_wikilink(
     return None
   }
   self.scanner.advance(2) // Skip [[
-  let target_buf = StringBuilder::new()
-  let label_buf = StringBuilder::new()
+  let target_buf = StringBuilder()
+  let label_buf = StringBuilder()
   let mut in_label = false
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
@@ -95,7 +95,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
   self.scanner.advance(1) // Skip [
 
   // Parse link text
-  let text_buf = StringBuilder::new()
+  let text_buf = StringBuilder()
   let mut bracket_depth = 1
   while !self.scanner.is_eof() && bracket_depth > 0 {
     match self.scanner.peek() {
@@ -132,7 +132,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
     self.scanner.advance(1)
 
     // Parse URL
-    let url_buf = StringBuilder::new()
+    let url_buf = StringBuilder()
     let mut paren_depth = 1
 
     // Skip leading whitespace
@@ -217,7 +217,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
           Some(c) => c
           None => '"'
         }
-        let title_buf = StringBuilder::new()
+        let title_buf = StringBuilder()
         while !self.scanner.is_eof() {
           match self.scanner.peek() {
             Some(c) if c == quote => {
@@ -242,7 +242,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
       }
       Some('(') => {
         self.scanner.advance(1) // Skip opening (
-        let title_buf = StringBuilder::new()
+        let title_buf = StringBuilder()
         let mut paren_depth = 1
         while !self.scanner.is_eof() && paren_depth > 0 {
           match self.scanner.peek() {
@@ -311,7 +311,7 @@ fn InlineParser::try_parse_link(self : InlineParser, start : Int) -> Inline? {
   // Check for reference link [text][ref]
   if char_is(self.scanner.peek(), '[') {
     self.scanner.advance(1)
-    let label_buf = StringBuilder::new()
+    let label_buf = StringBuilder()
     while !self.scanner.is_eof() {
       match self.scanner.peek() {
         Some(']') => {
@@ -365,7 +365,7 @@ fn InlineParser::try_parse_footnote_reference(
   self.scanner.advance(1) // Skip ^
 
   // Read label (alphanumeric, -, _)
-  let label_buf = StringBuilder::new()
+  let label_buf = StringBuilder()
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
       Some(']') => break
@@ -409,7 +409,7 @@ fn InlineParser::try_parse_image(self : InlineParser, start : Int) -> Inline? {
   self.scanner.advance(1) // Skip [
 
   // Parse alt text
-  let alt_buf = StringBuilder::new()
+  let alt_buf = StringBuilder()
   while !self.scanner.is_eof() {
     match self.scanner.peek() {
       Some(']') => {
@@ -437,7 +437,7 @@ fn InlineParser::try_parse_image(self : InlineParser, start : Int) -> Inline? {
     self.scanner.advance(1)
 
     // Parse URL (same as link)
-    let url_buf = StringBuilder::new()
+    let url_buf = StringBuilder()
     let _ = self.scanner.skip_spaces()
     if char_is(self.scanner.peek(), '<') {
       self.scanner.advance(1)
@@ -476,7 +476,7 @@ fn InlineParser::try_parse_image(self : InlineParser, start : Int) -> Inline? {
           Some(c) => c
           None => '"'
         }
-        let title_buf = StringBuilder::new()
+        let title_buf = StringBuilder()
         while !self.scanner.is_eof() {
           match self.scanner.peek() {
             Some(c) if c == quote => {
@@ -511,7 +511,7 @@ fn InlineParser::try_parse_image(self : InlineParser, start : Int) -> Inline? {
   // Check for reference image ![alt][ref]
   if char_is(self.scanner.peek(), '[') {
     self.scanner.advance(1)
-    let label_buf = StringBuilder::new()
+    let label_buf = StringBuilder()
     while !self.scanner.is_eof() {
       match self.scanner.peek() {
         Some(']') => {

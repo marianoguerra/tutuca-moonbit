@@ -351,7 +351,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
   let interior = unescape_str(s)
   let chars : Array[Char] = interior.iter().collect()
   let vals : Array[@tutuca.Val?] = []
-  let text = StringBuilder::new()
+  let text = StringBuilder()
   fn flush_text() {
     vals.push(Some(const_str(text.to_string())))
     text.reset()
@@ -367,7 +367,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
       }
       if j < chars.length() && j > i + 1 {
         flush_text()
-        let expr = StringBuilder::new()
+        let expr = StringBuilder()
         for k in (i + 1)..<j {
           expr.write_char(chars[k])
         }
@@ -549,7 +549,7 @@ fn slice_span(src : String, span : Span) -> String {
   if hi <= lo {
     return ""
   }
-  let b = StringBuilder::new()
+  let b = StringBuilder()
   for i in lo..<hi {
     b.write_char(cs[i])
   }

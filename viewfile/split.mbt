@@ -137,7 +137,7 @@ fn slice_without_styles(
   end_ : Int,
   styles : Array[StyleRegion],
 ) -> String {
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut i = start
   for s in styles {
     // Before the span (or inside a region already skipped — regions never
@@ -216,7 +216,7 @@ fn styles_within(
 /// inside a `list<s32>`, from being read as a tag.
 fn read_raw(tok : @html5.Tokenizer, tag : String) -> (String, Int) {
   tok.switch_to_rawtext()
-  let sb = StringBuilder::new()
+  let sb = StringBuilder()
   let mut end_ = tok.get_position().offset
   let mut done = false
   while !done {

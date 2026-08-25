@@ -59,7 +59,7 @@
 /// unpaired half would otherwise reach a name comparison as a character no
 /// browser would produce.
 fn preprocess(src : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let n = src.length()
   let mut i = 0
   while i < n {
@@ -174,7 +174,7 @@ fn normalize(src : String) -> Result[Array[@token.Token], CssReason] {
 /// case-insensitive. Custom property names are NOT — `--Foo` and `--foo` are
 /// different properties — so `declarations.mbt` folds only what it should.
 fn ascii_lower(s : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for c in s {
     if c >= 'A' && c <= 'Z' {
       out.write_char((c.to_int() + 32).unsafe_to_char())
