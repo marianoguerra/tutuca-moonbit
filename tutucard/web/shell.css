@@ -116,7 +116,16 @@ select {
   border-color: var(--bad);
 }
 
-.grid {
+/* The page's three columns.
+ *
+ * NOT `.grid`, which is what it used to be called. A card mounts INTO this
+ * page, its class names are Tailwind's, and an unlayered rule here outranks
+ * every layered one in the sheet margaui compiles — so a card whose own
+ * markup said `class="grid grid-cols-1 md:grid-cols-2"` got this rule's
+ * `height: calc(100vh - 3.5rem)` and stretched to the height of the window.
+ * The shell's chrome carries names a card cannot collide with for the same
+ * reason `.pane > h2` is a direct-child selector. */
+.panes {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;
   gap: 1px;
@@ -125,7 +134,7 @@ select {
 }
 
 @media (max-width: 60rem) {
-  .grid {
+  .panes {
     grid-template-columns: 1fr;
     height: auto;
   }
@@ -492,6 +501,30 @@ textarea:focus {
   white-space: pre;
   font-size: 0.72rem;
   line-height: 1.45;
+}
+
+/* …and in the pane it lives in, the height is the PANE's rather than 22rem of
+ * it: the code is the only thing here that grows with the card, and a fixed
+ * cap left a band of empty pane under a module you had to scroll to read.
+ * The stacked layout below puts the cap back, because a pane whose height is
+ * `auto` gives a flexible child nothing to fill. */
+.compiled-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.compiled-pane > .wasm-out {
+  flex: 1 1 auto;
+  min-height: 8rem;
+  max-height: none;
+}
+
+@media (max-width: 60rem) {
+  .compiled-pane > .wasm-out {
+    flex: 0 1 auto;
+    max-height: 22rem;
+  }
 }
 
 .wasm-out.bad {
