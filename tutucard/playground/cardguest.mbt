@@ -456,6 +456,37 @@ impl @dyncomp.Guest for CardGuest with fn drop_instance(self, handle) {
 }
 
 ///|
+/// What each app on one instance table could still reach, the last time it
+/// drained.
+///
+/// A LIST rather than one set, because `globalThis.__cardguest[key]` is ONE
+/// instance table and more than one app can be reading it: the page mounts the
+/// card, and then `drive` mounts the SAME bundle again — once per scene, on the
+/// in-memory DOM — under the same key, because the key names the module and
+/// there is only one of those. A sweep that kept what the app that raised it
+/// could reach and nothing else would collect every instance the others hold,
+/// which is exactly what a card with a `tutuca/test` block did: driving its
+/// scenes dropped the handle the preview was holding, and the card on the page
+/// went dead while every field read back null.
+///
+/// Each app writes its OWN entry when its own cascade drains, and the sweep
+/// keeps the union. Walking someone else's tree instead would mean calling
+/// `get-field` on their instances in the middle of this app's cascade, and a
+/// guest call drains the pending children and clears the arena the call in
+/// flight is holding — which loses a row being built. So a foreign app's
+/// reachability is READ from what it recorded, never recomputed here.
+///
+/// Emptied by `teardown`, which is the first thing a mount into that key does:
+/// the apps that recorded these are gone, and so is the table they read.
+let sweep_live : Map[String, Array[Ref[Array[Int]]]] = Map([])
+
+///|
+/// Forget what an id's sweep was keeping alive. `teardown` calls this.
+fn forget_sweep_roots(key : String) -> Unit {
+  sweep_live.remove(key)
+}
+
+///|
 /// Collect what nothing points at, at the end of every drained cascade.
 ///
 /// Installed AFTER `install_gc`, and after the App's own re-render: subscribers
@@ -466,12 +497,34 @@ fn install_sweep(
   root : () -> @tutuca.Value,
   tx : @transactor.Transactor,
 ) -> Unit {
+  let mine : Ref[Array[Int]] = Ref([])
+  let sets = match sweep_live.get(key) {
+    Some(sets) => sets
+    None => {
+      let sets : Array[Ref[Array[Int]]] = []
+      sweep_live[key] = sets
+      sets
+    }
+  }
+  sets.push(mine)
   tx.on_drained(() => {
     let live : Array[Int] = []
     live_handles(root(), live)
+    mine.val = live
+    // …and everything the other apps on this table recorded when they last
+    // drained. One table, several readers: a handle is garbage only when none
+    // of them can reach it.
+    let keep : Array[Int] = []
+    for set in sets {
+      for handle in set.val {
+        if not(keep.contains(handle)) {
+          keep.push(handle)
+        }
+      }
+    }
     cardguest_retain(
       key,
-      Json::array(live.map(h => Json::number(h.to_double()))).stringify(),
+      Json::array(keep.map(h => Json::number(h.to_double()))).stringify(),
     )
     |> ignore
   })

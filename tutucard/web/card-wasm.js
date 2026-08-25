@@ -401,6 +401,13 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       return next === undefined ? -1 : register(next, compOf(handle));
     },
   };
+  // The table above is NEW, and the collector's sweep keeps what each app on
+  // the key could reach the last time it drained (`cardguest.mbt`,
+  // `sweep_live`). Those are handles into the table this one replaced, and a
+  // handle is a number: kept, they would pin whichever entries this table
+  // happens to hand out the same numbers to. So the record goes with the table
+  // it was about.
+  globalThis.__tutucard?.resetSweep?.(key);
   return root;
 }
 

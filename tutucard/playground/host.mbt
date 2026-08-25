@@ -77,6 +77,11 @@ fn slot_of(id : String) -> Slot {
 /// same bundle that serves this page also answers to `node`, which is what a
 /// build step and an agent both are.
 ///
+/// `resetSweep` is the one entry point a PAGE never calls: `card-wasm.js` calls
+/// it when it installs a new instance table under a key, because the collector
+/// records what each app on that key could reach and those records are handles
+/// into the table that just went away.
+///
 /// `compile` and `mountCompiled` are the two halves of showing a card: a card
 /// is mounted by compiling it and instantiating the module. Instantiation is
 /// `WebAssembly`, which answers a promise, so the sequence lives in
@@ -93,6 +98,7 @@ pub fn install() -> Unit {
     id => classes_at(id),
     (id, manifest, init) => mount_compiled(id, manifest, init),
     (key, manifest, source, scenes) => drive(key, manifest, source, scenes),
+    key => forget_sweep_roots(key),
   )
 }
 
@@ -107,8 +113,9 @@ extern "js" fn publish(
   classes_at : (String) -> String,
   mount_compiled : (String, String, String) -> String,
   drive : (String, String, String, String) -> String,
+  reset_sweep : (String) -> Unit,
 ) -> Unit =
-  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive } }
+  #|(check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep) => { globalThis.__tutucard = { check, compile, state, classes, activity, unmount, classesAt, mountCompiled, drive, resetSweep } }
 
 ///|
 /// Tear a card down and forget its mount point.
@@ -186,6 +193,9 @@ fn teardown(id : String) -> Unit {
   }
   slot.app = None
   slot.activity.clear()
+  // …and what the sweep for this mount point was walking. The apps that
+  // registered those roots are gone, and the next mount installs its own.
+  forget_sweep_roots(id)
   // Whatever this card asked the host for, it is no longer here to be told.
   slot.gen += 1
 }
