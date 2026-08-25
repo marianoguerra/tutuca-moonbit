@@ -215,8 +215,35 @@ fn drop_this(args : Array[@tutuca.Value]) -> Array[@tutuca.Value] {
 }
 
 ///|
-fn DynObj::method_fn(self : DynObj, name : String) -> @tutuca.Value {
-  Fn(args => self.guest.call_method(self.handle, name, drop_this(args)))
+/// What this component's declared lookups mean AT THIS RENDER POSITION.
+///
+/// The render-time twin of the map `obj_handler` builds from `ctx.lookup`, and
+/// it asks the same question of the other environment: `stack.lookup_dynamic`
+/// is what a `*name` in this card's own VIEW reads, so a `*name` in its `pred`
+/// reads the same thing. Empty for a component that declares no lookup, which
+/// is most of them — and empty when there is no stack to ask, which is the
+/// honest answer for a `$compute` read off a bare `Value` outside a render.
+fn DynObj::render_bindings(
+  self : DynObj,
+  stack : &@tutuca.Stack,
+) -> Map[String, @tutuca.Value] {
+  let out : Map[String, @tutuca.Value] = Map([])
+  for pair in self.def.lookup {
+    out[pair.0] = stack.lookup_dynamic(pair.0)
+  }
+  out
+}
+
+///|
+fn DynObj::method_fn(
+  self : DynObj,
+  name : String,
+  stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  let bindings = self.render_bindings(stack)
+  Fn(args => {
+    self.guest.call_method(self.handle, name, drop_this(args), bindings)
+  })
 }
 
 ///|
@@ -246,6 +273,23 @@ pub impl @tutuca.Obj for DynObj with fn obj_identity(self) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
+  // No stack in hand: a `$compute` read off a bare `Value` — the JSON
+  // projection, a path lookup, the inspector — is not being asked from a
+  // render position, so a `*name` inside it has no ancestry to walk.
+  self.field_at(name, @tutuca.NullStack::{  })
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_method_at(self, name, stack) {
+  self.field_at(name, stack)
+}
+
+///|
+fn DynObj::field_at(
+  self : DynObj,
+  name : String,
+  stack : &@tutuca.Stack,
+) -> @tutuca.Value? {
   if name == handle_field {
     Some(Num(self.handle.to_double()))
   } else if self.owned.get(name) is Some(v) {
@@ -253,7 +297,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
     // never given this value and has nothing to say about it.
     Some(v)
   } else if self.def.methods.contains(name) {
-    Some(self.method_fn(name))
+    Some(self.method_fn(name, stack))
   } else {
     match self.guest.get_field(self.handle, name) {
       Some(v) => Some(v)
@@ -295,12 +339,27 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
+  self.callable_at(name, ns, @tutuca.NullStack::{  })
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_callable_at(self, name, ns, stack) {
+  self.callable_at(name, ns, stack)
+}
+
+///|
+fn DynObj::callable_at(
+  self : DynObj,
+  name : String,
+  ns : @tutuca.HandlerNamespace,
+  stack : &@tutuca.Stack,
+) -> @tutuca.Value? {
   // The render-time (alter) namespace is where a `@when` filter is looked up.
   // It reaches `call-method` like any other declared callable — the guest
   // writes one function and the host reads its answer as a boolean — and this
   // list is what says the name belongs to that namespace.
   if ns is Alter && self.def.whens.contains(name) {
-    return Some(self.method_fn(name))
+    return Some(self.method_fn(name, stack))
   }
   // An ENRICHER answers a map of bindings, and the renderer reads the map it
   // PASSED IN rather than what the call returned (`render/render.mbt` discards
@@ -318,12 +377,17 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
             // write, then `key` / `value` / `iter`, which is the shape
             // `component/instance.mbt` uses and the offsets the generated
             // guest reads them at.
-            let out = self.guest.call_method(self.handle, name, [
-              Map(binds),
-              a.get(1).unwrap_or(Null),
-              a.get(2).unwrap_or(Null),
-              a.get(3).unwrap_or(Null),
-            ])
+            let out = self.guest.call_method(
+              self.handle,
+              name,
+              [
+                Map(binds),
+                a.get(1).unwrap_or(Null),
+                a.get(2).unwrap_or(Null),
+                a.get(3).unwrap_or(Null),
+              ],
+              self.render_bindings(stack),
+            )
             match out {
               Map(bound) =>
                 for k, v in bound {
@@ -351,7 +415,13 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
   if ns is Alter && self.def.enrich_scopes.contains(name) {
     return Some(
       Fn(_args => {
-        match self.guest.call_method(self.handle, name, []) {
+        match
+          self.guest.call_method(
+            self.handle,
+            name,
+            [],
+            self.render_bindings(stack),
+          ) {
           Map(_) as m => m
           _ => Map(Map([]))
         }
@@ -359,7 +429,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
     )
   }
   if self.def.methods.contains(name) {
-    Some(self.method_fn(name))
+    Some(self.method_fn(name, stack))
   } else {
     match self.mutators.get(name) {
       Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))

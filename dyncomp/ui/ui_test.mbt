@@ -107,6 +107,7 @@ impl @dyncomp.Guest for StubGuest with fn call_method(
   _handle,
   _name,
   _args,
+  _bindings,
 ) {
   Null
 }

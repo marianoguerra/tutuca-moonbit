@@ -6,6 +6,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A card's `compute`, `pred`, `@when` or `enrich` reads `*name` for real.**
+  The third copy of the defect 0.29.0 fixed for MoonBit components, and the
+  worst-behaved of the three: the card backend compiled `control.lookup`
+  correctly, the checker allowed it, and the value came back **nil** — with no
+  diagnostic anywhere, while the same body in a MoonBit component worked. That
+  gap widened the moment 0.29.0 made value bodies work, because a card author
+  now reasonably expects parity.
+
+  The host resolved a component's declared lookups only on the DISPATCH path
+  (`Guest::dispatch` carried `bindings`, `Guest::call_method` did not), and
+  `control.lookup` reads those and nothing else. It now resolves them for the
+  RENDER position too, from `stack.lookup_dynamic` — which is what a `*name` in
+  the card's own view reads, so a `*name` in its `pred` answers the same thing.
+  `DynObj` implements `obj_method_at` / `obj_callable_at` to get the stack the
+  call is being made under; `obj_field` / `obj_callable` still pass a
+  `NullStack`, which is the honest answer for a `$compute` read off a bare
+  `Value` outside a render.
+
+  **No `apiVersion` bump, and no bundle needs rebuilding.** The guest's
+  `callMethod(name, args)` is unchanged and `control.lookup` is a host-side
+  import shim, so an existing bundle starts answering correctly as soon as it
+  is loaded by this host. What did change is the `@dyncomp.Guest` trait:
+  `call_method` takes `bindings`, like `dispatch` beside it.
+  (`dyncomp/host/guest.mbt`, `dyncomp/host/dynobj.mbt`,
+  `dyncomp/host/wasm/glue.mbt`, `dyncomp/host/wasm/loader.mjs`,
+  `dyncomp/wit/tutuca-component.wit`.)
+
+- **A refusal reported for two roles is one hint, not two.** A refusal is per
+  name AND role, which is right for the decision — the same `pred` can compile
+  as a `@when` and be refused as a method. But every `pred` is folded into the
+  method bucket as well as its own, so a body refused for a reason that is not
+  about the role produced two byte-identical lines. (`viewgen/emit.mbt`.)
+
 ## [0.29.0] - 2026-08-25
 
 ### Changed

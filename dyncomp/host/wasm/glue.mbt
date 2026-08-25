@@ -47,6 +47,7 @@ extern "wasm" fn tcomp_call_method(
   handle : Int,
   name : String,
   args_json : String,
+  bindings_json : String,
 ) -> String = "tcomp" "call_method"
 
 ///|
@@ -419,8 +420,17 @@ pub impl @dyncomp.Guest for WasmGuest with fn call_method(
   handle,
   name,
   args,
+  bindings,
 ) {
-  parse_value(tcomp_call_method(self.bundle, handle, name, args_json(args)))
+  parse_value(
+    tcomp_call_method(
+      self.bundle,
+      handle,
+      name,
+      args_json(args),
+      map_json(bindings),
+    ),
+  )
 }
 
 ///|

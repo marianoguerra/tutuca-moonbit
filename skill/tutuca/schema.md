@@ -293,8 +293,10 @@ built, so the render stack is what has the answer, and it is the same stack a
 so the two agree.
 
 The host resolves this component's declared lookups before it enters the card
-and the handler reads one of the answers — so a `*name` a body writes and a
-`*name` a template writes get the same value. A `*name` the `state` block does
+and the body reads one of the answers — from the dispatch position for a
+handler, from the render chain for a `compute` / `pred` / `@when` / `enrich`.
+So a `*name` a body writes and a `*name` a template writes get the same value,
+in a card exactly as in a MoonBit component. A `*name` the `state` block does
 not declare is `DYN_NOT_DECLARED`: whether a producer is above you at render
 time is a runtime fact, but whether you ever asked for the name is not.
 

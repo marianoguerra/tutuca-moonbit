@@ -300,9 +300,15 @@ impl Guest for FakeGuest with fn serve_intent(self, name, args) {
 }
 
 ///|
-impl Guest for FakeGuest with fn call_method(self, handle, name, args) {
+impl Guest for FakeGuest with fn call_method(self, handle, name, args, bindings) {
   match name {
     "label" => Str("count is \{self.counters.get(handle).unwrap()}")
+    // A value body reading a dynamic binding — the render-time twin of
+    // `readTheme` in `dispatch` above. Before `call_method` carried bindings a
+    // card's `pred` compiled `control.lookup` and read nil here, silently.
+    "themeLabel" => bindings.get("theme").unwrap_or(Null)
+    // The same question about a name the manifest declares no lookup for.
+    "undeclaredLabel" => bindings.get("nosuch").unwrap_or(Str("(absent)"))
     // a `@when` filter: called with (key, item, iter-data), answers a boolean
     "nonZero" =>
       match args {
@@ -468,7 +474,7 @@ fn counter_manifest() -> DynManifest {
         // field implies, and the host answers it
         receives: ["init", "setTo"],
         intents: [],
-        methods: ["label"],
+        methods: ["label", "themeLabel", "undeclaredLabel"],
         whens: ["nonZero"],
         enriches: [],
         enrich_scopes: [],
@@ -2188,6 +2194,52 @@ test "a guest handler reads a declared lookup" {
   h.click(".notify")
   h.send_at_root("readTheme", args=[])
   inspect(h.text(".theme"), content="changed!")
+}
+
+///|
+/// A stack that answers one dynamic name, so a test can tell "the host handed
+/// the render position over" from "it handed over nothing".
+priv struct OneBinding {
+  name : String
+  value : @tutuca.Value
+}
+
+///|
+impl @tutuca.Stack for OneBinding with fn lookup_dynamic(self, name) {
+  if name == self.name {
+    self.value
+  } else {
+    Null
+  }
+}
+
+///|
+/// A guest VALUE BODY reads a dynamic binding too.
+///
+/// The handler half above resolves the declared lookups from `ctx.lookup`
+/// before entering the guest. This is the render half, and it was missing:
+/// `call-method` carried no bindings, so a card's `compute`, `pred`, `@when`
+/// or `enrich` compiled `control.lookup` and read nil — silently, with the
+/// same body working in a MoonBit component. The two halves ask the same
+/// question of the two environments a `*name` has ever meant.
+test "a guest value body reads a declared lookup" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  guard! inst.to_value() is Obj(o)
+  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  guard! o.obj_method_at("themeLabel", stack) is Some(Fn(f))
+  assert_true(f([Null]) is Str("dark"))
+  // A name the manifest declares no lookup for is not resolved and not sent,
+  // so the guest sees it absent rather than null — the same distinction the
+  // handler half draws.
+  guard! o.obj_method_at("undeclaredLabel", stack) is Some(Fn(g))
+  assert_true(g([Null]) is Str("(absent)"))
+  // And asked with no render position at all — a `$compute` read off a bare
+  // Value, outside any render — the binding is absent rather than guessed.
+  guard! o.obj_field("themeLabel") is Some(Fn(bare))
+  assert_true(bare([Null]) is Null)
 }
 
 ///|

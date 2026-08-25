@@ -423,6 +423,10 @@ export function createTcompImports(getExports) {
     // the host resolved this component's declared lookups to before entering
     // the guest — see the WIT: everything else here is an effect applied
     // afterwards, and a value a handler is using cannot wait for that.
+    //
+    // Both entry points fill it: `dispatch` from the dispatch position,
+    // `call_method` from the render one. A value body that reads `*name` goes
+    // through the second, and read nil until it did.
     lookup: (name) =>
       Object.hasOwn(bindings, name)
         ? jsonToGuest(bindings[name])
@@ -746,15 +750,26 @@ export function createTcompImports(getExports) {
       bindings = {};
       return out;
     },
-    call_method: (bundle, handle, name, argsJson) => {
+    // `bindings` for the same reason `dispatch` has them, resolved for the
+    // RENDER position instead of the dispatch one: a `compute`, a `pred`, a
+    // `@when` or an `enrich` that reads `*name` compiles `control.lookup`, and
+    // this is the only thing that answers it. Set and cleared around the call
+    // exactly as `dispatch` does — a binding must not outlive the call it was
+    // resolved for.
+    call_method: (bundle, handle, name, argsJson, bindingsJson) => {
       const inst = instOf(bundle, handle);
       if (!inst) return '';
+      bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       const args = JSON.parse(argsJson).map(jsonToGuest);
-      const v = inst.callMethod(name, args);
-      drainChildren();
-      const out = JSON.stringify(guestToJson(v));
-      arena.clear();
-      return out;
+      try {
+        const v = inst.callMethod(name, args);
+        drainChildren();
+        const out = JSON.stringify(guestToJson(v));
+        arena.clear();
+        return out;
+      } finally {
+        bindings = {};
+      }
     },
     // a request the BUNDLE serves; module-scoped, so no instance handle
     serve_intent: (bundle, name, argsJson) => {

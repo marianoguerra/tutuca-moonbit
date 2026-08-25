@@ -125,10 +125,15 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
       )
       call("tc_null", [])
     }
-    // The handler-side twin of a view's `*name`. A compiled card DOES have a
-    // scope to read now: the host resolves this component's declared lookups
+    // The body-side twin of a view's `*name`. A compiled card DOES have a
+    // scope to read: the host resolves this component's declared lookups
     // before it enters the guest and `control.lookup` reads one of the
     // answers, which is the one import that answers rather than acting.
+    //
+    // In a HANDLER those come from the dispatch position; in a value body — a
+    // `compute`, a `pred`, a `@when`, an `enrich` — from the render chain the
+    // call is being made under, which is what a `*name` in this card's own
+    // view reads. The host fills both, so one body answers one way.
     //
     // A name the manifest declares no lookup for comes back nil, and the
     // checker has already said so — which is why there is nothing to bail on

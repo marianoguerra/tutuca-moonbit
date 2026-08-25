@@ -79,7 +79,22 @@ pub(open) trait Guest {
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> DispatchResult
-  fn call_method(Self, handle : Int, name : String, args : Array[@tutuca.Value]) -> @tutuca.Value
+  /// Call one render-time method: a `compute`, a `pred`, a `@when` filter, an
+  /// enricher. Pure — it must not mutate.
+  ///
+  /// `bindings` is `dispatch`'s, resolved for the RENDER position instead of
+  /// the dispatch one, and it is here for the reason it is there: a value body
+  /// that reads `*name` has nowhere else to get the answer, and
+  /// `control.lookup` reads these and nothing else. Without it a card's `pred`
+  /// compiled `tc_lookup` and read nil — silently, which is the failure this
+  /// argument exists to remove.
+  fn call_method(
+    Self,
+    handle : Int,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value
   fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?
   /// Serve one of the intents the bundle declares on its own scope.
   /// Synchronous, like every call across this boundary: a guest that must wait

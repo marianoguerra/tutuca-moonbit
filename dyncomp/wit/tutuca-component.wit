@@ -410,10 +410,16 @@ interface control {
   /// and a value a handler is in the middle of using cannot wait for that.
   ///
   /// It takes no route, and the omission is the contract rather than a gap.
-  /// The host resolves this component's declared lookups at DISPATCH, along
-  /// the default `[dyn, lex]`, and this reads one of the answers — so a route
-  /// the guest named could not change what came back. Which environments were
-  /// walked is the host's business, the same way the default route is.
+  /// The host resolves this component's declared lookups BEFORE entering the
+  /// guest and this reads one of the answers — so a route the guest named
+  /// could not change what came back. Which environments were walked is the
+  /// host's business, the same way the default route is.
+  ///
+  /// Both entry points resolve them, from the position each one stands in: a
+  /// `handle-event` walks the dispatch route `[dyn, lex]`, and a `call-method`
+  /// asks the render chain the call is being made under — which is what a
+  /// `*name` in this component's own VIEW reads. So a `*name` in a `pred` and
+  /// a `*name` in the template beside it answer the same thing.
   ///
   /// `nil` for a name the manifest's `lookup` list does not declare, and for a
   /// declared one that nothing above supplies and that carries no default.
@@ -532,6 +538,11 @@ interface guest {
                        args: list<value>) -> event-result;
 
     /// Pure render-time method call (view expressions). Must not mutate.
+    ///
+    /// The host resolves this component's declared lookups for the RENDER
+    /// position before the call, exactly as it does for `handle-event` at the
+    /// dispatch one, so a `compute`, a `pred`, a `@when` or an `enrich` that
+    /// reads `*name` through `control.lookup` gets an answer rather than nil.
     call-method: func(name: string, args: list<value>) -> value;
 
     /// COW write-through: successor with one field replaced. It is what host
