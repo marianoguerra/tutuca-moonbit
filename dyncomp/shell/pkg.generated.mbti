@@ -62,8 +62,8 @@ pub fn LoaderBarMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum LoaderBarReceive {
   FilesDropped(@core.Value)
-  DyncompLoaded(String)
-  DyncompError(String)
+  DyncompLoaded(String, Int)
+  DyncompError(String, Int)
   LoadSample(@core.Value)
   LoadUrl
   TypeUrl(String)
@@ -87,9 +87,9 @@ pub(all) struct LoaderBarState {
 pub fn LoaderBarState::zero() -> Self
 
 pub(all) enum LoaderEvent {
-  Started(String)
-  Loaded(String)
-  Failed(String)
+  Started(String, Int)
+  Loaded(String, Int)
+  Failed(String, Int)
 } derive(Eq, @debug.Debug)
 
 // Type aliases

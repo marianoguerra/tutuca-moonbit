@@ -6,6 +6,7 @@ import {
   createTcompImports,
   gunzip,
   readCompressedResponse,
+  registerArchive,
   requireDescriptor,
   untar,
 } from "../host/wasm/loader.mjs";
@@ -190,4 +191,85 @@ test("html and src views hydrate side by side", async () => {
   );
   assert.doesNotMatch(outcome, /static manifest view is missing/);
   assert.match(outcome, /unsupported world/);
+});
+
+// --- bundles the page already holds ---
+
+// The same unpack as `loadOutcome`, reached the third way: bytes this process
+// built rather than a file somebody dropped or a URL to fetch. A page that
+// GENERATES bundles has them in hand, and staging them behind an object URL to
+// fetch back is a round trip whose only other outcome is a revoke race.
+async function loadBytesOutcome(bytes, { registered = true } = {}) {
+  const told = [];
+  const imports = createTcompImports(() => ({
+    dyncomp_on_loaded: (_loadId, _id, json) => told.push(json),
+    dyncomp_on_load_error: (_loadId, message) => told.push(message),
+    refresh_margaui: () => {},
+  }));
+  const id = registered ? registerArchive(bytes) : 987654;
+  const noise = console.error;
+  console.error = () => {};
+  try {
+    imports.load_bytes(id, 1);
+    for (let i = 0; i < 200 && told.length === 0; i++) {
+      await new Promise((resume) => setTimeout(resume, 10));
+    }
+  } finally {
+    console.error = noise;
+  }
+  return { outcome: told[0] ?? "the load never reported back", id, imports, told };
+}
+
+function heldArchive(manifest) {
+  return gzipSync(archive([
+    ["bundle/tutuca.json", JSON.stringify({ core: "main.wasm", world: "card", manifest })],
+    ["bundle/main.wasm", new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0])],
+  ]));
+}
+
+const HELD = {
+  manifestVersion: 1,
+  components: [{ name: "card", views: [{ name: "main", html: "<div>held</div>" }] }],
+};
+
+test("held bytes unpack the same as a dropped file", async () => {
+  const { outcome } = await loadBytesOutcome(heldArchive(HELD));
+  // Reaching the world check is reaching `finishLoad`, which means the archive
+  // untarred and its manifest hydrated — the whole path, minus a real guest.
+  assert.match(outcome, /unsupported world/);
+  assert.doesNotMatch(outcome, /no held archive/);
+});
+
+// An id names ONE load. Holding the bytes after it would be a page-lifetime
+// leak of every bundle it ever built, and there is no second load to serve:
+// a host that wants the same archive twice registers it twice.
+test("a held archive id is consumed by its load", async () => {
+  const { id, imports, told } = await loadBytesOutcome(heldArchive(HELD));
+  told.length = 0;
+  const noise = console.error;
+  console.error = () => {};
+  try {
+    imports.load_bytes(id, 2);
+    for (let i = 0; i < 50 && told.length === 0; i++) {
+      await new Promise((resume) => setTimeout(resume, 10));
+    }
+  } finally {
+    console.error = noise;
+  }
+  assert.match(told[0] ?? "", new RegExp(`no held archive #${id}`));
+});
+
+// The failure answers rather than going quiet: every way into the loader has
+// to complete its load, or a host that waits for one waits forever.
+test("an unregistered id fails the load instead of hanging", async () => {
+  const { outcome } = await loadBytesOutcome(heldArchive(HELD), { registered: false });
+  assert.match(outcome, /no held archive #987654/);
+});
+
+// `gunzip` already bounds the compressed size, so the bytes path needs no
+// check of its own — but it does have to REPORT rather than throw past the
+// host, which is the part a caller depends on.
+test("held bytes over the compressed limit are refused, not thrown", async () => {
+  const { outcome } = await loadBytesOutcome(new Uint8Array(17 * 1024 * 1024));
+  assert.match(outcome, /too large/);
 });

@@ -117,9 +117,11 @@ pub(all) enum LoaderBarReceive {
   /// handed back what was not its.
   FilesDropped(@tutuca.Value)
   /// The bridge's own answers, routed here because this is the path that
-  /// asked for the load.
-  DyncompLoaded(String)
-  DyncompError(String)
+  /// asked for the load. The second argument is the load id the load
+  /// answered with: success already names its module, but a failure has only
+  /// a reason, and the bar loads on behalf of whoever asked.
+  DyncompLoaded(String, Int)
+  DyncompError(String, Int)
   LoadSample(@tutuca.Value)
   LoadUrl
   TypeUrl(String)
@@ -141,8 +143,12 @@ pub fn LoaderBarReceive::from_dispatch(
   Some(
     match (name, args) {
       ("filesDropped", [a0]) => FilesDropped(a0)
-      ("dyncompLoaded", [Str(a0)]) => DyncompLoaded(a0)
-      ("dyncompError", [Str(a0)]) => DyncompError(a0)
+      ("dyncompLoaded", [Str(a0), Num(a1)]) if a1.to_int().to_double() == a1 &&
+        a1 >= -2147483648.0 &&
+        a1 <= 2147483647.0 => DyncompLoaded(a0, a1.to_int())
+      ("dyncompError", [Str(a0), Num(a1)]) if a1.to_int().to_double() == a1 &&
+        a1 >= -2147483648.0 &&
+        a1 <= 2147483647.0 => DyncompError(a0, a1.to_int())
       ("loadSample", [a0]) => LoadSample(a0)
       ("loadUrl", []) => LoadUrl
       ("typeUrl", [Str(a0)]) => TypeUrl(a0)
@@ -158,8 +164,8 @@ pub fn LoaderBarReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     FilesDropped(a0) => ("filesDropped", [a0])
-    DyncompLoaded(a0) => ("dyncompLoaded", [Str(a0)])
-    DyncompError(a0) => ("dyncompError", [Str(a0)])
+    DyncompLoaded(a0, a1) => ("dyncompLoaded", [Str(a0), Num(a1.to_double())])
+    DyncompError(a0, a1) => ("dyncompError", [Str(a0), Num(a1.to_double())])
     LoadSample(a0) => ("loadSample", [a0])
     LoadUrl => ("loadUrl", [])
     TypeUrl(a0) => ("typeUrl", [Str(a0)])
@@ -321,7 +327,7 @@ pub fn LoaderBarMsg::from_dispatch(d : @component.Dispatch) -> LoaderBarMsg? {
 impl @component.Fields for LoaderBarState with fn schema() {
   @component.SchemaInfo::new(
     name="LoaderBar",
-    fingerprint="e8383c4cbc8a1b3a",
+    fingerprint="c5cc8725058c92ec",
     fields=[
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("url", TyText),

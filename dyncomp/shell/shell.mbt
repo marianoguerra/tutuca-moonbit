@@ -77,15 +77,20 @@ pub fn refresh_margaui() -> Unit {
 /// the universal host a finished load may be the last one a saved session was
 /// waiting for, and to the storybook it is a reason to recompile the stylesheet.
 /// Neither belongs in a loader.
+/// Every case carries the LOAD ID as its second field — the one the bridge
+/// answered `load_url` / `load_dropped` / `load_bytes` with. `Started` carries
+/// it because that is the only moment a host knows both the id and what it
+/// asked for, and `Failed` needs it because a reason on its own does not say
+/// whose load failed. A host with one load in flight can ignore all three.
 pub(all) enum LoaderEvent {
   /// A load was asked for. The URL, or "" for a file dropped on the page —
   /// which has no name the page could fetch again, and saying so is better than
   /// pretending.
-  Started(String)
+  Started(String, Int)
   /// A bundle registered (or hot-swapped), named by its module.
-  Loaded(String)
+  Loaded(String, Int)
   /// It did not, in the refusal's own words.
-  Failed(String)
+  Failed(String, Int)
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -121,8 +126,12 @@ pub fn loader_bar_comp(
       // generator types a loop-sourced argument as `any`, which is the honest
       // answer for something the schema cannot see through.
       Some(LoadSample(Str(url))) => {
-        notify(Started(url), ctx)
-        @dhw.load_url(ctx.path(), url) |> ignore
+        // The load id first, then the event: `Started` is what lets a host
+        // bind id -> url, and it cannot do that before there is an id. Nothing
+        // is lost by starting the fetch first — it is asynchronous, so no
+        // completion can overtake the line below.
+        let id = @dhw.load_url(ctx.path(), url)
+        notify(Started(url, id), ctx)
         return Next({ ..s, url, status: "loading \{url}…" })
       }
       // The name was claimed, and a payload that is not a URL is not a load.
@@ -133,8 +142,8 @@ pub fn loader_bar_comp(
         if url == "" {
           return Next({ ..s, status: "nothing to load" })
         }
-        notify(Started(url), ctx)
-        @dhw.load_url(ctx.path(), url) |> ignore
+        let id = @dhw.load_url(ctx.path(), url)
+        notify(Started(url, id), ctx)
         return Next({ ..s, status: "loading \{url}…" })
       }
       Some(Unknown(_, _)) | None => ()
@@ -150,7 +159,11 @@ pub fn loader_bar_comp(
           match f.field("id") {
             Num(id) => {
               any = true
-              @dhw.load_dropped(ctx.path(), id.to_int()) |> ignore
+              // One `Started` per file rather than one per drop: dropping
+              // three archives is three loads, and a host binding ids to what
+              // it asked for needs all three.
+              let load = @dhw.load_dropped(ctx.path(), id.to_int())
+              notify(Started("", load), ctx)
             }
             _ => ()
           }
@@ -158,19 +171,18 @@ pub fn loader_bar_comp(
         // A drop that carried no file at all is not a load, and telling
         // somebody it is loading would be a lie that never resolves.
         guard any else { return Unchanged }
-        notify(Started(""), ctx)
         Next({ ..s, status: "loading…" })
       }
-      Some(DyncompLoaded(module_name)) => {
+      Some(DyncompLoaded(module_name, load)) => {
         LoaderBarIntent::CatalogChanged(module_name).dispatch(ctx)
-        notify(Loaded(module_name), ctx)
+        notify(Loaded(module_name, load), ctx)
         Next({ ..s, status: "loaded \{module_name}" })
       }
       // The refusal's own words: "this host takes no CSS from a bundle", "no
       // such component". A generic sentence here would throw away the one
       // thing a person can act on.
-      Some(DyncompError(why)) => {
-        notify(Failed(why), ctx)
+      Some(DyncompError(why, load)) => {
+        notify(Failed(why, load), ctx)
         Next({ ..s, status: why })
       }
       // The merged `Receive` carries this component's own VIEW names as

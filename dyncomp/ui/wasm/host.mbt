@@ -48,10 +48,17 @@ pub struct UniversalHost {
   ui : @ui.UniversalUi
   /// Where the session goes, or `None` for a page that starts empty.
   session : Session?
-  /// Loads still in flight. Saving while a session is being restored would
-  /// write the empty page over the thing being restored INTO it, which is the
-  /// one way this feature could destroy what it exists to keep.
-  pending : Ref[Int]
+  /// The RESUMED loads still in flight, by load id. Saving while a session is
+  /// being restored would write the empty page over the thing being restored
+  /// INTO it, which is the one way this feature could destroy what it exists
+  /// to keep.
+  ///
+  /// The ids rather than a count, because a count cannot tell a resumed load
+  /// from a bundle somebody dropped while the resume was still running: the
+  /// drop's completion would retire a slot the resume was waiting on, and the
+  /// restore would fire over a page that is not ready for it. Only what
+  /// `resume_session` started goes in here.
+  pending : Set[Int]
   /// The URLs to load again next time. Only URLs: a dropped file has no name
   /// the page can fetch, so its components come back only if the same bundle
   /// is dropped again.
@@ -151,7 +158,7 @@ pub fn tree_of_json(
 fn save_session() -> Unit {
   guard live.val is Some(host) else { return }
   guard host.session is Some(session) else { return }
-  if host.pending.val > 0 {
+  if !host.pending.is_empty() {
     return
   }
   let store = session.store
@@ -195,9 +202,8 @@ fn resume_session(host : UniversalHost, at : @tutuca.DispatchPath) -> Unit {
   guard parsed is Array(items) else { return }
   for item in items {
     if item is String(url) {
-      host.pending.val = host.pending.val + 1
       host.loaded_urls.push(url)
-      @dhw.load_url(at, url) |> ignore
+      host.pending.add(@dhw.load_url(at, url))
     }
   }
 }
@@ -245,16 +251,27 @@ fn host_tools_comp(
       match ev {
         // Only URLs: a dropped file has no name the page can fetch, so its
         // components come back only if the same bundle is dropped again.
-        Started(url) =>
+        Started(url, _) =>
           if url != "" && !host.loaded_urls.contains(url) {
             host.loaded_urls.push(url)
           }
-        // The last of the resumed loads is what makes a restore possible:
-        // every bundle the saved page names is now here.
-        Loaded(_) =>
-          if host.pending.val > 0 {
-            host.pending.val = host.pending.val - 1
-            if host.pending.val == 0 {
+        // Retired BY ID, and only if this host resumed it. A count could not
+        // tell a resumed load from a bundle somebody dropped while the resume
+        // was still running: the drop's completion would retire a slot the
+        // resume was waiting on, and the restore would fire over a page that
+        // is not ready for it.
+        //
+        // A FAILED load retires too, and the last one still restores. Waiting
+        // forever for a bundle that will not load is not caution: `pending`
+        // also gates `save_session`, so a page stuck waiting goes on to write
+        // its empty self over the session it was trying to restore — the one
+        // outcome this whole mechanism exists to prevent. Restoring without
+        // that bundle loses the components it owned and keeps everything else,
+        // which is the honest answer and the recoverable one.
+        Loaded(_, load) | Failed(_, load) =>
+          if host.pending.contains(load) {
+            host.pending.remove(load)
+            if host.pending.is_empty() {
               match restored_tree() {
                 Some(root) =>
                   ctx.intent(
@@ -265,10 +282,6 @@ fn host_tools_comp(
                 None => ()
               }
             }
-          }
-        Failed(_) =>
-          if host.pending.val > 0 {
-            host.pending.val = host.pending.val - 1
           }
       }
     },
@@ -348,7 +361,7 @@ pub fn mount(
     app,
     ui,
     session,
-    pending: { val: 0 },
+    pending: Set::new(),
     loaded_urls: [],
   }
   live.val = Some(host)
@@ -369,7 +382,7 @@ pub fn mount(
   // below. Doing it here is the whole of that case — and it has to be HERE
   // rather than inside `resume_session`, because a page that DOES name bundles
   // must wait for the last of them.
-  if host.pending.val == 0 {
+  if host.pending.is_empty() {
     match restored_tree() {
       Some(root) => app.send_at_root("restoreTree", args=[root]) |> ignore
       None => ()

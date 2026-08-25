@@ -44,7 +44,7 @@ fn tools_comp(samples : Array[@shell.LoaderBarSample]) -> @component.Component {
     // URL as well as by button. The universal host does not draw the box.
     show_url=true,
     status="drop a .tutuca.tar.gz, or load one by URL",
-    notify=(ev, _ctx) => if ev is Loaded(_) { @shell.refresh_margaui() },
+    notify=(ev, _ctx) => if ev is Loaded(_, _) { @shell.refresh_margaui() },
   )
 }
 

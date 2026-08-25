@@ -8,7 +8,7 @@ import {
   "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/shell",
   "marianoguerra/tutuca/dyncomp/ui",
-  "moonbitlang/core/ref",
+  "moonbitlang/core/set",
 }
 
 // Values
@@ -43,7 +43,7 @@ pub struct UniversalHost {
   app : @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]
   ui : @ui.UniversalUi
   session : Session?
-  pending : @ref.Ref[Int]
+  pending : @set.Set[Int]
   loaded_urls : Array[String]
 }
 

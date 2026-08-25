@@ -34,9 +34,11 @@
     /// handed back what was not its.
     filesDropped(Any)
     /// The bridge's own answers, routed here because this is the path that
-    /// asked for the load.
-    dyncompLoaded(String)
-    dyncompError(String)
+    /// asked for the load. The second argument is the load id the load
+    /// answered with: success already names its module, but a failure has only
+    /// a reason, and the bar loads on behalf of whoever asked.
+    dyncompLoaded(String, Int)
+    dyncompError(String, Int)
   }
 
   intent {

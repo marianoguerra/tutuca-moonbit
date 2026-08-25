@@ -108,6 +108,35 @@ export function setGrants(caps) {
   grants = [...caps];
 }
 
+// --- archives a page already holds ---
+
+// A bundle the page BUILT rather than fetched: bytes that are already in this
+// process, named by an int so MoonBit can ask for them. The same shape a drop
+// uses (`app/wasm/loader.mjs`'s `takeDroppedFile`), for the same reason — a
+// Uint8Array cannot cross into wasm-gc — and the alternative is worse than it
+// looks: without this a page has to `URL.createObjectURL` bytes it is holding,
+// carry the URL through wasm and back, `fetch` a blob that never left the
+// process, and then revoke the URL in the one window that is neither too early
+// (racing the load) nor too late (never).
+//
+// Consumed individually rather than cleared like `droppedFiles`, because these
+// are not "the files of the last drop": each one is a load somebody asked for.
+const heldArchives = new Map();
+let nextArchive = 1;
+
+/**
+ * Hold `.tutuca.tar.gz` bytes for one load and answer the id that names them.
+ *
+ * Pass the id to `@dhw.load_bytes(path, id)` on the MoonBit side. The entry is
+ * consumed by that load — an id loads once, and an id nobody loads is a leak
+ * the page owns, so register at the point you are about to load.
+ */
+export function registerArchive(bytes) {
+  const id = nextArchive++;
+  heldArchives.set(id, bytes);
+  return id;
+}
+
 // --- single-file bundle unpacking (native, dependency-free) ---
 
 // These bounds apply BEFORE the manifest's structural quotas. A manifest
@@ -690,9 +719,10 @@ export function createTcompImports(getExports) {
       }
       b.config = JSON.parse(configJson);
     },
-    // A bundle is a `.tutuca.tar.gz` archive, and there are two ways to name
-    // one: the id of a file the user dropped, or a URL to fetch it from. Both
-    // end in the same unpack-and-instantiate path.
+    // A bundle is a `.tutuca.tar.gz` archive, and there are three ways to name
+    // one: the id of a file the user dropped, a URL to fetch it from, or the id
+    // of bytes the page already holds. All three end in the same
+    // unpack-and-instantiate path.
     load_dropped: (fileId, loadId) => {
       const file = takeDroppedFile(fileId);
       if (!file) {
@@ -710,6 +740,18 @@ export function createTcompImports(getExports) {
         console.error("dyncomp load failed:", e);
         getExports().dyncomp_on_load_error(loadId, String(e));
       });
+    },
+    // No size check before the unpack: `gunzip` already refuses more than
+    // ARCHIVE_LIMITS.compressedBytes, and unlike a dropped File there is no
+    // `.size` to read without touching the bytes anyway.
+    load_bytes: (archiveId, loadId) => {
+      const bytes = heldArchives.get(archiveId);
+      if (!bytes) {
+        getExports().dyncomp_on_load_error(loadId, `no held archive #${archiveId}`);
+        return;
+      }
+      heldArchives.delete(archiveId);
+      loadArchiveBytes(bytes, loadId);
     },
     create: (bundle, component, argsJson) => {
       currentBundle = bundle;

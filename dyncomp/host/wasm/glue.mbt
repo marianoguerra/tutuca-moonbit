@@ -6,6 +6,11 @@
 ///   listeners/styles, and pushes a "dyncompLoaded" message so a host
 ///   component seeds instances as a plain state change.
 ///
+/// Both completion messages carry the load id `load_url` / `load_dropped` /
+/// `load_bytes` answered with — dyncompLoaded(module-name, load-id) and
+/// dyncompError(reason, load-id) — so a host with more than one load in flight
+/// can tell whose completion it just received.
+///
 /// Value JSON conventions with the JS bridge:
 ///   - args/maps cross as plain JSON (Value::to_json / from_json)
 ///   - get_field/call_method return "" for none, else a JSON value
@@ -71,9 +76,14 @@ extern "wasm" fn tcomp_serve_intent(
 extern "wasm" fn tcomp_load_dropped(file_id : Int, load_id : Int) -> Unit = "tcomp" "load_dropped"
 
 ///|
-/// Load the same kind of bundle from a URL. One archive format, two ways to
-/// name one: what the page dropped, or what it can fetch.
+/// Load the same kind of bundle from a URL. One archive format, three ways to
+/// name one: what the page dropped, what it can fetch, or what it already has.
 extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "load_url"
+
+///|
+/// ...and the third: bytes the page is already holding, by the id
+/// `registerArchive` (in `loader.mjs`) answered with.
+extern "wasm" fn tcomp_load_bytes(archive_id : Int, load_id : Int) -> Unit = "tcomp" "load_bytes"
 
 ///|
 /// Keep the JS-side import gate on the same grants as the MoonBit policy.
@@ -657,9 +667,19 @@ fn next_load_at(path : @tutuca.DispatchPath) -> Int {
 }
 
 ///|
-/// Load a `.tutuca.tar.gz` bundle from a URL. Completion arrives via the
-/// exported dyncomp_on_loaded / dyncomp_on_load_error callbacks as a
-/// "dyncompLoaded" / "dyncompError" receive at `path`.
+/// Load a `.tutuca.tar.gz` bundle from a URL.
+///
+/// RETURNS BEFORE THE BUNDLE EXISTS. What comes back is the load's id, not a
+/// loaded bundle: nothing is registered and no component of it can be
+/// instantiated until completion arrives, via the exported dyncomp_on_loaded /
+/// dyncomp_on_load_error callbacks, as a `dyncompLoaded(module_name, load_id)`
+/// or `dyncompError(reason, load_id)` receive at `path`.
+///
+/// Exactly one of the two arrives for every load — the loader answers on every
+/// failure path it has — so a host that waits for one does not hang, and a host
+/// that reports success before one is reporting a download it started rather
+/// than a component it mounted. Match on the id to answer the request that
+/// began the load. See `docs/dynamic-components.md`.
 pub fn load_url(path : @tutuca.DispatchPath, url : String) -> Int {
   let id = next_load_at(path)
   tcomp_load_url(url, id)
@@ -678,11 +698,42 @@ pub fn load_dropped(path : @tutuca.DispatchPath, file_id : Int) -> Int {
 }
 
 ///|
+/// Load a bundle the page BUILT: `archive_id` is what `registerArchive(bytes)`
+/// in `dyncomp/host/wasm/loader.mjs` answered with, and completion arrives at
+/// `path` like the other two.
+///
+/// For a page that generates bundles rather than fetching them, this is the
+/// difference between handing over bytes and staging them behind an object URL
+/// only to fetch them back — which is not merely a detour: the URL has to
+/// survive the round trip through wasm, and revoking it is a race in both
+/// directions. A page that has the archive says so.
+///
+/// The id is consumed by this call. Register the bytes where you load them.
+pub fn load_bytes(path : @tutuca.DispatchPath, archive_id : Int) -> Int {
+  let id = next_load_at(path)
+  tcomp_load_bytes(archive_id, id)
+  id
+}
+
+///|
+/// Answer the load, at the path that asked for it.
+///
+/// The load id is appended to every message rather than left to the callers,
+/// because it is what makes a completion ATTRIBUTABLE and a caller that forgot
+/// it would be indistinguishable from one that had nothing to say. Success
+/// already names its module, but a failure has only a reason — and a host with
+/// two loads in flight cannot tell whose reason it is without this.
+///
+/// The path is taken out BEFORE the app guard: an unmounted app is the one
+/// case where nothing is delivered, and leaving the entry behind would keep a
+/// finished load's path alive for as long as the page.
 fn notify(load_id : Int, name : String, args : Array[@tutuca.Value]) -> Unit {
+  let at = notify_paths.get(load_id)
+  notify_paths.remove(load_id) |> ignore
   guard current.val is Some(app) else { return }
-  match notify_paths.get(load_id) {
+  let args = [..args, @tutuca.Value::Num(load_id.to_double())]
+  match at {
     Some(path) => {
-      notify_paths.remove(load_id) |> ignore
       let _ = app.transactor.push_send(path, name, args)
       app.transactor.settle() |> ignore
     }

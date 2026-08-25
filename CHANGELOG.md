@@ -6,6 +6,54 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`@dhw.load_bytes` — a bundle a page BUILT, without the round trip through a
+  URL.** There were two ways into the dynamic-component registry and both named
+  a bundle the page did not have: a URL to fetch, or a file somebody dropped
+  (whose ids come only out of a DOM drop event). A page that GENERATES bundles
+  had them in hand and no way to say so, so it had to stage bytes it was
+  already holding behind an object URL, carry the URL through wasm and back,
+  fetch a blob that never left the process, and then revoke the URL in the one
+  window that is neither too early (racing the load) nor too late (never).
+
+  `registerArchive(bytes)` in `dyncomp/host/wasm/loader.mjs` holds the bytes and
+  answers an id; `@dhw.load_bytes(path, id)` loads it, with the same completion
+  contract as the other two. The id is consumed by the load — one id, one load.
+  A `Uint8Array` cannot cross into wasm-gc, which is why this is an id rather
+  than an argument, and why it is the same shape a drop already uses.
+
+### Changed
+
+- **Both load completions carry the load id, so a failure says WHOSE it is.**
+  `load_url` / `load_dropped` / `load_bytes` return a load id that never came
+  back. `dyncompLoaded` named its module, but `dyncompError` carried only a
+  reason — and a reason on its own does not identify a load, so a host with two
+  in flight could not tell which one failed, or answer the call that started it.
+
+  The receives are now `dyncompLoaded(module-name, load-id)` and
+  `dyncompError(reason, load-id)`, and `dyncomp/shell`'s `LoaderEvent` carries
+  the id on `Started` too — the one moment a host knows both the id and what it
+  asked for. **Breaking** for any host that declares these receives itself.
+
+### Fixed
+
+- **A resumed session no longer overwrites itself when a bundle fails to load.**
+  The universal host counted in-flight loads and restored the saved page when
+  the count reached zero — but only on success. A load that FAILED decremented
+  the count and restored nothing, which is worse than it sounds: the same
+  counter gates `save_session`, so the page went on to write its empty self
+  over the session it was trying to restore. It now retires loads by id, and
+  the last one restores whether it succeeded or failed: restoring without that
+  bundle loses the components it owned and keeps everything else.
+
+  Retiring by id also means a bundle dropped WHILE a resume is running no
+  longer retires a slot the resume was waiting on.
+
+- **A finished load's notify path is forgotten even with no app mounted.**
+  `notify` returned before removing the entry, keeping the path alive for the
+  life of the page.
+
 ## [0.32.0] - 2026-08-25
 
 ### Fixed

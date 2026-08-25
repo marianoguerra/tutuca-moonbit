@@ -22,6 +22,8 @@ pub fn current_policy() -> @policy.Policy
 
 pub fn drop_bundle(String) -> Unit
 
+pub fn load_bytes(@core.DispatchPath, Int) -> Int
+
 pub fn load_dropped(@core.DispatchPath, Int) -> Int
 
 pub fn load_url(@core.DispatchPath, String) -> Int

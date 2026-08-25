@@ -112,7 +112,13 @@ DOM by itself:
 - **`dyncomp/host/wasm/loader.mjs`** — `tcomp` (the guest bridge, the value
   arena, the bundle unpacker) and `tkv` (`localStorage`). Linked through
   `instantiate`'s `makeExtra` hook, so a page that loads no bundles carries
-  none of it.
+  none of it. It also exports `registerArchive(bytes)`, for a page that BUILDS
+  bundles rather than fetching them: it holds the bytes and answers an id to
+  pass to `@dhw.load_bytes`. A `Uint8Array` cannot cross into wasm-gc, and the
+  alternative is worse than it looks — staging bytes you are already holding
+  behind an object URL, carrying the URL through wasm and back, fetching a blob
+  that never left the process, and then revoking it in the one window that is
+  neither too early (racing the load) nor too late (never).
 - **`dyncomp/host/wasm/abi.mjs`** — the canonical ABI for the world, written
   once host-side. The file above
   `import()`s it lazily, only while an archive is actually being unpacked, so a
@@ -175,6 +181,63 @@ gated at both ends, and a page that restores but does not save — or the revers
 `demo/universal_wasm/` in the repository is that file in full, with its
 `moon.pkg` export list and its `index.html`. `dyncomp/ui/ui_test.mbt` drives the
 same editor with no browser at all.
+
+### Driving loads yourself
+
+`@uiw.mount` hands the loading to the universal UI. A host that does something
+else with bundles — a gallery, a chat that generates them, anything that is not
+that editor — calls `dyncomp/host/wasm` directly, and then the two exports above
+stop being boilerplate. They are the only way it finds out anything happened.
+
+There are three ways to name a bundle, and all three answer the same way:
+
+| entry point | for |
+| --- | --- |
+| `@dhw.load_url(path, url)` | an archive the page can fetch |
+| `@dhw.load_dropped(path, file_id)` | a file the user dropped — the id comes out of the drop event's own value |
+| `@dhw.load_bytes(path, archive_id)` | an archive the page already HAS, from `registerArchive(bytes)` in `dyncomp/host/wasm/loader.mjs` |
+
+**All three return before the bundle exists.** What comes back is the load's id,
+not a loaded bundle: nothing is registered, and no component of it can be
+instantiated, until completion arrives. Completion is a receive at the
+`DispatchPath` you passed in — the loading handler's own `ctx.path()`, which is
+what lets a component anywhere in the tree host bundles without root-level
+plumbing:
+
+```
+dyncompLoaded(module_name : String, load_id : Int)
+dyncompError(reason : String, load_id : Int)
+```
+
+Exactly one of the two arrives for every load. The loader answers on every
+failure path it has — a 404, a truncated archive, a missing core module, a
+manifest the policy refuses — so a host that waits for one does not hang, and
+does not need a timeout to protect itself.
+
+Two things follow from this, and they are the mistakes worth naming:
+
+- **A host that reports success before that receive is reporting a download it
+  started, not a component it mounted.** If something upstream is waiting to be
+  told a component is ready — a caller, a tool, a person — tell it in the
+  `dyncompLoaded` handler. Anywhere earlier is a claim about the wrong event,
+  and a registration failure will reach the page while that claim stands.
+- **Match on the load id.** Success already names its module, but a failure has
+  only a reason, and with two loads in flight a reason does not say whose it is.
+  The id is the one thing that identifies a load from the call that started it
+  through to the completion that ends it. `dyncomp/shell`'s `LoaderEvent` carries
+  it on `Started` too, which is the only moment a host knows both the id and
+  what it asked for.
+
+When a load does fail, `reason` is the refusal's own words — "this host takes no
+CSS from a bundle", "no such component". They are what a person can act on;
+collapsing them into a generic sentence throws away the whole of the answer.
+
+For a lookup that failed rather than a load that did, `make_instance` answering
+`None` does not say why, by design — it is the mount call, not the diagnostic.
+Ask the catalog instead: `@dhw.registry().modules()` says whether a module is
+registered at all, and `Registry::describe(ComponentRef)` says whether that
+module declares the component. "Never heard of it", "still loading" and "loaded,
+but it has no such component" are three different things to tell somebody.
 
 ## What a bundle can do to your page
 
