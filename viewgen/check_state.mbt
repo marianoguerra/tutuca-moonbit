@@ -439,3 +439,39 @@ fn Checker::node(
     MacroCall(d) => if d.node is Some(n) { self.node(n, sc) }
   }
 }
+
+///|
+/// Check ONE component's views against its schema, and answer the surface its
+/// BLOCK should be checked against — from one compile of the templates.
+///
+/// The two things a caller that holds views and a block both needs.
+/// `gen-views` gets them as a side effect of emitting, because
+/// `emit_component` compiles every view anyway. A CARD compiles none: its
+/// block was checked against a surface that says "I have no views"
+/// (`knows_views: false`), which is the honest answer for a caller holding a
+/// block alone and a false one for a caller holding the same FILE the views
+/// are in. What that cost is three rules that never fired for a card —
+/// `NO_VIEW_HANDLER`, the arity cross-check, and the call-site parameter
+/// types — plus the view checks in this file, which nothing ran at all.
+///
+/// The fatal findings RAISE, in the checker's own words; `hints` collects the
+/// advisory ones. A caller that reports rather than builds (a live editor) can
+/// catch the first and list both.
+///
+/// `open_senders` is the caller saying whether the views are the only place a
+/// message can come from — false for a file the generator owns end to end,
+/// true for a card, which a host dispatches into. See
+/// `@check.Surface::open_senders`.
+pub fn check_component_views(
+  views : Array[@viewfile.RawView],
+  def : @statedef.StateDef,
+  prog : ProgramIndex,
+  macros? : Array[@viewfile.MacroDef] = [],
+  comps? : Array[String] = [],
+  open_senders? : Bool = false,
+  hints? : Array[String] = [],
+) -> @check.Surface raise GenError {
+  let compiled = compile_views(views, FileMacros::of(macros))
+  check_views(compiled, def, prog, hints)
+  { ..inline_surface(surface_of(compiled)), comps, open_senders }
+}

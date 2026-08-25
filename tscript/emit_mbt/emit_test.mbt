@@ -50,6 +50,7 @@ fn views() -> @check.Surface {
       "show": [Some(TText)],
     },
     knows_views: true,
+    open_senders: false,
     comps: [],
   }
 }

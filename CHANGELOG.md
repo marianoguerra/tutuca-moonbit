@@ -6,6 +6,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A card's views are checked against its own state block.** A card is one
+  file holding a schema, a block and the templates, and it was checked as if
+  the templates were somewhere else: `tutucard/wasm` handed the block checker a
+  surface saying `knows_views: false` — "I have no views" — while the views sat
+  in the same string it had just split. Three rules that already existed never
+  fired for a card, and the view checks never ran at all:
+
+  ```html
+  <button @on.click="noSuchMessage">a</button>   <!-- NO_VIEW_HANDLER -->
+  <button @on.click="bump 1 2 3">b</button>      <!-- ARITY -->
+  <output @text=".noSuchField"></output>         <!-- UNKNOWN_STATE_FIELD -->
+  ```
+
+  All three now report, with a position in the file. A MoonBit component was
+  never exposed this way — its view handler names become a generated `Input`
+  enum whose unanswered variants break `update`'s `match` — which is why the
+  gap survived: the language's other backend has a type system standing where
+  the card had nothing.
+
+  `viewgen.check_component_views` is the one call that answers both halves from
+  one compile of the templates: it checks them against the schema and returns
+  the `@check.Surface` the block is then checked against. `gen-views` gets both
+  as a side effect of emitting; a card compiles no views, so it needed the walk
+  to be reachable on its own.
+
+  **A view finding does not stop a card compiling.** `check_card` lists it —
+  that is the reporting face, and a card with a wrong `.field` in a template
+  still renders — while `compile` falls back to the surface it had before. The
+  errors that DO stop a build are the block's own, which is what stopped one
+  before.
+
+  `@check.Surface` gained `open_senders`, because `knows_views` was answering
+  two questions with one bit. A card is mounted by a host that dispatches a
+  STRING, driven by scenes that `{"send": …}` it one, and shares a file with
+  siblings that `sendAt` and `sendReply` — so `receive poke` naming no schema
+  case is a message that arrives, not `NO_SUCH_MESSAGE`. A MoonBit component
+  keeps the stricter rule, where the parent's dispatch is typed and the finding
+  is true. (`tutucard/wasm/check.mbt`, `tutucard/wasm/compile.mbt`,
+  `viewgen/check_state.mbt`, `viewgen/errors.mbt`, `tscript/check/`.)
+
+
 ## [0.31.0] - 2026-08-25
 
 ### Changed

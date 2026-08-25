@@ -71,7 +71,7 @@ fn C::warn(
 
 ///|
 pub fn Surface::empty() -> Surface {
-  { inputs: Map([]), knows_views: false, comps: [] }
+  { inputs: Map([]), knows_views: false, open_senders: false, comps: [] }
 }
 
 ///|
@@ -337,6 +337,17 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
         "`\{d.name}` takes \{d.params.length()} parameter(s) here, but the views call it with \{types.length()}",
         d.name_span,
       )
+    }
+    return
+  }
+  // A name no view sends, in a file whose senders are not all in it. See
+  // `Surface::open_senders`: a card is dispatched into by its host and by its
+  // own scenes, so "the schema declares no case for this" is a thing to
+  // prefer, not a thing to assert. The parameters bind raw, exactly as they do
+  // for a caller with no views at all.
+  if found.is_empty() && d.kind is DReceive && self.surface.open_senders {
+    for p in d.params {
+      self.params[p.name] = None
     }
     return
   }

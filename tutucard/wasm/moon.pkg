@@ -44,6 +44,11 @@ import {
   "marianoguerra/tutuca/statedef/info",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
+  // The view side of checking a card: `check_component_views` compiles this
+  // component's templates, checks them against its schema, and answers the
+  // surface — what the views SEND — that makes the block checkable against
+  // them. Nothing else here reaches into the generator.
+  "marianoguerra/tutuca/viewgen",
   "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }

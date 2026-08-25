@@ -214,6 +214,9 @@ pub fn compile(
   let pool = @abi.Pool::new()
   let refusals : Array[Refusal] = []
   let comps : Array[Comp] = []
+  // Built once, and only so the surface below can be: `check_card` uses the
+  // same index to check `<x render>` against a sibling's views.
+  let prog = @viewgen.ProgramIndex::of(file, name)
   for idx, views in file.components {
     let comp = views.component_name(name)
     // A card with no `<script type="tutuca/state">` block is a card with no
@@ -264,17 +267,38 @@ pub fn compile(
     // to reject it rather than to emit a module with a hole where a handler
     // should be. So the findings are errors here, spelled in the checker's own
     // words and pointing at the card's own columns.
+    // What this component's TEMPLATES send, so the block is checked against
+    // the views it actually serves: `NO_VIEW_HANDLER`, the arity cross-check
+    // and the call-site parameter types all need a surface that knows them.
+    //
+    // A view finding is NOT a build failure here. `check_card` is the face
+    // that reports one, with a position in the file and beside every other
+    // finding; here it would stop a card from compiling for something the host
+    // is about to parse for itself, and a card that renders is the thing this
+    // function exists to produce. So the surface falls back to "I could not
+    // look", which is exactly what every card got before this line existed.
+    let surface = @viewgen.check_component_views(
+      views.views,
+      def,
+      prog,
+      macros=file.macros,
+      comps=components,
+      // A card is mounted by a host that dispatches a name into it, and
+      // driven by scenes that send it one. Neither is in this file.
+      open_senders=true,
+    ) catch {
+      _ =>
+        {
+          inputs: Map([]),
+          knows_views: false,
+          open_senders: true,
+          comps: components,
+        }
+    }
     match block {
       Some(b) => {
         let bad : Array[String] = []
-        for
-          f in @check.check(
-            decls,
-            def,
-            // The siblings, so `new TodoItem` is the child and not a type this
-            // component's schema is missing.
-            surface={ inputs: Map([]), knows_views: false, comps: components },
-          ) {
+        for f in @check.check(decls, def, surface~) {
           // A warning is not a card that does not typecheck. The paragraph
           // above argues that a name resolving to nothing should be rejected
           // rather than compiled around, and that argument is about ERRORS; the

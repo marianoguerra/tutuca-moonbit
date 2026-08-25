@@ -60,6 +60,22 @@ pub(all) struct Surface {
   /// handler's name was never checked against anything, so an absent surface
   /// cost nothing.
   knows_views : Bool
+  /// Whether a message can arrive from OUTSIDE this file.
+  ///
+  /// `knows_views` says whether the views are known; this says whether they
+  /// are the only senders. For a MoonBit component they are all that matters:
+  /// a parent dispatches a TYPED value, so a `receive` that no view sends and
+  /// no schema declares is answering a message nothing can send, which is the
+  /// finding. A CARD is mounted by a host that dispatches a STRING, driven by
+  /// scenes that `{"send": …}` it one, and shares a file with siblings that
+  /// `sendAt` and `sendReply` — none of which this surface can see, so the
+  /// same silence would be a false accusation rather than a missing rule.
+  ///
+  /// It changes NOTHING else: `NO_VIEW_HANDLER` still fires (the views send a
+  /// name and the block does not answer it, which is true either way), and a
+  /// name the views DO send still takes its parameter types and its arity
+  /// from the call sites.
+  open_senders : Bool
   /// The SIBLING components declared beside this one, so `new TodoItem` reads
   /// as "build the child" rather than as a type this block does not declare.
   ///

@@ -71,29 +71,74 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
   // own block. One iteration for a card that declares one, which is every card
   // that has ever compiled — the loop is here so that lifting the guard above
   // is a deletion rather than a rewrite.
+  //
+  // The index is built once and covers every component in the file, so a
+  // `<x render>` or an `as="edit"` naming a SIBLING is checked against that
+  // sibling's views rather than against nothing.
+  let prog = @viewgen.ProgramIndex::of(file, name)
   for views in file.components {
     let comp = views.component_name(name)
-    guard script_for(file, comp) is Some(b) else { continue }
-    let decls = @tscript.parse_script(b.text) catch {
-      e =>
-        raise BadCard(
-          "line " +
-          (b.line + line_of(b.text, e.span().start) - 1).to_string() +
-          ": " +
-          e.message(),
-        )
+    let block = script_for(file, comp)
+    let decls : Array[@tscript.Decl] = match block {
+      Some(b) =>
+        @tscript.parse_script(b.text) catch {
+          e =>
+            raise BadCard(
+              "line " +
+              (b.line + line_of(b.text, e.span().start) - 1).to_string() +
+              ": " +
+              e.message(),
+            )
+        }
+      None => []
     }
     // No schema: nothing to check against, and checking against a guess would
     // be the checker inventing a type. A card with no state block is legal and
     // its handlers are unchecked — the same trade a view file with no schema
     // makes.
     guard state_for(file, comp, name) is Some(def) else { continue }
-    for
-      f in @check.check(decls, def, surface={
-        inputs: Map([]),
-        knows_views: false,
-        comps: components,
-      }) {
+    // The VIEWS, against that same schema — and the surface that says what
+    // they SEND, which is what makes the block checkable against them.
+    //
+    // A card is the one caller that has both halves in one file and used to
+    // check them apart: the block against a surface that said "I have no
+    // views", the views against nothing at all. A finding here is listed like
+    // any other rather than raised, because this is the reporting face and a
+    // card with a wrong `.field` in a template still renders.
+    let hints : Array[String] = []
+    let surface = @viewgen.check_component_views(
+      views.views,
+      def,
+      prog,
+      macros=file.macros,
+      comps=components,
+      // A card is mounted by a host that dispatches a name into it, and
+      // driven by scenes that send it one. Neither is in this file.
+      open_senders=true,
+      hints~,
+    ) catch {
+      e => {
+        let (line, span) = locate_view(source, views, view=e.view())
+        issues.push({ comp, code: e.code(), message: e.message(), line, span })
+        // What is no longer known is what the views send. `knows_views:
+        // false` is how the checker is told that, and it is the difference
+        // between "they send nothing" and "I could not look".
+        {
+          inputs: Map([]),
+          knows_views: false,
+          open_senders: true,
+          comps: components,
+        }
+      }
+    }
+    for h in hints {
+      let (line, span) = locate_view(source, views, view=None)
+      issues.push({ comp, code: "HINT", message: h, line, span })
+    }
+    // A card with views and no block has been checked as far as it goes: there
+    // is nothing to check the surface against.
+    guard block is Some(b) else { continue }
+    for f in @check.check(decls, def, surface~) {
       // The checker's warnings are listed here rather than dropped — this is
       // the reporting face, and a warning is worth showing. `compile.mbt` is
       // the one that decides what stops a build, and it skips them.
@@ -174,4 +219,61 @@ fn state_for(
     return file.state.get(0)
   }
   None
+}
+
+///|
+/// Where a view sits in the FILE, for a finding the VIEW checker raised.
+///
+/// Those findings have no span of their own: the checker walks a compiled
+/// tree, and its nodes carry no offsets back into the source. The template the
+/// finding names is the finest position available, so that is what gets
+/// pointed at — its FIRST LINE rather than its whole body, because an editor
+/// highlighting forty lines says "somewhere in here", which the message
+/// already said better.
+///
+/// `None`, or a name no template answers to, falls back to the component's
+/// first view; a body that is not found verbatim in the source falls back to
+/// the top of the file, which is what every whole-card failure reports.
+fn locate_view(
+  source : String,
+  views : @viewfile.ViewSet,
+  view~ : String?,
+) -> (Int, @tscript.Span) {
+  let mut body = ""
+  if view is Some(want) {
+    for v in views.views {
+      if v.name == want {
+        body = v.source
+        break
+      }
+    }
+  }
+  if body.is_empty() && views.views.get(0) is Some(first) {
+    body = first.source
+  }
+  if body.is_empty() {
+    return (1, { start: 0, end_: 0 })
+  }
+  // The FIRST LINE of the body, not the body: `viewfile` dedents a template
+  // when it lifts it (`split.mbt` `dedent`), so the body it carries is not a
+  // substring of the file it came from. One line of it still is — dedenting
+  // takes a COMMON prefix off every line, so what is left of the first one
+  // appears verbatim, with the indentation sitting just before the match.
+  let first_line = match body.find("\n") {
+    Some(n) => body[0:n].to_string()
+    None => body
+  }
+  match source.find(first_line) {
+    Some(i) => {
+      // Counted over the prefix rather than by indexing into the whole file:
+      // `find` answers in the string's own units and `line_of` walks
+      // characters, and slicing here is what keeps the two from disagreeing.
+      let prefix = source[0:i].to_string()
+      (
+        line_of(prefix, prefix.length()),
+        { start: i, end_: i + first_line.length() },
+      )
+    }
+    None => (1, { start: 0, end_: 0 })
+  }
 }

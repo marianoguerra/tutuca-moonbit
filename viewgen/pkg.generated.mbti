@@ -4,12 +4,15 @@ package "marianoguerra/tutuca/viewgen"
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub fn build_views(@viewfile.ViewSet, macros? : Array[@viewfile.MacroDef]) -> Map[String, @anode.View] raise GenError
+
+pub fn check_component_views(Array[@viewfile.RawView], @statedef.StateDef, ProgramIndex, macros? : Array[@viewfile.MacroDef], comps? : Array[String], open_senders? : Bool, hints? : Array[String]) -> @check.Surface raise GenError
 
 pub fn declared_components(@viewfile.ViewFile, String) -> Array[String]
 
@@ -47,7 +50,9 @@ pub suberror GenError {
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
   BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
 }
+pub fn GenError::code(Self) -> String
 pub fn GenError::message(Self) -> String
+pub fn GenError::view(Self) -> String?
 
 // Types and methods
 pub(all) enum ArgType {

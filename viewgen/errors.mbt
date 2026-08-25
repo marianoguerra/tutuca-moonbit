@@ -39,3 +39,58 @@ pub fn GenError::message(self : GenError) -> String {
       "line \{line}: script block for \{comp}: \{message}"
   }
 }
+
+///|
+/// The stable machine-readable name for a generation failure.
+///
+/// `message` is what the CLI prints and the whole of what it needs. A CARD
+/// reports its findings as a LIST an editor renders beside the source, and
+/// every other entry in that list carries a code (`NO_VIEW_HANDLER`, `ARITY`,
+/// …) — so a view finding needs one too, or the card's face would have a
+/// column that is filled in for half its rows.
+///
+/// One table here rather than one per face, for the same reason `message` is
+/// one table: two copies of a list is how two lists drift apart.
+pub fn GenError::code(self : GenError) -> String {
+  match self {
+    File(_) => "FILE"
+    ViewParseIssue(..) => "VIEW_PARSE"
+    EmptyView(_) => "EMPTY_VIEW"
+    NameCollision(..) => "NAME_COLLISION"
+    BadComponentName(_) => "BAD_COMPONENT_NAME"
+    NoViewsToCompile => "NO_VIEWS"
+    MethodInEventPosition(..) => "METHOD_IN_EVENT"
+    BareEventArg(..) => "BARE_EVENT_ARG"
+    UnknownStateField(..) => "UNKNOWN_STATE_FIELD"
+    IdInLoop(..) => "ID_IN_LOOP"
+    PayloadDisagrees(..) => "PAYLOAD_DISAGREES"
+    AlwaysTruthy(..) => "ALWAYS_TRUTHY"
+    NotIterable(..) => "NOT_ITERABLE"
+    NotRenderable(..) => "NOT_RENDERABLE"
+    BadScriptBlock(..) => "BAD_SCRIPT_BLOCK"
+  }
+}
+
+///|
+/// The view a finding is about, for the callers that can point at one.
+///
+/// Every message below already NAMES its view, which is enough for a line in a
+/// build log and not enough for an editor: a card's face has to turn a finding
+/// into a position in the file the author has open, and the template is the
+/// finest position there is — the checker walks a COMPILED tree, whose nodes
+/// carry no offsets. `None` is for the failures that are about the file rather
+/// than about one of its views.
+pub fn GenError::view(self : GenError) -> String? {
+  match self {
+    ViewParseIssue(view~, ..)
+    | MethodInEventPosition(view~, ..)
+    | BareEventArg(view~, ..)
+    | UnknownStateField(view~, ..)
+    | IdInLoop(view~, ..)
+    | AlwaysTruthy(view~, ..)
+    | NotIterable(view~, ..)
+    | NotRenderable(view~, ..) => Some(view)
+    EmptyView(name) => Some(name)
+    _ => None
+  }
+}
