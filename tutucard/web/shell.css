@@ -53,6 +53,10 @@ body {
   font-family: var(--mono);
 }
 
+.tagline a {
+  color: var(--ink);
+}
+
 .examples {
   margin-left: auto;
   display: flex;
