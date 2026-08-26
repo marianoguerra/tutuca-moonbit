@@ -564,6 +564,36 @@ fn find_bundle(which : String) -> @dyncomp.Bundle? {
 }
 
 ///|
+/// A guest for a loaded bundle, and the manifest it was registered from, for a
+/// host that wants to register that module AGAIN somewhere else.
+///
+/// The case this exists for is driving a bundle's scenes: `tutucard/drive`
+/// mounts a component on an in-memory DOM, one fresh `ComponentStack` per
+/// scene, which means registering the module again — and registering needs a
+/// `&Guest` and a `DynManifest`, neither of which this bridge published. A page
+/// could reach the instantiated module and could not test it.
+///
+/// The guest is a NEW `WasmGuest` over the same instantiated module rather than
+/// the one this bridge registered, and the difference is the whole reason this
+/// is a function rather than a field. A guest carries the bundle it was last
+/// registered as, so that a child token can be wrapped through the right one;
+/// a driver rebinds that per scene. Handing back the live guest would leave the
+/// page's own drawn instance wrapping through whichever scene ran last, which
+/// is a drawn card quietly breaking because something tested it.
+///
+/// `None` when nothing by that name or key is loaded. Same addressing as every
+/// other entry point here — see `find_bundle`.
+pub fn guest_for(which : String) -> (&@dyncomp.Guest, @dyncomp.DynManifest)? {
+  guard find_bundle(which) is Some(bundle) else { return None }
+  guard by_key.get(bundle.key()) is Some(bid) else { return None }
+  (
+    (WasmGuest::{ bundle: bid, registered: { val: None } } : &@dyncomp.Guest),
+    bundle.manifest(),
+  )
+  |> Some
+}
+
+///|
 let next_load : Ref[Int] = { val: 1 }
 
 ///|

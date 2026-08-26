@@ -8,6 +8,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`@dhw.guest_for` — a loaded bundle's guest and manifest, so a page can
+  register that module again.** A host could reach an instantiated module and
+  could not TEST it: `tutucard/drive` mounts a component on an in-memory DOM
+  with one fresh `ComponentStack` per scene, which means registering the module
+  again, and registering takes a `&Guest` and a `DynManifest` — neither of which
+  this bridge published. `WasmGuest` is read-only outside the package and the
+  bundle table is private, so there was no way to assemble the pair.
+
+  The guest handed back is a NEW `WasmGuest` over the same instantiated module,
+  not the one the bridge registered. That is the point rather than an
+  implementation detail: a guest carries the bundle it was last registered as so
+  a child token wraps through the right one, and a driver rebinds that per
+  scene. Handing back the live guest would leave a page's own drawn instance
+  wrapping through whichever scene ran last — a mounted component quietly
+  breaking because something tested it.
+
 - **`@dhw.load_bytes` — a bundle a page BUILT, without the round trip through a
   URL.** There were two ways into the dynamic-component registry and both named
   a bundle the page did not have: a URL to fetch, or a file somebody dropped
