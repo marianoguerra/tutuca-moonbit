@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-08-26
+
 ### Added
 
 - **`@dhw.guest_for` — a loaded bundle's guest and manifest, so a page can
@@ -23,6 +25,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   scene. Handing back the live guest would leave a page's own drawn instance
   wrapping through whichever scene ran last — a mounted component quietly
   breaking because something tested it.
+
+## [0.33.0] - 2026-08-25
+
+### Added
 
 - **`@dhw.load_bytes` — a bundle a page BUILT, without the round trip through a
   URL.** There were two ways into the dynamic-component registry and both named
@@ -5198,5 +5204,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.32.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.34.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
