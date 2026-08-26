@@ -112,23 +112,26 @@ let counter = counter_component()</code></pre>
           view="./site/examples/toggle.html"
         ></mb-playground>
 
-        <h3>A card — the same file, with no compiler</h3>
+        <h3>A card — the same file, with no MoonBit toolchain</h3>
         <p>
-          The examples above compile MoonBit in your browser. This example does
-          not. A <strong>card</strong> is the same view file: schema, script,
-          and templates. The page <em>interprets</em> the card, and the runtime
-          is already on this page. Thus the card parses and mounts in
+          The examples above compile MoonBit in your browser, and that costs a
+          5.5 MB payload. This example does not. A <strong>card</strong> is the
+          same view file: schema, script, and templates. The page compiles the
+          card itself — into a <code>tutuca:component</code> WebAssembly module
+          it then instantiates — and that compiler is part of the runtime
+          already on this page. Thus the card compiles and mounts in
           milliseconds. Edit the card. It mounts again while you type. There is
           no run step.
         </p>
         <p>
-          You lose the parts that need the compiler. A card cannot name a
-          MoonBit value. Thus there are no imports, no closures, and no child
-          components built at run time. Every handler must use the language in
-          the <code>tutuca/script</code> block. You keep everything else,
-          including the checks. The diagnostics below the preview are the same
-          ones <code>tutuca gen-views</code> reports. They have the same line
-          and column numbers.
+          You lose the parts that need the MoonBit compiler. A card cannot
+          name a MoonBit value. Thus there are no imports and no closures, and
+          a handler <code>gen-views</code> would refuse has nowhere to go.
+          Every handler must use the language in the
+          <code>tutuca/script</code> block. You keep everything else, including
+          the checks. The diagnostics below the preview are the same ones
+          <code>tutuca gen-views</code> reports. They have the same line and
+          column numbers.
         </p>
         <p>
           The card carries no CSS. Its views name the
@@ -144,9 +147,10 @@ let counter = counter_component()</code></pre>
           card step by step, with live examples at each step. It covers the
           state block and its generated code, the handler language, derived
           values, loops, messages, and the limits of a card. The
-          <a href="./tutucard/">card playground</a> uses the same loader and has
-          more panels: the state tree, the dispatch log, and a structured editor
-          that shows one block of the file at a time.
+          <a href="./tutucard/">card playground</a> uses the same compiler and
+          has more panels: the state tree, the dispatch log, the card's test
+          scenes, the compiled module itself, and a structured editor that
+          shows one block of the file at a time.
         </p>
       </section>
 

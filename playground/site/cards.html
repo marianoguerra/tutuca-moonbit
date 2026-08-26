@@ -6,7 +6,7 @@
     <title>Cards — the tutuca script tutorial</title>
     <meta
       name="description"
-      content="Build a tutuca component one file at a time. No compiler is needed: the state block, the tutuca/script block, and the views. Nine live, editable examples."
+      content="Build a tutuca component one file at a time: the state block, the tutuca/script block, and the views. Your browser compiles the file to a WebAssembly component and mounts it. Nine live, editable examples."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
@@ -34,8 +34,10 @@
     </style>
     <!-- The card runtime is a classic script that installs `__tutucard`; the
          element is a module, and a module runs after a classic one, so the
-         order below is the whole of the wiring. No compiler, no worker, no
-         payload — a card is parsed and mounted. -->
+         order below is the whole of the wiring. The card COMPILER is inside
+         that runtime — no MoonBit toolchain, no worker, no payload fetched
+         beside the page — and the element imports `card-wasm.js` (and the
+         host ABI it instantiates through) when the first card mounts. -->
     <script src="./site/tutucard.js"></script>
     <script type="module" src="./site/card-embed.js"></script>
   </head>
@@ -52,7 +54,7 @@
     </nav>
     <header>
       <h1>Cards</h1>
-      <h2>A complete component in one file, interpreted without a compiler</h2>
+      <h2>A complete component in one file, compiled to wasm in your browser</h2>
       <p class="hero-tagline">
         Eight steps, nine live examples. Edit any example, and it re-mounts
         while you type.
@@ -63,28 +65,44 @@
         <h2>What a card is</h2>
         <p class="lede">
           A <strong>card</strong> is a tutuca view file: a state schema, a
-          script block, and one or more templates. The page interprets the
-          card. It does not compile it. This page parsed the first example
-          below. Your browser mounted it directly: no MoonBit compiler, no
-          worker, no build step, and no server.
+          script block, and one or more templates. The page compiles the card.
+          It compiled the first example below into a
+          <code>tutuca:component</code> WebAssembly module and instantiated it
+          where it stands: no MoonBit toolchain, no worker, no build step, and
+          no server.
         </p>
         <p>
-          This is the same framework as the rest of this site, without the
-          compiler. The schema still generates mutators. The checker still
-          reads the script block and reports the same diagnostics with the
-          same line and column numbers. The views are the views. What changes
-          is <em>when</em>: a card is read at mount rather than at build.
-          What you give up for that is the subject of
-          <a href="#limits">the last section</a>.
+          This is the same framework as the rest of this site, with a
+          different compiler. The landing page compiles MoonBit in your
+          browser, and that costs a 5.5 MB payload. This page compiles the
+          card language instead, and that compiler is part of the runtime the
+          page already loaded. The schema still generates mutators. The
+          checker still reads the script block and reports the same
+          diagnostics with the same line and column numbers. The views are the
+          views. What changes is <em>when</em>: a card is compiled at mount
+          rather than ahead of time. What you give up for that is the subject
+          of <a href="#limits">the last section</a>.
         </p>
         <p>The file has three kinds of block, and only the last is required:</p>
         <pre><code>&lt;script type="tutuca/state"&gt;   fields, types, payloads
 &lt;script type="tutuca/script"&gt;  handlers, derived values
 &lt;template&gt;                     the views</code></pre>
         <p>
+          A file may carry three more, and no example here does:
+          <code>tutuca/init</code> (named starting states, each one a fixture a
+          host can mount), <code>tutuca/test</code> (scenes that drive the card
+          and assert against the DOM), and <code>tutuca/wax</code> (the escape
+          hatch: a handler written in the language the module is built out of).
+          A page decides whether to honour the last one, and this one does not.
+        </p>
+        <p>
           Every example below is one such file. Each one is complete and
           runnable. The bar above each example shows the component name and
-          the checker result: <code>ok</code>, or the number of issues. Each
+          the checker result: <code>ok</code>, or the number of issues. The
+          checker reads both halves of the file — the script block against the
+          schema, and the templates against the same schema — so a
+          <code>.field</code> that no field answers is an issue here rather
+          than a blank in the render. Each
           issue has a button. Press it to select the exact characters of that
           issue. You can break an example on purpose. The checker then reports
           the problem. Press <strong>reset</strong> to put the original text
@@ -218,13 +236,14 @@
           Inside a body, write to a collection through its receiver:
           <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>.
           The infix part drops because the receiver is written out.
-          Sequences and maps have these methods:
-          <code>push</code>, <code>insertAt</code>, <code>setAt</code>,
-          <code>deleteAt</code>/<code>removeAt</code>, <code>clear</code>.
-          Sets and maps have these methods:
-          <code>add</code>,
-          <code>remove</code>/<code>delete</code>, <code>toggle</code>,
-          <code>set</code>.
+          Sequences and maps have <code>push</code>,
+          <code>insertAt</code>, <code>setAt</code> and
+          <code>deleteAt</code>. Sets and maps have <code>add</code>,
+          <code>remove</code> and <code>toggle</code>. The parser also accepts
+          <code>clear</code>, <code>set</code> and the aliases
+          <code>removeAt</code> and <code>delete</code>. No backend implements
+          those four, so a card that writes one is refused by name when it
+          compiles rather than doing nothing when it runs.
         </p>
         <p>
           A list of <em>records</em> needs one more thing. The language has no
@@ -310,9 +329,9 @@
         <p>
           <code>send</code> is one of the effects that a body may perform.
           These effects are the vocabulary that a dynamic WebAssembly component
-          already answers with. This match is deliberate: a card and a compiled
-          component give the host the same effect list. Neither knows what the
-          host will do with them.
+          answers with — and a card compiles into one, so the two lists are the
+          same list rather than two that agree. Neither a card nor a component
+          knows what the host will do with them.
         </p>
         <ul>
           <li><code>send 'name' args…</code> — to this component.</li>
@@ -578,7 +597,7 @@ new Label                   build one, at @cur
 @tag = $'{@value}'          bind (in an enrich)
 .items.push v               a collection method,
 .items.deleteAt i           receiver first
-.byId.set k v
+.byId.setAt k v
 new Label                   build a value at its zero,
 @cur.text = 'hi'            fill it in through `@cur`,
 .labels.push @cur           then put it somewhere
@@ -642,9 +661,9 @@ str x       lower s     upper s     trim s</code></pre>
         </p>
         <ul>
           <li>
-            <strong>No imports, no closures, no components built at run
-            time.</strong> A handler that walks a dispatch path or constructs a
-            child is a handler that needs the compiler.
+            <strong>No imports and no closures.</strong> A handler that walks a
+            dispatch path, or hands a MoonBit function to the framework, is a
+            handler that needs <code>gen-views</code> and a module.
           </li>
           <li>
             <strong>No record literal, but a record.</strong> There is no
@@ -654,22 +673,31 @@ str x       lower s     upper s     trim s</code></pre>
             <code>.labels.push @cur</code> is how a list of records grows.
           </li>
           <li>
-            <strong>One component per file.</strong> The checker refuses a file
-            that declares several, and names them. Several components need
-            <code>tutuca gen-views</code> and a module.
+            <strong>Several components, but no reading into one.</strong> A
+            file may declare a <code>state</code> per component, a
+            <code>&lt;script type="tutuca/script" for="Comp"&gt;</code> for
+            each, and a <code>&lt;template id="Comp:main"&gt;</code> each; the
+            root is the first one, or the one whose template carries
+            <code>data-root</code>. A card even builds children at run time —
+            <code>new Todo</code> beside <code>state Todo</code> asks the host
+            to make one. What it cannot do is reach <em>into</em> a child: the
+            instance belongs to the host and the card holds a token, so
+            <code>.rows[0].text</code> is refused when the card compiles. Send
+            the child a message instead.
           </li>
           <li>
             <strong>No <code>&lt;template&gt;</code>, no card.</strong> State
             and script describe a component. A view makes one visible.
           </li>
           <li>
-            <strong>The views are not checked.</strong> The report above each
-            preview judges the <em>script</em> block against the schema.
-            <code>gen-views</code> also checks the templates: every
-            <code>.field</code> a slot reads, including inside a loop. A card
-            cannot do this, because its views are parsed at mount rather than
-            compiled. Misspell one in a template here and it reads
-            <code>Null</code> and renders nothing, with no message.
+            <strong>No MoonBit in a refused handler.</strong>
+            <code>gen-views</code> refuses a handler it cannot compile
+            <em>by name</em> and hands it back as an <code>update~</code>
+            argument you write yourself. A card has nowhere to write that
+            argument. Its one escape hatch is a
+            <code>&lt;script type="tutuca/wax"&gt;</code> block, written in the
+            language the module is built out of — and a page decides whether to
+            honour one at all.
           </li>
         </ul>
         <p>
@@ -687,17 +715,19 @@ str x       lower s     upper s     trim s</code></pre>
           checking one needs no browser. The same runtime this page loads
           exposes <code>__tutucard.check(source, name)</code>. That call
           returns the report you see above the previews: the component's name
-          and every issue, with lines and character ranges. It mounts nothing.
+          and every issue, with lines and character ranges. It compiles
+          nothing and mounts nothing — <code>__tutucard.compile</code> is the
+          call that answers a module.
           A build step over a directory of cards, or an agent that
           just generated one, validates with that call and no DOM. It is what
           keeps every example on this page loading.
         </p>
         <h3>Keep going</h3>
         <ul>
-          <li><a href="./tutucard/">The card playground</a> — the same loader with more panels: the state tree, the dispatch log, and a structured editor. The editor shows one block of the file at a time.</li>
+          <li><a href="./tutucard/">The card playground</a> — the same compiler with more panels: the state tree, the dispatch log, the card's <code>tutuca/test</code> scenes run against an in-memory DOM, the compiled module as Wax and WAT, and a structured editor that shows one block of the file at a time.</li>
           <li><a href="./">The landing page</a> — the same framework with the compiler included. It compiles MoonBit in your browser.</li>
           <li><a href="./storybook/">Storybook</a> — every ported example, compiled ahead of time, with a Lint panel per story.</li>
-          <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the loader is <code>tutucard/</code>, the language is <code>tscript/</code>.</li>
+          <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the card compiler is <code>tutucard/wasm/</code>, the language is <code>tscript/</code>.</li>
         </ul>
       </section>
     </main>
