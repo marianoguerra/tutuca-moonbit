@@ -113,10 +113,11 @@ inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
 element's static `type` — anything unresolvable
 -> `@tutuca.Value`), and `CounterMethod`, the `$`-callables the views name
-that the script block has NOT already answered. A `pred` or a `compute` in
-`<script type="tutuca/script">` is merged into the bucket ahead of your match,
-so an arm for it could never run and its name is dropped from the enum, with a
-note on the enum saying which names went; a bucket the block answers entirely
+that a block has NOT already answered. A `compute` in
+`<script type="tutuca/script">`, and a `pred` or an `invariant` in
+`<script type="tutuca/spec">`, are merged into the bucket ahead of your match,
+so an arm for one could never run and its name is dropped from the enum, with a
+note on the enum saying which names went; a bucket the blocks answer entirely
 emits no enum at all. The same holds for `CounterWhen`, `CounterEnrich` and
 `CounterEnrichScope`. A file that also carries
 a `<script type="tutuca/spec">` block gets the state half: `CounterState`

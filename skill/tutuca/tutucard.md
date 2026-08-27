@@ -51,9 +51,11 @@ A card keeps its concerns in one file:
 ```
 
 - `tutuca/spec` declares components, field types, records, enums, flags,
-  message buckets, dynamic `provide`/`lookup`, and named initial states.
-- `tutuca/script` declares receives, derived values and predicates,
-  enrichment, intents, contracts, effects, and collection updates.
+  message buckets, dynamic `provide`/`lookup`, named initial states, and the
+  `pred` / `invariant` rules the component keeps.
+- `tutuca/script` declares receives, derived values, enrichment, intents,
+  effects, collection updates, and the `requires` / `ensures` clauses that
+  attach a spec-block rule to one transition.
 - `tutuca/init` contains named fixtures. A fixture may provide a value, drive
   steps, documentation, and a default marker.
 - `tutuca/test` contains named interaction scenes. It is optional but should

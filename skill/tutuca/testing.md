@@ -459,10 +459,17 @@ happen, and the card says so through `control.log` — carrying the rule's
 own `format` sentence, evaluated over the state that was rejected:
 
 ```html
+<script type="tutuca/spec">
+  state {
+    n : Int
+
+    pred room
+      format $'the counter is full at {.n}' { .n < 3 }
+  }
+</script>
+
 <script type="tutuca/script">
   receive bump requires room { .n += 1 }
-  pred room
-    format $'the counter is full at {.n}' { .n < 3 }
 </script>
 
 <script type="tutuca/test">

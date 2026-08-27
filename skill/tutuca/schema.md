@@ -311,14 +311,14 @@ An **uppercase** name publishes a component TYPE rather than a value, and
 one rather than whatever is registered under that name. A published type is not
 a render target — it has no path, so `<x render="*Cell">` resolves to nothing.
 
-**A body reads one too — any body.** `*name` in a script block is the same
+**A body reads one too — any body, in either block.** `*name` is the same
 question the view asks, answered at the same position, whether the body is a
-transition or a value:
+transition, a value, or a rule:
 
 ```
-receive stamp { .label = $'{.label} ({*theme})' }
-pred    onBrand { .accent is *theme }
-compute themeLabel { *theme }
+receive stamp { .label = $'{.label} ({*theme})' }   // script block
+compute themeLabel { *theme }                       // script block
+pred    onBrand { .accent is *theme }               // spec block
 ```
 
 A transition is answered from its DISPATCH position, along the same `dyn`/`lex`
@@ -644,6 +644,13 @@ Four things to know about the clauses themselves:
   compiled beside the rule at the moment it fails. The other two report the
   rule's NAME and the state that was rejected.
 
+- **An `invariant` that reads a `*name` decides nothing on the two new paths.**
+  The runtime asks it after a generated mutator or a hand-written `update~`
+  arm, which is not a render position, so a dynamic binding reads null there
+  and the rule answers neither true nor false. Unknown is not wrong: the
+  transition goes through. Read as `$name` from a view it still works
+  normally. Keep an invariant on `.field`s if you want it enforced everywhere.
+
 - **A rule in the spec block takes no arguments and reads no `@`-binding.** One
   that needs either is about a particular render rather than about the
   component — a `@when` filter over `@value`, or a `pred containsText(q)` a
@@ -665,12 +672,21 @@ state that was rejected — so the values in it are the ones that made the rule
 false:
 
 ```html
-<script type="tutuca/script" for="Post">
-  /// A post needs a title before it can go out.
-  pred hasTitle
-    format $'Cannot publish "{.slug}": the title is empty.'
-  { (trim .title) is not '' }
+<script type="tutuca/spec">
+  state Post {
+    slug      : String
+    title     : String
+    published : Bool
 
+    /// A post needs a title before it can go out.
+    pred hasTitle
+      format $'Cannot publish "{.slug}": the title is empty.'
+    { (trim .title) is not '' }
+  }
+</script>
+```
+```html
+<script type="tutuca/script" for="Post">
   receive publish requires hasTitle { .published = true }
 </script>
 ```

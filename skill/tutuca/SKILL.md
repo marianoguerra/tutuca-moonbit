@@ -1,18 +1,19 @@
 ---
 name: tutuca
-description: Author, review, debug, and test Tutuca MoonBit components and Tutucard single-file UI cards. Use for Tutuca HTML views, state and script blocks, generated view modules, ModuleDef wiring, events, messages and intents, component tests, card scenes, styling, playgrounds, and the tutuca CLI.
+description: Author, review, debug, and test Tutuca MoonBit components and Tutucard single-file UI cards. Use for Tutuca HTML views, spec and script blocks, state schemas, rules and contracts, generated view modules, ModuleDef wiring, events, messages and intents, component tests, card scenes, styling, playgrounds, and the tutuca CLI.
 ---
 
 # Tutuca and Tutucard
 
-Tutuca is an immutable-state UI framework for MoonBit. A view file holds the
-typed state schema, templates, styles, and optionally a small handler language.
+Tutuca is an immutable-state UI framework for MoonBit. A view file holds what a
+component IS — its typed state schema and the rules it keeps — alongside its
+templates, styles, and optionally a small handler language for what it DOES.
 There are two authoring paths over that same file format:
 
 | Path | Choose it when | Build and test |
 |---|---|---|
 | **Compiled Tutuca component** | The UI needs MoonBit functions, imports, custom objects, host wiring, or a reusable `ModuleDef` | `tutuca gen-views` or `tutuca watch`, then `moon check` and `moon test` |
-| **Tutucard** | The UI should remain one portable HTML file and use only the schema, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tutuca/test` scenes |
+| **Tutucard** | The UI should remain one portable HTML file and use only the spec, script, template, style, fixture, and scene languages | The card runtime compiles it to a component wasm module in the browser; validate with the card checker and its `tutuca/test` scenes |
 
 Read [tutucard.md](./tutucard.md) first for a card. Read
 [core.md](./core.md) first for a compiled component. Load only the additional
@@ -44,7 +45,14 @@ references needed for the task.
   a computed value, or enrichment; a render binding may read one member.
 - Tutuca has no automatic `init` lifecycle. The host or a test must send it.
 - Generated bucket enums are closed over names referenced by the views. Change
-  the view, regenerate, then implement the new arm.
+  the view, regenerate, then implement the new arm. An `invariant` is the one
+  exception: it gets a body whether or not a view names it, because the runtime
+  asks it after every dispatch.
+- The two blocks split by what they say, not by how they look. `tutuca/spec`
+  says what a component IS — fields, types, channels, wiring, and the `pred` /
+  `invariant` rules it keeps. `tutuca/script` says what it DOES. A rule about
+  the state goes in the spec block; one that takes an argument or reads
+  `@value` is a render-time filter and stays in the script block.
 - Literal class names can be collected for Tailwind/MargaUI. Runtime-assembled
   class names cannot.
 

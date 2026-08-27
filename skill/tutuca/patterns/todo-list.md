@@ -52,8 +52,8 @@ two reasons: **building a child component instance** (`item.make`), which that
 language deliberately has no way to say, and **reading a path into a row**
 (`@value.completed`), which `gen-views` does not compile — the rows are `Item`
 INSTANCES, so the filter has to look inside one. Were `items` a list of plain
-values, `onlyVisible` would be a `pred` in a block and this file would have no
-`when` bucket at all (see [filter-a-list.md](filter-a-list.md)). What is left
+values, `onlyVisible` would be a `pred` in the spec block and this file would
+have no `when` bucket at all (see [filter-a-list.md](filter-a-list.md)). What is left
 is the handlers:
 
 ```moonbit
