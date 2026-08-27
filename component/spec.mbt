@@ -170,10 +170,13 @@ pub(all) struct DynProducer {
 /// what the dispatch IS, never on where it came from — a view's `@on` name and
 /// a parent's `ctx.send` of that name are the same message and reach the same
 /// arm.
+/// Debug because a dispatch is what a failing property REPORTS. A generated
+/// message sequence that breaks a component is the counterexample, and one
+/// that cannot be printed leaves the reader with "a property failed".
 pub(all) enum Dispatch {
   Receive(String, Array[@tutuca.Value])
   Intent(String, Array[@tutuca.Value])
-}
+} derive(Eq, @debug.Debug)
 
 ///|
 /// What an `update` arm answers.

@@ -85,7 +85,7 @@ pub fn Components::register(Self, Component) -> Unit
 pub(all) enum Dispatch {
   Receive(String, Array[@core.Value])
   Intent(String, Array[@core.Value])
-}
+} derive(Eq, @debug.Debug)
 
 pub(all) struct DynBinds {
   binds : Map[String, @core.Value]

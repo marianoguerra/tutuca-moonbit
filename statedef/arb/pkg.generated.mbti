@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/statedef/arb"
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/statedef",
+  "moonbitlang/core/debug",
+  "moonbitlang/quickcheck/gen",
+}
+
+// Values
+pub const MAX_DEPTH : Int = 3
+
+pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+
+pub fn mutator_args(@statedef.StateDef, depth? : Int) -> Map[String, @gen.Gen[Array[@core.Value]]]
+
+pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+
+pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+
+pub fn rules_of(@statedef.StateDef) -> Rules
+
+pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @gen.Gen[Int], depth? : Int) -> @gen.Gen[Array[@component.Dispatch]]?
+
+pub fn shrink_script(Array[@component.Dispatch]) -> Iter[Array[@component.Dispatch]]
+
+pub fn state_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[Map[String, @core.Value]]
+
+pub fn value_of(@statedef.StateDef, @statedef.StateTy, depth? : Int) -> @gen.Gen[@core.Value]
+
+// Errors
+
+// Types and methods
+pub(all) enum Bucket {
+  BReceive
+  BIntent
+  BEither
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Rules {
+  preds : Map[String, @core.Val]
+  invariants : Map[String, @core.Val]
+  unlowerable : Array[(String, String)]
+}
+pub fn Rules::broken(Self, Map[String, @core.Value]) -> Array[String]
+pub fn Rules::filter(Self, @gen.Gen[Map[String, @core.Value]]) -> @gen.Gen[Map[String, @core.Value]?]
+pub fn Rules::holds(Self, String, Map[String, @core.Value]) -> Bool?
+pub fn Rules::invariants_hold(Self, Map[String, @core.Value]) -> Bool
+pub fn Rules::usable(Self) -> Bool
+
+// Type aliases
+
+// Traits

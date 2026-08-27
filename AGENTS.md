@@ -417,6 +417,29 @@ plain `moon test "..." { ... }` blocks:
   immutable. A row that is REMOVED is superseded by nothing, so that collector
   cannot see it; `install_sweep` walks the root and retains what it finds.
   `tutucard/build/check-instances.mjs` pins both.
+- **Property tests derive their generators from the spec block, not from a
+  MoonBit type.** `derive(Arbitrary)` has nothing to derive over here — a
+  component's shape is a `<script type="tutuca/spec">` block, not a type — so
+  `statedef/arb` is the randomized twin of `statedef/info`: `value_of` walks a
+  `StateTy` where `zero_of` walks it, `state_of` mirrors `zero_value`,
+  `dispatch_of` reads `MsgDef.payload`, and `mutator_dispatch_of` takes its
+  names from `@component.schema_mutators` so it cannot drift from the table the
+  runtime installs. Nothing is generated ahead of time; the `StateDef` is
+  parsed at test time and the generators are built from that value.
+
+  `rules_of` is the piece worth knowing about. A `pred` / `invariant` is ONE
+  expression with no arguments, so `@tscript.parse_bool` lowers it to a
+  `@core.Val` and `Val::eval` answers it over any state — which makes an
+  invariant both a FILTER on a generator and a PROPERTY a driven component is
+  held to. It also makes a differential test cheap:
+  `storybook/examples/svg_more_property_test.mbt` asks each precondition here
+  and checks the answer against the `Refusal` the arm `gen-views` compiled from
+  the same line actually raised. Bound worth knowing: `Val` is what a SLOT
+  holds, so the slot vocabulary is what lowers — there is no arithmetic, and
+  `invariant conserved { (.here + .there) is .total }` lands in
+  `Rules::unlowerable` rather than being silently treated as satisfied. Name
+  the sum with a `compute` and compare against `$name`.
+
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

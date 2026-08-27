@@ -27,7 +27,16 @@ import {
 import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/viewgen",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/test",
+  // The spec-derived generators, for `svg_more_property_test.mbt`: a
+  // component's own `<script type="tutuca/spec">` block, parsed at test time,
+  // is what says which states and which messages exist. Nothing is generated
+  // from a MoonBit type here, because the declaration is not one.
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/arb",
+  "moonbitlang/quickcheck" @qc,
+  "moonbitlang/quickcheck/gen",
 } for "test"

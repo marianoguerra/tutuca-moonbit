@@ -1,0 +1,42 @@
+// A parsed schema as GENERATORS: `StateDef` -> `@gen.Gen[...]`.
+//
+// The randomized twin of `statedef/info`, and a sub-package for the same
+// reason that one is: `statedef` stays pure text-in/text-out, and the value
+// side of a declaration lives beside it rather than in it.
+//
+// What it is for. A component's shape is not a MoonBit type, so
+// `derive(Arbitrary)` has nothing to derive over — it is a
+// `<script type="tutuca/spec">` block, parsed into a `StateDef` at runtime. So
+// the generator is derived from that VALUE: `@info.zero_of` walks a `StateTy`
+// to the one value it has, and `value_of` walks the same tree to any of them.
+// Every function here has a `statedef/info` counterpart, and the suite beside
+// this file holds the two together — every generated value is `accepts`-ed by
+// the `TyInfo` the same declaration projects to.
+//
+// `rules.mbt` is the third piece and the one that makes the generators useful
+// rather than merely well-typed: a `pred` / `invariant` is ONE expression, so
+// `@tscript.parse_bool` lowers it to a `@core.Val` and `Val::eval` answers it
+// over a generated state. No backend, no compiler — which is what lets an
+// invariant both SHAPE a generator and BE a property.
+//
+// Named `arb` rather than `gen` because `moonbitlang/quickcheck/gen` is `@gen`
+// by convention everywhere in this repo, and a caller needs both.
+import {
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/info",
+  "marianoguerra/tutuca/core" @tutuca,
+  // `Dispatch`, and `schema_mutators` — the table the runtime installs, which
+  // is where `mutator_dispatch_of` takes its NAMES from rather than guessing.
+  "marianoguerra/tutuca/component",
+  // `parse_bool` + `ParseCtx`: a rule's source is the block language, and this
+  // is the only thing that turns it into something evaluable.
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/debug",
+  // The declared int widths, for a generator that draws at a field's own edges.
+  "moonbitlang/core/int",
+}
+
+import {
+  "moonbitlang/quickcheck" @qc,
+} for "test"

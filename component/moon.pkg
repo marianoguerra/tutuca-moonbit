@@ -8,8 +8,7 @@ import {
   // and neither reaches back here.
   "marianoguerra/tutuca/lint",
   "moonbitlang/core/json",
-}
-
-import {
+  // `Dispatch` derives Debug: a generated dispatch is what a failing property
+  // reports, and a counterexample nobody can print is not one.
   "moonbitlang/core/debug",
-} for "test"
+}
