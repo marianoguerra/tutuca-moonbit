@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-08-27
+
 ### BREAKING — the rule layer moved, and the block was renamed
 
 - **`<script type="tutuca/state">` is now `<script type="tutuca/spec">`.** The
