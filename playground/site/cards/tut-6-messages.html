@@ -12,10 +12,13 @@
     log    : Array[String]
   }
 
-  receive Thermostat {
+  handle Thermostat {
+    message {
     init
     nudge(Int)
     setMode(String)
+
+    }
   }
 </script>
 
@@ -40,7 +43,7 @@
   /// itself is how two call sites share one transition, and the
   /// dispatch goes through the transactor exactly as a parent's
   /// would.
-  /// 
+  ///
   /// `(-1)` is parenthesised because `-` is an OPERATOR here, not
   /// part of the number — unlike a view slot, where `step -1` is a
   /// literal.

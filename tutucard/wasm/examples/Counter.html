@@ -9,8 +9,11 @@
 
   /// What the host says to this component when it mounts. Declared here
   /// because no view writes it: the schema is the only place it can be.
-  receive Counter {
+  handle Counter {
+    message {
     init
+
+    }
   }
 </script>
 

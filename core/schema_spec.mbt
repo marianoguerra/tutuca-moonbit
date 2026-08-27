@@ -46,6 +46,37 @@ pub(all) struct FieldInfo {
 }
 
 ///|
+/// Runtime projection of a protocol surface. All names are wire names and the
+/// id is canonical; source aliases never cross this boundary.
+pub(all) struct ProtocolInfo {
+  id : String
+  handle_messages : Array[String]
+  handle_intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  properties : Array[(String, TyInfo)]
+  views : Array[String]
+  provides : Array[(String, TyInfo)]
+  lookups : Array[(String, TyInfo)]
+} derive(Eq, Debug)
+
+///|
+/// A component's explicit provider for one protocol operation.
+pub(all) struct ProtocolBindingInfo {
+  protocol_id : String
+  member_name : String
+  source : String
+} derive(Eq, Debug)
+
+///|
+/// The result of checking one runtime schema against a protocol assumption.
+pub(all) enum ProtocolConformance {
+  Verified
+  Deferred(Array[String])
+  Invalid(Array[String])
+} derive(Eq, Debug)
+
+///|
 /// What a component declares, as static metadata.
 ///
 /// `inputs` is the one that matters most: the names `update` answers are
@@ -72,6 +103,8 @@ pub(all) struct SchemaInfo {
   receives : Array[String]
   /// The ROUTED names this component answers.
   intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
   /// `$name` callables in VALUE positions.
   methods : Array[String]
   /// Constant element ids — the selectors a test addresses.
@@ -79,6 +112,12 @@ pub(all) struct SchemaInfo {
   view_names : Array[String]
   /// Named fixtures from the `tutuca/init` block.
   init_names : Array[String]
+  protocols : Array[ProtocolInfo]
+  implements : Array[String]
+  property_bindings : Array[ProtocolBindingInfo]
+  view_bindings : Array[ProtocolBindingInfo]
+  provide_bindings : Array[ProtocolBindingInfo]
+  lookup_bindings : Array[ProtocolBindingInfo]
 }
 
 ///|
@@ -116,11 +155,26 @@ declare pub fn SchemaInfo::new(
   view_handlers? : Array[String],
   receives? : Array[String],
   intents? : Array[String],
+  express_messages? : Array[String],
+  express_intents? : Array[String],
   methods? : Array[String],
   ids? : Array[String],
   view_names? : Array[String],
   init_names? : Array[String],
+  protocols? : Array[ProtocolInfo],
+  implements? : Array[String],
+  property_bindings? : Array[ProtocolBindingInfo],
+  view_bindings? : Array[ProtocolBindingInfo],
+  provide_bindings? : Array[ProtocolBindingInfo],
+  lookup_bindings? : Array[ProtocolBindingInfo],
 ) -> SchemaInfo
+
+///|
+/// Check an instance schema against a known protocol surface.
+declare pub fn SchemaInfo::conforms(
+  self : SchemaInfo,
+  protocol : ProtocolInfo,
+) -> ProtocolConformance
 
 ///|
 /// A structural fingerprint of a schema built at RUNTIME, for a holder with no

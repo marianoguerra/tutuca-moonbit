@@ -24,11 +24,13 @@ pub let module_key : String
 
 pub fn mutator_name(String, String) -> String
 
-pub fn on_refusal((Refusal) -> Unit) -> () -> Unit
+pub fn on_runtime_notice((RuntimeNotice) -> Unit) -> () -> Unit
 
 pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
 pub fn precondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
+
+pub fn protocol_mismatch(RuntimeProtocolNotice) -> Unit
 
 pub fn refuse(Refusal) -> Unit
 
@@ -209,6 +211,47 @@ pub(all) enum PathKey {
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
 
+pub(all) struct ProtocolBindingInfo {
+  protocol_id : String
+  member_name : String
+  source : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ProtocolConformance {
+  Verified
+  Deferred(Array[String])
+  Invalid(Array[String])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolInfo {
+  id : String
+  handle_messages : Array[String]
+  handle_intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  properties : Array[(String, TyInfo)]
+  views : Array[String]
+  provides : Array[(String, TyInfo)]
+  lookups : Array[(String, TyInfo)]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ProtocolIssueCode {
+  ProtocolUnresolved
+  ProtocolDefinitionConflict
+  ProtocolNotImplemented
+  ProtocolMemberMissing
+  ProtocolMemberType
+  ProtocolTargetMismatch
+  ProtocolPropertyMissing
+  ProtocolPropertyType
+  ProtocolViewMissing
+  ProtocolProvideMissing
+  ProtocolLookupMissing
+  ProtocolResultType
+  ProtocolExpressionUndeclared
+} derive(Eq, @debug.Debug)
+pub fn ProtocolIssueCode::word(Self) -> String
+
 pub(all) struct Refusal {
   code : RefusalCode
   asked : String
@@ -231,6 +274,38 @@ pub(all) enum RefusalCode {
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
 
+pub(all) enum RuntimeNotice {
+  Refused(Refusal)
+  ProtocolMismatch(RuntimeProtocolNotice)
+  RuntimeWarning(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RuntimeProtocolNotice {
+  code : ProtocolIssueCode
+  protocol_id : String
+  member_name : String
+  operation : String
+  detail : String
+  component : String
+  path : Path
+  state : Value
+  resolution : RuntimeResolution
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuntimeResolution {
+  KeptPreviousState
+  ReturnedNull
+  ReturnedDefault
+  EvaluatedFalse
+  UsedMainView
+  RenderedPlaceholder
+  ContinuedIntentRoute
+  DeliveredUnhandled
+  DroppedMessage
+  SkippedProvider
+  RejectedComponentValue
+} derive(Eq, @debug.Debug)
+
 pub(all) struct SchemaInfo {
   name : String
   fingerprint : String
@@ -238,14 +313,23 @@ pub(all) struct SchemaInfo {
   view_handlers : Array[String]
   receives : Array[String]
   intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
   methods : Array[String]
   ids : Array[String]
   view_names : Array[String]
   init_names : Array[String]
+  protocols : Array[ProtocolInfo]
+  implements : Array[String]
+  property_bindings : Array[ProtocolBindingInfo]
+  view_bindings : Array[ProtocolBindingInfo]
+  provide_bindings : Array[ProtocolBindingInfo]
+  lookup_bindings : Array[ProtocolBindingInfo]
 }
+pub fn SchemaInfo::conforms(Self, ProtocolInfo) -> ProtocolConformance
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {
@@ -278,9 +362,11 @@ pub(all) enum TyInfo {
   TySet
   TyOMap(TyInfo)
   TyComp(String?)
+  TyCompProtocols(Array[String])
   TyTable
   TyAny
 } derive(Eq, @debug.Debug)
+pub fn TyInfo::accepts(Self, Value) -> Bool
 pub fn TyInfo::elem(Self) -> Self?
 pub fn TyInfo::kind(Self) -> FieldKind
 pub fn TyInfo::members(Self) -> Array[String]
@@ -350,6 +436,7 @@ pub fn Value::map_opt(Self) -> Map[String, Self]?
 pub fn Value::method_at(Self, String, &Stack) -> Self?
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
+pub fn Value::protocol_property(Self, String, String, &Stack) -> Self
 pub fn Value::schema(Self) -> SchemaInfo?
 pub fn Value::size(Self, default? : Int) -> Int
 pub fn Value::snapshot(Self) -> Map[String, Self]

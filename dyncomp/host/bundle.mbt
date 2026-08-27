@@ -216,9 +216,43 @@ pub fn register_bundle(
       fields=def.field_infos(),
       receives=def.receives,
       intents=def.intents,
+      express_messages=def.express_messages,
+      express_intents=def.express_intents,
       methods=def.methods,
       view_names=def.views.map(v => v.name),
       init_names=def.inits.map(i => i.name),
+      protocols=def.protocols.map(p => @tutuca.ProtocolInfo::{
+        id: p.id,
+        handle_messages: p.handle_messages,
+        handle_intents: p.handle_intents,
+        express_messages: p.express_messages,
+        express_intents: p.express_intents,
+        properties: p.properties.map(n => (n, @tutuca.TyAny)),
+        views: p.views,
+        provides: p.provides.map(n => (n, @tutuca.TyAny)),
+        lookups: p.lookups.map(n => (n, @tutuca.TyAny)),
+      }),
+      implements=def.implements,
+      property_bindings=def.property_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+        protocol_id: b.protocol_id,
+        member_name: b.member_name,
+        source: b.source,
+      }),
+      view_bindings=def.view_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+        protocol_id: b.protocol_id,
+        member_name: b.member_name,
+        source: b.source,
+      }),
+      provide_bindings=def.provide_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+        protocol_id: b.protocol_id,
+        member_name: b.member_name,
+        source: b.source,
+      }),
+      lookup_bindings=def.lookup_bindings.map(b => @tutuca.ProtocolBindingInfo::{
+        protocol_id: b.protocol_id,
+        member_name: b.member_name,
+        source: b.source,
+      }),
     )
     // Hashed from the shape that just crossed, by the same function any other
     // runtime schema uses — a guest ships no generated `<v>_schema_fingerprint`
@@ -237,6 +271,9 @@ pub fn register_bundle(
     for pair in def.provide {
       provide[pair.0] = pair.1
     }
+    for b in def.provide_bindings {
+      provide[b.protocol_id + "::" + b.member_name] = b.source
+    }
     let lookup : Array[@component.LookupSpec] = def.lookup.map(pair => {
       let (name, default) = pair
       if default == "" {
@@ -245,6 +282,11 @@ pub fn register_bundle(
         @component.lookup_or(name, default)
       }
     })
+    for b in def.lookup_bindings {
+      lookup.push(
+        @component.lookup_or(b.protocol_id + "::" + b.member_name, b.source),
+      )
+    }
     let made = def.name
     let comp = @component.Component::for_type(
       name=def.name,

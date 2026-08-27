@@ -259,7 +259,7 @@ pub fn StateDef::to_value_src(
     TInt(..) => "Num(\{e}.to_double())"
     TFloat => "Num(\{e})"
     TText => "Str(\{e})"
-    TAny | TComp(_) => e
+    TAny | TComp(_) | TCompProtocols(_) => e
     TList(inner) =>
       "(List(\{e}.map(x => \{self.to_value_src(inner, "x")})) : @tutuca.Value)"
     TSet | TFlags(_) =>

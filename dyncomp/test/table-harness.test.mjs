@@ -126,7 +126,7 @@ before(async () => {
 
 test('the manifest declares one ty-table field', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 8);
+  assert.equal(m.apiVersion, 9);
   assert.equal(m.moduleName, 'tablelib');
   const [c] = m.components;
   assert.equal(c.name, 'Table');

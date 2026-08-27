@@ -15,20 +15,32 @@ not happen is the one outcome nobody can reason about afterwards.
   /// The two names a sibling addresses this component by. No view writes
   /// either, so the schema is the only place they can be declared — and
   /// declaring them is what lets the block answer them.
-  receive Status { flash(String), clear }
+  handle Status {
+    message { flash(String), clear
+    }
+  }
 
   state Chat { draft: String, status: Status }
 
   state Log { label: String, log: Array[Any] }
-  receive Log { onItemClick }
-  intent Log { itemSelected(String) }
+  handle Log {
+    message { onItemClick
+    }
+  }
+  handle Log {
+    intent { itemSelected(String)
+    }
+  }
 
   state Feed { items: Array[Any], isLoading: Bool, error: String }
   /// The three `loadData…` names are the ANSWERS. Declaring them is what makes
   /// `intent lex 'loadData'` a request rather than a notification — the
   /// generator reads this list and fills the intent's opts in.
-  receive Feed { init, loadDataOk(Array[Any]), loadDataError(String),
-                 loadDataUnhandled }
+  handle Feed {
+    message { init, loadDataOk(Array[Any]), loadDataError(String),
+                 loadDataUnhandled
+    }
+  }
 </script>
 
 <script type="tutuca/script" for="Status">

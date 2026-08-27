@@ -358,6 +358,18 @@ pub fn gen_views_all(
   if !failures.is_empty() {
     return Err(batch_error(files.length(), failures))
   }
+  let protocol_validation = index.protocol_validation()
+  for d in protocol_validation.diagnostics {
+    let line = "\{d.code.word()}: \{d.component}: \{d.message}"
+    if d.error {
+      failures.push((d.component, line))
+    } else {
+      diagnostics.push(line)
+    }
+  }
+  if !failures.is_empty() {
+    return Err(batch_error(files.length(), failures))
+  }
   for pair in split {
     let (f, views) = pair
     let file = basename(f.input)

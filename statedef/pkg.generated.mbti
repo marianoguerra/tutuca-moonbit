@@ -27,6 +27,8 @@ pub fn str_cmp(String, String) -> Int
 
 pub fn upper_name(String) -> String
 
+pub fn validate_protocols(Array[StateDef]) -> ProtocolValidation
+
 pub fn value_prefix(String) -> String
 
 // Errors
@@ -43,6 +45,8 @@ pub suberror DefError {
   Collision(kind~ : String, ident~ : String, first~ : String, second~ : String, span~ : Span)
   BadComponentName(name~ : String, span~ : Span)
   ReservedName(name~ : String, span~ : Span)
+  UnknownProtocol(local_name~ : String, span~ : Span)
+  ProtocolConflict(id~ : String, span~ : Span)
 }
 pub fn DefError::message(Self) -> String
 pub fn DefError::span(Self) -> Span
@@ -104,6 +108,55 @@ pub(all) struct MsgDef {
   doc : String?
 } derive(Eq, @debug.Debug)
 
+pub(all) struct PropertyDef {
+  name : String
+  ty : StateTy
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolBinding {
+  protocol_id : String
+  member_name : String
+  source : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolDef {
+  local_name : String
+  id : String
+  handle_message : Array[MsgDef]
+  handle_intent : Array[MsgDef]
+  express_message : Array[MsgDef]
+  express_intent : Array[MsgDef]
+  properties : Array[PropertyDef]
+  views : Array[String]
+  provides : Array[PropertyDef]
+  lookups : Array[PropertyDef]
+  doc : String?
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolDiagnostic {
+  code : @core.ProtocolIssueCode
+  component : String
+  protocol_id : String
+  member_name : String
+  message : String
+  error : Bool
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolRef {
+  local_name : String
+  id : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ProtocolValidation {
+  mode : ValidationMode
+  diagnostics : Array[ProtocolDiagnostic]
+} derive(Eq, @debug.Debug)
+
 pub(all) struct ProvideDecl {
   name : String
   source : String
@@ -121,6 +174,15 @@ pub(all) struct StateDef {
   fields : Array[FieldDef]
   receive : Array[MsgDef]
   intent : Array[MsgDef]
+  express_message : Array[MsgDef]
+  express_intent : Array[MsgDef]
+  implements : Array[String]
+  protocols : Array[ProtocolDef]
+  protocol_imports : Array[ProtocolRef]
+  property_bindings : Array[ProtocolBinding]
+  view_bindings : Array[ProtocolBinding]
+  provide_bindings : Array[ProtocolBinding]
+  lookup_bindings : Array[ProtocolBinding]
   types : Array[UserTy]
   provide : Array[ProvideDecl]
   lookup : Array[LookupDecl]
@@ -130,6 +192,7 @@ pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
+pub fn StateDef::operation_name(Self, String) -> String?
 pub fn StateDef::resolve_ty(Self, String, Array[StateTy]) -> StateTy?
 pub fn StateDef::to_value_src(Self, StateTy, String) -> String
 pub fn StateDef::ty_info_src(Self, StateTy) -> String
@@ -151,6 +214,7 @@ pub(all) enum StateTy {
   TSet
   TOMap(StateTy)
   TComp(String?)
+  TCompProtocols(Array[String])
   TAny
 } derive(Eq, @debug.Debug)
 pub fn StateTy::component_named(Self) -> String?
@@ -171,6 +235,11 @@ pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
   UEnum(Array[(String, String)])
   UVariant(Array[MsgDef])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ValidationMode {
+  Strict
+  Gradual
 } derive(Eq, @debug.Debug)
 
 // Type aliases

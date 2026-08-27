@@ -46,6 +46,7 @@ pub fn ty_info(
     }
     TSet => TySet
     TComp(c) => TyComp(c)
+    TCompProtocols(ids) => TyCompProtocols(ids)
     TAny => TyAny
   }
 }
@@ -158,6 +159,24 @@ pub fn schema_info(
   // generated component of the same schema land in the same render-cache
   // bucket rather than looking like two unrelated shapes.
   let fp = fingerprint.unwrap_or_else(() => @statedef.fingerprint([def]))
+  let protocols = def.protocols.map(p => @tutuca.ProtocolInfo::{
+    id: p.id,
+    handle_messages: p.handle_message.map(m => m.name),
+    handle_intents: p.handle_intent.map(m => m.name),
+    express_messages: p.express_message.map(m => m.name),
+    express_intents: p.express_intent.map(m => m.name),
+    properties: p.properties.map(x => (x.name, ty_info(def, x.ty))),
+    views: p.views,
+    provides: p.provides.map(x => (x.name, ty_info(def, x.ty))),
+    lookups: p.lookups.map(x => (x.name, ty_info(def, x.ty))),
+  })
+  let binding_info = (xs : Array[@statedef.ProtocolBinding]) => {
+    xs.map(b => @tutuca.ProtocolBindingInfo::{
+      protocol_id: b.protocol_id,
+      member_name: b.member_name,
+      source: b.source,
+    })
+  }
   @tutuca.SchemaInfo::new(
     name~,
     fingerprint=fp,
@@ -165,9 +184,17 @@ pub fn schema_info(
     view_handlers~,
     receives=def.receive.map(m => m.name),
     intents=def.intent.map(m => m.name),
+    express_messages=def.express_message.map(m => m.name),
+    express_intents=def.express_intent.map(m => m.name),
     methods~,
     ids~,
     view_names~,
     init_names~,
+    protocols~,
+    implements=def.implements,
+    property_bindings=binding_info(def.property_bindings),
+    view_bindings=binding_info(def.view_bindings),
+    provide_bindings=binding_info(def.provide_bindings),
+    lookup_bindings=binding_info(def.lookup_bindings),
   )
 }

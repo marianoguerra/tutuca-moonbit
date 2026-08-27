@@ -7,9 +7,12 @@
   /// The two names a sibling addresses this component by. No view writes
   /// either one, so the schema is the only place they can be declared — and
   /// declaring them is what lets the script block answer them.
-  receive Status {
+  handle Status {
+    message {
     flash(String)
     clear
+
+    }
   }
 
   state SendReceive {
@@ -18,8 +21,11 @@
   }
 
   /// Sent by `submit` to SELF, so the two call sites share one body.
-  receive SendReceive {
+  handle SendReceive {
+    message {
     clearDraft
+
+    }
   }
 
   state TreeItem {

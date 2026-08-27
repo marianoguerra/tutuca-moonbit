@@ -68,7 +68,7 @@ const said = (inst, name) => inst.callMethod(name, []).val;
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 8);
+  assert.equal(m.apiVersion, 9);
   assert.equal(m.moduleName, 'rusttemplib');
   assert.equal(m.components[0].views[0].src, 'views/TempConv.main.html');
 

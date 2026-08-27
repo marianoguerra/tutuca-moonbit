@@ -95,7 +95,7 @@ before(async () => {
 
 test('the static manifest declares the component schema', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 8);
+  assert.equal(m.apiVersion, 9);
   assert.equal(m.moduleName, 'todomvclib');
   const [c] = m.components;
   assert.equal(c.name, 'TodoMvc');

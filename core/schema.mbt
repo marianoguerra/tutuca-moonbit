@@ -25,10 +25,18 @@ pub fn SchemaInfo::new(
   view_handlers? : Array[String] = [],
   receives? : Array[String] = [],
   intents? : Array[String] = [],
+  express_messages? : Array[String] = [],
+  express_intents? : Array[String] = [],
   methods? : Array[String] = [],
   ids? : Array[String] = [],
   view_names? : Array[String] = [],
   init_names? : Array[String] = [],
+  protocols? : Array[ProtocolInfo] = [],
+  implements? : Array[String] = [],
+  property_bindings? : Array[ProtocolBindingInfo] = [],
+  view_bindings? : Array[ProtocolBindingInfo] = [],
+  provide_bindings? : Array[ProtocolBindingInfo] = [],
+  lookup_bindings? : Array[ProtocolBindingInfo] = [],
 ) -> SchemaInfo {
   {
     name,
@@ -37,10 +45,85 @@ pub fn SchemaInfo::new(
     view_handlers,
     receives,
     intents,
+    express_messages,
+    express_intents,
     methods,
     ids,
     view_names,
     init_names,
+    protocols,
+    implements,
+    property_bindings,
+    view_bindings,
+    provide_bindings,
+    lookup_bindings,
+  }
+}
+
+///|
+pub fn SchemaInfo::conforms(
+  self : SchemaInfo,
+  protocol : ProtocolInfo,
+) -> ProtocolConformance {
+  if !self.implements.contains(protocol.id) {
+    return Invalid(["component does not claim protocol `\{protocol.id}`"])
+  }
+  let missing : Array[String] = []
+  for n in protocol.handle_messages {
+    if !self.receives.contains(n) {
+      missing.push("handle message `\{n}`")
+    }
+  }
+  for n in protocol.handle_intents {
+    if !self.intents.contains(n) {
+      missing.push("handle intent `\{n}`")
+    }
+  }
+  for n in protocol.express_messages {
+    // Outbound declarations live in protocol metadata rather than the legacy
+    // receive/intents projection. Absence from all component-carried protocol
+    // definitions is therefore a concrete mismatch.
+    if !self.express_messages.contains(n) {
+      missing.push("express message `\{n}`")
+    }
+  }
+  for n in protocol.express_intents {
+    if !self.express_intents.contains(n) {
+      missing.push("express intent `\{n}`")
+    }
+  }
+  for pair in protocol.properties {
+    if !self.property_bindings
+      .iter()
+      .any(b => b.protocol_id == protocol.id && b.member_name == pair.0) {
+      missing.push("property `\{pair.0}`")
+    }
+  }
+  for n in protocol.views {
+    if !self.view_bindings
+      .iter()
+      .any(b => b.protocol_id == protocol.id && b.member_name == n) {
+      missing.push("view `\{n}`")
+    }
+  }
+  for pair in protocol.provides {
+    if !self.provide_bindings
+      .iter()
+      .any(b => b.protocol_id == protocol.id && b.member_name == pair.0) {
+      missing.push("provide `\{pair.0}`")
+    }
+  }
+  for pair in protocol.lookups {
+    if !self.lookup_bindings
+      .iter()
+      .any(b => b.protocol_id == protocol.id && b.member_name == pair.0) {
+      missing.push("lookup `\{pair.0}`")
+    }
+  }
+  if missing.is_empty() {
+    Verified
+  } else {
+    Invalid(missing)
   }
 }
 
@@ -89,8 +172,11 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
     pair in [
       ("r", self.receives),
       ("i", self.intents),
+      ("x", self.express_messages),
+      ("y", self.express_intents),
       ("c", self.methods),
       ("v", self.view_names),
+      ("p", self.implements),
     ] {
     for n in pair.1 {
       sb.write_string("\{pair.0}:\{n};")

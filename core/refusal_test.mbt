@@ -77,7 +77,12 @@ fn at(key : String) -> @core.Path {
 /// Drive `body` with the channel on, and answer what left by it.
 fn watched(body : () -> Unit) -> Array[@core.Refusal] {
   let out : Array[@core.Refusal] = []
-  let off = @core.on_refusal(r => out.push(r))
+  let off = @core.on_runtime_notice(n => {
+    match n {
+      Refused(r) => out.push(r)
+      _ => ()
+    }
+  })
   body()
   off()
   out

@@ -220,11 +220,11 @@ fn encode_field(
   match (ty, v) {
     // An empty slot is `null`, and the key is still written. That is what makes
     // it distinguishable from a slot the document never mentioned.
-    (TyComp(_), Null) => Json::null()
-    (TyComp(_), Obj(_)) => encode_instance(v, at, claim)
+    (TyComp(_) | TyCompProtocols(_), Null) => Json::null()
+    (TyComp(_) | TyCompProtocols(_), Obj(_)) => encode_instance(v, at, claim)
     // A slot holding something that is not an instance is data nobody declared;
     // let the untagged projection say what it can.
-    (TyComp(_), _) => v.to_json()
+    (TyComp(_) | TyCompProtocols(_), _) => v.to_json()
     (TyAny, _) => encode_any(v, at, claim)
     // An option is its payload or nothing, so it is written as its payload's
     // type would be — which is what keeps a `Set[X]?` spelled the way a `Set[X]`
@@ -331,7 +331,8 @@ fn decode_field(
   match (ty, j) {
     (TyComp(c), Object(_)) =>
       decode_instance(j, at, src, fallback=c.unwrap_or(""))
-    (TyComp(_), Null) => Some(Null)
+    (TyCompProtocols(_), Object(_)) => decode_instance(j, at, src, fallback="")
+    (TyComp(_) | TyCompProtocols(_), Null) => Some(Null)
     (TyAny, _) => Some(decode_any(j, at, src))
     (TyOption(_), Null) => Some(Null)
     (TyOption(inner), _) => decode_field(j, inner, at, src)

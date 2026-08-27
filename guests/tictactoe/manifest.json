@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "gameslib",
   "doc": "Small games, as loadable components.",
   "version": "0.4.0",
@@ -90,7 +90,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

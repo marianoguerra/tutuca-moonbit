@@ -473,6 +473,14 @@ fn counter_manifest() -> DynManifest {
         // field implies, and the host answers it
         receives: ["init", "setTo"],
         intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
         methods: ["label", "themeLabel", "undeclaredLabel"],
         whens: ["nonZero"],
         enriches: [],
@@ -526,6 +534,14 @@ fn counter_manifest() -> DynManifest {
         // saying so here is what makes it the guest's
         receives: [],
         intents: ["counted"],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
         methods: [],
         whens: [],
         enriches: [],
@@ -572,6 +588,14 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("title", 0), plain_field("body", 1)],
         receives: [],
         intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
         methods: [],
         whens: [],
         enriches: [],
@@ -1136,7 +1160,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 8, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 9, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -1321,7 +1345,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs and constraints" {
   let json =
-    #|{"apiVersion": 8, "moduleName": "formlib",
+    #|{"apiVersion": 9, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
@@ -1377,7 +1401,7 @@ test "catalog metadata parses: docs and constraints" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 8, "moduleName": "bare", "components": [
+    #|{"apiVersion": 9, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
     #|   "receives": [], "intents": [], "methods": [],
@@ -1391,7 +1415,7 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 8, "moduleName": "m", "components": [
+    #|{"apiVersion": 9, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1476,6 +1500,14 @@ test "a bundle's views are linted at load" {
         fields: [],
         receives: [],
         intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
         methods: [],
         whens: [],
         enriches: [],
@@ -1551,6 +1583,14 @@ test "a `$method` the manifest never declared is reported at load" {
         fields: [plain_field("count", 0)],
         receives: [],
         intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
         // `$setCount` is absent on purpose: it is the mutator the `count` field
         // implies, so the host answers it and it must NOT be reported
         methods: ["boxStyle"],

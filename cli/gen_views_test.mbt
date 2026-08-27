@@ -288,8 +288,10 @@ test "a message declared in a spelling nothing uses is reported" {
     (
       #|<script type="tutuca/state">
       #|  state Thermostat { target: Int }
-      #|  receive Thermostat { Init, Nudge(Int) }
-      #|  intent Thermostat { SetMode(String) }
+      #|  handle Thermostat {
+      #|    message { Init, Nudge(Int) }
+      #|    intent { SetMode(String) }
+      #|  }
       #|</script>
       #|<template><button @on.click="init">go</button></template>
     ),
@@ -317,7 +319,7 @@ test "a message declared the way it is used is silent" {
     (
       #|<script type="tutuca/state">
       #|  state Thermostat { target: Int }
-      #|  receive Thermostat { init, nudge(Int) }
+      #|  handle Thermostat { message { init, nudge(Int) } }
       #|</script>
       #|<template><button @on.click="init">go</button></template>
     ),

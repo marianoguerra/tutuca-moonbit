@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "todomvclib",
   "doc": "TodoMVC, as a dynamic component: the whole canonical list in one bundle.",
   "version": "0.4.0",
@@ -138,7 +138,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

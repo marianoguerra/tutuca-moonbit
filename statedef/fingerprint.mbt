@@ -56,12 +56,21 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
     // spends. The bucket a name sits in IS part of the shape — a name that
     // moved from `receive` to `intent` answers a different channel — so the
     // two are hashed under distinct letters.
-    for pair in [("r", def.receive), ("n", def.intent)] {
+    for
+      pair in [
+        ("r", def.receive),
+        ("n", def.intent),
+        ("x", def.express_message),
+        ("y", def.express_intent),
+      ] {
       for m in pair.1 {
         sb.write_string(
           "\{pair.0}:\{m.name}(\{m.payload.map(p => p.show_source()).join("|")});",
         )
       }
+    }
+    for id in def.implements {
+      sb.write_string("p:\{id};")
     }
   }
   hex64(fnv1a(sb.to_string()))

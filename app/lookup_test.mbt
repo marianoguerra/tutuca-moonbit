@@ -89,6 +89,12 @@ fn lk_slot_update() -> (LkSlotState, @component.Dispatch, &@tutuca.Ctx) -> @comp
         Next({
           made: shown(ctx.lookup("theme", @tutuca.LookupOpts::new(route=[]))),
         })
+      Receive("readProtocolTheme", _) =>
+        Next({
+          made: shown(
+            ctx.lookup("example/Theme@1::theme", @tutuca.LookupOpts::new()),
+          ),
+        })
       // The reply names itself: a message carries no expectation of an answer,
       // so its sender declared no arms for one.
       Receive("ping", _) => {
@@ -225,7 +231,12 @@ test "ctx.make: a name nothing answers is TYPE_NOT_FOUND" {
   let scope = lk_scope()
   let (tx, _) = lk_mount(scope, "Board")
   let seen : Array[@tutuca.Refusal] = []
-  let off = @tutuca.on_refusal(r => seen.push(r))
+  let off = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => seen.push(r)
+      _ => ()
+    }
+  })
   assert_eq(lk_made(tx, "buildNone"), "none")
   off()
   assert_true(seen.length() == 1)
@@ -248,6 +259,26 @@ test "ctx.lookup: a value answers on dyn, never on lex, and never on an empty ro
 }
 
 ///|
+test "a missing qualified lookup returns Null and reports the protocol mismatch" {
+  let scope = lk_scope()
+  let (tx, _) = lk_mount(scope, "Board")
+  let seen : Array[@tutuca.RuntimeProtocolNotice] = []
+  let off = @tutuca.on_runtime_notice(n => {
+    match n {
+      ProtocolMismatch(p) => seen.push(p)
+      _ => ()
+    }
+  })
+  assert_eq(lk_made(tx, "readProtocolTheme"), "null")
+  off()
+  assert_eq(seen.length(), 1)
+  assert_true(seen[0].code is ProtocolLookupMissing)
+  assert_eq(seen[0].protocol_id, "example/Theme@1")
+  assert_eq(seen[0].member_name, "theme")
+  assert_true(seen[0].resolution is ReturnedNull)
+}
+
+///|
 test "ctx.send_reply answers the sender under a name the replier picks" {
   let scope = lk_scope()
   let (tx, _) = lk_mount(scope, "Board")
@@ -267,7 +298,12 @@ test "ctx.send_reply with nobody waiting refuses NO_SENDER" {
   let (tx, container) = lk_mount(scope, "Board")
   guard find_el(container, "EM") is Some(em) else { fail("no em") }
   let seen : Array[@tutuca.Refusal] = []
-  let off = @tutuca.on_refusal(r => seen.push(r))
+  let off = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => seen.push(r)
+      _ => ()
+    }
+  })
   // A view's own `@on.click` is a message with no sender, so there is no
   // position to answer at.
   assert_true(@app.dispatch_dom_event(tx, em, "click", container, scope.comps))

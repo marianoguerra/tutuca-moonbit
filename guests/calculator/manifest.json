@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "calclib",
   "doc": "A calculator, as a loadable component.",
   "version": "0.4.0",
@@ -97,7 +97,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

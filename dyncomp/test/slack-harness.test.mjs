@@ -144,7 +144,7 @@ before(async () => {
 });
 
 test('the static manifest declares eight nesting components', { skip: !built }, () => {
-  assert.equal(manifest.apiVersion, 8);
+  assert.equal(manifest.apiVersion, 9);
   assert.equal(manifest.moduleName, 'slacklib');
   // nothing ambient — no clock for the timestamps, no entropy for the ids;
   // the pictures' origins are the host's to allow (`allowing_external_urls`)

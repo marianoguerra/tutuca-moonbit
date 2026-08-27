@@ -212,6 +212,18 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       while i < n && is_ident_char(chars[i]) {
         i = i + 1
       }
+      // A protocol-qualified operation is one lexical name. Keeping `::`
+      // inside the token prevents it from becoming a general expression
+      // operator: it is meaningful only where a message/intent name is asked.
+      if i + 2 < n &&
+        chars[i] == ':' &&
+        chars[i + 1] == ':' &&
+        is_ident_start(chars[i + 2]) {
+        i = i + 2
+        while i < n && is_ident_char(chars[i]) {
+          i = i + 1
+        }
+      }
       // A trailing `?` belongs to the name: `empty?` is one identifier, and a
       // user predicate is free to end the same way.
       if i < n && chars[i] == '?' {

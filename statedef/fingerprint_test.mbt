@@ -34,7 +34,7 @@ test "the fingerprint tracks shape, not formatting" {
   assert_not_eq(
     @statedef.fingerprint(a),
     @statedef.fingerprint(
-      defs_of("receive C { tick }\nstate C { n: Int, s: String }"),
+      defs_of("handle C { message { tick } }\nstate C { n: Int, s: String }"),
     ),
   )
 }
@@ -47,10 +47,10 @@ test "the fingerprint reads a name, not its spelling" {
   // fingerprint that moved here would report a restyled block as a shape the
   // stored state can no longer be read back into.
   let written = defs_of(
-    "state Board { rows: Array[Any] }\nreceive Board { Reset, FocusRow(Int) }\nintent Board { RowPicked(Int) }",
+    "state Board { rows: Array[Any] }\nhandle Board { message { Reset, FocusRow(Int) } intent { RowPicked(Int) } }",
   )
   let used = defs_of(
-    "state Board { rows: Array[Any] }\nreceive Board { reset, focusRow(Int) }\nintent Board { rowPicked(Int) }",
+    "state Board { rows: Array[Any] }\nhandle Board { message { reset, focusRow(Int) } intent { rowPicked(Int) } }",
   )
   assert_eq(@statedef.fingerprint(written), @statedef.fingerprint(used))
   // A named type's cases answer the same way. Its NAME is a separate matter:
@@ -69,7 +69,11 @@ test "the fingerprint reads a name, not its spelling" {
   // different channel is a different schema, which is why all four are hashed
   // under four distinct letters.
   assert_not_eq(
-    @statedef.fingerprint(defs_of("state C { n: Int }\nreceive C { tick }")),
-    @statedef.fingerprint(defs_of("state C { n: Int }\nintent C { tick }")),
+    @statedef.fingerprint(
+      defs_of("state C { n: Int }\nhandle C { message { tick } }"),
+    ),
+    @statedef.fingerprint(
+      defs_of("state C { n: Int }\nhandle C { intent { tick } }"),
+    ),
   )
 }

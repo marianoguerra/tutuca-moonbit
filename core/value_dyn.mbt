@@ -380,6 +380,85 @@ pub fn Value::schema(self : Value) -> SchemaInfo? {
 }
 
 ///|
+/// Read a protocol property through its explicit field/computation binding.
+/// A failed gradual assumption returns Null and reports the resolution; it
+/// never tears down rendering.
+pub fn Value::protocol_property(
+  self : Value,
+  protocol_id : String,
+  member_name : String,
+  stack : &Stack,
+) -> Value {
+  guard self.schema() is Some(schema) else {
+    protocol_property_notice(
+      self, protocol_id, member_name, "value exposes no schema",
+    )
+    return Null
+  }
+  guard schema.property_bindings
+    .iter()
+    .find_first(b => {
+      b.protocol_id == protocol_id && b.member_name == member_name
+    })
+    is Some(binding) else {
+    protocol_property_notice(
+      self, protocol_id, member_name, "property has no implementation binding",
+    )
+    return Null
+  }
+  let result = if binding.source.has_prefix(".") {
+    self.field_opt(binding.source[1:].to_owned()).unwrap_or(Null)
+  } else if binding.source.has_prefix("$") {
+    self
+    .method_at(binding.source[1:].to_owned(), stack)
+    .map(f => f.call([], this=self))
+    .unwrap_or(Null)
+  } else {
+    Null
+  }
+  let mut expected : (String, TyInfo)? = None
+  for p in schema.protocols {
+    if p.id == protocol_id {
+      for pair in p.properties {
+        if pair.0 == member_name {
+          expected = Some(pair)
+        }
+      }
+    }
+  }
+  if expected is Some(pair) && !pair.1.accepts(result) {
+    protocol_property_notice(
+      self,
+      protocol_id,
+      member_name,
+      "property result does not match \{pair.1.show_source()}",
+    )
+    return Null
+  }
+  result
+}
+
+///|
+fn protocol_property_notice(
+  value : Value,
+  protocol_id : String,
+  member_name : String,
+  detail : String,
+) -> Unit {
+  protocol_mismatch({
+    code: ProtocolPropertyMissing,
+    protocol_id,
+    member_name,
+    operation: "read property",
+    detail,
+    component: value.schema().map(s => s.name).unwrap_or(""),
+    path: Path::new(),
+    state: value,
+    resolution: ReturnedNull,
+  })
+}
+
+///|
 /// This value's render-cache bucket, when it is an instance that tracks one.
 ///
 /// None for every plain value — a `Map` render site, a component-less

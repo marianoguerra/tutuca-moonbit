@@ -125,7 +125,7 @@ test "only a state may carry wiring" {
       #|state Board { rows: Array[Row] }
     ),
   )
-  assert_true(msg.contains("only a component can say"))
+  assert_true(msg.contains("only valid in a state or protocol"))
 }
 
 ///|

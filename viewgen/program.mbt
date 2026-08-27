@@ -66,3 +66,38 @@ pub fn ProgramIndex::of(
   idx.add(file, fallback)
   idx
 }
+
+///|
+/// Validate protocol declarations and implementation claims across the whole
+/// generation batch. A one-file invocation naturally proves less and may be
+/// gradual; a directory build can reach strict mode.
+pub fn ProgramIndex::protocol_validation(
+  self : ProgramIndex,
+) -> @statedef.ProtocolValidation {
+  let defs : Array[@statedef.StateDef] = []
+  for _, def in self.defs {
+    defs.push(def)
+  }
+  let validation = @statedef.validate_protocols(defs)
+  for _, def in self.defs {
+    let local_views = self.views.get(def.component).unwrap_or([])
+    for binding in def.view_bindings {
+      if !local_views.contains(binding.source) {
+        validation.diagnostics.push({
+          code: ProtocolViewMissing,
+          component: def.component,
+          protocol_id: binding.protocol_id,
+          member_name: binding.member_name,
+          message: "protocol view `\{binding.member_name}` maps to missing local view `\{binding.source}`",
+          error: true,
+          span: binding.span,
+        })
+      }
+    }
+  }
+  if !validation.diagnostics.is_empty() {
+    { ..validation, mode: Gradual }
+  } else {
+    validation
+  }
+}

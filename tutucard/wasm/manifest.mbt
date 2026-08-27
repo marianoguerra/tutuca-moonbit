@@ -75,7 +75,7 @@ fn manifest_json(
   }
   Json::object({
     "manifestVersion": Json::number(1),
-    "apiVersion": Json::number(8),
+    "apiVersion": Json::number(9),
     // Named after the ROOT rather than after the `name~` argument: a terminal
     // passes a file's basename and the browser passes the first template's
     // component, and the root is the one answer both of those agree with.
@@ -168,6 +168,14 @@ fn component_json(
     "fields": Json::array(fields),
     "receives": strings(compiled(DReceive)),
     "intents": strings(compiled(DIntent)),
+    "expressMessages": strings(g.def.express_message.map(m => m.name)),
+    "expressIntents": strings(g.def.express_intent.map(m => m.name)),
+    "implements": strings(g.def.implements),
+    "protocols": Json::array(g.def.protocols.map(p => protocol_json(p))),
+    "propertyBindings": bindings_json(g.def.property_bindings),
+    "viewBindings": bindings_json(g.def.view_bindings),
+    "provideBindings": bindings_json(g.def.provide_bindings),
+    "lookupBindings": bindings_json(g.def.lookup_bindings),
     "methods": strings(
       compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
     ),
@@ -241,6 +249,34 @@ fn component_json(
 }
 
 ///|
+fn protocol_json(p : @statedef.ProtocolDef) -> Json {
+  Json::object({
+    "id": Json::string(p.id),
+    "handleMessages": strings(p.handle_message.map(m => m.name)),
+    "handleIntents": strings(p.handle_intent.map(m => m.name)),
+    "expressMessages": strings(p.express_message.map(m => m.name)),
+    "expressIntents": strings(p.express_intent.map(m => m.name)),
+    "properties": strings(p.properties.map(x => x.name)),
+    "views": strings(p.views),
+    "provides": strings(p.provides.map(x => x.name)),
+    "lookups": strings(p.lookups.map(x => x.name)),
+  })
+}
+
+///|
+fn bindings_json(xs : Array[@statedef.ProtocolBinding]) -> Json {
+  Json::array(
+    xs.map(b => {
+      Json::object({
+        "protocolId": Json::string(b.protocol_id),
+        "member": Json::string(b.member_name),
+        "source": Json::string(b.source),
+      })
+    }),
+  )
+}
+
+///|
 /// Whether a declaration made it into the module.
 ///
 /// The manifest DESCRIBES the guest, so a name the generator refused must not
@@ -282,6 +318,7 @@ fn ty_entry(ty : @statedef.StateTy) -> Json {
     TVariant(n) => ("ty-variant", n, [])
     TFlags(n) => ("ty-flags", n, [])
     TComp(n) => ("ty-comp", n.unwrap_or(""), [])
+    TCompProtocols(ids) => ("ty-comp-protocols", "", ids)
     TAny => ("ty-any", "", [])
   }
   Json::object({

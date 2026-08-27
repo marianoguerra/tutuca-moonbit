@@ -191,7 +191,7 @@ before(async () => {
 
 test('the static manifest declares five components', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 8);
+  assert.equal(m.apiVersion, 9);
   assert.equal(m.moduleName, 'blueskylib');
   // the origins its views name are the whole of its network reach, and the
   // host's policy (`allowing_external_urls`) is what decides them — the

@@ -4,8 +4,10 @@
 fn FieldSpec::comp(
   name : String,
   args? : Map[String, @tutuca.Value] = Map([]),
+  protocol_ids? : Array[String] = [],
+  protocols? : Array[@tutuca.ProtocolInfo] = [],
 ) -> FieldSpec {
-  { kind: FComp(comp=name, args~), default: Null }
+  { kind: FComp(comp=name, args~), default: Null, protocol_ids, protocols }
 }
 
 ///|
@@ -31,7 +33,30 @@ fn FieldSpec::coerce_or_default(
     | (FFloat, Num(_))
     | (FList, List(_))
     | (FMap, Map(_))
-    | (FComp(..), Obj(_)) => v
+    | (FComp(..), Obj(_)) => {
+      if self.protocol_ids.is_empty() {
+        return v
+      }
+      guard v.schema() is Some(schema) else {
+        self.report_protocol_target(v, "component exposes no runtime schema")
+        return self.default
+      }
+      for id in self.protocol_ids {
+        if !schema.implements.contains(id) {
+          self.report_protocol_target(v, "component does not implement `\{id}`")
+          return self.default
+        }
+        match self.protocol(id) {
+          Some(p) =>
+            if schema.conforms(p) is Invalid(missing) {
+              self.report_protocol_target(v, missing.join(", "))
+              return self.default
+            }
+          None => () // declaration was dynamically loaded; the id claim is checkable
+        }
+      }
+      v
+    }
     (FAny, _) => v
     // A set/omap already in Map shape passes through; a List coerces into a
     // Map-backed set (array -> ISet). Anything else -> default.
@@ -39,6 +64,35 @@ fn FieldSpec::coerce_or_default(
     (FSet, List(items)) => set_value(items)
     _ => self.default
   }
+}
+
+///|
+fn FieldSpec::protocol(self : FieldSpec, id : String) -> @tutuca.ProtocolInfo? {
+  for p in self.protocols {
+    if p.id == id {
+      return Some(p)
+    }
+  }
+  None
+}
+
+///|
+fn FieldSpec::report_protocol_target(
+  self : FieldSpec,
+  value : @tutuca.Value,
+  detail : String,
+) -> Unit {
+  @tutuca.protocol_mismatch({
+    code: ProtocolTargetMismatch,
+    protocol_id: self.protocol_ids.join(" & "),
+    member_name: "",
+    operation: "install component slot",
+    detail,
+    component: value.schema().map(s => s.name).unwrap_or(""),
+    path: @tutuca.Path::new(),
+    state: value,
+    resolution: RejectedComponentValue,
+  })
 }
 
 // `FieldInfo::new` / `SchemaInfo::new` / `SchemaInfo::field` moved to

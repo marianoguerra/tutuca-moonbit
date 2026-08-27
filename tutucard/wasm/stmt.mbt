@@ -660,7 +660,7 @@ fn ECtx::effect(
   [
     // The name crosses as a string, so whatever the expression evaluated to
     // becomes one — the same text a template interpolates through.
-    let_(msg, call("tc_display", [self.expr(args[0])])),
+    let_(msg, self.effect_message(args[0], span)),
     let_(pl, arg_list(payload)),
     // BUFFERED, not sent. The host cannot un-hear a `send`, and the
     // interpreter drops the effects of a transition that is abandoned — so
@@ -683,6 +683,31 @@ fn ECtx::effect(
       ])
     },
   ]
+}
+
+///|
+fn ECtx::effect_message(
+  self : ECtx,
+  expr : @tscript.Expr,
+  span : @tscript.Span,
+) -> @abi.I raise Bail {
+  match expr {
+    ELit(lit=LStr(raw), ..) => text_const_str(self.g.pool, raw)
+    EName(name=source_name, ..) =>
+      match self.g.def.operation_name(source_name) {
+        Some(wire_name) => text_const_str(self.g.pool, wire_name)
+        None => {
+          self.bail("unknown protocol operation `" + source_name + "`", span)
+          call("tc_empty_str", [])
+        }
+      }
+    _ => {
+      self.bail(
+        "an effect name is a raw quoted name or a declared protocol operation", span,
+      )
+      call("tc_empty_str", [])
+    }
+  }
 }
 
 ///|
@@ -710,10 +735,9 @@ fn ECtx::send_at(
   // otherwise, so a computed name is refused when it compiles rather than
   // failing when it runs. `send` and `bubble` take an expression because the
   // interpreter lets them.
-  guard args.get(1) is Some(ELit(lit=LStr(msg), ..)) else {
+  guard args.get(1) is Some(message_expr) else {
     self.bail(
-      "`sendAt`'s message name has to be written out — the interpreter reads it as a literal and abandons the transition for anything else",
-      span,
+      "`sendAt` needs a raw quoted name or a declared protocol operation", span,
     )
     return []
   }
@@ -791,7 +815,7 @@ fn ECtx::send_at(
     // fails, when the key is not one.
     call("tc_effect_push_at", [
       i32c(5),
-      text_const_str(self.g.pool, msg),
+      self.effect_message(message_expr, span),
       get(pl),
       get(sp),
     ]),

@@ -24,11 +24,14 @@
   ///
   /// `Any` on the payloads, because what a host produces is the host's
   /// business, not the schema's.
-  receive Quote {
+  handle Quote {
+    message {
     init
     loadQuoteOk(Any)
     loadQuoteError(Any)
     loadQuoteUnhandled
+
+    }
   }
 </script>
 
@@ -46,7 +49,7 @@
   }
 
   /// Each outcome is its own arm, and each gets only what it is about.
-  /// 
+  ///
   /// v1 sent one payload carrying BOTH a result and an error, exactly one
   /// of which was Null, and every arm began by working out which. The
   /// branch is gone with the pair.
@@ -61,7 +64,7 @@
   }
 
   /// The third outcome, and the one this page is actually showing you.
-  /// 
+  ///
   /// It registers NO handler for `loadQuote`, so the route runs out and
   /// NOBODY answered — which is not the same as a fetch that failed. v1
   /// could only say the second, so it invented an error and this arm was a

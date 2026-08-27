@@ -24,14 +24,17 @@
 
   /// A message the views never write, so the schema is the only place it can
   /// be declared — and the only place its payload can be typed.
-  receive Counter {
+  handle Counter {
+    message {
     resetTo(Int)
+
+    }
   }
 </script>
 
 <script type="tutuca/script">
   /// Move the counter by `d`, remembering where it landed.
-  /// 
+  ///
   /// `.count` on the second line reads what the first one wrote: a statement
   /// rebinds the state, so the trail records where the counter ENDED rather
   /// than where it started.
@@ -52,7 +55,7 @@
   }
 
   /// A derived value. `$summary` is how a template calls it.
-  /// 
+  ///
   /// A card starts at the schema's ZERO state — there is no seed to pass, since
   /// there is no MoonBit here to pass one — so the label is empty until someone
   /// types it, and this says what to show meanwhile. Both arms are required:

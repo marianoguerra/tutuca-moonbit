@@ -33,6 +33,26 @@ pub(all) struct DynFieldDef {
 } derive(Debug, Eq)
 
 ///|
+pub(all) struct DynProtocolDef {
+  id : String
+  handle_messages : Array[String]
+  handle_intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  properties : Array[String]
+  views : Array[String]
+  provides : Array[String]
+  lookups : Array[String]
+} derive(Debug, Eq)
+
+///|
+pub(all) struct DynProtocolBinding {
+  protocol_id : String
+  member_name : String
+  source : String
+} derive(Debug, Eq)
+
+///|
 /// One variable this bundle reads, as the bundle DECLARES it: a name, what
 /// kind of thing it is, what it is worth when nobody says otherwise, and what
 /// it is for.
@@ -98,6 +118,14 @@ pub(all) struct DynComponentDef {
   /// hop of a route until something replies. The answer to one comes back as
   /// an ordinary message, so it is declared in `receives` rather than here.
   intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  implements : Array[String]
+  protocols : Array[DynProtocolDef]
+  property_bindings : Array[DynProtocolBinding]
+  view_bindings : Array[DynProtocolBinding]
+  provide_bindings : Array[DynProtocolBinding]
+  lookup_bindings : Array[DynProtocolBinding]
   methods : Array[String]
   /// Callables a view's `@when` names (the render-time namespace).
   whens : Array[String]
@@ -179,7 +207,7 @@ pub(all) struct DynMacroDef {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 8
+pub let supported_api_version : Int = 9
 
 ///|
 suberror ManifestError {
@@ -500,6 +528,7 @@ fn ty_info_at(
     // not name, which `slots~` names for a host component and nothing names
     // here — so it stays unnamed rather than becoming a wrong name.
     "ty-comp" => TyComp(if t.name == "" { None } else { Some(t.name) })
+    "ty-comp-protocols" => TyCompProtocols(t.members)
     // A `tables.table`. Unlike `ty-record`, this one carries no name because
     // there is nothing to name — the shape is the contract's, so the host can
     // describe and check it without asking the guest anything.
@@ -563,6 +592,47 @@ fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise ManifestError {
 ///|
 /// Parse the JSON projection of a guest manifest. The JS bridge produces it
 /// with JSON.stringify over the jco-lifted record (camelCase keys).
+fn parse_protocols(
+  c : Map[String, Json],
+) -> Array[DynProtocolDef] raise ManifestError {
+  let out : Array[DynProtocolDef] = []
+  guard c.get("protocols") is Some(Array(items)) else { return out }
+  for item in items {
+    guard item is Object(p) else { continue }
+    out.push({
+      id: str_field(p, "id"),
+      handle_messages: str_array(p, "handleMessages"),
+      handle_intents: str_array(p, "handleIntents"),
+      express_messages: str_array(p, "expressMessages"),
+      express_intents: str_array(p, "expressIntents"),
+      properties: str_array(p, "properties"),
+      views: str_array(p, "views"),
+      provides: str_array(p, "provides"),
+      lookups: str_array(p, "lookups"),
+    })
+  }
+  out
+}
+
+///|
+fn parse_protocol_bindings(
+  c : Map[String, Json],
+  key : String,
+) -> Array[DynProtocolBinding] raise ManifestError {
+  let out : Array[DynProtocolBinding] = []
+  guard c.get(key) is Some(Array(items)) else { return out }
+  for item in items {
+    guard item is Object(b) else { continue }
+    out.push({
+      protocol_id: str_field(b, "protocolId"),
+      member_name: str_field(b, "member"),
+      source: str_field(b, "source"),
+    })
+  }
+  out
+}
+
+///|
 pub fn DynManifest::from_json_string(
   s : String,
 ) -> DynManifest raise ManifestError {
@@ -626,6 +696,14 @@ pub fn DynManifest::from_json_string(
       fields,
       receives: str_array(c, "receives"),
       intents: str_array(c, "intents"),
+      express_messages: str_array(c, "expressMessages"),
+      express_intents: str_array(c, "expressIntents"),
+      implements: str_array(c, "implements"),
+      protocols: parse_protocols(c),
+      property_bindings: parse_protocol_bindings(c, "propertyBindings"),
+      view_bindings: parse_protocol_bindings(c, "viewBindings"),
+      provide_bindings: parse_protocol_bindings(c, "provideBindings"),
+      lookup_bindings: parse_protocol_bindings(c, "lookupBindings"),
       methods: str_array(c, "methods"),
       whens: str_array(c, "whens"),
       enriches: str_array(c, "enriches"),

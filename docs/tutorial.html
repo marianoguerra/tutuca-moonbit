@@ -34,8 +34,11 @@
     message : String
   }
 
-  receive Status {
+  handle Status {
+    message {
     flash(String)
+
+    }
   }
 
   state Chat {
@@ -56,10 +59,13 @@
   /// Two arms where v1 had one: each outcome gets its own name and its own
   /// shape, instead of one payload carrying a result and an error with exactly
   /// one of them Null.
-  receive Quotes {
+  handle Quotes {
+    message {
     init
     loadQuotesOk(Array[Any])
     loadQuotesError(String)
+
+    }
   }
 
   state Features {

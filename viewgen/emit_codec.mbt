@@ -364,7 +364,7 @@ fn dec_val(
   let pad = "  ".repeat(depth)
   let tmp = "u\{depth}_\{base}"
   match ty {
-    TAny | TComp(_) => "\{pad}let \{name} = \{src}\n"
+    TAny | TComp(_) | TCompProtocols(_) => "\{pad}let \{name} = \{src}\n"
     TBool => "\{pad}guard \{src} is Bool(\{name}) else { return None }\n"
     TFloat => "\{pad}guard \{src} is Num(\{name}) else { return None }\n"
     TText => "\{pad}guard \{src} is Str(\{name}) else { return None }\n"

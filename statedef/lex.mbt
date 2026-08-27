@@ -44,6 +44,8 @@ priv enum Tok {
   /// nothing here, and two would let `# [` through.
   THashBracket
   TColon
+  TDoubleColon
+  TAmp
   TComma
   TQuestion
   TEquals
@@ -243,7 +245,13 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       let word = text.to_string()
       // A wiring section opens on the WORD plus a brace, so the lookahead
       // stops at the first thing that is not a space.
-      if !wiring && (word == "provide" || word == "lookup") {
+      if !wiring &&
+        (
+          word == "provide" ||
+          word == "lookup" ||
+          word == "property" ||
+          word == "view"
+        ) {
         let mut k = i
         while k < n &&
               (
@@ -265,6 +273,11 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       i = i + 2
       continue
     }
+    if c == ':' && i + 1 < n && chars[i + 1] == ':' {
+      push(TDoubleColon, i, i + 2)
+      i = i + 2
+      continue
+    }
     let single : Tok = match c {
       '{' => TLBrace
       '}' => TRBrace
@@ -273,6 +286,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       '(' => TLParen
       ')' => TRParen
       ':' => TColon
+      '&' => TAmp
       ',' => TComma
       '?' => TQuestion
       '=' => TEquals
@@ -315,6 +329,8 @@ fn Tok::describe(self : Tok) -> String {
     TRParen => "`)`"
     THashBracket => "`#[`"
     TColon => "`:`"
+    TDoubleColon => "`::`"
+    TAmp => "`&`"
     TComma => "`,`"
     TQuestion => "`?`"
     TEquals => "`=`"

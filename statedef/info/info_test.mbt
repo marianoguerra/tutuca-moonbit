@@ -37,6 +37,7 @@ fn show_ty(t : @tutuca.TyInfo) -> String {
     TySet => "TySet"
     TyComp(Some(c)) => "TyComp(Some(\"\{c}\"))"
     TyComp(None) => "TyComp(None)"
+    TyCompProtocols(ids) => "TyCompProtocols([" + ids.join(", ") + "])"
     TyTable => "TyTable"
     TyAny => "TyAny"
   }
@@ -176,8 +177,10 @@ test "the schema description carries the declaration's own channels" {
   let def = one(
     (
       #|state Board { rows: Array[Any], loading: Bool }
-      #|receive  Board { reset, focusRow(Int) }
-      #|intent   Board { rowPicked(Int), loadRows }
+      #|handle Board {
+      #|  message { reset, focusRow(Int) }
+      #|  intent { rowPicked(Int), loadRows }
+      #|}
     ),
   )
   let si = @info.schema_info(def, name="Board")

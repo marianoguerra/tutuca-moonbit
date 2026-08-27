@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "blueskylib",
   "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data — no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
   "version": "0.1.0",
@@ -110,7 +110,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Post",
@@ -454,7 +462,15 @@
         "folded",
         "unfolded"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Feed",
@@ -629,7 +645,15 @@
         "reposted",
         "unreposted"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Thread",
@@ -814,7 +838,15 @@
         "reposted",
         "unreposted"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Profile",
@@ -1073,7 +1105,15 @@
         "reposted",
         "unreposted"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

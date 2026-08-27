@@ -11,8 +11,11 @@
     picked : Set[String]
   }
 
-  receive Crew {
+  handle Crew {
+    message {
     init
+
+    }
   }
 </script>
 
@@ -27,7 +30,7 @@
 
   /// A row survives when the query is empty or its text contains it,
   /// folded on both sides so the filter is not a spelling test.
-  /// 
+  ///
   /// `@when` takes this bare — an iteration filter has always been
   /// a name.
   pred matches { (empty? .query) or (contains (lower @value) (lower .query)) }

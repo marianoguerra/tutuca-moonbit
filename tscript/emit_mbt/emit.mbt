@@ -1483,8 +1483,17 @@ fn E::effect(
     }
     _ => ()
   }
-  guard args.get(0) is Some(ELit(lit=LStr(msg), ..)) else {
-    raise Cannot("`\{name}` needs a literal message name")
+  let msg = match args.get(0) {
+    Some(ELit(lit=LStr(raw), ..)) => raw
+    Some(EName(name=source_name, ..)) =>
+      match self.def.operation_name(source_name) {
+        Some(wire_name) => wire_name
+        None => raise Cannot("unknown protocol operation `\{source_name}`")
+      }
+    _ =>
+      raise Cannot(
+        "`\{name}` needs a raw quoted name or a declared protocol operation",
+      )
   }
   // Every payload crosses as a `@tutuca.Value`, which is what the channel
   // carries — so this is the one place a typed expression goes back to the

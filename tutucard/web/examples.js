@@ -195,7 +195,7 @@ export const EXAMPLES = [
   /// sends here BY ADDRESS; \`intent\` is what reached here because a walk
   /// routed it. Declaring the bucket is the whole of the wiring — nothing
   /// registers a callback and no row holds a reference to the list.
-  intent Todo { removeItem(String) }
+  handle Todo { intent { removeItem(String) } }
 </script>
 
 <script type="tutuca/script" for="Todo">
@@ -386,7 +386,7 @@ export const EXAMPLES = [
 
   /// The views never write init: the host dispatches it at mount, which
   /// is the only way a card starts anywhere but the schema's zero.
-  receive Filter { init }
+  handle Filter { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -474,7 +474,7 @@ export const EXAMPLES = [
 
   /// The views never write these names, so the schema is the only place
   /// they can be declared — and the only place their payloads can be typed.
-  receive Inbox { note(String), bump(Int) }
+  handle Inbox { message { note(String), bump(Int) } }
 </script>
 
 <script type="tutuca/script">
@@ -560,14 +560,16 @@ export const EXAMPLES = [
   /// Three outcomes, three arms, each with its own shape. \`Any\` on the
   /// payloads, because what a host produces is the host's business rather
   /// than the schema's.
-  receive Feed {
-    init
-    rowsOk(Any)
-    rowsError(Any)
-    rowsUnhandled
-    echoOk(Any)
-    echoError(Any)
-    echoUnhandled
+  handle Feed {
+    message {
+      init
+      rowsOk(Any)
+      rowsError(Any)
+      rowsUnhandled
+      echoOk(Any)
+      echoError(Any)
+      echoUnhandled
+    }
   }
 </script>
 
@@ -1171,7 +1173,7 @@ export const EXAMPLES = [
     text : String
   }
 
-  receive RenderWithScope { init }
+  handle RenderWithScope { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1251,7 +1253,7 @@ export const EXAMPLES = [
     lookup { theme = 'slate' }
   }
 
-  receive Palette { init }
+  handle Palette { message { init } }
 </script>
 
 <script type="tutuca/script" for="Palette">
@@ -1338,7 +1340,7 @@ export const EXAMPLES = [
     query : String
   }
 
-  receive ListFilterEnrich { init }
+  handle ListFilterEnrich { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1413,7 +1415,7 @@ export const EXAMPLES = [
     items : Array[String]
   }
 
-  receive Iteration { init }
+  handle Iteration { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1459,7 +1461,7 @@ export const EXAMPLES = [
     source : String
   }
 
-  receive MdPreview { init }
+  handle MdPreview { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1523,7 +1525,7 @@ export const EXAMPLES = [
     notSet : Any
   }
 
-  receive TextDirective { init }
+  handle TextDirective { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1575,7 +1577,7 @@ export const EXAMPLES = [
     content : String
   }
 
-  receive DangerSetInnerHtml { init }
+  handle DangerSetInnerHtml { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1744,7 +1746,7 @@ export const EXAMPLES = [
     palette : Array[String]
   }
 
-  receive SwatchPicker { init }
+  handle SwatchPicker { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1822,7 +1824,7 @@ export const EXAMPLES = [
     c : Int
   }
 
-  receive Quadratic { init }
+  handle Quadratic { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -1923,7 +1925,7 @@ export const EXAMPLES = [
     labels : Array[Label]
   }
 
-  receive Nested { init }
+  handle Nested { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -2041,7 +2043,7 @@ export const EXAMPLES = [
     waiting  : Int
   }
 
-  receive Seats { init }
+  handle Seats { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -2229,7 +2231,7 @@ export const EXAMPLES = [
     status : String
   }
 
-  receive MacroDemo { init }
+  handle MacroDemo { message { init } }
 </script>
 
 <script type="tutuca/script">
@@ -2333,7 +2335,7 @@ export const EXAMPLES = [
     query : String
   }
 
-  receive Reorder { init }
+  handle Reorder { message { init } }
 </script>
 
 <script type="tutuca/script">

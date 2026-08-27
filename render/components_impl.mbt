@@ -10,7 +10,42 @@ pub impl ViewResolver for @component.Components with fn resolve_view(
   value,
 ) {
   guard self.get_comp_for(value) is Some(comp) else { return None }
-  guard best_name(names, n => comp.views.contains(n)) is Some(name) else {
+  let resolved_names : Array[String] = []
+  for requested in names {
+    let parts : Array[String] = requested
+      .split("::")
+      .map(x => x.to_owned())
+      .collect()
+    if parts.length() == 2 && value.schema() is Some(schema) {
+      match
+        schema.view_bindings
+        .iter()
+        .find_first(b => b.protocol_id == parts[0] && b.member_name == parts[1]) {
+        Some(binding) => resolved_names.push(binding.source)
+        None => {
+          resolved_names.push(parts[1]) // same-name gradual fallback
+          @tutuca.protocol_mismatch({
+            code: ProtocolViewMissing,
+            protocol_id: parts[0],
+            member_name: parts[1],
+            operation: "resolve view",
+            detail: "semantic view has no implementation binding",
+            component: schema.name,
+            path: @tutuca.Path::new(),
+            state: value,
+            resolution: UsedMainView,
+          })
+        }
+      }
+    } else {
+      resolved_names.push(requested)
+    }
+  }
+  // The final main fallback keeps a partially loaded UI visible.
+  if !resolved_names.contains("main") {
+    resolved_names.push("main")
+  }
+  guard best_name(resolved_names, n => comp.views.contains(n)) is Some(name) else {
     return None
   }
   match comp.views.get(name) {

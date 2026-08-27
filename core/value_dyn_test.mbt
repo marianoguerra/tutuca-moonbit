@@ -19,7 +19,56 @@ fn row_schema() -> @core.SchemaInfo {
       @core.FieldInfo::new("tags", TyList(TyText)),
     ],
     methods=["shout"],
+    protocols=[
+      {
+        id: "example/ListItem@1",
+        handle_messages: [],
+        handle_intents: [],
+        express_messages: [],
+        express_intents: [],
+        properties: [("label", TyText)],
+        views: [],
+        provides: [],
+        lookups: [],
+      },
+    ],
+    implements=["example/ListItem@1"],
+    property_bindings=[
+      {
+        protocol_id: "example/ListItem@1",
+        member_name: "label",
+        source: ".title",
+      },
+    ],
   )
+}
+
+///|
+test "a protocol property is an operation backed by a field" {
+  let r = row("hello")
+  assert_eq(
+    r.protocol_property("example/ListItem@1", "label", @core.NullStack::{  }),
+    Str("hello"),
+  )
+}
+
+///|
+test "a missing gradual property returns Null and emits structured runtime data" {
+  let notices : Array[@core.RuntimeProtocolNotice] = []
+  let off = @core.on_runtime_notice(n => {
+    match n {
+      ProtocolMismatch(p) => notices.push(p)
+      _ => ()
+    }
+  })
+  let got = row("hello").protocol_property("example/ListItem@1", "missing", @core.NullStack::{
+
+  })
+  off()
+  assert_eq(got, Null)
+  assert_eq(notices.length(), 1)
+  assert_true(notices[0].code is ProtocolPropertyMissing)
+  assert_true(notices[0].resolution is ReturnedNull)
 }
 
 ///|

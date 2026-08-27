@@ -93,6 +93,14 @@ pub(all) struct DynComponentDef {
   fields : Array[DynFieldDef]
   receives : Array[String]
   intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  implements : Array[String]
+  protocols : Array[DynProtocolDef]
+  property_bindings : Array[DynProtocolBinding]
+  view_bindings : Array[DynProtocolBinding]
+  provide_bindings : Array[DynProtocolBinding]
+  lookup_bindings : Array[DynProtocolBinding]
   methods : Array[String]
   whens : Array[String]
   enriches : Array[String]
@@ -167,6 +175,24 @@ pub fn DynObj::new(Int, DynComponentDef, &Guest, Int, schema~ : @core.SchemaInfo
 pub fn DynObj::to_value(Self) -> @core.Value
 pub fn DynObj::with_persist_id(Self, String) -> Self
 pub impl @core.Obj for DynObj
+
+pub(all) struct DynProtocolBinding {
+  protocol_id : String
+  member_name : String
+  source : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DynProtocolDef {
+  id : String
+  handle_messages : Array[String]
+  handle_intents : Array[String]
+  express_messages : Array[String]
+  express_intents : Array[String]
+  properties : Array[String]
+  views : Array[String]
+  provides : Array[String]
+  lookups : Array[String]
+} derive(Eq, @debug.Debug)
 
 pub(all) struct DynTyDef {
   kind : String

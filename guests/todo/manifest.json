@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "todolib",
   "doc": "A sample task list, for exercising list fields and item mutators.",
   "version": "0.4.0",
@@ -102,7 +102,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

@@ -33,7 +33,7 @@
   /// does not hold: nine bars is the cap, and there are already 9` through
   /// `warn_hook`, where an `if` that did not fire looks exactly like a chart
   /// that had nothing to add. A host that wants the record rather than the
-  /// line calls `@tutuca.on_refusal` and gets the rule, the path and the state
+  /// line calls `@tutuca.on_runtime_notice` and gets the rule, path and state
   /// that was rejected with it.
   receive addBar requires hasRoom {
     .values.push (((((len .values) * 17) + 23) mod 90) + 10)

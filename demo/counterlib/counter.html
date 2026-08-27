@@ -7,14 +7,17 @@
 
   /// Messages this counter raises at itself. The views never write these
   /// names, so the schema is the only place they can be declared.
-  receive {
+  handle {
+    message {
     resetTo(Int)
+
+    }
   }
 </script>
 
 <script type="tutuca/script">
   /// Move the counter by `d`, remembering where it landed.
-  /// 
+  ///
   /// `.count` reads the value the line above wrote: a statement rebinds the
   /// state, so the push records where the counter ENDED rather than where it
   /// started.

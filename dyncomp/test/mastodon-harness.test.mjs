@@ -204,7 +204,7 @@ before(async () => {
 
 test('the static manifest declares six components and its origin config', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 8);
+  assert.equal(m.apiVersion, 9);
   assert.equal(m.moduleName, 'mastodonlib');
   // the origins its views name are the whole of its network reach, and the
   // host allows them by BINDING the config variables — the manifest declares

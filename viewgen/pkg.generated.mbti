@@ -80,6 +80,7 @@ pub struct ProgramIndex {
 pub fn ProgramIndex::add(Self, @viewfile.ViewFile, String) -> Unit
 pub fn ProgramIndex::new() -> Self
 pub fn ProgramIndex::of(@viewfile.ViewFile, String) -> Self
+pub fn ProgramIndex::protocol_validation(Self) -> @statedef.ProtocolValidation
 
 pub(all) struct Surface {
   inputs : Array[InputSig]

@@ -14,8 +14,11 @@
     moves : Int
   }
 
-  receive Ledger {
+  handle Ledger {
+    message {
     init
+
+    }
   }
 </script>
 
@@ -26,7 +29,7 @@
   }
 
   /// PRECONDITIONS — what each handler asks before it moves anything.
-  /// 
+  ///
   /// The `format` is what each one SAYS when it declines. Press a button with
   /// nothing left on that side and the console gets the sentence rather than
   /// silence.
@@ -55,7 +58,7 @@
   /// about what THIS handler was supposed to achieve, which is the half a
   /// reader can check by looking: `pushAll` is the handler that empties
   /// `here`, and `hereEmpty` is that sentence written down.
-  /// 
+  ///
   /// One clause of each kind is the limit, and both on one header is the shape
   /// a transition takes when it has something to ask and something to promise.
   pred hereEmpty { .here is 0 }
@@ -69,7 +72,7 @@
   /// THE INVARIANT — the component keeps this, so it is checked after every
   /// handler above and every handler added later, including the ones that
   /// never mention it.
-  /// 
+  ///
   /// The `format` is what it SAYS when it does not hold, evaluated against the
   /// state that was rejected — so the numbers in the sentence are the ones that
   /// broke the rule. This comment says what the rule is; the format says what
@@ -87,7 +90,7 @@
   /// rule it does not mention — and the refusal is reported rather than
   /// silent. Open the console: `contract: cheat was abandoned — it broke the
   /// invariant conserved: 8 + 1 is not 8 — a token came from nowhere`. A host
-  /// that wants the record rather than the line calls `on_refusal`, and gets
+  /// that wants the record rather than the line calls `on_runtime_notice`, and gets
   /// the rule, the path and the state that was rejected with it.
   receive cheat {
     .there += 1

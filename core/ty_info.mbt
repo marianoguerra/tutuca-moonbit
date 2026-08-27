@@ -38,6 +38,8 @@ pub(all) enum TyInfo {
   TyOMap(TyInfo)
   /// A child-component slot; None when the schema said only `component`.
   TyComp(String?)
+  /// A dynamically composed child constrained by canonical protocol ids.
+  TyCompProtocols(Array[String])
   /// Tabular data: typed columns of equal width (`tables.table`).
   ///
   /// The one named shape whose contents the schema DOES know. `TyRecord` keeps
@@ -68,6 +70,7 @@ pub fn TyInfo::show_source(self : TyInfo) -> String {
     TyOMap(v) => "Map[String, " + v.show_source() + "]"
     TyComp(Some(c)) => "Component[" + c + "]"
     TyComp(None) => "Component"
+    TyCompProtocols(ids) => "Component[protocol " + ids.join(" & ") + "]"
     TyTable => "Table"
     TyAny => "Any"
   }
@@ -99,6 +102,7 @@ pub fn TyInfo::slot(self : TyInfo) -> String? {
   match self {
     TyComp(Some(c)) => Some(c)
     TyComp(None) => Some("")
+    TyCompProtocols(_) => Some("")
     _ => None
   }
 }
@@ -141,6 +145,7 @@ pub fn TyInfo::kind(self : TyInfo) -> FieldKind {
     // The slot's construction arguments are not part of its TYPE; the component
     // layer fills them in from what the author wired.
     TyComp(c) => FComp(comp=c.unwrap_or(""), args=Map([]))
+    TyCompProtocols(_) => FComp(comp="", args=Map([]))
     // An `option` is its value or absent, so the kind is the widest one: the
     // field may hold the inner shape or nothing.
     TyOption(_) | TyAny => FAny
@@ -174,6 +179,26 @@ pub fn TyInfo::zero(self : TyInfo) -> Value {
     TyFlags(_, _) | TySet => Map(Map([]))
     // A variant's zero is its first case, which this cannot name; an option
     // is absent; a slot is filled by the registration scope at make time.
-    TyVariant(_) | TyOption(_) | TyComp(_) | TyAny => Null
+    TyVariant(_) | TyOption(_) | TyComp(_) | TyCompProtocols(_) | TyAny => Null
+  }
+}
+
+///|
+/// Whether a runtime value has this declared outer shape. Named records and
+/// variants remain permissive because their structural declaration is not
+/// carried by TyInfo; generated decoders perform the deeper check.
+pub fn TyInfo::accepts(self : TyInfo, value : Value) -> Bool {
+  match (self, value) {
+    (TyBool, Bool(_)) => true
+    (TyInt | TyFloat, Num(_)) => true
+    (TyText | TyEnum(_), Str(_)) => true
+    (TyList(_) | TyTuple(_), List(_)) => true
+    (TyRecord(_) | TyOMap(_) | TySet | TyFlags(_, _) | TyTable, Map(_)) => true
+    (TyComp(_) | TyCompProtocols(_), Obj(_)) => true
+    (TyVariant(_), Str(_) | List(_)) => true
+    (TyOption(_), Null) => true
+    (TyOption(inner), other) => inner.accepts(other)
+    (TyAny, _) => true
+    _ => false
   }
 }

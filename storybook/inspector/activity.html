@@ -19,8 +19,11 @@
   /// Prepends one entry and caps the list. Raised from a host's observer
   /// subscription, never from a view, so the schema is the only place it
   /// can be declared.
-  receive ActivityLog {
+  handle ActivityLog {
+    message {
     appendEntry(Any)
+
+    }
   }
 </script>
 

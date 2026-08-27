@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **String-identified component protocols.** State blocks can declare or import
+  protocols, implement their handled and expressed messages/intents, semantic
+  views, typed properties, and namespaced `provide`/`lookup` values, and use
+  protocols as component-slot constraints. Static validation reports strict or
+  gradual conformance; deferred runtime failures are structured notices with
+  graceful UI-preserving fallbacks. Dynamic manifest API 9 carries the same
+  protocol metadata.
+
+### Changed
+
+- **Component communication declarations are now `handle` and `express`.**
+  The former is the inbound surface and the latter its outbound dual. Quoted
+  effect names are explicitly raw, unquoted names use the component's implicit
+  protocol, and `Protocol::member` uses the imported protocol's canonical id.
+  The old top-level `receive` and `intent` state declarations have been removed
+  without a compatibility parser.
+
 ### Removed
 
 - **Capabilities are gone from dynamic components; host↔guest communication is
@@ -2216,11 +2235,14 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   statements under it fill in through `@cur`:
 
   ```
-  receive init {
+  handle init {
+    message {
     new Label
     @cur.text = 'Buy milk'
     @cur.done = true
     .labels.push @cur
+
+    }
   }
   ```
 

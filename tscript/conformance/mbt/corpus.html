@@ -20,8 +20,10 @@
     tags   : Set[String]
     page   : Int
   }
-  receive Corpus { Case0, Case1, Case2(Int), Case3(String), Case4(Int), Case5(String), Case6(String), Case7(String), Case8(String), Case9, Case10(Int), Case11, Case12, Case13, Case14, Case15, Case24(Int), Case25(String) }
-  intent Corpus { Case16(String), Case17(String), Case18(Int), Case19(Int), Case20(String), Case21(String), Case22(String), Case23(String) }
+  handle Corpus {
+    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String) }
+    intent { case16(String), case17(String), case18(Int), case19(Int), case20(String), case21(String), case22(String), case23(String) }
+  }
 </script>
 
 <script type="tutuca/script">

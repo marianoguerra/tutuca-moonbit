@@ -40,6 +40,12 @@ pub(all) enum StateTy {
   TOMap(StateTy)
   /// A child-component slot; None for an untyped `Component`.
   TComp(String?)
+  /// A child slot constrained by one or more canonical protocol ids.
+  ///
+  /// This is deliberately distinct from `TComp`: a component name is a
+  /// construction hint, while protocols are capabilities checked when an
+  /// instance is installed in the slot.
+  TCompProtocols(Array[String])
   /// An arbitrary `@tutuca.Value`.
   TAny
 } derive(Eq, @debug.Debug)
@@ -86,6 +92,52 @@ pub(all) struct MsgDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// A protocol name in source and the canonical string id it resolves to.
+/// Aliases are lexical conveniences only; ids are what metadata and runtime
+/// checks carry, so separately loaded modules agree without sharing a path.
+pub(all) struct ProtocolRef {
+  local_name : String
+  id : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+/// A typed readable observation. It promises an operation, not storage: an
+/// implementation may bind it to a field or to a zero-argument computation.
+pub(all) struct PropertyDef {
+  name : String
+  ty : StateTy
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+///|
+/// A protocol's full capability surface.
+pub(all) struct ProtocolDef {
+  local_name : String
+  id : String
+  handle_message : Array[MsgDef]
+  handle_intent : Array[MsgDef]
+  express_message : Array[MsgDef]
+  express_intent : Array[MsgDef]
+  properties : Array[PropertyDef]
+  views : Array[String]
+  provides : Array[PropertyDef]
+  lookups : Array[PropertyDef]
+  doc : String?
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+/// An explicit implementation binding. `source` is `.field`, `$compute`, or
+/// a local view name depending on the section that owns it.
+pub(all) struct ProtocolBinding {
+  protocol_id : String
+  member_name : String
+  source : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
 /// A named type the state or its messages mention.
 ///
 /// The state language has one sum declaration. Payload-free sums become
@@ -124,6 +176,19 @@ pub(all) struct StateDef {
   /// route until something replies. An answer to one comes back as an ordinary
   /// message, so it is declared in `receive` rather than here.
   intent : Array[MsgDef]
+  /// Outbound capabilities declared by this component's implicit protocol.
+  express_message : Array[MsgDef]
+  express_intent : Array[MsgDef]
+  /// Canonical ids this component claims to implement.
+  implements : Array[String]
+  /// Protocol declarations and imports visible in this state block. A batch
+  /// compiler reconciles declarations with the same id across files.
+  protocols : Array[ProtocolDef]
+  protocol_imports : Array[ProtocolRef]
+  property_bindings : Array[ProtocolBinding]
+  view_bindings : Array[ProtocolBinding]
+  provide_bindings : Array[ProtocolBinding]
+  lookup_bindings : Array[ProtocolBinding]
   types : Array[UserTy]
   /// What this component PUBLISHES to its subtree, in declaration order.
   ///
@@ -200,6 +265,12 @@ pub suberror DefError {
   BadComponentName(name~ : String, span~ : Span)
   /// A builtin type name used as a user type name.
   ReservedName(name~ : String, span~ : Span)
+  /// A protocol alias used by an implementation or component constraint was
+  /// not declared or imported in this source unit.
+  UnknownProtocol(local_name~ : String, span~ : Span)
+  /// Two declarations in one source unit claim the same canonical id with
+  /// incompatible surfaces.
+  ProtocolConflict(id~ : String, span~ : Span)
 }
 
 ///|
@@ -234,6 +305,37 @@ declare pub fn parse_state(
 ) -> Array[StateDef] raise DefError
 
 ///|
+/// Whether every protocol assumption in a compilation batch was proved.
+pub(all) enum ValidationMode {
+  Strict
+  Gradual
+} derive(Eq, @debug.Debug)
+
+///|
+/// A static protocol finding. `code` is the same enum runtime notices carry.
+pub(all) struct ProtocolDiagnostic {
+  code : @tutuca.ProtocolIssueCode
+  component : String
+  protocol_id : String
+  member_name : String
+  message : String
+  error : Bool
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+pub(all) struct ProtocolValidation {
+  mode : ValidationMode
+  diagnostics : Array[ProtocolDiagnostic]
+} derive(Eq, @debug.Debug)
+
+///|
+/// Validate every protocol declaration and implementation visible in a batch.
+/// Missing dynamic definitions produce gradual warnings; contradictions in
+/// definitions or known implementations are errors.
+declare pub fn validate_protocols(defs : Array[StateDef]) -> ProtocolValidation
+
+///|
 /// The component this schema describes: its own name, or the caller's
 /// fallback for a file whose single component is unnamed.
 ///
@@ -255,6 +357,14 @@ declare pub fn StateDef::user_ty(
   self : StateDef,
   source_name : String,
 ) -> UserTy?
+
+///|
+/// Resolve an implicit (`save`) or protocol-qualified (`Store::save`) source
+/// operation to its collision-free wire name. Raw quoted names bypass this.
+declare pub fn StateDef::operation_name(
+  self : StateDef,
+  source_name : String,
+) -> String?
 
 ///|
 /// The element type an `@each` over this type binds, or None when the type

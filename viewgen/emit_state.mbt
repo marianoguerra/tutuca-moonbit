@@ -328,9 +328,84 @@ fn emit_schema(
   )
   out.write_string(out_channel("receives", def.receive.map(m => m.name)))
   out.write_string(out_channel("intents", def.intent.map(m => m.name)))
+  out.write_string(
+    out_channel("express_messages", def.express_message.map(m => m.name)),
+  )
+  out.write_string(
+    out_channel("express_intents", def.express_intent.map(m => m.name)),
+  )
+  out.write_string(out_channel("implements", def.implements))
+  if !def.protocols.is_empty() {
+    out.write_string("    protocols=[\n")
+    for p in def.protocols {
+      let typed = (xs : Array[@statedef.PropertyDef]) => {
+        xs
+        .map(x => "(" + quote(x.name) + ", " + def.ty_info_src(x.ty) + ")")
+        .join(", ")
+      }
+      out.write_string(
+        "      @tutuca.ProtocolInfo::{" +
+        "id: " +
+        quote(p.id) +
+        ", handle_messages: " +
+        str_array_src(p.handle_message.map(m => m.name)) +
+        ", handle_intents: " +
+        str_array_src(p.handle_intent.map(m => m.name)) +
+        ", express_messages: " +
+        str_array_src(p.express_message.map(m => m.name)) +
+        ", express_intents: " +
+        str_array_src(p.express_intent.map(m => m.name)) +
+        ", properties: [" +
+        typed(p.properties) +
+        "]" +
+        ", views: " +
+        str_array_src(p.views) +
+        ", provides: [" +
+        typed(p.provides) +
+        "]" +
+        ", lookups: [" +
+        typed(p.lookups) +
+        "]},\n",
+      )
+    }
+    out.write_string("    ],\n")
+  }
+  emit_protocol_bindings(out, "property_bindings", def.property_bindings)
+  emit_protocol_bindings(out, "view_bindings", def.view_bindings)
+  emit_protocol_bindings(out, "provide_bindings", def.provide_bindings)
+  emit_protocol_bindings(out, "lookup_bindings", def.lookup_bindings)
   out.write_string(out_channel("methods", declared_methods(surface)))
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))
   out.write_string(out_channel("init_names", inits.map(st => st.name)))
   out.write_string("  )\n}\n\n")
+}
+
+///|
+fn str_array_src(xs : Array[String]) -> String {
+  "[" + xs.map(quote).join(", ") + "]"
+}
+
+///|
+fn emit_protocol_bindings(
+  out : StringBuilder,
+  field : String,
+  xs : Array[@statedef.ProtocolBinding],
+) -> Unit {
+  if xs.is_empty() {
+    return
+  }
+  out.write_string("    \{field}=[\n")
+  for b in xs {
+    out.write_string(
+      "      @tutuca.ProtocolBindingInfo::{protocol_id: " +
+      quote(b.protocol_id) +
+      ", member_name: " +
+      quote(b.member_name) +
+      ", source: " +
+      quote(b.source) +
+      "},\n",
+    )
+  }
+  out.write_string("    ],\n")
 }

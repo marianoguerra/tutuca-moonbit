@@ -34,6 +34,8 @@ pub using @tutuca {
 priv struct FieldSpec {
   kind : FieldKind
   default : @tutuca.Value
+  protocol_ids : Array[String]
+  protocols : Array[@tutuca.ProtocolInfo]
 }
 
 ///|

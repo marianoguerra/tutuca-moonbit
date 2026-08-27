@@ -55,7 +55,10 @@ target's `receive <name>` block runs. There is **no built-in lifecycle**
     text : String
     rows : Array[Any]
   }
-  receive { init, flash(String) }
+  handle {
+    message { init, flash(String)
+    }
+  }
 </script>
 
 <script type="tutuca/script">
@@ -181,7 +184,10 @@ A component answers an intent with an `intent <name>` handler. Inside it:
 ```html
 <script type="tutuca/state">
   state { count : Int, page : Int }
-  intent { saveDraft(String), picked(Int) }
+  handle {
+    intent { saveDraft(String), picked(Int)
+    }
+  }
 </script>
 
 <script type="tutuca/script">
@@ -241,11 +247,14 @@ reads the schema's `receive` list and fills the intent's opts in.
   }
 
   /// The three ANSWERS. Declaring them is what wires `loadData` up.
-  receive {
+  handle {
+    message {
     init
     loadDataOk(Any)
     loadDataError(String)
     loadDataUnhandled
+
+    }
   }
 </script>
 
@@ -556,8 +565,10 @@ It captures the immutable dispatch root/path at call time.
 
 - [core.md](./core.md) — the core mental model, `view` directives, the
   `update`/`compute` overview, and *The ModuleDef convention*.
-- [schema.md](./schema.md) — the `receive` and `intent` message
-  declarations these handlers are typed by.
+- [schema.md](./schema.md) — the `handle { message / intent }` declarations
+  these script handlers are typed by.
+- [protocols.md](./protocols.md) — implicit and named communication surfaces,
+  raw versus checked effect names, and runtime mismatch notices.
 - [semantics.md](./semantics.md) — the path/transaction model behind
   these channels: path steps, the transaction lifecycle, teleporting,
   and the key-pinning rules `live_path` toggles.

@@ -12,10 +12,13 @@
     selected : Bool
   }
 
-  intent StoryNav {
+  handle StoryNav {
+    intent {
     /// (module, component). Two empty strings mean "everything", which is
     /// what the `all` button sends.
     navPicked(String, String)
+
+    }
   }
 
   /// One story: a component from a bundle, built with ONE named
@@ -47,11 +50,14 @@
     error : String
   }
 
-  intent StoryCard {
+  handle StoryCard {
+    intent {
     /// (module, component, init) — build me again from scratch. The card
     /// cannot do it itself: making an instance is the host's job, and this
     /// package is backend-agnostic.
     rebuildCard(String, String, String)
+
+    }
   }
 
   /// The gallery: every component every loaded bundle declares, once per
@@ -88,20 +94,26 @@
     devTools : Component
   }
 
-  receive DyncompStorybook {
+  handle DyncompStorybook {
+    message {
     /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
     /// by a host that pushes the news itself, and by every test here.
     catalogChanged(String)
     setStatus(String)
+
+    }
   }
 
-  intent DyncompStorybook {
+  handle DyncompStorybook {
+    intent {
     /// The same news, arriving the other way: from the loader the host put
     /// in the bar, which is BELOW this component and therefore bubbles.
     ///
     /// The loader says what it is DOING in the bar itself; this is only the
     /// part the gallery has to act on.
     catalogChanged(String)
+
+    }
   }
 </script>
 

@@ -2,8 +2,8 @@
 
 Read this file when declaring or changing a component's data contract: the
 `<script type="tutuca/state">` block, how a field's type is spelled, what
-mutators a field kind generates, message buckets, slots, and named initial
-states.
+mutators a field kind generates, handle/express surfaces, slots, and named
+initial states.
 
 The schema is the source of truth for a component's state. `gen-views` reads it
 and writes the MoonBit state struct, the codec, the descriptor and the typed
@@ -17,7 +17,9 @@ spells its types the way MoonBit does, alongside the templates that read it:
 ```html
 <script type="tutuca/state">
   state Counter { label: String, count: Int, history: Array[Int] }
-receive Counter { resetTo(Int) }
+  handle Counter {
+    message { resetTo(Int) }
+  }
 </script>
 ```
 
@@ -26,12 +28,12 @@ One `state` per component, named after the template id it gives views to
 bare `state { … }`; a file either names every component or none of them,
 exactly as its templates do.
 
-Five declaration keywords and no more — `state`, `struct`, `enum`, and the two
-message buckets `receive` / `intent`. There is no nesting level
-above them: a `<template id>` already says which component a thing belongs to,
-so a second place to say it would be a second place to get it wrong. Inside a
-`state` body, two SECTIONS say where a value comes from — see *Dynamic
-bindings* below.
+Top-level declarations include `state`, `struct`, `enum`, `protocol`,
+`import protocol`, `handle`, and `express`. The last two name the component
+whose implicit protocol they describe. A named component may also declare
+`implements` on its `state`; see [protocols.md](./protocols.md). Inside a
+`state` body, sections say how protocol properties, views, and dynamic bindings
+are implemented — see *Dynamic bindings* below.
 
 The schema goes in a `<script>` and not a `<template>`, because script content
 is raw text to an HTML parser and template content is markup — an `Array[Int]`
@@ -51,7 +53,7 @@ inside a template would be read as an `<Int>` element.
 | set, closed members | `Set[E]`, where `E` is an `enum` |
 | set, open members | `Set[String]` |
 | ordered map | `Map[String, V]` |
-| a child component | a sibling `state`'s name, `Component`, or `Component[Name]` |
+| a child component | a sibling `state`'s name, `Component`, `Component[Name]`, or `Component[protocol P & Q]` |
 | anything at all | `Any`, `Array[Any]` |
 
 The builtin names are **reserved** — a user type called `Any` would silently
@@ -196,40 +198,50 @@ structural equality read.
 > descriptor disagreeing with the block
 > (`component/component.mbt:173-200`). Change the spelling in the schema.
 
-## Message buckets
+## Handle and express surfaces
 
-Two optional variants declare the messages a component receives, beyond the
-`@on` handlers its views name. Each generates a typed enum
-(`BoardReceive` / `BoardIntent`) that `update` matches:
+`handle` declares the messages and intents a component accepts, beyond the
+`@on` handlers its views name. Its two sections generate typed enums
+(`BoardReceive` / `BoardIntent`) that `update` matches. `express` is the dual:
+it declares messages and intents that the component may initiate.
 
 ```html
 <script type="tutuca/state">
   state Board { rows: Array[Any], loading: Bool }
-  receive Board { reset, focusRow(Int), loadRowsOk(Array[Any]),
-                  loadRowsError(String), loadRowsUnhandled }
-  intent Board { rowPicked(Int) }
+  handle Board {
+    message {
+      reset, focusRow(Int), loadRowsOk(Array[Any]),
+      loadRowsError(String), loadRowsUnhandled
+    }
+    intent { rowPicked(Int) }
+  }
+  express Board {
+    intent { saveRows }
+  }
 </script>
 ```
 
 Declare a case the way it is **used**: `focusRow`, not `FocusRow`. The same
-name reappears as `receive focusRow(n)` in the script block and as
-`send 'focusRow' 3` in a view, and the generator makes the UpperCamel MoonBit
-variant (`BoardReceive::FocusRow`) from it — the capital belongs to the
-generated code, not to what you write. An UpperCamel declaration still parses,
-so old blocks keep working; `gen-views` reports it as a `message-case` warning.
+name reappears as `receive focusRow(n)` in the script block. A deliberately
+raw outbound name is quoted (`send 'focusRow' 3`); an operation declared in
+`express` is unquoted (`intent saveRows`). The generator makes the UpperCamel
+MoonBit variant (`BoardReceive::FocusRow`) from it — the capital belongs to
+the generated code, not to what you write. An UpperCamel declaration still
+parses, but `gen-views` reports it as a `message-case` warning.
 
-`receive` is what something `send`s to this component **by address**; `intent`
+`message` is what something `send`s to this component **by address**; `intent`
 is what reaches it because a walk routed here — a descendant's `intent dyn`, or
 an intent that took the default `dyn lex` route. A bucket the component has no
 use for is simply absent. What a parent asks of a child goes through `receive`
 — a slot is a handle, not a channel.
 
-Note the three `LoadRows…` names in the `receive` list. An intent's **answers**
+Note the three `LoadRows…` names in the `message` list. An intent's **answers**
 are ordinary messages, so they are declared where every other message is; and
 declaring them is what makes `intent lex 'loadRows'` a *request* rather than a
 notification. Nobody writes that down twice — the generator reads this list and
 fills the intent's opts in. Channel semantics are in
 [messages-and-intents.md](./messages-and-intents.md).
+Named and implicit component contracts are in [protocols.md](./protocols.md).
 
 ## Dynamic bindings (`provide` / `lookup`)
 
@@ -389,8 +401,11 @@ receiver first:
 ```html
 <script type="tutuca/state">
   state Playlist { songs: Array[String], tags: Set[String], by: Map[String, String] }
-  receive Playlist { add(String), rename(String), drop(Int), mark(String),
-                     credit(String, String) }
+  handle Playlist {
+    message { add(String), rename(String), drop(Int), mark(String),
+                     credit(String, String)
+    }
+  }
 </script>
 
 <script type="tutuca/script" for="Playlist">
@@ -446,7 +461,10 @@ other statement already does. `new <Type>` puts that type's **zero** at the
     songs : Array[Song]
     tags  : Array[String]
   }
-  receive Playlist { init }
+  handle Playlist {
+    message { init
+    }
+  }
 </script>
 
 <script type="tutuca/script" for="Playlist">
@@ -606,7 +624,8 @@ false:
 
 Every silent no-op the runtime decides — an unresolvable path, a name nothing
 answers, a rule that said no — looks from outside exactly like a handler that
-ran and had nothing to do. `@tutuca.on_refusal` is where that distinction goes:
+ran and had nothing to do. `@tutuca.on_runtime_notice` is the centralized
+channel where that distinction goes:
 
 ```moonbit nocheck
 // nocheck: `post_module` is the reader's own module
@@ -618,7 +637,9 @@ assert_eq(refused[0].sentence, "Cannot publish \"draft-2\": the title is empty."
 // …and the state that was rejected, which nothing else can reach
 ```
 
-- `@tutuca.on_refusal(f)` switches it on and answers the uninstall;
+- `@tutuca.on_runtime_notice(f)` switches it on and answers the uninstall;
+  refusals arrive as `RuntimeNotice::Refused`, while protocol mismatches use
+  `RuntimeNotice::ProtocolMismatch`;
   `@harness.refusals_while(body)` is that pair around one stretch of driving,
   and `@harness.no_refusals(body)` **fails** the test if anything was refused —
   which is what makes a test about a guarded button mean something.

@@ -494,7 +494,29 @@ impl @tutuca.Ctx for EventContext with fn lookup(self, name, opts) {
       () => tx.names.dyn_value(root, at, name),
     ) {
     Some(v) => v
-    None => Null
+    None => {
+      // A qualified lookup is an exercised protocol assumption. Keep the
+      // ordinary total lookup behavior, but make the deferred mismatch
+      // observable through the same code the static validator uses.
+      let parts : Array[String] = name
+        .split("::")
+        .map(x => x.to_owned())
+        .collect()
+      if parts.length() == 2 {
+        @tutuca.protocol_mismatch({
+          code: ProtocolLookupMissing,
+          protocol_id: parts[0],
+          member_name: parts[1],
+          operation: "lookup",
+          detail: "no provider answered the qualified protocol lookup",
+          component: "",
+          path: at.to_transaction_path(),
+          state: root,
+          resolution: ReturnedNull,
+        })
+      }
+      Null
+    }
   }
 }
 

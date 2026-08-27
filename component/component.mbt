@@ -223,7 +223,7 @@ pub fn[S : @tutuca.Fields] component(
   // exists, but nothing declared what it is.
   for k, v in init_fields {
     if !all_specs.contains(k) {
-      all_specs[k] = { kind: FAny, default: v }
+      all_specs[k] = { kind: FAny, default: v, protocol_ids: [], protocols: [] }
     }
   }
   let tspec : TypedSpec[S] = {
@@ -242,6 +242,20 @@ pub fn[S : @tutuca.Fields] component(
     decode,
   }
   gen_mutators(all_specs, tspec.generated)
+  // Protocol-qualified bindings use canonical ids as runtime keys. Raw names
+  // keep their existing namespace; the two cannot collide.
+  for b in schema.provide_bindings {
+    let key = b.protocol_id + "::" + b.member_name
+    if !provide.contains(key) {
+      provide[key] = b.source
+    }
+  }
+  for b in schema.lookup_bindings {
+    let key = b.protocol_id + "::" + b.member_name
+    if !lookup.iter().any(x => x.name == key) {
+      lookup.push(lookup_or(key, b.source))
+    }
+  }
   let comp = new_component(
     name,
     common_style,
@@ -479,11 +493,29 @@ fn field_specs(
 ) -> Map[String, FieldSpec] {
   let out : Map[String, FieldSpec] = Map([])
   for fi in schema.fields {
-    out[fi.name] = match fi.ty.slot() {
-      Some(comp) =>
-        FieldSpec::comp(comp, args=slot_args.get(fi.name).unwrap_or(Map([])))
-      None =>
-        { kind: fi.kind(), default: seed.get(fi.name).unwrap_or(fi.ty.zero()) }
+    out[fi.name] = match fi.ty {
+      TyCompProtocols(ids) =>
+        FieldSpec::comp(
+          "",
+          args=slot_args.get(fi.name).unwrap_or(Map([])),
+          protocol_ids=ids,
+          protocols=schema.protocols,
+        )
+      _ =>
+        match fi.ty.slot() {
+          Some(comp) =>
+            FieldSpec::comp(
+              comp,
+              args=slot_args.get(fi.name).unwrap_or(Map([])),
+            )
+          None =>
+            {
+              kind: fi.kind(),
+              default: seed.get(fi.name).unwrap_or(fi.ty.zero()),
+              protocol_ids: [],
+              protocols: [],
+            }
+        }
     }
   }
   out

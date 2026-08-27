@@ -7,8 +7,11 @@
     text : String
   }
 
-  receive Note {
+  handle Note {
+    message {
     write(String)
+
+    }
   }
 
   state Mailbox {

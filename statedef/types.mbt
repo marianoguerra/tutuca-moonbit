@@ -40,6 +40,32 @@ pub fn StateDef::user_ty(self : StateDef, source_name : String) -> UserTy? {
 }
 
 ///|
+pub fn StateDef::operation_name(
+  self : StateDef,
+  source_name : String,
+) -> String? {
+  let parts : Array[String] = source_name
+    .split("::")
+    .map(x => x.to_owned())
+    .collect()
+  if parts.length() == 1 {
+    return Some(camel_name(source_name))
+  }
+  guard parts.length() == 2 else { return None }
+  for p in self.protocols {
+    if p.local_name == parts[0] {
+      return Some(p.id + "::" + camel_name(parts[1]))
+    }
+  }
+  for p in self.protocol_imports {
+    if p.local_name == parts[0] {
+      return Some(p.id + "::" + camel_name(parts[1]))
+    }
+  }
+  None
+}
+
+///|
 /// The types whose spelling takes no arguments and needs no schema.
 ///
 /// Here rather than inline in `named`, because `StateDef::resolve_ty` answers
@@ -116,7 +142,7 @@ pub fn StateTy::elem(self : StateTy) -> StateTy? {
     // A component instance iterates through its own seq_entries, and a
     // dynamic value may be a list at runtime — neither is knowable here, so
     // both stay permissive rather than becoming a false error.
-    TAny | TComp(_) => Some(TAny)
+    TAny | TComp(_) | TCompProtocols(_) => Some(TAny)
     _ => None
   }
 }
@@ -143,7 +169,7 @@ pub fn StateDef::field_of(
     TOMap(v) => Some(v)
     // Opaque at generation time: a child component's fields belong to its
     // own schema, and a dynamic value has no schema at all.
-    TAny | TComp(_) => Some(TAny)
+    TAny | TComp(_) | TCompProtocols(_) => Some(TAny)
     _ => None
   }
 }
@@ -190,6 +216,7 @@ pub fn StateTy::is_boolish(self : StateTy) -> Bool {
 pub fn StateTy::component_named(self : StateTy) -> String? {
   match self {
     TComp(c) => c
+    TCompProtocols(_) => None
     TOption(inner) => inner.component_named()
     _ => None
   }
@@ -198,7 +225,7 @@ pub fn StateTy::component_named(self : StateTy) -> String? {
 ///|
 pub fn StateTy::is_renderable(self : StateTy) -> Bool {
   match self {
-    TComp(_) | TAny => true
+    TComp(_) | TCompProtocols(_) | TAny => true
     TOption(inner) => inner.is_renderable()
     _ => false
   }
@@ -231,6 +258,7 @@ pub fn StateTy::show_source(self : StateTy) -> String {
     TOMap(v) => "Map[String, " + v.show_source() + "]"
     TComp(Some(c)) => "Component[" + c + "]"
     TComp(None) => "Component"
+    TCompProtocols(ids) => "Component[protocol " + ids.join(" & ") + "]"
     TAny => "Any"
   }
 }
@@ -349,6 +377,10 @@ pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
     TSet => "TySet"
     TComp(Some(c)) => "TyComp(Some(" + quoted(c) + "))"
     TComp(None) => "TyComp(None)"
+    // Protocol-constrained slots retain their constraint in SchemaInfo; the
+    // runtime uses it when a dynamic instance is installed.
+    TCompProtocols(ids) =>
+      "TyCompProtocols([" + ids.map(quoted).join(", ") + "])"
     TAny => "TyAny"
   }
 }
@@ -382,7 +414,7 @@ pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String {
     TFlags(_) | TSet => "Map[String, Bool]"
     TOMap(v) => "Map[String, " + self.moonbit_ty(v) + "]"
     // A child instance is an Obj behind the Value escape hatch.
-    TComp(_) | TAny => "@tutuca.Value"
+    TComp(_) | TCompProtocols(_) | TAny => "@tutuca.Value"
   }
 }
 
@@ -439,7 +471,7 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
         }
         _ => "Null"
       }
-    TComp(_) | TAny => "Null"
+    TComp(_) | TCompProtocols(_) | TAny => "Null"
   }
 }
 
@@ -460,7 +492,9 @@ pub fn DefError::span(self : DefError) -> Span {
     | CyclicType(span~, ..)
     | Collision(span~, ..)
     | BadComponentName(span~, ..)
-    | ReservedName(span~, ..) => span
+    | ReservedName(span~, ..)
+    | UnknownProtocol(span~, ..)
+    | ProtocolConflict(span~, ..) => span
   }
 }
 
@@ -473,7 +507,7 @@ pub fn DefError::message(self : DefError) -> String {
   match self {
     Syntax(msg~, ..) => "state block: \{msg}"
     UnknownDecl(got~, ..) =>
-      "state block: `\{got}` is not a declaration — expected state, struct, enum, receive or intent"
+      "state block: `\{got}` is not a declaration — expected state, struct, enum, protocol or import"
     DuplicateComponent(name~, ..) =>
       "state block: two `state` declarations named `\{name}`; one component declares one state"
     MixedStateNames(..) =>
@@ -494,6 +528,10 @@ pub fn DefError::message(self : DefError) -> String {
       "state block: `\{name}` cannot name a component — it must start with a letter"
     ReservedName(name~, ..) =>
       "state block: `\{name}` is a builtin type name and cannot be declared as a type"
+    UnknownProtocol(local_name~, ..) =>
+      "state block: unknown protocol `\{local_name}` — declare it here or import its canonical string id"
+    ProtocolConflict(id~, ..) =>
+      "state block: protocol `\{id}` is declared more than once with different surfaces"
   }
 }
 

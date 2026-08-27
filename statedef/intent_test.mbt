@@ -1,4 +1,4 @@
-// The state block's `intent` variant.
+// The state block's handled intent channel.
 //
 // The second message word and the last one needed: `receive` declares every
 // MESSAGE the component accepts beyond the ones its own views send, and
@@ -14,8 +14,10 @@ test "intent declares a bucket beside receive" {
   let d = parse_one(
     (
       #|state Board { rows: Array[Any] }
-      #|receive Board { reset, loadRowsOk(Array[Any]) }
-      #|intent  Board { rowPicked(Int), saveDraft(String) }
+      #|handle Board {
+      #|  message { reset, loadRowsOk(Array[Any]) }
+      #|  intent { rowPicked(Int), saveDraft(String) }
+      #|}
     ),
   )
   assert_eq(d.receive.map(m => m.name), ["reset", "loadRowsOk"])
@@ -24,11 +26,11 @@ test "intent declares a bucket beside receive" {
 }
 
 ///|
-test "the declaration words are exactly receive and intent" {
+test "legacy message buckets are not declarations" {
   // There are two buckets and two words for them. A third is not a bucket
   // nobody uses — it is a parse error, which is what keeps the schema and the
   // dispatch model from drifting apart.
-  for word in ["bubble", "response", "on"] {
+  for word in ["receive", "intent", "bubble", "response", "on"] {
     let src = "state Board { rows: Array[Any] }\n\{word} Board { rowPicked(Int) }"
     let failed = try {
       parse_one(src) |> ignore
@@ -50,7 +52,7 @@ test "a type may be called Intent, and a bucket case may be too" {
     (
       #|struct Intent { name: String, urgent: Bool }
       #|state Board { pending: Intent }
-      #|intent Board { Intent(Intent) }
+      #|handle Board { intent { Intent(Intent) } }
     ),
   )
   assert_eq(d.types.map(t => t.source_name), ["Intent"])
@@ -60,7 +62,7 @@ test "a type may be called Intent, and a bucket case may be too" {
 }
 
 ///|
-test "an unknown declaration word names the five that are legal" {
+test "an unknown declaration word names the legal declarations" {
   let msg = try {
     parse_one("stat Board { a: Int }") |> ignore
     ""
@@ -71,6 +73,6 @@ test "an unknown declaration word names the five that are legal" {
   // message — and a word added to the match without being added to both is a
   // parser that accepts something it says it does not.
   assert_eq(
-    msg, "state block: `stat` is not a declaration — expected state, struct, enum, receive or intent",
+    msg, "state block: `stat` is not a declaration — expected state, struct, enum, protocol or import",
   )
 }

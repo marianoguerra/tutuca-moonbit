@@ -114,6 +114,80 @@ pub(all) struct Refusal {
 } derive(Eq, Debug)
 
 ///|
+/// One vocabulary shared with the static protocol validator.
+pub(all) enum ProtocolIssueCode {
+  ProtocolUnresolved
+  ProtocolDefinitionConflict
+  ProtocolNotImplemented
+  ProtocolMemberMissing
+  ProtocolMemberType
+  ProtocolTargetMismatch
+  ProtocolPropertyMissing
+  ProtocolPropertyType
+  ProtocolViewMissing
+  ProtocolProvideMissing
+  ProtocolLookupMissing
+  ProtocolResultType
+  ProtocolExpressionUndeclared
+} derive(Eq, Debug)
+
+///|
+pub fn ProtocolIssueCode::word(self : ProtocolIssueCode) -> String {
+  match self {
+    ProtocolUnresolved => "PROTOCOL_UNRESOLVED"
+    ProtocolDefinitionConflict => "PROTOCOL_DEFINITION_CONFLICT"
+    ProtocolNotImplemented => "PROTOCOL_NOT_IMPLEMENTED"
+    ProtocolMemberMissing => "PROTOCOL_MEMBER_MISSING"
+    ProtocolMemberType => "PROTOCOL_MEMBER_TYPE"
+    ProtocolTargetMismatch => "PROTOCOL_TARGET_MISMATCH"
+    ProtocolPropertyMissing => "PROTOCOL_PROPERTY_MISSING"
+    ProtocolPropertyType => "PROTOCOL_PROPERTY_TYPE"
+    ProtocolViewMissing => "PROTOCOL_VIEW_MISSING"
+    ProtocolProvideMissing => "PROTOCOL_PROVIDE_MISSING"
+    ProtocolLookupMissing => "PROTOCOL_LOOKUP_MISSING"
+    ProtocolResultType => "PROTOCOL_RESULT_TYPE"
+    ProtocolExpressionUndeclared => "PROTOCOL_EXPRESSION_UNDECLARED"
+  }
+}
+
+///|
+/// The graceful fallback the runtime chose after a protocol assumption failed.
+pub(all) enum RuntimeResolution {
+  KeptPreviousState
+  ReturnedNull
+  ReturnedDefault
+  EvaluatedFalse
+  UsedMainView
+  RenderedPlaceholder
+  ContinuedIntentRoute
+  DeliveredUnhandled
+  DroppedMessage
+  SkippedProvider
+  RejectedComponentValue
+} derive(Eq, Debug)
+
+///|
+pub(all) struct RuntimeProtocolNotice {
+  code : ProtocolIssueCode
+  protocol_id : String
+  member_name : String
+  operation : String
+  detail : String
+  component : String
+  path : Path
+  state : Value
+  resolution : RuntimeResolution
+} derive(Eq, Debug)
+
+///|
+/// The single centralized runtime diagnostics channel.
+pub(all) enum RuntimeNotice {
+  Refused(Refusal)
+  ProtocolMismatch(RuntimeProtocolNotice)
+  RuntimeWarning(String)
+} derive(Eq, Debug)
+
+///|
 /// A one-line rendering, for a host that wants text rather than the record.
 ///
 /// The sentence the author wrote comes LAST and unquoted, because it is the
@@ -139,7 +213,7 @@ pub fn Refusal::to_line(self : Refusal) -> String {
 ///|
 /// Where refusals go. `None` — the default — is the channel switched off, and
 /// every producer checks it before building anything.
-let refusal_hook : Ref[((Refusal) -> Unit)?] = Ref(None)
+let runtime_notice_hook : Ref[((RuntimeNotice) -> Unit)?] = Ref(None)
 
 ///|
 /// One dispatch's worth of refusal.
@@ -160,10 +234,10 @@ let dispatch_scope : Ref[DispatchScope?] = Ref(None)
 /// Switch the channel on. Returns the uninstall, which puts back whatever
 /// listener was there before — so a test that installs one inside another's
 /// lifetime cannot silently keep it.
-pub fn on_refusal(f : (Refusal) -> Unit) -> () -> Unit {
-  let prev = refusal_hook.val
-  refusal_hook.val = Some(f)
-  fn() { refusal_hook.val = prev }
+pub fn on_runtime_notice(f : (RuntimeNotice) -> Unit) -> () -> Unit {
+  let prev = runtime_notice_hook.val
+  runtime_notice_hook.val = Some(f)
+  fn() { runtime_notice_hook.val = prev }
 }
 
 ///|
@@ -173,7 +247,7 @@ pub fn on_refusal(f : (Refusal) -> Unit) -> () -> Unit {
 /// the answer is no. It is the reason a rejected state can be carried at all:
 /// nobody pays for it until somebody wants it.
 pub fn refusing() -> Bool {
-  refusal_hook.val is Some(_)
+  runtime_notice_hook.val is Some(_)
 }
 
 ///|
@@ -184,7 +258,7 @@ pub fn refusing() -> Bool {
 /// render-time name that nothing answers — is its own chain end and goes
 /// straight out.
 pub fn refuse(r : Refusal) -> Unit {
-  guard refusal_hook.val is Some(f) else { return }
+  guard runtime_notice_hook.val is Some(f) else { return }
   match dispatch_scope.val {
     Some(sc) =>
       if sc.held is None {
@@ -199,8 +273,17 @@ pub fn refuse(r : Refusal) -> Unit {
           },
         )
       }
-    None => f(r)
+    None => f(Refused(r))
   }
+}
+
+///|
+/// Report an exercised gradual protocol assumption that failed. Unlike a
+/// refusal, this is delivered immediately: the resolution already kept the UI
+/// usable, so there is no dispatch-chain deduplication to perform.
+pub fn protocol_mismatch(n : RuntimeProtocolNotice) -> Unit {
+  guard runtime_notice_hook.val is Some(f) else { return }
+  f(ProtocolMismatch(n))
 }
 
 ///|
@@ -210,7 +293,7 @@ pub fn refuse(r : Refusal) -> Unit {
 /// so it cannot close the outer one's scope: one dispatch, one record, however
 /// many layers it walked.
 fn begin_dispatch(path : Path) -> Bool {
-  guard refusal_hook.val is Some(_) else { return false }
+  guard runtime_notice_hook.val is Some(_) else { return false }
   guard dispatch_scope.val is None else { return false }
   dispatch_scope.val = Some({ path, held: None })
   true
@@ -226,6 +309,6 @@ fn end_dispatch(opened : Bool) -> Unit {
   }
   dispatch_scope.val = None
   guard held is Some(r) else { return }
-  guard refusal_hook.val is Some(f) else { return }
-  f(r)
+  guard runtime_notice_hook.val is Some(f) else { return }
+  f(Refused(r))
 }

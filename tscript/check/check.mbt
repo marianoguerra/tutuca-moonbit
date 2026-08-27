@@ -480,7 +480,18 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       }
     }
     SEffect(name~, args~, span~, ..) => {
-      for a in args {
+      let message_arg = if names_a_message(name) {
+        Some(if name == "sendAt" { 1 } else { 0 })
+      } else {
+        None
+      }
+      for i, a in args {
+        // A naming operand is syntax interpreted below, not a value
+        // expression. In particular, an unquoted protocol member must not
+        // also be diagnosed as an unknown local variable.
+        if message_arg == Some(i) {
+          continue
+        }
         // A `&` place is a POSITION and has no value, so it is checked as a
         // place rather than inferred as one.
         match a {
@@ -497,13 +508,41 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       // `forward` re-dispatches the one that arrived, and `reply` and `fail`
       // are addressed by the walk. Asking them would report `reply 1` as a
       // dynamic message name.
-      if names_a_message(name) && args.get(0) is Some(a0) && !(a0 is ERef(..)) {
-        if !(a0 is ELit(lit=LStr(_), ..)) {
-          self.say(
-            "DYNAMIC_MESSAGE",
-            "`\{name}` needs a literal message name: the generator routes it, so it has to be known before anything runs",
-            span,
-          )
+      if names_a_message(name) {
+        let name_at = message_arg.unwrap()
+        if args.get(name_at) is Some(a0) {
+          match a0 {
+            ELit(lit=LStr(_), ..) => () // explicitly raw
+            EName(name=source_name, ..) =>
+              match self.def.operation_name(source_name) {
+                None =>
+                  self.say(
+                    "PROTOCOL_UNRESOLVED",
+                    "`\{source_name}` uses a protocol name this component did not import",
+                    span,
+                  )
+                Some(wire_name) => {
+                  let declared = if name == "intent" {
+                    self.def.express_intent
+                  } else {
+                    self.def.express_message
+                  }
+                  if !declared.iter().any(m => m.name == wire_name) {
+                    self.say(
+                      "PROTOCOL_EXPRESSION_UNDECLARED",
+                      "`\{source_name}` is not declared in this component's `express` surface",
+                      span,
+                    )
+                  }
+                }
+              }
+            _ =>
+              self.say(
+                "DYNAMIC_MESSAGE",
+                "`\{name}` needs a raw quoted name or a declared protocol operation",
+                span,
+              )
+          }
         }
       }
     }

@@ -8,11 +8,13 @@ import {
 // Values
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
 
-pub fn on_refusal((@core.Refusal) -> Unit) -> () -> Unit
+pub fn on_runtime_notice((@core.RuntimeNotice) -> Unit) -> () -> Unit
 
 pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
 
 pub fn precondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
+
+pub fn protocol_mismatch(@core.RuntimeProtocolNotice) -> Unit
 
 pub fn refuse(@core.Refusal) -> Unit
 
@@ -31,9 +33,17 @@ pub using @core {type IntentOpts}
 
 pub using @core {type Leg}
 
+pub using @core {type ProtocolIssueCode}
+
 pub using @core {type Refusal}
 
 pub using @core {type RefusalCode}
+
+pub using @core {type RuntimeNotice}
+
+pub using @core {type RuntimeProtocolNotice}
+
+pub using @core {type RuntimeResolution}
 
 pub using @core {type Value}
 

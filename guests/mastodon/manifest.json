@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "apiVersion": 8,
+  "apiVersion": 9,
   "moduleName": "mastodonlib",
   "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data — no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",
   "version": "0.1.0",
@@ -130,7 +130,15 @@
         }
       ],
       "style": "",
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Status",
@@ -512,7 +520,15 @@
         "folded",
         "unfolded"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Poll",
@@ -672,7 +688,15 @@
         "voted",
         "unvoted"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Thread",
@@ -857,7 +881,15 @@
         "boosted",
         "unboosted"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Timeline",
@@ -1073,7 +1105,15 @@
         "unboosted",
         "replyTo"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     },
     {
       "name": "Profile",
@@ -1346,7 +1386,15 @@
         "unboosted",
         "replyTo"
       ],
-      "serves": []
+      "serves": [],
+      "expressMessages": [],
+      "expressIntents": [],
+      "implements": [],
+      "protocols": [],
+      "propertyBindings": [],
+      "viewBindings": [],
+      "provideBindings": [],
+      "lookupBindings": []
     }
   ]
 }

@@ -155,6 +155,7 @@ fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
       ])
     TyRecord(n) | TyEnum(n) | TyVariant(n) => defs.named(n)
     TyComp(c) => defs.component_ref(c)
+    TyCompProtocols(_) => defs.component_ref(None)
     // The one named shape this projection describes rather than merely labels
     // — see table_defs.mbt for why that asymmetry is the point.
     TyTable => defs.table()
@@ -184,7 +185,7 @@ fn bounds_numeric(ty : @tutuca.TyInfo) -> Bool {
 /// on text and elements on a collection; a bool has neither.
 fn bounds_length(ty : @tutuca.TyInfo) -> Bool {
   match ty {
-    TyBool | TyInt | TyFloat | TyComp(_) | TyTable => false
+    TyBool | TyInt | TyFloat | TyComp(_) | TyCompProtocols(_) | TyTable => false
     TyOption(inner) => bounds_length(inner)
     _ => true
   }

@@ -29,7 +29,8 @@
     samples : Array[Sample]
   }
 
-  receive {
+  handle {
+    message {
     /// Files the page forwarded — dropped anywhere on it, or on a cell that
     /// handed back what was not its.
     filesDropped(Any)
@@ -39,13 +40,18 @@
     /// a reason, and the bar loads on behalf of whoever asked.
     dyncompLoaded(String, Int)
     dyncompError(String, Int)
+
+    }
   }
 
-  intent {
+  handle {
+    intent {
     /// The catalog changed. Whatever is above re-reads it — a bar showing
     /// search results, or a gallery showing every configuration — rather than
     /// telling a person to ask again.
     catalogChanged(String)
+
+    }
   }
 </script>
 

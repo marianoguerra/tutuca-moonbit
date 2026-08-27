@@ -72,6 +72,9 @@ references needed for the task.
   pagination, and custom collections.
 - [messages-and-intents.md](./messages-and-intents.md) — messages, addressed
   sends, intent routes and outcomes, forwarding, replies, and async delivery.
+- [protocols.md](./protocols.md) — shared component contracts, implicit and
+  named operations, semantic views/properties, constraints, and strict versus
+  gradual validation.
 - [macros.md](./macros.md) — reusable view markup and slots.
 - [styles.md](./styles.md) — scoped, common, and global component CSS.
 - [advanced.md](./advanced.md) — drag and drop, dynamic bindings, pseudo-`x`,

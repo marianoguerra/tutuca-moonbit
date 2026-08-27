@@ -10,8 +10,11 @@
     limit : Int
   }
 
-  receive Draft {
+  handle Draft {
+    message {
     init
+
+    }
   }
 </script>
 
@@ -28,7 +31,7 @@
   pred over { (len .text) > .limit }
 
   /// The bar's width, as a whole style declaration.
-  /// 
+  ///
   /// Computed HERE rather than interpolated into the attribute, and
   /// that is a rule rather than a preference: a view slot names
   /// things, it does not call them, so `{(len .text)}` written in an
@@ -39,7 +42,7 @@
   /// One declaration calling two others, and `if` in a value
   /// position — where both arms are required, because an expression
   /// has to have a value.
-  /// 
+  ///
   /// `over` and `left` are written BARE. The `$` spelling belongs to
   /// a template, where the render stack answers it; inside a body it
   /// names nothing, and the compiler refuses it in so many words.

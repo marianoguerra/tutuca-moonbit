@@ -518,7 +518,7 @@ pub fn[N] Harness::send_at_root(
 }
 
 ///|
-/// Every refusal `body` produced — the channel `@tutuca.on_refusal` opens,
+/// Every refusal `body` produced — filtered from the runtime notice channel,
 /// scoped to one stretch of driving and switched off again afterwards.
 ///
 /// A free function rather than a `Harness` method because it needs no harness:
@@ -544,7 +544,12 @@ pub fn[N] Harness::send_at_root(
 /// ```
 pub fn refusals_while(body : () -> Unit raise) -> Array[@tutuca.Refusal] raise {
   let out : Array[@tutuca.Refusal] = []
-  let off = @tutuca.on_refusal(r => out.push(r))
+  let off = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => out.push(r)
+      _ => ()
+    }
+  })
   // Switched off on the way out of a failure too: a driving call that raises —
   // a selector matching nothing — must not leave the channel open for whatever
   // test runs next.

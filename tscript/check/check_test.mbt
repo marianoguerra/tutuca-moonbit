@@ -38,8 +38,15 @@ fn schema() -> String {
     #|  provide { count = .count }
     #|  lookup { theme, color = 'gray' }
     #|}
-    #|receive Counter { resetTo(Int), rename(String, Int) }
-    #|intent  Counter { rowPicked(Int), save(String) }
+    #|handle Counter {
+    #|  message { resetTo(Int), rename(String, Int) }
+    #|  intent { rowPicked(Int), save(String) }
+    #|}
+    #|import protocol "example/Bus@1" as Bus
+    #|express Counter {
+    #|  message { flash, Bus::notify }
+    #|  intent { persist }
+    #|}
   )
 }
 
@@ -293,8 +300,20 @@ test "an effect's message name has to be known before anything runs" {
   assert_eq(codes("receive x { stop }"), [])
   assert_eq(codes("receive x { sendAt &.labels[0] 'select' }"), [])
   assert_eq(messages("receive x { send .name 'body' }"), [
-    "`send` needs a literal message name: the generator routes it, so it has to be known before anything runs",
+    "`send` needs a raw quoted name or a declared protocol operation",
   ])
+}
+
+///|
+test "raw, implicit, and named-protocol effects are distinct" {
+  assert_eq(codes("receive x { send 'flash' }"), [])
+  assert_eq(codes("receive x { send flash }"), [])
+  assert_eq(codes("receive x { send Bus::notify }"), [])
+  assert_eq(codes("receive x { intent persist }"), [])
+  assert_eq(codes("receive x { send missing }"), [
+    "PROTOCOL_EXPRESSION_UNDECLARED",
+  ])
+  assert_eq(codes("receive x { send Missing::notify }"), ["PROTOCOL_UNRESOLVED"])
 }
 
 ///|

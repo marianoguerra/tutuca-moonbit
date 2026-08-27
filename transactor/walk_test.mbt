@@ -554,8 +554,11 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
   }
   let reg = Registry::{ handlers, }
   let refusals : Array[String] = []
-  let restore = @tutuca.on_refusal(r => {
-    refusals.push(r.code.word() + ":" + r.asked)
+  let restore = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => refusals.push(r.code.word() + ":" + r.asked)
+      _ => ()
+    }
   })
   let tx = @transactor.Transactor::new(tree("none", "none"), intents=reg)
   let _ = tx.push_send(item_at(), "go-answered", [Str("d")])
@@ -573,7 +576,12 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
 ///|
 test "a sender that declared Ok alone hears about an intent nobody answered" {
   let refusals : Array[String] = []
-  let restore = @tutuca.on_refusal(r => refusals.push(r.code.word()))
+  let restore = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => refusals.push(r.code.word())
+      _ => ()
+    }
+  })
   let tx = @transactor.Transactor::new(tree("none", "none"))
   let _ = tx.push_send(item_at(), "go-lex", [])
   tx.settle() |> ignore

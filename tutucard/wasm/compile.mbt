@@ -238,6 +238,15 @@ pub fn compile(
           fields: [],
           receive: [],
           intent: [],
+          express_message: [],
+          express_intent: [],
+          implements: [],
+          protocols: [],
+          protocol_imports: [],
+          property_bindings: [],
+          view_bindings: [],
+          provide_bindings: [],
+          lookup_bindings: [],
           types: [],
           provide: [],
           lookup: [],
@@ -1422,7 +1431,7 @@ fn jv_type_expr(g : Gen, ty : @statedef.StateTy) -> @abi.I {
     // A variant is a Map or a Null depending on the case, a component slot is
     // a host-side thing a guest never holds, and `TAny` is the whole point of
     // being unconstrained.
-    TVariant(_) | TComp(_) | TAny => call("jv_type_any", [])
+    TVariant(_) | TComp(_) | TCompProtocols(_) | TAny => call("jv_type_any", [])
   }
 }
 

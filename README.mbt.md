@@ -102,7 +102,9 @@ that spells its types the way MoonBit does, next to the templates that read it:
 ```html
 <script type="tutuca/state">
   state Counter { label: String, count: Int, history: Array[Int] }
-  receive Counter { resetTo(Int) }
+  handle Counter {
+    message { resetTo(Int) }
+  }
 </script>
 ```
 
@@ -116,7 +118,7 @@ build themselves from it with no component registry in hand. And every
 `.field` a view reads is checked against it, inside an `@each` body as well as
 at the root. A misspelt field is a
 generation failure naming the near miss, where before it rendered as null.
-The `receive` / `intent` buckets get typed enums too: those
+The `handle { message / intent }` surfaces get typed enums too: those
 names are raised from MoonBit rather than written in a view, so the schema is
 the only place they can be declared.
 

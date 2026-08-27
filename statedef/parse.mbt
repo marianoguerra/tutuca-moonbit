@@ -151,7 +151,9 @@ priv enum RawKind {
   RState
   RStruct
   REnum
-  RBucket(String)
+  RProtocol(String)
+  RProtocolImport(String)
+  RSurface(String)
 }
 
 ///|
@@ -166,9 +168,26 @@ priv struct RawDecl {
   fields : Array[RawField]
   /// Cases, for `enum` and the buckets.
   cases : Array[RawCase]
+  handle_message : Array[RawCase]
+  handle_intent : Array[RawCase]
+  express_message : Array[RawCase]
+  express_intent : Array[RawCase]
+  properties : Array[RawField]
+  views : Array[RawCase]
+  implements : Array[(String, Span)]
+  bindings : Array[RawBinding]
   /// The wiring sections, for `state`.
   provide : Array[ProvideDecl]
   lookup : Array[LookupDecl]
+}
+
+///|
+priv struct RawBinding {
+  section : String
+  protocol_name : String
+  member_name : String
+  source : String
+  span : Span
 }
 
 ///|
@@ -197,6 +216,8 @@ priv enum RawTy {
   ROpt(RawTy, Span)
   /// `(A, B)`
   RTuple(Array[RawTy], Span)
+  /// `protocol P & Q` inside `Component[…]`.
+  RProtocolSet(Array[(String, Span)], Span)
 }
 
 ///|
@@ -205,6 +226,7 @@ fn RawTy::span(self : RawTy) -> Span {
     RNamed(span~, ..) => span
     ROpt(_, s) => s
     RTuple(_, s) => s
+    RProtocolSet(_, s) => s
   }
 }
 
@@ -220,57 +242,180 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       break
     }
     let (word, word_span) = p.ident(
-      "a declaration: state, struct, enum, receive or intent",
+      "a declaration: state, struct, enum, protocol or import",
     )
+    // `import protocol "id" as Alias` has no body. The declaration is still
+    // collected beside protocols so the second pass resolves only ids.
+    if word == "import" {
+      let (protocol_word, ps) = p.ident("`protocol`")
+      if protocol_word != "protocol" {
+        raise Syntax(msg="only protocols are imported here", span=ps)
+      }
+      let id = match p.peek() {
+        TStr(s) => {
+          p.bump() |> ignore
+          s
+        }
+        _ => p.fail("a canonical protocol string id")
+      }
+      let (as_word, as_span) = p.ident("`as` and a local protocol name")
+      if as_word != "as" {
+        raise Syntax(msg="expected `as`", span=as_span)
+      }
+      let (local_name, name_span) = p.ident("a local protocol name")
+      out.push(empty_raw(RProtocolImport(id), local_name, name_span, doc))
+      continue
+    }
+    let mut protocol_id = ""
     let kind : RawKind = match word {
       "state" => RState
       "struct" => RStruct
       "enum" => REnum
-      "receive" | "intent" => RBucket(word)
+      "protocol" => RProtocol("")
+      "handle" | "express" => RSurface(word)
       _ => raise UnknownDecl(got=word, span=word_span)
     }
-    // A `state` may be bare; everything else is named.
     let (name, name_span) = match kind {
-      RState =>
+      RState | RSurface(_) =>
         if p.peek() is TIdent(_) {
           p.ident("the component's name")
         } else {
           ("", word_span)
         }
-      // A bucket is named the way a `state` is: bare for the file's single
-      // component, named when there are several.
-      RBucket(_) =>
-        if p.peek() is TIdent(_) {
-          p.ident("the component whose messages these are")
-        } else {
-          ("", word_span)
+      _ =>
+        p.ident(
+          if kind is RProtocol(_) {
+            "the protocol's local name"
+          } else {
+            "the type's name"
+          },
+        )
+    }
+    if kind is RProtocol(_) {
+      p.expect(TEquals, "`=` before the canonical protocol id")
+      protocol_id = match p.peek() {
+        TStr(s) => {
+          p.bump() |> ignore
+          s
         }
-      _ => p.ident("the type's name")
+        _ => p.fail("a canonical protocol string id")
+      }
+    }
+    let actual_kind = if kind is RProtocol(_) {
+      RProtocol(protocol_id)
+    } else {
+      kind
+    }
+    let implements : Array[(String, Span)] = []
+    if actual_kind is RState && p.peek() is TIdent("implements") {
+      p.bump() |> ignore
+      for ;; {
+        implements.push(p.ident("a protocol name"))
+        if p.peek() is TComma {
+          p.bump() |> ignore
+          continue
+        }
+        break
+      }
     }
     p.expect(TLBrace, "`{` opening the body")
     let fields : Array[RawField] = []
     let cases : Array[RawCase] = []
+    let handle_message : Array[RawCase] = []
+    let handle_intent : Array[RawCase] = []
+    let express_message : Array[RawCase] = []
+    let express_intent : Array[RawCase] = []
+    let properties : Array[RawField] = []
+    let views : Array[RawCase] = []
+    let bindings : Array[RawBinding] = []
     let provide : Array[ProvideDecl] = []
     let lookup : Array[LookupDecl] = []
-    let takes_fields = kind is (RState | RStruct)
+    let takes_fields = actual_kind is (RState | RStruct)
+    if actual_kind is RSurface(outer) {
+      parse_channel_body(
+        p,
+        outer,
+        if outer == "handle" {
+          handle_message
+        } else {
+          express_message
+        },
+        if outer == "handle" {
+          handle_intent
+        } else {
+          express_intent
+        },
+      )
+      p.expect(TRBrace, "`}` closing the \{outer} declaration")
+      out.push({
+        kind: actual_kind,
+        name,
+        name_span,
+        doc,
+        fields,
+        cases,
+        handle_message,
+        handle_intent,
+        express_message,
+        express_intent,
+        properties,
+        views,
+        implements,
+        bindings,
+        provide,
+        lookup,
+      })
+      continue
+    }
     while !(p.peek() is (TRBrace | TEof)) {
       // Docs first, because a section is documented the way a field is and the
       // comment sits between the brace and the word.
       let member_doc = p.docs()
       // A wiring section, which only a `state` may carry: `struct` describes a
       // value and a value publishes nothing.
+      if p.peek() is TIdent(w) && (w == "handle" || w == "express") {
+        p.bump() |> ignore
+        if !(actual_kind is (RState | RProtocol(_))) {
+          raise Syntax(
+            msg="`\{w}` is a component or protocol capability section",
+            span=p.span(),
+          )
+        }
+        parse_channels(
+          p,
+          w,
+          if w == "handle" {
+            handle_message
+          } else {
+            express_message
+          },
+          if w == "handle" {
+            handle_intent
+          } else {
+            express_intent
+          },
+        )
+        continue
+      }
       if p.peek() is TIdent(w) &&
-        (w == "provide" || w == "lookup") &&
+        (w == "provide" || w == "lookup" || w == "property" || w == "view") &&
         p.peek_at(1) is TLBrace {
         let word_at = p.span()
         p.bump() |> ignore
-        if !(kind is RState) {
+        if actual_kind is RProtocol(_) {
+          parse_protocol_members(p, w, properties, views)
+        } else if actual_kind is RState {
+          if w == "provide" || w == "lookup" {
+            parse_state_wiring(p, w, provide, lookup, bindings)
+          } else {
+            parse_bindings(p, w, bindings)
+          }
+        } else {
           raise Syntax(
-            msg="`\{w}` says where a value comes from, which only a component can say — move it into a `state`",
+            msg="`\{w}` is only valid in a state or protocol",
             span=word_at,
           )
         }
-        parse_wiring(p, w, provide, lookup)
         continue
       }
       let attrs = p.attrs()
@@ -311,9 +456,181 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       p.skip_comma()
     }
     p.expect(TRBrace, "`}` closing the body")
-    out.push({ kind, name, name_span, doc, fields, cases, provide, lookup })
+    out.push({
+      kind: actual_kind,
+      name,
+      name_span,
+      doc,
+      fields,
+      cases,
+      handle_message,
+      handle_intent,
+      express_message,
+      express_intent,
+      properties,
+      views,
+      implements,
+      bindings,
+      provide,
+      lookup,
+    })
   }
   out
+}
+
+///|
+fn empty_raw(
+  kind : RawKind,
+  name : String,
+  span : Span,
+  doc : String?,
+) -> RawDecl {
+  {
+    kind,
+    name,
+    name_span: span,
+    doc,
+    fields: [],
+    cases: [],
+    handle_message: [],
+    handle_intent: [],
+    express_message: [],
+    express_intent: [],
+    properties: [],
+    views: [],
+    implements: [],
+    bindings: [],
+    provide: [],
+    lookup: [],
+  }
+}
+
+///|
+fn parse_channels(
+  p : P,
+  outer : String,
+  messages : Array[RawCase],
+  intents : Array[RawCase],
+) -> Unit raise DefError {
+  p.expect(TLBrace, "`{` opening the \{outer} section")
+  parse_channel_body(p, outer, messages, intents)
+  p.expect(TRBrace, "`}` closing the \{outer} section")
+}
+
+///|
+fn parse_channel_body(
+  p : P,
+  outer : String,
+  messages : Array[RawCase],
+  intents : Array[RawCase],
+) -> Unit raise DefError {
+  while !(p.peek() is (TRBrace | TEof)) {
+    let (kind, span) = p.ident("`message` or `intent`")
+    let target = match kind {
+      "message" => messages
+      "intent" => intents
+      _ =>
+        raise Syntax(
+          msg="`\{outer}` contains `message` and `intent` sections",
+          span~,
+        )
+    }
+    p.expect(TLBrace, "`{` opening the \{kind} section")
+    parse_cases(p, target)
+    p.expect(TRBrace, "`}` closing the \{kind} section")
+  }
+}
+
+///|
+fn parse_cases(p : P, out : Array[RawCase]) -> Unit raise DefError {
+  while !(p.peek() is (TRBrace | TEof)) {
+    let doc = p.docs()
+    let (first_name, span) = p.ident("a message or intent name")
+    let name = if p.peek() is TDoubleColon {
+      p.bump() |> ignore
+      let (member_name, _) = p.ident("a protocol member name")
+      first_name + "::" + member_name
+    } else {
+      first_name
+    }
+    let payload : Array[RawTy] = []
+    if p.peek() is TLParen {
+      p.bump() |> ignore
+      if !(p.peek() is TRParen) {
+        for ;; {
+          payload.push(parse_ty(p))
+          if p.peek() is TComma {
+            p.bump() |> ignore
+            continue
+          }
+          break
+        }
+      }
+      p.expect(TRParen, "`)` closing the payload")
+    }
+    out.push({ name, span, doc, payload })
+    p.skip_comma()
+  }
+}
+
+///|
+fn qualified(p : P) -> (String, String, Span) raise DefError {
+  let (protocol_name, span) = p.ident("a protocol-qualified name")
+  p.expect(TDoubleColon, "`::` between a protocol and member")
+  let (member_name, _) = p.ident("a protocol member name")
+  (protocol_name, member_name, span)
+}
+
+///|
+fn parse_bindings(
+  p : P,
+  section : String,
+  out : Array[RawBinding],
+) -> Unit raise DefError {
+  p.expect(TLBrace, "`{` opening the \{section} section")
+  while !(p.peek() is (TRBrace | TEof)) {
+    let (protocol_name, member_name, span) = qualified(p)
+    p.expect(TEquals, "`=` before the implementation")
+    let source = match p.peek() {
+      TExpr(s) => {
+        p.bump() |> ignore
+        s
+      }
+      _ => p.fail("a field, computation, or view name")
+    }
+    out.push({ section, protocol_name, member_name, source, span })
+    p.skip_comma()
+  }
+  p.expect(TRBrace, "`}` closing the \{section} section")
+}
+
+///|
+fn parse_protocol_members(
+  p : P,
+  section : String,
+  properties : Array[RawField],
+  views : Array[RawCase],
+) -> Unit raise DefError {
+  p.expect(TLBrace, "`{` opening the \{section} section")
+  while !(p.peek() is (TRBrace | TEof)) {
+    let doc = p.docs()
+    let attrs = p.attrs()
+    let (name, span) = p.ident("a \{section} name")
+    if section == "view" {
+      views.push({ name, span, doc, payload: [] })
+    } else {
+      p.expect(TColon, "`:` before the \{section} type")
+      properties.push({
+        name: section + "::" + name,
+        span,
+        doc,
+        attrs,
+        ty: parse_ty(p),
+      })
+    }
+    p.skip_comma()
+  }
+  p.expect(TRBrace, "`}` closing the \{section} section")
 }
 
 ///|
@@ -323,22 +640,47 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
 /// the value, and a lookup names what it wants and MAY say what to fall back
 /// on. The expression itself arrives as one `TExpr` — the lexer found where it
 /// ended and read none of it.
-fn parse_wiring(
+fn parse_state_wiring(
   p : P,
   word : String,
   provide : Array[ProvideDecl],
   lookup : Array[LookupDecl],
+  bindings : Array[RawBinding],
 ) -> Unit raise DefError {
   let is_provide = word == "provide"
   p.expect(TLBrace, "`{` opening the \{word} section")
   while !(p.peek() is (TRBrace | TEof)) {
-    let (name, span) = p.ident(
+    let (first, span) = p.ident(
       if is_provide {
         "the name this component publishes under"
       } else {
         "the name this component is asking for"
       },
     )
+    // A qualified binding belongs to a protocol namespace and never enters
+    // the raw lookup table, avoiding collisions with an unrelated raw name.
+    if p.peek() is TDoubleColon {
+      p.bump() |> ignore
+      let (member_name, _) = p.ident("a protocol member name")
+      p.expect(TEquals, "`=` before the implementation")
+      let source = match p.peek() {
+        TExpr(s) => {
+          p.bump() |> ignore
+          s
+        }
+        _ => p.fail("an expression after `=`")
+      }
+      bindings.push({
+        section: word,
+        protocol_name: first,
+        member_name,
+        source,
+        span,
+      })
+      p.skip_comma()
+      continue
+    }
+    let name = first
     let seen = if is_provide {
       provide.iter().any(e => e.name == name)
     } else {
@@ -406,7 +748,19 @@ fn parse_ty(p : P) -> RawTy raise DefError {
       let args : Array[RawTy] = []
       if p.peek() is TLBracket {
         p.bump() |> ignore
-        if !(p.peek() is TRBracket) {
+        if name == "Component" && p.peek() is TIdent("protocol") {
+          p.bump() |> ignore
+          let refs : Array[(String, Span)] = []
+          for ;; {
+            refs.push(p.ident("a protocol name"))
+            if p.peek() is TAmp {
+              p.bump() |> ignore
+              continue
+            }
+            break
+          }
+          args.push(RProtocolSet(refs, nspan))
+        } else if !(p.peek() is TRBracket) {
           for ;; {
             args.push(parse_ty(p))
             if p.peek() is TComma {
@@ -444,6 +798,7 @@ priv struct Env {
   decls : Map[String, RawDecl]
   /// Component name -> itself, so a field can name a sibling.
   comps : Map[String, String]
+  protocols : Map[String, String]
 }
 
 ///|
@@ -505,7 +860,19 @@ pub fn parse_state(
       _ => ()
     }
   }
-  let env : Env = { decls, comps }
+  let protocols : Map[String, String] = Map([])
+  for d in raw {
+    match d.kind {
+      RProtocol(id) | RProtocolImport(id) => {
+        if protocols.contains(d.name) {
+          raise ProtocolConflict(id~, span=d.name_span)
+        }
+        protocols[d.name] = id
+      }
+      _ => ()
+    }
+  }
+  let env : Env = { decls, comps, protocols }
   let out : Array[StateDef] = []
   for d in raw {
     guard d.kind is RState else { continue }
@@ -525,18 +892,32 @@ fn build(
   let _ = fallback
   let comp = env.comps.get(d.name).unwrap()
   let fields = fields_of(d.fields, env)
-  // The buckets belong to the file, and a file declares one component's
-  // messages or none — a second `receive` would be the same bucket twice.
-  let bucket = (which : String) => {
-    let cases : Array[RawCase] = []
-    for r in raw {
-      if r.kind is RBucket(w) && w == which && r.name == d.name {
-        for c in r.cases {
-          cases.push(c)
+  let handle_message = d.handle_message.copy()
+  let handle_intent = d.handle_intent.copy()
+  let express_message = d.express_message.copy()
+  let express_intent = d.express_intent.copy()
+  for r in raw {
+    if r.name == d.name {
+      match r.kind {
+        RSurface("handle") => {
+          for c in r.handle_message {
+            handle_message.push(c)
+          }
+          for c in r.handle_intent {
+            handle_intent.push(c)
+          }
         }
+        RSurface("express") => {
+          for c in r.express_message {
+            express_message.push(c)
+          }
+          for c in r.express_intent {
+            express_intent.push(c)
+          }
+        }
+        _ => ()
       }
     }
-    msgs_of(cases, env)
   }
   let types : Array[UserTy] = []
   for _name, decl in env.decls {
@@ -544,18 +925,101 @@ fn build(
   }
   types.sort_by((a, b) => str_cmp(a.source_name, b.source_name))
   check_acyclic(types, fields, d.name_span)
+  let protocol_defs : Array[ProtocolDef] = []
+  let protocol_imports : Array[ProtocolRef] = []
+  for r in raw {
+    match r.kind {
+      RProtocol(id) => protocol_defs.push(protocol_of(r, id, env))
+      RProtocolImport(id) =>
+        protocol_imports.push({ local_name: r.name, id, span: r.name_span })
+      _ => ()
+    }
+  }
+  let implements : Array[String] = []
+  for pair in d.implements {
+    guard env.protocols.get(pair.0) is Some(id) else {
+      raise UnknownProtocol(local_name=pair.0, span=pair.1)
+    }
+    implements.push(id)
+  }
+  let bindings : Array[ProtocolBinding] = []
+  for b in d.bindings {
+    guard env.protocols.get(b.protocol_name) is Some(id) else {
+      raise UnknownProtocol(local_name=b.protocol_name, span=b.span)
+    }
+    bindings.push({
+      protocol_id: id,
+      member_name: b.member_name,
+      source: b.source,
+      span: b.span,
+    })
+  }
+  let binding_section = (section : String) => {
+    let out : Array[ProtocolBinding] = []
+    for i, b in bindings {
+      if d.bindings[i].section == section {
+        out.push(b)
+      }
+    }
+    out
+  }
   {
     source_name: d.name,
     component: comp,
     fields,
-    receive: bucket("receive"),
-    intent: bucket("intent"),
+    receive: msgs_of(handle_message, env),
+    intent: msgs_of(handle_intent, env),
+    express_message: msgs_of(express_message, env),
+    express_intent: msgs_of(express_intent, env),
+    implements,
+    protocols: protocol_defs,
+    protocol_imports,
+    property_bindings: binding_section("property"),
+    view_bindings: binding_section("view"),
+    provide_bindings: binding_section("provide"),
+    lookup_bindings: binding_section("lookup"),
     // `func` is gone: a callable is declared in the script block, where every
     // other callable already lives.
     types,
     provide: d.provide,
     lookup: d.lookup,
     doc: d.doc,
+  }
+}
+
+///|
+fn protocol_of(
+  d : RawDecl,
+  id : String,
+  env : Env,
+) -> ProtocolDef raise DefError {
+  let props = (section : String) => {
+    let out : Array[PropertyDef] = []
+    let prefix = section + "::"
+    for f in d.properties {
+      if f.name.has_prefix(prefix) {
+        out.push({
+          name: f.name[prefix.length():].to_owned(),
+          ty: resolve(f.ty, env),
+          doc: f.doc,
+        })
+      }
+    }
+    out
+  }
+  {
+    local_name: d.name,
+    id,
+    handle_message: msgs_of(d.handle_message, env),
+    handle_intent: msgs_of(d.handle_intent, env),
+    express_message: msgs_of(d.express_message, env),
+    express_intent: msgs_of(d.express_intent, env),
+    properties: props("property"),
+    views: d.views.map(v => v.name),
+    provides: props("provide"),
+    lookups: props("lookup"),
+    doc: d.doc,
+    span: d.name_span,
   }
 }
 
@@ -591,13 +1055,30 @@ fn span_of(raw : Array[RawField]) -> Span {
 
 ///|
 fn msgs_of(raw : Array[RawCase], env : Env) -> Array[MsgDef] raise DefError {
-  let names = raw.map(c => c.name)
   let first = match raw.get(0) {
     Some(c) => c.span
     None => no_span
   }
-  let runtime = mapped(names, "message", camel_name, first)
-  let variants = mapped(names, "message", upper_name, first)
+  let runtime_names : Array[String] = []
+  let variant_names : Array[String] = []
+  for c in raw {
+    let parts : Array[String] = c.name
+      .split("::")
+      .map(x => x.to_owned())
+      .collect()
+    if parts.length() == 2 {
+      guard env.protocols.get(parts[0]) is Some(id) else {
+        raise UnknownProtocol(local_name=parts[0], span=c.span)
+      }
+      runtime_names.push(id + "::" + camel_name(parts[1]))
+      variant_names.push(upper_name(parts[0]) + upper_name(parts[1]))
+    } else {
+      runtime_names.push(camel_name(c.name))
+      variant_names.push(upper_name(c.name))
+    }
+  }
+  let runtime = mapped(runtime_names, "message", x => x, first)
+  let variants = mapped(variant_names, "message", x => x, first)
   let out : Array[MsgDef] = []
   for i, c in raw {
     let payload : Array[StateTy] = []
@@ -686,6 +1167,16 @@ fn resolve(t : RawTy, env : Env) -> StateTy raise DefError {
       TTuple(out)
     }
     RNamed(name~, args~, span~) => named(name, args, span, env)
+    RProtocolSet(refs, _) => {
+      let ids : Array[String] = []
+      for pair in refs {
+        guard env.protocols.get(pair.0) is Some(id) else {
+          raise UnknownProtocol(local_name=pair.0, span=pair.1)
+        }
+        ids.push(id)
+      }
+      TCompProtocols(ids)
+    }
   }
 }
 
@@ -765,6 +1256,16 @@ fn named(
       } else {
         arity(name, args, 1, span)
         match args[0] {
+          RProtocolSet(refs, _) => {
+            let ids : Array[String] = []
+            for pair in refs {
+              guard env.protocols.get(pair.0) is Some(id) else {
+                raise UnknownProtocol(local_name=pair.0, span=pair.1)
+              }
+              ids.push(id)
+            }
+            TCompProtocols(ids)
+          }
           // `Component["Legend"]` names a component from another module. A
           // string rather than a bare name because it resolves through the
           // registration scope at make time and this file cannot see it.
@@ -891,6 +1392,13 @@ fn walk_inline(
       }
     TRecord(n) | TVariant(n) | TEnum(n) | TFlags(n) =>
       walk_named(n, by_name, on_path, done, span)
-    TBool | TInt(..) | TFloat | TText | TSet | TComp(_) | TAny => ()
+    TBool
+    | TInt(..)
+    | TFloat
+    | TText
+    | TSet
+    | TComp(_)
+    | TCompProtocols(_)
+    | TAny => ()
   }
 }

@@ -18,11 +18,14 @@
   /// Three outcomes, three arms. v1 had one combined `[res, err]` payload and
   /// a split arm that read the wrong slot; v2 gives each outcome its own name
   /// and its own shape.
-  receive {
+  handle {
+    message {
     init
     loadDataOk(Any)
     loadDataError(String)
     loadDataUnhandled
+
+    }
   }
 </script>
 
@@ -36,12 +39,12 @@
   /// it goes out only if the whole body finished — a message sent beside a
   /// transition that did not happen is the one outcome nobody can reason
   /// about afterwards.
-  /// 
+  ///
   /// `lex` is the leg: the answer comes from a handler REGISTERED IN THE
   /// SCOPE, not from a component up the tree. That is what v1 spelled
   /// `request`, and writing it as a route is the whole change — the verb no
   /// longer decides which scope answers.
-  /// 
+  ///
   /// No opts here. The three answer arms are in the schema, so the generator
   /// already knows where the answer goes.
   receive init {

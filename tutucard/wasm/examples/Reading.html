@@ -14,9 +14,12 @@
   /// What the host answers an `intent lex 'rows'` with. No view writes these,
   /// so the schema is the only place they can be declared — and declaring
   /// them is what makes `rows` a request rather than a notification.
-  receive Reading {
+  handle Reading {
+    message {
     rowsOk(Any)
     rowsError(Any)
+
+    }
   }
 </script>
 

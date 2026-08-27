@@ -46,10 +46,15 @@ pub using @core {type IntentOpts, type IntentCall, type IntentAnswer, type Leg}
 pub using @core {
   type Refusal,
   type RefusalCode,
+  type ProtocolIssueCode,
+  type RuntimeResolution,
+  type RuntimeProtocolNotice,
+  type RuntimeNotice,
   precondition_failed,
   postcondition_failed,
   invariant_failed,
-  on_refusal,
+  on_runtime_notice,
+  protocol_mismatch,
   refuse,
   refusing,
 }
