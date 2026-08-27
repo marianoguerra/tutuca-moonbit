@@ -115,6 +115,12 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   exactly one **binding member** — `@text="@value.title"` inside `@each`
   works (any `@`-binding, one level only; `@value.a.b` fails generation
   as `BINDING_MEMBER_TOO_DEEP`, and render targets still reject it).
+- **Use `@bind=".field"` only for checked scalar form bindings.** It requires a
+  state schema and supports `String` text controls/single selects, `Bool`
+  checkboxes, integer number/range inputs, and `Double` number/range inputs.
+  The generator rejects dynamic input types, nested/loop targets and competing
+  attributes or event handlers; invalid numeric edits leave state unchanged.
+  See [events.md](./events.md#two-way-scalar-fields-with-bind) for the matrix.
 - **`make()` / example args are coerced by shape, silently.** Each arg is
   coerced through the field's inferred spec: a value whose shape doesn't
   match the field kind **falls back to the default** (no error). The

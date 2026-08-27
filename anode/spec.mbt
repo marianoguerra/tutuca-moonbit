@@ -163,7 +163,32 @@ pub(all) struct AttrParseResult {
   attrs : Attrs
   wrappers : Array[WrapperAttr]
   text_child : @tutuca.Val?
+  bind : BindData?
 } derive(Debug)
+
+///|
+/// A pending `@bind` found by the HTML parser. The view generator resolves it
+/// against the component schema and fills `event.binding`; keeping the source
+/// value here lets that pass reject anything other than a direct state field.
+pub(all) struct BindData {
+  target : @tutuca.Val
+  property : String
+  event : NodeEvent
+} derive(Debug)
+
+///|
+/// The checked coercion attached to the setter event synthesized for
+/// `@bind`. Runtime dispatch uses it to reject invalid browser values before
+/// they can reach a generated field mutator.
+pub(all) enum BindCoercion {
+  /// Parsed but not schema-checked. Runtime dispatch rejects it; viewgen
+  /// replaces it with one of the concrete cases below.
+  BindPending
+  BindString
+  BindBool
+  BindInt(width~ : Int, signed~ : Bool)
+  BindDouble
+} derive(Debug, Eq)
 
 ///|
 /// Parse an ordered attribute list (as delivered by the HTML parser).
@@ -190,6 +215,7 @@ pub(all) struct NodeEvent {
   name : String
   handler : @tscript.HandlerParse
   modifiers : Array[String]
+  mut binding : BindCoercion?
 } derive(Debug)
 
 // ---------------------------------------------------------------------------
@@ -222,6 +248,7 @@ pub(all) struct DomData {
   /// name — `data-vid`, `data-cid`, `data-nid` — and no rule looks at those.
   /// `sink_hints_test.mbt` holds that.
   mut sink_hints : @sinks.SinkHints?
+  bind : BindData?
 } derive(Debug)
 
 ///|
@@ -538,6 +565,7 @@ declare pub fn on(
   handler : @tutuca.Val,
   args? : Array[@tutuca.Val],
   modifiers? : Array[String],
+  binding? : BindCoercion,
 ) -> NodeEvent
 
 ///|

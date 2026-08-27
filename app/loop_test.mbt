@@ -72,6 +72,46 @@ test "two-way input: value flows in, re-render morphs the DOM" {
 }
 
 ///|
+test "checked @bind coercion skips invalid numeric edits" {
+  let view = @anode.View::from_ir(
+    "main",
+    @anode.h(
+      "input",
+      [
+        @anode.attr("type", "number"),
+        @anode.dyn_attr("value", Field("count")),
+        @anode.eid(0),
+      ],
+      [],
+    ),
+    [
+      [
+        @anode.on(
+          "input",
+          HandlerName(name="setCount", ns=Receive),
+          args=[EventPath(["valueAsInt"])],
+          binding=BindInt(width=32, signed=true),
+        ),
+      ],
+    ],
+  )
+  let comp = @component.component(views={ "main": view }, name="BoundNumber", init=EditorState::{
+    text: "",
+    count: 7,
+  })
+  let (a, container) = mk_app(comp, Map([]))
+  guard find_el(container, "INPUT") is Some(input) else { fail("no input") }
+  assert_true(
+    a.dispatch(input, @render.DomEvent::new(name="input", value=Str("1.5"))),
+  )
+  assert_true(field_v(a, "count") == Num(7))
+  assert_true(
+    a.dispatch(input, @render.DomEvent::new(name="input", value=Str("12"))),
+  )
+  assert_true(field_v(a, "count") == Num(12))
+}
+
+///|
 test "keydown+send modifier gates on Enter" {
   let (a, container) = mk_app(text_editor(), Map([]))
   guard find_el(container, "INPUT") is Some(input) else { fail("no input") }

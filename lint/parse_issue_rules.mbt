@@ -5,7 +5,7 @@
 let known_directive_names : Array[String] = [
   "dangerouslysetinnerhtml", "setinnermd", "setinnerhtml", "setinnersvg", "slot",
   "push-view", "text", "show", "hide", "each", "enrich-with", "when", "loop-with",
-  "then", "else",
+  "then", "else", "bind",
 ]
 
 ///|
@@ -22,7 +22,7 @@ let x_known_attr_names : Array[String] = [
 /// Directive-only names that require a leading `@` on a host element; bare
 /// they are silently swallowed as plain HTML attributes.
 let host_directive_only_names : Array[String] = [
-  "when", "enrich-with", "loop-with", "show", "hide",
+  "when", "enrich-with", "loop-with", "show", "hide", "bind",
 ]
 
 ///|

@@ -123,6 +123,7 @@ fn from_element(
           childs: dom_childs,
           ns,
           sink_hints: None,
+          bind: result.bind,
         }),
         px,
         result.wrappers,

@@ -46,6 +46,46 @@ plus ctx.
 > one either — a name with no sigil is looked up among the binds and nowhere
 > else, so an unbound one answers `Null`. Write `e.value`.
 
+## Two-way scalar fields with `@bind`
+
+`@bind` is the checked shorthand for mirroring a direct state field into a
+form control and dispatching its generated `setX` mutator:
+
+```html
+<input @bind=".name" />
+<textarea @bind=".notes"></textarea>
+<select @bind=".category"><option>work</option></select>
+<input type="checkbox" @bind=".completed" />
+<input type="number" @bind=".count" />
+<input type="number" step="any" @bind=".ratio" />
+```
+
+The component must have a `tutuca/state` schema. View generation reads that
+schema and accepts exactly these combinations:
+
+| State field | Host element | Mirrored property | Event value |
+| --- | --- | --- | --- |
+| `String` | single `<select>`, `<textarea>`, or a non-numeric text-like `<input>` | `value` | `input` (`change` for select), string |
+| `Bool` | `<input type="checkbox">` | `checked` | `input`, boolean |
+| `Int`, `Int8`, `Int16`, `UInt`, `UInt8`, `UInt16` | `<input type="number">` or `range` | `value` | `input`, exact in-range integer |
+| `Double` | `<input type="number">` or `range` | `value` | `input`, finite number |
+
+Text-like input types are a missing `type`, `text`, `search`, `email`, `url`,
+`tel`, `password`, `date`, `month`, `week`, `time`, `datetime-local`, or
+`color`. `@bind` expands conceptually to `:value`/`:checked` plus the matching
+`@on` setter, but the generated event carries a checked coercion too. An empty,
+malformed, fractional integer, non-finite, or out-of-range numeric edit does
+not dispatch the setter, so it leaves the previous field value intact.
+
+Generation refuses `@bind` when its target is not a direct `.field`, when it
+sits under `@each`, when the input `:type` is dynamic, when a select is
+`multiple`, when the field is not one of the scalar types above, or when the
+element/type combination is wrong. It also refuses an explicit `value` or
+`checked` attribute, or another handler for the synthesized event, on the same
+element: either would make ownership or update order ambiguous. Use the
+explicit `:value` plus `@on.<event>` form when the conversion or event policy
+needs to differ.
+
 ## Handler arguments
 
 An event read is an `e.<path>`, and it resolves in two layers —

@@ -51,7 +51,7 @@ pub fn hide(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
 
-pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String]) -> NodeEvent
+pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String], binding? : BindCoercion) -> NodeEvent
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
@@ -122,6 +122,7 @@ pub(all) struct AttrParseResult {
   attrs : Attrs
   wrappers : Array[WrapperAttr]
   text_child : @core.Val?
+  bind : BindData?
 } derive(@debug.Debug)
 
 pub(all) enum Attrs {
@@ -138,12 +139,27 @@ pub(all) enum BadValueRole {
   ValueIssue(@tscript.IssueRole)
 } derive(Eq, @debug.Debug)
 
+pub(all) enum BindCoercion {
+  BindPending
+  BindString
+  BindBool
+  BindInt(width~ : Int, signed~ : Bool)
+  BindDouble
+} derive(Eq, @debug.Debug)
+
+pub(all) struct BindData {
+  target : @core.Val
+  property : String
+  event : NodeEvent
+} derive(@debug.Debug)
+
 pub(all) struct DomData {
   tag : String
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
   mut sink_hints : @sinks.SinkHints?
+  bind : BindData?
 } derive(@debug.Debug)
 
 pub(all) struct EachData {
@@ -197,6 +213,7 @@ pub(all) struct NodeEvent {
   name : String
   handler : @tscript.HandlerParse
   modifiers : Array[String]
+  mut binding : BindCoercion?
 } derive(@debug.Debug)
 
 pub(all) struct NodeEvents {

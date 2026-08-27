@@ -104,7 +104,14 @@ pub fn h(
   childs : Array[ANode],
   ns? : Ns,
 ) -> ANode {
-  Dom({ tag, attrs: attrs_of_items(attrs), childs, ns, sink_hints: None })
+  Dom({
+    tag,
+    attrs: attrs_of_items(attrs),
+    childs,
+    ns,
+    sink_hints: None,
+    bind: None,
+  })
 }
 
 ///|
@@ -189,6 +196,7 @@ pub fn on(
   handler : @tutuca.Val,
   args? : Array[@tutuca.Val] = [],
   modifiers? : Array[String] = [],
+  binding? : BindCoercion,
 ) -> NodeEvent {
-  { name, handler: { handler, args }, modifiers }
+  { name, handler: { handler, args }, modifiers, binding }
 }

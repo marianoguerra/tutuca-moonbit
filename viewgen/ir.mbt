@@ -381,7 +381,16 @@ fn handler_expr(h : @anode.NodeEvent) -> String {
   } else {
     ", modifiers=[" + h.modifiers.map(quote).join(", ") + "]"
   }
-  "\{q}on(\{quote(h.name)}, \{val_expr(h.handler.handler)}\{args}\{mods})"
+  let binding = match h.binding {
+    Some(BindPending) => ", binding=\{q}BindPending"
+    Some(BindString) => ", binding=\{q}BindString"
+    Some(BindBool) => ", binding=\{q}BindBool"
+    Some(BindInt(width~, signed~)) =>
+      ", binding=\{q}BindInt(width=\{width}, signed=\{signed})"
+    Some(BindDouble) => ", binding=\{q}BindDouble"
+    None => ""
+  }
+  "\{q}on(\{quote(h.name)}, \{val_expr(h.handler.handler)}\{args}\{mods}\{binding})"
 }
 
 ///|
@@ -407,7 +416,7 @@ pub fn emit_ir_module(
   source_file : String,
   file : @viewfile.ViewFile,
 ) -> String raise GenError {
-  emit_ir_module_compiled(name, source_file, file, compile_file(file))
+  emit_ir_module_compiled(name, source_file, file, compile_file(file, name))
 }
 
 ///|
@@ -579,7 +588,9 @@ pub fn build_views(
 ) -> Map[String, @anode.View] raise GenError {
   let scope = FileMacros::of(macros)
   let out : Map[String, @anode.View] = Map([])
-  for view in compile_views(views.views, scope) {
+  let compiled = compile_views(views.views, scope)
+  lower_binds(compiled, None)
+  for view in compiled {
     out[view.raw.name] = @anode.View::from_ir(
       view.raw.name,
       view.root,

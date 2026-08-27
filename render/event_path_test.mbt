@@ -152,3 +152,24 @@ test "an event with no resolver answers Null, as a test's event does" {
   // driveable from a test with no DOM at all.
   assert_eq(@render.event_path(e, ["value"]), Str("v"))
 }
+
+///|
+test "DomEvent bind coercions reject invalid edits" {
+  let text = @render.DomEvent::new(name="input", value=Str("hello"))
+  assert_true(text.bind_value(BindString) is Some(Str("hello")))
+  assert_true(text.bind_value(BindBool) is None)
+  let checked = @render.DomEvent::new(name="input", value=Bool(true))
+  assert_true(checked.bind_value(BindBool) is Some(Bool(true)))
+
+  let whole = @render.DomEvent::new(name="input", value=Str("127"))
+  assert_true(whole.bind_value(BindInt(width=8, signed=true)) is Some(Num(127)))
+  for bad in ["", "1.5", "128", "NaN", "Infinity", "12px"] {
+    let e = @render.DomEvent::new(name="input", value=Str(bad))
+    assert_true(e.bind_value(BindInt(width=8, signed=true)) is None)
+  }
+  let unsigned = @render.DomEvent::new(name="input", value=Str("-1"))
+  assert_true(unsigned.bind_value(BindInt(width=8, signed=false)) is None)
+
+  let decimal = @render.DomEvent::new(name="input", value=Str("1.25"))
+  assert_true(decimal.bind_value(BindDouble) is Some(Num(1.25)))
+}

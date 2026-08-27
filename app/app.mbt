@@ -141,13 +141,25 @@ fn run_handlers(
       Method(m) => m
       _ => continue
     }
-    let args : Array[@tutuca.Value] = []
-    match arg_stack {
-      Some(st) =>
-        for a in h.handler.args {
-          args.push(a.eval(st))
+    let args : Array[@tutuca.Value] = match h.binding {
+      Some(coercion) =>
+        match e.bind_value(coercion) {
+          Some(value) => [value]
+          // An empty, fractional, non-finite or out-of-range numeric edit is
+          // not a new state value. Leave the previous field untouched.
+          None => continue
         }
-      None => ()
+      None => {
+        let values : Array[@tutuca.Value] = []
+        match arg_stack {
+          Some(st) =>
+            for a in h.handler.args {
+              values.push(a.eval(st))
+            }
+          None => ()
+        }
+        values
+      }
     }
     // A view raises a MESSAGE, addressed to the component that owns the view:
     // that is what `send` means, so there is no separate bucket for one. The

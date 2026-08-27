@@ -18,6 +18,8 @@ priv struct AttrParser {
   mut each_attr : WrapperAttr?
   mut if_attr : IfAttr?
   mut events : NodeEvents?
+  mut bind_target : @tutuca.Val?
+  mut bind_source : String?
 }
 
 ///|
@@ -30,6 +32,8 @@ fn AttrParser::new(px : ParseContext) -> AttrParser {
     each_attr: None,
     if_attr: None,
     events: None,
+    bind_target: None,
+    bind_source: None,
   }
 }
 
@@ -70,10 +74,22 @@ fn AttrParser::parse(
       self.items.push(ConstA(name~, val=Const(lit~, from_macro=false)))
     }
   }
+  let bind = if parse_all && self.bind_target is Some(_) {
+    // `@bind` owns a host DOM property/event pair; a macro call has neither.
+    // Macro arguments use `:name`, including an argument literally named
+    // `bind`.
+    self.px.issue(
+      UnknownDirective(name="bind", value=self.bind_source.unwrap_or("")),
+    )
+    None
+  } else {
+    self.finish_bind()
+  }
   {
     attrs: attrs_of_items(self.items),
     wrappers: self.wrappers,
     text_child: self.text_child,
+    bind,
   }
 }
 
@@ -228,6 +244,12 @@ fn AttrParser::parse_directive(
     "loop-with" => self.parse_loop_with(s)
     "then" => self.parse_then(s)
     "else" => self.parse_else(s)
+    "bind" => {
+      self.bind_source = Some(s)
+      self.bind_target = self.directive_value(
+        directive_name, s, @tscript.parse_text,
+      )
+    }
     _ =>
       if directive_name is [.. "on.", ..] {
         self.parse_event(directive_name, s)
@@ -240,6 +262,65 @@ fn AttrParser::parse_directive(
       } else {
         self.px.issue(UnknownDirective(name=directive_name, value=s))
       }
+  }
+}
+
+///|
+/// Finish the parser half of `@bind`: mirror the state value into the DOM and
+/// register the setter event. Its coercion remains deliberately unset until
+/// viewgen has the component schema in hand.
+fn AttrParser::finish_bind(self : AttrParser) -> BindData? {
+  guard self.bind_target is Some(target) else { return None }
+  let tag = self.px.current_tag.unwrap_or("").to_lower()
+  let checkbox = tag == "input" && self.static_attr("type") == Some("checkbox")
+  let property = if checkbox { "checked" } else { "value" }
+  let event_name = if tag == "select" { "change" } else { "input" }
+  self.items.push(Plain(name=property, val=target))
+  let events = self.ensure_events()
+  let field = match target {
+    Field(name) => name
+    _ => "invalidBindTarget"
+  }
+  let event : NodeEvent = {
+    name: event_name,
+    handler: {
+      handler: HandlerName(name=@tutuca.mutator_name("set", field), ns=Receive),
+      args: [EventPath(["value"])],
+    },
+    modifiers: [],
+    binding: Some(BindPending),
+  }
+  events.handlers.push(event)
+  Some({ target, property, event })
+}
+
+///|
+fn AttrParser::static_attr(self : AttrParser, wanted : String) -> String? {
+  for item in self.items {
+    match item {
+      ConstA(name~, val=Const(lit=LStr(value), ..)) if name == wanted =>
+        return Some(value.to_lower())
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+fn AttrParser::ensure_events(self : AttrParser) -> NodeEvents {
+  match self.events {
+    Some(ev) => ev
+    None => {
+      let ev = self.px.register_events()
+      self.events = Some(ev)
+      self.items.push(
+        ConstA(
+          name="data-eid",
+          val=Const(lit=LNum(ev.id.to_double()), from_macro=false),
+        ),
+      )
+      ev
+    }
   }
 }
 
@@ -329,20 +410,7 @@ fn AttrParser::parse_event(
   let handler = @tscript.parse_input_handler(value, self.px.value_ctx())
   self.px.drain_value_issues()
   if handler is Some(h) {
-    let events = match self.events {
-      Some(ev) => ev
-      None => {
-        let ev = self.px.register_events()
-        self.events = Some(ev)
-        self.items.push(
-          ConstA(
-            name="data-eid",
-            val=Const(lit=LNum(ev.id.to_double()), from_macro=false),
-          ),
-        )
-        ev
-      }
-    }
+    let events = self.ensure_events()
     events.add(event_name, h, modifiers)
   }
 }

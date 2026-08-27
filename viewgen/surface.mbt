@@ -602,7 +602,9 @@ pub fn view_surface(
   macros? : Array[@viewfile.MacroDef] = [],
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
-  surface_of(compile_views(views, scope))
+  let compiled = compile_views(views, scope)
+  lower_binds(compiled, None)
+  surface_of(compiled)
 }
 
 ///|

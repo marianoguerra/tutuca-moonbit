@@ -45,6 +45,7 @@ pub(all) struct DomEvent {
   prevent_default : EventEffect?
   stop_propagation : EventEffect?
 } derive(@debug.Debug)
+pub fn DomEvent::bind_value(Self, @anode.BindCoercion) -> @core.Value?
 pub fn DomEvent::new(name~ : String, value? : @core.Value, read_path? : EventPathReader, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value, prevent_default? : EventEffect, stop_propagation? : EventEffect) -> Self
 
 pub(all) struct EventDispatch {

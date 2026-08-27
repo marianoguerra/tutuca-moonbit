@@ -131,6 +131,14 @@ declare pub fn DomEvent::new(
 ) -> DomEvent
 
 ///|
+/// Coerce the browser value for a checked `@bind`. `None` means the edit is
+/// invalid and the synthesized setter must not be dispatched.
+declare pub fn DomEvent::bind_value(
+  self : DomEvent,
+  coercion : @anode.BindCoercion,
+) -> @tutuca.Value?
+
+///|
 /// Root frame on the rendered value (publishes its provides when a registry
 /// is present). `event` attaches the DOM event whose handler args this stack
 /// will evaluate. `event_paths` says which rule an `e.<path>` argument

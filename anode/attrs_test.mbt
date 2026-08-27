@@ -138,6 +138,26 @@ test "two events on one node share the same eid" {
 }
 
 ///|
+test "@bind parses to a mirrored property and a pending setter event" {
+  let (root, px) = aparse("<input type=\"checkbox\" @bind=\".done\" />")
+  guard! root is Dom(d)
+  guard! d.bind is Some(bind)
+  assert_true(bind.target is Field("done"))
+  assert_eq(bind.property, "checked")
+  guard! d.attrs is DynAttrs(items)
+  assert_true(
+    items.any(item => item is Plain(name="checked", val=Field("done"))),
+  )
+  assert_eq(px.events.length(), 1)
+  assert_eq(px.events[0].handlers.length(), 1)
+  let h = px.events[0].handlers[0]
+  assert_eq(h.name, "input")
+  assert_true(h.handler.handler is HandlerName(name="setDone", ns=Receive))
+  assert_true(h.handler.args is [EventPath(["value"])])
+  assert_true(h.binding is Some(BindPending))
+}
+
+///|
 test "unknown directive reports an issue but keeps the element" {
   let issues : Array[@anode.ParseIssue] = []
   let (root, _) = collecting_parse("<div @nope=\"v\">x</div>", issues)

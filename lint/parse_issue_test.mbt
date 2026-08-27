@@ -86,6 +86,19 @@ test "bare host directive name hints at the @ prefix" {
 }
 
 ///|
+test "@bind is known and bare bind hints at the @ prefix" {
+  assert_eq(lint_parse("<input @bind=\".name\">").length(), 0)
+  let findings = lint_parse("<input bind=\".name\">")
+  guard! findings[0]
+    is {
+      code: MaybeAddAtPrefix,
+      level: Hint,
+      suggestion: Some(AddPrefix(from="bind", to="@bind")),
+      ..,
+    }
+}
+
+///|
 test "plain bad value stays BAD_VALUE" {
   let findings = synthetic(BadValue(role=Attr(name="class"), value="%a"))
   guard! findings[0] is { code: BadValue, level: Error, suggestion: None, .. }

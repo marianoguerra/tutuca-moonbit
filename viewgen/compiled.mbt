@@ -69,17 +69,25 @@ fn surface_of(views : Array[CompiledView]) -> Surface raise GenError {
 fn compile_component(
   views : @viewfile.ViewSet,
   scope : FileMacros,
+  def : @statedef.StateDef?,
 ) -> CompiledComponent raise GenError {
   let compiled = compile_views(views.views, scope)
+  lower_binds(compiled, def)
   { raw: views, views: compiled, surface: surface_of(compiled) }
 }
 
 ///|
-fn compile_file(file : @viewfile.ViewFile) -> CompiledFile raise GenError {
+fn compile_file(
+  file : @viewfile.ViewFile,
+  name : String,
+) -> CompiledFile raise GenError {
   let scope = FileMacros::of(file.macros)
   let components : Array[CompiledComponent] = []
   for comp in file.components {
-    components.push(compile_component(comp, scope))
+    let cname = comp.component_name(name)
+    components.push(
+      compile_component(comp, scope, state_for(file, cname, name)),
+    )
   }
   { components, }
 }

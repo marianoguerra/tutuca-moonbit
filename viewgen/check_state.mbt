@@ -472,6 +472,7 @@ pub fn check_component_views(
   hints? : Array[String] = [],
 ) -> @check.Surface raise GenError {
   let compiled = compile_views(views, FileMacros::of(macros))
+  lower_binds(compiled, Some(def))
   check_views(compiled, def, prog, hints)
   { ..inline_surface(surface_of(compiled)), comps, open_senders }
 }

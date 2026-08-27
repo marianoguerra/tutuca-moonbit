@@ -548,7 +548,7 @@ pub fn emit_module(
     name,
     source_file,
     file,
-    compile_file(file),
+    compile_file(file, name),
     debug_derive,
     hints,
     program,
@@ -565,7 +565,7 @@ pub fn emit_modules(
   hints? : Array[String] = [],
   program? : ProgramIndex,
 ) -> GeneratedModules raise GenError {
-  let compiled = compile_file(file)
+  let compiled = compile_file(file, name)
   let types_source = emit_module_compiled(
     name, source_file, file, compiled, debug_derive, hints, program,
   )

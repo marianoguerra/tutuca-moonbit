@@ -52,6 +52,76 @@ fn value_as_num(v : @tutuca.Value, as_int : Bool) -> @tutuca.Value {
 }
 
 ///|
+pub fn DomEvent::bind_value(
+  self : DomEvent,
+  coercion : @anode.BindCoercion,
+) -> @tutuca.Value? {
+  match coercion {
+    BindPending => None
+    BindString =>
+      match self.value {
+        Str(s) => Some(Str(s))
+        _ => None
+      }
+    BindBool =>
+      match self.value {
+        Bool(b) => Some(Bool(b))
+        _ => None
+      }
+    BindDouble => bind_number(self.value).map(n => Num(n))
+    BindInt(width~, signed~) => {
+      guard bind_number(self.value) is Some(n) else { return None }
+      if n != n.trunc() {
+        return None
+      }
+      let low = if signed {
+        match width {
+          8 => -128.0
+          16 => -32768.0
+          _ => -2147483648.0
+        }
+      } else {
+        0.0
+      }
+      // State integers are MoonBit `Int`s. Even the source spelling `UInt`
+      // therefore cannot safely carry the unsigned half above Int::max.
+      let high = if signed {
+        match width {
+          8 => 127.0
+          16 => 32767.0
+          _ => 2147483647.0
+        }
+      } else {
+        match width {
+          8 => 255.0
+          16 => 65535.0
+          _ => 2147483647.0
+        }
+      }
+      if n < low || n > high {
+        None
+      } else {
+        Some(Num(n))
+      }
+    }
+  }
+}
+
+///|
+fn bind_number(value : @tutuca.Value) -> Double? {
+  let n : Double = match value {
+    Num(n) => n
+    Str(s) => @strconv.from_str(s) catch { _ => return None }
+    _ => return None
+  }
+  if n.is_nan() || n.is_inf() {
+    None
+  } else {
+    Some(n)
+  }
+}
+
+///|
 /// A field of the active `DragInfo` (`app/drag.mbt` builds the Obj), or Null
 /// when no drag is in flight.
 fn drag_field(info : @tutuca.Value, name : String) -> @tutuca.Value {

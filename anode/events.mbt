@@ -8,5 +8,5 @@ fn NodeEvents::add(
   handler : @tscript.HandlerParse,
   modifiers : Array[String],
 ) -> Unit {
-  self.handlers.push({ name, handler, modifiers })
+  self.handlers.push({ name, handler, modifiers, binding: None })
 }
