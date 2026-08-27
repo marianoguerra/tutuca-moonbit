@@ -6,6 +6,60 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-08-27
+
+### Added
+
+- **Property-test generators derived from the spec block, with no code
+  generation.** `derive(Arbitrary)` has nothing to derive over here: a
+  component's shape is not a MoonBit type, it is a
+  `<script type="tutuca/spec">` block. So `statedef/arb` derives the generators
+  from the parsed `StateDef` at test time, and it is the randomized twin of
+  `statedef/info` function for function — `value_of` walks the `StateTy` tree
+  where `zero_of` walks it, `state_of` mirrors `zero_value`, `dispatch_of`
+  reads `MsgDef.payload`, and `mutator_dispatch_of` takes its NAMES from
+  `@component.schema_mutators` so it cannot drift from the table the runtime
+  installs.
+
+  `MsgDef.payload` is why the seam is the DECLARATION rather than a mounted
+  component: the runtime `SchemaInfo` carries `receives` and `intents` as bare
+  name lists with the payload types dropped, so a generator built by reflecting
+  off an instance could name a message but never call it correctly.
+
+- **`rules_of` — a `pred` or an `invariant`, evaluated rather than compiled.** A
+  rule is ONE expression with no arguments (the spec block refuses a
+  parameterised one by name, which is exactly what makes this possible), so
+  `@tscript.parse_bool` lowers it to a `@core.Val` and `Val::eval` answers it
+  over any state. An invariant is then both a FILTER on a generator and a
+  PROPERTY a driven component is held to, and neither needs a backend.
+
+  The bound is pinned rather than described: `Val` is what a SLOT holds, so the
+  slot vocabulary is what lowers. There is no arithmetic, and
+  `invariant conserved { (.here + .there) is .total }` lands in
+  `Rules::unlowerable` carrying the grammar's own sentence instead of being
+  silently treated as satisfied. Name the sum with a `compute` and compare
+  against `$name`.
+
+- **A differential test between the two readings of a contract**
+  (`storybook/examples/svg_more_property_test.mbt`). `BarChart` declares two
+  `pred`s used as preconditions and an `invariant`. The suite asks each
+  precondition through `Val::eval` and checks the answer against the `Refusal`
+  the `guard` that `gen-views` compiled from the same source line actually
+  raised — two readings of one declaration that have to agree. A hand-written
+  test cannot make that claim, because the two sides only diverge on the states
+  nobody thought to write down.
+
+  Beside it, the property no hand-written scene reaches: no generated mutator,
+  from any reachable state, drives the chart through `neverEmpty`.
+  `setValues []` is a legal dispatch that nothing in `svg_more.html` can
+  produce — no button sends it, and both handlers guard against emptiness — but
+  the runtime installs it for every declared field, so a page, a parent or a
+  host can.
+
+- `@component.Dispatch` derives `Eq` and `Debug`. A generated message sequence
+  that breaks a component is the counterexample, and one that cannot be printed
+  leaves the reader with "a property failed".
+
 ### Fixed
 
 - **`handle` and `express` were reserved field names inside a `state` body.**
@@ -5364,5 +5418,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.35.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
