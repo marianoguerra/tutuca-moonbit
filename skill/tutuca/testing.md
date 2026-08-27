@@ -351,7 +351,7 @@ block that path skips.
 ### The block
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count: Int, step: Int }
 </script>
 
@@ -566,7 +566,7 @@ used, and a `TodoItem` belongs beside the `TodoList` that renders it
 rather than in a file of its own:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Board { title: String, tally: Int }
   state Row   { label: String, done: Bool }
 </script>
@@ -585,7 +585,7 @@ rather than in a file of its own:
 <template id="Row:main">   … </template>
 ```
 
-- One `state` per component in the **one** state block.
+- One `state` per component in the **one** spec block.
 - One `<script type="tutuca/script" for="Comp">` each. A bare block with
   no `for=` is only unambiguous when the file declares one component; with
   several, name every block.

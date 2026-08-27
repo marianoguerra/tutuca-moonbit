@@ -152,7 +152,7 @@ as such in the code: content-addressed bundle ids.
 
 There is no layout document. The component tree IS the layout, and every piece
 of it is an ordinary tutuca component authored the normal way (`std.html` with a
-`tutuca/state` block and templates, through `gen-views`):
+`tutuca/spec` block and templates, through `gen-views`):
 
 - **`Universal`** — holds one thing, or draws a `+`. The only one that MUST
   exist.

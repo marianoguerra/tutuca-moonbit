@@ -3,7 +3,7 @@
 **Problem:** render only the items that match a condition.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Roster { items: Array[String], query: String }
 </script>
 

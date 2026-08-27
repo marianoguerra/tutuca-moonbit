@@ -14,7 +14,7 @@ you don't want to thread it through every component in between.
 `entries.html`:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Editor { entries: Array[Any], picker: Selector }
     state Selector {  }
 </script>

@@ -8,7 +8,7 @@
 ///|
 fn msgs_src(bucket_decls : String) -> String raise {
   @viewgen.generate(
-    "<script type=\"tutuca/state\">\n" +
+    "<script type=\"tutuca/spec\">\n" +
     bucket_decls +
     "\nstate Chat { n: Int }\n</script>\n" +
     "<template><p><x text=\".n\"></x></p></template>",
@@ -94,7 +94,7 @@ test "a component with no declared buckets emits none of this" {
 /// A file whose script block answers some of its `@on` names.
 fn answered_src(script : String) -> String raise {
   @viewgen.generate(
-    "<script type=\"tutuca/state\">\nstate Chat { n: Int }\n</script>\n" +
+    "<script type=\"tutuca/spec\">\nstate Chat { n: Int }\n</script>\n" +
     "<script type=\"tutuca/script\">\n" +
     script +
     "\n</script>\n" +
@@ -172,7 +172,7 @@ test "a declaration the backend refuses is NOT counted as answered" {
 /// A file with both a schema and views, so the merge has both halves.
 fn merged_src(bucket_decls : String, view_body : String) -> String raise {
   @viewgen.generate(
-    "<script type=\"tutuca/state\">\n" +
+    "<script type=\"tutuca/spec\">\n" +
     bucket_decls +
     "\nstate Chat { n: Int, name: String }\n</script>\n" +
     "<template><p>" +
@@ -190,7 +190,7 @@ fn merged_src(bucket_decls : String, view_body : String) -> String raise {
 /// this one builds the document from the two halves the merge needs.
 fn merge_err(bucket_decls : String, view_body : String) -> String {
   gen_err(
-    "<script type=\"tutuca/state\">\n" +
+    "<script type=\"tutuca/spec\">\n" +
     bucket_decls +
     "\nstate Chat { n: Int, name: String }\n</script>\n" +
     "<template><p>" +

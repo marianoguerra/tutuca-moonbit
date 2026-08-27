@@ -18,7 +18,7 @@
 /// emitted into different files.
 fn bucket_src(script : String) -> (String, String) raise {
   let file = @viewgen.split_file(
-    "<script type=\"tutuca/state\">\n" +
+    "<script type=\"tutuca/spec\">\n" +
     "state Mail { items: Array[Int], n: Int }\n" +
     "</script>\n" +
     "<script type=\"tutuca/script\">\n" +

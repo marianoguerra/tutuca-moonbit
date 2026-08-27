@@ -156,7 +156,7 @@ it. What you write is the code no generator can: the handlers.
 `counter.html`:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count: Int }
 </script>
 
@@ -550,7 +550,7 @@ arguments it is built with — see [schema.md](./schema.md#slots).
 ## Fields
 
 **The schema is the fields.** Names, types and kinds are declared in the view
-file's `<script type="tutuca/state">` block; `gen-views` writes the struct, and
+file's `<script type="tutuca/spec">` block; `gen-views` writes the struct, and
 every handler body is compiler-checked against it — `s.cuont` is a compile
 error, not a silently-Null render.
 
@@ -882,11 +882,12 @@ that claims it, and the buckets are the last:
 
 1. a **generated mutator** — `setX`, `toggleX`, `pushInX`, `removeInXAt`, from
    the field's declared kind. No code at all.
-2. a **declaration in the `<script type="tutuca/script">` block** — `receive`,
-   `intent`, `compute`, `pred`, `invariant`, `enrich`, `enrichScope`, and the
-   `send` / `sendAt` / `intent` / `forward` effects. A name the block answers
-   is dropped from the generated enum, so the two halves can never both claim
-   one handler.
+2. a **declaration in one of the two blocks** — `receive`, `intent`,
+   `compute`, `enrich`, `enrichScope` and the `send` / `sendAt` / `intent` /
+   `forward` effects in `<script type="tutuca/script">`; `pred` and `invariant`
+   in `<script type="tutuca/spec">`, beside the state they are about. A name a
+   block answers is dropped from the generated enum, so the two halves can
+   never both claim one handler.
 3. a **bucket entry**, for what neither of those says: building a child
    component instance, `@loop-with`, a fold over a whole sequence, a payload
    unpacked out of an `Any` — and anything `gen-views` prints a
@@ -938,8 +939,11 @@ generated wrapper, translate them to the enum match — the wrapper's parameter
 type will not accept a map.
 
 The enums are **closed and view-driven**: their cases come from the names the
-views reference, plus the `pred` / `compute` / `invariant` names the script
-block declares — minus the ones that block ANSWERS, which need no arm. You cannot pre-declare a
+views reference, plus the `compute` names the script block declares and the
+`pred` / `invariant` names the spec block declares — minus the ones a block
+ANSWERS, which need no arm. An `invariant` is the one exception to
+"view-driven": it gets a body whether or not a view names it, because the
+runtime asks it after every dispatch. You cannot pre-declare a
 handler no view calls yet — the constructor doesn't exist. Add the name to the
 view first, regenerate, then write the handler. A bucket the views never use is
 not a parameter at all.
@@ -1223,12 +1227,13 @@ its examples never reach the storybook or a harness test.
 
 ## See also
 
-- [schema.md](./schema.md) — the `<script type="tutuca/state">` language: field
-  spellings, the mutators each kind generates, slots, message buckets, and
-  `tutuca/init` fixtures — plus what the `<script type="tutuca/script">` block
-  beside it declares: `$`-callables, `new` / `@cur` value building, and the
-  `requires` / `ensures` / `invariant` contracts, the `format` a rule says
-  when it fails, and the refusal channel that carries it.
+- [schema.md](./schema.md) — the `<script type="tutuca/spec">` language: field
+  spellings, the mutators each kind generates, slots, message buckets,
+  `tutuca/init` fixtures, and the `pred` / `invariant` rules a component keeps
+  with the `format` each says when it fails — plus what the
+  `<script type="tutuca/script">` block beside it declares: `$`-callables,
+  `new` / `@cur` value building, the `requires` / `ensures` clauses that attach
+  a rule to a transition, and the refusal channel that carries a failure.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.
 - [iteration.md](./iteration.md) — `@each` / `render-each`, `@when`,

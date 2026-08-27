@@ -123,7 +123,7 @@ cases.push({
     "}",
   ].join("\n"),
   html: [
-    '<script type="tutuca/state">',
+    '<script type="tutuca/spec">',
     "  state Ledger { here : Int, there : Int, total : Int }",
     "</script>",
     "",

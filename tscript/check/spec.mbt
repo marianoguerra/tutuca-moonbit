@@ -115,3 +115,30 @@ declare pub fn check(
   def : @statedef.StateDef,
   surface? : Surface,
 ) -> Array[Finding]
+
+///|
+/// Check the SPEC block's rules — every `pred` and `invariant` — against the
+/// schema they are about.
+///
+/// A second entry point rather than a branch inside `check`, because the two
+/// answer about different TEXTS. A `Finding` carries a span in the block it
+/// came from and a caller rebases it with that block's offset, so a finding
+/// about a `pred` in the spec block and one about a `receive` in the script
+/// block cannot ride in one list without landing in the wrong file position.
+///
+/// Every span here is relative to the spec block; rebase with
+/// `@viewfile.ViewFile::state_block`.
+declare pub fn check_rules(def : @statedef.StateDef) -> Array[Finding]
+
+///|
+/// The spec block's `pred`s and `invariant`s, as declarations a backend can
+/// walk like any other, plus the names whose body did not parse.
+///
+/// Here rather than in either backend because BOTH need it and they must not
+/// drift. A rule the SCRIPT block also declares is skipped, so the deprecation
+/// window changes nothing about what a file already compiles to; `check`
+/// reports that pair as `RULE_IN_BOTH`.
+declare pub fn rule_decls(
+  def : @statedef.StateDef,
+  decls : Array[@tscript.Decl],
+) -> (Array[@tscript.Decl], Array[String])

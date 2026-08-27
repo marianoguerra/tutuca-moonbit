@@ -12,6 +12,14 @@
 // spelling the reference was written in, and recasing a type renames something
 // the state itself mentions.
 //
+// RULES ARE NOT HASHED, and that is a decision rather than an oversight. What
+// this digest is for is noticing that a stored state can no longer be READ
+// BACK; adding, changing or removing a `pred` or an `invariant` leaves every
+// stored instance exactly as readable as it was. Hashing one would force a
+// migration for a change that needs none — and it would make tightening a rule,
+// the thing an author should be able to do freely, the most expensive edit in
+// the block.
+//
 
 ///|
 /// A stable structural fingerprint of the whole schema.

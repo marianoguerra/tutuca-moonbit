@@ -154,7 +154,7 @@ fn only(f : @viewfile.ViewFile) -> @viewfile.ViewSet {
 test "the script block is lifted out unparsed, with where it came from" {
   let vs = @viewfile.split_file(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Counter { count: Int }
       #|</script>
       #|
@@ -177,15 +177,72 @@ test "the script block is lifted out unparsed, with where it came from" {
       #|
     ),
   )
-  // The block starts on line 5 (1-based): the state block is lines 1-3, then
+  // The block starts on line 5 (1-based): the spec block is lines 1-3, then
   // a blank, then the opening tag. The offset is the character just past that
-  // tag's `>` — line 5 begins at 71 and `<script type="tutuca/script">` is 29
+  // tag's `>` — line 5 begins at 70 and `<script type="tutuca/script">` is 29
   // characters — so a span inside the block rebases onto the file exactly,
   // column included.
   assert_eq(block.line, 5)
-  assert_eq(block.offset, 100)
+  assert_eq(block.offset, 99)
   // …and it is NOT part of any view, the same way the schema is not.
   assert_eq(only(vs).views[0].source, "<button @on.click=\"add 1\">+1</button>")
+}
+
+///|
+test "the block's old name still splits, and the file says it was used" {
+  // `tutuca/state` is what the spec block used to be called. A card in the
+  // field is one file someone else's page loads, so the old name keeps
+  // working — and the file records that it was used, because the one consumer
+  // that talks to an author is the one that should mention it.
+  let vs = @viewfile.split_file(
+    (
+      #|<script type="tutuca/state">
+      #|  state Counter { count: Int }
+      #|</script>
+      #|<template><b @text=".count"></b></template>
+    ),
+  )
+  assert_true(vs.legacy_spec)
+  assert_eq(vs.state.length(), 1)
+  assert_eq(vs.state[0].fields[0].name, "count")
+}
+
+///|
+test "the new name splits the same and is not reported" {
+  let vs = @viewfile.split_file(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Counter { count: Int }
+      #|</script>
+      #|<template><b @text=".count"></b></template>
+    ),
+  )
+  assert_false(vs.legacy_spec)
+  assert_eq(vs.state[0].fields[0].name, "count")
+}
+
+///|
+test "one block of each spelling is still two blocks" {
+  // Two specs however they are spelled, and there is no order in which to
+  // merge them — the same answer two `tutuca/spec` blocks get.
+  try
+    @viewfile.split_file(
+      (
+        #|<script type="tutuca/spec">
+        #|  state A { n: Int }
+        #|</script>
+        #|<script type="tutuca/state">
+        #|  state B { n: Int }
+        #|</script>
+        #|<template><p>hi</p></template>
+      ),
+    )
+    |> ignore
+  catch {
+    e => assert_true(e.message().contains("one file declares one spec"))
+  } noraise {
+    _ => fail("expected the second block to be refused")
+  }
 }
 
 ///|
@@ -242,7 +299,7 @@ test "a script block does not make a schema-only file into a view" {
   // the same lifted-region list or its text would become a `main` view.
   let vs = @viewfile.split_file(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Counter { count: Int }
       #|</script>
       #|<script type="tutuca/script">
@@ -262,7 +319,7 @@ test "a script block does not make a schema-only file into a view" {
 test "a test block is lifted out and parsed" {
   let f = @viewfile.split_file(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Counter { count: Int }
       #|</script>
       #|<script type="tutuca/test">
@@ -290,7 +347,7 @@ test "a test block is lifted out and parsed" {
 /// the whole reason this is parsed here rather than handed back raw.
 test "a bad scene is reported on the line of the html file" {
   let src =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state Counter { count: Int }
     #|</script>
     #|

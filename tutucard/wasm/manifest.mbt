@@ -179,7 +179,14 @@ fn component_json(
     "methods": strings(
       compiled(DCompute) + compiled(DPred) + compiled(DInvariant),
     ),
-    "whens": strings(compiled(DPred)),
+    // An `invariant` is a `pred` with a role, and every USE a `pred` has it
+    // has too: `@when="conserved"` filters a row with one exactly as
+    // `@when="canPush"` does, and `dispatch.mbt` already gives it the loop's
+    // three parameters. Listing only `DPred` here left the body compiled and
+    // the name unroutable — the MoonBit backend folds both, and two backends
+    // that disagree about which names a view may filter with are two answers
+    // to one question.
+    "whens": strings(compiled(DPred) + compiled(DInvariant)),
     // The two the manifest had no key for: a host cannot route to a name it
     // was never told about.
     "enriches": strings(compiled(DEnrich)),

@@ -179,6 +179,8 @@ priv struct RawDecl {
   /// The wiring sections, for `state`.
   provide : Array[ProvideDecl]
   lookup : Array[LookupDecl]
+  /// The rule layer, for `state`.
+  rules : Array[RuleDecl]
 }
 
 ///|
@@ -330,6 +332,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
     let bindings : Array[RawBinding] = []
     let provide : Array[ProvideDecl] = []
     let lookup : Array[LookupDecl] = []
+    let rules : Array[RuleDecl] = []
     let takes_fields = actual_kind is (RState | RStruct)
     if actual_kind is RSurface(outer) {
       parse_channel_body(
@@ -364,6 +367,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
         bindings,
         provide,
         lookup,
+        rules,
       })
       continue
     }
@@ -416,6 +420,102 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
             span=word_at,
           )
         }
+        continue
+      }
+      // A rule: `pred NAME [format <sentence>] { <expression> }`. The lexer
+      // has already found where the sentence and the body END — both are the
+      // block language and neither means anything here — so what is left is
+      // the shape.
+      //
+      // Recognised on the WORD plus a NAME, which is why `pred : Bool` is
+      // still a field and a case called `pred` is still a case: the lexer arms
+      // on a shape rather than reserving a word.
+      // A rule with PARAMETERS, which the spec block cannot express and should
+      // not: a rule here is a fact about the component's state, and one that
+      // needs an argument is about the particular call that supplied it. That
+      // is the same line `CONTRACT_ARGS` already draws for a contract clause,
+      // and the same reason a `@when` filter over `@value` stays where the
+      // render-time things are.
+      //
+      // Caught by SHAPE, before the field parser sees `containsText` and asks
+      // for a `:`, which is a puzzling thing to be told about a `pred`.
+      if p.peek() is TIdent(w) &&
+        (w == "pred" || w == "invariant") &&
+        p.peek_at(1) is TIdent(_) &&
+        p.peek_at(2) is TLParen {
+        p.bump() |> ignore
+        let (rname, rname_span) = p.ident("the rule's name")
+        raise Syntax(
+          msg="`\{rname}` takes parameters, and a rule in the spec block takes none — it is a fact about this component's state, so declare it as a `pred` in the script block, beside the other render-time callables",
+          span=rname_span,
+        )
+      }
+      // The same three-token shape the lexer armed on, and not a looser one:
+      // in an `enum` body two bare identifiers sit side by side, so `pred` plus
+      // a name is a CASE LIST as often as it is a rule. The third token is what
+      // tells them apart, and it is the lexer that produced it — a `TBody` only
+      // exists where the lexer decided a brace opened a rule.
+      if p.peek() is TIdent(w) &&
+        (w == "pred" || w == "invariant") &&
+        p.peek_at(1) is TIdent(_) &&
+        p.peek_at(2) is (TBody(_) | TIdent("format")) {
+        let kw_at = p.span()
+        p.bump() |> ignore
+        let (rname, rname_span) = p.ident("the rule's name")
+        guard actual_kind is RState else {
+          raise RuleOutsideState(name=rname, span=rname_span)
+        }
+        let mut format = ""
+        let mut format_span = no_span
+        if p.peek() is TIdent("format") {
+          p.bump() |> ignore
+          match p.peek() {
+            TExpr(e) => {
+              format = e
+              format_span = p.span()
+              p.bump() |> ignore
+            }
+            other =>
+              raise Syntax(
+                msg="`format` takes the sentence to say when `\{rname}` does not hold, and got \{other.describe()}",
+                span=p.span(),
+              )
+          }
+        }
+        let (source, source_span) = match p.peek() {
+          TBody(b) => {
+            let at = p.span()
+            p.bump() |> ignore
+            (b, at)
+          }
+          other =>
+            raise Syntax(
+              msg="`\{rname}` needs a body — one expression in `{ … }` — and got \{other.describe()}",
+              span=p.span(),
+            )
+        }
+        // One namespace for both kinds: `$conserved` reads an invariant from a
+        // view exactly as `$canPush` reads a pred, so two rules with one name
+        // would be one `$name` with two answers.
+        if rules.iter().any(r => r.name == rname) {
+          raise DuplicateRule(name=rname, span=rname_span)
+        }
+        rules.push({
+          kind: if w == "invariant" {
+            RInvariant
+          } else {
+            RPred
+          },
+          name: rname,
+          source,
+          source_span,
+          format,
+          format_span,
+          doc: member_doc,
+          span: { start: kw_at.start, end_: source_span.end_ + 1, },
+          name_span: rname_span,
+        })
+        p.skip_comma()
         continue
       }
       let attrs = p.attrs()
@@ -473,6 +573,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       bindings,
       provide,
       lookup,
+      rules,
     })
   }
   out
@@ -502,6 +603,7 @@ fn empty_raw(
     bindings: [],
     provide: [],
     lookup: [],
+    rules: [],
   }
 }
 
@@ -983,6 +1085,7 @@ fn build(
     types,
     provide: d.provide,
     lookup: d.lookup,
+    rules: d.rules,
     doc: d.doc,
   }
 }

@@ -1,4 +1,4 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// A card that answers three things in Wax, for three different reasons.
   state Escaped {
     /// A running total.
@@ -11,13 +11,13 @@
     rows: Array[Any]
     /// Which one is selected, read live.
     sel: String
+
+    /// Nothing here is ever negative.
+    invariant sane { .total >= 0 }
   }
 </script>
 
 <script type="tutuca/script">
-  /// Nothing here is ever negative.
-  invariant sane { .total >= 0 }
-
   /// Declared, checks, and REFUSED by this backend: a `sendAt` whose key is
   /// read from live state re-resolves on every dispatch, and
   /// `control.path-step` has no case that says so. Answered in Wax below.

@@ -13,7 +13,7 @@
 test "a named state and a bare template still find each other" {
   let out = @wasm.check_card(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Counter { count: Int }
       #|</script>
       #|<script type="tutuca/script">
@@ -34,7 +34,7 @@ test "a named state and a bare template still find each other" {
 test "a card may declare two components, each checked against its own schema" {
   let out = @wasm.check_card(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Board { tally: Int }
       #|  state Row { done: Bool }
       #|</script>
@@ -60,7 +60,7 @@ test "a card may declare two components, each checked against its own schema" {
 test "a component cannot read a sibling's field" {
   let out = @wasm.check_card(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Board { tally: Int }
       #|  state Row { done: Bool }
       #|</script>
@@ -79,7 +79,7 @@ test "a component cannot read a sibling's field" {
 /// `data-root` decides what a host mounts, and does not reorder the file.
 test "data-root names the component a host mounts" {
   let src =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state Board { tally: Int }
     #|  state Row { done: Bool }
     #|</script>

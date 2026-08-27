@@ -100,7 +100,7 @@ A view file may also declare its component's data contract, in a small language
 that spells its types the way MoonBit does, next to the templates that read it:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { label: String, count: Int, history: Array[Int] }
   handle Counter {
     message { resetTo(Int) }

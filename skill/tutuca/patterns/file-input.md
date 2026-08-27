@@ -4,7 +4,7 @@
 
 ```html
 <!-- file_picker.html -->
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state FilePicker { name: String, size: Double, type: String, hasFile: Bool }
 </script>
 

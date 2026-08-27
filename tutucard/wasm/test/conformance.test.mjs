@@ -110,7 +110,7 @@ function schemaOf(c) {
  */
 function cardOf(c) {
   return (
-    `<script type="tutuca/state">\n${c.schema}\n</` + `script>\n` +
+    `<script type="tutuca/spec">\n${c.schema}\n</` + `script>\n` +
     `<script type="tutuca/script">\n${c.script}\n</` + `script>\n` +
     `<template id="${c.component}"><div></div></template>\n`
   );
@@ -327,7 +327,7 @@ test("the wasm backend agrees with the conformance corpus", async () => {
     const b = await build(
       c,
       `v2_${i}`,
-      `<script type="tutuca/state">\n${schemaOf(c)}\n</` + `script>\n` +
+      `<script type="tutuca/spec">\n${schemaOf(c)}\n</` + `script>\n` +
         `<script type="tutuca/script">\n${c.script}\n</` + `script>\n` +
         `<template id="${c.component}"><div></div></template>\n`,
     );
@@ -414,7 +414,7 @@ test("a map field keeps its contents AND its insertion order", async () => {
   const b = await build(
     null,
     "maporder",
-    `<script type="tutuca/state">\n  state M { m: Map[String, Int] }\n</` +
+    `<script type="tutuca/spec">\n  state M { m: Map[String, Int] }\n</` +
       `script>\n<script type="tutuca/script">\n  receive put(k, v) { .m.setAt k v }\n  receive drop(k) { .m.deleteAt k }\n</` +
       `script>\n<template id="M"><div></div></template>\n`,
   );

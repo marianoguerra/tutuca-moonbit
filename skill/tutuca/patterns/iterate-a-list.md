@@ -3,7 +3,7 @@
 **Problem:** render one element per item in a list/map field.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Feed { items: Array[Any] }   // or Array[String], Map[String, Any], …
 </script>
 

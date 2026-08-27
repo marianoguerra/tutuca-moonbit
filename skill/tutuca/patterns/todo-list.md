@@ -9,7 +9,7 @@ and a named `<template>` per component:
 
 ```html
 <!-- todo.html -->
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Item { completed: Bool, text: String }
     state Items { items: Array[Any], hideCompleted: Bool }
 </script>

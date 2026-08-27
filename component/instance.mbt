@@ -445,6 +445,73 @@ fn answers_at_home(bucket : @tutuca.HandlerBucket) -> Bool {
 }
 
 ///|
+/// The first `invariant` the successor breaks, or None when it keeps them all.
+///
+/// The rules are asked THROUGH the successor's own object interface rather than
+/// off `self.spec.compute`, so one call site covers both ways a successor is
+/// built: an `update` arm's `Next(s2)`, and a generated mutator's brand-new
+/// instance value. The second is the case that had no check at all before —
+/// nothing wove a rule around `setCount`, because the rules lived in the script
+/// block and a generated mutator is not declared there.
+///
+/// `NullStack` because a dispatch is not a render position: a `*name` inside a
+/// rule answers Null here, exactly as it does for a `$compute` read off a bare
+/// `Value`. The checker is what stops a rule from depending on one.
+///
+/// Only an explicit `Bool(false)` counts as broken. A rule that answers `Null`
+/// could not be evaluated, and unknown is not wrong — refusing a transition
+/// because a rule failed to run would turn a bad rule into a frozen component.
+fn[S] TypedInstance::broken_invariant(
+  self : TypedInstance[S],
+  successor : @tutuca.Value,
+) -> String? {
+  guard self.spec.comp is Some(comp) else { return None }
+  for name in comp.schema.invariants {
+    guard successor.method_at(name, @tutuca.NullStack::{ }) is Some(Fn(f)) else {
+      continue
+    }
+    if f([successor]) is Bool(false) {
+      return Some(name)
+    }
+  }
+  None
+}
+
+///|
+/// Report a broken invariant and answer the state that stands instead.
+///
+/// The transition is ABANDONED, which is the answer every other refusal in a
+/// body already gives — and the previous state is what stands, so the component
+/// is left where it was rather than in the state the rule rejected.
+///
+/// The `sentence` is empty here and not on the path the generator weaves. A
+/// `format` is compiled INTO the arm beside the rule, at the moment it fails,
+/// so the values in it are the ones that made it fail; there is no such moment
+/// on this path, and inventing one would mean a second evaluation against a
+/// state the rule already rejected. The rule's NAME and the rejected STATE are
+/// carried, which is what nothing could reach before this existed.
+fn[S] TypedInstance::refuse_invariant(
+  self : TypedInstance[S],
+  rule : String,
+  asked : String,
+  rejected : @tutuca.Value,
+) -> @tutuca.Value {
+  if @tutuca.refusing() {
+    @tutuca.refuse({
+      code: Invariant,
+      asked,
+      rule,
+      sentence: "",
+      state: rejected,
+      path: @tutuca.Path::new(),
+    })
+  } else {
+    @tutuca.invariant_failed(handler=asked, pred=rule, sentence="")
+  }
+  self.to_value()
+}
+
+///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name) {
   let has_update = self.spec.update is Some(_)
   let input_fallback = answers_at_home(bucket) &&
@@ -474,7 +541,20 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Intent => Intent(name, args)
           }
           let answered = match u(self.state, d, ctx) {
-            Next(s2) => return Some(self.with_state(s2).to_value())
+            Next(s2) => {
+              let nv = self.with_state(s2).to_value()
+              // The rules the component KEEPS, around an arm the generator did
+              // not weave them into. A script-declared arm has already been
+              // checked inline — and more strictly, before its effect queue
+              // flushed — so one that broke a rule answered `Unchanged` and
+              // never reached here. What this covers is the hand-written
+              // `update~`, whose effects may already have fired: the state is
+              // rolled back, the effects are not, and that limit is real.
+              return match self.broken_invariant(nv) {
+                Some(rule) => Some(self.refuse_invariant(rule, name, nv))
+                None => Some(nv)
+              }
+            }
             // Answered, and nothing changed. The instance's own Value, which
             // is memoized — so the transactor's `physical_equal` reads it as
             // "nothing happened" and no generated mutator is consulted.
@@ -497,7 +577,19 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
         match self.spec.generated.get(name) {
           Some(g) =>
             match g(self.field_box(), args) {
-              Obj(_) as nv => return Some(nv)
+              // A GENERATED mutator, which nothing declared and therefore
+              // nothing wove a rule around. `invariant conserved` covers
+              // `setHere` exactly as it covers `push`, and it did not before:
+              // the rules used to live in the script block, where a mutator
+              // the schema generates has no declaration to attach to.
+              //
+              // A mutator raises no effects, so the abandonment here is
+              // complete — there is nothing half-done to leave behind.
+              Obj(_) as nv =>
+                return match self.broken_invariant(nv) {
+                  Some(rule) => Some(self.refuse_invariant(rule, name, nv))
+                  None => Some(nv)
+                }
               _ => ()
             }
           None => ()

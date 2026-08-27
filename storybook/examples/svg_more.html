@@ -1,6 +1,32 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state BarChart {
     values : Array[Any]
+
+    /// The two limits, named. A `pred` reads the state and nothing else, which
+    /// is what lets it sit in a handler's header instead of at the top of its
+    /// body — and what puts it HERE, beside the field it is about, rather than
+    /// among the handlers that ask it.
+    ///
+    /// Each carries the sentence it says when it does NOT hold. The comment
+    /// says what the rule is; the `format` says what went wrong this time,
+    /// with the count that made it go wrong — which is the half nobody can
+    /// reconstruct afterwards from a chart that simply did not change.
+    pred hasRoom
+      format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
+
+    pred hasSpare
+      format 'one bar has to stay, or there is no chart left to look at' { (len .values) > 1 }
+
+    /// What the chart KEEPS, as opposed to what a handler asks before it acts.
+    /// It is checked after every dispatch — the two handlers below, the
+    /// generated `setValues` and `pushInValues` nobody wrote, and anything
+    /// added later that never mentions it.
+    ///
+    /// `hasSpare` is the same sentence attached at a different moment, and the
+    /// difference is the point: a precondition can decline, an invariant
+    /// cannot be declined into. There is no way to reach an empty chart.
+    invariant neverEmpty
+      format 'the chart lost its last bar' { (len .values) > 0 }
   }
 
   state IconGallery {
@@ -9,20 +35,6 @@
 </script>
 
 <script type="tutuca/script" for="BarChart">
-  /// The two limits, named. A `pred` reads the state and nothing else, which
-  /// is what lets it sit in a handler's header instead of at the top of its
-  /// body.
-  /// 
-  /// Each carries the sentence it says when it does NOT hold. The comment says
-  /// what the rule is; the `format` says what went wrong this time, with the
-  /// count that made it go wrong — which is the half nobody can reconstruct
-  /// afterwards from a chart that simply did not change.
-  pred hasRoom
-    format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
-
-  pred hasSpare
-    format 'one bar has to stay, or there is no chart left to look at' { (len .values) > 1 }
-
   /// Add a bar, up to nine. The height is derived from the length rather than
   /// drawn at random, so the picture is the same on every run — a test can
   /// look at it.

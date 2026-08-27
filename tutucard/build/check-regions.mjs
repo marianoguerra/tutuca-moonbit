@@ -25,7 +25,7 @@ function check(name, got, want) {
 }
 
 const CARD = [
-  '<script type="tutuca/state">',
+  '<script type="tutuca/spec">',
   "  state Counter { n: Int }",
   "</script>",
   "",
@@ -71,7 +71,7 @@ check("views are named by the half after the colon", p.views.map((v) => v.name),
 // the colon names nothing: two components' `main` views would both be `main`,
 // and a tab strip is what a reader picks a component with.
 const TWO = [
-  '<script type="tutuca/state">',
+  '<script type="tutuca/spec">',
   "  state Todos { n: Int }",
   "  state Todo { t: String }",
   "</script>",
@@ -129,7 +129,7 @@ const added = R.addView(CARD, "edit");
 check("adding a view appends a template", added.includes('<template id="Counter:edit">'), true);
 check("…and keeps everything that was there", added.startsWith(CARD), true);
 
-const BARE = '<script type="tutuca/state">\n  state Note { t: String }\n</script>\n<template><p></p></template>\n';
+const BARE = '<script type="tutuca/spec">\n  state Note { t: String }\n</script>\n<template><p></p></template>\n';
 check("a bare template is the main view", R.parts(BARE).views.map((v) => v.name), ["main"]);
 const named = R.addView(BARE, "edit");
 check(
@@ -181,7 +181,7 @@ check(
 // show as a view called `field` of a component called `macro`.
 
 const WITH_MACRO = [
-  '<script type="tutuca/state">',
+  '<script type="tutuca/spec">',
   "  state Form { name : String }",
   "</script>",
   '<template id="macro:field" data-label="\'Field\'">',

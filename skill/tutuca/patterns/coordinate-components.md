@@ -10,7 +10,7 @@ if the whole body finished, because a message sent beside a transition that did
 not happen is the one outcome nobody can reason about afterwards.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Status { message: String, count: Int }
   /// The two names a sibling addresses this component by. No view writes
   /// either, so the schema is the only place they can be declared — and

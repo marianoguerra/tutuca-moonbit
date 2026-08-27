@@ -58,11 +58,13 @@ pub(all) struct ViewFile {
   components : Array[ViewSet]
   macros : Array[MacroDef]
   state : Array[@statedef.StateDef]
+  state_block : Block?
   init : Array[(String, @statedef.InitState)]
   scripts : Array[ScriptBlock]
   wax : Array[ScriptBlock]
   tests : Array[@scenedef.Scene]
   root : String
+  legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
 pub fn ViewFile::wax_for(Self, String) -> Block?

@@ -50,7 +50,7 @@ target's `receive <name>` block runs. There is **no built-in lifecycle**
 (typically after mounting) for it to run.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state {
     text : String
     rows : Array[Any]
@@ -182,7 +182,7 @@ A component answers an intent with an `intent <name>` handler. Inside it:
   goes on. A handler that does not reply is an **observer**.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state { count : Int, page : Int }
   handle {
     intent { saveDraft(String), picked(Int)
@@ -239,7 +239,7 @@ only if it declares one. Nobody writes that down twice: the generator
 reads the schema's `receive` list and fills the intent's opts in.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state {
     items     : Array[Any]
     isLoading : Bool

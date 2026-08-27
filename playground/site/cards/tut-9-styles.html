@@ -11,11 +11,13 @@
      compiled — which is why `@if.class` below switches between whole
      literals rather than appending a word to one. -->
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Ticket {
     title : String
     kind  : String
     votes : Int
+
+    pred isFeature { .kind is 'feature' }
   }
 
   handle Ticket {
@@ -39,8 +41,6 @@
   receive pick(k) {
     .kind = k
   }
-
-  pred isFeature { .kind is 'feature' }
 </script>
 
 <template>

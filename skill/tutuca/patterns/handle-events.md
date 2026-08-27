@@ -3,7 +3,7 @@
 **Problem:** respond to a DOM event and update state.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count: Int, str: String, n: Int }
 </script>
 

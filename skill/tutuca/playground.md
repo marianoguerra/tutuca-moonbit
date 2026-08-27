@@ -33,7 +33,7 @@ your code names `items_component` and `ItemsMsg` with **no import**.
 A playground example is a PAIR of sources compiled together:
 
 - the **view** source — the `<template>`s, the
-  `<script type="tutuca/state">` schema, and any `<style>`s, exactly as
+  `<script type="tutuca/spec">` schema, and any `<style>`s, exactly as
   in an `.html` view file;
 - the **component** source — MoonBit, ending in a bare entry point:
 

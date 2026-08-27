@@ -4,7 +4,7 @@
 without storing it on the data.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Notes { items: Array[String], picked: Set[String] }
 </script>
 

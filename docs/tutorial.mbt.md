@@ -63,7 +63,7 @@ schema, and the compiled handlers:
 
 ```html
 <!-- tutorial.html -->
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count : Int }
 </script>
 
@@ -100,7 +100,7 @@ test "the generated counter is a complete component" {
 Things to notice:
 
 - **The view file declares the state.** `CounterState` is generated from the
-  `<script type="tutuca/state">` block, together with its zero value and its
+  `<script type="tutuca/spec">` block, together with its zero value and its
   codec. Thus no MoonBit here writes a field list twice.
 - **The view file declares the behaviour too.** The checker reads the
   `<script type="tutuca/script">` block against that schema: `.count` has to

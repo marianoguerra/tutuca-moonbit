@@ -20,7 +20,7 @@ fn gen_err(html : String, name : String) -> String {
 ///|
 /// A state block wrapping the given declarations for the `Board` component.
 fn board(state : String, view : String) -> String {
-  "<script type=\"tutuca/state\">\n" +
+  "<script type=\"tutuca/spec\">\n" +
   state +
   "\n</script>\n<template>" +
   view +
@@ -48,7 +48,7 @@ test "a field with no near miss is told where to declare it" {
     "Board",
   )
   assert_true(msg.contains("not a field of the Board state"))
-  assert_true(msg.contains("tutuca/state"))
+  assert_true(msg.contains("tutuca/spec"))
 }
 
 ///|
@@ -133,7 +133,7 @@ test "<x render> on a non-component is refused" {
 
 ///|
 test "<x render> on a declared child slot is fine" {
-  let html = "<script type=\"tutuca/state\">\n" +
+  let html = "<script type=\"tutuca/spec\">\n" +
     "state Card { title: String }\n" +
     "state Board { lead: Card }\n" +
     "</script>\n" +
@@ -176,7 +176,7 @@ test "a file with no state block is checked exactly as before" {
 ///|
 test "the counter demo's own view passes its schema" {
   // The migrated reference example, checked here as well as by compiling.
-  let html = "<script type=\"tutuca/state\">\n" +
+  let html = "<script type=\"tutuca/spec\">\n" +
     "state Counter { label: String, count: Int, history: Array[Int] }\n" +
     "</script>\n" +
     "<template>\n" +
@@ -358,7 +358,7 @@ fn gen_hints(html : String, name : String) -> Array[String] {
 ///|
 /// Two components in one file: a Page holding a list of Rows.
 fn page_and_row(page_view : String, row_views : String) -> String {
-  "<script type=\"tutuca/state\">\n" +
+  "<script type=\"tutuca/spec\">\n" +
   "state Page { rows: Array[Row], sel: Row }\n" +
   "state Row { title: String }\n" +
   "</script>\n" +
@@ -458,7 +458,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   // the hints channel as much as in the fatal one.
   assert_eq(
     gen_hints(
-      "<script type=\"tutuca/state\">\nstate Page { sel: Component }\n</script>" +
+      "<script type=\"tutuca/spec\">\nstate Page { sel: Component }\n</script>" +
       "<template id=\"Page\"><x render=\".sel\" as=\"edit\"></x></template>",
       "Page",
     ).length(),

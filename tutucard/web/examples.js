@@ -58,7 +58,7 @@
 export const EXAMPLES = [
   {
     name: "counter",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Counter {
     label   : String
     count   : Int
@@ -165,7 +165,7 @@ export const EXAMPLES = [
   },
   {
     name: "todo",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   /// TWO components in one card: the list, and the row beside it. A file may
   /// declare as many as it likes — one \`state\` each, one
   /// \`<script type="tutuca/script" for="…">\` each, one
@@ -378,7 +378,7 @@ export const EXAMPLES = [
   },
   {
     name: "filter",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Filter {
     query : String
     names : Array[String]
@@ -466,7 +466,7 @@ export const EXAMPLES = [
   },
   {
     name: "messages",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Inbox {
     status : String
     seen   : Int
@@ -542,7 +542,7 @@ export const EXAMPLES = [
   },
   {
     name: "intents",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Feed {
     rows   : Array[Any]
     query  : String
@@ -739,7 +739,7 @@ export const EXAMPLES = [
   },
   {
     name: "traffic-light",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state TrafficLight {
     lightIndex : Int
   }
@@ -824,7 +824,7 @@ export const EXAMPLES = [
   },
   {
     name: "tabs",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state TabbedUI {
     tab : String
   }
@@ -891,7 +891,7 @@ export const EXAMPLES = [
   },
   {
     name: "show-hide",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state ShowHide {
     isOpen : Bool
     count  : Int
@@ -967,7 +967,7 @@ export const EXAMPLES = [
   },
   {
     name: "attributes",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state AttributeBinding {
     str  : String
     num  : Int
@@ -1029,7 +1029,7 @@ export const EXAMPLES = [
   },
   {
     name: "modifiers",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state EventModifiers {
     query          : String
     lastSentSearch : Any
@@ -1094,7 +1094,7 @@ export const EXAMPLES = [
   },
   {
     name: "file-picker",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state FilePicker {
     name    : String
     size    : Double
@@ -1168,7 +1168,7 @@ export const EXAMPLES = [
   },
   {
     name: "scope",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state RenderWithScope {
     text : String
   }
@@ -1233,7 +1233,7 @@ export const EXAMPLES = [
   },
   {
     name: "dynamic-bindings",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Palette {
     theme : String
     draft : String
@@ -1334,7 +1334,7 @@ export const EXAMPLES = [
   },
   {
     name: "list-enrich",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state ListFilterEnrich {
     items : Array[String]
     query : String
@@ -1410,7 +1410,7 @@ export const EXAMPLES = [
   },
   {
     name: "list-iteration",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Iteration {
     items : Array[String]
   }
@@ -1456,7 +1456,7 @@ export const EXAMPLES = [
   },
   {
     name: "markdown",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state MdPreview {
     source : String
   }
@@ -1517,7 +1517,7 @@ export const EXAMPLES = [
   },
   {
     name: "text",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state TextDirective {
     str    : String
     num    : Int
@@ -1572,7 +1572,7 @@ export const EXAMPLES = [
   },
   {
     name: "raw-html",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state DangerSetInnerHtml {
     content : String
   }
@@ -1605,7 +1605,7 @@ export const EXAMPLES = [
   },
   {
     name: "conditional-attrs",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state ConditionalAttributes {
     isActive : Bool
   }
@@ -1661,7 +1661,7 @@ export const EXAMPLES = [
   },
   {
     name: "styles",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Styled {
     loud : Bool
   }
@@ -1740,7 +1740,7 @@ export const EXAMPLES = [
   },
   {
     name: "swatches",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state SwatchPicker {
     color   : String
     palette : Array[String]
@@ -1817,7 +1817,7 @@ export const EXAMPLES = [
   },
   {
     name: "quadratic",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Quadratic {
     a : Int
     b : Int
@@ -1913,7 +1913,7 @@ export const EXAMPLES = [
   },
   {
     name: "nested-state",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   struct Label {
     text : String
     done : Bool
@@ -2036,7 +2036,7 @@ export const EXAMPLES = [
   },
   {
     name: "contracts",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Seats {
     capacity : Int
     taken    : Int
@@ -2225,7 +2225,7 @@ export const EXAMPLES = [
   },
   {
     name: "macros",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state MacroDemo {
     count  : Int
     status : String
@@ -2329,7 +2329,7 @@ export const EXAMPLES = [
   },
   {
     name: "drag-reorder",
-    source: `<script type="tutuca/state">
+    source: `<script type="tutuca/spec">
   state Reorder {
     items : Array[String]
     query : String

@@ -237,7 +237,8 @@ fn declared_methods(surface : Surface) -> Array[String] {
 ///|
 /// The component's surface with what its script block declares folded in.
 ///
-/// A `pred` or a `compute` in the block is a method this component answers,
+/// A rule in the SPEC block, or a `pred` / `compute` in the script block, is a
+/// method this component answers,
 /// exactly as a `$name` at a call site is — and the enum a `compute` match is
 /// written over needs the name, which is the half no call site could supply.
 ///
@@ -249,20 +250,33 @@ fn with_script(
   surface : Surface,
   file : @viewfile.ViewFile,
   comp : String,
+  state : @statedef.StateDef?,
 ) -> Surface raise GenError {
-  guard file.script_for(comp) is Some(block) else { return surface }
-  let decls = @tscript.parse_script(block.text) catch {
-    e =>
-      raise BadScriptBlock(
-        comp~,
-        line=block.line + line_of(block.text, e.span().start) - 1,
-        message=e.message(),
-      )
-  }
   let methods = surface.methods.copy()
-  for d in decls {
-    if d.kind is (DPred | DCompute | DInvariant) && !methods.contains(d.name) {
-      methods.push(d.name)
+  // The SPEC block's rules first. Every one of them, whether or not a view
+  // reads it: a `pred` a parent filters with has no local call site, and an
+  // invariant is asked by the RUNTIME after every dispatch, so neither can wait
+  // to be named by a template.
+  if state is Some(def) {
+    for r in def.rules {
+      if !methods.contains(r.name) {
+        methods.push(r.name)
+      }
+    }
+  }
+  if file.script_for(comp) is Some(block) {
+    let decls = @tscript.parse_script(block.text) catch {
+      e =>
+        raise BadScriptBlock(
+          comp~,
+          line=block.line + line_of(block.text, e.span().start) - 1,
+          message=e.message(),
+        )
+    }
+    for d in decls {
+      if d.kind is (DPred | DCompute | DInvariant) && !methods.contains(d.name) {
+        methods.push(d.name)
+      }
     }
   }
   methods.sort_by((a, b) => a.lexical_compare(b))
@@ -648,7 +662,7 @@ fn emit_module_compiled(
     let inits = file.init.filter(p => p.0 == init_key).map(p => p.1)
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
-    let surface = with_script(compiled_comp.surface, file, cname)
+    let surface = with_script(compiled_comp.surface, file, cname, state)
     let mut answered = Answered::none()
     if state is Some(def) {
       check_views(compiled_comp.views, def, prog, hints)

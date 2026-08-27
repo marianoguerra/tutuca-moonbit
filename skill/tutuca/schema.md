@@ -1,21 +1,45 @@
-# Tutuca — The State Schema
+# Tutuca — The Component Spec
 
-Read this file when declaring or changing a component's data contract: the
-`<script type="tutuca/state">` block, how a field's type is spelled, what
-mutators a field kind generates, handle/express surfaces, slots, and named
-initial states.
+Read this file when declaring or changing what a component IS: the
+`<script type="tutuca/spec">` block — how a field's type is spelled, what
+mutators a field kind generates, handle/express surfaces, slots, named initial
+states, and the `pred`s and `invariant`s the component keeps.
 
-The schema is the source of truth for a component's state. `gen-views` reads it
+The spec is the source of truth for a component's state. `gen-views` reads it
 and writes the MoonBit state struct, the codec, the descriptor and the typed
 message enums; nothing you write restates it. Change a field here, regenerate,
 and every read of it in every view and handler is re-checked.
+
+**The block used to be called `tutuca/state`.** That name still parses and
+`gen-views` reports it once per file, because a card in the field is one file
+someone else's page loads. Rename the `type=` and nothing else changes.
+
+## The two blocks
+
+The split is what a reader can rely on: the **spec** block says what the
+component is, the **script** block says what it does. Read the first and you
+know the component's shape, its channels, its wiring and its rules without
+reading a handler.
+
+| Spec block (`tutuca/spec`) | Script block (`tutuca/script`) |
+| --- | --- |
+| `state`, `struct`, `enum` — the data | `receive`, `intent` — the transitions |
+| `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
+| `provide` / `lookup` — the wiring | `compute` — a `$name` a view reads |
+| `pred`, `invariant` — the rules it keeps | — |
+
+A rule sits in the spec block because it has no statements, no effects and no
+arguments: it is a fact about the state, not a step. A `compute` stays in the
+script block because it is not declared to answer yes or no — and so does a
+`pred` that takes an argument or reads `@value`, which is a render-time filter
+about one row rather than a rule about the component.
 
 ## The block
 
 A view file declares its component's data contract in a small language that
 spells its types the way MoonBit does, alongside the templates that read it:
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { label: String, count: Int, history: Array[Int] }
   handle Counter {
     message { resetTo(Int) }
@@ -68,7 +92,7 @@ EMPTY — and the enum decides the membership, which is one idea in each place.
 component instances:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Items { items: Array[Any] }
 </script>
 ```
@@ -140,7 +164,7 @@ child **through the registration scope** at `make()` time, so forward references
 work by name (`component/component_test.mbt:418`):
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Board {
     title   : String
     editor  : Sheet             // a sibling state in this file
@@ -206,7 +230,7 @@ structural equality read.
 it declares messages and intents that the component may initiate.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Board { rows: Array[Any], loading: Bool }
   handle Board {
     message {
@@ -249,7 +273,7 @@ For passing a value "context-style" to a deep descendant without threading it
 through every component in between. Two sections inside a `state` body:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Board {
     theme: String
     sheets: Map[String, String]
@@ -344,7 +368,8 @@ have no constructor. Name it in the script block, which is where callables live:
 </script>
 ```
 
-The state block declares no behaviour at all — only data.
+The spec block declares no BEHAVIOUR — no statements and no effects. It does
+declare the component's RULES, which are neither: see *Contracts* below.
 `for=` names the component the way a `<template id>` does, and is needed
 only in a file that declares more than one.
 
@@ -399,7 +424,7 @@ A collection is changed by a statement that names the place and the operation,
 receiver first:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Playlist { songs: Array[String], tags: Set[String], by: Map[String, String] }
   handle Playlist {
     message { add(String), rename(String), drop(Int), mark(String),
@@ -454,7 +479,7 @@ other statement already does. `new <Type>` puts that type's **zero** at the
 **active target**, and the statements under it fill it in through `@cur`:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   struct Song { title : String, plays : Int, moods : Array[String] }
   state Playlist {
     draft : String
@@ -486,7 +511,7 @@ other statement already does. `new <Type>` puts that type's **zero** at the
 </script>
 ```
 
-- The type is spelled the way the **state block** spells it — `new Song`,
+- The type is spelled the way the **spec block** spells it — `new Song`,
   `new Array[String]`, `new Map[String, Int]` — and has to be one that block
   declares (`struct R { … }` for a record) or a built-in. It shares the name
   table with the state parser, so `new Int16` and `count : Int16` cannot come
@@ -540,13 +565,28 @@ Elsewhere, three things a body may otherwise say:
 
 ## Contracts (`requires` / `ensures` / `invariant`)
 
-A `pred` gives a rule about the state a **name**. Where you attach it says
-which of the three kinds of rule it is, and the runtime keeps all three:
+A `pred` gives a rule about the state a **name**, and it is declared in the
+SPEC block, inside the `state` body it is about. Where you ATTACH it says which
+of the three kinds of rule it is, and the runtime keeps all three:
 
 ```html
-<script type="tutuca/script" for="Ledger">
-  pred canPush { .here > 0 }
+<script type="tutuca/spec">
+  state Ledger {
+    here  : Int
+    there : Int
+    total : Int
 
+    pred canPush { .here > 0 }
+    pred empty { .here is 0 }
+
+    /// An INVARIANT: checked after EVERY dispatch, including the ones written
+    /// later that never mention it, and including the generated mutators.
+    invariant conserved { (.here + .there) is .total }
+  }
+</script>
+```
+```html
+<script type="tutuca/script" for="Ledger">
   /// A PRECONDITION: asked before the body, against the state as it arrived.
   receive push requires canPush {
     .here -= 1
@@ -557,13 +597,15 @@ which of the three kinds of rule it is, and the runtime keeps all three:
   receive drain ensures empty {
     .here = 0
   }
-  pred empty { .here is 0 }
-
-  /// An INVARIANT: checked after EVERY transition the block declares,
-  /// including the ones written later that never mention it.
-  invariant conserved { (.here + .there) is .total }
 </script>
 ```
+
+**Why the rule and the clause live in different blocks.** The clause is local —
+it says when THIS handler applies — so it sits on the handler's header. The
+rule is not: `canPush` is a fact about the ledger, `$canPush` reads it from a
+view, and an `invariant`'s attachment point is the component itself. Declaring
+them beside the fields is what lets a reader learn what a component promises
+without opening the handlers.
 
 A rule that does not hold **abandons the whole transition** — no successor
 state and no effects, which is the answer every other refusal in a body already
@@ -589,9 +631,31 @@ Four things to know about the clauses themselves:
   naming their `and`: `pred canMove { canPush and (not .busy) }`.
 - Contracts attach to transitions only — `on`, `receive`, `intent`. An `enrich` writes bindings, and a `compute` is a value.
 - An `invariant` is a `pred` with a role, so `$conserved` still reads from a
-  view and `@when="conserved"` still filters a row. It covers the transitions
-  the **block** declares; the generated mutators a component answers by default
-  are not among them.
+  view and `@when="conserved"` still filters a row. It covers **every**
+  dispatch, in three degrees:
+
+  | dispatch | when the rule is asked | effects if it fails |
+  | --- | --- | --- |
+  | a handler the script block declares | inline, before the effect queue flushes | never fire — the transition is whole or not at all |
+  | a generated mutator (`setHere`, `pushInItems`, …) | after the successor is built | there are none to fire |
+  | a hand-written MoonBit `update~` arm | after the successor is built | **may already have fired** — the state is rolled back, they are not |
+
+  Only the first carries the rule's `format` sentence, because a `format` is
+  compiled beside the rule at the moment it fails. The other two report the
+  rule's NAME and the state that was rejected.
+
+- **A rule in the spec block takes no arguments and reads no `@`-binding.** One
+  that needs either is about a particular render rather than about the
+  component — a `@when` filter over `@value`, or a `pred containsText(q)` a
+  parent calls. Those stay in the script block, where the other render-time
+  callables are, and a parameterised rule in the spec block is refused by name.
+
+- **The declared initial states are checked at build time.** Every
+  `tutuca/init` fixture is asserted against every invariant by a test
+  `gen-views` writes into the generated module — a rule that does not hold in
+  the state the component starts in is broken before anything happens. The
+  schema's zero is deliberately not checked: a wrapper is normally called with
+  `init~`, which the generator cannot see.
 
 ### `format` — what the rule says when it fails
 

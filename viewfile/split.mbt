@@ -17,12 +17,30 @@
 const MACRO_PREFIX = "macro:"
 
 ///|
-/// The `type=` that marks a `<script>` as the file's state schema.
+/// The `type=` that marks a `<script>` as the file's SPEC — what the component
+/// IS, as opposed to what it does.
 ///
 /// A `<script>` and not a `<template>`: script content is RAW TEXT to an HTML
 /// parser, template content is markup — and the schema is full of `<` and
 /// `>`, so `list<s32>` inside a template would be read as an `<s32>` element.
-const STATE_TYPE = "tutuca/state"
+///
+/// Named `spec` and not `state` because the block outgrew the word. It holds
+/// the fields, yes, but also the named types, the `handle`/`express` surfaces,
+/// the protocols, the `provide`/`lookup` wiring and — since the rule layer
+/// moved here — the `pred`s and `invariant`s the component keeps. "State" named
+/// one section of it. `spec` is the same promise `spec.mbt` makes one directory
+/// down: this is the declared contract, and the implementation is elsewhere.
+const SPEC_TYPE = "tutuca/spec"
+
+///|
+/// What the spec block used to be called.
+///
+/// Kept parsing rather than cut, because a view file is a FORMAT and not just
+/// this repo's input: a card is one file that someone else's page loads, and
+/// breaking every one of them in the field to rename a string is a cost the
+/// rename does not earn. A file that writes it still splits, and `gen-views`
+/// says so once per file.
+const LEGACY_SPEC_TYPE = "tutuca/state"
 
 ///|
 /// The `type=` that marks a `<script>` as the file's named initial states.
@@ -90,7 +108,7 @@ priv enum StyleKind {
   SView // inside a template (or the whole file when there are none)
   SCommon // top-level <style data-common>
   SGlobal // top-level <style data-global>
-  // A `tutuca/state`, `tutuca/init` or `tutuca/script` block. Not a style at
+  // A `tutuca/spec`, `tutuca/init` or `tutuca/script` block. Not a style at
   // all — it rides
   // in this list because the list IS the set of spans lifted out of view
   // source, and a file with no templates is otherwise its own main view,
@@ -105,6 +123,16 @@ priv struct TplSpan {
   attrs : Array[@html5.Attribute]
   start : Int
   end_ : Int
+}
+
+///|
+/// Whether a `type=` names the spec block, under either spelling.
+///
+/// A function and not a pattern in the arm's guard, because the arm has to ask
+/// twice — once to claim the block and once to notice which name it was given —
+/// and a `|` pattern spread over two lines is not a guard MoonBit accepts.
+fn is_spec_type(ty : String?) -> Bool {
+  ty is Some(SPEC_TYPE | LEGACY_SPEC_TYPE)
 }
 
 ///|
@@ -298,6 +326,7 @@ pub fn split_file(
   let mut open_at = ""
   let mut stray : Char? = None
   let mut state_src : (String, Int)? = None
+  let mut legacy_spec = false
   let mut init_src : (String, Int)? = None
   let mut test_src : (String, Int)? = None
   let script_srcs : Array[(String, String, Int)] = []
@@ -324,11 +353,19 @@ pub fn split_file(
               }
               depth = depth + 1
             }
-          // The state schema. Consumed here rather than left to the
+          // The spec block. Consumed here rather than left to the
           // Character arm below, so its `<` and `>` never reach the
           // tokenizer as markup and its text never counts as stray.
-          "script" if attr_of(attrs, "type") is Some(STATE_TYPE) => {
+          //
+          // One arm for both spellings, so a file carrying one of each hits
+          // `DuplicateStateBlock` — which is the right answer. Two blocks are
+          // two specs however they are spelled, and there is no order in which
+          // to merge them.
+          "script" if is_spec_type(attr_of(attrs, "type")) => {
             let content_at = after
+            if attr_of(attrs, "type") is Some(LEGACY_SPEC_TYPE) {
+              legacy_spec = true
+            }
             let (text, end_) = read_raw(tok, "script")
             if state_src is Some(_) {
               raise DuplicateStateBlock
@@ -433,6 +470,13 @@ pub fn split_file(
   let common_style = collect_style(styles, SCommon)
   let global_style = collect_style(styles, SGlobal)
   let state = parse_state_block(chars, state_src, name)
+  // The block itself, beside the `StateDef`s it produced. A rule's body is the
+  // BLOCK language, and whoever parses one has a span relative to the spec
+  // block and nowhere to put it without this.
+  let state_block : Block? = match state_src {
+    Some((text, at)) => Some({ text, offset: at, line: line_at(chars, at), })
+    None => None
+  }
   let init = parse_init_block(chars, init_src, state)
   let tests = parse_test_block(chars, test_src)
   let scripts = script_blocks(chars, script_srcs)
@@ -456,6 +500,8 @@ pub fn split_file(
         wax,
         tests,
         root: "",
+        legacy_spec,
+        state_block,
       }
     }
     return {
@@ -480,6 +526,8 @@ pub fn split_file(
       wax,
       tests,
       root: "",
+      legacy_spec,
+      state_block,
     }
   }
   if stray is Some(c) {
@@ -618,6 +666,8 @@ pub fn split_file(
     wax,
     tests,
     root: root_marked.unwrap_or(""),
+    legacy_spec,
+    state_block,
   }
 }
 
@@ -660,7 +710,7 @@ fn parse_init_block(
   guard !state.is_empty() else {
     raise BadInitBlock(
       line=line_at(chars, at),
-      message="an init block needs a <script type=\"tutuca/state\"> schema to check against",
+      message="an init block needs a <script type=\"tutuca/spec\"> schema to check against",
     )
   }
   // One schema per component, so a fixture belongs to whichever component

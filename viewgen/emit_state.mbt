@@ -375,6 +375,10 @@ fn emit_schema(
   emit_protocol_bindings(out, "provide_bindings", def.provide_bindings)
   emit_protocol_bindings(out, "lookup_bindings", def.lookup_bindings)
   out.write_string(out_channel("methods", declared_methods(surface)))
+  // The ROLE, which nothing else records. The invariant's body is already one
+  // of the methods above; this is what says the runtime should ask it after
+  // every dispatch rather than only where a view names it.
+  out.write_string(out_channel("invariants", def.invariants()))
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))
   out.write_string(out_channel("init_names", inits.map(st => st.name)))

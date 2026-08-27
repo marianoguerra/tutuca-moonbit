@@ -32,6 +32,13 @@ fn view_diagnostics(
   fallback : String,
 ) -> Array[String] {
   let out : Array[String] = []
+  // The block's old name. Once per FILE and not once per component, because
+  // the spelling is a property of the `<script>` tag and a file has one.
+  if file.legacy_spec {
+    out.push(
+      "spec-block-name (warning) \{fallback}: `<script type=\"tutuca/state\">` is now `<script type=\"tutuca/spec\">` — the block declares more than state (types, `handle`/`express`, protocols, wiring, and the `pred`s and `invariant`s the component keeps). The old name still parses; rename the `type=`.",
+    )
+  }
   // A schema interface with no template declares state for a component whose
   // views are built in MoonBit. Legitimate, and also what a mistyped
   // interface name looks like — so it is reported, not generated in silence.
@@ -49,6 +56,24 @@ fn view_diagnostics(
     }
     for line in message_case_diagnostics(def, fallback) {
       out.push(line)
+    }
+    // The rule layer, checked against the schema it is about. A `pred` reading
+    // a field the state does not declare is the same mistake as a view reading
+    // one, and it is worth the same report — a rule that cannot be evaluated
+    // is a rule that silently never holds.
+    //
+    // The spans are the spec BLOCK's, and it is the block's own line that puts
+    // them on the file. That is the whole reason `check_rules` is a second
+    // entry point: a finding about a rule and a finding about a handler come
+    // out of different texts and cannot share one rebasing.
+    for f in @check.check_rules(def) {
+      let where_ = def.component_name(fallback)
+      let line = match file.state_block {
+        Some(b) => "line \{b.line + line_of(b.text, f.span.start) - 1}: "
+        None => ""
+      }
+      let level = if f.severity is SWarning { "warning" } else { "error" }
+      out.push("\{f.code} (\{level}) \{where_}: \{line}\{f.message}")
     }
   }
   for comp in file.components {
@@ -163,7 +188,7 @@ let gen_views_help : String =
   #|    CounterMethod                        $-callable names, answered as an
   #|                                         exhaustive match
   #|
-  #|  With a <script type="tutuca/state"> block it also declares CounterState,
+  #|  With a <script type="tutuca/spec"> block it also declares CounterState,
   #|  its zero, its codec, and one SchemaInfo carrying the whole declaration:
   #|  the fields with their declared kinds, the handler channels, the view
   #|  names, the element ids and the fixture names. That descriptor is what an
@@ -483,4 +508,23 @@ fn basename(path : String) -> String {
 /// The line the shell prints after writing.
 pub fn gen_views_success(target : String, input : String) -> String {
   "generated \{target} from \{input}\n"
+}
+
+///|
+/// The 1-based line of a character offset inside a block. The twin of
+/// `viewgen`'s, and here rather than shared because this package does not
+/// import that one for anything else.
+fn line_of(text : String, offset : Int) -> Int {
+  let mut line = 1
+  let mut i = 0
+  for c in text {
+    if i >= offset {
+      break
+    }
+    if c == '\n' {
+      line = line + 1
+    }
+    i = i + 1
+  }
+  line
 }

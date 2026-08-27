@@ -75,6 +75,99 @@ pub fn Surface::empty() -> Surface {
 }
 
 ///|
+/// Check the SPEC block's rules against the schema they are about.
+///
+/// A second entry point rather than a branch inside `check`, because the two
+/// answer about different texts. A `Finding` carries a span in the block it
+/// came from, and a caller rebases it with that block's offset — so a finding
+/// about a `pred` in the spec block and a finding about a `receive` in the
+/// script block cannot ride in one list without one of them landing in the
+/// wrong file position.
+///
+/// Every span here is relative to the SPEC block; rebase with
+/// `@viewfile.ViewFile::state_block`.
+pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
+  let callable : Map[String, Int] = Map([])
+  let predicate : Map[String, Int] = Map([])
+  for r in def.rules {
+    callable[r.name] = 0
+    predicate[r.name] = 0
+  }
+  let c = C::{
+    def,
+    surface: Surface::empty(),
+    out: [],
+    params: Map([]),
+    decl_name: "",
+    callable,
+    predicate,
+    binds_assignable: false,
+    decl_kind: DPred,
+    target: TUnset,
+  }
+  for r in def.rules {
+    c.decl_name = r.name
+    c.decl_kind = if r.kind is RInvariant { DInvariant } else { DPred }
+    // The body. A rule answers yes or no, so it is judged as a CONDITION by
+    // the same rule every other condition is — not a stricter one, since a
+    // string and a number are boolish in tutuca and a `pred` that invented a
+    // narrower truthiness would be a second one to learn.
+    if c.parse_rule(r.source, r.source_span) is Some(e) {
+      c.condition(e)
+    }
+    // The sentence. Walked like any other expression, so a field that is not
+    // there is reported where it is written rather than turning into an empty
+    // sentence at the moment somebody most wants to read one.
+    if r.format != "" {
+      if c.parse_rule(r.format, r.format_span) is Some(e) {
+        match definite(c.expr(e)) {
+          Some(TText) | None => ()
+          Some(t) =>
+            c.say(
+              "FORMAT_TYPE",
+              "a `format` is the sentence a reader is shown, and this one answers \{t.show_source()} — write a string, or a `$'…'` template that puts it in one",
+              r.format_span |> rebase,
+            )
+        }
+      }
+    }
+  }
+  c.out
+}
+
+///|
+/// A `@statedef.Span` as a `@tscript.Span`. The two are the same half-open
+/// character range and differ only in which package declares them.
+fn rebase(s : @statedef.Span) -> @tscript.Span {
+  { start: s.start, end_: s.end_, }
+}
+
+///|
+/// Parse one rule's source, answering a finding rather than raising.
+///
+/// The span comes from the SPEC block and the parse error's span from inside
+/// the rule, so the two are added: `parse_expr_source` is handed a slice and
+/// counts from its start.
+fn C::parse_rule(
+  self : C,
+  source : String,
+  at : @statedef.Span,
+) -> @tscript.Expr? {
+  Some(@tscript.parse_expr_source(source)) catch {
+    err => {
+      let inner = err.span()
+      self.out.push({
+        code: "RULE_SYNTAX",
+        message: err.message(),
+        severity: SError,
+        span: { start: at.start + inner.start, end_: at.start + inner.end_, },
+      })
+      None
+    }
+  }
+}
+
+///|
 pub fn check(
   decls : Array[@tscript.Decl],
   def : @statedef.StateDef,
@@ -89,8 +182,30 @@ pub fn check(
   // answered by every value body, and "is this a rule" only by the two kinds
   // that declare their answer to be a yes or a no.
   let predicate : Map[String, Int] = Map([])
+  // The spec block's rules FIRST, because that is where a `pred` and an
+  // `invariant` now live: a rule is not behaviour — no statements, no effects,
+  // no parameters — and an invariant in particular has nowhere per-handler to
+  // be written. A rule declared there takes no arguments, which is why the
+  // arity is 0 and not read from anywhere.
+  for r in def.rules {
+    callable[r.name] = 0
+    predicate[r.name] = 0
+  }
+  let out : Array[Finding] = []
   for d in decls {
     if d.kind is (DPred | DCompute | DInvariant) {
+      // A rule written in BOTH blocks is not a silent win for either. It is
+      // reported here rather than left to whichever backend reads one of them,
+      // because the two answers can differ and the author is the only one who
+      // knows which was meant.
+      if @tscript.is_predicate(d.kind) && def.rule(d.name) is Some(_) {
+        out.push({
+          code: "RULE_IN_BOTH",
+          message: "`\{d.name}` is declared here and in the spec block — a rule has one body, and these two can disagree; delete this one",
+          severity: SWarning,
+          span: d.name_span,
+        })
+      }
       callable[d.name] = d.params.length()
     }
     if @tscript.is_predicate(d.kind) {
@@ -100,7 +215,7 @@ pub fn check(
   let c = C::{
     def,
     surface,
-    out: [],
+    out,
     params: Map([]),
     decl_name: "",
     callable,
@@ -257,14 +372,14 @@ fn C::contract(
   guard self.predicate.get(c.name) is Some(arity) else {
     self.say(
       "NO_PRED",
-      "`\{word} \{c.name}` names no `pred` this block declares" +
+      "`\{word} \{c.name}` names no `pred` the spec block declares" +
       (match @statedef.nearest(c.name, self.predicate.keys().collect()) {
         Some(s) => " — did you mean `\{s}`?"
         None =>
           if self.callable.contains(c.name) {
             "; `\{c.name}` is a `compute`, and a contract names a `pred`, whose answer is declared to be a yes or a no"
           } else {
-            "; declare `pred \{c.name} { … }` above `\{d.name}`"
+            "; `\{d.name}` asks for it, so declare `pred \{c.name} { … }` inside `state \{self.def.source_name}` in the spec block"
           }
       }),
       c.span,
@@ -361,7 +476,7 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
       (match @statedef.nearest(d.name, cases.map(m => m.name)) {
         Some(s) => " — did you mean `\{s}`?"
         None =>
-          "; add it to `variant \{bucket}` in the <script type=\"tutuca/state\"> block"
+          "; add it to `variant \{bucket}` in the <script type=\"tutuca/spec\"> block"
       }),
       d.name_span,
     )
@@ -602,7 +717,7 @@ fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
           @statedef.nearest(t.name, self.def.types.map(u => u.source_name)) {
           Some(s) => " — did you mean `\{s}`?"
           None =>
-            "; declare it in the <script type=\"tutuca/state\"> block, or write a built-in type"
+            "; declare it in the <script type=\"tutuca/spec\"> block, or write a built-in type"
         }),
         t.span,
       )
@@ -650,7 +765,7 @@ fn C::place(
             "`.\{name}` is not a field of the \{self.def.component} state" +
             (match @statedef.nearest(name, self.def.fields.map(f => f.name)) {
               Some(s) => " — did you mean `.\{s}`?"
-              None => "; declare it in the <script type=\"tutuca/state\"> block"
+              None => "; declare it in the <script type=\"tutuca/spec\"> block"
             }),
             p.span,
           )
@@ -1229,4 +1344,80 @@ fn expr_span(e : @tscript.Expr) -> @tscript.Span {
     | EIf(span~, ..)
     | ERef(span~, ..) => span
   }
+}
+
+///|
+/// The spec block's `pred`s and `invariant`s, as declarations a backend can
+/// walk like any other.
+///
+/// Synthesised rather than handled separately, because a rule IS a `Decl` in
+/// every way that matters downstream — a name, no parameters, one expression,
+/// an optional sentence — and giving it a second path through a backend would
+/// mean the rule table, the contract guards and the value bodies each learning
+/// about two kinds of rule that behave identically.
+///
+/// Here rather than in either backend, because BOTH need it and they must not
+/// drift: two backends reporting different names for the same broken state are
+/// two backends that disagree. This package is where a declaration meets the
+/// schema it is about, which is exactly the join a rule needs.
+///
+/// A rule whose name the SCRIPT block also declares is skipped, so the
+/// deprecation window changes nothing about what a file already compiles to:
+/// moving a rule is deleting the old copy, and until it is deleted the old copy
+/// is what runs. `check` reports the pair as `RULE_IN_BOTH`, which is where the
+/// author is told rather than here.
+///
+/// The second answer is the names whose body did not parse. The caller reports
+/// them in its own vocabulary — `check` has already said so properly, with a
+/// span in the spec block, and a second wording of one failure is worse than
+/// none.
+pub fn rule_decls(
+  def : @statedef.StateDef,
+  decls : Array[@tscript.Decl],
+) -> (Array[@tscript.Decl], Array[String]) {
+  let out : Array[@tscript.Decl] = []
+  let unreadable : Array[String] = []
+  for r in def.rules {
+    if decls.iter().any(d => @tscript.is_predicate(d.kind) && d.name == r.name) {
+      continue
+    }
+    // Spec-block spans, which are positions in a DIFFERENT block from the one
+    // every other span on a `Decl` comes from. They reach only a backend's
+    // refusal hint, which reports by name; nothing rebases them onto a file.
+    let at : @tscript.Span = {
+      start: r.source_span.start,
+      end_: r.source_span.end_,
+    }
+    let body = Some(@tscript.parse_expr_source(r.source)) catch { _ => None }
+    guard body is Some(body) else {
+      unreadable.push(r.name)
+      continue
+    }
+    // A sentence that cannot be evaluated is DROPPED and the rule still holds:
+    // a refusal that cannot describe itself is still a refusal.
+    let format = if r.format == "" {
+      None
+    } else {
+      Some(@tscript.parse_expr_source(r.format)) catch {
+        _ => None
+      }
+    }
+    out.push({
+      kind: if r.kind is RInvariant {
+        DInvariant
+      } else {
+        DPred
+      },
+      name: r.name,
+      params: [],
+      requires_: None,
+      ensures_: None,
+      format,
+      body: Value(body),
+      doc: r.doc.unwrap_or(""),
+      span: at,
+      name_span: { start: r.name_span.start, end_: r.name_span.end_, },
+    })
+  }
+  (out, unreadable)
 }

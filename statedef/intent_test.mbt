@@ -73,6 +73,6 @@ test "an unknown declaration word names the legal declarations" {
   // message — and a word added to the match without being added to both is a
   // parser that accepts something it says it does not.
   assert_eq(
-    msg, "state block: `stat` is not a declaration — expected state, struct, enum, protocol or import",
+    msg, "spec block: `stat` is not a declaration — expected state, struct, enum, protocol or import",
   )
 }

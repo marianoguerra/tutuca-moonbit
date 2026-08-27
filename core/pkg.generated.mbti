@@ -316,6 +316,7 @@ pub(all) struct SchemaInfo {
   express_messages : Array[String]
   express_intents : Array[String]
   methods : Array[String]
+  invariants : Array[String]
   ids : Array[String]
   view_names : Array[String]
   init_names : Array[String]
@@ -329,7 +330,7 @@ pub(all) struct SchemaInfo {
 pub fn SchemaInfo::conforms(Self, ProtocolInfo) -> ProtocolConformance
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {

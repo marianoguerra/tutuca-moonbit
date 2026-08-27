@@ -15,11 +15,15 @@
      assembled at run time is one the collector never sees. -->
 
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter {
     label   : String
     count   : Int
     history : Array[Int]
+
+    /// A named boolean — the same thing, with its answer declared, which is what
+    /// lets `@show` be checked.
+    pred moved { (len .history) > 0 }
   }
 
   /// A message the views never write, so the schema is the only place it can
@@ -61,10 +65,6 @@
   /// types it, and this says what to show meanwhile. Both arms are required:
   /// an expression has to have a value.
   compute summary { if .label is '' { $'{.count}' } else { $'{.label}: {.count}' } }
-
-  /// A named boolean — the same thing, with its answer declared, which is what
-  /// lets `@show` be checked.
-  pred moved { (len .history) > 0 }
 </script>
 
 <template>

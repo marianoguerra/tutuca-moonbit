@@ -9,12 +9,14 @@
      giving it its own name is the difference between "the fetch broke" and
      "this page has no fetch". -->
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Quote {
     text  : String
     error : String
     busy  : Bool
     tries : Int
+
+    pred failed { not (empty? .error) }
   }
 
   /// `Init` is the host's. The other three are the ANSWERS, and declaring
@@ -73,8 +75,6 @@
     .busy = false
     .error = 'nothing on this page answers `loadQuote`'
   }
-
-  pred failed { not (empty? .error) }
 </script>
 
 <template>

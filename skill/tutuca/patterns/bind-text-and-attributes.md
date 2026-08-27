@@ -4,7 +4,7 @@
 string from several values.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Label { str: String, url: String, name: String, kind: String }
 </script>
 

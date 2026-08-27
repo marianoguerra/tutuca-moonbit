@@ -83,7 +83,7 @@ fn lower_bind(
   guard def is Some(schema) else {
     raise InvalidBind(
       view~,
-      reason="needs a `<script type=\"tutuca/state\">` schema to determine its coercion",
+      reason="needs a `<script type=\"tutuca/spec\">` schema to determine its coercion",
     )
   }
   guard schema.field(field_name) is Some(field) else {

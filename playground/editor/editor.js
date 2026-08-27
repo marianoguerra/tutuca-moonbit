@@ -102,7 +102,7 @@ const moonbitMode = StreamLanguage.define({
 });
 
 // --- tutuca block language --------------------------------------------------
-// What a <script type="tutuca/state"> or "tutuca/script" block holds. It is
+// What a <script type="tutuca/spec"> or "tutuca/script" block holds. It is
 // not HTML and it is not MoonBit — it is the small language `tscript` parses,
 // and its atoms are the view's atoms (`.field`, `@bind`, `$method`, `*dyn`,
 // `'text'`), which is exactly why they are coloured the same here.

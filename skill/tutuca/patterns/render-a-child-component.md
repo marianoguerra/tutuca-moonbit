@@ -6,7 +6,7 @@ it (reaching into nested data is not allowed — `@text=".child.name"` fails).
 Declare the field with the child's interface name — that makes it a **slot**:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Card { mode: String, greeting: Greeting }
     state Greeting { name: String }
 </script>

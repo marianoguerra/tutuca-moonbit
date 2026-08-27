@@ -16,7 +16,7 @@ pub fn FileError::message(self : FileError) -> String {
       "\{what} declares no main view: add a `main` view (id=\"Comp\" or id=\"Comp:main\")"
     UnclosedTemplate(what) => "unclosed <template\{what}>"
     DuplicateStateBlock =>
-      "two <script type=\"tutuca/state\"> blocks — one file declares one schema, with one `state` per component"
+      "two <script type=\"tutuca/spec\"> blocks — one file declares one spec, with one `state` per component (`tutuca/spec` is the old name for the same block, so one of each is still two)"
     TwoRoots(a, b) =>
       "two <template>s carry `data-root` (`\{a}` and `\{b}`) — a file has one root, and two markers do not say which"
     DuplicateTestBlock =>

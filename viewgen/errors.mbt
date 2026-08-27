@@ -23,7 +23,7 @@ pub fn GenError::message(self : GenError) -> String {
       "view \"\{view}\": `.\{name}` is not a field of \{scope}" +
       (match suggestion {
         Some(s) => " — did you mean `.\{s}`?"
-        None => "; declare it in the <script type=\"tutuca/state\"> block"
+        None => "; declare it in the <script type=\"tutuca/spec\"> block"
       })
     InvalidBind(view~, reason~) => "view \"\{view}\": `@bind` \{reason}"
     PayloadDisagrees(name~, declared~, written~, sites~) =>

@@ -25,7 +25,7 @@ generated module and a MoonBit component builder is the ahead-of-time path.
 A card keeps its concerns in one file:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count: Int }
 </script>
 
@@ -50,7 +50,7 @@ A card keeps its concerns in one file:
 </template>
 ```
 
-- `tutuca/state` declares components, field types, records, enums, flags,
+- `tutuca/spec` declares components, field types, records, enums, flags,
   message buckets, dynamic `provide`/`lookup`, and named initial states.
 - `tutuca/script` declares receives, derived values and predicates,
   enrichment, intents, contracts, effects, and collection updates.
@@ -72,8 +72,10 @@ options, tuples, records, enums, flags, `Any`, and sibling component slots.
 Their handler language covers:
 
 - field and nested collection updates;
-- `receive`, `compute`, `pred`, `invariant`, `enrich`, and `enrichScope`;
-- `requires` and `ensures` contracts with user-facing `format` text;
+- `receive`, `compute`, `enrich`, and `enrichScope` in the script block, and
+  `pred` / `invariant` in the spec block beside the state they are about;
+- `requires` and `ensures` clauses attaching one of those rules to a
+  transition, with user-facing `format` text on the rule;
 - `send`, addressed `sendAt`, `intent`, `forward`, `reply`, `fail`, and
   `stop`;
 - conditionals, arithmetic, comparisons, string templates, and the closed
@@ -133,11 +135,11 @@ when the host explicitly trusts and intends to enable the block.
 
 ## Multiple components and children
 
-A card may declare several components. Keep one state block, qualify each
+A card may declare several components. Keep one spec block, qualify each
 script block, and qualify template ids:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Todos { draft: String, items: Array[Todo] }
   state Todo  { text: String, done: Bool }
 </script>

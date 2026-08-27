@@ -286,7 +286,7 @@ test "a message declared in a spelling nothing uses is reported" {
   // handler and every call site writes the other spelling.
   let r = @cli.gen_views(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Thermostat { target: Int }
       #|  handle Thermostat {
       #|    message { Init, Nudge(Int) }
@@ -317,7 +317,7 @@ test "a message declared in a spelling nothing uses is reported" {
 test "a message declared the way it is used is silent" {
   let r = @cli.gen_views(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Thermostat { target: Int }
       #|  handle Thermostat { message { init, nudge(Int) } }
       #|</script>
@@ -330,6 +330,36 @@ test "a message declared the way it is used is silent" {
   )
   guard! r is Ok(plan)
   assert_eq(plan.diagnostics, [])
+}
+
+///|
+test "the block's old name is a warning, once per file" {
+  // Once per FILE and not once per component: the spelling is a property of
+  // the `<script>` tag, and a file has one tag however many components it
+  // declares.
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/state">
+      #|  state Thermostat { target: Int }
+      #|  state Dial { angle: Int }
+      #|</script>
+      #|<template id="Thermostat"><b @text=".target"></b></template>
+      #|<template id="Dial"><i @text=".angle"></i></template>
+    ),
+    name="Thermostat",
+    input="views/thermostat.html",
+    target="views/thermostat_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  inspect(
+    plan.diagnostics.join("\n"),
+    content=(
+      #|spec-block-name (warning) Thermostat: `<script type="tutuca/state">` is now `<script type="tutuca/spec">` — the block declares more than state (types, `handle`/`express`, protocols, wiring, and the `pred`s and `invariant`s the component keeps). The old name still parses; rename the `type=`.
+    ),
+  )
+  // A warning and not a failure: the block parsed, so the module is generated.
+  assert_eq(plan.files.length(), 1)
 }
 
 ///|

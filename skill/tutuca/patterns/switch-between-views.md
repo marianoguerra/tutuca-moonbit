@@ -7,7 +7,7 @@ A named view is a `<template id="Comp:name">` in the view file; `main` is the
 one with no suffix.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Note { title: String, view: String, items: Array[Any] }
 </script>
 

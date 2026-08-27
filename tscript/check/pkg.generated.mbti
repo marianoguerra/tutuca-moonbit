@@ -10,7 +10,11 @@ import {
 // Values
 pub fn check(Array[@tscript.Decl], @statedef.StateDef, surface? : Surface) -> Array[Finding]
 
+pub fn check_rules(@statedef.StateDef) -> Array[Finding]
+
 pub fn resolve_ty_ref(@statedef.StateDef, @tscript.TyRef) -> @statedef.StateTy?
+
+pub fn rule_decls(@statedef.StateDef, Array[@tscript.Decl]) -> (Array[@tscript.Decl], Array[String])
 
 // Errors
 

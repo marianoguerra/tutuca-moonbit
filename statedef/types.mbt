@@ -30,6 +30,35 @@ pub fn StateDef::field(self : StateDef, name : String) -> FieldDef? {
 }
 
 ///|
+/// The rule of this name, of either kind. `pred` and `invariant` share one
+/// namespace, so one name has one answer.
+pub fn StateDef::rule(self : StateDef, name : String) -> RuleDecl? {
+  for r in self.rules {
+    if r.name == name {
+      return Some(r)
+    }
+  }
+  None
+}
+
+///|
+/// The names of the rules this component KEEPS, sorted.
+///
+/// Sorted because WHICH rule broke is part of the answer, and a report that
+/// depended on declaration order would move when an unrelated rule was added
+/// above it.
+pub fn StateDef::invariants(self : StateDef) -> Array[String] {
+  let out : Array[String] = []
+  for r in self.rules {
+    if r.kind is RInvariant {
+      out.push(r.name)
+    }
+  }
+  out.sort_by(str_cmp)
+  out
+}
+
+///|
 pub fn StateDef::user_ty(self : StateDef, source_name : String) -> UserTy? {
   for t in self.types {
     if t.source_name == source_name {
@@ -494,7 +523,9 @@ pub fn DefError::span(self : DefError) -> Span {
     | BadComponentName(span~, ..)
     | ReservedName(span~, ..)
     | UnknownProtocol(span~, ..)
-    | ProtocolConflict(span~, ..) => span
+    | ProtocolConflict(span~, ..)
+    | DuplicateRule(span~, ..)
+    | RuleOutsideState(span~, ..) => span
   }
 }
 
@@ -505,33 +536,37 @@ pub fn DefError::span(self : DefError) -> Span {
 /// prints these verbatim: they are user-facing text, not debug output.
 pub fn DefError::message(self : DefError) -> String {
   match self {
-    Syntax(msg~, ..) => "state block: \{msg}"
+    Syntax(msg~, ..) => "spec block: \{msg}"
     UnknownDecl(got~, ..) =>
-      "state block: `\{got}` is not a declaration — expected state, struct, enum, protocol or import"
+      "spec block: `\{got}` is not a declaration — expected state, struct, enum, protocol or import"
     DuplicateComponent(name~, ..) =>
-      "state block: two `state` declarations named `\{name}`; one component declares one state"
+      "spec block: two `state` declarations named `\{name}`; one component declares one state"
     MixedStateNames(..) =>
-      "state block: this file mixes `state { … }` with `state Name { … }` — name every component, or none of them, exactly as its templates do"
+      "spec block: this file mixes `state { … }` with `state Name { … }` — name every component, or none of them, exactly as its templates do"
     NoState(..) =>
-      "state block: nothing declares `state`; a block of types with no state describes no component"
+      "spec block: nothing declares `state`; a block of types with no state describes no component"
     UnsupportedType(ty~, why~, ..) =>
-      "state block: `\{ty}` is not something component state can carry — \{why}"
+      "spec block: `\{ty}` is not something component state can carry — \{why}"
     UnknownTypeRef(name~, ..) =>
-      "state block: unknown type `\{name}`; declare it, name a component in this file, or use a builtin (Bool, Int, Double, String, Array[T], Set[T], Map[String, V], Any, Component)"
+      "spec block: unknown type `\{name}`; declare it, name a component in this file, or use a builtin (Bool, Int, Double, String, Array[T], Set[T], Map[String, V], Any, Component)"
     BadTypeArgs(name~, want~, got~, ..) =>
-      "state block: `\{name}` takes \{want} type argument(s), not \{got}"
+      "spec block: `\{name}` takes \{want} type argument(s), not \{got}"
     CyclicType(name~, ..) =>
-      "state block: `\{name}` contains itself with no `?` or `Array` in between, so it has no size and no zero"
+      "spec block: `\{name}` contains itself with no `?` or `Array` in between, so it has no size and no zero"
     Collision(kind~, ident~, first~, second~, ..) =>
-      "state block: \{kind}s `\{first}` and `\{second}` both map to `\{ident}`"
+      "spec block: \{kind}s `\{first}` and `\{second}` both map to `\{ident}`"
     BadComponentName(name~, ..) =>
-      "state block: `\{name}` cannot name a component — it must start with a letter"
+      "spec block: `\{name}` cannot name a component — it must start with a letter"
     ReservedName(name~, ..) =>
-      "state block: `\{name}` is a builtin type name and cannot be declared as a type"
+      "spec block: `\{name}` is a builtin type name and cannot be declared as a type"
     UnknownProtocol(local_name~, ..) =>
-      "state block: unknown protocol `\{local_name}` — declare it here or import its canonical string id"
+      "spec block: unknown protocol `\{local_name}` — declare it here or import its canonical string id"
     ProtocolConflict(id~, ..) =>
-      "state block: protocol `\{id}` is declared more than once with different surfaces"
+      "spec block: protocol `\{id}` is declared more than once with different surfaces"
+    DuplicateRule(name~, ..) =>
+      "spec block: two rules named `\{name}`; a `pred` and an `invariant` share one `$name`, so one name has one answer"
+    RuleOutsideState(name~, ..) =>
+      "spec block: `\{name}` is a rule, and a rule belongs to the `state` that keeps it — move it inside the `state` body"
   }
 }
 

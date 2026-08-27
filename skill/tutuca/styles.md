@@ -10,7 +10,7 @@ style, one at file level is the component's `common_style`, and one marked
 `data-global` is its `global_style`.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Styled {  }
 </script>
 

@@ -199,6 +199,12 @@ pub(all) struct StateDef {
   /// What it asks its ancestors for. A lookup names what it WANTS, not who
   /// supplies it.
   lookup : Array[LookupDecl]
+  /// The `pred`s and `invariant`s this component declares, in source order.
+  ///
+  /// One list and not two, because they share a NAMESPACE: `$conserved` reads
+  /// an invariant from a view exactly as `$canPush` reads a pred, and two rules
+  /// with one name would be one `$name` with two answers.
+  rules : Array[RuleDecl]
   doc : String?
 } derive(Eq, @debug.Debug)
 
@@ -223,6 +229,62 @@ pub(all) struct LookupDecl {
   name : String
   default : String?
   span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+/// Which of the two roles a rule has.
+///
+/// One type and not two declarations, because a `pred` and an `invariant` are
+/// the same thing — a named boolean over this component's state, one
+/// expression, no arguments — and differ only in who asks it. A slot asks a
+/// `pred`; the runtime asks an `invariant`, after every transition, including
+/// the ones written later that never mention it.
+pub(all) enum RuleKind {
+  /// Asked by whoever names it: a `requires` / `ensures` clause, a `$name` in a
+  /// view, a `@when` filter.
+  RPred
+  /// A `pred` the component KEEPS. Asked after every transition as well, and
+  /// still callable from a slot like any other.
+  RInvariant
+} derive(Eq, @debug.Debug)
+
+///|
+/// One `pred` or `invariant`: a name, the one expression it is, and the
+/// sentence it says when it does not hold.
+///
+/// It lives here rather than in the script block because a rule is not
+/// behaviour. It has no statements, no effects and no parameters — it is
+/// something the component is DECLARED to keep — and an invariant in
+/// particular has nowhere per-handler to be written, since "after every
+/// transition" is not a fact about any one of them.
+///
+/// `source` and `format` are the BLOCK language and are NOT read here — the
+/// same treatment `ProvideDecl.source` gets, and for the same reason. Which
+/// names resolve, whether the answer is a boolean, and whether the text parses
+/// at all are `tscript`'s questions; this records what was written and where.
+pub(all) struct RuleDecl {
+  kind : RuleKind
+  name : String
+  /// The one expression, without its braces.
+  source : String
+  /// Where `source` came from, so a caller that parses it can rebase a span
+  /// from the block language onto the file exactly.
+  source_span : Span
+  /// The `format` expression's source, or "". The sentence to say when the
+  /// rule does NOT hold, evaluated against the state that was rejected.
+  ///
+  /// Describes the FALSE case, because a predicate is true when things are
+  /// fine. The `///` comment and this do different jobs: the comment says what
+  /// the rule IS, statically; the format says what went wrong THIS time.
+  format : String
+  /// Where `format` came from. The empty span when there is none.
+  format_span : Span
+  doc : String?
+  /// The whole declaration, from its keyword to its closing brace.
+  span : Span
+  /// Just the name, for a diagnostic that is about the name rather than the
+  /// body — a duplicate, or one a contract could not find.
+  name_span : Span
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -271,6 +333,13 @@ pub suberror DefError {
   /// Two declarations in one source unit claim the same canonical id with
   /// incompatible surfaces.
   ProtocolConflict(id~ : String, span~ : Span)
+  /// Two rules claim one name. `pred` and `invariant` share the `$name`
+  /// namespace, so this catches a pair of either kind.
+  DuplicateRule(name~ : String, span~ : Span)
+  /// A `pred` or an `invariant` outside a `state` body. A `struct` describes a
+  /// value and a value keeps nothing; a `protocol` describes a boundary, and a
+  /// rule is private to the component that keeps it.
+  RuleOutsideState(name~ : String, span~ : Span)
 }
 
 ///|
@@ -285,7 +354,7 @@ declare pub fn DefError::message(self : DefError) -> String
 declare pub fn DefError::span(self : DefError) -> Span
 
 ///|
-/// Parse a `<script type="tutuca/state">` block into one StateDef per
+/// Parse a `<script type="tutuca/spec">` block into one StateDef per
 /// component it declares.
 ///
 /// `source` is the block's text exactly as written, so every span indexes it

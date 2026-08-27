@@ -92,7 +92,7 @@ test "an unknown field is named, and the message guesses" {
     "`.coutn` is not a field of the Counter state — did you mean `.count`?",
   ])
   assert_eq(messages("receive x { .wildlyDifferent = 1 }"), [
-    "`.wildlyDifferent` is not a field of the Counter state; declare it in the <script type=\"tutuca/state\"> block",
+    "`.wildlyDifferent` is not a field of the Counter state; declare it in the <script type=\"tutuca/spec\"> block",
   ])
   assert_eq(codes("receive x { .count = 1 }"), [])
 }
@@ -159,7 +159,7 @@ test "a handler for a message the schema does not declare" {
   // `rowPicked` is one, and answering it as a message is answering a name
   // nothing addresses.
   assert_eq(messages_with_views("receive rowPicked(i) { .count = i }", []), [
-    "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/state\"> block",
+    "the schema declares no `receive` case `rowPicked`; add it to `variant receive` in the <script type=\"tutuca/spec\"> block",
   ])
   assert_eq(codes("intent rowPicked(i) { .count = i }"), [])
 }
@@ -524,7 +524,7 @@ test "a type the state does not declare is named, with the nearest one" {
     "`Labl` is not a type the Counter state declares — did you mean `Label`?",
   ])
   assert_eq(messages("receive x { new Array[Widget] }"), [
-    "`Array[Widget]` is not a type the Counter state declares; declare it in the <script type=\"tutuca/state\"> block, or write a built-in type",
+    "`Array[Widget]` is not a type the Counter state declares; declare it in the <script type=\"tutuca/spec\"> block, or write a built-in type",
   ])
   // The built-in spellings the state block has, all of them legal here.
   assert_eq(
@@ -641,7 +641,7 @@ test "a contract names a `pred` the block declares" {
     [],
   )
   assert_eq(messages("receive bump requires enough { .count += 1 }"), [
-    "`requires enough` names no `pred` this block declares; declare `pred enough { … }` above `bump`",
+    "`requires enough` names no `pred` the spec block declares; `bump` asks for it, so declare `pred enough { … }` inside `state Counter` in the spec block",
   ])
   // A `compute` is not a rule: nothing declares that its answer is a yes or a
   // no, so a contract over one would hold whenever it happened to be truthy.
@@ -653,7 +653,7 @@ test "a contract names a `pred` the block declares" {
       ),
     ),
     [
-      "`requires caption` names no `pred` this block declares; `caption` is a `compute`, and a contract names a `pred`, whose answer is declared to be a yes or a no",
+      "`requires caption` names no `pred` the spec block declares; `caption` is a `compute`, and a contract names a `pred`, whose answer is declared to be a yes or a no",
     ],
   )
 }
@@ -668,7 +668,7 @@ test "a near miss in a contract is named" {
       ),
     ),
     [
-      "`requires enouhg` names no `pred` this block declares — did you mean `enough`?",
+      "`requires enouhg` names no `pred` the spec block declares — did you mean `enough`?",
     ],
   )
 }
@@ -863,4 +863,102 @@ test "an intent declaration does not answer a view name" {
   assert_eq(codes_with_views("intent save(t) { reply 1 }", ["save"]), [
     "NO_VIEW_HANDLER",
   ])
+}
+
+// -- the spec block's rules -------------------------------------------------
+
+///|
+fn rule_findings(spec : String) -> Array[String] raise {
+  let def = @statedef.parse_state(spec)[0]
+  @check.check_rules(def).map(f => f.message)
+}
+
+///|
+test "a rule reading a field the state does not declare is reported" {
+  debug_inspect(
+    rule_findings("state Counter { count : Int  pred ok { .nope > 0 } }"),
+    content=(
+      #|["`.nope` is not a field of the Counter state; declare it in the <script type=\"tutuca/spec\"> block"]
+    ),
+  )
+}
+
+///|
+test "a rule body that cannot decide anything is reported" {
+  // The same ALWAYS_TRUE rule every other condition gets, and not a stricter
+  // one: a string and a number are boolish in tutuca.
+  debug_inspect(
+    rule_findings("state Counter { items : Array[Int]  pred any { .items } }"),
+    content=(
+      #|["Array[Int] is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it"]
+    ),
+  )
+}
+
+///|
+test "a format that answers a number is reported, and one that answers a string is not" {
+  debug_inspect(
+    rule_findings(
+      "state Counter { count : Int  invariant ok format .count { .count > 0 } }",
+    ),
+    content=(
+      #|["a `format` is the sentence a reader is shown, and this one answers Int — write a string, or a `$'…'` template that puts it in one"]
+    ),
+  )
+  assert_eq(
+    rule_findings(
+      "state Counter { count : Int  invariant ok format $'{.count} is not above zero' { .count > 0 } }",
+    ),
+    [],
+  )
+}
+
+///|
+test "a rule that does not parse is reported where it broke, not where it started" {
+  let out = rule_findings(
+    "state Counter { count : Int  pred ok { .a + .b * .c } }",
+  )
+  assert_eq(out.length(), 1)
+  // The block language refuses two operator families in one unparenthesized
+  // chain, which is the whole reason it has no precedence table.
+  assert_true(out[0].contains("parenthes") || out[0].contains("`*`"))
+}
+
+///|
+test "a contract naming a spec-block rule resolves" {
+  let def = @statedef.parse_state(
+      "state Ledger { here : Int  there : Int  pred canPush { .here > 0 } }",
+    )[0]
+  let decls = @tscript.parse_script(
+    "receive push requires canPush { .here -= 1\n.there += 1 }",
+  )
+  assert_eq(@check.check(decls, def).map(f => f.message), [])
+}
+
+///|
+test "a contract naming nothing says where the rule goes" {
+  let def = @statedef.parse_state("state Ledger { here : Int }")[0]
+  let decls = @tscript.parse_script(
+    "receive push requires canPush { .here -= 1 }",
+  )
+  debug_inspect(
+    @check.check(decls, def).map(f => f.message),
+    content=(
+      #|["`requires canPush` names no `pred` the spec block declares; `push` asks for it, so declare `pred canPush { … }` inside `state Ledger` in the spec block"]
+    ),
+  )
+}
+
+///|
+test "a rule declared in both blocks is reported rather than silently resolved" {
+  let def = @statedef.parse_state(
+      "state Ledger { here : Int  pred canPush { .here > 0 } }",
+    )[0]
+  let decls = @tscript.parse_script(
+    "pred canPush { .here > 99 }\nreceive push requires canPush { .here -= 1 }",
+  )
+  let out = @check.check(decls, def)
+  assert_eq(out.length(), 1)
+  assert_eq(out[0].code, "RULE_IN_BOTH")
+  assert_eq(out[0].severity, SWarning)
 }

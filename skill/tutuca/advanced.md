@@ -108,7 +108,7 @@ them through every component in between. **`provide`** on the producer;
 `theme.html` — both components in one view file, so one generated module:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Theme { color: String, body: Child }
     state Child {  }
 </script>

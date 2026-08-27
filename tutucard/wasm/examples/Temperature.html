@@ -1,8 +1,11 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// A temperature, readable either way round.
   state Temperature {
     /// Degrees Celsius.
     c: Double
+
+    /// Never below absolute zero.
+    invariant physical { .c >= (-273.15) }
   }
 </script>
 
@@ -19,9 +22,6 @@
   receive cooler {
     .c -= 1
   }
-
-  /// Never below absolute zero.
-  invariant physical { .c >= (-273.15) }
 
   /// Both scales, in one sentence.
   compute both { $'{.c} °C is {f} °F' }

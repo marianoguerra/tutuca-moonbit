@@ -13,7 +13,7 @@ backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 
 ```html
 <!-- counter.html -->
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter { count: Int }
 </script>
 

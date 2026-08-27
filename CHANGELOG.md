@@ -6,6 +6,94 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### BREAKING — the rule layer moved, and the block was renamed
+
+- **`<script type="tutuca/state">` is now `<script type="tutuca/spec">`.** The
+  old name still parses and `gen-views` reports it once per file, because a card
+  in the field is one file someone else's page loads and breaking every one of
+  them to rename a string is a cost the rename does not earn. Rename the `type=`
+  and nothing else changes. A file carrying one of each spelling is two blocks,
+  which is the answer two `tutuca/spec` blocks already got.
+
+  The block outgrew the word. It held the fields, yes, but also the named types,
+  the `handle`/`express` surfaces, the protocols and the `provide`/`lookup`
+  wiring — and now the rules. "State" named one section of it. `spec` is the
+  same promise `spec.mbt` makes one directory down: this is the declared
+  contract, and the implementation is elsewhere.
+
+- **`pred` and `invariant` are declared in the spec block, inside the `state`
+  body they are about.** `script_spec.mbt` had already argued half of it:
+  "`requires` and `ensures` attach BY NAME because what they say is local; an
+  invariant's attachment point is the component, so the component's top level is
+  where it goes." The component's top level is the other block. And a `pred` is
+  the same construct with a different asker — one expression, no statements, no
+  effects, no arguments — so it went with it.
+
+  What this buys is the reading. A spec block now answers what a component IS,
+  what it OBSERVES and what it PROMISES without opening a handler; the script
+  block answers what it does. `requires` / `ensures` stay on the handler header,
+  because what they say is local, and they still take a NAME — the rule those
+  names reach is just up in the spec block now.
+
+  Two `pred`s cannot move, and the boundary is the point: one that takes an
+  argument (`pred containsText(q)`), and one that reads a render binding
+  (`pred matches { contains (str @value) .needle }`). Neither is a rule about
+  the component — they are filters about one row — so they stay in the script
+  block beside the other render-time callables. A parameterised rule in the spec
+  block is refused by name, with where it belongs.
+
+  The old spelling still parses for one release. A rule declared in BOTH blocks
+  is reported as `RULE_IN_BOTH` and the script block's copy is what runs, so
+  moving one is deleting the old copy and nothing changes until you do.
+
+### Added
+
+- **An invariant now covers every dispatch, not just the ones the block wrote.**
+  It used to be woven into script-declared arms and nowhere else — the 0.32.0
+  entry said so outright: "it covers what the BLOCK declares, not the generated
+  mutators a component answers by default." The names now ride in `SchemaInfo`,
+  so `component()` asks them after every successor is built, and three paths are
+  covered where one was:
+
+  | dispatch | asked | effects if it fails |
+  | --- | --- | --- |
+  | a handler the script block declares | inline, before the effect queue flushes | never fire |
+  | a generated mutator (`setHere`, `pushInItems`, …) | after the successor is built | there are none |
+  | a hand-written MoonBit `update~` arm | after the successor is built | **may already have fired** |
+
+  The third row is written down rather than papered over: the state is rolled
+  back, the effects are not. Only the first carries the rule's `format`
+  sentence, because a `format` is compiled beside the rule at the moment it
+  fails and there is no such moment on the other two — they report the rule's
+  NAME and the state that was rejected, which is what nothing could reach at all
+  before.
+
+- **`Init => Inv`, at build time.** `gen-views` writes a test into the generated
+  module asserting that every `tutuca/init` fixture keeps every declared
+  invariant. A rule that does not hold in the state a component starts in is
+  broken before anything happens and every transition after it is refused, which
+  makes it the one check worth making before the component runs.
+
+  A generated test and not a static evaluation, which is the whole trick: the
+  block interpreter was removed once the two compilers covered what it did, and
+  a constant folder written to decide these would be a THIRD implementation of
+  the expression semantics — the one place a rule could quietly mean something
+  other than what it means at runtime. The invariant is already compiled into
+  the module; calling it is exact by construction.
+
+  The DECLARED fixtures, and not the schema's zero. A wrapper is normally called
+  with `init~`, which the generator cannot see, so asserting over all-zeros
+  would fail components that work — the shape of a check people turn off.
+
+### Fixed
+
+- **A card would not let a view filter with an `invariant`.** `@when="conserved"`
+  compiled a body with the loop's three parameters and then left the name out of
+  the manifest's `whens`, so the host had nothing to route to. The MoonBit
+  backend folds an invariant into the when bucket the way it folds a `pred`, and
+  the two now agree — which they must, since a rule kept differently by two
+  backends is two answers to one question.
+
 ## [0.35.0] - 2026-08-27
 
 ### Added
@@ -1240,7 +1328,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   one backend later. The manifest carries them now and `register_bundle`
   registers them.
 
-- **A card with no `<script type="tutuca/state">` block compiles.** It was turned
+- **A card with no `<script type="tutuca/spec">` block compiles.** It was turned
   away whole, while the loader mounted one happily.
 
 ## [0.21.0] - 2026-08-14
@@ -2998,7 +3086,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   case: at page 0, `prevPage` now REFUSES rather than falling through to
   whatever mutator happens to share the name.
 
-- **The state block is no longer WIT.** `<script type="tutuca/state">` now
+- **The state block is no longer WIT.** `<script type="tutuca/spec">` now
   reads a small language of its own that spells its types the way MoonBit does:
   `state Counter { count : Int, tags : Set[String] }` where the file used to
   write `interface counter { record state { count: s32, tags: text-set } }`.
@@ -4105,7 +4193,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   what catches a removed parameter, and the run reports its own coverage (18 of
   67 blocks compiled) rather than implying the whole skill is compile-verified.
 
-- **`skill/tutuca/schema.md`** — the `<script type="tutuca/state">` language in
+- **`skill/tutuca/schema.md`** — the `<script type="tutuca/spec">` language in
   one place: every field spelling, the mutators each kind generates, slots,
   message buckets, declared `$`-callables, `tutuca/init` fixtures. It merges
   cli.md's WIT-subset section with core.md's field-kind table, which described
@@ -4195,7 +4283,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 - **`SKILL.md`'s frontmatter names the artifact the skill is actually about.**
   It described "`#|` raw-string HTML views" — the older spelling — while the rest
   of the skill treats the `.html` view file plus `gen-views` as canonical, so a
-  prompt about a `.html` view, a `<template>`, a `<script type="tutuca/state">`,
+  prompt about a `.html` view, a `<template>`, a `<script type="tutuca/spec">`,
   `tutuca watch`, `moon check`, a storybook example or the playground had nothing
   to match. Routing gained rows for schema.md and events.md.
 
@@ -4746,7 +4834,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   to the JSON bridge.
 
 - **A component's state can be declared in the view file, in a subset of WIT,
-  and is then generated.** A `<script type="tutuca/state">` block holds one
+  and is then generated.** A `<script type="tutuca/spec">` block holds one
   `interface` per component and one `record state` in each; `gen-views` emits
   the struct, a `zero()`, a `Field` table whose `kind()` is *declared*, the
   state <-> Value codec, and the `specs~` map. Sets, ordered maps and
@@ -4814,7 +4902,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   never passed by anything — the runtime was guessing kinds it had already
   been told. Removed. Net cost to a generated module: ~700 bytes.
 
-- **Schema-only view files.** A file may carry a `tutuca/state` block and no
+- **Schema-only view files.** A file may carry a `tutuca/spec` block and no
   `<template>`, which is how a component whose views are built in MoonBit
   still gets a generated state type — the schema lives in a view file, so it
   needs one even with no views. One file may also mix the two: templates for

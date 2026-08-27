@@ -4,7 +4,7 @@ Task-oriented recipes: "how do I do X" with a minimal working snippet and the
 one pitfall worth knowing. Each recipe is self-contained and brief.
 
 **Write it in the view file first.** A component's data goes in the
-`<script type="tutuca/state">` schema and its behaviour in the
+`<script type="tutuca/spec">` schema and its behaviour in the
 `<script type="tutuca/script">` block beside it — `receive`, `intent`,
 `compute`, `pred`, `invariant`, `enrich`, `enrichScope`, plus the `send` /
 `sendAt` / `intent` / `forward` effects. MoonBit is for what that language

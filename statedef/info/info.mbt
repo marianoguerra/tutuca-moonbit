@@ -187,6 +187,7 @@ pub fn schema_info(
     express_messages=def.express_message.map(m => m.name),
     express_intents=def.express_intent.map(m => m.name),
     methods~,
+    invariants=def.invariants(),
     ids~,
     view_names~,
     init_names~,

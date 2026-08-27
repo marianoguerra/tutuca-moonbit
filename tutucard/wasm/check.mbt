@@ -131,6 +131,21 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
         }
       }
     }
+    // The spec block's rules, checked against the schema they are about. Their
+    // spans are the SPEC block's, so they are located with that block rather
+    // than with the script block below — which is why the checker keeps the two
+    // entry points apart.
+    for f in @check.check_rules(def) {
+      let (line, span) : (Int, @tscript.Span) = match file.state_block {
+        Some(b) =>
+          (
+            b.line + line_of(b.text, f.span.start) - 1,
+            { start: f.span.start + b.offset, end_: f.span.end_ + b.offset, },
+          )
+        None => locate_view(source, views, view=None)
+      }
+      issues.push({ comp, code: f.code, message: f.message, line, span, })
+    }
     for h in hints {
       let (line, span) = locate_view(source, views, view=None)
       issues.push({ comp, code: "HINT", message: h, line, span, })
@@ -138,7 +153,10 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     // A card with views and no block has been checked as far as it goes: there
     // is nothing to check the surface against.
     guard block is Some(b) else { continue }
-    for f in @check.check(decls, def, surface~) {
+    // The spec block's rules ride with the block's own, exactly as they do in
+    // `compile`, so what is CHECKED here is what is compiled there.
+    let (spec_rules, _) = @check.rule_decls(def, decls)
+    for f in @check.check(spec_rules + decls, def, surface~) {
       // The checker's warnings are listed here rather than dropped — this is
       // the reporting face, and a warning is worth showing. `compile.mbt` is
       // the one that decides what stops a build, and it skips them.

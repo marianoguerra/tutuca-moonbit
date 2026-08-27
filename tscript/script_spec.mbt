@@ -184,7 +184,7 @@ pub(all) enum Stmt {
 } derive(Debug, Eq)
 
 ///|
-/// The name a `new` was applied to, in the `tutuca/state` spelling:
+/// The name a `new` was applied to, in the `tutuca/spec` spelling:
 /// `Label`, `Array[String]`, `Map[String, Int]`.
 ///
 /// The NAME, not the type. Resolving it needs the `StateDef`, which this

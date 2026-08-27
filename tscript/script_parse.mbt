@@ -697,7 +697,7 @@ fn parse_stmt_block(p : P) -> Array[Stmt] raise ScriptError {
 // Type references
 
 ///|
-/// `Label`, `Array[String]`, `Map[String, Int]` — the `tutuca/state` spelling
+/// `Label`, `Array[String]`, `Map[String, Int]` — the `tutuca/spec` spelling
 /// of a type, parsed as a name applied to names.
 ///
 /// Every spelling the state block has is a name with arguments or without one,

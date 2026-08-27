@@ -3,7 +3,7 @@
 **Problem:** render an element only when a condition holds.
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Form { title: String, body: String, isOpen: Bool, items: Array[Any], query: String }
 </script>
 

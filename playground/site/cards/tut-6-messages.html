@@ -5,11 +5,13 @@
      checker can see, so the schema is the only place it can be
      declared — and the only place its payload can be typed. -->
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Thermostat {
     target : Int
     mode   : String
     log    : Array[String]
+
+    pred isAway { .mode is 'away' }
   }
 
   handle Thermostat {
@@ -62,8 +64,6 @@
   receive home {
     send 'setMode' 'auto'
   }
-
-  pred isAway { .mode is 'away' }
 
   compute reading { if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' } }
 </script>

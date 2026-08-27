@@ -672,7 +672,7 @@ test("the screen takes functions and refuses what authority is made of", async (
   ];
   for (const [block, want] of cases) {
     const card =
-      `<script type="tutuca/state">\nstate Bad { n: Int }\n</` + `script>\n` +
+      `<script type="tutuca/spec">\nstate Bad { n: Int }\n</` + `script>\n` +
       `<script type="tutuca/wax">\n${block}\n</` + `script>\n` +
       `<template id="Bad"><div></div></template>\n`;
     writeFileSync(join(out, "Bad.html"), card);

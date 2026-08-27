@@ -118,7 +118,7 @@ function prefixScripts(source, prefix) {
   );
 }
 
-// A view file's `tutuca/state` and `tutuca/init` blocks, removed. See the
+// A view file's `tutuca/spec` and `tutuca/init` blocks, removed. See the
 // call site for why the concatenated corpus cannot keep them.
 function stripStateBlocks(source) {
   return source.replace(

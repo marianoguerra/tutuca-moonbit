@@ -6,7 +6,7 @@ shows, and the active tab button is highlighted.
 `tabs.html`:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Tabs { currentView: String }
 </script>
 

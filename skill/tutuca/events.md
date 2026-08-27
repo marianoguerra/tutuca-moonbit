@@ -60,7 +60,7 @@ form control and dispatching its generated `setX` mutator:
 <input type="number" step="any" @bind=".ratio" />
 ```
 
-The component must have a `tutuca/state` schema. View generation reads that
+The component must have a `tutuca/spec` schema. View generation reads that
 schema and accepts exactly these combinations:
 
 | State field | Host element | Mirrored property | Event value |

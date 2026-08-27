@@ -4,10 +4,13 @@
      construct with its answer declared a boolean. Neither can
      assign, so neither can be the reason a render is wrong. -->
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Draft {
     text  : String
     limit : Int
+
+    /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
+    pred over { (len .text) > .limit }
   }
 
   handle Draft {
@@ -26,9 +29,6 @@
   /// `$left` is how a template calls this, and this is the only
   /// place the subtraction is written.
   compute left { .limit - (len .text) }
-
-  /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
-  pred over { (len .text) > .limit }
 
   /// The bar's width, as a whole style declaration.
   ///

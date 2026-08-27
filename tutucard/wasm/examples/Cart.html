@@ -1,4 +1,4 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// One entry on the receipt.
   struct Line { what: String, qty: Int }
   /// One line of a shopping cart.
@@ -15,16 +15,21 @@
     history: Array[Int]
     /// The receipt lines, each one a record this card builds with `new`.
     receipt: Array[Line]
+
+    /// A line is only ever worth a non-negative amount.
+    invariant sane { .qty >= 0 }
+
+    /// True while there is something to send.
+    pred hasItem
+      format $'a line with no item cannot be checked out ({.qty}
+
+    /// True once the item names something a receipt would print.
+    pred namable { not (empty? (trim .item)) }
   }
 </script>
 
 <script type="tutuca/script">
-  /// A line is only ever worth a non-negative amount.
-  invariant sane { .qty >= 0 }
-
-  /// True while there is something to send.
-  pred hasItem
-    format $'a line with no item cannot be checked out ({.qty} of nothing)' { not (empty? .item) }
+ of nothing)' { not (empty? .item) }
 
   /// What this line costs.
   compute total { .qty * .price }
@@ -72,9 +77,6 @@
 
   /// The item, tidied: no stray spaces, and compared case-blind.
   compute tidy { trim .item }
-
-  /// True once the item names something a receipt would print.
-  pred namable { not (empty? (trim .item)) }
 </script>
 
 <template id="Cart">

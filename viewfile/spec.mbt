@@ -77,7 +77,7 @@ pub(all) struct ScriptBlock {
 /// cluster — the example library has files defining eight and thirteen of
 /// them, and a file each would bury the module in fragments.
 ///
-/// **Why the state block is parsed here and the script block is not.** A state
+/// **Why the spec block is parsed here and the script block is not.** A spec
 /// block is self-contained: text in, `StateDef` out, and the only thing the
 /// splitter adds is mapping a schema error onto the line of the HTML file the
 /// author has open, which needs the line map it already owns. A script block
@@ -88,9 +88,17 @@ pub(all) struct ScriptBlock {
 pub(all) struct ViewFile {
   components : Array[ViewSet]
   macros : Array[MacroDef]
-  /// The `<script type="tutuca/state">` schema, one entry per component it
+  /// The `<script type="tutuca/spec">` declaration, one entry per component it
   /// declares. Empty when the file has no block.
   state : Array[@statedef.StateDef]
+  /// Where that block came from, or None when the file has none.
+  ///
+  /// Parsed AND kept as raw text, which is the one block that is both. The
+  /// `StateDef`s above are what every consumer reads; this is what a consumer
+  /// needs when it has to point INTO the block — a rule's body is the block
+  /// language, and whoever parses one has a span relative to the block and
+  /// nowhere to put it without the block's own offset.
+  state_block : Block?
   /// The `<script type="tutuca/init">` fixtures, each paired with the
   /// component whose schema it was checked against.
   init : Array[(String, @statedef.InitState)]
@@ -129,6 +137,15 @@ pub(all) struct ViewFile {
   /// at index 0, so moving the root to the front would move a stylesheet as a
   /// side effect of saying which component is the interesting one.
   root : String
+  /// The file spelled its spec block `tutuca/spec`, the name that block used
+  /// to have.
+  ///
+  /// A fact about the file and not a failure, which is why it rides here rather
+  /// than in `FileError`: the block parsed, the components are complete, and
+  /// nothing downstream behaves differently. What it is for is letting the ONE
+  /// consumer that talks to an author — `gen-views` — say so, without every
+  /// other consumer of a `ViewFile` having to grow a warning channel to ignore.
+  legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -161,7 +178,8 @@ pub suberror FileError {
   NoMainViewFor(String)
   /// A `<template>` is never closed.
   UnclosedTemplate(String)
-  /// Two `<script type="tutuca/state">` blocks in one file.
+  /// Two spec blocks in one file — including one written `tutuca/spec` and one
+  /// written `tutuca/spec`, which are two blocks however they are spelled.
   DuplicateStateBlock
   /// Two `<script type="tutuca/script">` blocks answer for the same component
   /// — the name is the `for=` attribute, or "" for an unqualified block.
@@ -171,7 +189,7 @@ pub suberror FileError {
   /// escapes are one body of source, and two would have to be concatenated in
   /// an order the file does not state.
   DuplicateWaxBlock(String)
-  /// The state block does not describe component state. `line` is the line in
+  /// The spec block does not describe a component. `line` is the line in
   /// the HTML file, not in the block, because that is the file the author has
   /// open.
   BadStateBlock(line~ : Int, message~ : String)

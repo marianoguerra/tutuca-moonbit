@@ -1,17 +1,57 @@
 <!-- Step 8 — rules with names, and a runtime that keeps them.
 
-     A `pred` names a rule. Where it ATTACHES says which of the three it is:
-     `requires` before a transition is a PRECONDITION, `ensures` after one is a
-     POSTCONDITION, and `invariant` — declared once, checked after every
-     handler — is what the component keeps. The badges below read the same
-     names the handlers do. -->
+     A `pred` names a rule, and it lives in the SPEC block beside the fields it
+     is about: a rule has no statements, no effects and no arguments, so it is
+     part of what the component IS rather than part of what it does. Read the
+     spec block and you know what this ledger promises, without reading a
+     single handler.
 
-<script type="tutuca/state">
+     Where a rule ATTACHES says which of the three it is: `requires` before a
+     transition is a PRECONDITION, `ensures` after one is a POSTCONDITION, and
+     `invariant` — declared once, checked after every dispatch — is what the
+     component KEEPS. The badges below read the same names the handlers do. -->
+
+<script type="tutuca/spec">
   state Ledger {
     total : Int
     here  : Int
     there : Int
     moves : Int
+
+    /// PRECONDITIONS — what a handler asks before it moves anything.
+    ///
+    /// The `format` is what each one SAYS when it declines. Press a button with
+    /// nothing left on that side and the console gets the sentence rather than
+    /// silence.
+    pred canPush
+      format 'nothing left here to push' { .here > 0 }
+
+    pred canPull
+      format 'nothing over there to pull back' { .there > 0 }
+
+    /// A POSTCONDITION's rule. It is about what ONE handler was supposed to
+    /// achieve, which is the half a reader can check by looking: `pushAll` is
+    /// the handler that empties `here`, and this is that sentence written down.
+    pred hereEmpty { .here is 0 }
+
+    /// THE INVARIANT — the component keeps this, so it is checked after every
+    /// handler below and every handler added later, including the ones that
+    /// never mention it, and including the generated `setHere` nobody wrote.
+    /// That reach is why it belongs here rather than among the handlers: its
+    /// attachment point is the COMPONENT, and this is the component.
+    ///
+    /// The `format` is what it SAYS when it does not hold, evaluated against the
+    /// state that was rejected — so the numbers in the sentence are the ones that
+    /// broke the rule. This comment says what the rule is; the format says what
+    /// went wrong this time.
+    invariant conserved
+      format $'{.here} + {.there} is not {.total} — a token came from nowhere' { (.here + .there) is .total }
+
+    /// A cross-field rule, in the shape `implies` is here for: exactly two
+    /// operands, so there is no precedence to get wrong. Left as a plain `pred`
+    /// — it is read by the badge below and by nothing else, which is what a
+    /// rule looks like before you decide it is worth enforcing.
+    pred emptyMeansMoved { (.here is 0) implies (.moves > 0) }
   }
 
   handle Ledger {
@@ -28,20 +68,10 @@
     .here = 8
   }
 
-  /// PRECONDITIONS — what each handler asks before it moves anything.
-  ///
-  /// The `format` is what each one SAYS when it declines. Press a button with
-  /// nothing left on that side and the console gets the sentence rather than
-  /// silence.
-  pred canPush
-    format 'nothing left here to push' { .here > 0 }
-
-  pred canPull
-    format 'nothing over there to pull back' { .there > 0 }
-
   /// The guard has a NAME and sits in the header, so a reader knows when the
-  /// handler applies without reading the body. It still needs no rollback: a
-  /// precondition is asked before anything has moved.
+  /// handler applies without reading the body — and can read the rule itself in
+  /// the spec block above. It still needs no rollback: a precondition is asked
+  /// before anything has moved.
   receive push requires canPush {
     .here -= 1
     .there += 1
@@ -54,44 +84,26 @@
     .moves += 1
   }
 
-  /// A POSTCONDITION — asked after the body, against where it landed. It is
-  /// about what THIS handler was supposed to achieve, which is the half a
-  /// reader can check by looking: `pushAll` is the handler that empties
-  /// `here`, and `hereEmpty` is that sentence written down.
+  /// A POSTCONDITION — asked after the body, against where it landed.
   ///
   /// One clause of each kind is the limit, and both on one header is the shape
   /// a transition takes when it has something to ask and something to promise.
-  pred hereEmpty { .here is 0 }
-
+  /// Both clauses are NAMES; the sentences they name are up in the spec block,
+  /// which is what lets this header stay one line of intent.
   receive pushAll requires canPush ensures hereEmpty {
     .there += .here
     .here = 0
     .moves += 1
   }
 
-  /// THE INVARIANT — the component keeps this, so it is checked after every
-  /// handler above and every handler added later, including the ones that
-  /// never mention it.
-  ///
-  /// The `format` is what it SAYS when it does not hold, evaluated against the
-  /// state that was rejected — so the numbers in the sentence are the ones that
-  /// broke the rule. This comment says what the rule is; the format says what
-  /// went wrong this time.
-  invariant conserved
-    format $'{.here} + {.there} is not {.total} — a token came from nowhere' { (.here + .there) is .total }
-
-  /// A cross-field rule, in the shape `implies` is here for: exactly two
-  /// operands, so there is no precedence to get wrong. Left as a plain `pred`
-  /// — it is read by the badge below and by nothing else, which is what a
-  /// rule looks like before you decide it is worth enforcing.
-  pred emptyMeansMoved { (.here is 0) implies (.moves > 0) }
-
   /// The button that tries to mint one out of nothing. It is refused — by a
-  /// rule it does not mention — and the refusal is reported rather than
-  /// silent. Open the console: `contract: cheat was abandoned — it broke the
-  /// invariant conserved: 8 + 1 is not 8 — a token came from nowhere`. A host
-  /// that wants the record rather than the line calls `on_runtime_notice`, and gets
-  /// the rule, the path and the state that was rejected with it.
+  /// rule it does not mention, and does not need to, because the rule is the
+  /// component's rather than this handler's — and the refusal is reported
+  /// rather than silent. Open the console: `contract: cheat was abandoned — it
+  /// broke the invariant conserved: 8 + 1 is not 8 — a token came from
+  /// nowhere`. A host that wants the record rather than the line calls
+  /// `on_runtime_notice`, and gets the rule, the path and the state that was
+  /// rejected with it.
   receive cheat {
     .there += 1
   }

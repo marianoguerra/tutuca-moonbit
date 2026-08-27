@@ -187,7 +187,7 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
     "  from the corpus's own schema: six cases declare `intent saveDraft` with\n" +
     "  six different bodies, and one component answers one name once.\n" +
     "-->\n" +
-    "<script type=\"tutuca/state\">\n" +
+    "<script type=\"tutuca/spec\">\n" +
     indent(schema) +
     "\n</script>\n\n" +
     "<script type=\"tutuca/script\">\n" +

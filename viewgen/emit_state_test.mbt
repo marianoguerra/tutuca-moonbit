@@ -5,7 +5,7 @@
 
 ///|
 let counter_state_html : String =
-  #|<script type="tutuca/state">
+  #|<script type="tutuca/spec">
   #|  state Counter { label: String, count: Int, history: Array[Int] }
   #|</script>
   #|
@@ -69,7 +69,7 @@ test "a file with no state block generates exactly what it did before" {
 ///|
 test "sets, ordered maps and child slots are described in the schema" {
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  enum Visibility { Done, Active }
     #|  state Card { title: String }
     #|  state Board { vis: Set[Visibility], tags: Set[String], order: Map[String, Any], lead: Card, plain: String }
@@ -106,7 +106,7 @@ test "sets, ordered maps and child slots are described in the schema" {
 ///|
 test "named types become MoonBit types, and a keyword field escapes" {
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  enum Mode { View, Edit }
     #|  struct Item { title: String, done: Bool }
     #|  state Editor { m: Mode, items: Array[Item], type: String }
@@ -139,7 +139,7 @@ test "a schema interface with no template declares state anyway" {
   // mistyped interface name looks like, so the CLI reports it on its
   // non-fatal diagnostic channel rather than failing generation.
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state Countr { n: Int }
     #|</script>
     #|<template><p>hi</p></template>
@@ -157,7 +157,7 @@ test "a schema error points at the line in the HTML file" {
   let html =
     #|<template><p>hi</p></template>
     #|
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state Counter { n: Int64 }
     #|</script>
   try @viewgen.split_file(html) |> ignore catch {
@@ -176,15 +176,15 @@ test "a schema error points at the line in the HTML file" {
 ///|
 test "two state blocks in one file are refused" {
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state A { n: Int }
     #|</script>
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state B { n: Int }
     #|</script>
     #|<template><p>hi</p></template>
   try @viewgen.split_file(html) |> ignore catch {
-    e => assert_true(e.message().contains("one file declares one schema"))
+    e => assert_true(e.message().contains("one file declares one spec"))
   } noraise {
     _ => fail("expected the duplicate block to be reported")
   }
@@ -196,7 +196,7 @@ test "the block's angle brackets survive the HTML tokenizer" {
   // parser reads template content as markup, so `list<s32>` would become an
   // `<s32>` element and `option<string>` an `<string>` one.
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state C { a: Array[Int], b: String?, c: (Int, Bool) }
     #|</script>
     #|<template><p>hi</p></template>
@@ -216,7 +216,7 @@ test "a schema-only file declares state for views built at runtime" {
   // generated state type: the schema lives in a view file, so it needs a
   // view file even when it has no views.
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state BarChart { title: String, values: Array[Any] }
     #|</script>
   let file = @viewgen.split_file(html)
@@ -241,7 +241,7 @@ test "a schema block is lifted out of a file that is its own main view" {
   // inside it — before the block was lifted like a <style>, it compiled to a
   // literal <script> element in the view tree.
   let html =
-    #|<script type="tutuca/state">
+    #|<script type="tutuca/spec">
     #|  state Widget { n: Int }
     #|</script>
     #|<p><x text=".n"></x></p>

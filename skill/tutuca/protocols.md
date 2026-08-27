@@ -4,7 +4,7 @@ Use a protocol when components need a shared capability without sharing a
 concrete component or filesystem module. Protocol identity is a string:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
 protocol Lifecycle = "tutuca.dev/std/Lifecycle@1" {
   handle { message { init, deinit } intent { resume, suspend } }
   express { message { resumed } intent { wantsAttention(String) } }
@@ -64,7 +64,9 @@ the static checker.
 
 Protocols cover boundary-visible behavior: handled/expressed operations,
 semantic views, typed properties, dynamic bindings, and component constraints.
-Fields, helper types, fixtures, generated mutators, contracts, and script
-`pred`/`compute` declarations stay private. Promote a stable observation to a
-protocol `property`, and model an argument-taking or asynchronous operation as
-a message or intent.
+Fields, helper types, fixtures, generated mutators, `pred` / `invariant` rules,
+the `requires` / `ensures` clauses that attach them, and script `compute`
+declarations stay private — declared in the spec block does not mean visible at
+the boundary, and a protocol says nothing about what an implementor promises
+itself. Promote a stable observation to a protocol `property`, and model an
+argument-taking or asynchronous operation as a message or intent.

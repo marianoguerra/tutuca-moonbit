@@ -22,7 +22,7 @@ const EXAMPLES = {
 <!-- The state: CounterState, its zero(), and its @component.Fields impl
      (schema + codec) are generated from this block, so the component tab
      never writes a codec by hand. -->
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Counter {
     count : Int
     label : String
@@ -77,7 +77,7 @@ fn build() -> @component.ModuleDef {
   // compute derives the label — so the component has no @on Input handlers at
   // all, and no update. The View tab still compiles ahead of time.
   Toggle: {
-    view: `<script type="tutuca/state">
+    view: `<script type="tutuca/spec">
   state Panel {
     open : Bool
   }
@@ -117,7 +117,7 @@ fn build() -> @component.ModuleDef {
   // Two-way binding: :value reads the field, @on.input writes it via the
   // generated $setName mutator. @text mirrors it live. No handlers needed.
   "Text input": {
-    view: `<script type="tutuca/state">
+    view: `<script type="tutuca/spec">
   state Greeter {
     name : String
   }
@@ -155,7 +155,7 @@ fn build() -> @component.ModuleDef {
 //
 // No View tab means no generator, so this state writes the three
 // @component.Fields methods by hand — the same contract gen-views emits from
-// a \`tutuca/state\` block. That is the whole cost of leaving the AOT path.
+// a \`tutuca/spec\` block. That is the whole cost of leaving the AOT path.
 struct CounterState {
   count : Int
 }

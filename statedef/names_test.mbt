@@ -141,7 +141,7 @@ test "show_source round-trips the spelling the author wrote" {
 ///|
 test "a syntax error carries a span, not an identifier to go looking for" {
   guard! def_err("state { count: }") is Some(e)
-  assert_eq(e.message(), "state block: expected a type, found `}`")
+  assert_eq(e.message(), "spec block: expected a type, found `}`")
   assert_eq(e.span(), { start: 15, end_: 16, })
 }
 
@@ -161,10 +161,7 @@ test "every failure points at the thing it is about" {
   // A type application with the wrong arity.
   guard! def_err("state { xs: Array[Int, Int] }") is Some(e2)
   assert_true(e2 is BadTypeArgs(_))
-  assert_eq(
-    e2.message(),
-    "state block: `Array` takes 1 type argument(s), not 2",
-  )
+  assert_eq(e2.message(), "spec block: `Array` takes 1 type argument(s), not 2")
 
   // A by-value cycle has no representation and no zero.
   guard! def_err("struct Node { next: Node }\nstate { n: Node }") is Some(e3)

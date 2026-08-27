@@ -33,8 +33,15 @@ fn inline_emit(
   v : String,
   state_ty : String,
 ) -> @emit_mbt.Emitted? {
-  guard file.script_for(comp) is Some(block) else { return None }
-  let decls = @tscript.parse_script(block.text) catch { _ => return None }
+  // A component with rules and no script block still has bodies to emit: a
+  // `pred` and an `invariant` are declared in the SPEC block now, and the
+  // runtime asks an invariant after every dispatch whether or not the file
+  // writes a single handler. `emit` synthesises those from the schema, so an
+  // empty declaration list is a real input rather than a reason to stop.
+  let decls = match file.script_for(comp) {
+    Some(block) => @tscript.parse_script(block.text) catch { _ => return None }
+    None => if def.rules.is_empty() { return None } else { [] }
+  }
   Some(
     @emit_mbt.emit(
       decls,

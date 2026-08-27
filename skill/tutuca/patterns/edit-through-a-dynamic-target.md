@@ -6,7 +6,7 @@ the child land back on the owner — without forwarding events up by hand.
 `workspace.html` — one view file, so one generated module for all three:
 
 ```html
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Workspace { sheet: Sheet, bar: Toolbar }
     state Sheet { text: String }
     state Toolbar {  }

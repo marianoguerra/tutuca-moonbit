@@ -128,6 +128,23 @@ pub fn emit(
   roles? : Roles = Roles::none(),
   surface? : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
+  // The SPEC block's rules, as declarations, ahead of the block's own.
+  //
+  // Synthesised rather than handled separately, because a rule is a `Decl` in
+  // every way that matters here — a name, no parameters, one expression, an
+  // optional sentence — and giving it a second path through this file would
+  // mean `callables`, `rules`, `formats`, `invariants` and `value_bodies` each
+  // learning about two kinds of rule that behave identically.
+  let refusals : Array[Refusal] = []
+  let (spec_rules, unreadable) = @check.rule_decls(def, decls)
+  for name in unreadable {
+    refusals.push({
+      name,
+      why: "its body is not an expression this backend can read",
+      span: @tscript.no_span,
+    })
+  }
+  let decls = spec_rules + decls
   // Every name this component has an arm for, gathered before the walk for the
   // same reason `callables` is: a body above a declaration still needs it.
   let answer_arms : Set[String] = Set([])
@@ -162,7 +179,6 @@ pub fn emit(
     target_n: 0,
   }
   let arms : Array[String] = []
-  let refusals : Array[Refusal] = []
   // Two buckets, and THREE lists: the `Receive` bucket has two enums over it,
   // because a name a VIEW writes is typed from its call sites and a name the
   // SCHEMA declares is typed from the declaration. One dispatch bucket, two
@@ -350,7 +366,17 @@ fn E::value_bodies(
       // An `invariant` is a `pred` with a role, and every USE a `pred` has it
       // has too: a badge reading `$conserved` and a `@when="conserved"` are
       // asking the rule the same question the transitions ask it.
-      DCompute | DPred | DInvariant => {
+      // An `invariant` gets its method body whether or not a view asks for
+      // one. Every other value body waits to be NAMED — a `compute` no view
+      // reads is a function nobody could call — but an invariant is the
+      // COMPONENT's rather than a view's: the runtime asks it after every
+      // dispatch, including the ones no view raised, so its existence cannot
+      // depend on a template mentioning it.
+      DInvariant => {
+        take(d, RMethod, roles.methods + [d.name], out.methods)
+        take(d, RWhen, roles.whens, out.whens)
+      }
+      DCompute | DPred => {
         take(d, RMethod, roles.methods, out.methods)
         if @tscript.is_predicate(d.kind) {
           take(d, RWhen, roles.whens, out.whens)
@@ -492,8 +518,12 @@ fn E::value_body(
   let b = StringBuilder()
   b.write_string("///|\n")
   b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
+  // Which block it came from. A rule lives in the spec block and everything
+  // else in the script block, and a generated comment that pointed at the
+  // wrong one would send a reader to edit a file that does not hold it.
+  let block = if self.def.rule(d.name) is Some(_) { "spec" } else { "script" }
   b.write_string(
-    "`<script type=\"tutuca/script\">` block. GENERATED — edit\n",
+    "`<script type=\"tutuca/\{block}\">` block. GENERATED — edit\n",
   )
   b.write_string("/// the block, not this.\n")
   b.write_string("fn \{name}(\{params.join(", ")}) -> \{ret} {\n")

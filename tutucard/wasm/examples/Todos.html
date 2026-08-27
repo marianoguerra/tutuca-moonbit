@@ -1,4 +1,4 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// A list that makes its own rows.
   ///
   /// The thing a card could not do until it could: `add` builds a `Todo` while
@@ -8,6 +8,10 @@
     draft: String
     /// The rows, each a child instance.
     items: Array[Todo]
+
+    /// True while there is something to add.
+    pred typed
+      format $'nothing to add' { not (empty? .draft) }
   }
 
   /// One row, declared beside the list that makes it.
@@ -38,10 +42,6 @@
     .items.push @cur
     .draft = ''
   }
-
-  /// True while there is something to add.
-  pred typed
-    format $'nothing to add' { not (empty? .draft) }
 
   /// Take a row away.
   ///

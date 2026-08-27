@@ -15,7 +15,7 @@
 test "an effect in the SECOND component still gets the card's flush" {
   let out = @wasm.compile(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Board { rows: Array[Row] }
       #|  state Row { label: String }
       #|</script>
@@ -50,7 +50,7 @@ test "an effect in the SECOND component still gets the card's flush" {
 test "an effect in the SECOND component decides the card's imports" {
   let out = @wasm.compile(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Board { rows: Array[Row] }
       #|  state Row { label: String }
       #|</script>
@@ -83,7 +83,7 @@ test "an effect in the SECOND component decides the card's imports" {
 test "a card's provide/lookup sections reach the manifest" {
   let out = @wasm.compile(
     (
-      #|<script type="tutuca/state">
+      #|<script type="tutuca/spec">
       #|  state Board {
       #|    theme: String
       #|    slot: Slot
@@ -143,4 +143,56 @@ test "a card's provide/lookup sections reach the manifest" {
   // The key the HOST reads. It used to be `requests`, which nothing read, so a
   // card could not have declared a served intent even in principle.
   @debug.assert_eq(board.get("serves"), Some(Json::array([])))
+}
+
+///|
+/// A rule declared in the SPEC block reaches the card's module and its
+/// manifest — the same rule, from the same synthesis, as the MoonBit backend.
+///
+/// Two backends keeping different rules for one file would be two answers to
+/// one question, which is why the synthesis lives in `tscript/check` and both
+/// call it rather than each carrying a copy.
+test "the spec block's rules compile into the card and its manifest" {
+  let out = @wasm.compile(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Ledger {
+      #|    here  : Int
+      #|    there : Int
+      #|    total : Int
+      #|
+      #|    pred canPush
+      #|      format 'nothing left here to push' { .here > 0 }
+      #|
+      #|    invariant conserved { (.here + .there) is .total }
+      #|  }
+      #|</script>
+      #|<script type="tutuca/script">
+      #|  receive push requires canPush {
+      #|    .here -= 1
+      #|    .there += 1
+      #|  }
+      #|</script>
+      #|<template>
+      #|  <button @on.click="push" @if.class="$conserved" @then="'ok'" @else="'bad'">
+      #|    <x text=".here"></x>
+      #|  </button>
+      #|</template>
+    ),
+    name="Ledger",
+  )
+  guard! out.manifest is Object(root)
+  guard! root.get("components") is Some(Array(comps))
+  guard! comps.get(0) is Some(Object(ledger))
+  // Both rules are `$`-callables, the way every value body is, so a badge
+  // reading `$conserved` finds one.
+  @debug.assert_eq(
+    ledger.get("methods"),
+    Some(Json::array([Json::string("canPush"), Json::string("conserved")])),
+  )
+  // …and both are predicates, so a `@when` may filter with either.
+  @debug.assert_eq(
+    ledger.get("whens"),
+    Some(Json::array([Json::string("canPush"), Json::string("conserved")])),
+  )
 }

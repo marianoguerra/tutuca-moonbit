@@ -4,10 +4,12 @@
      needs no handler at all: `removeInSongsAt` is one of the four
      mutators the `Array[String]` field generated. -->
 
-<script type="tutuca/state">
+<script type="tutuca/spec">
   state Playlist {
     draft : String
     songs : Array[String]
+
+    pred any { not (empty? .songs) }
   }
 
   handle Playlist {
@@ -43,8 +45,6 @@
       .songs.deleteAt (i + 1)
     }
   }
-
-  pred any { not (empty? .songs) }
 
   compute caption { $'{len .songs} song(s)' }
 </script>

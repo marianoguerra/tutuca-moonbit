@@ -107,6 +107,19 @@ pub(all) struct SchemaInfo {
   express_intents : Array[String]
   /// `$name` callables in VALUE positions.
   methods : Array[String]
+  /// The rules this component KEEPS: the `invariant` names its spec block
+  /// declares, sorted.
+  ///
+  /// Names and not bodies, because the body is already here — an invariant is a
+  /// `pred` with a role, so it is one of the `methods` above and the component
+  /// layer calls it the way a view does. What this list adds is the ROLE, which
+  /// nothing else records: that the runtime should ask it after every dispatch,
+  /// including the ones no view raised and no handler mentions.
+  ///
+  /// Sorted, because WHICH rule broke is part of the answer and a report that
+  /// depended on declaration order would move when an unrelated rule was added
+  /// above it.
+  invariants : Array[String]
   /// Constant element ids — the selectors a test addresses.
   ids : Array[String]
   view_names : Array[String]
@@ -158,6 +171,7 @@ declare pub fn SchemaInfo::new(
   express_messages? : Array[String],
   express_intents? : Array[String],
   methods? : Array[String],
+  invariants? : Array[String],
   ids? : Array[String],
   view_names? : Array[String],
   init_names? : Array[String],

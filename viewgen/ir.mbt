@@ -435,7 +435,7 @@ fn emit_ir_module_compiled(
   for comp in compiled.components {
     let cname = comp.raw.component_name(name)
     let state = state_for(file, cname, name)
-    let surface = with_script(comp.surface, file, cname)
+    let surface = with_script(comp.surface, file, cname, state)
     // The script block, compiled — None when the file writes none, and None
     // for a component with no schema, which has no state type to write a
     // transition over.
@@ -451,7 +451,13 @@ fn emit_ir_module_compiled(
         )
       None => None
     }
-    emit_ir_component(cname, comp, state, surface, inline, out)
+    // A fixture is keyed by the schema's RAW component name, which is "" for
+    // a bare `state { … }` — the same key `emit_module` uses.
+    let inits = match state {
+      Some(def) => file.init.filter(p => p.0 == def.component).map(p => p.1)
+      None => []
+    }
+    emit_ir_component(cname, comp, state, surface, inline, inits, out)
   }
   out.to_string()
 }
@@ -512,6 +518,7 @@ fn emit_ir_component(
   state : @statedef.StateDef?,
   surface : Surface,
   inline : @emit_mbt.Emitted?,
+  inits : Array[@statedef.InitState],
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -574,7 +581,85 @@ fn emit_ir_component(
   }
   if state is Some(def) {
     emit_wrapper(name, t, v, def, surface, inline_name, inline, out)
+    emit_init_invariants(t, v, def, inits, inline, out)
   }
+}
+
+///|
+/// `Init => Inv`: every declared initial state keeps every declared invariant,
+/// asserted at BUILD time.
+///
+/// A generated test and not a static evaluation, which is the whole trick. The
+/// block interpreter was removed once the two compilers covered what it did,
+/// and a constant folder written to decide these here would be a THIRD
+/// implementation of the expression semantics — the one place where a rule
+/// could quietly mean something different from what it means at runtime. The
+/// invariant is already compiled into this module; calling it is exact by
+/// construction.
+///
+/// Only an explicit `Bool(false)` fails, matching the runtime: a rule that
+/// cannot be evaluated is unknown, and unknown is not wrong.
+///
+/// The DECLARED initial states, and not the schema's `zero()`. The zero is what
+/// a field falls back to, not a state anybody said the component starts in: a
+/// wrapper is normally called with `init~`, which this cannot see, so a rule
+/// that is false of all-zeros and true of every real fixture is a component
+/// that works. Asserting over the zero would fail those, which is the shape of
+/// a check people turn off.
+fn emit_init_invariants(
+  t : String,
+  v : String,
+  def : @statedef.StateDef,
+  inits : Array[@statedef.InitState],
+  inline : @emit_mbt.Emitted?,
+  out : StringBuilder,
+) -> Unit {
+  let invariants = def.invariants()
+  if invariants.is_empty() {
+    return
+  }
+  // Only the ones that actually compiled. A rule the backend refused has no
+  // function to call, and a test naming it would not build.
+  guard inline is Some(e) else { return }
+  let live = invariants.filter(r => e.answers_methods.contains(r))
+  if live.is_empty() {
+    return
+  }
+  if inits.is_empty() {
+    return
+  }
+  let seeds : Array[(String, String)] = inits.map(st => {
+    (st.name, t + "State::" + st.ident + "()")
+  })
+  let where_ = if def.source_name == "" { v } else { def.source_name }
+  out.write_string(
+    "///|\n" +
+    "/// Every declared initial state keeps every declared invariant.\n" +
+    "///\n" +
+    "/// A rule that does not hold in the state a component STARTS in is broken\n" +
+    "/// before anything happens, and every transition after it is refused — so\n" +
+    "/// this is the one check worth making before the component ever runs.\n" +
+    "/// GENERATED — edit the spec block, not this.\n" +
+    "test " +
+    quote(where_ + ": the declared initial states keep the invariants") +
+    " {\n",
+  )
+  for seed in seeds {
+    out.write_string("  let s = " + seed.1 + "\n")
+    for rule in live {
+      out.write_string(
+        "  assert_false(\n" +
+        "    " +
+        @emit_mbt.value_fn_name(v, RMethod, rule) +
+        "(s, [], @tutuca.NullStack::{  }) is Bool(false),\n" +
+        "    msg=" +
+        quote("the `" + seed.0 + "` initial state breaks `" + rule + "`") +
+        ",\n" +
+        "  )\n",
+      )
+    }
+  }
+  out.write_string("}\n\n")
 }
 
 ///|

@@ -1,6 +1,6 @@
 ///|
 fn bind_file(state : String, view : String) -> String {
-  "<script type=\"tutuca/state\">\nstate Form { " +
+  "<script type=\"tutuca/spec\">\nstate Form { " +
   state +
   " }\n</script>\n<template>" +
   view +
@@ -103,6 +103,6 @@ test "@bind requires a direct root field and a schema" {
     e => e.message()
   }
   assert_true(
-    no_schema.contains("needs a `<script type=\"tutuca/state\">` schema"),
+    no_schema.contains("needs a `<script type=\"tutuca/spec\">` schema"),
   )
 }

@@ -158,6 +158,15 @@ fn bar_chart_inline_update(
             ) : @tutuca.Value),
         ],
       }
+      guard s.values.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="addBar",
+          pred="neverEmpty",
+          sentence="the chart lost its last bar",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("removeBar", _args) => {
@@ -175,6 +184,15 @@ fn bar_chart_inline_update(
       let s : BarChartState = {
         values: s.values[0:at].to_owned() + s.values[at + 1:].to_owned(),
       }
+      guard s.values.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="removeBar",
+          pred="neverEmpty",
+          sentence="the chart lost its last bar",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
@@ -182,7 +200,7 @@ fn bar_chart_inline_update(
 }
 
 ///|
-/// `pred hasRoom` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// `pred hasRoom` from the `<script type="tutuca/spec">` block. GENERATED — edit
 /// the block, not this.
 fn bar_chart_compute_hasRoom(
   s : BarChartState,
@@ -193,7 +211,7 @@ fn bar_chart_compute_hasRoom(
 }
 
 ///|
-/// `pred hasSpare` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// `pred hasSpare` from the `<script type="tutuca/spec">` block. GENERATED — edit
 /// the block, not this.
 fn bar_chart_compute_hasSpare(
   s : BarChartState,
@@ -201,6 +219,17 @@ fn bar_chart_compute_hasSpare(
   _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   (Bool(s.values.length().to_double() > 1.0) : @tutuca.Value)
+}
+
+///|
+/// `invariant neverEmpty` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn bar_chart_compute_neverEmpty(
+  s : BarChartState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.values.length().to_double() > 0.0) : @tutuca.Value)
 }
 
 ///|
@@ -213,6 +242,7 @@ fn bar_chart_inline_compute() -> Map[
   {
     "hasRoom": bar_chart_compute_hasRoom,
     "hasSpare": bar_chart_compute_hasSpare,
+    "neverEmpty": bar_chart_compute_neverEmpty,
   }
 }
 

@@ -721,7 +721,7 @@ function currentRegion() {
 
 /** What to say when the part the tab names is not in the card yet. */
 const MISSING = {
-  state: 'no <script type="tutuca/state"> block yet — add one in the raw view',
+  state: 'no <script type="tutuca/spec"> block yet — add one in the raw view',
   script:
     'no <script type="tutuca/script"> block yet — add one in the raw view',
   views: "no <template> yet",

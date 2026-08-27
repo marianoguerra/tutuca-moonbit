@@ -1,4 +1,4 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// A board that publishes its theme, and rows that read it.
   ///
   /// The thing a card could not SAY until it could: where a value comes from.
@@ -19,6 +19,10 @@
     /// The expression must be ADDRESSABLE — a field or a `.seq[.key]` — because
     /// a provide doubles as the path a `<x render="*name">` teleports through.
     provide { theme = .theme }
+
+    /// True while there is something to add.
+    pred typed
+      format $'nothing to add' { not (empty? .draft) }
   }
 
   /// One row, declared beside the list that makes it.
@@ -51,10 +55,6 @@
     .items.push @cur
     .draft = ''
   }
-
-  /// True while there is something to add.
-  pred typed
-    format $'nothing to add' { not (empty? .draft) }
 
   /// Ask the first row about itself.
   ///

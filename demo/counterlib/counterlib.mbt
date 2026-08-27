@@ -2,7 +2,7 @@
 // embedded-CLI demo.
 //
 // BOTH halves of the contract live in counter.html: the state schema in its
-// `<script type="tutuca/state">` block and the views in its templates. They
+// `<script type="tutuca/spec">` block and the views in its templates. They
 // compile ahead of time into counter_view_gen.mbt by
 //
 //   moon run --target native cmd/tutuca -- gen-views demo/counterlib/counter.html --name Counter

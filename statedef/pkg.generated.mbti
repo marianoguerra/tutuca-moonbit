@@ -47,6 +47,8 @@ pub suberror DefError {
   ReservedName(name~ : String, span~ : Span)
   UnknownProtocol(local_name~ : String, span~ : Span)
   ProtocolConflict(id~ : String, span~ : Span)
+  DuplicateRule(name~ : String, span~ : Span)
+  RuleOutsideState(name~ : String, span~ : Span)
 }
 pub fn DefError::message(Self) -> String
 pub fn DefError::span(Self) -> Span
@@ -163,6 +165,23 @@ pub(all) struct ProvideDecl {
   span : Span
 } derive(Eq, @debug.Debug)
 
+pub(all) struct RuleDecl {
+  kind : RuleKind
+  name : String
+  source : String
+  source_span : Span
+  format : String
+  format_span : Span
+  doc : String?
+  span : Span
+  name_span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) enum RuleKind {
+  RPred
+  RInvariant
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Span {
   start : Int
   end_ : Int
@@ -186,14 +205,17 @@ pub(all) struct StateDef {
   types : Array[UserTy]
   provide : Array[ProvideDecl]
   lookup : Array[LookupDecl]
+  rules : Array[RuleDecl]
   doc : String?
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
+pub fn StateDef::invariants(Self) -> Array[String]
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
 pub fn StateDef::operation_name(Self, String) -> String?
 pub fn StateDef::resolve_ty(Self, String, Array[StateTy]) -> StateTy?
+pub fn StateDef::rule(Self, String) -> RuleDecl?
 pub fn StateDef::to_value_src(Self, StateTy, String) -> String
 pub fn StateDef::ty_info_src(Self, StateTy) -> String
 pub fn StateDef::user_ty(Self, String) -> UserTy?

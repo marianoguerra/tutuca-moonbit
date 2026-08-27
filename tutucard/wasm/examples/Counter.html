@@ -1,10 +1,13 @@
-<script type="tutuca/state">
+<script type="tutuca/spec">
   /// A number with buttons that raise and lower it.
   state Counter {
     /// The current value.
     count: Int
     /// How much a step moves it.
     step: Int
+
+    /// True while the count is above zero.
+    pred positive { .count > 0 }
   }
 
   /// What the host says to this component when it mounts. Declared here
@@ -40,9 +43,6 @@
 
   /// The count as a sentence.
   compute label { $'the count is {.count}' }
-
-  /// True while the count is above zero.
-  pred positive { .count > 0 }
 </script>
 
 <script type="tutuca/test">

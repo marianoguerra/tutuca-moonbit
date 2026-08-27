@@ -219,7 +219,7 @@ pub fn compile(
   let prog = @viewgen.ProgramIndex::of(file, name)
   for idx, views in file.components {
     let comp = views.component_name(name)
-    // A card with no `<script type="tutuca/state">` block is a card with no
+    // A card with no `<script type="tutuca/spec">` block is a card with no
     // fields, and it is accepted: `viewfile` has a name for the shape — a
     // SCHEMA-LESS file, whose views are built at runtime — so it is a thing
     // people write.
@@ -250,6 +250,7 @@ pub fn compile(
           types: [],
           provide: [],
           lookup: [],
+          rules: [],
           doc: None,
         }
     }
@@ -267,6 +268,18 @@ pub fn compile(
         }
       None => []
     }
+    // The SPEC block's rules, as declarations, ahead of the block's own.
+    //
+    // The same synthesis `gen-views` runs, from the same function, because the
+    // two backends have to keep the same rules: a card that enforced a
+    // different `invariant` from the generated component of the same file
+    // would be two answers to one question.
+    //
+    // A rule whose body this backend cannot read is dropped rather than
+    // raised: `check_card` has already reported it with a position in the
+    // file, and a card that renders is what this function exists to produce.
+    let (spec_rules, _) = @check.rule_decls(def, decls)
+    let decls = spec_rules + decls
     // The CHECKER, before a single instruction is built.
     //
     // `tutucard.load` runs this and reports the findings beside the card.
