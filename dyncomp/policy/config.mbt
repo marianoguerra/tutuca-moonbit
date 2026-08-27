@@ -77,22 +77,22 @@ pub(all) struct ConfigBinding {
 /// the way `allowing_external_urls` checks its list, because it ends up in the
 /// same place.
 pub fn origin(value : String) -> ConfigBinding {
-  { ty: TyOrigin, value }
+  { ty: TyOrigin, value, }
 }
 
 ///|
 pub fn text(value : String) -> ConfigBinding {
-  { ty: TyText, value }
+  { ty: TyText, value, }
 }
 
 ///|
 pub fn bool_(value : Bool) -> ConfigBinding {
-  { ty: TyBool, value: if value { "true" } else { "false" } }
+  { ty: TyBool, value: if value { "true" } else { "false" }, }
 }
 
 ///|
 pub fn number(value : Double) -> ConfigBinding {
-  { ty: TyNumber, value: value.to_string() }
+  { ty: TyNumber, value: value.to_string(), }
 }
 
 ///|
@@ -204,7 +204,7 @@ pub fn Policy::with_config(
         // Two spellings, and they are not interchangeable: a view needs the
         // closing `/` so its template pins, and `external_origins` holds what
         // `origin_of` returns, which is what `origin_refusal` compares.
-        config[name] = { ty: TyOrigin, value: bare + "/" }
+        config[name] = { ty: TyOrigin, value: bare + "/", }
         if !origins.contains(bare) {
           origins.push(bare)
         }
@@ -237,7 +237,7 @@ pub fn Policy::with_config(
 /// entire point of the allowance, and `with_config` is where that decision
 /// goes.
 pub fn Policy::trusting_manifest_config(self : Policy) -> Policy {
-  { ..self, trusts_manifest_config: true }
+  { ..self, trusts_manifest_config: true, }
 }
 
 ///|

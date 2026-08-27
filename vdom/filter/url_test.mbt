@@ -8,7 +8,7 @@
 
 ///|
 fn el(tag : String, attrs : Map[String, @vdom.AttrValue]) -> @vdom.Vdom {
-  Node({ tag, attrs, childs: [], key: None, ns: None })
+  Node({ tag, attrs, childs: [], key: None, ns: None, })
 }
 
 ///|

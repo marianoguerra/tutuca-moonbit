@@ -23,7 +23,7 @@ fn composability_comp(
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
   composability_component(
-    init={ ..ComposabilityState::zero(), activeSection: "todo" },
+    init={ ..ComposabilityState::zero(), activeSection: "todo", },
     // The component each slot holds is part of its declared type; the
     // arguments it is BUILT with are a value, which no type states.
     // `DnDExample` has adjacent capitals, which kebab-case cannot round-trip

@@ -132,7 +132,7 @@ pub fn FnSource::new(
   build : (String?, String, Map[String, Value], String) -> Value?,
   describe? : (String?, String) -> SchemaInfo?,
 ) -> FnSource {
-  { build_: build, describe_: describe }
+  { build_: build, describe_: describe, }
 }
 
 ///|

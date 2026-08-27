@@ -59,14 +59,14 @@ test "the standard components survive a bundle arriving and leaving" {
   // loaded modules, and a page that could lose its `+` to a dropped file is a
   // page that can be taken away.
   assert_true(reg.all().length() < before)
-  assert_true(reg.describe({ module_: "std", name: "Universal" }) is Some(_))
-  assert_true(reg.describe({ module_: "counterlib", name: "Counter" }) is None)
+  assert_true(reg.describe({ module_: "std", name: "Universal", }) is Some(_))
+  assert_true(reg.describe({ module_: "counterlib", name: "Counter", }) is None)
 }
 
 ///|
 test "a standard component projects a schema the generated form can draw" {
   let reg = mixed_catalog()
-  guard! reg.describe({ module_: "std", name: "Grid" }) is Some(d)
+  guard! reg.describe({ module_: "std", name: "Grid", }) is Some(d)
   let schema = d.args_schema()
   guard! json_at(schema, "properties") is Some(props)
   guard! json_at(props, "cols") is Some(cols)
@@ -84,7 +84,7 @@ test "a standard component projects a schema the generated form can draw" {
 ///|
 test "a choice field projects the choices, so the form draws a select" {
   let reg = mixed_catalog()
-  guard! reg.describe({ module_: "std", name: "Stack" }) is Some(d)
+  guard! reg.describe({ module_: "std", name: "Stack", }) is Some(d)
   guard! json_at(d.args_schema(), "properties") is Some(props)
   guard! json_at(props, "direction") is Some(dir)
   @debug.assert_eq(
@@ -105,7 +105,7 @@ test "a choice field projects the choices, so the form draws a select" {
 ///|
 test "a standard component's arguments are validated like any other" {
   let reg = mixed_catalog()
-  guard! reg.describe({ module_: "std", name: "Grid" }) is Some(d)
+  guard! reg.describe({ module_: "std", name: "Grid", }) is Some(d)
   assert_true(d.coerce_args(Json::object({ "cols": Json::number(3) })) is Ok(_))
   // Refused, per field, with an RFC 6901 pointer — the same shape a guest's
   // bad argument comes back in, because it is the same validator.
@@ -116,7 +116,7 @@ test "a standard component's arguments are validated like any other" {
 ///|
 test "a standard component offers its named fixtures like a guest does" {
   let reg = mixed_catalog()
-  guard! reg.describe({ module_: "std", name: "Stack" }) is Some(d)
+  guard! reg.describe({ module_: "std", name: "Stack", }) is Some(d)
   @debug.assert_eq(d.inits.map(i => i.name), ["row", "column"])
   @debug.assert_eq(d.inits[0].args.get("direction"), Some(Str("row")))
 }
@@ -124,7 +124,7 @@ test "a standard component offers its named fixtures like a guest does" {
 ///|
 test "a container is configured by properties, never by typing in a child" {
   let reg = mixed_catalog()
-  guard! reg.describe({ module_: "std", name: "Stack" }) is Some(d)
+  guard! reg.describe({ module_: "std", name: "Stack", }) is Some(d)
   guard! json_at(d.args_schema(), "properties") is Some(props)
   guard! props is Object(m)
   // `children` holds components, and the generated form's honest fallback for

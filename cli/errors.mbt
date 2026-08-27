@@ -65,7 +65,7 @@ pub fn err(
   where_? : String,
   exit_code? : Int = 1,
 ) -> ErrShape {
-  { code, message, suggestion, hint, where_, exit_code }
+  { code, message, suggestion, hint, where_, exit_code, }
 }
 
 ///|
@@ -161,5 +161,5 @@ fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
 ///|
 /// Emit for an error: stderr text + the shape's exit code.
 pub fn error_emit(opts : GlobalOpts, shape : ErrShape) -> Emit {
-  { out: "", err: render_error(opts, shape), exit_code: shape.exit_code }
+  { out: "", err: render_error(opts, shape), exit_code: shape.exit_code, }
 }

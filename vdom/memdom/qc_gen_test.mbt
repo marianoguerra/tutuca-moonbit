@@ -104,7 +104,7 @@ fn assign_keys(v : @vdom.Vdom, rng : Lcg, counter : Ref[Int]) -> @vdom.Vdom {
         match assign_keys(c, rng, counter) {
           Node(cel) if rng.below(3) == 0 => {
             counter.val += 1
-            @vdom.Vdom::Node({ ..cel, key: Some("k\{counter.val}") })
+            @vdom.Vdom::Node({ ..cel, key: Some("k\{counter.val}"), })
           }
           other => other
         }
@@ -118,7 +118,7 @@ fn assign_keys(v : @vdom.Vdom, rng : Lcg, counter : Ref[Int]) -> @vdom.Vdom {
 ///|
 fn gen_keyed_vdom() -> @gen.Gen[@vdom.Vdom] {
   @gen.tuple(gen_vdom(), @gen.int_range(0, 1073741823)).fmap(p => {
-    let rng = Lcg::{ state: p.1.reinterpret_as_uint() }
+    let rng = Lcg::{ state: p.1.reinterpret_as_uint(), }
     assign_keys(p.0, rng, Ref(0))
   })
 }
@@ -165,7 +165,7 @@ fn mutate(v : @vdom.Vdom, rng : Lcg) -> @vdom.Vdom {
       } else {
         el.tag
       }
-      Node({ ..el, tag, attrs, childs })
+      Node({ ..el, tag, attrs, childs, })
     }
   }
 }
@@ -190,7 +190,7 @@ fn mutate_childs(cs : Array[@vdom.Vdom], rng : Lcg) -> Array[@vdom.Vdom] {
 /// (old, new) pairs where new is a localized mutation of old.
 fn gen_mutated_pair() -> @gen.Gen[(@vdom.Vdom, @vdom.Vdom)] {
   @gen.tuple(gen_keyed_vdom(), @gen.int_range(0, 1073741823)).fmap(p => {
-    let rng = Lcg::{ state: p.1.reinterpret_as_uint() }
+    let rng = Lcg::{ state: p.1.reinterpret_as_uint(), }
     (p.0, mutate(p.0, rng))
   })
 }

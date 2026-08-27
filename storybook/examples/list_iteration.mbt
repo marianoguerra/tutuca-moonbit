@@ -4,7 +4,7 @@
 
 ///|
 fn list_iteration_comp() -> @component.Component {
-  list_iteration_component(init={ items: [] })
+  list_iteration_component(init={ items: [], })
 }
 
 ///|

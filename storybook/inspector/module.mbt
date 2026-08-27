@@ -39,7 +39,7 @@ fn Inspector::make_(
 /// Inspector reference these exact descriptors, so snapshots embedded in
 /// example args render through the same registered components.
 pub fn Inspector::new() -> Inspector {
-  let insp = Inspector::{ comps: Map([]) }
+  let insp = Inspector::{ comps: Map([]), }
   for
     c in [
       // data / json layer
@@ -129,7 +129,7 @@ pub fn Inspector::build_inspector_views(
     Some(c) => self.inspect_component(c)
     None => Null
   }
-  { instance_view, component_view, has_component: comp is Some(_) }
+  { instance_view, component_view, has_component: comp is Some(_), }
 }
 
 // ---------------------------------------------------------------------------
@@ -155,8 +155,8 @@ fn rich_sample_comp() -> @component.Component {
   rich_sample_component(
     update=(s, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
-        Receive("reset", _) => Next({ ..s, count: 0 })
+        Receive("inc", _) => Next({ ..s, count: s.count + 1, })
+        Receive("reset", _) => Next({ ..s, count: 0, })
         Receive("ping", _) | Intent("onChild", _) | Receive("onData", _) =>
           Next(s)
         _ => Unhandled
@@ -182,7 +182,7 @@ fn sample_card_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match msg {
-        Receive("bump", _) => Next({ ..s, count: s.count + 1 })
+        Receive("bump", _) => Next({ ..s, count: s.count + 1, })
         _ => Unhandled
       }
     },

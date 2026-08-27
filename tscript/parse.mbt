@@ -28,7 +28,7 @@ fn ParseCtx::issue(
   value : String,
   span : Span,
 ) -> Unit {
-  self.issues.push({ kind: BadValue, role, value, span })
+  self.issues.push({ kind: BadValue, role, value, span, })
 }
 
 ///|
@@ -185,7 +185,7 @@ fn const_str(s : String) -> @tutuca.Val {
 /// The public entry: a bare string with no position of its own, so anything
 /// it reports spans the whole of it.
 pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_tok({ text: s, span: { start: 0, end_: s.to_array().length() } }, ctx)
+  parse_tok({ text: s, span: { start: 0, end_: s.to_array().length(), }, }, ctx)
 }
 
 ///|
@@ -430,7 +430,7 @@ fn resolve_macro_var(
       // The expansion is parsed against THIS token's span: its own offsets
       // index the macro's source, which is a different file position than the
       // one the reader is looking at.
-      match parse_tok({ text: tokens[0].text, span: at }, ctx) {
+      match parse_tok({ text: tokens[0].text, span: at, }, ctx) {
         Some(Const(lit~, ..)) => Some(Const(lit~, from_macro=true))
         other => other
       }
@@ -767,7 +767,7 @@ fn parse_handler(
   let tokens = tokenize(s)
   let head_tok : Token = tokens
     .get(0)
-    .unwrap_or({ text: "", span: { start: 0, end_: 0 } })
+    .unwrap_or({ text: "", span: { start: 0, end_: 0, }, })
   let head : @tutuca.Val? = if head_tok.text == "" {
     None
   } else {
@@ -784,7 +784,11 @@ fn parse_handler(
     }
   }
   if !allow_args {
-    return if tokens.length() == 1 { Some({ handler, args: [] }) } else { None }
+    return if tokens.length() == 1 {
+      Some({ handler, args: [], })
+    } else {
+      None
+    }
   }
   let args : Array[@tutuca.Val] = []
   for i in 1..<tokens.length() {
@@ -800,5 +804,5 @@ fn parse_handler(
       }
     }
   }
-  Some({ handler, args })
+  Some({ handler, args, })
 }

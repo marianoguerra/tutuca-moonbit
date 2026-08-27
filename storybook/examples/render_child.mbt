@@ -7,7 +7,7 @@
 
 ///|
 fn greeting_comp() -> @component.Component {
-  greeting_component(init={ name: "world" })
+  greeting_component(init={ name: "world", })
 }
 
 ///|
@@ -27,7 +27,7 @@ pub fn render_child_module() -> @component.ModuleDef {
     name="render-child",
     components=[page_comp(), greeting_comp()],
     examples=[
-      { component: "Page", title: "Default", args: Map([]), view: None },
+      { component: "Page", title: "Default", args: Map([]), view: None, },
     ],
   )
 }
@@ -50,7 +50,7 @@ fn entry_comp() -> @component.Component {
 ///|
 pub fn entry_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="entry", components=[entry_comp()], examples=[
-    { component: "Entry", title: "Default", args: Map([]), view: None },
+    { component: "Entry", title: "Default", args: Map([]), view: None, },
     {
       component: "Entry",
       title: "Custom",

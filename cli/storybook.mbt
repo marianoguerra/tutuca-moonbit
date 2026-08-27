@@ -31,7 +31,7 @@ fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
     Err(e) => return Done(error_emit(opts, e))
   }
   if parsed.bool("help") || opts.help {
-    return Done({ out: storybook_help, err: "", exit_code: 0 })
+    return Done({ out: storybook_help, err: "", exit_code: 0, })
   }
   let dir = parsed.positionals.get(0).unwrap_or("")
   let out = parsed.str("out")

@@ -110,5 +110,5 @@ pub fn h(
   } else {
     tag
   }
-  Node({ tag, attrs: props, childs: normalize_childs(childs), key, ns })
+  Node({ tag, attrs: props, childs: normalize_childs(childs), key, ns, })
 }

@@ -13,7 +13,7 @@ fn main {
 /// URL state on Back/Forward. tutuca has no lifecycle, so — like the JS
 /// storybook's `window.addEventListener("popstate", …)` — the host re-sends
 /// `init`, which re-runs the shell's `loadState` restore.
-let current_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
+let current_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None, }
 
 ///|
 /// The browser-history request handlers wired into the gallery's root scope:

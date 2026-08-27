@@ -153,7 +153,7 @@ fn universal_comp() -> @component.Component {
         // Emptying gives the `+` back rather than deleting the cell. Deleting
         // a cell is the container's affordance, because the container is what
         // owns how many there are.
-        Some(Remove) => return Next({ child: Null })
+        Some(Remove) => return Next({ child: Null, })
         // `dropped` is the pill, or an OS file drag that happens to have
         // landed here. Only the first is ours; the second has to keep
         // travelling, because `drop` stops at the first component that
@@ -176,7 +176,7 @@ fn universal_comp() -> @component.Component {
       }
       match UniversalReceive::from_dispatch(msg) {
         Some(Hold(child)) => Next({ child, })
-        Some(Empty) => Next({ child: Null })
+        Some(Empty) => Next({ child: Null, })
         // Written through the child's own COW rather than by rebuilding it
         // from arguments: everything the schema does NOT name — a half-typed
         // sentence, a scroll position, whatever a guest keeps privately —
@@ -188,7 +188,7 @@ fn universal_comp() -> @component.Component {
           for k, v in m {
             next = next.with_field(k, v)
           }
-          Next({ child: next })
+          Next({ child: next, })
         }
         // The merged `Receive` now carries this component's own VIEW names as
         // well as the schema's, so `Unknown` no longer covers everything this
@@ -278,7 +278,7 @@ fn spliced(
 ///|
 fn Std::stack_comp(self : Std) -> @component.Component {
   stack_component(
-    init={ ..StackState::zero(), direction: "column", gap: 8 },
+    init={ ..StackState::zero(), direction: "column", gap: 8, },
     compute=m => {
       match m {
         Style => Some((s, _args, _stack) => Str(stack_style(s)))
@@ -296,7 +296,7 @@ fn Std::stack_comp(self : Std) -> @component.Component {
             children: spliced(s.children, at.num().to_int(), self.cell()),
           })
         Some(AppendCell) =>
-          Next({ ..s, children: spliced(s.children, -1, self.cell()) })
+          Next({ ..s, children: spliced(s.children, -1, self.cell()), })
         Some(Unknown(_, _)) | None => Unhandled
       }
     },
@@ -393,7 +393,7 @@ fn Std::grow(
       )
     }
   }
-  { ..s, cols: cols2, rows: rows2, children: out }
+  { ..s, cols: cols2, rows: rows2, children: out, }
 }
 
 ///|
@@ -413,7 +413,7 @@ pub fn Std::grid(self : Std, cols? : Int = 2, rows? : Int = 2) -> @tutuca.Value 
 ///|
 fn Std::grid_comp(self : Std) -> @component.Component {
   grid_component(
-    init={ ..GridState::zero(), cols: 2, rows: 2, gap: 8 },
+    init={ ..GridState::zero(), cols: 2, rows: 2, gap: 8, },
     compute=m => {
       match m {
         Style => Some((s, _args, _stack) => Str(grid_style(s)))
@@ -491,7 +491,7 @@ pub fn Std::tabs(self : Std, count? : Int = 1) -> @tutuca.Value {
 /// type. What Enter and Escape MEAN is the strip's business — it is the thing
 /// holding the old name — so they leave as bubbles.
 fn tab_page_comp() -> @component.Component {
-  tab_page_component(init={ ..TabPageState::zero(), label: "untitled" }, update=(
+  tab_page_component(init={ ..TabPageState::zero(), label: "untitled", }, update=(
     s,
     msg,
     ctx,
@@ -581,7 +581,7 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
               original: s.tabs[at].field("label").str(),
             })
           } else {
-            Next({ ..s, active: at, renaming: false, original: "" })
+            Next({ ..s, active: at, renaming: false, original: "", })
           }
         }
         Some(AddTab) => {
@@ -620,7 +620,7 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
       match msg {
         Intent("doneRename", _) =>
           if s.renaming {
-            Next({ ..s, renaming: false, original: "" })
+            Next({ ..s, renaming: false, original: "", })
           } else {
             Unhandled
           }
@@ -631,11 +631,11 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
           guard s.renaming else { return Unchanged }
           let at = active_of(s)
           guard at >= 0 else {
-            return Next({ ..s, renaming: false, original: "" })
+            return Next({ ..s, renaming: false, original: "", })
           }
           let tabs = s.tabs.copy()
           tabs[at] = tabs[at].call_field("setLabel", [Str(s.original)])
-          Next({ ..s, tabs, renaming: false, original: "" })
+          Next({ ..s, tabs, renaming: false, original: "", })
         }
         _ => Unhandled
       }
@@ -684,7 +684,7 @@ fn textarea_comp() -> @component.Component {
 /// the second half: placing a component means constructing one by name, and
 /// `Std::build` is what does it for everything in here.
 pub fn std_components() -> (Array[@component.Component], Std) {
-  let std : Std = { comps: Map([]) }
+  let std : Std = { comps: Map([]), }
   // Leaves first, and not for tidiness: every container builds a `Universal`
   // when it inserts a cell, and `Tabs` builds a `TabPage` that builds one, so
   // `comps` has to hold them by the time any of those handlers runs.

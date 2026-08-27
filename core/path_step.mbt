@@ -91,11 +91,11 @@ fn step_to_abstract(step : Step) -> Step? {
 /// dropping the step instead would shift the indices of later keys.
 fn step_to_key(step : Step) -> StepKey? {
   match step {
-    FieldStep(name) => Some({ field: name, key: None })
+    FieldStep(name) => Some({ field: name, key: None, })
     SeqStep(field~, key~) | EachRenderItStep(field~, key~) =>
-      Some({ field, key: Some(key) })
+      Some({ field, key: Some(key), })
     SeqAccessStep(seq_field~, key_field=_) =>
-      Some({ field: seq_field, key: None })
+      Some({ field: seq_field, key: None, })
     BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => None // frame-only: no field to report
   }
 }

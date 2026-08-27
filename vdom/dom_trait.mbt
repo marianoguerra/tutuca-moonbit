@@ -44,7 +44,7 @@ pub(all) struct RenderOpts[N] {
 
 ///|
 pub fn[N] RenderOpts::new(document : N) -> RenderOpts[N] {
-  { document, ns: None }
+  { document, ns: None, }
 }
 
 ///|
@@ -86,6 +86,6 @@ fn[N] child_opts(el : VElem, ns : Ns?, opts : RenderOpts[N]) -> RenderOpts[N] {
   if target == opts.ns {
     opts
   } else {
-    { ..opts, ns: target }
+    { ..opts, ns: target, }
   }
 }

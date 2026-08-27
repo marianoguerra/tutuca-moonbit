@@ -531,7 +531,7 @@ test "a syntax error names its column" {
   } catch {
     err => err.span()
   }
-  assert_eq(e, { start: 27, end_: 28 })
+  assert_eq(e, { start: 27, end_: 28, })
 }
 
 ///|

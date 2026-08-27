@@ -51,7 +51,7 @@ pub impl ViewResolver for @component.Components with fn resolve_view(
   match comp.views.get(name) {
     Some(view) =>
       match view.anode {
-        Some(node) => Some({ node, cid: comp.id, vid: name })
+        Some(node) => Some({ node, cid: comp.id, vid: name, })
         None => None // not compiled
       }
     None => None

@@ -488,7 +488,7 @@ test "a finding points at the thing it is about" {
   assert_eq(fs.length(), 1)
   // `.coutn` starts at offset 14 — the block's own coordinates, which
   // `@viewfile.Block` rebases onto the file.
-  assert_eq(fs[0].span, { start: 14, end_: 20 })
+  assert_eq(fs[0].span, { start: 14, end_: 20, })
 }
 
 // -- new, and the target ----------------------------------------------------
@@ -818,7 +818,7 @@ test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
   let found = @check.check(
     @tscript.parse_script("receive resetTo(n) { .count = n }"),
     def_of(schema()),
-    surface={ inputs, knows_views: true, open_senders: false, comps: [] },
+    surface={ inputs, knows_views: true, open_senders: false, comps: [], },
   )
   assert_eq(found.length(), 1)
   assert_eq(found[0].severity, SWarning)

@@ -26,7 +26,7 @@ priv struct StubGuest {
 
 ///|
 fn StubGuest::new() -> StubGuest {
-  { counts: Map([]), notes: Map([]), next: { val: 0 } }
+  { counts: Map([]), notes: Map([]), next: { val: 0, }, }
 }
 
 ///|
@@ -95,9 +95,9 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
             ),
             msgs: [],
           }
-        _ => { handled: true, next: None, msgs: [] }
+        _ => { handled: true, next: None, msgs: [], }
       }
-    _ => { handled: false, next: None, msgs: [] }
+    _ => { handled: false, next: None, msgs: [], }
   }
 }
 
@@ -147,7 +147,7 @@ impl @dyncomp.Guest for StubGuest with fn drop_instance(_self, _handle) {
 
 ///|
 fn ty(kind : String) -> @dyncomp.DynTyDef {
-  { kind, elem: None, items: [], name: "", members: [] }
+  { kind, elem: None, items: [], name: "", members: [], }
 }
 
 ///|
@@ -179,7 +179,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         types: [
           ty("ty-float"),
           ty("ty-text"),
-          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [] },
+          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [], },
         ],
         fields: [
           {
@@ -288,7 +288,7 @@ fn mount_app(guest? : StubGuest) -> @harness.MemHarness raise {
     Some(x) => x
     None => StubGuest::new()
   }
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let live : Ref[@dyncomp.Bundle?] = { val: None, }
   let reg = @registry.Registry::new()
   let module_ = universal_module(reg, (ref_, init, args) => {
     guard live.val is Some(bundle) else { return None }

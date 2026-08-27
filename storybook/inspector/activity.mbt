@@ -23,7 +23,10 @@ let activity_cap : Int = 50
 ///
 /// The state and the views live in activity.html.
 fn activity_entry_comp() -> @component.Component {
-  activity_entry_component(init={ ..ActivityEntryState::zero(), hasAfter: true })
+  activity_entry_component(init={
+    ..ActivityEntryState::zero(),
+    hasAfter: true,
+  })
 }
 
 ///|
@@ -42,7 +45,7 @@ fn activity_log_comp() -> @component.Component {
           }
           out.push(e)
         }
-        Next({ events: out, hasEvents: true })
+        Next({ events: out, hasEvents: true, })
       }
       Some(Unknown(_, _)) | None => Unhandled
     }

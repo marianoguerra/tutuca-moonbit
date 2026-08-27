@@ -151,7 +151,7 @@ pub(all) struct TextDirectiveState {
 ///
 ///   init={ ..TextDirectiveState::zero(), label: "Counter" }
 pub fn TextDirectiveState::zero() -> TextDirectiveState {
-  { str: "", num: 0, bool: false, notSet: Null }
+  { str: "", num: 0, bool: false, notSet: Null, }
 }
 
 ///|
@@ -179,7 +179,7 @@ impl @component.Fields for TextDirectiveState with fn decode(f) {
   let v_num = t1_num.to_int()
   guard f.get("bool") is Some(Bool(v_bool)) else { return None }
   let v_notSet = f.get("notSet").unwrap_or(Null)
-  Some({ str: v_str, num: v_num, bool: v_bool, notSet: v_notSet })
+  Some({ str: v_str, num: v_num, bool: v_bool, notSet: v_notSet, })
 }
 
 ///|
@@ -244,7 +244,7 @@ pub(all) struct DangerSetInnerHtmlState {
 ///
 ///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
 pub fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
-  { content: "" }
+  { content: "", }
 }
 
 ///|
@@ -263,7 +263,7 @@ impl @component.Fields for DangerSetInnerHtmlState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DangerSetInnerHtmlState with fn decode(f) {
   guard f.get("content") is Some(Str(v_content)) else { return None }
-  Some({ content: v_content })
+  Some({ content: v_content, })
 }
 
 ///|
@@ -309,7 +309,7 @@ pub(all) struct SetInnerMdState {
 ///
 ///   init={ ..SetInnerMdState::zero(), label: "Counter" }
 pub fn SetInnerMdState::zero() -> SetInnerMdState {
-  { source: "" }
+  { source: "", }
 }
 
 ///|
@@ -328,7 +328,7 @@ impl @component.Fields for SetInnerMdState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SetInnerMdState with fn decode(f) {
   guard f.get("source") is Some(Str(v_source)) else { return None }
-  Some({ source: v_source })
+  Some({ source: v_source, })
 }
 
 ///|

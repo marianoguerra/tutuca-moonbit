@@ -442,5 +442,5 @@ pub fn Policy::check_event_paths(
 /// loads, so bundles already registered keep the answer they were screened
 /// under.
 pub fn Policy::with_open_event_paths(self : Policy) -> Policy {
-  { ..self, event_paths: Open }
+  { ..self, event_paths: Open, }
 }

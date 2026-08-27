@@ -291,7 +291,7 @@ fn AttrParser::finish_bind(self : AttrParser) -> BindData? {
     binding: Some(BindPending),
   }
   events.handlers.push(event)
-  Some({ target, property, event })
+  Some({ target, property, event, })
 }
 
 ///|
@@ -349,7 +349,7 @@ fn AttrParser::parse_if(
   let name = directive_name[3:].to_owned()
   match self.px.pval(value, @tscript.parse_bool) {
     Some(cond_val) => {
-      let if_attr = IfAttr::{ name, cond_val, then_val: None, else_val: None }
+      let if_attr = IfAttr::{ name, cond_val, then_val: None, else_val: None, }
       self.if_attr = Some(if_attr)
       self.items.push(If(if_attr))
     }

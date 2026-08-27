@@ -149,7 +149,7 @@ pub fn Snapshot::from_json(j : Json) -> Snapshot? {
     _ => b""
   }
   let fields = m.get("fields").unwrap_or(Json::object({}))
-  Some({ module_, component, id, state, fields })
+  Some({ module_, component, id, state, fields, })
 }
 
 ///|

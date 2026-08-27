@@ -56,7 +56,7 @@ pub fn effect(
   args? : Array[@tutuca.Value] = [],
   route? : String = "",
 ) -> CaseEffect {
-  { kind, name, args, route }
+  { kind, name, args, route, }
 }
 
 ///|

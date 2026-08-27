@@ -61,7 +61,7 @@ fn command_bar_comp() -> @component.Component {
       let hits = s.hits.mapi((i, r) => {
         r.call_field("setSelected", [Bool(i == cursor)])
       })
-      (Next({ ..s, hits, cursor }) : @component.Update[CommandBarState])
+      (Next({ ..s, hits, cursor, }) : @component.Update[CommandBarState])
     }
     match CommandBarMsg::from_dispatch(msg) {
       // The bar does not search — it cannot, since the catalog is the app's.
@@ -72,7 +72,7 @@ fn command_bar_comp() -> @component.Component {
           [Str(q)],
           @tutuca.IntentOpts::new(route=[Dyn]),
         )
-        Next({ ..s, query: q })
+        Next({ ..s, query: q, })
       }
       Some(Nav(key)) =>
         match key {
@@ -125,12 +125,12 @@ fn schema_field_comp() -> @component.Component {
         )
         Next(
           match (s.kind, v) {
-            ("bool", _) => { ..s, flag: v.is_truthy(), error: "" }
+            ("bool", _) => { ..s, flag: v.is_truthy(), error: "", }
             // A number control still hands back text, and `text` is what
             // `form_args` reads: keeping one source per field is what stops a
             // half-typed "1." from becoming a 1.
-            (_, Str(text)) => { ..s, text, error: "" }
-            _ => { ..s, text: v.to_display_string(), error: "" }
+            (_, Str(text)) => { ..s, text, error: "", }
+            _ => { ..s, text: v.to_display_string(), error: "", }
           },
         )
       }
@@ -184,7 +184,7 @@ fn schema_form_comp() -> @component.Component {
           f.call_field("setError", [Str(msg)])
         })
         let general = by_field.get("").unwrap_or(Str("")).str()
-        return Next({ ..s, fields, error: general })
+        return Next({ ..s, fields, error: general, })
       }
       // The merged `Receive` carries this component's own VIEW names as
       // well as the schema's, so `Unknown` covers cases this match has
@@ -193,7 +193,7 @@ fn schema_form_comp() -> @component.Component {
       _ => ()
     }
     match msg {
-      Intent("fieldEdited", _) => Next({ ..s, error: "" })
+      Intent("fieldEdited", _) => Next({ ..s, error: "", })
       _ => Unhandled
     }
   })

@@ -70,14 +70,14 @@ pub struct UniversalHost {
 /// name. Module-scoped because `host_tools_comp` and the restore path run from
 /// inside the component tree, where no `UniversalHost` is in hand — one live
 /// app per wasm instance is the premise the exports already rest on.
-let live : Ref[UniversalHost?] = { val: None }
+let live : Ref[UniversalHost?] = { val: None, }
 
 ///|
 /// The browser's localStorage under `prefix`, as a `Session`. The prefix is
 /// the caller's because two universal pages on one origin should not read each
 /// other's tree.
 pub fn session_in_local_storage(prefix~ : String) -> Session {
-  { store: @pwasm.LocalStore::new(prefix~) }
+  { store: @pwasm.LocalStore::new(prefix~), }
 }
 
 // --- the session: what survives the page ----------------------------------
@@ -180,7 +180,7 @@ fn save_session() -> Unit {
   let saved : Array[String] = []
   for at, snap in snaps {
     let key = "at/\{at}"
-    if @persist.save(store, { ..snap, id: key }) {
+    if @persist.save(store, { ..snap, id: key, }) {
       saved.push(key)
     }
   }

@@ -27,7 +27,7 @@ pub(all) struct ItemState {
 ///
 ///   init={ ..ItemState::zero(), label: "Counter" }
 pub fn ItemState::zero() -> ItemState {
-  { completed: false, text: "" }
+  { completed: false, text: "", }
 }
 
 ///|
@@ -47,7 +47,7 @@ impl @component.Fields for ItemState with fn encode(s) {
 impl @component.Fields for ItemState with fn decode(f) {
   guard f.get("completed") is Some(Bool(v_completed)) else { return None }
   guard f.get("text") is Some(Str(v_text)) else { return None }
-  Some({ completed: v_completed, text: v_text })
+  Some({ completed: v_completed, text: v_text, })
 }
 
 ///|
@@ -206,7 +206,7 @@ pub(all) struct ItemsState {
 ///
 ///   init={ ..ItemsState::zero(), label: "Counter" }
 pub fn ItemsState::zero() -> ItemsState {
-  { items: [] }
+  { items: [], }
 }
 
 ///|
@@ -231,7 +231,7 @@ impl @component.Fields for ItemsState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some({ items: v_items })
+  Some({ items: v_items, })
 }
 
 ///|

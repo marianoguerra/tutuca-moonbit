@@ -22,7 +22,7 @@ impl @component.Fields for CardState with fn encode(s) {
 ///|
 impl @component.Fields for CardState with fn decode(f) {
   guard f.get("title") is Some(Str(t)) else { return None }
-  Some({ title: t })
+  Some({ title: t, })
 }
 
 ///|
@@ -43,10 +43,10 @@ fn card_scope() -> (@component.ComponentStack, @component.Component) raise {
       ),
     },
     name="Card",
-    init=CardState::{ title: "" },
+    init=CardState::{ title: "", },
     update=(_s : CardState, msg, _ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Next({ title: t })
+        Receive("rename", [Str(t)]) => Next({ title: t, })
         _ => Unhandled
       }
     },
@@ -200,7 +200,7 @@ test "a value with no bucket is declined, not missed" {
   // as the reason the previous cache lost time where it did not hit.
   let cache = RenderCache::new()
   let card = parse_node("<div class=\"plain\">static</div>")
-  let resolver : &ViewResolver = ViewMap::{ views: { "main": card } }
+  let resolver : &ViewResolver = ViewMap::{ views: { "main": card }, }
   let v : @tutuca.Value = Map({ "a": Num(1) })
   let ctx = RenderCtx::new(view_resolver=resolver, render_cache=cache)
   let stack = RenderStack::new(v)
@@ -254,7 +254,7 @@ impl @component.Fields for ThemedState with fn encode(s) {
 ///|
 impl @component.Fields for ThemedState with fn decode(f) {
   guard f.get("label") is Some(Str(l)) else { return None }
-  Some({ label: l, child: f.get("child").unwrap_or(Null) })
+  Some({ label: l, child: f.get("child").unwrap_or(Null), })
 }
 
 ///|
@@ -274,7 +274,7 @@ test "a compute reading `*name` is answered by the render chain it is under" {
       ),
     },
     name="Themed",
-    init=ThemedState::{ label: "", child: Null },
+    init=ThemedState::{ label: "", child: Null, },
     compute={
       "themeLabel": (_s : ThemedState, _args, stack) => {
         stack.lookup_dynamic("theme")
@@ -290,7 +290,7 @@ test "a compute reading `*name` is answered by the render chain it is under" {
       ),
     },
     name="Shell",
-    init=ThemedState::{ label: "dark", child: Null },
+    init=ThemedState::{ label: "dark", child: Null, },
     provide={ "theme": ".label" },
   )
   let scope = @component.ComponentStack::new()

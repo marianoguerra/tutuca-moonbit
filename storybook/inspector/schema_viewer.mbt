@@ -10,7 +10,7 @@
 /// `schema_viewer_component` are generated from it.
 fn schema_viewer_comp() -> @component.Component {
   schema_viewer_component(
-    init={ value: Null, raw: Null, rawSchema: Null, showRaw: false },
+    init={ value: Null, raw: Null, rawSchema: Null, showRaw: false, },
     update=(
       // A raw `match msg`: `toggleIsExpanded` is raised inside the rendered
       // child, so no view of THIS component declares it and SchemaViewerMsg
@@ -21,7 +21,7 @@ fn schema_viewer_comp() -> @component.Component {
     ) => {
       match msg {
         Receive("toggleIsExpanded", _) =>
-          Next({ ..s, value: toggle_wrapped(s.value) })
+          Next({ ..s, value: toggle_wrapped(s.value), })
         _ => Unhandled
       }
     },

@@ -258,9 +258,11 @@ fn Gallery::root_comp(
     update=(s, msg, ctx) => {
       match DyncompStorybookMsg::from_dispatch(msg) {
         Some(SetQuery(q)) =>
-          return Next({ ..s, query: q, emptyMessage: "" } |> with_empty_message)
-        Some(ChooseTheme(t)) => return Next({ ..s, theme: t })
-        Some(ToggleWide) => return Next({ ..s, wide: not_(s.wide) })
+          return Next(
+            { ..s, query: q, emptyMessage: "", } |> with_empty_message,
+          )
+        Some(ChooseTheme(t)) => return Next({ ..s, theme: t, })
+        Some(ToggleWide) => return Next({ ..s, wide: not_(s.wide), })
         Some(ToggleDetails) =>
           return Next({
             ..s,
@@ -272,7 +274,7 @@ fn Gallery::root_comp(
           })
         Some(ShowAll) =>
           return Next(
-            { ..s, module_: "", name: "", nav: self.nav("", "") }
+            { ..s, module_: "", name: "", nav: self.nav("", ""), }
             |> with_empty_message,
           )
         // Files dropped on the page. Forwarded to whatever the host put in the
@@ -297,7 +299,7 @@ fn Gallery::root_comp(
       }
       match DyncompStorybookReceive::from_dispatch(msg) {
         Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
-        Some(SetStatus(t)) => return Next({ ..s, status: t })
+        Some(SetStatus(t)) => return Next({ ..s, status: t, })
         // The merged `Receive` carries this component's own VIEW names as
         // well as the schema's, so `Unknown` covers cases this match has
         // nothing to say about. They are answered by the match
@@ -315,7 +317,7 @@ fn Gallery::root_comp(
       match StoryNavIntent::from_dispatch(msg) {
         Some(NavPicked(module_, name)) =>
           return Next(
-            { ..s, module_, name, nav: self.nav(module_, name) }
+            { ..s, module_, name, nav: self.nav(module_, name), }
             |> with_empty_message,
           )
         Some(Unknown(_, _)) | None => ()
@@ -324,7 +326,7 @@ fn Gallery::root_comp(
         // One card, from scratch. Rebuilding the whole set here would throw
         // away every OTHER card's live state to reset one of them.
         Some(RebuildCard(module_, name, init_)) => {
-          let ref_ : @registry.ComponentRef = { module_, name }
+          let ref_ : @registry.ComponentRef = { module_, name, }
           let cards = s.cards.map(c => {
             if text_field(c, "module") == module_ &&
               text_field(c, "name") == name &&
@@ -358,7 +360,7 @@ fn not_(b : Bool) -> Bool {
 /// than recomputed in the view: it is one string, and a `compute` that runs on
 /// every render to produce it would be the same answer many more times.
 fn with_empty_message(s : DyncompStorybookState) -> DyncompStorybookState {
-  { ..s, emptyMessage: empty_message(s) }
+  { ..s, emptyMessage: empty_message(s), }
 }
 
 ///|
@@ -387,7 +389,7 @@ pub fn gallery_module(
   make : MakeInstance,
   dev_tools? : String = "",
 ) -> (@component.ModuleDef, Gallery) {
-  let gallery : Gallery = { registry, make, comps: Map([]) }
+  let gallery : Gallery = { registry, make, comps: Map([]), }
   // Leaves first, and not for tidiness: the root's `init` builds cards and
   // sidebar rows out of them, so `comps` has to hold them by the time it runs.
   let chrome = [nav_comp(), card_comp()]
@@ -416,7 +418,7 @@ fn Gallery::reloaded(
   s : DyncompStorybookState,
   module_ : String,
 ) -> DyncompStorybookState {
-  { ..self.refresh(s), status: "loaded \{module_}" }
+  { ..self.refresh(s), status: "loaded \{module_}", }
 }
 
 ///|
@@ -429,6 +431,6 @@ pub fn Gallery::refresh(
   self : Gallery,
   s : DyncompStorybookState,
 ) -> DyncompStorybookState {
-  { ..s, cards: self.cards(), nav: self.nav(s.module_, s.name) }
+  { ..s, cards: self.cards(), nav: self.nav(s.module_, s.name), }
   |> with_empty_message
 }

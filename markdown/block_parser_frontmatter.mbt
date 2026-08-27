@@ -59,7 +59,7 @@ fn BlockParser::try_parse_frontmatter(self : BlockParser) -> Frontmatter? {
   }
   let raw = yaml_buf.to_string()
   let entries = parse_simple_yaml(raw)
-  Some({ raw, entries, span: Span::new(start, self.scanner.pos) })
+  Some({ raw, entries, span: Span::new(start, self.scanner.pos), })
 }
 
 ///|

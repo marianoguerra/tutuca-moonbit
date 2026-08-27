@@ -34,7 +34,7 @@ pub(all) struct StoryNavState {
 ///
 ///   init={ ..StoryNavState::zero(), label: "Counter" }
 pub fn StoryNavState::zero() -> StoryNavState {
-  { module_: "", name: "", count: 0, selected: false }
+  { module_: "", name: "", count: 0, selected: false, }
 }
 
 ///|

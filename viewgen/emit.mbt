@@ -65,7 +65,7 @@ priv struct Answered {
 ///|
 /// What a file with no script block answers: nothing, in every bucket.
 fn Answered::none() -> Answered {
-  { inputs: [], methods: [], whens: [], enriches: [], enrich_scopes: [] }
+  { inputs: [], methods: [], whens: [], enriches: [], enrich_scopes: [], }
 }
 
 ///|
@@ -576,7 +576,7 @@ pub fn emit_modules(
   } else {
     None
   }
-  { types_source, ir_source }
+  { types_source, ir_source, }
 }
 
 ///|

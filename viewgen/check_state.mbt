@@ -66,8 +66,8 @@ fn check_views(
   hints : Array[String],
 ) -> Unit raise GenError {
   for view in views {
-    let c = Checker::{ def, prog, view: view.raw.name, hints }
-    c.node(view.root, { self_ty: SState, item: SOpaque })
+    let c = Checker::{ def, prog, view: view.raw.name, hints, }
+    c.node(view.root, { self_ty: SState, item: SOpaque, })
   }
 }
 
@@ -434,7 +434,7 @@ fn Checker::node(
       }
       // Inside a loop `.field` still addresses the item, and `@value` names
       // it too — the two spellings reach the same place.
-      self.node(d.node, { self_ty: item, item })
+      self.node(d.node, { self_ty: item, item, })
     }
     MacroCall(d) => if d.node is Some(n) { self.node(n, sc) }
   }
@@ -474,5 +474,5 @@ pub fn check_component_views(
   let compiled = compile_views(views, FileMacros::of(macros))
   lower_binds(compiled, Some(def))
   check_views(compiled, def, prog, hints)
-  { ..inline_surface(surface_of(compiled)), comps, open_senders }
+  { ..inline_surface(surface_of(compiled)), comps, open_senders, }
 }

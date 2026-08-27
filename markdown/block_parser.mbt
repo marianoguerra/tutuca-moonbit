@@ -40,7 +40,7 @@ fn BlockParser::new(
   strict : Bool,
   wikilinks : Bool,
 ) -> BlockParser {
-  { scanner, definitions: [], strict, wikilinks }
+  { scanner, definitions: [], strict, wikilinks, }
 }
 
 ///|
@@ -74,7 +74,7 @@ fn BlockParser::parse_document(self : BlockParser) -> ParseResult {
     children,
     span: Span::new(start, self.scanner.pos),
   }
-  { document, definitions: self.definitions }
+  { document, definitions: self.definitions, }
 }
 
 ///|

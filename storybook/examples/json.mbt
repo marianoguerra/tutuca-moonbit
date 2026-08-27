@@ -51,18 +51,18 @@ fn json_null_comp() -> @component.Component {
 
 ///|
 fn json_bool_comp() -> @component.Component {
-  json_bool_component(init={ value: true })
+  json_bool_component(init={ value: true, })
 }
 
 ///|
 fn json_string_comp() -> @component.Component {
-  json_string_component(init={ value: "hello" })
+  json_string_component(init={ value: "hello", })
 }
 
 ///|
 fn json_number_comp() -> @component.Component {
   json_number_component(
-    init={ strValue: "0", value: 0 },
+    init={ strValue: "0", value: 0, },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed `String` by the generator, so the arg no longer
     // has to be unpacked from an untyped list.
@@ -74,8 +74,8 @@ fn json_number_comp() -> @component.Component {
           }
           Next(
             match parsed {
-              Some(n) => { strValue: raw, value: n }
-              None => { ..s, strValue: raw }
+              Some(n) => { strValue: raw, value: n, }
+              None => { ..s, strValue: raw, }
             },
           )
         }
@@ -154,14 +154,14 @@ fn json_dropped_items(
 
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
-  json_array_component(init={ items: [] }, update=(s, msg, _ctx) => {
+  json_array_component(init={ items: [], }, update=(s, msg, _ctx) => {
     match JsonArrayMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
       // view spells them bare now, so they arrive as Inputs, and `Unhandled`
       // falls through to them.
       Some(RemoveInItemsAt(_)) => Unhandled
       // add a fresh JsonSelector so the user can pick the new element's type
-      Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)] })
+      Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)], })
       Some(OnDropOnItem(a0, a1)) =>
         match json_dropped_items(s.items, [a0, a1]) {
           Some(items) => Next({ items, })
@@ -176,12 +176,12 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
-  json_object_key_val_component(init={ key: "k", value: Null })
+  json_object_key_val_component(init={ key: "k", value: Null, })
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
-  json_object_component(init={ items: [] }, update=(s, msg, _ctx) => {
+  json_object_component(init={ items: [], }, update=(s, msg, _ctx) => {
     match JsonObjectMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
       // view spells them bare now, so they arrive as Inputs, and `Unhandled`
@@ -193,7 +193,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
           Some(kv) => kv.make({ "value": json_make_selector(reg) })
           None => Null
         }
-        Next({ items: s.items + [row] })
+        Next({ items: s.items + [row], })
       }
       Some(OnDropOnItem(a0, a1)) =>
         match json_dropped_items(s.items, [a0, a1]) {
@@ -209,7 +209,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
 
 ///|
 pub fn json_module() -> @component.ModuleDef {
-  let reg = JsonReg::{ comps: Map([]) }
+  let reg = JsonReg::{ comps: Map([]), }
   let null = json_null_comp()
   let bool_ = json_bool_comp()
   let string = json_string_comp()
@@ -236,7 +236,7 @@ pub fn json_module() -> @component.ModuleDef {
         args: { "items": List([json_make_selector(reg)]) },
         view: None,
       },
-      { component: "JsonObject", title: "Object", args: Map([]), view: None },
+      { component: "JsonObject", title: "Object", args: Map([]), view: None, },
       {
         component: "JsonSelector",
         title: "Type Selector",

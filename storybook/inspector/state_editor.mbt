@@ -150,7 +150,7 @@ fn state_editor_comp(insp : Inspector) -> @component.Component {
         // something that is not an instance, and nothing changes — `Unchanged`
         // rather than `Unhandled`, because this arm DID claim `onEdit`.
         guard next is Obj(_) else { return Unchanged }
-        Next({ ..s, target: next, rows: insp.editor_rows(next) })
+        Next({ ..s, target: next, rows: insp.editor_rows(next), })
       }
       _ => Unhandled
     }

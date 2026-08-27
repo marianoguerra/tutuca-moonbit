@@ -24,7 +24,7 @@ impl Composite for SchemaScalarState with fn current_page(self) {
 
 ///|
 impl Composite for SchemaScalarState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -49,7 +49,7 @@ impl Composite for SchemaObjectState with fn current_page(self) {
 
 ///|
 impl Composite for SchemaObjectState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -74,7 +74,7 @@ impl Composite for SchemaArrayState with fn current_page(self) {
 
 ///|
 impl Composite for SchemaArrayState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -99,7 +99,7 @@ impl Composite for SchemaEnumState with fn current_page(self) {
 
 ///|
 impl Composite for SchemaEnumState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -124,14 +124,14 @@ impl Composite for SchemaCombinatorState with fn current_page(self) {
 
 ///|
 impl Composite for SchemaCombinatorState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
 /// Primitive type(s): string / number / integer / boolean / null / multi-type.
 fn schema_scalar_comp() -> @component.Component {
   schema_scalar_component(
-    init={ ..SchemaScalarState::zero(), itemsPerPage: 10 },
+    init={ ..SchemaScalarState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -172,7 +172,7 @@ fn Inspector::schema_scalar_from(
 /// branches (additionalProperties / patternProperties / propertyNames).
 fn schema_object_comp() -> @component.Component {
   schema_object_component(
-    init={ ..SchemaObjectState::zero(), itemsPerPage: 10 },
+    init={ ..SchemaObjectState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -271,7 +271,7 @@ fn Inspector::schema_object_from(
 /// tuple, plus `contains` and array constraints (as badges).
 fn schema_array_comp() -> @component.Component {
   schema_array_component(
-    init={ ..SchemaArrayState::zero(), itemsPerPage: 10 },
+    init={ ..SchemaArrayState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -361,7 +361,7 @@ fn Inspector::schema_array_from(
 /// Enumerated allowed values — each rendered with the value inspector.
 fn schema_enum_comp() -> @component.Component {
   schema_enum_component(
-    init={ ..SchemaEnumState::zero(), itemsPerPage: 10 },
+    init={ ..SchemaEnumState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -417,7 +417,7 @@ fn schema_const_comp() -> @component.Component {
 /// Combinator: allOf / anyOf / oneOf, subschemas listed without keys.
 fn schema_combinator_comp() -> @component.Component {
   schema_combinator_component(
-    init={ ..SchemaCombinatorState::zero(), itemsPerPage: 10 },
+    init={ ..SchemaCombinatorState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -505,7 +505,7 @@ fn schema_not_comp() -> @component.Component {
 ///|
 /// Boolean schemas: `true` accepts any value, `false` accepts none.
 fn schema_boolean_comp() -> @component.Component {
-  schema_boolean_component(init={ value: true }, compute=m => {
+  schema_boolean_component(init={ value: true, }, compute=m => {
     match m {
       Text =>
         Some((s, _args, _stack) => {

@@ -83,7 +83,7 @@ fn out_values(
     state_ty="CounterState",
     fn_name="counter_inline_update",
     prefix="counter",
-    roles={ methods, whens, enriches, enrich_scopes },
+    roles={ methods, whens, enriches, enrich_scopes, },
     surface=views(),
   )
 }

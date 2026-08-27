@@ -18,7 +18,7 @@ fn flag(
   enum_? : Array[String],
   description? : String,
 ) -> FlagSpec {
-  { name, short, type_, enum_, description }
+  { name, short, type_, enum_, description, }
 }
 
 ///|
@@ -28,7 +28,7 @@ fn positional(
   description? : String,
   note? : String,
 ) -> PositionalSpec {
-  { name, required, description, note }
+  { name, required, description, note, }
 }
 
 ///|
@@ -332,6 +332,6 @@ pub fn command_names() -> Array[String] {
 pub fn command_spec(name : String) -> CommandSpec {
   match find_command(name) {
     Some(c) => c
-    None => { name, describe: "", flags: [], positionals: [] }
+    None => { name, describe: "", flags: [], positionals: [], }
   }
 }

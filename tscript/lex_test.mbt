@@ -51,8 +51,8 @@ test "spans index characters, not UTF-16 units" {
   // for any input. An astral character is one position, not two.
   let toks = @tscript.tokenize("'\u{1F600}' .after")
   assert_eq(toks.length(), 2)
-  assert_eq(toks[0].span, { start: 0, end_: 3 })
-  assert_eq(toks[1].span, { start: 4, end_: 10 })
+  assert_eq(toks[0].span, { start: 0, end_: 3, })
+  assert_eq(toks[1].span, { start: 4, end_: 10, })
 }
 
 ///|
@@ -61,5 +61,5 @@ test "leading and trailing whitespace does not shift a span" {
   // move every span off the string the caller handed in.
   let toks = @tscript.tokenize("   .count  ")
   assert_eq(toks.length(), 1)
-  assert_eq(toks[0].span, { start: 3, end_: 9 })
+  assert_eq(toks[0].span, { start: 3, end_: 9, })
 }

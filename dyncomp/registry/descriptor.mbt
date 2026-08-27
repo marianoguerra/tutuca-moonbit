@@ -160,7 +160,7 @@ fn messages_of(
   bucket : String,
   docs : Map[String, String],
 ) -> Array[MessageInfo] {
-  names.map(n => { name: n, bucket, doc: docs.get(n).unwrap_or("") })
+  names.map(n => { name: n, bucket, doc: docs.get(n).unwrap_or(""), })
 }
 
 ///|
@@ -200,7 +200,7 @@ pub fn describe(bundle : @dyncomp.Bundle, component : String) -> Descriptor? {
     }
   }
   Some({
-    ref_: { module_: bundle.module_name(), name: component },
+    ref_: { module_: bundle.module_name(), name: component, },
     doc: def.doc,
     keywords: def.keywords,
     category: def.category,
@@ -208,7 +208,7 @@ pub fn describe(bundle : @dyncomp.Bundle, component : String) -> Descriptor? {
     field_docs,
     messages,
     inits: def.inits.map(i => {
-      ({ name: i.name, doc: i.doc, args: i.args } : InitInfo)
+      ({ name: i.name, doc: i.doc, args: i.args, } : InitInfo)
     }),
     module_doc: manifest.doc,
     module_version: manifest.version,

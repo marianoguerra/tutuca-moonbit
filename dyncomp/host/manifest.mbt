@@ -447,7 +447,7 @@ fn parse_macros(
         }
       _ => ()
     }
-    out.push({ name, defaults, html: opt_str(r, "html") })
+    out.push({ name, defaults, html: opt_str(r, "html"), })
   }
   out
 }
@@ -666,7 +666,7 @@ pub fn DynManifest::from_json_string(
     let views = []
     for vj in views_json {
       guard vj is Object(v) else { raise ManifestError("manifest: bad view") }
-      views.push({ name: str_field(v, "name"), html: str_field(v, "html") })
+      views.push({ name: str_field(v, "name"), html: str_field(v, "html"), })
     }
     let fields : Array[DynFieldDef] = []
     match c.get("fields") {

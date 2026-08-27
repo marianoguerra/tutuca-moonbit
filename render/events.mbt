@@ -271,11 +271,11 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
             if !cross_component(cid, vid) {
               return None
             }
-            refs.push({ nid, key: None })
+            refs.push({ nid, key: None, })
           }
           Some(Each(nid~, key~)) =>
-            refs.push({ nid: Some(nid), key: Some(key) })
-          Some(Scope(nid~)) => refs.push({ nid: Some(nid), key: None })
+            refs.push({ nid: Some(nid), key: Some(key), })
+          Some(Scope(nid~)) => refs.push({ nid: Some(nid), key: None, })
           None => ()
         }
         sib = m.prev_sibling()

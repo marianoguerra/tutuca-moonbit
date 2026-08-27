@@ -45,10 +45,10 @@ fn UniversalUi::resolve_ref(
   name : String,
 ) -> @registry.ComponentRef? {
   match module_ {
-    Some(m) => Some({ module_: m, name })
+    Some(m) => Some({ module_: m, name, })
     None => {
       if self.std.declares(name) {
-        return Some({ module_: builtin_module, name })
+        return Some({ module_: builtin_module, name, })
       }
       for d in self.registry.all() {
         if d.ref_.name == name {
@@ -132,7 +132,8 @@ pub fn UniversalUi::tree_of_json(
   restore? : (String, @registry.ComponentRef) -> @tutuca.Value?,
 ) -> @tutuca.Value {
   let src : &@tutuca.ComponentSource = match restore {
-    Some(r) => RestoringUi::{ ui: self, restore: r } as &@tutuca.ComponentSource
+    Some(r) =>
+      RestoringUi::{ ui: self, restore: r, } as &@tutuca.ComponentSource
     None => self as &@tutuca.ComponentSource
   }
   @tutuca.Value::from_component_json(j, src).unwrap_or(Null)

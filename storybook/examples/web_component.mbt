@@ -6,14 +6,14 @@
 
 ///|
 fn emoji_picker_comp() -> @component.Component {
-  emoji_picker_component(init={ current: Null, isPickerVisible: false }, update=(
+  emoji_picker_component(init={ current: Null, isPickerVisible: false, }, update=(
     s,
     msg,
     _ctx,
   ) => {
     match msg {
       Receive("onEmojiClick", [Map(detail), ..]) =>
-        Next({ ..s, current: detail.get("unicode").unwrap_or(Null) })
+        Next({ ..s, current: detail.get("unicode").unwrap_or(Null), })
       _ => Unhandled
     }
   })
@@ -25,7 +25,7 @@ pub fn web_component_module() -> @component.ModuleDef {
     name="web-component-custom-event",
     components=[emoji_picker_comp()],
     examples=[
-      { component: "EmojiPicker", title: "Default", args: Map([]), view: None },
+      { component: "EmojiPicker", title: "Default", args: Map([]), view: None, },
     ],
   )
 }

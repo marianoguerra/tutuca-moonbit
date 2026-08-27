@@ -24,7 +24,7 @@ pub fn CssPolicy::declarations(
   if self.level is Deny {
     return {
       css: None,
-      dropped: [{ property: "", reason: UnknownProperty }],
+      dropped: [{ property: "", reason: UnknownProperty, }],
       screened_urls: [],
     }
   }
@@ -33,7 +33,7 @@ pub fn CssPolicy::declarations(
     Err(reason) =>
       return {
         css: None,
-        dropped: [{ property: "", reason }],
+        dropped: [{ property: "", reason, }],
         screened_urls: [],
       }
   }
@@ -41,7 +41,7 @@ pub fn CssPolicy::declarations(
   let mut kept = 0
   for run in split_on_semicolons(toks) {
     if kept + dropped.length() >= max_declarations {
-      dropped.push({ property: "", reason: TooLarge })
+      dropped.push({ property: "", reason: TooLarge, })
       break
     }
     match declaration_text(run[:], self, urls, screen) {
@@ -112,7 +112,7 @@ pub fn CssPolicy::value_checked(
   if property_verdict(name, self) is Err(reason) {
     return {
       css: None,
-      dropped: [{ property: name, reason }],
+      dropped: [{ property: name, reason, }],
       screened_urls: [],
     }
   }
@@ -121,15 +121,15 @@ pub fn CssPolicy::value_checked(
     Err(reason) =>
       return {
         css: None,
-        dropped: [{ property: name, reason }],
+        dropped: [{ property: name, reason, }],
         screened_urls: [],
       }
   }
   let urls : Array[String] = []
   match value_text(toks[:], name, self, urls, screen) {
-    Ok(text) => { css: Some(text), dropped: [], screened_urls: urls }
+    Ok(text) => { css: Some(text), dropped: [], screened_urls: urls, }
     Err(reason) =>
-      { css: None, dropped: [{ property: name, reason }], screened_urls: [] }
+      { css: None, dropped: [{ property: name, reason, }], screened_urls: [], }
   }
 }
 
@@ -178,10 +178,10 @@ fn declaration_text(
   }
   let raw = match run[i] {
     Ident(name) => name
-    _ => return Err({ property: "", reason: Malformed("no property name") })
+    _ => return Err({ property: "", reason: Malformed("no property name"), })
   }
   if !is_plain_ascii_name(raw) {
-    return Err({ property: "", reason: Malformed("property name") })
+    return Err({ property: "", reason: Malformed("property name"), })
   }
   // A custom property's name is case-SENSITIVE — `--Foo` and `--foo` are two
   // properties — so only a real property name is folded.
@@ -192,7 +192,7 @@ fn declaration_text(
     i += 1
   }
   if !(i < run.length() && run[i] is Colon) {
-    return Err({ property, reason: Malformed("no colon") })
+    return Err({ property, reason: Malformed("no colon"), })
   }
   i += 1
   let value = run[i:]
@@ -204,7 +204,7 @@ fn declaration_text(
   // wrote.
   for j = 0; j < value.length(); j = j + 1 {
     if value[j] is Delim('!') {
-      return Err({ property, reason: Important })
+      return Err({ property, reason: Important, })
     }
   }
   if custom {
@@ -215,19 +215,19 @@ fn declaration_text(
     // grammar to hold it against, and refused entirely at `Constant`, which
     // admits no `var()` to read it back with.
     if policy.level is Constant {
-      return Err({ property, reason: UnknownProperty })
+      return Err({ property, reason: UnknownProperty, })
     }
     return match value_text(value, "", policy, urls, screen) {
       Ok(text) => Ok(Some(property + ":" + text))
-      Err(reason) => Err({ property, reason })
+      Err(reason) => Err({ property, reason, })
     }
   }
   match property_verdict(property, policy) {
-    Err(reason) => Err({ property, reason })
+    Err(reason) => Err({ property, reason, })
     Ok(_) =>
       match value_text(value, property, policy, urls, screen) {
         Ok(text) => Ok(Some(property + ":" + text))
-        Err(reason) => Err({ property, reason })
+        Err(reason) => Err({ property, reason, })
       }
   }
 }

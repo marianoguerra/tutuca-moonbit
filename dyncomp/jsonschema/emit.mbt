@@ -284,7 +284,7 @@ pub fn of_schema(
   title? : String = "",
   description? : String = "",
 ) -> Json {
-  let defs : Defs = { entries: Map([]) }
+  let defs : Defs = { entries: Map([]), }
   let props : Map[String, Json] = Map([])
   let required : Array[Json] = []
   for f in schema.fields {

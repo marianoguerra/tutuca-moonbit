@@ -27,7 +27,13 @@ fn run_step(
   step : @scenedef.Step,
   take_log : () -> Array[String],
 ) -> (StepResult, Array[String], Array[String]) {
-  let mut result : StepResult = { at, ok: true, got: None, want: None, why: "" }
+  let mut result : StepResult = {
+    at,
+    ok: true,
+    got: None,
+    want: None,
+    why: "",
+  }
   let refused = @harness.refusals_while(() => {
     match step {
       Read(e) => result = judge(h, scene, at, e, [])
@@ -38,7 +44,7 @@ fn run_step(
     // failure the harness reports by raising rather than by doing nothing.
     e =>
       return (
-        { at, ok: false, got: None, want: None, why: e.to_string() },
+        { at, ok: false, got: None, want: None, why: e.to_string(), },
         [],
         take_log(),
       )
@@ -175,15 +181,16 @@ fn judge(
   refused : Array[String],
 ) -> StepResult {
   let got = read(h, scene, e, refused) catch {
-    err => return { at, ok: false, got: None, want: None, why: err.to_string() }
+    err =>
+      return { at, ok: false, got: None, want: None, why: err.to_string(), }
   }
   match e.want {
     // RECORD: read it and hand it back. Never a failure — the whole point is
     // to run a drive you have not written the answers to yet.
-    None => { at, ok: true, got: Some(got), want: None, why: "" }
+    None => { at, ok: true, got: Some(got), want: None, why: "", }
     Some(WIs(want)) =>
       if same(got, want) {
-        { at, ok: true, got: Some(got), want: Some(want), why: "" }
+        { at, ok: true, got: Some(got), want: Some(want), why: "", }
       } else {
         {
           at,
@@ -204,7 +211,7 @@ fn judge(
         other => show(other)
       }
       if hay.contains(want) {
-        { at, ok: true, got: Some(got), want: Some(Str(want)), why: "" }
+        { at, ok: true, got: Some(got), want: Some(Str(want)), why: "", }
       } else {
         {
           at,

@@ -75,7 +75,7 @@ pub(all) struct MacroParamsState {
 ///
 ///   init={ ..MacroParamsState::zero(), label: "Counter" }
 pub fn MacroParamsState::zero() -> MacroParamsState {
-  { status: "" }
+  { status: "", }
 }
 
 ///|
@@ -94,7 +94,7 @@ impl @component.Fields for MacroParamsState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MacroParamsState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
-  Some({ status: v_status })
+  Some({ status: v_status, })
 }
 
 ///|
@@ -129,7 +129,7 @@ pub(all) struct MacroSlotsState {
 ///
 ///   init={ ..MacroSlotsState::zero(), label: "Counter" }
 pub fn MacroSlotsState::zero() -> MacroSlotsState {
-  { count: 0 }
+  { count: 0, }
 }
 
 ///|
@@ -149,7 +149,7 @@ impl @component.Fields for MacroSlotsState with fn encode(s) {
 impl @component.Fields for MacroSlotsState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some({ count: v_count })
+  Some({ count: v_count, })
 }
 
 ///|
@@ -184,7 +184,7 @@ pub(all) struct MacroNamedSlotsState {
 ///
 ///   init={ ..MacroNamedSlotsState::zero(), label: "Counter" }
 pub fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
-  { count: 0 }
+  { count: 0, }
 }
 
 ///|
@@ -204,7 +204,7 @@ impl @component.Fields for MacroNamedSlotsState with fn encode(s) {
 impl @component.Fields for MacroNamedSlotsState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some({ count: v_count })
+  Some({ count: v_count, })
 }
 
 ///|

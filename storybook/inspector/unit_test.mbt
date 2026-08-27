@@ -30,7 +30,7 @@ fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
   // `Receive`, because that is what a view raises now. This helper stands in
   // for a click, and a click is an addressed message.
   guard o.obj_handler(Receive, name) is Some(Handler(f)) else { return Null }
-  match f([], @tutuca.NullCtx::{  }) {
+  match f([], @tutuca.NullCtx::{ }) {
     Some(node) => node
     None => v
   }
@@ -139,7 +139,7 @@ test "classify: a nested instance keeps its name" {
 /// The fallback survives for the one case that still needs it.
 test "classify: an instance that declares nothing is still an opaque leaf" {
   let insp = @inspector.Inspector::new()
-  let leaf = insp.classify(Obj(Undescribed::{  }))
+  let leaf = insp.classify(Obj(Undescribed::{ }))
   assert_true(oget(leaf, "text") is Str(s) && s.contains("Undescribed"))
 }
 
@@ -205,15 +205,15 @@ fn sample_comp() -> @component.Component {
       ),
     },
     name="RichSample",
-    init=RichState::{ title: "", count: 0, tags: [], open: false },
+    init=RichState::{ title: "", count: 0, tags: [], open: false, },
     compute={
       "label": (s : RichState, _args, _stack) => Str(s.title),
       "double": (s : RichState, _args, _stack) => Num((s.count * 2).to_double()),
     },
     update=(s : RichState, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
-        Receive("reset", _) => Next({ ..s, count: 0 })
+        Receive("inc", _) => Next({ ..s, count: s.count + 1, })
+        Receive("reset", _) => Next({ ..s, count: 0, })
         Receive("ping", _) | Intent("onChild", _) | Receive("onData", _) =>
           Next(s)
         _ => Unhandled
@@ -391,9 +391,9 @@ test "schema_view holds both the classified tree and the raw value" {
 ///|
 test "path_keys_label joins fields and keys" {
   let keys : Array[@tutuca.StepKey] = [
-    { field: "value", key: None },
-    { field: "rows", key: Some(KInt(1)) },
-    { field: "byName", key: Some(KStr("a")) },
+    { field: "value", key: None, },
+    { field: "rows", key: Some(KInt(1)), },
+    { field: "byName", key: Some(KStr("a")), },
   ]
   inspect(@inspector.path_keys_label(keys), content="value.rows[1].byName[a]")
 }
@@ -406,7 +406,7 @@ test "record_to_entry maps an observer record onto an ActivityEntry" {
     name: "click",
     args: [],
     path: @tutuca.Path::new(),
-    path_keys: [{ field: "value", key: None }],
+    path_keys: [{ field: "value", key: None, }],
     target_path: @tutuca.DispatchPath::new(),
     matched: Exact,
     before: Some(Num(1)),
@@ -422,7 +422,7 @@ test "record_to_entry maps an observer record onto an ActivityEntry" {
   assert_true(oget(entry, "hasAfter") is Bool(true))
   assert_true(oget(entry, "before") is Obj(_))
   // the outgoing side of a request has no after
-  let outgoing = insp.record_to_entry({ ..record, after: None })
+  let outgoing = insp.record_to_entry({ ..record, after: None, })
   assert_true(oget(outgoing, "hasAfter") is Bool(false))
   assert_true(oget(outgoing, "after") is Null)
 }
@@ -453,7 +453,7 @@ fn schema_sample_comp() -> @component.Component {
   @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Described",
-    init=DescribedState::{ title: "", count: 0, tags: [], open: false },
+    init=DescribedState::{ title: "", count: 0, tags: [], open: false, },
     update=(_s : DescribedState, _msg, _ctx) => Unhandled,
   )
 }
@@ -568,7 +568,7 @@ impl @component.Fields for RichState with fn decode(f) {
   let v_count = n_count.to_int()
   guard f.get("tags") is Some(List(v_tags)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open })
+  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open, })
 }
 
 ///|
@@ -622,7 +622,7 @@ impl @component.Fields for DescribedState with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   guard f.get("tags") is Some(List(v_tags)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some({ title: v_title, count: n_count.to_int(), tags: v_tags, open: v_open })
+  Some({ title: v_title, count: n_count.to_int(), tags: v_tags, open: v_open, })
 }
 
 ///|
@@ -682,7 +682,7 @@ test "state editor: rows come from the schema, controls from the kinds" {
   assert_true(oget(rows[3], "kind") is Str("bool"))
   assert_true(oget(rows[3], "flag") is Bool(true))
   // an instance that declares nothing has no form to draw
-  assert_eq(insp.editor_rows(Obj(Undescribed::{  })).length(), 0)
+  assert_eq(insp.editor_rows(Obj(Undescribed::{ })).length(), 0)
 }
 
 ///|

@@ -100,7 +100,7 @@ fn vw_instr(name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwEmptyState::{  },
+    init=VwEmptyState::{ },
   )
 }
 
@@ -116,7 +116,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwImmState::{ value: 0, rawValue: "0" },
+    init=VwImmState::{ value: 0, rawValue: "0", },
     // Runtime views throughout this file (the tree is assembled in MoonBit),
     // so there is no generated Msg and every arm names the dispatch directly.
     update=(s : VwImmState, msg, _ctx) => {
@@ -129,8 +129,8 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
           let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
           Next(
             match parsed {
-              Some(v) => { value: v, rawValue: raw }
-              None => { ..s, rawValue: raw }
+              Some(v) => { value: v, rawValue: raw, }
+              None => { ..s, rawValue: raw, }
             },
           )
         }
@@ -164,7 +164,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
       ),
     },
     name~,
-    init=VwEmptyState::{  },
+    init=VwEmptyState::{ },
     swap={
       "setType": (_s : VwEmptyState, args, _ctx) => {
         let id = match args {
@@ -357,7 +357,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
       ),
     },
     name="Types",
-    init=VwTypesState::{ items: [] },
+    init=VwTypesState::{ items: [], },
     update=(s : VwTypesState, msg, _ctx) => {
       match msg {
         Receive("addItemAt", args) => {
@@ -370,7 +370,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
           Next({ items, })
         }
         Receive("appendItem", _) =>
-          Next({ items: s.items + [vw_make_type(reg, "TypeI32")] })
+          Next({ items: s.items + [vw_make_type(reg, "TypeI32")], })
         _ => Unhandled
       }
     },
@@ -401,7 +401,7 @@ fn vw_block_type_comp() -> @component.Component {
       ),
     },
     name="BlockType",
-    init=VwEmptyState::{  },
+    init=VwEmptyState::{ },
     slots={ "args": "Types", "returns": "Types" },
   )
 }
@@ -432,9 +432,12 @@ fn vw_container_update(
   (s, msg, _ctx) => {
     match msg {
       Receive("addItemAt", args) =>
-        Next({ ..s, items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)) })
+        Next({
+          ..s,
+          items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)),
+        })
       Receive("appendItem", _) =>
-        Next({ ..s, items: s.items + [vw_make_picker(reg)] })
+        Next({ ..s, items: s.items + [vw_make_picker(reg)], })
       _ => Unhandled
     }
   }
@@ -453,7 +456,7 @@ fn vw_container_compute() -> Map[
 
 ///|
 fn vw_container_init() -> VwContainerState {
-  { items: [], expanded: true, editing: false }
+  { items: [], expanded: true, editing: false, }
 }
 
 ///|
@@ -577,16 +580,16 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
     update=(s : VwIfState, msg, _ctx) => {
       match msg {
         Receive("addThnAt", args) =>
-          Next({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) })
+          Next({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)), })
         Receive("appendInThn", _) =>
-          Next({ ..s, thn: s.thn + [vw_make_picker(reg)] })
+          Next({ ..s, thn: s.thn + [vw_make_picker(reg)], })
         Receive("addElseAt", args) =>
           Next({
             ..s,
             else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
           })
         Receive("appendInElse", _) =>
-          Next({ ..s, else_: s.else_ + [vw_make_picker(reg)] })
+          Next({ ..s, else_: s.else_ + [vw_make_picker(reg)], })
         _ => Unhandled
       }
     },
@@ -622,7 +625,7 @@ fn vw_section_comp() -> @component.Component {
     update=(s : VwSectionState, msg, _ctx) => {
       match msg {
         Receive("addDefaultItem", _) =>
-          Next({ ..s, items: s.items + [vw_with_editing(s.defaultItem)] })
+          Next({ ..s, items: s.items + [vw_with_editing(s.defaultItem)], })
         _ => Unhandled
       }
     },
@@ -661,13 +664,13 @@ fn vw_memory_comp() -> @component.Component {
       ),
     },
     name="Memory",
-    init=VwMemoryState::{ n: 1, m: 1 },
+    init=VwMemoryState::{ n: 1, m: 1, },
     update=(s : VwMemoryState, msg, _ctx) => {
       match msg {
         Receive("setNFromString", args) =>
-          Next({ ..s, n: vw_int_value(args, s.n) })
+          Next({ ..s, n: vw_int_value(args, s.n), })
         Receive("setMFromString", args) =>
-          Next({ ..s, m: vw_int_value(args, s.m) })
+          Next({ ..s, m: vw_int_value(args, s.m), })
         _ => Unhandled
       }
     },
@@ -689,7 +692,7 @@ fn vw_module_comp() -> @component.Component {
       ),
     },
     name="Module",
-    init=VwEmptyState::{  },
+    init=VwEmptyState::{ },
     slots={ "mem": "Section", "func": "Section" },
     slot_args={
       "mem": { "id": Num(5), "name": Str("Memory") },
@@ -864,7 +867,7 @@ fn vw_macros() -> Map[String, @anode.Macro] {
 
 ///|
 pub fn visual_wasm_module() -> @component.ModuleDef {
-  let reg = VwReg::{ comps: Map([]) }
+  let reg = VwReg::{ comps: Map([]), }
   let comps : Array[@component.Component] = []
   fn add(c : @component.Component) -> @component.Component {
     reg.comps[c.name] = c
@@ -900,7 +903,7 @@ pub fn visual_wasm_module() -> @component.ModuleDef {
     components=comps,
     macros=vw_macros(),
     examples=[
-      { component: "Module", title: "Empty Module", args: Map([]), view: None },
+      { component: "Module", title: "Empty Module", args: Map([]), view: None, },
       {
         component: "InstructionPicker",
         title: "Instruction Picker",

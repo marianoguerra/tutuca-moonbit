@@ -29,7 +29,7 @@ pub(all) struct AttributeBindingState {
 ///
 ///   init={ ..AttributeBindingState::zero(), label: "Counter" }
 pub fn AttributeBindingState::zero() -> AttributeBindingState {
-  { str: "", num: 0, bool: false, notSet: Null }
+  { str: "", num: 0, bool: false, notSet: Null, }
 }
 
 ///|
@@ -57,7 +57,7 @@ impl @component.Fields for AttributeBindingState with fn decode(f) {
   let v_num = t1_num.to_int()
   guard f.get("bool") is Some(Bool(v_bool)) else { return None }
   let v_notSet = f.get("notSet").unwrap_or(Null)
-  Some({ str: v_str, num: v_num, bool: v_bool, notSet: v_notSet })
+  Some({ str: v_str, num: v_num, bool: v_bool, notSet: v_notSet, })
 }
 
 ///|
@@ -234,7 +234,7 @@ pub(all) struct ConditionalAttributesState {
 ///
 ///   init={ ..ConditionalAttributesState::zero(), label: "Counter" }
 pub fn ConditionalAttributesState::zero() -> ConditionalAttributesState {
-  { isActive: false }
+  { isActive: false, }
 }
 
 ///|
@@ -253,7 +253,7 @@ impl @component.Fields for ConditionalAttributesState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ConditionalAttributesState with fn decode(f) {
   guard f.get("isActive") is Some(Bool(v_isActive)) else { return None }
-  Some({ isActive: v_isActive })
+  Some({ isActive: v_isActive, })
 }
 
 ///|
@@ -412,7 +412,7 @@ pub(all) struct EventModifiersState {
 ///
 ///   init={ ..EventModifiersState::zero(), label: "Counter" }
 pub fn EventModifiersState::zero() -> EventModifiersState {
-  { query: "", lastSentSearch: Null }
+  { query: "", lastSentSearch: Null, }
 }
 
 ///|
@@ -432,7 +432,7 @@ impl @component.Fields for EventModifiersState with fn encode(s) {
 impl @component.Fields for EventModifiersState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
   let v_lastSentSearch = f.get("lastSentSearch").unwrap_or(Null)
-  Some({ query: v_query, lastSentSearch: v_lastSentSearch })
+  Some({ query: v_query, lastSentSearch: v_lastSentSearch, })
 }
 
 ///|
@@ -608,7 +608,7 @@ pub(all) struct ShowHideState {
 ///
 ///   init={ ..ShowHideState::zero(), label: "Counter" }
 pub fn ShowHideState::zero() -> ShowHideState {
-  { isOpen: false, count: 0 }
+  { isOpen: false, count: 0, }
 }
 
 ///|
@@ -629,7 +629,7 @@ impl @component.Fields for ShowHideState with fn decode(f) {
   guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some({ isOpen: v_isOpen, count: v_count })
+  Some({ isOpen: v_isOpen, count: v_count, })
 }
 
 ///|

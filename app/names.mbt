@@ -25,7 +25,7 @@ pub(all) struct ScopeNames {
 
 ///|
 pub fn ScopeNames::new(comps : @component.Components) -> ScopeNames {
-  { comps, memo_root: None, memo_at: None, memo_stack: None }
+  { comps, memo_root: None, memo_at: None, memo_stack: None, }
 }
 
 ///|

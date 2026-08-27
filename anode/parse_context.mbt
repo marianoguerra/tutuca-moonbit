@@ -9,7 +9,7 @@ pub fn ParseContext::new(
 ) -> ParseContext {
   let h : &ParseHandler = match handler {
     Some(h) => h
-    None => WarnHandler::{  }
+    None => WarnHandler::{ }
   }
   {
     nodes: [],
@@ -36,7 +36,7 @@ pub fn ParseContext::enter_macro(
     events: self.events,
     macro_nodes: self.macro_nodes,
     parent: Some(self),
-    frame: Some({ macro_name: name, macro_vars: vars, macro_slots: slots }),
+    frame: Some({ macro_name: name, macro_vars: vars, macro_slots: slots, }),
     // Inherited, not reset: an expansion is still this host's parse.
     config_vars: self.config_vars,
     val_ctx: None,
@@ -58,7 +58,7 @@ fn ParseContext::is_inside_macro(self : ParseContext, name : String) -> Bool {
 
 ///|
 fn ParseContext::register_events(self : ParseContext) -> NodeEvents {
-  let events = NodeEvents::{ id: self.events.length(), handlers: [] }
+  let events = NodeEvents::{ id: self.events.length(), handlers: [], }
   self.events.push(events)
   events
 }
@@ -149,7 +149,7 @@ fn ParseContext::new_macro_node(
   // The default slot's array is shared with the Fragment BEFORE filling, so
   // late pushes are visible through slots["_"].
   let any_slot : Array[ANode] = []
-  let slots : Map[String, ANode] = { "_": Fragment({ childs: any_slot }) }
+  let slots : Map[String, ANode] = { "_": Fragment({ childs: any_slot, }) }
   for child in childs {
     match child {
       Slot(d) => slots[d.name] = d.node

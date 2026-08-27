@@ -334,13 +334,13 @@ pub fn split_file(
               raise DuplicateStateBlock
             }
             state_src = Some((text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted })
+            styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
           "script" if attr_of(attrs, "type") is Some(INIT_TYPE) => {
             let content_at = after
             let (text, end_) = read_raw(tok, "script")
             init_src = Some((text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted })
+            styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
           // The handlers. Lifted out unparsed: checking them needs the schema
           // and the argument types the views imply, and neither is in hand
@@ -359,7 +359,7 @@ pub fn split_file(
               raise DuplicateScriptBlock(for_comp)
             }
             script_srcs.push((for_comp, text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted })
+            styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
           // The escape hatch. Lifted exactly as the handlers are, and for the
           // same reason: what it says can only be judged by a backend that has
@@ -375,7 +375,7 @@ pub fn split_file(
               raise DuplicateWaxBlock(for_comp)
             }
             wax_srcs.push((for_comp, text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted })
+            styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
           // The scenes. Parsed here, the way the init block is, because a
           // scene block IS self-contained: JSON in, `Scene`s out, and the only
@@ -391,7 +391,7 @@ pub fn split_file(
               raise DuplicateTestBlock
             }
             test_src = Some((text, content_at))
-            styles.push({ start: before, end_, text: "", kind: SLifted })
+            styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
           "style" => {
             let (text, end_) = read_raw(tok, "style")
@@ -404,7 +404,7 @@ pub fn split_file(
             } else {
               SCommon
             }
-            styles.push({ start: before, end_, text, kind })
+            styles.push({ start: before, end_, text, kind, })
           }
           _ => ()
         }
@@ -519,7 +519,7 @@ pub fn split_file(
           defaults[a.name[5:].to_owned()] = a.value
         }
       }
-      macros.push({ name, defaults, source: body })
+      macros.push({ name, defaults, source: body, })
       continue
     }
     // `Comp:view` / `Comp` name a component; a bare id or none belongs to the
@@ -569,7 +569,7 @@ pub fn split_file(
         raise DuplicateView(if comp == "" { vname } else { comp + ":" + vname })
       }
     }
-    views.push({ name: vname, source: body, style })
+    views.push({ name: vname, source: body, style, })
   }
   let components : Array[ViewSet] = []
   for i, comp in order {
@@ -708,7 +708,7 @@ fn script_blocks(
 ) -> Array[ScriptBlock] {
   srcs.map(t => {
     comp: t.0,
-    block: { text: t.1, offset: t.2, line: line_at(chars, t.2) },
+    block: { text: t.1, offset: t.2, line: line_at(chars, t.2), },
   })
 }
 

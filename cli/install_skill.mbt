@@ -43,7 +43,7 @@ fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
     Err(e) => return Done(error_emit(opts, e))
   }
   if parsed.bool("help") || opts.help {
-    return Done({ out: install_skill_help, err: "", exit_code: 0 })
+    return Done({ out: install_skill_help, err: "", exit_code: 0, })
   }
   let user = parsed.bool("user")
   let project = parsed.bool("project")
@@ -83,7 +83,7 @@ fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
     for pair in skill_files {
       sb.write_string("  + \{pair.0}\n")
     }
-    return Done({ out: sb.to_string(), err: "", exit_code: 0 })
+    return Done({ out: sb.to_string(), err: "", exit_code: 0, })
   }
   InstallSkill(opts, plan={
     target_rel,

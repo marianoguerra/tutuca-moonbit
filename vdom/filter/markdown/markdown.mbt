@@ -47,7 +47,7 @@ pub fn MdFilter::new(
   sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
   max_reports? : Int = 64,
 ) -> MdFilter {
-  { sanitizer, log: @filter.DropLog::new(max_reports~) }
+  { sanitizer, log: @filter.DropLog::new(max_reports~), }
 }
 
 ///|
@@ -64,7 +64,7 @@ fn MdFilter::record(
   value : String,
   reason : String,
 ) -> Unit {
-  self.log.record({ tag, attr, value, reason })
+  self.log.record({ tag, attr, value, reason, })
 }
 
 ///|

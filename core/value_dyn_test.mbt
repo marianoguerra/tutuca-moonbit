@@ -47,7 +47,7 @@ fn row_schema() -> @core.SchemaInfo {
 test "a protocol property is an operation backed by a field" {
   let r = row("hello")
   assert_eq(
-    r.protocol_property("example/ListItem@1", "label", @core.NullStack::{  }),
+    r.protocol_property("example/ListItem@1", "label", @core.NullStack::{ }),
     Str("hello"),
   )
 }
@@ -62,7 +62,6 @@ test "a missing gradual property returns Null and emits structured runtime data"
     }
   })
   let got = row("hello").protocol_property("example/ListItem@1", "missing", @core.NullStack::{
-
   })
   off()
   assert_eq(got, Null)
@@ -73,7 +72,7 @@ test "a missing gradual property returns Null and emits structured runtime data"
 
 ///|
 fn row(title : String, tags? : Array[@core.Value] = []) -> @core.Value {
-  Obj(Row::{ title, tags })
+  Obj(Row::{ title, tags, })
 }
 
 ///|

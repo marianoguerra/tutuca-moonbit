@@ -35,7 +35,7 @@ fn UniversalUi::close_bar(
   s : UniversalAppState,
 ) -> @component.Update[UniversalAppState] {
   self.asked.val = None
-  Next({ ..s, commandBar: Null, status: "" })
+  Next({ ..s, commandBar: Null, status: "", })
 }
 
 ///|
@@ -71,7 +71,7 @@ fn UniversalUi::place_default(
   ref_ : @registry.ComponentRef,
 ) -> @component.Update[UniversalAppState] {
   guard self.registry.describe(ref_) is Some(d) else {
-    return Next({ ..s, status: "no such component: \{ref_.to_id()}" })
+    return Next({ ..s, status: "no such component: \{ref_.to_id()}", })
   }
   match defaults_of(d) {
     // It needs something nobody has said yet. Opening the form is the answer
@@ -93,9 +93,9 @@ fn UniversalUi::place_default(
       match self.build(ref_, args) {
         Some(inst) => {
           if !self.deliver(ctx, inst) {
-            return Next({ ..s, commandBar: Null, status: "nowhere to put it" })
+            return Next({ ..s, commandBar: Null, status: "nowhere to put it", })
           }
-          Next({ ..s, commandBar: Null, status: "placed \{ref_.to_id()}" })
+          Next({ ..s, commandBar: Null, status: "placed \{ref_.to_id()}", })
         }
         None =>
           Next({
@@ -118,7 +118,7 @@ fn UniversalUi::place_form(
   fields : Array[@tutuca.Value],
 ) -> @component.Update[UniversalAppState] {
   guard self.registry.describe(ref_) is Some(d) else {
-    return Next({ ..s, status: "no such component: \{ref_.to_id()}" })
+    return Next({ ..s, status: "no such component: \{ref_.to_id()}", })
   }
   // A named fixture is the component's own answer to "what arguments", so the
   // blank form beside it is not consulted — but it has to be RESOLVED here, to
@@ -157,7 +157,7 @@ fn UniversalUi::place_form(
           "showErrors",
           [Map(by_pointer)],
         )
-        return Next({ ..s, status: "check the highlighted fields" })
+        return Next({ ..s, status: "check the highlighted fields", })
       }
     }
   }
@@ -184,11 +184,11 @@ fn UniversalUi::place_form(
   match self.build(ref_, args) {
     Some(inst) => {
       if !self.deliver(ctx, inst) {
-        return Next({ ..s, configPanel: Null, status: "nowhere to put it" })
+        return Next({ ..s, configPanel: Null, status: "nowhere to put it", })
       }
-      Next({ ..s, configPanel: Null, status: "placed \{ref_.to_id()}" })
+      Next({ ..s, configPanel: Null, status: "placed \{ref_.to_id()}", })
     }
-    None => Next({ ..s, status: "could not build \{ref_.to_id()}" })
+    None => Next({ ..s, status: "could not build \{ref_.to_id()}", })
   }
 }
 
@@ -241,7 +241,7 @@ fn UniversalUi::open_config(
     })
   }
   guard self.describe_instance(child) is Some(d) else {
-    return Next({ ..s, status: "nothing is known about \{title}" })
+    return Next({ ..s, status: "nothing is known about \{title}", })
   }
   // The form opens on what the instance ALREADY holds, so changing one
   // property does not mean retyping the rest.
@@ -285,7 +285,7 @@ fn UniversalUi::close_config(
     _ => ()
   }
   self.configuring.val = None
-  Next({ ..s, configPanel: Null, status: "" })
+  Next({ ..s, configPanel: Null, status: "", })
 }
 
 // --- the app ----------------------------------------------------------------
@@ -306,7 +306,7 @@ fn UniversalUi::catalog_changed(
   } else {
     Null
   }
-  Next({ ..s, commandBar: bar, status: "loaded \{module_}" })
+  Next({ ..s, commandBar: bar, status: "loaded \{module_}", })
 }
 
 ///|
@@ -316,9 +316,9 @@ fn restore_tree(
   root : @tutuca.Value,
 ) -> @component.Update[UniversalAppState] {
   if root is Obj(_) {
-    Next({ ..s, root, status: "restored" })
+    Next({ ..s, root, status: "restored", })
   } else {
-    Next({ ..s, status: "could not restore the last page" })
+    Next({ ..s, status: "could not restore the last page", })
   }
 }
 
@@ -420,7 +420,7 @@ fn UniversalUi::app_comp(
         }
         Intent("componentPicked", [Str(module_), Str(name), flag, ..]) => {
           ctx.stop_propagation()
-          let ref_ : @registry.ComponentRef = { module_, name }
+          let ref_ : @registry.ComponentRef = { module_, name, }
           // Two ways to ask for the form and either will do: ctrl/cmd on THIS
           // click, or a bar that was opened in configure mode to begin with.
           // A bar opened by ctrl-clicking a `+` and then used with plain
@@ -444,7 +444,7 @@ fn UniversalUi::app_comp(
                   status: "fill in \{d.ref_.to_id()} and place it",
                 })
               None =>
-                Next({ ..s, status: "no such component: \{ref_.to_id()}" })
+                Next({ ..s, status: "no such component: \{ref_.to_id()}", })
             }
           } else {
             self.place_default(s, ctx, ref_)
@@ -452,7 +452,7 @@ fn UniversalUi::app_comp(
         }
         Intent("submitForm", [Str(module_), Str(name), Str(init), List(fields)]) => {
           ctx.stop_propagation()
-          self.place_form(s, ctx, { module_, name }, init, fields)
+          self.place_form(s, ctx, { module_, name, }, init, fields)
         }
         Intent("cancelForm", _) | Intent("closeConfig", _) => {
           ctx.stop_propagation()
@@ -524,8 +524,8 @@ pub fn seeded_app(
     make,
     std,
     comps: Map([]),
-    asked: { val: None },
-    configuring: { val: None },
+    asked: { val: None, },
+    configuring: { val: None, },
   }
   // The catalog answers for the standard components as soon as it exists, so
   // a page with no bundles loaded is still one you can build.

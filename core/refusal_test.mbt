@@ -162,7 +162,7 @@ test "one dispatch produces at most one record" {
   // Two rules break inside one handler — the second is the first being handed
   // back up the chain, and a listener that saw both would be reading one
   // failure as two.
-  let obj : @core.Value = Map({ "notes": Map({ "a": Obj(Twice::{  }) }) })
+  let obj : @core.Value = Map({ "notes": Map({ "a": Obj(Twice::{ }) }) })
   let said = watched(() => at("a").update(obj, Receive, "twice", []) |> ignore)
   assert_eq(said.length(), 1)
   assert_eq(said[0].rule, "first")

@@ -182,7 +182,7 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
 /// `attribute_allowed` because that is the same shape: a rule the config does
 /// not get a vote on.
 pub fn Sanitizer::without_css(self : Sanitizer) -> Sanitizer {
-  { ..self, css: @safecss.CssPolicy::deny() }
+  { ..self, css: @safecss.CssPolicy::deny(), }
 }
 
 ///|
@@ -196,7 +196,7 @@ pub fn Sanitizer::with_css(
   self : Sanitizer,
   policy : @safecss.CssPolicy,
 ) -> Sanitizer {
-  { ..self, css: policy }
+  { ..self, css: policy, }
 }
 
 ///|
@@ -267,7 +267,7 @@ pub fn Sanitizer::element_verdict(
   ns : @anode.Ns?,
 ) -> ElementVerdict {
   let key = (
-    { name: normalize_tag(tag, ns), ns: ElemNs::of_anode(ns) } : ElementName).key()
+    { name: normalize_tag(tag, ns), ns: ElemNs::of_anode(ns), } : ElementName).key()
   // The baseline first, and unconditionally: safety comes from the entry
   // point, not from the config, so a config that allows `script` does not get
   // `script`. See `SanitizerConfig::default`.
@@ -335,7 +335,7 @@ pub fn Sanitizer::attribute_allowed(
     return true
   }
   let key = (
-    { name: normalize_tag(tag, ns), ns: ElemNs::of_anode(ns) } : ElementName).key()
+    { name: normalize_tag(tag, ns), ns: ElemNs::of_anode(ns), } : ElementName).key()
   let per_elem = match self.allow_elements {
     Some(m) => m.get(key)
     None => None

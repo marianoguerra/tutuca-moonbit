@@ -127,7 +127,7 @@ priv struct WPanel {
 
 ///|
 fn wpanel(item : @tutuca.Value, role : String, seen : String) -> @tutuca.Value {
-  Obj(WPanel::{ item, role, seen })
+  Obj(WPanel::{ item, role, seen, })
 }
 
 ///|
@@ -202,7 +202,7 @@ priv struct WRoot {
 
 ///|
 fn wroot(panel : @tutuca.Value, role : String, seen : String) -> @tutuca.Value {
-  Obj(WRoot::{ panel, role, seen })
+  Obj(WRoot::{ panel, role, seen, })
 }
 
 ///|
@@ -472,7 +472,7 @@ fn passer(count : Ref[Int]) -> @transactor.IntentHandler {
 
 ///|
 test "a lex handler answers, and the answer reaches the sender" {
-  let asked : Ref[Int] = { val: 0 }
+  let asked : Ref[Int] = { val: 0, }
   let reg = Registry::{
     handlers: [
       IntentHandler((call, answer) => {
@@ -490,7 +490,7 @@ test "a lex handler answers, and the answer reaches the sender" {
 
 ///|
 test "a declining lex handler hands the intent to the next one, and costs no transaction" {
-  let passed : Ref[Int] = { val: 0 }
+  let passed : Ref[Int] = { val: 0, }
   let reg = Registry::{
     handlers: [
       passer(passed),
@@ -511,8 +511,8 @@ test "a declining lex handler hands the intent to the next one, and costs no tra
 
 ///|
 test "a lex leg that answers nothing falls through to the next leg" {
-  let passed : Ref[Int] = { val: 0 }
-  let reg = Registry::{ handlers: [passer(passed), passer(passed)] }
+  let passed : Ref[Int] = { val: 0, }
+  let reg = Registry::{ handlers: [passer(passed), passer(passed)], }
   let tx = @transactor.Transactor::new(tree("none", "reply"), intents=reg)
   let _ = tx.push_send(item_at(), "go-lex-first", [])
   tx.settle() |> ignore
@@ -525,7 +525,7 @@ test "a lex leg that answers nothing falls through to the next leg" {
 test "a lex handler may answer later, and the walk waits for it" {
   // Callback style, exactly as a request handler already is. The walk is not
   // allowed to assume a static handler answers synchronously.
-  let later : Ref[((@tutuca.IntentAnswer) -> Unit)?] = { val: None }
+  let later : Ref[((@tutuca.IntentAnswer) -> Unit)?] = { val: None, }
   let reg = Registry::{
     handlers: [IntentHandler((_call, answer) => later.val = Some(answer))],
   }
@@ -547,7 +547,7 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
   // components; this is the same counter reached the cheap way, and it is the
   // exhaustion path that has to run afterwards — a sender that asked for an
   // answer must learn something rather than wait forever.
-  let passed : Ref[Int] = { val: 0 }
+  let passed : Ref[Int] = { val: 0, }
   let handlers : Array[@transactor.IntentHandler] = []
   for _ in 0..<(@transactor.INTENT_DEPTH + 10) {
     handlers.push(passer(passed))
@@ -599,7 +599,7 @@ test "the sender stays open until the answer has settled" {
   // to the walk rather than to any one hop — this is the test that says so.
   let tx = @transactor.Transactor::new(tree("observe", "reply"))
   let sender = tx.push_send(item_at(), "go-answered", [])
-  let settled : Ref[Bool] = { val: false }
+  let settled : Ref[Bool] = { val: false, }
   sender.completion().on_subtree_settled(() => settled.val = true)
   tx.settle() |> ignore
   assert_true(settled.val)
@@ -611,7 +611,7 @@ test "the sender stays open until the answer has settled" {
 test "a walk nobody answers still lets the sender go" {
   let tx = @transactor.Transactor::new(tree("none", "none"))
   let sender = tx.push_send(item_at(), "go", [])
-  let settled : Ref[Bool] = { val: false }
+  let settled : Ref[Bool] = { val: false, }
   sender.completion().on_subtree_settled(() => settled.val = true)
   tx.settle() |> ignore
   assert_true(settled.val)

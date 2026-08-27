@@ -52,7 +52,7 @@ pub(all) struct LoaderBarState {
 ///
 ///   init={ ..LoaderBarState::zero(), label: "Counter" }
 pub fn LoaderBarState::zero() -> LoaderBarState {
-  { status: "", url: "", showUrl: false, samples: [] }
+  { status: "", url: "", showUrl: false, samples: [], }
 }
 
 ///|
@@ -67,7 +67,7 @@ fn loader_bar_sample_of_value(v : @tutuca.Value) -> LoaderBarSample? {
   guard v is Map(m) else { return None }
   guard m.get("label") is Some(Str(f_label)) else { return None }
   guard m.get("url") is Some(Str(f_url)) else { return None }
-  Some({ label: f_label, url: f_url })
+  Some({ label: f_label, url: f_url, })
 }
 
 ///|
@@ -103,7 +103,7 @@ impl @component.Fields for LoaderBarState with fn decode(f) {
     }
     v_samples.push(x1_samples)
   }
-  Some({ status: v_status, url: v_url, showUrl: v_showUrl, samples: v_samples })
+  Some({ status: v_status, url: v_url, showUrl: v_showUrl, samples: v_samples, })
 }
 
 ///|

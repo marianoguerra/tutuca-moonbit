@@ -104,7 +104,7 @@ fn maybe_fragment(childs : Array[ANode]) -> ANode {
 /// Placeholder used while constructing wrapper nodes before wrap_node runs
 /// (wrappers are built with node=null and assigned right after).
 fn empty_node() -> ANode {
-  Fragment({ childs: [] })
+  Fragment({ childs: [], })
 }
 
 ///|

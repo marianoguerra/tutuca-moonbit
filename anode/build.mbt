@@ -71,7 +71,7 @@ pub fn if_attr(
   then_val? : @tutuca.Val,
   else_val? : @tutuca.Val,
 ) -> AttrItem {
-  If({ name, cond_val: cond, then_val, else_val })
+  If({ name, cond_val: cond, then_val, else_val, })
 }
 
 ///|
@@ -131,42 +131,42 @@ pub fn frag(childs : Array[ANode]) -> ANode {
 
 ///|
 pub fn dyn_text(val : @tutuca.Val, id? : Int) -> ANode {
-  RenderText({ node_id: id, val })
+  RenderText({ node_id: id, val, })
 }
 
 ///|
 pub fn render(id : Int, val : @tutuca.Val, view? : @tutuca.Val) -> ANode {
-  Render({ node_id: id, val, view_val: view })
+  Render({ node_id: id, val, view_val: view, })
 }
 
 ///|
 pub fn render_it(id : Int, view? : @tutuca.Val) -> ANode {
-  RenderIt({ node_id: id, view_val: view })
+  RenderIt({ node_id: id, view_val: view, })
 }
 
 ///|
 pub fn show(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
-  Show({ node_id: id, val, node })
+  Show({ node_id: id, val, node, })
 }
 
 ///|
 pub fn hide(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
-  Hide({ node_id: id, val, node })
+  Hide({ node_id: id, val, node, })
 }
 
 ///|
 pub fn push_view(val : @tutuca.Val, node : ANode, id? : Int) -> ANode {
-  PushView({ node_id: id, val, node })
+  PushView({ node_id: id, val, node, })
 }
 
 ///|
 pub fn scope(id : Int, val : @tutuca.Val, node : ANode) -> ANode {
-  Scope({ node_id: Some(id), val, node })
+  Scope({ node_id: Some(id), val, node, })
 }
 
 ///|
 pub fn slot(name : String, node : ANode) -> ANode {
-  Slot({ name, node })
+  Slot({ name, node, })
 }
 
 ///|
@@ -181,7 +181,7 @@ pub fn each(
 ) -> ANode {
   Each({
     node_id: id,
-    iter_info: { val, when_val, loop_with_val, enrich_with_val },
+    iter_info: { val, when_val, loop_with_val, enrich_with_val, },
     node,
     from_render_each,
   })
@@ -198,5 +198,5 @@ pub fn on(
   modifiers? : Array[String] = [],
   binding? : BindCoercion,
 ) -> NodeEvent {
-  { name, handler: { handler, args }, modifiers, binding }
+  { name, handler: { handler, args, }, modifiers, binding, }
 }

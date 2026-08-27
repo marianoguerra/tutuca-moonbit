@@ -26,7 +26,7 @@ pub(all) struct CompNameState {
 ///
 ///   init={ ..CompNameState::zero(), label: "Counter" }
 pub fn CompNameState::zero() -> CompNameState {
-  { name: "" }
+  { name: "", }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for CompNameState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for CompNameState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some({ name: v_name })
+  Some({ name: v_name, })
 }
 
 ///|
@@ -93,7 +93,7 @@ pub(all) struct CompFieldState {
 ///
 ///   init={ ..CompFieldState::zero(), label: "Counter" }
 pub fn CompFieldState::zero() -> CompFieldState {
-  { name: "", typeName: "", child: Null }
+  { name: "", typeName: "", child: Null, }
 }
 
 ///|
@@ -114,7 +114,7 @@ impl @component.Fields for CompFieldState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("typeName") is Some(Str(v_typeName)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
-  Some({ name: v_name, typeName: v_typeName, child: v_child })
+  Some({ name: v_name, typeName: v_typeName, child: v_child, })
 }
 
 ///|
@@ -166,7 +166,7 @@ pub(all) struct CompViewState {
 ///
 ///   init={ ..CompViewState::zero(), label: "Counter" }
 pub fn CompViewState::zero() -> CompViewState {
-  { name: "", rawView: "", isExpanded: false }
+  { name: "", rawView: "", isExpanded: false, }
 }
 
 ///|
@@ -191,7 +191,7 @@ impl @component.Fields for CompViewState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("rawView") is Some(Str(v_rawView)) else { return None }
   guard f.get("isExpanded") is Some(Bool(v_isExpanded)) else { return None }
-  Some({ name: v_name, rawView: v_rawView, isExpanded: v_isExpanded })
+  Some({ name: v_name, rawView: v_rawView, isExpanded: v_isExpanded, })
 }
 
 ///|
@@ -365,7 +365,7 @@ pub(all) struct CompSectionState {
 ///
 ///   init={ ..CompSectionState::zero(), label: "Counter" }
 pub fn CompSectionState::zero() -> CompSectionState {
-  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, label: "" }
+  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, label: "", }
 }
 
 ///|
@@ -632,7 +632,7 @@ pub(all) struct ComponentInspectorState {
 ///
 ///   init={ ..ComponentInspectorState::zero(), label: "Counter" }
 pub fn ComponentInspectorState::zero() -> ComponentInspectorState {
-  { compName: "", compId: 0, sections: [] }
+  { compName: "", compId: 0, sections: [], }
 }
 
 ///|
@@ -664,7 +664,7 @@ impl @component.Fields for ComponentInspectorState with fn decode(f) {
     let x1_sections = e1_sections
     v_sections.push(x1_sections)
   }
-  Some({ compName: v_compName, compId: v_compId, sections: v_sections })
+  Some({ compName: v_compName, compId: v_compId, sections: v_sections, })
 }
 
 ///|

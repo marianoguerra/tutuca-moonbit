@@ -2,7 +2,7 @@
 
 ///|
 pub fn Components::new() -> Components {
-  { by_id: Map([]) }
+  { by_id: Map([]), }
 }
 
 ///|
@@ -236,7 +236,7 @@ pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
     return None
   }
   match comp.provide.get(name) {
-    Some(p) => Some({ producer: comp.id, steps: steps_of(p.val) })
+    Some(p) => Some({ producer: comp.id, steps: steps_of(p.val), })
     None =>
       match comp.scope {
         Some(s) =>
@@ -244,7 +244,7 @@ pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
             Some(producer) =>
               match producer.provide.get(name) {
                 Some(p) =>
-                  Some({ producer: producer.id, steps: steps_of(p.val) })
+                  Some({ producer: producer.id, steps: steps_of(p.val), })
                 None => None
               }
             None => None

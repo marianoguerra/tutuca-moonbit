@@ -26,7 +26,7 @@ pub(all) struct PlaylistState {
 ///
 ///   init={ ..PlaylistState::zero(), label: "Counter" }
 pub fn PlaylistState::zero() -> PlaylistState {
-  { songs: Null }
+  { songs: Null, }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for PlaylistState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PlaylistState with fn decode(f) {
   let v_songs = f.get("songs").unwrap_or(Null)
-  Some({ songs: v_songs })
+  Some({ songs: v_songs, })
 }
 
 ///|
@@ -197,7 +197,7 @@ pub(all) struct SongState {
 ///
 ///   init={ ..SongState::zero(), label: "Counter" }
 pub fn SongState::zero() -> SongState {
-  { title: "" }
+  { title: "", }
 }
 
 ///|
@@ -216,7 +216,7 @@ impl @component.Fields for SongState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SongState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|

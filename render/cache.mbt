@@ -69,7 +69,7 @@ pub struct RenderCache {
 
 ///|
 pub fn RenderCache::new() -> RenderCache {
-  { cur: Map([]), prev: Map([]) }
+  { cur: Map([]), prev: Map([]), }
 }
 
 ///|

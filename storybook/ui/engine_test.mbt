@@ -181,7 +181,7 @@ fn shell_input(
 ) -> @tutuca.Value {
   guard root is Obj(o) else { return root }
   guard o.obj_handler(Receive, name) is Some(Handler(f)) else { return root }
-  match f(args, @tutuca.NullCtx::{  }) {
+  match f(args, @tutuca.NullCtx::{ }) {
     Some(node) => node
     None => root
   }

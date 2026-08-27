@@ -66,7 +66,7 @@ fn P::bump(self : P) -> ScriptToken {
 /// inside it.
 fn P::since(self : P, from : Span) -> Span {
   let prev = if self.at > 0 { self.toks[self.at - 1].span } else { from }
-  { start: from.start, end_: prev.end_ }
+  { start: from.start, end_: prev.end_, }
 }
 
 ///|
@@ -318,7 +318,7 @@ fn expr_span(e : Expr) -> Span {
 /// this way — a fresh cursor over a bare substring, and a demand that the
 /// whole of it was consumed.
 pub fn parse_expr_source(source : String) -> Expr raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0 }
+  let p : P = { toks: tokenize_script(source), at: 0, }
   let e = parse_expr(p)
   if !(p.peek() is TEof) {
     raise Unexpected(
@@ -332,7 +332,7 @@ pub fn parse_expr_source(source : String) -> Expr raise ScriptError {
 
 ///|
 pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0 }
+  let p : P = { toks: tokenize_script(source), at: 0, }
   let out : Array[Decl] = []
   // One name per bucket: a name answered twice is refused rather than ordered,
   // in the spirit of `Path::update`'s "one lookup, by exact name, with no
@@ -387,7 +387,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     if !(p.peek() is TRParen) {
       for ;; {
         let (pn, ps) = p.ident("a parameter name")
-        params.push({ name: pn, span: ps })
+        params.push({ name: pn, span: ps, })
         if p.peek() is TComma {
           p.bump() |> ignore
           continue
@@ -486,7 +486,7 @@ fn parse_clauses(
       )
     }
     let (n, ns) = p.ident("the `pred` `\{word}` names")
-    let clause : Attach = { name: n, span: ns }
+    let clause : Attach = { name: n, span: ns, }
     if word == "requires" {
       guard requires_ is None else {
         raise Unexpected(
@@ -601,7 +601,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
       let amp = p.span()
       p.bump() |> ignore
       let place = parse_place(p, for_ref=true)
-      args.push(ERef(place~, span={ start: amp.start, end_: place.span.end_ }))
+      args.push(ERef(place~, span={ start: amp.start, end_: place.span.end_, }))
     }
     while starts_argument(p.peek()) {
       args.push(parse_atom(p))
@@ -723,7 +723,7 @@ fn parse_ty_ref(p : P) -> TyRef raise ScriptError {
     }
     p.expect(TRBracket, "`]` closing the type arguments")
   }
-  { name, args, span: if args.is_empty() { name_span } else { p.since(from) } }
+  { name, args, span: if args.is_empty() { name_span } else { p.since(from) }, }
 }
 
 // ---------------------------------------------------------------------------
@@ -752,7 +752,7 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
     _ => p.fail("a place: `.field` or `@binding`")
   }
   let steps = parse_steps(p, for_ref~)
-  { root, steps, span: p.since(from) }
+  { root, steps, span: p.since(from), }
 }
 
 ///|
@@ -1000,7 +1000,7 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
       // path rather than to two things.
       if starts_attached_step(p) {
         let steps = parse_steps(p, for_ref=false)
-        let place : Place = { root: PParam(n), steps, span: p.since(from) }
+        let place : Place = { root: PParam(n), steps, span: p.since(from), }
         return ERead(place~, span=place.span)
       }
       let args : Array[Expr] = []
@@ -1060,7 +1060,7 @@ fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError 
         // The interior is its own little expression. Its spans index the
         // interior, so they are rebased onto the template token — a column
         // inside an interpolation is not worth a second offset discipline.
-        let ip : P = { toks: tokenize_script(inner.to_string()), at: 0 }
+        let ip : P = { toks: tokenize_script(inner.to_string()), at: 0, }
         let e = parse_expr(ip)
         if !(ip.peek() is TEof) {
           raise Unexpected(

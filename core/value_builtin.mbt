@@ -60,14 +60,14 @@ let builtin_table : Map[String, Builtin] = {
     arity: 1,
     apply: args => Bool(pred_truthy(args[0])),
   },
-  "null?": { name: "null?", arity: 1, apply: args => Bool(args[0] is Null) },
+  "null?": { name: "null?", arity: 1, apply: args => Bool(args[0] is Null), },
 
   // -- Logic ---------------------------------------------------------------
   //
   // `not` evaluates here; `and` / `or` do not — `Val::eval` short-circuits
   // them, because `apply` is handed evaluated arguments and a guard like
   // `and (truthy? .items) ($firstLabel)` has to be able to stop.
-  "not": { name: "not", arity: 1, apply: args => Bool(!op_truthy(args[0])) },
+  "not": { name: "not", arity: 1, apply: args => Bool(!op_truthy(args[0])), },
   "and": {
     name: "and",
     arity: 2,
@@ -91,7 +91,7 @@ let builtin_table : Map[String, Builtin] = {
   // contents compare equal here as they do in a compiled handler. The ordering
   // four read both sides as numbers, which a non-number answers 0 for —
   // the interpreter's analogue of the type error the compiled backend raises.
-  "is": { name: "is", arity: 2, apply: args => Bool(args[0] == args[1]) },
+  "is": { name: "is", arity: 2, apply: args => Bool(args[0] == args[1]), },
   "is not": {
     name: "is not",
     arity: 2,
@@ -206,7 +206,7 @@ let builtin_table : Map[String, Builtin] = {
     arity: 1,
     apply: args => Num(args[0].num().to_int().to_double()),
   },
-  "num": { name: "num", arity: 1, apply: args => Num(args[0].num()) },
+  "num": { name: "num", arity: 1, apply: args => Num(args[0].num()), },
   "str": {
     name: "str",
     arity: 1,

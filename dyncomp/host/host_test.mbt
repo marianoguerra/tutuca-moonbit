@@ -28,8 +28,8 @@ fn FakeGuest::new() -> FakeGuest {
     histories: Map([]),
     pairs: Map([]),
     titles: Map([]),
-    next: { val: 0 },
-    bundle: { val: None },
+    next: { val: 0, },
+    bundle: { val: None, },
     served: [],
   }
 }
@@ -164,18 +164,26 @@ impl Guest for FakeGuest with fn dispatch(
           next: None,
           msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])],
         }
-      _ => { handled: false, next: None, msgs: [] }
+      _ => { handled: false, next: None, msgs: [], }
     }
   }
   if self.titles.contains(handle) {
-    return { handled: false, next: None, msgs: [] }
+    return { handled: false, next: None, msgs: [], }
   }
   let count = self.counters.get(handle).unwrap()
   match (bucket, name) {
     (Receive, "inc") =>
-      { handled: true, next: Some(self.next_of(handle, count + 1.0)), msgs: [] }
+      {
+        handled: true,
+        next: Some(self.next_of(handle, count + 1.0)),
+        msgs: [],
+      }
     (Receive, "dec") =>
-      { handled: true, next: Some(self.next_of(handle, count - 1.0)), msgs: [] }
+      {
+        handled: true,
+        next: Some(self.next_of(handle, count - 1.0)),
+        msgs: [],
+      }
     // the answer comes back at "doubled" with just the value (on_ok_name)
     (Receive, "double") =>
       {
@@ -192,8 +200,8 @@ impl Guest for FakeGuest with fn dispatch(
     (Receive, "doubled") =>
       match args {
         [Num(n), ..] =>
-          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { handled: true, next: None, msgs: [] }
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
       }
     // an intent the BUNDLE serves on its own scope (see serve_intent), not
     // one the host answers
@@ -212,8 +220,8 @@ impl Guest for FakeGuest with fn dispatch(
     (Receive, "tripled") =>
       match args {
         [Num(n), ..] =>
-          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { handled: true, next: None, msgs: [] }
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
       }
     (Receive, "notify") =>
       {
@@ -278,14 +286,14 @@ impl Guest for FakeGuest with fn dispatch(
         ],
       }
     (Receive, "reset") =>
-      { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [] }
+      { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [], }
     (Receive, "setTo") =>
       match args {
         [Num(n), ..] =>
-          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { handled: true, next: None, msgs: [] }
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [], }
+        _ => { handled: true, next: None, msgs: [], }
       }
-    _ => { handled: false, next: None, msgs: [] }
+    _ => { handled: false, next: None, msgs: [], }
   }
 }
 
@@ -394,7 +402,7 @@ impl Guest for FakeGuest with fn drop_instance(self, handle) {
 /// BEHAVES, and spelling three blanks per field there would bury it; the
 /// documented and constrained shapes are exercised in the parsing tests below.
 fn plain_field(name : String, ty : Int) -> DynFieldDef {
-  { name, ty, doc: "", required: false, constraint: None }
+  { name, ty, doc: "", required: false, constraint: None, }
 }
 
 ///|
@@ -466,7 +474,7 @@ fn counter_manifest() -> DynManifest {
         ],
         types: [
           num_ty,
-          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [] },
+          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [], },
         ],
         fields: [plain_field("count", 0), plain_field("history", 1)],
         // `setCount` is deliberately absent: it is the mutator the `count`
@@ -576,7 +584,7 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         types: [
-          { kind: "ty-text", elem: None, items: [], name: "", members: [] },
+          { kind: "ty-text", elem: None, items: [], name: "", members: [], },
           {
             kind: "ty-comp",
             elem: None,
@@ -628,25 +636,25 @@ fn shell_module() -> @component.ModuleDef {
       ),
     },
     name="Shell",
-    init=TestShellState::{ slot: Null, note: "" },
+    init=TestShellState::{ slot: Null, note: "", },
     // A HOST component publishing to its subtree, which includes whatever
     // bundle gets mounted into `.slot`. The guest reads it as `*theme` — see
     // the manifest's `lookup` — and nothing about that crosses the guest ABI.
     provide={ "theme": ".note" },
     update=(s : TestShellState, msg, ctx) => {
       match msg {
-        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
         // Shell is the SENDER here, so the guest's reply has a position to
         // reach.
         Receive("poke", _) => {
           ctx.at().field("slot").send("ping", [])
           Unchanged
         }
-        Receive("pong", [Str(who)]) => Next({ ..s, note: "pong:\{who}" })
-        Intent("counterChanged", [v, ..]) => Next({ ..s, note: v.str() })
+        Receive("pong", [Str(who)]) => Next({ ..s, note: "pong:\{who}", })
+        Intent("counterChanged", [v, ..]) => Next({ ..s, note: v.str(), })
         // only reached when nothing below stopped the bubble
         Intent("counted", [v, ..]) =>
-          Next({ ..s, note: "counted \{v.to_display_string()}" })
+          Next({ ..s, note: "counted \{v.to_display_string()}", })
         _ => Unhandled
       }
     },
@@ -705,10 +713,10 @@ fn filler_comp() -> @component.Component {
         ),
       ),
     },
-    init=FillerState::{ note: "fresh" },
+    init=FillerState::{ note: "fresh", },
     update=(s, msg, _ctx) => {
       match msg {
-        Receive("bump", _) => Next({ note: s.note + "!" })
+        Receive("bump", _) => Next({ note: s.note + "!", })
         _ => Unhandled
       }
     },
@@ -925,7 +933,7 @@ test "a guest refusing its own bytes falls back to the fields" {
   let (_h, bundle) = mount_with_bundle(fake)
   guard! bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
   guard! bundle.snapshot(a.to_value()) is Some(snap)
-  let stale = { ..snap, state: @utf8.encode("from a format ago") }
+  let stale = { ..snap, state: @utf8.encode("from a format ago"), }
   guard! bundle.restore(stale) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 3.0)
 }
@@ -1202,15 +1210,15 @@ test "the default policy refuses CSS and a bomb" {
   let styleless : DynManifest = {
     ..base,
     module_name: "styleless",
-    components: base.components.map(c => ({ ..c, style: "" } : DynComponentDef)),
+    components: base.components.map(c => ({ ..c, style: "", } : DynComponentDef)),
   }
   assert_false(refused(styleless))
   // and a manifest too large to parse before rendering anything
   let many : Array[DynComponentDef] = []
   for i in 0..<200 {
-    many.push({ ..styleless.components[0], name: "C\{i}" })
+    many.push({ ..styleless.components[0], name: "C\{i}", })
   }
-  assert_true(refused({ ..styleless, module_name: "huge", components: many }))
+  assert_true(refused({ ..styleless, module_name: "huge", components: many, }))
 }
 
 ///|
@@ -1224,7 +1232,7 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
       ..base,
       module_name: "view-policy",
       components: [
-        { ..base.components[0], style: "", views: [{ name: "main", html }] },
+        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
       ],
     }
     let mut ok = true
@@ -1254,7 +1262,7 @@ test "allowing external URLs lets a registered guest view name a pinned image" {
       ..base,
       module_name: "avatar-policy",
       components: [
-        { ..base.components[0], style: "", views: [{ name: "main", html }] },
+        { ..base.components[0], style: "", views: [{ name: "main", html, }], },
       ],
     }
     let mut ok = true
@@ -1329,7 +1337,7 @@ test "a guest view that sets markup directly is refused" {
     components: [
       {
         ..m.components[0],
-        views: [{ name: "main", html: "<div class=\"tidy-marker\"></div>" }],
+        views: [{ name: "main", html: "<div class=\"tidy-marker\"></div>", }],
       },
     ],
   }
@@ -1461,7 +1469,7 @@ impl @component.Fields for TestShellState with fn encode(s) {
 impl @component.Fields for TestShellState with fn decode(f) {
   let v_slot = f.get("slot").unwrap_or(Null)
   guard f.get("note") is Some(Str(v_note)) else { return None }
-  Some({ slot: v_slot, note: v_note })
+  Some({ slot: v_slot, note: v_note, })
 }
 
 ///|
@@ -1494,7 +1502,7 @@ test "a bundle's views are linted at load" {
         // no build step ever checked for a guest, because its views arrive at
         // RUNTIME
         views: [
-          { name: "main", html: "<div><span @on.click=\".nope\">hi</div>" },
+          { name: "main", html: "<div><span @on.click=\".nope\">hi</div>", },
         ],
         types: [],
         fields: [],
@@ -2054,7 +2062,7 @@ test "a bound name the bundle does not declare is a diagnostic" {
   let plain : DynManifest = {
     ..base,
     module_name: "no-config-here",
-    components: [{ ..base.components[0], style: "" }],
+    components: [{ ..base.components[0], style: "", }],
   }
   let b = register_bundle(
     h.app.scope,
@@ -2132,10 +2140,10 @@ fn no_provide_shell() -> @component.ModuleDef {
       ),
     },
     name="Bare",
-    init=TestShellState::{ slot: Null, note: "" },
+    init=TestShellState::{ slot: Null, note: "", },
     update=(s : TestShellState, msg, _ctx) => {
       match msg {
-        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v, })
         _ => Unhandled
       }
     },
@@ -2226,7 +2234,10 @@ test "a guest value body reads a declared lookup" {
   let (_, bundle) = mount_with_bundle(fake)
   guard! bundle.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   guard! inst.to_value() is Obj(o)
-  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  let stack : &@tutuca.Stack = OneBinding::{
+    name: "theme",
+    value: Str("dark"),
+  }
   guard! o.obj_method_at("themeLabel", stack) is Some(Fn(f))
   assert_true(f([Null]) is Str("dark"))
   // A name the manifest declares no lookup for is not resolved and not sent,

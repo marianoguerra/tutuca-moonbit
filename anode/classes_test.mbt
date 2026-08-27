@@ -12,7 +12,7 @@ impl @anode.MacroScope for NoMacros with fn lookup_macro(_self, _name) {
 ///|
 fn classes_of(raw_view : String) -> Array[String] raise {
   let v = @anode.View::new("main", raw_view~)
-  v.compile(@anode.ParseContext::new(), NoMacros::{  }, cid=LNum(0))
+  v.compile(@anode.ParseContext::new(), NoMacros::{ }, cid=LNum(0))
   let set : Set[String] = Set([])
   guard! v.anode is Some(node)
   node.collect_classes(set)

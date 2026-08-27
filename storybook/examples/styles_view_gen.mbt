@@ -91,7 +91,7 @@ pub(all) struct StylesExampleRootState {
 ///
 ///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
 pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
-  { value: Null }
+  { value: Null, }
 }
 
 ///|
@@ -110,7 +110,7 @@ impl @component.Fields for StylesExampleRootState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleRootState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|

@@ -18,7 +18,7 @@ priv struct IrState {
 
 ///|
 fn ir_state() -> IrState {
-  { label: "Counter", count: 2, history: [1, 2] }
+  { label: "Counter", count: 2, history: [1, 2], }
 }
 
 ///|
@@ -100,7 +100,7 @@ test "handlers dispatch through a compiled tree" {
     init=ir_state(),
     update=(s : IrState, msg, _ctx) => {
       match msg {
-        Receive("add", [Num(d)]) => Next({ ..s, count: s.count + d.to_int() })
+        Receive("add", [Num(d)]) => Next({ ..s, count: s.count + d.to_int(), })
         _ => Unhandled
       }
     },
@@ -195,7 +195,7 @@ test "a file-declared macro renders like a MoonBit-registered one" {
   let from_tree = @component.component(
     name="BadgeTree",
     views=@viewgen.build_views(vs.components[0], macros=vs.macros),
-    init=BadgeState::{ title: "hi" },
+    init=BadgeState::{ title: "hi", },
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
@@ -206,11 +206,11 @@ test "a file-declared macro renders like a MoonBit-registered one" {
       ),
     },
     name="BadgeRuntime",
-    init=BadgeState::{ title: "hi" },
+    init=BadgeState::{ title: "hi", },
   )
   let scope = @component.ComponentStack::new()
   scope.register_macros({
-    "badge": { defaults: vs.macros[0].defaults, raw_view: vs.macros[0].source },
+    "badge": { defaults: vs.macros[0].defaults, raw_view: vs.macros[0].source, },
   })
   scope.register_components([from_macro])
   scope.compile_all()
@@ -265,7 +265,7 @@ impl @component.Fields for IrState with fn decode(f) {
     guard x is Num(n) else { return None }
     v_history.push(n.to_int())
   }
-  Some({ label: v_label, count: v_count, history: v_history })
+  Some({ label: v_label, count: v_count, history: v_history, })
 }
 
 ///|
@@ -276,7 +276,7 @@ impl @component.Fields for BadgeState with fn encode(s) {
 ///|
 impl @component.Fields for BadgeState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|

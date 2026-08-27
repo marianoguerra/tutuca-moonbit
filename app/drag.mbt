@@ -134,7 +134,7 @@ fn[N : @vdom.DomWalk] App::handle_drag(
       )
       self.drag = Some({
         node,
-        info: Obj(DragInfoObj::{ drag_type, val: value, stack }),
+        info: Obj(DragInfoObj::{ drag_type, val: value, stack, }),
       })
     }
     "drop" => self.clean_drag_over()

@@ -107,7 +107,7 @@ fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
   guard v is Map(m) else { return None }
   guard m.get("text") is Some(Str(f_text)) else { return None }
   guard m.get("done") is Some(Bool(f_done)) else { return None }
-  Some({ text: f_text, done: f_done })
+  Some({ text: f_text, done: f_done, })
 }
 
 ///|

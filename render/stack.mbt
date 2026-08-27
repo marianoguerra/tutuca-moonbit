@@ -33,7 +33,7 @@ pub fn RenderStack::enter(
   binds : Map[String, @tutuca.Value],
   is_frame? : Bool = true,
 ) -> RenderStack {
-  let stack : RenderStack = { ..self, it, binds, parent: Some(self), is_frame }
+  let stack : RenderStack = { ..self, it, binds, parent: Some(self), is_frame, }
   // only frames publish provides (JS: enter() calls _pushProvides when
   // isFrame — dynamic vars come from component boundaries, not scopes)
   if is_frame {
@@ -65,7 +65,7 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   for tname, cid in comp.provide_type {
     types[tname] = cid
   }
-  { ..self, dyn_binds: Some({ binds, types, parent: self.dyn_binds }) }
+  { ..self, dyn_binds: Some({ binds, types, parent: self.dyn_binds, }), }
 }
 
 ///|

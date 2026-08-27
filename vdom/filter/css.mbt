@@ -62,7 +62,7 @@ pub fn CssFilter::new(
   policy? : @safecss.CssPolicy = @safecss.CssPolicy::payload(),
   max_reports? : Int = 64,
 ) -> CssFilter {
-  { policy, log: DropLog::new(max_reports~) }
+  { policy, log: DropLog::new(max_reports~), }
 }
 
 ///|

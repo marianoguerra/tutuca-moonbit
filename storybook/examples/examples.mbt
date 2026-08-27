@@ -154,7 +154,7 @@ fn ex(
   title? : String,
   init? : Bool = false,
 ) -> ExampleModule {
-  { name, root, module_, example_title: title, init }
+  { name, root, module_, example_title: title, init, }
 }
 
 ///|

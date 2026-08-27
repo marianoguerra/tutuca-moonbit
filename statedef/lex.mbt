@@ -25,7 +25,7 @@ pub(all) struct Span {
 
 ///|
 /// The empty span, for a failure with no position of its own.
-let no_span : Span = { start: 0, end_: 0 }
+let no_span : Span = { start: 0, end_: 0, }
 
 ///|
 priv enum Tok {
@@ -105,7 +105,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
   let mut pending_wiring = false
   let mut after_equals = false
   fn push(t : Tok, start : Int, end_ : Int) -> Unit {
-    out.push({ tok: t, span: { start, end_ } })
+    out.push({ tok: t, span: { start, end_, }, })
   }
 
   while i < n {
@@ -200,7 +200,7 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
         j = j + 1
       }
       if !closed {
-        raise Syntax(msg="unterminated string", span={ start, end_: n })
+        raise Syntax(msg="unterminated string", span={ start, end_: n, })
       }
       push(TStr(text.to_string()), start, j)
       i = j
@@ -227,7 +227,8 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       }
       let s = text.to_string()
       let v : Double = @string.from_str(s) catch {
-        _ => raise Syntax(msg="`\{s}` is not a number", span={ start, end_: i })
+        _ =>
+          raise Syntax(msg="`\{s}` is not a number", span={ start, end_: i, })
       }
       push(TNum(v), start, i)
       continue

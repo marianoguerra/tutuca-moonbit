@@ -84,7 +84,7 @@ fn[S] TypedInstance::make(
         fields,
       )
   }
-  { spec, state, fields, id, boxed: None }
+  { spec, state, fields, id, boxed: None, }
 }
 
 ///|
@@ -317,7 +317,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
     // being asked from a render position, so a `*name` inside it has no
     // ancestry to walk and answers Null. `obj_method_at` below is the seam for
     // the caller that DOES have one.
-    None => self.callable_of(name, @tutuca.NullStack::{  })
+    None => self.callable_of(name, @tutuca.NullStack::{ })
   }
 }
 
@@ -333,7 +333,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
-  @tutuca.Obj::obj_callable_at(self, name, ns, @tutuca.NullStack::{  })
+  @tutuca.Obj::obj_callable_at(self, name, ns, @tutuca.NullStack::{ })
 }
 
 ///|

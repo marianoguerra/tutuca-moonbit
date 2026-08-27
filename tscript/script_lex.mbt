@@ -113,7 +113,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
   // Set by every whitespace and comment run, cleared by every token pushed.
   let gap : Ref[Bool] = Ref(false)
   fn push(t : STok, start : Int, end_ : Int) -> Unit {
-    out.push({ tok: t, span: { start, end_ }, pre_space: gap.val })
+    out.push({ tok: t, span: { start, end_, }, pre_space: gap.val, })
     gap.val = false
   }
 
@@ -201,7 +201,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       }
       let s = text.to_string()
       let v : Double = @string.from_str(s) catch {
-        _ => raise Unexpected(got=s, want="a number", span={ start, end_: i })
+        _ => raise Unexpected(got=s, want="a number", span={ start, end_: i, })
       }
       push(TNum(v), start, i)
       continue
@@ -300,7 +300,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
         raise Unexpected(
           got=c.to_string(),
           want="a declaration, a statement or an expression",
-          span={ start: i, end_: i + 1 },
+          span={ start: i, end_: i + 1, },
         )
     }
     push(single, i, i + 1)

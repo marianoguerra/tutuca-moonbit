@@ -427,13 +427,13 @@ pub fn compile(
           name: comp,
           reason: "this host compiles cards without their `<script type=\"tutuca/wax\"> block — whether a card may carry hand-written code is the host's decision, and this one did not grant it",
           line: b.line,
-          span: { start: b.offset, end_: b.offset + b.text.length() },
+          span: { start: b.offset, end_: b.offset + b.text.length(), },
         })
         []
       }
       None => []
     }
-    comps.push({ g, decls, escape_fields })
+    comps.push({ g, decls, escape_fields, })
   }
   // Two escape blocks defining the same function.
   //

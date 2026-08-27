@@ -116,7 +116,7 @@ pub fn mount(
       @dhw.load_url(tools_path(), s.url) |> ignore
     }
   }
-  Some({ app, gallery })
+  Some({ app, gallery, })
 }
 
 ///|

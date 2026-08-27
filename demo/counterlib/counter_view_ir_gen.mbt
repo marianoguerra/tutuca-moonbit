@@ -110,14 +110,14 @@ fn counter_inline_update(
   match msg {
     Receive("add", args) => {
       guard args.get(0) is Some(Num(d)) else { return Unchanged }
-      let s = { ..s, count: (s.count.to_double() + d).to_int() }
-      let s = { ..s, history: s.history + [s.count] }
+      let s = { ..s, count: (s.count.to_double() + d).to_int(), }
+      let s = { ..s, history: s.history + [s.count], }
       Next(s)
     }
     Receive("resetTo", args) => {
       guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int() }
-      let s = { ..s, history: s.history + [s.count] }
+      let s = { ..s, count: n.to_int(), }
+      let s = { ..s, history: s.history + [s.count], }
       Next(s)
     }
     _ => Unhandled

@@ -157,7 +157,7 @@ fn request_example_inline_update(
           ),
         )
       })
-      let s = { ..s, isLoading: true }
+      let s = { ..s, isLoading: true, }
       for f in effects {
         f()
       }

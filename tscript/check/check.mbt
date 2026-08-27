@@ -54,7 +54,7 @@ fn C::say(
   message : String,
   span : @tscript.Span,
 ) -> Unit {
-  self.out.push({ code, message, span, severity: SError })
+  self.out.push({ code, message, span, severity: SError, })
 }
 
 ///|
@@ -66,12 +66,12 @@ fn C::warn(
   message : String,
   span : @tscript.Span,
 ) -> Unit {
-  self.out.push({ code, message, span, severity: SWarning })
+  self.out.push({ code, message, span, severity: SWarning, })
 }
 
 ///|
 pub fn Surface::empty() -> Surface {
-  { inputs: Map([]), knows_views: false, open_senders: false, comps: [] }
+  { inputs: Map([]), knows_views: false, open_senders: false, comps: [], }
 }
 
 ///|
@@ -148,7 +148,7 @@ fn C::view_names(self : C, decls : Array[@tscript.Decl]) -> Unit {
       // The block has no span for a name it does not mention, so the finding
       // points at the block's start. Where the name IS written is the view,
       // and this package cannot see one.
-      { start: 0, end_: 0 },
+      { start: 0, end_: 0, },
     )
   }
 }

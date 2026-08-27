@@ -24,7 +24,7 @@ impl @component.Fields for LinkState with fn encode(s) {
 ///|
 impl @component.Fields for LinkState with fn decode(f) {
   guard f.get("url") is Some(Str(v_url)) else { return None }
-  Some({ url: v_url })
+  Some({ url: v_url, })
 }
 
 ///|
@@ -44,7 +44,7 @@ fn link_component() -> @component.Component {
       ),
     },
     name="Linker",
-    init=LinkState::{ url: "/safe" },
+    init=LinkState::{ url: "/safe", },
   )
 }
 
@@ -84,7 +84,7 @@ fn mk_filtered_app(
   }
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let f = ClassDropper::{ dropped: 0 }
+  let f = ClassDropper::{ dropped: 0, }
   let a = @app.App::new(
     scope,
     c.make(Map([])),
@@ -202,7 +202,7 @@ test "a filter added after mount applies from the next render" {
   assert_true(container.to_html().contains("class=\"link\""))
 
   // Adding does NOT reach back into the DOM.
-  let dropper = ClassDropper::{ dropped: 0 }
+  let dropper = ClassDropper::{ dropped: 0, }
   a.add_filter(dropper)
   assert_true(container.to_html().contains("class=\"link\""))
   assert_eq(dropper.dropped, 0)
@@ -246,7 +246,7 @@ impl @component.Fields for ChildState with fn encode(s) {
 ///|
 impl @component.Fields for ChildState with fn decode(f) {
   guard f.get("label") is Some(Str(v)) else { return None }
-  Some({ label: v })
+  Some({ label: v, })
 }
 
 ///|
@@ -266,7 +266,7 @@ fn child_comp() -> @component.Component {
       ),
     },
     name="FChild",
-    init=ChildState::{ label: "a" },
+    init=ChildState::{ label: "a", },
   )
 }
 
@@ -283,7 +283,7 @@ impl @component.Fields for ParentState with fn encode(s) {
 ///|
 impl @component.Fields for ParentState with fn decode(f) {
   guard f.get("title") is Some(Str(v)) else { return None }
-  Some({ title: v })
+  Some({ title: v, })
 }
 
 ///|
@@ -304,7 +304,7 @@ fn parent_comp() -> @component.Component {
       ),
     },
     name="FParent",
-    init=ParentState::{ title: "t" },
+    init=ParentState::{ title: "t", },
   )
 }
 
@@ -315,7 +315,7 @@ fn mk_counted() -> (@app.App[@memdom.MemNode], @memdom.MemNode, CountingFilter) 
   guard scope.lookup_component("FParent") is Some(p) else { fail("no FParent") }
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let f = CountingFilter::{ elems: 0 }
+  let f = CountingFilter::{ elems: 0, }
   let a = @app.App::new(
     scope,
     p.make({ "title": Str("t") }),
@@ -392,7 +392,7 @@ impl @component.Fields for BodyState with fn encode(s) {
 ///|
 impl @component.Fields for BodyState with fn decode(f) {
   guard f.get("body") is Some(Str(v)) else { return None }
-  Some({ body: v })
+  Some({ body: v, })
 }
 
 ///|
@@ -414,7 +414,7 @@ fn md_component() -> @component.Component {
       ),
     },
     name="Bodied",
-    init=BodyState::{ body: "# one\n\n*hi* <script>alert(1)</script>" },
+    init=BodyState::{ body: "# one\n\n*hi* <script>alert(1)</script>", },
   )
 }
 
@@ -526,7 +526,7 @@ impl @component.Fields for LinksState with fn decode(f) {
     guard v is Str(s) else { return None }
     out.push(s)
   }
-  Some({ links: out })
+  Some({ links: out, })
 }
 
 ///|
@@ -547,7 +547,7 @@ fn mk_links_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
       ),
     },
     name="Linker",
-    init=LinksState::{ links: ["javascript:alert(document.cookie)"] },
+    init=LinksState::{ links: ["javascript:alert(document.cookie)"], },
   )
   scope.register_components([c])
   let doc = @memdom.document()

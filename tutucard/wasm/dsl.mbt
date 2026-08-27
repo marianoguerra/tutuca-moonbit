@@ -16,7 +16,7 @@ fn ins(d : @ast.InstrDesc[@basic.Location]) -> @abi.I {
 
 ///|
 fn body(xs : Array[@abi.I]) -> @basic.Annotated[Array[@abi.I], @basic.Location] {
-  { desc: xs, info: @basic.dummy_loc }
+  { desc: xs, info: @basic.dummy_loc, }
 }
 
 ///|
@@ -76,13 +76,13 @@ let f64_ : @abi.VT = F64
 /// `persistent_vector.wax`, so getting one of these wrong is a diagnostic
 /// against the stdlib rather than against this file.
 fn ref_(name : String) -> @abi.VT {
-  Ref({ nullable: false, typ: Type(id(name)) })
+  Ref({ nullable: false, typ: Type(id(name)), })
 }
 
 ///|
 /// A nullable one — `&?T`. What "no arguments" is.
 fn refopt_(name : String) -> @abi.VT {
-  Ref({ nullable: true, typ: Type(id(name)) })
+  Ref({ nullable: true, typ: Type(id(name)), })
 }
 
 ///|
@@ -160,7 +160,7 @@ fn mem(meth : String, args : Array[@abi.I]) -> @abi.I {
 
 ///|
 fn binop(op : @ast.BinOp, a : @abi.I, b : @abi.I) -> @abi.I {
-  ins(BinOpI({ desc: op, info: @basic.dummy_loc }, a, b))
+  ins(BinOpI({ desc: op, info: @basic.dummy_loc, }, a, b))
 }
 
 ///|
@@ -232,7 +232,7 @@ fn if_(cond : @abi.I, then_ : Array[@abi.I], else_ : Array[@abi.I]) -> @abi.I {
   ins(
     If(
       label=None,
-      typ={ params: [], results: [] },
+      typ={ params: [], results: [], },
       cond~,
       if_block=body(then_),
       else_block=if else_.is_empty() { None } else { Some(body(else_)) },
@@ -251,7 +251,7 @@ fn if_val(
   ins(
     If(
       label=None,
-      typ={ params: [], results: [ty] },
+      typ={ params: [], results: [ty], },
       cond~,
       if_block=body(then_),
       else_block=Some(body(else_)),
@@ -278,7 +278,7 @@ fn while_(cond : @abi.I, step : @abi.I?, block : Array[@abi.I]) -> @abi.I {
 ///|
 /// `name op= value`, e.g. `i += 1`.
 fn setop(name : String, op : @ast.BinOp, value : @abi.I) -> @abi.I {
-  ins(Set(id(name), Some({ desc: op, info: @basic.dummy_loc }), value))
+  ins(Set(id(name), Some({ desc: op, info: @basic.dummy_loc, }), value))
 }
 
 ///|

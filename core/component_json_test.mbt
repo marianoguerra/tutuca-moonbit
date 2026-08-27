@@ -79,7 +79,7 @@ fn node_source() -> @core.FnSource {
               None => f.ty.zero()
             }
           }
-          Some(Obj(Node::{ sc, fields }))
+          Some(Obj(Node::{ sc, fields, }))
         }
         None => None
       }
@@ -90,7 +90,7 @@ fn node_source() -> @core.FnSource {
 
 ///|
 fn node(name : String, fields : Map[String, @core.Value]) -> @core.Value {
-  Obj(Node::{ sc: schemas().get(name).unwrap(), fields })
+  Obj(Node::{ sc: schemas().get(name).unwrap(), fields, })
 }
 
 ///|
@@ -271,7 +271,7 @@ test "a Fn and a schema-less Obj both project to null" {
   ])
   let v : @core.Value = Obj(Node::{
     sc,
-    fields: { "text": Fn(_args => Null), "n": Obj(Bare::{  }) },
+    fields: { "text": Fn(_args => Null), "n": Obj(Bare::{ }) },
   })
   inspect(
     v.to_component_json().stringify(),
@@ -306,7 +306,7 @@ test "a field the schema does not name is not written" {
 
 ///|
 test "a module rides along and comes back" {
-  let seen : Ref[String?] = { val: None }
+  let seen : Ref[String?] = { val: None, }
   let src = @core.FnSource::new((m, name, _args, _at) => {
     seen.val = m
     if name == "Far" {
@@ -364,7 +364,7 @@ test "a key holding a slash or a tilde is escaped, per RFC 6901" {
     @core.FieldInfo::new("c~d", TyComp(None)),
   ])
   let leaf = node("Leaf", { "text": Str("a"), "n": Num(1.0) })
-  let v : @core.Value = Obj(Node::{ sc, fields: { "a/b": leaf, "c~d": leaf } })
+  let v : @core.Value = Obj(Node::{ sc, fields: { "a/b": leaf, "c~d": leaf }, })
   let seen : Array[String] = []
   v.to_component_json(claim=(_v, at) => {
     seen.push(at)

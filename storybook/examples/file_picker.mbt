@@ -64,7 +64,7 @@ fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
         lastModified: meta.get("lastModified").unwrap_or(Num(0)).num(),
         hasFile: true,
       }
-    _ => { ..s, hasFile: false }
+    _ => { ..s, hasFile: false, }
   }
 }
 
@@ -73,7 +73,7 @@ fn file_picker_comp() -> @component.Component {
   file_picker_component(
     // The File metadata is flattened into plain fields so the view can bind
     // each piece reactively. `hasFile` gates summary vs. empty-state.
-    init={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false },
+    init={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false, },
     update=(s, msg, _ctx) => {
       match msg {
         Receive("onPickFile", args) =>
@@ -104,7 +104,7 @@ pub fn file_picker_module() -> @component.ModuleDef {
     name="file-picker",
     components=[file_picker_comp()],
     examples=[
-      { component: "FilePicker", title: "Empty", args: Map([]), view: None },
+      { component: "FilePicker", title: "Empty", args: Map([]), view: None, },
       {
         component: "FilePicker",
         title: "With a file",

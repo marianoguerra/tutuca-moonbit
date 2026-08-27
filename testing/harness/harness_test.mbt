@@ -34,21 +34,21 @@ fn counter_module() -> @component.ModuleDef {
       ),
     },
     name="Counter",
-    init=CounterState::{ count: 0, label: "" },
+    init=CounterState::{ count: 0, label: "", },
     // Hand-written and complete. A fixture is not exempt: `component` takes a
     // schema because the runtime should be told a component's shape rather
     // than reconstruct it, and that holds whether the shape came from
     // `gen-views` or from here.
     update=(s : CounterState, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ ..s, count: s.count + 1 })
-        Receive("dec", _) => Next({ ..s, count: s.count - 1 })
+        Receive("inc", _) => Next({ ..s, count: s.count + 1, })
+        Receive("dec", _) => Next({ ..s, count: s.count - 1, })
         _ => Unhandled
       }
     },
   )
   @component.ModuleDef::new(name="counter", components=[comp], examples=[
-    { component: "Counter", title: "Basic Counter", args: Map([]), view: None },
+    { component: "Counter", title: "Basic Counter", args: Map([]), view: None, },
   ])
 }
 
@@ -116,7 +116,7 @@ impl @component.Fields for CounterState with fn encode(s) {
 impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ count: n_count.to_int(), label: v_label })
+  Some({ count: n_count.to_int(), label: v_label, })
 }
 
 ///|
@@ -163,7 +163,7 @@ impl @component.Fields for GateState with fn encode(s) {
 ///|
 impl @component.Fields for GateState with fn decode(f) {
   guard f.get("on") is Some(Bool(v)) else { return None }
-  Some({ on: v })
+  Some({ on: v, })
 }
 
 ///|
@@ -191,11 +191,11 @@ fn gate_module() -> @component.ModuleDef {
       ),
     },
     name="Gate",
-    init=GateState::{ on: true },
+    init=GateState::{ on: true, },
     update=(_s : GateState, msg, _ctx) => {
       match msg {
-        Receive("hide", _) => Next(({ on: false } : GateState))
-        Receive("show", _) => Next(({ on: true } : GateState))
+        Receive("hide", _) => Next(({ on: false, } : GateState))
+        Receive("show", _) => Next(({ on: true, } : GateState))
         _ => Unhandled
       }
     },

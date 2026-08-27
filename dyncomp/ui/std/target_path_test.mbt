@@ -50,7 +50,7 @@ impl @component.Fields for SpikeState with fn encode(s) {
 impl @component.Fields for SpikeState with fn decode(f) {
   guard f.get("mode") is Some(Str(mode)) else { return None }
   guard f.get("status") is Some(Str(status)) else { return None }
-  Some({ root: f.get("root").unwrap_or(Null), mode, status })
+  Some({ root: f.get("root").unwrap_or(Null), mode, status, })
 }
 
 ///|
@@ -58,7 +58,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
   let (comps, std) = std_components()
   // What the app keeps: where the last request came from. Held here rather
   // than in state, for the reason at the top of this file.
-  let target : Ref[@tutuca.DispatchPath?] = { val: None }
+  let target : Ref[@tutuca.DispatchPath?] = { val: None, }
   let spike = @component.component(
     name="Spike",
     views={
@@ -69,7 +69,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         ),
       ),
     },
-    init=SpikeState::{ root: Null, mode: "edit", status: "" },
+    init=SpikeState::{ root: Null, mode: "edit", status: "", },
     update=(s, msg, ctx) => {
       match msg {
         // The bubble arrives with a SHORTENED path (one hop popped per
@@ -78,7 +78,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         Intent("addRequested", _) => {
           target.val = Some(ctx.target_path())
           ctx.stop_propagation()
-          Next({ ..s, status: "asked:\{ctx.target_path().items.length()}" })
+          Next({ ..s, status: "asked:\{ctx.target_path().items.length()}", })
         }
         // A LATER dispatch, with nothing of the first one still on the stack —
         // which is the case the app is actually in when somebody picks a row
@@ -89,9 +89,9 @@ fn spike_module() -> (@component.ModuleDef, Std) {
               ctx.send_at_path(p, "hold", [
                 std.build("Text", { "text": Str("landed"), "size": Str("") }),
               ])
-              Next({ ..s, status: "placed" })
+              Next({ ..s, status: "placed", })
             }
-            None => Next({ ..s, status: "no target" })
+            None => Next({ ..s, status: "no target", })
           }
         // Put a two-cell stack in the root universal, so the next request comes
         // from a universal INSIDE a container — one more component boundary for
@@ -108,13 +108,13 @@ fn spike_module() -> (@component.ModuleDef, Std) {
               "wrap": Bool(false),
             }),
           ])
-          Next({ ..s, status: "stacked" })
+          Next({ ..s, status: "stacked", })
         }
         // Plant a tree built in MoonBit. The other tests in this package use it
         // to set up a shape without clicking their way to it — the clicking is
         // what they are testing, not what they need to arrange.
-        Receive("setRoot", [v, ..]) => Next({ ..s, root: v })
-        Receive("setMode", [Str(m), ..]) => Next({ ..s, mode: m })
+        Receive("setRoot", [v, ..]) => Next({ ..s, root: v, })
+        Receive("setMode", [Str(m), ..]) => Next({ ..s, mode: m, })
         _ => Unhandled
       }
     },

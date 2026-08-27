@@ -214,7 +214,7 @@ pub fn emit(
         // A refused arm is not emitted, so whatever it reached for does not
         // count towards what the function's parameters are used for.
         e.uses_ctx = before
-        refusals.push({ name: d.name, why, span: d.span })
+        refusals.push({ name: d.name, why, span: d.span, })
         continue
       }
     }
@@ -278,7 +278,7 @@ pub fn emit(
 
 ///|
 pub fn Roles::none() -> Roles {
-  { methods: [], whens: [], enriches: [], enrich_scopes: [] }
+  { methods: [], whens: [], enriches: [], enrich_scopes: [], }
 }
 
 ///|
@@ -337,7 +337,7 @@ fn E::value_bodies(
     }
     let src = self.value_body(d, role, prefix) catch {
       Cannot(why) => {
-        refusals.push({ name: d.name, why, span: d.span })
+        refusals.push({ name: d.name, why, span: d.span, })
         return
       }
     }
@@ -362,7 +362,7 @@ fn E::value_bodies(
       _ => ()
     }
   }
-  { ..out, source: b.to_string() }
+  { ..out, source: b.to_string(), }
 }
 
 ///|

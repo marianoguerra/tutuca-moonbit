@@ -102,7 +102,7 @@ fn scene_of(name : String, body : Json) -> Scene raise SceneError {
   for i, s in steps {
     out.push(step_of(name, i, s))
   }
-  { name, component, init, args, intents, raw, steps: out }
+  { name, component, init, args, intents, raw, steps: out, }
 }
 
 ///|
@@ -337,7 +337,7 @@ fn expect_of(
     // RECORD: read it and hand the answer back rather than judging it.
     (None, None) => None
   }
-  { reader, sel, place, name: str_or(o, "name", ""), nth, want }
+  { reader, sel, place, name: str_or(o, "name", ""), nth, want, }
 }
 
 // ---------------------------------------------------------------------------

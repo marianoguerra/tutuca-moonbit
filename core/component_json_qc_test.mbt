@@ -91,7 +91,7 @@ fn gen_qc_instance(depth : Int) -> @gen.Gen[@core.Value] {
         fingerprint="qc",
         fields~,
       )
-      Obj(QcNode::{ sc, fields: values })
+      Obj(QcNode::{ sc, fields: values, })
     })
   })
 }

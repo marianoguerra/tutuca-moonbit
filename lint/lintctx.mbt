@@ -3,7 +3,7 @@
 
 ///|
 pub fn LintCollector::new() -> LintCollector {
-  { parse_issues: [], attrs: [] }
+  { parse_issues: [], attrs: [], }
 }
 
 ///|
@@ -22,5 +22,5 @@ pub impl @anode.ParseHandler for LintCollector with fn on_attributes(
   is_macro_call,
   tag,
 ) {
-  self.attrs.push({ result, is_macro_call, tag })
+  self.attrs.push({ result, is_macro_call, tag, })
 }

@@ -97,7 +97,7 @@ fn SafeMarkupFilter::record(
   value : String,
   reason : String,
 ) -> Unit {
-  self.log.record({ tag, attr, value, reason })
+  self.log.record({ tag, attr, value, reason, })
 }
 
 ///|

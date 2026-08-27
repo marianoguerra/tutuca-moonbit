@@ -70,7 +70,7 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
     Err(e) => return Done(error_emit(opts, e))
   }
   if parsed.bool("help") || opts.help {
-    return Done({ out: watch_help, err: "", exit_code: 0 })
+    return Done({ out: watch_help, err: "", exit_code: 0, })
   }
   let paths = parsed.positionals
   let name = parsed.str("name")

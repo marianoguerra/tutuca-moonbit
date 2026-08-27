@@ -56,7 +56,7 @@ fn ParseContext::from_ir(
   let nodes = slots.map(s => {
     match s {
       Some(n) => n
-      None => Fragment({ childs: [] })
+      None => Fragment({ childs: [], })
     }
   })
   {
@@ -70,7 +70,7 @@ fn ParseContext::from_ir(
     config_vars: Map([]),
     val_ctx: None,
     current_tag: None,
-    handler: WarnHandler::{  },
+    handler: WarnHandler::{ },
   }
 }
 
@@ -80,7 +80,7 @@ fn ParseContext::from_ir(
 /// `id = events.length()`, so a NodeEvents id IS its position — emitting the
 /// ids would only be a chance to disagree with the array.
 pub fn events_of(handlers : Array[Array[NodeEvent]]) -> Array[NodeEvents] {
-  handlers.mapi((id, handlers) => { id, handlers })
+  handlers.mapi((id, handlers) => { id, handlers, })
 }
 
 ///|

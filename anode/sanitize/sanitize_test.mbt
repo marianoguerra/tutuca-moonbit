@@ -155,7 +155,7 @@ test "per-element attribute rules" {
   let s = Sanitizer::new({
     ..SanitizerConfig::empty(),
     elements: Some([
-      { elem: html("a"), attributes: Some(["href"]), remove_attributes: None },
+      { elem: html("a"), attributes: Some(["href"]), remove_attributes: None, },
       ElementRule::of(html("div")),
     ]),
     attributes: Some(["class"]),

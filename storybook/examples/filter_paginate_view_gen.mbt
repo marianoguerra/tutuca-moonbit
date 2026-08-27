@@ -28,7 +28,7 @@ pub(all) struct PersonState {
 ///
 ///   init={ ..PersonState::zero(), label: "Counter" }
 pub fn PersonState::zero() -> PersonState {
-  { name: "", email: "", active: false }
+  { name: "", email: "", active: false, }
 }
 
 ///|
@@ -49,7 +49,7 @@ impl @component.Fields for PersonState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("email") is Some(Str(v_email)) else { return None }
   guard f.get("active") is Some(Bool(v_active)) else { return None }
-  Some({ name: v_name, email: v_email, active: v_active })
+  Some({ name: v_name, email: v_email, active: v_active, })
 }
 
 ///|
@@ -220,7 +220,7 @@ pub(all) struct StrategiesState {
 ///
 ///   init={ ..StrategiesState::zero(), label: "Counter" }
 pub fn StrategiesState::zero() -> StrategiesState {
-  { naive: Null, shared: Null, coupled: Null }
+  { naive: Null, shared: Null, coupled: Null, }
 }
 
 ///|
@@ -241,7 +241,7 @@ impl @component.Fields for StrategiesState with fn decode(f) {
   let v_naive = f.get("naive").unwrap_or(Null)
   let v_shared = f.get("shared").unwrap_or(Null)
   let v_coupled = f.get("coupled").unwrap_or(Null)
-  Some({ naive: v_naive, shared: v_shared, coupled: v_coupled })
+  Some({ naive: v_naive, shared: v_shared, coupled: v_coupled, })
 }
 
 ///|
@@ -294,7 +294,7 @@ pub(all) struct NaivePeopleState {
 ///
 ///   init={ ..NaivePeopleState::zero(), label: "Counter" }
 pub fn NaivePeopleState::zero() -> NaivePeopleState {
-  { items: [], query: "", page: 0, pageSize: 0 }
+  { items: [], query: "", page: 0, pageSize: 0, }
 }
 
 ///|
@@ -329,7 +329,7 @@ impl @component.Fields for NaivePeopleState with fn decode(f) {
   let v_page = t1_page.to_int()
   guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
   let v_pageSize = t1_pageSize.to_int()
-  Some({ items: v_items, query: v_query, page: v_page, pageSize: v_pageSize })
+  Some({ items: v_items, query: v_query, page: v_page, pageSize: v_pageSize, })
 }
 
 ///|

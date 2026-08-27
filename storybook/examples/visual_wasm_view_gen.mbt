@@ -76,7 +76,7 @@ pub(all) struct VwImmState {
 ///
 ///   init={ ..VwImmState::zero(), label: "Counter" }
 pub fn VwImmState::zero() -> VwImmState {
-  { value: 0, rawValue: "" }
+  { value: 0, rawValue: "", }
 }
 
 ///|
@@ -97,7 +97,7 @@ impl @component.Fields for VwImmState with fn decode(f) {
   guard f.get("value") is Some(Num(t1_value)) else { return None }
   let v_value = t1_value.to_int()
   guard f.get("rawValue") is Some(Str(v_rawValue)) else { return None }
-  Some({ value: v_value, rawValue: v_rawValue })
+  Some({ value: v_value, rawValue: v_rawValue, })
 }
 
 ///|
@@ -133,7 +133,7 @@ pub(all) struct VwTypesState {
 ///
 ///   init={ ..VwTypesState::zero(), label: "Counter" }
 pub fn VwTypesState::zero() -> VwTypesState {
-  { items: [] }
+  { items: [], }
 }
 
 ///|
@@ -158,7 +158,7 @@ impl @component.Fields for VwTypesState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some({ items: v_items })
+  Some({ items: v_items, })
 }
 
 ///|
@@ -195,7 +195,7 @@ pub(all) struct VwContainerState {
 ///
 ///   init={ ..VwContainerState::zero(), label: "Counter" }
 pub fn VwContainerState::zero() -> VwContainerState {
-  { items: [], expanded: false, editing: false }
+  { items: [], expanded: false, editing: false, }
 }
 
 ///|
@@ -226,7 +226,7 @@ impl @component.Fields for VwContainerState with fn decode(f) {
   }
   guard f.get("expanded") is Some(Bool(v_expanded)) else { return None }
   guard f.get("editing") is Some(Bool(v_editing)) else { return None }
-  Some({ items: v_items, expanded: v_expanded, editing: v_editing })
+  Some({ items: v_items, expanded: v_expanded, editing: v_editing, })
 }
 
 ///|
@@ -369,7 +369,7 @@ pub(all) struct VwSectionState {
 ///
 ///   init={ ..VwSectionState::zero(), label: "Counter" }
 pub fn VwSectionState::zero() -> VwSectionState {
-  { id: 0, name: "", items: [], expanded: false, defaultItem: Null }
+  { id: 0, name: "", items: [], expanded: false, defaultItem: Null, }
 }
 
 ///|
@@ -451,7 +451,7 @@ pub(all) struct VwMemoryState {
 ///
 ///   init={ ..VwMemoryState::zero(), label: "Counter" }
 pub fn VwMemoryState::zero() -> VwMemoryState {
-  { n: 0, m: 0 }
+  { n: 0, m: 0, }
 }
 
 ///|
@@ -473,7 +473,7 @@ impl @component.Fields for VwMemoryState with fn decode(f) {
   let v_n = t1_n.to_int()
   guard f.get("m") is Some(Num(t1_m)) else { return None }
   let v_m = t1_m.to_int()
-  Some({ n: v_n, m: v_m })
+  Some({ n: v_n, m: v_m, })
 }
 
 ///|
@@ -511,7 +511,7 @@ pub(all) struct VwPickerState {
 ///
 ///   init={ ..VwPickerState::zero(), label: "Counter" }
 pub fn VwPickerState::zero() -> VwPickerState {
-  { currentSection: "", instructions: [], filter: "" }
+  { currentSection: "", instructions: [], filter: "", }
 }
 
 ///|

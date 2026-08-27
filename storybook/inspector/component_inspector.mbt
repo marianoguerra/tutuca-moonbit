@@ -139,7 +139,7 @@ fn comp_view_comp() -> @component.Component {
             )
             Unhandled
           } else {
-            Next({ ..s, isExpanded: !s.isExpanded })
+            Next({ ..s, isExpanded: !s.isExpanded, })
           }
         _ => Unhandled
       }
@@ -174,13 +174,13 @@ impl Composite for CompSectionState with fn current_page(self) {
 
 ///|
 impl Composite for CompSectionState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
 fn comp_section_comp() -> @component.Component {
   comp_section_component(
-    init={ ..CompSectionState::zero(), itemsPerPage: 10 },
+    init={ ..CompSectionState::zero(), itemsPerPage: 10, },
     compute=m => {
       match m {
         ArrowText => Some(composite_arrow_text)
@@ -211,7 +211,7 @@ fn comp_section_comp() -> @component.Component {
             )
             Unhandled
           } else {
-            Next({ ..s, isExpanded: !s.isExpanded })
+            Next({ ..s, isExpanded: !s.isExpanded, })
           }
         // The shared prev/next page arms.
         _ => composite_update(s, msg)

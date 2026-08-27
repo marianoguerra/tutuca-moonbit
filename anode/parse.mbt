@@ -4,7 +4,7 @@
 pub fn ANode::parse(html : String, px : ParseContext) -> ANode? {
   let (doc, roots) = parse_fragment(html)
   if roots.length() == 0 {
-    return Some(Comment({ val: "Empty View in ANode.parse" }))
+    return Some(Comment({ val: "Empty View in ANode.parse", }))
   }
   if roots.length() == 1 {
     return ANode::from_dom(doc, roots[0], px)
@@ -18,7 +18,7 @@ pub fn ANode::parse(html : String, px : ParseContext) -> ANode? {
   }
   let trimmed = condense_childs_whites(childs)
   if trimmed.length() == 0 {
-    return Some(Comment({ val: "Empty View in ANode.parse" }))
+    return Some(Comment({ val: "Empty View in ANode.parse", }))
   }
   Some(maybe_fragment(trimmed))
 }
@@ -45,8 +45,8 @@ fn ANode::from_dom(
   px : ParseContext,
 ) -> ANode? {
   match doc.get_node(node_id) {
-    Some(TextNode(s)) => Some(Text({ val: s }))
-    Some(CommentNode(s)) => Some(Comment({ val: s }))
+    Some(TextNode(s)) => Some(Text({ val: s, }))
+    Some(CommentNode(s)) => Some(Comment({ val: s, }))
     Some(ElementNode(el)) => from_element(doc, node_id, el, px)
     // Doctypes etc. cannot appear in template content; drop defensively.
     _ => None
@@ -103,7 +103,7 @@ fn from_element(
     let result = parse_attributes(attrs, px)
     px.handler.on_attributes(result, false, tag)
     if result.text_child is Some(tc) {
-      childs.insert(0, RenderText({ node_id: None, val: tc }))
+      childs.insert(0, RenderText({ node_id: None, val: tc, }))
     }
     let dom_childs = if tag != "pre" {
       condense_childs_whites(childs)
@@ -130,7 +130,7 @@ fn from_element(
       ),
     )
   } else {
-    Some(Comment({ val: "Error: InvalidTagName \{tag}" }))
+    Some(Comment({ val: "Error: InvalidTagName \{tag}", }))
   }
   px.current_tag = prev_tag
   result
@@ -193,14 +193,14 @@ fn make_wrapper_node(data : WrapperAttr, px : ParseContext) -> ANode? {
       })
     Scope =>
       px.add_node_if(data.val, (id, val) => {
-        Scope({ node_id: Some(id), val, node: empty_node() })
+        Scope({ node_id: Some(id), val, node: empty_node(), })
       })
     Show =>
-      data.val.map(val => Show({ node_id: None, val, node: empty_node() }))
+      data.val.map(val => Show({ node_id: None, val, node: empty_node(), }))
     Hide =>
-      data.val.map(val => Hide({ node_id: None, val, node: empty_node() }))
+      data.val.map(val => Hide({ node_id: None, val, node: empty_node(), }))
     PushView =>
-      data.val.map(val => PushView({ node_id: None, val, node: empty_node() }))
+      data.val.map(val => PushView({ node_id: None, val, node: empty_node(), }))
   }
   if node is Some(Each(d)) {
     d.iter_info.enrich_with_val = data.enrich_with_val

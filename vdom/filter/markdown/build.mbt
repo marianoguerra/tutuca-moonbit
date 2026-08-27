@@ -42,7 +42,7 @@ pub fn build(
       defs[key] = d
     }
   }
-  let b = Build::{ sanitizer, defs, host_tag, on_drop, footnotes: [] }
+  let b = Build::{ sanitizer, defs, host_tag, on_drop, footnotes: [], }
   let out = b.blocks(parsed.document.children)
   for node in b.footnote_section() {
     out.push(node)

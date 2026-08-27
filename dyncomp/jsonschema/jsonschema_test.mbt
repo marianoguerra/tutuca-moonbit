@@ -185,12 +185,12 @@ test "a constraint supplies the half a type cannot state" {
     "count": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10) }),
+      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10), }),
     },
     "tags": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), max_len: Some(3) }),
+      constraint: Some({ ..Constraint::none(), max_len: Some(3), }),
     },
   }
   let js = of_schema(s, docs~)
@@ -226,7 +226,7 @@ test "a constraint supplies the half a type cannot state" {
 test "an optional type is never required, whatever the manifest claimed" {
   let s = schema_of([@tutuca.FieldInfo::new("note", TyOption(TyText))])
   let docs : Map[String, FieldDoc] = {
-    "note": { doc: "", required: true, constraint: None },
+    "note": { doc: "", required: true, constraint: None, },
   }
   let js = of_schema(s, docs~)
   // the option unwraps: the field's schema is its element's
@@ -308,7 +308,7 @@ test "a required field that is missing is named" {
     @tutuca.FieldInfo::new("note", TyText),
   ])
   let docs : Map[String, FieldDoc] = {
-    "email": { doc: "", required: true, constraint: None },
+    "email": { doc: "", required: true, constraint: None, },
   }
   guard! coerce(s, @json.parse("{}"), docs~) is Err(errors)
   debug_inspect(
@@ -334,12 +334,12 @@ test "a constraint is checked on the way in, not only advertised" {
     "count": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10) }),
+      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10), }),
     },
     "name": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min_len: Some(2) }),
+      constraint: Some({ ..Constraint::none(), min_len: Some(2), }),
     },
     "mode": {
       doc: "",
@@ -418,8 +418,8 @@ test "what the emitted schema advertises is what coerce accepts" {
     @tutuca.FieldInfo::new("note", TyOption(TyText)),
   ])
   let docs : Map[String, FieldDoc] = {
-    "email": { doc: "", required: true, constraint: None },
-    "note": { doc: "", required: true, constraint: None },
+    "email": { doc: "", required: true, constraint: None, },
+    "note": { doc: "", required: true, constraint: None, },
   }
   let js = of_schema(s, docs~)
   // the schema requires exactly `email` — `note` is optional by type
@@ -648,15 +648,15 @@ test "a bound the type cannot carry never reaches the schema" {
     "createdAt": {
       doc: "",
       required: false,
-      constraint: Some({ ..zeros, format: "date-time", max_len: None }),
+      constraint: Some({ ..zeros, format: "date-time", max_len: None, }),
     },
     "count": {
       doc: "",
       required: false,
-      constraint: Some({ ..zeros, max_len: None }),
+      constraint: Some({ ..zeros, max_len: None, }),
     },
-    "on": { doc: "", required: false, constraint: Some(zeros) },
-    "tags": { doc: "", required: false, constraint: Some(zeros) },
+    "on": { doc: "", required: false, constraint: Some(zeros), },
+    "tags": { doc: "", required: false, constraint: Some(zeros), },
   }
   let props = at(of_schema(s, docs~), "properties").unwrap()
   // a numeric bound says nothing about text, so it is dropped rather than

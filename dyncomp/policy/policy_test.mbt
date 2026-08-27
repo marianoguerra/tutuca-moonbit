@@ -741,8 +741,8 @@ test "a path in a bound origin is dropped, not honored" {
 test "a bound value carries its own type, and a bad one is loud" {
   let refused = try {
     Policy::untrusted().with_config([
-      ("retries", { ty: TyNumber, value: "a lot" }),
-      ("verbose", { ty: TyBool, value: "yes" }),
+      ("retries", { ty: TyNumber, value: "a lot", }),
+      ("verbose", { ty: TyBool, value: "yes", }),
     ])
     |> ignore
     ""

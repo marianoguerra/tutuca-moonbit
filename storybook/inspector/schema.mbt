@@ -274,7 +274,7 @@ fn schema_property_comp() -> @component.Component {
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
   schema_branch_component(
-    init={ ..SchemaBranchState::zero(), labelClass: "text-accent" },
+    init={ ..SchemaBranchState::zero(), labelClass: "text-accent", },
     compute=m => {
       match m {
         LabelCssClass =>

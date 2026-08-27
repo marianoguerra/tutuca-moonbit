@@ -13,7 +13,7 @@ impl @anode.MacroScope for TestScope with fn lookup_macro(self, name) {
 
 ///|
 fn mk_macro(defaults : Map[String, String], raw_view : String) -> @anode.Macro {
-  { defaults, raw_view }
+  { defaults, raw_view, }
 }
 
 ///|

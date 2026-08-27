@@ -31,7 +31,7 @@ pub struct ProgramIndex {
 
 ///|
 pub fn ProgramIndex::new() -> ProgramIndex {
-  { defs: Map([]), views: Map([]) }
+  { defs: Map([]), views: Map([]), }
 }
 
 ///|
@@ -96,7 +96,7 @@ pub fn ProgramIndex::protocol_validation(
     }
   }
   if !validation.diagnostics.is_empty() {
-    { ..validation, mode: Gradual }
+    { ..validation, mode: Gradual, }
   } else {
     validation
   }

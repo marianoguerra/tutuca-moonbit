@@ -48,7 +48,7 @@ test "the three outcome names are carried separately, not as one pair" {
 
 ///|
 test "a handler with no dispatcher can reply, and nothing happens" {
-  let ctx : &@core.Ctx = @core.NullCtx::{  }
+  let ctx : &@core.Ctx = @core.NullCtx::{ }
   // None of these has a transactor under it. Each is a no-op, and the test is
   // that the call returns at all.
   ctx.intent("saveDraft", [Str("x")], @core.IntentOpts::new())

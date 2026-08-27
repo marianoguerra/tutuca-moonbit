@@ -24,7 +24,7 @@ impl @tutuca.Fields for ChkState with fn encode(s) {
 ///|
 impl @tutuca.Fields for ChkState with fn decode(f) {
   guard f.get("n") is Some(Num(v)) else { return None }
-  Some({ n: v.to_int() })
+  Some({ n: v.to_int(), })
 }
 
 ///|
@@ -36,7 +36,7 @@ fn chk_comp(
   @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name~,
-    init=ChkState::{ n: 0 },
+    init=ChkState::{ n: 0, },
     provide~,
     lookup~,
   )

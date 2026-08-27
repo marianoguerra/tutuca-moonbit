@@ -51,7 +51,7 @@ test "the JSON wire shape matches the JS renderer" {
 test "render_root emits the root Comp boundary with a null nid" {
   let px = @anode.ParseContext::new()
   let node = @anode.ANode::parse("<main>root</main>", px).unwrap()
-  let resolver = ViewMap::{ views: { "main": node } }
+  let resolver = ViewMap::{ views: { "main": node }, }
   let stack = RenderStack::new(Map(Map([])))
   let ctx = RenderCtx::new(view_resolver=resolver)
   guard render_root(Map(Map([])), stack, ctx) is Some(v) else {

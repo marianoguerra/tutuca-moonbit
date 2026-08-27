@@ -169,7 +169,7 @@ pub fn validate_protocols(defs : Array[StateDef]) -> ProtocolValidation {
       check_property_types(def, p, add)
     }
   }
-  { mode: if diagnostics.is_empty() { Strict } else { Gradual }, diagnostics }
+  { mode: if diagnostics.is_empty() { Strict } else { Gradual }, diagnostics, }
 }
 
 ///|

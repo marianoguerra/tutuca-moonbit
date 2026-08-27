@@ -31,7 +31,7 @@ test "a snapshot survives text, bytes and all" {
 ///|
 test "a snapshot with no id is not stored" {
   let store = @persist.MemStore::new()
-  assert_false(@persist.save(store, { ..sample(), id: "" }))
+  assert_false(@persist.save(store, { ..sample(), id: "", }))
   assert_eq(store.size(), 0)
 }
 
@@ -39,7 +39,7 @@ test "a snapshot with no id is not stored" {
 test "the prefix separates kinds of thing, and saved_ids strips it" {
   let store = @persist.MemStore::new()
   let _ = @persist.save(store, sample())
-  let _ = @persist.save(store, { ..sample(), id: "doc/main" }, prefix="other:")
+  let _ = @persist.save(store, { ..sample(), id: "doc/main", }, prefix="other:")
   @debug.assert_eq(@persist.saved_ids(store), ["slot/n3"])
   @debug.assert_eq(@persist.saved_ids(store, prefix="other:"), ["doc/main"])
   // and a load under the wrong prefix finds nothing rather than the wrong thing

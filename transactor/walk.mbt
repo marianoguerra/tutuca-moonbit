@@ -159,8 +159,12 @@ fn Transactor::try_lex(
     return
   }
   let IntentHandler(f) = handlers[i]
-  let call : @tutuca.IntentCall = { name: w.name, args: w.args, from: w.origin }
-  let done : Ref[Bool] = { val: false }
+  let call : @tutuca.IntentCall = {
+    name: w.name,
+    args: w.args,
+    from: w.origin,
+  }
+  let done : Ref[Bool] = { val: false, }
   f(call, answer => {
     // One answer per handler, whatever the handler does with the callback it
     // was given. The walk's own one-shot is a different guard: that one is per

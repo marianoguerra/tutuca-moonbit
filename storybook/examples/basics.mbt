@@ -62,7 +62,7 @@ pub fn static_view_module() -> @component.ModuleDef {
 /// renders: strings, numbers, booleans, null.
 fn text_directive_comp() -> @component.Component {
   text_directive_component(
-    init={ str: "hello", num: 42, bool: true, notSet: Null },
+    init={ str: "hello", num: 42, bool: true, notSet: Null, },
     compute=m => {
       match m {
         GetStrUpper => Some((s, _args, _stack) => Str(s.str.to_upper()))
@@ -144,7 +144,7 @@ pub fn set_inner_md_module() -> @component.ModuleDef {
     name="set-inner-md",
     components=[set_inner_md_comp()],
     examples=[
-      { component: "SetInnerMd", title: "Default", args: Map([]), view: None },
+      { component: "SetInnerMd", title: "Default", args: Map([]), view: None, },
       {
         component: "SetInnerMd",
         title: "GFM",

@@ -4,14 +4,14 @@
 ///|
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> DispatchPath {
   match items {
-    Some(i) => { items: i }
-    None => { items: [] }
+    Some(i) => { items: i, }
+    None => { items: [], }
   }
 }
 
 ///|
 pub fn DispatchPath::of_steps(steps : Array[Step]) -> DispatchPath {
-  { items: steps.map(s => Plain(step=s, origin=None)) }
+  { items: steps.map(s => Plain(step=s, origin=None)), }
 }
 
 ///|
@@ -32,7 +32,7 @@ pub fn DispatchPath::pop_step(self : DispatchPath) -> DispatchPath {
   if n == 0 {
     self
   } else {
-    { items: self.items[0:n - 1].to_owned() }
+    { items: self.items[0:n - 1].to_owned(), }
   }
 }
 
@@ -93,5 +93,5 @@ pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path {
       }
     }
   }
-  { steps: out.map(p => p.0) }
+  { steps: out.map(p => p.0), }
 }

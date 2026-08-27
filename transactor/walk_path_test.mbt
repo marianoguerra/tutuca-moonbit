@@ -56,7 +56,7 @@ impl @tutuca.Obj for CompNode with fn component_id(self) {
 ///|
 test "walk_path visits component instances leaf -> root" {
   let collector : Array[Int] = []
-  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector })
+  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector, })
   let root : @tutuca.Value = Obj(CompNode::{
     cid: 1,
     child: Some(leaf),
@@ -76,7 +76,7 @@ test "walk_path visits component instances leaf -> root" {
 ///|
 test "walk_path callback can stop early by returning false" {
   let collector : Array[Int] = []
-  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector })
+  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector, })
   let root : @tutuca.Value = Obj(CompNode::{
     cid: 1,
     child: Some(leaf),

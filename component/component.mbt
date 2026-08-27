@@ -3,7 +3,7 @@
 // (views, styles, provide/lookup compilation, make).
 
 ///|
-let comp_id_counter : Ref[Int] = { val: 0 }
+let comp_id_counter : Ref[Int] = { val: 0, }
 
 ///|
 fn next_comp_id() -> Int {
@@ -202,7 +202,7 @@ pub fn[S : @tutuca.Fields] component(
       // case 2: the declared slot has no name, and this entry supplies it
       fields.push(
         match (fi.ty, slots.get(fi.name)) {
-          (TyComp(None), Some(comp)) => { ..fi, ty: TyComp(Some(comp)) }
+          (TyComp(None), Some(comp)) => { ..fi, ty: TyComp(Some(comp)), }
           _ => fi
         },
       )
@@ -223,7 +223,12 @@ pub fn[S : @tutuca.Fields] component(
   // exists, but nothing declared what it is.
   for k, v in init_fields {
     if !all_specs.contains(k) {
-      all_specs[k] = { kind: FAny, default: v, protocol_ids: [], protocols: [] }
+      all_specs[k] = {
+        kind: FAny,
+        default: v,
+        protocol_ids: [],
+        protocols: [],
+      }
     }
   }
   let tspec : TypedSpec[S] = {
@@ -382,7 +387,7 @@ pub fn Component::make(
 pub fn Component::compile(self : Component) -> Unit raise {
   let scope_obj : &@anode.MacroScope = match self.scope {
     Some(s) => s as &@anode.MacroScope
-    None => EmptyScope::{  }
+    None => EmptyScope::{ }
   }
   for _, view in self.views {
     view.compile(
@@ -400,7 +405,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
   if self.schema.view_handlers.is_empty() {
     let names = self.view_handler_names()
     if !names.is_empty() {
-      self.schema = { ..self.schema, view_handlers: names }
+      self.schema = { ..self.schema, view_handlers: names, }
     }
   }
   // The name rule splits the two keyspaces: an uppercase key publishes a TYPE,
@@ -421,7 +426,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
       continue
     }
     match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
-      Some(val) => self.provide[pname] = { name: pname, val }
+      Some(val) => self.provide[pname] = { name: pname, val, }
       None => ()
     }
   }
@@ -430,7 +435,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
       Some(d) => @tscript.parse_field(d, @tscript.ParseCtx::new())
       None => None
     }
-    self.lookup[spec.name] = { name: spec.name, default_val }
+    self.lookup[spec.name] = { name: spec.name, default_val, }
   }
 }
 
@@ -732,5 +737,5 @@ pub fn LoopWith::new(
   end? : Int,
   keys? : Array[@tutuca.Value],
 ) -> LoopWith {
-  { iter_data, start, end, keys }
+  { iter_data, start, end, keys, }
 }

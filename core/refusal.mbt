@@ -267,7 +267,7 @@ pub fn refuse(r : Refusal) -> Unit {
         // stated is kept — it knew something more specific.
         sc.held = Some(
           if r.path.steps.is_empty() {
-            { ..r, path: sc.path }
+            { ..r, path: sc.path, }
           } else {
             r
           },
@@ -295,7 +295,7 @@ pub fn protocol_mismatch(n : RuntimeProtocolNotice) -> Unit {
 fn begin_dispatch(path : Path) -> Bool {
   guard runtime_notice_hook.val is Some(_) else { return false }
   guard dispatch_scope.val is None else { return false }
-  dispatch_scope.val = Some({ path, held: None })
+  dispatch_scope.val = Some({ path, held: None, })
   true
 }
 

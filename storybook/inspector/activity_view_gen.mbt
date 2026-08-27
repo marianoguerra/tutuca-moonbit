@@ -148,7 +148,7 @@ pub(all) struct ActivityLogState {
 ///
 ///   init={ ..ActivityLogState::zero(), label: "Counter" }
 pub fn ActivityLogState::zero() -> ActivityLogState {
-  { events: [], hasEvents: false }
+  { events: [], hasEvents: false, }
 }
 
 ///|
@@ -177,7 +177,7 @@ impl @component.Fields for ActivityLogState with fn decode(f) {
     v_events.push(x1_events)
   }
   guard f.get("hasEvents") is Some(Bool(v_hasEvents)) else { return None }
-  Some({ events: v_events, hasEvents: v_hasEvents })
+  Some({ events: v_events, hasEvents: v_hasEvents, })
 }
 
 ///|

@@ -222,7 +222,7 @@ test "activity log: observe entries land newest-first via appendEntry" {
     name: "click",
     args: [],
     path: @tutuca.Path::new(),
-    path_keys: [{ field: "value", key: None }],
+    path_keys: [{ field: "value", key: None, }],
     target_path: @tutuca.DispatchPath::new(),
     matched: Exact,
     before: Some(Num(1)),
@@ -245,7 +245,7 @@ test "activity log: observe entries land newest-first via appendEntry" {
   assert_true(h.texts(".json-number") == ["1", "2"])
   // a second entry prepends
   let second = insp.record_to_entry(
-    { ..record, name: "keydown", seq: 2 },
+    { ..record, name: "keydown", seq: 2, },
     time="#2",
   )
   h.send_at_root("appendEntry", args=[second])

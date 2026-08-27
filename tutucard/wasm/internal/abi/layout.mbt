@@ -184,7 +184,7 @@ pub struct Pool {
 
 ///|
 pub fn Pool::new() -> Pool {
-  { bytes: [], strings: Map([]), string_list: [], doubles: Map([]) }
+  { bytes: [], strings: Map([]), string_list: [], doubles: Map([]), }
 }
 
 ///|

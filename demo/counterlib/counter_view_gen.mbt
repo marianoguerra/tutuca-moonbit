@@ -28,7 +28,7 @@ pub(all) struct CounterState {
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
 pub fn CounterState::zero() -> CounterState {
-  { label: "", count: 0, history: [] }
+  { label: "", count: 0, history: [], }
 }
 
 ///|
@@ -36,7 +36,7 @@ pub fn CounterState::zero() -> CounterState {
 /// the schema at generation time, so a field the schema dropped fails
 /// the build instead of being coerced away at runtime.
 fn CounterState::fresh() -> CounterState {
-  { ..CounterState::zero(), label: "Counter" }
+  { ..CounterState::zero(), label: "Counter", }
 }
 
 ///|
@@ -44,7 +44,7 @@ fn CounterState::fresh() -> CounterState {
 /// the schema at generation time, so a field the schema dropped fails
 /// the build instead of being coerced away at runtime.
 fn CounterState::withHistory() -> CounterState {
-  { label: "Demo", count: 3, history: [1, 2, 3] }
+  { label: "Demo", count: 3, history: [1, 2, 3], }
 }
 
 ///|
@@ -93,7 +93,7 @@ impl @component.Fields for CounterState with fn decode(f) {
     let x1_history = u2_history.to_int()
     v_history.push(x1_history)
   }
-  Some({ label: v_label, count: v_count, history: v_history })
+  Some({ label: v_label, count: v_count, history: v_history, })
 }
 
 ///|

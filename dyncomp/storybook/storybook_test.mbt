@@ -21,7 +21,7 @@ priv struct StubGuest {
 
 ///|
 fn StubGuest::new() -> StubGuest {
-  { counts: Map([]), labels: Map([]), next: { val: 0 } }
+  { counts: Map([]), labels: Map([]), next: { val: 0, }, }
 }
 
 ///|
@@ -77,7 +77,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
         ),
         msgs: [],
       }
-    _ => { handled: false, next: None, msgs: [] }
+    _ => { handled: false, next: None, msgs: [], }
   }
 }
 
@@ -119,7 +119,7 @@ impl @dyncomp.Guest for StubGuest with fn drop_instance(_self, _handle) {
 
 ///|
 fn ty(kind : String) -> @dyncomp.DynTyDef {
-  { kind, elem: None, items: [], name: "", members: [] }
+  { kind, elem: None, items: [], name: "", members: [], }
 }
 
 ///|
@@ -270,7 +270,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
 /// changed — the same two steps the wasm bridge takes.
 fn mount_gallery() -> (@harness.MemHarness, () -> Unit raise) raise {
   let guest = StubGuest::new()
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let live : Ref[@dyncomp.Bundle?] = { val: None, }
   let reg = @registry.Registry::new()
   let (module_, _) = gallery_module(reg, (ref_, init, args) => {
     guard live.val is Some(bundle) else { return None }

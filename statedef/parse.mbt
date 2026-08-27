@@ -451,7 +451,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
           }
           p.expect(TRParen, "`)` closing the payload")
         }
-        cases.push({ name: mname, span: mspan, doc: member_doc, payload })
+        cases.push({ name: mname, span: mspan, doc: member_doc, payload, })
       }
       p.skip_comma()
     }
@@ -568,7 +568,7 @@ fn parse_cases(p : P, out : Array[RawCase]) -> Unit raise DefError {
       }
       p.expect(TRParen, "`)` closing the payload")
     }
-    out.push({ name, span, doc, payload })
+    out.push({ name, span, doc, payload, })
     p.skip_comma()
   }
 }
@@ -598,7 +598,7 @@ fn parse_bindings(
       }
       _ => p.fail("a field, computation, or view name")
     }
-    out.push({ section, protocol_name, member_name, source, span })
+    out.push({ section, protocol_name, member_name, source, span, })
     p.skip_comma()
   }
   p.expect(TRBrace, "`}` closing the \{section} section")
@@ -617,7 +617,7 @@ fn parse_protocol_members(
     let attrs = p.attrs()
     let (name, span) = p.ident("a \{section} name")
     if section == "view" {
-      views.push({ name, span, doc, payload: [] })
+      views.push({ name, span, doc, payload: [], })
     } else {
       p.expect(TColon, "`:` before the \{section} type")
       properties.push({
@@ -713,10 +713,10 @@ fn parse_state_wiring(
             msg="`\{name}` is provided with nothing — write `\{name} = .\{name}`, or `self` to publish this component as a type",
             span~,
           )
-        Some(source) => provide.push({ name, source, span })
+        Some(source) => provide.push({ name, source, span, })
       }
     } else {
-      lookup.push({ name, default: expr, span })
+      lookup.push({ name, default: expr, span, })
     }
     p.skip_comma()
   }
@@ -741,7 +741,7 @@ fn parse_ty(p : P) -> RawTy raise DefError {
         }
       }
       p.expect(TRParen, "`)` closing the tuple")
-      RTuple(parts, { start: from.start, end_: p.toks[p.at - 1].span.end_ })
+      RTuple(parts, { start: from.start, end_: p.toks[p.at - 1].span.end_, })
     }
     TIdent(_) => {
       let (name, nspan) = p.ident("a type")
@@ -783,7 +783,7 @@ fn parse_ty(p : P) -> RawTy raise DefError {
   }
   if p.peek() is TQuestion {
     let q = p.bump()
-    return ROpt(base, { start: from.start, end_: q.span.end_ })
+    return ROpt(base, { start: from.start, end_: q.span.end_, })
   }
   base
 }
@@ -806,7 +806,7 @@ pub fn parse_state(
   source : String,
   name? : String = "",
 ) -> Array[StateDef] raise DefError {
-  let p : P = { toks: tokenize(source), at: 0 }
+  let p : P = { toks: tokenize(source), at: 0, }
   let raw = parse_decls(p)
   // Which components this file declares, so a field can name a sibling
   // before its `state` appears.
@@ -872,7 +872,7 @@ pub fn parse_state(
       _ => ()
     }
   }
-  let env : Env = { decls, comps, protocols }
+  let env : Env = { decls, comps, protocols, }
   let out : Array[StateDef] = []
   for d in raw {
     guard d.kind is RState else { continue }
@@ -931,7 +931,7 @@ fn build(
     match r.kind {
       RProtocol(id) => protocol_defs.push(protocol_of(r, id, env))
       RProtocolImport(id) =>
-        protocol_imports.push({ local_name: r.name, id, span: r.name_span })
+        protocol_imports.push({ local_name: r.name, id, span: r.name_span, })
       _ => ()
     }
   }
@@ -1126,7 +1126,7 @@ fn user_ty_of(d : RawDecl, comp : String, env : Env) -> UserTy raise DefError {
       }
     }
   }
-  { source_name: d.name, name, kind, doc: d.doc }
+  { source_name: d.name, name, kind, doc: d.doc, }
 }
 
 // ---------------------------------------------------------------------------

@@ -44,7 +44,7 @@ test "at-prefixed x op typo suggests dropping the prefix plus a hint" {
       code: UnknownXOp,
       level: Error,
       suggestion: Some(DropPrefix(from="@render-it", to="render-it")),
-      ..,
+      ..
     }
   guard! findings[1] is { code: MaybeDropAtPrefix, level: Hint, .. }
 }
@@ -80,7 +80,7 @@ test "bare host directive name hints at the @ prefix" {
       level: Hint,
       suggestion: Some(AddPrefix(from="when", to="@when")),
       info,
-      ..,
+      ..
     }
   assert_true(info.contains(("tag", "div")))
 }
@@ -94,7 +94,7 @@ test "@bind is known and bare bind hints at the @ prefix" {
       code: MaybeAddAtPrefix,
       level: Hint,
       suggestion: Some(AddPrefix(from="bind", to="@bind")),
-      ..,
+      ..
     }
 }
 

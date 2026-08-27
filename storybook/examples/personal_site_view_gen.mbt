@@ -27,7 +27,7 @@ pub(all) struct AltUrlState {
 ///
 ///   init={ ..AltUrlState::zero(), label: "Counter" }
 pub fn AltUrlState::zero() -> AltUrlState {
-  { label: "", url: "" }
+  { label: "", url: "", }
 }
 
 ///|
@@ -47,7 +47,7 @@ impl @component.Fields for AltUrlState with fn encode(s) {
 impl @component.Fields for AltUrlState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("url") is Some(Str(v_url)) else { return None }
-  Some({ label: v_label, url: v_url })
+  Some({ label: v_label, url: v_url, })
 }
 
 ///|

@@ -42,7 +42,7 @@ pub(all) struct UniversalState {
 ///
 ///   init={ ..UniversalState::zero(), label: "Counter" }
 pub fn UniversalState::zero() -> UniversalState {
-  { child: Null }
+  { child: Null, }
 }
 
 ///|
@@ -61,7 +61,7 @@ impl @component.Fields for UniversalState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for UniversalState with fn decode(f) {
   let v_child = f.get("child").unwrap_or(Null)
-  Some({ child: v_child })
+  Some({ child: v_child, })
 }
 
 ///|
@@ -591,7 +591,7 @@ pub(all) struct GridState {
 ///
 ///   init={ ..GridState::zero(), label: "Counter" }
 pub fn GridState::zero() -> GridState {
-  { children: [], cols: 0, rows: 0, gap: 0, padding: 0 }
+  { children: [], cols: 0, rows: 0, gap: 0, padding: 0, }
 }
 
 ///|
@@ -835,7 +835,7 @@ pub(all) struct TabPageState {
 ///
 ///   init={ ..TabPageState::zero(), label: "Counter" }
 pub fn TabPageState::zero() -> TabPageState {
-  { label: "", body: Null }
+  { label: "", body: Null, }
 }
 
 ///|
@@ -855,7 +855,7 @@ impl @component.Fields for TabPageState with fn encode(s) {
 impl @component.Fields for TabPageState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   let v_body = f.get("body").unwrap_or(Null)
-  Some({ label: v_label, body: v_body })
+  Some({ label: v_label, body: v_body, })
 }
 
 ///|
@@ -1098,7 +1098,7 @@ pub(all) struct TabsState {
 ///
 ///   init={ ..TabsState::zero(), label: "Counter" }
 pub fn TabsState::zero() -> TabsState {
-  { tabs: [], active: 0, renaming: false, original: "" }
+  { tabs: [], active: 0, renaming: false, original: "", }
 }
 
 ///|
@@ -1334,7 +1334,7 @@ pub(all) struct TextState {
 ///
 ///   init={ ..TextState::zero(), label: "Counter" }
 pub fn TextState::zero() -> TextState {
-  { text: "", size: "" }
+  { text: "", size: "", }
 }
 
 ///|
@@ -1354,7 +1354,7 @@ impl @component.Fields for TextState with fn encode(s) {
 impl @component.Fields for TextState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   guard f.get("size") is Some(Str(v_size)) else { return None }
-  Some({ text: v_text, size: v_size })
+  Some({ text: v_text, size: v_size, })
 }
 
 ///|
@@ -1419,7 +1419,7 @@ pub(all) struct TextareaState {
 ///
 ///   init={ ..TextareaState::zero(), label: "Counter" }
 pub fn TextareaState::zero() -> TextareaState {
-  { text: "", rows: 0, placeholder: "" }
+  { text: "", rows: 0, placeholder: "", }
 }
 
 ///|
@@ -1445,7 +1445,7 @@ impl @component.Fields for TextareaState with fn decode(f) {
   guard f.get("rows") is Some(Num(t1_rows)) else { return None }
   let v_rows = t1_rows.to_int()
   guard f.get("placeholder") is Some(Str(v_placeholder)) else { return None }
-  Some({ text: v_text, rows: v_rows, placeholder: v_placeholder })
+  Some({ text: v_text, rows: v_rows, placeholder: v_placeholder, })
 }
 
 ///|

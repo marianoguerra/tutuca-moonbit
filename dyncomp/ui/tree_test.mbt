@@ -20,7 +20,7 @@ fn mount_restorable(
     Some(x) => x
     None => StubGuest::new()
   }
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let live : Ref[@dyncomp.Bundle?] = { val: None, }
   let reg = @registry.Registry::new()
   let (module_, ui) = seeded_app(reg, (ref_, init, args) => {
     guard live.val is Some(bundle) else { return None }

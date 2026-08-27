@@ -41,7 +41,7 @@ fn app() -> @css.CssPolicy {
 
 ///|
 fn constant() -> @css.CssPolicy {
-  { level: Constant, overlay: false, url: FragmentOnly, stylesheet: false }
+  { level: Constant, overlay: false, url: FragmentOnly, stylesheet: false, }
 }
 
 // ---------------------------------------------------------------------------

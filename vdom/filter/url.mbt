@@ -168,7 +168,7 @@ pub struct UrlFilter {
 
 ///|
 pub fn UrlFilter::new(max_reports? : Int = 64) -> UrlFilter {
-  { log: DropLog::new(max_reports~) }
+  { log: DropLog::new(max_reports~), }
 }
 
 ///|
@@ -261,7 +261,7 @@ pub impl VdomFilter for UrlFilter with fn filter_elem(self, el) {
         Some(names) => names.push(name)
         None => doomed = Some([name])
       }
-      self.record({ tag: el.tag, attr: name, value: raw, reason })
+      self.record({ tag: el.tag, attr: name, value: raw, reason, })
     }
   }
   if doomed is Some(names) {

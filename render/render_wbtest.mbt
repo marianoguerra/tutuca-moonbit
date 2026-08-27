@@ -65,7 +65,7 @@ test "a second render pass reuses nothing, and renders the same thing" {
 /// the point of declining rather than keying and missing.
 test "a component render site rebuilds every pass, and tracks its value" {
   let card = parse_node("<div class=\"card\">static</div>")
-  let resolver : &ViewResolver = ViewMap::{ views: { "main": card } }
+  let resolver : &ViewResolver = ViewMap::{ views: { "main": card }, }
   let ctx = RenderCtx::new(view_resolver=resolver)
   let v1 : @tutuca.Value = Map({ "a": Num(1) })
   let stack = RenderStack::new(v1)
@@ -138,7 +138,7 @@ test "svg subtree keeps its namespace" {
 ///|
 test "render-it resolves through a ViewMap and enters the value" {
   let card = parse_node("<div class=\"card\">static</div>")
-  let resolver = ViewMap::{ views: { "main": card } }
+  let resolver = ViewMap::{ views: { "main": card }, }
   assert_eq(
     render_html("<section><x render-it></x></section>", resolver~),
     "<section><!--§{\"$\":\"Comp\",\"nid\":0,\"cid\":0,\"vid\":\"main\"}§--><div class=\"card\">static</div></section>",
@@ -148,7 +148,7 @@ test "render-it resolves through a ViewMap and enters the value" {
 ///|
 test "render-it with as= picks the named view" {
   let detail = parse_node("<p>detail</p>")
-  let resolver = ViewMap::{ views: { "detail": detail } }
+  let resolver = ViewMap::{ views: { "detail": detail }, }
   assert_eq(
     render_html("<x render-it as=\"detail\"></x>", resolver~),
     "<!--§{\"$\":\"Comp\",\"nid\":0,\"cid\":0,\"vid\":\"detail\"}§--><p>detail</p>",
@@ -185,7 +185,7 @@ test "compiled macro call renders its expansion" {
     raw_view="<section><x:card><x slot=\"body\"><em>custom</em></x></x:card></section>",
   )
   let px = @anode.ParseContext::new()
-  v.compile(px, MacroTestScope::{ macros: { "card": card } })
+  v.compile(px, MacroTestScope::{ macros: { "card": card }, })
   let stack = RenderStack::new(Map(Map([])))
   let html = to_html(render_view(v, stack, RenderCtx::new()))
   // View::compile stamps data-vid on the root (the headless cleanup that
@@ -438,7 +438,7 @@ test "loop-less @enrich-with opens a scope frame" {
 ///|
 test "render-each over a sequence via ViewMap" {
   let item_view = parse_node("<li>item</li>")
-  let resolver = ViewMap::{ views: { "main": item_view } }
+  let resolver = ViewMap::{ views: { "main": item_view }, }
   assert_eq(
     render_html(
       "<ul><x render-each=\".items\"></x></ul>",

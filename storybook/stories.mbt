@@ -267,7 +267,7 @@ pub fn sections_of(stories : Array[Story]) -> Array[Section] {
   for name in section_order {
     match by_name.get(name) {
       Some(arr) => {
-        out.push({ title: name, stories: arr })
+        out.push({ title: name, stories: arr, })
         emitted[name] = true
       }
       None => ()
@@ -277,7 +277,7 @@ pub fn sections_of(stories : Array[Story]) -> Array[Section] {
   for name in seen_order {
     if !emitted.contains(name) {
       match by_name.get(name) {
-        Some(arr) => out.push({ title: name, stories: arr })
+        Some(arr) => out.push({ title: name, stories: arr, })
         None => ()
       }
     }

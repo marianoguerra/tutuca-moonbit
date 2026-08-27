@@ -10,7 +10,7 @@
 fn ns_full() -> NestedStateState {
   {
     title: "t",
-    labels: [{ text: "a", done: true }, { text: "b", done: false }],
+    labels: [{ text: "a", done: true, }, { text: "b", done: false, }],
     priority: High,
     due: OnDay(3),
     note: Some("n"),
@@ -85,8 +85,8 @@ test "nested state: decode rebuilds the typed values" {
   )
   guard round is Some(s) else { fail("decode rejected its own encoding") }
   @debug.assert_eq(s.labels, [
-    { text: "a", done: true },
-    { text: "b", done: false },
+    { text: "a", done: true, },
+    { text: "b", done: false, },
   ])
   @debug.assert_eq(s.priority, High)
   @debug.assert_eq(s.due, OnDay(3))

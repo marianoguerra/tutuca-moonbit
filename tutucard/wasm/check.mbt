@@ -119,7 +119,7 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     ) catch {
       e => {
         let (line, span) = locate_view(source, views, view=e.view())
-        issues.push({ comp, code: e.code(), message: e.message(), line, span })
+        issues.push({ comp, code: e.code(), message: e.message(), line, span, })
         // What is no longer known is what the views send. `knows_views:
         // false` is how the checker is told that, and it is the difference
         // between "they send nothing" and "I could not look".
@@ -133,7 +133,7 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     }
     for h in hints {
       let (line, span) = locate_view(source, views, view=None)
-      issues.push({ comp, code: "HINT", message: h, line, span })
+      issues.push({ comp, code: "HINT", message: h, line, span, })
     }
     // A card with views and no block has been checked as far as it goes: there
     // is nothing to check the surface against.
@@ -147,11 +147,11 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
         code: f.code,
         message: f.message,
         line: b.line + line_of(b.text, f.span.start) - 1,
-        span: { start: f.span.start + b.offset, end_: f.span.end_ + b.offset },
+        span: { start: f.span.start + b.offset, end_: f.span.end_ + b.offset, },
       })
     }
   }
-  { component: root, components, issues }
+  { component: root, components, issues, }
 }
 
 ///|
@@ -252,7 +252,7 @@ fn locate_view(
     body = first.source
   }
   if body.is_empty() {
-    return (1, { start: 0, end_: 0 })
+    return (1, { start: 0, end_: 0, })
   }
   // The FIRST LINE of the body, not the body: `viewfile` dedents a template
   // when it lifts it (`split.mbt` `dedent`), so the body it carries is not a
@@ -271,9 +271,9 @@ fn locate_view(
       let prefix = source[0:i].to_owned()
       (
         line_of(prefix, prefix.length()),
-        { start: i, end_: i + first_line.length() },
+        { start: i, end_: i + first_line.length(), },
       )
     }
-    None => (1, { start: 0, end_: 0 })
+    None => (1, { start: 0, end_: 0, })
   }
 }

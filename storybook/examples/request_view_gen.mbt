@@ -30,7 +30,7 @@ pub(all) struct RequestExampleState {
 ///
 ///   init={ ..RequestExampleState::zero(), label: "Counter" }
 pub fn RequestExampleState::zero() -> RequestExampleState {
-  { items: [], query: "", view: "", isLoading: false, error: Null }
+  { items: [], query: "", view: "", isLoading: false, error: Null, }
 }
 
 ///|

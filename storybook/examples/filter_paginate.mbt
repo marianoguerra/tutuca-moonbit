@@ -65,10 +65,10 @@ fn fp_update() -> (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @comp
     match msg {
       // reset to page 0 on every query change, so a shrinking result set never
       // strands you on an empty page
-      Receive("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0 })
+      Receive("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0, })
       Receive("prev", _) => {
         let (_, current) = fp_clamp(s.page, fp_match_count(s), s.pageSize)
-        Next({ ..s, page: @cmp.maximum(0, current - 1) })
+        Next({ ..s, page: @cmp.maximum(0, current - 1), })
       }
       Receive("next", _) => {
         let (page_count, current) = fp_clamp(
@@ -76,7 +76,7 @@ fn fp_update() -> (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @comp
           fp_match_count(s),
           s.pageSize,
         )
-        Next({ ..s, page: @cmp.minimum(page_count - 1, current + 1) })
+        Next({ ..s, page: @cmp.minimum(page_count - 1, current + 1), })
       }
       _ => Unhandled
     }
@@ -114,7 +114,7 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
 
 ///|
 fn person_comp() -> @component.Component {
-  person_component(init={ name: "", email: "", active: false })
+  person_component(init={ name: "", email: "", active: false, })
 }
 
 ///|
@@ -138,7 +138,7 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
-    init={ items: [], query: "", page: 0, pageSize: 5 },
+    init={ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     when=w => {
       match w {
@@ -178,7 +178,7 @@ fn shared_people_comp() -> @component.Component {
   @component.component(
     views={ "main": shared_people_main_view_ir() },
     name="SharedPeople",
-    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
@@ -216,7 +216,7 @@ fn coupled_people_comp() -> @component.Component {
   @component.component(
     views={ "main": coupled_people_main_view_ir() },
     name="CoupledPeople",
-    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     enrich_scope={
       "pagerInfo": (s : NaivePeopleState, _stack) => {

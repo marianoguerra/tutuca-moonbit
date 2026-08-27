@@ -137,7 +137,7 @@ fn InlineParser::new(
   scanner : Scanner,
   wikilinks? : Bool = false,
 ) -> InlineParser {
-  { scanner, wikilinks }
+  { scanner, wikilinks, }
 }
 
 ///|

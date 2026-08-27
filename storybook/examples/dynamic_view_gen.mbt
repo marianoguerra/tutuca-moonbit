@@ -27,7 +27,7 @@ pub(all) struct SelectorEntryState {
 ///
 ///   init={ ..SelectorEntryState::zero(), label: "Counter" }
 pub fn SelectorEntryState::zero() -> SelectorEntryState {
-  { value: "", label: "" }
+  { value: "", label: "", }
 }
 
 ///|
@@ -47,7 +47,7 @@ impl @component.Fields for SelectorEntryState with fn encode(s) {
 impl @component.Fields for SelectorEntryState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ value: v_value, label: v_label })
+  Some({ value: v_value, label: v_label, })
 }
 
 ///|
@@ -214,7 +214,7 @@ pub(all) struct SelectorState {
 ///
 ///   init={ ..SelectorState::zero(), label: "Counter" }
 pub fn SelectorState::zero() -> SelectorState {
-  { items: [], selectedValue: Null }
+  { items: [], selectedValue: Null, }
 }
 
 ///|
@@ -243,7 +243,7 @@ impl @component.Fields for SelectorState with fn decode(f) {
     v_items.push(x1_items)
   }
   let v_selectedValue = f.get("selectedValue").unwrap_or(Null)
-  Some({ items: v_items, selectedValue: v_selectedValue })
+  Some({ items: v_items, selectedValue: v_selectedValue, })
 }
 
 ///|
@@ -399,7 +399,7 @@ pub(all) struct EntryEditorAndSelectorState {
 ///
 ///   init={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
 pub fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
-  { items: [], selector: Null }
+  { items: [], selector: Null, }
 }
 
 ///|
@@ -428,7 +428,7 @@ impl @component.Fields for EntryEditorAndSelectorState with fn decode(f) {
     v_items.push(x1_items)
   }
   let v_selector = f.get("selector").unwrap_or(Null)
-  Some({ items: v_items, selector: v_selector })
+  Some({ items: v_items, selector: v_selector, })
 }
 
 ///|
@@ -598,7 +598,7 @@ pub(all) struct SheetState {
 ///
 ///   init={ ..SheetState::zero(), label: "Counter" }
 pub fn SheetState::zero() -> SheetState {
-  { title: "" }
+  { title: "", }
 }
 
 ///|
@@ -617,7 +617,7 @@ impl @component.Fields for SheetState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SheetState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|
@@ -823,7 +823,7 @@ pub(all) struct PanelState {
 ///
 ///   init={ ..PanelState::zero(), label: "Counter" }
 pub fn PanelState::zero() -> PanelState {
-  { toolbar: Null }
+  { toolbar: Null, }
 }
 
 ///|
@@ -842,7 +842,7 @@ impl @component.Fields for PanelState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PanelState with fn decode(f) {
   let v_toolbar = f.get("toolbar").unwrap_or(Null)
-  Some({ toolbar: v_toolbar })
+  Some({ toolbar: v_toolbar, })
 }
 
 ///|
@@ -889,7 +889,7 @@ pub(all) struct WorkspaceState {
 ///
 ///   init={ ..WorkspaceState::zero(), label: "Counter" }
 pub fn WorkspaceState::zero() -> WorkspaceState {
-  { sheet: Null, panel: Null }
+  { sheet: Null, panel: Null, }
 }
 
 ///|
@@ -909,7 +909,7 @@ impl @component.Fields for WorkspaceState with fn encode(s) {
 impl @component.Fields for WorkspaceState with fn decode(f) {
   let v_sheet = f.get("sheet").unwrap_or(Null)
   let v_panel = f.get("panel").unwrap_or(Null)
-  Some({ sheet: v_sheet, panel: v_panel })
+  Some({ sheet: v_sheet, panel: v_panel, })
 }
 
 ///|

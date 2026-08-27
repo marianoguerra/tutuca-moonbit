@@ -112,7 +112,7 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
     }
     decls.write_string(
       "  " +
-      { ..d, name, doc: "case \{i}: \{c.name}" }
+      { ..d, name, doc: "case \{i}: \{c.name}", }
       .to_source()
       .split("\n")
       .map(l => l.to_owned())

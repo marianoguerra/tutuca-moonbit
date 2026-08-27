@@ -49,7 +49,7 @@ fn Completion::mark_self_settled(self : Completion) -> Unit {
 ///|
 fn Completion::track(self : Completion) -> () -> Unit {
   self.pending += 1
-  let done : Ref[Bool] = { val: false }
+  let done : Ref[Bool] = { val: false, }
   () => {
     if !done.val {
       done.val = true

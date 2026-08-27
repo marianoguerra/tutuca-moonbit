@@ -301,7 +301,7 @@ pub(all) struct InstanceInspectorState {
 ///
 ///   init={ ..InstanceInspectorState::zero(), label: "Counter" }
 pub fn InstanceInspectorState::zero() -> InstanceInspectorState {
-  { value: Null }
+  { value: Null, }
 }
 
 ///|
@@ -320,7 +320,7 @@ impl @component.Fields for InstanceInspectorState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for InstanceInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|

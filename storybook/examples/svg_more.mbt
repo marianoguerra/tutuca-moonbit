@@ -23,7 +23,7 @@
 /// the block's contracts cover.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
-    init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)] },
+    init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)], },
     loop_with=l => {
       match l {
         // once per render, before the loop: split the 300-wide viewBox among the
@@ -72,7 +72,7 @@ fn bar_chart_comp() -> @component.Component {
               _ => v
             }
           })
-          Next({ values: next })
+          Next({ values: next, })
         }
         _ => Unhandled
       }
@@ -94,7 +94,7 @@ pub fn svg_bar_chart_module() -> @component.ModuleDef {
     name="svg-bar-chart",
     components=[bar_chart_comp()],
     examples=[
-      { component: "BarChart", title: "Default", args: Map([]), view: None },
+      { component: "BarChart", title: "Default", args: Map([]), view: None, },
       {
         component: "BarChart",
         title: "Single bar",
@@ -149,7 +149,7 @@ fn icon_gallery_comp() -> @component.Component {
       ),
     },
     name="IconGallery",
-    init=IconGalleryState::{ size: 40 },
+    init=IconGalleryState::{ size: 40, },
   )
 }
 
@@ -168,7 +168,7 @@ pub fn svg_icon_macro_module() -> @component.ModuleDef {
       "iconbolt": icon_macro("M13 2L3 14h7l-1 8 10-12h-7z"),
     },
     examples=[
-      { component: "IconGallery", title: "Default", args: Map([]), view: None },
+      { component: "IconGallery", title: "Default", args: Map([]), view: None, },
       {
         component: "IconGallery",
         title: "Small",

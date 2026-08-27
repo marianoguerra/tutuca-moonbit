@@ -22,7 +22,7 @@ test "constant-only template stays a StrTplVal" {
     is Some(r)
   assert_true(r is StrTpl(_))
   assert_true(r.is_literal())
-  guard! r.eval(@tutuca.NullStack::{  }) is Str(s)
+  guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex flex-col gap-3 hi")
 }
 
@@ -72,7 +72,7 @@ test "quoted constant inside braces" {
   guard! @tscript.parse_text("$'flex {\\'gap-3\\'}'", ctx) is Some(r)
   assert_true(r is StrTpl(_))
   assert_true(r.is_literal())
-  guard! r.eval(@tutuca.NullStack::{  }) is Str(s)
+  guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex gap-3")
 }
 
@@ -82,7 +82,7 @@ test "numeric constant inside braces" {
   guard! @tscript.parse_text("$'width: {42}px'", ctx) is Some(r)
   assert_true(r is StrTpl(_))
   assert_true(r.is_literal())
-  guard! r.eval(@tutuca.NullStack::{  }) is Str(s)
+  guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "width: 42px")
 }
 
@@ -142,7 +142,7 @@ test "parse_bool accepts a placeholderless string template" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool("$'flex'", ctx) is Some(r)
   assert_true(r is StrTpl(_))
-  guard! r.eval(@tutuca.NullStack::{  }) is Str(s)
+  guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex")
 }
 
@@ -246,7 +246,7 @@ test "unknown predicate returns None" {
         kind: BadValue,
         role: UnknownPredicate,
         value: "present?",
-        span: { start: 0, end_: 8 },
+        span: { start: 0, end_: 8, },
       },
     ],
   )
@@ -266,7 +266,7 @@ test "arity mismatch returns None" {
         kind: BadValue,
         role: PredicateArity(name="empty?", want=1),
         value: "empty? .a .b",
-        span: { start: 0, end_: 12 },
+        span: { start: 0, end_: 12, },
       },
     ],
   )
@@ -503,7 +503,7 @@ test "a bad argument is blamed on the argument, not on the attribute" {
   assert_eq(ctx.issues[0].role, BadPredicateArg)
   assert_eq(ctx.issues[0].value, "Foo")
   // `Foo` starts at column 7 of the attribute value.
-  assert_eq(ctx.issues[0].span, { start: 7, end_: 10 })
+  assert_eq(ctx.issues[0].span, { start: 7, end_: 10, })
 }
 
 ///|
@@ -516,7 +516,7 @@ test "a handler argument is blamed on the argument that failed" {
   assert_true(h.args[1] is Const(lit=LNull, ..))
   assert_eq(ctx.issues.length(), 1)
   assert_eq(ctx.issues[0].role, BadHandlerArg)
-  assert_eq(ctx.issues[0].span, { start: 15, end_: 20 })
+  assert_eq(ctx.issues[0].span, { start: 15, end_: 20, })
 }
 
 ///|
@@ -525,7 +525,7 @@ test "a span indexes the string handed to the parser, untrimmed" {
   // that turns a block-relative span into a file-relative one.
   let ctx = @tscript.ParseCtx::new()
   assert_true(@tscript.parse_bool("  present? .x", ctx) is None)
-  assert_eq(ctx.issues[0].span, { start: 2, end_: 10 })
+  assert_eq(ctx.issues[0].span, { start: 2, end_: 10, })
 }
 
 ///|
@@ -743,5 +743,5 @@ test "a `^` nothing is bound to is an issue inside an expression too" {
   assert_eq(ctx.issues.length(), 1)
   assert_eq(ctx.issues[0].role, BadMacroVar)
   assert_eq(ctx.issues[0].value, "^label")
-  assert_eq(ctx.issues[0].span, { start: 7, end_: 13 })
+  assert_eq(ctx.issues[0].span, { start: 7, end_: 13, })
 }

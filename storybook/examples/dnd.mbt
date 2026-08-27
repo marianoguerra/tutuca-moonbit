@@ -38,7 +38,7 @@ fn move_index_to_index(
 ///|
 fn dnd_comp() -> @component.Component {
   dn_d_example_component(
-    init={ items: [], query: "" },
+    init={ items: [], query: "", },
     when=w => {
       match w {
         FilterItem =>
@@ -68,7 +68,7 @@ fn dnd_comp() -> @component.Component {
               }
             _ => -1
           }
-          Next({ ..s, items: move_index_to_index(s.items, source, target) })
+          Next({ ..s, items: move_index_to_index(s.items, source, target), })
         }
         Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => Unhandled
       }

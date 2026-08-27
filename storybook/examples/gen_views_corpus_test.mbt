@@ -63,7 +63,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       components: [
         {
           name: "",
-          views: [{ name: "main", source, style: "" }],
+          views: [{ name: "main", source, style: "", }],
           common_style: "",
           global_style: "",
         },

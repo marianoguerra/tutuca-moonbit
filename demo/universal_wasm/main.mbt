@@ -67,21 +67,21 @@ fn samples() -> Array[@shell.LoaderBarSample] {
     return []
   }
   [
-    { label: "counter", url: "./examples/counter.tutuca.tar.gz" },
-    { label: "todo", url: "./examples/todo.tutuca.tar.gz" },
-    { label: "todomvc", url: "./examples/todomvc.tutuca.tar.gz" },
-    { label: "calculator", url: "./examples/calculator.tutuca.tar.gz" },
-    { label: "tic-tac-toe", url: "./examples/tictactoe.tutuca.tar.gz" },
-    { label: "bluesky", url: "./examples/bluesky.tutuca.tar.gz" },
-    { label: "mastodon", url: "./examples/mastodon.tutuca.tar.gz" },
-    { label: "slack", url: "./examples/slack.tutuca.tar.gz" },
-    { label: "table", url: "./examples/table.tutuca.tar.gz" },
-    { label: "rust temp", url: "./examples/rust-tempconv.tutuca.tar.gz" },
+    { label: "counter", url: "./examples/counter.tutuca.tar.gz", },
+    { label: "todo", url: "./examples/todo.tutuca.tar.gz", },
+    { label: "todomvc", url: "./examples/todomvc.tutuca.tar.gz", },
+    { label: "calculator", url: "./examples/calculator.tutuca.tar.gz", },
+    { label: "tic-tac-toe", url: "./examples/tictactoe.tutuca.tar.gz", },
+    { label: "bluesky", url: "./examples/bluesky.tutuca.tar.gz", },
+    { label: "mastodon", url: "./examples/mastodon.tutuca.tar.gz", },
+    { label: "slack", url: "./examples/slack.tutuca.tar.gz", },
+    { label: "table", url: "./examples/table.tutuca.tar.gz", },
+    { label: "rust temp", url: "./examples/rust-tempconv.tutuca.tar.gz", },
     // The die `examples/dyncomp-dice` ships. It is offered here because its
     // own page cannot host it — that example builds against the PUBLISHED
     // package and imports one this repo added since — and a guest nothing can
     // run is a guest nothing notices going stale.
-    { label: "dice", url: "./examples/dice.tutuca.tar.gz" },
+    { label: "dice", url: "./examples/dice.tutuca.tar.gz", },
   ]
 }
 

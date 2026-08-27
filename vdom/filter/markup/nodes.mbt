@@ -42,7 +42,7 @@ pub fn html_nodes(
   attr? : String = RAW_ATTR,
 ) -> Array[@vdom.Vdom] {
   let (doc, roots) = @anode.parse_fragment(html)
-  build_roots({ sanitizer, host_tag, attr, on_drop }, doc, roots)
+  build_roots({ sanitizer, host_tag, attr, on_drop, }, doc, roots)
 }
 
 ///|
@@ -72,7 +72,7 @@ pub fn svg_nodes(
   attr? : String = SAFE_SVG_ATTR,
 ) -> Array[@vdom.Vdom] {
   let (doc, roots) = @anode.parse_fragment_svg(svg)
-  build_roots({ sanitizer, host_tag, attr, on_drop }, doc, roots)
+  build_roots({ sanitizer, host_tag, attr, on_drop, }, doc, roots)
 }
 
 ///|

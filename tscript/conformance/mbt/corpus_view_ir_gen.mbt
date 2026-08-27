@@ -47,16 +47,16 @@ fn corpus_inline_update(
 ) -> @component.Update[CorpusState] {
   match msg {
     Receive("case0", _args) => {
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }
     Receive("case1", _args) => {
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }
     Receive("case2", args) => {
       guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int() }
+      let s = { ..s, count: n.to_int(), }
       Next(s)
     }
     Receive("case3", args) => {
@@ -126,7 +126,7 @@ fn corpus_inline_update(
     Receive("case8", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.forward(None, None))
       for f in effects {
         f()
@@ -200,7 +200,7 @@ fn corpus_inline_update(
     }
     Receive("case14", _args) => {
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => {
         ctx.send_reply("pong", [(Num(s.count.to_double()) : @tutuca.Value)])
       })
@@ -219,7 +219,7 @@ fn corpus_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
-      let s = { ..s, ok: true }
+      let s = { ..s, ok: true, }
       effects.push(() => ctx.send("flash", [(Str(s.name) : @tutuca.Value)]))
       effects.push(() => ctx.stop_propagation())
       for f in effects {
@@ -230,7 +230,7 @@ fn corpus_inline_update(
     Intent("case16", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       for f in effects {
         f()
@@ -248,13 +248,13 @@ fn corpus_inline_update(
     }
     Intent("case18", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
-      let s = { ..s, page: k.to_int() }
+      let s = { ..s, page: k.to_int(), }
       Next(s)
     }
     Intent("case19", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, page: k.to_int() }
+      let s = { ..s, page: k.to_int(), }
       effects.push(() => ctx.forward(None, None))
       for f in effects {
         f()
@@ -274,7 +274,7 @@ fn corpus_inline_update(
     Intent("case21", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.stop_propagation())
       for f in effects {
         f()
@@ -292,7 +292,7 @@ fn corpus_inline_update(
         return Unchanged
       }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       for f in effects {
         f()
@@ -302,7 +302,7 @@ fn corpus_inline_update(
     Intent("case23", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       guard s.count.to_double() > 5.0 else {
         @tutuca.postcondition_failed(
@@ -319,12 +319,12 @@ fn corpus_inline_update(
     }
     Receive("case24", args) => {
       guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int() }
+      let s = { ..s, count: n.to_int(), }
       Next(s)
     }
     Receive("case25", args) => {
       guard args.get(0) is Some(Str(why)) else { return Unchanged }
-      let s = { ..s, name: why }
+      let s = { ..s, name: why, }
       Next(s)
     }
     _ => Unhandled

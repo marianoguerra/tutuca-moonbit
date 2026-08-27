@@ -235,7 +235,7 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
     Err(e) => return Done(error_emit(opts, e))
   }
   if parsed.bool("help") || opts.help {
-    return Done({ out: gen_views_help, err: "", exit_code: 0 })
+    return Done({ out: gen_views_help, err: "", exit_code: 0, })
   }
   let roots = parsed.positionals
   let name = parsed.str("name")
@@ -295,7 +295,7 @@ pub fn gen_views(
   target~ : String,
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape] {
-  gen_views_all([{ input, target, name, source }], ir~)
+  gen_views_all([{ input, target, name, source, }], ir~)
 }
 
 ///|
@@ -409,7 +409,7 @@ pub fn gen_views_all(
   if !failures.is_empty() {
     return Err(batch_error(files.length(), failures))
   }
-  Ok({ files: out, diagnostics })
+  Ok({ files: out, diagnostics, })
 }
 
 ///|

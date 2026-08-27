@@ -53,11 +53,11 @@ fn item_comp() -> @component.Component {
       ),
     },
     name="Item",
-    init=ItemState::{ label: "plain" },
+    init=ItemState::{ label: "plain", },
     update=(_s : ItemState, msg, _ctx) => {
       match msg {
-        Receive("pick", [Str(l)]) => Next({ label: l })
-        Receive("loadOk", [Str(l), ..]) => Next({ label: l })
+        Receive("pick", [Str(l)]) => Next({ label: l, })
+        Receive("loadOk", [Str(l), ..]) => Next({ label: l, })
         _ => Unhandled
       }
     },
@@ -79,7 +79,7 @@ fn panel_comp() -> @component.Component {
       ),
     },
     name="Panel",
-    init=PanelState::{ title: "panel" },
+    init=PanelState::{ title: "panel", },
   )
 }
 
@@ -149,7 +149,7 @@ impl @component.Fields for ItemState with fn encode(s) {
 ///|
 impl @component.Fields for ItemState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ label: v_label })
+  Some({ label: v_label, })
 }
 
 ///|
@@ -160,7 +160,7 @@ impl @component.Fields for PanelState with fn encode(s) {
 ///|
 impl @component.Fields for PanelState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|
@@ -209,7 +209,7 @@ test "a view raises a message, and the lexical leg answers an intent" {
       ),
     },
     name="Lexy",
-    init=LexyState::{ seen: "" },
+    init=LexyState::{ seen: "", },
     update=(_s : LexyState, msg, ctx) => {
       match msg {
         // The view's name arrives as a MESSAGE now.
@@ -222,7 +222,7 @@ test "a view raises a message, and the lexical leg answers an intent" {
           Unchanged
         }
         // ...and the answer arrives as one too.
-        Receive("loadRowsOk", [v]) => Next({ seen: v.to_repr().to_string() })
+        Receive("loadRowsOk", [v]) => Next({ seen: v.to_repr().to_string(), })
         _ => Unhandled
       }
     },
@@ -260,7 +260,7 @@ impl @component.Fields for LexyState with fn encode(s) {
 ///|
 impl @component.Fields for LexyState with fn decode(f) {
   guard f.get("seen") is Some(Str(v)) else { return None }
-  Some({ seen: v })
+  Some({ seen: v, })
 }
 
 ///|

@@ -136,7 +136,7 @@ pub struct DropLog {
 
 ///|
 pub fn DropLog::new(max_reports? : Int = 64) -> DropLog {
-  { entries: [], max: max_reports }
+  { entries: [], max: max_reports, }
 }
 
 ///|

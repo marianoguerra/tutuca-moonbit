@@ -210,7 +210,7 @@ impl @tutuca.Stack for FieldMap with fn lookup_field_raw(self, name) {
 ///|
 test "eval: a Val reads state through the Stack trait" {
   let px = @tscript.ParseCtx::new()
-  let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") } }
+  let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") }, }
   guard! @tscript.parse_token(".count", px) is Some(count)
   debug_inspect(
     count.eval(stack),
@@ -428,7 +428,7 @@ produces a new instance:
 ```mbt check
 ///|
 test "instances are copy-on-write values, visible through Obj" {
-  let greeting = fp_greeting_component(init={ name: "world" })
+  let greeting = fp_greeting_component(init={ name: "world", })
   let a = greeting.make(Map([]))
   // writes go through the Obj trait (or generated mutators from views):
   // they return a NEW instance value
@@ -484,7 +484,7 @@ tree is navigable and rebuildable:
 fn mailbox_module() -> @component.ModuleDef {
   let note = note_component(update=(_s, msg, _ctx) => {
     match NoteReceive::from_dispatch(msg) {
-      Some(Write(t)) => Next({ text: t })
+      Some(Write(t)) => Next({ text: t, })
       Some(Unknown(_, _)) | None => Unhandled
     }
   })

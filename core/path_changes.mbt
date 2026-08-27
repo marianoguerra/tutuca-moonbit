@@ -13,19 +13,19 @@ pub struct PathChanges {
 /// A builder rooted at `ctx`'s dispatch path. Usually reached
 /// through `Ctx::at`, exposed for callers holding a `&Ctx` directly.
 fn PathChanges::of(ctx : &Ctx) -> PathChanges {
-  { ctx, steps: [] }
+  { ctx, steps: [], }
 }
 
 ///|
 /// Each builder method spells its step through the absolute `Path` builder, so
 /// the relative and absolute forms cannot disagree about what a step is.
 fn PathChanges::of_path(self : PathChanges, p : Path) -> PathChanges {
-  { ctx: self.ctx, steps: p.steps }
+  { ctx: self.ctx, steps: p.steps, }
 }
 
 ///|
 fn PathChanges::as_path(self : PathChanges) -> Path {
-  { steps: self.steps }
+  { steps: self.steps, }
 }
 
 ///|

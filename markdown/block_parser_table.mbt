@@ -150,13 +150,13 @@ fn parse_table_row(
     } else {
       parse_inlines(content, strict~, wikilinks~)
     }
-    cells.push({ children, span: Span::new(0, content.length()) }, // Simplified span
+    cells.push({ children, span: Span::new(0, content.length()), }, // Simplified span
     )
   }
 
   // Pad with empty cells if needed
   while cells.length() < expected_cols {
-    cells.push({ children: [], span: Span::new(0, 0) })
+    cells.push({ children: [], span: Span::new(0, 0), })
   }
   cells
 }

@@ -32,7 +32,7 @@ pub(all) struct Span {
 ///|
 /// The empty span, for a diagnostic about a value with no source of its own —
 /// a `^macro` variable's expansion, or a value built by hand.
-pub let no_span : Span = { start: 0, end_: 0 }
+pub let no_span : Span = { start: 0, end_: 0, }
 
 ///|
 /// One lexical run, and where it came from.

@@ -26,7 +26,7 @@ fn compile_view(
   view : @viewfile.RawView,
   scope : FileMacros,
 ) -> CompiledView raise GenError {
-  let collector = IssueCollector::{ issues: [] }
+  let collector = IssueCollector::{ issues: [], }
   let px = @anode.ParseContext::new(handler=collector)
   let v = @anode.View::new(view.name, raw_view=view.source)
   v.compile(px, scope) catch {
@@ -40,7 +40,7 @@ fn compile_view(
   guard v.anode is Some(root) else { raise EmptyView(view.name) }
   let tree = strip_macro_calls(root)
   strip_data_vid(tree)
-  { raw: view, root: tree, events: px.events }
+  { raw: view, root: tree, events: px.events, }
 }
 
 ///|
@@ -73,7 +73,7 @@ fn compile_component(
 ) -> CompiledComponent raise GenError {
   let compiled = compile_views(views.views, scope)
   lower_binds(compiled, def)
-  { raw: views, views: compiled, surface: surface_of(compiled) }
+  { raw: views, views: compiled, surface: surface_of(compiled), }
 }
 
 ///|

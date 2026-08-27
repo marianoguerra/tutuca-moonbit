@@ -112,34 +112,34 @@ fn parse_x_op(
     None => None
   }
   let node : ANode? = match op {
-    Some(OpSlot) => Some(Slot({ name: value, node: maybe_fragment(childs) }))
+    Some(OpSlot) => Some(Slot({ name: value, node: maybe_fragment(childs), }))
     Some(OpText) =>
       px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_text), (
         id,
         val,
-      ) => RenderText({ node_id: Some(id), val }))
+      ) => RenderText({ node_id: Some(id), val, }))
     Some(OpRender) =>
       px.add_node_if(
         parse_x_op_val(name, value, px, @tscript.parse_component),
-        (id, val) => Render({ node_id: id, val, view_val: as_val }),
+        (id, val) => Render({ node_id: id, val, view_val: as_val, }),
       )
     Some(OpRenderIt) =>
-      Some(px.add_node(id => RenderIt({ node_id: id, view_val: as_val })))
+      Some(px.add_node(id => RenderIt({ node_id: id, view_val: as_val, })))
     Some(OpRenderEach) => parse_render_each(px, value, as_val, attrs)
     Some(OpShow) =>
       px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_bool), (
         id,
         val,
-      ) => Show({ node_id: Some(id), val, node: maybe_fragment(childs) }))
+      ) => Show({ node_id: Some(id), val, node: maybe_fragment(childs), }))
     Some(OpHide) =>
       px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_bool), (
         id,
         val,
-      ) => Hide({ node_id: Some(id), val, node: maybe_fragment(childs) }))
+      ) => Hide({ node_id: Some(id), val, node: maybe_fragment(childs), }))
     None => {
       px.issue(UnknownXOp(name~, value~))
       return Some(
-        Comment({ val: "Error: InvalidSpecialTagOp \{name}=\{value}" }),
+        Comment({ val: "Error: InvalidSpecialTagOp \{name}=\{value}", }),
       )
     }
   }
@@ -192,8 +192,8 @@ fn process_x_extras(
     let (kind, val) = wrappers[i]
     let wrapper = px.add_node_if(val, (id, v) => {
       match kind {
-        Show => Show({ node_id: Some(id), val: v, node: empty_node() })
-        _ => Hide({ node_id: Some(id), val: v, node: empty_node() })
+        Show => Show({ node_id: Some(id), val: v, node: empty_node(), })
+        _ => Hide({ node_id: Some(id), val: v, node: empty_node(), })
       }
     })
     if wrapper is Some(w) {
@@ -219,7 +219,7 @@ fn parse_render_each(
     "render-each", value, px, @tscript.parse_sequence,
   )
   guard seq_val is Some(_) else { return None }
-  let render_it = px.add_node(id => RenderIt({ node_id: id, view_val: as_val }))
+  let render_it = px.add_node(id => RenderIt({ node_id: id, view_val: as_val, }))
   let attr_parser = AttrParser::new(px)
   let each_attr = attr_parser.push_wrapper(Each, value, seq_val)
   attr_parser.each_attr = Some(each_attr)

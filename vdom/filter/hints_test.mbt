@@ -74,7 +74,7 @@ test "a rule whose bit is clear does nothing" {
 test "each rule reads its own bit and no other" {
   // `url` set alone: the URL goes, the handler and the CSS stay.
   let el = every_sink()
-  let url_only = { ..@sinks.SinkHints::empty(), url: true }
+  let url_only = { ..@sinks.SinkHints::empty(), url: true, }
   UrlFilter::new().filter_elem_hinted(el, url_only)
   HandlerFilter::new().filter_elem_hinted(el, url_only)
   CssFilter::new().filter_elem_hinted(el, url_only)
@@ -106,7 +106,7 @@ test "a filter that ignores the hints still sees every element" {
   // The default impl on the trait, which is what a host's own rule gets. It
   // must not be skippable: nothing here can describe what it looks for, so a
   // clear bit says nothing about it.
-  let counter = { seen: 0 }
+  let counter = { seen: 0, }
   let f : &VdomFilter = counter
   f.filter_elem_hinted(every_sink(), @sinks.SinkHints::empty())
   f.filter_elem_hinted(every_sink(), @sinks.SinkHints::all())

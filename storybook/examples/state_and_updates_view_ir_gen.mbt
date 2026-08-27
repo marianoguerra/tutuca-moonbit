@@ -447,7 +447,7 @@ fn show_hide_inline_update(
 ) -> @component.Update[ShowHideState] {
   match msg {
     Receive("incCount", _args) => {
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }
     _ => Unhandled

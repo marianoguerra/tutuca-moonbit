@@ -45,7 +45,7 @@ priv struct FileMacros {
 fn FileMacros::of(defs : Array[@viewfile.MacroDef]) -> FileMacros {
   let by_name : Map[String, @anode.Macro] = Map([])
   for d in defs {
-    by_name[d.name] = { defaults: d.defaults, raw_view: d.source }
+    by_name[d.name] = { defaults: d.defaults, raw_view: d.source, }
   }
   { by_name, }
 }
@@ -651,7 +651,7 @@ fn walk_view(
             check_event_arg(a, view_name, site, c.hints)
           }
           match inputs.get(name) {
-            None => inputs[name] = { name, args: Some(shape), sites: [site] }
+            None => inputs[name] = { name, args: Some(shape), sites: [site], }
             Some(prev) => {
               let args = match prev.args {
                 Some(p) if p.length() == shape.length() =>

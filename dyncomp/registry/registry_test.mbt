@@ -27,7 +27,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   _args,
   _bindings,
 ) {
-  { handled: false, next: None, msgs: [] }
+  { handled: false, next: None, msgs: [], }
 }
 
 ///|
@@ -68,12 +68,12 @@ impl @dyncomp.Guest for StubGuest with fn drop_instance(_self, _handle) {
 
 ///|
 fn ty(kind : String) -> @dyncomp.DynTyDef {
-  { kind, elem: None, items: [], name: "", members: [] }
+  { kind, elem: None, items: [], name: "", members: [], }
 }
 
 ///|
 fn plain(name : String, ty_ : Int, doc? : String = "") -> @dyncomp.DynFieldDef {
-  { name, ty: ty_, doc, required: false, constraint: None }
+  { name, ty: ty_, doc, required: false, constraint: None, }
 }
 
 ///|
@@ -201,9 +201,9 @@ fn loaded() -> Registry raise {
   let scope = @component.ComponentStack::new()
   let reg = Registry::new()
   reg.register(
-    @dyncomp.register_bundle(scope, StubGuest::{  }, counter_bundle()),
+    @dyncomp.register_bundle(scope, StubGuest::{ }, counter_bundle()),
   )
-  reg.register(@dyncomp.register_bundle(scope, StubGuest::{  }, todo_bundle()))
+  reg.register(@dyncomp.register_bundle(scope, StubGuest::{ }, todo_bundle()))
   reg
 }
 
@@ -222,7 +222,7 @@ test "the catalog lists every component of every loaded module" {
 /// every one of these fields was empty and a chooser had only a name.
 test "a descriptor carries what a chooser needs" {
   let reg = loaded()
-  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter", }) is Some(d)
   inspect(d.doc, content="A number with buttons that raise and lower it.")
   inspect(d.category, content="input")
   debug_inspect(d.keywords, content="[\"tally\", \"increment\"]")
@@ -251,11 +251,11 @@ test "a descriptor carries what a chooser needs" {
 /// blank would be worse than one that reads "count: f64".
 test "summary falls back through doc, keywords, then the shape" {
   let reg = loaded()
-  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter", }) is Some(d)
   inspect(d.summary(), content="A number with buttons that raise and lower it.")
-  let bare : Descriptor = { ..d, doc: "", keywords: [] }
+  let bare : Descriptor = { ..d, doc: "", keywords: [], }
   inspect(bare.summary(), content="count: Double")
-  let kw : Descriptor = { ..d, doc: "" }
+  let kw : Descriptor = { ..d, doc: "", }
   inspect(kw.summary(), content="tally, increment")
 }
 
@@ -264,7 +264,7 @@ test "summary falls back through doc, keywords, then the shape" {
 /// to, which is what keeps the form and the tool describing the same thing.
 test "a descriptor projects its own args schema, and coerces against it" {
   let reg = loaded()
-  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter", }) is Some(d)
   let props = d.args_schema()
   inspect(
     (if props is Object(m) { m.get("properties") } else { None })
@@ -414,22 +414,22 @@ test "re-registering a module replaces it and keeps its place" {
   let scope = @component.ComponentStack::new()
   let reg = Registry::new()
   reg.register(
-    @dyncomp.register_bundle(scope, StubGuest::{  }, counter_bundle()),
+    @dyncomp.register_bundle(scope, StubGuest::{ }, counter_bundle()),
   )
-  reg.register(@dyncomp.register_bundle(scope, StubGuest::{  }, todo_bundle()))
+  reg.register(@dyncomp.register_bundle(scope, StubGuest::{ }, todo_bundle()))
   let swapped : @dyncomp.DynManifest = {
     ..counter_bundle(),
     components: [
-      { ..counter_bundle().components[0], name: "Tally", doc: "Renamed." },
+      { ..counter_bundle().components[0], name: "Tally", doc: "Renamed.", },
     ],
   }
-  reg.register(@dyncomp.register_bundle(scope, StubGuest::{  }, swapped))
+  reg.register(@dyncomp.register_bundle(scope, StubGuest::{ }, swapped))
   debug_inspect(reg.modules(), content="[\"counterlib\", \"todolib\"]")
   debug_inspect(
     reg.all().map(d => d.ref_.to_id()),
     content="[\"counterlib/Tally\", \"todolib/Todo\"]",
   )
-  assert_true(reg.describe({ module_: "counterlib", name: "Counter" }) is None)
+  assert_true(reg.describe({ module_: "counterlib", name: "Counter", }) is None)
 }
 
 ///|
@@ -456,7 +456,7 @@ test "a hit and a descriptor each have one JSON projection" {
       #|{"module":"counterlib","name":"Counter","summary":"A number with buttons that raise and lower it.","category":"input","score":30,"why":["keyword \"tally\""]}
     ),
   )
-  guard! reg.describe({ module_: "todolib", name: "Todo" }) is Some(d)
+  guard! reg.describe({ module_: "todolib", name: "Todo", }) is Some(d)
   let doc = d.to_json()
   guard! doc is Object(m)
   debug_inspect(

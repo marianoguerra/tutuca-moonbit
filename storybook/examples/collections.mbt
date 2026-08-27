@@ -17,7 +17,7 @@
 /// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
 /// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
-  render_with_scope_component(init={ text: "Hello" }, enrich_scope=e => {
+  render_with_scope_component(init={ text: "Hello", }, enrich_scope=e => {
     match e {
       EnrichScope =>
         Some((s, _stack) => {
@@ -55,7 +55,7 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
 /// value is Unit. Setting `binds["count"]` makes `@count` readable in the row.
 fn list_filter_enrich_comp() -> @component.Component {
   list_filter_enrich_component(
-    init={ items: [], query: "" },
+    init={ items: [], query: "", },
     when=w => {
       match w {
         FilterItem =>
@@ -104,7 +104,7 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 /// before any filtering.
 fn list_filter_enrich_with_comp() -> @component.Component {
   list_filter_enrich_with_component(
-    init={ items: [], query: "" },
+    init={ items: [], query: "", },
     loop_with=l => {
       match l {
         GetIterData =>

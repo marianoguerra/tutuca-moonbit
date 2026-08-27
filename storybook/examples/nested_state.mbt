@@ -21,7 +21,7 @@ fn ns_toggle_label(
   let i = n.to_int()
   guard i >= 0 && i < labels.length() else { return labels }
   let out = labels.copy()
-  out[i] = { text: out[i].text, done: !out[i].done }
+  out[i] = { text: out[i].text, done: !out[i].done, }
   out
 }
 
@@ -31,7 +31,7 @@ fn nested_state_comp() -> @component.Component {
     init={
       ..NestedStateState::zero(),
       title: "Write the codec",
-      labels: [{ text: "schema", done: true }, { text: "codec", done: false }],
+      labels: [{ text: "schema", done: true, }, { text: "codec", done: false, }],
       due: OnDay(3),
       size: (2, 5),
     },
@@ -48,7 +48,7 @@ fn nested_state_comp() -> @component.Component {
             },
           })
         Some(ToggleLabel(key)) =>
-          Next({ ..s, labels: ns_toggle_label(s.labels, key) })
+          Next({ ..s, labels: ns_toggle_label(s.labels, key), })
         Some(Unknown(_, _)) | None => Unhandled
       }
     },

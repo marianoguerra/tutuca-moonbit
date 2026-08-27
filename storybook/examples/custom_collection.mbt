@@ -16,7 +16,7 @@ fn KeyedList::set(self : KeyedList, k : String, v : @tutuca.Value) -> KeyedList 
   let order = if self.items.contains(k) { self.order } else { self.order + [k] }
   let items = self.items.to_array() |> Map::from_array
   items[k] = v
-  { order, items }
+  { order, items, }
 }
 
 ///|
@@ -34,13 +34,13 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 
 ///|
 fn song_comp() -> @component.Component {
-  song_component(init={ title: "" })
+  song_component(init={ title: "", })
 }
 
 ///|
 fn playlist_comp() -> @component.Component {
   playlist_component(
-    init={ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
+    init={ songs: Obj(KeyedList::{ order: [], items: Map([]), }), },
     // The state only sees `&Obj`, so the removal REBUILDS the keyed list from
     // obj_seq_entries minus the key (there is no downcast back to KeyedList —
     // the port's trait-object rule).
@@ -50,7 +50,7 @@ fn playlist_comp() -> @component.Component {
           guard key_v is Str(key) else { return Unchanged }
           guard s.songs is Obj(o) else { return Unchanged }
           guard o.obj_seq_entries() is Some(entries) else { return Unchanged }
-          let mut next = KeyedList::{ order: [], items: Map([]) }
+          let mut next = KeyedList::{ order: [], items: Map([]), }
           for entry in entries {
             let (pk, v) = entry
             match pk {
@@ -58,7 +58,7 @@ fn playlist_comp() -> @component.Component {
               _ => ()
             }
           }
-          Next({ songs: Obj(next) })
+          Next({ songs: Obj(next), })
         }
         Some(Unknown(_, _)) | None => Unhandled
       }
@@ -68,7 +68,7 @@ fn playlist_comp() -> @component.Component {
 
 ///|
 fn demo_songs(song : @component.Component) -> KeyedList {
-  KeyedList::{ order: [], items: Map([]) }
+  KeyedList::{ order: [], items: Map([]), }
   .set("intro", song.make({ "title": Str("Intro") }))
   .set("middle", song.make({ "title": Str("Middle Eight") }))
   .set("outro", song.make({ "title": Str("Outro") }))

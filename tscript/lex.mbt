@@ -67,7 +67,7 @@ pub fn tokenize(s : String) -> Array[Token] {
     for k in start..<end {
       buf.write_char(chars[k])
     }
-    out.push({ text: buf.to_string(), span: { start, end_: end } })
+    out.push({ text: buf.to_string(), span: { start, end_: end, }, })
     i = end
   }
   out

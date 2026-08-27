@@ -29,7 +29,7 @@ pub(all) struct SchemaViewerState {
 ///
 ///   init={ ..SchemaViewerState::zero(), label: "Counter" }
 pub fn SchemaViewerState::zero() -> SchemaViewerState {
-  { value: Null, raw: Null, rawSchema: Null, showRaw: false }
+  { value: Null, raw: Null, rawSchema: Null, showRaw: false, }
 }
 
 ///|

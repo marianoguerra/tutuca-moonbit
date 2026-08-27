@@ -142,7 +142,7 @@ test "show_source round-trips the spelling the author wrote" {
 test "a syntax error carries a span, not an identifier to go looking for" {
   guard! def_err("state { count: }") is Some(e)
   assert_eq(e.message(), "state block: expected a type, found `}`")
-  assert_eq(e.span(), { start: 15, end_: 16 })
+  assert_eq(e.span(), { start: 15, end_: 16, })
 }
 
 ///|
@@ -153,7 +153,7 @@ test "every failure points at the thing it is about" {
   guard! def_err("state { big: Int64 }") is Some(e1)
   assert_true(e1 is UnsupportedType(_))
   assert_true(e1.message().contains("2^53"))
-  assert_eq(e1.span(), { start: 13, end_: 18 })
+  assert_eq(e1.span(), { start: 13, end_: 18, })
 
   guard! def_err("state { big: Nope }") is Some(e1b)
   assert_true(e1b is UnknownTypeRef(_))

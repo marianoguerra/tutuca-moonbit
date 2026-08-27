@@ -60,7 +60,7 @@ impl Composite for JsonArrayState with fn current_page(self) {
 
 ///|
 impl Composite for JsonArrayState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -85,7 +85,7 @@ impl Composite for JsonObjectState with fn current_page(self) {
 
 ///|
 impl Composite for JsonObjectState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
@@ -309,7 +309,7 @@ fn value_obj_comp() -> @component.Component {
 ///|
 fn json_array_comp() -> @component.Component {
   json_array_component(
-    init={ ..JsonArrayState::zero(), itemsPerPage: 10 },
+    init={ ..JsonArrayState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -334,7 +334,7 @@ fn json_array_comp() -> @component.Component {
 ///|
 fn json_object_comp() -> @component.Component {
   json_object_component(
-    init={ ..JsonObjectState::zero(), itemsPerPage: 10 },
+    init={ ..JsonObjectState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -383,7 +383,8 @@ fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
 fn data_inspector_comp() -> @component.Component {
   data_inspector_component(update=(s, msg, _ctx) => {
     match msg {
-      Receive("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
+      Receive("toggleIsExpanded", _) =>
+        Next({ value: toggle_wrapped(s.value), })
       _ => Unhandled
     }
   })

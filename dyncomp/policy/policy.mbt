@@ -197,7 +197,7 @@ pub(all) struct Refusal {
 
 ///|
 fn refusal(where_ : String, message : String) -> Refusal {
-  { where_, message }
+  { where_, message, }
 }
 
 ///|
@@ -341,7 +341,7 @@ pub fn Policy::check_view(
 /// widen what a guest may paint with, which is why `with_sanitizer` carries the
 /// CSS policy across rather than taking the compiled sanitizer's default.
 pub fn Policy::with_css(self : Policy, css : @safecss.CssPolicy) -> Policy {
-  { ..self, sanitizer: self.sanitizer.with_css(css) }
+  { ..self, sanitizer: self.sanitizer.with_css(css), }
 }
 
 ///|

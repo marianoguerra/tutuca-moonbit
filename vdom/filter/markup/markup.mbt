@@ -43,7 +43,7 @@ pub fn MarkupFilter::new(
   sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
   max_reports? : Int = 64,
 ) -> MarkupFilter {
-  { sanitizer, log: @filter.DropLog::new(max_reports~) }
+  { sanitizer, log: @filter.DropLog::new(max_reports~), }
 }
 
 ///|
@@ -60,7 +60,7 @@ fn MarkupFilter::record(
   value : String,
   reason : String,
 ) -> Unit {
-  self.log.record({ tag, attr, value, reason })
+  self.log.record({ tag, attr, value, reason, })
 }
 
 ///|

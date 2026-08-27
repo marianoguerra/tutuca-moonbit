@@ -91,5 +91,5 @@ fn classify_attrs(attrs : @anode.Attrs) -> @sinks.SinkHints {
         }
       }
   }
-  { url, handler, css, markup }
+  { url, handler, css, markup, }
 }

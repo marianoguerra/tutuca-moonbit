@@ -85,7 +85,7 @@ pub(all) struct JsonBooleanState {
 ///
 ///   init={ ..JsonBooleanState::zero(), label: "Counter" }
 pub fn JsonBooleanState::zero() -> JsonBooleanState {
-  { value: false }
+  { value: false, }
 }
 
 ///|
@@ -104,7 +104,7 @@ impl @component.Fields for JsonBooleanState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|
@@ -166,7 +166,7 @@ pub(all) struct JsonNumberState {
 ///
 ///   init={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
-  { value: 0.0 }
+  { value: 0.0, }
 }
 
 ///|
@@ -185,7 +185,7 @@ impl @component.Fields for JsonNumberState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("value") is Some(Num(v_value)) else { return None }
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|
@@ -245,7 +245,7 @@ pub(all) struct JsonStringState {
 ///
 ///   init={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
-  { value: "" }
+  { value: "", }
 }
 
 ///|
@@ -264,7 +264,7 @@ impl @component.Fields for JsonStringState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|
@@ -383,7 +383,7 @@ pub(all) struct ValueObjState {
 ///
 ///   init={ ..ValueObjState::zero(), label: "Counter" }
 pub fn ValueObjState::zero() -> ValueObjState {
-  { text: "" }
+  { text: "", }
 }
 
 ///|
@@ -402,7 +402,7 @@ impl @component.Fields for ValueObjState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ValueObjState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
-  Some({ text: v_text })
+  Some({ text: v_text, })
 }
 
 ///|
@@ -451,7 +451,7 @@ pub(all) struct JsonArrayState {
 ///
 ///   init={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
-  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0 }
+  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, }
 }
 
 ///|
@@ -713,7 +713,7 @@ pub(all) struct JsonObjectState {
 ///
 ///   init={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
-  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0 }
+  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0, }
 }
 
 ///|
@@ -973,7 +973,7 @@ pub(all) struct JsonPropertyState {
 ///
 ///   init={ ..JsonPropertyState::zero(), label: "Counter" }
 pub fn JsonPropertyState::zero() -> JsonPropertyState {
-  { key: "", child: Null }
+  { key: "", child: Null, }
 }
 
 ///|
@@ -993,7 +993,7 @@ impl @component.Fields for JsonPropertyState with fn encode(s) {
 impl @component.Fields for JsonPropertyState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
-  Some({ key: v_key, child: v_child })
+  Some({ key: v_key, child: v_child, })
 }
 
 ///|
@@ -1042,7 +1042,7 @@ pub(all) struct DataInspectorState {
 ///
 ///   init={ ..DataInspectorState::zero(), label: "Counter" }
 pub fn DataInspectorState::zero() -> DataInspectorState {
-  { value: Null }
+  { value: Null, }
 }
 
 ///|
@@ -1061,7 +1061,7 @@ impl @component.Fields for DataInspectorState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DataInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|

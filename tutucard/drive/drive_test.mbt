@@ -38,7 +38,7 @@ fn todo_module() -> @component.ModuleDef {
       ),
     },
     name="Todo",
-    init=TodoState::{ draft: "", todos: [], done: false },
+    init=TodoState::{ draft: "", todos: [], done: false, },
     compute={ "total": (s, _args, _stack) => Num(s.todos.length().to_double()) },
     update=(s : TodoState, msg, _ctx) => {
       match msg {
@@ -51,9 +51,9 @@ fn todo_module() -> @component.ModuleDef {
           } else {
             let todos = s.todos.copy()
             todos.push(Str(s.draft))
-            Next({ ..s, todos, draft: "" })
+            Next({ ..s, todos, draft: "", })
           }
-        Receive("clear", _) => Next({ ..s, todos: [] })
+        Receive("clear", _) => Next({ ..s, todos: [], })
         _ => Unhandled
       }
     },
@@ -71,7 +71,7 @@ impl @component.Fields for TodoState with fn decode(f) {
   guard f.get("draft") is Some(Str(d)) else { return None }
   guard f.get("todos") is Some(List(t)) else { return None }
   guard f.get("done") is Some(Bool(b)) else { return None }
-  Some({ draft: d, todos: t, done: b })
+  Some({ draft: d, todos: t, done: b, })
 }
 
 ///|

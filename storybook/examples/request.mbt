@@ -32,7 +32,7 @@
 /// into entries.
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   request_example_component(
-    init={ items: [], query: "", view: "main", isLoading: false, error: Null },
+    init={ items: [], query: "", view: "main", isLoading: false, error: Null, },
     update=(s, msg, ctx) => {
       match msg {
         // The same intent, dispatched from MoonBit rather than from the block
@@ -50,7 +50,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
               on_unhandled_name="loadDataUnhandled",
             ),
           )
-          Next({ ..s, isLoading: true })
+          Next({ ..s, isLoading: true, })
         }
         // THREE outcomes, three arms, each with its own shape.
         //
@@ -65,7 +65,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
             [_, ..] => "the intent failed"
             _ => "the intent failed"
           }
-          Next({ ..s, isLoading: false, error: Str(err) })
+          Next({ ..s, isLoading: false, error: Str(err), })
         }
         // The third outcome, and v2's own: the route ran out and NOBODY
         // answered. Not the same as a handler failing, which is why it has its
@@ -112,7 +112,7 @@ fn entries_from_response(
       })
     _ => []
   }
-  { ..s, isLoading: false, items }
+  { ..s, isLoading: false, items, }
 }
 
 ///|

@@ -15,7 +15,10 @@
 
 ///|
 fn badge_macro() -> @anode.Macro {
-  { defaults: Map([]), raw_view: "<span class=\"badge badge-info\">New</span>" }
+  {
+    defaults: Map([]),
+    raw_view: "<span class=\"badge badge-info\">New</span>",
+  }
 }
 
 ///|
@@ -34,7 +37,7 @@ fn static_macro_comp() -> @component.Component {
       ),
     },
     name="StaticMacro",
-    init=MacrosNoState::{  },
+    init=MacrosNoState::{ },
   )
 }
 
@@ -48,7 +51,7 @@ pub fn macro_static_module() -> @component.ModuleDef {
     components=[static_macro_comp()],
     macros={ "badge": badge_macro() },
     examples=[
-      { component: "StaticMacro", title: "Default", args: Map([]), view: None },
+      { component: "StaticMacro", title: "Default", args: Map([]), view: None, },
     ],
   )
 }
@@ -83,7 +86,7 @@ fn macro_params_comp() -> @component.Component {
       ),
     },
     name="MacroParams",
-    init=MacroParamsState::{ status: "active" },
+    init=MacroParamsState::{ status: "active", },
   )
 }
 
@@ -94,7 +97,7 @@ pub fn macro_params_module() -> @component.ModuleDef {
     components=[macro_params_comp()],
     macros={ "badge": param_badge_macro() },
     examples=[
-      { component: "MacroParams", title: "Default", args: Map([]), view: None },
+      { component: "MacroParams", title: "Default", args: Map([]), view: None, },
       {
         component: "MacroParams",
         title: "Archived",
@@ -143,12 +146,12 @@ fn macro_slots_comp() -> @component.Component {
       ),
     },
     name="MacroSlots",
-    init=MacroSlotsState::{ count: 0 },
+    init=MacroSlotsState::{ count: 0, },
     // Runtime views (a macro body is registered from MoonBit), so there is
     // no generated Msg and the arm names the dispatch directly.
     update=(s : MacroSlotsState, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ count: s.count + 1 })
+        Receive("inc", _) => Next({ count: s.count + 1, })
         _ => Unhandled
       }
     },
@@ -162,7 +165,7 @@ pub fn macro_slots_module() -> @component.ModuleDef {
     components=[macro_slots_comp()],
     macros={ "card": card_macro() },
     examples=[
-      { component: "MacroSlots", title: "Default", args: Map([]), view: None },
+      { component: "MacroSlots", title: "Default", args: Map([]), view: None, },
     ],
   )
 }
@@ -209,10 +212,10 @@ fn macro_named_slots_comp() -> @component.Component {
       ),
     },
     name="MacroNamedSlots",
-    init=MacroNamedSlotsState::{ count: 0 },
+    init=MacroNamedSlotsState::{ count: 0, },
     update=(s : MacroNamedSlotsState, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ count: s.count + 1 })
+        Receive("inc", _) => Next({ count: s.count + 1, })
         _ => Unhandled
       }
     },

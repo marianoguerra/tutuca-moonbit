@@ -74,7 +74,7 @@ fn run_gen_css(
     Err(e) => return Done(error_emit(opts, e))
   }
   if parsed.bool("help") || opts.help {
-    return Done({ out: help, err: "", exit_code: 0 })
+    return Done({ out: help, err: "", exit_code: 0, })
   }
   let paths = parsed.positionals
   let out = parsed.str("out")

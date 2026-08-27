@@ -38,17 +38,17 @@ pub(all) struct ElementName {
 /// here and only here: an HTML parser lowercases them, foreign content keeps
 /// source case (`linearGradient`, `foreignObject`) and so is matched exactly.
 pub fn html(name : String) -> ElementName {
-  { name: name.to_lower(), ns: Html }
+  { name: name.to_lower(), ns: Html, }
 }
 
 ///|
 pub fn svg(name : String) -> ElementName {
-  { name, ns: Svg }
+  { name, ns: Svg, }
 }
 
 ///|
 pub fn mathml(name : String) -> ElementName {
-  { name, ns: MathML }
+  { name, ns: MathML, }
 }
 
 ///|
@@ -77,7 +77,7 @@ pub(all) struct ElementRule {
 ///|
 /// A plain allowed element, no per-element attribute rules.
 pub fn ElementRule::of(elem : ElementName) -> ElementRule {
-  { elem, attributes: None, remove_attributes: None }
+  { elem, attributes: None, remove_attributes: None, }
 }
 
 ///|

@@ -26,7 +26,7 @@ pub(all) struct ListIterationState {
 ///
 ///   init={ ..ListIterationState::zero(), label: "Counter" }
 pub fn ListIterationState::zero() -> ListIterationState {
-  { items: [] }
+  { items: [], }
 }
 
 ///|
@@ -51,7 +51,7 @@ impl @component.Fields for ListIterationState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some({ items: v_items })
+  Some({ items: v_items, })
 }
 
 ///|

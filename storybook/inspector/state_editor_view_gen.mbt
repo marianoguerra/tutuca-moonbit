@@ -254,7 +254,7 @@ pub(all) struct StateEditorState {
 ///
 ///   init={ ..StateEditorState::zero(), label: "Counter" }
 pub fn StateEditorState::zero() -> StateEditorState {
-  { target: Null, rows: [], name: "" }
+  { target: Null, rows: [], name: "", }
 }
 
 ///|
@@ -285,7 +285,7 @@ impl @component.Fields for StateEditorState with fn decode(f) {
     v_rows.push(x1_rows)
   }
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some({ target: v_target, rows: v_rows, name: v_name })
+  Some({ target: v_target, rows: v_rows, name: v_name, })
 }
 
 ///|

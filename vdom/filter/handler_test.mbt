@@ -11,7 +11,7 @@ fn nel(
   ns? : @vdom.Ns,
   childs? : Array[@vdom.Vdom] = [],
 ) -> @vdom.Vdom {
-  Node({ tag, attrs, childs, key: None, ns })
+  Node({ tag, attrs, childs, key: None, ns, })
 }
 
 ///|

@@ -16,7 +16,7 @@ fn name_finding(
   level : @lint.LintLevel,
   info : Array[(String, String)],
 ) -> @lint.Finding {
-  { code, level, info, location: None, suggestion: None }
+  { code, level, info, location: None, suggestion: None, }
 }
 
 ///|

@@ -33,7 +33,7 @@ pub struct Registry {
 
 ///|
 pub fn Registry::new() -> Registry {
-  { by_module: Map([]), order: [], builtins: [] }
+  { by_module: Map([]), order: [], builtins: [], }
 }
 
 ///|
@@ -311,7 +311,7 @@ pub fn Registry::search(
       if out.length() >= limit {
         break
       }
-      out.push({ descriptor: d, score: 0, why: [] })
+      out.push({ descriptor: d, score: 0, why: [], })
     }
     return out
   }
@@ -319,7 +319,7 @@ pub fn Registry::search(
   for d in all {
     let (score, why) = score_one(d, ts)
     if score > 0 {
-      hits.push({ descriptor: d, score, why })
+      hits.push({ descriptor: d, score, why, })
     }
   }
   // Sort by score, and by the catalog's own order within a tie — `all()` is

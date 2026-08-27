@@ -30,7 +30,7 @@ pub(all) struct LintDemoState {
 ///
 ///   init={ ..LintDemoState::zero(), label: "Counter" }
 pub fn LintDemoState::zero() -> LintDemoState {
-  { count: 0, items: [], kind: "", isOpen: false, child: Null }
+  { count: 0, items: [], kind: "", isOpen: false, child: Null, }
 }
 
 ///|
@@ -111,7 +111,7 @@ pub(all) struct HtmlLintDemoState {
 ///
 ///   init={ ..HtmlLintDemoState::zero(), label: "Counter" }
 pub fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
-  { count: 0 }
+  { count: 0, }
 }
 
 ///|
@@ -131,7 +131,7 @@ impl @component.Fields for HtmlLintDemoState with fn encode(s) {
 impl @component.Fields for HtmlLintDemoState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some({ count: v_count })
+  Some({ count: v_count, })
 }
 
 ///|
@@ -166,7 +166,7 @@ pub(all) struct ScopedStyleDemoState {
 ///
 ///   init={ ..ScopedStyleDemoState::zero(), label: "Counter" }
 pub fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
-  { count: 0 }
+  { count: 0, }
 }
 
 ///|
@@ -186,7 +186,7 @@ impl @component.Fields for ScopedStyleDemoState with fn encode(s) {
 impl @component.Fields for ScopedStyleDemoState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some({ count: v_count })
+  Some({ count: v_count, })
 }
 
 ///|

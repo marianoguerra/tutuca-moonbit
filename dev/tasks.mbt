@@ -44,7 +44,7 @@ pub struct Task {
 
 ///|
 fn moon(label : String, args : Array[String]) -> Command {
-  { label, prog: "moon", args }
+  { label, prog: "moon", args, }
 }
 
 ///|
@@ -457,7 +457,7 @@ pub fn tasks() -> Array[Task] {
       name: "setup",
       about: "install js-test deps (happy-dom) and enable the git hooks",
       commands: [
-        { label: "npm install", prog: "npm", args: ["install"] },
+        { label: "npm install", prog: "npm", args: ["install"], },
         {
           label: "enable git hooks",
           prog: "git",

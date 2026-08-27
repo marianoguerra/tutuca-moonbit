@@ -23,5 +23,5 @@ pub fn extract_globals(argv : Array[String]) -> (GlobalOpts, Array[String]) {
       rest.push(a)
     }
   }
-  ({ json, help }, rest)
+  ({ json, help, }, rest)
 }

@@ -182,7 +182,7 @@ pub fn register_bundle(
   // A guest instance stays guest-owned either way: this is the host asking the
   // guest to create one, which is exactly `Bundle::make_instance`, and not the
   // host building something behind its back.
-  let self_ref : Ref[Bundle?] = { val: None }
+  let self_ref : Ref[Bundle?] = { val: None, }
   for def in manifest.components {
     refuse_if_any(policy.check_style(def.name, def.style))
     // Guest view HTML arrives at runtime from the manifest, so it is parsed
@@ -348,7 +348,7 @@ pub fn register_bundle(
   if !manifest.macros.is_empty() {
     let macros : Map[String, @anode.Macro] = Map([])
     for m in manifest.macros {
-      macros[m.name] = { defaults: m.defaults, raw_view: m.html }
+      macros[m.name] = { defaults: m.defaults, raw_view: m.html, }
     }
     child.register_macros(macros)
   }
@@ -392,7 +392,7 @@ pub fn register_bundle(
     manifest,
     comps,
     diagnostics,
-    next_pid: { val: 1 },
+    next_pid: { val: 1, },
     scope: child,
     config,
     key: bundle_key(manifest, config),

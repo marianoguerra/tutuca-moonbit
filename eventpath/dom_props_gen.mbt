@@ -41,9 +41,9 @@ pub(all) struct DomInterface {
 pub let dom_interfaces : Array[(String, DomInterface)] = [
   (
     "BeforeUnloadEvent",
-    { inherits: Some("Event"), props: [("returnValue", PText)] },
+    { inherits: Some("Event"), props: [("returnValue", PText)], },
   ),
-  ("Blob", { inherits: None, props: [("size", PNum), ("type", PText)] }),
+  ("Blob", { inherits: None, props: [("size", PNum), ("type", PText)], }),
   (
     "ClipboardChangeEvent",
     {
@@ -68,9 +68,12 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       props: [("command", PText), ("source", PObj("Element"))],
     },
   ),
-  ("CompositionEvent", { inherits: Some("UIEvent"), props: [("data", PText)] }),
-  ("CustomEvent", { inherits: Some("Event"), props: [("detail", PObj("any"))] }),
-  ("DOMStringMap", { inherits: None, props: [] }),
+  ("CompositionEvent", { inherits: Some("UIEvent"), props: [("data", PText)], }),
+  (
+    "CustomEvent",
+    { inherits: Some("Event"), props: [("detail", PObj("any"))], },
+  ),
+  ("DOMStringMap", { inherits: None, props: [], }),
   (
     "DataTransfer",
     {
@@ -86,9 +89,9 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "DataTransferItem",
-    { inherits: None, props: [("kind", PText), ("type", PText)] },
+    { inherits: None, props: [("kind", PText), ("type", PText)], },
   ),
-  ("DataTransferItemList", { inherits: None, props: [("length", PNum)] }),
+  ("DataTransferItemList", { inherits: None, props: [("length", PNum)], }),
   (
     "DragEvent",
     {
@@ -227,9 +230,12 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "File",
-    { inherits: Some("Blob"), props: [("lastModified", PNum), ("name", PText)] },
+    {
+      inherits: Some("Blob"),
+      props: [("lastModified", PNum), ("name", PText)],
+    },
   ),
-  ("FileList", { inherits: None, props: [("length", PNum)] }),
+  ("FileList", { inherits: None, props: [("length", PNum)], }),
   (
     "FocusEvent",
     {
@@ -239,7 +245,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "FormDataEvent",
-    { inherits: Some("Event"), props: [("formData", PObj("FormData"))] },
+    { inherits: Some("Event"), props: [("formData", PObj("FormData"))], },
   ),
   (
     "HTMLAnchorElement",
@@ -305,10 +311,10 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("HTMLAudioElement", { inherits: Some("HTMLMediaElement"), props: [] }),
+  ("HTMLAudioElement", { inherits: Some("HTMLMediaElement"), props: [], }),
   (
     "HTMLBRElement",
-    { inherits: Some("HTMLElement"), props: [("clear", PText)] },
+    { inherits: Some("HTMLElement"), props: [("clear", PText)], },
   ),
   (
     "HTMLBaseElement",
@@ -384,11 +390,11 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLDListElement",
-    { inherits: Some("HTMLElement"), props: [("compact", PBool)] },
+    { inherits: Some("HTMLElement"), props: [("compact", PBool)], },
   ),
   (
     "HTMLDataElement",
-    { inherits: Some("HTMLElement"), props: [("value", PText)] },
+    { inherits: Some("HTMLElement"), props: [("value", PText)], },
   ),
   (
     "HTMLDataListElement",
@@ -399,7 +405,10 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLDetailsElement",
-    { inherits: Some("HTMLElement"), props: [("name", PText), ("open", PBool)] },
+    {
+      inherits: Some("HTMLElement"),
+      props: [("name", PText), ("open", PBool)],
+    },
   ),
   (
     "HTMLDialogElement",
@@ -410,11 +419,11 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLDirectoryElement",
-    { inherits: Some("HTMLElement"), props: [("compact", PBool)] },
+    { inherits: Some("HTMLElement"), props: [("compact", PBool)], },
   ),
   (
     "HTMLDivElement",
-    { inherits: Some("HTMLElement"), props: [("align", PText)] },
+    { inherits: Some("HTMLElement"), props: [("align", PText)], },
   ),
   (
     "HTMLElement",
@@ -665,14 +674,14 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("HTMLHeadElement", { inherits: Some("HTMLElement"), props: [] }),
+  ("HTMLHeadElement", { inherits: Some("HTMLElement"), props: [], }),
   (
     "HTMLHeadingElement",
-    { inherits: Some("HTMLElement"), props: [("align", PText)] },
+    { inherits: Some("HTMLElement"), props: [("align", PText)], },
   ),
   (
     "HTMLHtmlElement",
-    { inherits: Some("HTMLElement"), props: [("version", PText)] },
+    { inherits: Some("HTMLElement"), props: [("version", PText)], },
   ),
   (
     "HTMLIFrameElement",
@@ -794,7 +803,10 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLLIElement",
-    { inherits: Some("HTMLElement"), props: [("type", PText), ("value", PNum)] },
+    {
+      inherits: Some("HTMLElement"),
+      props: [("type", PText), ("value", PNum)],
+    },
   ),
   (
     "HTMLLabelElement",
@@ -907,7 +919,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLMenuElement",
-    { inherits: Some("HTMLElement"), props: [("compact", PBool)] },
+    { inherits: Some("HTMLElement"), props: [("compact", PBool)], },
   ),
   (
     "HTMLMetaElement",
@@ -1029,7 +1041,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLParagraphElement",
-    { inherits: Some("HTMLElement"), props: [("align", PText)] },
+    { inherits: Some("HTMLElement"), props: [("align", PText)], },
   ),
   (
     "HTMLParamElement",
@@ -1043,10 +1055,10 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("HTMLPictureElement", { inherits: Some("HTMLElement"), props: [] }),
+  ("HTMLPictureElement", { inherits: Some("HTMLElement"), props: [], }),
   (
     "HTMLPreElement",
-    { inherits: Some("HTMLElement"), props: [("width", PNum)] },
+    { inherits: Some("HTMLElement"), props: [("width", PNum)], },
   ),
   (
     "HTMLProgressElement",
@@ -1062,7 +1074,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLQuoteElement",
-    { inherits: Some("HTMLElement"), props: [("cite", PText)] },
+    { inherits: Some("HTMLElement"), props: [("cite", PText)], },
   ),
   (
     "HTMLScriptElement",
@@ -1111,10 +1123,10 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("HTMLSelectedContentElement", { inherits: Some("HTMLElement"), props: [] }),
+  ("HTMLSelectedContentElement", { inherits: Some("HTMLElement"), props: [], }),
   (
     "HTMLSlotElement",
-    { inherits: Some("HTMLElement"), props: [("name", PText)] },
+    { inherits: Some("HTMLElement"), props: [("name", PText)], },
   ),
   (
     "HTMLSourceElement",
@@ -1131,7 +1143,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("HTMLSpanElement", { inherits: Some("HTMLElement"), props: [] }),
+  ("HTMLSpanElement", { inherits: Some("HTMLElement"), props: [], }),
   (
     "HTMLStyleElement",
     {
@@ -1147,7 +1159,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLTableCaptionElement",
-    { inherits: Some("HTMLElement"), props: [("align", PText)] },
+    { inherits: Some("HTMLElement"), props: [("align", PText)], },
   ),
   (
     "HTMLTableCellElement",
@@ -1286,11 +1298,11 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HTMLTimeElement",
-    { inherits: Some("HTMLElement"), props: [("dateTime", PText)] },
+    { inherits: Some("HTMLElement"), props: [("dateTime", PText)], },
   ),
   (
     "HTMLTitleElement",
-    { inherits: Some("HTMLElement"), props: [("text", PText)] },
+    { inherits: Some("HTMLElement"), props: [("text", PText)], },
   ),
   (
     "HTMLTrackElement",
@@ -1314,7 +1326,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       props: [("compact", PBool), ("type", PText)],
     },
   ),
-  ("HTMLUnknownElement", { inherits: Some("HTMLElement"), props: [] }),
+  ("HTMLUnknownElement", { inherits: Some("HTMLElement"), props: [], }),
   (
     "HTMLVideoElement",
     {
@@ -1331,7 +1343,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "HashChangeEvent",
-    { inherits: Some("Event"), props: [("newURL", PText), ("oldURL", PText)] },
+    { inherits: Some("Event"), props: [("newURL", PText), ("oldURL", PText)], },
   ),
   (
     "InputEvent",
@@ -1361,7 +1373,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "MediaQueryListEvent",
-    { inherits: Some("Event"), props: [("matches", PBool), ("media", PText)] },
+    { inherits: Some("Event"), props: [("matches", PBool), ("media", PText)], },
   ),
   (
     "MessageEvent",
@@ -1451,7 +1463,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "PageTransitionEvent",
-    { inherits: Some("Event"), props: [("persisted", PBool)] },
+    { inherits: Some("Event"), props: [("persisted", PBool)], },
   ),
   (
     "PointerEvent",
@@ -1503,9 +1515,9 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
   ),
   (
     "SubmitEvent",
-    { inherits: Some("Event"), props: [("submitter", PObj("HTMLElement"))] },
+    { inherits: Some("Event"), props: [("submitter", PObj("HTMLElement"))], },
   ),
-  ("TextEvent", { inherits: Some("UIEvent"), props: [("data", PText)] }),
+  ("TextEvent", { inherits: Some("UIEvent"), props: [("data", PText)], }),
   (
     "ToggleEvent",
     {
@@ -1555,7 +1567,7 @@ pub let dom_interfaces : Array[(String, DomInterface)] = [
       ],
     },
   ),
-  ("TouchList", { inherits: None, props: [("length", PNum)] }),
+  ("TouchList", { inherits: None, props: [("length", PNum)], }),
   (
     "TrackEvent",
     {

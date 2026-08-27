@@ -41,7 +41,7 @@ impl @core.Stack for BindStack with fn lookup_bind(self, _name) {
 test "an application resolves its name and applies the builtin" {
   // Built rather than parsed: the parser lives one package UP now (core
   // cannot import it), and what this is about is evaluation anyway.
-  let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") } }
+  let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") }, }
   fn app(name : String, field : String) -> @core.Val {
     App(name~, args=[Field(field)])
   }
@@ -72,14 +72,16 @@ test "FieldVal.eval reads the raw field without invoking" {
 
 ///|
 test "MethodVal.eval invokes the method" {
-  let stack : MethodStack = { methods: { "fullName": Str("Ada L") } }
+  let stack : MethodStack = { methods: { "fullName": Str("Ada L") }, }
   let v : @core.Val = Method("fullName")
   assert_true(v.eval(stack) is Str("Ada L"))
 }
 
 ///|
 test "MethodVal.eval_as_handler hands back the raw function" {
-  let stack : FieldStack = { fields: { "inc": Fn(_args => Str("inc-marker")) } }
+  let stack : FieldStack = {
+    fields: { "inc": Fn(_args => Str("inc-marker")) },
+  }
   let v : @core.Val = Method("inc")
   guard! v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))
@@ -87,7 +89,7 @@ test "MethodVal.eval_as_handler hands back the raw function" {
 
 ///|
 test "equals? eval compares the field value against the literal" {
-  let stack : FieldStack = { fields: { "view": Str("detail") } }
+  let stack : FieldStack = { fields: { "view": Str("detail") }, }
   fn eq(lit : String) -> @core.Val {
     App(name="equals?", args=[
       Field("view"),
@@ -103,18 +105,18 @@ test "equals? eval compares the field value against the literal" {
 test "bind member eval reads the member off the resolved binding" {
   // map-like binding value: member lookup with Null default (covers both
   // original paths — immutable `.get` and plain-object property access)
-  let im : BindStack = { bind: Map({ "title": Str("alpha") }) }
+  let im : BindStack = { bind: Map({ "title": Str("alpha") }), }
   let hit : @core.Val = BindMember(name="value", prop="title")
   assert_true(hit.eval(im) is Str("alpha"))
   let miss : @core.Val = BindMember(name="value", prop="missing")
   assert_true(miss.eval(im) is Null)
-  let plain : BindStack = { bind: Map({ "color": Str("red") }) }
+  let plain : BindStack = { bind: Map({ "color": Str("red") }), }
   let color : @core.Val = BindMember(name="meta", prop="color")
   assert_true(color.eval(plain) is Str("red"))
   let missing : @core.Val = BindMember(name="meta", prop="missing")
   assert_true(missing.eval(plain) is Null)
   // unresolved binding
-  let unresolved : BindStack = { bind: Null }
+  let unresolved : BindStack = { bind: Null, }
   let nope : @core.Val = BindMember(name="nope", prop="x")
   assert_true(nope.eval(unresolved) is Null)
 }

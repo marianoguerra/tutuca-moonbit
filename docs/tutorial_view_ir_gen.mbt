@@ -62,11 +62,11 @@ fn counter_inline_update(
 ) -> @component.Update[CounterState] {
   match msg {
     Receive("inc", _args) => {
-      let s : CounterState = { count: (s.count.to_double() + 1.0).to_int() }
+      let s : CounterState = { count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }
     Receive("dec", _args) => {
-      let s : CounterState = { count: (s.count.to_double() - 1.0).to_int() }
+      let s : CounterState = { count: (s.count.to_double() - 1.0).to_int(), }
       Next(s)
     }
     _ => Unhandled

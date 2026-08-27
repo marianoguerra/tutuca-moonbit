@@ -28,12 +28,12 @@ fn id_comp() -> @component.Component {
       ),
     },
     name="Ided",
-    init=IdState::{ title: "untitled", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "untitled", count: 0, items: [], tags: Map([]), },
     update=(s : IdState, msg, _ctx) => {
       match msg {
         // returns a struct that is EQUAL to the current state
-        Receive("touch", _) => Next({ ..s })
-        Receive("rename", [Str(t)]) => Next({ ..s, title: t })
+        Receive("touch", _) => Next({ ..s, })
+        Receive("rename", [Str(t)]) => Next({ ..s, title: t, })
         _ => Unhandled
       }
     },
@@ -137,7 +137,7 @@ test "identity is preserved through a nested list, not just at the top" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let kids = [
     child.make({ "title": Str("one") }),
@@ -168,7 +168,7 @@ test "writing a list back unchanged leaves the parent instance alone" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
@@ -260,7 +260,7 @@ test "a child contributes its origin to its parent, not its contents" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let a = parent.make({ "items": List([child.make({ "title": Str("one") })]) })
   let b = parent.make({ "items": List([child.make({ "title": Str("one") })]) })
@@ -277,7 +277,7 @@ test "a parent's own bucket moves when a child is written through it" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
@@ -307,7 +307,7 @@ impl @component.Fields for IdState with fn decode(f) {
   let v_count = n_count.to_int()
   guard f.get("items") is Some(List(v_items)) else { return None }
   guard f.get("tags") is Some(Map(v_tags)) else { return None }
-  Some({ title: v_title, count: v_count, items: v_items, tags: v_tags })
+  Some({ title: v_title, count: v_count, items: v_items, tags: v_tags, })
 }
 
 ///|
@@ -335,7 +335,7 @@ test "a child instance is replaced by a successor that looks identical" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let first = Opaque::new("one")
   let v = parent.make({ "items": List([first.to_value()]) })
@@ -363,7 +363,7 @@ test "writing the same child back leaves the parent alone" {
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
-    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]), },
   )
   let kid = child.make({ "title": Str("one") })
   let v = parent.make({ "items": List([kid]) })
@@ -390,13 +390,13 @@ priv struct Opaque {
 
 ///|
 fn Opaque::new(label : String) -> Opaque {
-  { label, hidden: "", id: @tutuca.ObjId::of("opaque", { "n": Str(label) }) }
+  { label, hidden: "", id: @tutuca.ObjId::of("opaque", { "n": Str(label) }), }
 }
 
 ///|
 /// The same instance, one update later: same declared fields, new identity.
 fn Opaque::successor(self : Opaque, hidden : String) -> Opaque {
-  { ..self, hidden, id: self.id.next() }
+  { ..self, hidden, id: self.id.next(), }
 }
 
 ///|

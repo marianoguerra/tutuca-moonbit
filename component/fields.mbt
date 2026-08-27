@@ -7,7 +7,7 @@ fn FieldSpec::comp(
   protocol_ids? : Array[String] = [],
   protocols? : Array[@tutuca.ProtocolInfo] = [],
 ) -> FieldSpec {
-  { kind: FComp(comp=name, args~), default: Null, protocol_ids, protocols }
+  { kind: FComp(comp=name, args~), default: Null, protocol_ids, protocols, }
 }
 
 ///|

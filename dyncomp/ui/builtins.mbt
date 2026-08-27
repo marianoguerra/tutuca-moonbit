@@ -45,7 +45,7 @@ fn descriptor_of(
   filled? : Array[String] = [],
 ) -> @registry.Descriptor {
   {
-    ref_: { module_: builtin_module, name: comp.name },
+    ref_: { module_: builtin_module, name: comp.name, },
     doc,
     keywords,
     category,
@@ -102,7 +102,7 @@ fn fd(
   doc : String,
   c? : @jsonschema.Constraint = @jsonschema.Constraint::none(),
 ) -> @jsonschema.FieldDoc {
-  { doc, required: false, constraint: Some(c) }
+  { doc, required: false, constraint: Some(c), }
 }
 
 ///|
@@ -135,7 +135,7 @@ fn choices(
 ///|
 /// A short line of text, starting at `d`.
 fn text_field(doc : String, d? : String = "") -> @jsonschema.FieldDoc {
-  fd(doc, c={ ..@jsonschema.Constraint::none(), default: Some(Str(d)) })
+  fd(doc, c={ ..@jsonschema.Constraint::none(), default: Some(Str(d)), })
 }
 
 ///|
@@ -209,11 +209,11 @@ pub fn builtin_descriptors(
       "padding": ranged("Pixels inside the edge.", 0, 64, 0),
       "wrap": fd(
         "Let the children run onto another line when they do not fit.",
-        c={ ..@jsonschema.Constraint::none(), default: Some(Bool(false)) },
+        c={ ..@jsonschema.Constraint::none(), default: Some(Bool(false)), },
       ),
     },
     [
-      { name: "row", doc: "Side by side.", args: { "direction": Str("row") } },
+      { name: "row", doc: "Side by side.", args: { "direction": Str("row") }, },
       {
         name: "column",
         doc: "One above the other.",

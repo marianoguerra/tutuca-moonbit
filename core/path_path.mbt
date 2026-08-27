@@ -4,8 +4,8 @@
 ///|
 pub fn Path::new(steps? : Array[Step]) -> Path {
   match steps {
-    Some(s) => { steps: s }
-    None => { steps: [] }
+    Some(s) => { steps: s, }
+    None => { steps: [], }
   }
 }
 
@@ -15,7 +15,7 @@ pub fn Path::concat(self : Path, steps : Array[Step]) -> Path {
   for s in steps {
     out.push(s)
   }
-  { steps: out }
+  { steps: out, }
 }
 
 ///|
@@ -46,7 +46,7 @@ pub fn Path::pop_step(self : Path) -> Path {
   if n == 0 {
     self
   } else {
-    { steps: self.steps[0:n - 1].to_owned() }
+    { steps: self.steps[0:n - 1].to_owned(), }
   }
 }
 
@@ -198,7 +198,7 @@ pub fn IntentOpts::new(
   on_unhandled_name? : String,
   live_path? : Bool = false,
 ) -> IntentOpts {
-  { route, on_ok_name, on_error_name, on_unhandled_name, live_path }
+  { route, on_ok_name, on_error_name, on_unhandled_name, live_path, }
 }
 
 ///|
@@ -263,7 +263,7 @@ pub fn Path::update(
   // A handler that dispatches again nests into this same scope — one dispatch,
   // one record, however many layers it walked.
   let opened = begin_dispatch(self)
-  let out = match f(args, NullCtx::{  }) {
+  let out = match f(args, NullCtx::{ }) {
     Some(new_leaf) =>
       // Parity with the original `newLeaf !== curLeaf` check: a handler that
       // hands back the value

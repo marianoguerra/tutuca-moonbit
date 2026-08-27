@@ -32,7 +32,7 @@ impl @component.Fields for JLeaf with fn encode(s) {
 impl @component.Fields for JLeaf with fn decode(f) {
   guard f.get("text") is Some(Str(text)) else { return None }
   guard f.get("n") is Some(Num(n)) else { return None }
-  Some({ text, n: n.to_int() })
+  Some({ text, n: n.to_int(), })
 }
 
 ///|
@@ -45,7 +45,7 @@ priv struct JHolder {
 
 ///|
 fn JHolder::zero() -> JHolder {
-  { named: Null, free: Null, kids: [], tags: Map(Map([])) }
+  { named: Null, free: Null, kids: [], tags: Map(Map([])), }
 }
 
 ///|
@@ -69,7 +69,7 @@ impl @component.Fields for JHolder with fn decode(f) {
   guard f.get("free") is Some(free) else { return None }
   guard f.get("kids") is Some(List(kids)) else { return None }
   guard f.get("tags") is Some(tags) else { return None }
-  Some({ named, free, kids, tags })
+  Some({ named, free, kids, tags, })
 }
 
 ///|

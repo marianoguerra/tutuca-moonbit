@@ -19,7 +19,7 @@ pub(all) struct SchemaError {
 
 ///|
 fn err(pointer : String, message : String) -> SchemaError {
-  { pointer, message }
+  { pointer, message, }
 }
 
 ///|

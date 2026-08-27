@@ -2,7 +2,7 @@
 
 ///|
 pub fn FieldInfo::new(name : String, ty : TyInfo) -> FieldInfo {
-  { name, ty }
+  { name, ty, }
 }
 
 ///|

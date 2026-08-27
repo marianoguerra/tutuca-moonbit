@@ -224,7 +224,11 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
     list_json(args),
     bindings_json(bindings),
   )
-  let empty : @dyncomp.DispatchResult = { handled: false, next: None, msgs: [] }
+  let empty : @dyncomp.DispatchResult = {
+    handled: false,
+    next: None,
+    msgs: [],
+  }
   let j = @json.parse(raw) catch { _ => return empty }
   guard j is Object(o) else { return empty }
   let handled = o.get("handled") is Some(True)
@@ -283,7 +287,7 @@ impl @dyncomp.Guest for CardGuest with fn dispatch(
       }
     _ => ()
   }
-  { handled, next, msgs }
+  { handled, next, msgs, }
 }
 
 ///|
@@ -677,7 +681,7 @@ pub fn mount_compiled(
   // afterwards, which is the only order available: `register_bundle` takes the
   // guest, and the guest needs the bundle to wrap a child token. Nothing can
   // call the guest in between.
-  let guest = CardGuest::{ key: id, registered: Ref(None) }
+  let guest = CardGuest::{ key: id, registered: Ref(None), }
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
     @dyncomp.register_bundle(scope, guest, manifest, policy~)
@@ -860,7 +864,7 @@ pub fn drive(
   let manifest = @dyncomp.DynManifest::from_json_string(manifest_json) catch {
     e => return drive_failed(e.message())
   }
-  let guest = CardGuest::{ key, registered: Ref(None) }
+  let guest = CardGuest::{ key, registered: Ref(None), }
   @drive.report_json(
     @drive.run(
       guest,

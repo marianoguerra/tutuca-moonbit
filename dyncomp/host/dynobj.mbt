@@ -200,7 +200,7 @@ pub fn DynObj::with_persist_id(self : DynObj, pid : String) -> DynObj {
 /// the same bucket at the next revision — a successor is the same logical
 /// instance one update later, which is exactly what the revision means.
 fn DynObj::successor(self : DynObj, handle : Int) -> DynObj {
-  { ..self, handle, id: self.id.next() }
+  { ..self, handle, id: self.id.next(), }
 }
 
 ///|
@@ -276,7 +276,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
   // No stack in hand: a `$compute` read off a bare `Value` — the JSON
   // projection, a path lookup, the inspector — is not being asked from a
   // render position, so a `*name` inside it has no ancestry to walk.
-  self.field_at(name, @tutuca.NullStack::{  })
+  self.field_at(name, @tutuca.NullStack::{ })
 }
 
 ///|
@@ -326,7 +326,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
       owned[k] = prev
     }
     owned[name] = v
-    return Some(Obj({ ..self, owned, id: self.id.next() }))
+    return Some(Obj({ ..self, owned, id: self.id.next(), }))
   }
   match self.guest.with_field(self.handle, name, v) {
     Some(h) => {
@@ -339,7 +339,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
-  self.callable_at(name, ns, @tutuca.NullStack::{  })
+  self.callable_at(name, ns, @tutuca.NullStack::{ })
 }
 
 ///|

@@ -61,12 +61,12 @@ fn status_inline_update(
   match msg {
     Receive("flash", args) => {
       guard args.get(0) is Some(Str(m)) else { return Unchanged }
-      let s = { ..s, message: m }
-      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      let s = { ..s, message: m, }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }
     Receive("clear", _args) => {
-      let s = { ..s, message: "" }
+      let s = { ..s, message: "", }
       Next(s)
     }
     _ => Unhandled
@@ -188,7 +188,7 @@ fn send_receive_inline_update(
 ) -> @component.Update[SendReceiveState] {
   match msg {
     Receive("clearDraft", _args) => {
-      let s = { ..s, draft: "" }
+      let s = { ..s, draft: "", }
       Next(s)
     }
     _ => Unhandled

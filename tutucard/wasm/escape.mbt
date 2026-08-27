@@ -138,9 +138,9 @@ fn parse_escape(
         match escape_role(name.name, comp~) {
           Some(pair) => {
             let (kind, decl) = pair
-            defined.push({ fn_name: name.name, kind, name: decl })
+            defined.push({ fn_name: name.name, kind, name: decl, })
           }
-          None => defined.push({ fn_name: name.name, kind: "", name: "" })
+          None => defined.push({ fn_name: name.name, kind: "", name: "", })
         }
       }
       // Everything a guest's AUTHORITY is made of. An escape may not widen it,

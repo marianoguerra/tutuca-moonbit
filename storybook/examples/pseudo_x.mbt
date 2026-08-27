@@ -8,25 +8,25 @@
 
 ///|
 fn table_row_comp() -> @component.Component {
-  table_row_component(init={ name: "", qty: 0, price: 0.0 })
+  table_row_component(init={ name: "", qty: 0, price: 0.0, })
 }
 
 ///|
 /// `<tr @x render-each=".rows">` — without the `@x` the parser would drop an
 /// `<x>` here, since `<x>` is not valid inside `<tbody>`.
 fn item_table_comp() -> @component.Component {
-  item_table_component(init={ rows: [] })
+  item_table_component(init={ rows: [], })
 }
 
 ///|
 fn select_option_comp() -> @component.Component {
-  select_option_component(init={ value: "", label: "" })
+  select_option_component(init={ value: "", label: "", })
 }
 
 ///|
 /// Same trick inside `<select>`: `<option @x render-each=".options">`.
 fn item_select_comp() -> @component.Component {
-  item_select_component(init={ options: [], current: "" })
+  item_select_component(init={ options: [], current: "", })
 }
 
 ///|

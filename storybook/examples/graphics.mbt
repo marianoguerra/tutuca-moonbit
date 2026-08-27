@@ -21,7 +21,7 @@ let palette : Array[@tutuca.Value] = [
 /// Clicking a `<circle>` sets `color`; the preview `<rect>` binds `:fill` to it,
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
-  swatch_picker_component(init={ color: "#ef4444", palette }, enrich=e => {
+  swatch_picker_component(init={ color: "#ef4444", palette, }, enrich=e => {
     match e {
       // lay each swatch out along a row and ring the selected one; the typed
       // state's current `color` field decides which ring shows
@@ -49,7 +49,12 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
     name="svg-interactive",
     components=[swatch_picker_comp()],
     examples=[
-      { component: "SwatchPicker", title: "Default", args: Map([]), view: None },
+      {
+        component: "SwatchPicker",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "SwatchPicker",
         title: "Blue selected",
@@ -64,7 +69,7 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
 /// `@text` on an `<mn>` makes the displayed number reactive; the discriminant
 /// classifies the equation as the coefficients change.
 fn quadratic_comp() -> @component.Component {
-  quadratic_component(init={ a: 1, b: -3, c: 2 }, compute=m => {
+  quadratic_component(init={ a: 1, b: -3, c: 2, }, compute=m => {
     match m {
       // b² − 4ac decides how many real roots the equation has
       Discriminant =>
@@ -95,7 +100,7 @@ pub fn mathml_formula_module() -> @component.ModuleDef {
     name="mathml-formula",
     components=[quadratic_comp()],
     examples=[
-      { component: "Quadratic", title: "Two roots", args: Map([]), view: None },
+      { component: "Quadratic", title: "Two roots", args: Map([]), view: None, },
       {
         component: "Quadratic",
         title: "No real roots",

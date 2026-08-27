@@ -17,7 +17,7 @@ fn text_editor() -> @component.Component {
       ),
     },
     name="Editor",
-    init=EditorState::{ text: "start", count: 0 },
+    init=EditorState::{ text: "start", count: 0, },
   )
 }
 
@@ -162,10 +162,10 @@ test "`e.value` reads the event and `@value` reads the @each item" {
       ),
     },
     name="Picker",
-    init=PickerState::{ items: [], picked: "" },
+    init=PickerState::{ items: [], picked: "", },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
-        Receive("pick", [Str(p)]) => Next({ ..s, picked: p })
+        Receive("pick", [Str(p)]) => Next({ ..s, picked: p, })
         _ => Unhandled
       }
     },
@@ -197,10 +197,10 @@ test "`@value` in an event argument reads the @each item, not the event" {
       ),
     },
     name="Picker",
-    init=PickerState::{ items: [], picked: "" },
+    init=PickerState::{ items: [], picked: "", },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
-        Receive("pick", [Str(p)]) => Next({ ..s, picked: p })
+        Receive("pick", [Str(p)]) => Next({ ..s, picked: p, })
         _ => Unhandled
       }
     },
@@ -249,7 +249,7 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
       ),
     },
     name="Chatty",
-    init=ChattyState::{ n: 0 },
+    init=ChattyState::{ n: 0, },
     update=(s : ChattyState, msg, ctx) => {
       match msg {
         Receive("go", _) => {
@@ -257,9 +257,9 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
           ctx.send("bump", [])
           ctx.send("bump", [])
           ctx.send("bump", [])
-          Next({ n: s.n + 1 })
+          Next({ n: s.n + 1, })
         }
-        Receive("bump", _) => Next({ n: s.n + 1 })
+        Receive("bump", _) => Next({ n: s.n + 1, })
         _ => Unhandled
       }
     },
@@ -278,7 +278,7 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
 test "host draining reports bounded progress and rejects a zero batch" {
   let (a, _container) = mk_app(text_editor(), Map([]))
   let sent = a.send_at_root("noop")
-  assert_eq(sent, { processed: 1, pending: false })
+  assert_eq(sent, { processed: 1, pending: false, })
   a.transactor.push_send(
     @tutuca.DispatchPath::new(),
     "noop",
@@ -286,9 +286,9 @@ test "host draining reports bounded progress and rejects a zero batch" {
   )
   |> ignore
   let invalid = a.drain_batched(max_per_batch=0, () => ())
-  assert_eq(invalid, { processed: 0, pending: true })
+  assert_eq(invalid, { processed: 0, pending: true, })
   let drained = a.drain_batched(max_per_batch=1, () => ())
-  assert_eq(drained, { processed: 1, pending: false })
+  assert_eq(drained, { processed: 1, pending: false, })
 }
 
 ///|
@@ -312,7 +312,7 @@ impl @component.Fields for EditorState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
-  Some({ text: v_text, count: v_count })
+  Some({ text: v_text, count: v_count, })
 }
 
 ///|
@@ -332,7 +332,7 @@ impl @component.Fields for PickerState with fn decode(f) {
     v_items.push(s)
   }
   guard f.get("picked") is Some(Str(v_picked)) else { return None }
-  Some({ items: v_items, picked: v_picked })
+  Some({ items: v_items, picked: v_picked, })
 }
 
 ///|
@@ -344,7 +344,7 @@ impl @component.Fields for ChattyState with fn encode(s) {
 impl @component.Fields for ChattyState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
-  Some({ n: v_n })
+  Some({ n: v_n, })
 }
 
 ///|

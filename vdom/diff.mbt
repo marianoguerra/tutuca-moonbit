@@ -229,12 +229,12 @@ pub fn[N : DomNode] render(
   if prev is Some(p) && (p.vnode is Fragment(_)) == is_fragment {
     let old_dom = if is_fragment { container } else { p.dom }
     let new_dom = morph_node(old_dom, p.vnode, vnode, opts)
-    return { vnode, dom: if is_fragment { container } else { new_dom } }
+    return { vnode, dom: if is_fragment { container } else { new_dom }, }
   }
   let dom_node = to_dom(vnode, opts)
   container.replace_children()
   container.append_child(dom_node)
-  { vnode, dom: if is_fragment { container } else { dom_node } }
+  { vnode, dom: if is_fragment { container } else { dom_node }, }
 }
 
 ///|

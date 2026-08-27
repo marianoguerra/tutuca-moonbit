@@ -93,7 +93,7 @@ pub(all) struct CssPolicy {
 ///|
 /// No CSS. Today's `without_css`, as a level.
 pub fn CssPolicy::deny() -> CssPolicy {
-  { level: Deny, overlay: false, url: NoUrl, stylesheet: false }
+  { level: Deny, overlay: false, url: NoUrl, stylesheet: false, }
 }
 
 ///|
@@ -103,7 +103,7 @@ pub fn CssPolicy::deny() -> CssPolicy {
 /// `Computed` so the payload can lay itself out, no overlay so it cannot leave
 /// its box, and `FragmentOnly` so SVG artwork works and nothing fetches.
 pub fn CssPolicy::payload() -> CssPolicy {
-  { level: Computed, overlay: false, url: FragmentOnly, stylesheet: false }
+  { level: Computed, overlay: false, url: FragmentOnly, stylesheet: false, }
 }
 
 ///|
@@ -115,7 +115,7 @@ pub fn CssPolicy::payload() -> CssPolicy {
 /// working while still refusing `background-image:url(javascript:…)` and
 /// anything the tokenizer could not make sense of.
 pub fn CssPolicy::app() -> CssPolicy {
-  { level: Computed, overlay: true, url: Screened, stylesheet: true }
+  { level: Computed, overlay: true, url: Screened, stylesheet: true, }
 }
 
 ///|

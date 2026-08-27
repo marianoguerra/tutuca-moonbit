@@ -26,7 +26,7 @@ fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome {
   let positionals : Array[String] = []
   for a in args {
     if a == "-h" || a == "--help" {
-      return Done({ out: feedback_help_text + "\n", err: "", exit_code: 0 })
+      return Done({ out: feedback_help_text + "\n", err: "", exit_code: 0, })
     }
     if a.has_prefix("-") && a != "-" {
       let stripped = a.trim_start(chars="-").to_owned()

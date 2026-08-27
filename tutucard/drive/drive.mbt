@@ -136,7 +136,7 @@ fn run_one(
   for step in pre {
     let _ = run_step(h, scene, -1, step, take_log)
   }
-  let out = { ..drive_scene(h, scene, take_log~), component: comp, activity }
+  let out = { ..drive_scene(h, scene, take_log~), component: comp, activity, }
   // Both halves of a mounted app are reference cycles the native backend does
   // not reclaim, and a block of scenes mounts one each.
   h.destroy()

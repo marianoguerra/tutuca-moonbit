@@ -14,7 +14,7 @@ impl @anode.MacroScope for NoMacrosM with fn lookup_macro(_self, _name) {
 ///|
 fn methods_of(raw_view : String) -> Array[String] raise {
   let v = @anode.View::new("main", raw_view~)
-  v.compile(@anode.ParseContext::new(), NoMacrosM::{  }, cid=LNum(0))
+  v.compile(@anode.ParseContext::new(), NoMacrosM::{ }, cid=LNum(0))
   let set : Set[String] = Set([])
   v.collect_method_names(set)
   let out = set.to_array()

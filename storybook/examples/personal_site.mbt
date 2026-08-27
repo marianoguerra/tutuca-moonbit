@@ -168,7 +168,7 @@ fn ps_category_decoy_classes() -> String {
 
 ///|
 fn alt_url_comp() -> @component.Component {
-  alt_url_component(init={ label: "", url: "#" })
+  alt_url_component(init={ label: "", url: "#", })
 }
 
 ///|
@@ -376,11 +376,11 @@ fn root_comp() -> @component.Component {
             selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
           })
         Receive("onToggleSortByEnd", _) =>
-          Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
+          Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd, }))
         Receive("onToggleSortAsc", _) =>
-          Next(ps_resort({ ..s, sortAsc: !s.sortAsc }))
+          Next(ps_resort({ ..s, sortAsc: !s.sortAsc, }))
         Receive("onToggleFeaturedFirst", _) =>
-          Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
+          Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst, }))
         // The ANSWER, named for its outcome and carrying only what it is
         // about: three arms, three payloads, and no arm handed both a result
         // and an error to tell apart.

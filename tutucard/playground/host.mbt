@@ -49,7 +49,7 @@ fn slot_of(id : String) -> Slot {
   match slots.get(id) {
     Some(s) => s
     None => {
-      let s = Slot::{ app: None, activity: [], gen: 0 }
+      let s = Slot::{ app: None, activity: [], gen: 0, }
       slots[id] = s
       s
     }

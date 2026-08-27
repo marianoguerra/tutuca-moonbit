@@ -138,7 +138,7 @@ impl @filter.VdomFilter for HintRecorder with fn filter_elem_hinted(
 
 ///|
 test "the render loop hands each element the hints for its own attributes" {
-  let recorder = { seen: [] }
+  let recorder = { seen: [], }
   let filter : &@filter.VdomFilter = recorder
   let _ = render_html(
     "<div class=\"page\"><a href=\".target\">go</a><p style=\"color:red\">x</p></div>",

@@ -1551,7 +1551,7 @@ pub(all) struct SchemaConstState {
 ///
 ///   init={ ..SchemaConstState::zero(), label: "Counter" }
 pub fn SchemaConstState::zero() -> SchemaConstState {
-  { value: Null }
+  { value: Null, }
 }
 
 ///|
@@ -1570,7 +1570,7 @@ impl @component.Fields for SchemaConstState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaConstState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|
@@ -1719,7 +1719,7 @@ pub(all) struct SchemaNotState {
 ///
 ///   init={ ..SchemaNotState::zero(), label: "Counter" }
 pub fn SchemaNotState::zero() -> SchemaNotState {
-  { child: Null }
+  { child: Null, }
 }
 
 ///|
@@ -1738,7 +1738,7 @@ impl @component.Fields for SchemaNotState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaNotState with fn decode(f) {
   let v_child = f.get("child").unwrap_or(Null)
-  Some({ child: v_child })
+  Some({ child: v_child, })
 }
 
 ///|
@@ -1784,7 +1784,7 @@ pub(all) struct SchemaBooleanState {
 ///
 ///   init={ ..SchemaBooleanState::zero(), label: "Counter" }
 pub fn SchemaBooleanState::zero() -> SchemaBooleanState {
-  { value: false }
+  { value: false, }
 }
 
 ///|
@@ -1803,7 +1803,7 @@ impl @component.Fields for SchemaBooleanState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
-  Some({ value: v_value })
+  Some({ value: v_value, })
 }
 
 ///|
@@ -1865,7 +1865,7 @@ pub(all) struct SchemaRefState {
 ///
 ///   init={ ..SchemaRefState::zero(), label: "Counter" }
 pub fn SchemaRefState::zero() -> SchemaRefState {
-  { target: "" }
+  { target: "", }
 }
 
 ///|
@@ -1884,7 +1884,7 @@ impl @component.Fields for SchemaRefState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaRefState with fn decode(f) {
   guard f.get("target") is Some(Str(v_target)) else { return None }
-  Some({ target: v_target })
+  Some({ target: v_target, })
 }
 
 ///|

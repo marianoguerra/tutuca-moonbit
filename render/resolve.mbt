@@ -39,7 +39,7 @@ pub fn RenderCtx::new(
   {
     view_resolver: match view_resolver {
       Some(r) => r
-      None => NullViewResolver::{  }
+      None => NullViewResolver::{ }
     },
     render_cache,
     filter,

@@ -10,11 +10,11 @@ pub fn Transactor::new(
   {
     intents: match intents {
       Some(i) => i
-      None => NoIntents::{  }
+      None => NoIntents::{ }
     },
     names: match names {
       Some(n) => n
-      None => NoNames::{  }
+      None => NoNames::{ }
     },
     root,
     queue: [],
@@ -33,7 +33,7 @@ pub fn Transactor::observe(
   cb : (ObserveRecord) -> Unit,
 ) -> () -> Unit {
   self.observers.push(cb)
-  let done : Ref[Bool] = { val: false }
+  let done : Ref[Bool] = { val: false, }
   () => {
     if !done.val {
       done.val = true
@@ -226,7 +226,7 @@ pub fn Transactor::settle(
   max_turns? : Int = 10000,
 ) -> SettleResult {
   if self.draining || max_turns <= 0 {
-    return { processed: 0, pending: self.has_pending() }
+    return { processed: 0, pending: self.has_pending(), }
   }
   self.draining = true
   let mut processed = 0
@@ -252,7 +252,7 @@ pub fn Transactor::settle(
       cb()
     }
   }
-  { processed, pending: self.has_pending() }
+  { processed, pending: self.has_pending(), }
 }
 
 ///|
@@ -330,7 +330,7 @@ fn Transactor::update_root_value(
     t.mark_settled()
     return cur
   }
-  let ctx = EventContext::{ txn: t }
+  let ctx = EventContext::{ txn: t, }
   let result = f(t.args, ctx)
   t.mark_settled()
   match result {

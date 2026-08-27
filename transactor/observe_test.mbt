@@ -66,7 +66,7 @@ impl @tutuca.Obj for ORoot with fn obj_field(self, name) {
 ///|
 impl @tutuca.Obj for ORoot with fn obj_with_field(self, name, v) {
   match name {
-    "sheets" => Some(Obj(ORoot::{ sheets: v, sel_id: self.sel_id }))
+    "sheets" => Some(Obj(ORoot::{ sheets: v, sel_id: self.sel_id, }))
     _ => None
   }
 }
@@ -98,7 +98,7 @@ impl @tutuca.Obj for OSheets with fn obj_with_item(self, key, v) {
 
 ///|
 test "observe: send records carry kind, matched, before/after and pinned keys" {
-  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a" }) })
+  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a", }) })
   let node : @tutuca.Value = root
   let tx = @transactor.Transactor::new(node)
   let records : Array[@transactor.ObserveRecord] = []
@@ -114,7 +114,7 @@ test "observe: send records carry kind, matched, before/after and pinned keys" {
   assert_true(r0.matched is Exact)
   assert_true(r0.before is Some(Obj(_)))
   assert_true(r0.after is Some(Obj(_)))
-  assert_true(r0.path_keys is [{ field: "sheet", key: None }])
+  assert_true(r0.path_keys is [{ field: "sheet", key: None, }])
   let r1 = records[1]
   assert_true(r1.matched is NoHandler) // nothing registers that name
   assert_true(r1.seq > r0.seq)
@@ -122,7 +122,7 @@ test "observe: send records carry kind, matched, before/after and pinned keys" {
 
 ///|
 test "observe: bubble chains emit one record per hop; skipSelf emits none" {
-  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a" }) })
+  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a", }) })
   let node : @tutuca.Value = root
   let tx = @transactor.Transactor::new(node)
   let kinds : Array[@transactor.ObserveKind] = []
@@ -143,10 +143,10 @@ test "observe: bubble chains emit one record per hop; skipSelf emits none" {
 
 ///|
 test "on_drained fires once per outermost settle that did work" {
-  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a" }) })
+  let root : @tutuca.Value = Map({ "sheet": Obj(OSheet::{ title: "a", }) })
   let node : @tutuca.Value = root
   let tx = @transactor.Transactor::new(node)
-  let drains : Ref[Int] = { val: 0 }
+  let drains : Ref[Int] = { val: 0, }
   tx.on_drained(() => drains.val = drains.val + 1)
   // empty settle: no work, no callback
   tx.settle() |> ignore
@@ -215,7 +215,7 @@ impl @tutuca.Obj for DSheet with fn obj_handler(_self, bucket, name) {
 /// instance, and an instance flattened to `null`. The record serialized to
 /// everything EXCEPT the state change it exists to describe.
 test "observe: a record serializes, state change and all" {
-  let root : @tutuca.Value = Map({ "sheet": Obj(DSheet::{ title: "a" }) })
+  let root : @tutuca.Value = Map({ "sheet": Obj(DSheet::{ title: "a", }) })
   let tx = @transactor.Transactor::new(root)
   let records : Array[@transactor.ObserveRecord] = []
   let _un = tx.observe(r => records.push(r))

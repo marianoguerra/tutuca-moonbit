@@ -120,7 +120,11 @@ pub fn SanitizerConfig::spec_default() -> SanitizerConfig {
       ElementRule::of(html("caption")),
       ElementRule::of(html("cite")),
       ElementRule::of(html("code")),
-      { elem: html("col"), attributes: Some(["span"]), remove_attributes: None },
+      {
+        elem: html("col"),
+        attributes: Some(["span"]),
+        remove_attributes: None,
+      },
       {
         elem: html("colgroup"),
         attributes: Some(["span"]),
@@ -163,7 +167,11 @@ pub fn SanitizerConfig::spec_default() -> SanitizerConfig {
         remove_attributes: None,
       },
       ElementRule::of(html("kbd")),
-      { elem: html("li"), attributes: Some(["value"]), remove_attributes: None },
+      {
+        elem: html("li"),
+        attributes: Some(["value"]),
+        remove_attributes: None,
+      },
       ElementRule::of(html("main")),
       ElementRule::of(html("mark")),
       ElementRule::of(html("menu")),

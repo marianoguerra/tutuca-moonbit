@@ -36,7 +36,7 @@ fn finding(
   if tag is Some(t) {
     info.push(("tag", t))
   }
-  { code, level, info, location: None, suggestion }
+  { code, level, info, location: None, suggestion, }
 }
 
 ///|

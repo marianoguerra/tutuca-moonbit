@@ -18,10 +18,10 @@ fn sheet_comp() -> @component.Component {
       ),
     },
     name="Sheet",
-    init=SheetState::{ title: "Q1" },
+    init=SheetState::{ title: "Q1", },
     update=(_s : SheetState, msg, ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Next({ title: t })
+        Receive("rename", [Str(t)]) => Next({ title: t, })
         Receive("poke", _) => {
           ctx.intent("sheet-poked", [], @tutuca.IntentOpts::new(route=[Dyn]))
           Unchanged
@@ -64,7 +64,7 @@ fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> @component
 ] {
   (_s, msg, _ctx) => {
     match msg {
-      Intent("sheet-poked", _) => Next({ seen: true })
+      Intent("sheet-poked", _) => Next({ seen: true, })
       _ => Unhandled
     }
   }
@@ -81,7 +81,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Toolbar",
-    init=SeenState::{ seen: false },
+    init=SeenState::{ seen: false, },
     lookup=[@component.lookup_name("active")],
     update=seen_update(),
   )
@@ -93,10 +93,10 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Panel",
-    init=TelePanelState::{ seen: false },
+    init=TelePanelState::{ seen: false, },
     update=(_s, msg, _ctx) => {
       match msg {
-        Intent("sheet-poked", _) => Next({ seen: true })
+        Intent("sheet-poked", _) => Next({ seen: true, })
         _ => Unhandled
       }
     },
@@ -109,11 +109,11 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Workspace",
-    init=TeleWorkspaceState::{ seen: false },
+    init=TeleWorkspaceState::{ seen: false, },
     provide={ "active": ".sheet" },
     update=(_s, msg, _ctx) => {
       match msg {
-        Intent("sheet-poked", _) => Next({ seen: true })
+        Intent("sheet-poked", _) => Next({ seen: true, })
         _ => Unhandled
       }
     },
@@ -223,7 +223,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
       ),
     },
     name="Solo",
-    init=TeleSoloState::{  },
+    init=TeleSoloState::{ },
     provide={ "active": ".sheet" },
   )
   scope.register_components([sheet_comp(), solo])
@@ -253,7 +253,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
       ),
     },
     name="RowList",
-    init=NoState::{  },
+    init=NoState::{ },
     lookup=[@component.lookup_name("rows")],
   )
   let grid = @component.component(
@@ -264,7 +264,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
       ),
     },
     name="Grid",
-    init=RowsState::{ rows: Map([]) },
+    init=RowsState::{ rows: Map([]), },
     provide={ "rows": ".rows" },
   )
   scope.register_components([sheet_comp(), list, grid])
@@ -316,7 +316,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
       ),
     },
     name="Viewer",
-    init=NoState::{  },
+    init=NoState::{ },
     lookup=[@component.lookup_name("sel")],
   )
   let deck = @component.component(
@@ -327,7 +327,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
       ),
     },
     name="Deck",
-    init=DeckState::{ sheets: Map([]), selId: "b" },
+    init=DeckState::{ sheets: Map([]), selId: "b", },
     provide={ "sel": ".sheets[.selId]" },
   )
   scope.register_components([sheet_comp(), viewer, deck])
@@ -376,7 +376,7 @@ test "lookup default: a consumer without its producer falls back" {
       ),
     },
     name="Lonely",
-    init=TeleLonelyState::{  },
+    init=TeleLonelyState::{ },
     lookup=[@component.lookup_or("active", ".backup")],
   )
   scope.register_components([sheet_comp(), lonely])
@@ -412,7 +412,7 @@ impl @component.Fields for SheetState with fn encode(s) {
 ///|
 impl @component.Fields for SheetState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|
@@ -423,7 +423,7 @@ impl @component.Fields for SeenState with fn encode(s) {
 ///|
 impl @component.Fields for SeenState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v_seen)) else { return None }
-  Some({ seen: v_seen })
+  Some({ seen: v_seen, })
 }
 
 ///|
@@ -444,7 +444,7 @@ impl @component.Fields for RowsState with fn encode(s) {
 ///|
 impl @component.Fields for RowsState with fn decode(f) {
   guard f.get("rows") is Some(Map(v_rows)) else { return None }
-  Some({ rows: v_rows })
+  Some({ rows: v_rows, })
 }
 
 ///|
@@ -456,7 +456,7 @@ impl @component.Fields for DeckState with fn encode(s) {
 impl @component.Fields for DeckState with fn decode(f) {
   guard f.get("sheets") is Some(Map(v_sheets)) else { return None }
   guard f.get("selId") is Some(Str(v_selId)) else { return None }
-  Some({ sheets: v_sheets, selId: v_selId })
+  Some({ sheets: v_sheets, selId: v_selId, })
 }
 
 ///|
@@ -489,7 +489,7 @@ impl @component.Fields for TelePanelState with fn encode(s) {
 ///|
 impl @component.Fields for TelePanelState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
-  Some({ seen: v })
+  Some({ seen: v, })
 }
 
 ///|
@@ -509,7 +509,7 @@ impl @component.Fields for TeleWorkspaceState with fn encode(s) {
 ///|
 impl @component.Fields for TeleWorkspaceState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
-  Some({ seen: v })
+  Some({ seen: v, })
 }
 
 ///|

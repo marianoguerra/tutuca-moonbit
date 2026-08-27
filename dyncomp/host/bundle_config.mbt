@@ -124,5 +124,5 @@ fn resolve_config(
         )
     }
   }
-  ({ all, view }, effective)
+  ({ all, view, }, effective)
 }

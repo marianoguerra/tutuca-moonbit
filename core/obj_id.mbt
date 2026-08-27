@@ -94,12 +94,12 @@ fn mix_named(h : UInt64, m : Map[String, Value]) -> UInt64 {
 
 ///|
 pub fn ObjId::of(fingerprint : String, fields : Map[String, Value]) -> ObjId {
-  { origin: mix_named(mix_str(FNV_OFFSET, fingerprint), fields), rev: 0 }
+  { origin: mix_named(mix_str(FNV_OFFSET, fingerprint), fields), rev: 0, }
 }
 
 ///|
 pub fn ObjId::next(self : ObjId) -> ObjId {
-  { ..self, rev: self.rev + 1 }
+  { ..self, rev: self.rev + 1, }
 }
 
 ///|

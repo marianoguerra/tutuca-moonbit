@@ -170,7 +170,7 @@ fn invalidate(steps : Array[@core.Step], rng : Lcg) -> Array[@core.Step] {
 fn gen_tree_and_path() -> @gen.Gen[(@core.Value, Array[@core.Step])] {
   gen_value(3).bind(tree => {
     @gen.int_range(0, 1073741823).fmap(seed => {
-      let rng = Lcg::{ state: seed.reinterpret_as_uint() }
+      let rng = Lcg::{ state: seed.reinterpret_as_uint(), }
       (tree, derive_path(tree, rng))
     })
   })
@@ -240,7 +240,7 @@ test "property: put through an unresolvable path is physically identity" {
       }),
       x => {
         let ((tree, steps, v), seed) = x
-        let rng = Lcg::{ state: seed.reinterpret_as_uint() }
+        let rng = Lcg::{ state: seed.reinterpret_as_uint(), }
         let bad = invalidate(steps, rng)
         let root : @core.Value = tree
         let p = @core.Path::new(steps=bad)

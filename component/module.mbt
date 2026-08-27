@@ -8,7 +8,7 @@ pub fn ModuleDef::new(
   intents? : Map[String, Array[IntentFn]] = Map([]),
   examples? : Array[ExampleDef] = [],
 ) -> ModuleDef {
-  { name, components, macros, intents, examples }
+  { name, components, macros, intents, examples, }
 }
 
 ///|

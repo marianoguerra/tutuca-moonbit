@@ -103,14 +103,14 @@ pub(all) struct LookupSpec {
 /// A `lookup` entry as written, with no default. The common case, and the one
 /// worth a word rather than a record literal.
 pub fn lookup_name(name : String) -> LookupSpec {
-  { name, default: None }
+  { name, default: None, }
 }
 
 ///|
 /// A `lookup` entry with a fallback expression, used when no producer is above
 /// the consumer at render time.
 pub fn lookup_or(name : String, default : String) -> LookupSpec {
-  { name, default: Some(default) }
+  { name, default: Some(default), }
 }
 
 ///|

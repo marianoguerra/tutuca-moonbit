@@ -53,13 +53,13 @@ pub fn Scanner::new(source : String) -> Scanner {
     }
   }
   offsets[len] = utf16_pos
-  { source, chars, pos: 0, len, utf16_offsets: Some(offsets) }
+  { source, chars, pos: 0, len, utf16_offsets: Some(offsets), }
 }
 
 ///|
 fn Scanner::new_bmp(source : String) -> Scanner {
   let chars : Array[Char] = []
-  { source, chars, pos: 0, len: source.length(), utf16_offsets: None }
+  { source, chars, pos: 0, len: source.length(), utf16_offsets: None, }
 }
 
 ///|

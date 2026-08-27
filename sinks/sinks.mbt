@@ -61,14 +61,14 @@ pub(all) struct SinkHints {
 /// walk that computes these — so it gets this, and every rule inspects it as it
 /// always did.
 pub fn SinkHints::all() -> SinkHints {
-  { url: true, handler: true, css: true, markup: true }
+  { url: true, handler: true, css: true, markup: true, }
 }
 
 ///|
 /// Nothing for any rule to look at. The starting point of the fold, and the
 /// answer for the overwhelming majority of elements.
 pub fn SinkHints::empty() -> SinkHints {
-  { url: false, handler: false, css: false, markup: false }
+  { url: false, handler: false, css: false, markup: false, }
 }
 
 ///|

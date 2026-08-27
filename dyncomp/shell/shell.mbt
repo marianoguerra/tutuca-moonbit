@@ -37,7 +37,7 @@ pub fn make_instance(
 /// The mounted app whose classes get compiled. One live app per wasm instance is
 /// the premise the exported entry points already rest on, so this is a module
 /// ref rather than something a caller threads through.
-let live_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
+let live_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None, }
 
 ///|
 /// Tell this package which app to compile classes from. A host calls it once,
@@ -115,7 +115,7 @@ pub fn loader_bar_comp(
   status? : String = "",
   notify? : (LoaderEvent, &@tutuca.Ctx) -> Unit = ignore_event,
 ) -> @component.Component {
-  loader_bar_component(init={ status, url: "", showUrl: show_url, samples }, update=(
+  loader_bar_component(init={ status, url: "", showUrl: show_url, samples, }, update=(
     s,
     msg,
     ctx,
@@ -132,7 +132,7 @@ pub fn loader_bar_comp(
         // completion can overtake the line below.
         let id = @dhw.load_url(ctx.path(), url)
         notify(Started(url, id), ctx)
-        return Next({ ..s, url, status: "loading \{url}…" })
+        return Next({ ..s, url, status: "loading \{url}…", })
       }
       // The name was claimed, and a payload that is not a URL is not a load.
       Some(LoadSample(_)) => return Unchanged
@@ -140,11 +140,11 @@ pub fn loader_bar_comp(
       Some(LoadUrl) => {
         let url = s.url.trim().to_owned()
         if url == "" {
-          return Next({ ..s, status: "nothing to load" })
+          return Next({ ..s, status: "nothing to load", })
         }
         let id = @dhw.load_url(ctx.path(), url)
         notify(Started(url, id), ctx)
-        return Next({ ..s, status: "loading \{url}…" })
+        return Next({ ..s, status: "loading \{url}…", })
       }
       Some(Unknown(_, _)) | None => ()
     }
@@ -171,19 +171,19 @@ pub fn loader_bar_comp(
         // A drop that carried no file at all is not a load, and telling
         // somebody it is loading would be a lie that never resolves.
         guard any else { return Unchanged }
-        Next({ ..s, status: "loading…" })
+        Next({ ..s, status: "loading…", })
       }
       Some(DyncompLoaded(module_name, load)) => {
         LoaderBarIntent::CatalogChanged(module_name).dispatch(ctx)
         notify(Loaded(module_name, load), ctx)
-        Next({ ..s, status: "loaded \{module_name}" })
+        Next({ ..s, status: "loaded \{module_name}", })
       }
       // The refusal's own words: "this host takes no CSS from a bundle", "no
       // such component". A generic sentence here would throw away the one
       // thing a person can act on.
       Some(DyncompError(why, load)) => {
         notify(Failed(why, load), ctx)
-        Next({ ..s, status: why })
+        Next({ ..s, status: why, })
       }
       // The merged `Receive` carries this component's own VIEW names as
       // well as the schema's, so `Unknown` covers cases this match has
@@ -266,7 +266,7 @@ pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]] {
 /// than anything stronger because a demo die needs a different face each time
 /// and nothing more; a page that needed unpredictability an attacker cannot
 /// reproduce would reach for the platform's own generator here.
-let seed : Ref[UInt] = { val: 0x9E3779B9 }
+let seed : Ref[UInt] = { val: 0x9E3779B9, }
 
 ///|
 fn next_u32() -> UInt {

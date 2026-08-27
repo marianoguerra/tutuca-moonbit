@@ -30,7 +30,7 @@ pub(all) struct FilePickerState {
 ///
 ///   init={ ..FilePickerState::zero(), label: "Counter" }
 pub fn FilePickerState::zero() -> FilePickerState {
-  { name: "", size: 0.0, type_: "", lastModified: 0.0, hasFile: false }
+  { name: "", size: 0.0, type_: "", lastModified: 0.0, hasFile: false, }
 }
 
 ///|

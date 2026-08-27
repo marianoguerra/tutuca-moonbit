@@ -150,7 +150,7 @@ pub fn parse_flags(
     flags[f.name] = Str(value)
     i = i + 1
   }
-  Ok({ flags, positionals })
+  Ok({ flags, positionals, })
 }
 
 ///|

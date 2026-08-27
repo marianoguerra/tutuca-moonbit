@@ -66,7 +66,7 @@ pub fn mount(
 /// implementations of "click the third row" start disagreeing about what
 /// `nth` counts.
 pub fn[N] Harness::over(app : @app.App[N], container : N) -> Harness[N] {
-  { app, container }
+  { app, container, }
 }
 
 ///|
@@ -183,7 +183,7 @@ fn parse_selector(sel : String) -> Sel {
       _ => attrs.push(name)
     }
   }
-  { tag, id, classes, attrs }
+  { tag, id, classes, attrs, }
 }
 
 ///|

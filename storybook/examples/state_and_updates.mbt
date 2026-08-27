@@ -17,7 +17,7 @@
 /// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
   attribute_binding_component(
-    init={ str: "hello", num: 42, bool: true, notSet: Null },
+    init={ str: "hello", num: 42, bool: true, notSet: Null, },
     update=(
       // Parse-and-validate before writing: a bad number leaves state untouched.
       // The payload is typed
@@ -30,7 +30,7 @@ fn attribute_binding_comp() -> @component.Component {
       match AttributeBindingMsg::from_dispatch(msg) {
         Some(SetRawNumber(v)) =>
           match (Some(@string.parse_int(v)) catch { _ => None }) {
-            Some(n) => Next({ ..s, num: n })
+            Some(n) => Next({ ..s, num: n, })
             // A bad number leaves the state untouched — and `Unchanged`, not
             // `Unhandled`, because this arm claimed `setRawNumber`.
             None => Unchanged
@@ -64,7 +64,7 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
 /// single @if the @then/@else infer the attribute name; with several, the extra
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
 fn conditional_attributes_comp() -> @component.Component {
-  conditional_attributes_component(init={ isActive: true })
+  conditional_attributes_component(init={ isActive: true, })
 }
 
 ///|
@@ -93,7 +93,7 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
 /// Modifiers filter events: `+send` fires only on Enter, `+cancel` only on
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
-  event_modifiers_component(init={ query: "", lastSentSearch: Null }, update=(
+  event_modifiers_component(init={ query: "", lastSentSearch: Null, }, update=(
     s,
     msg,
     _ctx,
@@ -103,7 +103,7 @@ fn event_modifiers_comp() -> @component.Component {
       // view spells them bare now, so they arrive as Inputs, and `Unhandled`
       // falls through to them.
       Some(ResetQuery | SetLastSentSearch(_)) => Unhandled
-      Some(OnInput(v)) => Next({ ..s, query: v })
+      Some(OnInput(v)) => Next({ ..s, query: v, })
       Some(Unknown(_, _)) | None => Unhandled
     }
   })
@@ -115,7 +115,12 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
     name="event-modifiers",
     components=[event_modifiers_comp()],
     examples=[
-      { component: "EventModifiers", title: "Empty", args: Map([]), view: None },
+      {
+        component: "EventModifiers",
+        title: "Empty",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "EventModifiers",
         title: "With Sent Search",
@@ -139,7 +144,7 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 /// `compute` is answered by the render stack, which is not what that block
 /// compiles.
 fn show_hide_comp() -> @component.Component {
-  show_hide_component(init={ isOpen: false, count: 0 }, compute=m => {
+  show_hide_component(init={ isOpen: false, count: 0, }, compute=m => {
     match m {
       Label =>
         Some((s, _args, _stack) => {
@@ -156,7 +161,7 @@ fn show_hide_comp() -> @component.Component {
 ///|
 pub fn show_hide_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="show-hide", components=[show_hide_comp()], examples=[
-    { component: "ShowHide", title: "Closed", args: Map([]), view: None },
+    { component: "ShowHide", title: "Closed", args: Map([]), view: None, },
     {
       component: "ShowHide",
       title: "Open",

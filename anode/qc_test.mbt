@@ -117,7 +117,7 @@ test "ANode::parse never panics on directive-free tag soup" {
       let i = if x < 0 { -(x + 1) } else { x }
       buf.write_string(fragments[i % fragments.length()])
     }
-    let px = @anode.ParseContext::new(handler=SilentHandler::{  })
+    let px = @anode.ParseContext::new(handler=SilentHandler::{ })
     @anode.ANode::parse(buf.to_string(), px) |> ignore
     true
   })

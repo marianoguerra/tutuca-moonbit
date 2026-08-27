@@ -78,7 +78,11 @@ async fn run_feedback(
         ),
       )
   }
-  emit_and_exit({ out: @cli.feedback_success_line(file), err: "", exit_code: 0 })
+  emit_and_exit({
+    out: @cli.feedback_success_line(file),
+    err: "",
+    exit_code: 0,
+  })
 }
 
 ///|
@@ -260,7 +264,7 @@ async fn run_gen_views(
       }
     }
     let (target, comp) = @cli.gen_views_target(input, out?, name?)
-    inputs.push({ input, target, name: comp, source })
+    inputs.push({ input, target, name: comp, source, })
   }
   let plan = match @cli.gen_views_all(inputs, ir~) {
     Ok(plan) => plan
@@ -355,7 +359,7 @@ async fn run_gen_css(
     }
   }
   if plan.print_classes {
-    emit_and_exit({ out: @cli.class_list_text(classes), err: "", exit_code: 0 })
+    emit_and_exit({ out: @cli.class_list_text(classes), err: "", exit_code: 0, })
     return
   }
   let css = match compile_css(plan, classes) {
@@ -366,7 +370,7 @@ async fn run_gen_css(
     }
   }
   match plan.out {
-    None => emit_and_exit({ out: css, err: "", exit_code: 0 })
+    None => emit_and_exit({ out: css, err: "", exit_code: 0, })
     Some(target) =>
       match write_css(target, css) {
         Err(shape) => emit_and_exit(@cli.error_emit(opts, shape))

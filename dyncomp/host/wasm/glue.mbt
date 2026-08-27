@@ -347,7 +347,11 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     args_json(args),
     map_json(bindings),
   )
-  let empty : @dyncomp.DispatchResult = { handled: false, next: None, msgs: [] }
+  let empty : @dyncomp.DispatchResult = {
+    handled: false,
+    next: None,
+    msgs: [],
+  }
   let j = @json.parse(raw) catch {
     _ => {
       bad_payload("dispatch result", raw)
@@ -417,7 +421,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
       }
     _ => ()
   }
-  { handled, next, msgs }
+  { handled, next, msgs, }
 }
 
 ///|
@@ -514,10 +518,10 @@ pub impl @dyncomp.Guest for WasmGuest with fn drop_instance(self, handle) {
 // --- lifecycle glue ---
 
 ///|
-let current : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
+let current : Ref[@app.App[@wdom.WasmNode]?] = { val: None, }
 
 ///|
-let current_doc : Ref[@wdom.WasmNode?] = { val: None }
+let current_doc : Ref[@wdom.WasmNode?] = { val: None, }
 
 ///|
 let bundles : Map[Int, @dyncomp.Bundle] = Map([])
@@ -583,14 +587,14 @@ pub fn guest_for(which : String) -> (&@dyncomp.Guest, @dyncomp.DynManifest)? {
   guard find_bundle(which) is Some(bundle) else { return None }
   guard by_key.get(bundle.key()) is Some(bid) else { return None }
   (
-    (WasmGuest::{ bundle: bid, registered: { val: None } } : &@dyncomp.Guest),
+    (WasmGuest::{ bundle: bid, registered: { val: None, }, } : &@dyncomp.Guest),
     bundle.manifest(),
   )
   |> Some
 }
 
 ///|
-let next_load : Ref[Int] = { val: 1 }
+let next_load : Ref[Int] = { val: 1, }
 
 ///|
 /// What this page will accept from a bundle. Every load is screened against it,
@@ -600,7 +604,7 @@ let next_load : Ref[Int] = { val: 1 }
 /// Untrusted until a page says otherwise, which is the only safe default for a
 /// loader whose whole purpose is to accept an archive from somewhere: a page
 /// that has not thought about the question has not granted anything.
-let policy : Ref[@policy.Policy] = { val: @policy.Policy::untrusted() }
+let policy : Ref[@policy.Policy] = { val: @policy.Policy::untrusted(), }
 
 ///|
 /// Hand the live app to the glue after mounting (mirrors @wglue.install), and
@@ -777,12 +781,12 @@ pub fn on_loaded(
   manifest_json : String,
 ) -> Unit {
   guard current.val is Some(app) else { return }
-  let registered : Ref[@dyncomp.Bundle?] = { val: None }
+  let registered : Ref[@dyncomp.Bundle?] = { val: None, }
   let bundle = try {
     let manifest = @dyncomp.DynManifest::from_json_string(manifest_json)
     @dyncomp.register_bundle(
       app.scope,
-      WasmGuest::{ bundle: bundle_id, registered },
+      WasmGuest::{ bundle: bundle_id, registered, },
       manifest,
       policy=policy.val,
     )

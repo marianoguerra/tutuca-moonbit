@@ -68,7 +68,7 @@ pub fn Policy::allowing_external_urls(
   if !bad.is_empty() {
     raise InvalidOrigin(bad)
   }
-  { ..self, allows_external_urls: true, external_origins: normalized }
+  { ..self, allows_external_urls: true, external_origins: normalized, }
 }
 
 ///|

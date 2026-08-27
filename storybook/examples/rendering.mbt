@@ -31,7 +31,7 @@ fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
 /// read-only and editable at once.
 fn push_view_comp() -> @component.Component {
   push_view_component(
-    init={ items: [], query: "", view: "main" },
+    init={ items: [], query: "", view: "main", },
     compute=m => {
       match m {
         GetToggleLabel =>
@@ -85,7 +85,7 @@ pub fn push_view_module() -> @component.ModuleDef {
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
   seq_item_access_component(
-    init={ byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0 },
+    init={ byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0, },
     compute=m => {
       match m {
         GetMaxIndex =>
@@ -134,7 +134,7 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 /// labels, which are `compute`s.
 fn pagination_comp() -> @component.Component {
   pagination_component(
-    init={ items: [], page: 0, pageSize: 5 },
+    init={ items: [], page: 0, pageSize: 5, },
     compute=m => {
       match m {
         // No `PageCount`: nothing called `$pageCount`, in a view or out of one.

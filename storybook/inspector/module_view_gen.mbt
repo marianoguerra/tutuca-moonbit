@@ -32,7 +32,7 @@ pub(all) struct RichSampleState {
 ///
 ///   init={ ..RichSampleState::zero(), label: "Counter" }
 pub fn RichSampleState::zero() -> RichSampleState {
-  { title: "", count: 0, tags: [], open: false }
+  { title: "", count: 0, tags: [], open: false, }
 }
 
 ///|
@@ -66,7 +66,7 @@ impl @component.Fields for RichSampleState with fn decode(f) {
     v_tags.push(x1_tags)
   }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open })
+  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open, })
 }
 
 ///|
@@ -333,7 +333,7 @@ pub(all) struct SampleCardState {
 ///
 ///   init={ ..SampleCardState::zero(), label: "Counter" }
 pub fn SampleCardState::zero() -> SampleCardState {
-  { title: "", count: 0, tags: [], open: false }
+  { title: "", count: 0, tags: [], open: false, }
 }
 
 ///|
@@ -367,7 +367,7 @@ impl @component.Fields for SampleCardState with fn decode(f) {
     v_tags.push(x1_tags)
   }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open })
+  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open, })
 }
 
 ///|

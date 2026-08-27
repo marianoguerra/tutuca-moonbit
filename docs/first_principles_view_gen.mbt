@@ -26,7 +26,7 @@ pub(all) struct FpGreetingState {
 ///
 ///   init={ ..FpGreetingState::zero(), label: "Counter" }
 pub fn FpGreetingState::zero() -> FpGreetingState {
-  { name: "" }
+  { name: "", }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for FpGreetingState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for FpGreetingState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some({ name: v_name })
+  Some({ name: v_name, })
 }
 
 ///|
@@ -91,7 +91,7 @@ pub(all) struct NoteState {
 ///
 ///   init={ ..NoteState::zero(), label: "Counter" }
 pub fn NoteState::zero() -> NoteState {
-  { text: "" }
+  { text: "", }
 }
 
 ///|
@@ -110,7 +110,7 @@ impl @component.Fields for NoteState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for NoteState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
-  Some({ text: v_text })
+  Some({ text: v_text, })
 }
 
 ///|
@@ -207,7 +207,7 @@ pub(all) struct MailboxState {
 ///
 ///   init={ ..MailboxState::zero(), label: "Counter" }
 pub fn MailboxState::zero() -> MailboxState {
-  { note: Null }
+  { note: Null, }
 }
 
 ///|
@@ -226,7 +226,7 @@ impl @component.Fields for MailboxState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MailboxState with fn decode(f) {
   let v_note = f.get("note").unwrap_or(Null)
-  Some({ note: v_note })
+  Some({ note: v_note, })
 }
 
 ///|

@@ -80,7 +80,7 @@ fn lk_slot_update() -> (LkSlotState, @component.Dispatch, &@tutuca.Ctx) -> @comp
           ),
         })
       Receive("readTheme", _) =>
-        Next({ made: shown(ctx.lookup("theme", @tutuca.LookupOpts::new())) })
+        Next({ made: shown(ctx.lookup("theme", @tutuca.LookupOpts::new())), })
       Receive("readThemeLex", _) =>
         Next({
           made: shown(ctx.lookup("theme", @tutuca.LookupOpts::new(route=[Lex]))),
@@ -117,7 +117,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Cell",
-    init=LkCellState::{ label: "registered" },
+    init=LkCellState::{ label: "registered", },
   )
   let slot = @component.component(
     views={
@@ -129,7 +129,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Slot",
-    init=LkSlotState::{ made: "" },
+    init=LkSlotState::{ made: "", },
     lookup=[@component.lookup_name("Cell"), @component.lookup_name("theme")],
     update=lk_slot_update(),
   )
@@ -141,7 +141,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Board",
-    init=LkBoardState::{ theme: "dark", label: "published" },
+    init=LkBoardState::{ theme: "dark", label: "published", },
     provide={ "Cell": "self", "theme": ".theme" },
     update=(s : LkBoardState, msg, ctx) => {
       match msg {
@@ -150,7 +150,7 @@ fn lk_scope() -> @component.ComponentStack raise {
           ctx.at().field("slot").send("ping", [])
           Unchanged
         }
-        Receive("pong", [Str(who)]) => Next({ ..s, label: "pong:\{who}" })
+        Receive("pong", [Str(who)]) => Next({ ..s, label: "pong:\{who}", })
         _ => Unhandled
       }
     },
@@ -163,7 +163,7 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Plain",
-    init=LkPlainState::{  },
+    init=LkPlainState::{ },
   )
   scope.register_components([cell, slot, board, plain])
   scope.compile_all()
@@ -332,7 +332,7 @@ impl @component.Fields for LkCellState with fn encode(s) {
 ///|
 impl @component.Fields for LkCellState with fn decode(f) {
   guard f.get("label") is Some(Str(v)) else { return None }
-  Some({ label: v })
+  Some({ label: v, })
 }
 
 ///|
@@ -354,7 +354,7 @@ impl @component.Fields for LkBoardState with fn decode(f) {
   guard f.get("theme") is Some(Str(t)) && f.get("label") is Some(Str(l)) else {
     return None
   }
-  Some({ theme: t, label: l })
+  Some({ theme: t, label: l, })
 }
 
 ///|
@@ -371,7 +371,7 @@ impl @component.Fields for LkPlainState with fn encode(_s) {
 
 ///|
 impl @component.Fields for LkPlainState with fn decode(_f) {
-  Some(LkPlainState::{  })
+  Some(LkPlainState::{ })
 }
 
 ///|
@@ -389,5 +389,5 @@ impl @component.Fields for LkSlotState with fn encode(s) {
 ///|
 impl @component.Fields for LkSlotState with fn decode(f) {
   guard f.get("made") is Some(Str(v)) else { return None }
-  Some({ made: v })
+  Some({ made: v, })
 }

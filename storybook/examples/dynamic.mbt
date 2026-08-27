@@ -6,7 +6,7 @@
 
 ///|
 fn selector_entry_comp() -> @component.Component {
-  selector_entry_component(init={ value: "entry-value", label: "Entry Label" })
+  selector_entry_component(init={ value: "entry-value", label: "Entry Label", })
 }
 
 ///|
@@ -14,7 +14,7 @@ fn selector_entry_comp() -> @component.Component {
 /// `*entries`. The `default` is used only when no producer is in the render
 /// stack.
 fn selector_comp() -> @component.Component {
-  selector_component(init={ items: [], selectedValue: Null }, lookup=[
+  selector_component(init={ items: [], selectedValue: Null, }, lookup=[
     @component.lookup_or("entries", ".items"),
   ])
 }
@@ -24,7 +24,7 @@ fn selector_comp() -> @component.Component {
 /// component is entered during render — there is no hook to opt in.
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   entry_editor_and_selector_component(
-    init={ ..EntryEditorAndSelectorState::zero(), items: [] },
+    init={ ..EntryEditorAndSelectorState::zero(), items: [], },
     provide={ "entries": ".items" },
     update=(s, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
@@ -83,7 +83,7 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
 /// A dynamic var resolves to a VALUE, so it works anywhere a value is read —
 /// including as a component-render target: `<x render="*active">`.
 fn sheet_comp() -> @component.Component {
-  sheet_component(init={ title: "untitled" })
+  sheet_component(init={ title: "untitled", })
 }
 
 ///|
@@ -123,7 +123,7 @@ pub fn dynamic_path_module() -> @component.ModuleDef {
     name="dynamic-path",
     components=[workspace_comp(), panel_comp(), toolbar_comp(), sheet_comp()],
     examples=[
-      { component: "Workspace", title: "Default", args: Map([]), view: None },
+      { component: "Workspace", title: "Default", args: Map([]), view: None, },
     ],
   )
 }

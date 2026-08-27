@@ -82,7 +82,7 @@ test "property: keyed reorder preserves DOM node identity" {
   @qc.quick_check(
     @qc.forall(gen, p => {
       let (n, seed) = p
-      let rng = Lcg::{ state: seed.reinterpret_as_uint() }
+      let rng = Lcg::{ state: seed.reinterpret_as_uint(), }
       let keys : Array[String] = []
       for i in 0..<n {
         keys.push("k\{i}")

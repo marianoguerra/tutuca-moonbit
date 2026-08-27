@@ -46,7 +46,7 @@ pub struct HandlerFilter {
 
 ///|
 pub fn HandlerFilter::new(max_reports? : Int = 64) -> HandlerFilter {
-  { log: DropLog::new(max_reports~) }
+  { log: DropLog::new(max_reports~), }
 }
 
 ///|

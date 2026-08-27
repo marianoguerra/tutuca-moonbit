@@ -19,13 +19,13 @@ pub(all) struct Span {
 ///|
 /// Create a span
 pub fn Span::new(from : Int, to : Int) -> Span {
-  { from, to }
+  { from, to, }
 }
 
 ///|
 /// Empty span (for synthetic nodes)
 pub fn Span::empty() -> Span {
-  { from: 0, to: 0 }
+  { from: 0, to: 0, }
 }
 
 // =============================================================================
@@ -85,7 +85,7 @@ pub fn Trivia::new(content : String) -> Trivia {
 
 ///|
 pub fn Trivia::empty() -> Trivia {
-  { content: "" }
+  { content: "", }
 }
 
 ///|

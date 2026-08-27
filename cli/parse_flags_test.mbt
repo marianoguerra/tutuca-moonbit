@@ -4,7 +4,7 @@
 fn emit_of(o : @cli.Outcome) -> @cli.Emit {
   match o {
     Done(e) => e
-    _ => { out: "", err: "not done", exit_code: 0 }
+    _ => { out: "", err: "not done", exit_code: 0, }
   }
 }
 

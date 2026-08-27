@@ -36,7 +36,14 @@ pub(all) struct PaletteRowState {
 ///
 ///   init={ ..PaletteRowState::zero(), label: "Counter" }
 pub fn PaletteRowState::zero() -> PaletteRowState {
-  { module_: "", name: "", summary: "", why: "", category: "", selected: false }
+  {
+    module_: "",
+    name: "",
+    summary: "",
+    why: "",
+    category: "",
+    selected: false,
+  }
 }
 
 ///|
@@ -310,7 +317,7 @@ pub(all) struct CommandBarState {
 ///
 ///   init={ ..CommandBarState::zero(), label: "Counter" }
 pub fn CommandBarState::zero() -> CommandBarState {
-  { query: "", hits: [], cursor: 0, configure: false, emptyMessage: "" }
+  { query: "", hits: [], cursor: 0, configure: false, emptyMessage: "", }
 }
 
 ///|
@@ -1114,7 +1121,7 @@ pub(all) struct ConfigPanelState {
 ///
 ///   init={ ..ConfigPanelState::zero(), label: "Counter" }
 pub fn ConfigPanelState::zero() -> ConfigPanelState {
-  { title: "", mode: "", target: Null, form: Null }
+  { title: "", mode: "", target: Null, form: Null, }
 }
 
 ///|
@@ -1141,7 +1148,7 @@ impl @component.Fields for ConfigPanelState with fn decode(f) {
   guard f.get("mode") is Some(Str(v_mode)) else { return None }
   let v_target = f.get("target").unwrap_or(Null)
   let v_form = f.get("form").unwrap_or(Null)
-  Some({ title: v_title, mode: v_mode, target: v_target, form: v_form })
+  Some({ title: v_title, mode: v_mode, target: v_target, form: v_form, })
 }
 
 ///|

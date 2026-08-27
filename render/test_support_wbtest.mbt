@@ -20,7 +20,7 @@ impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
   let mut cid = 0
   for key, node in self.views {
     if key == name {
-      return Some({ node, cid, vid: name })
+      return Some({ node, cid, vid: name, })
     }
     cid += 1
   }
@@ -50,7 +50,7 @@ impl @anode.MacroScope for EmptyMacroScope with fn lookup_macro(_self, _name) {
 
 ///|
 fn ViewRegistry::new() -> ViewRegistry {
-  { by_name: Map([]) }
+  { by_name: Map([]), }
 }
 
 ///|
@@ -62,9 +62,9 @@ fn ViewRegistry::add(
   let cid = self.by_name.length()
   let v = @anode.View::new(name, raw_view~)
   let px = @anode.ParseContext::new()
-  v.compile(px, EmptyMacroScope::{  }, cid=LNum(cid.to_double()))
+  v.compile(px, EmptyMacroScope::{ }, cid=LNum(cid.to_double()))
   guard v.anode is Some(node) else { fail("view \{name} did not compile") }
-  self.by_name[name] = { cid, vid: name, node, px }
+  self.by_name[name] = { cid, vid: name, node, px, }
 }
 
 ///|
@@ -73,7 +73,7 @@ impl ViewResolver for ViewRegistry with fn resolve_view(self, names, _value) {
     return None
   }
   match self.by_name.get(name) {
-    Some(cv) => Some({ node: cv.node, cid: cv.cid, vid: cv.vid })
+    Some(cv) => Some({ node: cv.node, cid: cv.cid, vid: cv.vid, })
     None => None
   }
 }

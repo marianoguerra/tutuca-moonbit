@@ -6,7 +6,7 @@
 
 ///|
 fn todo_item_comp() -> @component.Component {
-  item_component(init={ completed: false, text: "do the thing" })
+  item_component(init={ completed: false, text: "do the thing", })
 }
 
 ///|
@@ -14,13 +14,13 @@ fn todo_item_comp() -> @component.Component {
 /// loop is currently on. `$removeInItemsAt @key` is a generated list mutator,
 /// passed the loop's key.
 fn todo_items_comp(item : @component.Component) -> @component.Component {
-  items_component(init={ items: [] }, update=(s, msg, _ctx) => {
+  items_component(init={ items: [], }, update=(s, msg, _ctx) => {
     match ItemsMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
       // view spells them bare now, so they arrive as Inputs, and `Unhandled`
       // falls through to them.
       Some(RemoveInItemsAt(_)) => Unhandled
-      Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
+      Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))], })
       Some(Unknown(_, _)) | None => Unhandled
     }
   })
@@ -33,14 +33,14 @@ pub fn todo_module() -> @component.ModuleDef {
     name="todo",
     components=[todo_items_comp(item), item],
     examples=[
-      { component: "Item", title: "Default Item", args: Map([]), view: None },
+      { component: "Item", title: "Default Item", args: Map([]), view: None, },
       {
         component: "Item",
         title: "Completed Item",
         args: { "completed": Bool(true) },
         view: None,
       },
-      { component: "Items", title: "Default Items", args: Map([]), view: None },
+      { component: "Items", title: "Default Items", args: Map([]), view: None, },
       {
         component: "Items",
         title: "Some Items",

@@ -70,13 +70,13 @@ impl Composite for InstanceFieldsState with fn current_page(self) {
 
 ///|
 impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
+  { ..self, currentPage: p, }
 }
 
 ///|
 fn instance_fields_comp() -> @component.Component {
   instance_fields_component(
-    init={ ..InstanceFieldsState::zero(), itemsPerPage: 10 },
+    init={ ..InstanceFieldsState::zero(), itemsPerPage: 10, },
     update=(s, msg, _ctx) => composite_update(s, msg),
     compute=m => {
       match m {
@@ -105,7 +105,8 @@ fn instance_fields_comp() -> @component.Component {
 fn instance_inspector_comp() -> @component.Component {
   instance_inspector_component(update=(s, msg, _ctx) => {
     match msg {
-      Receive("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
+      Receive("toggleIsExpanded", _) =>
+        Next({ value: toggle_wrapped(s.value), })
       _ => Unhandled
     }
   })

@@ -64,5 +64,5 @@ pub(all) struct FieldDoc {
 
 ///|
 pub fn FieldDoc::none() -> FieldDoc {
-  { doc: "", required: false, constraint: None }
+  { doc: "", required: false, constraint: None, }
 }

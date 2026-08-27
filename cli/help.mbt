@@ -3,7 +3,7 @@
 ///|
 fn run_help(target : String?, opts : GlobalOpts) -> Emit {
   match target {
-    None => { out: overview(), err: "", exit_code: 0 }
+    None => { out: overview(), err: "", exit_code: 0, }
     Some(name) =>
       match find_command(name) {
         None => unknown_command(name, opts)

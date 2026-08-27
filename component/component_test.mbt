@@ -32,7 +32,7 @@ fn todo_comp() -> @component.Component {
     },
     update=(s : TodoState, msg, _ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Next({ ..s, title: t })
+        Receive("rename", [Str(t)]) => Next({ ..s, title: t, })
         _ => Unhandled
       }
     },
@@ -119,7 +119,7 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
     name="Facets",
     // The state's own value, not the type's: `TyFlags` says which members are
     // spellable, and the declaration says which ones are set to begin with.
-    init=FacetsOnly::{  },
+    init=FacetsOnly::{ },
   )
   // default
   let t = comp.make(Map([]))
@@ -172,7 +172,7 @@ test "a declared set keeps the typed default and gets set mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="TypedFacets",
-    init=SetInState::{ sel: { "a": true } },
+    init=SetInState::{ sel: { "a": true }, },
   )
   let t = comp.make(Map([]))
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
@@ -192,7 +192,7 @@ test "omap slot field: keyed mutators over an ordered Map" {
     name="Ordered",
     // A non-empty default is a VALUE, so it comes from `init` rather than from
     // a spec beside the type.
-    init=OMapInState::{ m: { "x": Num(1) } },
+    init=OMapInState::{ m: { "x": Num(1) }, },
   )
   let t = comp.make(Map([]))
   assert_true(t.field("m") == Map({ "x": Num(1) }))
@@ -222,14 +222,14 @@ test "Components::collect_classes gathers sorted classes from compiled views" {
       ),
     },
     name="A",
-    init=NoFields::{  },
+    init=NoFields::{ },
   )
   let b = @component.component(
     views={
       "main": @anode.View::new("main", raw_view="<p class=\"baz qux\">y</p>"),
     },
     name="B",
-    init=NoFields::{  },
+    init=NoFields::{ },
   )
   scope.register_components([a, b])
   scope.compile_all()
@@ -273,10 +273,10 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Counter",
-    init=CountOnly::{ count: 1 },
+    init=CountOnly::{ count: 1, },
     update=(s : CountOnly, msg, _ctx) => {
       match msg {
-        Receive("inc", _) => Next({ count: s.count + 1 })
+        Receive("inc", _) => Next({ count: s.count + 1, })
         _ => Unhandled
       }
     },
@@ -309,12 +309,12 @@ test "registration scopes: chains, aliases, sibling independence" {
   let a = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>a</i>") },
     name="A",
-    init=NoFields::{  },
+    init=NoFields::{ },
   )
   let b = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>b</i>") },
     name="B",
-    init=NoFields::{  },
+    init=NoFields::{ },
   )
   root_scope.register_components([a], aliases={ "Alias": "A" })
   guard a.scope is Some(a_scope) else { fail("no scope on A") }
@@ -345,7 +345,7 @@ test "compile parses provide/lookup and stamps view ids" {
       ),
     },
     name="Workspace",
-    init=TitleOnly::{ title: "t" },
+    init=TitleOnly::{ title: "t", },
     provide={
       "active": ".sheet",
       "sel": ".sheets[.selId]",
@@ -401,7 +401,7 @@ test "compile_style emits data-cid scoped blocks" {
       ),
     },
     name="Styled",
-    init=NoFields::{  },
+    init=NoFields::{ },
     common_style="border: 0",
     global_style="body{margin:0}",
   )
@@ -424,7 +424,7 @@ test "FComp slot fields default through the registration scope" {
   let child = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
     name="Child",
-    init=LabelOnly::{ label: "hi" },
+    init=LabelOnly::{ label: "hi", },
   )
   let parent = @component.component(
     views={
@@ -436,7 +436,7 @@ test "FComp slot fields default through the registration scope" {
     name="Parent",
     // The slot is DECLARED, the way a state block declares one; the component
     // it holds is part of the field's type.
-    init=ParentWithKid::{  },
+    init=ParentWithKid::{ },
   )
   scope.register_components([child, parent])
   let p = parent.make(Map([]))
@@ -455,7 +455,7 @@ test "slots~ names a slot the schema declared as bare `component`" {
   let child = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
     name="DNDExample",
-    init=LabelOnly::{ label: "hi" },
+    init=LabelOnly::{ label: "hi", },
   )
   let parent = @component.component(
     views={
@@ -465,7 +465,7 @@ test "slots~ names a slot the schema declared as bare `component`" {
       ),
     },
     name="Parent",
-    init=ParentWithAnyKid::{  },
+    init=ParentWithAnyKid::{ },
     slots={ "kid": "DNDExample" },
     slot_args={ "kid": { "label": Str("named through slots") } },
   )
@@ -490,12 +490,12 @@ test "slots~ does not override a slot the schema already names" {
   let child = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
     name="Child",
-    init=LabelOnly::{ label: "declared" },
+    init=LabelOnly::{ label: "declared", },
   )
   let other = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<b>o</b>") },
     name="Other",
-    init=LabelOnly::{ label: "usurper" },
+    init=LabelOnly::{ label: "usurper", },
   )
   let parent = @component.component(
     views={
@@ -506,7 +506,7 @@ test "slots~ does not override a slot the schema already names" {
     },
     name="Parent",
     // the schema says Child; this says Other, and the schema wins
-    init=ParentWithKid::{  },
+    init=ParentWithKid::{ },
     slots={ "kid": "Other" },
   )
   scope.register_components([child, other, parent])
@@ -526,15 +526,15 @@ test "Value fields in S carry Obj instances losslessly through updates" {
   let child = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>l</i>") },
     name="Leaf",
-    init=LabelOnly::{ label: "leaf" },
+    init=LabelOnly::{ label: "leaf", },
   )
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Holder",
-    init=StashedState::{ items: [] },
+    init=StashedState::{ items: [], },
     update=(s : StashedState, msg, _ctx) => {
       match msg {
-        Receive("add", [item, ..]) => Next({ items: s.items + [item] })
+        Receive("add", [item, ..]) => Next({ items: s.items + [item], })
         _ => Unhandled
       }
     },
@@ -587,7 +587,7 @@ impl @tutuca.Obj for Badge with fn obj_handler(self, bucket, name) {
         Handler((args, _ctx) => {
           match args {
             [Str(s)] =>
-              Some((Obj(Badge::{ cid: self.cid, label: s }) : @tutuca.Value))
+              Some((Obj(Badge::{ cid: self.cid, label: s, }) : @tutuca.Value))
             _ => None
           }
         }),
@@ -619,7 +619,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
   )
   let todo = todo_comp()
   scope.register_components([badge_comp, todo])
-  let badge : @tutuca.Value = Obj(Badge::{ cid: badge_comp.id, label: "new" })
+  let badge : @tutuca.Value = Obj(Badge::{ cid: badge_comp.id, label: "new", })
   // the registry resolves both hybrid halves from their values
   assert_true(scope.comps.get_comp_for(badge) is Some(c) && c.name == "Badge")
   assert_true(
@@ -655,7 +655,7 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
       ),
     },
     name="Filtered",
-    init=FilterState::{ query: "a" },
+    init=FilterState::{ query: "a", },
     when={
       "keep": (s : FilterState, _key, value, _iter, _stack) => {
         value.str().contains(s.query)
@@ -720,7 +720,7 @@ test "swap handlers replace the node with another component's instance" {
       "main": @anode.View::new("main", raw_view="<i @text=\".note\"></i>"),
     },
     name="BComp",
-    init=SwapBState::{ note: "i am b" },
+    init=SwapBState::{ note: "i am b", },
   )
   let a = @component.component(
     views={
@@ -730,7 +730,7 @@ test "swap handlers replace the node with another component's instance" {
       ),
     },
     name="AComp",
-    init=SwapAState::{ label: "a" },
+    init=SwapAState::{ label: "a", },
     swap={
       "becomeB": (s : SwapAState, _args, _ctx) => {
         Some(b.make({ "note": Str("from \{s.label}") }))
@@ -813,7 +813,7 @@ impl @component.Fields for SetInState with fn decode(f) {
   for k2, x in m_sel {
     v_sel[k2] = x is Bool(true)
   }
-  Some({ sel: v_sel })
+  Some({ sel: v_sel, })
 }
 
 ///|
@@ -825,7 +825,7 @@ impl @component.Fields for CountOnly with fn encode(s) {
 impl @component.Fields for CountOnly with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
-  Some({ count: v_count })
+  Some({ count: v_count, })
 }
 
 ///|
@@ -836,7 +836,7 @@ impl @component.Fields for TitleOnly with fn encode(s) {
 ///|
 impl @component.Fields for TitleOnly with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some({ title: v_title })
+  Some({ title: v_title, })
 }
 
 ///|
@@ -847,7 +847,7 @@ impl @component.Fields for LabelOnly with fn encode(s) {
 ///|
 impl @component.Fields for LabelOnly with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ label: v_label })
+  Some({ label: v_label, })
 }
 
 ///|
@@ -858,7 +858,7 @@ impl @component.Fields for StashedState with fn encode(s) {
 ///|
 impl @component.Fields for StashedState with fn decode(f) {
   guard f.get("items") is Some(List(v_items)) else { return None }
-  Some({ items: v_items })
+  Some({ items: v_items, })
 }
 
 ///|
@@ -869,7 +869,7 @@ impl @component.Fields for FilterState with fn encode(s) {
 ///|
 impl @component.Fields for FilterState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some({ query: v_query })
+  Some({ query: v_query, })
 }
 
 ///|
@@ -880,7 +880,7 @@ impl @component.Fields for SwapAState with fn encode(s) {
 ///|
 impl @component.Fields for SwapAState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ label: v_label })
+  Some({ label: v_label, })
 }
 
 ///|
@@ -891,7 +891,7 @@ impl @component.Fields for SwapBState with fn encode(s) {
 ///|
 impl @component.Fields for SwapBState with fn decode(f) {
   guard f.get("note") is Some(Str(v_note)) else { return None }
-  Some({ note: v_note })
+  Some({ note: v_note, })
 }
 
 ///|
@@ -1106,7 +1106,9 @@ test "lookup_intent walks the scope chain and answers with the whole chain" {
   assert_eq(chain.length(), 4)
   for h in chain {
     let IntentFn(f) = h
-    f({ name: "loadRows", args: [], from: @tutuca.DispatchPath::new() }, _ => ())
+    f({ name: "loadRows", args: [], from: @tutuca.DispatchPath::new(), }, _ => {
+      ()
+    })
   }
   // Innermost frame first, and registration order inside a frame.
   assert_eq(log.join(","), "leaf-a,leaf-b,mid,root")
@@ -1123,7 +1125,7 @@ test "two registrations of one intent name are two candidates, not a shadowing" 
   assert_eq(chain.length(), 2)
   for h in chain {
     let IntentFn(f) = h
-    f({ name: "saveDraft", args: [], from: @tutuca.DispatchPath::new() }, _ => {
+    f({ name: "saveDraft", args: [], from: @tutuca.DispatchPath::new(), }, _ => {
       ()
     })
   }
@@ -1158,14 +1160,17 @@ test "a compute is handed the stack it is asked from" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Themed",
-    init=CountOnly::{ count: 1 },
+    init=CountOnly::{ count: 1, },
     compute={
       "theme": (_s : CountOnly, _args, stack) => stack.lookup_dynamic("theme"),
     },
   )
   let t = comp.make(Map([]))
   guard! t is Obj(o)
-  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  let stack : &@tutuca.Stack = OneBinding::{
+    name: "theme",
+    value: Str("dark"),
+  }
   guard! o.obj_method_at("theme", stack) is Some(Fn(f))
   assert_true(f([Null]) == Str("dark"))
   // Asked WITHOUT one — a `$compute` read off a bare Value, outside any
@@ -1182,7 +1187,7 @@ test "a @when is handed the stack too, through the alter seam" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="ThemedWhen",
-    init=CountOnly::{ count: 1 },
+    init=CountOnly::{ count: 1, },
     when={
       "isTheme": (_s : CountOnly, _k, value, _iter, stack) => {
         stack.lookup_dynamic("theme") == value
@@ -1191,7 +1196,10 @@ test "a @when is handed the stack too, through the alter seam" {
   )
   let t = comp.make(Map([]))
   guard! t is Obj(o)
-  let stack : &@tutuca.Stack = OneBinding::{ name: "theme", value: Str("dark") }
+  let stack : &@tutuca.Stack = OneBinding::{
+    name: "theme",
+    value: Str("dark"),
+  }
   guard! o.obj_callable_at("isTheme", Alter, stack) is Some(Fn(f))
   assert_true(f([Null, Null, Str("dark"), Null]) == Bool(true))
   assert_true(f([Null, Null, Str("light"), Null]) == Bool(false))

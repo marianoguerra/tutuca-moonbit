@@ -13,7 +13,7 @@ pub struct MemStore {
 
 ///|
 pub fn MemStore::new() -> MemStore {
-  { entries: Map([]) }
+  { entries: Map([]), }
 }
 
 ///|

@@ -37,7 +37,7 @@ pub struct TouchDrag {
 
 ///|
 pub fn TouchDrag::new(ops : TouchOps) -> TouchDrag {
-  { ops, state: Ref(None) }
+  { ops, state: Ref(None), }
 }
 
 ///|

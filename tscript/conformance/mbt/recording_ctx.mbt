@@ -14,7 +14,7 @@ pub(all) struct Recorder {
 
 ///|
 pub fn Recorder::new() -> Recorder {
-  { seen: [] }
+  { seen: [], }
 }
 
 ///|

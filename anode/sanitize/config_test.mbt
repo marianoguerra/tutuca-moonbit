@@ -77,7 +77,11 @@ test "per-element rules against the global lists" {
           attributes: Some(["class"]),
           remove_attributes: Some(["title"]),
         },
-        { elem: html("p"), attributes: None, remove_attributes: Some(["href"]) },
+        {
+          elem: html("p"),
+          attributes: None,
+          remove_attributes: Some(["href"]),
+        },
       ]),
       attributes: Some(["class", "title"]),
     }),

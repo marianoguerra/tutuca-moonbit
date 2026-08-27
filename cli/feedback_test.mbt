@@ -1,7 +1,7 @@
 // feedback: pure pieces (record line, paths, parse) + iso8601_utc.
 
 ///|
-let plain_opts : @cli.GlobalOpts = { json: false, help: false }
+let plain_opts : @cli.GlobalOpts = { json: false, help: false, }
 
 ///|
 test "record line matches the JS JSON.stringify shape" {

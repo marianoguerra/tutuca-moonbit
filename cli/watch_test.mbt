@@ -9,7 +9,7 @@ test "watch defaults to the current directory" {
     plan_watch([])
     is Watch(
       _,
-      plan={ paths: ["."], name: None, out: None, ir: true, css: None }
+      plan={ paths: ["."], name: None, out: None, ir: true, css: None, }
     ),
   )
 }
@@ -24,7 +24,7 @@ test "watch takes files and directories, and the gen-views flags" {
         paths: ["src", "views/counter.html"],
         out: Some("gen"),
         ir: false,
-        ..,
+        ..
       }
     ),
   )

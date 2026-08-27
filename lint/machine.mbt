@@ -155,7 +155,7 @@ fn Machine::new(
 ///|
 fn Machine::mk_frame(self : Machine, name : String, ns : FNs) -> Frame {
   self.frame_counter = self.frame_counter + 1
-  { id: self.frame_counter, name, ns, html_integration: false }
+  { id: self.frame_counter, name, ns, html_integration: false, }
 }
 
 ///|
@@ -183,7 +183,7 @@ fn Machine::report(
     code,
     level,
     info,
-    location: Some({ line: lo + 1, column: offset - ls[lo] + 1, offset }),
+    location: Some({ line: lo + 1, column: offset - ls[lo] + 1, offset, }),
     suggestion,
   })
 }

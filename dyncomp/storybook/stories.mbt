@@ -94,13 +94,13 @@ pub fn nav_of(stories : Array[Story]) -> Array[NavEntry] {
     let mut found = false
     for i, e in out {
       if e.ref_ == s.ref_ {
-        out[i] = { ..e, count: e.count + 1 }
+        out[i] = { ..e, count: e.count + 1, }
         found = true
         break
       }
     }
     if !found {
-      out.push({ ref_: s.ref_, count: 1 })
+      out.push({ ref_: s.ref_, count: 1, })
     }
   }
   out

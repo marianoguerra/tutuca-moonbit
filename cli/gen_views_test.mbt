@@ -1,5 +1,5 @@
 ///|
-let no_opts : @cli.GlobalOpts = { json: false, help: false }
+let no_opts : @cli.GlobalOpts = { json: false, help: false, }
 
 ///|
 fn plan_gen(args : Array[String]) -> @cli.Outcome {

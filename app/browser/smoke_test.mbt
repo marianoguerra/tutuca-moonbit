@@ -41,10 +41,10 @@ fn counter_comp() -> @component.Component {
       ),
     },
     name="Counter",
-    init=SmokeCounterState::{ n: 0, label: "start" },
+    init=SmokeCounterState::{ n: 0, label: "start", },
     update=(s : SmokeCounterState, msg, _ctx) => {
       match msg {
-        Receive("bump", _) => Next({ ..s, n: s.n + 1 })
+        Receive("bump", _) => Next({ ..s, n: s.n + 1, })
         _ => Unhandled
       }
     },
@@ -102,7 +102,7 @@ test "browser: styles are compiled into a head style element" {
       ),
     },
     name="Styled",
-    init=SmokeEmptyState::{  },
+    init=SmokeEmptyState::{ },
   )
   scope.register_components([styled])
   let a = @app.App::new(
@@ -143,12 +143,12 @@ test "browser: real drag events run the drag lifecycle" {
       ),
     },
     name="DropBoard",
-    init=DropBoardState::{ landed_kind: "" },
+    init=DropBoardState::{ landed_kind: "", },
     update=(_s : DropBoardState, msg, _ctx) => {
       match msg {
         Receive("landed", [Obj(info), ..]) =>
           match info.obj_field("type") {
-            Some(Str(kind)) => Next({ landed_kind: kind })
+            Some(Str(kind)) => Next({ landed_kind: kind, })
             _ => Unhandled
           }
         _ => Unhandled
@@ -224,10 +224,10 @@ fn effects_comp() -> @component.Component {
       ),
     },
     name="Effects",
-    init=EffectsState::{ n: 0 },
+    init=EffectsState::{ n: 0, },
     update=(s : EffectsState, msg, _ctx) => {
       match msg {
-        Receive("bump", _) => Next({ n: s.n + 1 })
+        Receive("bump", _) => Next({ n: s.n + 1, })
         _ => Unhandled
       }
     },
@@ -242,7 +242,7 @@ impl @component.Fields for EffectsState with fn encode(s) {
 ///|
 impl @component.Fields for EffectsState with fn decode(f) {
   guard f.get("n") is Some(Num(v)) else { return None }
-  Some({ n: v.to_int() })
+  Some({ n: v.to_int(), })
 }
 
 ///|
@@ -317,7 +317,7 @@ impl @component.Fields for SmokeCounterState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ n: v_n, label: v_label })
+  Some({ n: v_n, label: v_label, })
 }
 
 ///|
@@ -338,7 +338,7 @@ impl @component.Fields for DropBoardState with fn encode(s) {
 ///|
 impl @component.Fields for DropBoardState with fn decode(f) {
   guard f.get("landed_kind") is Some(Str(v_landed_kind)) else { return None }
-  Some({ landed_kind: v_landed_kind })
+  Some({ landed_kind: v_landed_kind, })
 }
 
 ///|

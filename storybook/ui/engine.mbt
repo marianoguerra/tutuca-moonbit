@@ -106,7 +106,7 @@ fn ShellInst::make(
   spec : ShellSpec,
   fields : Map[String, @tutuca.Value],
 ) -> ShellInst {
-  { spec, fields, boxed: None }
+  { spec, fields, boxed: None, }
 }
 
 ///|

@@ -71,7 +71,7 @@ fn tm_item_comp() -> @component.Component {
       ),
     },
     name="Item",
-    init=TmItemState::{ completed: false, text: "do the thing" },
+    init=TmItemState::{ completed: false, text: "do the thing", },
   )
 }
 
@@ -99,7 +99,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
       ),
     },
     name="Items",
-    init=TmItemsState::{ items: [] },
+    init=TmItemsState::{ items: [], },
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {
         Receive("onAddItem", _) =>
@@ -133,14 +133,14 @@ pub fn todo_macros_module() -> @component.ModuleDef {
       "vbox": tm_vbox_macro(),
     },
     examples=[
-      { component: "Item", title: "Default Item", args: Map([]), view: None },
+      { component: "Item", title: "Default Item", args: Map([]), view: None, },
       {
         component: "Item",
         title: "Completed Item",
         args: { "completed": Bool(true) },
         view: None,
       },
-      { component: "Items", title: "Empty List", args: Map([]), view: None },
+      { component: "Items", title: "Empty List", args: Map([]), view: None, },
       {
         component: "Items",
         title: "Some Items",

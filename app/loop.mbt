@@ -72,7 +72,7 @@ pub fn[N : @vdom.DomWalk] App::new(
   scope.compile_all()
   let tx = @transactor.Transactor::new(
     root_value,
-    intents=ScopeIntents::{ comps: scope.comps },
+    intents=ScopeIntents::{ comps: scope.comps, },
     names=ScopeNames::new(scope.comps),
   )
   let app : App[N] = {
@@ -210,13 +210,13 @@ pub fn[N] App::drain_batched(
     let batch = self.transactor.settle(max_turns=max_per_batch)
     processed += batch.processed
     if batch.processed == 0 {
-      return { processed, pending: batch.pending }
+      return { processed, pending: batch.pending, }
     }
     if batch.pending {
       yield_between()
     }
   }
-  { processed, pending: false }
+  { processed, pending: false, }
 }
 
 ///|
@@ -401,7 +401,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
   node : N,
   e : @render.DomEvent,
 ) -> Bool {
-  let e2 : @render.DomEvent = { ..e, drag_info: self.drag_info_value() }
+  let e2 : @render.DomEvent = { ..e, drag_info: self.drag_info_value(), }
   if is_drag_event(e.name) {
     guard @render.from_node_and_event_name(
         node,
@@ -415,7 +415,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
     }
     self.handle_drag(node, e.name, ed.path)
     // dragstart just captured: dispatch with the FRESH dragInfo
-    let e3 : @render.DomEvent = { ..e2, drag_info: self.drag_info_value() }
+    let e3 : @render.DomEvent = { ..e2, drag_info: self.drag_info_value(), }
     if !ed.handlers.is_empty() {
       run_handlers(self.transactor, ed, e3, self.scope.comps, self.event_paths)
     }
