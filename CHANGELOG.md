@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-08-27
+
 ### Added
 
 - **String-identified component protocols.** State blocks can declare or import
@@ -25,6 +27,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The old top-level `receive` and `intent` state declarations have been removed
   without a compatibility parser.
 
+- **External URLs survive, reframed: a host policy allowance rather than a
+  manifest declaration.** `Policy.allows_external_urls : Bool` plus
+  `Policy.external_origins`, set together by
+  `Policy::allowing_external_urls(origins)` (an empty list means any `https`
+  origin) and by `with_config` when a bound config variable is an origin —
+  binding an origin is allowing it. Untrusted views still pin `<img src>` /
+  `<a href>` to a literal origin the policy allows; a guest declares nothing,
+  because the host's policy is the single source of what a view may reach.
+  The refusal now reads "this host does not allow external URLs in views".
+
 ### Removed
 
 - **Capabilities are gone from dynamic components; host↔guest communication is
@@ -43,18 +55,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   loop per question rather than per grant, and removes the one manifest field
   whose meaning was a promise about the future. **Breaking** for any bundle
   whose manifest carries a `"capabilities"` key or whose code imported `env`.
-
-### Changed
-
-- **External URLs survive, reframed: a host policy allowance rather than a
-  manifest declaration.** `Policy.allows_external_urls : Bool` plus
-  `Policy.external_origins`, set together by
-  `Policy::allowing_external_urls(origins)` (an empty list means any `https`
-  origin) and by `with_config` when a bound config variable is an origin —
-  binding an origin is allowing it. Untrusted views still pin `<img src>` /
-  `<a href>` to a literal origin the policy allows; a guest declares nothing,
-  because the host's policy is the single source of what a view may reach.
-  The refusal now reads "this host does not allow external URLs in views".
 
 ## [0.34.0] - 2026-08-26
 
@@ -5257,5 +5257,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.34.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.35.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
