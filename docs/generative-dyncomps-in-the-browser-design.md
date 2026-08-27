@@ -256,7 +256,8 @@ then share one identity scheme.
 **Agent-generated components are Untrusted, like everything else.** Nothing about
 a model having written a component argues for a higher policy tier. If anything
 the opposite: generated code is exactly the case the `Untrusted` tier and the
-view-authority walk exist for. This design adds no trust tier and no capability.
+view-authority walk exist for. This design adds no trust tier and no new
+authority.
 
 ## Alternatives considered
 

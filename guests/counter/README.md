@@ -23,8 +23,8 @@ what they compute.
   `Instance` is, and both of those are here.
 - `gen/interface/tutuca/component/guest/counter.mbt` — behavior: structs
   implementing `DynComponent`, factories, and optional request serving
-- `manifest.json` — schema, catalog metadata, non-input message buckets and
-  capabilities; input handler names are discovered through `event-result`
+- `manifest.json` — schema, catalog metadata and non-input message buckets;
+  input handler names are discovered through `event-result`
 - `views/*.html` — host-compiled tutuca templates
 
 There is no `wit/` here. The one WIT in the repo is

@@ -202,18 +202,14 @@ before(async () => {
   };
 });
 
-test('the static manifest declares six components and asks for one capability', { skip: !built }, () => {
+test('the static manifest declares six components and its origin config', { skip: !built }, () => {
   const m = manifest;
   assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'mastodonlib');
-  // the one thing this bundle asks a host for, and it asks with a reason: the
-  // origins its views name are the whole of its network reach
-  assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
-  // The reason names the VARIABLES rather than a host, because there is no
-  // host in this bundle to name any more — which is the difference between a
-  // reader for mastodon.social and a reader for the fediverse.
-  assert.match(m.capabilities[0].reason, /mediaOrigin/);
-  assert.match(m.capabilities[0].reason, /webOrigin/);
+  // the origins its views name are the whole of its network reach, and the
+  // host allows them by BINDING the config variables — the manifest declares
+  // the variables, not a capability
+  assert.ok(!('capabilities' in m));
   // Two origins the host binds, and one name it writes in prose. The type is
   // the enforcement: only an `origin` can reach a view, so `instanceName`
   // cannot become one.

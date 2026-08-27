@@ -433,7 +433,6 @@ fn counter_manifest() -> DynManifest {
     version: "0.1.0",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [
@@ -1159,9 +1158,9 @@ test "manifest parses from the bridge's JSON projection" {
 
 ///|
 /// The default policy is the untrusted one, and `register_bundle` enforces it
-/// before it parses anything. Three refusals, end to end, from the same
+/// before it parses anything. Two refusals, end to end, from the same
 /// fixture the rest of the suite registers under a vouched policy.
-test "the default policy refuses CSS, capabilities and a bomb" {
+test "the default policy refuses CSS and a bomb" {
   let h = @harness.mount(shell_module(), "Shell")
   let base = counter_manifest()
   let refused = (m : DynManifest) => {
@@ -1182,14 +1181,6 @@ test "the default policy refuses CSS, capabilities and a bomb" {
     components: base.components.map(c => ({ ..c, style: "" } : DynComponentDef)),
   }
   assert_false(refused(styleless))
-  // a capability nobody granted
-  assert_true(
-    refused({
-      ..styleless,
-      module_name: "clocky",
-      capabilities: [{ cap: CapClock, reason: "stamps entries" }],
-    }),
-  )
   // and a manifest too large to parse before rendering anything
   let many : Array[DynComponentDef] = []
   for i in 0..<200 {
@@ -1228,10 +1219,10 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
 }
 
 ///|
-/// The same seam, with the one capability that is about the view rather than
-/// about an import. A page grants the origins it means to allow, and the
-/// bundle's own views are what get held against them.
-test "cap-external-urls lets a registered guest view name a pinned image" {
+/// The same seam, with the external-URL allowance. A page allows the origins
+/// it means to allow, and the bundle's own views are what get held against
+/// them.
+test "allowing external URLs lets a registered guest view name a pinned image" {
   let register_view = (html : String, policy : @policy.Policy) => {
     let h = @harness.mount(shell_module(), "Shell")
     let base = counter_manifest()
@@ -1262,27 +1253,6 @@ test "cap-external-urls lets a registered guest view name a pinned image" {
   assert_false(
     register_view("<img src=\"https://elsewhere.test/a.png\" />", cdn),
   )
-  // A bundle that ASKS for it is refused by a page that has not decided, which
-  // is the same bargain every other capability makes.
-  let h = @harness.mount(shell_module(), "Shell")
-  let base = counter_manifest()
-  let asking : DynManifest = {
-    ..base,
-    module_name: "asking",
-    components: [
-      {
-        ..base.components[0],
-        style: "",
-        views: [{ name: "main", html: pinned }],
-      },
-    ],
-    capabilities: [{ cap: CapExternalUrls, reason: "shows avatars" }],
-  }
-  let mut refused = false
-  try register_bundle(h.app.scope, FakeGuest::new(), asking) |> ignore catch {
-    _ => refused = true
-  }
-  assert_true(refused)
 }
 
 ///|
@@ -1349,12 +1319,10 @@ test "a guest view that sets markup directly is refused" {
 /// and `constraint` are the two facts neither the type table nor the views can
 /// supply, and they are what the catalog ranks on and the generated form
 /// validates with.
-test "catalog metadata parses: docs, constraints and capability requests" {
+test "catalog metadata parses: docs and constraints" {
   let json =
     #|{"apiVersion": 8, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
-    #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
-    #|                  {"cap": "cap-teleport", "reason": "?"}],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
     #|   "keywords": ["form", "email"], "category": "input",
@@ -1372,12 +1340,6 @@ test "catalog metadata parses: docs, constraints and capability requests" {
   let m = DynManifest::from_json_string(json)
   inspect(m.doc, content="Form controls.")
   inspect(m.version, content="1.2.0")
-  // an unknown capability is KEPT, not dropped: the host has to be able to say
-  // which one it is refusing
-  debug_inspect(
-    m.capabilities.map(c => c.cap),
-    content="[CapClock, CapUnknown(\"cap-teleport\")]",
-  )
   let c = m.components[0]
   inspect(c.doc, content="Collects an address.")
   inspect(c.category, content="input")
@@ -1422,7 +1384,6 @@ test "a manifest with no catalog metadata still parses" {
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
   inspect(m.doc, content="")
-  debug_inspect(m.capabilities, content="[]")
   inspect(m.components[0].category, content="")
   debug_inspect(m.components[0].message_docs, content="{}")
 }
@@ -1458,7 +1419,6 @@ test "manifest with wrong api version is rejected" {
         version: "",
         homepage: "",
         authors: [],
-        capabilities: [],
         config: [],
         macros: [],
         components: [],
@@ -1497,7 +1457,6 @@ test "a bundle's views are linted at load" {
     version: "",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [
@@ -1567,7 +1526,6 @@ test "a `$method` the manifest never declared is reported at load" {
     version: "",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [

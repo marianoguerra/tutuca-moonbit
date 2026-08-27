@@ -148,7 +148,6 @@ pub(all) struct DynManifest {
   version : String
   homepage : String
   authors : Array[String]
-  capabilities : Array[@policy.CapabilityReq]
   /// The variables this bundle reads, declared with defaults. Empty for every
   /// bundle that is the same everywhere it runs, which is most of them.
   config : Array[DynConfigDef]
@@ -348,29 +347,8 @@ fn parse_wiring(c : Map[String, Json], key : String) -> Array[(String, String)] 
 }
 
 ///|
-/// The capabilities a bundle asks for. An unknown name is KEPT as
-/// `CapUnknown` rather than dropped: the host refuses a bundle it cannot
-/// fully understand, and a dropped name would look like a bundle that asked
-/// for nothing.
-fn parse_capabilities(root : Map[String, Json]) -> Array[@policy.CapabilityReq] {
-  let out : Array[@policy.CapabilityReq] = []
-  guard root.get("capabilities") is Some(Array(items)) else { return out }
-  for item in items {
-    guard item is Object(r) else { continue }
-    // An unknown name is KEPT (`CapUnknown`) rather than dropped: the host
-    // refuses a bundle it cannot fully understand, and a dropped name would
-    // look like a bundle that asked for nothing.
-    let cap = @policy.Capability::parse(opt_str(r, "cap"))
-    out.push({ cap, reason: opt_str(r, "reason") })
-  }
-  out
-}
-
-///|
-/// The variables a bundle declares. Unlike `parse_capabilities`, a malformed
-/// entry RAISES rather than being kept as an unknown: a capability's name is
-/// the only thing a host has to judge it by, so an unrecognized one is still
-/// information, while a config var with no name or an unreadable type is not a
+/// The variables a bundle declares. A malformed entry RAISES rather than
+/// being kept: a config var with no name or an unreadable type is not a
 /// declaration at all — nothing can be bound to it and nothing can refuse it,
 /// so letting it through would leave a `$$name` in the views with no way to
 /// say what went wrong.
@@ -666,7 +644,6 @@ pub fn DynManifest::from_json_string(
     version: opt_str(root, "version"),
     homepage: opt_str(root, "homepage"),
     authors: str_array(root, "authors"),
-    capabilities: parse_capabilities(root),
     config: parse_config(root),
     components,
     macros: parse_macros(root),

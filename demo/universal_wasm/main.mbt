@@ -102,7 +102,7 @@ pub fn mount() -> Unit {
   // list). It applies to a DROPPED bundle as well, and that is the decision
   // being made here rather than a side effect: this page will let anything it
   // loads point an `<img src>` at those five hosts — never at an origin the
-  // bundle picks, which is what `cap-external-urls` refuses.
+  // bundle picks, which is what the external-URL rule refuses.
   @uiw.mount(
     session~,
     samples=samples(),

@@ -35,15 +35,12 @@ fn samples() -> Array[@shell.LoaderBarSample] {
 ///
 /// A die needs a number nobody can predict, and a `tutuca:component` guest
 /// cannot make one: its world imports no WASI, so there is no clock and no
-/// entropy in there at all. It could ASK for `cap-random` and be handed a
-/// host-seeded PRNG — but only from a page that grants it, and this one does
-/// not: `mount` defaults to the untrusted tier, and a bundle asking for
-/// something ungranted is refused rather than degraded.
+/// entropy in there at all.
 ///
-/// So the die asks through `control.request` instead, which needs no grant
-/// because it is not ambient authority — it is one question, answered once, by
-/// a page that could decline. That is the more interesting seam anyway: the
-/// guest and the host holding a conversation.
+/// So the die asks through `control.intent`, which is not ambient authority —
+/// it is one question, answered once, by a page that could decline. That is
+/// the interesting seam anyway: the guest and the host holding a
+/// conversation.
 let seed : Ref[UInt] = { val: 0x9E3779B9 }
 
 ///|
@@ -82,7 +79,7 @@ fn next_u32() -> UInt {
 ///|
 /// Services this HOST provides to whatever it hosts.
 ///
-/// `roll` is what the die calls (`control.request "roll"` in
+/// `roll` is what the die calls (the `roll` intent in
 /// `../dice/gen/interface/tutuca/component/guest/dice.mbt`). The `println` is
 /// deliberate: it lowers to a `console.log` import, so a line in the browser
 /// console is proof that a sandboxed guest reached this map — which is the
@@ -92,11 +89,9 @@ fn next_u32() -> UInt {
 /// only reached because the die's bundle serves nothing.
 ///
 /// **The v2 shape.** Tutuca's four dispatch channels became two, and a
-/// `request` is now an intent on the `lex` leg — so what a host registers is an
+/// request is an intent on the `lex` leg — so what a host registers is an
 /// `IntentFn` and a LIST of them per name, because the leg walks: a handler
-/// that answers `Pass` declines and the next one is tried. The guest side did
-/// not change. `control.request` is still in the contract, and the host
-/// translates it, which is what keeps a bundle built against 0.7 loading.
+/// that answers `Pass` declines and the next one is tried.
 ///
 /// One answer is worth having here. A handler that MUST respond cannot decline, so a
 /// handler with nothing to contribute could only invent an error; this one
@@ -131,7 +126,7 @@ fn host_intents() -> Map[String, Array[@component.IntentFn]] {
 ///
 /// Partly because it is the decision a host page most owes an answer to, and a
 /// stated one reads as a choice rather than an oversight — this page accepts a
-/// bundle from anywhere, so it grants nothing to it: no clock, no entropy, no
+/// bundle from anywhere, so it allows it nothing: no external URLs and no
 /// stylesheet of its own. `@policy.Policy::granted()` is the line to change,
 /// and it means a person said yes.
 ///

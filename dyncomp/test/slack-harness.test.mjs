@@ -146,10 +146,9 @@ before(async () => {
 test('the static manifest declares eight nesting components', { skip: !built }, () => {
   assert.equal(manifest.apiVersion, 8);
   assert.equal(manifest.moduleName, 'slacklib');
-  // nothing ambient — no clock for the timestamps, no entropy for the ids —
-  // and one capability, for the pictures, which names its origins in its reason
-  assert.deepEqual(manifest.capabilities.map((c) => c.cap), ['cap-external-urls']);
-  assert.match(manifest.capabilities[0].reason, /slack-edge\.com/);
+  // nothing ambient — no clock for the timestamps, no entropy for the ids;
+  // the pictures' origins are the host's to allow (`allowing_external_urls`)
+  assert.ok(!('capabilities' in manifest));
   assert.deepEqual(manifest.components.map((c) => c.name), [
     'Segment', 'Scope', 'RichText', 'Reaction', 'Message', 'Thread', 'FileList', 'ChannelHistory',
   ]);
@@ -246,7 +245,7 @@ test('a message builds its body out of segments and reads its own timestamp', { 
   const m = make('Message', initArgs('Message', 'root'));
   assert.deepEqual(m.callMethod('authorLabel', []), text('@Ada Lovelace'));
   assert.deepEqual(m.callMethod('channelLabel', []), text('#general'));
-  // sliced out of the data it arrived with — no clock capability anywhere
+  // sliced out of the data it arrived with — no clock anywhere
   assert.deepEqual(m.callMethod('timeLabel', []), text('09:12'));
   assert.deepEqual(m.callMethod('hasChannel', []), bool(true));
 

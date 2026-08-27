@@ -14,11 +14,10 @@ Where a claim is weaker than it sounds, it says so.
 |---|---|---|
 | archive code | page authority | **closed** — only descriptor bundles load; legacy JavaScript archives are rejected |
 | archive parsing | page responsiveness/memory | **bounded** — compressed, expanded, entry and file-count limits; checked tar arithmetic and headers |
-| wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
-| `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
+| wasm imports (`values`, `control`, `config`) | nothing ambient | **safe by construction** — the world has no clock, no entropy and no timer; anything a guest cannot compute it asks the host for over an intent (§2) |
+| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only when the host allows external URLs, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that. The declaration half now has a validator (§4); the selector and at-rule half does not |
-| `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it, and no host uses it yet (§5) |
+| `control.intent` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it, and no host uses it yet (§5) |
 | guest view event paths (`e.<path>`) | the host's DOM, and through it the page | **handled** — every step through a host object is checked against a curated allow-list, not just the first one (§9) |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
@@ -28,13 +27,13 @@ executable form of most of this document.
 
 ## 1. The wasm sandbox
 
-`world dynamic-component` imports three callable interfaces plus the
-types-only `tables` interface, and no WASI
+`world dynamic-component` imports three callable interfaces (`values`,
+`control`, `config`) plus the types-only `tables` interface, and no WASI
 (`wit/tutuca-component.wit`). A guest therefore has **no** filesystem, network,
-sockets, environment variables, subprocesses, storage, or — except through
-`env`, below — clock and entropy. It cannot reach the DOM at all: tutuca has no
-element event handlers, so a view is a description rather than a place to put
-code, and the guest renders nothing.
+sockets, environment variables, subprocesses, storage, clock or entropy. It
+cannot reach the DOM at all: tutuca has no element event handlers, so a view
+is a description rather than a place to put code, and the guest renders
+nothing.
 
 That is stronger than the usual "it's sandboxed, it's wasm". Several specific
 properties follow from the contract's shape rather than from the wasm engine:
@@ -52,15 +51,15 @@ properties follow from the contract's shape rather than from the wasm engine:
 - **The static manifest's type table is depth-guarded** at 16 (`host/manifest.mbt`,
   `ty_info_at`), because a manifest that crossed a trust boundary cannot be
   trusted to be acyclic.
-- **No clock meant no measurement.** Before `env`, a guest could not read time
-  at all, which removes the primitive most timing side channels are built from.
-  `env` is the deliberate, bounded relaxation — see below.
+- **No clock means no measurement.** A guest cannot read time at all, which
+  removes the primitive most timing side channels are built from.
 
-## 2. `env`: clock, randomness and ids, on purpose
+## 2. No ambient facts: a guest asks, over an intent
 
-Components genuinely need "what time is it" and "give me a fresh key". The
-answer is not `wasi:clocks` + `wasi:random`, for three reasons in order of
-weight:
+Components genuinely need "what time is it" and "give me an unpredictable
+number", and the world deliberately gives them no way to take either. There is
+no `wasi:clocks` + `wasi:random`, and no host-supplied `env` interface either,
+for three reasons in order of weight:
 
 1. The world imports no WASI, and adding it drags preview2 shims into the
    browser that nothing else needs.
@@ -69,50 +68,35 @@ weight:
 3. An ambient clock makes a dispatch unreplayable, which contradicts the first
    principle of this design — *the host is the framework*.
 
-So `env` gives deliberately weaker answers, and the browser bridge implements
-them that way (`dyncomp/host/wasm/loader.mjs`):
+What a guest cannot compute it ASKS for, through `control.intent`, and that is
+a different kind of thing from ambient authority: the host answers one
+question, once, per call, from a handler it registered by name — and it can
+decline. `examples/dyncomp-dice` is the worked example: the die cannot make
+the one number it exists to produce, so it dispatches a `roll` intent and the
+page's `IntentFn` answers with the page's own entropy
+(`dyncomp/shell/shell.mbt`, `sample_host_intents`). The host is not lending
+the guest a generator; it is answering a question, and every answer flows
+through the same dispatch path as every other message — recorded, replayable,
+and visible to the page that gave it.
 
-- `now-ms` is **coarsened to a second and frozen for the duration of one call**.
-  Every read inside one handler agrees, which is what lets a dispatch replay and
-  what denies a guest a fine-grained timer.
-- `random-u64` draws from a **seeded xorshift**, not `crypto.getRandomValues`. A
-  session that records its seed replays exactly. It is explicitly not
-  cryptographic: a guest that needs unpredictability an attacker cannot
-  reproduce asks the host through `control.request`.
-- `new-id` is monotonic per bundle — for keying a list, not for naming anything
-  outside the page.
-- `control.after` lets a guest ask for a later message. The host owns the timer
-  and may coalesce, delay or drop it; there is no cancel, because a guest cannot
-  cancel what it does not own.
+This is why there is no capability vocabulary here any more. A capability was
+an import the manifest requested and the host granted ahead of time; an intent
+is a question the host answers at call time, with the caller's path on the
+call (`IntentCall.from`, §5) if it wants to discriminate. The second shape
+subsumes the first and keeps the world's import section closed: for v0.6
+descriptor bundles, the host-owned ABI checks the core module's actual import
+section against the contract before the first guest instruction runs, and
+anything outside `values`/`control`/`config` refuses the bundle.
 
-Each is gated by a capability the static manifest requests (`cap-clock`,
-`cap-random`, `cap-timer`) and the host grants. `cap-external-urls` (§3) is the
-fourth name in that vocabulary and the one that gates no import at all: it is
-about what a guest's VIEW may name, so it is checked at registration and the
-module's import section has nothing to say about it. For v0.6 descriptor bundles,
-the host-owned ABI also checks the core module's actual import section before
-the first guest instruction runs: omitting a capability from metadata cannot
-hide an import. An ungranted capability **refuses the bundle**
-rather than degrading it: a capability that is present but lies is worse than
-one that is absent — a guest reading a frozen zero from an ungranted clock
-cannot tell that from midnight.
+The external-URL question (§3) is the one piece of the old vocabulary that
+survives, as a policy field rather than a grant: it was never about an import
+— it is about what a guest's VIEW may name, checked at registration.
 
-The default policy (`Policy::untrusted()`) grants **none** of them, and
-`register_bundle` enforces that before it parses anything. `Policy::granted()`
-— a person said yes to this bundle — adds the clock and ids but still not the
-timer: a bundle that wants to wake itself up is asking for something nobody can
-meaningfully consent to in one dialog.
-
-A browser host chooses its tier through `@uiw.mount(policy=…)`, or
+A browser host chooses its policy through `@uiw.mount(policy=…)`, or
 `@dhw.set_app(…, policy~)` for a page that does its own mounting; `set_policy`
-changes it afterwards, for a host that asks a person first. It applies at LOAD,
-so narrowing it does not retract a bundle already registered — revoking is
-dropping the bundle.
-
-`control.after` still has no host implementation — the bridge warns rather
-than crashing.
-
-`control.request` is deliberately *not* a capability — see §5.
+changes it afterwards, for a host that asks a person first. It applies at
+LOAD, so narrowing it does not retract a bundle already registered — revoking
+is dropping the bundle.
 
 ### Archive code is no longer a channel
 
@@ -291,14 +275,14 @@ link or image directly. There is no value-level distinction between “a useful
 fetch” and “an exfiltration fetch” that the guest cannot choose dynamically —
 so the decision a host CAN make is not about the value, it is about the origin.
 
-**`cap-external-urls`: the origin is the host's decision, written in the view.**
-The rule above says a component that needs a picture "asks the host through a
-deliberately authorized channel". This is that channel, and it is a capability
-like the others: requested by the static manifest, granted per host, and
-refusing the bundle when it is not granted rather than degrading it.
+**The external-URL allowance: the origin is the host's decision, written in
+the view.** The rule above says a component that needs a picture "asks the
+host through a deliberately authorized channel". This is that channel, and it
+is entirely the host's: a policy field (`allows_external_urls`) plus the list
+of origins, set together, with nothing for a manifest to declare.
 
 ```moonbit
-// The list and the grant are one call, because they are one decision.
+// The list and the allowance are one call, because they are one decision.
 @policy.Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])
 ```
 
@@ -327,7 +311,7 @@ would move the boundary after the check.
 
 The honest limits, in the order they matter:
 
-- **It is a network grant.** An image the guest chooses is a GET the guest
+- **It is a network allowance.** An image the guest chooses is a GET the guest
   chose, and the path is still the guest's to write, so an allowed origin is an
   origin that can be told things. Naming the origins is what turns "this bundle
   can talk to anyone" into "this bundle can talk to the CDN its pictures are
@@ -336,30 +320,26 @@ The honest limits, in the order they matter:
 - **A path in an entry is dropped, not honored.** `https://cdn.example/public/`
   is not a boundary — `/public/../private/key` is a URL to `/private/key` — so
   an entry normalizes to its origin rather than pretending to be narrower.
-- **A relative URL stays refused with the capability granted**, which is not an
+- **A relative URL stays refused with the allowance in place**, which is not an
   oversight: `/logout` is a request to the HOST's origin carrying the host's
-  cookies, and that is a different grant from "may load pictures from a CDN".
+  cookies, and that is a different decision from "may load pictures from a CDN".
 - **`<a href>` navigates.** A link the guest wrote is a link a person can click
   to an origin the host allowed; `target`/`rel` are the page's own concern and
-  this capability says nothing about them.
-- Everything else on the sink list stays refused with it granted — `<iframe
+  this allowance says nothing about them.
+- Everything else on the sink list stays refused with it in place — `<iframe
   src>` is a document with its own script, `<form action>` sends what a person
   typed, `srcset` is a list with a parser in it, and the CSS sinks are a
   stylesheet's worth of surface behind one attribute. A host that wants those
-  wants a tier, not a capability.
+  wants a tier, not an allowance.
 
-`Granted` and `System` list the capability too, so a bundle that declares it is
-not refused by the host that trusts it most; above `Untrusted` the whole URL
-surface is theirs anyway and the check returns early.
+Above `Untrusted` the whole URL surface is a bundle's anyway and the check
+returns early, so the flag is inert there and the tier constructors leave it
+false.
 
-The GATE is the registration check, not the manifest — same split as §2, where
-the module's import section is the gate and the declared capability is what a
-consent dialog can show. A bundle that declares `cap-external-urls` at a host
-that does not grant it is refused whole (`check_capabilities`), which is the
-right answer for a component whose pictures are the point. A bundle that uses
-`<img src>` without declaring it is decided by the same rule as one that did:
-the host either grants those origins to bundles it loads or it does not, and a
-declaration cannot widen that.
+The GATE is the registration check, not anything a bundle says about itself —
+same split as §2, where the module's import section is the gate. The host
+either allows those origins to bundles it loads or it does not, and nothing a
+bundle ships can widen that.
 
 `guests/bluesky` and `guests/slack` are the worked example on the guest side:
 five origins between them, each a literal in a view, each paired with a path the
@@ -384,7 +364,7 @@ origin and the rule above runs unchanged (`policy/config.mbt`,
 `tscript/parse.mbt`).
 
 ```moonbit
-// Binding an origin IS granting it — one call, one decision, like the list.
+// Binding an origin IS allowing it — one call, one decision, like the list.
 @policy.Policy::untrusted().with_config([
   ("mediaOrigin", @policy.origin("https://files.hachyderm.io")),
   ("instanceName", @policy.text("hachyderm.io")),
@@ -397,16 +377,16 @@ literal the host wrote.* Both are settled before anything renders.
 
 Four things hold it there, and each is load-bearing:
 
-- **A manifest default is not a grant.** An unbound `origin` reaches the GUEST
-  — so a bundle nobody configured is still what its author shipped — and never
-  reaches a view. Otherwise a bundle would grant itself an origin by writing
-  one in its own file, which would make the whole rule decorative. A host that
-  ships the bundles it loads opts in explicitly with
+- **A manifest default is not an allowance.** An unbound `origin` reaches the
+  GUEST — so a bundle nobody configured is still what its author shipped — and
+  never reaches a view. Otherwise a bundle would allow itself an origin by
+  writing one in its own file, which would make the whole rule decorative. A
+  host that ships the bundles it loads opts in explicitly with
   `trusting_manifest_config`, and that call is named for what it costs.
 - **The type is stated twice, by both parties, and a disagreement refuses the
   bundle.** Without the host's half, a manifest could declare `type: "origin"`
   for a variable a host bound as prose — an internal API base, say — and turn a
-  string the host meant as data into a network grant.
+  string the host meant as data into a network allowance.
 - **Only an `origin` reaches a view.** `Policy::view_config` hands the parser
   the origin-typed entries and nothing else, because `$$name` becomes a `Const`
   the URL rule will happily pin, so a `text` variable a view could name would
@@ -416,9 +396,9 @@ Four things hold it there, and each is load-bearing:
   screens — and they must resolve `$$name` identically or the check is about a
   document nobody displays.
 
-The sharp edge, stated plainly: **binding an origin is granting it.** A host
+The sharp edge, stated plainly: **binding an origin is allowing it.** A host
 that binds one from input it did not write — a query parameter, a model's
-output — has granted whatever that input named. `origin_of` still refuses
+output — has allowed whatever that input named. `origin_of` still refuses
 anything that is not a well-formed http(s) authority, so the worst case is a
 picture fetched from a server the input chose; that is not a way past the rule,
 but it is a real decision and it belongs in host code that means it.
@@ -617,20 +597,21 @@ upstream in `mizchi/css` — its `consume_name` not implementing css-syntax-3
 The stricter tier that would have been the other half of this is already in
 place — see "what is true now" above.
 
-## 5. `control.request`: a bundle's own handlers are fine, the host's are not
+## 5. `control.intent`: a bundle's own handlers are fine, the host's are not
 
-A request resolves against the bundle's own handlers first, then the host's:
-`register_bundle` puts the bundle's in a child scope and `lookup_request` walks
-child → parent.
+An intent on the `lex` leg resolves against the bundle's own handlers first,
+then the host's: `register_bundle` puts the bundle's in a child scope and
+`lookup_intent` walks child → parent.
 
-**A bundle's own handlers need no policy.** They run inside the guest, which has
-no dangerous capability, so they inherit exactly the same limitation as every
-other line of guest code. Nothing to add.
+**A bundle's own handlers need no policy.** They run inside the guest, which
+has no authority of its own, so they inherit exactly the same limitation as
+every other line of guest code. Nothing to add.
 
 **Host-registered handlers are the open one.** A guest can call any of
 them with any arguments. In `demo/universal_wasm` those are `double`,
 `listComponents`, `makeComponent`; in a real app they are whatever the app's
-services are.
+services are — and after §2, they are also where a clock or entropy comes
+from, which makes this seam the whole of what a guest can ask a page for.
 
 The fix is not a manifest-declared allowlist — that would ask the untrusted
 party what it is allowed to do. It is to authorize **at call time, from the
@@ -714,9 +695,9 @@ trustworthy as what comes off the network.
 
 **Storage is a channel, and it is the page's.** `dyncomp/persist` names no
 backend; the browser one (`dyncomp/persist/wasm`) is the page's own
-`localStorage` under a prefix the page chooses. A guest cannot reach it — there
-is no storage capability, and `persist` is a value the host asked for rather
-than a call the guest makes. Two bundles cannot read each other's snapshots
+`localStorage` under a prefix the page chooses. A guest cannot reach it — the
+contract has no storage call, and `persist` is a value the host asked for
+rather than a call the guest makes. Two bundles cannot read each other's snapshots
 through the contract; whoever hosts them decides what the store holds and what
 is handed back.
 
@@ -819,9 +800,10 @@ own views can read the window, which is the point of opening.)
 It **dispatches an intent** and the host answers. The two channels differ in
 exactly the way that matters here: an event path has no caller to authorize —
 a view is compiled data, so nothing is on the other end — while an intent
-carries `IntentCall.from`, and a host holding that can decide. Capability is
-granted through a channel that knows its caller, never reached through one that
-does not, which is principle 4 applied to the DOM instead of to wasm imports.
+carries `IntentCall.from`, and a host holding that can decide. Authority is
+extended through a channel that knows its caller, never reached through one
+that does not, which is principle 4 applied to the DOM instead of to wasm
+imports.
 
 ## What to check when changing this
 
@@ -835,10 +817,11 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
 - Adding a way for a guest to hand the host a string that ends up in markup —
   a macro argument was one, and had nothing reading it for four releases. Ask
   where the string can LAND, not what it is called at the call site.
-- Widening `cap-external-urls`: every attribute added to `external_url_attr`
-  has to survive the question the two on it already answered — can the
-  registration-time check see the whole origin, and is what the attribute does
-  with that origin a fetch rather than a document, a form or a stylesheet?
+- Widening the external-URL allowance: every attribute added to
+  `external_url_attr` has to survive the question the two on it already
+  answered — can the registration-time check see the whole origin, and is what
+  the attribute does with that origin a fetch rather than a document, a form
+  or a stylesheet?
 - Adding a WIT export: is it runtime behavior that genuinely cannot be static
   bundle data? Metadata in wasm executes code merely to describe code and
   expands the canonical ABI attack surface.
@@ -861,8 +844,11 @@ does not, which is principle 4 applied to the DOM instead of to wasm imports.
   what its own views already had, and the host chose it. Anything else that
   wants to answer should be built the same way, or it is a channel out of the
   sandbox rather than a value.
-- Adding to `env`: is the answer weaker than the platform's own, and is it
-  frozen or seeded so a dispatch still replays?
+- Adding an ambient import (a clock, entropy, anything a guest reads rather
+  than asks for): don't. The intent seam already carries it with the caller
+  identified and the host deciding per call, and an ambient answer would have
+  to be weaker than the platform's own AND frozen or seeded so a dispatch
+  still replays — which is the intent answer with extra steps.
 - **Adding a step to `event_object_steps`**: what does it reach, and can a path
   through it get out of the event and into the page? Ask it of the whole PATH
   and not of the step — `target` is fine and `target.ownerDocument` is the

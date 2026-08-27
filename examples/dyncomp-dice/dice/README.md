@@ -15,7 +15,7 @@ else is yours:
 | `gen/`, `interface/`, `world/` | `wit-bindgen moonbit` output, checked in — so building needs no wit-bindgen |
 | `gen/interface/tutuca/component/guest/sdk.mbt` | the guest SDK: implements every generated `declare` over the `DynComponent` trait |
 | `gen/interface/tutuca/component/guest/dice.mbt` | **yours**: the behavior |
-| `manifest.json` | **yours**: the schema, the docs, the message buckets, the capabilities |
+| `manifest.json` | **yours**: the schema, the docs, the message buckets |
 | `views/Dice.main.html` | **yours**: the view, as a file an editor understands |
 
 The last two used to be a `dice_def()` inside `dice.mbt`, exported through a
@@ -51,14 +51,15 @@ bumping one without the others produces a component the host rejects.
    fields exist because `manifest.json` says so. That split is what lets a
    catalog rank you, a form configure you and an inspector show you — with
    nobody trusting your code.
-4. **Ambient authority is granted, never assumed.** The world imports no WASI:
-   no filesystem, no network, no clock, no entropy. The three facts you cannot
-   compute for yourself — the time, a random number, a fresh id — are
-   capabilities you request in `manifest.json` and a host grants or refuses. A
-   host that will not grant one **refuses the bundle** rather than handing you a
-   plausible lie.
+4. **Ambient authority is absent, never assumed.** The world imports no WASI:
+   no filesystem, no network, no clock, no entropy. A fact you cannot compute
+   for yourself — the time, a random number — you ask the host for over an
+   intent: the host registers an `IntentFn`, you raise the intent through
+   `control.intent`, and the answer arrives as an ordinary message. This die
+   is the worked example — it cannot roll itself, so it raises `roll` and the
+   host answers with `rollOk` or `rollFailed`.
 
-   What a host CAN hand you without a capability is configuration: variables
+   What a host CAN hand you up front is configuration: variables
    your manifest declares with defaults and a host binds at load, read back
    through `config.get`. This die declares none — it needs a number, not a
    setting — but `guests/mastodon` upstairs is the worked example, and it is

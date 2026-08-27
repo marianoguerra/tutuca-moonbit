@@ -83,31 +83,6 @@ export function createTkvImports() {
   };
 }
 
-// --- what this host is willing to grant ---
-//
-// Capabilities are checked against a descriptor bundle's IMPORT SECTION,
-// which is the difference between a gate and a promise. The static manifest
-// remains useful for consent UI, but it cannot hide what the module imports.
-//
-// The default is what `Policy::untrusted()` says: nothing. A page that has
-// asked a person calls this before loading, and `set_policy` is the MoonBit
-// side of the same decision — wiring the two together is the piece still
-// missing, and until it lands the strict answer is the one in force.
-let grants = [];
-
-/**
- * Capabilities (`cap-clock`, `cap-random`, `cap-timer`) that descriptor
- * bundles loaded from now on may import. Applies at LOAD, like the policy it
- * mirrors: narrowing it does not retract a bundle already registered.
- *
- * `cap-external-urls` gates no import — it is about what a guest's VIEW may
- * name — so it belongs on the MoonBit policy (`allowing_external_urls`) and
- * passing it here changes nothing either way.
- */
-export function setGrants(caps) {
-  grants = [...caps];
-}
-
 // --- archives a page already holds ---
 
 // A bundle the page BUILT rather than fetched: bytes that are already in this
@@ -475,52 +450,6 @@ export function createTcompImports(getExports) {
     dropInstance: (token) => {
       bundles.get(currentBundle)?.instances.delete(Number(token));
     },
-    // Declared in the contract, not yet implemented: it needs a timer the
-    // transactor owns, so that a delayed message arrives through the same
-    // dispatch path as every other one. Present and LOUD rather than absent:
-    // an absent import makes jco throw something about a missing function,
-    // which says nothing about why. See dyncomp/DESIGN.md "Still open".
-    after: (delayMs, name) => {
-      console.warn(
-        `[guest] control.after("${name}", ${delayMs}ms) ignored: ` +
-        "the host has no timer yet",
-      );
-    },
-  };
-  // The three ambient facts a guest cannot compute for itself. Each answer is
-  // deliberately WEAKER than the platform's own:
-  //
-  //  - `nowMs` is coarsened to 1s and frozen for the duration of one tcomp
-  //    call, so every read inside one handler agrees. That is what lets a
-  //    dispatch replay, and it is why a guest cannot build a fine-grained
-  //    timer — and therefore a timing side channel — out of it.
-  //  - `randomU64` is a seeded xorshift, not `crypto.getRandomValues`: a
-  //    session that records its seed replays exactly. A guest that needs
-  //    unpredictability an attacker cannot reproduce asks the host instead.
-  //  - `newId` is monotonic per bundle, for keying a list — not for naming
-  //    anything outside the page.
-  //
-  // The host decides whether a bundle gets any of this (manifest
-  // `capabilities`); until it grants, these are simply not reached, because
-  // jco elides an import the guest never calls.
-  let frozenNow = 0;
-  let rngState = 0x9e3779b97f4a7c15n;
-  let idCounter = 0;
-  const freezeClock = () => {
-    frozenNow = Math.floor(Date.now() / 1000) * 1000;
-  };
-  const envImpl = {
-    nowMs: () => BigInt(frozenNow || Math.floor(Date.now() / 1000) * 1000),
-    tzOffsetMin: () => -new Date().getTimezoneOffset(),
-    locale: () => globalThis.navigator?.language ?? "en",
-    randomU64: () => {
-      // xorshift64*, masked to 64 bits — deterministic given the seed
-      rngState ^= rngState >> 12n;
-      rngState ^= (rngState << 25n) & 0xffffffffffffffffn;
-      rngState ^= rngState >> 27n;
-      return (rngState * 0x2545f4914f6cdd1dn) & 0xffffffffffffffffn;
-    },
-    newId: () => `id-${++idCounter}`,
   };
   // What the HOST decided this bundle's variables are. Filled by
   // `set_bundle_config` once MoonBit has resolved the manifest's declarations
@@ -559,8 +488,6 @@ export function createTcompImports(getExports) {
     "tutuca:component/values@0.10.0": valuesImpl,
     "tutuca:component/control": controlImpl,
     "tutuca:component/control@0.10.0": controlImpl,
-    "tutuca:component/env": envImpl,
-    "tutuca:component/env@0.10.0": envImpl,
     "tutuca:component/config": configImpl,
     "tutuca:component/config@0.10.0": configImpl,
   };
@@ -579,7 +506,6 @@ export function createTcompImports(getExports) {
   // not.
   const instOf = (bundle, handle) => {
     currentBundle = bundle;
-    freezeClock();
     const inst = bundles.get(bundle)?.instances.get(handle)?.inst;
     if (!inst) {
       const live = bundles.get(bundle);
@@ -665,7 +591,7 @@ export function createTcompImports(getExports) {
       const { instantiate } = await import("./abi.mjs");
       const manifest = hydrateManifest(descriptor, files);
       await finishLoad(
-        (g, i) => instantiate(g, i, { ...descriptor, policy: { grants } }),
+        (g, i) => instantiate(g, i, descriptor),
         getCoreModule,
         loadId,
         manifest,
@@ -698,15 +624,12 @@ export function createTcompImports(getExports) {
   };
 
   return {
-    set_grants: (capsJson) => setGrants(JSON.parse(capsJson)),
     // What `config.get` answers with, for one bundle.
     //
-    // Per BUNDLE rather than per host, which is the difference between this
-    // and `set_grants`: a grant is a decision about what any bundle may do,
-    // and a config is a decision about what THIS registration is. Two
-    // registrations of one archive with different variables are the case the
-    // whole mechanism exists for, and a host-wide table could not tell them
-    // apart.
+    // Per BUNDLE rather than per host: a config is a decision about what THIS
+    // registration is. Two registrations of one archive with different
+    // variables are the case the whole mechanism exists for, and a host-wide
+    // table could not tell them apart.
     //
     // Called from `dyncomp_on_loaded`, after MoonBit resolved the manifest's
     // declarations against the policy's bindings and before anything can
@@ -755,7 +678,6 @@ export function createTcompImports(getExports) {
     },
     create: (bundle, component, argsJson) => {
       currentBundle = bundle;
-      freezeClock();
       const b = bundles.get(bundle);
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, jsonToGuest(v)]);
       const h = register(bundle, new b.guest.Instance(component, args), component);
@@ -816,7 +738,6 @@ export function createTcompImports(getExports) {
     // a request the BUNDLE serves; module-scoped, so no instance handle
     serve_intent: (bundle, name, argsJson) => {
       currentBundle = bundle;
-      freezeClock();
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const res = bundles.get(bundle).guest.serveIntent(name, args);
       drainChildren();
@@ -851,7 +772,6 @@ export function createTcompImports(getExports) {
       const b = bundles.get(bundle);
       if (!b) return -1;
       currentBundle = bundle;
-      freezeClock();
       const inst = b.guest.Instance.restore(component, b64ToBytes(stateB64));
       drainChildren();
       arena.clear();

@@ -7,8 +7,8 @@
 /// How much a host is willing to believe about where a bundle came from.
 ///
 /// The authority a host deliberately extends to a bundle. Untrusted has no
-/// ambient capabilities or direct DOM network/CSS channel; Granted adds the
-/// surfaces a person approved; System is app code shipped by the host.
+/// direct DOM network/CSS channel; Granted adds the surfaces a person
+/// approved; System is app code shipped by the host.
 pub(all) enum TrustTier {
   /// Shipped with the app. Everything it asks for.
   System
@@ -55,9 +55,17 @@ pub fn Quotas::default() -> Quotas {
 pub(all) struct Policy {
   tier : TrustTier
   quotas : Quotas
-  /// Capabilities this host will grant. Anything a manifest asks for that is
-  /// not here refuses the bundle.
-  grants : Array[Capability]
+  /// Whether an untrusted view may pin a `<img src>` / `<a href>` to an
+  /// external origin at all — see `external_url.mbt`.
+  ///
+  /// Set through `allowing_external_urls`, and by `with_config` when a bound
+  /// variable is an origin: binding an origin is allowing it. The flag, not
+  /// `external_origins.is_empty()`, is the gate — a host that allowed
+  /// external URLs with an EMPTY list allowed any `https://` origin, and a
+  /// host that never allowed them has an empty list too. Only consulted for
+  /// Untrusted views (`check_untrusted_view_authority` returns early above
+  /// Untrusted).
+  allows_external_urls : Bool
   /// Whether a bundle may ship its own CSS at all.
   ///
   /// The strict answer is no, and it is the DEFAULT for an untrusted bundle:
@@ -79,11 +87,11 @@ pub(all) struct Policy {
   /// back.
   sanitizer : @sanitize.Sanitizer
   /// The origins an untrusted view may pin a `<img src>` / `<a href>` to, each
-  /// normalized to `scheme://authority`. Only consulted when `CapExternalUrls`
-  /// is granted; empty then means any `https://` origin.
+  /// normalized to `scheme://authority`. Only consulted when
+  /// `allows_external_urls` is set; empty then means any `https://` origin.
   ///
-  /// Set through `allowing_external_urls`, which is also what adds the grant:
-  /// the list and the capability are one decision and a policy holding one
+  /// Set through `allowing_external_urls`, which is also what sets the flag:
+  /// the list and the allowance are one decision and a policy holding one
   /// without the other would be a policy nobody meant to write.
   external_origins : Array[String]
   /// The variables this host BOUND, by name — see `config.mbt`. Empty means
@@ -91,7 +99,7 @@ pub(all) struct Policy {
   /// answer: those defaults reach the guest and never reach a view.
   ///
   /// Set through `with_config`, which is also what adds an origin among them
-  /// to `external_origins` and the grant with it.
+  /// to `external_origins` and sets `allows_external_urls` with it.
   config : Map[String, ConfigBinding]
   /// Whether a bundle's OWN `origin` defaults count as bound (see
   /// `trusting_manifest_config`). False everywhere a host did not say
@@ -111,10 +119,12 @@ pub(all) struct Policy {
 }
 
 ///|
-/// What an untrusted bundle gets: no capabilities, no stylesheet of its own,
-/// default quotas. It can still declare components, ship views, hold state,
-/// handle events, nest children and serve its own intents — which is to say,
-/// it can still be a component. That is the claim this design is making.
+/// What an untrusted bundle gets: no stylesheet of its own, no external
+/// URLs, default quotas. It can still declare components, ship views, hold
+/// state, handle events, nest children and serve its own intents — which is
+/// to say, it can still be a component. That is the claim this design is
+/// making. Anything it cannot do for itself — a clock, entropy, the network —
+/// it asks the host for over an intent, and the host decides per call.
 ///
 /// `CssPolicy::payload()` is the one thing here that is not a refusal, and it is
 /// new: a CONSTANT inline style or SVG presentation attribute is now read
@@ -126,7 +136,7 @@ pub fn Policy::untrusted() -> Policy {
   {
     tier: Untrusted,
     quotas: Quotas::default(),
-    grants: [],
+    allows_external_urls: false,
     allow_custom_css: false,
     sanitizer: @sanitize.Sanitizer::default().with_css(
       @safecss.CssPolicy::payload(),
@@ -139,20 +149,14 @@ pub fn Policy::untrusted() -> Policy {
 }
 
 ///|
-/// A person said yes: the clock and ids, and CSS the validator has looked at.
-/// Still no timer — a bundle that wants to wake itself up is asking for
-/// something a person cannot meaningfully consent to in one dialog.
-///
-/// `CapExternalUrls` is in the list because these tiers already keep the whole
-/// URL surface (`check_untrusted_view_authority` returns early above
-/// Untrusted). A bundle that DECLARES the capability so an untrusted host can
-/// judge it must not be refused by a host that was going to allow more than it
-/// anyway, which is what leaving it out would do.
+/// A person said yes to this bundle: its own CSS, and the whole URL surface —
+/// `check_untrusted_view_authority` returns early above Untrusted, so
+/// `allows_external_urls` is inert here and stays false.
 pub fn Policy::granted() -> Policy {
   {
     tier: Granted,
     quotas: Quotas::default(),
-    grants: [CapClock, CapRandom, CapExternalUrls],
+    allows_external_urls: false,
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
     external_origins: [],
@@ -163,12 +167,14 @@ pub fn Policy::granted() -> Policy {
 }
 
 ///|
-/// Shipped with the app, and treated as part of it.
+/// Shipped with the app, and treated as part of it. Behaviorally the same as
+/// `granted()` today; the tier label is the statement of intent, kept
+/// separate so a host can say which of the two things it means.
 pub fn Policy::system() -> Policy {
   {
     tier: System,
     quotas: Quotas::default(),
-    grants: [CapClock, CapRandom, CapTimer, CapExternalUrls],
+    allows_external_urls: false,
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
     external_origins: [],
@@ -218,43 +224,6 @@ pub(all) struct BundleFacts {
   max_style_bytes : Int
   max_types : Int
 } derive(Eq, Debug)
-
-///|
-/// Whether the capabilities a manifest asks for are ones this host will grant.
-///
-/// An ungranted capability refuses the BUNDLE rather than degrading it. The
-/// alternative — hand it over and answer with a zero — produces a component
-/// that appears to work and is quietly wrong, which is the worse failure of
-/// the two by a distance.
-pub fn Policy::check_capabilities(
-  self : Policy,
-  requested : Array[CapabilityReq],
-) -> Array[Refusal] {
-  let out : Array[Refusal] = []
-  for req in requested {
-    if !self.grants.contains(req.cap) {
-      let why = if req.reason == "" {
-        ""
-      } else {
-        " (asked for it to: \{req.reason})"
-      }
-      out.push(
-        refusal("", "this host does not grant \{req.cap.to_string()}\{why}"),
-      )
-    }
-  }
-  out
-}
-
-///|
-/// Whether the granted capabilities are enough to bother instantiating for.
-/// A bundle that asked for nothing always passes.
-pub fn Policy::grants_all(
-  self : Policy,
-  requested : Array[CapabilityReq],
-) -> Bool {
-  self.check_capabilities(requested).is_empty()
-}
 
 ///|
 pub fn Policy::check_quotas(

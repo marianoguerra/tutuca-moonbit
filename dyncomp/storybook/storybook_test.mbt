@@ -132,7 +132,6 @@ fn stub_manifest() -> @dyncomp.DynManifest {
     version: "0.1.0",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [

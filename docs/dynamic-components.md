@@ -54,7 +54,7 @@ contract to implement rather than a source to regenerate against.
 
 The scaffold is a complete MoonBit module. Three places are yours:
 `gen/interface/tutuca/component/guest/clock.mbt` holds behavior and factories,
-`manifest.json` holds the schema/catalog/capability declaration, and `views/`
+`manifest.json` holds the schema/catalog declaration, and `views/`
 holds normal HTML templates. Everything else is generated bindings plus
 `sdk.mbt`, which implements every generated `declare` over the trait.
 
@@ -94,7 +94,7 @@ The host is assembled from published packages:
 | --- | --- |
 | `dyncomp/host` | wraps a guest instance as an ordinary `&Obj`, and synthesizes real components from its manifest. Backend-agnostic — `&Guest` is the seam, and tests implement it with an in-process fake. |
 | `dyncomp/host/wasm` | that seam over the `tcomp` FFI, for wasm-gc |
-| `dyncomp/policy` | what this host will *accept*. Three tiers, and an ungranted capability refuses the bundle rather than degrading it. |
+| `dyncomp/policy` | what this host will *accept*. Three tiers, and a bundle that needs what the policy withholds — its own CSS, an external origin — is refused rather than degraded. |
 | `dyncomp/registry` | the catalog of everything every loaded bundle declares, and ranked search over it |
 | `dyncomp/jsonschema` | the declared schema as JSON Schema and back, collecting every validation error with a JSON Pointer rather than stopping at the first |
 | `dyncomp/persist` | a component that has to outlive the page (`dyncomp/persist/wasm` stores it in `localStorage`) |
@@ -155,8 +155,8 @@ pub fn mount() -> Unit {
     // services this host lends to what it hosts, as `lex`-leg handlers
     intents=my_intents(),
     // what you will ACCEPT from a bundle. Defaults to `untrusted`: no
-    // capabilities, no bundle CSS. A bundle that asks for something you do
-    // not grant is refused rather than degraded, so raising this is a
+    // external URLs, no bundle CSS. A bundle that needs something you do
+    // not allow is refused rather than degraded, so raising this is a
     // decision to make deliberately — `granted()` is "a person said yes".
     policy=@policy.Policy::untrusted(),
   )
@@ -247,19 +247,22 @@ states each claim's actual strength:
 | channel | reaches | state |
 | --- | --- | --- |
 | wasm imports (`values`, `control`) | nothing ambient | safe by construction |
-| `env` — clock, randomness, ids | weakened, host-supplied answers | gated; refused by default |
-| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks, URL-bearing macro arguments and runtime markup; `<img src>`/`<a href>` reopen only with `cap-external-urls`, to an origin the view states or a config var you bound; trusted tiers retain filtered URLs |
+| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks, URL-bearing macro arguments and runtime markup; `<img src>`/`<a href>` reopen only when the policy allows external URLs, to an origin the view states or a config var you bound; trusted tiers retain filtered URLs |
 | guest CSS | your stylesheet | refused outright for an untrusted bundle |
-| `control.request` → host handlers | your own services | **open** — needs caller-aware authorization |
+| `control.intent` → host handlers | your own services | **open** — needs caller-aware authorization |
 | a runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
 The world imports no WASI. That is not a packaging accident, it is the sandbox:
 no filesystem, no network, no sockets, no environment, no subprocess, and no
-clock or entropy beyond what a capability grant supplies. The default tier is
-the one the design is *for* — a bundle there can still declare components, ship
-views, hold state, handle events, nest children and serve its own intents. Most
-sample guests run under it unchanged; the two that display other people's
-records ask for one capability, and what it buys them is below.
+clock or entropy at all. A fact a guest cannot compute for itself — the time, a
+random number — it asks the host for over an intent: the host registers an
+`IntentFn`, the guest calls `control.intent`, and the answer arrives as an
+ordinary message (the dice example's `roll` intent, answered with `rollOk` or
+`rollFailed`, is the worked version). The default tier is the one the design is
+*for* — a bundle there can still declare components, ship views, hold state,
+handle events, nest children and serve its own intents. Most sample guests run
+under it unchanged; the two that display other people's records need one
+allowance from the host's policy, and what it buys them is below.
 
 Autonomous custom elements remain available to untrusted views, including
 structured property bindings. The host page owns their JavaScript, though: a
@@ -268,8 +271,8 @@ default policy removes `is=` and browser-native network/CSS sinks, but a host
 that exposes effectful custom elements should use a sanitizer allow-list to
 narrow which tags and properties an untrusted bundle may invoke.
 
-A page that wants an untrusted bundle to show pictures grants
-`cap-external-urls` and names the origins in the same call:
+A page that wants an untrusted bundle to show pictures allows external URLs
+and names the origins in the same call:
 
 ```moonbit
 @policy.Policy::untrusted().allowing_external_urls(["https://cdn.example"])
@@ -277,10 +280,13 @@ A page that wants an untrusted bundle to show pictures grants
 
 That reopens `src` on `<img>` and `href` on `<a>`, and only for a URL whose
 ORIGIN is settled before anything renders — `<img :src="$'https://cdn.example/a/{.id}.png'">`
-is allowed, `<img :src=".avatar">` is not. It is a network grant: the path is
-still the bundle's to write, so grant the origins you meant and read
+is allowed, `<img :src=".avatar">` is not. It is a network allowance: the path
+is still the bundle's to write, so allow the origins you meant and read
 `SECURITY.md` §3 before passing an empty list, which means any `https://`
-origin.
+origin. The bundle's manifest declares nothing for any of this — the host's
+policy is the single source of what a view may reach, and a view that names an
+origin the policy does not allow is refused with "this host does not allow
+external URLs in views".
 
 A bundle that should work at more than one server names no origin at all.
 It declares a **config var** and its views spend it, and the host binds it:
@@ -297,7 +303,7 @@ It declares a **config var** and its views spend it, and the host binds it:
 
 `$$name` resolves at parse time to the string the host bound, so the same rule
 checks it and the origin is still settled at registration — it is just written
-by the host rather than by the bundle. Binding an origin IS granting it, which
+by the host rather than by the bundle. Binding an origin IS allowing it, which
 is one decision in one call; `SECURITY.md` §3a is the whole argument.
 
 The `bluesky`, `mastodon` and `slack` guests are what that looks like from the
@@ -326,8 +332,8 @@ number in prose is the half that stops being true):
   a link somebody posted, no global CSS for a display toggle, and an avatar
   from three origins its view names outright
 - **bluesky** — the same line drawn around a reader of other people's records:
-  `cap-external-urls` for pictures off the Bluesky CDN and links into
-  `bsky.app`, with the initials disc still underneath every avatar
+  the host's external-URL allowance spent on pictures off the Bluesky CDN and
+  links into `bsky.app`, with the initials disc still underneath every avatar
 - **mastodon** — the same job on a FEDERATED network, which moves the line
   somewhere else: the rich text has to be found in plain text and then checked
   against the record's own `tags` / `mentions` (Mastodon's `content` is HTML, and

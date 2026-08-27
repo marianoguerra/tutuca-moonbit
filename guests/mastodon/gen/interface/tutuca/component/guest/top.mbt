@@ -159,6 +159,11 @@ declare pub fn Instance::handle_event(
 
 ///|
 /// Pure render-time method call (view expressions). Must not mutate.
+///
+/// The host resolves this component's declared lookups for the RENDER
+/// position before the call, exactly as it does for `handle-event` at the
+/// dispatch one, so a `compute`, a `pred`, a `@when` or an `enrich` that
+/// reads `*name` through `control.lookup` gets an answer rather than nil.
 declare pub fn Instance::call_method(
   self : Instance,
   name : String,

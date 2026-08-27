@@ -91,7 +91,7 @@ pub fn storybook_module(
 /// where that button does nothing is a card that lies about the component.
 ///
 /// `policy` is what this page will accept from a bundle, and it defaults to
-/// `untrusted`: no capabilities, no bundle CSS, stock quotas. Raising it is a
+/// `untrusted`: no external URLs, no bundle CSS, stock quotas. Raising it is a
 /// decision to make deliberately — see `dyncomp/SECURITY.md`. A storybook is
 /// where an unfamiliar bundle gets opened, so the default matters more here than
 /// almost anywhere.

@@ -893,19 +893,25 @@ pub fn send_reply(name : String, args : Array[@values.Value]) -> Unit {
 /// and a value a handler is in the middle of using cannot wait for that.
 ///
 /// It takes no route, and the omission is the contract rather than a gap.
-/// The host resolves this component's declared lookups at DISPATCH, along
-/// the default `[dyn, lex]`, and this reads one of the answers — so a route
-/// the guest named could not change what came back. Which environments were
-/// walked is the host's business, the same way the default route is.
+/// The host resolves this component's declared lookups BEFORE entering the
+/// guest and this reads one of the answers — so a route the guest named
+/// could not change what came back. Which environments were walked is the
+/// host's business, the same way the default route is.
+///
+/// Both entry points resolve them, from the position each one stands in: a
+/// `handle-event` walks the dispatch route `[dyn, lex]`, and a `call-method`
+/// asks the render chain the call is being made under — which is what a
+/// `*name` in this component's own VIEW reads. So a `*name` in a `pred` and
+/// a `*name` in the template beside it answer the same thing.
 ///
 /// `nil` for a name the manifest's `lookup` list does not declare, and for a
 /// declared one that nothing above supplies and that carries no default.
 /// There is no error arm: a name nothing supplies is the ordinary case a
 /// default exists FOR, and a view's `*name` answers it the same way.
 ///
-/// No capability gates it. A guest reads what an ancestor deliberately
-/// published to its subtree and nothing else — the reach its own views
-/// already had, moved to where a handler can use it.
+/// A guest reads what an ancestor deliberately published to its subtree
+/// and nothing else — the reach its own views already had, moved to where
+/// a handler can use it.
 pub fn lookup(name : String) -> @values.Value {
   let ptr = mbt_ffi_str2ptr(name)
   let return_area = mbt_ffi_malloc(16)
@@ -951,87 +957,6 @@ pub fn lookup(name : String) -> @values.Value {
 /// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
 pub fn stop_propagation() -> Unit {
   wasmImportStopPropagation()
-}
-
-///|
-/// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
-/// later handle-event(receive, ...). Buffered like the rest; the host owns
-/// the timer and may coalesce, delay or drop it. There is no cancel and no
-/// handle: a guest cannot cancel what it does not own, and a component that
-/// wants to stop a tick stops acting on it. Requires `cap-timer`.
-pub fn after(
-  delay_ms : UInt,
-  name : String,
-  args : Array[@values.Value],
-) -> Unit {
-  let cleanup_list : Array[Int] = []
-
-  let ptr = mbt_ffi_str2ptr(name)
-
-  let address = mbt_ffi_malloc(args.length() * 16)
-  for index = 0; index < args.length(); index = index + 1 {
-    let iter_elem : @values.Value = args[index]
-    let iter_base = address + index * 16
-
-    match iter_elem {
-      Nil => {
-        mbt_ffi_store8(iter_base + 0, 0)
-
-        ()
-      }
-      Boolean(payload0) => {
-        mbt_ffi_store8(iter_base + 0, 1)
-        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
-
-        ()
-      }
-      Number(payload1) => {
-        mbt_ffi_store8(iter_base + 0, 2)
-        mbt_ffi_storef64(iter_base + 8, payload1)
-
-        ()
-      }
-      Text(payload2) => {
-        mbt_ffi_store8(iter_base + 0, 3)
-
-        let ptr3 = mbt_ffi_str2ptr(payload2)
-        mbt_ffi_store32(iter_base + 12, payload2.length())
-        mbt_ffi_store32(iter_base + 8, ptr3)
-        cleanup_list.push(ptr3)
-
-        ()
-      }
-      List(payload4) => {
-        mbt_ffi_store8(iter_base + 0, 4)
-        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
-
-        ()
-      }
-      Map(payload5) => {
-        mbt_ffi_store8(iter_base + 0, 5)
-        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
-
-        ()
-      }
-      Instance(payload6) => {
-        mbt_ffi_store8(iter_base + 0, 6)
-        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
-
-        ()
-      }
-    }
-  }
-  wasmImportAfter(
-    delay_ms.reinterpret_as_int(),
-    ptr,
-    name.length(),
-    address,
-    args.length(),
-  )
-  mbt_ffi_free(ptr)
-  mbt_ffi_free(address)
-
-  cleanup_list.each(mbt_ffi_free)
 }
 
 ///|

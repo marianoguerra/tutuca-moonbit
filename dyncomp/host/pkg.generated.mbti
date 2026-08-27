@@ -144,7 +144,6 @@ pub(all) struct DynManifest {
   version : String
   homepage : String
   authors : Array[String]
-  capabilities : Array[@policy.CapabilityReq]
   config : Array[DynConfigDef]
   components : Array[DynComponentDef]
   macros : Array[DynMacroDef]

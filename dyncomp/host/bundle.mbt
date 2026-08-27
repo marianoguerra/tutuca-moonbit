@@ -75,7 +75,7 @@ pub fn Bundle::key(self : Bundle) -> String {
 
 ///|
 /// The variables this bundle runs with, by name. What a consent dialog or a
-/// catalog shows beside the capability list, and what `config.get` answers.
+/// catalog shows, and what `config.get` answers.
 pub fn Bundle::config(self : Bundle) -> Map[String, String] {
   self.config.all
 }
@@ -163,7 +163,6 @@ pub fn register_bundle(
   // a refusal costs no parsing and leaves nothing behind. `@policy` owns the
   // decisions; this owns the mechanics — see dyncomp/SECURITY.md.
   refuse_if_any(policy.check_quotas(facts_of(manifest)))
-  refuse_if_any(policy.check_capabilities(manifest.capabilities))
   let diagnostics : Array[String] = []
   // Before anything is parsed, because the parse depends on it: a `$$name` in
   // a view resolves against `config.view`, and the policy the views are then

@@ -52,7 +52,7 @@ That declared shape is what makes both layers possible from one core.
 |---|---|---|
 | `dyncomp/wit` | v0.10.0 | the runtime behavior contract; static declaration lives in each bundle |
 | `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
-| `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
+| `dyncomp/policy` | built | trust tiers, the external-URL allowance, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |
 | `dyncomp/jsonschema` | built | the declared schema ⇄ JSON Schema, both directions |
 | `dyncomp/ui/std` | built | the standard components: the layout, and the `+` |
@@ -127,20 +127,20 @@ Three tiers, differing in authority deliberately extended by the host:
 
 | | `Untrusted` (default) | `Granted` | `System` |
 |---|---|---|---|
-| `cap-clock` / `cap-random` | no | yes | yes |
-| `cap-timer` | no | no | yes |
-| `cap-external-urls` | grantable — `allowing_external_urls(origins)`, or `with_config` binding an `origin` variable | yes | yes |
+| external URLs in views | only if the policy allows them — `allowing_external_urls(origins)`, or `with_config` binding an `origin` variable | yes | yes |
 | its own CSS | no | yes | yes |
-| direct DOM URL/CSS sinks | no — `<img src>` / `<a href>` only with `cap-external-urls`, and only to an origin settled before render: a literal the view states, or a config var the host bound | yes, render-time scheme filtered | yes, render-time scheme filtered |
+| direct DOM URL/CSS sinks | no — `<img src>` / `<a href>` only when the policy allows external URLs, and only to an origin settled before render: a literal the view states, or a config var the host bound | yes, render-time scheme filtered | yes, render-time scheme filtered |
 | sanitized runtime HTML | no | configurable | configurable |
 
-An ungranted capability **refuses the bundle** rather than degrading it: a guest
-reading a frozen zero from an ungranted clock cannot tell that from midnight.
-The untrusted tier is the one this design is *for*, and a bundle there can still
-declare components, ship views, hold state, handle events, nest children and
-serve its own requests — most sample guests run under it unchanged, and the two
-that display other people's records ask for `cap-external-urls` and name the
-origins they spend it on (`guests/bluesky`, `guests/slack`).
+There are no capabilities. A guest has no clock and no entropy at any tier —
+the world imports only `values`, `control`, `config` and `tables` — and
+anything it cannot compute for itself it asks the host for over an intent,
+reading the answer from the message the host sends back. The untrusted tier is
+the one this design is *for*, and a bundle there can still declare components,
+ship views, hold state, handle events, nest children and serve its own
+requests — most sample guests run under it unchanged, and the two that display
+other people's records render pictures and links only because the host's
+policy allows their origins (`guests/bluesky`, `guests/slack`).
 
 Also here: the Sanitizer-API config over the ANode tree (`anode/sanitize`, run by
 `check_view`), the untrusted authority walk that refuses direct network/CSS
@@ -299,11 +299,7 @@ What is left, in order:
    `DispatchPath` (`SECURITY.md` §4–§5). The Sanitizer-API port and the
    `mizchi/css` style validator have landed (`docs/sanitizer.md`,
    `docs/css-validator.md`).
-3. **Two debts from the v0.3 bump**: `manifest.capabilities` is now enforced,
-   but `control.after` still has no host implementation (it needs a timer the
-   transactor owns), and the bridge supplies `env` unconditionally rather than
-   per grant.
-4. **Design the agent tool surface** from what the tree actually offers —
+3. **Design the agent tool surface** from what the tree actually offers —
    address a component by path, send it a message, read its declared fields
    back. Then Layer 2.
 

@@ -6,10 +6,10 @@
 /// dynamic, so sink attributes are refused by name instead of trying to
 /// validate only the literals visible now.
 ///
-/// The one place that generalizes is `cap-external-urls`, and it does not
-/// break the rule so much as find the part of a value that IS static: a URL's
-/// origin, when the view writes it as a literal. `external_url.mbt` owns that
-/// rule; this file owns where it applies.
+/// The one place that generalizes is the external-URL allowance, and it does
+/// not break the rule so much as find the part of a value that IS static: a
+/// URL's origin, when the view writes it as a literal. `external_url.mbt`
+/// owns that rule; this file owns where it applies.
 
 ///|
 /// Whether this attribute name is a CSS VALUE rather than a value of its own.
@@ -68,15 +68,15 @@ fn untrusted_sink_attr(name : String) -> Bool {
 }
 
 ///|
-/// The two places a URL is worth the argument, and the only two
-/// `cap-external-urls` reopens: a picture and a link.
+/// The two places a URL is worth the argument, and the only two the
+/// external-URL allowance reopens: a picture and a link.
 ///
-/// Everything else on `untrusted_sink_attr` stays refused with the capability
-/// granted, and the list is short for a reason rather than for tidiness. An
+/// Everything else on `untrusted_sink_attr` stays refused with the allowance
+/// in place, and the list is short for a reason rather than for tidiness. An
 /// `<iframe src>` is a document with its own script; a `<form action>` sends
 /// what a person typed; `srcset` is a list, which is a rule with a parser in
 /// it; the CSS sinks are a stylesheet's worth of surface behind one attribute.
-/// A host that wants any of those wants a tier, not a capability.
+/// A host that wants any of those wants a tier, not an allowance.
 fn external_url_attr(tag : String, attr : String) -> Bool {
   (tag == "img" && attr == "src") || (tag == "a" && attr == "href")
 }
@@ -162,9 +162,9 @@ fn check_untrusted_attrs(
   let tag = d.tag.to_lower()
   // `vals` is what the attribute would set — one expression usually, two for
   // an `@if.` attribute, and a `None` for a branch that sets nothing. The sink
-  // rule never needed them (a name is a name); `cap-external-urls` does, being
-  // a rule about where the value POINTS, read off the literal part of it. See
-  // external_url.mbt.
+  // rule never needed them (a name is a name); the external-URL rule does,
+  // being a rule about where the value POINTS, read off the literal part of
+  // it. See external_url.mbt.
   fn check_name(name : String, vals : Array[@tutuca.Val?]) {
     let lower = name.to_lower()
     if lower == "is" {
@@ -189,8 +189,8 @@ fn check_untrusted_attrs(
         }
       } else if css_sink_attr(lower) {
         // A CSS-valued attribute is read rather than refused — but only when
-        // the view STATES the value, which is the same shape
-        // `cap-external-urls` reads an origin off. A dynamic one stays refused,
+        // the view STATES the value, which is the same shape the external-URL
+        // rule reads an origin off. A dynamic one stays refused,
         // and the reason is not caution: `check_view` runs at registration and
         // the dyncomp host installs `@filter.Baseline`, which carries no CSS
         // rule, so there is nothing downstream that would ever look at the
@@ -233,8 +233,8 @@ fn check_untrusted_attrs(
   match d.attrs {
     ConstAttrs(attrs) =>
       for name, lit in attrs {
-        // A constant attribute IS a pinned value, which is the case
-        // `cap-external-urls` is friendliest to; it reaches the same rule as
+        // A constant attribute IS a pinned value, which is the case the
+        // external-URL rule is friendliest to; it reaches the same rule as
         // the dynamic one by wearing the shape the rule reads.
         check_name(name, [Some(Const(lit~, from_macro=false))])
         if name.to_lower() == "class" && class_lit_has_arbitrary_css(lit) {

@@ -54,8 +54,8 @@ only when there is something to disclose.
 it, and clicking it `emit`s `openLink` exactly as a link segment does. That is
 the same rule arrived at from the other direction: a permalink is
 `https://<team>.slack.com/archives/…`, and the subdomain belongs to the
-workspace, so there is no origin a view can write as a literal and nothing for
-`cap-external-urls` to be spent on. See the `href` section below.
+workspace, so there is no origin a view can write as a literal and nothing a
+host's external-URL allowance could pin it to. See the `href` section below.
 
 ## What it exercises: a DEEP tree of same-bundle children
 
@@ -92,16 +92,16 @@ real host would open it, or ask first.
 **An avatar, from three named origins.** The same rule refuses `src` too — but
 what it cannot know ahead of time is the VALUE, not the ORIGIN, and a view that
 writes its origin as a literal has settled that much before anything runs. So
-`Message` asks for `cap-external-urls` and spends it on the three hosts a Slack
-profile picture actually comes from: `ca.slack-edge.com`, `avatars.slack-edge.com`
-and `secure.gravatar.com`, one `<img>` each, all three readable in
-`views/Message.main.html`. `avatar_path` keeps only what follows one of them, so
-a picture hosted anywhere else is not drawn.
+`Message`'s views name the three hosts a Slack profile picture actually comes
+from — `ca.slack-edge.com`, `avatars.slack-edge.com` and `secure.gravatar.com`,
+one `<img>` each, all three readable in `views/Message.main.html` — origins a
+hosting policy allows with `allowing_external_urls`. `avatar_path` keeps only
+what follows one of them, so a picture hosted anywhere else is not drawn.
 
 That is not a contradiction of the `href` case above, it is the other side of
 it. What a message LINKS to was chosen by whoever wrote it, and no view can
 name it; what it loads as an avatar was chosen by Slack, and a view can. The
-capability is exactly the difference.
+allowance is exactly the difference.
 
 The initials stay: the `<img>` is drawn OVER the disc rather than instead of
 it, so a message with no picture, one hosted somewhere the view does not name,
@@ -111,10 +111,10 @@ word. An untrusted view has no `onerror` to write and does not need one.
 the two deliberately agree: a host drawing a Slack card beside a Bluesky one
 must not draw two different kinds of disc.
 
-A page that does not grant the capability refuses this bundle whole rather than
-loading one that draws half of itself. Both demo pages grant those three origins
-plus the bluesky reader's two (`@shell.sample_policy`); what a grant costs is in
-`dyncomp/SECURITY.md` §3.
+A page whose policy does not allow those origins refuses this bundle whole
+rather than loading one that draws half of itself. Both demo pages allow those
+three origins plus the bluesky reader's two (`@shell.sample_policy`); what the
+allowance costs is in `dyncomp/SECURITY.md` §3.
 
 **No global CSS.** The original hides replies, reactions and channel badges with
 three `globalStyle` rules (`.hide-replies .msg-foot { display: none }`). There is
@@ -123,11 +123,11 @@ not ported. Doing it inside the contract means pushing the flags down with
 `control.send-at`, the way `expandAll` already does — which is a real
 implementation rather than a workaround, just a bigger one than three CSS rules.
 
-**No clock.** `capabilities` asks for the pictures and nothing else. Timestamps
-are data the message arrived with, and `timeLabel` slices `"…T09:12:00Z"` down
-to `"09:12"` — reading a string you already hold is not a fact about the world,
-and a capability that only bought a nicer phrasing would not be worth asking a
-host for.
+**No clock.** A guest has none, and this one never misses it. Timestamps are
+data the message arrived with, and `timeLabel` slices `"…T09:12:00Z"` down to
+`"09:12"` — reading a string you already hold is not a fact about the world,
+and an intent round trip that only bought a nicer phrasing would not be worth
+asking a host for.
 
 ## The `margauiClasses` view
 

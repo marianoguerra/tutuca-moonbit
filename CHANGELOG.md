@@ -6,6 +6,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **Capabilities are gone from dynamic components; host↔guest communication is
+  intents and messages, full stop.** The `Capability` enum (`cap-clock` /
+  `cap-random` / `cap-timer` / `cap-external-urls`), `CapabilityReq`, the
+  manifest `"capabilities"` key, `Policy.grants` and `check_capabilities` are
+  all removed, along with the bridge's per-grant import gate. `interface env`
+  (`now-ms`, `tz-offset-min`, `locale`, `random-u64`, `new-id`) and
+  `control.after` are removed from the WIT contract (`tutuca:component@0.10.0`,
+  version unchanged) — the world imports only `values`, `control`, `config`
+  and `tables`, so a guest has no clock and no entropy at all. A fact it
+  cannot compute for itself it asks the host for over an intent: the host
+  registers an `IntentFn`, the guest calls `control.intent`, and the answer
+  arrives as an ordinary message (the dice example's `roll`, answered with
+  `rollOk` / `rollFailed`, is the worked version). That puts the host in the
+  loop per question rather than per grant, and removes the one manifest field
+  whose meaning was a promise about the future. **Breaking** for any bundle
+  whose manifest carries a `"capabilities"` key or whose code imported `env`.
+
+### Changed
+
+- **External URLs survive, reframed: a host policy allowance rather than a
+  manifest declaration.** `Policy.allows_external_urls : Bool` plus
+  `Policy.external_origins`, set together by
+  `Policy::allowing_external_urls(origins)` (an empty list means any `https`
+  origin) and by `with_config` when a bound config variable is an origin —
+  binding an origin is allowing it. Untrusted views still pin `<img src>` /
+  `<a href>` to a literal origin the policy allows; a guest declares nothing,
+  because the host's policy is the single source of what a view may reach.
+  The refusal now reads "this host does not allow external URLs in views".
+
 ## [0.34.0] - 2026-08-26
 
 ### Added

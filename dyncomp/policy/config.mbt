@@ -47,9 +47,8 @@ pub fn ConfigTy::to_string(self : ConfigTy) -> String {
 }
 
 ///|
-/// `None` for a name this host does not know, kept rather than defaulted for
-/// the reason `Capability::parse` keeps `CapUnknown`: a type that silently
-/// became `text` would read as a policy that was applied.
+/// `None` for a name this host does not know, kept rather than defaulted: a
+/// type that silently became `text` would read as a policy that was applied.
 pub fn ConfigTy::parse(s : String) -> ConfigTy? {
   match s {
     "origin" => Some(TyOrigin)
@@ -154,9 +153,9 @@ fn reads_as_number(value : String) -> Bool {
 
 ///|
 /// The same policy, with these variables bound — and, for every origin among
-/// them, the `cap-external-urls` grant that binding one MEANS.
+/// them, the external-URL allowance that binding one MEANS.
 ///
-/// One call rather than a binding step and a grant step, for the reason
+/// One call rather than a binding step and an allowing step, for the reason
 /// `allowing_external_urls` gives: they are one decision. A host that says
 /// "this bundle's pictures are on files.hachyderm.io" has said the bundle may
 /// load pictures from files.hachyderm.io, and a version of this that made you
@@ -216,12 +215,12 @@ pub fn Policy::with_config(
   if !bad.is_empty() {
     raise InvalidConfig(bad)
   }
-  let grants = if origins.is_empty() || self.grants.contains(CapExternalUrls) {
-    self.grants
-  } else {
-    [..self.grants, CapExternalUrls]
+  {
+    ..self,
+    allows_external_urls: self.allows_external_urls || !origins.is_empty(),
+    external_origins: origins,
+    config,
   }
-  { ..self, grants, external_origins: origins, config }
 }
 
 ///|
@@ -235,7 +234,7 @@ pub fn Policy::with_config(
 /// It is a separate call, and named for what it costs, because it is the one
 /// case where a bundle's own file decides an origin. Do not reach for it on a
 /// page that loads bundles it did not ship: there, deciding per bundle is the
-/// entire point of the capability, and `with_config` is where that decision
+/// entire point of the allowance, and `with_config` is where that decision
 /// goes.
 pub fn Policy::trusting_manifest_config(self : Policy) -> Policy {
   { ..self, trusts_manifest_config: true }

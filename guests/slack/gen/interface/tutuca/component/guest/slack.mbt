@@ -27,8 +27,8 @@
 ///      in its footer. That is still true of a POSTED link, and it is why the
 ///      avatar is a different case rather than the same one: what a message
 ///      links to is chosen by whoever wrote it, and what an avatar loads is
-///      chosen by Slack. So this bundle asks for `cap-external-urls` and spends
-///      it on the three origins Slack actually serves a profile picture from,
+///      chosen by Slack. So the host allows external URLs for
+///      the three origins Slack actually serves a profile picture from,
 ///      each written as a literal in `Message`'s view — see `avatar_path` and
 ///      the README.
 ///
@@ -261,7 +261,7 @@ impl DynComponent for Segment with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
     // A link segment cannot navigate: `href` is refused for an untrusted
     // bundle, so the URL travels UP and whoever is above decides. That is the
-    // same shape as asking the host for a capability, one level cheaper.
+    // same shape as asking the host over an intent, one level cheaper.
     (RECEIVE, "open") => {
       if self.link && self.url != "" {
         @control.intent(
@@ -434,14 +434,14 @@ priv struct Message {
   /// gives about posted links, arriving here from the other direction. A
   /// permalink is `https://<team>.slack.com/archives/…`, and the subdomain is
   /// the workspace's: there is no origin a view can write as a literal, so
-  /// there is nothing for `cap-external-urls` to be spent on. Clicking it emits
+  /// there is nothing for the external-URL allowance to be spent on. Clicking it emits
   /// `openLink`, exactly as a link segment does, and whoever is above decides
   /// what opening it means.
   permalink : String
 }
 
 ///|
-/// "2026-06-23T09:12:00Z" -> "09:12". No `cap-clock` anywhere near it: the
+/// "2026-06-23T09:12:00Z" -> "09:12". No clock anywhere near it: the
 /// timestamp is data the message arrived with, and slicing a string it already
 /// holds is not a fact about the world.
 fn clock_of(created_at : String) -> String {
@@ -498,7 +498,7 @@ const GRAVATAR = "https://secure.gravatar.com/"
 /// front, or `""` when the picture is somewhere else — including a relative
 /// url, which is a request to the HOST's origin and not this bundle's to make.
 ///
-/// This is the guest's half of `cap-external-urls`: the view names the origin,
+/// This is the guest's half of the external-URL rule: the view names the origin,
 /// this decides that the profile's url is actually ON it, and what crosses
 /// between them is a path. A picture that fails all three tests is not drawn,
 /// and the initials underneath it are what shows — which is what every message

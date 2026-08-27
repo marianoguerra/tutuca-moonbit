@@ -20,9 +20,10 @@
 /// The world imports no WASI — only the interfaces below — and the browser
 /// host supplies them. That is not an accident of packaging: it is the sandbox. A guest
 /// has no filesystem, no network, no sockets, no environment, no subprocess,
-/// no clock and no entropy except what `env` grants it, and it never touches
-/// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
-/// that does and does not cover.
+/// no clock and no entropy — anything it cannot compute for itself it asks
+/// the host for over an intent, and the host decides per call — and it never
+/// touches the DOM — its views are DATA the host compiles. See ../SECURITY.md
+/// for what that does and does not cover.
 package tutuca:component@0.10.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
@@ -232,42 +233,6 @@ interface tables {
   variant command-result { ok(table), err(table-error) }
 }
 
-/// The three ambient facts a component cannot compute for itself: what time it
-/// is, an unpredictable number, and a fresh name. Each one is a CAPABILITY the
-/// static manifest requests and the host grants; an ungranted call
-/// traps rather than returning a plausible lie.
-///
-/// Deliberately NOT `wasi:clocks` + `wasi:random`. Three reasons, in order:
-/// the world imports no WASI and adding it drags preview2 shims into the
-/// browser; a real monotonic clock is the primitive a timing side channel is
-/// built from, and the coarsened one below is not; and an ambient clock makes
-/// a dispatch unreplayable, which contradicts "the host is the framework".
-interface env {
-  /// Milliseconds since the Unix epoch, coarsened by the host and FROZEN for
-  /// the duration of one dispatch: every call inside one `handle-event`
-  /// returns the same instant. That is what lets a session replay, and what
-  /// denies a guest the fine-grained timer a side channel needs. Requires
-  /// `cap-clock`.
-  now-ms: func() -> u64;
-
-  /// Minutes to add to UTC for the user's local time, and the host's locale.
-  /// The host-context a widget would otherwise read off the DOM, handed over
-  /// as data. Requires `cap-clock`.
-  tz-offset-min: func() -> s32;
-  locale: func() -> string;
-
-  /// From a PRNG the HOST seeds per instance and records, so a session
-  /// replays. NOT cryptographic: a guest that needs unpredictability an
-  /// attacker cannot reproduce asks the host with an intent on the `lex` leg.
-  /// Requires `cap-random`.
-  random-u64: func() -> u64;
-
-  /// A fresh identifier, unique within this bundle for this session.
-  /// Monotonic, not a UUID — it is for keying a list, not for naming a thing
-  /// outside the page. Requires `cap-random`.
-  new-id: func() -> string;
-}
-
 /// What the HOST decided this bundle's variables are: the manifest's declared
 /// defaults with the host's bindings applied.
 ///
@@ -276,19 +241,17 @@ interface env {
 /// read mastodon.social or hachyderm.io depending on two strings, and neither
 /// the wasm nor the views change between them.
 ///
-/// NOT a capability, unlike everything in `env`. A capability is authority a
-/// guest would not otherwise have, and these values are the host's own,
-/// handed over deliberately — reading one gives a guest nothing it could not
-/// have been shipped as a constant. What the values reach is decided
-/// elsewhere: a view can name an `origin` variable and spend
-/// `cap-external-urls` on it, and that grant is the host's, made by binding it.
+/// NOT authority. These values are the host's own, handed over deliberately —
+/// reading one gives a guest nothing it could not have been shipped as a
+/// constant. What the values reach is decided elsewhere: a view can name an
+/// `origin` variable, and the external-URL allowance it spends is the host's,
+/// made by binding it.
 interface config {
   /// The value bound for `name`.
   ///
-  /// TRAPS for a name the manifest does not declare, for the reason an
-  /// ungranted `env` call traps: an empty string is a plausible value, and a
-  /// guest that got one back could not tell a variable it misspelled from a
-  /// variable somebody deliberately set to nothing.
+  /// TRAPS for a name the manifest does not declare: an empty string is a
+  /// plausible value, and a guest that got one back could not tell a variable
+  /// it misspelled from a variable somebody deliberately set to nothing.
   get: func(name: string) -> string;
 }
 
@@ -410,19 +373,25 @@ interface control {
   /// and a value a handler is in the middle of using cannot wait for that.
   ///
   /// It takes no route, and the omission is the contract rather than a gap.
-  /// The host resolves this component's declared lookups at DISPATCH, along
-  /// the default `[dyn, lex]`, and this reads one of the answers — so a route
-  /// the guest named could not change what came back. Which environments were
-  /// walked is the host's business, the same way the default route is.
+  /// The host resolves this component's declared lookups BEFORE entering the
+  /// guest and this reads one of the answers — so a route the guest named
+  /// could not change what came back. Which environments were walked is the
+  /// host's business, the same way the default route is.
+  ///
+  /// Both entry points resolve them, from the position each one stands in: a
+  /// `handle-event` walks the dispatch route `[dyn, lex]`, and a `call-method`
+  /// asks the render chain the call is being made under — which is what a
+  /// `*name` in this component's own VIEW reads. So a `*name` in a `pred` and
+  /// a `*name` in the template beside it answer the same thing.
   ///
   /// `nil` for a name the manifest's `lookup` list does not declare, and for a
   /// declared one that nothing above supplies and that carries no default.
   /// There is no error arm: a name nothing supplies is the ordinary case a
   /// default exists FOR, and a view's `*name` answers it the same way.
   ///
-  /// No capability gates it. A guest reads what an ancestor deliberately
-  /// published to its subtree and nothing else — the reach its own views
-  /// already had, moved to where a handler can use it.
+  /// A guest reads what an ancestor deliberately published to its subtree
+  /// and nothing else — the reach its own views already had, moved to where
+  /// a handler can use it.
   lookup: func(name: string) -> value;
 
   /// End the walk with no answer — "served, and no answer". The sender hears
@@ -431,13 +400,6 @@ interface control {
   ///
   /// (host `ctx.stop-propagation`; only meaningful while handling an intent.)
   stop-propagation: func();
-
-  /// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
-  /// later handle-event(receive, ...). Buffered like the rest; the host owns
-  /// the timer and may coalesce, delay or drop it. There is no cancel and no
-  /// handle: a guest cannot cancel what it does not own, and a component that
-  /// wants to stop a tick stops acting on it. Requires `cap-timer`.
-  after: func(delay-ms: u32, name: string, args: list<value>);
 
   /// Create a same-bundle child instance and return its HOST-ASSIGNED token
   /// (the only instance-token space; `value.instance` payloads use it).
@@ -532,6 +494,11 @@ interface guest {
                        args: list<value>) -> event-result;
 
     /// Pure render-time method call (view expressions). Must not mutate.
+    ///
+    /// The host resolves this component's declared lookups for the RENDER
+    /// position before the call, exactly as it does for `handle-event` at the
+    /// dispatch one, so a `compute`, a `pred`, a `@when` or an `enrich` that
+    /// reads `*name` through `control.lookup` gets an answer rather than nil.
     call-method: func(name: string, args: list<value>) -> value;
 
     /// COW write-through: successor with one field replaced. It is what host
@@ -562,7 +529,6 @@ interface guest {
 world dynamic-component {
   import values;
   import control;
-  import env;
   import config;
   /// Types only — `tables` declares no functions, so this import costs a
   /// guest nothing at runtime and buys it the shared table vocabulary.

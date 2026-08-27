@@ -18,10 +18,10 @@ fn shown(refusals : Array[Refusal]) -> Array[String] {
 ///|
 /// The default, and the tier the whole design is FOR: a runtime-extensible
 /// catalog is only interesting if a bundle nobody vetted is usable at it.
-test "an untrusted bundle gets no capabilities and ships no CSS" {
+test "an untrusted bundle allows no external URLs and ships no CSS" {
   let p = Policy::untrusted()
   debug_inspect(p.tier, content="Untrusted")
-  debug_inspect(p.grants, content="[]")
+  assert_false(p.allows_external_urls)
   debug_inspect(
     shown(p.check_style("Counter", ".counter { color: red }")),
     content=(
@@ -33,43 +33,6 @@ test "an untrusted bundle gets no capabilities and ships no CSS" {
 }
 
 ///|
-/// An ungranted capability refuses the BUNDLE rather than degrading it. The
-/// alternative — hand it over and answer with a zero — produces a component
-/// that appears to work and is quietly wrong.
-test "an ungranted capability refuses, and says which and why" {
-  let p = Policy::untrusted()
-  let asked : Array[CapabilityReq] = [
-    { cap: CapClock, reason: "stamps each entry" },
-    { cap: CapTimer, reason: "" },
-  ]
-  debug_inspect(
-    shown(p.check_capabilities(asked)),
-    content=(
-      #|[
-      #|  "this host does not grant cap-clock (asked for it to: stamps each entry)",
-      #|  "this host does not grant cap-timer",
-      #|]
-    ),
-  )
-  assert_false(p.grants_all(asked))
-  // a bundle that asked for nothing always passes
-  assert_true(p.grants_all([]))
-}
-
-///|
-/// A person saying yes gets the clock and ids, and still not a timer: a bundle
-/// that wants to wake itself up is asking for something nobody can
-/// meaningfully consent to in one dialog.
-test "the tiers grant capabilities deliberately" {
-  let clock : Array[CapabilityReq] = [{ cap: CapClock, reason: "" }]
-  let timer : Array[CapabilityReq] = [{ cap: CapTimer, reason: "" }]
-  assert_false(Policy::untrusted().grants_all(clock))
-  assert_true(Policy::granted().grants_all(clock))
-  assert_false(Policy::granted().grants_all(timer))
-  assert_true(Policy::system().grants_all(timer))
-}
-
-///|
 /// Untrusted means the wasm guest cannot turn its described DOM into a browser
 /// fetch. Sink NAMES are rejected because their values may be dynamic and
 /// unknowable until render.
@@ -77,11 +40,10 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
   let p = Policy::untrusted()
   for
     pair in [
-      // The two `cap-external-urls` would reopen say which capability they
-      // want; every other sink names no capability, because none of them has
-      // one.
-      ("<a href=\"/leave\">go</a>", "'href' on <a>: this host does not grant"),
-      ("<img :src=\".avatar\" />", "'src' on <img>: this host does not grant"),
+      // The two the external-URL allowance would reopen say so; every other
+      // sink names no allowance, because none of them has one.
+      ("<a href=\"/leave\">go</a>", "'href' on <a>: this host does not allow"),
+      ("<img :src=\".avatar\" />", "'src' on <img>: this host does not allow"),
       ("<iframe src=\"https://x.test/\"></iframe>", "attribute 'src'"),
       ("<form action=\"/pay\"></form>", "attribute 'action'"),
       (
@@ -275,11 +237,11 @@ test "untrusted macro arguments cannot carry a URL or arbitrary CSS" {
 }
 
 ///|
-/// The capability a picture needs. What it buys is exactly two attributes, and
+/// The allowance a picture needs. What it buys is exactly two attributes, and
 /// what it charges for them is that the ORIGIN is in the view: a literal the
 /// host can read in the bundle in front of it, rather than a string the guest
 /// assembles once it is running.
-test "cap-external-urls opens img src and a href, with the origin pinned" {
+test "allowing external URLs opens img src and a href, with the origin pinned" {
   let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])
   for
     view in [
@@ -311,10 +273,10 @@ test "cap-external-urls opens img src and a href, with the origin pinned" {
       (
         "<img src=\"https://attacker.test/p.png\" />", "is not an origin this host allows",
       ),
-      // Same-origin is not "external" and is not what was granted: a relative
+      // Same-origin is not "external" and is not what was allowed: a relative
       // URL is a request to the HOST, with the host's cookies on it.
       ("<a href=\"/logout\">out</a>", "'/logout' does not pin an origin"),
-      // The capability is two attributes on two elements. It is not a mood.
+      // The allowance is two attributes on two elements. It is not a mood.
       ("<iframe src=\"https://cdn.bsky.app/x\"></iframe>", "attribute 'src'"),
       ("<img srcset=\"https://cdn.bsky.app/x 1x\" />", "attribute 'srcset'"),
       ("<a ping=\"https://cdn.bsky.app/x\">go</a>", "attribute 'ping'"),
@@ -329,41 +291,26 @@ test "cap-external-urls opens img src and a href, with the origin pinned" {
 }
 
 ///|
-/// The list and the grant are one decision, so one call makes both — and a
-/// bundle asking for the capability at a host that never made that call is
-/// refused like any other ungranted one.
-test "cap-external-urls is a grant a host makes deliberately" {
-  let asked : Array[CapabilityReq] = [
-    { cap: CapExternalUrls, reason: "shows avatars from the Bluesky CDN" },
-  ]
-  assert_false(Policy::untrusted().grants_all(asked))
-  debug_inspect(
-    shown(Policy::untrusted().check_capabilities(asked)),
-    content=(
-      #|["this host does not grant cap-external-urls (asked for it to: shows avatars from the Bluesky CDN)"]
-    ),
-  )
+/// The list and the allowance are one decision, so one call makes both.
+test "allowing external URLs is a decision a host makes deliberately" {
+  assert_false(Policy::untrusted().allows_external_urls)
   let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app/"])
-  assert_true(p.grants_all(asked))
+  assert_true(p.allows_external_urls)
   debug_inspect(
     p.external_origins,
     content=(
       #|["https://cdn.bsky.app"]
     ),
   )
-  // The tiers that already keep the whole URL surface grant it too, so a
-  // bundle that declares it is not refused by the host that trusts it most.
-  assert_true(Policy::granted().grants_all(asked))
-  assert_true(Policy::system().grants_all(asked))
   // Everything else about the policy is untouched.
   debug_inspect(p.tier, content="Untrusted")
   assert_false(p.allow_custom_css)
 }
 
 ///|
-/// An empty list is the widest form the capability has: any `https://` origin,
+/// An empty list is the widest form the allowance has: any `https://` origin,
 /// and still no origin the guest computes.
-test "cap-external-urls with no origins still refuses http and a computed host" {
+test "allowing external URLs with no origins still refuses http and a computed host" {
   let p = Policy::untrusted().allowing_external_urls([])
   debug_inspect(
     p.check_view(
@@ -431,23 +378,6 @@ test "trusted tiers retain network and CSS-capable view syntax" {
     content="[]",
   )
   debug_inspect(Policy::system().check_view("Trusted/main", view), content="[]")
-}
-
-///|
-/// Kept rather than dropped, so a refusal can say WHICH one — a dropped name
-/// would make a bundle asking for something unrecognized look like a bundle
-/// asking for nothing.
-test "a capability this host has never heard of is refused by name" {
-  let asked : Array[CapabilityReq] = [
-    { cap: Capability::parse("cap-teleport"), reason: "" },
-  ]
-  debug_inspect(asked[0].cap, content="CapUnknown(\"cap-teleport\")")
-  debug_inspect(
-    shown(Policy::system().check_capabilities(asked)),
-    content=(
-      #|["this host does not grant cap-teleport"]
-    ),
-  )
 }
 
 ///|
@@ -666,8 +596,8 @@ test "a bound config origin pins a sink the same way a written one does" {
   let p = Policy::untrusted().with_config([
     ("mediaOrigin", origin("https://files.hachyderm.io")),
   ])
-  // Binding it granted it: one call, one decision.
-  assert_true(p.grants.contains(CapExternalUrls))
+  // Binding it allowed it: one call, one decision.
+  assert_true(p.allows_external_urls)
   debug_inspect(
     p.external_origins,
     content=(
@@ -722,11 +652,11 @@ test "an unbound config origin reaches the guest and never a view" {
   ).unwrap()
   // The name resolved to nothing, so the template carries a hole where its
   // origin would be — and the sink is refused on the ordinary ground, because
-  // a host that bound no origin granted no capability either.
+  // a host that bound no origin allowed no external URL either.
   debug_inspect(
     shown(p.check_view("Status/main", tree)),
     content=(
-      #|["Status/main: untrusted views may not use 'src' on <img>: this host does not grant cap-external-urls"]
+      #|["Status/main: untrusted views may not use 'src' on <img>: this host does not allow external URLs in views"]
     ),
   )
 }

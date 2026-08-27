@@ -189,16 +189,14 @@ before(async () => {
   };
 });
 
-test('the static manifest declares five components and asks for one capability', { skip: !built }, () => {
+test('the static manifest declares five components', { skip: !built }, () => {
   const m = manifest;
   assert.equal(m.apiVersion, 8);
   assert.equal(m.moduleName, 'blueskylib');
-  // the one thing this bundle asks a host for, and it asks with a reason: the
-  // origins its views name are the whole of its network reach, and a host that
-  // will not grant them refuses it rather than loading a version that draws
-  // half of itself
-  assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
-  assert.match(m.capabilities[0].reason, /cdn\.bsky\.app/);
+  // the origins its views name are the whole of its network reach, and the
+  // host's policy (`allowing_external_urls`) is what decides them — the
+  // manifest declares nothing
+  assert.ok(!('capabilities' in m));
   assert.deepEqual(m.components.map((c) => c.name), ['Scope', 'Post', 'Feed', 'Thread', 'Profile']);
 
   const byName = Object.fromEntries(m.components.map((c) => [c.name, c]));
@@ -594,7 +592,7 @@ test('a profile says when it was created and what it pinned', { skip: !built }, 
     ['pinnedPost', text('at://did:plc:alice/app.bsky.feed.post/3kaaa')],
   ]);
   // a date and not a duration: "3 years ago" needs a clock, and this bundle
-  // asks for no `cap-clock`
+  // has none
   assert.equal(field(p, 'joinedLabel'), 'Joined 14 May 2023');
   assert.equal(field(p, 'hasJoined'), true);
   // the link the prose has always offered, now under the view's own origin

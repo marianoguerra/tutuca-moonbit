@@ -24,23 +24,15 @@
 /// A DIE, and it is a die on purpose: it is the smallest component that cannot
 /// work alone. This world imports no WASI — no clock, no entropy, nothing
 /// ambient — so a die living in here has no way to produce the one number it
-/// exists to produce. It asks the page, through `control.request "roll"`, and
-/// the page answers. Every other component in this family (a counter, a todo
+/// exists to produce. It asks the page, through the `roll` intent, and the
+/// page answers. Every other component in this family (a counter, a todo
 /// list, a calculator) would still function with the host reduced to a
 /// renderer; this one would not, which is why it is the thing worth showing.
 ///
-/// It could instead have declared `capabilities=[cap-random]` and used
-/// `@env.random_u64()`. It deliberately does not. A capability is granted by
-/// the HOST's policy, and a host that will not grant one REFUSES the bundle
-/// rather than handing it a plausible lie — which is the right behaviour and
-/// also means a bundle that asks for anything is a bundle some pages cannot
-/// run. The default tier grants nothing, so a die that asked would be refused
-/// by every page that had not thought about the question, including this one.
-///
-/// Asking through `control.request` is the route that stays open: it needs no
-/// grant, because it is not ambient authority. The page is not lending the die
-/// entropy; it is answering one question, once, and it can decline. That is a
-/// smaller thing to consent to, and it is why this die runs anywhere.
+/// Asking through an intent is the only route there is, and the right one:
+/// it is not ambient authority. The page is not lending the die entropy; it
+/// is answering one question, once, and it can decline. That is a smaller
+/// thing to consent to, and it is why this die runs anywhere.
 
 ///|
 /// One component. Fields are ordinary MoonBit; only `get_field` decides what
@@ -227,11 +219,6 @@ fn make_dice(args : Array[(String, @values.Value)]) -> &DynComponent {
 /// component. The description moved to `manifest.json`, which is why this is
 /// now the whole of what the wasm says about itself: a name and a factory. The
 /// host reads the rest as data, before it instantiates anything.
-///
-/// `capabilities` is likewise a manifest field now, and this bundle's is empty
-/// — the honest list of ambient facts it needs. Asking for none is what makes a
-/// bundle safe to mount from anywhere, and an untrusted host REFUSES one that
-/// asks for something it will not grant rather than handing it a plausible lie.
 ///
 /// No `serve` either: `roll` is a request this bundle does NOT answer, which is
 /// what sends it past the bundle and out to the page. A bundle that served a

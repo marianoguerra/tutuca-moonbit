@@ -84,12 +84,6 @@ fn manifest_json(
     "version": Json::string("0.1.0"),
     "homepage": Json::string(""),
     "authors": Json::array([]),
-    // Nothing is asked for, and that is not a placeholder: a compiled card has
-    // no clock, no entropy and no timer, because nothing it can express needs
-    // one. A capability it did not import could not be used anyway — the host
-    // checks the IMPORT SECTION — so asking for one would be a promise rather
-    // than a grant.
-    "capabilities": Json::array([]),
     "stringEncoding": Json::string("utf8"),
     "macros": Json::array(macro_defs),
     "components": Json::array(component_defs),

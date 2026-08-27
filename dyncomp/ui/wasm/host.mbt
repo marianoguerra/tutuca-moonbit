@@ -338,12 +338,11 @@ pub fn refresh_margaui() -> Unit {
 /// services this host offers to what it hosts.
 ///
 /// `policy` is what this page will accept from a bundle, and it defaults to
-/// `untrusted`: no capabilities, no bundle CSS, stock quotas. A page that wants
-/// a bundle to be able to read a clock or draw a random number has to say so —
-/// `@policy.Policy::granted()` is a person having said yes — and a bundle that
-/// asks for something ungranted is refused rather than handed a plausible lie,
-/// which is why this is the page's decision and not a default anyone can drift
-/// into. See `dyncomp/SECURITY.md`.
+/// `untrusted`: no external URLs, no bundle CSS, stock quotas.
+/// `@policy.Policy::granted()` is a person having said yes, and raising the
+/// tier is the page's decision and not a default anyone can drift into. A
+/// bundle that needs a clock or a random number asks the page over an intent,
+/// and the page decides per call. See `dyncomp/SECURITY.md`.
 ///
 /// Returns `None` if the app could not mount, which on wasm-gc means the page
 /// had no `#app` to mount into.

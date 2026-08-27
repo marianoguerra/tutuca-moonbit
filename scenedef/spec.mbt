@@ -122,8 +122,8 @@ pub(all) enum Reader {
   /// component report a declined rule differently. A host component raises a
   /// structured `Refusal`; a compiled card has no shape to put one in on the
   /// guest boundary, so a `requires`, an `ensures` or an `invariant` that did
-  /// not hold crosses as `control.log` — the one call on the control interface
-  /// no capability gates — carrying the rule's own `format` sentence evaluated
+  /// not hold crosses as `control.log` — the simplest call on the control
+  /// interface — carrying the rule's own `format` sentence evaluated
   /// over the state that was rejected.
   ///
   /// Without it, a declined guard and a click that missed are the same thing

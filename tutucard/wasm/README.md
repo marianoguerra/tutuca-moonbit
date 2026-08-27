@@ -499,7 +499,7 @@ again, and a card without an arena still carries no code that mentions one.
   including the rule's own `format` clause evaluated over the state that was
   rejected. What does not cross is the structured `Refusal` a host component
   raises, with the state inside it: the guest world has no shape for that, and
-  `log` is the one thing on `control` that no capability gates. A card that
+  `log` is the simplest thing on `control`. A card that
   declares a rule therefore imports `control.log`, which is a true statement
   about the card.
 - **`tutuca/init` fixtures are dropped** from the manifest. Their field values

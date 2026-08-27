@@ -1063,8 +1063,8 @@ async function loadAndMount() {
       ),
     );
   } catch (e) {
-    // A throw is `abi.mjs` refusing the module — most often for a capability
-    // its import section asks for and the empty grants list does not answer.
+    // A throw is `abi.mjs` refusing the module — most often for an import
+    // its import section asks for that is outside the contract.
     report = { ok: false, error: String(e) };
   }
   if (!report.ok) {

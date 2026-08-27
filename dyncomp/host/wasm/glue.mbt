@@ -86,16 +86,12 @@ extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "
 extern "wasm" fn tcomp_load_bytes(archive_id : Int, load_id : Int) -> Unit = "tcomp" "load_bytes"
 
 ///|
-/// Keep the JS-side import gate on the same grants as the MoonBit policy.
-extern "wasm" fn tcomp_set_grants(caps_json : String) -> Unit = "tcomp" "set_grants"
-
-///|
 /// What `config.get` answers with, for ONE bundle — the manifest's declared
 /// variables with this host's bindings applied.
 ///
-/// Per bundle rather than per host, unlike `set_grants`: two registrations of
-/// one archive with different variables are the case config vars exist for,
-/// and a page-wide table could not tell them apart.
+/// Per bundle rather than per host: two registrations of one archive with
+/// different variables are the case config vars exist for, and a page-wide
+/// table could not tell them apart.
 extern "wasm" fn tcomp_set_bundle_config(
   bundle_id : Int,
   config_json : String,
@@ -663,14 +659,11 @@ pub fn take_filter_reports() -> Array[String] {
 
 ///|
 /// Change what this page accepts, for a host that decides after mounting (a
-/// person granting a capability, say). It applies to LOADS, so a bundle already
+/// person approving a bundle, say). It applies to LOADS, so a bundle already
 /// registered under the old answer stays registered: revoking is dropping the
 /// bundle, not narrowing the policy.
 pub fn set_policy(next : @policy.Policy) -> Unit {
   policy.val = next
-  tcomp_set_grants(
-    Json::array(next.grants.map(cap => Json::string(cap.to_string()))).stringify(),
-  )
 }
 
 ///|

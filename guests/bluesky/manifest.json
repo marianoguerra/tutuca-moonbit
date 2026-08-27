@@ -6,12 +6,6 @@
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
-  "capabilities": [
-    {
-      "cap": "cap-external-urls",
-      "reason": "avatars, banners and image thumbnails from cdn.bsky.app, and profile / hashtag / permalink links to bsky.app. Both origins are literals in the views; the records only ever supply the path."
-    }
-  ],
   "stringEncoding": "utf16",
   "components": [
     {
@@ -1018,7 +1012,7 @@
         {
           "name": "createdAt",
           "ty": 0,
-          "doc": "When the account was created, as an ISO 8601 stamp. Drawn as a date and not a duration: \"3 years ago\" needs a clock, and this bundle asks for no `cap-clock`.",
+          "doc": "When the account was created, as an ISO 8601 stamp. Drawn as a date and not a duration: \"3 years ago\" needs a clock, and this bundle has none.",
           "required": false,
           "constraint": {
             "maxLen": 64,

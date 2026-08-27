@@ -45,8 +45,8 @@ fn samples() -> Array[@shell.LoaderBarSample] {
 
 ///|
 pub fn mount() -> Unit {
-  // `untrusted` and one grant, which is `@shell.sample_policy`: no clock, no
-  // timer, no entropy, no CSS of a bundle's own, and `cap-external-urls` for
+  // `untrusted` and one allowance, which is `@shell.sample_policy`: no clock,
+  // no timer, no entropy, no CSS of a bundle's own, and external URLs for
   // the five origins the bundles above load a picture or point a link at. A
   // storybook is where an unfamiliar bundle gets opened, so the tier stays
   // where it was — what changed is that this page ships two readers whose

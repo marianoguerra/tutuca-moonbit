@@ -92,7 +92,7 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
   // absolute zero is a floor the physics gives us
   assert.equal(m.components[0].fields[0].constraint.min, -273.15);
   assert.ok(m.components[0].keywords.includes('rust'));
-  assert.deepEqual(m.capabilities, []);
+  assert.ok(!('capabilities' in m));
   // `setCelsius` is the host's mutator, not a handler this guest answers
   assert.equal(m.components[0].handlers, undefined);
   assert.deepEqual(m.components[0].inits.map((i) => i.name), ['body-heat']);

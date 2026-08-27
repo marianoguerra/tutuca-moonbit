@@ -86,7 +86,6 @@ fn counter_bundle() -> @dyncomp.DynManifest {
     version: "0.3.0",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [
@@ -145,7 +144,6 @@ fn todo_bundle() -> @dyncomp.DynManifest {
     version: "0.3.0",
     homepage: "",
     authors: [],
-    capabilities: [],
     config: [],
     macros: [],
     components: [

@@ -145,9 +145,9 @@ test('the manifest carries what a catalog and a model read', () => {
   const m = manifest;
   assert.match(m.doc, /reference bundle/);
   assert.equal(m.version, '0.4.0');
-  // this bundle needs no clock, no randomness and no timer, so it asks for
-  // nothing — which is what makes it trivially safe to mount from anywhere
-  assert.deepEqual(m.capabilities, []);
+  // the manifest declares no capabilities — the vocabulary is gone; anything
+  // a guest cannot compute for itself it asks the host for over an intent
+  assert.ok(!('capabilities' in m));
   const [comp] = m.components;
   assert.match(comp.doc, /buttons that raise and lower it/);
   assert.ok(comp.keywords.includes('tally'));

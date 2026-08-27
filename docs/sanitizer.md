@@ -272,9 +272,10 @@ predicate stays in `anode` for other callers, still with its blind spot.
 The spec sanitizes by removal. This pass does not:
 
 - for a guest bundle, removal is worse than refusal — the component silently
-  renders wrong, and its author gets nothing to read. `dyncomp` already made
-  this call for capabilities ("a capability that is present but lies is worse
-  than one that is absent"), and it is the same argument;
+  renders wrong, and its author gets nothing to read. `dyncomp`'s policy
+  already made this call — a bundle that needs what a host withholds is
+  refused whole rather than loaded drawing half of itself — and it is the same
+  argument;
 - the tree is shared and mutable (`slots` aliases the expansion), so a stripping
   pass has an aliasing problem that a reporting pass does not have.
 

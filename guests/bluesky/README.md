@@ -29,9 +29,9 @@ policy boundary shows up in the OUTPUT rather than in a doc:
   view-authority rule refuses `src`, `href` and `style` outright for an
   Untrusted bundle, because what a dynamic attribute will hold is unknowable
   when the view is registered. What CAN be known is the ORIGIN, when the view
-  states it as a literal — so this bundle asks for `cap-external-urls` and
-  spends it on exactly two: `cdn.bsky.app` for the pictures, `bsky.app` for the
-  links.
+  states it as a literal — so this bundle's views name exactly two:
+  `cdn.bsky.app` for the pictures, `bsky.app` for the links — origins a hosting
+  policy allows with `allowing_external_urls`.
 
   ```html
   <!-- allowed: the origin is settled before anything runs -->
@@ -54,12 +54,13 @@ policy boundary shows up in the OUTPUT rather than in a doc:
   origin no view names, and a fetch that fails anyway all show the same two
   letters. An untrusted view has no `onerror` to write and does not need one.
 
-  A host that does not grant the capability refuses this bundle whole rather
-  than loading a version of it that draws half of itself — the bargain every
-  capability here makes, and the reason the manifest states its reason. Both
-  demo pages grant exactly the origins above (`@shell.sample_policy`). What the
-  grant costs — an image is a GET the guest chose, so an allowed origin is an
-  origin that can be told things — is in `dyncomp/SECURITY.md` §3.
+  A host whose policy does not allow those origins refuses this bundle whole
+  rather than loading a version of it that draws half of itself. The manifest
+  declares nothing for this — the host's policy is the single source, and the
+  origins are readable off the views it applies to. Both demo pages allow
+  exactly the origins above (`@shell.sample_policy`). What the allowance
+  costs — an image is a GET the guest chose, so an allowed origin is an origin
+  that can be told things — is in `dyncomp/SECURITY.md` §3.
 - **No indentation attribute either**, which is why a row's `depth` arrives in
   the view as a `rail` list: that many spacer elements to draw, since a
   `style="margin-left:…"` is exactly the sink the rule refuses.
@@ -69,12 +70,13 @@ policy boundary shows up in the OUTPUT rather than in a doc:
   `data-theme`, which is what makes the light and dark variants free — plus a
   fixed `sky-500` for links and the focal ring, since atproto-wc keeps its
   accent the same in both themes.
-- **No clock**, and the difference from the pictures is the point. `env.now-ms`
-  needs `cap-clock`, and what a clock buys a reader is "2h ago" instead of a
-  date it already has — a second capability for a nicer phrasing of something
-  it can already say. A timestamp is therefore formatted from the record's own
-  `createdAt`, "11 Aug 2026, 14:03", and the one capability this bundle does
-  ask for is the one whose absence it cannot work around.
+- **No clock**, and the difference from the pictures is the point. A guest has
+  no clock at all — the time is a fact only the host can supply, over an
+  intent — and what a clock buys a reader is "2h ago" instead of a date it
+  already has: a round trip for a nicer phrasing of something it can already
+  say. A timestamp is therefore formatted from the record's own `createdAt`,
+  "11 Aug 2026, 14:03", and the one thing this bundle does need from a host —
+  the origins above — is the one whose absence it cannot work around.
 - **No writes.** Liking, reposting and following move a flag locally and `emit`
   a bubble (`liked`, `reposted`, `followed`, …). Whoever holds the component is
   the one that can turn that into an `app.bsky.feed.like` record; the counts
@@ -86,8 +88,8 @@ bundle does without) and the at-uri of the message it pinned, as a bsky.app link
 The uri and not the message: `getProfiles` answers with a strong ref, so the
 content is one more request away and this bundle makes none.
 
-The result asks for one capability, spends it on two origins a host can read off
-the views, and does without everything else. That is the trade this guest exists
+The result needs one allowance from a host — two origins it can read off the
+views — and does without everything else. That is the trade this guest exists
 to show: not that an untrusted bundle needs nothing — this one draws other
 people's pictures, so it does — but that what it needs can be small enough to
 check by looking.

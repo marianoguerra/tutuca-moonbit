@@ -21,9 +21,9 @@
 //     (SECURITY.md, and the note `bundles/audit-bundle.mjs` prints). There is
 //     nothing left to import.
 //   - Imports are bound BY NAME against `IMPORTS`, so an import outside the
-//     contract is refused here rather than noticed later by an offline tool,
-//     and `policy` can refuse a capability the module actually imports rather
-//     than one its manifest admits to.
+//     contract is refused here rather than noticed later by an offline tool —
+//     the judgment is about what the module actually imports, never about
+//     what its metadata admits to.
 //
 // The reference is the Canonical ABI section of the Component Model spec. Every
 // layout this file computes was checked against the shipped core signatures —
@@ -44,7 +44,6 @@
 const BOOL = { k: "bool" };
 const U8 = { k: "u8" };
 const U32 = { k: "u32" };
-const S32 = { k: "s32" };
 const U64 = { k: "u64" };
 const F64 = { k: "f64" };
 const STRING = { k: "string" };
@@ -115,8 +114,7 @@ const EVENT_RESULT = variant([
 const ARGS = list(tuple([STRING, VALUE]));
 
 // What a guest may import, and nothing else. `impl` is the key on the host's
-// implementation object; `cap` is the capability a host must have granted for
-// this import to be legal at all — the gate that used to read the manifest.
+// implementation object.
 //
 // `tutuca:component/tables` is absent because it declares no functions.
 export const IMPORTS = {
@@ -163,28 +161,14 @@ export const IMPORTS = {
     forward: { impl: "forward", params: [list(VALUE), INTENT_OPTS], result: null },
     reply: { impl: "reply", params: [VALUE], result: null },
     fail: { impl: "fail", params: [VALUE], result: null },
-    after: {
-      impl: "after",
-      params: [U32, STRING, list(VALUE)],
-      result: null,
-      cap: "cap-timer",
-    },
     "make-instance": { impl: "makeInstance", params: [STRING, ARGS], result: U64 },
     "drop-instance": { impl: "dropInstance", params: [U64], result: null },
   },
-  "tutuca:component/env": {
-    "now-ms": { impl: "nowMs", params: [], result: U64, cap: "cap-clock" },
-    "tz-offset-min": { impl: "tzOffsetMin", params: [], result: S32, cap: "cap-clock" },
-    locale: { impl: "locale", params: [], result: STRING, cap: "cap-clock" },
-    "random-u64": { impl: "randomU64", params: [], result: U64, cap: "cap-random" },
-    "new-id": { impl: "newId", params: [], result: STRING, cap: "cap-random" },
-  },
-  // No `cap`, and that is the design rather than an omission. A capability is
-  // authority a guest would not otherwise have; these values are the host's
-  // own, handed over deliberately, and reading one gives a guest nothing it
-  // could not have been shipped as a constant. What the values REACH is
-  // decided elsewhere — a view spending `cap-external-urls` on an origin
-  // variable — and that grant is the host's, made by binding it.
+  // These values are the host's own, handed over deliberately, and reading
+  // one gives a guest nothing it could not have been shipped as a constant.
+  // What the values REACH is decided elsewhere — a view spending the
+  // external-URL allowance on an origin variable — and that allowance is the
+  // host's, made by binding it.
   "tutuca:component/config": {
     get: { impl: "get", params: [STRING], result: STRING },
   },
@@ -906,11 +890,6 @@ function liftExport(cx, spec, coreFn, postFn) {
  *   { world: "tutuca:component@0.10.0", encoding: "utf16" | "utf8",
  *     core: "<name>.component.core.wasm" }
  *
- * `policy.grants` is the list of capabilities the host is willing to give this
- * bundle. It is checked against the module's IMPORT SECTION rather than
- * against the manifest, which is the difference between a gate and a promise:
- * a guest chooses what it imports, and cannot choose what that means.
- *
  * The two trampoline modules a transpiled bundle carries are not needed. They
  * exist because jco captures `memory` in its closures at instantiation time and
  * has to break the resulting cycle; every import here reads memory at CALL
@@ -921,8 +900,6 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
   if (world !== "tutuca:component@0.10.0") {
     throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.10.0)`);
   }
-  const grants = descriptor.policy?.grants ?? [];
-
   const module = await getCoreModule(core);
   const cx = new Cx(encoding);
   const table = new ResourceTable();
@@ -954,12 +931,6 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
       throw new Error(
         `bundle imports ${imp.module}#${imp.name}, which is outside ` +
         `tutuca:component@0.10.0 — refused`,
-      );
-    }
-    if (spec.cap && !grants.includes(spec.cap)) {
-      throw new Error(
-        `bundle imports ${iface}#${imp.name}, which requires ${spec.cap}; ` +
-        `this host granted [${grants.join(", ") || "nothing"}] — refused`,
       );
     }
     bind(imp.module, imp.name, lowerImport(cx, spec, implFor(imports, iface, spec, imp.name)));

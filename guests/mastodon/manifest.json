@@ -6,12 +6,6 @@
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
-  "capabilities": [
-    {
-      "cap": "cap-external-urls",
-      "reason": "avatars, profile headers and attachment previews from the configured media origin — which serves a remote account's pictures too, under /cache/, because the server proxies what it federates — and profile / hashtag / permalink links to the configured web origin. Neither origin is a literal in this bundle: the views name them through `mediaOrigin` and `webOrigin`, which the HOST binds, and the records only ever supply the path."
-    }
-  ],
   "config": [
     {
       "name": "mediaOrigin",

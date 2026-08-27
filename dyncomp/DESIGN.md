@@ -53,12 +53,13 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
    (`get-field`). The schema says what fields exist and what they hold — it
    never carries their values.
 
-4. **Ambient authority is granted, never assumed.** The world imports no WASI.
-   The three facts a component cannot compute for itself — the time, a random
-   number, a fresh id — live in `env`, each behind a capability the manifest
-   requests and the host grants, and each answered more weakly than the
-   platform would (a coarsened, per-dispatch-frozen clock; a seeded PRNG). An
-   ungranted capability refuses the bundle rather than degrading it.
+4. **Ambient authority is absent, never assumed.** The world imports no WASI —
+   and no clock, no entropy either: `values`, `control`, `config` and `tables`
+   are everything a guest gets. A fact a component cannot compute for itself —
+   the time, a random number — it asks the host for over an intent
+   (`control.intent`), and the answer arrives as an ordinary message. That puts
+   the host in the loop per question rather than per grant: it decides
+   whether, and how weakly, to answer each one.
 
 That third principle is what makes the contract small. Everything generic over
 a schema works on a guest without the guest implementing any of it: structural
@@ -177,7 +178,7 @@ Guests are separate moon modules under `guests/` with the wit-bindgen layout.
 generated `declare` over a `DynComponent` trait, so authoring a guest is: one
 struct per component implementing that trait, plus a `dyn_module()` listing
 component names, factories, and the bundle's optional `serve`. The schema,
-catalog metadata, capabilities and HTML are edited directly as static files.
+catalog metadata and HTML are edited directly as static files.
 
 It is COPIED into each guest rather than depended on, and that is forced rather
 than chosen: a `declare` must be implemented in the package that declares it,
@@ -216,7 +217,7 @@ JavaScript at page authority and a warning was not an isolation boundary.
 | `methods` and `whens` (`@when` filters) | — |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
 | what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is its module, version and the config it was registered with (`Bundle::key`) |
-| the capabilities it needs (`cap-clock` / `cap-random` / `cap-timer` / `cap-external-urls`) | whether it gets them — nor, for `cap-external-urls`, WHICH origins it gets |
+| — | which external origins its views may reference — the host's policy alone allows those (`allowing_external_urls`, or `with_config` binding an origin), and the manifest has nothing to say about it |
 | the `config` variables it reads, with a type, a default and a reason | what they are bound to — a default reaches the guest, and only a host's binding reaches a view |
 | a SCOPED style, or none | any global CSS — there is no field for it, deliberately |
 
@@ -240,8 +241,9 @@ JavaScript at page authority and a warning was not an isolation boundary.
   the only decision available ahead of time. Running the sanitizer's config over
   the payload in the render-time filter — where the string is finally concrete —
   is what would let it back in (`SECURITY.md` §3, `docs/sanitizer.md`).
-- Nothing in `env` is a real clock or real entropy, by design. A component that
-  needs either asks the host through `control.request`.
+- A guest has no clock and no entropy at all, by design. A component that
+  needs either asks the host through `control.intent` and reads the answer
+  from the message the host sends back.
 
 ## Still open
 
@@ -256,12 +258,6 @@ JavaScript at page authority and a warning was not an isolation boundary.
 - Playground emission of dyncomp bundles (needs in-browser componentize).
 - `@enrich-with` / `@loop-with` for guests: `@when` reaches `call-method`
   today, the other two render-time buckets do not.
-- The BRIDGE still supplies `env` unconditionally rather than per grant.
-  `register_bundle` now refuses a bundle whose capabilities the policy does not
-  grant, so a guest cannot legitimately reach it — but the import is there, and
-  closing that is the bridge's half of the same job.
-- `control.after` is in the contract and has no host implementation; it needs a
-  timer the transactor owns.
 - A per-bundle cap on LIVE INSTANCES, which unlike the other quotas has to be
   enforced at `make_instance` time rather than at registration.
 - Caller-aware authorization of HOST request handlers, which needs `RequestFn`

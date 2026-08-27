@@ -406,7 +406,8 @@ pub fn Violation::to_string(self : Violation) -> String {
 ///
 /// It REPORTS rather than strips, for two reasons. A bundle whose view is
 /// silently trimmed renders wrong and its author gets nothing to read, which is
-/// the same argument `dyncomp` already made about capabilities. And the tree is
+/// the argument `dyncomp`'s policy makes everywhere: refuse whole, loudly,
+/// rather than degrade. And the tree is
 /// shared and mutable — a `MacroCall`'s slots alias what the expansion will
 /// contain — so a stripping pass has an aliasing problem this one does not.
 ///

@@ -64,8 +64,8 @@ name it.
 A post in a federated timeline comes from any server there is, so no view could
 name the origins its avatars live on. Except that an instance **proxies what it
 federates**: a remote account's avatar and a remote post's attachment are both
-re-served from the instance's own media host, under `/cache/`. So this bundle
-asks for `cap-external-urls` and spends it on exactly two origins.
+re-served from the instance's own media host, under `/cache/`. So this bundle's
+views reach exactly two origins.
 
 Neither of them is written here. They are **config vars** — declared in
 `manifest.json` with a default, bound by the host at load — so one build of this
@@ -240,11 +240,12 @@ a favourite three pages back is still there when the reader pages back to it.
 
 ## No clock, and no writes
 
-`env.now-ms` needs `cap-clock`, and what a clock buys a reader is "4h" instead of
-a date the record already carries — a second capability for a nicer phrasing of
-something it can already say. mastodon.social writes "4h"; this writes
-"13 Aug 2026, 16:02", from the record's own `createdAt`, and the one capability
-this bundle does ask for is the one whose absence it cannot work around.
+A guest has no clock at all — the time is a fact only the host can supply, over
+an intent — and what a clock buys a reader is "4h" instead of a date the record
+already carries: a round trip for a nicer phrasing of something it can already
+say. mastodon.social writes "4h"; this writes "13 Aug 2026, 16:02", from the
+record's own `createdAt`, and the one thing this bundle does need from a host —
+its two bound origins — is the one whose absence it cannot work around.
 
 Nothing here writes either. Favouriting, boosting, following and voting move a
 flag locally and `emit` a bubble; whoever holds the component is the one that can

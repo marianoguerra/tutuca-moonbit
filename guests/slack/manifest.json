@@ -6,12 +6,6 @@
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
-  "capabilities": [
-    {
-      "cap": "cap-external-urls",
-      "reason": "profile pictures from the three origins Slack serves them on — ca.slack-edge.com, avatars.slack-edge.com and secure.gravatar.com. All three are literals in Message's view; a profile only ever supplies the path, and a picture anywhere else is not drawn."
-    }
-  ],
   "stringEncoding": "utf16",
   "components": [
     {

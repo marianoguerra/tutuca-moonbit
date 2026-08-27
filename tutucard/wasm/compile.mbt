@@ -668,9 +668,8 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
   // whole claim: a card that composes children something else made imports
   // nothing here, and a host reads the import section to know which it has.
   //
-  // No capability gates it (`abi.mjs` binds it with no `cap`), because a child
-  // of the same bundle is not a reach outside it — the component it names has
-  // to be one this manifest declares.
+  // Nothing gates it, because a child of the same bundle is not a reach
+  // outside it — the component it names has to be one this manifest declares.
   if g.uses_children {
     fs.push(
       @build.import_func(

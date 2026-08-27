@@ -7,8 +7,8 @@
 /// have to be: a view that writes its origin as a literal has settled it
 /// before anything runs, and a view that computes its origin has settled
 /// nothing. That is the whole of the rule here — the origin is a literal in
-/// the view, so granting `cap-external-urls` grants the origins the HOST can
-/// read in the bundle it is looking at, not the origins the guest picks later.
+/// the view, so allowing external URLs allows the origins the HOST can read
+/// in the bundle it is looking at, not the origins the guest picks later.
 ///
 /// What it does NOT do is make the request safe. An image is a GET the guest
 /// chose, and the path is still the guest's to fill in, so an allowed origin
@@ -34,10 +34,10 @@ pub fn InvalidOrigin::to_string(self : InvalidOrigin) -> String {
 }
 
 ///|
-/// The same policy, granting `cap-external-urls` for these origins.
+/// The same policy, allowing external URLs pinned to these origins.
 ///
-/// One call rather than a field and a grant a host sets separately, because
-/// they are one decision: a list with no grant permits nothing, and a grant
+/// One call rather than two fields a host sets separately, because they are
+/// one decision: a list with no allowance permits nothing, and an allowance
 /// with no list permits every `https://` origin there is. Both of those are
 /// policies somebody would write by accident.
 ///
@@ -48,7 +48,7 @@ pub fn InvalidOrigin::to_string(self : InvalidOrigin) -> String {
 /// a boundary would be worse than none.
 ///
 /// An empty list means any `https://` origin. It is the widest form this
-/// capability has and the one to justify before using: it still denies the
+/// allowance has and the one to justify before using: it still denies the
 /// guest a computed origin, and denies it nothing else.
 pub fn Policy::allowing_external_urls(
   self : Policy,
@@ -68,12 +68,7 @@ pub fn Policy::allowing_external_urls(
   if !bad.is_empty() {
     raise InvalidOrigin(bad)
   }
-  let grants = if self.grants.contains(CapExternalUrls) {
-    self.grants
-  } else {
-    [..self.grants, CapExternalUrls]
-  }
-  { ..self, grants, external_origins: normalized }
+  { ..self, allows_external_urls: true, external_origins: normalized }
 }
 
 ///|
@@ -227,8 +222,8 @@ fn Policy::origin_refusal(self : Policy, origin : String) -> String? {
 /// refusal a guest author cannot act on produces a bundle that gets rewritten
 /// at random until it loads.
 fn Policy::external_url_refusal(self : Policy, val : @tutuca.Val) -> String? {
-  if !self.grants.contains(CapExternalUrls) {
-    return Some("this host does not grant cap-external-urls")
+  if !self.allows_external_urls {
+    return Some("this host does not allow external URLs in views")
   }
   guard pinned_prefix(val) is Some(prefix) else {
     return Some(
@@ -352,9 +347,9 @@ fn Policy::macro_arg_refusal(self : Policy, raw : String) -> String? {
     )
   }
   guard url_shaped(text) is Some(url) else { return None }
-  if !self.grants.contains(CapExternalUrls) {
+  if !self.allows_external_urls {
     return Some(
-      "a macro argument may not carry a URL: this host does not grant cap-external-urls",
+      "a macro argument may not carry a URL: this host does not allow external URLs in views",
     )
   }
   guard origin_of(url) is Some(origin) else {

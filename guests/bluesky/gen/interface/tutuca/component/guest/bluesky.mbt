@@ -14,7 +14,7 @@
 ///      (`dyncomp/policy`'s view authority rule), because what a dynamic
 ///      attribute will hold is unknowable when the view is registered. What CAN
 ///      be known is the ORIGIN, when the view states it as a literal — so this
-///      bundle asks for `cap-external-urls` and spends it on exactly two:
+///      bundle's views reach exactly two origins:
 ///      `cdn.bsky.app` for the pictures and `bsky.app` for the links. Both are
 ///      literals in the markup and neither is ever a value, which is why a host
 ///      can read this bundle's whole network reach off its views.
@@ -29,14 +29,15 @@
 ///      so it stays text with its target in the tooltip. An image is still its
 ///      alt text when the record carries no thumbnail.
 ///
-///      A host that does not grant the capability refuses this bundle whole
-///      rather than loading a degraded one, which is the bargain every
-///      capability here makes. `dyncomp/SECURITY.md` §3 is the rest of it.
-///   2. **No clock.** `env.now-ms` needs `cap-clock`, and a bundle that asks
-///      for a capability is refused by every page that has not thought about
-///      the question (see `examples/dyncomp-dice`). A timestamp is therefore
-///      formatted from the record's own `createdAt` — "11 Aug 2026, 14:03" —
-///      rather than shown as "2h ago", which no one here can know.
+///      A host that does not allow those origins refuses this bundle whole
+///      rather than loading a degraded one. `dyncomp/SECURITY.md` §3 is the
+///      rest of it.
+///   2. **No clock.** The world has none: a guest that needs an ambient fact
+///      asks its host over an intent, and this one deliberately asks for
+///      nothing (see `examples/dyncomp-dice` for a guest that does). A
+///      timestamp is therefore formatted from the record's own `createdAt` —
+///      "11 Aug 2026, 14:03" — rather than shown as "2h ago", which no one
+///      here can know.
 ///
 /// The three components split the persistence contract the way the counter and
 /// the todo list do: `Post` and `Profile` are exactly their declared fields, so
@@ -176,7 +177,7 @@ const CDN = "https://cdn.bsky.app/"
 /// url anywhere else — including a relative one, which is a request to the
 /// HOST's origin and not this bundle's to make.
 ///
-/// This is the guest's half of `cap-external-urls`: the view names the origin,
+/// This is the guest's half of the external-URL rule: the view names the origin,
 /// this decides that the record's url is actually ON it, and what crosses
 /// between them is a path. A picture that fails the test is not drawn at all,
 /// and drawing nothing is a state the views already have — it is what a record
@@ -780,9 +781,9 @@ fn month_name(n : Int) -> String {
 ///|
 /// An ISO 8601 stamp as something a person reads — "11 Aug 2026, 14:03".
 ///
-/// No clock is involved, which is the point: "2h ago" would need `cap-clock`,
-/// and a bundle that asks for a capability is a bundle some pages refuse. A
-/// stamp this bundle cannot parse is shown verbatim rather than blanked.
+/// No clock is involved, which is the point: "2h ago" would need a clock,
+/// and this world has none to read. A stamp this bundle cannot parse is
+/// shown verbatim rather than blanked.
 fn time_label(iso : String) -> String {
   let chars : Array[Char] = iso.iter().collect()
   guard chars.length() >= 16 else { return iso }
@@ -2393,7 +2394,7 @@ priv struct Profile {
   children : Array[UInt64]
   /// When the account was created, as an ISO 8601 stamp. Drawn as a date and not
   /// a duration, for the same reason a message's time is: "3 years ago" needs a
-  /// clock, and `cap-clock` is a capability this bundle does without.
+  /// clock, and a clock is a thing this bundle does without.
   created_at : String
   /// The at:// uri of the message this account pinned to its profile, `""` for
   /// none.

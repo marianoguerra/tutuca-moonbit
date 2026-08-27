@@ -26,7 +26,7 @@
 ///      name the origins its avatars live on — except that an instance PROXIES
 ///      what it federates: a remote account's avatar is served from
 ///      `files.mastodon.social/cache/…`, the same host as a local one. So this
-///      bundle asks for `cap-external-urls` and spends it on exactly two
+///      bundle's views reach exactly two
 ///      origins, both literals in the views: `files.mastodon.social` for every
 ///      picture, `mastodon.social` for every link.
 ///
@@ -44,8 +44,8 @@
 ///      `value` is not a network or CSS sink, so nothing had to be reopened for
 ///      it.
 ///
-/// No clock, for the reason `guests/bluesky` gives at length: `env.now-ms` needs
-/// `cap-clock`, and what a clock buys is "4h" instead of a date the record
+/// No clock, for the reason `guests/bluesky` gives at length: the world has
+/// none, and what a clock buys is "4h" instead of a date the record
 /// already carries. The stamp is formatted from `createdAt`.
 ///
 /// Its static declaration and views live beside the module; sdk.mbt does the ABI.
@@ -150,7 +150,7 @@ priv struct ProfileField {
 /// A CONFIG VARIABLE rather than a constant, which is what makes one build of
 /// this bundle a reader for any instance there is. The host binds it, the host
 /// normalizes it through the closing `/`, and the same string is what the views
-/// name as `$$mediaOrigin` — so the two halves of `cap-external-urls` cannot
+/// name as `$$mediaOrigin` — so the two halves of the external-URL rule cannot
 /// drift apart, because there is only one of them now.
 ///
 /// The trailing slash is the whole check rather than a tidiness: without it
@@ -187,7 +187,7 @@ fn home() -> String {
 /// a url anywhere else — including a relative one, which is a request to the
 /// HOST's origin and not this bundle's to make.
 ///
-/// This is the guest's half of `cap-external-urls`: the view names the origin,
+/// This is the guest's half of the external-URL rule: the view names the origin,
 /// this decides that the record's url is actually ON it, and what crosses
 /// between them is a path. A picture that fails the test is not drawn at all,
 /// and drawing nothing is a state the views already have — it is what a record
@@ -925,7 +925,7 @@ fn two_digit(chars : Array[Char], at : Int) -> Int {
 /// An ISO 8601 stamp as something a person reads — "13 Aug 2026, 16:02".
 ///
 /// No clock is involved, which is the point: mastodon.social writes "4h" beside
-/// a post, and "4h" needs `cap-clock` — a second capability for a nicer
+/// a post, and "4h" needs a clock — an ambient fact for a nicer
 /// phrasing of something the record already says. A stamp this bundle cannot
 /// parse is shown verbatim rather than blanked.
 fn time_label(iso : String) -> String {

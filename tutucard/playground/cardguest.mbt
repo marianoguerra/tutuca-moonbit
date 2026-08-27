@@ -17,10 +17,9 @@
 // compiled card cannot reach: no bundle table (this page holds one card), no
 // load lifecycle (the page already has the bytes), no `$dyn` child markers (the
 // generator emits no `make-instance`, so a guest value is never another
-// instance), and no capability plumbing (`loadGuest` binds an empty grants
-// list, and `abi.mjs` screens the module's IMPORT SECTION rather than anything
-// the manifest claims — so a card that asked for a clock is refused before any
-// of this runs).
+// instance). `abi.mjs` screens the module's IMPORT SECTION against the
+// contract, so a card importing anything outside it is refused before any of
+// this runs.
 
 ///|
 /// Whether a compiled card has been instantiated on this page.
@@ -30,7 +29,7 @@ extern "js" fn cardguest_ready(key : String) -> Bool =
 ///|
 /// Everything the instantiated card has logged since this was last asked.
 ///
-/// `control.log` is the one call on the control interface no capability gates,
+/// `control.log` is the simplest call on the control interface,
 /// and for a compiled card it carries the thing an author is most likely to get
 /// wrong: a `requires`, an `ensures` or an `invariant` that did not hold, with
 /// the rule's own `format` sentence evaluated over the state that was rejected.
@@ -594,8 +593,8 @@ fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
 /// wrote it; there is nobody else to vouch.
 ///
 /// What it does NOT widen is what the module can do, because that was settled
-/// before this ran: `loadGuest` binds an empty grants list and `abi.mjs` checks
-/// the module's import section, so a card asking for a capability is refused at
+/// before this ran: `abi.mjs` checks the module's import section against the
+/// contract, so a card importing anything outside it is refused at
 /// instantiation whatever this says.
 fn card_policy() -> @policy.Policy {
   @policy.Policy::granted()

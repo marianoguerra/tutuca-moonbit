@@ -197,7 +197,7 @@ pub fn loader_bar_comp(
 ///|
 /// Services a demo PAGE offers to whatever it hosts.
 ///
-/// `double` is the one `guests/counter` calls (`control.request "double"`),
+/// `double` is the one `guests/counter` calls (`control.intent "double"`),
 /// and it is here to demonstrate the seam rather than because doubling is
 /// interesting: it is a guest asking the page for something it cannot compute
 /// for itself. A bundle that serves a request of the same NAME answers its own
@@ -231,11 +231,10 @@ pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]] {
     // `roll` is what `examples/dyncomp-dice`'s die calls, and it is the sharper
     // demonstration of the same seam: the counter could compute `double`
     // itself and asks as a courtesy, while the die CANNOT make a number. The
-    // world imports no WASI, and the die deliberately declares no
-    // `cap-random` — a bundle that asks for a capability is a bundle some
-    // pages cannot run, and asking through `control.request` needs no grant
-    // because it is not ambient authority. The page answers one question,
-    // once, and may decline.
+    // world imports no WASI, no clock and no entropy — asking through
+    // `control.intent` is the only route, and the right one: it is not
+    // ambient authority. The page answers one question, once, and may
+    // decline.
     "roll": [
       IntentFn((call, answer) => {
         match call.args {
@@ -284,7 +283,7 @@ fn next_u32() -> UInt {
 /// The origins a demo page lets the bundles it SHIPS load a picture from.
 ///
 /// Still `untrusted` — no clock, no timer, no entropy, no CSS of the bundle's
-/// own — plus `cap-external-urls` for these five hosts and nothing else. It is
+/// own — plus external URLs for these five hosts and nothing else. It is
 /// here beside `sample_host_intents` and for the same reason: both pages ship
 /// the same archives, so both have to answer the same question, and two copies
 /// of an answer about the network are two copies that can drift apart.
@@ -303,14 +302,14 @@ fn next_u32() -> UInt {
 /// there is no origin here to permit. `trusting_manifest_config` is what
 /// answers for it — see below.
 ///
-/// What granting them costs is written out in `dyncomp/SECURITY.md` §3, and the
+/// What allowing them costs is written out in `dyncomp/SECURITY.md` §3, and the
 /// short version is that an image is a GET the guest chose: an allowed origin
 /// is an origin that can be told this page loaded something. That is why the
 /// list is origins a person can check against the views rather than the empty
 /// list, which would mean every `https://` origin there is.
 ///
 /// A page that hosts bundles it did NOT ship should not copy this. It should
-/// decide, per bundle, which is what the capability is for.
+/// decide, per bundle, which is what the allowance is for.
 ///
 /// `trusting_manifest_config` is here for the same reason the list is: these
 /// pages ship the archives they load, so "the default in the manifest" and
@@ -325,7 +324,7 @@ pub fn sample_policy() -> @policy.Policy {
     "https://cdn.bsky.app", "https://bsky.app", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
     "https://secure.gravatar.com",
   ]) catch {
-    // Unreachable: every entry above is a literal origin. Refusing to grant is
+    // Unreachable: every entry above is a literal origin. Refusing to allow is
     // the safe half of the answer anyway — the bundles that wanted it stop
     // loading, and they say why.
     _ => @policy.Policy::untrusted()

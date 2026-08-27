@@ -3,10 +3,9 @@
 ///|
 /// The value bound for `name`.
 ///
-/// TRAPS for a name the manifest does not declare, for the reason an
-/// ungranted `env` call traps: an empty string is a plausible value, and a
-/// guest that got one back could not tell a variable it misspelled from a
-/// variable somebody deliberately set to nothing.
+/// TRAPS for a name the manifest does not declare: an empty string is a
+/// plausible value, and a guest that got one back could not tell a variable
+/// it misspelled from a variable somebody deliberately set to nothing.
 pub fn get(name : String) -> String {
   let ptr = mbt_ffi_str2ptr(name)
   let return_area = mbt_ffi_malloc(8)

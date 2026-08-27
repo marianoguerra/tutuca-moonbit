@@ -103,11 +103,6 @@ function jsonToGuest(j, put) {
 /**
  * Instantiate a compiled card and install it as `globalThis.__cardguest`.
  *
- * The grants list is empty and stays empty. A compiled card imports no
- * capability — `abi.mjs` checks the module's IMPORT SECTION rather than
- * anything the manifest claims — so a card that asked for a clock would be
- * refused here rather than quietly given one.
- *
  * `module` is the compiled module to instantiate, for a caller that already has
  * one. Everything else here is per-key already — the arena, the instance table,
  * `__cardguest[key]` — so N instances off ONE module is what the shape already
@@ -249,10 +244,9 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
           control.push({ kind: "reply", value: guestToJson(v, arena.cells) }),
         fail: (e) =>
           control.push({ kind: "fail", value: guestToJson(e, arena.cells) }),
-        // Still nothing a card can emit: the generator has no `intentAt` and
-        // no `after`, and a stub is what an unreachable import costs.
+        // Still nothing a card can emit: the generator has no `intentAt`,
+        // and a stub is what an unreachable import costs.
         intentAt: () => {},
-        after: () => {},
         // A same-bundle child factory. The token IS the handle in the table
         // beside this one — the only instance-token space a card has.
         //
@@ -272,7 +266,7 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
         },
       },
     },
-    { ...descriptor, policy: { grants: [] } },
+    descriptor,
   );
 
   const to = (j) => jsonToGuest(j, arena.put);

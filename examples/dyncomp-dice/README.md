@@ -75,7 +75,7 @@ host: rolled 4 on a d6
 The die did not produce that number. It could not: its world imports no WASI —
 no clock, no entropy, nothing ambient — so a die living inside it has no way to
 make the one thing it exists to make. It asked, through
-`control.request "roll"`, and `page/main.mbt` answered. That console line is a
+`control.intent "roll"`, and `page/main.mbt` answered. That console line is a
 sandboxed component reaching a service the page chose to lend it, and it is the
 whole seam in one line.
 
@@ -90,7 +90,7 @@ mutator nobody declared, which the host synthesized from the declared field.
 | --- | --- |
 | `moon.mod` | two published dependencies, no path dependency. Everything below is reachable from a tarball. |
 | `page/moon.pkg` | the wasm-gc export list — the ONE thing that cannot come from a dependency, and therefore the only reason the page is a package rather than a function call |
-| `page/main.mbt` | the whole host in ~70 lines: `@uiw.mount`, six one-line forwards, the `roll` service, and the `policy` this page grants a bundle (nothing) |
+| `page/main.mbt` | the whole host in ~70 lines: `@uiw.mount`, six one-line forwards, the `roll` service, and the `policy` this page applies to a bundle (the default: nothing beyond the contract) |
 | `page/loader.mjs` | the browser side: three import namespaces, all from the published loaders |
 | `dice/gen/interface/tutuca/component/guest/dice.mbt` | the ONE file a component author writes. Everything else under `dice/` came from `tutuca new-guest dice`. |
 | `build.mjs` | the assembly, including the loader rewrite below |

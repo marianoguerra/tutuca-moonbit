@@ -56,9 +56,6 @@ extern "wasm" fn mbt_ffi_storef64(offset : Int, value : Double) =
   #|(func (param i32) (param f64) local.get 0 local.get 1 f64.store)
 
 ///|
-fn wasmImportAfter(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int) = "tutuca:component/control@0.10.0" "after"
-
-///|
 fn wasmImportDropInstance(p0 : Int64) = "tutuca:component/control@0.10.0" "drop-instance"
 
 ///|
