@@ -375,9 +375,18 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       // Docs first, because a section is documented the way a field is and the
       // comment sits between the brace and the word.
       let member_doc = p.docs()
-      // A wiring section, which only a `state` may carry: `struct` describes a
-      // value and a value publishes nothing.
-      if p.peek() is TIdent(w) && (w == "handle" || w == "express") {
+      // A capability section, which only a `state` or a `protocol` may carry:
+      // a `struct` describes a value, and a value answers no message.
+      //
+      // Guarded on the BRACE, the same way every other section here is. The
+      // trigger is the word followed by `{`, which is what keeps `handle` and
+      // `express` from being reserved field names: `handle : String` is still
+      // a field, exactly as `view : String` and `provide : String` are. Adding
+      // a section should never take a name away from an author, and this arm
+      // was the one place that did.
+      if p.peek() is TIdent(w) &&
+        (w == "handle" || w == "express") &&
+        p.peek_at(1) is TLBrace {
         p.bump() |> ignore
         if !(actual_kind is (RState | RProtocol(_))) {
           raise Syntax(

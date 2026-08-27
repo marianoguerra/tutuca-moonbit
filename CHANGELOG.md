@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`handle` and `express` were reserved field names inside a `state` body.**
+  `state BskyPost { handle : String }` — the obvious spelling for a Bluesky or
+  Mastodon account name — failed with "expected `{` opening the handle
+  section", because that arm matched on the WORD alone while every other
+  section in the same loop guards on the word followed by a brace
+  (`statedef/parse.mbt`). So `view : String` and `provide : String` were fields
+  and `handle : String` was not, which is a distinction nothing ever meant to
+  draw. Guarded now, and a `handle` field may sit beside a `handle { … }`
+  section in one body.
+
+  Present since 0.35.0, where `handle` / `express` became in-state sections —
+  not a 0.37.0 regression, though 0.37.0 is the first release to say so.
+  Adding a section should never take a name away from an author, and this arm
+  was the one place that did.
+
 ## [0.37.0] - 2026-08-27
 
 ### BREAKING — the rule layer moved, and the block was renamed

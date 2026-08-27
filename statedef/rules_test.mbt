@@ -253,3 +253,54 @@ test "a rule reading a render binding is reported, not silently answered" {
     )[0]
   assert_eq(def.rules[0].source, " contains (str @value) .needle ")
 }
+
+// -- section words are not reserved field names -----------------------------
+
+///|
+test "a section word is still a field name" {
+  // Every section here triggers on the WORD FOLLOWED BY A BRACE, so adding a
+  // section never takes a name away from an author. `handle` and `express`
+  // were the one pair that did not check, which made `handle : String` — the
+  // obvious spelling for a Bluesky or Mastodon account name — fail to parse
+  // with "expected `{` opening the handle section".
+  let def = one(
+    (
+      #|state BskyPost {
+      #|  handle   : String
+      #|  express  : Bool
+      #|  view     : String
+      #|  provide  : String
+      #|  lookup   : String
+      #|  property : Int
+      #|  pred     : Bool
+      #|}
+    ),
+  )
+  assert_eq(def.fields.length(), 7)
+  assert_eq(def.fields.map(f => f.name), [
+    "handle", "express", "view", "provide", "lookup", "property", "pred",
+  ])
+  assert_eq(def.receive.length(), 0)
+  assert_eq(def.rules.length(), 0)
+}
+
+///|
+test "the sections themselves still parse beside a field of the same name" {
+  // Both readings in one body, which is the case the brace guard exists for.
+  let def = one(
+    (
+      #|state Feed {
+      #|  handle : String
+      #|  handle {
+      #|    message { refresh }
+      #|  }
+      #|  express {
+      #|    intent { wantsMore }
+      #|  }
+      #|}
+    ),
+  )
+  assert_eq(def.fields.map(f => f.name), ["handle"])
+  assert_eq(def.receive.map(m => m.name), ["refresh"])
+  assert_eq(def.express_intent.map(m => m.name), ["wantsMore"])
+}
