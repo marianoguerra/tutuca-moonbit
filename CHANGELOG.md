@@ -6,6 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.39.2] - 2026-08-28
+
+### Fixed
+
+- **A component declaring a bare `state { … }` had no fuzz plan.**
+  `Plan::of_component` parsed the block without handing over the component's
+  name. A bare state belongs to the file's single unnamed component, and the
+  parser can only give it a name if the caller supplies one — the caller being
+  the only thing that knows what that component is called. Without it the block
+  parsed to a `StateDef` named `""`, matched nothing, and `Plan::of_component`
+  answered `None`: every bare-state component in the corpus (counter, dnd,
+  file-picker, list-iteration, nested-state, request, web-component,
+  composability, loader-bar) reported "declares no spec block" while declaring
+  one.
+
+  The name is part of the parse rather than a filter applied after it, which is
+  why passing it late could not have worked.
+
+### Added
+
+- **The storybook shows a story the block it was declared in.** Repo-only —
+  `storybook/` is excluded from the tarball — but it is what made the bug above
+  visible. The spec block became load-bearing at run time when the Fuzz tab
+  started deriving a component's generators, and its whole oracle, from
+  `Component::spec`; "what is this run held to" stopped being a question you
+  answer by opening the `.html`. **Spec** re-parses the block and renders what
+  it declares — fields in the author's own type spelling, messages with their
+  payloads, `pred`/`invariant` rules with the expression and the sentence
+  written for the moment they fail. **Raw** shows the same block verbatim: the
+  parse is what the runtime reads, the source is what the author edits, and a
+  reader reconciling a surprising verdict wants both.
+
 ## [0.39.1] - 2026-08-28
 
 ### Fixed
@@ -5536,7 +5568,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.1...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.2...HEAD
+[0.39.2]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.1...v0.39.2
 [0.39.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...v0.39.1
 [0.39.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...v0.39.0
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
