@@ -323,3 +323,119 @@ test "state editor: editing a control rewrites the instance" {
   // and the untouched fields came along unchanged
   assert_true(h.drive_value().field("target").field("count") is Num(3.0))
 }
+
+///|
+/// The declaration, read back out of the component that was built from it.
+///
+/// A block is FILE-level, so RichSample's carries SampleCard's arm too — both
+/// show, and the one the panel was opened for is the one that starts open.
+test "spec viewer: the block's arms, the story's own expanded" {
+  let h = @harness.mount_example(
+    @inspector.inspector_module(),
+    "Spec: Rich Sample",
+  )
+  // one section per arm; RichSample is expanded, so its own groups show
+  // between it and the collapsed SampleCard below.
+  @debug.assert_eq(h.texts(".comp-section"), [
+    "RichSample", "Fields", "Receive", "Intent", "SampleCard",
+  ])
+  // Fields starts expanded: the section a reader opened this for.
+  @debug.assert_eq(h.texts(".spec-field-name"), [
+    "title", "count", "tags", "open",
+  ])
+  @debug.assert_eq(h.texts(".spec-field-type"), [
+    "String", "Int", "Array[Any]", "Bool",
+  ])
+  // messages are collapsed until asked for, and then carry the names a
+  // dispatch is addressed to
+  assert_eq(h.find_all(".spec-msg").length(), 0)
+  h.click(".comp-section", nth=2)
+  @debug.assert_eq(h.texts(".spec-msg-name"), ["ping", "onData"])
+  // `gen-views` shipped this block without its prose, and the pane says so
+  // rather than leaving a reader to wonder where the file's comments went.
+  assert_eq(h.find_all(".spec-doc-block").length(), 0)
+  assert_true(h.text(".spec-note").contains("without its doc comments"))
+  // the other arm opens on its own
+  h.click(".comp-section", nth=4)
+  assert_true(h.texts(".comp-section").contains("Fields"))
+}
+
+///|
+/// The half of a block that `gen-views` does not ship, over a block that
+/// reached the runtime whole: the prose, the rules, and the named types.
+///
+/// The rules are the ones that matter. A rule reaches `SchemaInfo` as a bare
+/// name, so the component inspector beside this can only say THAT one exists —
+/// and a rule is the whole oracle the Fuzz tab holds a component to, so a
+/// reader deciding whether a green run means anything has to see its words.
+test "spec viewer: rules, named types and prose" {
+  let h = @harness.mount_example(
+    @inspector.inspector_module(),
+    "Spec: Rules and Types",
+  )
+  // one arm, expanded, with the groups the block fills
+  @debug.assert_eq(h.texts(".comp-section"), [
+    "Shipment", "Fields", "Receive", "Rules", "Types",
+  ])
+  // the block came in whole, so there is nothing missing to warn about
+  assert_eq(h.find_all(".spec-note").length(), 0)
+  // types are the author's spelling throughout — `Array[Parcel]`, not the
+  // component-prefixed MoonBit type the generator would emit for it
+  @debug.assert_eq(h.texts(".spec-field-type"), [
+    "String", "Double", "Array[Parcel]", "Status",
+  ])
+  assert_true(
+    h.text(".spec-doc-block").contains("two things that must stay true"),
+  )
+  // Rules start expanded beside Fields: the expression is carried verbatim,
+  // and so is the sentence its author wrote for the moment it fails.
+  @debug.assert_eq(h.texts(".rule-kind"), ["pred", "invariant"])
+  @debug.assert_eq(h.texts(".spec-rule-name"), ["loadable", "addressed"])
+  @debug.assert_eq(h.texts(".spec-rule-source"), [
+    ".weightKg > 0", "not (.to is '')",
+  ])
+  // the sentence as SOURCE, quotes and all: a `format` may be a `$'…{expr}'`
+  // template, and half-unquoting one would be a lie about what was written.
+  @debug.assert_eq(h.texts(".spec-rule-format"), [
+    "'weight must be above zero'", "'a booked shipment must name a destination'",
+  ])
+  // a message's payload, which the schema cannot carry either
+  h.click(".comp-section", nth=2)
+  @debug.assert_eq(h.texts(".spec-msg-name"), ["addParcel", "reweigh"])
+  @debug.assert_eq(h.texts(".spec-msg-payload"), [
+    "(String, Double)", "(Double)",
+  ])
+  // the named types, one nested section each
+  h.click(".comp-section", nth=4)
+  let labels = h.texts(".comp-section")
+  assert_true(labels.contains("struct Parcel"))
+  assert_true(labels.contains("enum Status"))
+}
+
+///|
+/// The same block, verbatim — what the author edits, beside what the runtime
+/// reads.
+test "spec source: the block as written" {
+  let h = @harness.mount_example(
+    @inspector.inspector_module(),
+    "Spec source: Rich Sample",
+  )
+  let src = h.text(".spec-source-text")
+  assert_true(src.contains("state RichSample {"))
+  assert_true(src.contains("count : Int"))
+  assert_true(src.contains("state SampleCard {"))
+  assert_eq(h.find_all(".spec-source-hint").length(), 0)
+}
+
+///|
+/// A component with nothing to show says so. Every hand-written component is
+/// this case, and so is every component the Fuzz tab cannot generate for —
+/// which is the same fact, said once.
+test "spec viewer: no component resolved, no empty pane" {
+  let h = @harness.mount_example(
+    @inspector.inspector_module(),
+    "Spec: none declared",
+  )
+  assert_eq(h.find_all(".comp-section").length(), 0)
+  assert_true(h.text(".spec-hint").contains("does not resolve"))
+}

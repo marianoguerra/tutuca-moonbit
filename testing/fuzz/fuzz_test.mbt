@@ -185,6 +185,34 @@ test "a plan comes from the block, and a component without one has none" {
 }
 
 ///|
+/// A bare `state { … }` is still that component's block.
+///
+/// The name is part of the PARSE, not a filter applied after it: an unnamed
+/// state belongs to the file's single unnamed component, and only the caller
+/// knows what that component is called. Handing it over is what makes a plan
+/// possible at all here — without it the arm parses as `""`, matches nothing,
+/// and the whole corpus of bare-state components (counter, dnd, file-picker,
+/// …) reports "declares no spec block" while declaring one.
+test "a bare state block belongs to the component that carries it" {
+  let comp = @component.Component::for_type(
+    name="Tally",
+    views=Map([]),
+    schema=@component.SchemaInfo::new(name="Tally", fingerprint="tally"),
+    spec=(
+      #|state {
+      #|  count : Int
+      #|}
+    ),
+  )
+  guard @fuzz.Plan::of_component(comp) is Some(p) else {
+    fail("a bare state block gave no plan")
+  }
+  assert_eq(p.component, "Tally")
+  assert_eq(p.def.fields.length(), 1)
+  assert_eq(p.def.fields[0].name, "count")
+}
+
+///|
 /// A seed is the whole address of a run.
 ///
 /// The claim the profiling story rests on: the same four values redraw the

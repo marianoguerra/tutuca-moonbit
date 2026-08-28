@@ -354,6 +354,62 @@ pub let schema_viewer_spec_source : String
 
 pub fn schema_viewer_views() -> Map[String, @anode.View]
 
+pub let spec_doc_common_style : String
+
+pub fn spec_doc_component(name? : String, views? : Map[String, @anode.View], init? : SpecDocState, common_style? : String, global_style? : String, update? : (SpecDocState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecDocState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_doc_global_style : String
+
+pub fn spec_doc_views() -> Map[String, @anode.View]
+
+pub let spec_docs_note : String
+
+pub let spec_field_common_style : String
+
+pub fn spec_field_component(name? : String, views? : Map[String, @anode.View], init? : SpecFieldState, common_style? : String, global_style? : String, update? : (SpecFieldState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecFieldState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_field_global_style : String
+
+pub let spec_field_spec_source : String
+
+pub fn spec_field_views() -> Map[String, @anode.View]
+
+pub let spec_msg_common_style : String
+
+pub fn spec_msg_component(name? : String, views? : Map[String, @anode.View], init? : SpecMsgState, common_style? : String, global_style? : String, update? : (SpecMsgState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecMsgState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_msg_global_style : String
+
+pub fn spec_msg_views() -> Map[String, @anode.View]
+
+pub let spec_rule_common_style : String
+
+pub fn spec_rule_component(name? : String, views? : Map[String, @anode.View], init? : SpecRuleState, common_style? : String, global_style? : String, update? : (SpecRuleState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecRuleState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_rule_global_style : String
+
+pub fn spec_rule_views() -> Map[String, @anode.View]
+
+pub fn spec_sample_component() -> @component.Component
+
+pub let spec_sample_source : String
+
+pub let spec_source_common_style : String
+
+pub fn spec_source_component(name? : String, views? : Map[String, @anode.View], init? : SpecSourceState, common_style? : String, global_style? : String, update? : (SpecSourceState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecSourceState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_source_global_style : String
+
+pub fn spec_source_views() -> Map[String, @anode.View]
+
+pub let spec_viewer_common_style : String
+
+pub fn spec_viewer_component(name? : String, views? : Map[String, @anode.View], init? : SpecViewerState, common_style? : String, global_style? : String, update? : (SpecViewerState, @component.Dispatch, &@core.Ctx) -> @component.Update[SpecViewerState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let spec_viewer_global_style : String
+
+pub fn spec_viewer_views() -> Map[String, @anode.View]
+
 pub let state_editor_common_style : String
 
 pub fn state_editor_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorState, common_style? : String, global_style? : String, update? : (StateEditorState, @component.Dispatch, &@core.Ctx) -> @component.Update[StateEditorState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
@@ -749,6 +805,8 @@ pub fn Inspector::place_candidates(Self, Array[(String, String)], @trace.Trace, 
 pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value
 pub fn Inspector::recorder_bar(Self, recording? : Bool, scope? : String, events? : Int, turns? : Int, has_trace? : Bool, picking? : Bool) -> @core.Value
 pub fn Inspector::schema_view(Self, @core.Value) -> @core.Value
+pub fn Inspector::spec_panel(Self, comp? : @component.Component) -> @core.Value
+pub fn Inspector::spec_source_panel(Self, comp? : @component.Component) -> @core.Value
 pub fn Inspector::trace_examples(Self) -> Array[@component.ExampleDef]
 pub fn Inspector::trace_header(Self, @trace.Trace) -> @core.Value
 pub fn Inspector::trace_log(Self, @trace.Trace, at? : Int, inputs_only? : Bool, turn? : Int) -> @core.Value
@@ -1491,6 +1549,61 @@ pub(all) struct SchemaViewerState {
   showRaw : Bool
 }
 pub fn SchemaViewerState::zero() -> Self
+
+pub(all) struct SpecDocState {
+  text : String
+}
+pub fn SpecDocState::zero() -> Self
+
+pub(all) struct SpecFieldState {
+  name : String
+  typeName : String
+  attrs : String
+  doc : String
+}
+pub fn SpecFieldState::zero() -> Self
+
+pub(all) struct SpecMsgState {
+  name : String
+  payload : String
+  doc : String
+}
+pub fn SpecMsgState::zero() -> Self
+
+pub(all) struct SpecRuleState {
+  kind : String
+  kindClass : String
+  name : String
+  source : String
+  format : String
+  doc : String
+}
+pub fn SpecRuleState::zero() -> Self
+
+pub(all) struct SpecSourceState {
+  source : String
+  hasSource : Bool
+  hint : String
+  note : String
+}
+pub fn SpecSourceState::zero() -> Self
+
+pub(all) enum SpecViewerIntent {
+  ToggleAllSections(Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SpecViewerIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
+pub fn SpecViewerIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn SpecViewerIntent::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct SpecViewerState {
+  compName : String
+  sections : Array[@core.Value]
+  hasSpec : Bool
+  hint : String
+  note : String
+}
+pub fn SpecViewerState::zero() -> Self
 
 pub(all) enum StateEditorRowInput {
   Edit

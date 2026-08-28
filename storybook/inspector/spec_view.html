@@ -1,0 +1,142 @@
+<script type="tutuca/spec">
+  /// The declaration a component was built from, as something to READ.
+  ///
+  /// Every row here is a projection of a `@statedef.StateDef` — the block
+  /// re-parsed out of `Component::spec` — and none of it is recomputed from
+  /// the schema beside it. The schema is the block's lossy projection: a rule
+  /// reaches it as a bare name and a message as a name with no payload, and
+  /// those two are exactly what a reader of a declaration came for.
+
+  /// One declared field: `name : type`, with the doc its author wrote.
+  state SpecField {
+    name : String
+    /// The author's own WIT spelling — `list<card>`, not `list`.
+    typeName : String
+    /// `@attr` / `@attr=value` on the field, on one line. Empty when it has
+    /// none, which is the common case.
+    attrs : String
+    doc : String
+  }
+
+  /// One declared message: `name(Int, String)`.
+  state SpecMsg {
+    /// The name a dispatch is addressed to.
+    name : String
+    /// Its payload types in parens, or empty for a message that carries none.
+    payload : String
+    doc : String
+  }
+
+  /// One `pred` or `invariant`, with the expression as written.
+  ///
+  /// The expression is carried rather than summarised because it is the whole
+  /// oracle: the Fuzz tab holds the component to exactly these words, so a
+  /// reader deciding whether a green run means anything has to see them.
+  state SpecRule {
+    /// `pred` or `invariant`.
+    kind : String
+    kindClass : String
+    name : String
+    /// The rule expression, as written.
+    source : String
+    /// The sentence its author wrote for the moment it fails.
+    format : String
+    doc : String
+  }
+
+  /// A doc comment standing on its own — a component's or a named type's.
+  state SpecDoc {
+    text : String
+  }
+
+  /// The whole declaration, one collapsible section per component the block
+  /// declares. A block is FILE-level, so a file declaring three components
+  /// carries all three arms in every one of its wrappers; the story's own
+  /// component is the section that starts open.
+  state SpecViewer {
+    compName : String
+    sections : Array[Any]
+    hasSpec : Bool
+    /// Why there is nothing to show, when there is nothing to show.
+    hint : String
+    /// A caveat about the block itself — that `gen-views` shipped it without
+    /// its prose, say. Empty for a block that reached the runtime whole.
+    note : String
+  }
+
+  /// Raised by a CompSection on a ctrl-click, so it arrives here as a Bubble.
+  /// No view of this component declares it.
+  handle SpecViewer {
+    intent {
+    toggleAllSections(Bool)
+
+    }
+  }
+
+  /// The same block, verbatim.
+  ///
+  /// Beside the parsed view rather than instead of it: the parse is what the
+  /// runtime reads, and the source is what the author edits. A reader
+  /// reconciling a surprising Fuzz verdict with the file open in their editor
+  /// wants the second one.
+  state SpecSource {
+    source : String
+    hasSource : Bool
+    hint : String
+    note : String
+  }
+</script>
+
+<template id="SpecField">
+  <div class="flex flex-col gap-0.5 leading-tight spec-field">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="text-base-content/70 font-mono text-sm spec-field-name" @text=".name"></span>
+      <span class="text-base-content/30" @show="truthy? .typeName">:</span>
+      <span class="text-base-content/50 font-mono text-xs spec-field-type" @text=".typeName"></span>
+      <span class="badge badge-xs badge-ghost font-mono spec-field-attrs" @show="truthy? .attrs" @text=".attrs"></span>
+    </div>
+    <div class="text-xs opacity-50 pl-2 spec-doc" @show="truthy? .doc" @text=".doc"></div>
+  </div>
+</template>
+
+<template id="SpecMsg">
+  <div class="flex flex-col gap-0.5 leading-tight spec-msg">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="font-mono text-sm spec-msg-name" @text=".name"></span>
+      <span class="text-base-content/50 font-mono text-xs spec-msg-payload" @show="truthy? .payload" @text=".payload"></span>
+    </div>
+    <div class="text-xs opacity-50 pl-2 spec-doc" @show="truthy? .doc" @text=".doc"></div>
+  </div>
+</template>
+
+<template id="SpecRule">
+  <div class="flex flex-col gap-0.5 leading-tight spec-rule">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span :class=".kindClass" @text=".kind"></span>
+      <span class="font-mono text-sm font-semibold spec-rule-name" @text=".name"></span>
+    </div>
+    <code class="text-xs font-mono opacity-70 pl-2 break-all spec-rule-source" @text=".source"></code>
+    <div class="text-xs opacity-50 pl-2 spec-rule-format" @show="truthy? .format" @text=".format"></div>
+    <div class="text-xs opacity-50 pl-2 spec-doc" @show="truthy? .doc" @text=".doc"></div>
+  </div>
+</template>
+
+<template id="SpecDoc">
+  <div class="text-xs opacity-60 italic whitespace-pre-wrap spec-doc-block" @text=".text"></div>
+</template>
+
+<template id="SpecViewer">
+  <div class="font-mono text-sm leading-tight flex flex-col gap-1 spec-viewer">
+    <div class="text-xs opacity-50 spec-hint" @hide=".hasSpec" @text=".hint"></div>
+    <div class="text-xs opacity-40 italic spec-note" @show="truthy? .note" @text=".note"></div>
+    <x render-each=".sections"></x>
+  </div>
+</template>
+
+<template id="SpecSource">
+  <div class="flex flex-col gap-1 spec-source">
+    <div class="text-xs opacity-50 spec-source-hint" @hide=".hasSource" @text=".hint"></div>
+    <div class="text-xs opacity-40 italic spec-note" @show="truthy? .note" @text=".note"></div>
+    <pre class="text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap" @show=".hasSource"><code class="spec-source-text" @text=".source"></code></pre>
+  </div>
+</template>

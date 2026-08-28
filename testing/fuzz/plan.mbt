@@ -57,7 +57,14 @@ pub fn Plan::of_component(
   depth? : Int = @arb.MAX_DEPTH,
 ) -> Plan? {
   guard comp.spec != "" else { return None }
-  let defs = @statedef.parse_state(comp.spec) catch {
+  // The NAME is part of the parse, not a filter applied after it: a bare
+  // `state { … }` belongs to the file's single unnamed component, and the
+  // parser can only give it a name if the caller — the only thing that knows
+  // what that component is called — hands one over. Without it every
+  // bare-state component in the corpus (counter, dnd, file-picker, …) parsed
+  // to a `StateDef` named "" and matched nothing below, so the Fuzz tab
+  // reported "declares no spec block" for a component that declares one.
+  let defs = @statedef.parse_state(comp.spec, name=comp.schema.name) catch {
     // A block that no longer parses is not a plan and not an error a fuzz run
     // can act on. It is a `gen-views` failure that has already been reported
     // somewhere the author will see it.

@@ -12,6 +12,9 @@ import {
   // The Fuzz pane's rows ARE `@fuzz.Step`s — a projection of the driver's own
   // values, the way the trace rows project a `@trace.Event`.
   "marianoguerra/tutuca/testing/fuzz",
+  // The Spec pane re-parses `Component::spec` — the same block `testing/fuzz`
+  // draws its generators from — so a reader can see what a run is held to.
+  "marianoguerra/tutuca/statedef",
   "moonbitlang/core/cmp",
   // parse_double: a text control hands back a String for a numeric field
   "moonbitlang/core/string",

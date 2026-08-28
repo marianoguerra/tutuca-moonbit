@@ -513,6 +513,7 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/inspector/schema.html", None),
     ("storybook/inspector/module.html", None),
     ("storybook/inspector/fuzz_view.html", None),
+    ("storybook/inspector/spec_view.html", None),
     ("docs/tutorial.html", None),
     ("docs/first_principles.html", None),
     ("storybook/inspector/schema_viewer.html", Some("SchemaViewer")),

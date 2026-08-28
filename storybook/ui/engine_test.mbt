@@ -728,3 +728,65 @@ test "a run sends nothing the story leaves unhandled" {
   assert_false(h.texts(".row-refused").contains("unhandled"))
   assert_false(h.texts(".row-name").contains("tabLen"))
 }
+
+///|
+/// The Spec and Raw tabs: what the story's component DECLARES, and the block
+/// it declared it in.
+///
+/// They exist because that block became load-bearing at run time. The Fuzz tab
+/// beside them derives a component's generators and its whole oracle from
+/// `Component::spec`, so "what is this run held to" stopped being a question
+/// you answer by opening the .html file and became one the pane has to answer
+/// about the story on screen.
+test "each story pane shows the block it was declared in" {
+  let sections = pick(["counter"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  assert_true(container.to_html().contains("spec-tab"))
+  assert_true(container.to_html().contains("raw-tab"))
+  let root = app.transactor.root
+  // neither is built for a tab nobody opened: ~50 stories, and re-parsing
+  // every block at mount to render none of them is pure cost
+  assert_true(root.field("d0") is Null)
+  assert_true(root.field("w0") is Null)
+
+  let spec = shell_input(root, "onStoryTab", [Num(0), Str("spec")])
+  assert_true(spec.field("t0") is Str("spec"))
+  assert_true(spec.field("d0") is Obj(_))
+  assert_true(spec.field("d0").field("hasSpec") is Bool(true))
+
+  let raw = shell_input(spec, "onStoryTab", [Num(0), Str("raw")])
+  assert_true(raw.field("w0") is Obj(_))
+  // Verbatim, so it is the file's own bare `state { … }` and not the name the
+  // parse gave it.
+  let src = raw.field("w0").field("source").str(default="")
+  assert_true(src.contains("state {"))
+  assert_true(src.contains("count : Int"))
+
+  // A declaration cannot go stale — the component behind a story is the one
+  // thing about it that never changes — so leaving keeps both panels rather
+  // than dropping them the way the explorer is dropped.
+  let back = shell_input(raw, "onStoryTab", [Num(0), Str("story")])
+  assert_true(back.field("t0") is Str("story"))
+  assert_true(back.field("d0") is Obj(_))
+  assert_true(back.field("w0") is Obj(_))
+}
+
+///|
+/// The Spec tab RENDERS, not merely builds: the panel is made from the shell's
+/// own Inspector, and a rendered instance resolves its component through the
+/// app's registry — so an unregistered one draws nothing and the pane comes up
+/// blank with every value-level assertion above still passing.
+test "the Spec tab renders the declaration, not a blank pane" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".spec-tab")
+  // the counter's arm, expanded, with the field it declares
+  assert_true(h.texts(".comp-section").contains("Counter"))
+  assert_true(h.texts(".spec-field-name").contains("count"))
+  h.click(".raw-tab")
+  assert_true(h.text(".spec-source-text").contains("count : Int"))
+}

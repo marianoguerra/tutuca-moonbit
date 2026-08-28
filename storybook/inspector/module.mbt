@@ -94,6 +94,13 @@ pub fn Inspector::new() -> Inspector {
       fuzz_controls_comp(),
       fuzz_verdict_comp(),
       fuzz_panel_comp(),
+      // spec layer
+      spec_field_comp(),
+      spec_msg_comp(),
+      spec_rule_comp(),
+      spec_doc_comp(),
+      spec_viewer_comp(),
+      spec_source_comp(),
     ] {
     insp.comps[c.name] = c
   }
@@ -384,6 +391,35 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
         args: instance_args(
           deep_expand(insp.inspect_component(rich_sample_comp())),
         ),
+        view: None,
+      },
+      {
+        // The other half of "what is this component": the descriptor above
+        // says what the runtime KNOWS, this says what the author DECLARED —
+        // rules and message payloads included, which the schema cannot carry.
+        component: "SpecViewer",
+        title: "Spec: Rich Sample",
+        args: instance_args(insp.spec_panel(comp=rich_sample_comp())),
+        view: None,
+      },
+      {
+        component: "SpecSource",
+        title: "Spec source: Rich Sample",
+        args: instance_args(insp.spec_source_panel(comp=rich_sample_comp())),
+        view: None,
+      },
+      {
+        // The rows RichSample's block has none of: prose, rules, named types,
+        // a message with a payload. A block that reached the runtime whole.
+        component: "SpecViewer",
+        title: "Spec: Rules and Types",
+        args: instance_args(insp.spec_panel(comp=spec_sample_component())),
+        view: None,
+      },
+      {
+        component: "SpecViewer",
+        title: "Spec: none declared",
+        args: instance_args(insp.spec_panel()),
         view: None,
       },
       {

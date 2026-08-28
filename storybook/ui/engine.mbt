@@ -88,6 +88,40 @@ fn ShellSpec::explorer_of(
 }
 
 ///|
+/// The component behind a story's instance, or None.
+///
+/// The same resolution the Fuzz tab does before it draws a plan, and it has to
+/// be a resolution rather than something remembered from `build_shell`: a
+/// story's instance is REPLACED as it is driven, and the component behind it is
+/// the stable thing.
+fn ShellSpec::comp_of(
+  self : ShellSpec,
+  instance : @tutuca.Value,
+) -> @component.Component? {
+  guard self.comps is Some(cs) else { return None }
+  cs.get_comp_for(instance)
+}
+
+///|
+/// The Spec tab's content: the story component's `<script type="tutuca/spec">`
+/// block, re-parsed and rendered as what it declares.
+fn ShellSpec::spec_of(
+  self : ShellSpec,
+  instance : @tutuca.Value,
+) -> @tutuca.Value {
+  self.insp.spec_panel(comp?=self.comp_of(instance))
+}
+
+///|
+/// The Raw tab's: the same block, verbatim.
+fn ShellSpec::spec_source_of(
+  self : ShellSpec,
+  instance : @tutuca.Value,
+) -> @tutuca.Value {
+  self.insp.spec_source_panel(comp?=self.comp_of(instance))
+}
+
+///|
 /// The gallery instance: a plain COW fields map behind the Obj trait — the
 /// hand-written analogue of what typed components generate from their state
 /// struct, for the one component whose fields are data-driven.
@@ -397,6 +431,32 @@ fn ShellInst::handler_for(
                       steps=self.get("fzSteps").str(default="40"),
                       source=self.get("fzSource").str(default="mutators"),
                     ),
+                  )
+                } else {
+                  next
+                }
+                with_panel.set("i\{idx}", Null)
+              }
+              // A declaration cannot go stale — the component behind a story
+              // is the one thing about it that never changes — so both spec
+              // panels are built once and then left alone. Built lazily all
+              // the same: a gallery has ~50 stories, and re-parsing every
+              // block at mount to render none of them is pure cost.
+              "spec" => {
+                let cur = next.get("d\{idx}")
+                let with_panel = if cur is Null {
+                  next.set("d\{idx}", self.spec.spec_of(self.get("s\{idx}")))
+                } else {
+                  next
+                }
+                with_panel.set("i\{idx}", Null)
+              }
+              "raw" => {
+                let cur = next.get("w\{idx}")
+                let with_panel = if cur is Null {
+                  next.set(
+                    "w\{idx}",
+                    self.spec.spec_source_of(self.get("s\{idx}")),
                   )
                 } else {
                   next
@@ -788,6 +848,9 @@ fn build_shell(
       defaults["i\{idx}"] = Null
       defaults["r\{idx}"] = Null
       defaults["f\{idx}"] = Null
+      // the Spec and Raw panels, built the first time their tab is opened
+      defaults["d\{idx}"] = Null
+      defaults["w\{idx}"] = Null
       if s.renderable {
         id_to_field[s.id] = "s\{idx}"
         if s.init {
@@ -831,6 +894,14 @@ fn build_shell(
           " @if.class=\".t\{idx} is 'fuzz'\"" +
           " @then=\"'tab tab-active fuzz-tab'\" @else=\"'tab fuzz-tab'\"" +
           " @on.click=\"onStoryTab \{idx} 'fuzz'\">Fuzz</a>" +
+          "<a role=\"tab\" class=\"tab spec-tab\"" +
+          " @if.class=\".t\{idx} is 'spec'\"" +
+          " @then=\"'tab tab-active spec-tab'\" @else=\"'tab spec-tab'\"" +
+          " @on.click=\"onStoryTab \{idx} 'spec'\">Spec</a>" +
+          "<a role=\"tab\" class=\"tab raw-tab\"" +
+          " @if.class=\".t\{idx} is 'raw'\"" +
+          " @then=\"'tab tab-active raw-tab'\" @else=\"'tab raw-tab'\"" +
+          " @on.click=\"onStoryTab \{idx} 'raw'\">Raw</a>" +
           "</div>",
         )
         sb.write_string(
@@ -869,6 +940,23 @@ fn build_shell(
           "<x render=\".s\{idx}\"></x></div>" +
           "<div class=\"border border-base-300 rounded-lg p-4 bg-base-100 overflow-auto\">" +
           "<x render=\".f\{idx}\"></x></div></div>",
+        )
+        // The two halves of one string, and the string is now load-bearing:
+        // the Fuzz tab derives a component's generators and its whole oracle
+        // from `Component::spec`, so what the block DECLARES stopped being
+        // something you read the file for and became something the story has
+        // to be able to show. Parsed on the left, verbatim on the right —
+        // the parse is what the runtime reads, the source is what the author
+        // edits, and a reader reconciling a surprising verdict wants both.
+        sb.write_string(
+          "<div @show=\".t\{idx} is 'spec'\"" +
+          " class=\"border border-base-300 rounded-lg p-4 bg-base-100 overflow-auto\">" +
+          "<x render=\".d\{idx}\"></x></div>",
+        )
+        sb.write_string(
+          "<div @show=\".t\{idx} is 'raw'\"" +
+          " class=\"border border-base-300 rounded-lg p-4 bg-base-100 overflow-auto\">" +
+          "<x render=\".w\{idx}\"></x></div>",
         )
       } else {
         sb.write_string(
