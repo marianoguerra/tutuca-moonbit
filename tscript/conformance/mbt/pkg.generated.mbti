@@ -61,6 +61,7 @@ pub(all) enum CorpusReceive {
   Case15
   Case24(Int)
   Case25(String)
+  Case26(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusReceive::from_dispatch(@component.Dispatch) -> Self?

@@ -138,7 +138,20 @@ pub fn collect_view_classes(
     try {
       let file = @viewgen.split_file(source)
       for comp in file.components {
-        let views = @viewgen.build_views(comp, macros=file.macros)
+        // The schema, paired the way the generator pairs it. Building without
+        // it is not a shortcut: `@bind` reads the field's type to pick its
+        // coercion, so a view file gen-views compiles happily would be refused
+        // here and the whole stylesheet would stop rebuilding.
+        //
+        // The fallback is "" on both sides — `split_file` above is called
+        // without a `name~`, so an unnamed component and an unnamed `state`
+        // block meet under the same empty name, which is the pairing they have.
+        let cname = comp.component_name("")
+        let views = @viewgen.build_views(
+          comp,
+          macros=file.macros,
+          state=file.state_of(cname, fallback=""),
+        )
         for _, view in views {
           if view.anode is Some(node) {
             node.collect_classes(found)

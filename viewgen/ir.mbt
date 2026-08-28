@@ -667,14 +667,23 @@ fn emit_init_invariants(
 /// exactly the value `emit_ir_module`'s output reconstructs, which is what the
 /// gen-views tests assert: render through both paths, expect the same DOM. A
 /// host that already holds the view text could use it to skip codegen too.
+///
+/// `state` is the component's schema, and passing it is not optional in the
+/// way the default makes it look: `@bind` needs the field's type to pick its
+/// coercion, so a view file that uses one and is built WITHOUT its schema is
+/// refused. Hardcoding `None` here is what made `gen-css` reject files
+/// `gen-views` accepts. Callers holding a `ViewFile` get it from
+/// `ViewFile::state_of`; `None` is right only for a caller that has no schema
+/// to give.
 pub fn build_views(
   views : @viewfile.ViewSet,
   macros? : Array[@viewfile.MacroDef] = [],
+  state? : @statedef.StateDef? = None,
 ) -> Map[String, @anode.View] raise GenError {
   let scope = FileMacros::of(macros)
   let out : Map[String, @anode.View] = Map([])
   let compiled = compile_views(views.views, scope)
-  lower_binds(compiled, None)
+  lower_binds(compiled, state)
   for view in compiled {
     out[view.raw.name] = @anode.View::from_ir(
       view.raw.name,

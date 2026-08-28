@@ -844,3 +844,26 @@ pub fn ViewFile::wax_for(self : ViewFile, comp : String) -> Block? {
   }
   None
 }
+
+///|
+/// The schema entry for a component, or None when the file declares none.
+///
+/// The pairing rule is `component_name`'s on both sides: a `state` block with
+/// no name and a template with no `Comp:` prefix are the SAME component, and
+/// the caller's fallback is what they are both called. Living here rather than
+/// in each consumer is what stops a second reading of that rule from drifting
+/// — `viewgen` emits against this schema and `gen-css` collects classes
+/// against it, and the two seeing different schemas for one file is a bug that
+/// shows up as a view the CSS pass refuses and the generator accepts.
+pub fn ViewFile::state_of(
+  self : ViewFile,
+  comp : String,
+  fallback~ : String,
+) -> @statedef.StateDef? {
+  for def in self.state {
+    if def.component_name(fallback) == comp {
+      return Some(def)
+    }
+  }
+  None
+}

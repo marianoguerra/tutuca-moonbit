@@ -38,6 +38,7 @@ test "the v2 corpus still holds every case it was written with" {
       #|an ensures that does not hold takes the reply with it
       #|an answer arrives as an ordinary message
       #|an error answer arrives as an ordinary message too
+      #|a parameter named `s` is the argument, not the state
     ),
   )
 }

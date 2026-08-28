@@ -168,6 +168,7 @@ declare pub fn split_file(
 declare pub fn view_surface(
   views : Array[@viewfile.RawView],
   macros? : Array[@viewfile.MacroDef],
+  state? : @statedef.StateDef?,
 ) -> Surface raise GenError
 
 ///|
@@ -231,6 +232,7 @@ declare pub fn emit_ir_module_opt(
 declare pub fn build_views(
   views : @viewfile.ViewSet,
   macros? : Array[@viewfile.MacroDef],
+  state? : @statedef.StateDef?,
 ) -> Map[String, @anode.View] raise GenError
 
 ///|

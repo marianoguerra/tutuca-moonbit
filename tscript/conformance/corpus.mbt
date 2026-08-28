@@ -787,5 +787,19 @@ pub fn cases() -> Array[Case] {
       args=[Str("disk full")],
       after=Some(with_fields({ "name": Str("disk full") })),
     ),
+    // -- a parameter named like the machinery -------------------------------
+    //
+    // `s` is what the MoonBit backend calls the state, and a parameter
+    // spelled the same used to be emitted straight into that name: the arm
+    // wrote `let s = { ..s, name: s }`, spreading the argument instead of the
+    // state, in a module `moonc` then refused. The interpreter never had the
+    // name to lose, so nothing but a row here holds the two to one answer.
+    recv_case(
+      "a parameter named `s` is the argument, not the state",
+      "receive setName(s) { .name = s }",
+      "setName",
+      args=[Str("ok")],
+      after=Some(with_fields({ "name": Str("ok") })),
+    ),
   ]
 }

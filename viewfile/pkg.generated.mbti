@@ -67,6 +67,7 @@ pub(all) struct ViewFile {
   legacy_spec : Bool
 } derive(Eq, @debug.Debug)
 pub fn ViewFile::script_for(Self, String) -> Block?
+pub fn ViewFile::state_of(Self, String, fallback~ : String) -> @statedef.StateDef?
 pub fn ViewFile::wax_for(Self, String) -> Block?
 
 pub(all) struct ViewSet {

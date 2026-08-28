@@ -464,7 +464,7 @@ fn E::value_body(
         self.params[prm.name] = None
         if decl_reads_name(d, prm.name) {
           body.write_string(
-            "  let \{prm.name} = args.get(\{i}).unwrap_or(Null)\n",
+            "  let \{local_of(prm.name)} = args.get(\{i}).unwrap_or(Null)\n",
           )
         }
       }
@@ -652,7 +652,7 @@ fn E::arm(
     // way — a `setLabel 3` must refuse whether or not the body looks at the
     // argument — but a binding nobody uses is a warning, and a generated file
     // must not be the thing that warns.
-    let binder = if uses_name(body, p.name) { p.name } else { "_" }
+    let binder = if uses_name(body, p.name) { local_of(p.name) } else { "_" }
     // The pattern that takes a payload APART, and the type the body may then
     // use it at. The two answers are one decision: a parameter is usable at
     // its declared type exactly when the pattern below hands the body that
@@ -1796,7 +1796,7 @@ fn E::expr(
         // A transition still refuses, because there the argument's shape is
         // what decides whether the transition happens at all.
         if self.fail != "" {
-          return (name, TAny)
+          return (local_of(name), TAny)
         }
         raise Cannot(
           "`\{name}`'s type is not known from the call sites, so it arrives as a raw value — annotate it by calling the handler consistently, or write the handler in MoonBit",
@@ -1805,8 +1805,8 @@ fn E::expr(
       // A parameter arrives as the type its pattern bound: a number is a
       // Double, which is the arithmetic surface.
       match t {
-        TInt(..) => (name, TFloat)
-        _ => (name, t)
+        TInt(..) => (local_of(name), TFloat)
+        _ => (local_of(name), t)
       }
     }
     EUnary(op~, operand~, ..) =>
@@ -1908,7 +1908,7 @@ fn E::read(
         "`\{param}` arrives as \{ty.unwrap().show_source()} from the call sites, and a \{ty.unwrap().show_source()} has no field `\{p.steps.map(s => if s is PField(n) { n } else { "?" }).join(".")}`",
       )
     }
-    let mut src = param
+    let mut src = local_of(param)
     for st in p.steps {
       guard st is PField(sub) else {
         raise Cannot(
@@ -2173,6 +2173,32 @@ fn E::app(
 
 // ---------------------------------------------------------------------------
 // Spelling
+
+///|
+/// The MoonBit local an author-chosen script name binds to.
+///
+/// Author names and generated names share ONE namespace inside the emitted
+/// function, and a script identifier is `[A-Za-z_][A-Za-z0-9_]*` — the same
+/// alphabet MoonBit locals use, so there is no character to escape into.
+/// Appending `_` is injective, so two script names stay two, and it lands
+/// every author name in a region this emitter never writes into: nothing it
+/// generates ends in `_` — not `s`/`_s`, `args`, `ctx`, `stack`, `binds`,
+/// `key`/`value`/`iter_data`, `at`, and not the COUNTED ones, `v1`, `cur0`,
+/// `d0`.
+///
+/// Those counted names are why this is a rename rather than a reserved-name
+/// list: the set of generated names has no bound, so a list could only ever
+/// be a snapshot of it, and the next emitter local would reopen the hole
+/// silently. `receive setStatus(s) { .status = s }` emitted
+/// `let s = { ..s, status: s }` — the parameter shadowing the state it was
+/// being written into, a module that does not compile out of a script nobody
+/// would look at twice.
+///
+/// Applied at the BINDING sites and every reference site, never to the keys of
+/// `params`/`binds`: a diagnostic quotes what the author wrote.
+fn local_of(name : String) -> String {
+  name + "_"
+}
 
 ///|
 /// The MoonBit binding for a runtime field name — the same escape

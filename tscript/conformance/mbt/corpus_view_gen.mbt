@@ -163,6 +163,7 @@ pub(all) enum CorpusReceive {
   Case15
   Case24(Int)
   Case25(String)
+  Case26(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -204,6 +205,7 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => Case24(a0.to_int())
       ("case25", [Str(a0)]) => Case25(a0)
+      ("case26", [Str(a0)]) => Case26(a0)
       _ => Unknown(name, args)
     },
   )
@@ -233,6 +235,7 @@ pub fn CorpusReceive::to_dispatch(
     Case15 => ("case15", [])
     Case24(a0) => ("case24", [Num(a0.to_double())])
     Case25(a0) => ("case25", [Str(a0)])
+    Case26(a0) => ("case26", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -346,7 +349,7 @@ pub let corpus_global_style : String = ""
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="0dfa4db194302eab",
+    fingerprint="776320ff937b9184",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -360,7 +363,7 @@ impl @component.Fields for CorpusState with fn schema() {
     receives=[
       "case0", "case1", "case2", "case3", "case4", "case5", "case6", "case7", "case8",
       "case9", "case10", "case11", "case12", "case13", "case14", "case15", "case24",
-      "case25",
+      "case25", "case26",
     ],
     intents=[
       "case16", "case17", "case18", "case19", "case20", "case21", "case22", "case23",

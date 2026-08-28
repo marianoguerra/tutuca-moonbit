@@ -788,17 +788,16 @@ fn emit_state_only(
 
 ///|
 /// The schema entry for a component, or None when the file declares none.
+///
+/// The rule itself lives on `ViewFile`, next to the two arrays it pairs: a
+/// consumer outside this package needs the same answer — `gen-css` builds the
+/// same views this emits from — and two readings of it would drift.
 fn state_for(
   file : @viewfile.ViewFile,
   comp : String,
   fallback : String,
 ) -> @statedef.StateDef? {
-  for def in file.state {
-    if def.component_name(fallback) == comp {
-      return Some(def)
-    }
-  }
-  None
+  file.state_of(comp, fallback~)
 }
 
 ///|

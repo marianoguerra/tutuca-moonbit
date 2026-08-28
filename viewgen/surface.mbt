@@ -597,13 +597,20 @@ fn join_arg(a : ArgType, b : ArgType) -> ArgType {
 // ---------------------------------------------------------------------------
 
 ///|
+/// The surface a set of views needs, built straight from their source.
+///
+/// `state` carries the same weight it does in `build_views`: bind lowering
+/// rewrites the handler an `@bind` element raises, so a surface computed
+/// without the schema is both refused (when the file uses `@bind`) and wrong
+/// (if it were not).
 pub fn view_surface(
   views : Array[@viewfile.RawView],
   macros? : Array[@viewfile.MacroDef] = [],
+  state? : @statedef.StateDef? = None,
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
   let compiled = compile_views(views, scope)
-  lower_binds(compiled, None)
+  lower_binds(compiled, state)
   surface_of(compiled)
 }
 

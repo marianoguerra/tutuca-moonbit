@@ -389,12 +389,51 @@ test "arithmetic goes through Double and comes back at the field's type" {
 }
 
 ///|
+/// Author names and generated names share one namespace in the emitted
+/// function, so a parameter used to be able to shadow a local this backend
+/// needs — `receive rename(s, n) { .label = s }` wrote
+/// `let s = { ..s, label: s }`, the parameter standing where the state should
+/// have been, in a module that does not compile. The block was fine and
+/// `gen-views` reported nothing; `moonc` found it, in a file nobody reads.
+///
+/// The table is one name per generated-name FAMILY, the counted ones included:
+/// `v1`, `cur0` and `d0` come off counters, so no reserved-name list could
+/// have covered them, which is why the fix renames the author's name rather
+/// than refusing it.
+test "a parameter cannot shadow a name the emitter generates" {
+  for
+    name in [
+      "s", "_s", "args", "_args", "ctx", "stack", "binds", "key", "value", "iter_data",
+      "at", "v1", "cur0", "d0",
+    ] {
+    assert_eq(
+      body("receive rename(\{name}, n) { .label = \{name} }"),
+      "guard args.get(0) is Some(Str(\{name}_)) else { return Unchanged }\n" +
+      "guard args.get(1) is Some(Num(_)) else { return Unchanged }\n" +
+      "let s = { ..s, label: \{name}_ }\n" +
+      "Next(s)",
+    )
+  }
+}
+
+///|
+/// The same rename on the value-body side, where the parameter binds out of
+/// `args` and the state is the function's first parameter.
+test "a compute parameter cannot shadow the state it is compiled beside" {
+  let src = out_values("compute pick(s) { s }", methods=["pick"]).source
+  assert_true(src.contains("let s_ = args.get(0).unwrap_or(Null)"))
+  // The state parameter keeps its own spelling — a body that does not read it
+  // gets the underscore, and nothing here is renamed on the generated side.
+  assert_true(src.contains("_s : CounterState"))
+}
+
+///|
 test "a receive handler's parameters are typed by the schema's payload" {
   inspect(
     body("receive resetTo(n) { .count = n }"),
     content=(
-      #|guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      #|let s = { ..s, count: n.to_int() }
+      #|guard args.get(0) is Some(Num(n_)) else { return Unchanged }
+      #|let s = { ..s, count: n_.to_int() }
       #|Next(s)
     ),
   )
@@ -402,10 +441,10 @@ test "a receive handler's parameters are typed by the schema's payload" {
   inspect(
     body("receive rename(t, n) { .label = t; .count = n }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
-      #|guard args.get(1) is Some(Num(n)) else { return Unchanged }
-      #|let s = { ..s, label: t }
-      #|let s = { ..s, count: n.to_int() }
+      #|guard args.get(0) is Some(Str(t_)) else { return Unchanged }
+      #|guard args.get(1) is Some(Num(n_)) else { return Unchanged }
+      #|let s = { ..s, label: t_ }
+      #|let s = { ..s, count: n_.to_int() }
       #|Next(s)
     ),
   )
@@ -428,8 +467,8 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
   inspect(
     body("receive dropAt(i) { .history.removeAt i }"),
     content=(
-      #|guard args.get(0) is Some(Num(i)) else { return Unchanged }
-      #|let at = i.to_int()
+      #|guard args.get(0) is Some(Num(i_)) else { return Unchanged }
+      #|let at = i_.to_int()
       #|guard at >= 0 && at < s.history.length() else { return Unchanged }
       #|let s = { ..s, history: (s.history[0:at].to_owned() + s.history[at + 1:].to_owned()) }
       #|Next(s)
@@ -442,8 +481,8 @@ test "a set is Map-backed and copied before it is written" {
   inspect(
     body("receive tag(t) { .tags.add t }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
-      #|let s = { ..s, tags: { let m = s.tags.copy(); m[t] = true; m } }
+      #|guard args.get(0) is Some(Str(t_)) else { return Unchanged }
+      #|let s = { ..s, tags: { let m = s.tags.copy(); m[t_] = true; m } }
       #|Next(s)
     ),
   )
@@ -451,8 +490,8 @@ test "a set is Map-backed and copied before it is written" {
   inspect(
     body("receive flip(t) { .tags.toggle t }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
-      #|let s = { ..s, tags: { let m = s.tags.copy(); let k = t; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m } }
+      #|guard args.get(0) is Some(Str(t_)) else { return Unchanged }
+      #|let s = { ..s, tags: { let m = s.tags.copy(); let k = t_; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m } }
       #|Next(s)
     ),
   )

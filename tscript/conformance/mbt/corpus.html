@@ -21,7 +21,7 @@
     page   : Int
   }
   handle Corpus {
-    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String) }
+    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String), case26(String) }
     intent { case16(String), case17(String), case18(Int), case19(Int), case20(String), case21(String), case22(String), case23(String) }
   }
 </script>
@@ -171,6 +171,11 @@
   /// case 25: an error answer arrives as an ordinary message too
   receive case25(why) {
     .name = why
+  }
+
+  /// case 26: a parameter named `s` is the argument, not the state
+  receive case26(s) {
+    .name = s
   }
 
 </script>

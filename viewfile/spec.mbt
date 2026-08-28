@@ -242,3 +242,15 @@ declare pub fn ViewSet::component_name(
   self : ViewSet,
   fallback : String,
 ) -> String
+
+///|
+/// The schema entry for a component, or None when the file declares none.
+///
+/// The pairing rule is `component_name`'s on both sides, so a consumer that
+/// walks `components` and one that walks `state` agree on which pairs with
+/// which.
+declare pub fn ViewFile::state_of(
+  self : ViewFile,
+  comp : String,
+  fallback~ : String,
+) -> @statedef.StateDef?

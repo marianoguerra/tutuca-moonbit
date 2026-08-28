@@ -55,8 +55,8 @@ fn corpus_inline_update(
       Next(s)
     }
     Receive("case2", args) => {
-      guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int(), }
+      guard args.get(0) is Some(Num(n_)) else { return Unchanged }
+      let s = { ..s, count: n_.to_int(), }
       Next(s)
     }
     Receive("case3", args) => {
@@ -148,12 +148,12 @@ fn corpus_inline_update(
       Next(s)
     }
     Receive("case10", args) => {
-      guard args.get(0) is Some(Num(k)) else { return Unchanged }
+      guard args.get(0) is Some(Num(k_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
           "picked",
-          [(Num(k) : @tutuca.Value)],
+          [(Num(k_) : @tutuca.Value)],
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Dyn]),
         )
       })
@@ -247,14 +247,14 @@ fn corpus_inline_update(
       Next(s)
     }
     Intent("case18", args) => {
-      guard args.get(0) is Some(Num(k)) else { return Unchanged }
-      let s = { ..s, page: k.to_int(), }
+      guard args.get(0) is Some(Num(k_)) else { return Unchanged }
+      let s = { ..s, page: k_.to_int(), }
       Next(s)
     }
     Intent("case19", args) => {
-      guard args.get(0) is Some(Num(k)) else { return Unchanged }
+      guard args.get(0) is Some(Num(k_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
-      let s = { ..s, page: k.to_int(), }
+      let s = { ..s, page: k_.to_int(), }
       effects.push(() => ctx.forward(None, None))
       for f in effects {
         f()
@@ -318,13 +318,18 @@ fn corpus_inline_update(
       Next(s)
     }
     Receive("case24", args) => {
-      guard args.get(0) is Some(Num(n)) else { return Unchanged }
-      let s = { ..s, count: n.to_int(), }
+      guard args.get(0) is Some(Num(n_)) else { return Unchanged }
+      let s = { ..s, count: n_.to_int(), }
       Next(s)
     }
     Receive("case25", args) => {
-      guard args.get(0) is Some(Str(why)) else { return Unchanged }
-      let s = { ..s, name: why, }
+      guard args.get(0) is Some(Str(why_)) else { return Unchanged }
+      let s = { ..s, name: why_, }
+      Next(s)
+    }
+    Receive("case26", args) => {
+      guard args.get(0) is Some(Str(s_)) else { return Unchanged }
+      let s = { ..s, name: s_, }
       Next(s)
     }
     _ => Unhandled

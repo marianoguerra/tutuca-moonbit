@@ -60,8 +60,8 @@ fn status_inline_update(
 ) -> @component.Update[StatusState] {
   match msg {
     Receive("flash", args) => {
-      guard args.get(0) is Some(Str(m)) else { return Unchanged }
-      let s = { ..s, message: m, }
+      guard args.get(0) is Some(Str(m_)) else { return Unchanged }
+      let s = { ..s, message: m_, }
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       Next(s)
     }

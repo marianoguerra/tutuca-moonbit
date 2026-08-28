@@ -152,6 +152,51 @@ test "collect_view_classes sees classes inside an expanded macro" {
 }
 
 ///|
+/// The collector builds views against the file's OWN schema, the way the
+/// generator does. It did not, and hardcoded "no schema" instead: `@bind`
+/// reads the field's type to pick its coercion, so every view file using one
+/// was refused here and the whole stylesheet stopped rebuilding while
+/// `gen-views` kept writing the same file without complaint.
+test "collect_view_classes builds a view against the file's schema" {
+  let classes = classes_of(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Counter { name: String, count: Int }
+      #|</script>
+      #|<template id="Counter">
+      #|  <div class="card bg-base-100">
+      #|    <input class="input input-bordered" type="text" @bind=".name" />
+      #|  </div>
+      #|</template>
+    ),
+  )
+  assert_eq(classes, ["bg-base-100", "card", "input", "input-bordered"])
+}
+
+///|
+/// The negative twin: without a schema there IS nothing to pick a coercion
+/// from, so the refusal above was the right answer to the wrong question. It
+/// stays the answer here.
+test "collect_view_classes still refuses an @bind with no schema to read" {
+  let shape = match
+    @cli.collect_view_classes([
+      (
+        "nospec.html",
+        (
+          #|<template id="Counter">
+          #|  <input class="input" type="text" @bind=".name" />
+          #|</template>
+        ),
+      ),
+    ]) {
+    Err(shape) => shape
+    Ok(_) => abort("expected the schema-less @bind to fail")
+  }
+  assert_eq(shape.code, @cli.CODE_VIEW_GEN_FAILED)
+  assert_true(shape.message.contains("tutuca/spec"))
+}
+
+///|
 test "collect_view_classes reports the file a bad view came from" {
   let shape = match
     @cli.collect_view_classes([("broken.html", "oops<template></template>")]) {

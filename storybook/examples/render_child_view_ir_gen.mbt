@@ -220,8 +220,8 @@ fn entry_compute_containsText(
   args : Array[@tutuca.Value],
   _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
-  let q = args.get(0).unwrap_or(Null)
-  guard q is Str(v1) else { return Null }
+  let q_ = args.get(0).unwrap_or(Null)
+  guard q_ is Str(v1) else { return Null }
   (
     Bool(
       s.title.to_lower().contains(v1.to_lower()) ||

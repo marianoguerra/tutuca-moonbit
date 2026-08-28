@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`gen-tailwind-css` / `gen-margaui-css` refused every view file using
+  `@bind`.** The class collector built its views through `build_views`, which
+  hardcoded "this file has no schema" — and `@bind` reads the field's type to
+  pick its coercion, so a view `gen-views` compiled without complaint came back
+  from the CSS pass as ``view "main": `@bind` needs a
+  `<script type="tutuca/spec">` schema``, about the block sitting at the top of
+  the file. `build_views` and `view_surface` now take the schema, the pairing
+  rule that finds it lives on `ViewFile::state_of` so the generator and the CSS
+  pass cannot read one file two ways, and `collect_view_classes` passes it.
+
+  Under `watch --margaui-css` this was silent as well as wrong: the loop
+  suppressed a view-gen failure from the CSS pass on the grounds that the
+  regenerate pass had already printed it, which stopped being true the moment
+  the two passes disagreed. It now suppresses a message only for a file it
+  actually printed one for.
+
+- **A script parameter could shadow the state it was being written into.**
+  `receive setStatus(s) { .status = s }` emitted `let s = { ..s, status: s }` —
+  the argument standing where the state should have been, in a generated module
+  `moonc` then refused, out of a block `gen-views` reported nothing about.
+  Author names and emitter names shared one namespace, and the emitter's
+  namespace has no bound: `v1`, `cur0` and `d0` come off counters, so no
+  reserved-name list could have closed it. Author-chosen locals are now spelled
+  with a trailing `_` — injective, and disjoint from everything this backend
+  generates. Generated code reads `let s = { ..s, status: s_ }`; nothing about
+  a block's own spelling changes.
+
 ## [0.38.0] - 2026-08-27
 
 ### Added

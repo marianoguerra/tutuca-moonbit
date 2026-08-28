@@ -525,6 +525,7 @@ async fn write_css(
 async fn refresh_watch_css(
   plan : @cli.CssPlan,
   files : Array[String],
+  reported~ : Map[String, Bool],
 ) -> Unit noraise {
   guard plan.out is Some(target) else { return }
   let classes = match css_candidates(plan, files) {
@@ -533,7 +534,14 @@ async fn refresh_watch_css(
       // A view that will not parse has already been reported, file by file, by
       // the regenerate pass — and it is the same message. Only say something
       // the run of ✗ lines above does not already say.
-      if shape.code != @cli.CODE_VIEW_GEN_FAILED {
+      //
+      // Which file it was, not just which code: the two passes agreeing on
+      // every file is a PROPERTY, and a bug in it is exactly what this line
+      // hides. One did — the CSS pass built views without their schema, so it
+      // refused an `@bind` file the regenerate pass had just written a ✓ for,
+      // and the stylesheet stopped rebuilding without a word on screen.
+      let seen = shape.where_ is Some(path) && reported.contains(path)
+      if !(shape.code == @cli.CODE_VIEW_GEN_FAILED && seen) {
         write_out(@cli.watch_error_line(shape.message))
       }
       return
@@ -636,14 +644,17 @@ fn watch_roots(files : Array[String], paths : Array[String]) -> Array[String] {
 }
 
 ///|
-/// Regenerate one view file, reporting either outcome. Returns nothing: a
-/// failed view is a message, not the end of the watch — the next save is
-/// expected to fix it.
-async fn regenerate(path : String, plan : @cli.WatchPlan) -> Unit noraise {
+/// Regenerate one view file, reporting either outcome. A failed view is a
+/// message, not the end of the watch — the next save is expected to fix it.
+///
+/// Answers whether it PRINTED a failure for this path, which is what lets
+/// `refresh_watch_css` tell "the CSS pass is about to repeat a message already
+/// on screen" from "the CSS pass found something this one did not".
+async fn regenerate(path : String, plan : @cli.WatchPlan) -> Bool noraise {
   let source = @fs.read_file(path).text() catch {
     e => {
       write_out(@cli.watch_error_line("\{path}: cannot read: \{e}"))
-      return
+      return true
     }
   }
   let target = @cli.watch_target(path, plan.out)
@@ -655,7 +666,10 @@ async fn regenerate(path : String, plan : @cli.WatchPlan) -> Unit noraise {
       target~,
       ir=plan.ir,
     ) {
-    Err(shape) => write_out(@cli.watch_error_line(shape.message))
+    Err(shape) => {
+      write_out(@cli.watch_error_line(shape.message))
+      return true
+    }
     Ok(gen) => {
       for d in gen.diagnostics {
         write_out(@cli.watch_error_line(d))
@@ -675,6 +689,7 @@ async fn regenerate(path : String, plan : @cli.WatchPlan) -> Unit noraise {
       }
     }
   }
+  false
 }
 
 ///|
@@ -696,11 +711,18 @@ async fn run_watch(
   write_out(@cli.watch_banner(files, roots))
   // Generate once up front so the tree is correct before the first edit,
   // not just after it.
+  // The paths the regenerate pass has already printed a failure for, so the
+  // CSS pass below can stay quiet about those and only those.
+  let reported : Map[String, Bool] = Map([])
   for f in files {
-    regenerate(f, plan)
+    if regenerate(f, plan) {
+      reported[f] = true
+    } else {
+      reported.remove(f)
+    }
   }
   if plan.css is Some(css_plan) {
-    refresh_watch_css(css_plan, files)
+    refresh_watch_css(css_plan, files, reported~)
   }
   let watcher = @fswatch.start(roots) catch {
     e => {
@@ -748,13 +770,20 @@ async fn run_watch(
         files.push(e.path)
       }
       write_out("\{e.path}\n")
-      regenerate(e.path, plan)
+      // A file that regenerates cleanly this time drops out of `reported`:
+      // the ✗ it printed on the last save is scrolled off and is no longer a
+      // reason for the CSS pass to keep quiet about it.
+      if regenerate(e.path, plan) {
+        reported[e.path] = true
+      } else {
+        reported.remove(e.path)
+      }
       regenerated = true
     }
     // Once per settled batch, not once per file: the stylesheet covers the
     // whole project, and compiling it is the expensive half of the loop.
     if regenerated && plan.css is Some(css_plan) {
-      refresh_watch_css(css_plan, files)
+      refresh_watch_css(css_plan, files, reported~)
     }
   }
 }
