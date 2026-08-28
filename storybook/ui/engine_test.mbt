@@ -705,3 +705,26 @@ test "Step walks a run, and restarts at the end of one" {
   fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 1)
 }
+
+///|
+/// A generated script sends nothing the story cannot answer.
+///
+/// `tabbed-ui` is the case that showed this was wrong: its `tab` field gets a
+/// generated `tabLen` alongside `setTab`, and `tabLen` READS — it answers a
+/// scalar rather than a successor, so the receive path leaves it `Unhandled`.
+/// The generator drew it because it took its names from the full table of
+/// generated callables rather than the half that writes, and every draw
+/// surfaced as a refusal badge that looked exactly like a finding.
+test "a run sends nothing the story leaves unhandled" {
+  let sections = pick(["tabbed-ui"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  h.click(".ctl-burst")
+  fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 40)
+  // No badge reading `unhandled`, and no row naming the reader.
+  assert_false(h.texts(".row-refused").contains("unhandled"))
+  assert_false(h.texts(".row-name").contains("tabLen"))
+}

@@ -1204,3 +1204,96 @@ test "a @when is handed the stack too, through the alter seam" {
   assert_true(f([Null, Null, Str("dark"), Null]) == Bool(true))
   assert_true(f([Null, Null, Str("light"), Null]) == Bool(false))
 }
+
+///|
+/// `schema_writers` is the table minus the names that only read.
+///
+/// The two are one loop apart on purpose: a reader is recorded at the site
+/// that installs it, so this cannot drift into listing a name the runtime does
+/// not have — or missing one it does.
+test "the generated table separates what writes from what only reads" {
+  let schema = @component.SchemaInfo::new(fingerprint="writers", fields=[
+    @component.FieldInfo::new("items", TyList(TyInt)),
+    @component.FieldInfo::new("tags", TySet),
+    @component.FieldInfo::new("done", TyBool),
+  ])
+  let all = @component.schema_mutators(schema)
+  let writers = @component.schema_writers(schema)
+  // Every reader the loop installs is in the full table and out of this one.
+  for reader in ["itemsLen", "tagsLen", "doneLen", "hasInTags"] {
+    assert_true(all.contains(reader))
+    assert_false(writers.contains(reader))
+  }
+  // …and nothing that writes was lost with them.
+  for
+    writer in [
+      "setItems", "resetItems", "pushInItems", "insertInItemsAt", "setInItemsAt",
+      "deleteInItemsAt", "removeInItemsAt", "addInTags", "deleteInTags", "toggleInTags",
+      "toggleDone", "setDone",
+    ] {
+    assert_true(writers.contains(writer))
+  }
+  // The difference IS the readers, and nothing else.
+  let dropped : Array[String] = []
+  for name, _ in all {
+    if !writers.contains(name) {
+      dropped.push(name)
+    }
+  }
+  // The difference IS the readers, and nothing else — length as well as
+  // membership, so a writer quietly going missing fails here too.
+  assert_eq(dropped.length(), 4)
+  for expected in ["doneLen", "hasInTags", "itemsLen", "tagsLen"] {
+    assert_true(dropped.contains(expected))
+  }
+}
+
+///|
+/// A reader dispatched as a message does nothing, which is what makes the
+/// split above worth having rather than a matter of taste.
+///
+/// Both halves of the claim: `itemsLen` really is callable (it answers the
+/// length through `$`), and sending it really does leave the instance exactly
+/// where it was — the same instance, not an equal one.
+test "sending a read-only generated name leaves the instance alone" {
+  let comp = @component.component(name="Bag", views=Map([]), init=BagState::{
+    items: [Num(1), Num(2), Num(3)],
+  })
+  let v = comp.make(Map([]))
+  guard v is Obj(o) else { fail("a made component is an instance") }
+  // It reads: `$itemsLen` answers three.
+  guard o.obj_callable("itemsLen", Receive) is Some(Fn(f)) else {
+    fail("itemsLen is a generated `$`-callable")
+  }
+  assert_eq(f([v]), Num(3))
+  // It does not write: the dispatch is unclaimed, so the instance comes back
+  // unchanged — physically, which is how the runtime says "nothing happened".
+  let after = @tutuca.Path::new().update(v, Receive, "itemsLen", [])
+  assert_true(physical_equal(after, v))
+  // …whereas a writer from the same table does move it.
+  let moved = @tutuca.Path::new().update(v, Receive, "pushInItems", [Num(4)])
+  assert_false(physical_equal(moved, v))
+}
+
+///|
+priv struct BagState {
+  items : Array[@tutuca.Value]
+}
+
+///|
+impl @component.Fields for BagState with fn encode(s) {
+  { "items": List(s.items) }
+}
+
+///|
+impl @component.Fields for BagState with fn decode(f) {
+  guard f.get("items") is Some(List(a)) else { return None }
+  Some({ items: a, })
+}
+
+///|
+impl @component.Fields for BagState with fn schema() {
+  @component.SchemaInfo::new(name="Bag", fingerprint="bag", fields=[
+    @component.FieldInfo::new("items", TyList(TyAny)),
+  ])
+}

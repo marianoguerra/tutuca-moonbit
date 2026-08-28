@@ -443,3 +443,49 @@ test "a component with fields has generated mutators to send" {
     assert_true(@arb.mutator_dispatch_of(def) is Some(_))
   }
 }
+
+///|
+/// A generated script contains nothing the component cannot answer.
+///
+/// The join with `schema_writers` is what makes this true, and the property is
+/// worth stating because the failure it prevents is invisible: a dispatch
+/// nothing claims does not crash, it just does nothing, and the run reports it
+/// as a refusal that reads exactly like a finding. `<field>Len` and
+/// `hasIn<Field>` are the shapes that used to leak through — generated
+/// callables that answer a scalar rather than a successor.
+test "property: every generated mutator is a name the component can be sent" {
+  for def in fixtures() {
+    let schema = @info.schema_info(def)
+    let writers = @component.schema_writers(schema)
+    let all = @component.schema_mutators(schema)
+    guard @arb.mutator_dispatch_of(def) is Some(one) else { continue }
+    @qc.quick_check(
+      @qc.forall(@gen.int_range(0, 8).bind(n => one.array_with_size(n)), script => {
+        for d in script {
+          guard d is Receive(name, _) else { return false }
+          // In the runtime's own table, and on the half of it that writes.
+          if !all.contains(name) || !writers.contains(name) {
+            return false
+          }
+        }
+        true
+      }),
+      max_success=100,
+    )
+  }
+}
+
+///|
+/// …and the readers really are reachable, so the filter removed the right
+/// things rather than simply removing things.
+test "the readers the generators skip are still generated callables" {
+  let def = one(SCALARS)
+  let schema = @info.schema_info(def)
+  let all = @component.schema_mutators(schema)
+  let writers = @component.schema_writers(schema)
+  // `SCALARS` declares `many : Array[Int]` and `open : Set[String]`.
+  for reader in ["manyLen", "hasInOpen"] {
+    assert_true(all.contains(reader))
+    assert_false(writers.contains(reader))
+  }
+}

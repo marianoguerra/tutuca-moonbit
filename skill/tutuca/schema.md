@@ -138,6 +138,14 @@ verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery e.value"`,
 non-sized values). A `compute` entry of the same name wins over the generated
 one.
 
+Two of the generated names only **read**: `xLen` and `hasInX` answer a scalar
+and touch nothing. Write them in a view as `$xLen` / `$hasInX tag`; SENDING one
+as a message does nothing, because the receive path takes a generated name's
+result only when it is a new instance, so a reader falls through to
+`Unhandled`. `@component.schema_mutators` is every generated callable and
+`@component.schema_writers` is the half that can be sent — reach for the second
+when you are deciding what to dispatch.
+
 There is deliberately **no `updateX`** and no `updateInXAt`. Both would take a
 function value and apply it to the current one, and a view can write values but
 never a lambda — so no template could ever call either. Transforming a value in

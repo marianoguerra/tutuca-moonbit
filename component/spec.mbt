@@ -76,6 +76,19 @@ declare pub fn schema_mutators(
 ) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
 
 ///|
+/// The same table, minus the names that only READ.
+///
+/// `itemsLen` and `hasInTags` answer a scalar and touch nothing: they are
+/// `$`-callables a view writes as `$itemsLen`, not messages. Dispatching one
+/// does nothing, and the runtime says so — the receive path takes a generated
+/// entry's result only when it is `Obj(_)`, so a reader falls through to
+/// `Unhandled`. This is that distinction up front, for a caller deciding what
+/// to SEND.
+declare pub fn schema_writers(
+  schema : SchemaInfo,
+) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
+
+///|
 /// A provided VALUE: the name it is published under and the addressable
 /// expression that produces it.
 ///

@@ -547,6 +547,35 @@ pub fn schema_mutators(
 }
 
 ///|
+/// The generated names a component can be SENT, as messages.
+///
+/// `schema_mutators` is every generated callable, and that is one table with
+/// two kinds of thing in it: names that build a successor, and names that
+/// merely read. `<field>Len` and `hasIn<Field>` answer a scalar — they are
+/// `$`-callables a view writes as `$tabLen`, and dispatching one as a message
+/// does nothing at all. The runtime already knows this and says so: the
+/// receive path takes a generated entry's result only when it is `Obj(_)`
+/// (see `TypedInstance`'s dispatch), so a reader falls through to `Unhandled`.
+///
+/// This is that same distinction, up front, for a caller deciding what to
+/// send rather than discovering afterwards that it could not have worked.
+/// `statedef/arb` is the caller: a generator drawing from the full table
+/// spends a share of every script on names nothing can answer, and reports
+/// them as refusals that look like findings.
+pub fn schema_writers(
+  schema : SchemaInfo,
+) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value] {
+  let out : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  )
+  let readers : Array[String] = []
+  gen_mutators(field_specs(schema), out, readers~)
+  for name in readers {
+    out.remove(name) |> ignore
+  }
+  out
+}
+
+///|
 /// Generated per-field mutators, camelCase names so
 /// views port verbatim: set/reset/len/pushIn/setInAt/deleteInAt/removeInAt for
 /// list/map/omap, toggle for bools, and addIn/deleteIn/removeIn/hasIn/toggleIn
@@ -562,6 +591,11 @@ pub fn schema_mutators(
 fn gen_mutators(
   fields : Map[String, FieldSpec],
   into : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value],
+  /// The names installed here that only READ. Collected at the two sites that
+  /// install one rather than recomputed by a second walk of the same fields:
+  /// a second walk is a second opinion about which names those are, and the
+  /// whole point of the list is that it cannot disagree with the table.
+  readers? : Array[String] = [],
 ) -> Unit {
   for name, spec in fields {
     into[mut_name("set", name)] = (inst, args) => {
@@ -570,6 +604,10 @@ fn gen_mutators(
     into[mut_name("reset", name)] = (inst, _args) => {
       (inst.set)(name, spec.default)
     }
+    // READS. `size_of` and `contains` answer a scalar and touch nothing, so
+    // unlike everything else here these are `$`-callables for a view and not
+    // messages — see `schema_writers`.
+    readers.push(name + "Len")
     into[name + "Len"] = (inst, _args) => {
       match @tutuca.size_of((inst.get)(name)) {
         Some(n) => Num(n.to_double())
@@ -600,6 +638,7 @@ fn gen_mutators(
         }
         into[mut_name("deleteIn", name)] = delete_member
         into[mut_name("removeIn", name)] = delete_member
+        readers.push(mut_name("hasIn", name))
         into[mut_name("hasIn", name)] = (inst, args) => {
           match ((inst.get)(name), args) {
             (Map(m), [v, ..]) => Bool(m.contains(v.to_display_string()))

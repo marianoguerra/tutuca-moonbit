@@ -21,6 +21,8 @@ pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
 pub fn schema_mutators(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
 
+pub fn schema_writers(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
+
 // Errors
 
 // Types and methods

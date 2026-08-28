@@ -423,8 +423,10 @@ plain `moon test "..." { ... }` blocks:
   `statedef/arb` is the randomized twin of `statedef/info`: `value_of` walks a
   `StateTy` where `zero_of` walks it, `state_of` mirrors `zero_value`,
   `dispatch_of` reads `MsgDef.payload`, and `mutator_dispatch_of` takes its
-  names from `@component.schema_mutators` so it cannot drift from the table the
-  runtime installs. Nothing is generated ahead of time; the `StateDef` is
+  names from `@component.schema_writers` so it cannot drift from the table the
+  runtime installs — the WRITING half of it, because `xLen` and `hasInX` are
+  generated callables that answer a scalar rather than a successor, and
+  dispatching one lands on `Unhandled`. Nothing is generated ahead of time; the `StateDef` is
   parsed at test time and the generators are built from that value.
 
   `rules_of` is the piece worth knowing about. A `pred` / `invariant` is ONE

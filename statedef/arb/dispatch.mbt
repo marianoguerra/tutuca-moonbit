@@ -194,16 +194,25 @@ pub fn protocol_dispatch_of(
 /// that tries to drive a component through its own invariant, and no handler
 /// anybody wrote will produce it.
 ///
-/// The NAMES come from `@component.schema_mutators`, which is the table the
-/// runtime itself installs: a name this package guessed and the runtime does
-/// not have would send a message nothing answers, and look like a passing
-/// test. The ARGUMENTS come from the declaration, because that table holds
-/// functions and not types.
+/// The NAMES come from `@component.schema_writers`, which is the table the
+/// runtime itself installs, minus the entries that only read: a name this
+/// package guessed and the runtime does not have would send a message nothing
+/// answers, and look like a passing test. The ARGUMENTS come from the
+/// declaration, because that table holds functions and not types.
+///
+/// `schema_writers` rather than `schema_mutators`, and the difference is not
+/// cosmetic. The full table is every generated CALLABLE, and two of its shapes
+/// — `<field>Len` and `hasIn<Field>` — answer a scalar and touch nothing. They
+/// are `$`-callables for a view, and the receive path takes a generated
+/// entry's result only when it is `Obj(_)`, so sending one lands on
+/// `Unhandled`. Drawing from the full table spent a share of every script on
+/// names that could not do anything and reported each as a refusal — noise
+/// shaped exactly like a finding.
 pub fn mutator_dispatch_of(
   def : @statedef.StateDef,
   depth? : Int = MAX_DEPTH,
 ) -> @gen.Gen[@component.Dispatch]? {
-  let installed = @component.schema_mutators(@info.schema_info(def))
+  let installed = @component.schema_writers(@info.schema_info(def))
   let choices : Array[@gen.Gen[@component.Dispatch]] = []
   for name, args in mutator_args(def, depth~) {
     // Dropped rather than sent: the join with the runtime's own table is what
