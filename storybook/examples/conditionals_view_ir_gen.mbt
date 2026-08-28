@@ -18,6 +18,28 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let traffic_light_spec_source : String =
+  #|  state TrafficLight {
+  #|    lightIndex : Int
+  #|  }
+  #|
+  #|  state TabbedUI {
+  #|    tab : String
+  #|  }
+  #|
+  #|  state ListAndFilter {
+  #|    items : Array[Any]
+  #|    query : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn traffic_light_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -158,6 +180,7 @@ pub fn traffic_light_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=traffic_light_spec_source,
   )
 }
 
@@ -328,6 +351,7 @@ pub fn tabbed_u_i_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=traffic_light_spec_source,
   )
 }
 
@@ -447,5 +471,6 @@ pub fn list_and_filter_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=traffic_light_spec_source,
   )
 }

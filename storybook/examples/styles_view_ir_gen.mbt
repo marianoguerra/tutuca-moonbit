@@ -18,6 +18,22 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let styles_example_spec_source : String =
+  #|  state StylesExample {
+  #|  }
+  #|
+  #|  state StylesExampleRoot {
+  #|    value : StylesExample
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn styles_example_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -122,6 +138,7 @@ pub fn styles_example_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=styles_example_spec_source,
   )
 }
 
@@ -183,5 +200,6 @@ pub fn styles_example_root_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=styles_example_spec_source,
   )
 }

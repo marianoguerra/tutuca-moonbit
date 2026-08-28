@@ -18,6 +18,39 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let nested_state_spec_source : String =
+  #|  struct Label {
+  #|    text : String
+  #|    done : Bool
+  #|  }
+  #|
+  #|  enum Priority {
+  #|    Low
+  #|    High
+  #|  }
+  #|
+  #|  enum Due {
+  #|    Unscheduled
+  #|    OnDay(Int)
+  #|  }
+  #|
+  #|  state {
+  #|    title : String
+  #|    labels : Array[Label]
+  #|    priority : Priority
+  #|    due : Due
+  #|    note : String?
+  #|    size : (Int, Int)
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn nested_state_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -117,5 +150,6 @@ pub fn nested_state_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=nested_state_spec_source,
   )
 }

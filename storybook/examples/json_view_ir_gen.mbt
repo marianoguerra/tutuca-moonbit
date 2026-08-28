@@ -18,6 +18,47 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let json_selector_spec_source : String =
+  #|  state JsonNull {
+  #|  }
+  #|
+  #|  state JsonBool {
+  #|    value : Bool
+  #|  }
+  #|
+  #|  state JsonString {
+  #|    value : String
+  #|  }
+  #|
+  #|  state JsonNumber {
+  #|    strValue : String
+  #|    value : Double
+  #|  }
+  #|
+  #|  state JsonSelector {
+  #|  }
+  #|
+  #|  state JsonArray {
+  #|    items : Array[Any]
+  #|  }
+  #|
+  #|  state JsonObjectKeyVal {
+  #|    key : String
+  #|    value : Any
+  #|  }
+  #|
+  #|  state JsonObject {
+  #|    items : Array[Any]
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn json_selector_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -160,6 +201,7 @@ pub fn json_selector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -219,6 +261,7 @@ pub fn json_null_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -312,6 +355,7 @@ pub fn json_bool_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -397,6 +441,7 @@ pub fn json_string_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -484,6 +529,7 @@ pub fn json_number_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -617,6 +663,7 @@ pub fn json_array_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -716,6 +763,7 @@ pub fn json_object_key_val_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }
 
@@ -851,5 +899,6 @@ pub fn json_object_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_selector_spec_source,
   )
 }

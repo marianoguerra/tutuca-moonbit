@@ -18,6 +18,31 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let corpus_spec_source : String =
+  #|  struct Label { text: String, done: Bool }
+  #|  state Corpus {
+  #|    name   : String
+  #|    count  : Int
+  #|    ratio  : Double
+  #|    ok     : Bool
+  #|    items  : Array[String]
+  #|    labels : Array[Label]
+  #|    tags   : Set[String]
+  #|    page   : Int
+  #|  }
+  #|  handle Corpus {
+  #|    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String), case26(String) }
+  #|    intent { case16(String), case17(String), case18(Int), case19(Int), case20(String), case21(String), case22(String), case23(String) }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn corpus_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -413,5 +438,6 @@ pub fn corpus_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=corpus_spec_source,
   )
 }

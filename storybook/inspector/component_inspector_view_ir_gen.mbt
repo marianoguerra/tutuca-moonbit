@@ -18,6 +18,53 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let comp_name_spec_source : String =
+  #|  state CompName {
+  #|    name : String
+  #|  }
+  #|
+  #|  state CompField {
+  #|    name : String
+  #|    typeName : String
+  #|    child : Any
+  #|  }
+  #|
+  #|  state CompView {
+  #|    name : String
+  #|    rawView : String
+  #|    isExpanded : Bool
+  #|  }
+  #|
+  #|  state CompSection {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    label : String
+  #|  }
+  #|
+  #|  state ComponentInspector {
+  #|    compName : String
+  #|    compId : Int
+  #|    sections : Array[Any]
+  #|  }
+  #|
+  #|  handle ComponentInspector {
+  #|    intent {
+  #|    toggleAllSections(Bool)
+  #|    toggleAllViews(Bool)
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn comp_name_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -77,6 +124,7 @@ pub fn comp_name_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=comp_name_spec_source,
   )
 }
 
@@ -158,6 +206,7 @@ pub fn comp_field_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=comp_name_spec_source,
   )
 }
 
@@ -306,6 +355,7 @@ pub fn comp_view_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=comp_name_spec_source,
   )
 }
 
@@ -512,6 +562,7 @@ pub fn comp_section_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=comp_name_spec_source,
   )
 }
 
@@ -614,5 +665,6 @@ pub fn component_inspector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=comp_name_spec_source,
   )
 }

@@ -18,6 +18,39 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let activity_entry_spec_source : String =
+  #|  state ActivityEntry {
+  #|    kind : String
+  #|    name : String
+  #|    handlerName : String
+  #|    matched : String
+  #|    pathLabel : String
+  #|    time : String
+  #|    before : Any
+  #|    after : Any
+  #|    hasAfter : Bool
+  #|  }
+  #|
+  #|  state ActivityLog {
+  #|    events : Array[Any]
+  #|    hasEvents : Bool
+  #|  }
+  #|
+  #|  handle ActivityLog {
+  #|    message {
+  #|    appendEntry(Any)
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn activity_entry_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -189,6 +222,7 @@ pub fn activity_entry_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=activity_entry_spec_source,
   )
 }
 
@@ -272,5 +306,6 @@ pub fn activity_log_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=activity_entry_spec_source,
   )
 }

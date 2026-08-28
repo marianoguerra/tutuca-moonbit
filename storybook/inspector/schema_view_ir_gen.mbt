@@ -18,6 +18,27 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let schema_property_spec_source : String =
+  #|  state SchemaProperty {
+  #|    key : String
+  #|    child : Any
+  #|    required : Bool
+  #|  }
+  #|
+  #|  state SchemaBranch {
+  #|    label : String
+  #|    child : Any
+  #|    labelClass : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn schema_property_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -103,6 +124,7 @@ pub fn schema_property_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_property_spec_source,
   )
 }
 
@@ -207,5 +229,6 @@ pub fn schema_branch_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_property_spec_source,
   )
 }

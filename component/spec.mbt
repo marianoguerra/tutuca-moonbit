@@ -267,6 +267,22 @@ pub struct Component {
   /// them, which is the case for a component whose views arrive at runtime
   /// (see `Component::view_handler_names`). Nothing else writes it.
   mut schema : SchemaInfo
+  /// The `<script type="tutuca/spec">` block this component was declared in,
+  /// as SOURCE. Empty for a component that had none, and for every component
+  /// built by hand rather than by `gen-views`.
+  ///
+  /// The schema beside it is the block's PROJECTION, and the projection is
+  /// lossy in the two places a generator needs: a rule reaches it as a name
+  /// (`invariants`, `methods`) with no body, and a message reaches it as a
+  /// name (`receives`) with no payload. Re-parsing this recovers both — see
+  /// `testing/fuzz`, which derives a component's generators from it at
+  /// runtime, on whatever backend it is running on.
+  ///
+  /// The whole block rather than this component's `state` arm: a `struct` or
+  /// `enum` in it is file-level, and `@statedef.parse_state` folds those into
+  /// every `StateDef` it returns. Read it back by matching `StateDef::component`
+  /// against this component's name.
+  spec : String
   mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
   raw_lookup : Array[LookupSpec]
@@ -330,6 +346,7 @@ declare pub fn[S : @tutuca.Fields] component(
   slot_args? : Map[String, Map[String, @tutuca.Value]],
   provide? : Map[String, String],
   lookup? : Array[LookupSpec],
+  spec? : String,
 ) -> Component
 
 ///|
@@ -367,6 +384,7 @@ declare pub fn Component::for_type(
   provide? : Map[String, String],
   lookup? : Array[LookupSpec],
   make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
+  spec? : String,
 ) -> Component
 
 ///|

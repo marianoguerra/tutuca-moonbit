@@ -18,6 +18,52 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let alt_url_spec_source : String =
+  #|  state AltUrl {
+  #|    label : String
+  #|    url : String
+  #|  }
+  #|
+  #|  state PsEntry {
+  #|    title : String
+  #|    description : String
+  #|    lang : String
+  #|    startYear : Any
+  #|    endYear : Any
+  #|    role : Any
+  #|    featured : Bool
+  #|    url : String
+  #|    altUrls : Array[Any]
+  #|    categories : Array[Any]
+  #|  }
+  #|
+  #|  state Root {
+  #|    allEntries : Array[Any]
+  #|    allCategories : Array[String]
+  #|    allRoles : Array[String]
+  #|    selectedCategories : Set[String]
+  #|    selectedRoles : Set[String]
+  #|    featuredFirst : Bool
+  #|    sortByEnd : Bool
+  #|    sortAsc : Bool
+  #|  }
+  #|
+  #|  handle Root {
+  #|    message {
+  #|    init
+  #|    loadDataOk(Array[Any])
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn alt_url_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -82,6 +128,7 @@ pub fn alt_url_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=alt_url_spec_source,
   )
 }
 
@@ -267,6 +314,7 @@ pub fn ps_entry_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=alt_url_spec_source,
   )
 }
 
@@ -640,5 +688,6 @@ pub fn root_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=alt_url_spec_source,
   )
 }

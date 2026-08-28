@@ -18,6 +18,26 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let swatch_picker_spec_source : String =
+  #|  state SwatchPicker {
+  #|    color : String
+  #|    palette : Array[Any]
+  #|  }
+  #|
+  #|  state Quadratic {
+  #|    a : Int
+  #|    b : Int
+  #|    c : Int
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn swatch_picker_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -153,6 +173,7 @@ pub fn swatch_picker_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=swatch_picker_spec_source,
   )
 }
 
@@ -362,5 +383,6 @@ pub fn quadratic_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=swatch_picker_spec_source,
   )
 }

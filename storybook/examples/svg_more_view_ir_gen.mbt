@@ -18,6 +18,32 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let bar_chart_spec_source : String =
+  #|  state BarChart {
+  #|    values : Array[Any]
+  #|
+  #|    pred hasRoom
+  #|      format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
+  #|
+  #|    pred hasSpare
+  #|      format 'one bar has to stay, or there is no chart left to look at' { (len .values) > 1 }
+  #|
+  #|    invariant neverEmpty
+  #|      format 'the chart lost its last bar' { (len .values) > 0 }
+  #|  }
+  #|
+  #|  state IconGallery {
+  #|    size : Int
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn bar_chart_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -336,5 +362,6 @@ pub fn bar_chart_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=bar_chart_spec_source,
   )
 }

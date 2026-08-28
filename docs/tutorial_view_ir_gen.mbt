@@ -18,6 +18,80 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let counter_spec_source : String =
+  #|  state Counter {
+  #|    count : Int
+  #|  }
+  #|
+  #|  state Profile {
+  #|    name : String
+  #|    waving : Bool
+  #|  }
+  #|
+  #|  state Search {
+  #|    draft : String
+  #|    sent : String
+  #|  }
+  #|
+  #|  state Toggle {
+  #|    on : Bool
+  #|    message : Any
+  #|  }
+  #|
+  #|  state Fruits {
+  #|    items : Array[String]
+  #|  }
+  #|
+  #|  state Greeting {
+  #|    name : String
+  #|  }
+  #|
+  #|  state Page {
+  #|    greeting : Greeting
+  #|  }
+  #|
+  #|  state Status {
+  #|    message : String
+  #|  }
+  #|
+  #|  handle Status {
+  #|    message {
+  #|    flash(String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state Chat {
+  #|    draft : String
+  #|    status : Status
+  #|  }
+  #|
+  #|  state Quotes {
+  #|    items : Array[String]
+  #|    isLoading : Bool
+  #|  }
+  #|
+  #|  handle Quotes {
+  #|    message {
+  #|    init
+  #|    loadQuotesOk(Array[Any])
+  #|    loadQuotesError(String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state Features {
+  #|    status : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn counter_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -127,6 +201,7 @@ pub fn counter_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -227,6 +302,7 @@ pub fn profile_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -321,6 +397,7 @@ pub fn search_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -418,6 +495,7 @@ pub fn toggle_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -502,6 +580,7 @@ pub fn fruits_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -575,6 +654,7 @@ pub fn greeting_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -634,6 +714,7 @@ pub fn page_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -694,6 +775,7 @@ pub fn status_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -782,6 +864,7 @@ pub fn chat_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -852,6 +935,7 @@ pub fn quotes_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }
 
@@ -925,5 +1009,6 @@ pub fn features_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=counter_spec_source,
   )
 }

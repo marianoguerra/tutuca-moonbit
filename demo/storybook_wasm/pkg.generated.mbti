@@ -10,6 +10,8 @@ pub fn mount() -> Unit
 
 pub fn on_event(@core.Any) -> Unit
 
+pub fn on_fuzz_tick() -> Unit
+
 pub fn on_popstate() -> Unit
 
 pub fn refresh_margaui() -> Unit

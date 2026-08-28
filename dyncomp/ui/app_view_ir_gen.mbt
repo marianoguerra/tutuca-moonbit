@@ -18,6 +18,122 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let palette_row_spec_source : String =
+  #|  state PaletteRow {
+  #|    module : String
+  #|    name : String
+  #|    summary : String
+  #|    why : String
+  #|    category : String
+  #|    selected : Bool
+  #|  }
+  #|
+  #|  handle PaletteRow {
+  #|    intent {
+  #|    componentPicked(String, String, Bool)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle PaletteRow {
+  #|    message {
+  #|    setSelected(Bool)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state CommandBar {
+  #|    query : String
+  #|    hits : Array[Any]
+  #|    cursor : Int
+  #|    configure : Bool
+  #|    emptyMessage : String
+  #|  }
+  #|
+  #|  handle CommandBar {
+  #|    message {
+  #|    setCursor(Int)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state SchemaField {
+  #|    name : String
+  #|    kind : String
+  #|    hint : String
+  #|    doc : String
+  #|    required : Bool
+  #|    text : String
+  #|    num : Double
+  #|    flag : Bool
+  #|    choices : Array[Any]
+  #|    error : String
+  #|  }
+  #|
+  #|  handle SchemaField {
+  #|    intent {
+  #|    fieldEdited(String, String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state SchemaForm {
+  #|    module : String
+  #|    name : String
+  #|    title : String
+  #|    doc : String
+  #|    fields : Array[Any]
+  #|    inits : Array[Any]
+  #|    error : String
+  #|    submitLabel : String
+  #|  }
+  #|
+  #|  handle SchemaForm {
+  #|    message {
+  #|    showErrors(Any)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state ConfigPanel {
+  #|    title : String
+  #|    mode : String
+  #|    target : Component
+  #|    form : Component
+  #|  }
+  #|
+  #|  handle ConfigPanel {
+  #|    intent {
+  #|    closeConfig
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state UniversalApp {
+  #|    root : Component[Universal]
+  #|    mode : String
+  #|    commandBar : Component
+  #|    configPanel : Component
+  #|    status : String
+  #|    devTools : Component
+  #|  }
+  #|
+  #|  handle UniversalApp {
+  #|    message {
+  #|    catalogChanged(String)
+  #|    restoreTree(Any)
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn palette_row_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -135,6 +251,7 @@ pub fn palette_row_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }
 
@@ -291,6 +408,7 @@ pub fn command_bar_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }
 
@@ -516,6 +634,7 @@ pub fn schema_field_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }
 
@@ -666,6 +785,7 @@ pub fn schema_form_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }
 
@@ -783,6 +903,7 @@ pub fn config_panel_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }
 
@@ -943,5 +1064,6 @@ pub fn universal_app_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=palette_row_spec_source,
   )
 }

@@ -18,6 +18,76 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let story_nav_spec_source : String =
+  #|  state StoryNav {
+  #|    module : String
+  #|    name : String
+  #|    count : Int
+  #|    selected : Bool
+  #|  }
+  #|
+  #|  handle StoryNav {
+  #|    intent {
+  #|    navPicked(String, String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state StoryCard {
+  #|    title : String
+  #|    doc : String
+  #|    module : String
+  #|    name : String
+  #|    init : String
+  #|    args : String
+  #|    target : Component
+  #|    error : String
+  #|  }
+  #|
+  #|  handle StoryCard {
+  #|    intent {
+  #|    rebuildCard(String, String, String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state DyncompStorybook {
+  #|    cards : Array[Any]
+  #|    nav : Array[Any]
+  #|    query : String
+  #|    module : String
+  #|    name : String
+  #|    theme : String
+  #|    wide : Bool
+  #|    mode : String
+  #|    status : String
+  #|    emptyMessage : String
+  #|    devTools : Component
+  #|  }
+  #|
+  #|  handle DyncompStorybook {
+  #|    message {
+  #|    catalogChanged(String)
+  #|    setStatus(String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle DyncompStorybook {
+  #|    intent {
+  #|    catalogChanged(String)
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn story_nav_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -117,6 +187,7 @@ pub fn story_nav_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=story_nav_spec_source,
   )
 }
 
@@ -381,6 +452,7 @@ pub fn story_card_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=story_nav_spec_source,
   )
 }
 
@@ -707,5 +779,6 @@ pub fn dyncomp_storybook_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=story_nav_spec_source,
   )
 }

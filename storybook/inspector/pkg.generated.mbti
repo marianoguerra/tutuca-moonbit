@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/testing/fuzz",
   "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/debug",
@@ -82,6 +83,48 @@ pub let data_inspector_global_style : String
 pub fn data_inspector_views() -> Map[String, @anode.View]
 
 pub fn deep_expand(@core.Value) -> @core.Value
+
+pub let fuzz_controls_common_style : String
+
+pub fn fuzz_controls_component(name? : String, views? : Map[String, @anode.View], init? : FuzzControlsState, common_style? : String, global_style? : String, update? : (FuzzControlsState, @component.Dispatch, &@core.Ctx) -> @component.Update[FuzzControlsState], swap? : (FuzzControlsInput) -> ((FuzzControlsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let fuzz_controls_global_style : String
+
+pub fn fuzz_controls_views() -> Map[String, @anode.View]
+
+pub let fuzz_log_common_style : String
+
+pub fn fuzz_log_component(name? : String, views? : Map[String, @anode.View], init? : FuzzLogState, common_style? : String, global_style? : String, update? : (FuzzLogState, @component.Dispatch, &@core.Ctx) -> @component.Update[FuzzLogState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let fuzz_log_global_style : String
+
+pub fn fuzz_log_views() -> Map[String, @anode.View]
+
+pub let fuzz_panel_common_style : String
+
+pub fn fuzz_panel_component(name? : String, views? : Map[String, @anode.View], init? : FuzzPanelState, common_style? : String, global_style? : String, update? : (FuzzPanelState, @component.Dispatch, &@core.Ctx) -> @component.Update[FuzzPanelState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let fuzz_panel_global_style : String
+
+pub fn fuzz_panel_views() -> Map[String, @anode.View]
+
+pub let fuzz_row_common_style : String
+
+pub fn fuzz_row_component(name? : String, views? : Map[String, @anode.View], init? : FuzzRowState, common_style? : String, global_style? : String, update? : (FuzzRowState, @component.Dispatch, &@core.Ctx) -> @component.Update[FuzzRowState], swap? : (FuzzRowInput) -> ((FuzzRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let fuzz_row_global_style : String
+
+pub let fuzz_row_spec_source : String
+
+pub fn fuzz_row_views() -> Map[String, @anode.View]
+
+pub let fuzz_verdict_common_style : String
+
+pub fn fuzz_verdict_component(name? : String, views? : Map[String, @anode.View], init? : FuzzVerdictState, common_style? : String, global_style? : String, update? : (FuzzVerdictState, @component.Dispatch, &@core.Ctx) -> @component.Update[FuzzVerdictState], swap? : (FuzzVerdictInput) -> ((FuzzVerdictState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let fuzz_verdict_global_style : String
+
+pub fn fuzz_verdict_views() -> Map[String, @anode.View]
 
 pub fn inspector_module() -> @component.ModuleDef
 
@@ -546,6 +589,172 @@ pub(all) struct DataInspectorState {
   value : @core.Value
 }
 pub fn DataInspectorState::zero() -> Self
+
+pub(all) enum FuzzControlsInput {
+  Burst
+  Play
+  Reset
+  SetSeed
+  SetSource
+  SetSteps
+  Step
+  Stop
+} derive(Eq, @debug.Debug)
+pub fn FuzzControlsInput::name(Self) -> String
+pub fn FuzzControlsInput::parse(String) -> Self?
+
+pub(all) enum FuzzControlsMsg {
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzControlsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum FuzzControlsReceive {
+  Burst
+  Play
+  Reset
+  SetSeed(String)
+  SetSource(String)
+  SetSteps(String)
+  Step
+  Stop
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzControlsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn FuzzControlsReceive::send(Self, &@core.Ctx) -> Unit
+pub fn FuzzControlsReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct FuzzControlsState {
+  seed : String
+  steps : String
+  source : String
+  mutatorsClass : String
+  declaredClass : String
+  eitherClass : String
+  playing : Bool
+  canRun : Bool
+  noPlanHint : String
+}
+pub fn FuzzControlsState::zero() -> Self
+
+pub(all) struct FuzzLogState {
+  rows : Array[@core.Value]
+  hasRows : Bool
+  emptyHint : String
+}
+pub fn FuzzLogState::zero() -> Self
+
+pub(all) struct FuzzPanelState {
+  controls : @core.Value
+  verdict : @core.Value
+  log : @core.Value
+  hasRun : Bool
+  at : Int
+  total : Int
+}
+pub fn FuzzPanelState::zero() -> Self
+
+pub(all) enum FuzzRowInput {
+  Toggle
+} derive(Eq, @debug.Debug)
+pub fn FuzzRowInput::name(Self) -> String
+pub fn FuzzRowInput::parse(String) -> Self?
+
+pub(all) enum FuzzRowMsg {
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum FuzzRowReceive {
+  Toggle
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzRowReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn FuzzRowReceive::send(Self, &@core.Ctx) -> Unit
+pub fn FuzzRowReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct FuzzRowState {
+  at : Int
+  name : String
+  args : String
+  verb : String
+  verbClass : String
+  renders : Int
+  refused : Bool
+  refusedRule : String
+  refusedSentence : String
+  broke : Bool
+  brokeRule : String
+  disagreed : Bool
+  rowClass : String
+  current : Bool
+  after : @core.Value
+  open : Bool
+}
+pub fn FuzzRowState::zero() -> Self
+
+pub(all) enum FuzzVerdictInput {
+  Shrink
+} derive(Eq, @debug.Debug)
+pub fn FuzzVerdictInput::name(Self) -> String
+pub fn FuzzVerdictInput::parse(String) -> Self?
+
+pub(all) enum FuzzVerdictMsg {
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzVerdictMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum FuzzVerdictReceive {
+  Shrink
+  Unknown(String, Array[@core.Value])
+}
+pub fn FuzzVerdictReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn FuzzVerdictReceive::send(Self, &@core.Ctx) -> Unit
+pub fn FuzzVerdictReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct FuzzVerdictState {
+  kind : String
+  badgeClass : String
+  headline : String
+  sentence : String
+  rule : String
+  at : Int
+  unchecked : String
+  hasUnchecked : Bool
+  reproducer : Array[@core.Value]
+  hasReproducer : Bool
+}
+pub fn FuzzVerdictState::zero() -> Self
+
+pub struct Inspector {
+  comps : Map[String, @component.Component]
+}
+pub fn Inspector::build_inspector_views(Self, @core.Value, comps? : @component.Components) -> InspectorViews
+pub fn Inspector::classify(Self, @core.Value) -> @core.Value
+pub fn Inspector::classify_schema(Self, @core.Value) -> @core.Value
+pub fn Inspector::components(Self) -> Array[@component.Component]
+pub fn Inspector::edit_instance(Self, @core.Value) -> @core.Value
+pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
+pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Components) -> @core.Value
+pub fn Inspector::fuzz_controls(Self, seed~ : String, steps~ : String, source~ : String, playing? : Bool, can_run? : Bool, no_plan_hint? : String) -> @core.Value
+pub fn Inspector::fuzz_examples(Self) -> Array[@component.ExampleDef]
+pub fn Inspector::fuzz_log(Self, Array[@fuzz.Step], at? : Int, planned? : Int) -> @core.Value
+pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@component.Dispatch]) -> @core.Value
+pub fn Inspector::fuzz_row(Self, @fuzz.Step, at~ : Int, current? : Bool) -> @core.Value
+pub fn Inspector::fuzz_verdict(Self, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@component.Dispatch]) -> @core.Value
+pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
+pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
+pub fn Inspector::module_(Self) -> @component.ModuleDef
+pub fn Inspector::new() -> Self
+pub fn Inspector::place_candidates(Self, Array[(String, String)], @trace.Trace, selected? : String) -> @core.Value
+pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value
+pub fn Inspector::recorder_bar(Self, recording? : Bool, scope? : String, events? : Int, turns? : Int, has_trace? : Bool, picking? : Bool) -> @core.Value
+pub fn Inspector::schema_view(Self, @core.Value) -> @core.Value
+pub fn Inspector::trace_examples(Self) -> Array[@component.ExampleDef]
+pub fn Inspector::trace_header(Self, @trace.Trace) -> @core.Value
+pub fn Inspector::trace_log(Self, @trace.Trace, at? : Int, inputs_only? : Bool, turn? : Int) -> @core.Value
+pub fn Inspector::trace_panel(Self, trace? : @trace.Trace, tab? : String, recording? : Bool, scope? : String, picking? : Bool, selecting? : Bool, at? : Int, selected_place? : String, inputs_only? : Bool, places? : @core.Value) -> @core.Value
+pub fn Inspector::trace_places(Self, @trace.Trace, selected? : String, heading? : String, empty_hint? : String) -> @core.Value
+pub fn Inspector::trace_row(Self, @trace.Event, depth? : Int, current? : Bool) -> @core.Value
 
 pub struct InspectorViews {
   instance_view : @core.Value

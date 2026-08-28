@@ -18,6 +18,36 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let minimum_viable_component_spec_source : String =
+  #|  state MinimumViableComponent {
+  #|  }
+  #|
+  #|  state StaticViewComponent {
+  #|  }
+  #|
+  #|  state TextDirective {
+  #|    str : String
+  #|    num : Int
+  #|    bool : Bool
+  #|    notSet : Any
+  #|  }
+  #|
+  #|  state DangerSetInnerHtml {
+  #|    content : String
+  #|  }
+  #|
+  #|  state SetInnerMd {
+  #|    source : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn minimum_viable_component_main_view_ir() -> @anode.View {
   @anode.View::from_ir("main", @anode.comment("Empty View in ANode.parse"), [])
@@ -65,6 +95,7 @@ pub fn minimum_viable_component_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=minimum_viable_component_spec_source,
   )
 }
 
@@ -120,6 +151,7 @@ pub fn static_view_component_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=minimum_viable_component_spec_source,
   )
 }
 
@@ -226,6 +258,7 @@ pub fn text_directive_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=minimum_viable_component_spec_source,
   )
 }
 
@@ -287,6 +320,7 @@ pub fn danger_set_inner_html_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=minimum_viable_component_spec_source,
   )
 }
 
@@ -348,5 +382,6 @@ pub fn set_inner_md_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=minimum_viable_component_spec_source,
   )
 }

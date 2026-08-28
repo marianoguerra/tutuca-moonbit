@@ -37,6 +37,9 @@ import {
   // from a MoonBit type here, because the declaration is not one.
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/statedef/arb",
+  // The driver the storybook's Fuzz tab runs, so the property here and the run
+  // a reader watches there are the same run.
+  "marianoguerra/tutuca/testing/fuzz",
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/quickcheck/gen",
 } for "test"

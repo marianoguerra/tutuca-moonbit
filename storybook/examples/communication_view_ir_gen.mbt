@@ -18,6 +18,52 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let status_spec_source : String =
+  #|  state Status {
+  #|    message : String
+  #|    count : Int
+  #|  }
+  #|
+  #|  handle Status {
+  #|    message {
+  #|    flash(String)
+  #|    clear
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state SendReceive {
+  #|    draft : String
+  #|    status : Status
+  #|  }
+  #|
+  #|  handle SendReceive {
+  #|    message {
+  #|    clearDraft
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state TreeItem {
+  #|    type : String
+  #|    label : String
+  #|    isOpen : Bool
+  #|    items : Array[Any]
+  #|  }
+  #|
+  #|  state TreeRoot {
+  #|    log : Array[Any]
+  #|    root : TreeItem
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn status_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -117,6 +163,7 @@ pub fn status_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=status_spec_source,
   )
 }
 
@@ -253,6 +300,7 @@ pub fn send_receive_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=status_spec_source,
   )
 }
 
@@ -374,6 +422,7 @@ pub fn tree_item_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=status_spec_source,
   )
 }
 
@@ -447,5 +496,6 @@ pub fn tree_root_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=status_spec_source,
   )
 }

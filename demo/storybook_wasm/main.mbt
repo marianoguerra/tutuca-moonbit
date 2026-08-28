@@ -223,6 +223,7 @@ pub fn mount() -> Unit {
     root,
     opts,
     url_handlers=url_request_handlers(),
+    fuzz_effects=fuzz_effects(),
   )
   current_app.val = Some(app)
   @wglue.install(app)
@@ -259,8 +260,23 @@ pub fn refresh_margaui() -> Unit {
 
 ///|
 /// The delegated DOM event entry point JS calls (via tdom.add_listener).
+///
+/// One interception, and it is the page's job rather than the gallery's: while
+/// the Trace panel is waiting to be pointed at, a click MEANS something else.
+/// Letting it through as well would drive the app with the click that was meant
+/// to point at it — so the pick consumes it, and everything else goes on
+/// exactly as before.
 pub fn on_event(ev : @core.Any) -> Unit {
-  @wglue.on_event(ev)
+  @wglue.on_event(ev, before=(node, name) => {
+    if name != "click" {
+      false
+    } else {
+      match current_app.val {
+        Some(app) => @sbui.take_select_click(app, node, app.root_node)
+        None => false
+      }
+    }
+  })
 }
 
 ///|
@@ -273,4 +289,79 @@ pub fn on_popstate() -> Unit {
     Some(app) => app.send_at_root("init") |> ignore
     None => ()
   }
+}
+
+///|
+/// The Fuzz tab's two browser effects.
+///
+/// Here rather than in `storybook/ui` for the reason the URL handlers are: the
+/// gallery package is checked and tested on every backend, and a `globalThis`
+/// in it would make that untrue. The page owns its effects; the gallery is
+/// told what they are.
+fn fuzz_effects() -> @sbui.FuzzEffects {
+  { arm_frame: arm_fuzz_frame, mark: mark_fuzz, }
+}
+
+///|
+/// Ask the page for the next animation frame.
+///
+/// A call OUT and not a callback in: a closure cannot cross into JS on wasm-gc
+/// — the same constraint `on_event` and `on_popstate` are shaped by — so the
+/// page installs `__tutucaFuzzTick` as a one-shot `requestAnimationFrame` onto
+/// the `on_fuzz_tick` export, and this pulls it. Nothing arms it again once a
+/// run stops, so there is no permanent frame loop.
+///
+/// Silent when the page installed nothing: a gallery served by some other
+/// index.html gets a Play that does not advance rather than a crash, and Step
+/// and Burst still work.
+fn arm_fuzz_frame() -> Unit {
+  let g = @core.global_this()
+  if @core.is_nullish(g) {
+    return
+  }
+  let f = g._get("__tutucaFuzzTick")
+  if @core.is_nullish(f) {
+    return
+  }
+  let _ = f._invoke([])
+}
+
+///|
+/// Bracket one step on DevTools' Timings track.
+///
+/// A LABEL, not a measurement. The numbers are the profiler's — that is what
+/// it is for, and it sees layout, paint and GC that nothing in MoonBit can —
+/// and what a run owes it is a name against each dispatch so the flame chart
+/// can be read. No fallback clock where `performance` is absent, on purpose: a
+/// second timebase nobody asked for is worse than none.
+fn mark_fuzz(name : String, phase : String) -> Unit {
+  let g = @core.global_this()
+  if @core.is_nullish(g) {
+    return
+  }
+  let perf = g._get("performance")
+  if @core.is_nullish(perf) {
+    return
+  }
+  if phase == "start" {
+    let _ = perf._call("mark", [@core.any("fuzz:\{name}:start")])
+  } else {
+    let _ = perf._call("mark", [@core.any("fuzz:\{name}:end")])
+    // Named for the dispatch, so a reader scanning the track sees which
+    // message cost what without opening anything.
+    let _ = perf._call("measure", [
+      @core.any("fuzz \{name}"),
+      @core.any("fuzz:\{name}:start"),
+      @core.any("fuzz:\{name}:end"),
+    ])
+  }
+}
+
+///|
+/// Called from JS on each animation frame while a fuzz run is playing.
+///
+/// The fourth export, and the same shape as `on_popstate`: the page owns the
+/// scheduler, MoonBit owns what happens on the tick.
+pub fn on_fuzz_tick() -> Unit {
+  @sbui.fuzz_tick()
 }

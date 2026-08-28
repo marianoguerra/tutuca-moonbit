@@ -1,0 +1,38 @@
+// Driving a component with generators derived from its own spec block.
+//
+// `statedef/arb` turns a `<script type="tutuca/spec">` block into
+// `@gen.Gen[...]` — values, states, dispatches, scripts, a shrinker, and the
+// `Rules` that evaluate a `pred`/`invariant` over any state. What it does NOT
+// do is run one against a component: a generator produces a script, and
+// somebody has to send it somewhere and read back what happened. This is that
+// somebody.
+//
+// Generic over the node type, like `testing/harness` — which is what lets the
+// SAME driver run headless on memdom under `moon test` and live on a real DOM
+// inside the storybook. That is the whole reason this is a package and not a
+// test helper: a fuzz run you can watch and a fuzz run CI performs have to be
+// the same run, or the one you watched proves nothing about the other.
+//
+// The spec source reaches here through `Component::spec`, which `gen-views`
+// fills in — see `viewgen/emit_comp.mbt`'s `emit_spec_source`. A component
+// built by hand carries "" and simply has no `Plan`.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/arb",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/testing/harness",
+  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/debug",
+}
+
+// The suite mounts real components on memdom, and builds one of its own the
+// way a generated view module does.
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/cmp",
+  "moonbitlang/core/debug",
+} for "test"

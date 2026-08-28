@@ -18,6 +18,60 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let json_null_spec_source : String =
+  #|  state JsonNull {
+  #|  }
+  #|
+  #|  state JsonBoolean {
+  #|    value : Bool
+  #|  }
+  #|
+  #|  state JsonNumber {
+  #|    value : Double
+  #|  }
+  #|
+  #|  state JsonString {
+  #|    value : String
+  #|  }
+  #|
+  #|  state ValueFn {
+  #|  }
+  #|
+  #|  state ValueObj {
+  #|    text : String
+  #|  }
+  #|
+  #|  state JsonArray {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|  }
+  #|
+  #|  state JsonObject {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|  }
+  #|
+  #|  state JsonProperty {
+  #|    key : String
+  #|    child : Any
+  #|  }
+  #|
+  #|  state DataInspector {
+  #|    value : Any
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn json_null_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -77,6 +131,7 @@ pub fn json_null_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -161,6 +216,7 @@ pub fn json_boolean_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -238,6 +294,7 @@ pub fn json_number_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -316,6 +373,7 @@ pub fn json_string_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -379,6 +437,7 @@ pub fn value_fn_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -443,6 +502,7 @@ pub fn value_obj_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -643,6 +703,7 @@ pub fn json_array_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -843,6 +904,7 @@ pub fn json_object_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -918,6 +980,7 @@ pub fn json_property_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }
 
@@ -975,5 +1038,6 @@ pub fn data_inspector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=json_null_spec_source,
   )
 }

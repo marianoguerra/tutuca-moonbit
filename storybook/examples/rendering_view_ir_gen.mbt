@@ -18,6 +18,34 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let push_view_spec_source : String =
+  #|  state PushView {
+  #|    items : Array[Any]
+  #|    query : String
+  #|    view : String
+  #|  }
+  #|
+  #|  state SeqItemAccess {
+  #|    byKey : Map[String, Any]
+  #|    byIndex : Array[Any]
+  #|    currentKey : Any
+  #|    currentIndex : Int
+  #|  }
+  #|
+  #|  state Pagination {
+  #|    items : Array[Any]
+  #|    page : Int
+  #|    pageSize : Int
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn push_view_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -203,6 +231,7 @@ pub fn push_view_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=push_view_spec_source,
   )
 }
 
@@ -331,6 +360,7 @@ pub fn seq_item_access_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=push_view_spec_source,
   )
 }
 
@@ -523,5 +553,6 @@ pub fn pagination_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=push_view_spec_source,
   )
 }

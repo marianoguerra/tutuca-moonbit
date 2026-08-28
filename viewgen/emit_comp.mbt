@@ -46,6 +46,10 @@ fn emit_wrapper(
   /// The block's compiled VALUE bodies, which the buckets below compose the
   /// same way — generated first, the author's consulted for what is left.
   values : @emit_mbt.Emitted?,
+  /// The file-level const holding the spec block's source, when the file has
+  /// one — `emit_spec_source`'s answer, threaded down rather than recomputed
+  /// so every wrapper in a file names the same const.
+  spec_source : String?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let methods = declared_methods(surface)
@@ -175,6 +179,14 @@ fn emit_wrapper(
   out.write_string(
     "    slots~,\n    slot_args~,\n    provide~,\n    lookup~,\n",
   )
+  // Not a parameter of the wrapper. Everything else here is something the
+  // author might legitimately pass differently; the block a component was
+  // DECLARED in is not, and a wrapper that let it be overridden would let the
+  // generators be derived from a schema the component does not have.
+  match spec_source {
+    Some(name) => out.write_string("    spec=\{name},\n")
+    None => ()
+  }
   out.write_string("  )\n}\n\n")
 }
 
@@ -351,4 +363,69 @@ fn wrapper_buckets(
     })
   }
   out
+}
+
+///|
+/// The `<script type="tutuca/spec">` block, as source, for the `spec~` a
+/// wrapper passes to `component()`.
+///
+/// Doc comments go. What is kept has to be re-PARSEABLE — that is the whole
+/// contract, since a reader is `@statedef.parse_state` and nothing else — and
+/// prose is the half of a block that no parser reads and every binary would
+/// otherwise carry. `svg_more.html`'s block is 1.4 KB of which most is the
+/// explanation of why the two limits are named, which is worth having in the
+/// file the author edits and worth nothing in a wasm module.
+///
+/// Returns the const's NAME, or None when the file declares no block. One
+/// const per FILE rather than per component: a `struct` or `enum` in the block
+/// is file-level, and `parse_state` folds those into every `StateDef` it
+/// returns — so a per-component slice would be a slice that no longer parses.
+fn emit_spec_source(
+  v : String,
+  file : @viewfile.ViewFile,
+  out : StringBuilder,
+) -> String? {
+  guard file.state_block is Some(block) else { return None }
+  let text = strip_doc_comments(block.text)
+  guard text != "" else { return None }
+  let name = "\{v}_spec_source"
+  emit_string_let(
+    out,
+    "This file's `<script type=\"tutuca/spec\">` block, as source, with its\n" +
+    "/// doc comments removed.\n" +
+    "///\n" +
+    "/// The schema each component carries is this block's PROJECTION, and the\n" +
+    "/// projection is lossy exactly where a generator needs it: a rule reaches\n" +
+    "/// `SchemaInfo` as a name with no body, and a message as a name with no\n" +
+    "/// payload. Re-parsing this recovers both — see `testing/fuzz`.",
+    name,
+    text,
+  )
+  Some(name)
+}
+
+///|
+/// Drop `///` doc-comment lines, and any blank line left leading a block.
+///
+/// Line-oriented on purpose: a `///` inside a `format` string is a `///` in
+/// the middle of a line, and this only ever looks at what a line STARTS with.
+fn strip_doc_comments(text : String) -> String {
+  let kept : Array[String] = []
+  for line in text.split("\n") {
+    let l = line.to_owned()
+    if l.trim(chars=" \t").has_prefix("///") {
+      continue
+    }
+    // A blank line that only separated prose from what follows leaves a gap
+    // the block does not need; one between two declarations is kept.
+    if l.trim(chars=" \t\r") == "" &&
+      (kept.is_empty() || kept[kept.length() - 1] == "") {
+      continue
+    }
+    kept.push(l)
+  }
+  while kept.length() > 0 && kept[kept.length() - 1].trim(chars=" \t\r") == "" {
+    kept.pop() |> ignore
+  }
+  kept.join("\n")
 }

@@ -18,6 +18,34 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let person_spec_source : String =
+  #|  state Person {
+  #|    name : String
+  #|    email : String
+  #|    active : Bool
+  #|  }
+  #|
+  #|  state NaivePeople {
+  #|    items : Array[Any]
+  #|    query : String
+  #|    page : Int
+  #|    pageSize : Int
+  #|  }
+  #|
+  #|  state Strategies {
+  #|    naive : NaivePeople
+  #|    shared : Component[SharedPeople]
+  #|    coupled : Component[CoupledPeople]
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn person_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -139,6 +167,7 @@ pub fn person_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=person_spec_source,
   )
 }
 
@@ -215,6 +244,7 @@ pub fn strategies_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=person_spec_source,
   )
 }
 
@@ -423,6 +453,7 @@ pub fn naive_people_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=person_spec_source,
   )
 }
 

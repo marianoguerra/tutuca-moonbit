@@ -18,6 +18,29 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let dse_root_spec_source : String =
+  #|  state DseEntry {
+  #|    name : String
+  #|  }
+  #|
+  #|  state DseEditor {
+  #|    missing : Any
+  #|  }
+  #|
+  #|  state DseRoot {
+  #|    items : Map[String, Any]
+  #|    selectedKey : String
+  #|    editor : Component[Editor]
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn dse_root_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -122,6 +145,7 @@ pub fn dse_root_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=dse_root_spec_source,
   )
 }
 
@@ -208,6 +232,7 @@ pub fn dse_editor_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=dse_root_spec_source,
   )
 }
 
@@ -304,5 +329,6 @@ pub fn dse_entry_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=dse_root_spec_source,
   )
 }

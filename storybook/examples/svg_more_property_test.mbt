@@ -13,29 +13,12 @@
 // `gen-views` emitted from the same source. Two readings of one declaration
 // that have to agree is a differential test, and it costs one function call.
 //
-// The spec source is a constant rather than a read of `svg_more.html`: this
-// package checks under wasm-gc, where there is no filesystem, and the point
-// being made is about the generators rather than about file plumbing.
-
-///|
-/// `BarChart`'s spec block, verbatim from `svg_more.html`.
-///
-/// Kept in sync by `bar_chart_spec_matches_the_component` below, which holds
-/// it against the schema the GENERATED module carries — so this drifting from
-/// the file is a test failure rather than a silent divergence.
-const BAR_CHART_SPEC : String =
-  #|state BarChart {
-  #|  values : Array[Any]
-  #|
-  #|  pred hasRoom
-  #|    format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
-  #|
-  #|  pred hasSpare
-  #|    format 'one bar has to stay, or there is no chart left to look at' { (len .values) > 1 }
-  #|
-  #|  invariant neverEmpty
-  #|    format 'the chart lost its last bar' { (len .values) > 0 }
-  #|}
+// The spec source is not copied here any more. `gen-views` carries the block
+// into the generated module (`bar_chart_spec_source`) and the component holds
+// it, so `@fuzz.Plan::of_component` reads the declaration the component was
+// actually built from — on any backend, with no filesystem. The constant this
+// file used to keep, and the test that held it against the schema so it could
+// not drift, are both gone: there is nothing left to drift.
 
 ///|
 /// Which handler asks which precondition, as the script block writes it.
@@ -49,10 +32,25 @@ fn contracts() -> Array[(String, String)] {
 }
 
 ///|
-fn bar_chart_def() -> @statedef.StateDef raise {
-  let defs = @statedef.parse_state(BAR_CHART_SPEC)
-  assert_eq(defs.length(), 1)
-  defs[0]
+/// `BarChart`'s generators, from the block it was declared in.
+///
+/// The component carries its own spec source, so this reads the declaration
+/// that produced the compiled arms rather than a copy of it. A plan is `None`
+/// only for a component with no block, which BarChart is not.
+fn bar_chart_plan(source? : @fuzz.Source = Mutators) -> @fuzz.Plan raise {
+  guard @fuzz.Plan::of_component(bar_chart_comp(), source~) is Some(p) else {
+    fail("BarChart declares a spec block, so it has a plan")
+  }
+  p
+}
+
+///|
+fn bar_chart_comp() -> @component.Component raise {
+  let comps = svg_bar_chart_module().components.filter(c => c.name == "BarChart")
+  guard comps.length() == 1 else {
+    fail("the svg-bar-chart module declares one BarChart")
+  }
+  comps[0]
 }
 
 ///|
@@ -100,29 +98,29 @@ fn settled(h : @harness.Harness[@memdom.MemNode]) -> Map[String, @tutuca.Value] 
 }
 
 ///|
-/// The constant above still describes the component that ships.
+/// The block reached the component, and everything in it is checkable.
 ///
-/// Held against the schema the GENERATED module carries rather than against
-/// the file, because that is what the component actually runs on: a field
-/// renamed in `svg_more.html` reaches the generated schema through
-/// `gen-views`, and this fails the moment the two stop agreeing.
-test "the spec constant describes the component the module carries" {
-  let def = bar_chart_def()
+/// What this used to assert was that a hand-copied constant still matched the
+/// shipping component — a test that existed only because the copy did. The
+/// copy is gone, so the claim moves to the two things that can still be wrong:
+/// that `gen-views` actually carried the block through, and that every rule in
+/// it is one `@core.Val` can answer, so nothing below is quietly skipped.
+test "the component carries the block it was declared in" {
+  let p = bar_chart_plan()
+  assert_eq(p.component, "BarChart")
+  assert_eq(p.def.fields.map(f => f.name), ["values"])
+  assert_eq(p.def.invariants(), ["neverEmpty"])
+  // The generated schema lists the same invariant by name — two projections of
+  // one declaration, which is the sync this file is really about.
   let h = @harness.mount_example(svg_bar_chart_module(), "Default")
   guard h.drive_value() is Obj(o) && o.obj_schema() is Some(schema) else {
     fail("a mounted BarChart answers its own schema")
   }
-  assert_eq(
-    def.fields.map(f => f.name).join(","),
-    schema.fields.map(f => f.name).join(","),
-  )
-  // And the rules, which is the half this file reads: the generated schema
-  // lists its invariants by name, and `statedef` found the same ones.
-  assert_eq(def.invariants().join(","), schema.invariants.join(","))
-  // Every rule the block declares is one `@core.Val` can answer, so nothing
-  // below is quietly skipped.
-  let rules = @arb.rules_of(def)
-  assert_eq(rules.unlowerable.map(u => "\{u.0}: \{u.1}").join("\n"), "")
+  assert_eq(p.def.invariants(), schema.invariants)
+  assert_eq(p.def.fields.map(f => f.name), schema.fields.map(f => f.name))
+  // Nothing unlowerable, so every rule below is really being asked.
+  assert_eq(p.unchecked(), [])
+  assert_true(p.has_oracle())
 }
 
 ///|
@@ -136,31 +134,32 @@ test "the spec constant describes the component the module carries" {
 /// declared field, so a page, a parent, or a host can. `neverEmpty` is what
 /// stands between that and a chart with no bars, and this is what asks whether
 /// it does.
+/// Driven through `testing/fuzz` rather than in this file, and that is the
+/// point of the package: the run a reader watches step by step in the
+/// storybook's Fuzz tab is THIS run, on the same generators and the same
+/// oracle. A property checked here and a component driven there would
+/// otherwise be two things that only look alike.
 test "property: no generated mutator can drive the chart through its invariant" {
-  let def = bar_chart_def()
-  let rules = @arb.rules_of(def)
-  guard @arb.mutator_dispatch_of(def) is Some(one) else {
-    fail("BarChart declares a field, so it has generated mutators")
-  }
+  let p = bar_chart_plan()
   @qc.quick_check(
     @qc.forall_shrink(
-      @gen.int_range(0, 6).bind(n => one.array_with_size(n)),
+      @gen.int_range(0, 6).bind(n => p.script_gen(n)),
       @arb.shrink_script,
       script => {
         guard fresh_chart() is Some(h) else { return false }
+        // Every generated mutator is a Receive — a mutator is not routed — so
+        // an Intent here would mean the generator invented one.
         for d in script {
-          // Every generated mutator is a Receive — a mutator is not routed —
-          // so an Intent here would mean the generator invented one.
-          guard d is Receive(name, args) else { return false }
-          h.send_at_root(name, args~)
-          // Read after EVERY step, not once at the end: an invariant that is
-          // broken and then repaired by the next message is still broken, and
-          // a check at the end would call that a pass.
-          if !rules.invariants_hold(settled(h)) {
+          if !(d is Receive(_, _)) {
             return false
           }
         }
-        true
+        // `run` reads the rules after EVERY step, not once at the end: an
+        // invariant that is broken and then repaired by the next message is
+        // still broken, and a check at the end would call that a pass.
+        (p.run(h, script).outcome is Held) catch {
+          _ => false
+        }
       },
     ),
     max_success=200,
@@ -183,8 +182,7 @@ test "property: no generated mutator can drive the chart through its invariant" 
 /// against a rule it read — because the two sides only diverge on the states
 /// nobody thought to write down.
 test "property: an interpreted precondition predicts the compiled one" {
-  let def = bar_chart_def()
-  let rules = @arb.rules_of(def)
+  let rules = bar_chart_plan().rules
   let names = contracts().map(c => c.0)
   @qc.quick_check(
     @qc.forall(

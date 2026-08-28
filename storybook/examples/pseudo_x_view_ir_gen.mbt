@@ -18,6 +18,40 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let table_row_spec_source : String =
+  #|  state TableRow {
+  #|    name : String
+  #|    qty : Int
+  #|    price : Double
+  #|  }
+  #|
+  #|  state ItemTable {
+  #|    rows : Array[Any]
+  #|  }
+  #|
+  #|  state SelectOption {
+  #|    value : String
+  #|    label : String
+  #|  }
+  #|
+  #|  state ItemSelect {
+  #|    options : Array[Any]
+  #|    current : String
+  #|  }
+  #|
+  #|  state PseudoXDemo {
+  #|    table : ItemTable
+  #|    select : ItemSelect
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn table_row_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -79,6 +113,7 @@ pub fn table_row_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=table_row_spec_source,
   )
 }
 
@@ -150,6 +185,7 @@ pub fn item_table_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=table_row_spec_source,
   )
 }
 
@@ -207,6 +243,7 @@ pub fn select_option_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=table_row_spec_source,
   )
 }
 
@@ -297,6 +334,7 @@ pub fn item_select_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=table_row_spec_source,
   )
 }
 
@@ -356,5 +394,6 @@ pub fn pseudo_x_demo_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=table_row_spec_source,
   )
 }

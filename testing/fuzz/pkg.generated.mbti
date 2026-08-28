@@ -1,0 +1,71 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/testing/fuzz"
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/arb",
+  "marianoguerra/tutuca/testing/harness",
+  "moonbitlang/core/debug",
+  "moonbitlang/quickcheck/gen",
+}
+
+// Values
+pub fn[N] settled(@harness.Harness[N], read? : Reader) -> Map[String, @core.Value]
+
+pub fn[N] shrink(Plan, Array[@component.Dispatch], () -> @harness.Harness[N]?, at? : @core.DispatchPath, read? : Reader, rounds? : Int) -> Array[@component.Dispatch]
+
+// Errors
+
+// Types and methods
+pub(all) enum Outcome {
+  Held
+  Broke(rule~ : String, sentence~ : String, at~ : Int)
+  Disagreed(rule~ : String, at~ : Int)
+  Stuck(String)
+} derive(Eq, @debug.Debug)
+
+pub struct Plan {
+  component : String
+  def : @statedef.StateDef
+  rules : @arb.Rules
+  one : @gen.Gen[@component.Dispatch]?
+}
+pub fn Plan::has_oracle(Self) -> Bool
+pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) -> Self?
+pub fn[N] Plan::run(Self, @harness.Harness[N], Array[@component.Dispatch], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
+pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[@component.Dispatch]
+pub fn Plan::script_gen(Self, Int) -> @gen.Gen[Array[@component.Dispatch]]
+pub fn Plan::sentence_of(Self, String) -> String
+pub fn[N] Plan::step(Self, @harness.Harness[N], @component.Dispatch, at? : @core.DispatchPath, read? : Reader) -> Step raise
+pub fn Plan::unchecked(Self) -> Array[(String, String)]
+
+pub(all) struct Reader(() -> @core.Value)
+
+pub(all) struct Run {
+  outcome : Outcome
+  steps : Array[Step]
+  script : Array[@component.Dispatch]
+  seed : UInt64
+}
+pub fn Run::reproducer(Self) -> Array[@component.Dispatch]
+
+pub(all) enum Source {
+  Mutators
+  Declared(@arb.Bucket)
+  Either(@arb.Bucket)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Step {
+  dispatch : @component.Dispatch
+  refused : Array[@core.Refusal]
+  broke : Array[String]
+  disagreed : Array[String]
+  after : Map[String, @core.Value]
+  renders : Int
+}
+
+// Type aliases
+
+// Traits

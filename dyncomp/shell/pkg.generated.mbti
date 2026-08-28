@@ -21,6 +21,8 @@ pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], i
 
 pub let loader_bar_global_style : String
 
+pub let loader_bar_spec_source : String
+
 pub fn loader_bar_views() -> Map[String, @anode.View]
 
 pub fn make_instance(@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?

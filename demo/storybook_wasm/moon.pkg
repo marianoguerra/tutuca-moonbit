@@ -30,6 +30,10 @@ options(
         "mount",
         "on_event",
         "on_popstate",
+        // The Fuzz tab's animation frame. An export rather than a callback for
+        // the reason `on_event` is one: closures cannot cross into JS on
+        // wasm-gc.
+        "on_fuzz_tick",
         "refresh_margaui",
       ],
       "use-js-builtin-string": true,

@@ -17,6 +17,8 @@ pub fn alt_url_component(name? : String, views? : Map[String, @anode.View], init
 
 pub let alt_url_global_style : String
 
+pub let alt_url_spec_source : String
+
 pub fn alt_url_views() -> Map[String, @anode.View]
 
 pub let attribute_binding_common_style : String
@@ -27,6 +29,8 @@ pub let attribute_binding_global_style : String
 
 pub fn attribute_binding_module() -> @component.ModuleDef
 
+pub let attribute_binding_spec_source : String
+
 pub fn attribute_binding_views() -> Map[String, @anode.View]
 
 pub let bar_chart_common_style : String
@@ -34,6 +38,8 @@ pub let bar_chart_common_style : String
 pub fn bar_chart_component(name? : String, views? : Map[String, @anode.View], init? : BarChartState, common_style? : String, global_style? : String, update? : (BarChartState, @component.Dispatch, &@core.Ctx) -> @component.Update[BarChartState], swap? : (BarChartInput) -> ((BarChartState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, enrich? : (BarChartEnrich) -> ((BarChartState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit)?, loop_with? : (BarChartLoopWith) -> ((BarChartState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let bar_chart_global_style : String
+
+pub let bar_chart_spec_source : String
 
 pub fn bar_chart_views() -> Map[String, @anode.View]
 
@@ -44,6 +50,8 @@ pub fn composability_component(name? : String, views? : Map[String, @anode.View]
 pub let composability_global_style : String
 
 pub fn composability_module() -> @component.ModuleDef
+
+pub let composability_spec_source : String
 
 pub fn composability_views() -> Map[String, @anode.View]
 
@@ -64,6 +72,8 @@ pub fn counter_component(name? : String, views? : Map[String, @anode.View], init
 pub let counter_global_style : String
 
 pub fn counter_module() -> @component.ModuleDef
+
+pub let counter_spec_source : String
 
 pub fn counter_views() -> Map[String, @anode.View]
 
@@ -93,6 +103,8 @@ pub fn dn_d_example_component(name? : String, views? : Map[String, @anode.View],
 
 pub let dn_d_example_global_style : String
 
+pub let dn_d_example_spec_source : String
+
 pub fn dn_d_example_views() -> Map[String, @anode.View]
 
 pub fn dnd_module() -> @component.ModuleDef
@@ -119,6 +131,8 @@ pub fn dse_root_component(name? : String, views? : Map[String, @anode.View], ini
 
 pub let dse_root_global_style : String
 
+pub let dse_root_spec_source : String
+
 pub fn dse_root_views() -> Map[String, @anode.View]
 
 pub fn dynamic_bindings_module() -> @component.ModuleDef
@@ -132,6 +146,8 @@ pub let emoji_picker_common_style : String
 pub fn emoji_picker_component(name? : String, views? : Map[String, @anode.View], init? : EmojiPickerState, common_style? : String, global_style? : String, update? : (EmojiPickerState, @component.Dispatch, &@core.Ctx) -> @component.Update[EmojiPickerState], swap? : (EmojiPickerInput) -> ((EmojiPickerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let emoji_picker_global_style : String
+
+pub let emoji_picker_spec_source : String
 
 pub fn emoji_picker_views() -> Map[String, @anode.View]
 
@@ -173,6 +189,8 @@ pub let file_picker_global_style : String
 
 pub fn file_picker_module() -> @component.ModuleDef
 
+pub let file_picker_spec_source : String
+
 pub fn file_picker_views() -> Map[String, @anode.View]
 
 pub fn filter_paginate_module() -> @component.ModuleDef
@@ -182,6 +200,8 @@ pub let greeting_common_style : String
 pub fn greeting_component(name? : String, views? : Map[String, @anode.View], init? : GreetingState, common_style? : String, global_style? : String, update? : (GreetingState, @component.Dispatch, &@core.Ctx) -> @component.Update[GreetingState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let greeting_global_style : String
+
+pub let greeting_spec_source : String
 
 pub fn greeting_views() -> Map[String, @anode.View]
 
@@ -198,6 +218,8 @@ pub fn item_select_component(name? : String, views? : Map[String, @anode.View], 
 pub let item_select_global_style : String
 
 pub fn item_select_views() -> Map[String, @anode.View]
+
+pub let item_spec_source : String
 
 pub let item_table_common_style : String
 
@@ -275,6 +297,8 @@ pub fn json_selector_component(name? : String, views? : Map[String, @anode.View]
 
 pub let json_selector_global_style : String
 
+pub let json_selector_spec_source : String
+
 pub fn json_selector_views() -> Map[String, @anode.View]
 
 pub let json_string_common_style : String
@@ -325,6 +349,8 @@ pub let list_iteration_global_style : String
 
 pub fn list_iteration_module() -> @component.ModuleDef
 
+pub let list_iteration_spec_source : String
+
 pub fn list_iteration_views() -> Map[String, @anode.View]
 
 pub fn macro_named_slots_module() -> @component.ModuleDef
@@ -342,6 +368,8 @@ pub let minimum_viable_component_common_style : String
 pub fn minimum_viable_component_component(name? : String, views? : Map[String, @anode.View], init? : MinimumViableComponentState, common_style? : String, global_style? : String, update? : (MinimumViableComponentState, @component.Dispatch, &@core.Ctx) -> @component.Update[MinimumViableComponentState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let minimum_viable_component_global_style : String
+
+pub let minimum_viable_component_spec_source : String
 
 pub fn minimum_viable_component_views() -> Map[String, @anode.View]
 
@@ -372,6 +400,8 @@ pub fn nested_state_component(name? : String, views? : Map[String, @anode.View],
 pub let nested_state_global_style : String
 
 pub fn nested_state_module() -> @component.ModuleDef
+
+pub let nested_state_spec_source : String
 
 pub fn nested_state_views() -> Map[String, @anode.View]
 
@@ -407,6 +437,8 @@ pub fn person_component(name? : String, views? : Map[String, @anode.View], init?
 
 pub let person_global_style : String
 
+pub let person_spec_source : String
+
 pub fn person_views() -> Map[String, @anode.View]
 
 pub fn personal_site_module() -> @component.ModuleDef
@@ -416,6 +448,8 @@ pub let playlist_common_style : String
 pub fn playlist_component(name? : String, views? : Map[String, @anode.View], init? : PlaylistState, common_style? : String, global_style? : String, update? : (PlaylistState, @component.Dispatch, &@core.Ctx) -> @component.Update[PlaylistState], swap? : (PlaylistInput) -> ((PlaylistState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let playlist_global_style : String
+
+pub let playlist_spec_source : String
 
 pub fn playlist_views() -> Map[String, @anode.View]
 
@@ -445,6 +479,8 @@ pub let push_view_global_style : String
 
 pub fn push_view_module() -> @component.ModuleDef
 
+pub let push_view_spec_source : String
+
 pub fn push_view_views() -> Map[String, @anode.View]
 
 pub let quadratic_common_style : String
@@ -465,6 +501,8 @@ pub let render_with_scope_global_style : String
 
 pub fn render_with_scope_module() -> @component.ModuleDef
 
+pub let render_with_scope_spec_source : String
+
 pub fn render_with_scope_views() -> Map[String, @anode.View]
 
 pub let request_example_common_style : String
@@ -472,6 +510,8 @@ pub let request_example_common_style : String
 pub fn request_example_component(name? : String, views? : Map[String, @anode.View], init? : RequestExampleState, common_style? : String, global_style? : String, update? : (RequestExampleState, @component.Dispatch, &@core.Ctx) -> @component.Update[RequestExampleState], swap? : (RequestExampleInput) -> ((RequestExampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (RequestExampleWhen) -> ((RequestExampleState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let request_example_global_style : String
+
+pub let request_example_spec_source : String
 
 pub fn request_example_views() -> Map[String, @anode.View]
 
@@ -502,6 +542,8 @@ pub let selector_entry_common_style : String
 pub fn selector_entry_component(name? : String, views? : Map[String, @anode.View], init? : SelectorEntryState, common_style? : String, global_style? : String, update? : (SelectorEntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[SelectorEntryState], swap? : (SelectorEntryInput) -> ((SelectorEntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let selector_entry_global_style : String
+
+pub let selector_entry_spec_source : String
 
 pub fn selector_entry_views() -> Map[String, @anode.View]
 
@@ -587,6 +629,8 @@ pub fn status_component(name? : String, views? : Map[String, @anode.View], init?
 
 pub let status_global_style : String
 
+pub let status_spec_source : String
+
 pub fn status_views() -> Map[String, @anode.View]
 
 pub let strategies_common_style : String
@@ -611,6 +655,8 @@ pub let styles_example_root_global_style : String
 
 pub fn styles_example_root_views() -> Map[String, @anode.View]
 
+pub let styles_example_spec_source : String
+
 pub fn styles_example_views() -> Map[String, @anode.View]
 
 pub fn styles_module() -> @component.ModuleDef
@@ -626,6 +672,8 @@ pub let swatch_picker_common_style : String
 pub fn swatch_picker_component(name? : String, views? : Map[String, @anode.View], init? : SwatchPickerState, common_style? : String, global_style? : String, update? : (SwatchPickerState, @component.Dispatch, &@core.Ctx) -> @component.Update[SwatchPickerState], swap? : (SwatchPickerInput) -> ((SwatchPickerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, enrich? : (SwatchPickerEnrich) -> ((SwatchPickerState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let swatch_picker_global_style : String
+
+pub let swatch_picker_spec_source : String
 
 pub fn swatch_picker_views() -> Map[String, @anode.View]
 
@@ -644,6 +692,8 @@ pub let table_row_common_style : String
 pub fn table_row_component(name? : String, views? : Map[String, @anode.View], init? : TableRowState, common_style? : String, global_style? : String, update? : (TableRowState, @component.Dispatch, &@core.Ctx) -> @component.Update[TableRowState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let table_row_global_style : String
+
+pub let table_row_spec_source : String
 
 pub fn table_row_views() -> Map[String, @anode.View]
 
@@ -676,6 +726,8 @@ pub fn traffic_light_component(name? : String, views? : Map[String, @anode.View]
 pub let traffic_light_global_style : String
 
 pub fn traffic_light_module() -> @component.ModuleDef
+
+pub let traffic_light_spec_source : String
 
 pub fn traffic_light_views() -> Map[String, @anode.View]
 

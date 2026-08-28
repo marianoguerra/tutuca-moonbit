@@ -18,6 +18,32 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let greeting_spec_source : String =
+  #|  state Greeting {
+  #|    name : String
+  #|  }
+  #|
+  #|  state Page {
+  #|    greeting : Greeting
+  #|  }
+  #|
+  #|  state Entry {
+  #|    title : String
+  #|    description : String
+  #|  }
+  #|
+  #|  state MultipleViews {
+  #|    value : Entry
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn greeting_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -73,6 +99,7 @@ pub fn greeting_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=greeting_spec_source,
   )
 }
 
@@ -138,6 +165,7 @@ pub fn page_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=greeting_spec_source,
   )
 }
 
@@ -285,6 +313,7 @@ pub fn entry_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=greeting_spec_source,
   )
 }
 
@@ -344,5 +373,6 @@ pub fn multiple_views_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=greeting_spec_source,
   )
 }

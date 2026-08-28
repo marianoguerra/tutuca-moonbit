@@ -541,3 +541,167 @@ test "a click is consumed only while the panel is waiting for one" {
   h.click(".trace-tab")
   assert_eq(h.text(".places-heading"), "Components under what you clicked")
 }
+
+///|
+/// The Fuzz tab derives its generators from the story's own spec block, and
+/// runs them against the instance on screen.
+///
+/// The claim that makes the tab worth having: the component being driven is
+/// the ONE the Story tab renders — `.sN`, the same field — so what a reader
+/// watches mutate is what the rows say was sent. A second mount would make the
+/// panel a report about something else.
+test "the Fuzz tab drives the story on screen" {
+  let sections = pick(["svg-bar-chart"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  // The knobs are there, so a plan was derived — `canRun` gates the whole
+  // control block on the component carrying a block at all.
+  assert_eq(h.find_all(".ctl-seed").length(), 1)
+  assert_eq(h.find_all(".ctl-burst").length(), 1)
+  assert_eq(h.find_all(".no-plan").length(), 0)
+  // Six bars to start with, from the story's args.
+  let before = h.find_all("rect").length()
+  assert_eq(before, 6)
+  h.click(".ctl-burst")
+  fuzz_tick()
+  // Forty generated dispatches ran, and each is a row.
+  let rows = h.find_all(".fuzz-row")
+  assert_eq(rows.length(), 40)
+  // The chart moved: the run drove the instance the Story tab renders, not a
+  // copy of it.
+  assert_not_eq(h.find_all("rect").length(), before)
+}
+
+///|
+/// A green verdict is a claim about the ENFORCEMENT, not about the generator
+/// having found nothing.
+///
+/// `setValues []` is a legal dispatch that no button in `svg_more.html` can
+/// produce, and the generator sends it. `neverEmpty` is what stands between it
+/// and a chart with no bars — the runtime abandons the transition and refuses
+/// — so the run holds AND the refusals are there to prove it got that far.
+test "a run reaches the dispatches the invariant has to decline" {
+  let sections = pick(["svg-bar-chart"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  h.click(".ctl-burst")
+  fuzz_tick()
+  assert_eq(h.texts(".verdict-kind"), ["held"])
+  // At least one row was declined, by the invariant the block declares.
+  //
+  // This is the assertion that pins WHY a run steps on the tick rather than
+  // inside the click that asked for it. A refusal is held for the length of a
+  // dispatch and only the first one escapes, so a run driven from inside the
+  // button's own chain would show an empty column here and a green verdict —
+  // which is exactly what a component with no invariant at all looks like.
+  let declined = h.texts(".row-refused")
+  assert_true(declined.contains("neverEmpty"))
+  // …and the chart still has bars, which is what the rule is for.
+  assert_true(h.find_all("rect").length() > 0)
+}
+
+///|
+/// The same seed draws the same script.
+///
+/// The claim the profiling story rests on: a run somebody records in DevTools
+/// has to be the same run when they record it again.
+test "a run is addressed by its seed" {
+  fn names_at(seed : String) -> Array[String] raise {
+    let sections = pick(["svg-bar-chart"])
+    let (doc, container) = @harness.new_mount()
+    let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+    let h = @harness.Harness::over(app, container)
+    h.click(".fuzz-tab")
+    h.type_into(".ctl-seed", seed)
+    h.click(".ctl-burst")
+    fuzz_tick()
+    h.texts(".row-name")
+  }
+
+  let a = names_at("7")
+  assert_eq(a.length(), 40)
+  assert_eq(a, names_at("7"))
+  assert_not_eq(a, names_at("8"))
+}
+
+///|
+/// Reset puts the story back to what it was mounted with.
+///
+/// Remounting the value rather than undoing the dispatches, because rewinding
+/// a component by sending it the reverse of what it received is not a thing
+/// that exists.
+test "reset puts the story back" {
+  let sections = pick(["svg-bar-chart"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  let before = h.find_all("rect").length()
+  h.click(".ctl-burst")
+  fuzz_tick()
+  assert_not_eq(h.find_all("rect").length(), before)
+  h.click(".ctl-reset")
+  assert_eq(h.find_all("rect").length(), before)
+  // And the rows went with it: a reset that left the old script on screen
+  // would be showing a run of a component that no longer exists.
+  assert_eq(h.find_all(".fuzz-row").length(), 0)
+}
+
+///|
+/// Play advances one dispatch per frame, and the frame comes from the host.
+///
+/// Headless there is no page, so `FuzzEffects::none()` never arms one and the
+/// run sits at zero — which is the honest behaviour and worth pinning: the
+/// yield is the browser's, and a gallery that advanced anyway would be
+/// pretending to have one.
+test "Play waits for a frame the host has to supply" {
+  let sections = pick(["svg-bar-chart"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  h.click(".ctl-play")
+  // Playing, and nothing has run: no frame ever arrived.
+  assert_eq(h.find_all(".ctl-stop").length(), 1)
+  assert_eq(h.find_all(".fuzz-row").length(), 0)
+  // A frame, and exactly one dispatch lands.
+  fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 1)
+  fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 2)
+  // Stop, and a stray frame is a no-op rather than a wrong answer.
+  h.click(".ctl-stop")
+  fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 2)
+}
+
+///|
+/// Step walks a run one dispatch at a time, and starts a new one when the last
+/// is done.
+///
+/// The second half is the part worth pinning: "continue what is in progress"
+/// and "there is nothing in progress" are different states, and a Step that
+/// only knew the first is a button that goes dead at the end of a script.
+test "Step walks a run, and restarts at the end of one" {
+  let sections = pick(["svg-bar-chart"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  h.type_into(".ctl-steps", "3")
+  for i in [1, 2, 3] {
+    h.click(".ctl-step")
+    fuzz_tick()
+    assert_eq(h.find_all(".fuzz-row").length(), i)
+  }
+  // The script ran out and the run has a verdict.
+  assert_eq(h.texts(".verdict-kind"), ["held"])
+  // One more Step starts a new run rather than doing nothing.
+  h.click(".ctl-step")
+  fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 1)
+}

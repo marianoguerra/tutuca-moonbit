@@ -40,6 +40,14 @@
       // Programmatic push/replaceState don't fire popstate, so this only runs
       // on real navigation.
       window.addEventListener("popstate", () => exports.on_popstate());
+      // The Fuzz tab's frame. MoonBit pulls this when a Play needs the next
+      // step; it schedules ONE frame and nothing re-arms it once the run
+      // stops, so there is no permanent rAF loop here. The yield is the whole
+      // point: it is what lets layout and paint land between generated
+      // dispatches, so the component is visibly mutating and a DevTools
+      // recording shows real per-step cost rather than one blocking call.
+      globalThis.__tutucaFuzzTick = () =>
+        requestAnimationFrame(() => exports.on_fuzz_tick());
     </script>
   </body>
 </html>

@@ -18,6 +18,46 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let selector_entry_spec_source : String =
+  #|  state SelectorEntry {
+  #|    value : String
+  #|    label : String
+  #|  }
+  #|
+  #|  state Selector {
+  #|    items : Array[Any]
+  #|    selectedValue : Any
+  #|  }
+  #|
+  #|  state EntryEditorAndSelector {
+  #|    items : Array[Any]
+  #|    selector : Selector
+  #|  }
+  #|
+  #|  state Sheet {
+  #|    title : String
+  #|  }
+  #|
+  #|  state Toolbar {
+  #|  }
+  #|
+  #|  state Panel {
+  #|    toolbar : Toolbar
+  #|  }
+  #|
+  #|  state Workspace {
+  #|    sheet : Sheet
+  #|    panel : Panel
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn selector_entry_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -114,6 +154,7 @@ pub fn selector_entry_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -207,6 +248,7 @@ pub fn selector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -322,6 +364,7 @@ pub fn entry_editor_and_selector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -411,6 +454,7 @@ pub fn sheet_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -480,6 +524,7 @@ pub fn toolbar_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -549,6 +594,7 @@ pub fn panel_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }
 
@@ -629,5 +675,6 @@ pub fn workspace_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=selector_entry_spec_source,
   )
 }

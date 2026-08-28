@@ -15,6 +15,8 @@ pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init?
 
 pub let corpus_global_style : String
 
+pub let corpus_spec_source : String
+
 pub fn corpus_views() -> Map[String, @anode.View]
 
 pub fn v2_case_name(Int) -> String?

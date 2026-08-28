@@ -18,6 +18,25 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let composability_spec_source : String =
+  #|  state {
+  #|    activeSection : String
+  #|    todo : Component[Items]
+  #|    json : Component[JsonArray]
+  #|    tree : Component[TreeRoot]
+  #|    personalSite : Component[Root]
+  #|    visualWasm : Component[Module]
+  #|    dnd : Component
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn composability_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -285,5 +304,6 @@ pub fn composability_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=composability_spec_source,
   )
 }

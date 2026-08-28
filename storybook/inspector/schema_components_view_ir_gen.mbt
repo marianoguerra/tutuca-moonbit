@@ -18,6 +18,100 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let schema_scalar_spec_source : String =
+  #|  state SchemaScalar {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeLabel : String
+  #|    badges : Array[Any]
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaObject {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeLabel : String
+  #|    badges : Array[Any]
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaArray {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeLabel : String
+  #|    badges : Array[Any]
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaEnum {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeLabel : String
+  #|    badges : Array[Any]
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaCombinator {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeLabel : String
+  #|    badges : Array[Any]
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaConst {
+  #|    value : Any
+  #|  }
+  #|
+  #|  state SchemaConditional {
+  #|    ifNode : Any
+  #|    thenNode : Any
+  #|    elseNode : Any
+  #|    title : String
+  #|    description : String
+  #|    deprecated : Bool
+  #|  }
+  #|
+  #|  state SchemaNot {
+  #|    child : Any
+  #|  }
+  #|
+  #|  state SchemaBoolean {
+  #|    value : Bool
+  #|  }
+  #|
+  #|  state SchemaRef {
+  #|    target : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn schema_scalar_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -269,6 +363,7 @@ pub fn schema_scalar_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -524,6 +619,7 @@ pub fn schema_object_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -779,6 +875,7 @@ pub fn schema_array_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1029,6 +1126,7 @@ pub fn schema_enum_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1283,6 +1381,7 @@ pub fn schema_combinator_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1356,6 +1455,7 @@ pub fn schema_const_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1550,6 +1650,7 @@ pub fn schema_conditional_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1623,6 +1724,7 @@ pub fn schema_not_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1707,6 +1809,7 @@ pub fn schema_boolean_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }
 
@@ -1773,5 +1876,6 @@ pub fn schema_ref_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=schema_scalar_spec_source,
   )
 }

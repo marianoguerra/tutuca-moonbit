@@ -9,6 +9,9 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/trace",
+  // The Fuzz pane's rows ARE `@fuzz.Step`s — a projection of the driver's own
+  // values, the way the trace rows project a `@trace.Event`.
+  "marianoguerra/tutuca/testing/fuzz",
   "moonbitlang/core/cmp",
   // parse_double: a text control hands back a String for a numeric field
   "moonbitlang/core/string",
@@ -25,3 +28,11 @@ import {
   "marianoguerra/tutuca/render",
   "moonbitlang/core/test",
 } for "test"
+
+// The whitebox suite drives the Fuzz pane's own fixture through the real
+// driver, so the hand-built example steps cannot drift from the component they
+// describe. Whitebox because that fixture is package-private, which it should
+// stay.
+import {
+  "marianoguerra/tutuca/testing/harness",
+} for "wbtest"

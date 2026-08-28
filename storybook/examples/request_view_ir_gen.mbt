@@ -18,6 +18,33 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let request_example_spec_source : String =
+  #|  state {
+  #|    items : Array[Any]
+  #|    query : String
+  #|    view : String
+  #|    isLoading : Bool
+  #|    error : Any
+  #|  }
+  #|
+  #|  handle {
+  #|    message {
+  #|    init
+  #|    loadDataOk(Any)
+  #|    loadDataError(String)
+  #|    loadDataUnhandled
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn request_example_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -243,5 +270,6 @@ pub fn request_example_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=request_example_spec_source,
   )
 }

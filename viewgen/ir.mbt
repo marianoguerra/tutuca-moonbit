@@ -432,6 +432,9 @@ fn emit_ir_module_compiled(
   guard !file.components.is_empty() else { raise NoViewsToCompile }
   let first = file.components[0].component_name(name)
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
+  // Ahead of every component, because every wrapper in the file names it: the
+  // block is the FILE's, not one component's.
+  let spec_source = emit_spec_source(value_prefix(first), file, out)
   for comp in compiled.components {
     let cname = comp.raw.component_name(name)
     let state = state_for(file, cname, name)
@@ -457,7 +460,9 @@ fn emit_ir_module_compiled(
       Some(def) => file.init.filter(p => p.0 == def.component).map(p => p.1)
       None => []
     }
-    emit_ir_component(cname, comp, state, surface, inline, inits, out)
+    emit_ir_component(
+      cname, comp, state, surface, inline, inits, spec_source, out,
+    )
   }
   out.to_string()
 }
@@ -519,6 +524,8 @@ fn emit_ir_component(
   surface : Surface,
   inline : @emit_mbt.Emitted?,
   inits : Array[@statedef.InitState],
+  /// The file-level spec-source const, named by every wrapper in the file.
+  spec_source : String?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -580,7 +587,9 @@ fn emit_ir_component(
     _ => None
   }
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, surface, inline_name, inline, out)
+    emit_wrapper(
+      name, t, v, def, surface, inline_name, inline, spec_source, out,
+    )
     emit_init_invariants(t, v, def, inits, inline, out)
   }
 }

@@ -65,6 +65,7 @@ fn new_component(
   swap_names? : Array[String] = [],
   alter_names? : Array[String] = [],
   schema~ : SchemaInfo,
+  spec? : String = "",
 ) -> Component {
   // Views arrive already built — either compiled ahead of time by
   // `tutuca gen-views` (View::from_ir) or parsed from source by
@@ -90,6 +91,7 @@ fn new_component(
     swap_names,
     alter_names,
     schema,
+    spec,
     make_fn: _args => Null,
     raw_provide: provide,
     raw_lookup: lookup,
@@ -154,6 +156,7 @@ pub fn[S : @tutuca.Fields] component(
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Array[LookupSpec] = [],
+  spec? : String = "",
 ) -> Component {
   // The three facts only the author knows — the declared schema and the
   // conversion to and from the fields map — arrive as ONE trait implemented on
@@ -275,6 +278,7 @@ pub fn[S : @tutuca.Fields] component(
       map_keys(enrich_scope) +
       map_keys(loop_with),
     schema~,
+    spec~,
   )
   tspec.comp = Some(comp)
   comp.make_fn = args => make_typed(comp, tspec, args)
@@ -344,6 +348,7 @@ pub fn Component::for_type(
   provide? : Map[String, String] = Map([]),
   lookup? : Array[LookupSpec] = [],
   make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
+  spec? : String = "",
 ) -> Component {
   let comp = new_component(
     name,
@@ -354,6 +359,7 @@ pub fn Component::for_type(
     lookup,
     Map([]),
     schema~,
+    spec~,
   )
   // Without this a `for_type` component cannot be INSTANTIATED, only adopted:
   // `make_fn` defaults to answering Null, and the field is package-private, so

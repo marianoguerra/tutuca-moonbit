@@ -19,6 +19,8 @@ pub let counter_global_style : String
 
 pub fn counter_init_args(String) -> Map[String, @core.Value]?
 
+pub let counter_spec_source : String
+
 pub fn counter_views() -> Map[String, @anode.View]
 
 pub fn module_def() -> @component.ModuleDef

@@ -18,6 +18,34 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let instance_fields_spec_source : String =
+  #|  state InstanceFields {
+  #|    items : Array[Any]
+  #|    isExpanded : Bool
+  #|    itemsPerPage : Int
+  #|    currentPage : Int
+  #|    typeName : String
+  #|  }
+  #|
+  #|  state InstanceInspector {
+  #|    value : Any
+  #|  }
+  #|
+  #|  state InstanceExplorer {
+  #|    activeTab : String
+  #|    instanceView : Any
+  #|    componentView : Any
+  #|    hasComponent : Bool
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn instance_fields_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -216,6 +244,7 @@ pub fn instance_fields_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=instance_fields_spec_source,
   )
 }
 
@@ -273,6 +302,7 @@ pub fn instance_inspector_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=instance_fields_spec_source,
   )
 }
 
@@ -437,5 +467,6 @@ pub fn instance_explorer_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=instance_fields_spec_source,
   )
 }

@@ -1,0 +1,266 @@
+<script type="tutuca/spec">
+  /// One dispatch of a generated script, and what it did.
+  ///
+  /// Flat, like a trace row and for the same reason: everything here was
+  /// decided when the step ran, and a row that recomputed any of it would be a
+  /// second opinion about what happened.
+  state FuzzRow {
+    /// Position in the script, 0-based, as the driver numbers it.
+    at : Int
+    /// The dispatch, as `name arg, arg`.
+    name : String
+    args : String
+    /// `send` or `intent`, with the badge's WHOLE class list — whole because
+    /// `:class` replaces the written one rather than adding to it.
+    verb : String
+    verbClass : String
+    /// How many renders it caused. 0 is a dispatch that changed nothing, which
+    /// is a different thing from one that was declined.
+    renders : Int
+    /// The runtime declined it. Not a failure: a rule doing its job, and the
+    /// only place a decline is visible at all.
+    refused : Bool
+    refusedRule : String
+    refusedSentence : String
+    /// A rule the block declares does not hold in the state this step settled
+    /// at, and nothing stopped it. THE finding.
+    broke : Bool
+    brokeRule : String
+    /// The interpreted rule and the compiled one disagreed here.
+    disagreed : Bool
+    /// The row's whole class list, its border decided by the worst thing that
+    /// happened on it.
+    rowClass : String
+    /// Where the cursor is parked, so stepping has something to point at.
+    current : Bool
+    /// The settled state, prebuilt as a value inspector.
+    after : Any
+    open : Bool
+  }
+
+  /// The script, as something to scan.
+  state FuzzLog {
+    rows : Array[Any]
+    hasRows : Bool
+    emptyHint : String
+  }
+
+  /// What a run is addressed by, and what came of it.
+  ///
+  /// The seed is editable because reproducibility is the whole point: a run
+  /// somebody wants to profile has to be the same run twice, and the four
+  /// values here are its whole address.
+  state FuzzControls {
+    /// Text, not numbers, and for two reasons. A seed is 64-bit — `Int` would
+    /// truncate one — and `e.value` off an `<input>` is a string, so parsing
+    /// here would mean a `String` where an `Int` is wanted and the arm falling
+    /// back to MoonBit. The host parses both, which is where the plan they
+    /// address lives anyway.
+    seed : String
+    steps : String
+    /// `mutators`, `declared` or `either`.
+    source : String
+    mutatorsClass : String
+    declaredClass : String
+    eitherClass : String
+    /// A run is in flight, one step per frame.
+    playing : Bool
+    /// The component declares a block, so there is something to generate.
+    canRun : Bool
+    /// Why not, when it cannot.
+    noPlanHint : String
+  }
+
+  /// The verdict, in the words the declaration used.
+  state FuzzVerdict {
+    /// `held`, `broke`, `disagreed` or `none`.
+    kind : String
+    badgeClass : String
+    headline : String
+    /// The rule's own `format` — the sentence its author wrote for exactly
+    /// this moment, which is why it is carried rather than recomposed.
+    sentence : String
+    rule : String
+    at : Int
+    /// Rules the block declares that `@core.Val` could not lower, so the run
+    /// is quieter than a green verdict looks.
+    unchecked : String
+    hasUnchecked : Bool
+    /// The shrunk reproducer, as dispatch lines.
+    reproducer : Array[Any]
+    hasReproducer : Bool
+  }
+
+  state FuzzPanel {
+    controls : Any
+    verdict : Any
+    log : Any
+    hasRun : Bool
+    /// Cursor position, 1-based for display.
+    at : Int
+    total : Int
+  }
+</script>
+
+<script type="tutuca/script" for="FuzzControls">
+  /// The three knobs, and each one invalidates the drawn script — so each
+  /// tells the host rather than only moving a field. The host holds the plan;
+  /// a control that changed its own field and nothing else would show a seed
+  /// that no longer describes the rows underneath it.
+  receive setSeed(s) {
+    .seed = s
+    intent lex 'fuzzConfig' s .steps .source
+  }
+
+  receive setSteps(n) {
+    .steps = n
+    intent lex 'fuzzConfig' .seed n .source
+  }
+
+  receive setSource(s) {
+    .source = s
+    intent lex 'fuzzConfig' .seed .steps s
+  }
+
+  /// Draw a script and run it whole, with no yield. What a profiler wants: one
+  /// flame chart over settle + render + morph, with no scheduler noise in it.
+  receive burst {
+    intent lex 'fuzzBurst'
+  }
+
+  /// One dispatch per frame. What a person wants: the component visibly
+  /// mutating, and a DevTools recording in which layout and paint actually
+  /// land between steps.
+  receive play {
+    intent lex 'fuzzPlay'
+  }
+
+  receive stop {
+    intent lex 'fuzzStop'
+  }
+
+  /// One dispatch, now.
+  receive step {
+    intent lex 'fuzzStep'
+  }
+
+  /// Back to the story's initial state, script and all.
+  receive reset {
+    intent lex 'fuzzReset'
+  }
+</script>
+
+<script type="tutuca/script" for="FuzzRow">
+  /// Open one line to see the state it settled at. Closed by default because a
+  /// script is read by scanning it.
+  receive toggle {
+    .open = not (.open)
+  }
+</script>
+
+<script type="tutuca/script" for="FuzzVerdict">
+  /// Shrink the failing script to the dispatches that actually cause it. At
+  /// the host, because shrinking remounts the component many times and a
+  /// component cannot mount another.
+  receive shrink {
+    intent lex 'fuzzShrink'
+  }
+</script>
+
+<template id="FuzzRow">
+  <div :class=".rowClass">
+    <div class="row-head flex items-center gap-2 flex-wrap cursor-pointer" @on.click="toggle">
+      <span class="badge badge-xs tabular-nums opacity-50 row-at" @text=".at"></span>
+      <span title="A message or an intent" :class=".verbClass" @text=".verb"></span>
+      <span class="font-mono font-semibold row-name" @text=".name"></span>
+      <span class="text-xs opacity-40 font-mono row-args" @show="truthy? .args" @text=".args"></span>
+      <span title="A rule the block declares does not hold here, and nothing stopped it"
+            class="badge badge-xs badge-error row-broke" @show=".broke" @text=".brokeRule"></span>
+      <span title="The runtime declined this — a rule doing its job, not a failure"
+            class="badge badge-xs badge-warning badge-outline row-refused" @show=".refused"
+            @text=".refusedRule"></span>
+      <span title="The block's reading of the rule and the compiled one do not agree"
+            class="badge badge-xs badge-secondary row-disagreed" @show=".disagreed">disagrees</span>
+      <span title="Renders this dispatch caused" class="ml-auto text-xs opacity-40 tabular-nums row-renders">
+        <x text=".renders"></x><x text="' render'"></x>
+      </span>
+    </div>
+    <div class="pl-6 flex flex-col gap-1 font-mono text-xs row-detail" @show=".open">
+      <div class="opacity-70 row-sentence" @show=".refused"><x text=".refusedSentence"></x></div>
+      <div class="opacity-50">after</div>
+      <x render=".after"></x>
+    </div>
+  </div>
+</template>
+
+<template id="FuzzLog">
+  <div class="fuzz-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2">
+    <div class="text-xs opacity-40 empty-hint" @hide=".hasRows" @text=".emptyHint"></div>
+    <x render-each=".rows"></x>
+  </div>
+</template>
+
+<template id="FuzzControls">
+  <div class="fuzz-controls flex flex-col gap-2 p-2">
+    <div class="text-xs opacity-50 no-plan" @hide=".canRun" @text=".noPlanHint"></div>
+    <div class="flex items-center gap-2 flex-wrap" @show=".canRun">
+      <label class="text-xs opacity-60">seed</label>
+      <input class="input input-xs input-bordered w-24 tabular-nums ctl-seed" type="number"
+             :value=".seed" @on.input="setSeed e.value">
+      <label class="text-xs opacity-60">steps</label>
+      <input class="input input-xs input-bordered w-20 tabular-nums ctl-steps" type="number"
+             :value=".steps" @on.input="setSteps e.value">
+    </div>
+    <div class="flex gap-2 flex-wrap" @show=".canRun">
+      <button :class=".mutatorsClass" @on.click="setSource 'mutators'">Generated mutators</button>
+      <button :class=".declaredClass" @on.click="setSource 'declared'">Declared messages</button>
+      <button :class=".eitherClass" @on.click="setSource 'either'">Either</button>
+    </div>
+    <div class="text-xs opacity-50" @show=".canRun">
+      A mutator is installed for every declared field whether or not anything sends one, so
+      these are the dispatches no hand-written test covers. The same seed always draws the
+      same script — which is what makes a run worth profiling twice.
+    </div>
+    <div class="flex gap-2 flex-wrap" @show=".canRun">
+      <button class="btn btn-sm btn-primary ctl-play" @hide=".playing" @on.click="play">Play</button>
+      <button class="btn btn-sm btn-error ctl-stop" @show=".playing" @on.click="stop">Stop</button>
+      <button class="btn btn-sm ctl-step" @on.click="step">Step</button>
+      <button class="btn btn-sm ctl-burst" @on.click="burst">Burst</button>
+      <button class="btn btn-sm btn-ghost ctl-reset" @on.click="reset">Reset</button>
+    </div>
+  </div>
+</template>
+
+<template id="FuzzVerdict">
+  <div class="fuzz-verdict flex flex-col gap-1 p-2" @show="not (.kind is 'none')">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span :class=".badgeClass" @text=".kind"></span>
+      <span class="text-sm verdict-headline" @text=".headline"></span>
+      <span class="text-xs opacity-40 font-mono verdict-rule" @show="truthy? .rule"><x text=".rule"></x></span>
+    </div>
+    <div class="text-sm opacity-80 verdict-sentence" @show="truthy? .sentence" @text=".sentence"></div>
+    <div class="text-xs opacity-60 verdict-unchecked" @show=".hasUnchecked">
+      <x text="'not checked: '"></x><x text=".unchecked"></x>
+    </div>
+    <div class="flex flex-col gap-1" @show=".hasReproducer">
+      <div class="text-xs opacity-50">the shortest script that still does it</div>
+      <x render-each=".reproducer"></x>
+    </div>
+    <button class="btn btn-xs btn-ghost verdict-shrink" @show="not (.kind is 'held')"
+            @hide=".hasReproducer" @on.click="shrink">Shrink it</button>
+  </div>
+</template>
+
+<template id="FuzzPanel">
+  <div class="fuzz-panel flex flex-col gap-2">
+    <div class="flex items-center gap-2 border-b border-base-content/10 px-2 pb-1">
+      <span class="text-xs opacity-60">Property run</span>
+      <span class="ml-auto text-xs opacity-40 tabular-nums panel-pos" @show=".hasRun">
+        <x text=".at"></x><x text="' / '"></x><x text=".total"></x>
+      </span>
+    </div>
+    <x render=".controls"></x>
+    <x render=".verdict"></x>
+    <x render=".log"></x>
+  </div>
+</template>

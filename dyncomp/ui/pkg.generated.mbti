@@ -40,6 +40,8 @@ pub fn palette_row_component(name? : String, views? : Map[String, @anode.View], 
 
 pub let palette_row_global_style : String
 
+pub let palette_row_spec_source : String
+
 pub fn palette_row_views() -> Map[String, @anode.View]
 
 pub let schema_field_common_style : String

@@ -88,6 +88,12 @@ pub fn Inspector::new() -> Inspector {
       trace_places_comp(),
       recorder_bar_comp(),
       trace_panel_comp(),
+      // fuzz layer
+      fuzz_row_comp(),
+      fuzz_log_comp(),
+      fuzz_controls_comp(),
+      fuzz_verdict_comp(),
+      fuzz_panel_comp(),
     ] {
     insp.comps[c.name] = c
   }
@@ -424,6 +430,9 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
       // The trace viewer, one entry per level — see trace_examples.mbt for why
       // there is one for each rather than only for the finished screen.
       ..insp.trace_examples(),
+      // The Fuzz pane, over a real run against a component whose invariant is
+      // declared and never implemented — see fuzz_examples.mbt.
+      ..insp.fuzz_examples(),
     ],
   )
 }

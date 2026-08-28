@@ -18,6 +18,85 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let universal_spec_source : String =
+  #|  state Universal {
+  #|    child : Component
+  #|  }
+  #|
+  #|  handle Universal {
+  #|    intent {
+  #|    addRequested(Bool)
+  #|    configRequested(Any)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle Universal {
+  #|    message {
+  #|    hold(Any)
+  #|    empty
+  #|    applyConfig(Any)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state Stack {
+  #|    children : Array[Any]
+  #|    direction : String
+  #|    justify : String
+  #|    align : String
+  #|    gap : Int
+  #|    padding : Int
+  #|    wrap : Bool
+  #|  }
+  #|
+  #|  state Grid {
+  #|    children : Array[Any]
+  #|    cols : Int
+  #|    rows : Int
+  #|    gap : Int
+  #|    padding : Int
+  #|  }
+  #|
+  #|  state TabPage {
+  #|    label : String
+  #|    body : Component
+  #|  }
+  #|
+  #|  handle TabPage {
+  #|    intent {
+  #|    doneRename
+  #|    cancelRename
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  state Tabs {
+  #|    tabs : Array[Any]
+  #|    active : Int
+  #|    renaming : Bool
+  #|    original : String
+  #|  }
+  #|
+  #|  state Text {
+  #|    text : String
+  #|    size : String
+  #|  }
+  #|
+  #|  state Textarea {
+  #|    text : String
+  #|    rows : Int
+  #|    placeholder : String
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn universal_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -178,6 +257,7 @@ pub fn universal_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -341,6 +421,7 @@ pub fn stack_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -517,6 +598,7 @@ pub fn grid_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -616,6 +698,7 @@ pub fn tab_page_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -847,6 +930,7 @@ pub fn tabs_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -919,6 +1003,7 @@ pub fn text_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
 
@@ -1006,5 +1091,6 @@ pub fn textarea_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=universal_spec_source,
   )
 }
