@@ -6,6 +6,66 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-08-28
+
+### Added
+
+- **An execution trace, as an artifact.** The transactor already had an
+  observer channel, but a subscription is not something you can keep: it cannot
+  be saved, handed to someone else, or run again. `trace/` is the format — the
+  state a component tree started in plus every message and intent that crossed
+  the runtime afterwards — with three shortening operations (`prefix`,
+  `rebase`, `relocate`) and a compactor. Pure and target-agnostic: a `Trace` in,
+  a `Trace` out, never a DOM and never an app, which is what lets those be
+  `moon test`-able on every backend and lets the native CLI perform two of them
+  with no component runtime at all.
+
+  `trace/replay` is what proves the format. A recording that cannot be run back
+  is a log; until the same events reach the same state, nothing built on it is
+  worth having. Three recorders fill one: whole (`TraceRecorder`), scoped to a
+  subtree (`ScopedRecorder`), and a bounded ring (`RingRecorder`).
+
+- **A component carries the spec block it was declared in.** `gen-views` emits
+  the `<script type="tutuca/spec">` source into the generated module (doc
+  comments stripped) and `Component::spec` holds it, so a generator can be
+  derived at runtime, on any backend, from the declaration the compiled arms
+  came from. The `SchemaInfo` beside it is that block's PROJECTION, and the
+  projection is lossy exactly where a generator needs it: a rule arrives as a
+  name with no body, a message as a name with no payload.
+
+- **`testing/fuzz` — the spec block's generators, run against a live
+  component.** `Plan::of_component` → `script(seed~, steps~)` → `step` / `run`
+  → `shrink`, generic over the node type so `moon test` and a browser host
+  drive identically. A run is addressed entirely by (component, source, seed,
+  steps), which is what makes one reproducible — and worth pointing a profiler
+  at twice.
+
+  Three things the runtime decided about its shape. A compiled invariant is
+  already ENFORCED — the transition is abandoned and a `Refusal` raised — so
+  `Outcome::Broke` means the opposite of the obvious: a rule declared and
+  enforced by nothing. The differential check is preconditions-only, because a
+  precondition is asked against the state a dispatch arrived at while an
+  invariant is asked against the proposed successor, which was abandoned and
+  which nothing ever sees. And `settle()` runs INSIDE the refusal capture,
+  because a contract is checked as the transaction commits.
+
+- **The storybook gets a Trace tab and a Fuzz tab.** The Trace tab records the
+  gallery, whole or cut to one example, with selection mode to narrow a
+  recording to the component under a click. The Fuzz tab derives generators
+  from the story's own spec block and drives them at the instance on screen —
+  rendering the story ABOVE the panel, because a run you cannot watch is the
+  headless run with extra steps.
+
+  Every run mode steps on the animation frame rather than inside the click that
+  asked for it, and that is a correctness requirement: a refusal is held for
+  the length of a dispatch and only the first escapes, so a run driven from
+  inside the button's own chain shows an empty refusal column and a green
+  verdict — indistinguishable from a component with no invariant at all.
+  Performance stays the browser's to measure; the host brackets each dispatch
+  with `performance.mark`/`measure` so DevTools' Timings track names them, and
+  `storybook/ui` takes the two browser effects as a record rather than reaching
+  for the FFI itself.
+
 ### Fixed
 
 - **`gen-tailwind-css` / `gen-margaui-css` refused every view file using
@@ -5447,5 +5507,6 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...HEAD
+[0.39.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...v0.39.0
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
