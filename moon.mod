@@ -36,7 +36,7 @@ import {
   // Dependency-free itself, and MoonBit links per package, so a consumer who
   // never compiles a card pays the fetch and nothing else.
   "marianoguerra/wax@0.2.0",
-  "marianoguerra/tailwindcss@0.3.0",
+  "marianoguerra/tailwindcss@0.4.0",
   "moonbitlang/x@0.5.1",
 }
 
