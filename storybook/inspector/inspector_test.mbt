@@ -228,6 +228,8 @@ test "activity log: observe entries land newest-first via appendEntry" {
     before: Some(Num(1)),
     after: Some(Num(2)),
     seq: 1,
+    walk: 0,
+    parent_seq: 0,
   }
   h.send_at_root("appendEntry", args=[insp.record_to_entry(record)])
   inspect(h.find_all(".empty-hint").length(), content="0")

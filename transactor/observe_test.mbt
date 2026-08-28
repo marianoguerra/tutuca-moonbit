@@ -226,7 +226,7 @@ test "observe: a record serializes, state change and all" {
   inspect(
     records[0].to_json().stringify(),
     content=(
-      #|{"kind":"receive","name":"rename","matched":"exact","path":"sheet","seq":1,"args":["b"],"before":{"title":"a"},"after":{"title":"b"}}
+      #|{"kind":"receive","name":"rename","matched":"exact","path":"sheet","pathKeys":[{"f":"sheet"}],"seq":1,"args":["b"],"before":{"title":"a"},"after":{"title":"b"}}
     ),
   )
   // A handler that answered nothing has NO `after` key — absent, not null,

@@ -1,0 +1,67 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/trace/replay"
+
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/trace",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn mount(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool) -> Player raise ReplayError
+
+pub fn replay(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool) -> Json raise ReplayError
+
+// Errors
+pub suberror ReplayError {
+  Diverged(at~ : Int, want~ : @trace.Event, got~ : @trace.Event)
+  ShapeChanged(component~ : String, want~ : String, got~ : String)
+  RootUnbuildable(String)
+  UnknownVersion(got~ : Int)
+}
+pub fn ReplayError::message(Self) -> String
+
+// Types and methods
+pub struct Answers {
+  // private fields
+}
+pub fn Answers::of_trace(@trace.Trace) -> Self
+pub fn Answers::take(Self, String) -> Array[@core.IntentAnswer]
+
+pub(all) enum Fidelity {
+  Live
+} derive(Eq, @debug.Debug)
+
+pub struct Player {
+  app : @app.App[@memdom.MemNode]
+  container : @memdom.MemNode
+  trace : @trace.Trace
+  fidelity : Fidelity
+  mut at : Int
+  // private fields
+}
+pub fn Player::destroy(Self) -> Unit
+pub fn Player::done(Self) -> Bool
+pub fn Player::harness(Self) -> @harness.Harness[@memdom.MemNode]
+pub fn Player::html(Self) -> String
+pub fn Player::observed(Self) -> Array[@trace.Event]
+pub fn Player::run(Self) -> Unit raise ReplayError
+pub fn Player::run_to(Self, Int) -> Unit raise ReplayError
+pub fn Player::snapshot(Self) -> Json
+pub fn Player::step(Self) -> Unit raise ReplayError
+pub fn Player::step_event(Self) -> Unit raise ReplayError
+
+pub struct RecordedHost {
+  // private fields
+}
+pub fn RecordedHost::new(Answers, fallback? : &@transactor.Intents) -> Self
+pub impl @transactor.Intents for RecordedHost
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,422 @@
+<script type="tutuca/spec">
+  /// One line of a recording.
+  ///
+  /// Flat, and deliberately so: everything here was decided when the trace was
+  /// written, and a row that recomputed any of it would be a second opinion
+  /// about what happened. `verb` is the word, `input` is the line between what
+  /// happened TO the app and what the app did about it, and `depth` is the
+  /// causal nesting the `parent` links already describe.
+  state TraceRow {
+    seq : Int
+    turn : Int
+    walk : Int
+    hasWalk : Bool
+    verb : String
+    /// The badge's WHOLE class list, colour and all.
+    ///
+    /// Whole because `:class` replaces the static `class` rather than adding
+    /// to it, so a computed class and a written one cannot both be on the same
+    /// element — and on the row rather than in the template because it is a
+    /// four-way dispatch on a value the builder already has in hand.
+    verbClass : String
+    name : String
+    place : String
+    args : String
+    input : Bool
+    /// The row's whole class list, its border decided by whether a rerun feeds
+    /// it. Whole for the same reason `verbClass` is: a computed `:class`
+    /// replaces the written one.
+    rowClass : String
+    depth : Int
+    /// Set for the row a viewer is parked on, so a step slider has something
+    /// to point at.
+    current : Bool
+    /// The state the handler produced, prebuilt as a value inspector, or Null
+    /// when the recording did not keep one.
+    after : Any
+    hasAfter : Bool
+    open : Bool
+  }
+
+  /// The rows, and the two questions a reader asks of them: show me only what
+  /// a rerun would feed, and show me one turn at a time.
+  state TraceLog {
+    rows : Array[Any]
+    hasRows : Bool
+    inputsOnly : Bool
+    /// 0 shows every turn.
+    turn : Int
+    emptyHint : String
+  }
+
+  /// What a recording says about itself, before any of its events.
+  state TraceHeader {
+    component : String
+    module : String
+    example : String
+    fingerprint : String
+    events : Int
+    inputs : Int
+    turns : Int
+    relocatedFrom : String
+    isRelocated : Bool
+    compacted : Bool
+  }
+
+  /// One candidate for relocation: a place the recording touched, with how
+  /// much of the recording is about it.
+  state TracePlace {
+    label : String
+    display : String
+    component : String
+    events : Int
+    depth : Int
+    selected : Bool
+    rowClass : String
+    /// Whether cutting here yields something mountable. A list is a correct
+    /// cut and an unmountable trace, and saying so before the click is
+    /// cheaper than saying it after.
+    mountable : Bool
+  }
+
+  /// The places a recording is ABOUT, offered as relocation targets.
+  state TracePlaces {
+    places : Array[Any]
+    hasPlaces : Bool
+    selected : String
+    /// What this list IS. The same component serves two lists — the places a
+    /// recording touched, and the components under something somebody just
+    /// clicked — because they are the same list of the same things offered for
+    /// the same reason, and only the sentence above them differs.
+    heading : String
+    emptyHint : String
+  }
+
+  /// The recorder, as a control. Off is the default and the whole point:
+  /// nothing is recorded until somebody asks.
+  state RecorderBar {
+    recording : Bool
+    /// What the next recording will cover: `all`, `section` or `example`.
+    scope : String
+    scopeLabel : String
+    /// The three buttons' classes. Precomputed for the same reason every other
+    /// class here is: a template picks a value, it does not decide one.
+    allClass : String
+    sectionClass : String
+    exampleClass : String
+    events : Int
+    turns : Int
+    /// Set once a recording exists and has been stopped — the moment the
+    /// trace view is worth switching to.
+    hasTrace : Bool
+    /// Whether the picker is open. Asked BEFORE recording starts, because
+    /// what a recording covers is not something it can be told afterwards.
+    picking : Bool
+  }
+
+  /// Recording, in one control and one place.
+  ///
+  /// A viewer, a picker and a recorder bar are three components and one
+  /// screen; this is the screen. Nothing here holds a trace — the host does,
+  /// and it hands down the three instances already built.
+  state TracePanel {
+    bar : RecorderBar
+    header : TraceHeader
+    places : TracePlaces
+    log : TraceLog
+    recordTabClass : String
+    traceTabClass : String
+    selectTabClass : String
+    /// The word the selection-mode button reads as.
+    selectLabel : String
+    /// `record`, `trace` or `pick`. Recording and reading are two modes
+    /// because they are two activities: while a session is being recorded
+    /// nobody is reading it, and a reader is not about to click the app.
+    tab : String
+    hasTrace : Bool
+    /// Selection mode: click anything on the page and the component tree it
+    /// belongs to comes back as relocation candidates.
+    selecting : Bool
+    /// Whether the trace pane is the one showing. One field rather than an
+    /// expression over two, because "there is a trace" and "the reader asked
+    /// for it" are decided by the host and by a click, and neither belongs in
+    /// a template.
+    showTrace : Bool
+    /// How far through the recording the viewer is parked.
+    at : Int
+    total : Int
+  }
+
+  /// The bar raises these AT THE HOST: only the host owns a transactor, and
+  /// only the host can install a recorder on one.
+  handle RecorderBar {
+    message {
+    setScope(String)
+    openPicker
+    closePicker
+    startRecording
+    stopRecording
+    clearRecording
+
+    }
+  }
+
+  handle TracePanel {
+    message {
+    setTab(String)
+    setAt(Int)
+    toggleSelecting
+
+    }
+  }
+
+  handle TracePlace {
+    message {
+    pickPlace(String)
+
+    }
+  }
+
+  handle TraceLog {
+    message {
+    setTurn(Int)
+    showAllTurns
+
+    }
+  }
+
+  handle TraceRow {
+    message {
+    toggle
+
+    }
+  }
+</script>
+
+<script type="tutuca/script" for="TracePanel">
+  /// Selection mode on and off. At the HOST, for the same reason recording is:
+  /// what makes a click on the page mean "pick this" is a document listener,
+  /// and a component cannot install one.
+  receive toggleSelecting {
+    intent lex 'traceSelect'
+  }
+</script>
+
+<script type="tutuca/script" for="TracePlace">
+  /// Which candidate the reader chose.
+  ///
+  /// On the ROW and not on the list, because the button is in the row's view
+  /// and a view's `@on` is a message to the component that owns it — an arm on
+  /// the list would never be reached. At the host, because choosing a place is
+  /// only worth anything to the thing that holds the recording.
+  receive pickPlace(p) {
+    intent lex 'tracePick' p
+  }
+</script>
+
+<script type="tutuca/script" for="TraceRow">
+  /// Open one line to see its arguments and the state it produced. A row is
+  /// closed by default because a recording is read by scanning it, and forty
+  /// expanded rows is not a thing anybody scans.
+  receive toggle {
+    .open = not (.open)
+  }
+</script>
+
+<script type="tutuca/script" for="RecorderBar">
+  /// Which scope the next recording will cover.
+  ///
+  /// The classes are set here rather than left to the builder because this is
+  /// the one field on the bar a CLICK changes: everything else the bar shows is
+  /// the host's, handed down when it rebuilds. A precomputed class that a click
+  /// can invalidate is a class that goes stale, so the arm that invalidates it
+  /// is the arm that sets it.
+  receive setScope(s) {
+    .scope = s
+    .scopeLabel = if s is 'section' { 'the active section' } else { if s is 'example' { 'this example' } else { 'the whole storybook' } }
+    .allClass = if s is 'all' { 'btn btn-sm pick-all btn-primary' } else { 'btn btn-sm pick-all btn-outline' }
+    .sectionClass = if s is 'section' { 'btn btn-sm pick-section btn-primary' } else { 'btn btn-sm pick-section btn-outline' }
+    .exampleClass = if s is 'example' { 'btn btn-sm pick-example btn-primary' } else { 'btn btn-sm pick-example btn-outline' }
+  }
+
+  /// Open and close the picker. Asked BEFORE recording starts, because what a
+  /// recording covers is not something it can be told afterwards.
+  receive openPicker {
+    .picking = true
+  }
+
+  receive closePicker {
+    .picking = false
+  }
+
+  /// The three that leave the component.
+  ///
+  /// Raised AT THE HOST rather than handled here, and it is not a stylistic
+  /// choice: recording is installing a `Recorder` on a transactor, and a
+  /// transactor is the one thing a component cannot reach. What the bar owns is
+  /// which scope is selected and whether the picker is open; everything that
+  /// actually records is the host's.
+  ///
+  /// `lex` is the leg, so the answer comes from a handler registered in the
+  /// scope — which is exactly where a host puts one.
+  receive startRecording {
+    .picking = false
+    intent lex 'traceStart' .scope
+  }
+
+  receive stopRecording {
+    intent lex 'traceStop'
+  }
+
+  receive clearRecording {
+    intent lex 'traceDiscard'
+  }
+</script>
+
+<script type="tutuca/script" for="TraceLog">
+  /// Which turn a reader is looking at, and `0` for all of them. A toggle
+  /// rather than a filter box because the interesting question is almost
+  /// always "this turn, and what it caused".
+  receive setTurn(t) {
+    .turn = t
+  }
+
+  receive showAllTurns {
+    .turn = 0
+  }
+</script>
+
+<template id="TraceRow">
+  <div :class=".rowClass">
+    <div class="row-head flex items-center gap-2 flex-wrap cursor-pointer" @on.click="toggle">
+      <span class="badge badge-xs tabular-nums opacity-50 row-seq" @text=".seq"></span>
+      <span title="What this was: a message, an intent, an offer to the host, the host's answer, or a refusal"
+            :class=".verbClass" @text=".verb"></span>
+      <span class="font-mono font-semibold row-name" @text=".name"></span>
+      <span title="Where it landed" class="text-xs opacity-40 font-mono row-place" @text=".place"></span>
+      <span title="A rerun feeds this one; everything else it produces for itself"
+            class="badge badge-xs badge-primary badge-outline row-input" @show=".input">input</span>
+      <span title="Every hop of one intent shares this" class="badge badge-xs badge-ghost row-walk"
+            @show=".hasWalk"><x text="'walk '"></x><x text=".walk"></x></span>
+      <span class="ml-auto text-xs opacity-40 tabular-nums row-turn"><x text="'turn '"></x><x text=".turn"></x></span>
+    </div>
+    <div class="pl-6 flex flex-col gap-1 font-mono text-xs row-detail" @show=".open">
+      <div class="opacity-60 row-args" @show="truthy? .args"><x text="'args '"></x><x text=".args"></x></div>
+      <div @show=".hasAfter">
+        <div class="opacity-50">after</div>
+        <x render=".after"></x>
+      </div>
+      <div class="opacity-40 row-noafter" @hide=".hasAfter">no state was kept for this one</div>
+    </div>
+  </div>
+</template>
+
+<template id="TraceLog">
+  <div class="trace-log flex flex-col gap-1 max-h-[50vh] overflow-y-auto p-2">
+    <div class="text-xs opacity-40 empty-hint" @hide=".hasRows" @text=".emptyHint"></div>
+    <x render-each=".rows"></x>
+  </div>
+</template>
+
+<template id="TraceHeader">
+  <div class="trace-header flex flex-col gap-1 p-2 text-sm">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="badge badge-sm badge-primary header-component" @text=".component"></span>
+      <span class="text-xs opacity-50 font-mono header-module" @show="truthy? .module" @text=".module"></span>
+      <span class="text-xs opacity-50 header-example" @show="truthy? .example" @text=".example"></span>
+      <span title="This trace was cut down to a subtree; every path in it was rewritten"
+            class="badge badge-xs badge-warning header-relocated" @show=".isRelocated">
+        <x text="'relocated from '"></x><x text=".relocatedFrom"></x>
+      </span>
+      <span title="The derived events were dropped: this trace can no longer be relocated or scripted"
+            class="badge badge-xs badge-ghost header-compacted" @show=".compacted">compacted</span>
+    </div>
+    <div class="flex gap-3 text-xs opacity-60 tabular-nums">
+      <span class="header-events"><x text=".events"></x><x text="' events'"></x></span>
+      <span class="header-inputs"><x text=".inputs"></x><x text="' fed on a rerun'"></x></span>
+      <span class="header-turns"><x text=".turns"></x><x text="' turns'"></x></span>
+      <span class="opacity-40 font-mono header-fp" @show="truthy? .fingerprint" @text=".fingerprint"></span>
+    </div>
+  </div>
+</template>
+
+<template id="TracePlace">
+  <button :class=".rowClass" @on.click="pickPlace .label">
+    <span class="font-mono place-label" @text=".display"></span>
+    <span class="badge badge-xs badge-ghost place-component" @show="truthy? .component" @text=".component"></span>
+    <span title="Cutting here would not yield a component, so the trace could not be mounted"
+          class="badge badge-xs badge-warning place-unmountable" @hide=".mountable">not a component</span>
+    <span class="ml-auto text-xs opacity-40 tabular-nums place-count" @text=".events"></span>
+  </button>
+</template>
+
+<template id="TracePlaces">
+  <div class="trace-places flex flex-col gap-1 p-2">
+    <div class="text-xs opacity-50 places-heading" @text=".heading"></div>
+    <div class="text-xs opacity-40 empty-hint" @hide=".hasPlaces" @text=".emptyHint"></div>
+    <x render-each=".places"></x>
+  </div>
+</template>
+
+<template id="RecorderBar">
+  <div class="flex flex-col gap-1">
+    <div class="recorder-bar flex items-center gap-2 p-2 flex-wrap">
+      <button class="btn btn-sm btn-error rec-stop" @show=".recording" @on.click="stopRecording">
+        Stop recording
+      </button>
+      <button class="btn btn-sm btn-primary rec-start" @hide=".recording" @on.click="openPicker">
+        Record
+      </button>
+      <span class="badge badge-sm badge-ghost rec-scope" @text=".scopeLabel"></span>
+      <span class="text-xs opacity-60 tabular-nums rec-count" @show=".recording">
+        <x text=".events"></x><x text="' events · '"></x><x text=".turns"></x><x text="' turns'"></x>
+      </span>
+      <button class="btn btn-sm btn-ghost rec-clear" @show=".hasTrace" @hide=".recording" @on.click="clearRecording">
+        Discard
+      </button>
+    </div>
+    <!-- Inline rather than a view of its own: what a recording covers has to be
+         asked in the place the Record button is, and a second template holding
+         the same three buttons is a second place for them to drift. -->
+    <div class="recorder-picker flex flex-col gap-2 p-2" @show=".picking">
+    <div class="text-sm">What should this recording cover?</div>
+    <div class="flex gap-2 flex-wrap">
+      <button :class=".allClass" @on.click="setScope 'all'">The whole storybook</button>
+      <button :class=".sectionClass" @on.click="setScope 'section'">The active section</button>
+      <button :class=".exampleClass" @on.click="setScope 'example'">This example only</button>
+    </div>
+    <div class="text-xs opacity-50">
+      A narrower scope is not a filter applied afterwards — it is what gets mounted with a
+      recorder on it, so nothing else is ever captured. You can still cut a recording down
+      to one component when you stop.
+    </div>
+      <div class="flex gap-2">
+        <button class="btn btn-sm btn-primary picker-go" @on.click="startRecording">Start</button>
+        <button class="btn btn-sm btn-ghost picker-cancel" @on.click="closePicker">Cancel</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="TracePanel">
+  <div class="trace-panel flex flex-col gap-2">
+    <div class="flex items-center gap-2 border-b border-base-content/10 px-2">
+      <button :class=".recordTabClass" @on.click="setTab 'record'">Record</button>
+      <button :class=".traceTabClass" @show=".hasTrace" @on.click="setTab 'trace'">Trace</button>
+      <button :class=".selectTabClass" @show=".hasTrace" @on.click="toggleSelecting"
+              @text=".selectLabel"></button>
+      <span class="ml-auto text-xs opacity-40 tabular-nums panel-pos" @show=".hasTrace">
+        <x text=".at"></x><x text="' / '"></x><x text=".total"></x>
+      </span>
+    </div>
+    <x render=".bar"></x>
+    <div class="panel-trace flex flex-col gap-2" @show=".showTrace">
+      <x render=".header"></x>
+      <x render=".places"></x>
+      <x render=".log"></x>
+    </div>
+    <div class="panel-empty text-xs opacity-40 px-2 pb-2" @hide=".hasTrace">
+      Nothing recorded yet. Press Record, use the component, then stop.
+    </div>
+  </div>
+</template>

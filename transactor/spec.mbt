@@ -262,7 +262,177 @@ pub(all) struct ObserveRecord {
   before : @tutuca.Value?
   after : @tutuca.Value?
   seq : Int
+  /// The intent walk this is one hop of, 0 for a message. Shared by every hop
+  /// of one intent and by the answer it produced, which is what lets a reader
+  /// group a walk instead of guessing at it from names.
+  walk : Int
+  /// The `seq` of the record whose handler caused this one, 0 for none.
+  ///
+  /// `Transaction.parent` has always existed and has always been private, so an
+  /// activity log could only ever be a flat list — a cascade of twelve sends
+  /// from one click read as twelve unrelated rows. This is that link, projected.
+  parent_seq : Int
 }
+
+///|
+/// Where a dispatch came from — the whole basis of replaying one.
+///
+/// The distinction is `Transaction.parent`, and it is the only one that
+/// matters to a recording: a derived dispatch is a consequence of a handler
+/// that a rerun produces again, and an external one is not reproducible by
+/// anything, because nothing inside the tree caused it.
+pub(all) enum Source {
+  /// Nobody in the tree asked for it: a DOM event, `send_at_root`, a timer, a
+  /// host reaching in. These are what a recording has to REPLAY.
+  Extern
+  /// A handler produced it. A rerun derives it again; a recording keeps it to
+  /// show, to check a rerun against, and to decide what crossed a subtree
+  /// boundary.
+  Derived
+} derive(Eq, Debug)
+
+///|
+/// One dispatch entering the queue, as a recorder sees it.
+///
+/// `at` is a `Path` and not the `DispatchPath` the transaction carries, because
+/// this is the form that can be written down: a `DispatchPath` names render-time
+/// producers by component id — a process-global counter nothing may persist —
+/// and `Step`'s frame-only variants hold `Val` expressions and closures. The
+/// transaction path is what the dispatch actually lands on, with every dynamic
+/// marker already teleported to where the data lives.
+pub(all) struct Dispatched {
+  source : Source
+  bucket : @tutuca.HandlerBucket
+  name : String
+  args : Array[@tutuca.Value]
+  /// Pinned against the root as it is NOW, so a key that moves later still
+  /// names the item this was addressed to.
+  at : @tutuca.Path
+  /// The intent walk this belongs to; 0 for a message.
+  walk : Int
+  /// The `seq` of the dispatch whose handler caused this one, 0 for none.
+  ///
+  /// Read at PUSH time, which is why it is a different number from
+  /// `ObserveRecord.parent_seq` even though both come from the same counter: a
+  /// parent's observation is emitted after its handler returns, and by then the
+  /// child it pushed is already on the queue. Each stream is internally
+  /// consistent, and a consumer reads one or the other.
+  parent : Int
+  /// The walk's options, and `IntentOpts::new()` for a message.
+  ///
+  /// On the dispatch rather than only on the walk because they decide the NAME
+  /// of the answer — a sender that declared `on_ok_name` hears that arm and not
+  /// `<name>Ok` — and a rerun that had to guess would deliver the reply to a
+  /// handler that does not exist.
+  opts : @tutuca.IntentOpts
+  /// Dispatches pushed between two settles share a turn. One DOM event with two
+  /// handlers is one turn, which is the grouping a rerun has to reproduce to
+  /// batch the way the recording did.
+  turn : Int
+  seq : Int
+}
+
+///|
+/// The tree → host leg: the walk is offering an intent to a handler the HOST
+/// registered.
+///
+/// The boundary, and the reason it is its own record. Everything up to here the
+/// runtime derived and a rerun derives again; what comes back does not exist
+/// until the host says it. Without this an observer sees an intent climb the
+/// tree, stop, and an answer appear from nowhere.
+pub(all) struct Offered {
+  walk : Int
+  /// The `seq` of the dispatch that raised the intent.
+  parent : Int
+  name : String
+  args : Array[@tutuca.Value]
+  /// The sender's position — who is asking, which is what a host gates on.
+  from : @tutuca.Path
+  /// Which handler in the lexical chain. A `Pass` and the next handler after it
+  /// are two offers and not one, because they are two decisions.
+  nth : Int
+  seq : Int
+}
+
+///|
+/// The host → tree reply: how a registered handler answered.
+///
+/// The other thing a rerun cannot recompute, and the harder one, because the
+/// handler may answer long after it was asked. A recording that keeps this can
+/// replay a host that answered late, answered differently the second time, or
+/// did not answer at all.
+pub(all) struct Answered {
+  walk : Int
+  /// The `seq` of the dispatch that raised the intent.
+  parent : Int
+  nth : Int
+  answer : @tutuca.IntentAnswer
+  seq : Int
+}
+
+///|
+/// The capture seam: what a recorder is handed, and when.
+///
+/// A trait rather than a callback for the same reason `Intents` and `Names` are
+/// traits — an implementation answers several questions and wants one place to
+/// keep the state behind them — but unlike those two it is swappable while the
+/// app runs, because recording is something a person turns on after they have
+/// seen something go wrong.
+///
+/// Every method is defaulted, so an implementation writes only the hooks it
+/// cares about, and `NullRecorder` writes none.
+pub(open) trait Recorder {
+  /// Asked BEFORE any record is built.
+  ///
+  /// `false` — the default — costs one virtual call per push and nothing else:
+  /// no path pinning, no argument copy, no record. It is the same bargain the
+  /// observer list already strikes by being empty, and it is why the default
+  /// recorder is free rather than cheap.
+  fn recording(Self) -> Bool = _
+  /// A message or an intent entered the queue.
+  fn on_dispatch(Self, Dispatched) -> Unit = _
+  /// An intent reached a host handler.
+  fn on_offered(Self, Offered) -> Unit = _
+  /// A host handler answered.
+  fn on_answer(Self, Answered) -> Unit = _
+  /// A handler ran, with the state it read and the state it produced. The same
+  /// stream `observe` delivers; a recorder that wants it need not also
+  /// subscribe.
+  fn on_observed(Self, ObserveRecord) -> Unit = _
+}
+
+///|
+impl Recorder with fn recording(_self) {
+  false
+}
+
+///|
+impl Recorder with fn on_dispatch(_self, _d) {
+  ()
+}
+
+///|
+impl Recorder with fn on_offered(_self, _o) {
+  ()
+}
+
+///|
+impl Recorder with fn on_answer(_self, _a) {
+  ()
+}
+
+///|
+impl Recorder with fn on_observed(_self, _r) {
+  ()
+}
+
+///|
+/// Records nothing, and says so. What a `Transactor` is built with, so the
+/// capture machinery costs a running app nothing until somebody asks for it.
+pub(all) struct NullRecorder {}
+
+///|
+pub impl Recorder for NullRecorder
 
 ///|
 /// Outcome of one bounded settle pass. `pending` tells the caller whether it
@@ -317,6 +487,23 @@ pub struct Transaction {
   priv mut obs_matched : ObserveMatch?
   priv mut obs_before : @tutuca.Value?
   priv mut obs_after : @tutuca.Value?
+  /// The `seq` this transaction's record was emitted under, 0 before it ran or
+  /// when nothing was watching. Read by its CHILDREN, to say what caused them.
+  priv mut obs_seq : Int
+  /// The `seq` this dispatch was recorded under when it entered the queue, 0
+  /// when nothing was recording. Read by the transactions this one PUSHES, to
+  /// say what caused them.
+  priv mut push_seq : Int
+  /// The walk's `raise_seq`, for a transaction the walk produced rather than a
+  /// handler. Its cause, when `parent` is None and there still was one.
+  priv walk_parent : Int
+  /// Which walk this belongs to, 0 for none.
+  ///
+  /// Not read off `walk`, and the difference matters: `walk` is what a
+  /// transaction ADVANCES when it finishes, so an intent's answer must not
+  /// carry one or it would advance a walk that is already over. The answer
+  /// still belongs to the walk, and this is how it says so.
+  priv walk_id : Int
 }
 
 ///|
@@ -340,6 +527,14 @@ pub struct Transactor {
   priv observers : Array[(ObserveRecord) -> Unit]
   priv mut obs_seq : Int
   priv drain_subs : Array[() -> Unit]
+  /// The capture strategy, `NullRecorder` until somebody swaps one in.
+  priv mut recorder : &Recorder
+  /// Hands out `IntentWalk.id`.
+  priv mut walk_seq : Int
+  /// Bumped at the end of every outermost `settle`, so everything pushed
+  /// between two drains shares a number. The grouping falls out of `draining`
+  /// and nothing outside this package has to know it exists.
+  priv mut turn : Int
 }
 
 ///|
@@ -348,6 +543,40 @@ declare pub fn Transactor::new(
   intents? : &Intents,
   names? : &Names,
 ) -> Transactor
+
+///|
+/// Install a capture strategy, replacing whatever was there.
+///
+/// Swappable while the app runs, which is the point: recording is something a
+/// person turns on after they have seen something go wrong, and turns off again
+/// by installing `NullRecorder::{}`. Unlike `observe`, there is exactly one at a
+/// time — a recorder OWNS the recording, and two of them would each hold half
+/// of one.
+declare pub fn Transactor::set_recorder(
+  self : Transactor,
+  r : &Recorder,
+) -> Unit
+
+///|
+/// The installed strategy.
+declare pub fn Transactor::recorder(self : Transactor) -> &Recorder
+
+///|
+/// Install a whole tree, telling the subscribers.
+///
+/// `root` is a public mutable field and assigning it directly is the trap this
+/// closes: the assignment inside `transact` is followed by the `on_change`
+/// notification, and an outside assignment is not, so the App never re-renders
+/// and the mismatch surfaces later as a view that will not update. Nothing in
+/// the repo installed a tree before — replaying a recording is the first thing
+/// that needs to, and a state editor would be the second.
+///
+/// Notifies only when the tree actually moved, on the same physical-identity
+/// test every other change subscriber is woken by.
+declare pub fn Transactor::reset_root(
+  self : Transactor,
+  root : @tutuca.Value,
+) -> Unit
 
 ///|
 /// Subscribe to a normalized record for every handler invocation — a receive,
@@ -405,6 +634,18 @@ declare pub fn Transactor::push_send(
 /// allowed has already been given. A route is a list and a position, so this is
 /// a list and a position.
 pub struct IntentWalk {
+  /// The `seq` the walk's own raise was recorded under, 0 when nothing was
+  /// recording. Every hop, every offer, every answer and the reply message
+  /// point back at it — a walk is not a transaction, so this is the only thing
+  /// its consequences have to name as their cause.
+  mut raise_seq : Int
+  /// This walk's identity, unique within the transactor.
+  ///
+  /// A walk had none, so an answer could not name the intent it answered: an
+  /// observer saw an intent climb and an answer arrive and had to infer the
+  /// pairing from the name. A recorded trace cannot infer it at all, because
+  /// two walks of the same intent may be in flight at once.
+  id : Int
   name : String
   /// The legs, in the order written. `[Dyn, Lex]` when nothing said otherwise.
   mut route : Array[@tutuca.Leg]

@@ -62,17 +62,27 @@ pub struct App[N] {
 }
 
 ///|
+/// `intents` replaces the host — the registered handlers an intent's lexical
+/// leg asks. It defaults to the scope's own, which is what every ordinary mount
+/// wants, and it is a parameter because the host is the one part of a mounted
+/// app that is not in the scope: replaying a recording answers from what the
+/// host said last time, and a fixture answers from what a test decided. Both
+/// are the same substitution, and neither is something the scope can express.
 pub fn[N : @vdom.DomWalk] App::new(
   scope : @component.ComponentStack,
   root_value : @tutuca.Value,
   root_node : N,
   opts : @vdom.RenderOpts[N],
   view? : String = "",
+  intents? : &@transactor.Intents,
 ) -> App[N] raise {
   scope.compile_all()
   let tx = @transactor.Transactor::new(
     root_value,
-    intents=ScopeIntents::{ comps: scope.comps, },
+    intents=match intents {
+      Some(i) => i
+      None => ScopeIntents::{ comps: scope.comps, }
+    },
     names=ScopeNames::new(scope.comps),
   )
   let app : App[N] = {

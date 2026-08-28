@@ -274,3 +274,270 @@ test "the Instance tab renders the explorer, not a blank pane" {
   // and the tab pair the explorer puts over it
   assert_true(html.contains("Component"))
 }
+
+///|
+/// Recording the gallery, end to end.
+///
+/// The claim is not that a button exists: it is that pressing Record installs a
+/// recorder on the app's own transactor, that driving a story afterwards is
+/// captured, and that pressing Stop hands the recording back as something the
+/// Trace tab can show. Every one of those crosses the component/host line,
+/// which is the part of this that could be wrong.
+test "the gallery records what a story did, and shows it back" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  // Nothing is recording until somebody asks. That is the default and the
+  // whole point.
+  assert_false(app.transactor.recorder().recording())
+  h.click(".trace-tab")
+  assert_eq(h.find_all(".recorder-bar").length(), 1)
+  assert_eq(h.find_all(".rec-start").length(), 1)
+  h.click(".rec-start")
+  h.click(".picker-go")
+  assert_true(app.transactor.recorder().recording())
+  assert_eq(h.find_all(".rec-stop").length(), 1)
+  // Back to the story to actually use it, which is the flow: you press Record
+  // on the Trace tab, drive the thing on the Story tab, and come back to read
+  // what happened. The recorder is on the transactor, not on the tab, so
+  // switching away does not stop it.
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  // Back to recording nothing, and not merely "stopped": leaving a live
+  // recorder installed after Stop would be the gallery quietly still
+  // recording.
+  assert_false(app.transactor.recorder().recording())
+  // And the recording is there, showing the two clicks it captured.
+  assert_eq(h.find_all(".panel-trace").length(), 1)
+  let names = h.texts(".row-name")
+  assert_true(names.contains("inc"))
+  assert_eq(names.filter(n => n == "inc").length(), 2)
+}
+
+///|
+/// A narrower scope is not a filter applied afterwards: it is what the recorder
+/// keeps, as it happens. A gallery is ONE transactor with every story mounted
+/// under it, so this is the only way "record only this example" can mean
+/// anything at all.
+test "recording one example keeps only that example" {
+  let sections = pick(["counter", "traffic-light"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".pick-example")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  // The addresses are relative to the story, so a reader knows what they mean —
+  // and the header says the paths were rewritten rather than leaving them to
+  // be misread.
+  assert_eq(h.find_all(".header-relocated").length(), 1)
+  assert_eq(h.texts(".row-name"), ["inc"])
+  assert_eq(h.texts(".row-place"), ["(root)"])
+}
+
+///|
+/// A recording survives you looking away from it. The explorer is dropped when
+/// its tab closes because it is a whole component tree nobody is looking at;
+/// a recording is not, and a panel that reset itself would lose the session
+/// that was just captured.
+test "the recording survives leaving the tab" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  let before = h.texts(".row-name").length()
+  h.click(".story-tab")
+  assert_eq(h.find_all(".trace-row").length(), 0)
+  h.click(".trace-tab")
+  assert_eq(h.texts(".row-name").length(), before)
+}
+
+///|
+/// Discard means discard.
+test "discarding a recording puts the panel back where it started" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  assert_eq(h.find_all(".panel-trace").length(), 1)
+  h.click(".rec-clear")
+  assert_eq(h.find_all(".panel-trace").length(), 0)
+  assert_eq(h.find_all(".panel-empty").length(), 1)
+}
+
+///|
+/// Selection mode, end to end.
+///
+/// The claim: a person can point at a row instead of spelling `.s0.rows[1]`,
+/// and what comes back is the ancestry the renderer itself stamped into the
+/// DOM. Every step of that crosses the component/host line — the click is the
+/// host's, the intent is the component's, the panel is the host's again — which
+/// is the part of this that could be wrong.
+test "clicking the page offers the components under it" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  // Before any click, the picker offers what the RECORDING touched.
+  assert_eq(h.text(".places-heading"), "Relocate to")
+  // Selection mode on. The button says so, because clicking the page is about
+  // to mean something different from clicking the page.
+  h.click(".tab-select")
+  inspect(h.text(".tab-select"), content="Click an element…")
+  // The glue's half: a node, turned into the ancestry under it. This is
+  // exactly what a document listener would hand over — and the node has to be
+  // on screen to be clicked, so the story is what is showing.
+  h.click(".story-tab")
+  // Picked while the story is showing, which is when a real click happens: the
+  // pane re-renders on a tab switch, so a node kept across one is detached and
+  // walks up to nothing.
+  let found = pick_at(app, h.find(".stat-value"), container)
+  h.click(".trace-tab")
+  // The shell, then the story's counter — outermost first, each named by the
+  // instance its address resolves to rather than by the render-time id, which
+  // is a process-global counter and means nothing outside this run.
+  assert_eq(found.map(c => c.1), ["Storybook", "Counter"])
+  // And the host's half: the shell forwards it, the host stores it and rebuilds
+  // the panel around it.
+  let payload : Array[@tutuca.Value] = found.map(c => {
+    Map({ "place": Str(c.0), "component": Str(c.1) })
+  })
+  h.send_at_root("onTraceCandidates", args=[List(payload)])
+  assert_eq(h.text(".places-heading"), "Components under what you clicked")
+  assert_eq(h.texts(".place-component"), ["Storybook", "Counter"])
+  // Picking one keeps it, rather than acting on it: choosing a place is the
+  // thing a person does several times before they mean it.
+  h.click(".trace-place", nth=1)
+  assert_true(
+    h
+    .attr(".trace-place", "class", nth=1)
+    .unwrap_or("")
+    .contains("ring-primary/40"),
+  )
+  // And selection mode is off again — a click was what it was waiting for.
+  inspect(h.text(".tab-select"), content="Pick a component")
+}
+
+///|
+/// Turning selection mode off puts the recording's own places back. A stale
+/// list of candidates from a click nobody remembers making is worse than no
+/// list.
+test "leaving selection mode restores the recording's own places" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  h.click(".tab-select")
+  h.click(".story-tab")
+  let found = pick_at(app, h.find(".stat-value"), container)
+  h.click(".trace-tab")
+  h.send_at_root("onTraceCandidates", args=[
+    List(found.map(c => Map({ "place": Str(c.0), "component": Str(c.1) }))),
+  ])
+  assert_eq(h.text(".places-heading"), "Components under what you clicked")
+  h.click(".tab-select")
+  h.click(".tab-select")
+  assert_eq(h.text(".places-heading"), "Relocate to")
+}
+
+///|
+/// A recording scoped to one story has story-relative addresses, so a candidate
+/// has to be one too — offering an address the recording cannot be cut to would
+/// be offering an empty trace.
+test "candidates are relative to the story a scoped recording is about" {
+  let sections = pick(["counter", "traffic-light"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".pick-example")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  h.click(".tab-select")
+  h.click(".story-tab")
+  let found = pick_at(app, h.find(".stat-value"), container)
+  h.click(".trace-tab")
+  h.send_at_root("onTraceCandidates", args=[
+    List(found.map(c => Map({ "place": Str(c.0), "component": Str(c.1) }))),
+  ])
+  // The shell is above the cut and drops out; the story becomes the root.
+  assert_eq(h.texts(".place-component"), ["Counter"])
+  assert_eq(h.texts(".place-label"), ["(the whole thing)"])
+}
+
+///|
+/// The gate a host asks before it dispatches.
+///
+/// A pick and a use are two meanings for one click, and doing both is doing the
+/// wrong one — so while the panel is waiting to be pointed at, the click is
+/// consumed and the story never sees it.
+test "a click is consumed only while the panel is waiting for one" {
+  let sections = pick(["counter"])
+  let (doc, container) = @harness.new_mount()
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let h = @harness.Harness::over(app, container)
+  // Nothing is waiting, so nothing is claimed — the gallery behaves exactly as
+  // it always did.
+  assert_false(trace_selecting())
+  assert_false(take_select_click(app, h.find(".btn-success"), container))
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  h.click(".tab-select")
+  assert_true(trace_selecting())
+  h.click(".story-tab")
+  // Now it is, so the click is taken — and the counter does NOT move, which is
+  // the whole point of the gate.
+  let before = h.text(".stat-value")
+  assert_true(take_select_click(app, h.find(".btn-success"), container))
+  assert_eq(h.text(".stat-value"), before)
+  // One click, and the panel is done waiting.
+  assert_false(trace_selecting())
+  h.click(".trace-tab")
+  assert_eq(h.text(".places-heading"), "Components under what you clicked")
+}

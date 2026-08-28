@@ -202,3 +202,84 @@ test "switched off, the report is the line warn has always printed" {
     "contract: `publish` declined — its precondition `hasTitle` does not hold: the title is empty",
   ])
 }
+
+///|
+/// `to_line` is prose and `to_json` is the record: what the sentence folds away
+/// — the code as a word to filter on, the address as structure, and the state
+/// that was rejected — is exactly what a stored trace or a scene report needs
+/// back.
+test "a refusal as JSON keeps what the line throws away" {
+  let said = watched(() => {
+    at("a").update(tree(), Receive, "guarded", []) |> ignore
+  })
+  assert_eq(said.length(), 1)
+  inspect(
+    said[0].to_json().stringify(),
+    content=(
+      #|{"code":"PRECONDITION","asked":"guarded","rule":"hasText","sentence":"a note with no text cannot be retitled","path":"notes[a]","pathKeys":[{"f":"notes","k":"a"}],"state":{"text":""}}
+    ),
+  )
+}
+
+///|
+/// A producer with no state in hand writes no `state` key at all. A `null`
+/// there would say "the rejected state was null", which is a different and
+/// wrong claim.
+test "a refusal with no state omits the key" {
+  let r : @core.Refusal = {
+    code: NoSender,
+    asked: "saved",
+    rule: "",
+    sentence: "",
+    state: Null,
+    path: @core.Path::new(),
+  }
+  inspect(
+    r.to_json().stringify(),
+    content=(
+      #|{"code":"NO_SENDER","asked":"saved","rule":"","sentence":"","path":"","pathKeys":[]}
+    ),
+  )
+}
+
+///|
+/// The shared address encoding. Short keys because a trace of a real session is
+/// mostly these, and `k` absent rather than null because a keyed step and a
+/// plain field are different steps.
+test "a step key round-trips through JSON" {
+  let keys : Array[@core.StepKey] = [
+    { field: "rows", key: None, },
+    { field: "rows", key: Some(KInt(2)), },
+    { field: "byId", key: Some(KStr("a")), },
+  ]
+  let js = keys.map(k => k.to_json())
+  inspect(
+    Json::array(js).stringify(),
+    content=(
+      #|[{"f":"rows"},{"f":"rows","k":2},{"f":"byId","k":"a"}]
+    ),
+  )
+  assert_eq(js.map(j => @core.StepKey::from_json(j)), keys.map(k => Some(k)))
+}
+
+///|
+/// A step that cannot say where it points is not a step: the reader answers
+/// None rather than inventing a field or dropping a key.
+test "a malformed step key is refused rather than guessed" {
+  assert_eq(@core.StepKey::from_json(Json::string("rows")), None)
+  assert_eq(@core.StepKey::from_json(Json::object({})), None)
+  assert_eq(
+    @core.StepKey::from_json(
+      Json::object({ "f": Json::string("rows"), "k": Json::array([]) }),
+    ),
+    None,
+  )
+  // An explicit null key is a PLAIN field, not a malformed keyed step: that is
+  // what a writer that spells its absent values out produces.
+  assert_eq(
+    @core.StepKey::from_json(
+      Json::object({ "f": Json::string("rows"), "k": Json::null() }),
+    ),
+    Some({ field: "rows", key: None, }),
+  )
+}

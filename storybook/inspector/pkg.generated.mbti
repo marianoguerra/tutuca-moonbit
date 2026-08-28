@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/debug",
 }
@@ -15,6 +16,8 @@ pub let activity_entry_common_style : String
 pub fn activity_entry_component(name? : String, views? : Map[String, @anode.View], init? : ActivityEntryState, common_style? : String, global_style? : String, update? : (ActivityEntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[ActivityEntryState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let activity_entry_global_style : String
+
+pub let activity_entry_spec_source : String
 
 pub fn activity_entry_views() -> Map[String, @anode.View]
 
@@ -39,6 +42,8 @@ pub let comp_name_common_style : String
 pub fn comp_name_component(name? : String, views? : Map[String, @anode.View], init? : CompNameState, common_style? : String, global_style? : String, update? : (CompNameState, @component.Dispatch, &@core.Ctx) -> @component.Update[CompNameState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let comp_name_global_style : String
+
+pub let comp_name_spec_source : String
 
 pub fn comp_name_views() -> Map[String, @anode.View]
 
@@ -94,6 +99,8 @@ pub fn instance_fields_component(name? : String, views? : Map[String, @anode.Vie
 
 pub let instance_fields_global_style : String
 
+pub let instance_fields_spec_source : String
+
 pub fn instance_fields_views() -> Map[String, @anode.View]
 
 pub let instance_inspector_common_style : String
@@ -127,6 +134,8 @@ pub let json_null_common_style : String
 pub fn json_null_component(name? : String, views? : Map[String, @anode.View], init? : JsonNullState, common_style? : String, global_style? : String, update? : (JsonNullState, @component.Dispatch, &@core.Ctx) -> @component.Update[JsonNullState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let json_null_global_style : String
+
+pub let json_null_spec_source : String
 
 pub fn json_null_views() -> Map[String, @anode.View]
 
@@ -164,11 +173,21 @@ pub fn json_string_views() -> Map[String, @anode.View]
 
 pub fn path_keys_label(Array[@core.StepKey]) -> String
 
+pub let recorder_bar_common_style : String
+
+pub fn recorder_bar_component(name? : String, views? : Map[String, @anode.View], init? : RecorderBarState, common_style? : String, global_style? : String, update? : (RecorderBarState, @component.Dispatch, &@core.Ctx) -> @component.Update[RecorderBarState], swap? : (RecorderBarInput) -> ((RecorderBarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let recorder_bar_global_style : String
+
+pub fn recorder_bar_views() -> Map[String, @anode.View]
+
 pub let rich_sample_common_style : String
 
 pub fn rich_sample_component(name? : String, views? : Map[String, @anode.View], init? : RichSampleState, common_style? : String, global_style? : String, update? : (RichSampleState, @component.Dispatch, &@core.Ctx) -> @component.Update[RichSampleState], compute? : (RichSampleMethod) -> ((RichSampleState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (RichSampleInput) -> ((RichSampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (RichSampleLoopWith) -> ((RichSampleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let rich_sample_global_style : String
+
+pub let rich_sample_spec_source : String
 
 pub fn rich_sample_views() -> Map[String, @anode.View]
 
@@ -179,6 +198,8 @@ pub fn sample_card_component(name? : String, views? : Map[String, @anode.View], 
 pub let sample_card_global_style : String
 
 pub fn sample_card_views() -> Map[String, @anode.View]
+
+pub fn sample_trace() -> @trace.Trace
 
 pub let schema_array_common_style : String
 
@@ -258,6 +279,8 @@ pub fn schema_property_component(name? : String, views? : Map[String, @anode.Vie
 
 pub let schema_property_global_style : String
 
+pub let schema_property_spec_source : String
+
 pub fn schema_property_views() -> Map[String, @anode.View]
 
 pub let schema_ref_common_style : String
@@ -274,6 +297,8 @@ pub fn schema_scalar_component(name? : String, views? : Map[String, @anode.View]
 
 pub let schema_scalar_global_style : String
 
+pub let schema_scalar_spec_source : String
+
 pub fn schema_scalar_views() -> Map[String, @anode.View]
 
 pub let schema_viewer_common_style : String
@@ -281,6 +306,8 @@ pub let schema_viewer_common_style : String
 pub fn schema_viewer_component(name? : String, views? : Map[String, @anode.View], init? : SchemaViewerState, common_style? : String, global_style? : String, update? : (SchemaViewerState, @component.Dispatch, &@core.Ctx) -> @component.Update[SchemaViewerState], compute? : (SchemaViewerMethod) -> ((SchemaViewerState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (SchemaViewerInput) -> ((SchemaViewerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let schema_viewer_global_style : String
+
+pub let schema_viewer_spec_source : String
 
 pub fn schema_viewer_views() -> Map[String, @anode.View]
 
@@ -296,9 +323,61 @@ pub fn state_editor_row_component(name? : String, views? : Map[String, @anode.Vi
 
 pub let state_editor_row_global_style : String
 
+pub let state_editor_row_spec_source : String
+
 pub fn state_editor_row_views() -> Map[String, @anode.View]
 
 pub fn state_editor_views() -> Map[String, @anode.View]
+
+pub let trace_header_common_style : String
+
+pub fn trace_header_component(name? : String, views? : Map[String, @anode.View], init? : TraceHeaderState, common_style? : String, global_style? : String, update? : (TraceHeaderState, @component.Dispatch, &@core.Ctx) -> @component.Update[TraceHeaderState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_header_global_style : String
+
+pub fn trace_header_views() -> Map[String, @anode.View]
+
+pub let trace_log_common_style : String
+
+pub fn trace_log_component(name? : String, views? : Map[String, @anode.View], init? : TraceLogState, common_style? : String, global_style? : String, update? : (TraceLogState, @component.Dispatch, &@core.Ctx) -> @component.Update[TraceLogState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_log_global_style : String
+
+pub fn trace_log_views() -> Map[String, @anode.View]
+
+pub let trace_panel_common_style : String
+
+pub fn trace_panel_component(name? : String, views? : Map[String, @anode.View], init? : TracePanelState, common_style? : String, global_style? : String, update? : (TracePanelState, @component.Dispatch, &@core.Ctx) -> @component.Update[TracePanelState], swap? : (TracePanelInput) -> ((TracePanelState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_panel_global_style : String
+
+pub fn trace_panel_views() -> Map[String, @anode.View]
+
+pub let trace_place_common_style : String
+
+pub fn trace_place_component(name? : String, views? : Map[String, @anode.View], init? : TracePlaceState, common_style? : String, global_style? : String, update? : (TracePlaceState, @component.Dispatch, &@core.Ctx) -> @component.Update[TracePlaceState], swap? : (TracePlaceInput) -> ((TracePlaceState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_place_global_style : String
+
+pub fn trace_place_views() -> Map[String, @anode.View]
+
+pub let trace_places_common_style : String
+
+pub fn trace_places_component(name? : String, views? : Map[String, @anode.View], init? : TracePlacesState, common_style? : String, global_style? : String, update? : (TracePlacesState, @component.Dispatch, &@core.Ctx) -> @component.Update[TracePlacesState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_places_global_style : String
+
+pub fn trace_places_views() -> Map[String, @anode.View]
+
+pub let trace_row_common_style : String
+
+pub fn trace_row_component(name? : String, views? : Map[String, @anode.View], init? : TraceRowState, common_style? : String, global_style? : String, update? : (TraceRowState, @component.Dispatch, &@core.Ctx) -> @component.Update[TraceRowState], swap? : (TraceRowInput) -> ((TraceRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+
+pub let trace_row_global_style : String
+
+pub fn trace_row_views() -> Map[String, @anode.View]
+
+pub fn trace_scope_label(String) -> String
 
 pub let value_fn_common_style : String
 
@@ -467,23 +546,6 @@ pub(all) struct DataInspectorState {
   value : @core.Value
 }
 pub fn DataInspectorState::zero() -> Self
-
-pub struct Inspector {
-  comps : Map[String, @component.Component]
-}
-pub fn Inspector::build_inspector_views(Self, @core.Value, comps? : @component.Components) -> InspectorViews
-pub fn Inspector::classify(Self, @core.Value) -> @core.Value
-pub fn Inspector::classify_schema(Self, @core.Value) -> @core.Value
-pub fn Inspector::components(Self) -> Array[@component.Component]
-pub fn Inspector::edit_instance(Self, @core.Value) -> @core.Value
-pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
-pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Components) -> @core.Value
-pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
-pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
-pub fn Inspector::module_(Self) -> @component.ModuleDef
-pub fn Inspector::new() -> Self
-pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value
-pub fn Inspector::schema_view(Self, @core.Value) -> @core.Value
 
 pub struct InspectorViews {
   instance_view : @core.Value
@@ -718,6 +780,55 @@ pub(all) struct JsonStringState {
   value : String
 }
 pub fn JsonStringState::zero() -> Self
+
+pub(all) enum RecorderBarInput {
+  ClearRecording
+  ClosePicker
+  OpenPicker
+  SetScope
+  StartRecording
+  StopRecording
+} derive(Eq, @debug.Debug)
+pub fn RecorderBarInput::name(Self) -> String
+pub fn RecorderBarInput::parse(String) -> Self?
+
+pub(all) enum RecorderBarMsg {
+  ClearRecording
+  ClosePicker
+  OpenPicker
+  SetScope(String)
+  StartRecording
+  StopRecording
+  Unknown(String, Array[@core.Value])
+}
+pub fn RecorderBarMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RecorderBarReceive {
+  SetScope(String)
+  OpenPicker
+  ClosePicker
+  StartRecording
+  StopRecording
+  ClearRecording
+  Unknown(String, Array[@core.Value])
+}
+pub fn RecorderBarReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn RecorderBarReceive::send(Self, &@core.Ctx) -> Unit
+pub fn RecorderBarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct RecorderBarState {
+  recording : Bool
+  scope : String
+  scopeLabel : String
+  allClass : String
+  sectionClass : String
+  exampleClass : String
+  events : Int
+  turns : Int
+  hasTrace : Bool
+  picking : Bool
+}
+pub fn RecorderBarState::zero() -> Self
 
 pub(all) enum RichSampleInput {
   Inc
@@ -1210,6 +1321,161 @@ pub(all) struct StateEditorState {
   name : String
 }
 pub fn StateEditorState::zero() -> Self
+
+pub(all) struct TraceHeaderState {
+  component : String
+  module_ : String
+  example : String
+  fingerprint : String
+  events : Int
+  inputs : Int
+  turns : Int
+  relocatedFrom : String
+  isRelocated : Bool
+  compacted : Bool
+}
+pub fn TraceHeaderState::zero() -> Self
+
+pub(all) enum TraceLogReceive {
+  SetTurn(Int)
+  ShowAllTurns
+  Unknown(String, Array[@core.Value])
+}
+pub fn TraceLogReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TraceLogReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TraceLogReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TraceLogState {
+  rows : Array[@core.Value]
+  hasRows : Bool
+  inputsOnly : Bool
+  turn : Int
+  emptyHint : String
+}
+pub fn TraceLogState::zero() -> Self
+
+pub(all) enum TracePanelInput {
+  SetTab
+  ToggleSelecting
+} derive(Eq, @debug.Debug)
+pub fn TracePanelInput::name(Self) -> String
+pub fn TracePanelInput::parse(String) -> Self?
+
+pub(all) enum TracePanelMsg {
+  SetTab(String)
+  ToggleSelecting
+  Unknown(String, Array[@core.Value])
+}
+pub fn TracePanelMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TracePanelReceive {
+  SetTab(String)
+  SetAt(Int)
+  ToggleSelecting
+  Unknown(String, Array[@core.Value])
+}
+pub fn TracePanelReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TracePanelReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TracePanelReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TracePanelState {
+  bar : @core.Value
+  header : @core.Value
+  places : @core.Value
+  log : @core.Value
+  recordTabClass : String
+  traceTabClass : String
+  selectTabClass : String
+  selectLabel : String
+  tab : String
+  hasTrace : Bool
+  selecting : Bool
+  showTrace : Bool
+  at : Int
+  total : Int
+}
+pub fn TracePanelState::zero() -> Self
+
+pub(all) enum TracePlaceInput {
+  PickPlace
+} derive(Eq, @debug.Debug)
+pub fn TracePlaceInput::name(Self) -> String
+pub fn TracePlaceInput::parse(String) -> Self?
+
+pub(all) enum TracePlaceMsg {
+  PickPlace(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TracePlaceMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TracePlaceReceive {
+  PickPlace(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TracePlaceReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TracePlaceReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TracePlaceReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TracePlaceState {
+  label : String
+  display : String
+  component : String
+  events : Int
+  depth : Int
+  selected : Bool
+  rowClass : String
+  mountable : Bool
+}
+pub fn TracePlaceState::zero() -> Self
+
+pub(all) struct TracePlacesState {
+  places : Array[@core.Value]
+  hasPlaces : Bool
+  selected : String
+  heading : String
+  emptyHint : String
+}
+pub fn TracePlacesState::zero() -> Self
+
+pub(all) enum TraceRowInput {
+  Toggle
+} derive(Eq, @debug.Debug)
+pub fn TraceRowInput::name(Self) -> String
+pub fn TraceRowInput::parse(String) -> Self?
+
+pub(all) enum TraceRowMsg {
+  Toggle
+  Unknown(String, Array[@core.Value])
+}
+pub fn TraceRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TraceRowReceive {
+  Toggle
+  Unknown(String, Array[@core.Value])
+}
+pub fn TraceRowReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TraceRowReceive::send(Self, &@core.Ctx) -> Unit
+pub fn TraceRowReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct TraceRowState {
+  seq : Int
+  turn : Int
+  walk : Int
+  hasWalk : Bool
+  verb : String
+  verbClass : String
+  name : String
+  place : String
+  args : String
+  input : Bool
+  rowClass : String
+  depth : Int
+  current : Bool
+  after : @core.Value
+  hasAfter : Bool
+  open : Bool
+}
+pub fn TraceRowState::zero() -> Self
 
 pub(all) struct ValueFnState {
 } derive(Default)

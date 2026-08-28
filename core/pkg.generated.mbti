@@ -208,6 +208,8 @@ pub(all) enum PathKey {
   KInt(Int)
   KStr(String)
 } derive(Eq, @debug.Debug)
+pub fn PathKey::from_json(Json) -> Self?
+pub fn PathKey::to_json(Self) -> Json
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
 
@@ -260,6 +262,7 @@ pub(all) struct Refusal {
   state : Value
   path : Path
 } derive(Eq, @debug.Debug)
+pub fn Refusal::to_json(Self) -> Json
 pub fn Refusal::to_line(Self) -> String
 
 pub(all) enum RefusalCode {
@@ -347,6 +350,8 @@ pub(all) struct StepKey {
   field : String
   key : PathKey?
 } derive(Eq, @debug.Debug)
+pub fn StepKey::from_json(Json) -> Self?
+pub fn StepKey::to_json(Self) -> Json
 
 pub(all) enum TyInfo {
   TyBool

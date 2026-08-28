@@ -506,7 +506,17 @@ test "a declining lex handler hands the intent to the next one, and costs no tra
   assert_eq(item_seen(tx.root), "ok:RStr(\"third\")")
   // Two declines and one answer, and NOT one queued hop per frame: the whole
   // leg resolved inside the transaction that was already running.
-  inspect(seen.join(" "), content="receive:go-lex answer:saveDraftOk")
+  //
+  // The three `intent:` records are those three decisions, one per handler
+  // asked. They are the only trace a lexical hop leaves — it is invoked inline
+  // rather than queued — and the reason they are worth emitting is right here:
+  // the sentence above describes what happens, and until these existed nothing
+  // could observe it. `passed.val` counts the declines from inside the
+  // handlers; this counts them from outside, which is where a devtool stands.
+  inspect(
+    seen.join(" "),
+    content="intent:saveDraft intent:saveDraft intent:saveDraft receive:go-lex answer:saveDraftOk",
+  )
 }
 
 ///|

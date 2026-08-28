@@ -80,6 +80,14 @@ pub fn Inspector::new() -> Inspector {
       instance_fields_comp(),
       state_editor_comp(insp),
       state_editor_row_comp(),
+      // trace layer
+      trace_row_comp(),
+      trace_log_comp(),
+      trace_header_comp(),
+      trace_place_comp(),
+      trace_places_comp(),
+      recorder_bar_comp(),
+      trace_panel_comp(),
     ] {
     insp.comps[c.name] = c
   }
@@ -300,113 +308,122 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
     "fn": Fn(_args => Null),
     "nothing": Null,
   })
-  @component.ModuleDef::new(name="inspector", components=insp.components(), examples=[
-    {
-      component: "DataInspector",
-      title: "Null",
-      args: { "value": insp.classify(Null) },
-      view: None,
-    },
-    {
-      component: "DataInspector",
-      title: "Small Array (expanded)",
-      args: {
-        "value": expand_top(
-          insp.classify(List([Num(1), Str("two"), Bool(true), Null])),
+  @component.ModuleDef::new(
+    name="inspector",
+    components=insp.components(),
+    examples=[
+      {
+        component: "DataInspector",
+        title: "Null",
+        args: { "value": insp.classify(Null) },
+        view: None,
+      },
+      {
+        component: "DataInspector",
+        title: "Small Array (expanded)",
+        args: {
+          "value": expand_top(
+            insp.classify(List([Num(1), Str("two"), Bool(true), Null])),
+          ),
+        },
+        view: None,
+      },
+      {
+        component: "DataInspector",
+        title: "Paginated Array (25 items, expanded)",
+        args: { "value": expand_top(insp.classify(long_list(25))) },
+        view: None,
+      },
+      {
+        component: "DataInspector",
+        title: "API Response Shape (expanded)",
+        args: { "value": expand_top(insp.classify(api_response_shape())) },
+        view: None,
+      },
+      {
+        component: "DataInspector",
+        title: "Deeply Mixed (expanded)",
+        args: { "value": deep_expand(insp.classify(deep_zoo)) },
+        view: None,
+      },
+      {
+        component: "SchemaViewer",
+        title: "Schema: Kitchen Sink (expanded)",
+        args: instance_args(
+          deep_expand(insp.schema_view(kitchen_sink_schema())),
         ),
+        view: None,
       },
-      view: None,
-    },
-    {
-      component: "DataInspector",
-      title: "Paginated Array (25 items, expanded)",
-      args: { "value": expand_top(insp.classify(long_list(25))) },
-      view: None,
-    },
-    {
-      component: "DataInspector",
-      title: "API Response Shape (expanded)",
-      args: { "value": expand_top(insp.classify(api_response_shape())) },
-      view: None,
-    },
-    {
-      component: "DataInspector",
-      title: "Deeply Mixed (expanded)",
-      args: { "value": deep_expand(insp.classify(deep_zoo)) },
-      view: None,
-    },
-    {
-      component: "SchemaViewer",
-      title: "Schema: Kitchen Sink (expanded)",
-      args: instance_args(deep_expand(insp.schema_view(kitchen_sink_schema()))),
-      view: None,
-    },
-    {
-      component: "SchemaViewer",
-      title: "Schema: Conditional",
-      args: instance_args(insp.schema_view(conditional_schema())),
-      view: None,
-    },
-    {
-      component: "SchemaViewer",
-      title: "Schema: Boolean False",
-      args: instance_args(insp.schema_view(Bool(false))),
-      view: None,
-    },
-    {
-      component: "ComponentInspector",
-      title: "Component: Rich Sample",
-      args: instance_args(insp.inspect_component(rich_sample_comp())),
-      view: None,
-    },
-    {
-      component: "ComponentInspector",
-      title: "Component: Rich Sample (expanded)",
-      args: instance_args(
-        deep_expand(insp.inspect_component(rich_sample_comp())),
-      ),
-      view: None,
-    },
-    {
-      component: "InstanceInspector",
-      title: "Instance Inspector (expanded)",
-      args: instance_args(insp.inspect_instance(card, sample_card)),
-      view: None,
-    },
-    {
-      component: "InstanceExplorer",
-      title: "Instance Explorer",
-      args: instance_args(insp.explore_instance(card, sample_card)),
-      view: None,
-    },
-    {
-      // A form nobody wrote: every row, control and label comes from what the
-      // component DECLARES, so this example works for any component at all.
-      component: "StateEditor",
-      title: "State Editor (schema-driven)",
-      args: instance_args(insp.edit_instance(card)),
-      view: None,
-    },
-    {
-      component: "ActivityLog",
-      title: "Activity Log",
-      args: Map([]),
-      view: None,
-    },
-    {
-      component: "ActivityEntry",
-      title: "Activity Entry",
-      args: {
-        "kind": Str("input"),
-        "name": Str("click"),
-        "matched": Str("exact"),
-        "pathLabel": Str("value.rows[1]"),
-        "time": Str("#1"),
-        "before": insp.inspect_value(Num(1)),
-        "after": insp.inspect_value(Num(2)),
-        "hasAfter": Bool(true),
+      {
+        component: "SchemaViewer",
+        title: "Schema: Conditional",
+        args: instance_args(insp.schema_view(conditional_schema())),
+        view: None,
       },
-      view: None,
-    },
-  ])
+      {
+        component: "SchemaViewer",
+        title: "Schema: Boolean False",
+        args: instance_args(insp.schema_view(Bool(false))),
+        view: None,
+      },
+      {
+        component: "ComponentInspector",
+        title: "Component: Rich Sample",
+        args: instance_args(insp.inspect_component(rich_sample_comp())),
+        view: None,
+      },
+      {
+        component: "ComponentInspector",
+        title: "Component: Rich Sample (expanded)",
+        args: instance_args(
+          deep_expand(insp.inspect_component(rich_sample_comp())),
+        ),
+        view: None,
+      },
+      {
+        component: "InstanceInspector",
+        title: "Instance Inspector (expanded)",
+        args: instance_args(insp.inspect_instance(card, sample_card)),
+        view: None,
+      },
+      {
+        component: "InstanceExplorer",
+        title: "Instance Explorer",
+        args: instance_args(insp.explore_instance(card, sample_card)),
+        view: None,
+      },
+      {
+        // A form nobody wrote: every row, control and label comes from what the
+        // component DECLARES, so this example works for any component at all.
+        component: "StateEditor",
+        title: "State Editor (schema-driven)",
+        args: instance_args(insp.edit_instance(card)),
+        view: None,
+      },
+      {
+        component: "ActivityLog",
+        title: "Activity Log",
+        args: Map([]),
+        view: None,
+      },
+      {
+        component: "ActivityEntry",
+        title: "Activity Entry",
+        args: {
+          "kind": Str("input"),
+          "name": Str("click"),
+          "matched": Str("exact"),
+          "pathLabel": Str("value.rows[1]"),
+          "time": Str("#1"),
+          "before": insp.inspect_value(Num(1)),
+          "after": insp.inspect_value(Num(2)),
+          "hasAfter": Bool(true),
+        },
+        view: None,
+      },
+      // The trace viewer, one entry per level — see trace_examples.mbt for why
+      // there is one for each rather than only for the finished screen.
+      ..insp.trace_examples(),
+    ],
+  )
 }

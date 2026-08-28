@@ -231,6 +231,48 @@ let commands : Array[CommandSpec] = [
       ),
     ],
   },
+  // Reading and shortening an execution trace (trace.mbt). One command over
+  // one file: the flags say what to do to it, and no flags says what is in it.
+  //
+  // Only the operations that need nothing but the file. Rebasing a trace onto
+  // the state its prefix produced means RUNNING the app, and a native CLI does
+  // not have the user's compiled components — so it is absent rather than
+  // half-present.
+  {
+    name: "trace",
+    describe: "Read an execution trace, trim it, or cut it down to one component.",
+    flags: [
+      flag(
+        "trim",
+        type_="string",
+        description="Keep the first N events. Slices lines, so it works on a trace holding an event kind this build does not know.",
+      ),
+      flag(
+        "at",
+        type_="string",
+        description="Cut the trace down to this address (`.rows[1].body`), rewriting every path to suit. Run with no flags first to see the ones it touched.",
+      ),
+      flag(
+        "compact",
+        type_="boolean",
+        description="Also drop the derived events. Smaller, and the result can no longer be relocated again.",
+      ),
+      flag(
+        "out",
+        short="o",
+        type_="string",
+        description="Write here (default: stdout).",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "file",
+        required=true,
+        description="The .trace.jsonl file to read.",
+      ),
+    ],
+  },
   // Build-time CSS (gen_css.mbt). The same class collection a running host does
   // before injecting a <style>, run over the view files instead — so an
   // ahead-of-time project can ship a stylesheet holding only what it uses. Two

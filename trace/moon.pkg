@@ -1,0 +1,23 @@
+// An execution trace: the state a component tree started in, plus every
+// message and intent that crossed the runtime afterwards, as data.
+//
+// The transactor already had an observer channel, and a subscription is not an
+// artifact: it cannot be saved, handed to someone else, or run again. This is
+// the artifact. What FILLS one is `@transactor.Recorder`, which this package
+// implements; what REPLAYS one needs a mounted app and lives in `trace/replay`.
+//
+// Pure and target-agnostic — a `Trace` in, a `Trace` out, never a DOM and never
+// an app. That is what lets the three shortening operations (`prefix`,
+// `rebase`, `relocate`) be `moon test`-able on every backend, and what lets the
+// native CLI perform two of them with no component runtime at all.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/transactor",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/debug",
+} for "test"

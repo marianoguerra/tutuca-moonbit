@@ -117,6 +117,10 @@ pub(all) enum Outcome {
   /// files, calls `collect_view_classes` and then the compiler, and writes the
   /// result.
   GenCss(GlobalOpts, plan~ : CssPlan)
+  /// Read an execution trace and do one thing to it (trace.mbt). The core
+  /// decides the operation and performs it — `trace_apply` is pure text in,
+  /// text out — and the shell reads the file and writes the answer.
+  Trace(GlobalOpts, plan~ : TracePlan)
 } derive(Debug, Eq)
 
 ///|

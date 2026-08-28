@@ -12,12 +12,19 @@ import {
   "marianoguerra/tutuca/storybook" @sb,
   // the per-story Instance tab renders the inspector over the live instance
   "marianoguerra/tutuca/storybook/inspector",
+  // the Trace tab: the host owns the recorder, because a transactor is the one
+  // thing a component cannot reach
+  "marianoguerra/tutuca/trace",
+  "marianoguerra/tutuca/transactor",
+  // selection mode: the component ancestry is read back out of the DOM markers
+  // the renderer stamped
+  "marianoguerra/tutuca/render",
   // `@string.parse_int`, for the story-index suffix in a pane name
   "moonbitlang/core/string",
 }
 
 import {
   "marianoguerra/tutuca/vdom/memdom",
-  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/testing/harness",
   "moonbitlang/core/test",
 } for "test"

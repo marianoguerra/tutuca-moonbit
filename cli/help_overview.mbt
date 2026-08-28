@@ -62,6 +62,26 @@ let overview_body : String =
   #|      is not in the source to be found. --print-classes shows what was
   #|      collected; --classes adds back what was not.
   #|
+  #|  trace <file> [--trim <n>] [--at <place>] [--compact] [-o <file>]
+  #|      Read an execution trace — the state a component tree started in, plus
+  #|      every message and intent that crossed the runtime afterwards. With no
+  #|      flags it says what is in one: which component, how many events, how
+  #|      many of those a rerun would feed, and every address it touched. Run
+  #|      that before --at; the places it lists are the ones there is anything
+  #|      to cut to.
+  #|        --trim    keep the first n events. Slices lines and never reads an
+  #|                  event, so a trace holding a kind this build has never
+  #|                  heard of shortens just the same.
+  #|        --at      cut it down to one subtree and rewrite every address, so
+  #|                  `.rows[1]` becomes the root. What a parent sent INTO that
+  #|                  subtree survives as an input; what the subtree did for
+  #|                  itself stays derived, because a rerun does it again.
+  #|        --compact also drop the derived events. Smaller, and the result can
+  #|                  no longer be relocated.
+  #|      Rebasing — replacing a prefix with the state it produced — is not here
+  #|      and cannot be: it means running the app, and a CLI does not have your
+  #|      compiled components.
+  #|
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
   #|        [--tailwind-css <file> | --margaui-css <file>]
   #|        [--css-entry <file>] [--css-classes <file>]

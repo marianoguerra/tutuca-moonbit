@@ -143,6 +143,16 @@ pub fn all_examples() -> Array[ExampleModule] {
       @inspector.inspector_module(),
       title="Instance Explorer",
     ),
+    // The trace viewer, from the same module. A second entry rather than a
+    // second module: these components are registered beside the inspector's
+    // and a story mounts one of them, so splitting the module would mean two
+    // registries and a row that renders in one gallery and not the other.
+    ex(
+      "trace-viewer",
+      "TracePanel",
+      @inspector.inspector_module(),
+      title="Trace Panel · reading a recording",
+    ),
   ]
 }
 

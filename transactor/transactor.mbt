@@ -24,7 +24,50 @@ pub fn Transactor::new(
     observers: [],
     obs_seq: 0,
     drain_subs: [],
+    recorder: NullRecorder::{ },
+    walk_seq: 0,
+    turn: 1,
   }
+}
+
+///|
+pub fn Transactor::set_recorder(self : Transactor, r : &Recorder) -> Unit {
+  self.recorder = r
+}
+
+///|
+pub fn Transactor::recorder(self : Transactor) -> &Recorder {
+  self.recorder
+}
+
+///|
+pub fn Transactor::reset_root(self : Transactor, root : @tutuca.Value) -> Unit {
+  let cur = self.root
+  if physical_equal(root, cur) {
+    return
+  }
+  self.root = root
+  for cb in self.change_subs {
+    cb(root, cur)
+  }
+}
+
+///|
+/// The next walk id. Never 0: 0 is what a record carries when it belongs to no
+/// walk, so a real walk must not be able to collide with it.
+fn Transactor::next_walk_id(self : Transactor) -> Int {
+  self.walk_seq = self.walk_seq + 1
+  self.walk_seq
+}
+
+///|
+/// Whether anything is watching — an observer, a recorder, or both.
+///
+/// Asked before a record is BUILT rather than before it is delivered, because
+/// building one pins a path and copies an argument list, and a page that
+/// installed nothing must not pay for either.
+fn Transactor::watched(self : Transactor) -> Bool {
+  !self.observers.is_empty() || self.recorder.recording()
 }
 
 ///|
@@ -60,7 +103,9 @@ fn Transactor::emit_record(
   matched : ObserveMatch,
   before : @tutuca.Value?,
   after : @tutuca.Value?,
-) -> Unit {
+  walk? : Int = 0,
+  parent_seq? : Int = 0,
+) -> Int {
   self.obs_seq = self.obs_seq + 1
   let record : ObserveRecord = {
     kind,
@@ -73,10 +118,14 @@ fn Transactor::emit_record(
     before,
     after,
     seq: self.obs_seq,
+    walk,
+    parent_seq,
   }
   for cb in self.observers {
     cb(record)
   }
+  self.recorder.on_observed(record)
+  self.obs_seq
 }
 
 ///|
@@ -87,7 +136,7 @@ fn Transactor::emit(
   old_root : @tutuca.Value,
   matched : ObserveMatch,
 ) -> Unit {
-  if self.observers.is_empty() {
+  if !self.watched() {
     return
   }
   // pin field-resolved keys against the root the handler read, so path_keys
@@ -96,7 +145,10 @@ fn Transactor::emit(
     Some(p) => p
     None => t.path.to_transaction_path()
   }).pin_keys(old_root)
-  self.emit_record(
+  // The causal link, and why it is read HERE: a parent's record is emitted
+  // when the parent's handler finished, which is strictly before it could have
+  // pushed this one, so by now `parent.obs_seq` is stamped.
+  t.obs_seq = self.emit_record(
     kind,
     t.name,
     t.args,
@@ -105,6 +157,11 @@ fn Transactor::emit(
     matched,
     t.obs_before,
     t.obs_after,
+    walk=t.walk_id,
+    parent_seq=match t.parent {
+      Some(p) => p.obs_seq
+      None => 0
+    },
   )
 }
 
@@ -144,8 +201,53 @@ fn Transactor::link(
     }
     None => ()
   }
-  self.queue.push(t)
+  self.enqueue(t, if parent is None { Extern } else { Derived })
   t
+}
+
+///|
+/// Put a transaction on the queue, telling the recorder it happened.
+///
+/// The single door, and it has to be single: an answer the runtime writes and
+/// one hop of an intent's walk are queued directly rather than through
+/// `push_send`, so a hook on the public entry points alone would miss exactly
+/// the dispatches that make a walk legible.
+///
+/// `source` is passed rather than inferred from `parent`, because the two
+/// direct pushes have no parent transaction and are nonetheless derived: the
+/// walk caused them, and a walk is not a transaction.
+fn Transactor::enqueue(
+  self : Transactor,
+  t : Transaction,
+  source : Source,
+) -> Unit {
+  if self.recorder.recording() {
+    t.push_seq = self.next_record_seq()
+    self.recorder.on_dispatch({
+      source,
+      bucket: t.bucket,
+      name: t.name,
+      args: t.args,
+      at: (match t.txn_path {
+        Some(p) => p
+        None => t.path.to_transaction_path()
+      }).pin_keys(self.root),
+      walk: t.walk_id,
+      // A handler pushed it, or a WALK did — and a walk is not a transaction,
+      // so the two cases read from different places and mean the same thing.
+      parent: match t.parent {
+        Some(p) => p.push_seq
+        None => t.walk_parent
+      },
+      opts: match t.walk {
+        Some(w) => w.opts
+        None => @tutuca.IntentOpts::new()
+      },
+      turn: self.turn,
+      seq: t.push_seq,
+    })
+  }
+  self.queue.push(t)
 }
 
 ///|
@@ -161,6 +263,8 @@ fn Transactor::mk_txn(
   txn_path? : @tutuca.Path,
   parent? : Transaction,
   walk? : IntentWalk,
+  walk_id? : Int = 0,
+  walk_parent? : Int = 0,
   is_answer? : Bool = false,
   origin? : @tutuca.DispatchPath,
   origin_pinned? : @tutuca.Path,
@@ -184,6 +288,16 @@ fn Transactor::mk_txn(
     obs_matched: None,
     obs_before: None,
     obs_after: None,
+    obs_seq: 0,
+    push_seq: 0,
+    walk_parent: match walk {
+      Some(w) => w.raise_seq
+      None => walk_parent
+    },
+    walk_id: match walk {
+      Some(w) => w.id
+      None => walk_id
+    },
   }
 }
 
@@ -205,10 +319,30 @@ pub fn Transactor::push_send(
     Some(o) => Some(o.to_transaction_path().pin_keys(self.root))
     None => None
   }
-  self.link(
-    self.mk_txn(path, Receive, name, args, parent?, origin?, origin_pinned?),
-    parent,
+  let t = self.mk_txn(
+    path,
+    Receive,
+    name,
+    args,
+    parent?,
+    origin?,
+    origin_pinned?,
   )
+  // `parent` is the whole of the distinction, and `link` is where it is read:
+  // a handler pushed this, or something outside the tree did.
+  self.link(t, parent)
+}
+
+///|
+/// A number for a record that is not an `ObserveRecord` — a dispatch entering
+/// the queue, an intent offered to a host, an answer coming back.
+///
+/// The SAME counter the observer records use, deliberately: a recording
+/// interleaves both kinds and a reader orders them by this one number. Two
+/// counters would mean two orderings and no way to merge them.
+fn Transactor::next_record_seq(self : Transactor) -> Int {
+  self.obs_seq = self.obs_seq + 1
+  self.obs_seq
 }
 
 ///|
@@ -252,6 +386,11 @@ pub fn Transactor::settle(
       cb()
     }
   }
+  // One turn is everything pushed between two drains — one DOM event with two
+  // handlers is one turn, not two. Bumped here because `draining` already
+  // identifies the outermost pass, so nothing outside has to say where a turn
+  // begins.
+  self.turn = self.turn + 1
   { processed, pending: self.has_pending(), }
 }
 

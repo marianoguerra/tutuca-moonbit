@@ -159,6 +159,65 @@ pub fn PathKey::to_value(self : PathKey) -> Value {
 }
 
 ///|
+/// A key as JSON. An `Int` and a `String` are already distinguishable in JSON,
+/// so there is no tag: the reader takes a number as `KInt` and a string as
+/// `KStr` and cannot be wrong about which it had.
+pub fn PathKey::to_json(self : PathKey) -> Json {
+  match self {
+    KInt(i) => Json::number(i.to_double())
+    KStr(s) => Json::string(s)
+  }
+}
+
+///|
+/// A key back. `None` for anything that is neither a number nor a string —
+/// which for a key is not a recoverable shape, so the caller decides what a
+/// missing key means rather than being handed a wrong one.
+pub fn PathKey::from_json(j : Json) -> PathKey? {
+  match j {
+    Number(n, ..) => Some(KInt(n.to_int()))
+    String(s) => Some(KStr(s))
+    _ => None
+  }
+}
+
+///|
+/// One addressing step as JSON: `{"f": "rows"}`, or `{"f": "rows", "k": 1}`.
+///
+/// The shared encoding of a position, and the reason it is here rather than in
+/// each of its readers: a refusal, an observer record and a stored execution
+/// trace all write the same address, and three copies of two keys is three
+/// chances for them to stop agreeing. Short keys because a trace of a real
+/// session is mostly these.
+///
+/// `k` is ABSENT rather than null for a plain field, which is the distinction
+/// `StepKey.key` is: a sequence step whose key is `null` is not a field step.
+pub fn StepKey::to_json(self : StepKey) -> Json {
+  let obj : Map[String, Json] = { "f": Json::string(self.field) }
+  match self.key {
+    Some(k) => obj["k"] = k.to_json()
+    None => ()
+  }
+  Json::object(obj)
+}
+
+///|
+/// One step back. `None` when the object names no field, or names a `k` that is
+/// not a key — a step that cannot say where it points is not a step.
+pub fn StepKey::from_json(j : Json) -> StepKey? {
+  guard j is Object(m) else { return None }
+  guard m.get("f") is Some(String(field)) else { return None }
+  match m.get("k") {
+    None | Some(Null) => Some({ field, key: None, })
+    Some(kj) =>
+      match PathKey::from_json(kj) {
+        Some(k) => Some({ field, key: Some(k), })
+        None => None
+      }
+  }
+}
+
+///|
 /// Addressing steps as readable text: `value.rows[1].title`.
 ///
 /// Over `StepKey` rather than `Step`, because that is the projection a

@@ -12,6 +12,14 @@ pub const INTENT_DEPTH : Int = 64
 // Errors
 
 // Types and methods
+pub(all) struct Answered {
+  walk : Int
+  parent : Int
+  nth : Int
+  answer : @core.IntentAnswer
+  seq : Int
+}
+
 pub struct Completion {
   mut pending : Int
   mut self_settled : Bool
@@ -22,9 +30,24 @@ pub struct Completion {
 pub fn Completion::on_settled(Self, () -> Unit) -> Unit
 pub fn Completion::on_subtree_settled(Self, () -> Unit) -> Unit
 
+pub(all) struct Dispatched {
+  source : Source
+  bucket : @core.HandlerBucket
+  name : String
+  args : Array[@core.Value]
+  at : @core.Path
+  walk : Int
+  parent : Int
+  opts : @core.IntentOpts
+  turn : Int
+  seq : Int
+}
+
 pub(all) struct IntentHandler((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Unit)
 
 pub struct IntentWalk {
+  mut raise_seq : Int
+  id : Int
   name : String
   mut route : Array[@core.Leg]
   mut leg : Int
@@ -45,6 +68,10 @@ pub impl Intents for NoIntents
 pub(all) struct NoNames {
 }
 pub impl Names for NoNames
+
+pub(all) struct NullRecorder {
+}
+pub impl Recorder for NullRecorder
 
 pub(all) enum ObserveKind {
   Receive
@@ -71,12 +98,29 @@ pub(all) struct ObserveRecord {
   before : @core.Value?
   after : @core.Value?
   seq : Int
+  walk : Int
+  parent_seq : Int
 }
 pub fn ObserveRecord::to_json(Self) -> Json
+
+pub(all) struct Offered {
+  walk : Int
+  parent : Int
+  name : String
+  args : Array[@core.Value]
+  from : @core.Path
+  nth : Int
+  seq : Int
+}
 
 pub(all) struct SettleResult {
   processed : Int
   pending : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Source {
+  Extern
+  Derived
 } derive(Eq, @debug.Debug)
 
 pub struct Transaction {
@@ -104,6 +148,9 @@ pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_intent(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.IntentOpts, parent? : Transaction) -> IntentWalk
 pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, origin? : @core.DispatchPath) -> Transaction
+pub fn Transactor::recorder(Self) -> &Recorder
+pub fn Transactor::reset_root(Self, @core.Value) -> Unit
+pub fn Transactor::set_recorder(Self, &Recorder) -> Unit
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 
 // Type aliases
@@ -118,4 +165,12 @@ pub(open) trait Names {
   fn dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
   fn lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
   fn build(Self, Int, Map[String, @core.Value]) -> @core.Value? = _
+}
+
+pub(open) trait Recorder {
+  fn recording(Self) -> Bool = _
+  fn on_dispatch(Self, Dispatched) -> Unit = _
+  fn on_offered(Self, Offered) -> Unit = _
+  fn on_answer(Self, Answered) -> Unit = _
+  fn on_observed(Self, ObserveRecord) -> Unit = _
 }

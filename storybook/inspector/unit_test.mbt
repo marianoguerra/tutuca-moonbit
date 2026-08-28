@@ -412,6 +412,8 @@ test "record_to_entry maps an observer record onto an ActivityEntry" {
     before: Some(Num(1)),
     after: Some(Num(2)),
     seq: 7,
+    walk: 0,
+    parent_seq: 0,
   }
   let entry = insp.record_to_entry(record)
   assert_true(oget(entry, "kind") is Str("receive"))

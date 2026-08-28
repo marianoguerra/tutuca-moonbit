@@ -11,6 +11,8 @@ import {
 }
 
 // Values
+pub fn clean_html(@memdom.MemNode) -> String
+
 pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value], view? : String) -> Harness[@memdom.MemNode] raise
 
 pub fn mount_example(@component.ModuleDef, String) -> Harness[@memdom.MemNode] raise
@@ -31,6 +33,7 @@ pub struct Harness[N] {
 pub fn[N : @vdom.DomWalk] Harness::attr(Self[N], String, String, nth? : Int) -> String? raise
 pub fn[N : @vdom.DomWalk] Harness::check(Self[N], String, Bool, nth? : Int) -> Unit raise
 pub fn Harness::checked_of(Self[@memdom.MemNode], String, nth? : Int) -> Bool raise
+pub fn Harness::clean_html(Self[@memdom.MemNode]) -> String
 pub fn[N : @vdom.DomWalk] Harness::click(Self[N], String, nth? : Int) -> Unit raise
 pub fn Harness::destroy(Self[@memdom.MemNode]) -> Unit
 pub fn[N : @vdom.DomWalk] Harness::drag(Self[N], String, Int, Int) -> Unit raise

@@ -33,6 +33,8 @@ pub fn Transactor::push_intent(
     None => None
   }
   let w : IntentWalk = {
+    raise_seq: 0,
+    id: self.next_walk_id(),
     name,
     route: opts.route,
     leg: 0,
@@ -44,6 +46,30 @@ pub fn Transactor::push_intent(
     answered: false,
     stopped: false,
     hops: 0,
+  }
+  if self.recorder.recording() {
+    // Stamped on the walk before anything it causes is pushed, so every hop,
+    // offer, answer and reply can point back at it.
+    w.raise_seq = self.next_record_seq()
+    self.recorder.on_dispatch({
+      source: if parent is None {
+        Extern
+      } else {
+        Derived
+      },
+      bucket: Intent,
+      name,
+      args,
+      at: path.to_transaction_path().pin_keys(self.root),
+      walk: w.id,
+      parent: match parent {
+        Some(p) => p.push_seq
+        None => 0
+      },
+      opts: w.opts,
+      turn: self.turn,
+      seq: w.raise_seq,
+    })
   }
   self.advance_walk(w)
   w
@@ -120,7 +146,9 @@ fn Transactor::queue_hop(self : Transactor, w : IntentWalk) -> Unit {
     target_path=w.origin,
     walk=w,
   )
-  self.queue.push(t)
+  // Derived, and it has no parent transaction to say so: the WALK caused this
+  // hop, and a walk is not a transaction.
+  self.enqueue(t, Derived)
 }
 
 ///|
@@ -159,10 +187,46 @@ fn Transactor::try_lex(
     return
   }
   let IntentHandler(f) = handlers[i]
+  let from = w.origin.to_transaction_path().pin_keys(self.root)
   let call : @tutuca.IntentCall = {
     name: w.name,
     args: w.args,
     from: w.origin,
+  }
+  // The boundary, made visible. A lexical hop is invoked inline rather than
+  // queued as a transaction, so nothing here ever reached an observer: a log
+  // showed an intent climbing the tree, then stopping, then an answer arriving
+  // from nowhere. This hop is the moment the intent LEAVES the tree, and it is
+  // the one thing a recording of a host-integrated app cannot do without.
+  //
+  // `Exact` is the honest answer even though the handler has not run: the
+  // chain came back non-empty, so a handler was resolved. Whether it CLAIMS the
+  // intent is the answer's business, and a `Pass` is reported by the next hop
+  // existing at all.
+  if self.watched() {
+    self.emit_record(
+      Intent,
+      w.name,
+      w.args,
+      from,
+      w.origin,
+      Exact,
+      None,
+      None,
+      walk=w.id,
+    )
+    |> ignore
+  }
+  if self.recorder.recording() {
+    self.recorder.on_offered({
+      walk: w.id,
+      parent: w.raise_seq,
+      name: w.name,
+      args: w.args,
+      from,
+      nth: i,
+      seq: self.next_record_seq(),
+    })
   }
   let done : Ref[Bool] = { val: false, }
   f(call, answer => {
@@ -174,6 +238,18 @@ fn Transactor::try_lex(
       return
     }
     done.val = true
+    // Recorded BEFORE it is acted on, so a late answer lands in the recording
+    // where it actually arrived rather than where the intent was raised. That
+    // ordering is the whole reason an asynchronous host can be replayed at all.
+    if self.recorder.recording() {
+      self.recorder.on_answer({
+        walk: w.id,
+        parent: w.raise_seq,
+        nth: i,
+        answer,
+        seq: self.next_record_seq(),
+      })
+    }
     match answer {
       Ok(v) => self.answer_walk(w, Ok(v))
       Failed(e) => self.answer_walk(w, Err(e))
@@ -274,12 +350,17 @@ fn Transactor::deliver_answer(
   } else {
     Some(txn_path.pin_keys(cur_root))
   }
+  // `walk_id` and not `walk`: the answer BELONGS to the walk, but it must not
+  // advance one — the walk is already over, and `after_transaction` advances
+  // whatever `walk` names.
   let t = self.mk_txn(
     w.origin,
     Receive,
     name,
     args,
     txn_path?=res_path,
+    walk_id=w.id,
+    walk_parent=w.raise_seq,
     is_answer=true,
   )
   // Transferred rather than released: the sender stays open until the answer
@@ -292,7 +373,7 @@ fn Transactor::deliver_answer(
     }
     None => ()
   }
-  self.queue.push(t)
+  self.enqueue(t, Derived)
 }
 
 ///|

@@ -262,7 +262,21 @@ pub fn install(app : @app.App[@wdom.WasmNode]) -> Unit {
 /// app/browser listener: touch events feed the drag synthesizer, dragover/drop
 /// are preventDefault-ed so drops are allowed, everything else dispatches from
 /// the event target.
-pub fn on_event(ev : @core.Any) -> Unit {
+/// `before` is the page's first refusal on an event: answering `true` consumes
+/// it, and the app never sees it.
+///
+/// A seam rather than a special case, because the case it exists for is not
+/// special: a page that is waiting to be POINTED at has to take the click that
+/// points, or the same click would also drive the thing it was pointing at.
+/// Anything a page owns more than the app does belongs here.
+///
+/// It runs after the touch and drag branches, which are the runtime's own
+/// gestures and not a page's to claim, and the default consumes nothing — so an
+/// `install(app)` that says nothing behaves exactly as it always did.
+pub fn on_event(
+  ev : @core.Any,
+  before? : (@wdom.WasmNode, String) -> Bool,
+) -> Unit {
   guard current_app.val is Some(app) else { return }
   let name = to_str(ev._get("type"))
   if name.has_prefix("touch") {
@@ -279,7 +293,14 @@ pub fn on_event(ev : @core.Any) -> Unit {
   if @core.is_nullish(target) {
     return
   }
-  let _ = app.dispatch(@wdom.WasmNode::of_any(target), dom_event_of(ev))
+  let node = @wdom.WasmNode::of_any(target)
+  if before is Some(f) && f(node, name) {
+    // Consumed, and the default with it: a page that claimed a click on a link
+    // meant to claim what the link would have done too.
+    prevent_default(ev)
+    return
+  }
+  let _ = app.dispatch(node, dom_event_of(ev))
 }
 
 ///|

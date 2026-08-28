@@ -16,6 +16,8 @@ pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
 
+pub fn[N : @vdom.DomWalk] components_at(N, N, &Boundaries, max_depth? : Int) -> Array[Crossing]
+
 pub fn event_path(DomEvent, Array[String], profile? : @eventpath.EventPathProfile) -> @core.Value
 
 pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, max_depth? : Int, stop_on_no_event? : Bool) -> EventDispatch?
@@ -31,6 +33,12 @@ pub fn render_root(@core.Value, RenderStack, RenderCtx, view? : String) -> @vdom
 // Errors
 
 // Types and methods
+pub(all) struct Crossing {
+  cid : Int
+  vid : String
+  path : @core.DispatchPath
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DomEvent {
   name : String
   value : @core.Value

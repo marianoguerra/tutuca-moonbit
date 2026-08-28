@@ -129,10 +129,13 @@ test "render workload shape" {
       #|23849
     ),
   )
+  // Every story in the gallery, rendered once. It moves whenever a story is
+  // added — which is the only reason it is asserted at all: a workload that
+  // silently stopped covering half the corpus would still be "fast".
   inspect(
     @benchmarks.render_all_examples(),
     content=(
-      #|66413
+      #|79121
     ),
   )
 }

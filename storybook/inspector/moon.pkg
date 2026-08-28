@@ -8,6 +8,7 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/trace",
   "moonbitlang/core/cmp",
   // parse_double: a text control hands back a String for a numeric field
   "moonbitlang/core/string",

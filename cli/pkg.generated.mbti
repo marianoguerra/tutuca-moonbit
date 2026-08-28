@@ -107,6 +107,8 @@ pub fn snake_case(String) -> String
 
 pub fn substitute_guest_name(String, String) -> String
 
+pub fn trace_apply(TracePlan, String) -> Result[TraceResult, ErrShape]
+
 pub fn watch_banner(Array[String], Array[String]) -> String
 
 pub fn watch_css_line(String, classes~ : Int) -> String
@@ -202,6 +204,7 @@ pub(all) enum Outcome {
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
+  Trace(GlobalOpts, plan~ : TracePlan)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ParsedArgs {
@@ -223,6 +226,24 @@ pub(all) struct SkillInstallPlan {
   user_scope : Bool
   force : Bool
   files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum TraceOp {
+  Info
+  Trim(at~ : Int)
+  Relocate(place~ : String, compact~ : Bool)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TracePlan {
+  path : String
+  op : TraceOp
+  out : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TraceResult {
+  file : String?
+  report : String
+  diagnostics : Array[String]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct WatchPlan {

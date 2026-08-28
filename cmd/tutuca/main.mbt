@@ -372,7 +372,7 @@ async fn run_gen_css(
   match plan.out {
     None => emit_and_exit({ out: css, err: "", exit_code: 0, })
     Some(target) =>
-      match write_css(target, css) {
+      match write_text_file(target, css) {
         Err(shape) => emit_and_exit(@cli.error_emit(opts, shape))
         Ok(_) =>
           emit_and_exit({
@@ -500,16 +500,21 @@ async fn compile_css(
 }
 
 ///|
-async fn write_css(
+/// Write a file, making its directory first.
+///
+/// Named for what it does rather than for the first command that wanted it:
+/// a stylesheet and a trimmed trace are the same job, and a `write_css` that
+/// writes traces is a name that has stopped being true.
+async fn write_text_file(
   target : String,
-  css : String,
+  text : String,
 ) -> Result[Unit, @cli.ErrShape] noraise {
   try {
     let dir = parent_dir(target)
     if dir != "" && !@fs.exists(dir) {
       @fs.mkdir(dir, recursive=true)
     }
-    @fs.write_file(target, css, create_mode=CreateOrTruncate)
+    @fs.write_file(target, text, create_mode=CreateOrTruncate)
     Ok(())
   } catch {
     e => Err(@cli.err(@cli.CODE_INTERNAL, "failed to write \{target}: \{e}"))
@@ -554,7 +559,7 @@ async fn refresh_watch_css(
       return
     }
   }
-  match write_css(target, css) {
+  match write_text_file(target, css) {
     Err(shape) => write_out(@cli.watch_error_line(shape.message))
     Ok(_) => write_out(@cli.watch_css_line(target, classes=classes.length()))
   }
@@ -803,5 +808,65 @@ async fn main {
       run_gen_views(opts, roots, out, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
+    Trace(opts, plan~) => run_trace(opts, plan)
+  }
+}
+
+///|
+/// `tutuca trace`: read the file, do the one thing, write the answer.
+///
+/// The core decides and performs the operation — `trace_apply` is text in,
+/// text out — so what is left here is the two ends nothing pure can do.
+async fn run_trace(
+  opts : @cli.GlobalOpts,
+  plan : @cli.TracePlan,
+) -> Unit noraise {
+  let source = @fs.read_file(plan.path).text() catch {
+    e => {
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot read \{plan.path}: \{e}",
+            hint="pass the path to a .trace.jsonl file",
+          ),
+        ),
+      )
+      return
+    }
+  }
+  let result = match @cli.trace_apply(plan, source) {
+    Ok(r) => r
+    Err(shape) => {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
+    }
+  }
+  // Gaps are warnings beside a result, not an error instead of one: a
+  // relocated trace missing something is usually missing something that did
+  // not matter, and it is still worth having.
+  let warnings = result.diagnostics.map(d => d + "\n").join("")
+  match (result.file, plan.out) {
+    // Nothing to write — `info` only reports.
+    (None, _) =>
+      emit_and_exit({ out: result.report, err: warnings, exit_code: 0, })
+    // To a file, with the report going to stderr so the two never mix: what
+    // was asked for is the FILE, and a summary printed into it would corrupt
+    // the one thing this command produces.
+    (Some(text), Some(target)) =>
+      match write_text_file(target, text) {
+        Ok(_) =>
+          emit_and_exit({
+            out: "",
+            err: warnings + result.report,
+            exit_code: 0,
+          })
+        Err(shape) => emit_and_exit(@cli.error_emit(opts, shape))
+      }
+    // To stdout, which makes the trace pipeable — so the REPORT goes to
+    // stderr, or it would end up in whatever the pipe was feeding.
+    (Some(text), None) =>
+      emit_and_exit({ out: text, err: warnings + result.report, exit_code: 0, })
   }
 }

@@ -12,6 +12,9 @@ import {
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript/check",
   "marianoguerra/tutuca/viewgen",
+  // `tutuca trace`: reading and shortening a recording, which needs nothing
+  // but the file
+  "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/string",
 }

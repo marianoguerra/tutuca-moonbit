@@ -8,7 +8,7 @@
 /// below falls into "Other" (appended last).
 let section_order : Array[String] = [
   "Basics", "Lists & Data", "Composition & Views", "Macros & Styles", "Graphics",
-  "Behavior", "Lint", "Inspectors", "Other",
+  "Behavior", "Lint", "Inspectors", "Traces", "Other",
 ]
 
 ///|
@@ -65,6 +65,7 @@ fn section_for(name : String) -> String {
     | "visual-wasm" => "Behavior"
     "lint-errors" => "Lint"
     "inspector" => "Inspectors"
+    "trace-viewer" => "Traces"
     _ => "Other"
   }
 }
@@ -218,6 +219,10 @@ fn meta_for(name : String) -> (String, String) {
     "inspector" =>
       (
         "Instance Explorer", "Browse a component's structure and live instance state",
+      )
+    "trace-viewer" =>
+      (
+        "Trace Panel", "Record what an app did, read it back, and cut it down to one component",
       )
     _ => (name, "")
   }

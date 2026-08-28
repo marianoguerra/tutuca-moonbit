@@ -1,0 +1,30 @@
+// Running a recording back.
+//
+// Its own package because it needs an app, a scope and a DOM, and `trace`
+// deliberately needs none of those: what a recording SAYS is checkable on every
+// backend with no renderer anywhere, and that is what keeps the three
+// shortening operations cheap to test and lets the native CLI perform two of
+// them with no component runtime at all.
+//
+// This is also the step that PROVES the format. A recording that cannot be run
+// back is a log; until the same events reach the same state, nothing else built
+// on it is worth having.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/trace",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/testing/harness",
+  "moonbitlang/core/debug",
+}
+
+// Test-only: the fixtures build their components the way a generated view
+// module does, with `View::from_ir` — so the tests need `anode`, and nothing
+// this package SHIPS does.
+import {
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+} for "test"

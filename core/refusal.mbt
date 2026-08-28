@@ -211,6 +211,36 @@ pub fn Refusal::to_line(self : Refusal) -> String {
 }
 
 ///|
+/// One refusal as JSON — a record a host posts across a boundary, a scene
+/// report keeps, or an execution trace carries.
+///
+/// `to_line` is the sentence a person reads in a test failure and throws away
+/// everything a machine would filter on: the code is folded into prose, the
+/// path is a `Repr` of its steps, and the rejected state — the thing the record
+/// exists to carry — never appears at all. This is the same record with nothing
+/// dropped.
+///
+/// `path` is the readable label and `pathKeys` the structure, the same pair
+/// `ObserveRecord::to_json` writes, so a consumer that shows one and filters on
+/// the other reads both the same way. `state` is absent — not null — when the
+/// producer had none in hand, which is the distinction a `Null` state would
+/// erase.
+pub fn Refusal::to_json(self : Refusal) -> Json {
+  let obj : Map[String, Json] = {
+    "code": Json::string(self.code.word()),
+    "asked": Json::string(self.asked),
+    "rule": Json::string(self.rule),
+    "sentence": Json::string(self.sentence),
+    "path": Json::string(self.path.to_label()),
+    "pathKeys": Json::array(self.path.to_keys().map(k => k.to_json())),
+  }
+  if !(self.state is Null) {
+    obj["state"] = self.state.to_json()
+  }
+  Json::object(obj)
+}
+
+///|
 /// Where refusals go. `None` — the default — is the channel switched off, and
 /// every producer checks it before building anything.
 let runtime_notice_hook : Ref[((RuntimeNotice) -> Unit)?] = Ref(None)

@@ -19,7 +19,7 @@ pub fn install_styles(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @maria
 
 pub fn mount_in(@component.ModuleDef, String, id? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
 
-pub fn on_event(@mizchi/js/core.Any) -> Unit
+pub fn on_event(@mizchi/js/core.Any, before? : (@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> Bool) -> Unit
 
 // Errors
 

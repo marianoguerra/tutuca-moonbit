@@ -1,0 +1,132 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/trace"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/transactor",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const VERSION : Int = 1
+
+pub fn cut_root(Json, Place) -> Json?
+
+pub fn from_jsonl(String) -> Trace raise TraceError
+
+pub fn parse_place(String) -> Place raise TraceError
+
+pub fn split_lines(String) -> (Array[String], Array[String]) raise TraceError
+
+// Errors
+pub suberror TraceError {
+  NoHeader(String)
+  NotJson(line~ : Int, why~ : String)
+  NotATrace(line~ : Int)
+  BadVersion(line~ : Int, got~ : Int, want~ : Int)
+  NoRoot(line~ : Int)
+  LateHeader(line~ : Int)
+  NoOp(line~ : Int, keys~ : Array[String])
+  BadField(line~ : Int, key~ : String, want~ : String)
+  BadPlace(line~ : Int, why~ : String)
+}
+pub fn TraceError::message(Self) -> String
+
+// Types and methods
+pub(all) struct Event {
+  seq : Int
+  turn : Int
+  walk : Int
+  parent : Int
+  at : Place
+  op : Op
+  input : Bool
+  after : Json?
+} derive(Eq, @debug.Debug)
+pub fn Event::from_json(Json, line~ : Int) -> Self raise TraceError
+pub fn Event::to_json(Self) -> Json
+
+pub(all) enum Gap {
+  UnansweredIntent(name~ : String, seq~ : Int)
+  UnprovidedName(name~ : String)
+  NoDerivedStream
+  NoSuchPlace(place~ : String)
+  NotAComponent(place~ : String)
+} derive(Eq, @debug.Debug)
+pub fn Gap::message(Self) -> String
+
+pub(all) enum Op {
+  Send(name~ : String, args~ : Array[@core.Value])
+  Intent(name~ : String, args~ : Array[@core.Value], opts~ : @core.IntentOpts)
+  Offered(name~ : String, args~ : Array[@core.Value], nth~ : Int)
+  Answer(nth~ : Int, answer~ : @core.IntentAnswer)
+  Refused(code~ : String, asked~ : String, rule~ : String, sentence~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Origin {
+  module_ : String
+  component : String
+  example : String
+  view : String
+  fingerprint : String
+} derive(Eq, @debug.Debug)
+pub fn Origin::empty() -> Self
+
+pub(all) struct Place(Array[@core.StepKey]) derive(Eq, @debug.Debug)
+pub fn Place::depth(Self) -> Int
+pub fn Place::from_json(Json) -> Self?
+pub fn Place::label(Self) -> String
+pub fn Place::of_path(@core.Path) -> Self
+pub fn Place::starts_with(Self, Self) -> Bool
+pub fn Place::strip_prefix(Self, Self) -> Self?
+pub fn Place::to_json(Self) -> Json
+pub fn Place::to_path(Self) -> @core.Path
+pub fn Place::to_steps(Self) -> Array[@core.Step]
+
+pub struct RingRecorder {
+  // private fields
+}
+pub fn RingRecorder::new(turns~ : Int, snapshot~ : () -> Json, origin? : Origin, keep_after? : Bool) -> Self
+pub fn RingRecorder::take(Self) -> Trace
+pub impl @transactor.Recorder for RingRecorder
+
+pub struct ScopedRecorder {
+  // private fields
+}
+pub fn ScopedRecorder::new(at~ : Place, root~ : Json, origin? : Origin, keep_after? : Bool) -> Self
+pub fn ScopedRecorder::take(Self) -> Trace
+pub impl @transactor.Recorder for ScopedRecorder
+
+pub(all) struct Trace {
+  version : Int
+  origin : Origin
+  root : Json
+  relocated_from : Array[Place]
+  compacted : Bool
+  events : Array[Event]
+} derive(Eq, @debug.Debug)
+pub fn Trace::compact(Self) -> Self
+pub fn Trace::from_json(Json) -> Self raise TraceError
+pub fn Trace::input_count(Self) -> Int
+pub fn Trace::new(root~ : Json, origin? : Origin) -> Self
+pub fn Trace::places(Self) -> Array[Place]
+pub fn Trace::prefix(Self, Int) -> Self
+pub fn Trace::rebase(Self, at~ : Int, root~ : Json) -> Self
+pub fn Trace::relocate(Self, Place) -> (Self, Array[Gap])
+pub fn Trace::to_json(Self) -> Json
+pub fn Trace::to_jsonl(Self) -> String
+pub fn Trace::turn_boundary(Self, Int) -> Int
+pub fn Trace::turns(Self) -> Array[Array[Event]]
+
+pub struct TraceRecorder {
+  // private fields
+}
+pub fn TraceRecorder::new(root~ : Json, origin? : Origin, sink? : (String) -> Unit, keep_after? : Bool) -> Self
+pub fn TraceRecorder::stop_watching_refusals(Self) -> Unit
+pub fn TraceRecorder::take(Self) -> Trace
+pub fn TraceRecorder::watch_refusals(Self) -> () -> Unit
+pub impl @transactor.Recorder for TraceRecorder
+
+// Type aliases
+
+// Traits
