@@ -306,5 +306,6 @@ fn refusal_label(r : @tutuca.Refusal) -> String {
     IntentDepth => "intent depth"
     TypeNotFound => "no such type"
     NoSender => "no sender"
+    BadPayload => "bad payload"
   }
 }

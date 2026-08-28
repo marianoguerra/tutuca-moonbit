@@ -6,8 +6,8 @@
     matched : String
     pathLabel : String
     time : String
-    before : Any
-    after : Any
+    before : Component?
+    after : Component?
     hasAfter : Bool
 
     /// `ObserveMatch::label` produces these two and nothing else.
@@ -27,7 +27,7 @@
   }
 
   state ActivityLog {
-    events : Array[Any]
+    events : Array[ActivityEntry]
     hasEvents : Bool
 
     /// Newest-first and CAPPED — `appendEntry` drops the tail, and the cap

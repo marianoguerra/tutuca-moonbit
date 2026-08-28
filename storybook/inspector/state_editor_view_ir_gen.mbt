@@ -48,8 +48,8 @@ pub let state_editor_row_spec_source : String =
   #|  }
   #|
   #|  state StateEditor {
-  #|    target : Any
-  #|    rows : Array[Any]
+  #|    target : Component
+  #|    rows : Array[StateEditorRow]
   #|    name : String
   #|  }
 

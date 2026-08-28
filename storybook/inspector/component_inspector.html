@@ -8,7 +8,7 @@
   state CompField {
     name : String
     typeName : String
-    child : Any
+    child : Component
 
     /// A declared field is a name and a type. Both come off the schema, so
     /// a row missing either is a projection that lost something.
@@ -27,7 +27,7 @@
   }
 
   state CompSection {
-    items : Array[Any]
+    items : Array[Component]
     isExpanded : Bool
     itemsPerPage : Int
     currentPage : Int
@@ -53,7 +53,7 @@
   state ComponentInspector {
     compName : String
     compId : Int
-    sections : Array[Any]
+    sections : Array[CompSection]
 
     /// A component's registration id, handed out in order from zero.
     where compId >= 0

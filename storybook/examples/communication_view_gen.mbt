@@ -71,13 +71,27 @@ pub(all) enum StatusReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StatusReceive::from_dispatch(d : @component.Dispatch) -> StatusReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("flash", [Str(a0)]) => Flash(a0)
       ("clear", []) => Clear
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "flash" => @tutuca.bad_payload(name, "String", args)
+          "clear" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -198,6 +212,13 @@ pub(all) enum SendReceiveReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SendReceiveReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SendReceiveReceive? {
@@ -208,7 +229,16 @@ pub fn SendReceiveReceive::from_dispatch(
       ("clearStatus", []) => ClearStatus
       ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "clearDraft" => @tutuca.bad_payload(name, "", args)
+          "clearStatus" => @tutuca.bad_payload(name, "", args)
+          "setDraft" => @tutuca.bad_payload(name, "String", args)
+          "submit" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -410,6 +440,13 @@ pub(all) enum TreeItemReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn TreeItemReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> TreeItemReceive? {
@@ -417,7 +454,13 @@ pub fn TreeItemReceive::from_dispatch(
   Some(
     match (name, args) {
       ("onItemClick", []) => OnItemClick
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "onItemClick" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -531,12 +574,12 @@ pub fn TreeItemMethod::name(self : TreeItemMethod) -> String {
 impl @component.Fields for TreeItemState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeItem",
-    fingerprint="1ef7221de42175fb",
+    fingerprint="9bc820eb0e355113",
     fields=[
       @component.FieldInfo::new("type", TyText),
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("isOpen", TyBool),
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("TreeItem")))),
     ],
     view_handlers=["onItemClick"],
     methods=["areChildsVisible", "filesAreLeaves"],
@@ -553,7 +596,7 @@ impl @component.Fields for TreeItemState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct TreeRootState {
-  log : Array[@tutuca.Value]
+  log : Array[String]
   root : @tutuca.Value
 }
 
@@ -577,7 +620,7 @@ pub fn TreeRootState::zero() -> TreeRootState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for TreeRootState with fn encode(s) {
-  { "log": (List(s.log.map(x => x)) : @tutuca.Value), "root": s.root }
+  { "log": (List(s.log.map(x => Str(x))) : @tutuca.Value), "root": s.root }
 }
 
 ///|
@@ -586,9 +629,9 @@ impl @component.Fields for TreeRootState with fn encode(s) {
 impl @component.Fields for TreeRootState with fn decode(f) {
   guard f.get("log") is Some(t1_log) else { return None }
   guard t1_log is List(u1_log) else { return None }
-  let v_log : Array[@tutuca.Value] = []
+  let v_log : Array[String] = []
   for e1_log in u1_log {
-    let x1_log = e1_log
+    guard e1_log is Str(x1_log) else { return None }
     v_log.push(x1_log)
   }
   let v_root = f.get("root").unwrap_or(Null)
@@ -613,9 +656,9 @@ pub let tree_root_global_style : String = ""
 impl @component.Fields for TreeRootState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeRoot",
-    fingerprint="259cbbf71628d31a",
+    fingerprint="9e543e5dcf7e78cd",
     fields=[
-      @component.FieldInfo::new("log", TyList(TyAny)),
+      @component.FieldInfo::new("log", TyList(TyText)),
       @component.FieldInfo::new("root", TyComp(Some("TreeItem"))),
     ],
     view_names=["main"],

@@ -68,8 +68,8 @@ pub let story_nav_spec_source : String =
   #|  }
   #|
   #|  state DyncompStorybook {
-  #|    cards : Array[Any]
-  #|    nav : Array[Any]
+  #|    cards : Array[StoryCard]
+  #|    nav : Array[StoryNav]
   #|    query : String
   #|    module : String
   #|    name : String

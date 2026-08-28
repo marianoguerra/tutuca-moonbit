@@ -56,6 +56,21 @@ const SHAPES : String =
   #|}
 
 ///|
+/// A nullable field under a relation, which is the pair that used to have a
+/// blind spot: `is key of` narrows the draw to keys the map holds, so the
+/// EMPTY — the state the `?` exists for, and the one `<x render=".m[.sel]">`
+/// paints as nothing — was never drawn. `is index of` has `or none` for its
+/// integer sentinels; a `T?` needs no clause of its own, because
+/// `domain_holds` already admits `Null` under every relation.
+const SELECTION : String =
+  #|state Picker {
+  #|  byKey : Map[String, String]
+  #|  sel   : String?
+  #|
+  #|  where sel is key of .byKey
+  #|}
+
+///|
 /// The rules, in all three arrangements: a plain `pred`, a `pred` that names
 /// another one, and an `invariant` correlating three fields. Plus the messages
 /// a dispatch is drawn from, with and without a payload.
@@ -259,6 +274,23 @@ test "property: an interpreted rule agrees with what it declares" {
 /// `such_that_maybe` gives up rather than looping, so a `None` is a legal
 /// answer and is discarded; what may never happen is a `Some` holding a state
 /// the rule rejects.
+test "a nullable field under a relation draws both its empty and a value the relation admits" {
+  let def = one(SELECTION)
+  let states = @arb.state_of(def).samples(size=8, seed=20260828)
+  let sels = states.map(s => s.get("sel").unwrap_or(Null))
+  // Both halves are reached...
+  assert_true(sels.iter().any(v => v is Null))
+  assert_true(sels.iter().any(v => v is Str(_)))
+  // ...and the non-empty half is always a key the map actually holds, which is
+  // what the relation says and what the draw is narrowed to.
+  for st in states {
+    guard st.get("sel") is Some(Str(k)) else { continue }
+    guard st.get("byKey") is Some(Map(m)) else { fail("byKey is not a map") }
+    assert_true(m.contains(k))
+  }
+}
+
+///|
 test "property: the invariant filter admits only states the invariant holds for" {
   let def = one(LEDGER)
   let rules = @arb.rules_of(def)

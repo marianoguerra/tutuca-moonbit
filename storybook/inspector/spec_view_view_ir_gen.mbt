@@ -59,7 +59,7 @@ pub let spec_field_spec_source : String =
   #|
   #|  state SpecViewer {
   #|    compName : String
-  #|    sections : Array[Any]
+  #|    sections : Array[Component]
   #|    hasSpec : Bool
   #|    hint : String
   #|    note : String

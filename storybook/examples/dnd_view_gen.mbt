@@ -14,7 +14,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct DnDExampleState {
-  items : Array[@tutuca.Value]
+  items : Array[String]
   query : String
 }
 
@@ -39,7 +39,7 @@ pub fn DnDExampleState::zero() -> DnDExampleState {
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for DnDExampleState with fn encode(s) {
   {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "items": (List(s.items.map(x => Str(x))) : @tutuca.Value),
     "query": Str(s.query),
   }
 }
@@ -50,9 +50,9 @@ impl @component.Fields for DnDExampleState with fn encode(s) {
 impl @component.Fields for DnDExampleState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
+  let v_items : Array[String] = []
   for e1_items in u1_items {
-    let x1_items = e1_items
+    guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
@@ -80,6 +80,13 @@ pub(all) enum DnDExampleReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn DnDExampleReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> DnDExampleReceive? {
@@ -89,7 +96,15 @@ pub fn DnDExampleReceive::from_dispatch(
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
+          "resetQuery" => @tutuca.bad_payload(name, "", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -213,9 +228,9 @@ pub fn DnDExampleWhen::name(self : DnDExampleWhen) -> String {
 impl @component.Fields for DnDExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="DnDExample",
-    fingerprint="56351ef7784eb5e1",
+    fingerprint="19853145dad9c7e6",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("query", TyText),
     ],
     view_handlers=["onDropOnItem", "resetQuery", "setQuery"],

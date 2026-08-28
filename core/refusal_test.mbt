@@ -204,6 +204,38 @@ test "switched off, the report is the line warn has always printed" {
 }
 
 ///|
+/// A declared name handed the wrong shape, said out loud.
+///
+/// The generated `from_dispatch` is the one place that holds both halves — the
+/// arguments that arrived and the spelling the schema wrote — and this is the
+/// producer it calls. Asserted here rather than through a generated module
+/// because what is being pinned is the RECORD: a code of its own, and the
+/// argument list carried where a rejected state normally goes.
+test "a payload that does not fit its declaration is reported with the args" {
+  let said = watched(() => @core.bad_payload("moveTo", "Int, Int", [Str("x")]))
+  assert_eq(said.length(), 1)
+  assert_eq(said[0].code, BadPayload)
+  assert_eq(said[0].asked, "moveTo")
+  // Not a state: the arguments, because no arm ran and they are the thing to
+  // go and look at.
+  assert_eq(said[0].state, List([Str("x")]))
+  assert_eq(
+    said[0].to_line(),
+    "BAD_PAYLOAD at `moveTo` — the arguments do not fit `moveTo(Int, Int)`",
+  )
+}
+
+///|
+/// Nothing is built when nothing is listening, which is what lets the argument
+/// list be carried at all — the same bargain a rejected state makes.
+test "a payload refusal costs nothing with the channel switched off" {
+  // No listener installed: the producer returns before building the record,
+  // and `warn` is not reached either — a mismatch is not a warning, it is a
+  // record or it is nothing.
+  @core.bad_payload("moveTo", "Int, Int", [Str("x")])
+}
+
+///|
 /// `to_line` is prose and `to_json` is the record: what the sentence folds away
 /// — the code as a word to filter on, the address as structure, and the state
 /// that was rejected — is exactly what a stored trace or a scene report needs

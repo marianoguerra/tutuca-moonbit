@@ -110,6 +110,13 @@ pub(all) enum StateEditorRowReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StateEditorRowReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> StateEditorRowReceive? {
@@ -117,7 +124,13 @@ pub fn StateEditorRowReceive::from_dispatch(
   Some(
     match (name, args) {
       ("edit", [a0]) => Edit(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "edit" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -313,10 +326,10 @@ pub let state_editor_global_style : String = ""
 impl @component.Fields for StateEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="StateEditor",
-    fingerprint="8f92ec0f9400c2a7",
+    fingerprint="c309ede10e666779",
     fields=[
-      @component.FieldInfo::new("target", TyAny),
-      @component.FieldInfo::new("rows", TyList(TyAny)),
+      @component.FieldInfo::new("target", TyComp(None)),
+      @component.FieldInfo::new("rows", TyList(TyComp(Some("StateEditorRow")))),
       @component.FieldInfo::new("name", TyText),
     ],
     view_names=["main"],

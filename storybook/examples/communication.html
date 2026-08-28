@@ -37,7 +37,7 @@
     type : String
     label : String
     isOpen : Bool
-    items : Array[Any]
+    items : Array[TreeItem]
 
     /// A filesystem node is one of exactly two things, and the views branch
     /// on nothing else. Stated as a domain rather than as a rule so the
@@ -54,7 +54,7 @@
   }
 
   state TreeRoot {
-    log : Array[Any]
+    log : Array[String]
     root : TreeItem
   }
 </script>

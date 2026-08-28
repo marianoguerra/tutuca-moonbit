@@ -103,6 +103,13 @@ pub(all) enum InstanceFieldsReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn InstanceFieldsReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> InstanceFieldsReceive? {
@@ -112,7 +119,15 @@ pub fn InstanceFieldsReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -269,9 +284,9 @@ pub fn InstanceFieldsLoopWith::name(self : InstanceFieldsLoopWith) -> String {
 impl @component.Fields for InstanceFieldsState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceFields",
-    fingerprint="250e84a7d398d710",
+    fingerprint="ba73b280c25f2f1f",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
@@ -350,8 +365,8 @@ pub let instance_inspector_global_style : String = ""
 impl @component.Fields for InstanceInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceInspector",
-    fingerprint="7671eca5ec353551",
-    fields=[@component.FieldInfo::new("value", TyAny)],
+    fingerprint="363e7b592cf809d2",
+    fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )
 }
@@ -437,6 +452,13 @@ pub(all) enum InstanceExplorerReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn InstanceExplorerReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> InstanceExplorerReceive? {
@@ -444,7 +466,13 @@ pub fn InstanceExplorerReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setActiveTab", [Str(a0)]) => SetActiveTab(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setActiveTab" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -543,11 +571,11 @@ pub fn InstanceExplorerMsg::from_dispatch(
 impl @component.Fields for InstanceExplorerState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceExplorer",
-    fingerprint="eef9b127adea0340",
+    fingerprint="44ad70e869788180",
     fields=[
       @component.FieldInfo::new("activeTab", TyText),
-      @component.FieldInfo::new("instanceView", TyAny),
-      @component.FieldInfo::new("componentView", TyAny),
+      @component.FieldInfo::new("instanceView", TyComp(None)),
+      @component.FieldInfo::new("componentView", TyComp(None)),
       @component.FieldInfo::new("hasComponent", TyBool),
     ],
     view_handlers=["setActiveTab"],

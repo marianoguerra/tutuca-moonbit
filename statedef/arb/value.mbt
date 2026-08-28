@@ -223,6 +223,28 @@ fn field_gen(
       _ => elems.fmap(vs => (List(vs) : @tutuca.Value))
     }
   }
+  // A nullable field's empty is admissible under EVERY relation — each one
+  // guards on the shape it reads and answers `true` for anything else, `Null`
+  // included (`domain_holds`, core/domain.mbt). But a domain-derived draw only
+  // ever produces the shape it inverted, so a `String?` under `is key of`
+  // would never see its own empty: the one state the relation exists to make
+  // room for, and the one no run reaches.
+  //
+  // This is why `index of` grew `or none` and `key of` did not, and why
+  // `key of` does not need one. The sentinel clause is about SENTINEL INTEGERS
+  // — `-1`, or `0` over an empty list — a convention no type can state. The
+  // empty of a `T?` is a different thing: the type already states it, and it
+  // belongs to every relation at once rather than to the one that asked.
+  //
+  // Same 1:2 as the unconstrained `TOption` draw, so adding a `where` to a
+  // nullable field does not quietly change how often it is empty.
+  let with_empty = fn(g : @gen.Gen[@tutuca.Value]) {
+    if f.ty is TOption(_) {
+      @gen.frequency([(1, @gen.pure((Null : @tutuca.Value))), (2, g)])
+    } else {
+      g
+    }
+  }
   // Several clauses on one field CONJOIN, and only one of them can be
   // inverted into a draw — so the first invertible one produces the value and
   // the rest are filtered for. In practice one clause is the common case and
@@ -230,6 +252,7 @@ fn field_gen(
   // than looping, and the fallback below is what stands.
   for d in mine {
     if value_in_domain(d, drawn) is Some(g) {
+      let g = with_empty(g)
       if mine.length() == 1 {
         return g
       }

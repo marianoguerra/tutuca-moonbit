@@ -31,12 +31,12 @@ pub let render_with_scope_spec_source : String =
   #|  }
   #|
   #|  state ListFilterEnrich {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|    query : String
   #|  }
   #|
   #|  state ListFilterEnrichWith {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|    query : String
   #|  }
 

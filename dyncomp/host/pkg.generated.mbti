@@ -91,6 +91,7 @@ pub(all) struct DynComponentDef {
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
+  domains : Array[@core.FieldDomain]
   receives : Array[String]
   intents : Array[String]
   express_messages : Array[String]

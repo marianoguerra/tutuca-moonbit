@@ -37,6 +37,8 @@ pub fn v2_case_name(i : Int) -> String? {
     24 => Some("case24")
     25 => Some("case25")
     26 => Some("case26")
+    27 => Some("case27")
+    28 => Some("case28")
     _ => None
   }
 }

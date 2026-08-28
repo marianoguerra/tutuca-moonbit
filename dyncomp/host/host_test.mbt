@@ -479,6 +479,7 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("count", 0), plain_field("history", 1)],
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
+        domains: [],
         receives: ["init", "setTo"],
         intents: [],
         express_messages: [],
@@ -540,6 +541,7 @@ fn counter_manifest() -> DynManifest {
         // other case.
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
+        domains: [],
         receives: [],
         intents: ["counted"],
         express_messages: [],
@@ -594,6 +596,7 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         fields: [plain_field("title", 0), plain_field("body", 1)],
+        domains: [],
         receives: [],
         intents: [],
         express_messages: [],
@@ -1506,6 +1509,7 @@ test "a bundle's views are linted at load" {
         ],
         types: [],
         fields: [],
+        domains: [],
         receives: [],
         intents: [],
         express_messages: [],
@@ -1589,6 +1593,7 @@ test "a `$method` the manifest never declared is reported at load" {
         ],
         types: [float_ty],
         fields: [plain_field("count", 0)],
+        domains: [],
         receives: [],
         intents: [],
         express_messages: [],
@@ -2279,4 +2284,183 @@ test "a guest replies to whoever sent it a message" {
   // bucket like any other message.
   h.send_at_root("poke", args=[])
   inspect(h.text(".note"), content="pong:from-guest")
+}
+
+///|
+/// The manifest, with one component given a declared domain.
+///
+/// Built from the counter's rather than beside it, because what is being
+/// tested is the ENFORCEMENT and not the bundle: a second fixture would drift
+/// from this one and the drift would look like a domain that stopped working.
+fn bounded_counter_manifest(
+  domains : Array[@tutuca.FieldDomain],
+) -> DynManifest {
+  let base = counter_manifest()
+  {
+    ..base,
+    components: base.components.map(c => {
+      if c.name == "Counter" {
+        { ..c, domains, }
+      } else {
+        c
+      }
+    }),
+  }
+}
+
+///|
+fn mount_with_domains(
+  fake : FakeGuest,
+  domains : Array[@tutuca.FieldDomain],
+) -> (@harness.MemHarness, Bundle) raise {
+  let h = @harness.mount(shell_module(), "Shell")
+  install_gc(h.app.transactor)
+  let bundle = register_bundle(
+    h.app.scope,
+    fake,
+    bounded_counter_manifest(domains),
+    policy=vouched(),
+  )
+  fake.bundle.val = Some(bundle)
+  (h, bundle)
+}
+
+///|
+/// A guest keeps its own rules; the HOST keeps its declared domains.
+///
+/// This is the whole point of carrying `where` clauses in the manifest. A
+/// `pred` and an `invariant` are compiled into the guest module and the guest
+/// declines its own transition. A domain is not compilable there — the
+/// vocabulary is read BACKWARDS by a generator and forwards by
+/// `core/domain.mbt`, and the guest world has no shape for either — so the
+/// declaration travels out and this side enforces it.
+///
+/// Both doors, because neither catches what the other does.
+test "a guest's declared domain is enforced at both of the host's doors" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  inspect(h.text(".count"), content="10")
+
+  // THE FIRST DOOR: the field write itself. `setCount 0` is a generated
+  // mutator the host answers over `obj_with_field`, and the guest is never
+  // asked — so if this door did not exist there would be nothing between the
+  // click and a state the declaration forbids.
+  h.click(".zero")
+  inspect(h.text(".count"), content="10")
+
+  // THE SECOND DOOR: a GUEST transition's successor. `inc` is the guest's own
+  // handler, it ran, and it produced a state the host will not adopt.
+  h.click(".inc")
+  inspect(h.text(".count"), content="11")
+  h.click(".inc")
+  inspect(h.text(".count"), content="12")
+  h.click(".inc")
+  inspect(h.text(".count"), content="12")
+  // …and the instance that stands is the one that was there, so the next
+  // legal move still works.
+  h.click(".dec")
+  inspect(h.text(".count"), content="11")
+}
+
+///|
+/// The refusal a host can READ, with the sentence composed from the values.
+test "a refused guest write reaches the refusal channel" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  let refused = @harness.refusals_while(() => h.click(".zero"))
+  assert_eq(refused.length(), 1)
+  assert_eq(refused[0].code, OutOfRange)
+  // A `where` carries the FIELD where a rule carries its name, and the
+  // sentence is composed rather than authored — which is why no clause has a
+  // `format` to write.
+  assert_eq(refused[0].rule, "count")
+  assert_eq(
+    refused[0].sentence,
+    "`count` is 0, and it must be between 5 and 12",
+  )
+  // A legal move is not a refusal.
+  assert_eq(@harness.refusals_while(() => h.click(".dec")).length(), 0)
+}
+
+///|
+/// A domain the host cannot read enforces nothing, and blocks nothing.
+///
+/// The compatibility claim, from the other end: `domains_of_json` drops a
+/// relation it has never heard of, so a bundle built against a later
+/// vocabulary still mounts and still works — it is simply not held to the
+/// clause this host could not understand.
+test "a component with no readable domain is unconstrained" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_domains(fake, [])
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  h.click(".zero")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+/// A refused transition drops the SUCCESSOR, and keeps the instance that
+/// stands alive.
+///
+/// The half of a refusal that has nothing to do with the rule. A guest
+/// instance is a handle the host owns, the sweep drops every handle nothing
+/// holds any more, and "nothing holds it any more" is decided by which of the
+/// two the host adopted. Get that backwards and the domain check works
+/// perfectly and collects the live instance — a component that reads its own
+/// fields through a handle the guest has already freed.
+test "a refused transition frees the successor and keeps the live handle" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! bundle.make_instance("Counter", args={ "count": Num(12) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  inspect(h.text(".count"), content="12")
+  // The guest ran and minted a handle for 13; the host will not adopt it.
+  h.click(".inc")
+  collect_superseded()
+  // One instance left, which is the one that stands — the successor was
+  // collected rather than leaked, and the live handle was not.
+  assert_true(fake.counters.length() == 1)
+  // …and reading it still crosses the bridge, which is the assertion that
+  // would fail if the sweep had taken the wrong one.
+  inspect(h.text(".count"), content="12")
+  h.click(".dec")
+  inspect(h.text(".count"), content="11")
+}
+
+///|
+/// The same ownership question on the MUTATOR path, where the host does the
+/// guest write itself.
+test "a refused mutator frees the successor and keeps the live handle" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_domains(fake, [
+    { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
+  ])
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) })
+    is Some(inst0)
+  h.send_at_root("setSlot", args=[inst0.to_value()])
+  // `setCount 0` is turned down at the FIRST door, before the guest is
+  // entered — so there is no successor to free and nothing to get wrong.
+  h.click(".zero")
+  collect_superseded()
+  assert_true(fake.counters.length() == 1)
+  inspect(h.text(".count"), content="10")
 }

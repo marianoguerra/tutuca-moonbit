@@ -344,7 +344,7 @@ test "spec viewer: the block's arms, the story's own expanded" {
     "title", "count", "tags", "open",
   ])
   @debug.assert_eq(h.texts(".spec-field-type"), [
-    "String", "Int", "Array[Any]", "Bool",
+    "String", "Int", "Array[String]", "Bool",
   ])
   // messages are collapsed until asked for, and then carry the names a
   // dispatch is addressed to

@@ -7,7 +7,7 @@ off-page items.
 
 ```html
 <script type="tutuca/spec">
-  state Paged { items: Array[Any], page: Int, pageSize: Int }
+  state Paged { items: Array[String], page: Int, pageSize: Int }
 </script>
 
 <template id="Paged">

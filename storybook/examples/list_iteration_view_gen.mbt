@@ -14,7 +14,7 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ListIterationState {
-  items : Array[@tutuca.Value]
+  items : Array[String]
 }
 
 ///|
@@ -37,7 +37,7 @@ pub fn ListIterationState::zero() -> ListIterationState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ListIterationState with fn encode(s) {
-  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+  { "items": (List(s.items.map(x => Str(x))) : @tutuca.Value) }
 }
 
 ///|
@@ -46,9 +46,9 @@ impl @component.Fields for ListIterationState with fn encode(s) {
 impl @component.Fields for ListIterationState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
+  let v_items : Array[String] = []
   for e1_items in u1_items {
-    let x1_items = e1_items
+    guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
   Some({ items: v_items, })
@@ -72,8 +72,8 @@ pub let list_iteration_global_style : String = ""
 impl @component.Fields for ListIterationState with fn schema() {
   @component.SchemaInfo::new(
     name="ListIteration",
-    fingerprint="6fe756873b44e783",
-    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
+    fingerprint="424114ee5b20cd4e",
+    fields=[@component.FieldInfo::new("items", TyList(TyText))],
     view_names=["main"],
   )
 }

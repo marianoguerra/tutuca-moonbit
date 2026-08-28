@@ -18,11 +18,11 @@
 ///|
 /// Move `source` to sit at `target`, shifting the rest — the list equivalent of
 /// dragging a row onto another row.
-fn move_index_to_index(
-  list : Array[@tutuca.Value],
+fn[T] move_index_to_index(
+  list : Array[T],
   source : Int,
   target : Int,
-) -> Array[@tutuca.Value] {
+) -> Array[T] {
   if source < 0 || target < 0 || source == target || source >= list.length() {
     return list
   }

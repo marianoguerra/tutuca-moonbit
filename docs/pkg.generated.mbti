@@ -262,7 +262,7 @@ pub fn ProfileState::zero() -> Self
 
 pub(all) enum QuotesReceive {
   Init
-  LoadQuotesOk(@core.Value)
+  LoadQuotesOk(Array[@core.Value])
   LoadQuotesError(String)
   Unknown(String, Array[@core.Value])
 }

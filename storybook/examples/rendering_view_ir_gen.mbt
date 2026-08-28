@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let push_view_spec_source : String =
   #|  state PushView {
-  #|    items : Array[Any]
+  #|    items : Array[Component[Entry]]
   #|    query : String
   #|    view : String
   #|
@@ -35,8 +35,8 @@ pub let push_view_spec_source : String =
   #|  }
   #|
   #|  state SeqItemAccess {
-  #|    byKey : Map[String, Any]
-  #|    byIndex : Array[Any]
+  #|    byKey : Map[String, Component[Entry]]
+  #|    byIndex : Array[Component[Entry]]
   #|    currentKey : Any
   #|    currentIndex : Int
   #|
@@ -45,7 +45,7 @@ pub let push_view_spec_source : String =
   #|  }
   #|
   #|  state Pagination {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|    page : Int
   #|    pageSize : Int
   #|
@@ -149,6 +149,23 @@ fn push_view_inline_update(
         } else {
           "main"
         },
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "view", domain: DOneOf(["main", "edit"]), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="toggleView",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }
@@ -474,6 +491,26 @@ fn pagination_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "pageSize", domain: DBetween(lo=DLit(1), hi=DLit(100)), },
+            { field: "page", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="prev",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     Receive("next", _args) => {
@@ -501,6 +538,26 @@ fn pagination_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "pageSize", domain: DBetween(lo=DLit(1), hi=DLit(100)), },
+            { field: "page", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="next",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }

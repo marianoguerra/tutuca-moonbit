@@ -28,7 +28,7 @@
 pub let swatch_picker_spec_source : String =
   #|  state SwatchPicker {
   #|    color : String
-  #|    palette : Array[Any]
+  #|    palette : Array[String]
   #|
   #|    where palette is nonempty
   #|
@@ -122,7 +122,7 @@ fn swatch_picker_compute_colorIsOnThePalette(
   _args : Array[@tutuca.Value],
   _stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
-  (Bool(s.palette.contains((Str(s.color) : @tutuca.Value))) : @tutuca.Value)
+  (Bool(s.palette.contains(s.color)) : @tutuca.Value)
 }
 
 ///|

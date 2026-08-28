@@ -75,6 +75,17 @@ pub(all) enum RefusalCode {
   /// `send_at_root` have no sender, so there is no position to answer at, and
   /// nothing is dispatched.
   NoSender
+  /// A dispatch arrived under a name the schema DOES declare, carrying
+  /// arguments that do not fit the payload it declares — so it decoded to
+  /// nothing and no arm ran.
+  ///
+  /// Distinct from `NoHandler`, and the distinction is the whole reason this
+  /// code exists: "nobody answers `saveDraft`" and "`saveDraft` is answered
+  /// here and was handed a String where it declares an Int" are different
+  /// failures with different fixes, and before this they were the same
+  /// silence. A payload is checked at the boundary the way a `where` is
+  /// checked at a write.
+  BadPayload
 } derive(Eq, Debug)
 
 ///|
@@ -93,6 +104,7 @@ pub fn RefusalCode::word(self : RefusalCode) -> String {
     TypeNotFound => "TYPE_NOT_FOUND"
     OutOfRange => "OUT_OF_RANGE"
     NoSender => "NO_SENDER"
+    BadPayload => "BAD_PAYLOAD"
   }
 }
 
@@ -122,6 +134,10 @@ pub(all) struct Refusal {
   /// `Invariant` rejected the successor the body built and the framework then
   /// threw away. `Null` where the producer has no state in hand at all, which
   /// today is only the render-time 404 handler.
+  ///
+  /// `BadPayload` is the one code where this is not a state at all: it carries
+  /// the ARGUMENT LIST that did not fit, because that is the thing you go and
+  /// look at, and the state was never reached — no arm ran.
   state : Value
   /// Where it happened, in the runtime's own addressing. Empty is the root and
   /// is a real answer, not a missing one.
@@ -320,6 +336,38 @@ pub fn refuse(r : Refusal) -> Unit {
       }
     None => f(Refused(r))
   }
+}
+
+///|
+/// Report a dispatch whose arguments did not fit the payload its name declares.
+///
+/// Raised from a generated `from_dispatch`, which is the one place that holds
+/// both halves: the runtime arguments, and the declared spelling the schema
+/// wrote. `declared` is that spelling — `"Int, String"`, or `""` for a case
+/// that declares no payload — and it is baked in at generation time, because
+/// nothing at runtime can reconstruct it.
+///
+/// The decode's answer is unchanged: the case falls into `Unknown`, and an
+/// `update` that does not claim it answers `Unhandled` exactly as before. This
+/// only makes the failure SAYABLE — a mismatch used to be indistinguishable
+/// from a name nobody sent.
+pub fn bad_payload(
+  asked : String,
+  declared : String,
+  args : Array[Value],
+) -> Unit {
+  // Nothing is built when nothing is listening, which is what lets the
+  // argument list be carried at all — the same bargain `refusing()` makes for
+  // a rejected state.
+  guard refusing() else { return }
+  refuse({
+    code: BadPayload,
+    asked,
+    rule: "",
+    sentence: "the arguments do not fit `\{asked}(\{declared})`",
+    state: List(args),
+    path: Path::new(),
+  })
 }
 
 ///|

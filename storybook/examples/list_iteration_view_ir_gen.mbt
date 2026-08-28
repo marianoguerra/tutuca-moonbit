@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let list_iteration_spec_source : String =
   #|  state {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|  }
 
 ///|

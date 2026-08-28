@@ -71,7 +71,7 @@ impl @component.Fields for IconGalleryState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct BarChartState {
-  values : Array[@tutuca.Value]
+  values : Array[Int]
 }
 
 ///|
@@ -94,7 +94,7 @@ pub fn BarChartState::zero() -> BarChartState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for BarChartState with fn encode(s) {
-  { "values": (List(s.values.map(x => x)) : @tutuca.Value) }
+  { "values": (List(s.values.map(x => Num(x.to_double()))) : @tutuca.Value) }
 }
 
 ///|
@@ -103,9 +103,10 @@ impl @component.Fields for BarChartState with fn encode(s) {
 impl @component.Fields for BarChartState with fn decode(f) {
   guard f.get("values") is Some(t1_values) else { return None }
   guard t1_values is List(u1_values) else { return None }
-  let v_values : Array[@tutuca.Value] = []
+  let v_values : Array[Int] = []
   for e1_values in u1_values {
-    let x1_values = e1_values
+    guard e1_values is Num(u2_values) else { return None }
+    let x1_values = u2_values.to_int()
     v_values.push(x1_values)
   }
   Some({ values: v_values, })
@@ -132,6 +133,13 @@ pub(all) enum BarChartReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn BarChartReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> BarChartReceive? {
@@ -141,7 +149,15 @@ pub fn BarChartReceive::from_dispatch(
       ("addBar", []) => AddBar
       ("randomize", []) => Randomize
       ("removeBar", []) => RemoveBar
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "addBar" => @tutuca.bad_payload(name, "", args)
+          "randomize" => @tutuca.bad_payload(name, "", args)
+          "removeBar" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -276,8 +292,8 @@ pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {
 impl @component.Fields for BarChartState with fn schema() {
   @component.SchemaInfo::new(
     name="BarChart",
-    fingerprint="b384ef4ca1a7f956",
-    fields=[@component.FieldInfo::new("values", TyList(TyAny))],
+    fingerprint="6425046999b21101",
+    fields=[@component.FieldInfo::new("values", TyList(TyInt))],
     view_handlers=["addBar", "randomize", "removeBar"],
     methods=["hasRoom", "hasSpare", "neverEmpty"],
     invariants=["neverEmpty"],

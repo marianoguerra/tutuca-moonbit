@@ -215,6 +215,9 @@ fn emit_bucket_enum(
     "}\n\n",
   )
   // -- decode ---------------------------------------------------------------
+  for m in msgs {
+    emit_payload_decoder(ty, t, suffix, m, def, out)
+  }
   out.write_string(
     "///|\n" +
     "/// Decode a \{dispatch_arm} dispatch. None for any other bucket.\n" +
@@ -222,29 +225,113 @@ fn emit_bucket_enum(
     "/// A payload that does not match falls into `Unknown` rather than being\n" +
     "/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,\n" +
     "/// and silently truncating it would hide that.\n" +
+    "///\n" +
+    "/// It is also REPORTED. `Unknown` answers two different questions —\n" +
+    "/// nobody declares this name, and this name is declared here and was\n" +
+    "/// handed the wrong shape — and the second one is a bug in the sender\n" +
+    "/// that used to be indistinguishable from silence. Every arm below that\n" +
+    "/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,\n" +
+    "/// which costs nothing unless a host is listening.\n" +
     "pub fn \{ty}::from_dispatch(d : @component.Dispatch) -> \{ty}? {\n" +
     "  guard d is \{dispatch_arm}(name, args) else { return None }\n" +
     "  Some(\n" +
     "    match (name, args) {\n",
   )
   for m in msgs {
-    emit_decode_arm(m, def, out)
+    emit_decode_arm(t, suffix, m, def, out)
   }
-  out.write_string("      _ => Unknown(name, args)\n    },\n  )\n}\n\n")
+  out.write_string("      _ => {\n")
+  emit_bad_payload_report(msgs, out)
+  out.write_string("        Unknown(name, args)\n      }\n    },\n  )\n}\n\n")
   // -- raise ----------------------------------------------------------------
   emit_raise(ty, suffix, msgs, def, out)
+}
+
+///|
+/// The decoder for one case whose payload the pattern cannot read.
+///
+/// Nothing for a case that needs none — a payload of scalars, `Any` and slots
+/// is read by the arm itself, which keeps the integer width guards where they
+/// can be read beside the pattern they qualify.
+fn emit_payload_decoder(
+  ty : String,
+  t : String,
+  suffix : String,
+  m : @statedef.MsgDef,
+  def : @statedef.StateDef,
+  out : StringBuilder,
+) -> Unit {
+  if m.payload.is_empty() || m.payload.iter().all(payload_is_patternable) {
+    return
+  }
+  let name = payload_decoder_name(t, suffix, m)
+  out.write_string(
+    "///|\n" +
+    "/// `\{m.source_name}`'s arguments, decoded at the declared types.\n" +
+    "///\n" +
+    "/// The same `dec_stmts` the state codec is written from, so a payload and\n" +
+    "/// a field of the same declared type are read by one rule. `None` is a\n" +
+    "/// mismatch anywhere in the shape, however deep.\n" +
+    "fn \{name}(args : Array[@tutuca.Value]) -> \{ty}? {\n" +
+    "  guard args.length() == \{m.payload.length()} else { return None }\n",
+  )
+  for i, p in m.payload {
+    out.write_string(dec_stmts(def, p, "args.get(\{i})", "a\{i}", "\{i}", 1))
+  }
+  let binds = m.payload.mapi((i, _) => "a\{i}").join(", ")
+  out.write_string("  Some(\{m.variant}(\{binds}))\n}\n\n")
+}
+
+///|
+/// The `_` arm's report: a DECLARED name that reached the fallback was handed
+/// arguments no arm could read.
+///
+/// A name nothing declares reaches the same arm and says nothing, because
+/// there is nothing to say — an unaddressed message is a message, not a
+/// mistake.
+fn emit_bad_payload_report(
+  msgs : Array[@statedef.MsgDef],
+  out : StringBuilder,
+) -> Unit {
+  out.write_string("        match name {\n")
+  for m in msgs {
+    out.write_string(
+      "          \{quote(m.name)} =>\n" +
+      "            @tutuca.bad_payload(name, \{quote(payload_source(m))}, args)\n",
+    )
+  }
+  out.write_string("          _ => ()\n        }\n")
 }
 
 ///|
 /// One decode arm: the argument patterns, plus a guard for anything the
 /// pattern alone cannot express.
 fn emit_decode_arm(
+  t : String,
+  suffix : String,
   m : @statedef.MsgDef,
   def : @statedef.StateDef,
   out : StringBuilder,
 ) -> Unit {
   if m.payload.is_empty() {
     out.write_string("      (\{quote(m.name)}, []) => \{m.variant}\n")
+    return
+  }
+  // A shape the pattern cannot read goes through the generated decoder, and
+  // the arm matches the NAME alone — arity included, so a call with the wrong
+  // number of arguments is reported here rather than falling to `_`.
+  if !m.payload.iter().all(payload_is_patternable) {
+    let dec = payload_decoder_name(t, suffix, m)
+    out.write_string(
+      "      (\{quote(m.name)}, _) =>\n" +
+      "        match \{dec}(args) {\n" +
+      "          Some(v) => v\n" +
+      "          None => {\n" +
+      "            @tutuca.bad_payload(name, \{quote(payload_source(m))}, args)\n" +
+      "            Unknown(name, args)\n" +
+      "          }\n" +
+      "        }\n",
+    )
     return
   }
   let pats : Array[String] = []
@@ -415,40 +502,76 @@ fn emit_sender(
 
 ///|
 /// A MoonBit value of this type, as a @tutuca.Value.
+///
+/// `enc_expr` and nothing local, so the raise side and the state codec cannot
+/// disagree about a set or a nested record — the same reason `enc_expr` itself
+/// defers to `statedef`.
 fn to_value_expr(
   ty : @statedef.StateTy,
   binder : String,
   def : @statedef.StateDef,
 ) -> String {
-  def.moonbit_ty(ty) |> ignore
-  match ty {
-    TInt(..) => "Num(\{binder}.to_double())"
-    TFloat => "Num(\{binder})"
-    TText => "Str(\{binder})"
-    TBool => "Bool(\{binder})"
-    // Everything else already IS the Value — see `msg_payload_ty`.
-    _ => binder
-  }
+  enc_expr(def, ty, binder)
 }
 
 ///|
 /// The MoonBit type one message payload carries.
 ///
-/// A scalar is its own type; everything else is `@tutuca.Value`. This is the
-/// ONE place that decides, because three sites have to agree — the enum
-/// variant, the pattern `from_dispatch` matches, and the expression
-/// `to_dispatch` writes — and they did not: the variant said
-/// `Array[@tutuca.Value]` for a `values` payload while the decode bound the raw
-/// Value, so the generated module did not compile.
+/// The DECLARED type, whatever it is. This is the ONE place that decides,
+/// because three sites have to agree — the enum variant, what `from_dispatch`
+/// binds, and the expression `to_dispatch` writes — and a disagreement here
+/// emits a module that does not compile.
 ///
-/// Value rather than the declared collection because a dispatch payload
-/// arrives as `Array[@tutuca.Value]` and always did. Typing it as an
+/// This used to answer `@tutuca.Value` for everything but a scalar, and the
+/// reason it no longer does is worth keeping: the objection was that a
+/// dispatch payload ARRIVES as `Array[@tutuca.Value]`, so typing a payload as
 /// `Array[String]` would mean converting, and the only converter to hand was a
-/// JSON round trip — the same one the state codec exists to avoid. The handler
-/// destructures the Value instead, which is what the `Unknown` arm does too.
+/// JSON round trip. That is no longer true — `dec_stmts` and `to_value_src`
+/// are the state codec's own halves, and a payload is the same shape a field
+/// is. So the payload is decoded at the boundary exactly as a field is, and a
+/// handler reads a typed value instead of destructuring a Value by hand.
+///
+/// `Any` and a component slot stay `@tutuca.Value`, because that IS their
+/// declared type — nothing was erased and nothing is decoded.
 fn msg_payload_ty(def : @statedef.StateDef, ty : @statedef.StateTy) -> String {
+  def.moonbit_ty(ty)
+}
+
+///|
+/// Whether a payload of this type can be read by the decode's PATTERN alone.
+///
+/// A scalar can — with a guard for an integer's width, which is the one range
+/// a pattern cannot state — and `Any` and a slot can, trivially, because the
+/// pattern binds the Value they already are. Everything else needs the codec,
+/// and a case carrying one gets a decoder function of its own.
+fn payload_is_patternable(ty : @statedef.StateTy) -> Bool {
   match ty {
-    TInt(..) | TFloat | TText | TBool => def.moonbit_ty(ty)
-    _ => "@tutuca.Value"
+    TInt(..) | TFloat | TText | TBool | TAny | TComp(_) | TCompProtocols(_) =>
+      true
+    _ => false
   }
+}
+
+///|
+/// The declared payload, in the schema's own spelling, for a refusal to quote.
+///
+/// Baked in at generation time because nothing at runtime can reconstruct it:
+/// the arguments that arrive are the ones that did NOT fit.
+fn payload_source(m : @statedef.MsgDef) -> String {
+  m.payload.map(p => p.show_source()).join(", ")
+}
+
+///|
+/// The decoder function for one case's arguments: `Some(variant)` or `None`.
+///
+/// A function and not an inline arm because `dec_stmts` writes STATEMENTS that
+/// `return None` on a mismatch, which is the same shape the state codec's
+/// decode has and the same shape a nested list needs. An arm of a `match`
+/// expression has nowhere to return to.
+fn payload_decoder_name(
+  t : String,
+  suffix : String,
+  m : @statedef.MsgDef,
+) -> String {
+  "\{value_prefix(t)}_\{suffix.to_lower()}_\{value_prefix(m.variant)}_of_args"
 }

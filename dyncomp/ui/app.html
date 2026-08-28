@@ -38,7 +38,7 @@
   /// is slower than the thing it replaced.
   state CommandBar {
     query : String
-    hits : Array[Any]
+    hits : Array[PaletteRow]
     cursor : Int
     /// Opened by ctrl/cmd-clicking a `+`: every pick configures.
     configure : Bool
@@ -67,7 +67,7 @@
     text : String
     num : Double
     flag : Bool
-    choices : Array[Any]
+    choices : Array[String]
     error : String
   }
 
@@ -76,6 +76,15 @@
     fieldEdited(String, String)
 
     }
+  }
+
+  /// One of a component's named fixtures — a starting state its author
+  /// thought worth offering, with the sentence that says when to prefer it.
+  /// A `struct` and not a bare `Any`: the pair is a record with two known
+  /// fields, and saying so is what lets the view's `@value.label` be checked.
+  struct InitChoice {
+    name : String
+    label : String
   }
 
   /// A form over a component's declared arguments, generated from the JSON
@@ -88,8 +97,8 @@
     name : String
     title : String
     doc : String
-    fields : Array[Any]
-    inits : Array[Any]
+    fields : Array[SchemaField]
+    inits : Array[InitChoice]
     error : String
     /// What the button says. "Place" when this is filling an empty cell,
     /// "Apply" when it is reconfiguring something already there.
@@ -98,7 +107,7 @@
 
   handle SchemaForm {
     message {
-    showErrors(Any)
+    showErrors(Map[String, String])
 
     }
   }

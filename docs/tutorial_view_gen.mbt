@@ -69,6 +69,13 @@ pub(all) enum CounterReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CounterReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> CounterReceive? {
@@ -77,7 +84,14 @@ pub fn CounterReceive::from_dispatch(
     match (name, args) {
       ("dec", []) => Dec
       ("inc", []) => Inc
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "dec" => @tutuca.bad_payload(name, "", args)
+          "inc" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -246,6 +260,13 @@ pub(all) enum ProfileReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ProfileReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ProfileReceive? {
@@ -254,7 +275,14 @@ pub fn ProfileReceive::from_dispatch(
     match (name, args) {
       ("setName", [Str(a0)]) => SetName(a0)
       ("toggleWaving", []) => ToggleWaving
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setName" => @tutuca.bad_payload(name, "String", args)
+          "toggleWaving" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -429,6 +457,13 @@ pub(all) enum SearchReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SearchReceive::from_dispatch(d : @component.Dispatch) -> SearchReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
@@ -436,7 +471,15 @@ pub fn SearchReceive::from_dispatch(d : @component.Dispatch) -> SearchReceive? {
       ("resetDraft", []) => ResetDraft
       ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("setSent", [Str(a0)]) => SetSent(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "resetDraft" => @tutuca.bad_payload(name, "", args)
+          "setDraft" => @tutuca.bad_payload(name, "String", args)
+          "setSent" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -616,12 +659,25 @@ pub(all) enum ToggleReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ToggleReceive::from_dispatch(d : @component.Dispatch) -> ToggleReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("toggleOn", []) => ToggleOn
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggleOn" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -999,12 +1055,25 @@ pub(all) enum StatusReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StatusReceive::from_dispatch(d : @component.Dispatch) -> StatusReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("flash", [Str(a0)]) => Flash(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "flash" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1118,13 +1187,27 @@ pub(all) enum ChatReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ChatReceive::from_dispatch(d : @component.Dispatch) -> ChatReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setDraft" => @tutuca.bad_payload(name, "String", args)
+          "submit" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1295,11 +1378,31 @@ impl @component.Fields for QuotesState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum QuotesReceive {
   Init
-  LoadQuotesOk(@tutuca.Value)
+  LoadQuotesOk(Array[@tutuca.Value])
   LoadQuotesError(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// `loadQuotesOk`'s arguments, decoded at the declared types.
+///
+/// The same `dec_stmts` the state codec is written from, so a payload and
+/// a field of the same declared type are read by one rule. `None` is a
+/// mismatch anywhere in the shape, however deep.
+fn quotes_receive_load_quotes_ok_of_args(
+  args : Array[@tutuca.Value],
+) -> QuotesReceive? {
+  guard args.length() == 1 else { return None }
+  guard args.get(0) is Some(t1_0) else { return None }
+  guard t1_0 is List(u1_0) else { return None }
+  let a0 : Array[@tutuca.Value] = []
+  for e1_0 in u1_0 {
+    let x1_0 = e1_0
+    a0.push(x1_0)
+  }
+  Some(LoadQuotesOk(a0))
 }
 
 ///|
@@ -1308,14 +1411,36 @@ pub(all) enum QuotesReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn QuotesReceive::from_dispatch(d : @component.Dispatch) -> QuotesReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("init", []) => Init
-      ("loadQuotesOk", [a0]) => LoadQuotesOk(a0)
+      ("loadQuotesOk", _) =>
+        match quotes_receive_load_quotes_ok_of_args(args) {
+          Some(v) => v
+          None => {
+            @tutuca.bad_payload(name, "Array[Any]", args)
+            Unknown(name, args)
+          }
+        }
       ("loadQuotesError", [Str(a0)]) => LoadQuotesError(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "init" => @tutuca.bad_payload(name, "", args)
+          "loadQuotesOk" => @tutuca.bad_payload(name, "Array[Any]", args)
+          "loadQuotesError" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1327,7 +1452,8 @@ pub fn QuotesReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
-    LoadQuotesOk(a0) => ("loadQuotesOk", [a0])
+    LoadQuotesOk(a0) =>
+      ("loadQuotesOk", [(List(a0.map(x => x)) : @tutuca.Value)])
     LoadQuotesError(a0) => ("loadQuotesError", [Str(a0)])
     Unknown(n, args) => (n, args)
   }

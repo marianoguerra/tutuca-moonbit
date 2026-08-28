@@ -438,6 +438,13 @@ pub(all) enum SpecViewerIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SpecViewerIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> SpecViewerIntent? {
@@ -445,7 +452,13 @@ pub fn SpecViewerIntent::from_dispatch(
   Some(
     match (name, args) {
       ("toggleAllSections", [Bool(a0)]) => ToggleAllSections(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggleAllSections" => @tutuca.bad_payload(name, "Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -495,10 +508,10 @@ pub let spec_viewer_global_style : String = ""
 impl @component.Fields for SpecViewerState with fn schema() {
   @component.SchemaInfo::new(
     name="SpecViewer",
-    fingerprint="24571a9dd89122be",
+    fingerprint="38fa3e45899d8109",
     fields=[
       @component.FieldInfo::new("compName", TyText),
-      @component.FieldInfo::new("sections", TyList(TyAny)),
+      @component.FieldInfo::new("sections", TyList(TyComp(None))),
       @component.FieldInfo::new("hasSpec", TyBool),
       @component.FieldInfo::new("hint", TyText),
       @component.FieldInfo::new("note", TyText),

@@ -91,13 +91,13 @@ pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
-  startYear : @tutuca.Value
-  endYear : @tutuca.Value
-  role : @tutuca.Value
+  startYear : Int?
+  endYear : Int?
+  role : String?
   featured : Bool
   url : String
   altUrls : Array[@tutuca.Value]
-  categories : Array[@tutuca.Value]
+  categories : Array[String]
 }
 
 ///|
@@ -113,9 +113,9 @@ pub fn PsEntryState::zero() -> PsEntryState {
     title: "",
     description: "",
     lang: "",
-    startYear: Null,
-    endYear: Null,
-    role: Null,
+    startYear: None,
+    endYear: None,
+    role: None,
     featured: false,
     url: "",
     altUrls: [],
@@ -131,18 +131,27 @@ pub fn PsEntryState::zero() -> PsEntryState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for PsEntryState with fn encode(s) {
-  {
-    "title": Str(s.title),
-    "description": Str(s.description),
-    "lang": Str(s.lang),
-    "startYear": s.startYear,
-    "endYear": s.endYear,
-    "role": s.role,
-    "featured": Bool(s.featured),
-    "url": Str(s.url),
-    "altUrls": (List(s.altUrls.map(x => x)) : @tutuca.Value),
-    "categories": (List(s.categories.map(x => x)) : @tutuca.Value),
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["title"] = Str(s.title)
+  out["description"] = Str(s.description)
+  out["lang"] = Str(s.lang)
+  match s.startYear {
+    Some(x) => out["startYear"] = Num(x.to_double())
+    None => ()
   }
+  match s.endYear {
+    Some(x) => out["endYear"] = Num(x.to_double())
+    None => ()
+  }
+  match s.role {
+    Some(x) => out["role"] = Str(x)
+    None => ()
+  }
+  out["featured"] = Bool(s.featured)
+  out["url"] = Str(s.url)
+  out["altUrls"] = (List(s.altUrls.map(x => x)) : @tutuca.Value)
+  out["categories"] = (List(s.categories.map(x => Str(x))) : @tutuca.Value)
+  out
 }
 
 ///|
@@ -152,9 +161,29 @@ impl @component.Fields for PsEntryState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("lang") is Some(Str(v_lang)) else { return None }
-  let v_startYear = f.get("startYear").unwrap_or(Null)
-  let v_endYear = f.get("endYear").unwrap_or(Null)
-  let v_role = f.get("role").unwrap_or(Null)
+  let v_startYear : Int? = match f.get("startYear") {
+    None | Some(Null) => None
+    Some(t1_startYear) => {
+      guard t1_startYear is Num(u3_startYear) else { return None }
+      let x1_startYear = u3_startYear.to_int()
+      Some(x1_startYear)
+    }
+  }
+  let v_endYear : Int? = match f.get("endYear") {
+    None | Some(Null) => None
+    Some(t1_endYear) => {
+      guard t1_endYear is Num(u3_endYear) else { return None }
+      let x1_endYear = u3_endYear.to_int()
+      Some(x1_endYear)
+    }
+  }
+  let v_role : String? = match f.get("role") {
+    None | Some(Null) => None
+    Some(t1_role) => {
+      guard t1_role is Str(x1_role) else { return None }
+      Some(x1_role)
+    }
+  }
   guard f.get("featured") is Some(Bool(v_featured)) else { return None }
   guard f.get("url") is Some(Str(v_url)) else { return None }
   guard f.get("altUrls") is Some(t1_altUrls) else { return None }
@@ -166,9 +195,9 @@ impl @component.Fields for PsEntryState with fn decode(f) {
   }
   guard f.get("categories") is Some(t1_categories) else { return None }
   guard t1_categories is List(u1_categories) else { return None }
-  let v_categories : Array[@tutuca.Value] = []
+  let v_categories : Array[String] = []
   for e1_categories in u1_categories {
-    let x1_categories = e1_categories
+    guard e1_categories is Str(x1_categories) else { return None }
     v_categories.push(x1_categories)
   }
   Some({
@@ -233,18 +262,18 @@ pub fn PsEntryEnrich::name(self : PsEntryEnrich) -> String {
 impl @component.Fields for PsEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="PsEntry",
-    fingerprint="1f87343b7ff67df1",
+    fingerprint="9f39c7308a53ff0d",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("lang", TyText),
-      @component.FieldInfo::new("startYear", TyAny),
-      @component.FieldInfo::new("endYear", TyAny),
-      @component.FieldInfo::new("role", TyAny),
+      @component.FieldInfo::new("startYear", TyOption(TyInt)),
+      @component.FieldInfo::new("endYear", TyOption(TyInt)),
+      @component.FieldInfo::new("role", TyOption(TyText)),
       @component.FieldInfo::new("featured", TyBool),
       @component.FieldInfo::new("url", TyText),
-      @component.FieldInfo::new("altUrls", TyList(TyAny)),
-      @component.FieldInfo::new("categories", TyList(TyAny)),
+      @component.FieldInfo::new("altUrls", TyList(TyComp(Some("AltUrl")))),
+      @component.FieldInfo::new("categories", TyList(TyText)),
     ],
     methods=["isSpanish", "langFlag", "yearDisplay"],
     domains=[
@@ -390,7 +419,7 @@ impl @component.Fields for RootState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum RootReceive {
   Init
-  LoadDataOk(@tutuca.Value)
+  LoadDataOk(Array[@tutuca.Value])
   ClearFilters
   OnCategoryToggle(@tutuca.Value, Bool)
   OnRoleToggle(@tutuca.Value, Bool)
@@ -403,24 +432,71 @@ pub(all) enum RootReceive {
 }
 
 ///|
+/// `loadDataOk`'s arguments, decoded at the declared types.
+///
+/// The same `dec_stmts` the state codec is written from, so a payload and
+/// a field of the same declared type are read by one rule. `None` is a
+/// mismatch anywhere in the shape, however deep.
+fn root_receive_load_data_ok_of_args(
+  args : Array[@tutuca.Value],
+) -> RootReceive? {
+  guard args.length() == 1 else { return None }
+  guard args.get(0) is Some(t1_0) else { return None }
+  guard t1_0 is List(u1_0) else { return None }
+  let a0 : Array[@tutuca.Value] = []
+  for e1_0 in u1_0 {
+    let x1_0 = e1_0
+    a0.push(x1_0)
+  }
+  Some(LoadDataOk(a0))
+}
+
+///|
 /// Decode a Receive dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RootReceive::from_dispatch(d : @component.Dispatch) -> RootReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("init", []) => Init
-      ("loadDataOk", [a0]) => LoadDataOk(a0)
+      ("loadDataOk", _) =>
+        match root_receive_load_data_ok_of_args(args) {
+          Some(v) => v
+          None => {
+            @tutuca.bad_payload(name, "Array[Any]", args)
+            Unknown(name, args)
+          }
+        }
       ("clearFilters", []) => ClearFilters
       ("onCategoryToggle", [a0, Bool(a1)]) => OnCategoryToggle(a0, a1)
       ("onRoleToggle", [a0, Bool(a1)]) => OnRoleToggle(a0, a1)
       ("onToggleFeaturedFirst", []) => OnToggleFeaturedFirst
       ("onToggleSortAsc", []) => OnToggleSortAsc
       ("onToggleSortByEnd", []) => OnToggleSortByEnd
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "init" => @tutuca.bad_payload(name, "", args)
+          "loadDataOk" => @tutuca.bad_payload(name, "Array[Any]", args)
+          "clearFilters" => @tutuca.bad_payload(name, "", args)
+          "onCategoryToggle" => @tutuca.bad_payload(name, "Any, Bool", args)
+          "onRoleToggle" => @tutuca.bad_payload(name, "Any, Bool", args)
+          "onToggleFeaturedFirst" => @tutuca.bad_payload(name, "", args)
+          "onToggleSortAsc" => @tutuca.bad_payload(name, "", args)
+          "onToggleSortByEnd" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -432,7 +508,7 @@ pub fn RootReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     Init => ("init", [])
-    LoadDataOk(a0) => ("loadDataOk", [a0])
+    LoadDataOk(a0) => ("loadDataOk", [(List(a0.map(x => x)) : @tutuca.Value)])
     ClearFilters => ("clearFilters", [])
     OnCategoryToggle(a0, a1) => ("onCategoryToggle", [a0, Bool(a1)])
     OnRoleToggle(a0, a1) => ("onRoleToggle", [a0, Bool(a1)])
@@ -592,9 +668,9 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
 impl @component.Fields for RootState with fn schema() {
   @component.SchemaInfo::new(
     name="Root",
-    fingerprint="699855f09bdfc7a7",
+    fingerprint="68599a5a806e780b",
     fields=[
-      @component.FieldInfo::new("allEntries", TyList(TyAny)),
+      @component.FieldInfo::new("allEntries", TyList(TyComp(Some("PsEntry")))),
       @component.FieldInfo::new("allCategories", TyList(TyText)),
       @component.FieldInfo::new("allRoles", TyList(TyText)),
       @component.FieldInfo::new("selectedCategories", TySet),

@@ -27,12 +27,12 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let schema_scalar_spec_source : String =
   #|  state SchemaScalar {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeLabel : String
-  #|    badges : Array[Any]
+  #|    badges : Array[String]
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
@@ -47,12 +47,12 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaObject {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeLabel : String
-  #|    badges : Array[Any]
+  #|    badges : Array[String]
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
@@ -67,12 +67,12 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaArray {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeLabel : String
-  #|    badges : Array[Any]
+  #|    badges : Array[String]
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
@@ -87,12 +87,12 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaEnum {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeLabel : String
-  #|    badges : Array[Any]
+  #|    badges : Array[String]
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
@@ -107,12 +107,12 @@ pub let schema_scalar_spec_source : String =
   #|  }
   #|
   #|  state SchemaCombinator {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeLabel : String
-  #|    badges : Array[Any]
+  #|    badges : Array[String]
   #|    title : String
   #|    description : String
   #|    deprecated : Bool

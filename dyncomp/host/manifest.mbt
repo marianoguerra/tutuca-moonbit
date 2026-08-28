@@ -113,6 +113,16 @@ pub(all) struct DynComponentDef {
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
+  /// The FIELD DOMAINS the guest declared — its spec block's `where` clauses,
+  /// in the runtime vocabulary.
+  ///
+  /// Here rather than on `DynFieldDef` beside `constraint`, because the two are
+  /// different shapes of claim: a constraint is about ONE field's value, and a
+  /// domain is a relation that may name another field (`currentIndex is index
+  /// of .items`). A per-field list could not hold the second, and splitting one
+  /// vocabulary across two homes by whether it happens to mention a neighbour
+  /// would be a distinction no reader could keep.
+  domains : Array[@tutuca.FieldDomain]
   receives : Array[String]
   /// Every INTENT this component answers — a routed dispatch, offered to each
   /// hop of a route until something replies. The answer to one comes back as
@@ -694,6 +704,10 @@ pub fn DynManifest::from_json_string(
       views,
       types: parse_types(c),
       fields,
+      domains: match c.get("domains") {
+        Some(d) => @tutuca.domains_of_json(d)
+        None => []
+      },
       receives: str_array(c, "receives"),
       intents: str_array(c, "intents"),
       express_messages: str_array(c, "expressMessages"),

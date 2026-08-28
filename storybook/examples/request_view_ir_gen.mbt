@@ -27,11 +27,11 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let request_example_spec_source : String =
   #|  state {
-  #|    items : Array[Any]
+  #|    items : Array[Component[Entry]]
   #|    query : String
   #|    view : String
   #|    isLoading : Bool
-  #|    error : Any
+  #|    error : String?
   #|
   #|    where view is one of ["main", "edit"]
   #|
@@ -177,7 +177,13 @@ fn request_example_inline_update(
       }
       guard !s.isLoading ||
         (match @tutuca.builtin("null?") {
-          Some(b) => (b.apply)([s.error]).is_truthy()
+          Some(b) =>
+            (b.apply)([
+              match s.error {
+                Some(x) => Str(x)
+                None => Null
+              },
+            ]).is_truthy()
           None => false
         }) else {
         @tutuca.invariant_failed(
@@ -187,6 +193,23 @@ fn request_example_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "view", domain: DOneOf(["main", "edit"]), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="toggleView",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }
@@ -207,7 +230,13 @@ fn request_example_inline_update(
       let s = { ..s, isLoading: true, }
       guard !s.isLoading ||
         (match @tutuca.builtin("null?") {
-          Some(b) => (b.apply)([s.error]).is_truthy()
+          Some(b) =>
+            (b.apply)([
+              match s.error {
+                Some(x) => Str(x)
+                None => Null
+              },
+            ]).is_truthy()
           None => false
         }) else {
         @tutuca.invariant_failed(
@@ -217,6 +246,23 @@ fn request_example_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "view", domain: DOneOf(["main", "edit"]), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="init",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -239,7 +285,13 @@ fn request_example_compute_notFailedWhileLoading(
     Bool(
       !s.isLoading ||
       (match @tutuca.builtin("null?") {
-        Some(b) => (b.apply)([s.error]).is_truthy()
+        Some(b) =>
+          (b.apply)([
+            match s.error {
+              Some(x) => Str(x)
+              None => Null
+            },
+          ]).is_truthy()
         None => false
       }),
     ) : @tutuca.Value)

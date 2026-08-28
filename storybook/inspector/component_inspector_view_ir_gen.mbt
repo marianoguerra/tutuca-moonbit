@@ -35,7 +35,7 @@ pub let comp_name_spec_source : String =
   #|  state CompField {
   #|    name : String
   #|    typeName : String
-  #|    child : Any
+  #|    child : Component
   #|
   #|    where name is nonempty
   #|    where typeName is nonempty
@@ -50,7 +50,7 @@ pub let comp_name_spec_source : String =
   #|  }
   #|
   #|  state CompSection {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -68,7 +68,7 @@ pub let comp_name_spec_source : String =
   #|  state ComponentInspector {
   #|    compName : String
   #|    compId : Int
-  #|    sections : Array[Any]
+  #|    sections : Array[CompSection]
   #|
   #|    where compId >= 0
   #|    where compName is nonempty

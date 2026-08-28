@@ -203,6 +203,51 @@ pub fn broken_domain(
 }
 
 ///|
+/// The first domain the WHOLE state breaks, with the field it is about.
+///
+/// One function and not three, because there are three places that ask it and
+/// they have to get the same answer: the runtime's post-transition door, the
+/// guard `gen-views` weaves into a generated arm, and the dynamic-component
+/// host holding a guest's successor. A domain the woven guard admitted and the
+/// runtime then refused would be a component that abandons a transition its own
+/// compiled code said was fine — which is exactly the class of bug a second
+/// reading of one declaration produces.
+///
+/// Source order, not sorted: this answers WHICH ONE to report, and a reader
+/// fixes them one at a time. `broken_domains` is the other question — every
+/// field at once — and sorts for its own reasons.
+pub fn first_broken_domain(
+  all : Array[FieldDomain],
+  fields : Map[String, Value],
+) -> FieldDomain? {
+  for d in all {
+    if !domain_holds(d.domain, fields.get(d.field).unwrap_or(Null), fields) {
+      return Some(d)
+    }
+  }
+  None
+}
+
+///|
+/// What `first_broken_domain` found, as the sentence to say about it.
+///
+/// A convenience over `domain_sentence` and worth its line: every caller of the
+/// first has the pair in hand and has to dig the value back out of the map to
+/// call the second, and three callers digging it out three times is three
+/// chances to dig out the wrong one.
+pub fn broken_domain_sentence(
+  d : FieldDomain,
+  fields : Map[String, Value],
+) -> String {
+  domain_sentence(
+    d.domain,
+    d.field,
+    fields.get(d.field).unwrap_or(Null),
+    fields,
+  )
+}
+
+///|
 /// Every field whose CURRENT value is outside its declared domain.
 ///
 /// The whole-state question, asked after a transition so a hand-written
@@ -303,5 +348,195 @@ fn trim_num(n : Double) -> String {
     n.to_int64().to_string()
   } else {
     n.to_string()
+  }
+}
+
+// The WIRE form.
+//
+// A `where` is declared in a spec block, which the MoonBit generator reads at
+// build time and the card compiler reads in a browser — and then it has to
+// reach a HOST that has neither. A dynamic component arrives as a manifest and
+// a wasm module: the host never sees the block, so a domain that stayed in
+// `@statedef` would be a declaration the guest kept to itself.
+//
+// One codec, in `core`, because both ends are here: the card compiler writes
+// this and the dynamic-component host reads it, and a format written twice is
+// a format that disagrees with itself the first time either end grows a case.
+
+///|
+/// Every domain as JSON, for a manifest.
+pub fn domains_to_json(all : Array[FieldDomain]) -> Json {
+  Json::array(
+    all.map(d => {
+      Json::object({
+        "field": Json::string(d.field),
+        "domain": domain_to_json(d.domain),
+      })
+    }),
+  )
+}
+
+///|
+fn domain_to_json(d : Domain) -> Json {
+  let of = (rel : String, field : String) => {
+    Json::object({ "rel": Json::string(rel), "of": Json::string(field) })
+  }
+  match d {
+    DIndexOf(field~, allow_none~) =>
+      Json::object({
+        "rel": Json::string("indexOf"),
+        "of": Json::string(field),
+        "orNone": Json::boolean(allow_none),
+      })
+    DKeyOf(field~) => of("keyOf", field)
+    DMemberOf(field~) => of("memberOf", field)
+    DSubsetOf(field~) => of("subsetOf", field)
+    DNonEmpty => Json::object({ "rel": Json::string("nonempty") })
+    DLen(inner) =>
+      Json::object({
+        "rel": Json::string("len"),
+        "inner": domain_to_json(inner),
+      })
+    DOneOf(members) =>
+      Json::object({
+        "rel": Json::string("oneOf"),
+        "members": Json::array(members.map(m => Json::string(m))),
+      })
+    DCompare(op~, rhs~) =>
+      Json::object({
+        "rel": Json::string(
+          match op {
+            DGe => "ge"
+            DGt => "gt"
+            DLe => "le"
+            DLt => "lt"
+          },
+        ),
+        "rhs": operand_to_json(rhs),
+      })
+    DBetween(lo~, hi~) =>
+      Json::object({
+        "rel": Json::string("between"),
+        "lo": operand_to_json(lo),
+        "hi": operand_to_json(hi),
+      })
+  }
+}
+
+///|
+fn operand_to_json(o : DomainOperand) -> Json {
+  match o {
+    DLit(n) => Json::object({ "lit": Json::number(n) })
+    DField(f) => Json::object({ "field": Json::string(f) })
+  }
+}
+
+///|
+/// The domains a manifest declares.
+///
+/// UNKNOWN IS NOT WRONG, the same rule the evaluator follows and for a sharper
+/// reason here: this reads a document a GUEST wrote, and a guest built against
+/// a later version of this vocabulary will name relations this host has never
+/// heard of. An entry that cannot be read is DROPPED rather than raised — a
+/// host that refused to load a bundle over a clause it could not enforce would
+/// turn every addition to the vocabulary into a compatibility break, and one
+/// that enforced a guess would refuse writes the guest holds to be legal.
+pub fn domains_of_json(j : Json) -> Array[FieldDomain] {
+  let out : Array[FieldDomain] = []
+  guard j is Array(items) else { return out }
+  for item in items {
+    guard item is Object(m) else { continue }
+    guard m.get("field") is Some(String(field)) else { continue }
+    guard m.get("domain") is Some(d) else { continue }
+    match domain_of_json(d) {
+      Some(domain) => out.push({ field, domain, })
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+fn domain_of_json(j : Json) -> Domain? {
+  guard j is Object(m) else { return None }
+  guard m.get("rel") is Some(String(rel)) else { return None }
+  let field_of = () => {
+    match m.get("of") {
+      Some(String(s)) => Some(s)
+      _ => None
+    }
+  }
+  match rel {
+    "indexOf" => {
+      guard field_of() is Some(field) else { return None }
+      Some(DIndexOf(field~, allow_none=m.get("orNone") is Some(True)))
+    }
+    "keyOf" =>
+      match field_of() {
+        Some(field) => Some(DKeyOf(field~))
+        None => None
+      }
+    "memberOf" =>
+      match field_of() {
+        Some(field) => Some(DMemberOf(field~))
+        None => None
+      }
+    "subsetOf" =>
+      match field_of() {
+        Some(field) => Some(DSubsetOf(field~))
+        None => None
+      }
+    "nonempty" => Some(DNonEmpty)
+    "len" =>
+      match m.get("inner") {
+        Some(inner) =>
+          match domain_of_json(inner) {
+            Some(d) => Some(DLen(d))
+            None => None
+          }
+        None => None
+      }
+    "oneOf" => {
+      guard m.get("members") is Some(Array(ms)) else { return None }
+      let members : Array[String] = []
+      for x in ms {
+        guard x is String(s) else { continue }
+        members.push(s)
+      }
+      Some(DOneOf(members))
+    }
+    "between" => {
+      guard m.get("lo") is Some(lo) && m.get("hi") is Some(hi) else {
+        return None
+      }
+      guard operand_of_json(lo) is Some(lo) && operand_of_json(hi) is Some(hi) else {
+        return None
+      }
+      Some(DBetween(lo~, hi~))
+    }
+    "ge" | "gt" | "le" | "lt" => {
+      guard m.get("rhs") is Some(r) && operand_of_json(r) is Some(rhs) else {
+        return None
+      }
+      let op = match rel {
+        "ge" => DGe
+        "gt" => DGt
+        "le" => DLe
+        _ => DLt
+      }
+      Some(DCompare(op~, rhs~))
+    }
+    // A relation this host has never heard of. Dropped, not raised.
+    _ => None
+  }
+}
+
+///|
+fn operand_of_json(j : Json) -> DomainOperand? {
+  guard j is Object(m) else { return None }
+  match (m.get("lit"), m.get("field")) {
+    (Some(Number(n, ..)), _) => Some(DLit(n))
+    (_, Some(String(f))) => Some(DField(f))
+    _ => None
   }
 }

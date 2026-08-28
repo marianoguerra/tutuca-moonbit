@@ -169,3 +169,65 @@ test "a file with no `where` emits no domains at all" {
   let types = @viewgen.emit_module("Ledger", "ledger.html", f)
   assert_false(types.contains("domains="))
 }
+
+///|
+/// A `where` reaches the generated ARM as well, not only the schema.
+let gallery_script_html : String =
+  #|<script type="tutuca/spec">
+  #|  state Gallery {
+  #|    items : Array[String]
+  #|    view  : String
+  #|
+  #|    where view is one of ["main", "edit"]
+  #|  }
+  #|</script>
+  #|
+  #|<script type="tutuca/script">
+  #|  receive toggleView {
+  #|    .view = if .view is 'main' { 'edit' } else { 'main' }
+  #|    send 'viewChanged'
+  #|  }
+  #|</script>
+  #|
+  #|<template>
+  #|  <button @on.click="toggleView" @text=".view"></button>
+  #|</template>
+
+///|
+test "a `where` is woven into the arm, beside the invariants" {
+  // The schema carries the domains and the RUNTIME asks them after every
+  // dispatch — which for a long time was the only place they were asked. An
+  // arm that raised effects and then put a field out of domain therefore
+  // flushed its queue and was refused afterwards: the state rolled back, the
+  // messages did not. An `invariant` never had that gap, because its guard is
+  // compiled in; this closes it for a domain the same way.
+  let f = @viewgen.split_file(gallery_script_html)
+  // The IR module, which is where the arm the script block compiles to lives.
+  let out = @viewgen.emit_ir_module("Gallery", "gallery.html", f)
+  assert_true(out.contains("@tutuca.first_broken_domain("))
+  assert_true(out.contains("@tutuca.domain_failed("))
+  // CALLED rather than compiled, which is the opposite of what an invariant's
+  // guard does — and deliberate. A rule is an arbitrary expression this
+  // backend has to spell; a domain is a closed relation the runtime already
+  // evaluates at the door this guard stands in front of, and a second reading
+  // of `one of` could only disagree with the first.
+  assert_true(
+    out.contains("[{ field: \"view\", domain: DOneOf([\"main\", \"edit\"]) }]"),
+  )
+  // BEFORE the flush. The queue exists so that a transition is whole or does
+  // not happen, and a check after it would be a refusal with the messages
+  // already gone.
+  // Asked as "what comes first", because that is the claim: the text between
+  // the check and the flush is the arm, and the flush has to be after it.
+  let upto_flush = out.split("for f in effects").to_array()
+  assert_true(upto_flush.length() > 1)
+  assert_true(upto_flush[0].contains("@tutuca.first_broken_domain("))
+}
+
+///|
+test "a component with no `where` gets no check in its arm" {
+  // The cost of the feature for everyone who does not use it: nothing at all.
+  let f = @viewgen.split_file(ledger_html)
+  let out = @viewgen.emit_ir_module("Ledger", "ledger.html", f)
+  assert_false(out.contains("first_broken_domain"))
+}

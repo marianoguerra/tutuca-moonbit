@@ -87,6 +87,13 @@ pub(all) enum DseRootReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn DseRootReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> DseRootReceive? {
@@ -94,7 +101,13 @@ pub fn DseRootReceive::from_dispatch(
   Some(
     match (name, args) {
       ("selectItem", [a0]) => SelectItem(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "selectItem" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -188,9 +201,9 @@ pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
 impl @component.Fields for DseRootState with fn schema() {
   @component.SchemaInfo::new(
     name="DseRoot",
-    fingerprint="7b2a32adf52625b3",
+    fingerprint="03406d62f8349aca",
     fields=[
-      @component.FieldInfo::new("items", TyOMap(TyAny)),
+      @component.FieldInfo::new("items", TyOMap(TyComp(Some("DseEntry")))),
       @component.FieldInfo::new("selectedKey", TyText),
       @component.FieldInfo::new("editor", TyComp(Some("Editor"))),
     ],
@@ -325,6 +338,13 @@ pub(all) enum DseEntryReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn DseEntryReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> DseEntryReceive? {
@@ -332,7 +352,13 @@ pub fn DseEntryReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setName", [Str(a0)]) => SetName(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setName" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

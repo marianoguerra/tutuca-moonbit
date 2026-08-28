@@ -36,7 +36,7 @@ pub let table_row_spec_source : String =
   #|  }
   #|
   #|  state ItemTable {
-  #|    rows : Array[Any]
+  #|    rows : Array[TableRow]
   #|  }
   #|
   #|  state SelectOption {
@@ -45,7 +45,7 @@ pub let table_row_spec_source : String =
   #|  }
   #|
   #|  state ItemSelect {
-  #|    options : Array[Any]
+  #|    options : Array[SelectOption]
   #|    current : String
   #|  }
   #|

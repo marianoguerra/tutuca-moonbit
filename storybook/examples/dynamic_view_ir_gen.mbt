@@ -32,12 +32,12 @@ pub let selector_entry_spec_source : String =
   #|  }
   #|
   #|  state Selector {
-  #|    items : Array[Any]
+  #|    items : Array[SelectorEntry]
   #|    selectedValue : Any
   #|  }
   #|
   #|  state EntryEditorAndSelector {
-  #|    items : Array[Any]
+  #|    items : Array[SelectorEntry]
   #|    selector : Selector
   #|  }
   #|

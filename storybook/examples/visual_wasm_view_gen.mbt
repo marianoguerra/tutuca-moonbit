@@ -169,8 +169,8 @@ impl @component.Fields for VwTypesState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwTypesState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="e2ba6717214595df", fields=[
-    @component.FieldInfo::new("items", TyList(TyAny)),
+  @component.SchemaInfo::new(fingerprint="479948944eeca962", fields=[
+    @component.FieldInfo::new("items", TyList(TyComp(None))),
   ])
 }
 
@@ -237,8 +237,8 @@ impl @component.Fields for VwContainerState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwContainerState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="186251e4bffce07e", fields=[
-    @component.FieldInfo::new("items", TyList(TyAny)),
+  @component.SchemaInfo::new(fingerprint="800b682e34030cdd", fields=[
+    @component.FieldInfo::new("items", TyList(TyComp(None))),
     @component.FieldInfo::new("expanded", TyBool),
     @component.FieldInfo::new("editing", TyBool),
   ])
@@ -336,9 +336,9 @@ impl @component.Fields for VwIfState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwIfState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="806acbcfc51dce65", fields=[
-    @component.FieldInfo::new("thn", TyList(TyAny)),
-    @component.FieldInfo::new("else", TyList(TyAny)),
+  @component.SchemaInfo::new(fingerprint="9c6f1afed177b339", fields=[
+    @component.FieldInfo::new("thn", TyList(TyComp(None))),
+    @component.FieldInfo::new("else", TyList(TyComp(None))),
     @component.FieldInfo::new("expanded", TyBool),
     @component.FieldInfo::new("editingIf", TyBool),
     @component.FieldInfo::new("editingThn", TyBool),
@@ -423,13 +423,13 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
   @component.SchemaInfo::new(
-    fingerprint="95670364407deab6",
+    fingerprint="c2b767da50368b9c",
     fields=[
       @component.FieldInfo::new("id", TyInt),
       @component.FieldInfo::new("name", TyText),
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("expanded", TyBool),
-      @component.FieldInfo::new("defaultItem", TyAny),
+      @component.FieldInfo::new("defaultItem", TyComp(None)),
     ],
     domains=[
       { field: "id", domain: DBetween(lo=DLit(0), hi=DLit(12)), },
@@ -513,7 +513,7 @@ impl @component.Fields for VwMemoryState with fn schema() {
 /// this struct lacks fails generation.
 pub(all) struct VwPickerState {
   currentSection : String
-  instructions : Array[@tutuca.Value]
+  instructions : Array[String]
   filter : String
 }
 
@@ -539,7 +539,7 @@ pub fn VwPickerState::zero() -> VwPickerState {
 impl @component.Fields for VwPickerState with fn encode(s) {
   {
     "currentSection": Str(s.currentSection),
-    "instructions": (List(s.instructions.map(x => x)) : @tutuca.Value),
+    "instructions": (List(s.instructions.map(x => Str(x))) : @tutuca.Value),
     "filter": Str(s.filter),
   }
 }
@@ -553,9 +553,9 @@ impl @component.Fields for VwPickerState with fn decode(f) {
   }
   guard f.get("instructions") is Some(t1_instructions) else { return None }
   guard t1_instructions is List(u1_instructions) else { return None }
-  let v_instructions : Array[@tutuca.Value] = []
+  let v_instructions : Array[String] = []
   for e1_instructions in u1_instructions {
-    let x1_instructions = e1_instructions
+    guard e1_instructions is Str(x1_instructions) else { return None }
     v_instructions.push(x1_instructions)
   }
   guard f.get("filter") is Some(Str(v_filter)) else { return None }
@@ -575,10 +575,10 @@ impl @component.Fields for VwPickerState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwPickerState with fn schema() {
   @component.SchemaInfo::new(
-    fingerprint="3fdeef8c03b58885",
+    fingerprint="2eb5bae12b17fc04",
     fields=[
       @component.FieldInfo::new("currentSection", TyText),
-      @component.FieldInfo::new("instructions", TyList(TyAny)),
+      @component.FieldInfo::new("instructions", TyList(TyText)),
       @component.FieldInfo::new("filter", TyText),
     ],
     domains=[

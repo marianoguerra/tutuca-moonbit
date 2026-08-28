@@ -8,18 +8,18 @@
   }
 
   state VwTypes {
-    items : Array[Any]
+    items : Array[Component]
   }
 
   state VwContainer {
-    items : Array[Any]
+    items : Array[Component]
     expanded : Bool
     editing : Bool
   }
 
   state VwIf {
-    thn : Array[Any]
-    else : Array[Any]
+    thn : Array[Component]
+    else : Array[Component]
     expanded : Bool
     editingIf : Bool
     editingThn : Bool
@@ -29,9 +29,9 @@
   state VwSection {
     id : Int
     name : String
-    items : Array[Any]
+    items : Array[Component]
     expanded : Bool
-    defaultItem : Any
+    defaultItem : Component
 
     /// A wasm section id is a byte the binary format assigns, 0 (custom)
     /// through 12 (data count). Nothing outside that range names a section.
@@ -54,7 +54,7 @@
 
   state VwPicker {
     currentSection : String
-    instructions : Array[Any]
+    instructions : Array[String]
     filter : String
 
     /// The radio row, as a closed set. Every name here answers a

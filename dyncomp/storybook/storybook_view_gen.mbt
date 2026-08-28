@@ -89,6 +89,13 @@ pub(all) enum StoryNavReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StoryNavReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> StoryNavReceive? {
@@ -96,7 +103,13 @@ pub fn StoryNavReceive::from_dispatch(
   Some(
     match (name, args) {
       ("pick", []) => Pick
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "pick" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -146,6 +159,13 @@ pub(all) enum StoryNavIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StoryNavIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> StoryNavIntent? {
@@ -153,7 +173,13 @@ pub fn StoryNavIntent::from_dispatch(
   Some(
     match (name, args) {
       ("navPicked", [Str(a0), Str(a1)]) => NavPicked(a0, a1)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "navPicked" => @tutuca.bad_payload(name, "String, String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -385,6 +411,13 @@ pub(all) enum StoryCardReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StoryCardReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> StoryCardReceive? {
@@ -392,7 +425,13 @@ pub fn StoryCardReceive::from_dispatch(
   Some(
     match (name, args) {
       ("rebuild", []) => Rebuild
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "rebuild" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -443,6 +482,13 @@ pub(all) enum StoryCardIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn StoryCardIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> StoryCardIntent? {
@@ -450,7 +496,14 @@ pub fn StoryCardIntent::from_dispatch(
   Some(
     match (name, args) {
       ("rebuildCard", [Str(a0), Str(a1), Str(a2)]) => RebuildCard(a0, a1, a2)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "rebuildCard" =>
+            @tutuca.bad_payload(name, "String, String, String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -743,6 +796,13 @@ pub(all) enum DyncompStorybookReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn DyncompStorybookReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> DyncompStorybookReceive? {
@@ -757,7 +817,20 @@ pub fn DyncompStorybookReceive::from_dispatch(
       ("showAll", []) => ShowAll
       ("toggleDetails", []) => ToggleDetails
       ("toggleWide", []) => ToggleWide
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "catalogChanged" => @tutuca.bad_payload(name, "String", args)
+          "setStatus" => @tutuca.bad_payload(name, "String", args)
+          "chooseTheme" => @tutuca.bad_payload(name, "String", args)
+          "filesDropped" => @tutuca.bad_payload(name, "String", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          "showAll" => @tutuca.bad_payload(name, "", args)
+          "toggleDetails" => @tutuca.bad_payload(name, "", args)
+          "toggleWide" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -817,6 +890,13 @@ pub(all) enum DyncompStorybookIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn DyncompStorybookIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> DyncompStorybookIntent? {
@@ -824,7 +904,13 @@ pub fn DyncompStorybookIntent::from_dispatch(
   Some(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "catalogChanged" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -986,10 +1072,10 @@ pub fn DyncompStorybookWhen::name(self : DyncompStorybookWhen) -> String {
 impl @component.Fields for DyncompStorybookState with fn schema() {
   @component.SchemaInfo::new(
     name="DyncompStorybook",
-    fingerprint="e5a15f21dc2fc3fb",
+    fingerprint="8eb9bcecd50afc5a",
     fields=[
-      @component.FieldInfo::new("cards", TyList(TyAny)),
-      @component.FieldInfo::new("nav", TyList(TyAny)),
+      @component.FieldInfo::new("cards", TyList(TyComp(Some("StoryCard")))),
+      @component.FieldInfo::new("nav", TyList(TyComp(Some("StoryNav")))),
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),

@@ -196,3 +196,72 @@ test "the spec block's rules compile into the card and its manifest" {
     Some(Json::array([Json::string("canPush"), Json::string("conserved")])),
   )
 }
+
+///|
+/// A `where` LEAVES the card, and this is the only door it has.
+///
+/// The rules above compile INTO the module — a card declines its own
+/// transition, before its buffered effects go out. A domain does not: the
+/// vocabulary is closed precisely so a generator can read it backwards, and
+/// what reads it at runtime is `core/domain.mbt`, which the guest world has no
+/// shape for. So the declaration travels in the manifest and the HOST enforces
+/// it, at the two doors `DynObj` owns, and this is the hop that has to work
+/// for any of that to happen.
+test "the spec block's `where` clauses reach the manifest" {
+  let out = @wasm.compile(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Gallery {
+      #|    items        : Array[Any]
+      #|    entries      : Map[String, Any]
+      #|    currentIndex : Int
+      #|    currentKey   : String
+      #|    view         : String
+      #|    count        : Int
+      #|
+      #|    where currentIndex is index of .items
+      #|    where currentKey   is key of .entries
+      #|    where view is one of ["main", "edit"]
+      #|    where count between 0 and 10
+      #|    where items is nonempty
+      #|  }
+      #|</script>
+      #|<template><span @text=".currentKey"></span></template>
+    ),
+    name="Gallery",
+  )
+  guard! out.manifest is Object(root)
+  guard! root.get("components") is Some(Array(comps))
+  guard! comps.get(0) is Some(Object(gallery))
+  guard! gallery.get("domains") is Some(domains)
+  // Read back with the reader the HOST uses, rather than compared as JSON: the
+  // claim is that a host can act on this, and the shape it is written in is
+  // `core`'s business rather than this test's.
+  let read = @tutuca.domains_of_json(domains)
+  @debug.assert_eq(read.map(d => d.field), [
+    "currentIndex", "currentKey", "view", "count", "items",
+  ])
+  @debug.assert_eq(read[0].domain, DIndexOf(field="items", allow_none=false))
+  @debug.assert_eq(read[1].domain, DKeyOf(field="entries"))
+  @debug.assert_eq(read[2].domain, DOneOf(["main", "edit"]))
+  @debug.assert_eq(read[3].domain, DBetween(lo=DLit(0), hi=DLit(10)))
+  @debug.assert_eq(read[4].domain, DNonEmpty)
+}
+
+///|
+/// A card that declares none carries an empty list, not a missing key.
+test "a card with no `where` carries an empty domain list" {
+  let out = @wasm.compile(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Plain { count : Int }
+      #|</script>
+      #|<template><span @text=".count"></span></template>
+    ),
+    name="Plain",
+  )
+  guard! out.manifest is Object(root)
+  guard! root.get("components") is Some(Array(comps))
+  guard! comps.get(0) is Some(Object(plain))
+  @debug.assert_eq(plain.get("domains"), Some(Json::array([])))
+}

@@ -556,18 +556,19 @@ fn[S] TypedInstance::broken_rule(
   for f in comp.schema.fields {
     after[f.name] = successor.field(f.name)
   }
-  for d in comp.schema.domains {
-    let v = after.get(d.field).unwrap_or(Null)
-    if !@tutuca.domain_holds(d.domain, v, after) {
-      return Some(
+  // The SAME function the woven guard calls, which is the point of it being a
+  // function: a domain this door refuses and the compiled arm admitted would be
+  // two readings of one declaration.
+  match @tutuca.first_broken_domain(comp.schema.domains, after) {
+    Some(d) =>
+      Some(
         BDomain(
           field=d.field,
-          sentence=@tutuca.domain_sentence(d.domain, d.field, v, after),
+          sentence=@tutuca.broken_domain_sentence(d, after),
         ),
       )
-    }
+    None => None
   }
-  None
 }
 
 ///|

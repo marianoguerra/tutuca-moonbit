@@ -41,7 +41,7 @@ pub let fuzz_row_spec_source : String =
   #|    disagreed : Bool
   #|    rowClass : String
   #|    current : Bool
-  #|    after : Any
+  #|    after : Component?
   #|    open : Bool
   #|
   #|    where verb is one of ["send", "intent"]
@@ -61,7 +61,7 @@ pub let fuzz_row_spec_source : String =
   #|  }
   #|
   #|  state FuzzLog {
-  #|    rows : Array[Any]
+  #|    rows : Array[FuzzRow]
   #|    hasRows : Bool
   #|    emptyHint : String
   #|
@@ -104,7 +104,7 @@ pub let fuzz_row_spec_source : String =
   #|    at : Int
   #|    unchecked : String
   #|    hasUnchecked : Bool
-  #|    reproducer : Array[Any]
+  #|    reproducer : Array[FuzzRow]
   #|    hasReproducer : Bool
   #|
   #|    where kind is one of ["none", "held", "broke", "disagreed", "stuck"]
@@ -128,9 +128,9 @@ pub let fuzz_row_spec_source : String =
   #|  }
   #|
   #|  state FuzzPanel {
-  #|    controls : Any
-  #|    verdict : Any
-  #|    log : Any
+  #|    controls : FuzzControls
+  #|    verdict : FuzzVerdict
+  #|    log : FuzzLog
   #|    hasRun : Bool
   #|    at : Int
   #|    total : Int
@@ -323,6 +323,27 @@ fn fuzz_row_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "verb", domain: DOneOf(["send", "intent"]), },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="toggle",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }
@@ -761,6 +782,28 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setSeed",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -798,6 +841,28 @@ fn fuzz_controls_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setSteps",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -837,6 +902,28 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setSource",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -868,6 +955,28 @@ fn fuzz_controls_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="burst",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -901,6 +1010,28 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="play",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -932,6 +1063,28 @@ fn fuzz_controls_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="stop",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -965,6 +1118,28 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="step",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -996,6 +1171,28 @@ fn fuzz_controls_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "source",
+              domain: DOneOf(["mutators", "declared", "either"]),
+            },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="reset",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -1270,6 +1467,29 @@ fn fuzz_verdict_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "kind",
+              domain: DOneOf(["none", "held", "broke", "disagreed", "stuck"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(-1)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="shrink",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()

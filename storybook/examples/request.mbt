@@ -32,7 +32,7 @@
 /// into entries.
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   request_example_component(
-    init={ items: [], query: "", view: "main", isLoading: false, error: Null, },
+    init={ items: [], query: "", view: "main", isLoading: false, error: None, },
     update=(s, msg, ctx) => {
       match msg {
         // The same intent, dispatched from MoonBit rather than from the block
@@ -65,7 +65,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
             [_, ..] => "the intent failed"
             _ => "the intent failed"
           }
-          Next({ ..s, isLoading: false, error: Str(err), })
+          Next({ ..s, isLoading: false, error: Some(err), })
         }
         // The third outcome, and v2's own: the route ran out and NOBODY
         // answered. Not the same as a handler failing, which is why it has its
@@ -74,7 +74,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
           Next({
             ..s,
             isLoading: false,
-            error: Str("nothing in the scope answers `loadData`"),
+            error: Some("nothing in the scope answers `loadData`"),
           })
         _ => Unhandled
       }

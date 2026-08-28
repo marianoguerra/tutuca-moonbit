@@ -176,14 +176,17 @@ fn schema_form_comp() -> @component.Component {
       // the schema layer produces and what every other layer here already
       // speaks. Stripping the leading slash is this component's whole share of
       // knowing about pointers.
+      // `errors` arrives DECODED, at the `Map[String, String]` the schema
+      // declares — the unwrapping this arm used to open with was the boundary
+      // work `from_dispatch` now does, and a payload that is not that shape
+      // never reaches here at all.
       Some(ShowErrors(errors)) => {
-        let by_field = errors.map()
         let fields = s.fields.map(f => {
           let name = f.field("name").str()
-          let msg = by_field.get("/\{name}").unwrap_or(Str("")).str()
+          let msg = errors.get("/\{name}").unwrap_or("")
           f.call_field("setError", [Str(msg)])
         })
-        let general = by_field.get("").unwrap_or(Str("")).str()
+        let general = errors.get("").unwrap_or("")
         return Next({ ..s, fields, error: general, })
       }
       // The merged `Receive` carries this component's own VIEW names as

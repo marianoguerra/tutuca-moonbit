@@ -248,14 +248,172 @@ fn DynObj::method_fn(
 
 ///|
 /// This instance as the generated mutators see it (see `@component.FieldBox`):
-/// a field read is `obj_field`, a field write is `obj_with_field` — the guest's
-/// own COW successor — and the no-op answer is the instance itself.
+/// a field read is `obj_field`, a field write is `write_field` — the guest's
+/// own COW successor, held to the declared domains on the way through — and the
+/// no-op answer is the instance itself, which is also what a refused write
+/// answers.
 fn DynObj::field_box(self : DynObj) -> @component.FieldBox {
   {
     get: name => self.obj_field(name).unwrap_or(Null),
-    set: (name, v) => self.obj_with_field(name, v).unwrap_or(Obj(self)),
+    // The write every generated mutator makes, and where BOTH doors stand for
+    // it. Not `obj_with_field`, which is also how the RENDERER rebuilds a
+    // spine: refusing there would turn a re-render into a refusal.
+    set: (name, v) => self.write_field(name, v),
     value: () => Obj(self),
   }
+}
+
+///|
+/// A generated mutator's write, held to the component's declared domains.
+///
+/// Both doors, here rather than one here and one at the dispatch that called
+/// it, because of who owns the HANDLE. `obj_with_field` supersedes the handle
+/// it wrote from the moment it mints a successor — the old one is unreachable
+/// and the sweep drops it — so a check that ran after it and then kept the old
+/// instance would be keeping an instance whose handle is queued for collection.
+/// Doing the guest write here means the successor exists before anything is
+/// superseded, and a refusal drops the SUCCESSOR instead.
+fn DynObj::write_field(
+  self : DynObj,
+  name : String,
+  v : @tutuca.Value,
+) -> @tutuca.Value {
+  // THE FIRST DOOR: only the domains of the field being written, against the
+  // fields as they stand — the same division `TypedInstance::set` documents.
+  // Asked before the guest is entered, so a refused write mints nothing.
+  if self.broken_write(name, v) is Some(_) {
+    return Obj(self)
+  }
+  // A placeholder never reaches the guest and mints no handle, so there is
+  // nothing to own and `obj_with_field` is the whole of it.
+  if self.owned.contains(name) {
+    return @tutuca.Obj::obj_with_field(self, name, v).unwrap_or(Obj(self))
+  }
+  guard self.guest.with_field(self.handle, name, v) is Some(h) else {
+    return Obj(self)
+  }
+  // THE SECOND DOOR: the whole state. `setItems []` says nothing about
+  // `currentIndex` and leaves it stranded, which is precisely what the first
+  // door cannot see.
+  match self.adopt(@tutuca.mutator_name("set", name), Obj(self.successor(h))) {
+    Some(nv) => {
+      superseded.push((self.guest, self.handle))
+      nv
+    }
+    // The successor is what nothing holds now, so it is what the sweep takes.
+    // The instance that stands is the one this was called on, and its handle
+    // was never queued.
+    None => {
+      superseded.push((self.guest, h))
+      Obj(self)
+    }
+  }
+}
+
+///|
+/// The domains this component declared, or empty for one that declared none.
+///
+/// Read off the schema rather than the manifest, because the schema is what
+/// every other generic layer reads and a second path to the same list is a
+/// second chance for the two to disagree.
+fn DynObj::domains(self : DynObj) -> Array[@tutuca.FieldDomain] {
+  self.schema.domains
+}
+
+///|
+/// A guest instance's declared fields, as the map a relation reads.
+///
+/// A domain is CROSS-FIELD — `currentIndex` is only wrong relative to `items`
+/// — so the whole state has to be in hand, and a guest's fields are lazy. That
+/// is one bridge crossing per declared field, which is why every caller here
+/// asks `domains().is_empty()` first: a component that declared no `where`
+/// pays nothing at all.
+fn DynObj::fields_of(
+  self : DynObj,
+  v : @tutuca.Value,
+) -> Map[String, @tutuca.Value] {
+  let out : Map[String, @tutuca.Value] = Map([])
+  for f in self.schema.fields {
+    out[f.name] = v.field(f.name)
+  }
+  out
+}
+
+///|
+/// Whether writing `v` into `name` would leave that field outside its domain,
+/// reporting through the refusal channel when it would.
+fn DynObj::broken_write(
+  self : DynObj,
+  name : String,
+  v : @tutuca.Value,
+) -> @tutuca.Domain? {
+  guard !self.domains().is_empty() else { return None }
+  let fields = self.fields_of(Obj(self))
+  guard @tutuca.broken_domain(self.domains(), name, v, fields) is Some(d) else {
+    return None
+  }
+  let sentence = @tutuca.domain_sentence(d, name, v, fields)
+  if @tutuca.refusing() {
+    @tutuca.refuse({
+      code: OutOfRange,
+      asked: @tutuca.mutator_name("set", name),
+      rule: name,
+      sentence,
+      state: Obj(self),
+      path: @tutuca.Path::new(),
+    })
+  } else {
+    @tutuca.domain_failed(
+      handler=@tutuca.mutator_name("set", name),
+      field=name,
+      sentence~,
+      state=Map(fields),
+    )
+  }
+  Some(d)
+}
+
+///|
+/// THE SECOND DOOR: the whole successor, before the host adopts it.
+///
+/// A guest keeps its own `pred`s and `invariant`s — they are compiled into its
+/// module and it declines a transition itself. A DOMAIN is not: it leaves the
+/// guest in the manifest and is enforced out here, which is the only place
+/// that can, and which is why `core/domain.mbt` was put where a holder of a
+/// bare `Value` could reach it.
+///
+/// Answers the successor when every domain holds, and `None` when one does
+/// not — the caller keeps the instance it had, exactly as a typed instance
+/// keeps its own on a broken rule.
+fn DynObj::adopt(
+  self : DynObj,
+  asked : String,
+  successor : @tutuca.Value,
+) -> @tutuca.Value? {
+  guard !self.domains().is_empty() else { return Some(successor) }
+  let after = self.fields_of(successor)
+  guard @tutuca.first_broken_domain(self.domains(), after) is Some(d) else {
+    return Some(successor)
+  }
+  let sentence = @tutuca.broken_domain_sentence(d, after)
+  if @tutuca.refusing() {
+    @tutuca.refuse({
+      code: OutOfRange,
+      asked,
+      rule: d.field,
+      sentence,
+      state: Map(after),
+      path: @tutuca.Path::new(),
+    })
+  } else {
+    @tutuca.domain_failed(
+      handler=asked,
+      field=d.field,
+      sentence~,
+      state=Map(after),
+    )
+  }
+  None
 }
 
 ///|
@@ -472,6 +630,26 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
         args,
         bindings,
       )
+      // THE DOMAINS, BEFORE the guest's buffered control calls go out.
+      //
+      // A guest buffers its effects for exactly this reason — the interpreter
+      // drops the effects of a transition it abandons, and the host cannot
+      // un-hear a `send`. The guest already applies that to its OWN rules; a
+      // domain is the host's to keep, so the host has to apply it at the same
+      // moment. Checking after this loop would have been a transition that
+      // did not happen and messages that did.
+      let adopted : @tutuca.Value? = match result.next {
+        Some(h) => self.adopt(name, Obj(self.successor(h)))
+        None => None
+      }
+      if result.next is Some(h) && adopted is None {
+        // The successor is what nothing holds, so it is what the sweep takes.
+        // The instance that stands is the one this handler was called on, and
+        // its handle was never queued — which is the whole reason the check
+        // sits here rather than after the successor has been adopted.
+        superseded.push((self.guest, h))
+        return Some((Obj(self) : @tutuca.Value))
+      }
       for msg in result.msgs {
         match msg {
           Send(name, args) => ctx.send(name, args)
@@ -507,15 +685,18 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
         guard bucket is Receive && self.mutators.get(name) is Some(g) else {
           return None
         }
+        // Both doors were already asked, inside the write itself — see
+        // `write_field`. A refused mutator answers this instance's own value,
+        // which the transactor reads as "nothing happened".
         return match g(self.field_box(), args) {
-          Obj(_) as nv => Some(nv)
+          Obj(_) as nv => self.adopt(name, nv)
           _ => None
         }
       }
-      match result.next {
-        Some(h) => {
+      match adopted {
+        Some(_) as nv => {
           superseded.push((self.guest, self.handle))
-          Some((Obj(self.successor(h)) : @tutuca.Value))
+          nv
         }
         None => None
       }

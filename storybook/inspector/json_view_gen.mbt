@@ -515,6 +515,13 @@ pub(all) enum JsonArrayReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonArrayReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonArrayReceive? {
@@ -524,7 +531,15 @@ pub fn JsonArrayReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -679,9 +694,9 @@ pub fn JsonArrayLoopWith::name(self : JsonArrayLoopWith) -> String {
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
-    fingerprint="0ee2162fd5624d18",
+    fingerprint="b9e0d7b31d50edd3",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
@@ -786,6 +801,13 @@ pub(all) enum JsonObjectReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonObjectReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonObjectReceive? {
@@ -795,7 +817,15 @@ pub fn JsonObjectReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -950,9 +980,9 @@ pub fn JsonObjectLoopWith::name(self : JsonObjectLoopWith) -> String {
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
-    fingerprint="8a163ec91ddd9fb2",
+    fingerprint="086af2b08b6883ea",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("JsonProperty")))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
@@ -1032,10 +1062,10 @@ pub let json_property_global_style : String = ""
 impl @component.Fields for JsonPropertyState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonProperty",
-    fingerprint="7691ca18d47a981e",
+    fingerprint="99e14734917f75fd",
     fields=[
       @component.FieldInfo::new("key", TyText),
-      @component.FieldInfo::new("child", TyAny),
+      @component.FieldInfo::new("child", TyComp(None)),
     ],
     view_names=["main"],
   )
@@ -1100,8 +1130,8 @@ pub let data_inspector_global_style : String = ""
 impl @component.Fields for DataInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="DataInspector",
-    fingerprint="d2cff22022e090c6",
-    fields=[@component.FieldInfo::new("value", TyAny)],
+    fingerprint="a1b8c17a6a5496b5",
+    fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )
 }

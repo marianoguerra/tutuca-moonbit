@@ -69,6 +69,13 @@ pub(all) enum JsonSelectorReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonSelectorReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonSelectorReceive? {
@@ -81,7 +88,18 @@ pub fn JsonSelectorReceive::from_dispatch(
       ("setToNumber", []) => SetToNumber
       ("setToObject", []) => SetToObject
       ("setToString", []) => SetToString
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setToArray" => @tutuca.bad_payload(name, "", args)
+          "setToBool" => @tutuca.bad_payload(name, "Bool", args)
+          "setToNull" => @tutuca.bad_payload(name, "", args)
+          "setToNumber" => @tutuca.bad_payload(name, "", args)
+          "setToObject" => @tutuca.bad_payload(name, "", args)
+          "setToString" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -342,6 +360,13 @@ pub(all) enum JsonBoolReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonBoolReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonBoolReceive? {
@@ -349,7 +374,13 @@ pub fn JsonBoolReceive::from_dispatch(
   Some(
     match (name, args) {
       ("toggleValue", []) => ToggleValue
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggleValue" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -513,6 +544,13 @@ pub(all) enum JsonStringReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonStringReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonStringReceive? {
@@ -520,7 +558,13 @@ pub fn JsonStringReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setValue" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -686,6 +730,13 @@ pub(all) enum JsonNumberReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonNumberReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonNumberReceive? {
@@ -693,7 +744,13 @@ pub fn JsonNumberReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setRawValue", [Str(a0)]) => SetRawValue(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setRawValue" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -868,6 +925,13 @@ pub(all) enum JsonArrayReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonArrayReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonArrayReceive? {
@@ -877,7 +941,15 @@ pub fn JsonArrayReceive::from_dispatch(
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
       ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "addItem" => @tutuca.bad_payload(name, "", args)
+          "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
+          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -988,8 +1060,8 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
-    fingerprint="0de9c01b2912a1d0",
-    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
+    fingerprint="3cb4710a9dffd22d",
+    fields=[@component.FieldInfo::new("items", TyList(TyComp(None)))],
     view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )
@@ -1057,6 +1129,13 @@ pub(all) enum JsonObjectKeyValReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonObjectKeyValReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonObjectKeyValReceive? {
@@ -1064,7 +1143,13 @@ pub fn JsonObjectKeyValReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setKey", [Str(a0)]) => SetKey(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setKey" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1241,6 +1326,13 @@ pub(all) enum JsonObjectReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn JsonObjectReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> JsonObjectReceive? {
@@ -1250,7 +1342,15 @@ pub fn JsonObjectReceive::from_dispatch(
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
       ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "addItem" => @tutuca.bad_payload(name, "", args)
+          "onDropOnItem" => @tutuca.bad_payload(name, "Any, Any", args)
+          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1361,8 +1461,13 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
-    fingerprint="d710dac99231860a",
-    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
+    fingerprint="0bd8cbf0734aba72",
+    fields=[
+      @component.FieldInfo::new(
+        "items",
+        TyList(TyComp(Some("JsonObjectKeyVal"))),
+      ),
+    ],
     view_handlers=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )

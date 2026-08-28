@@ -136,11 +136,11 @@ pub let comp_field_global_style : String = ""
 impl @component.Fields for CompFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="CompField",
-    fingerprint="0f454106bd0eedb3",
+    fingerprint="432d4369d9e7f91c",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("typeName", TyText),
-      @component.FieldInfo::new("child", TyAny),
+      @component.FieldInfo::new("child", TyComp(None)),
     ],
     domains=[
       { field: "name", domain: DNonEmpty, },
@@ -218,6 +218,13 @@ pub(all) enum CompViewReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CompViewReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> CompViewReceive? {
@@ -225,7 +232,13 @@ pub fn CompViewReceive::from_dispatch(
   Some(
     match (name, args) {
       ("toggle", [Bool(a0)]) => Toggle(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggle" => @tutuca.bad_payload(name, "Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -438,6 +451,13 @@ pub(all) enum CompSectionReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CompSectionReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> CompSectionReceive? {
@@ -447,7 +467,15 @@ pub fn CompSectionReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggle", [Bool(a0)]) => Toggle(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggle" => @tutuca.bad_payload(name, "Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -604,9 +632,9 @@ pub fn CompSectionLoopWith::name(self : CompSectionLoopWith) -> String {
 impl @component.Fields for CompSectionState with fn schema() {
   @component.SchemaInfo::new(
     name="CompSection",
-    fingerprint="73f419e659ceaaaf",
+    fingerprint="8c149e16eb837bd6",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
@@ -702,6 +730,13 @@ pub(all) enum ComponentInspectorIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ComponentInspectorIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> ComponentInspectorIntent? {
@@ -710,7 +745,14 @@ pub fn ComponentInspectorIntent::from_dispatch(
     match (name, args) {
       ("toggleAllSections", [Bool(a0)]) => ToggleAllSections(a0)
       ("toggleAllViews", [Bool(a0)]) => ToggleAllViews(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggleAllSections" => @tutuca.bad_payload(name, "Bool", args)
+          "toggleAllViews" => @tutuca.bad_payload(name, "Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -776,11 +818,11 @@ pub fn ComponentInspectorMethod::name(
 impl @component.Fields for ComponentInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentInspector",
-    fingerprint="5569f08032fcd7dd",
+    fingerprint="c12de55a2abbc742",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("compId", TyInt),
-      @component.FieldInfo::new("sections", TyList(TyAny)),
+      @component.FieldInfo::new("sections", TyList(TyComp(Some("CompSection")))),
     ],
     intents=["toggleAllSections", "toggleAllViews"],
     methods=["idText"],

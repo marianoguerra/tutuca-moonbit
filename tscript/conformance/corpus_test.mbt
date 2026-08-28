@@ -21,6 +21,8 @@ test "the v2 corpus still holds every case it was written with" {
       #|forward lex dyn walks the legs in the order written
       #|forward amends the arguments and keeps the name and the route
       #|a handler may run and then forward
+      #|a bare value fills a nullable field
+      #|null empties one, and is the one literal the wanted type names
       #|an intent with no legs takes the default route
       #|intent dyn is what v1 spelled bubble
       #|intent lex is what v1 spelled request

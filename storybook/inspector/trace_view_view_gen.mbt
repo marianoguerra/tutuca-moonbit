@@ -46,7 +46,7 @@ pub(all) struct TraceRowState {
   current : Bool
   /// The state the handler produced, prebuilt as a value inspector, or Null
   /// when the recording did not keep one.
-  after : @tutuca.Value
+  after : @tutuca.Value?
   hasAfter : Bool
   open : Bool
 }
@@ -74,7 +74,7 @@ pub fn TraceRowState::zero() -> TraceRowState {
     rowClass: "",
     depth: 0,
     current: false,
-    after: Null,
+    after: None,
     hasAfter: false,
     open: false,
   }
@@ -88,24 +88,27 @@ pub fn TraceRowState::zero() -> TraceRowState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for TraceRowState with fn encode(s) {
-  {
-    "seq": Num(s.seq.to_double()),
-    "turn": Num(s.turn.to_double()),
-    "walk": Num(s.walk.to_double()),
-    "hasWalk": Bool(s.hasWalk),
-    "verb": Str(s.verb),
-    "verbClass": Str(s.verbClass),
-    "name": Str(s.name),
-    "place": Str(s.place),
-    "args": Str(s.args),
-    "input": Bool(s.input),
-    "rowClass": Str(s.rowClass),
-    "depth": Num(s.depth.to_double()),
-    "current": Bool(s.current),
-    "after": s.after,
-    "hasAfter": Bool(s.hasAfter),
-    "open": Bool(s.open),
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["seq"] = Num(s.seq.to_double())
+  out["turn"] = Num(s.turn.to_double())
+  out["walk"] = Num(s.walk.to_double())
+  out["hasWalk"] = Bool(s.hasWalk)
+  out["verb"] = Str(s.verb)
+  out["verbClass"] = Str(s.verbClass)
+  out["name"] = Str(s.name)
+  out["place"] = Str(s.place)
+  out["args"] = Str(s.args)
+  out["input"] = Bool(s.input)
+  out["rowClass"] = Str(s.rowClass)
+  out["depth"] = Num(s.depth.to_double())
+  out["current"] = Bool(s.current)
+  match s.after {
+    Some(x) => out["after"] = x
+    None => ()
   }
+  out["hasAfter"] = Bool(s.hasAfter)
+  out["open"] = Bool(s.open)
+  out
 }
 
 ///|
@@ -129,7 +132,13 @@ impl @component.Fields for TraceRowState with fn decode(f) {
   guard f.get("depth") is Some(Num(t1_depth)) else { return None }
   let v_depth = t1_depth.to_int()
   guard f.get("current") is Some(Bool(v_current)) else { return None }
-  let v_after = f.get("after").unwrap_or(Null)
+  let v_after : @tutuca.Value? = match f.get("after") {
+    None | Some(Null) => None
+    Some(t1_after) => {
+      let x1_after = t1_after
+      Some(x1_after)
+    }
+  }
   guard f.get("hasAfter") is Some(Bool(v_hasAfter)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
   Some({
@@ -171,6 +180,13 @@ pub(all) enum TraceRowReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn TraceRowReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> TraceRowReceive? {
@@ -178,7 +194,13 @@ pub fn TraceRowReceive::from_dispatch(
   Some(
     match (name, args) {
       ("toggle", []) => Toggle
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggle" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -275,7 +297,7 @@ pub fn TraceRowMsg::from_dispatch(d : @component.Dispatch) -> TraceRowMsg? {
 impl @component.Fields for TraceRowState with fn schema() {
   @component.SchemaInfo::new(
     name="TraceRow",
-    fingerprint="b797651dcf5fc969",
+    fingerprint="73d9e9d3f845d99f",
     fields=[
       @component.FieldInfo::new("seq", TyInt),
       @component.FieldInfo::new("turn", TyInt),
@@ -290,7 +312,7 @@ impl @component.Fields for TraceRowState with fn schema() {
       @component.FieldInfo::new("rowClass", TyText),
       @component.FieldInfo::new("depth", TyInt),
       @component.FieldInfo::new("current", TyBool),
-      @component.FieldInfo::new("after", TyAny),
+      @component.FieldInfo::new("after", TyOption(TyComp(None))),
       @component.FieldInfo::new("hasAfter", TyBool),
       @component.FieldInfo::new("open", TyBool),
     ],
@@ -402,6 +424,13 @@ pub(all) enum TraceLogReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn TraceLogReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> TraceLogReceive? {
@@ -412,7 +441,14 @@ pub fn TraceLogReceive::from_dispatch(
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => SetTurn(a0.to_int())
       ("showAllTurns", []) => ShowAllTurns
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setTurn" => @tutuca.bad_payload(name, "Int", args)
+          "showAllTurns" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -460,9 +496,9 @@ pub let trace_log_global_style : String = ""
 impl @component.Fields for TraceLogState with fn schema() {
   @component.SchemaInfo::new(
     name="TraceLog",
-    fingerprint="2d2d1dcda1a49542",
+    fingerprint="ab779104e1ec3c16",
     fields=[
-      @component.FieldInfo::new("rows", TyList(TyAny)),
+      @component.FieldInfo::new("rows", TyList(TyComp(Some("TraceRow")))),
       @component.FieldInfo::new("hasRows", TyBool),
       @component.FieldInfo::new("inputsOnly", TyBool),
       @component.FieldInfo::new("turn", TyInt),
@@ -722,6 +758,13 @@ pub(all) enum TracePlaceReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn TracePlaceReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> TracePlaceReceive? {
@@ -729,7 +772,13 @@ pub fn TracePlaceReceive::from_dispatch(
   Some(
     match (name, args) {
       ("pickPlace", [Str(a0)]) => PickPlace(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "pickPlace" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -936,9 +985,9 @@ pub let trace_places_global_style : String = ""
 impl @component.Fields for TracePlacesState with fn schema() {
   @component.SchemaInfo::new(
     name="TracePlaces",
-    fingerprint="101c44225057d64a",
+    fingerprint="ba590b6564d637b9",
     fields=[
-      @component.FieldInfo::new("places", TyList(TyAny)),
+      @component.FieldInfo::new("places", TyList(TyComp(Some("TracePlace")))),
       @component.FieldInfo::new("hasPlaces", TyBool),
       @component.FieldInfo::new("selected", TyText),
       @component.FieldInfo::new("heading", TyText),
@@ -1076,6 +1125,13 @@ pub(all) enum RecorderBarReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RecorderBarReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> RecorderBarReceive? {
@@ -1088,7 +1144,18 @@ pub fn RecorderBarReceive::from_dispatch(
       ("startRecording", []) => StartRecording
       ("stopRecording", []) => StopRecording
       ("clearRecording", []) => ClearRecording
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setScope" => @tutuca.bad_payload(name, "String", args)
+          "openPicker" => @tutuca.bad_payload(name, "", args)
+          "closePicker" => @tutuca.bad_payload(name, "", args)
+          "startRecording" => @tutuca.bad_payload(name, "", args)
+          "stopRecording" => @tutuca.bad_payload(name, "", args)
+          "clearRecording" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1410,6 +1477,13 @@ pub(all) enum TracePanelReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn TracePanelReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> TracePanelReceive? {
@@ -1421,7 +1495,15 @@ pub fn TracePanelReceive::from_dispatch(
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => SetAt(a0.to_int())
       ("toggleSelecting", []) => ToggleSelecting
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setTab" => @tutuca.bad_payload(name, "String", args)
+          "setAt" => @tutuca.bad_payload(name, "Int", args)
+          "toggleSelecting" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

@@ -136,6 +136,13 @@ pub(all) enum LoaderBarReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn LoaderBarReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> LoaderBarReceive? {
@@ -152,7 +159,18 @@ pub fn LoaderBarReceive::from_dispatch(
       ("loadSample", [a0]) => LoadSample(a0)
       ("loadUrl", []) => LoadUrl
       ("typeUrl", [Str(a0)]) => TypeUrl(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "filesDropped" => @tutuca.bad_payload(name, "Any", args)
+          "dyncompLoaded" => @tutuca.bad_payload(name, "String, Int", args)
+          "dyncompError" => @tutuca.bad_payload(name, "String, Int", args)
+          "loadSample" => @tutuca.bad_payload(name, "Any", args)
+          "loadUrl" => @tutuca.bad_payload(name, "", args)
+          "typeUrl" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -208,6 +226,13 @@ pub(all) enum LoaderBarIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn LoaderBarIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> LoaderBarIntent? {
@@ -215,7 +240,13 @@ pub fn LoaderBarIntent::from_dispatch(
   Some(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "catalogChanged" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

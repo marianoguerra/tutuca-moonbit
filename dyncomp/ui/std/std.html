@@ -51,7 +51,7 @@
   /// A row or a column. Everything about it is direction, spacing and
   /// alignment; `children` are universals and nothing else.
   state Stack {
-    children : Array[Any]
+    children : Array[Universal]
     direction : String
     justify : String
     align : String
@@ -68,7 +68,7 @@
   /// to somebody adding a cell; a bento box wants a component of its own
   /// rather than a mode of this one.
   state Grid {
-    children : Array[Any]
+    children : Array[Universal]
     cols : Int
     rows : Int
     gap : Int
@@ -97,7 +97,7 @@
 
   /// A tab strip and one page at a time. `tabs` are TabPages.
   state Tabs {
-    tabs : Array[Any]
+    tabs : Array[TabPage]
     active : Int
     /// Whether the active tab's NAME is being edited, in place on the strip.
     ///

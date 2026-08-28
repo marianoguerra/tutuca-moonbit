@@ -18,7 +18,7 @@ pub(all) struct RequestExampleState {
   query : String
   view : String
   isLoading : Bool
-  error : @tutuca.Value
+  error : String?
 }
 
 ///|
@@ -30,7 +30,7 @@ pub(all) struct RequestExampleState {
 ///
 ///   init={ ..RequestExampleState::zero(), label: "Counter" }
 pub fn RequestExampleState::zero() -> RequestExampleState {
-  { items: [], query: "", view: "", isLoading: false, error: Null, }
+  { items: [], query: "", view: "", isLoading: false, error: None, }
 }
 
 ///|
@@ -41,13 +41,16 @@ pub fn RequestExampleState::zero() -> RequestExampleState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for RequestExampleState with fn encode(s) {
-  {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
-    "query": Str(s.query),
-    "view": Str(s.view),
-    "isLoading": Bool(s.isLoading),
-    "error": s.error,
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["items"] = (List(s.items.map(x => x)) : @tutuca.Value)
+  out["query"] = Str(s.query)
+  out["view"] = Str(s.view)
+  out["isLoading"] = Bool(s.isLoading)
+  match s.error {
+    Some(x) => out["error"] = Str(x)
+    None => ()
   }
+  out
 }
 
 ///|
@@ -64,7 +67,13 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
   guard f.get("view") is Some(Str(v_view)) else { return None }
   guard f.get("isLoading") is Some(Bool(v_isLoading)) else { return None }
-  let v_error = f.get("error").unwrap_or(Null)
+  let v_error : String? = match f.get("error") {
+    None | Some(Null) => None
+    Some(t1_error) => {
+      guard t1_error is Str(x1_error) else { return None }
+      Some(x1_error)
+    }
+  }
   Some({
     items: v_items,
     query: v_query,
@@ -100,6 +109,13 @@ pub(all) enum RequestExampleReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RequestExampleReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> RequestExampleReceive? {
@@ -114,7 +130,20 @@ pub fn RequestExampleReceive::from_dispatch(
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
       ("toggleView", []) => ToggleView
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "init" => @tutuca.bad_payload(name, "", args)
+          "loadDataOk" => @tutuca.bad_payload(name, "Any", args)
+          "loadDataError" => @tutuca.bad_payload(name, "String", args)
+          "loadDataUnhandled" => @tutuca.bad_payload(name, "", args)
+          "loadAnotherWay" => @tutuca.bad_payload(name, "", args)
+          "resetQuery" => @tutuca.bad_payload(name, "", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          "toggleView" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -252,13 +281,13 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="f895d97d88b18bec",
+    fingerprint="9c3bb26c3abad5a5",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("view", TyText),
       @component.FieldInfo::new("isLoading", TyBool),
-      @component.FieldInfo::new("error", TyAny),
+      @component.FieldInfo::new("error", TyOption(TyText)),
     ],
     view_handlers=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
     receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],

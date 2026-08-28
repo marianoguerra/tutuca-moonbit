@@ -48,7 +48,7 @@ pub let universal_spec_source : String =
   #|  }
   #|
   #|  state Stack {
-  #|    children : Array[Any]
+  #|    children : Array[Universal]
   #|    direction : String
   #|    justify : String
   #|    align : String
@@ -58,7 +58,7 @@ pub let universal_spec_source : String =
   #|  }
   #|
   #|  state Grid {
-  #|    children : Array[Any]
+  #|    children : Array[Universal]
   #|    cols : Int
   #|    rows : Int
   #|    gap : Int
@@ -79,7 +79,7 @@ pub let universal_spec_source : String =
   #|  }
   #|
   #|  state Tabs {
-  #|    tabs : Array[Any]
+  #|    tabs : Array[TabPage]
   #|    active : Int
   #|    renaming : Bool
   #|    original : String

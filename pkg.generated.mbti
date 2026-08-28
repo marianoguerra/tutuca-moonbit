@@ -6,7 +6,13 @@ import {
 }
 
 // Values
+pub fn bad_payload(String, String, Array[@core.Value]) -> Unit
+
+pub fn broken_domain_sentence(@core.FieldDomain, Map[String, @core.Value]) -> String
+
 pub fn domain_failed(handler~ : String, field~ : String, sentence? : String, state? : @core.Value) -> Unit
+
+pub fn first_broken_domain(Array[@core.FieldDomain], Map[String, @core.Value]) -> @core.FieldDomain?
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
 
@@ -27,6 +33,14 @@ pub fn refusing() -> Bool
 // Types and methods
 
 // Type aliases
+pub using @core {type Domain}
+
+pub using @core {type DomainOp}
+
+pub using @core {type DomainOperand}
+
+pub using @core {type FieldDomain}
+
 pub using @core {type IntentAnswer}
 
 pub using @core {type IntentCall}

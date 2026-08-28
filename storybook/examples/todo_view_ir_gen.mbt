@@ -32,7 +32,7 @@ pub let item_spec_source : String =
   #|  }
   #|
   #|  state Items {
-  #|    items : Array[Any]
+  #|    items : Array[Item]
   #|  }
 
 ///|

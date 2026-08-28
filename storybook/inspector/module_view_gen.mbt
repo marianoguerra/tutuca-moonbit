@@ -19,7 +19,7 @@
 pub(all) struct RichSampleState {
   title : String
   count : Int
-  tags : Array[@tutuca.Value]
+  tags : Array[String]
   open : Bool
 }
 
@@ -46,7 +46,7 @@ impl @component.Fields for RichSampleState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
-    "tags": (List(s.tags.map(x => x)) : @tutuca.Value),
+    "tags": (List(s.tags.map(x => Str(x))) : @tutuca.Value),
     "open": Bool(s.open),
   }
 }
@@ -60,9 +60,9 @@ impl @component.Fields for RichSampleState with fn decode(f) {
   let v_count = t1_count.to_int()
   guard f.get("tags") is Some(t1_tags) else { return None }
   guard t1_tags is List(u1_tags) else { return None }
-  let v_tags : Array[@tutuca.Value] = []
+  let v_tags : Array[String] = []
   for e1_tags in u1_tags {
-    let x1_tags = e1_tags
+    guard e1_tags is Str(x1_tags) else { return None }
     v_tags.push(x1_tags)
   }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
@@ -94,6 +94,13 @@ pub(all) enum RichSampleReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RichSampleReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> RichSampleReceive? {
@@ -104,7 +111,16 @@ pub fn RichSampleReceive::from_dispatch(
       ("onData", []) => OnData
       ("inc", []) => Inc
       ("reset", []) => Reset
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "ping" => @tutuca.bad_payload(name, "", args)
+          "onData" => @tutuca.bad_payload(name, "", args)
+          "inc" => @tutuca.bad_payload(name, "", args)
+          "reset" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -155,6 +171,13 @@ pub(all) enum RichSampleIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RichSampleIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> RichSampleIntent? {
@@ -162,7 +185,13 @@ pub fn RichSampleIntent::from_dispatch(
   Some(
     match (name, args) {
       ("onChild", []) => OnChild
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "onChild" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -296,11 +325,11 @@ pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
 impl @component.Fields for RichSampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RichSample",
-    fingerprint="4e605821900d9496",
+    fingerprint="401c6cac8081bbaf",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),
-      @component.FieldInfo::new("tags", TyList(TyAny)),
+      @component.FieldInfo::new("tags", TyList(TyText)),
       @component.FieldInfo::new("open", TyBool),
     ],
     view_handlers=["inc", "reset"],
@@ -321,7 +350,7 @@ impl @component.Fields for RichSampleState with fn schema() {
 pub(all) struct SampleCardState {
   title : String
   count : Int
-  tags : Array[@tutuca.Value]
+  tags : Array[String]
   open : Bool
 }
 
@@ -348,7 +377,7 @@ impl @component.Fields for SampleCardState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
-    "tags": (List(s.tags.map(x => x)) : @tutuca.Value),
+    "tags": (List(s.tags.map(x => Str(x))) : @tutuca.Value),
     "open": Bool(s.open),
   }
 }
@@ -362,9 +391,9 @@ impl @component.Fields for SampleCardState with fn decode(f) {
   let v_count = t1_count.to_int()
   guard f.get("tags") is Some(t1_tags) else { return None }
   guard t1_tags is List(u1_tags) else { return None }
-  let v_tags : Array[@tutuca.Value] = []
+  let v_tags : Array[String] = []
   for e1_tags in u1_tags {
-    let x1_tags = e1_tags
+    guard e1_tags is Str(x1_tags) else { return None }
     v_tags.push(x1_tags)
   }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
@@ -390,6 +419,13 @@ pub(all) enum SampleCardReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SampleCardReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SampleCardReceive? {
@@ -397,7 +433,13 @@ pub fn SampleCardReceive::from_dispatch(
   Some(
     match (name, args) {
       ("bump", []) => Bump
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "bump" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -507,11 +549,11 @@ pub fn SampleCardMethod::name(self : SampleCardMethod) -> String {
 impl @component.Fields for SampleCardState with fn schema() {
   @component.SchemaInfo::new(
     name="SampleCard",
-    fingerprint="5c60f49b28eb5d16",
+    fingerprint="98481062f338a147",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),
-      @component.FieldInfo::new("tags", TyList(TyAny)),
+      @component.FieldInfo::new("tags", TyList(TyText)),
       @component.FieldInfo::new("open", TyBool),
     ],
     view_handlers=["bump"],

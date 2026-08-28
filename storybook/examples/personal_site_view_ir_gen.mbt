@@ -38,13 +38,13 @@ pub let alt_url_spec_source : String =
   #|    title : String
   #|    description : String
   #|    lang : String
-  #|    startYear : Any
-  #|    endYear : Any
-  #|    role : Any
+  #|    startYear : Int?
+  #|    endYear : Int?
+  #|    role : String?
   #|    featured : Bool
   #|    url : String
-  #|    altUrls : Array[Any]
-  #|    categories : Array[Any]
+  #|    altUrls : Array[AltUrl]
+  #|    categories : Array[String]
   #|
   #|    where lang is one of ["en", "es"]
   #|
@@ -53,7 +53,7 @@ pub let alt_url_spec_source : String =
   #|  }
   #|
   #|  state Root {
-  #|    allEntries : Array[Any]
+  #|    allEntries : Array[PsEntry]
   #|    allCategories : Array[String]
   #|    allRoles : Array[String]
   #|    selectedCategories : Set[String]

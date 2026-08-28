@@ -29,6 +29,7 @@ pub(all) struct CorpusState {
   labels : Array[CorpusLabel]
   tags : Map[String, Bool]
   page : Int
+  note : String?
 }
 
 ///|
@@ -49,6 +50,7 @@ pub fn CorpusState::zero() -> CorpusState {
     labels: [],
     tags: Map([]),
     page: 0,
+    note: None,
   }
 }
 
@@ -75,22 +77,27 @@ fn corpus_label_of_value(v : @tutuca.Value) -> CorpusLabel? {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for CorpusState with fn encode(s) {
-  {
-    "name": Str(s.name),
-    "count": Num(s.count.to_double()),
-    "ratio": Num(s.ratio),
-    "ok": Bool(s.ok),
-    "items": (List(s.items.map(x => Str(x))) : @tutuca.Value),
-    "labels": (List(s.labels.map(x => corpus_label_to_value(x))) : @tutuca.Value),
-    "tags": {
-      let m : Map[String, @tutuca.Value] = Map([])
-      for k, b in s.tags {
-        m[k] = Bool(b)
-      }
-      (Map(m) : @tutuca.Value)
-    },
-    "page": Num(s.page.to_double()),
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["name"] = Str(s.name)
+  out["count"] = Num(s.count.to_double())
+  out["ratio"] = Num(s.ratio)
+  out["ok"] = Bool(s.ok)
+  out["items"] = (List(s.items.map(x => Str(x))) : @tutuca.Value)
+  out["labels"] = (
+    List(s.labels.map(x => corpus_label_to_value(x))) : @tutuca.Value)
+  out["tags"] = {
+    let m : Map[String, @tutuca.Value] = Map([])
+    for k, b in s.tags {
+      m[k] = Bool(b)
+    }
+    (Map(m) : @tutuca.Value)
   }
+  out["page"] = Num(s.page.to_double())
+  match s.note {
+    Some(x) => out["note"] = Str(x)
+    None => ()
+  }
+  out
 }
 
 ///|
@@ -126,6 +133,13 @@ impl @component.Fields for CorpusState with fn decode(f) {
   }
   guard f.get("page") is Some(Num(t1_page)) else { return None }
   let v_page = t1_page.to_int()
+  let v_note : String? = match f.get("note") {
+    None | Some(Null) => None
+    Some(t1_note) => {
+      guard t1_note is Str(x1_note) else { return None }
+      Some(x1_note)
+    }
+  }
   Some({
     name: v_name,
     count: v_count,
@@ -135,6 +149,7 @@ impl @component.Fields for CorpusState with fn decode(f) {
     labels: v_labels,
     tags: v_tags,
     page: v_page,
+    note: v_note,
   })
 }
 
@@ -154,16 +169,18 @@ pub(all) enum CorpusReceive {
   Case6(String)
   Case7(String)
   Case8(String)
-  Case9
-  Case10(Int)
+  Case9(String)
+  Case10
   Case11
-  Case12
+  Case12(Int)
   Case13
   Case14
   Case15
-  Case24(Int)
-  Case25(String)
-  Case26(String)
+  Case16
+  Case17
+  Case26(Int)
+  Case27(String)
+  Case28(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -175,6 +192,13 @@ pub(all) enum CorpusReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
@@ -192,21 +216,49 @@ pub fn CorpusReceive::from_dispatch(d : @component.Dispatch) -> CorpusReceive? {
       ("case6", [Str(a0)]) => Case6(a0)
       ("case7", [Str(a0)]) => Case7(a0)
       ("case8", [Str(a0)]) => Case8(a0)
-      ("case9", []) => Case9
-      ("case10", [Num(a0)]) if a0.to_int().to_double() == a0 &&
-        a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case10(a0.to_int())
+      ("case9", [Str(a0)]) => Case9(a0)
+      ("case10", []) => Case10
       ("case11", []) => Case11
-      ("case12", []) => Case12
+      ("case12", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => Case12(a0.to_int())
       ("case13", []) => Case13
       ("case14", []) => Case14
       ("case15", []) => Case15
-      ("case24", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+      ("case16", []) => Case16
+      ("case17", []) => Case17
+      ("case26", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case24(a0.to_int())
-      ("case25", [Str(a0)]) => Case25(a0)
-      ("case26", [Str(a0)]) => Case26(a0)
-      _ => Unknown(name, args)
+        a0 <= 2147483647.0 => Case26(a0.to_int())
+      ("case27", [Str(a0)]) => Case27(a0)
+      ("case28", [Str(a0)]) => Case28(a0)
+      _ => {
+        match name {
+          "case0" => @tutuca.bad_payload(name, "", args)
+          "case1" => @tutuca.bad_payload(name, "", args)
+          "case2" => @tutuca.bad_payload(name, "Int", args)
+          "case3" => @tutuca.bad_payload(name, "String", args)
+          "case4" => @tutuca.bad_payload(name, "Int", args)
+          "case5" => @tutuca.bad_payload(name, "String", args)
+          "case6" => @tutuca.bad_payload(name, "String", args)
+          "case7" => @tutuca.bad_payload(name, "String", args)
+          "case8" => @tutuca.bad_payload(name, "String", args)
+          "case9" => @tutuca.bad_payload(name, "String", args)
+          "case10" => @tutuca.bad_payload(name, "", args)
+          "case11" => @tutuca.bad_payload(name, "", args)
+          "case12" => @tutuca.bad_payload(name, "Int", args)
+          "case13" => @tutuca.bad_payload(name, "", args)
+          "case14" => @tutuca.bad_payload(name, "", args)
+          "case15" => @tutuca.bad_payload(name, "", args)
+          "case16" => @tutuca.bad_payload(name, "", args)
+          "case17" => @tutuca.bad_payload(name, "", args)
+          "case26" => @tutuca.bad_payload(name, "Int", args)
+          "case27" => @tutuca.bad_payload(name, "String", args)
+          "case28" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -226,16 +278,18 @@ pub fn CorpusReceive::to_dispatch(
     Case6(a0) => ("case6", [Str(a0)])
     Case7(a0) => ("case7", [Str(a0)])
     Case8(a0) => ("case8", [Str(a0)])
-    Case9 => ("case9", [])
-    Case10(a0) => ("case10", [Num(a0.to_double())])
+    Case9(a0) => ("case9", [Str(a0)])
+    Case10 => ("case10", [])
     Case11 => ("case11", [])
-    Case12 => ("case12", [])
+    Case12(a0) => ("case12", [Num(a0.to_double())])
     Case13 => ("case13", [])
     Case14 => ("case14", [])
     Case15 => ("case15", [])
-    Case24(a0) => ("case24", [Num(a0.to_double())])
-    Case25(a0) => ("case25", [Str(a0)])
-    Case26(a0) => ("case26", [Str(a0)])
+    Case16 => ("case16", [])
+    Case17 => ("case17", [])
+    Case26(a0) => ("case26", [Num(a0.to_double())])
+    Case27(a0) => ("case27", [Str(a0)])
+    Case28(a0) => ("case28", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -257,14 +311,14 @@ pub fn CorpusReceive::send(self : CorpusReceive, ctx : &@tutuca.Ctx) -> Unit {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CorpusIntent {
-  Case16(String)
-  Case17(String)
-  Case18(Int)
-  Case19(Int)
-  Case20(String)
-  Case21(String)
+  Case18(String)
+  Case19(String)
+  Case20(Int)
+  Case21(Int)
   Case22(String)
   Case23(String)
+  Case24(String)
+  Case25(String)
   /// A intent the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -276,23 +330,43 @@ pub(all) enum CorpusIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CorpusIntent::from_dispatch(d : @component.Dispatch) -> CorpusIntent? {
   guard d is Intent(name, args) else { return None }
   Some(
     match (name, args) {
-      ("case16", [Str(a0)]) => Case16(a0)
-      ("case17", [Str(a0)]) => Case17(a0)
-      ("case18", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+      ("case18", [Str(a0)]) => Case18(a0)
+      ("case19", [Str(a0)]) => Case19(a0)
+      ("case20", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case18(a0.to_int())
-      ("case19", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 <= 2147483647.0 => Case20(a0.to_int())
+      ("case21", [Num(a0)]) if a0.to_int().to_double() == a0 &&
         a0 >= -2147483648.0 &&
-        a0 <= 2147483647.0 => Case19(a0.to_int())
-      ("case20", [Str(a0)]) => Case20(a0)
-      ("case21", [Str(a0)]) => Case21(a0)
+        a0 <= 2147483647.0 => Case21(a0.to_int())
       ("case22", [Str(a0)]) => Case22(a0)
       ("case23", [Str(a0)]) => Case23(a0)
-      _ => Unknown(name, args)
+      ("case24", [Str(a0)]) => Case24(a0)
+      ("case25", [Str(a0)]) => Case25(a0)
+      _ => {
+        match name {
+          "case18" => @tutuca.bad_payload(name, "String", args)
+          "case19" => @tutuca.bad_payload(name, "String", args)
+          "case20" => @tutuca.bad_payload(name, "Int", args)
+          "case21" => @tutuca.bad_payload(name, "Int", args)
+          "case22" => @tutuca.bad_payload(name, "String", args)
+          "case23" => @tutuca.bad_payload(name, "String", args)
+          "case24" => @tutuca.bad_payload(name, "String", args)
+          "case25" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -303,14 +377,14 @@ pub fn CorpusIntent::to_dispatch(
   self : CorpusIntent,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    Case16(a0) => ("case16", [Str(a0)])
-    Case17(a0) => ("case17", [Str(a0)])
-    Case18(a0) => ("case18", [Num(a0.to_double())])
-    Case19(a0) => ("case19", [Num(a0.to_double())])
-    Case20(a0) => ("case20", [Str(a0)])
-    Case21(a0) => ("case21", [Str(a0)])
+    Case18(a0) => ("case18", [Str(a0)])
+    Case19(a0) => ("case19", [Str(a0)])
+    Case20(a0) => ("case20", [Num(a0.to_double())])
+    Case21(a0) => ("case21", [Num(a0.to_double())])
     Case22(a0) => ("case22", [Str(a0)])
     Case23(a0) => ("case23", [Str(a0)])
+    Case24(a0) => ("case24", [Str(a0)])
+    Case25(a0) => ("case25", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -349,7 +423,7 @@ pub let corpus_global_style : String = ""
 impl @component.Fields for CorpusState with fn schema() {
   @component.SchemaInfo::new(
     name="Corpus",
-    fingerprint="776320ff937b9184",
+    fingerprint="a796e15bdbd4635f",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -359,14 +433,15 @@ impl @component.Fields for CorpusState with fn schema() {
       @component.FieldInfo::new("labels", TyList(TyRecord("Label"))),
       @component.FieldInfo::new("tags", TySet),
       @component.FieldInfo::new("page", TyInt),
+      @component.FieldInfo::new("note", TyOption(TyText)),
     ],
     receives=[
       "case0", "case1", "case2", "case3", "case4", "case5", "case6", "case7", "case8",
-      "case9", "case10", "case11", "case12", "case13", "case14", "case15", "case24",
-      "case25", "case26",
+      "case9", "case10", "case11", "case12", "case13", "case14", "case15", "case16",
+      "case17", "case26", "case27", "case28",
     ],
     intents=[
-      "case16", "case17", "case18", "case19", "case20", "case21", "case22", "case23",
+      "case18", "case19", "case20", "case21", "case22", "case23", "case24", "case25",
     ],
     methods=["hasSome", "small"],
     view_names=["main"],

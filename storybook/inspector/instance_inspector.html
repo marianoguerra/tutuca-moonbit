@@ -1,6 +1,6 @@
 <script type="tutuca/spec">
   state InstanceFields {
-    items : Array[Any]
+    items : Array[Component]
     isExpanded : Bool
     itemsPerPage : Int
     currentPage : Int
@@ -24,13 +24,13 @@
   }
 
   state InstanceInspector {
-    value : Any
+    value : Component
   }
 
   state InstanceExplorer {
     activeTab : String
-    instanceView : Any
-    componentView : Any
+    instanceView : Component
+    componentView : Component
     hasComponent : Bool
 
     /// Two tabs, two panes.

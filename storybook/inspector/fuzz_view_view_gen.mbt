@@ -47,7 +47,7 @@ pub(all) struct FuzzRowState {
   /// Where the cursor is parked, so stepping has something to point at.
   current : Bool
   /// The settled state, prebuilt as a value inspector.
-  after : @tutuca.Value
+  after : @tutuca.Value?
   open : Bool
 }
 
@@ -75,7 +75,7 @@ pub fn FuzzRowState::zero() -> FuzzRowState {
     disagreed: false,
     rowClass: "",
     current: false,
-    after: Null,
+    after: None,
     open: false,
   }
 }
@@ -88,24 +88,27 @@ pub fn FuzzRowState::zero() -> FuzzRowState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for FuzzRowState with fn encode(s) {
-  {
-    "at": Num(s.at.to_double()),
-    "name": Str(s.name),
-    "args": Str(s.args),
-    "verb": Str(s.verb),
-    "verbClass": Str(s.verbClass),
-    "renders": Num(s.renders.to_double()),
-    "refused": Bool(s.refused),
-    "refusedRule": Str(s.refusedRule),
-    "refusedSentence": Str(s.refusedSentence),
-    "broke": Bool(s.broke),
-    "brokeRule": Str(s.brokeRule),
-    "disagreed": Bool(s.disagreed),
-    "rowClass": Str(s.rowClass),
-    "current": Bool(s.current),
-    "after": s.after,
-    "open": Bool(s.open),
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["at"] = Num(s.at.to_double())
+  out["name"] = Str(s.name)
+  out["args"] = Str(s.args)
+  out["verb"] = Str(s.verb)
+  out["verbClass"] = Str(s.verbClass)
+  out["renders"] = Num(s.renders.to_double())
+  out["refused"] = Bool(s.refused)
+  out["refusedRule"] = Str(s.refusedRule)
+  out["refusedSentence"] = Str(s.refusedSentence)
+  out["broke"] = Bool(s.broke)
+  out["brokeRule"] = Str(s.brokeRule)
+  out["disagreed"] = Bool(s.disagreed)
+  out["rowClass"] = Str(s.rowClass)
+  out["current"] = Bool(s.current)
+  match s.after {
+    Some(x) => out["after"] = x
+    None => ()
   }
+  out["open"] = Bool(s.open)
+  out
 }
 
 ///|
@@ -130,7 +133,13 @@ impl @component.Fields for FuzzRowState with fn decode(f) {
   guard f.get("disagreed") is Some(Bool(v_disagreed)) else { return None }
   guard f.get("rowClass") is Some(Str(v_rowClass)) else { return None }
   guard f.get("current") is Some(Bool(v_current)) else { return None }
-  let v_after = f.get("after").unwrap_or(Null)
+  let v_after : @tutuca.Value? = match f.get("after") {
+    None | Some(Null) => None
+    Some(t1_after) => {
+      let x1_after = t1_after
+      Some(x1_after)
+    }
+  }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
   Some({
     at: v_at,
@@ -171,6 +180,13 @@ pub(all) enum FuzzRowReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn FuzzRowReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> FuzzRowReceive? {
@@ -178,7 +194,13 @@ pub fn FuzzRowReceive::from_dispatch(
   Some(
     match (name, args) {
       ("toggle", []) => Toggle
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "toggle" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -273,7 +295,7 @@ pub fn FuzzRowMsg::from_dispatch(d : @component.Dispatch) -> FuzzRowMsg? {
 impl @component.Fields for FuzzRowState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzRow",
-    fingerprint="0ba9b706fb211294",
+    fingerprint="60b6dab9cb72fbd6",
     fields=[
       @component.FieldInfo::new("at", TyInt),
       @component.FieldInfo::new("name", TyText),
@@ -289,7 +311,7 @@ impl @component.Fields for FuzzRowState with fn schema() {
       @component.FieldInfo::new("disagreed", TyBool),
       @component.FieldInfo::new("rowClass", TyText),
       @component.FieldInfo::new("current", TyBool),
-      @component.FieldInfo::new("after", TyAny),
+      @component.FieldInfo::new("after", TyOption(TyComp(None))),
       @component.FieldInfo::new("open", TyBool),
     ],
     view_handlers=["toggle"],
@@ -377,9 +399,9 @@ pub let fuzz_log_global_style : String = ""
 impl @component.Fields for FuzzLogState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzLog",
-    fingerprint="95fe205f68321175",
+    fingerprint="7d8bc3f2183527ff",
     fields=[
-      @component.FieldInfo::new("rows", TyList(TyAny)),
+      @component.FieldInfo::new("rows", TyList(TyComp(Some("FuzzRow")))),
       @component.FieldInfo::new("hasRows", TyBool),
       @component.FieldInfo::new("emptyHint", TyText),
     ],
@@ -519,6 +541,13 @@ pub(all) enum FuzzControlsReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn FuzzControlsReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> FuzzControlsReceive? {
@@ -533,7 +562,20 @@ pub fn FuzzControlsReceive::from_dispatch(
       ("setSteps", [Str(a0)]) => SetSteps(a0)
       ("step", []) => Step
       ("stop", []) => Stop
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "burst" => @tutuca.bad_payload(name, "", args)
+          "play" => @tutuca.bad_payload(name, "", args)
+          "reset" => @tutuca.bad_payload(name, "", args)
+          "setSeed" => @tutuca.bad_payload(name, "String", args)
+          "setSource" => @tutuca.bad_payload(name, "String", args)
+          "setSteps" => @tutuca.bad_payload(name, "String", args)
+          "step" => @tutuca.bad_payload(name, "", args)
+          "stop" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -811,6 +853,13 @@ pub(all) enum FuzzVerdictReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn FuzzVerdictReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> FuzzVerdictReceive? {
@@ -818,7 +867,13 @@ pub fn FuzzVerdictReceive::from_dispatch(
   Some(
     match (name, args) {
       ("shrink", []) => Shrink
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "shrink" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -918,7 +973,7 @@ pub fn FuzzVerdictMsg::from_dispatch(
 impl @component.Fields for FuzzVerdictState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzVerdict",
-    fingerprint="1d9e7f9a4ffc4df6",
+    fingerprint="fd4740889b293efa",
     fields=[
       @component.FieldInfo::new("kind", TyText),
       @component.FieldInfo::new("badgeClass", TyText),
@@ -928,7 +983,7 @@ impl @component.Fields for FuzzVerdictState with fn schema() {
       @component.FieldInfo::new("at", TyInt),
       @component.FieldInfo::new("unchecked", TyText),
       @component.FieldInfo::new("hasUnchecked", TyBool),
-      @component.FieldInfo::new("reproducer", TyList(TyAny)),
+      @component.FieldInfo::new("reproducer", TyList(TyComp(Some("FuzzRow")))),
       @component.FieldInfo::new("hasReproducer", TyBool),
     ],
     view_handlers=["shrink"],
@@ -1035,11 +1090,11 @@ pub let fuzz_panel_global_style : String = ""
 impl @component.Fields for FuzzPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzPanel",
-    fingerprint="8a1f9ebbc6edcd65",
+    fingerprint="cb7e7ca841d844f8",
     fields=[
-      @component.FieldInfo::new("controls", TyAny),
-      @component.FieldInfo::new("verdict", TyAny),
-      @component.FieldInfo::new("log", TyAny),
+      @component.FieldInfo::new("controls", TyComp(Some("FuzzControls"))),
+      @component.FieldInfo::new("verdict", TyComp(Some("FuzzVerdict"))),
+      @component.FieldInfo::new("log", TyComp(Some("FuzzLog"))),
       @component.FieldInfo::new("hasRun", TyBool),
       @component.FieldInfo::new("at", TyInt),
       @component.FieldInfo::new("total", TyInt),

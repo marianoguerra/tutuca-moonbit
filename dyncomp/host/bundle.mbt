@@ -214,6 +214,7 @@ pub fn register_bundle(
       name=def.name,
       fingerprint="",
       fields=def.field_infos(),
+      domains=def.domains,
       receives=def.receives,
       intents=def.intents,
       express_messages=def.express_messages,

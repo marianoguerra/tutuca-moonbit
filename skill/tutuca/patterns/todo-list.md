@@ -1,7 +1,7 @@
 # Build a todo list (complete pairing)
 
 **Problem:** a known-good, complete view + code pairing for a small app:
-a list of child components over `Array[Any]`, `@when`
+a list of child components over `Array[Item]`, `@when`
 filtering, add / toggle / delete handlers, and controlled inputs.
 
 One view file carries the whole module — the schema for both components
@@ -11,7 +11,7 @@ and a named `<template>` per component:
 <!-- todo.html -->
 <script type="tutuca/spec">
   state Item { completed: Bool, text: String }
-    state Items { items: Array[Any], hideCompleted: Bool }
+    state Items { items: Array[Item], hideCompleted: Bool }
 </script>
 
 <template id="Item">
@@ -117,9 +117,13 @@ pub fn todo_module() -> @component.ModuleDef {
 
 Why each piece is the way it is:
 
-- **`items: Array[Any]`** — the struct field is
-  `items : Array[@tutuca.Value]`, holding `Item` instances built with
-  `item.make(...)`. Append immutably: `s.items + [ ... ]`.
+- **`items: Array[Item]`** — a field type may name a SIBLING `state`, and
+  naming it is what lets the checker read `@each`'s body against `Item`'s
+  own schema. The struct field is `items : Array[@tutuca.Value]` either way,
+  holding `Item` instances built with `item.make(...)` — the element type
+  costs nothing at runtime and buys the check. Append immutably:
+  `s.items + [ ... ]`. Reach for `Array[Any]` only when the elements really
+  are of different shapes.
 - **`@each` + `<x render-it>`** renders each instance as its own `Item`
   component (fresh frame — the item handles its own events); the remove
   button sits **beside** `render-it` in the loop, so `removeInItemsAt

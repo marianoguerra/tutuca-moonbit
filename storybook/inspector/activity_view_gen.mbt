@@ -20,8 +20,8 @@ pub(all) struct ActivityEntryState {
   matched : String
   pathLabel : String
   time : String
-  before : @tutuca.Value
-  after : @tutuca.Value
+  before : @tutuca.Value?
+  after : @tutuca.Value?
   hasAfter : Bool
 }
 
@@ -41,8 +41,8 @@ pub fn ActivityEntryState::zero() -> ActivityEntryState {
     matched: "",
     pathLabel: "",
     time: "",
-    before: Null,
-    after: Null,
+    before: None,
+    after: None,
     hasAfter: false,
   }
 }
@@ -55,17 +55,23 @@ pub fn ActivityEntryState::zero() -> ActivityEntryState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ActivityEntryState with fn encode(s) {
-  {
-    "kind": Str(s.kind),
-    "name": Str(s.name),
-    "handlerName": Str(s.handlerName),
-    "matched": Str(s.matched),
-    "pathLabel": Str(s.pathLabel),
-    "time": Str(s.time),
-    "before": s.before,
-    "after": s.after,
-    "hasAfter": Bool(s.hasAfter),
+  let out : Map[String, @tutuca.Value] = Map([])
+  out["kind"] = Str(s.kind)
+  out["name"] = Str(s.name)
+  out["handlerName"] = Str(s.handlerName)
+  out["matched"] = Str(s.matched)
+  out["pathLabel"] = Str(s.pathLabel)
+  out["time"] = Str(s.time)
+  match s.before {
+    Some(x) => out["before"] = x
+    None => ()
   }
+  match s.after {
+    Some(x) => out["after"] = x
+    None => ()
+  }
+  out["hasAfter"] = Bool(s.hasAfter)
+  out
 }
 
 ///|
@@ -78,8 +84,20 @@ impl @component.Fields for ActivityEntryState with fn decode(f) {
   guard f.get("matched") is Some(Str(v_matched)) else { return None }
   guard f.get("pathLabel") is Some(Str(v_pathLabel)) else { return None }
   guard f.get("time") is Some(Str(v_time)) else { return None }
-  let v_before = f.get("before").unwrap_or(Null)
-  let v_after = f.get("after").unwrap_or(Null)
+  let v_before : @tutuca.Value? = match f.get("before") {
+    None | Some(Null) => None
+    Some(t1_before) => {
+      let x1_before = t1_before
+      Some(x1_before)
+    }
+  }
+  let v_after : @tutuca.Value? = match f.get("after") {
+    None | Some(Null) => None
+    Some(t1_after) => {
+      let x1_after = t1_after
+      Some(x1_after)
+    }
+  }
   guard f.get("hasAfter") is Some(Bool(v_hasAfter)) else { return None }
   Some({
     kind: v_kind,
@@ -112,7 +130,7 @@ pub let activity_entry_global_style : String = ""
 impl @component.Fields for ActivityEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityEntry",
-    fingerprint="adea2931e42acf62",
+    fingerprint="c465846c05bd1e60",
     fields=[
       @component.FieldInfo::new("kind", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -120,8 +138,8 @@ impl @component.Fields for ActivityEntryState with fn schema() {
       @component.FieldInfo::new("matched", TyText),
       @component.FieldInfo::new("pathLabel", TyText),
       @component.FieldInfo::new("time", TyText),
-      @component.FieldInfo::new("before", TyAny),
-      @component.FieldInfo::new("after", TyAny),
+      @component.FieldInfo::new("before", TyOption(TyComp(None))),
+      @component.FieldInfo::new("after", TyOption(TyComp(None))),
       @component.FieldInfo::new("hasAfter", TyBool),
     ],
     methods=["hasAfterTracksAfter"],
@@ -205,6 +223,13 @@ pub(all) enum ActivityLogReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ActivityLogReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ActivityLogReceive? {
@@ -212,7 +237,13 @@ pub fn ActivityLogReceive::from_dispatch(
   Some(
     match (name, args) {
       ("appendEntry", [a0]) => AppendEntry(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "appendEntry" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -259,9 +290,9 @@ pub let activity_log_global_style : String = ""
 impl @component.Fields for ActivityLogState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityLog",
-    fingerprint="a35d26f6c1c04c6b",
+    fingerprint="89a474ef1fab02dd",
     fields=[
-      @component.FieldInfo::new("events", TyList(TyAny)),
+      @component.FieldInfo::new("events", TyList(TyComp(Some("ActivityEntry")))),
       @component.FieldInfo::new("hasEvents", TyBool),
     ],
     receives=["appendEntry"],

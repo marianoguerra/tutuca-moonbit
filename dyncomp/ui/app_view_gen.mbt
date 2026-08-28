@@ -8,6 +8,16 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct PaletteRowInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
+
+///|
 /// One search hit. `why` is the ranking's reasons, joined — a search a
 /// person cannot explain is one they stop trusting, and that is as true of
 /// a standard component as of a loaded one.
@@ -44,6 +54,21 @@ pub fn PaletteRowState::zero() -> PaletteRowState {
     category: "",
     selected: false,
   }
+}
+
+///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn palette_row_init_choice_to_value(x : PaletteRowInitChoice) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn palette_row_init_choice_of_value(v : @tutuca.Value) -> PaletteRowInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
 }
 
 ///|
@@ -104,6 +129,13 @@ pub(all) enum PaletteRowReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PaletteRowReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> PaletteRowReceive? {
@@ -112,7 +144,14 @@ pub fn PaletteRowReceive::from_dispatch(
     match (name, args) {
       ("setSelected", [Bool(a0)]) => SetSelected(a0)
       ("pick", [Bool(a0)]) => Pick(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setSelected" => @tutuca.bad_payload(name, "Bool", args)
+          "pick" => @tutuca.bad_payload(name, "Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -163,6 +202,13 @@ pub(all) enum PaletteRowIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PaletteRowIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> PaletteRowIntent? {
@@ -171,7 +217,14 @@ pub fn PaletteRowIntent::from_dispatch(
     match (name, args) {
       ("componentPicked", [Str(a0), Str(a1), Bool(a2)]) =>
         ComponentPicked(a0, a1, a2)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "componentPicked" =>
+            @tutuca.bad_payload(name, "String, String, Bool", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -272,7 +325,7 @@ pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
 impl @component.Fields for PaletteRowState with fn schema() {
   @component.SchemaInfo::new(
     name="PaletteRow",
-    fingerprint="0ddbf64dd21a3457",
+    fingerprint="5c9c06d2faa1716a",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -287,6 +340,16 @@ impl @component.Fields for PaletteRowState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct CommandBarInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 ///|
 /// Search the catalog, over everything else on the page.
@@ -318,6 +381,21 @@ pub(all) struct CommandBarState {
 ///   init={ ..CommandBarState::zero(), label: "Counter" }
 pub fn CommandBarState::zero() -> CommandBarState {
   { query: "", hits: [], cursor: 0, configure: false, emptyMessage: "", }
+}
+
+///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn command_bar_init_choice_to_value(x : CommandBarInitChoice) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn command_bar_init_choice_of_value(v : @tutuca.Value) -> CommandBarInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
 }
 
 ///|
@@ -384,6 +462,13 @@ pub(all) enum CommandBarReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CommandBarReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> CommandBarReceive? {
@@ -396,7 +481,16 @@ pub fn CommandBarReceive::from_dispatch(
       ("close", []) => Close
       ("nav", [Str(a0)]) => Nav(a0)
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setCursor" => @tutuca.bad_payload(name, "Int", args)
+          "close" => @tutuca.bad_payload(name, "", args)
+          "nav" => @tutuca.bad_payload(name, "String", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -508,10 +602,10 @@ pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
 impl @component.Fields for CommandBarState with fn schema() {
   @component.SchemaInfo::new(
     name="CommandBar",
-    fingerprint="7a17e59503417a5d",
+    fingerprint="338dc1bbfe27922e",
     fields=[
       @component.FieldInfo::new("query", TyText),
-      @component.FieldInfo::new("hits", TyList(TyAny)),
+      @component.FieldInfo::new("hits", TyList(TyComp(Some("PaletteRow")))),
       @component.FieldInfo::new("cursor", TyInt),
       @component.FieldInfo::new("configure", TyBool),
       @component.FieldInfo::new("emptyMessage", TyText),
@@ -521,6 +615,16 @@ impl @component.Fields for CommandBarState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct SchemaFieldInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 ///|
 /// One control of the generated form.
@@ -542,7 +646,7 @@ pub(all) struct SchemaFieldState {
   text : String
   num : Double
   flag : Bool
-  choices : Array[@tutuca.Value]
+  choices : Array[String]
   error : String
 }
 
@@ -570,6 +674,25 @@ pub fn SchemaFieldState::zero() -> SchemaFieldState {
 }
 
 ///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn schema_field_init_choice_to_value(
+  x : SchemaFieldInitChoice,
+) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn schema_field_init_choice_of_value(
+  v : @tutuca.Value,
+) -> SchemaFieldInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
+}
+
+///|
 /// The state as the fields map the render and path layers read, built
 /// field by field rather than through a `Json` round trip.
 ///
@@ -586,7 +709,7 @@ impl @component.Fields for SchemaFieldState with fn encode(s) {
     "text": Str(s.text),
     "num": Num(s.num),
     "flag": Bool(s.flag),
-    "choices": (List(s.choices.map(x => x)) : @tutuca.Value),
+    "choices": (List(s.choices.map(x => Str(x))) : @tutuca.Value),
     "error": Str(s.error),
   }
 }
@@ -605,9 +728,9 @@ impl @component.Fields for SchemaFieldState with fn decode(f) {
   guard f.get("flag") is Some(Bool(v_flag)) else { return None }
   guard f.get("choices") is Some(t1_choices) else { return None }
   guard t1_choices is List(u1_choices) else { return None }
-  let v_choices : Array[@tutuca.Value] = []
+  let v_choices : Array[String] = []
   for e1_choices in u1_choices {
-    let x1_choices = e1_choices
+    guard e1_choices is Str(x1_choices) else { return None }
     v_choices.push(x1_choices)
   }
   guard f.get("error") is Some(Str(v_error)) else { return None }
@@ -644,6 +767,13 @@ pub(all) enum SchemaFieldReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaFieldReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaFieldReceive? {
@@ -651,7 +781,13 @@ pub fn SchemaFieldReceive::from_dispatch(
   Some(
     match (name, args) {
       ("edit", [a0]) => Edit(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "edit" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -699,6 +835,13 @@ pub(all) enum SchemaFieldIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaFieldIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaFieldIntent? {
@@ -706,7 +849,13 @@ pub fn SchemaFieldIntent::from_dispatch(
   Some(
     match (name, args) {
       ("fieldEdited", [Str(a0), Str(a1)]) => FieldEdited(a0, a1)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "fieldEdited" => @tutuca.bad_payload(name, "String, String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -808,7 +957,7 @@ pub fn SchemaFieldMsg::from_dispatch(
 impl @component.Fields for SchemaFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaField",
-    fingerprint="d9e3db6b40e5b7c7",
+    fingerprint="2212bcee6650805b",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("kind", TyText),
@@ -818,7 +967,7 @@ impl @component.Fields for SchemaFieldState with fn schema() {
       @component.FieldInfo::new("text", TyText),
       @component.FieldInfo::new("num", TyFloat),
       @component.FieldInfo::new("flag", TyBool),
-      @component.FieldInfo::new("choices", TyList(TyAny)),
+      @component.FieldInfo::new("choices", TyList(TyText)),
       @component.FieldInfo::new("error", TyText),
     ],
     view_handlers=["edit"],
@@ -826,6 +975,16 @@ impl @component.Fields for SchemaFieldState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct SchemaFormInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 ///|
 /// A form over a component's declared arguments, generated from the JSON
@@ -843,7 +1002,7 @@ pub(all) struct SchemaFormState {
   title : String
   doc : String
   fields : Array[@tutuca.Value]
-  inits : Array[@tutuca.Value]
+  inits : Array[SchemaFormInitChoice]
   error : String
   /// What the button says. "Place" when this is filling an empty cell,
   /// "Apply" when it is reconfiguring something already there.
@@ -872,6 +1031,21 @@ pub fn SchemaFormState::zero() -> SchemaFormState {
 }
 
 ///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn schema_form_init_choice_to_value(x : SchemaFormInitChoice) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn schema_form_init_choice_of_value(v : @tutuca.Value) -> SchemaFormInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
+}
+
+///|
 /// The state as the fields map the render and path layers read, built
 /// field by field rather than through a `Json` round trip.
 ///
@@ -885,7 +1059,9 @@ impl @component.Fields for SchemaFormState with fn encode(s) {
     "title": Str(s.title),
     "doc": Str(s.doc),
     "fields": (List(s.fields.map(x => x)) : @tutuca.Value),
-    "inits": (List(s.inits.map(x => x)) : @tutuca.Value),
+    "inits": (
+      List(s.inits.map(x => schema_form_init_choice_to_value(x))) :
+      @tutuca.Value),
     "error": Str(s.error),
     "submitLabel": Str(s.submitLabel),
   }
@@ -908,9 +1084,11 @@ impl @component.Fields for SchemaFormState with fn decode(f) {
   }
   guard f.get("inits") is Some(t1_inits) else { return None }
   guard t1_inits is List(u1_inits) else { return None }
-  let v_inits : Array[@tutuca.Value] = []
+  let v_inits : Array[SchemaFormInitChoice] = []
   for e1_inits in u1_inits {
-    let x1_inits = e1_inits
+    guard schema_form_init_choice_of_value(e1_inits) is Some(x1_inits) else {
+      return None
+    }
     v_inits.push(x1_inits)
   }
   guard f.get("error") is Some(Str(v_error)) else { return None }
@@ -934,7 +1112,7 @@ impl @component.Fields for SchemaFormState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum SchemaFormReceive {
-  ShowErrors(@tutuca.Value)
+  ShowErrors(Map[String, String])
   Cancel
   Create
   UseInit(@tutuca.Value)
@@ -944,22 +1122,65 @@ pub(all) enum SchemaFormReceive {
 }
 
 ///|
+/// `showErrors`'s arguments, decoded at the declared types.
+///
+/// The same `dec_stmts` the state codec is written from, so a payload and
+/// a field of the same declared type are read by one rule. `None` is a
+/// mismatch anywhere in the shape, however deep.
+fn schema_form_receive_show_errors_of_args(
+  args : Array[@tutuca.Value],
+) -> SchemaFormReceive? {
+  guard args.length() == 1 else { return None }
+  guard args.get(0) is Some(t1_0) else { return None }
+  guard t1_0 is Map(u1_0) else { return None }
+  let a0 : Map[String, String] = Map([])
+  for k, e1_0 in u1_0 {
+    guard e1_0 is Str(x1_0) else { return None }
+    a0[k] = x1_0
+  }
+  Some(ShowErrors(a0))
+}
+
+///|
 /// Decode a Receive dispatch. None for any other bucket.
 ///
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaFormReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaFormReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("showErrors", [a0]) => ShowErrors(a0)
+      ("showErrors", _) =>
+        match schema_form_receive_show_errors_of_args(args) {
+          Some(v) => v
+          None => {
+            @tutuca.bad_payload(name, "Map[String, String]", args)
+            Unknown(name, args)
+          }
+        }
       ("cancel", []) => Cancel
       ("create", []) => Create
       ("useInit", [a0]) => UseInit(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "showErrors" => @tutuca.bad_payload(name, "Map[String, String]", args)
+          "cancel" => @tutuca.bad_payload(name, "", args)
+          "create" => @tutuca.bad_payload(name, "", args)
+          "useInit" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -970,7 +1191,19 @@ pub fn SchemaFormReceive::to_dispatch(
   self : SchemaFormReceive,
 ) -> (String, Array[@tutuca.Value]) {
   match self {
-    ShowErrors(a0) => ("showErrors", [a0])
+    ShowErrors(a0) =>
+      (
+        "showErrors",
+        [
+          {
+            let m : Map[String, @tutuca.Value] = Map([])
+            for k, x in a0 {
+              m[k] = Str(x)
+            }
+            (Map(m) : @tutuca.Value)
+          },
+        ],
+      )
     Cancel => ("cancel", [])
     Create => ("create", [])
     UseInit(a0) => ("useInit", [a0])
@@ -1071,14 +1304,14 @@ pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
 impl @component.Fields for SchemaFormState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaForm",
-    fingerprint="dc3e13b649b7ab79",
+    fingerprint="dde839eed33ecac5",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("doc", TyText),
-      @component.FieldInfo::new("fields", TyList(TyAny)),
-      @component.FieldInfo::new("inits", TyList(TyAny)),
+      @component.FieldInfo::new("fields", TyList(TyComp(Some("SchemaField")))),
+      @component.FieldInfo::new("inits", TyList(TyRecord("InitChoice"))),
       @component.FieldInfo::new("error", TyText),
       @component.FieldInfo::new("submitLabel", TyText),
     ],
@@ -1087,6 +1320,16 @@ impl @component.Fields for SchemaFormState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct ConfigPanelInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The sidebar: what the thing you pointed at can be configured with.
@@ -1122,6 +1365,25 @@ pub(all) struct ConfigPanelState {
 ///   init={ ..ConfigPanelState::zero(), label: "Counter" }
 pub fn ConfigPanelState::zero() -> ConfigPanelState {
   { title: "", mode: "", target: Null, form: Null, }
+}
+
+///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn config_panel_init_choice_to_value(
+  x : ConfigPanelInitChoice,
+) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn config_panel_init_choice_of_value(
+  v : @tutuca.Value,
+) -> ConfigPanelInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
 }
 
 ///|
@@ -1170,6 +1432,13 @@ pub(all) enum ConfigPanelReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ConfigPanelReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ConfigPanelReceive? {
@@ -1177,7 +1446,13 @@ pub fn ConfigPanelReceive::from_dispatch(
   Some(
     match (name, args) {
       ("close", []) => Close
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "close" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1225,6 +1500,13 @@ pub(all) enum ConfigPanelIntent {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ConfigPanelIntent::from_dispatch(
   d : @component.Dispatch,
 ) -> ConfigPanelIntent? {
@@ -1232,7 +1514,13 @@ pub fn ConfigPanelIntent::from_dispatch(
   Some(
     match (name, args) {
       ("closeConfig", []) => CloseConfig
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "closeConfig" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1334,7 +1622,7 @@ pub fn ConfigPanelMsg::from_dispatch(
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="ConfigPanel",
-    fingerprint="2cf331b19c935d2d",
+    fingerprint="d7a35a48ea8dcbe4",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("mode", TyText),
@@ -1346,6 +1634,16 @@ impl @component.Fields for ConfigPanelState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// One of a component's named fixtures — a starting state its author
+/// thought worth offering, with the sentence that says when to prefer it.
+/// A `struct` and not a bare `Any`: the pair is a record with two known
+/// fields, and saying so is what lets the view's `@value.label` be checked.
+pub(all) struct UniversalAppInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The universal app: a bar, a root, and whatever chrome is open.
@@ -1400,6 +1698,25 @@ pub fn UniversalAppState::zero() -> UniversalAppState {
     status: "",
     devTools: Null,
   }
+}
+
+///|
+/// The `InitChoice` record as a `@tutuca.Value`.
+fn universal_app_init_choice_to_value(
+  x : UniversalAppInitChoice,
+) -> @tutuca.Value {
+  Map({ "name": Str(x.name), "label": Str(x.label) })
+}
+
+///|
+/// The `InitChoice` record back out. None on a shape mismatch.
+fn universal_app_init_choice_of_value(
+  v : @tutuca.Value,
+) -> UniversalAppInitChoice? {
+  guard v is Map(m) else { return None }
+  guard m.get("name") is Some(Str(f_name)) else { return None }
+  guard m.get("label") is Some(Str(f_label)) else { return None }
+  Some({ name: f_name, label: f_label, })
 }
 
 ///|
@@ -1466,6 +1783,13 @@ pub(all) enum UniversalAppReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn UniversalAppReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> UniversalAppReceive? {
@@ -1477,7 +1801,17 @@ pub fn UniversalAppReceive::from_dispatch(
       ("filesDropped", [Str(a0)]) => FilesDropped(a0)
       ("openCommand", []) => OpenCommand
       ("toggleMode", []) => ToggleMode
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "catalogChanged" => @tutuca.bad_payload(name, "String", args)
+          "restoreTree" => @tutuca.bad_payload(name, "Any", args)
+          "filesDropped" => @tutuca.bad_payload(name, "String", args)
+          "openCommand" => @tutuca.bad_payload(name, "", args)
+          "toggleMode" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1605,7 +1939,7 @@ pub fn UniversalAppMethod::name(self : UniversalAppMethod) -> String {
 impl @component.Fields for UniversalAppState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalApp",
-    fingerprint="a7e132d85c3b3345",
+    fingerprint="54b837f5ce52f780",
     fields=[
       @component.FieldInfo::new("root", TyComp(Some("Universal"))),
       @component.FieldInfo::new("mode", TyText),

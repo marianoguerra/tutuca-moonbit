@@ -70,13 +70,27 @@ pub(all) enum ItemReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ItemReceive::from_dispatch(d : @component.Dispatch) -> ItemReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setCompleted", [Bool(a0)]) => SetCompleted(a0)
       ("setText", [Str(a0)]) => SetText(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setCompleted" => @tutuca.bad_payload(name, "Bool", args)
+          "setText" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -254,13 +268,27 @@ pub(all) enum ItemsReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ItemsReceive::from_dispatch(d : @component.Dispatch) -> ItemsReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
       ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "onAddItem" => @tutuca.bad_payload(name, "", args)
+          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -361,8 +389,8 @@ pub fn ItemsMsg::from_dispatch(d : @component.Dispatch) -> ItemsMsg? {
 impl @component.Fields for ItemsState with fn schema() {
   @component.SchemaInfo::new(
     name="Items",
-    fingerprint="a304f0a44033a68f",
-    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
+    fingerprint="d37eb3e9af8860d3",
+    fields=[@component.FieldInfo::new("items", TyList(TyComp(Some("Item"))))],
     view_handlers=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
   )

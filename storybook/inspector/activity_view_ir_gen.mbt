@@ -33,8 +33,8 @@ pub let activity_entry_spec_source : String =
   #|    matched : String
   #|    pathLabel : String
   #|    time : String
-  #|    before : Any
-  #|    after : Any
+  #|    before : Component?
+  #|    after : Component?
   #|    hasAfter : Bool
   #|
   #|    where matched is one of ["exact", "none"]
@@ -48,7 +48,7 @@ pub let activity_entry_spec_source : String =
   #|  }
   #|
   #|  state ActivityLog {
-  #|    events : Array[Any]
+  #|    events : Array[ActivityEntry]
   #|    hasEvents : Bool
   #|
   #|    where events len <= 50
@@ -215,7 +215,13 @@ fn activity_entry_compute_hasAfterTracksAfter(
     Bool(
       !s.hasAfter ||
       !(match @tutuca.builtin("null?") {
-        Some(b) => (b.apply)([s.after]).is_truthy()
+        Some(b) =>
+          (b.apply)([
+            match s.after {
+              Some(x) => x
+              None => Null
+            },
+          ]).is_truthy()
         None => false
       }),
     ) : @tutuca.Value)

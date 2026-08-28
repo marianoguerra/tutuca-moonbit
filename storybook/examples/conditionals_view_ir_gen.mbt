@@ -39,7 +39,7 @@ pub let traffic_light_spec_source : String =
   #|  }
   #|
   #|  state ListAndFilter {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|    query : String
   #|  }
 
@@ -105,6 +105,23 @@ fn traffic_light_inline_update(
       guard d0 != 0.0 else { return Unchanged }
       let s : TrafficLightState = {
         lightIndex: (s.lightIndex.to_double() + 1.0).to_int() % d0.to_int(),
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "lightIndex", domain: DBetween(lo=DLit(0), hi=DLit(2)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="nextLight",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }

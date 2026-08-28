@@ -159,6 +159,7 @@ fn counter_schema() -> String {
     #|  labels : Array[Label]
     #|  tags   : Set[String]
     #|  page   : Int
+    #|  note   : String?
     #|}
     #|handle C { message { resetTo(Int) } }
   )
@@ -179,6 +180,10 @@ fn counter_state() -> Map[String, @tutuca.Value] {
     ]),
     "tags": Map(Map([])),
     "page": Num(0),
+    // `note` is DELIBERATELY absent, and that is what a `T?` holding nothing
+    // looks like on the wire: the generated encoder writes the key only for
+    // `Some`, so an empty optional is a key that is not there rather than a
+    // key holding `Null`. Decode reads both as empty; encode picks one.
   }
 }
 
@@ -459,6 +464,7 @@ fn v2_schema() -> String {
     #|  labels : Array[Label]
     #|  tags   : Set[String]
     #|  page   : Int
+    #|  note   : String?
     #|}
     #|handle C {
     #|  message { resetTo(Int), saveDraftOk(Int), saveDraftError(String) }
@@ -625,6 +631,29 @@ pub fn cases() -> Array[Case] {
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
       effects=[effect("forward", route="dyn lex")],
+    ),
+    // -- a nullable field --------------------------------------------------
+    // Both halves of a `T?` are decided by the PLACE rather than by the value,
+    // which is what makes them worth pinning: a bare value is `Some(...)` and
+    // `null` is `None`, and neither spelling says so on its own. Two rows,
+    // because a `T?` that is only ever filled and one that is only ever
+    // emptied are each half a type.
+    recv_case(
+      "a bare value fills a nullable field",
+      "receive name(t) { .note = t }",
+      "name",
+      args=[Str("hi")],
+      after=Some(with_fields({ "note": Str("hi") })),
+    ),
+    // Filled and then emptied in ONE body, because `before` is shared: the
+    // successor is the starting state again, and it is `note` being absent
+    // from it that says `null` did the emptying. A `null` that did nothing
+    // would leave `"hi"` behind.
+    recv_case(
+      "null empties one, and is the one literal the wanted type names",
+      "receive forget {\n  .note = 'hi'\n  .note = null\n}",
+      "forget",
+      after=Some(counter_state()),
     ),
     // -- intent: the routed dispatch ---------------------------------------
     recv_case(

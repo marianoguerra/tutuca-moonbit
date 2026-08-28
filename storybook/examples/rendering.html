@@ -1,6 +1,6 @@
 <script type="tutuca/spec">
   state PushView {
-    items : Array[Any]
+    items : Array[Component[Entry]]
     query : String
     view : String
 
@@ -11,8 +11,8 @@
   }
 
   state SeqItemAccess {
-    byKey : Map[String, Any]
-    byIndex : Array[Any]
+    byKey : Map[String, Component[Entry]]
+    byIndex : Array[Component[Entry]]
     currentKey : Any
     currentIndex : Int
 
@@ -29,7 +29,7 @@
   }
 
   state Pagination {
-    items : Array[Any]
+    items : Array[String]
     page : Int
     pageSize : Int
 

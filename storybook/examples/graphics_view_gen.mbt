@@ -15,7 +15,7 @@
 /// this struct lacks fails generation.
 pub(all) struct SwatchPickerState {
   color : String
-  palette : Array[@tutuca.Value]
+  palette : Array[String]
 }
 
 ///|
@@ -40,7 +40,7 @@ pub fn SwatchPickerState::zero() -> SwatchPickerState {
 impl @component.Fields for SwatchPickerState with fn encode(s) {
   {
     "color": Str(s.color),
-    "palette": (List(s.palette.map(x => x)) : @tutuca.Value),
+    "palette": (List(s.palette.map(x => Str(x))) : @tutuca.Value),
   }
 }
 
@@ -51,9 +51,9 @@ impl @component.Fields for SwatchPickerState with fn decode(f) {
   guard f.get("color") is Some(Str(v_color)) else { return None }
   guard f.get("palette") is Some(t1_palette) else { return None }
   guard t1_palette is List(u1_palette) else { return None }
-  let v_palette : Array[@tutuca.Value] = []
+  let v_palette : Array[String] = []
   for e1_palette in u1_palette {
-    let x1_palette = e1_palette
+    guard e1_palette is Str(x1_palette) else { return None }
     v_palette.push(x1_palette)
   }
   Some({ color: v_color, palette: v_palette, })
@@ -78,6 +78,13 @@ pub(all) enum SwatchPickerReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SwatchPickerReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SwatchPickerReceive? {
@@ -85,7 +92,13 @@ pub fn SwatchPickerReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setColor", [a0]) => SetColor(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setColor" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -197,10 +210,10 @@ pub fn SwatchPickerEnrich::name(self : SwatchPickerEnrich) -> String {
 impl @component.Fields for SwatchPickerState with fn schema() {
   @component.SchemaInfo::new(
     name="SwatchPicker",
-    fingerprint="c7bdbd2cb8df5d05",
+    fingerprint="75d585d74018b4b8",
     fields=[
       @component.FieldInfo::new("color", TyText),
-      @component.FieldInfo::new("palette", TyList(TyAny)),
+      @component.FieldInfo::new("palette", TyList(TyText)),
     ],
     view_handlers=["setColor"],
     methods=["colorIsOnThePalette"],
@@ -283,6 +296,13 @@ pub(all) enum QuadraticReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn QuadraticReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> QuadraticReceive? {
@@ -292,7 +312,15 @@ pub fn QuadraticReceive::from_dispatch(
       ("setA", [Num(a0)]) => SetA(a0)
       ("setB", [Num(a0)]) => SetB(a0)
       ("setC", [Num(a0)]) => SetC(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setA" => @tutuca.bad_payload(name, "Double", args)
+          "setB" => @tutuca.bad_payload(name, "Double", args)
+          "setC" => @tutuca.bad_payload(name, "Double", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

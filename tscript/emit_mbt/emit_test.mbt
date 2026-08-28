@@ -31,6 +31,8 @@ fn schema() -> String {
     #|  vis     : Set[Visibility]
     #|  byKey   : Map[String, String]
     #|  blob    : Any
+    #|  note    : String?
+    #|  year    : Int?
     #|}
     #|handle Counter { message { resetTo(Int), rename(String, Int) } }
   )
@@ -364,6 +366,53 @@ test "an assignment is a copy-on-write rebinding of `s`" {
       #|Next(s)
     ),
   )
+}
+
+///|
+/// A nullable field is filled from a block, which it could not be: `T?` was
+/// writable only from MoonBit, so every optional field pushed its own handlers
+/// out of the block language — and `Any`, which a block CAN write, became the
+/// spelling people reached for instead. Both halves are decided by the PLACE:
+/// `null` is the one literal with no type of its own, and a present value is
+/// the same value one level in.
+test "a nullable field takes `null` for its empty and the bare value for its full" {
+  inspect(
+    body("receive clear { .note = null }"),
+    content=(
+      #|let s = { ..s, note: None }
+      #|Next(s)
+    ),
+  )
+  inspect(
+    body("receive name { .note = 'hi' }"),
+    content=(
+      #|let s = { ..s, note: Some("hi") }
+      #|Next(s)
+    ),
+  )
+  // Through the same `at` one level in, so the integer-literal shortcut still
+  // fires: `Some(3)`, not `Some(3.0.to_int())`.
+  inspect(
+    body("receive setYear { .year = 3 }"),
+    content=(
+      #|let s = { ..s, year: Some(3) }
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+/// The widening stays honest. `Some(...)` is written only around a conversion
+/// that was already legal, so the two pairs a non-optional place refuses are
+/// refused through a `?` too — rather than becoming a `Some` wrapped around a
+/// guess about what an opaque value holds.
+test "a nullable place widens nothing a plain one would not" {
+  let e = out("receive bad { .note = 3 }")
+  assert_eq(e.source, "")
+  assert_true(e.refusals[0].why.contains("does not fit"))
+  let e2 = out("receive badAny { .note = .blob }")
+  assert_eq(e2.source, "")
+  assert_true(e2.refusals[0].why.contains("does not fit"))
 }
 
 ///|

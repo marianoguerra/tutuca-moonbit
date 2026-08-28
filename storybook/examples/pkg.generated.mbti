@@ -839,7 +839,7 @@ pub fn BarChartReceive::send(Self, &@core.Ctx) -> Unit
 pub fn BarChartReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct BarChartState {
-  values : Array[@core.Value]
+  values : Array[Int]
 }
 pub fn BarChartState::zero() -> Self
 
@@ -985,7 +985,7 @@ pub fn DnDExampleReceive::send(Self, &@core.Ctx) -> Unit
 pub fn DnDExampleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct DnDExampleState {
-  items : Array[@core.Value]
+  items : Array[String]
   query : String
 }
 pub fn DnDExampleState::zero() -> Self
@@ -1559,7 +1559,7 @@ pub fn ListAndFilterReceive::send(Self, &@core.Ctx) -> Unit
 pub fn ListAndFilterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListAndFilterState {
-  items : Array[@core.Value]
+  items : Array[String]
   query : String
 }
 pub fn ListAndFilterState::zero() -> Self
@@ -1598,7 +1598,7 @@ pub fn ListFilterEnrichReceive::send(Self, &@core.Ctx) -> Unit
 pub fn ListFilterEnrichReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListFilterEnrichState {
-  items : Array[@core.Value]
+  items : Array[String]
   query : String
 }
 pub fn ListFilterEnrichState::zero() -> Self
@@ -1642,7 +1642,7 @@ pub fn ListFilterEnrichWithReceive::send(Self, &@core.Ctx) -> Unit
 pub fn ListFilterEnrichWithReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct ListFilterEnrichWithState {
-  items : Array[@core.Value]
+  items : Array[String]
   query : String
 }
 pub fn ListFilterEnrichWithState::zero() -> Self
@@ -1653,7 +1653,7 @@ pub(all) enum ListFilterEnrichWithWhen {
 pub fn ListFilterEnrichWithWhen::name(Self) -> String
 
 pub(all) struct ListIterationState {
-  items : Array[@core.Value]
+  items : Array[String]
 }
 pub fn ListIterationState::zero() -> Self
 
@@ -1824,7 +1824,7 @@ pub fn PaginationReceive::send(Self, &@core.Ctx) -> Unit
 pub fn PaginationReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct PaginationState {
-  items : Array[@core.Value]
+  items : Array[String]
   page : Int
   pageSize : Int
 }
@@ -1909,13 +1909,13 @@ pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
-  startYear : @core.Value
-  endYear : @core.Value
-  role : @core.Value
+  startYear : Int?
+  endYear : Int?
+  role : String?
   featured : Bool
   url : String
   altUrls : Array[@core.Value]
-  categories : Array[@core.Value]
+  categories : Array[String]
 }
 pub fn PsEntryState::zero() -> Self
 
@@ -2073,7 +2073,7 @@ pub(all) struct RequestExampleState {
   query : String
   view : String
   isLoading : Bool
-  error : @core.Value
+  error : String?
 }
 pub fn RequestExampleState::zero() -> Self
 
@@ -2117,7 +2117,7 @@ pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RootReceive {
   Init
-  LoadDataOk(@core.Value)
+  LoadDataOk(Array[@core.Value])
   ClearFilters
   OnCategoryToggle(@core.Value, Bool)
   OnRoleToggle(@core.Value, Bool)
@@ -2445,7 +2445,7 @@ pub fn SwatchPickerReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SwatchPickerState {
   color : String
-  palette : Array[@core.Value]
+  palette : Array[String]
 }
 pub fn SwatchPickerState::zero() -> Self
 
@@ -2572,7 +2572,7 @@ pub(all) struct TreeItemState {
 pub fn TreeItemState::zero() -> Self
 
 pub(all) struct TreeRootState {
-  log : Array[@core.Value]
+  log : Array[String]
   root : @core.Value
 }
 pub fn TreeRootState::zero() -> Self
@@ -2612,7 +2612,7 @@ pub fn VwMemoryState::zero() -> Self
 
 pub(all) struct VwPickerState {
   currentSection : String
-  instructions : Array[@core.Value]
+  instructions : Array[String]
   filter : String
 }
 pub fn VwPickerState::zero() -> Self

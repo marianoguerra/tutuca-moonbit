@@ -6,7 +6,7 @@
   state RichSample {
     title : String
     count : Int
-    tags : Array[Any]
+    tags : Array[String]
     open : Bool
 
     /// A sample carrying one of everything — a domain included, so the
@@ -36,7 +36,7 @@
   state SampleCard {
     title : String
     count : Int
-    tags : Array[Any]
+    tags : Array[String]
     open : Bool
 
     where count >= 0

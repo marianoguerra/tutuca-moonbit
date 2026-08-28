@@ -150,8 +150,8 @@ pub let item_table_global_style : String = ""
 impl @component.Fields for ItemTableState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemTable",
-    fingerprint="bc91ea035f93f46f",
-    fields=[@component.FieldInfo::new("rows", TyList(TyAny))],
+    fingerprint="d376eac7534a0d7a",
+    fields=[@component.FieldInfo::new("rows", TyList(TyComp(Some("TableRow"))))],
     view_names=["main"],
   )
 }
@@ -297,6 +297,13 @@ pub(all) enum ItemSelectReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ItemSelectReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ItemSelectReceive? {
@@ -304,7 +311,13 @@ pub fn ItemSelectReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setCurrent", [Str(a0)]) => SetCurrent(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setCurrent" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -401,9 +414,9 @@ pub fn ItemSelectMsg::from_dispatch(d : @component.Dispatch) -> ItemSelectMsg? {
 impl @component.Fields for ItemSelectState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemSelect",
-    fingerprint="cdb125b62adbcd6b",
+    fingerprint="6eee37822fa72521",
     fields=[
-      @component.FieldInfo::new("options", TyList(TyAny)),
+      @component.FieldInfo::new("options", TyList(TyComp(Some("SelectOption")))),
       @component.FieldInfo::new("current", TyText),
     ],
     view_handlers=["setCurrent"],

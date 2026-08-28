@@ -1,10 +1,10 @@
 <script type="tutuca/spec">
   state {
-    items : Array[Any]
+    items : Array[Component[Entry]]
     query : String
     view : String
     isLoading : Bool
-    error : Any
+    error : String?
 
     /// `@push-view=".view"` falls back to `main` for a name it cannot find,
     /// so a third value is not an error — it is a toggle that stops toggling.

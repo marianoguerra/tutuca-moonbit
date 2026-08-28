@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let dn_d_example_spec_source : String =
   #|  state {
-  #|    items : Array[Any]
+  #|    items : Array[String]
   #|    query : String
   #|  }
 

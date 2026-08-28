@@ -67,6 +67,13 @@ pub(all) enum PlaylistReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PlaylistReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> PlaylistReceive? {
@@ -74,7 +81,13 @@ pub fn PlaylistReceive::from_dispatch(
   Some(
     match (name, args) {
       ("removeSong", [a0]) => RemoveSong(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "removeSong" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

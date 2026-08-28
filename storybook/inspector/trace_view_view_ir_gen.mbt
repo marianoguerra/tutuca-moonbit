@@ -40,7 +40,7 @@ pub let trace_row_spec_source : String =
   #|    rowClass : String
   #|    depth : Int
   #|    current : Bool
-  #|    after : Any
+  #|    after : Component?
   #|    hasAfter : Bool
   #|    open : Bool
   #|
@@ -58,7 +58,7 @@ pub let trace_row_spec_source : String =
   #|  }
   #|
   #|  state TraceLog {
-  #|    rows : Array[Any]
+  #|    rows : Array[TraceRow]
   #|    hasRows : Bool
   #|    inputsOnly : Bool
   #|    turn : Int
@@ -115,7 +115,7 @@ pub let trace_row_spec_source : String =
   #|  }
   #|
   #|  state TracePlaces {
-  #|    places : Array[Any]
+  #|    places : Array[TracePlace]
   #|    hasPlaces : Bool
   #|    selected : String
   #|    heading : String
@@ -400,6 +400,32 @@ fn trace_row_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "verb",
+              domain: DOneOf(["send", "intent", "offered", "answer", "refused"]),
+            },
+            { field: "seq", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "walk", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "depth", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="toggle",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     _ => Unhandled
@@ -568,6 +594,23 @@ fn trace_log_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setTurn",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     Receive("showAllTurns", _args) => {
@@ -585,6 +628,23 @@ fn trace_log_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="showAllTurns",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }
@@ -968,6 +1028,26 @@ fn trace_place_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "depth", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="pickPlace",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -1382,6 +1462,27 @@ fn recorder_bar_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setScope",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     Receive("openPicker", _args) => {
@@ -1398,6 +1499,27 @@ fn recorder_bar_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="openPicker",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     Receive("closePicker", _args) => {
@@ -1413,6 +1535,27 @@ fn recorder_bar_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="closePicker",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       Next(s)
     }
@@ -1437,6 +1580,27 @@ fn recorder_bar_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="startRecording",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -1464,6 +1628,27 @@ fn recorder_bar_inline_update(
         )
         return Unchanged
       }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="stopRecording",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       for f in effects {
         f()
       }
@@ -1489,6 +1674,27 @@ fn recorder_bar_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="clearRecording",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()
@@ -1742,6 +1948,27 @@ fn trace_panel_inline_update(
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            { field: "tab", domain: DOneOf(["record", "trace", "pick"]), },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="toggleSelecting",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
       }
       for f in effects {
         f()

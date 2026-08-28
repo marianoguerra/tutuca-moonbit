@@ -75,6 +75,11 @@ pub fn universal_module(@registry.Registry, (@registry.ComponentRef, String, Map
 // Errors
 
 // Types and methods
+pub(all) struct CommandBarInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
+
 pub(all) enum CommandBarInput {
   Close
   Nav
@@ -111,6 +116,11 @@ pub(all) struct CommandBarState {
 }
 pub fn CommandBarState::zero() -> Self
 
+pub(all) struct ConfigPanelInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
+
 pub(all) enum ConfigPanelInput {
   Close
 } derive(Eq, @debug.Debug)
@@ -146,6 +156,11 @@ pub(all) struct ConfigPanelState {
   form : @core.Value
 }
 pub fn ConfigPanelState::zero() -> Self
+
+pub(all) struct PaletteRowInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 pub(all) enum PaletteRowInput {
   Pick
@@ -186,6 +201,11 @@ pub(all) struct PaletteRowState {
 }
 pub fn PaletteRowState::zero() -> Self
 
+pub(all) struct SchemaFieldInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
+
 pub(all) enum SchemaFieldInput {
   Edit
 } derive(Eq, @debug.Debug)
@@ -223,10 +243,15 @@ pub(all) struct SchemaFieldState {
   text : String
   num : Double
   flag : Bool
-  choices : Array[@core.Value]
+  choices : Array[String]
   error : String
 }
 pub fn SchemaFieldState::zero() -> Self
+
+pub(all) struct SchemaFormInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 pub(all) enum SchemaFormInput {
   Cancel
@@ -245,7 +270,7 @@ pub(all) enum SchemaFormMsg {
 pub fn SchemaFormMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum SchemaFormReceive {
-  ShowErrors(@core.Value)
+  ShowErrors(Map[String, String])
   Cancel
   Create
   UseInit(@core.Value)
@@ -261,11 +286,16 @@ pub(all) struct SchemaFormState {
   title : String
   doc : String
   fields : Array[@core.Value]
-  inits : Array[@core.Value]
+  inits : Array[SchemaFormInitChoice]
   error : String
   submitLabel : String
 }
 pub fn SchemaFormState::zero() -> Self
+
+pub(all) struct UniversalAppInitChoice {
+  name : String
+  label : String
+} derive(Eq, @debug.Debug)
 
 pub(all) enum UniversalAppInput {
   FilesDropped

@@ -119,7 +119,7 @@ impl @component.Fields for TmItemsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="356ef1d990886bd6", fields=[
-    @component.FieldInfo::new("items", TyList(TyAny)),
+  @component.SchemaInfo::new(fingerprint="773891999b454843", fields=[
+    @component.FieldInfo::new("items", TyList(TyComp(Some("TmItem")))),
   ])
 }

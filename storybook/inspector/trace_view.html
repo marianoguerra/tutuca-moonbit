@@ -33,7 +33,7 @@
     current : Bool
     /// The state the handler produced, prebuilt as a value inspector, or Null
     /// when the recording did not keep one.
-    after : Any
+    after : Component?
     hasAfter : Bool
     open : Bool
 
@@ -60,7 +60,7 @@
   /// The rows, and the two questions a reader asks of them: show me only what
   /// a rerun would feed, and show me one turn at a time.
   state TraceLog {
-    rows : Array[Any]
+    rows : Array[TraceRow]
     hasRows : Bool
     inputsOnly : Bool
     /// 0 shows every turn.
@@ -134,7 +134,7 @@
 
   /// The places a recording is ABOUT, offered as relocation targets.
   state TracePlaces {
-    places : Array[Any]
+    places : Array[TracePlace]
     hasPlaces : Bool
     selected : String
     /// What this list IS. The same component serves two lists — the places a

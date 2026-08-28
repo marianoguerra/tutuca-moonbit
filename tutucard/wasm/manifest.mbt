@@ -166,6 +166,12 @@ fn component_json(
     "views": Json::array(view_defs),
     "types": Json::array(types),
     "fields": Json::array(fields),
+    // The `where` clauses, as the host's own vocabulary rather than as the
+    // block's. A card's rules are COMPILED into the module and kept inside it;
+    // a domain is not, and this is how it leaves. The host that mounts this
+    // card holds the successor of every transition and every generated
+    // mutator, and `@tutuca.first_broken_domain` is what it asks about them.
+    "domains": @tutuca.domains_to_json(@info.domains_of(g.def)),
     "receives": strings(compiled(DReceive)),
     "intents": strings(compiled(DIntent)),
     "expressMessages": strings(g.def.express_message.map(m => m.name)),

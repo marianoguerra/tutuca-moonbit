@@ -22,7 +22,7 @@ not happen is the one outcome nobody can reason about afterwards.
 
   state Chat { draft: String, status: Status }
 
-  state Log { label: String, log: Array[Any] }
+  state Log { label: String, log: Array[String] }
   handle Log {
     message { onItemClick
     }

@@ -212,6 +212,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             constraint: None,
           },
         ],
+        domains: [],
         receives: [],
         intents: [],
         express_messages: [],
@@ -449,6 +450,50 @@ test "the schema refuses bad arguments, per field, without placing anything" {
   h.click(".form-create")
   @debug.assert_eq(h.find_all(".the-counter").length(), 0)
   assert_true(h.text(".field-error").length() > 0)
+}
+
+///|
+/// A message payload is DECODED at the type the schema declares, and a
+/// mismatch is reported rather than swallowed.
+///
+/// `showErrors` declares `Map[String, String]`, which used to buy nothing: the
+/// payload was erased to `@tutuca.Value` and the arm unpacked it by hand, so
+/// the declaration and `Any` generated the same code. Now the shape is read at
+/// the boundary — and the other half matters as much, because `Unknown`
+/// answers two different questions and a sender handing the wrong shape used
+/// to be indistinguishable from a name nobody sent.
+test "a declared payload is decoded, and a mismatch says so" {
+  let said : Array[@tutuca.Refusal] = []
+  let off = @tutuca.on_runtime_notice(n => {
+    match n {
+      Refused(r) => said.push(r)
+      _ => ()
+    }
+  })
+  defer off()
+  // The shape it declares: decoded, and no word said about it.
+  let ok = SchemaFormReceive::from_dispatch(
+    Receive("showErrors", [Map({ "/email": Str("required") })]),
+  )
+  @debug.assert_eq(said.length(), 0)
+  guard ok is Some(ShowErrors(errors)) else {
+    fail("a well-shaped payload should decode")
+  }
+  @debug.assert_eq(errors.get("/email"), Some("required"))
+  // A map of the wrong VALUE type is a mismatch however deep it is: the decode
+  // walks the shape, so a `Map[String, Int]` is caught inside the map rather
+  // than passed on as "a map, near enough".
+  let bad = SchemaFormReceive::from_dispatch(
+    Receive("showErrors", [Map({ "/email": Num(1) })]),
+  )
+  assert_true(bad is Some(Unknown(_, _)))
+  @debug.assert_eq(said.length(), 1)
+  @debug.assert_eq(said[0].code, BadPayload)
+  @debug.assert_eq(said[0].asked, "showErrors")
+  // The declared spelling is quoted from the schema, which is the half nothing
+  // at runtime could reconstruct — the arguments that arrived are the ones
+  // that did not fit.
+  assert_true(said[0].sentence.contains("Map[String, String]"))
 }
 
 ///|

@@ -51,7 +51,7 @@ pub let palette_row_spec_source : String =
   #|
   #|  state CommandBar {
   #|    query : String
-  #|    hits : Array[Any]
+  #|    hits : Array[PaletteRow]
   #|    cursor : Int
   #|    configure : Bool
   #|    emptyMessage : String
@@ -73,7 +73,7 @@ pub let palette_row_spec_source : String =
   #|    text : String
   #|    num : Double
   #|    flag : Bool
-  #|    choices : Array[Any]
+  #|    choices : Array[String]
   #|    error : String
   #|  }
   #|
@@ -84,20 +84,25 @@ pub let palette_row_spec_source : String =
   #|    }
   #|  }
   #|
+  #|  struct InitChoice {
+  #|    name : String
+  #|    label : String
+  #|  }
+  #|
   #|  state SchemaForm {
   #|    module : String
   #|    name : String
   #|    title : String
   #|    doc : String
-  #|    fields : Array[Any]
-  #|    inits : Array[Any]
+  #|    fields : Array[SchemaField]
+  #|    inits : Array[InitChoice]
   #|    error : String
   #|    submitLabel : String
   #|  }
   #|
   #|  handle SchemaForm {
   #|    message {
-  #|    showErrors(Any)
+  #|    showErrors(Map[String, String])
   #|
   #|    }
   #|  }

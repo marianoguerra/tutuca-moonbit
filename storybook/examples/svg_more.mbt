@@ -23,7 +23,7 @@
 /// the block's contracts cover.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
-    init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)], },
+    init={ values: [40, 72, 28, 90, 55, 63], },
     loop_with=l => {
       match l {
         // once per render, before the loop: split the 300-wide viewBox among the
@@ -65,13 +65,8 @@ fn bar_chart_comp() -> @component.Component {
     update=(s, msg, _ctx) => {
       match msg {
         Receive("randomize", _) => {
-          let next : Array[@tutuca.Value] = s.values.map(v => {
-            match v {
-              // deterministic stand-in for Math.random, in the 10..99 range
-              Num(n) => Num(((n.to_int() * 7 + 13) % 90 + 10).to_double())
-              _ => v
-            }
-          })
+          // deterministic stand-in for Math.random, in the 10..99 range
+          let next : Array[Int] = s.values.map(v => (v * 7 + 13) % 90 + 10)
           Next({ values: next, })
         }
         _ => Unhandled

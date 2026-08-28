@@ -25,14 +25,14 @@ pub fn v2_case_name(Int) -> String?
 
 // Types and methods
 pub(all) enum CorpusIntent {
-  Case16(String)
-  Case17(String)
-  Case18(Int)
-  Case19(Int)
-  Case20(String)
-  Case21(String)
+  Case18(String)
+  Case19(String)
+  Case20(Int)
+  Case21(Int)
   Case22(String)
   Case23(String)
+  Case24(String)
+  Case25(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
@@ -54,16 +54,18 @@ pub(all) enum CorpusReceive {
   Case6(String)
   Case7(String)
   Case8(String)
-  Case9
-  Case10(Int)
+  Case9(String)
+  Case10
   Case11
-  Case12
+  Case12(Int)
   Case13
   Case14
   Case15
-  Case24(Int)
-  Case25(String)
-  Case26(String)
+  Case16
+  Case17
+  Case26(Int)
+  Case27(String)
+  Case28(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -79,6 +81,7 @@ pub(all) struct CorpusState {
   labels : Array[CorpusLabel]
   tags : Map[String, Bool]
   page : Int
+  note : String?
 }
 pub fn CorpusState::zero() -> Self
 

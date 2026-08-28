@@ -741,11 +741,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       } else {
         cats.get(section).unwrap_or([])
       }
-      {
-        ..s,
-        currentSection: section,
-        instructions: list.map(x => (Str(x) : @tutuca.Value)),
-      }
+      { ..s, currentSection: section, instructions: list, }
     }
     compute["currentIs" + cap(section)] = (s, _args, _stack) => {
       Bool(s.currentSection == section)
@@ -768,7 +764,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     name="InstructionPicker",
     init=VwPickerState::{
       currentSection: "all",
-      instructions: vw_all_ids().map(x => (Str(x) : @tutuca.Value)),
+      instructions: vw_all_ids(),
       filter: "",
     },
     update=(s : VwPickerState, msg, _ctx) => {

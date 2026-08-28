@@ -32,8 +32,8 @@
   /// `target` is the instance being edited — the source of truth, replaced
   /// wholesale by every edit. `rows` is its schema, projected.
   state StateEditor {
-    target : Any
-    rows : Array[Any]
+    target : Component
+    rows : Array[StateEditorRow]
     name : String
   }
 </script>

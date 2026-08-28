@@ -22,7 +22,7 @@
   }
 
   state JsonArray {
-    items : Array[Any]
+    items : Array[Component]
     isExpanded : Bool
     itemsPerPage : Int
     currentPage : Int
@@ -45,7 +45,7 @@
   }
 
   state JsonObject {
-    items : Array[Any]
+    items : Array[JsonProperty]
     isExpanded : Bool
     itemsPerPage : Int
     currentPage : Int
@@ -69,11 +69,11 @@
 
   state JsonProperty {
     key : String
-    child : Any
+    child : Component
   }
 
   state DataInspector {
-    value : Any
+    value : Component
   }
 </script>
 

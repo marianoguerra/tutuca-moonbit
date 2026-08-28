@@ -483,6 +483,23 @@ fn show_hide_inline_update(
   match msg {
     Receive("incCount", _args) => {
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="incCount",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     _ => Unhandled

@@ -19,7 +19,7 @@ pub(all) struct SchemaScalarState {
   itemsPerPage : Int
   currentPage : Int
   typeLabel : String
-  badges : Array[@tutuca.Value]
+  badges : Array[String]
   title : String
   description : String
   deprecated : Bool
@@ -61,7 +61,7 @@ impl @component.Fields for SchemaScalarState with fn encode(s) {
     "itemsPerPage": Num(s.itemsPerPage.to_double()),
     "currentPage": Num(s.currentPage.to_double()),
     "typeLabel": Str(s.typeLabel),
-    "badges": (List(s.badges.map(x => x)) : @tutuca.Value),
+    "badges": (List(s.badges.map(x => Str(x))) : @tutuca.Value),
     "title": Str(s.title),
     "description": Str(s.description),
     "deprecated": Bool(s.deprecated),
@@ -87,9 +87,9 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
   guard f.get("typeLabel") is Some(Str(v_typeLabel)) else { return None }
   guard f.get("badges") is Some(t1_badges) else { return None }
   guard t1_badges is List(u1_badges) else { return None }
-  let v_badges : Array[@tutuca.Value] = []
+  let v_badges : Array[String] = []
   for e1_badges in u1_badges {
-    let x1_badges = e1_badges
+    guard e1_badges is Str(x1_badges) else { return None }
     v_badges.push(x1_badges)
   }
   guard f.get("title") is Some(Str(v_title)) else { return None }
@@ -129,6 +129,13 @@ pub(all) enum SchemaScalarReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaScalarReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaScalarReceive? {
@@ -138,7 +145,15 @@ pub fn SchemaScalarReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -295,14 +310,14 @@ pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
 impl @component.Fields for SchemaScalarState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaScalar",
-    fingerprint="8bef5ed6785e6a36",
+    fingerprint="fd44507a558877c6",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeLabel", TyText),
-      @component.FieldInfo::new("badges", TyList(TyAny)),
+      @component.FieldInfo::new("badges", TyList(TyText)),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
@@ -333,7 +348,7 @@ pub(all) struct SchemaObjectState {
   itemsPerPage : Int
   currentPage : Int
   typeLabel : String
-  badges : Array[@tutuca.Value]
+  badges : Array[String]
   title : String
   description : String
   deprecated : Bool
@@ -375,7 +390,7 @@ impl @component.Fields for SchemaObjectState with fn encode(s) {
     "itemsPerPage": Num(s.itemsPerPage.to_double()),
     "currentPage": Num(s.currentPage.to_double()),
     "typeLabel": Str(s.typeLabel),
-    "badges": (List(s.badges.map(x => x)) : @tutuca.Value),
+    "badges": (List(s.badges.map(x => Str(x))) : @tutuca.Value),
     "title": Str(s.title),
     "description": Str(s.description),
     "deprecated": Bool(s.deprecated),
@@ -401,9 +416,9 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
   guard f.get("typeLabel") is Some(Str(v_typeLabel)) else { return None }
   guard f.get("badges") is Some(t1_badges) else { return None }
   guard t1_badges is List(u1_badges) else { return None }
-  let v_badges : Array[@tutuca.Value] = []
+  let v_badges : Array[String] = []
   for e1_badges in u1_badges {
-    let x1_badges = e1_badges
+    guard e1_badges is Str(x1_badges) else { return None }
     v_badges.push(x1_badges)
   }
   guard f.get("title") is Some(Str(v_title)) else { return None }
@@ -443,6 +458,13 @@ pub(all) enum SchemaObjectReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaObjectReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaObjectReceive? {
@@ -452,7 +474,15 @@ pub fn SchemaObjectReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -609,14 +639,14 @@ pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
 impl @component.Fields for SchemaObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaObject",
-    fingerprint="88255e054e7dac51",
+    fingerprint="10112fb1b287887f",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeLabel", TyText),
-      @component.FieldInfo::new("badges", TyList(TyAny)),
+      @component.FieldInfo::new("badges", TyList(TyText)),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
@@ -647,7 +677,7 @@ pub(all) struct SchemaArrayState {
   itemsPerPage : Int
   currentPage : Int
   typeLabel : String
-  badges : Array[@tutuca.Value]
+  badges : Array[String]
   title : String
   description : String
   deprecated : Bool
@@ -689,7 +719,7 @@ impl @component.Fields for SchemaArrayState with fn encode(s) {
     "itemsPerPage": Num(s.itemsPerPage.to_double()),
     "currentPage": Num(s.currentPage.to_double()),
     "typeLabel": Str(s.typeLabel),
-    "badges": (List(s.badges.map(x => x)) : @tutuca.Value),
+    "badges": (List(s.badges.map(x => Str(x))) : @tutuca.Value),
     "title": Str(s.title),
     "description": Str(s.description),
     "deprecated": Bool(s.deprecated),
@@ -715,9 +745,9 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
   guard f.get("typeLabel") is Some(Str(v_typeLabel)) else { return None }
   guard f.get("badges") is Some(t1_badges) else { return None }
   guard t1_badges is List(u1_badges) else { return None }
-  let v_badges : Array[@tutuca.Value] = []
+  let v_badges : Array[String] = []
   for e1_badges in u1_badges {
-    let x1_badges = e1_badges
+    guard e1_badges is Str(x1_badges) else { return None }
     v_badges.push(x1_badges)
   }
   guard f.get("title") is Some(Str(v_title)) else { return None }
@@ -757,6 +787,13 @@ pub(all) enum SchemaArrayReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaArrayReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaArrayReceive? {
@@ -766,7 +803,15 @@ pub fn SchemaArrayReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -923,14 +968,14 @@ pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
 impl @component.Fields for SchemaArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaArray",
-    fingerprint="50c9900100b521a5",
+    fingerprint="70e44a9b30dcecfb",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeLabel", TyText),
-      @component.FieldInfo::new("badges", TyList(TyAny)),
+      @component.FieldInfo::new("badges", TyList(TyText)),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
@@ -961,7 +1006,7 @@ pub(all) struct SchemaEnumState {
   itemsPerPage : Int
   currentPage : Int
   typeLabel : String
-  badges : Array[@tutuca.Value]
+  badges : Array[String]
   title : String
   description : String
   deprecated : Bool
@@ -1003,7 +1048,7 @@ impl @component.Fields for SchemaEnumState with fn encode(s) {
     "itemsPerPage": Num(s.itemsPerPage.to_double()),
     "currentPage": Num(s.currentPage.to_double()),
     "typeLabel": Str(s.typeLabel),
-    "badges": (List(s.badges.map(x => x)) : @tutuca.Value),
+    "badges": (List(s.badges.map(x => Str(x))) : @tutuca.Value),
     "title": Str(s.title),
     "description": Str(s.description),
     "deprecated": Bool(s.deprecated),
@@ -1029,9 +1074,9 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
   guard f.get("typeLabel") is Some(Str(v_typeLabel)) else { return None }
   guard f.get("badges") is Some(t1_badges) else { return None }
   guard t1_badges is List(u1_badges) else { return None }
-  let v_badges : Array[@tutuca.Value] = []
+  let v_badges : Array[String] = []
   for e1_badges in u1_badges {
-    let x1_badges = e1_badges
+    guard e1_badges is Str(x1_badges) else { return None }
     v_badges.push(x1_badges)
   }
   guard f.get("title") is Some(Str(v_title)) else { return None }
@@ -1071,6 +1116,13 @@ pub(all) enum SchemaEnumReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaEnumReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaEnumReceive? {
@@ -1080,7 +1132,15 @@ pub fn SchemaEnumReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1235,14 +1295,14 @@ pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
 impl @component.Fields for SchemaEnumState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaEnum",
-    fingerprint="a11accd490d076e3",
+    fingerprint="bade4b6925eae749",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeLabel", TyText),
-      @component.FieldInfo::new("badges", TyList(TyAny)),
+      @component.FieldInfo::new("badges", TyList(TyText)),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),
@@ -1273,7 +1333,7 @@ pub(all) struct SchemaCombinatorState {
   itemsPerPage : Int
   currentPage : Int
   typeLabel : String
-  badges : Array[@tutuca.Value]
+  badges : Array[String]
   title : String
   description : String
   deprecated : Bool
@@ -1315,7 +1375,7 @@ impl @component.Fields for SchemaCombinatorState with fn encode(s) {
     "itemsPerPage": Num(s.itemsPerPage.to_double()),
     "currentPage": Num(s.currentPage.to_double()),
     "typeLabel": Str(s.typeLabel),
-    "badges": (List(s.badges.map(x => x)) : @tutuca.Value),
+    "badges": (List(s.badges.map(x => Str(x))) : @tutuca.Value),
     "title": Str(s.title),
     "description": Str(s.description),
     "deprecated": Bool(s.deprecated),
@@ -1341,9 +1401,9 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
   guard f.get("typeLabel") is Some(Str(v_typeLabel)) else { return None }
   guard f.get("badges") is Some(t1_badges) else { return None }
   guard t1_badges is List(u1_badges) else { return None }
-  let v_badges : Array[@tutuca.Value] = []
+  let v_badges : Array[String] = []
   for e1_badges in u1_badges {
-    let x1_badges = e1_badges
+    guard e1_badges is Str(x1_badges) else { return None }
     v_badges.push(x1_badges)
   }
   guard f.get("title") is Some(Str(v_title)) else { return None }
@@ -1383,6 +1443,13 @@ pub(all) enum SchemaCombinatorReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SchemaCombinatorReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SchemaCombinatorReceive? {
@@ -1392,7 +1459,15 @@ pub fn SchemaCombinatorReceive::from_dispatch(
       ("nextPage", []) => NextPage
       ("prevPage", []) => PrevPage
       ("toggleIsExpanded", []) => ToggleIsExpanded
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "nextPage" => @tutuca.bad_payload(name, "", args)
+          "prevPage" => @tutuca.bad_payload(name, "", args)
+          "toggleIsExpanded" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -1551,14 +1626,14 @@ pub fn SchemaCombinatorLoopWith::name(
 impl @component.Fields for SchemaCombinatorState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaCombinator",
-    fingerprint="34e8e803383990d0",
+    fingerprint="626d4461aa6f6398",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
       @component.FieldInfo::new("itemsPerPage", TyInt),
       @component.FieldInfo::new("currentPage", TyInt),
       @component.FieldInfo::new("typeLabel", TyText),
-      @component.FieldInfo::new("badges", TyList(TyAny)),
+      @component.FieldInfo::new("badges", TyList(TyText)),
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("deprecated", TyBool),

@@ -200,13 +200,27 @@ pub(all) enum EntryReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn EntryReceive::from_dispatch(d : @component.Dispatch) -> EntryReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setDescription", [Str(a0)]) => SetDescription(a0)
       ("setTitle", [Str(a0)]) => SetTitle(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setDescription" => @tutuca.bad_payload(name, "String", args)
+          "setTitle" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

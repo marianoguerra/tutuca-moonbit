@@ -57,7 +57,7 @@ pub let status_spec_source : String =
   #|    type : String
   #|    label : String
   #|    isOpen : Bool
-  #|    items : Array[Any]
+  #|    items : Array[TreeItem]
   #|
   #|    where type is one of ["file", "dir"]
   #|
@@ -68,7 +68,7 @@ pub let status_spec_source : String =
   #|  }
   #|
   #|  state TreeRoot {
-  #|    log : Array[Any]
+  #|    log : Array[String]
   #|    root : TreeItem
   #|  }
 
@@ -118,10 +118,44 @@ fn status_inline_update(
       guard args.get(0) is Some(Str(m_)) else { return Unchanged }
       let s = { ..s, message: m_, }
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="flash",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     Receive("clear", _args) => {
       let s = { ..s, message: "", }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="clear",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
       Next(s)
     }
     _ => Unhandled

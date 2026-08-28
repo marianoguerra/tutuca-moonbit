@@ -81,6 +81,67 @@ test "a multi-argument message is spelled as a tuple payload" {
 }
 
 ///|
+/// A payload the schema declares is DECODED, at the type it declares.
+///
+/// This used to be the one thing a schema could say that bought nothing: every
+/// composite payload was erased to `@tutuca.Value` and every handler unpacked
+/// it by hand, so `loadDataOk(Array[Row])` and `loadDataOk(Any)` generated the
+/// same code. The decode is the state codec's own — `dec_stmts` — so a payload
+/// and a field of the same declared type are read by one rule rather than two.
+test "a composite payload is decoded at its declared type, not erased" {
+  let src = msgs_src(
+    "struct Row { title: String, n: Int }\n" +
+    "handle Chat { message { gotRows(Array[Row]), errs(Map[String, String]) } }",
+  )
+  assert_true(src.contains("  GotRows(Array[ChatRow])\n"))
+  assert_true(src.contains("  Errs(Map[String, String])\n"))
+  // A function and not an inline arm: `dec_stmts` writes statements that
+  // `return None`, which a `match` arm has nowhere to do.
+  assert_true(
+    src.contains(
+      "fn chat_receive_got_rows_of_args(args : Array[@tutuca.Value]) -> ChatReceive?",
+    ),
+  )
+  assert_true(src.contains("guard chat_row_of_value(e1_0) is Some(x1_0)"))
+  // ...and the raise side converts back through the same projection, so the
+  // name and the shape are both written once.
+  assert_true(src.contains("GotRows(a0) => (\"gotRows\", ["))
+}
+
+///|
+/// `Any` and a component slot are NOT decoded, because `@tutuca.Value` is what
+/// they declare — there is nothing to read them into.
+test "an Any payload stays the Value it declares" {
+  let src = msgs_src("handle Chat { message { raw(Any), kid(Component) } }")
+  assert_true(src.contains("  Raw(@tutuca.Value)\n"))
+  assert_true(src.contains("  Kid(@tutuca.Value)\n"))
+  assert_true(src.contains("(\"raw\", [a0]) => Raw(a0)"))
+  assert_false(src.contains("chat_receive_raw_of_args"))
+}
+
+///|
+/// A DECLARED name whose arguments do not fit is reported.
+///
+/// `Unknown` answers two questions — nobody declares this name, and this name
+/// is declared here and was handed the wrong shape — and the second is a bug
+/// in the sender that used to be indistinguishable from silence. The decode's
+/// ANSWER is unchanged; only the saying is new.
+test "a declared name handed the wrong shape is reported, not just Unknown" {
+  let src = msgs_src(
+    "struct Row { title: String }\n" +
+    "handle Chat { message { setAll(String), gotRows(Array[Row]) } }",
+  )
+  // The scalar arm cannot match, so it falls to `_` — which looks the name up
+  // before answering, and quotes what the schema declared.
+  assert_true(src.contains("@tutuca.bad_payload(name, \"String\", args)"))
+  // The composite arm fails inside its decoder and says so there.
+  assert_true(src.contains("@tutuca.bad_payload(name, \"Array[Row]\", args)"))
+  // A name nothing declares still says nothing: an unaddressed message is a
+  // message, not a mistake.
+  assert_true(src.contains("_ => ()"))
+}
+
+///|
 test "a component with no declared buckets emits none of this" {
   let src = msgs_src("")
   assert_false(src.contains("ChatReceive"))

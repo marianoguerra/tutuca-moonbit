@@ -139,7 +139,7 @@ fn tree_root_comp() -> @component.Component {
           _ => "?"
         }
         let log = s.log.copy()
-        log.insert(0, Str("selected: \{label}"))
+        log.insert(0, "selected: \{label}")
         Next({ ..s, log, })
       }
       _ => Unhandled

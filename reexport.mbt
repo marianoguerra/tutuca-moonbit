@@ -42,6 +42,27 @@ pub using @core {type IntentOpts, type IntentCall, type IntentAnswer, type Leg}
 // The channel comes with them rather than after them: a page that can be told a
 // rule refused something and cannot ask to hear it is half a feature.
 
+// The DOMAIN vocabulary, for the same reason and with the same failure mode as
+// the contract reporters below: a generated arm names `@tutuca.FieldDomain` in
+// the signature of the helper `gen-views` writes beside it, and calls
+// `@tutuca.first_broken_domain` to ask its question.
+//
+// The CONSTRUCTORS are deliberately not here, and cannot be: an enum
+// constructor does not resolve through a `pub using` re-export. Nothing needs
+// them to — the only position a generator writes one into is inside an
+// `Array[FieldDomain]` literal, where the expected type already names them.
+// That is the same bargain `StateDef::ty_info_src` struck, and it says so.
+
+///|
+pub using @core {
+  type FieldDomain,
+  type Domain,
+  type DomainOp,
+  type DomainOperand,
+  first_broken_domain,
+  broken_domain_sentence,
+}
+
 ///|
 pub using @core {
   type Refusal,
@@ -58,4 +79,7 @@ pub using @core {
   protocol_mismatch,
   refuse,
   refusing,
+  // Called by every generated `from_dispatch`, so it has to be reachable
+  // through the facade a generated module imports — not only through `@core`.
+  bad_payload,
 }

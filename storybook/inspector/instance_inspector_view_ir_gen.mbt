@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let instance_fields_spec_source : String =
   #|  state InstanceFields {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -43,13 +43,13 @@ pub let instance_fields_spec_source : String =
   #|  }
   #|
   #|  state InstanceInspector {
-  #|    value : Any
+  #|    value : Component
   #|  }
   #|
   #|  state InstanceExplorer {
   #|    activeTab : String
-  #|    instanceView : Any
-  #|    componentView : Any
+  #|    instanceView : Component
+  #|    componentView : Component
   #|    hasComponent : Bool
   #|
   #|    where activeTab is one of ["instance", "component"]

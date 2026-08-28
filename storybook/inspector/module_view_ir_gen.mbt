@@ -29,7 +29,7 @@ pub let rich_sample_spec_source : String =
   #|  state RichSample {
   #|    title : String
   #|    count : Int
-  #|    tags : Array[Any]
+  #|    tags : Array[String]
   #|    open : Bool
   #|
   #|    where count >= 0
@@ -53,7 +53,7 @@ pub let rich_sample_spec_source : String =
   #|  state SampleCard {
   #|    title : String
   #|    count : Int
-  #|    tags : Array[Any]
+  #|    tags : Array[String]
   #|    open : Bool
   #|
   #|    where count >= 0

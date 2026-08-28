@@ -4,7 +4,7 @@
 
 ```html
 <script type="tutuca/spec">
-  state Feed { items: Array[Any] }   // or Array[String], Map[String, Any], …
+  state Feed { items: Array[String] }   // or Array[Row], Map[String, Row], …
 </script>
 
 <template id="Feed">

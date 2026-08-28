@@ -19,10 +19,11 @@
     labels : Array[Label]
     tags   : Set[String]
     page   : Int
+    note   : String?
   }
   handle Corpus {
-    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String), case26(String) }
-    intent { case16(String), case17(String), case18(Int), case19(Int), case20(String), case21(String), case22(String), case23(String) }
+    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String) }
+    intent { case18(String), case19(String), case20(Int), case21(Int), case22(String), case23(String), case24(String), case25(String) }
   }
 </script>
 
@@ -73,108 +74,119 @@
     forward
   }
 
-  /// case 9: an intent with no legs takes the default route
-  receive case9 {
+  /// case 9: a bare value fills a nullable field
+  receive case9(t) {
+    .note = t
+  }
+
+  /// case 10: null empties one, and is the one literal the wanted type names
+  receive case10 {
+    .note = 'hi'
+    .note = null
+  }
+
+  /// case 11: an intent with no legs takes the default route
+  receive case11 {
     intent 'saveDraft' .name
   }
 
-  /// case 10: intent dyn is what v1 spelled bubble
-  receive case10(k) {
+  /// case 12: intent dyn is what v1 spelled bubble
+  receive case12(k) {
     intent dyn 'picked' k
   }
 
-  /// case 11: intent lex is what v1 spelled request
-  receive case11 {
+  /// case 13: intent lex is what v1 spelled request
+  receive case13 {
     intent lex 'loadRows' .name
   }
 
-  /// case 12: intent lex dyn reverses the legs
-  receive case12 {
+  /// case 14: intent lex dyn reverses the legs
+  receive case14 {
     intent lex dyn 'saveDraft' .name
   }
 
-  /// case 13: a reply to a message names itself
-  receive case13 {
+  /// case 15: a reply to a message names itself
+  receive case15 {
     sendReply 'pong' .name
   }
 
-  /// case 14: a reply is an effect like the rest, and buffers with them
-  receive case14 {
+  /// case 16: a reply is an effect like the rest, and buffers with them
+  receive case16 {
     .count += 1
     sendReply 'pong' .count
     send 'flash' .name
   }
 
-  /// case 15: effects come out in order, with the state
-  receive case15 {
+  /// case 17: effects come out in order, with the state
+  receive case17 {
     intent lex 'loadRows'
     .ok = true
     send 'flash' .name
     stop
   }
 
-  /// case 16: an intent answered where it arrives
-  intent case16(text) {
+  /// case 18: an intent answered where it arrives
+  intent case18(text) {
     .count += 1
     reply .count
   }
 
-  /// case 17: fail answers with an error and ends the walk
-  intent case17(text) {
+  /// case 19: fail answers with an error and ends the walk
+  intent case19(text) {
     fail 'disk full'
   }
 
-  /// case 18: a handler that does not reply is an observer
-  intent case18(k) {
+  /// case 20: a handler that does not reply is an observer
+  intent case20(k) {
     .page = k
   }
 
-  /// case 19: an intent handler may run and then continue the walk
-  intent case19(k) {
+  /// case 21: an intent handler may run and then continue the walk
+  intent case21(k) {
     .page = k
     forward
   }
 
-  /// case 20: a body may queue two replies, and both come out of it
-  intent case20(text) {
+  /// case 22: a body may queue two replies, and both come out of it
+  intent case22(text) {
     reply 1
     reply 2
   }
 
-  /// case 21: stop ends the walk before any reply, and answers nothing
-  intent case21(text) {
+  /// case 23: stop ends the walk before any reply, and answers nothing
+  intent case23(text) {
     .count += 1
     stop
   }
 
   pred hasSome { .count > 0 }
 
-  /// case 22: a requires that does not hold takes the reply with it
-  intent case22(text) requires hasSome {
+  /// case 24: a requires that does not hold takes the reply with it
+  intent case24(text) requires hasSome {
     .count += 1
     reply .count
   }
 
   pred small { .count > 5 }
 
-  /// case 23: an ensures that does not hold takes the reply with it
-  intent case23(text) ensures small {
+  /// case 25: an ensures that does not hold takes the reply with it
+  intent case25(text) ensures small {
     .count += 1
     reply .count
   }
 
-  /// case 24: an answer arrives as an ordinary message
-  receive case24(n) {
+  /// case 26: an answer arrives as an ordinary message
+  receive case26(n) {
     .count = n
   }
 
-  /// case 25: an error answer arrives as an ordinary message too
-  receive case25(why) {
+  /// case 27: an error answer arrives as an ordinary message too
+  receive case27(why) {
     .name = why
   }
 
-  /// case 26: a parameter named `s` is the argument, not the state
-  receive case26(s) {
+  /// case 28: a parameter named `s` is the argument, not the state
+  receive case28(s) {
     .name = s
   }
 

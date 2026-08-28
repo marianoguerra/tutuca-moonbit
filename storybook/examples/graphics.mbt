@@ -6,15 +6,8 @@
 // real namespaced elements — no special casing.
 
 ///|
-let palette : Array[@tutuca.Value] = [
-  Str("#ef4444"),
-  Str("#f97316"),
-  Str("#eab308"),
-  Str("#22c55e"),
-  Str("#06b6d4"),
-  Str("#3b82f6"),
-  Str("#8b5cf6"),
-  Str("#ec4899"),
+let palette : Array[String] = [
+  "#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899",
 ]
 
 ///|

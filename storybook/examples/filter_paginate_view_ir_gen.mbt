@@ -33,7 +33,7 @@ pub let person_spec_source : String =
   #|  }
   #|
   #|  state NaivePeople {
-  #|    items : Array[Any]
+  #|    items : Array[Person]
   #|    query : String
   #|    page : Int
   #|    pageSize : Int

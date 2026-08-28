@@ -83,6 +83,13 @@ pub(all) enum PushViewReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PushViewReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> PushViewReceive? {
@@ -92,7 +99,15 @@ pub fn PushViewReceive::from_dispatch(
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
       ("toggleView", []) => ToggleView
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "resetQuery" => @tutuca.bad_payload(name, "", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          "toggleView" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -230,9 +245,9 @@ pub fn PushViewWhen::name(self : PushViewWhen) -> String {
 impl @component.Fields for PushViewState with fn schema() {
   @component.SchemaInfo::new(
     name="PushView",
-    fingerprint="e12ef7e9d8cd685f",
+    fingerprint="5907771e77308ed8",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("view", TyText),
     ],
@@ -339,6 +354,13 @@ pub(all) enum SeqItemAccessReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SeqItemAccessReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SeqItemAccessReceive? {
@@ -347,7 +369,14 @@ pub fn SeqItemAccessReceive::from_dispatch(
     match (name, args) {
       ("setCurrentIndex", [Num(a0)]) => SetCurrentIndex(a0)
       ("setCurrentKey", [Str(a0)]) => SetCurrentKey(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setCurrentIndex" => @tutuca.bad_payload(name, "Double", args)
+          "setCurrentKey" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -466,10 +495,10 @@ pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
 impl @component.Fields for SeqItemAccessState with fn schema() {
   @component.SchemaInfo::new(
     name="SeqItemAccess",
-    fingerprint="70048a35375455e8",
+    fingerprint="5028d75eea4ab82e",
     fields=[
-      @component.FieldInfo::new("byKey", TyOMap(TyAny)),
-      @component.FieldInfo::new("byIndex", TyList(TyAny)),
+      @component.FieldInfo::new("byKey", TyOMap(TyComp(Some("Entry")))),
+      @component.FieldInfo::new("byIndex", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("currentKey", TyAny),
       @component.FieldInfo::new("currentIndex", TyInt),
     ],
@@ -493,7 +522,7 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct PaginationState {
-  items : Array[@tutuca.Value]
+  items : Array[String]
   page : Int
   pageSize : Int
 }
@@ -519,7 +548,7 @@ pub fn PaginationState::zero() -> PaginationState {
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for PaginationState with fn encode(s) {
   {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "items": (List(s.items.map(x => Str(x))) : @tutuca.Value),
     "page": Num(s.page.to_double()),
     "pageSize": Num(s.pageSize.to_double()),
   }
@@ -531,9 +560,9 @@ impl @component.Fields for PaginationState with fn encode(s) {
 impl @component.Fields for PaginationState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
+  let v_items : Array[String] = []
   for e1_items in u1_items {
-    let x1_items = e1_items
+    guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
   guard f.get("page") is Some(Num(t1_page)) else { return None }
@@ -563,6 +592,13 @@ pub(all) enum PaginationReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PaginationReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> PaginationReceive? {
@@ -571,7 +607,14 @@ pub fn PaginationReceive::from_dispatch(
     match (name, args) {
       ("next", []) => Next
       ("prev", []) => Prev
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "next" => @tutuca.bad_payload(name, "", args)
+          "prev" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -707,9 +750,9 @@ pub fn PaginationLoopWith::name(self : PaginationLoopWith) -> String {
 impl @component.Fields for PaginationState with fn schema() {
   @component.SchemaInfo::new(
     name="Pagination",
-    fingerprint="641548922663b3ee",
+    fingerprint="6c86d0e01aab6ee3",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("page", TyInt),
       @component.FieldInfo::new("pageSize", TyInt),
     ],

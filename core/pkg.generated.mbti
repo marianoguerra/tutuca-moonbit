@@ -8,7 +8,11 @@ import {
 }
 
 // Values
+pub fn bad_payload(String, String, Array[Value]) -> Unit
+
 pub fn broken_domain(Array[FieldDomain], String, Value, Map[String, Value]) -> Domain?
+
+pub fn broken_domain_sentence(FieldDomain, Map[String, Value]) -> String
 
 pub fn broken_domains(Array[FieldDomain], Map[String, Value]) -> Array[String]
 
@@ -27,6 +31,12 @@ pub fn domain_holds(Domain, Value, Map[String, Value]) -> Bool
 pub fn domain_sentence(Domain, String, Value, Map[String, Value]) -> String
 
 pub fn domains_of(Array[FieldDomain], String) -> Array[Domain]
+
+pub fn domains_of_json(Json) -> Array[FieldDomain]
+
+pub fn domains_to_json(Array[FieldDomain]) -> Json
+
+pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomain?
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
@@ -316,6 +326,7 @@ pub(all) enum RefusalCode {
   TypeNotFound
   OutOfRange
   NoSender
+  BadPayload
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
 

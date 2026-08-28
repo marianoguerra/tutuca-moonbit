@@ -36,10 +36,11 @@ pub let corpus_spec_source : String =
   #|    labels : Array[Label]
   #|    tags   : Set[String]
   #|    page   : Int
+  #|    note   : String?
   #|  }
   #|  handle Corpus {
-  #|    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9, case10(Int), case11, case12, case13, case14, case15, case24(Int), case25(String), case26(String) }
-  #|    intent { case16(String), case17(String), case18(Int), case19(Int), case20(String), case21(String), case22(String), case23(String) }
+  #|    message { case0, case1, case2(Int), case3(String), case4(Int), case5(String), case6(String), case7(String), case8(String), case9(String), case10, case11, case12(Int), case13, case14, case15, case16, case17, case26(Int), case27(String), case28(String) }
+  #|    intent { case18(String), case19(String), case20(Int), case21(Int), case22(String), case23(String), case24(String), case25(String) }
   #|  }
 
 ///|
@@ -158,7 +159,17 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case9", _args) => {
+    Receive("case9", args) => {
+      guard args.get(0) is Some(Str(t_)) else { return Unchanged }
+      let s = { ..s, note: Some(t_), }
+      Next(s)
+    }
+    Receive("case10", _args) => {
+      let s = { ..s, note: Some("hi"), }
+      let s = { ..s, note: None, }
+      Next(s)
+    }
+    Receive("case11", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
@@ -172,7 +183,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case10", args) => {
+    Receive("case12", args) => {
       guard args.get(0) is Some(Num(k_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => {
@@ -187,7 +198,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case11", _args) => {
+    Receive("case13", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
@@ -201,7 +212,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case12", _args) => {
+    Receive("case14", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
@@ -215,7 +226,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case13", _args) => {
+    Receive("case15", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.send_reply("pong", [(Str(s.name) : @tutuca.Value)]))
       for f in effects {
@@ -223,7 +234,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case14", _args) => {
+    Receive("case16", _args) => {
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => {
@@ -235,7 +246,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case15", _args) => {
+    Receive("case17", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => {
         ctx.intent(
@@ -252,7 +263,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case16", args) => {
+    Intent("case18", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
@@ -262,7 +273,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case17", args) => {
+    Intent("case19", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.fail((Str("disk full") : @tutuca.Value)))
@@ -271,12 +282,12 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case18", args) => {
+    Intent("case20", args) => {
       guard args.get(0) is Some(Num(k_)) else { return Unchanged }
       let s = { ..s, page: k_.to_int(), }
       Next(s)
     }
-    Intent("case19", args) => {
+    Intent("case21", args) => {
       guard args.get(0) is Some(Num(k_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, page: k_.to_int(), }
@@ -286,7 +297,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case20", args) => {
+    Intent("case22", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.reply((Num(1.0) : @tutuca.Value)))
@@ -296,7 +307,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case21", args) => {
+    Intent("case23", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
@@ -306,11 +317,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case22", args) => {
+    Intent("case24", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       guard s.count.to_double() > 0.0 else {
         @tutuca.precondition_failed(
-          handler="case22",
+          handler="case24",
           pred="hasSome",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
@@ -324,14 +335,14 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Intent("case23", args) => {
+    Intent("case25", args) => {
       guard args.get(0) is Some(Str(_)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int(), }
       effects.push(() => ctx.reply((Num(s.count.to_double()) : @tutuca.Value)))
       guard s.count.to_double() > 5.0 else {
         @tutuca.postcondition_failed(
-          handler="case23",
+          handler="case25",
           pred="small",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
@@ -342,17 +353,17 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Receive("case24", args) => {
+    Receive("case26", args) => {
       guard args.get(0) is Some(Num(n_)) else { return Unchanged }
       let s = { ..s, count: n_.to_int(), }
       Next(s)
     }
-    Receive("case25", args) => {
+    Receive("case27", args) => {
       guard args.get(0) is Some(Str(why_)) else { return Unchanged }
       let s = { ..s, name: why_, }
       Next(s)
     }
-    Receive("case26", args) => {
+    Receive("case28", args) => {
       guard args.get(0) is Some(Str(s_)) else { return Unchanged }
       let s = { ..s, name: s_, }
       Next(s)

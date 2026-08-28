@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let bar_chart_spec_source : String =
   #|  state BarChart {
-  #|    values : Array[Any]
+  #|    values : Array[Int]
   #|
   #|    pred hasRoom
   #|      format $'nine bars is the cap, and there are already {len .values}' { (len .values) < 9 }
@@ -37,6 +37,22 @@ pub let bar_chart_spec_source : String =
   #|
   #|    invariant neverEmpty
   #|      format 'the chart lost its last bar' { (len .values) > 0 }
+  #|
+  #|    // DELIBERATELY no `where values len between 1 and 9`, even though that is
+  #|    // exactly what the three rules above add up to. A plain comment and not a
+  #|    // `///` one, because a doc comment attaches to the declaration under it
+  #|    // and there is none: what this says is about the clause that is NOT here.
+  #|    //
+  #|    // A domain is read BACKWARDS by the generator: declare it and `@arb` stops
+  #|    // drawing `setValues []` at all, and the property next door — the one
+  #|    // asking whether `neverEmpty` really does stand between a generated
+  #|    // mutator and a chart with no bars — would pass by never asking. The
+  #|    // clause would not make the component safer; it would make the test that
+  #|    // proves it safe stop testing.
+  #|    //
+  #|    // That is the trade the two halves make. Narrowing the draw is what a
+  #|    // `where` is FOR, and it is the wrong tool for the one field whose
+  #|    // out-of-domain values are the point.
   #|  }
   #|
   #|  state IconGallery {
@@ -178,12 +194,8 @@ fn bar_chart_inline_update(
       let s : BarChartState = {
         values: s.values +
         [
-          (
-            Num(
-              ((s.values.length().to_double() * 17.0 + 23.0).to_int() %
-              d0.to_int()).to_double() +
-              10.0,
-            ) : @tutuca.Value),
+          (((s.values.length().to_double() * 17.0 + 23.0).to_int() % d0.to_int()).to_double() +
+          10.0).to_int(),
         ],
       }
       guard s.values.length().to_double() > 0.0 else {

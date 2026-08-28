@@ -49,7 +49,7 @@ pub let json_null_spec_source : String =
   #|  }
   #|
   #|  state JsonArray {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -64,7 +64,7 @@ pub let json_null_spec_source : String =
   #|  }
   #|
   #|  state JsonObject {
-  #|    items : Array[Any]
+  #|    items : Array[JsonProperty]
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
@@ -80,11 +80,11 @@ pub let json_null_spec_source : String =
   #|
   #|  state JsonProperty {
   #|    key : String
-  #|    child : Any
+  #|    child : Component
   #|  }
   #|
   #|  state DataInspector {
-  #|    value : Any
+  #|    value : Component
   #|  }
 
 ///|

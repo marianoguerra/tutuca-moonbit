@@ -73,6 +73,13 @@ pub(all) enum PersonReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn PersonReceive::from_dispatch(d : @component.Dispatch) -> PersonReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
@@ -80,7 +87,15 @@ pub fn PersonReceive::from_dispatch(d : @component.Dispatch) -> PersonReceive? {
       ("setActive", [Bool(a0)]) => SetActive(a0)
       ("setEmail", [Str(a0)]) => SetEmail(a0)
       ("setName", [Str(a0)]) => SetName(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setActive" => @tutuca.bad_payload(name, "Bool", args)
+          "setEmail" => @tutuca.bad_payload(name, "String", args)
+          "setName" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -354,6 +369,13 @@ pub(all) enum NaivePeopleReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn NaivePeopleReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> NaivePeopleReceive? {
@@ -364,7 +386,16 @@ pub fn NaivePeopleReceive::from_dispatch(
       ("prev", []) => Prev
       ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       ("search", [Str(a0)]) => Search(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "next" => @tutuca.bad_payload(name, "", args)
+          "prev" => @tutuca.bad_payload(name, "", args)
+          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
+          "search" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -523,9 +554,9 @@ pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
 impl @component.Fields for NaivePeopleState with fn schema() {
   @component.SchemaInfo::new(
     name="NaivePeople",
-    fingerprint="ff7b1edfba539bda",
+    fingerprint="06f7fefd211d5064",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("Person")))),
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("page", TyInt),
       @component.FieldInfo::new("pageSize", TyInt),

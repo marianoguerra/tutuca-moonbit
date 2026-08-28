@@ -67,6 +67,13 @@ pub(all) enum RenderWithScopeReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn RenderWithScopeReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> RenderWithScopeReceive? {
@@ -74,7 +81,13 @@ pub fn RenderWithScopeReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setText", [Str(a0)]) => SetText(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setText" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -202,7 +215,7 @@ impl @component.Fields for RenderWithScopeState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ListFilterEnrichState {
-  items : Array[@tutuca.Value]
+  items : Array[String]
   query : String
 }
 
@@ -227,7 +240,7 @@ pub fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ListFilterEnrichState with fn encode(s) {
   {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "items": (List(s.items.map(x => Str(x))) : @tutuca.Value),
     "query": Str(s.query),
   }
 }
@@ -238,9 +251,9 @@ impl @component.Fields for ListFilterEnrichState with fn encode(s) {
 impl @component.Fields for ListFilterEnrichState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
+  let v_items : Array[String] = []
   for e1_items in u1_items {
-    let x1_items = e1_items
+    guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
@@ -267,6 +280,13 @@ pub(all) enum ListFilterEnrichReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ListFilterEnrichReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ListFilterEnrichReceive? {
@@ -275,7 +295,14 @@ pub fn ListFilterEnrichReceive::from_dispatch(
     match (name, args) {
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "resetQuery" => @tutuca.bad_payload(name, "", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -407,9 +434,9 @@ pub fn ListFilterEnrichEnrich::name(self : ListFilterEnrichEnrich) -> String {
 impl @component.Fields for ListFilterEnrichState with fn schema() {
   @component.SchemaInfo::new(
     name="ListFilterEnrich",
-    fingerprint="336b6945b7ecfe9c",
+    fingerprint="5b67f47d98b3033d",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("query", TyText),
     ],
     view_handlers=["resetQuery", "setQuery"],
@@ -424,7 +451,7 @@ impl @component.Fields for ListFilterEnrichState with fn schema() {
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct ListFilterEnrichWithState {
-  items : Array[@tutuca.Value]
+  items : Array[String]
   query : String
 }
 
@@ -449,7 +476,7 @@ pub fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ListFilterEnrichWithState with fn encode(s) {
   {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "items": (List(s.items.map(x => Str(x))) : @tutuca.Value),
     "query": Str(s.query),
   }
 }
@@ -460,9 +487,9 @@ impl @component.Fields for ListFilterEnrichWithState with fn encode(s) {
 impl @component.Fields for ListFilterEnrichWithState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
+  let v_items : Array[String] = []
   for e1_items in u1_items {
-    let x1_items = e1_items
+    guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
@@ -489,6 +516,13 @@ pub(all) enum ListFilterEnrichWithReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn ListFilterEnrichWithReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> ListFilterEnrichWithReceive? {
@@ -497,7 +531,14 @@ pub fn ListFilterEnrichWithReceive::from_dispatch(
     match (name, args) {
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "resetQuery" => @tutuca.bad_payload(name, "", args)
+          "setQuery" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -652,9 +693,9 @@ pub fn ListFilterEnrichWithLoopWith::name(
 impl @component.Fields for ListFilterEnrichWithState with fn schema() {
   @component.SchemaInfo::new(
     name="ListFilterEnrichWith",
-    fingerprint="bc4920870d6c5298",
+    fingerprint="59b28948749c6f51",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("query", TyText),
     ],
     view_handlers=["resetQuery", "setQuery"],

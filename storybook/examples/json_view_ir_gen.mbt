@@ -46,7 +46,7 @@ pub let json_selector_spec_source : String =
   #|  }
   #|
   #|  state JsonArray {
-  #|    items : Array[Any]
+  #|    items : Array[Component]
   #|  }
   #|
   #|  state JsonObjectKeyVal {
@@ -55,7 +55,7 @@ pub let json_selector_spec_source : String =
   #|  }
   #|
   #|  state JsonObject {
-  #|    items : Array[Any]
+  #|    items : Array[JsonObjectKeyVal]
   #|  }
 
 ///|

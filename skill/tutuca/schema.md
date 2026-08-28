@@ -93,22 +93,30 @@ one spelling: `Set[String]` says any string is a member, `Set[Visibility]` says
 the members are that enum's cases. The container decides the zero — a set starts
 EMPTY — and the enum decides the membership, which is one idea in each place.
 
-`Array[Any]` is the spelling for a heterogeneous list, most often a list of
-component instances:
+A list of child components is written with the ELEMENT's name, and a sibling
+`state` is a name a field may use:
 
 ```html
 <script type="tutuca/spec">
-  state Items { items: Array[Any] }
+  state Item  { completed: Bool, text: String }
+  state Items { items: Array[Item] }
 </script>
 ```
 
-generates `items : Array[@tutuca.Value]`. Iterate it with
-`<div @each=".items"><x render-it></x></div>` and append instances with
-`Some({ items: s.items + [item.make(Map([]))] })` (the complete pairing is in
-[patterns/todo-list.md](./patterns/todo-list.md)). When every element has one
-known shape, prefer `Array[T]` — the reads stay typed and the views are checked
-against the element schema. `Any` is the scalar counterpart: one
-`@tutuca.Value` field.
+Iterate it with `<div @each=".items"><x render-it></x></div>` and append
+instances with `Some({ items: s.items + [item.make(Map([]))] })` (the complete
+pairing is in [patterns/todo-list.md](./patterns/todo-list.md)). `Array[Item]`
+and `Array[Any]` generate the SAME field — `items : Array[@tutuca.Value]` —
+so the element type costs nothing at runtime and buys the check: the `@each`
+body is read against `Item`'s schema, and `@value.txet` is caught. A component
+from another file is `Array[Component[Item]]`; a list of components whose
+shapes genuinely differ is `Array[Component]`.
+
+`Array[Any]` is the last resort, for a list whose elements are not even all
+components — a decoded JSON payload, say. `Any` is its scalar counterpart: one
+`@tutuca.Value` field. Before reaching for either, check whether the value is
+really a `T?` (absent), a `struct` (a record with known fields), or a
+`Map[String, V]`.
 
 **Refused, each with its own message**: `Int64`/`UInt64` (state travels as JSON,
 where a number is a Double and whole values above 2^53 do not survive the trip —
@@ -137,11 +145,20 @@ verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery e.value"`,
 | list | `Array[...]` | `pushInX`, `insertInXAt`, `setInXAt`, `deleteInXAt`/`removeInXAt` |
 | map / omap | `Map[String, ...]` | `setInXAt`, `deleteInXAt`/`removeInXAt` |
 | set (`Set[String]`, `Set[Enum]`) | `Map[String, Bool]` | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
+| nullable | `T?` | — (`setX` takes the bare `T`; `resetX` is the clear) |
 | comp | `@tutuca.Value` | — a slot, filled through the scope at `make()` (see [Slots](#slots)) |
 
 **Every** field additionally gets `setX`, `resetX`, and `xLen` (`Null` for
 non-sized values). A `compute` entry of the same name wins over the generated
 one.
+
+`resetX` is what empties a `T?`: it writes the field's zero, and a nullable
+field's zero is `None`. There is no separate `clearX`, and `setX` on a `T?`
+takes the bare `T` — a view that means "nothing selected" sends `resetSel`,
+not `setSel` with an empty string. In a `<script type="tutuca/script">` block
+the same field is written directly, both ways: `.sel = 'k'` compiles to
+`Some("k")` and `.sel = null` to `None`, with the wanted type deciding which
+spelling `null` gets.
 
 Two of the generated names only **read**: `xLen` and `hasInX` answer a scalar
 and touch nothing. Write them in a view as `$xLen` / `$hasInX tag`; SENDING one
@@ -271,6 +288,20 @@ is what reaches it because a walk routed here — a descendant's `intent dyn`, o
 an intent that took the default `dyn lex` route. A bucket the component has no
 use for is simply absent. What a parent asks of a child goes through `receive`
 — a slot is a handle, not a channel.
+
+A declared payload is **decoded at the boundary**, at the type it names —
+the same codec a field of that type goes through, so `loadRowsOk(Array[Row])`
+hands the arm an `Array[BoardRow]` rather than a `@tutuca.Value` to unpack.
+The types are the field types: scalars, `Array[T]`, `Map[String, V]`, a
+`struct`, an `enum`, a `T?`, a tuple. `Any` and `Component` stay
+`@tutuca.Value`, because that is what they declare.
+
+A dispatch whose arguments do not fit falls into `Unknown` — never coerced —
+**and is reported** as `BAD_PAYLOAD` on the refusal channel, carrying the
+argument list that did not fit. Declaring `focusRow(Int)` and sending it a
+string is a bug in the sender, and it used to be indistinguishable from a name
+nobody sent. `Any` buys silence here, which is a reason to declare the shape
+you mean.
 
 Note the three `LoadRows…` names in the `message` list. An intent's **answers**
 are ordinary messages, so they are declared where every other message is; and
@@ -640,15 +671,27 @@ cannot state is refused by name, with the vocabulary in the message.
 
 ### What a `where` does at runtime
 
-Two doors, and they catch different things:
+Three doors, and they catch different things:
 
 | when | what it covers |
 | --- | --- |
 | at the field write | the field being written — `setCurrentIndex 99` is turned down and the instance is unchanged |
-| after the transition | every field — including `setItems []`, which says nothing about `currentIndex` and leaves it stranded |
+| in the arm, before its effects flush | every field, for a handler the script block declares — the same place an `invariant`'s guard sits, so an arm that raises effects and then leaves a field out of domain sends nothing |
+| after the transition | every field, for every path — a generated mutator, a hand-written `update~` arm — including `setItems []`, which says nothing about `currentIndex` and leaves it stranded |
 
-Either way the transition is **abandoned** and a `Refusal` is raised with code
+Any of the three **abandons** the transition and raises a `Refusal` with code
 `OUT_OF_RANGE`, carrying the **field** where a rule's refusal carries its name.
+
+The middle door is CALLED rather than compiled, which is the opposite of what
+an `invariant`'s guard does and is the point: a rule is an arbitrary
+expression the generator has to be able to spell, while a relation is one the
+runtime already evaluates at the third door. So the arm emits the declaration
+and asks `@tutuca.first_broken_domain`, and the two doors cannot answer
+differently.
+
+The third door is the one a hand-written `update~` arm gets, and it has the
+limit every rule has there: the successor is checked after the arm returned, so
+effects it fired have already gone out. The state rolls back; they do not.
 
 There is no `format`. A rule needs a hand-written sentence because an arbitrary
 boolean cannot say why it failed; a relation knows what it wanted and what it
@@ -682,6 +725,36 @@ a relation that cannot be inverted belongs in a rule.
 One inference comes free and is worth knowing: `where i is index of .items`
 with no `or none` says an index always exists, so the generator never produces
 an empty `items`. Write `or none` when the empty list is a real state.
+
+`or none` is about SENTINEL INTEGERS — `-1`, or `0` over an empty list — which
+is a convention no type can state, and it is why only `index of` has the
+clause. A **nullable** subject needs none of it: every relation reads one shape
+and admits anything else, so `sel : String?` under `where sel is key of .byKey`
+already means "a key it holds, or nothing selected", and the generator draws
+both. Say the absence in the TYPE and the relation follows.
+
+### In a card, and in any dynamic component
+
+A `pred` and an `invariant` are COMPILED INTO a card's wasm module: the card
+declines its own transition, before its buffered effects reach the host.
+
+A domain is not compiled in, and cannot be — the vocabulary exists to be read
+backwards by a generator and forwards by `core/domain.mbt`, and the guest world
+has no shape for either. So the declaration LEAVES the guest: the card compiler
+writes it into the bundle manifest (`"domains"` per component) and the host
+enforces it, at the two doors the host owns — the generated mutator's field
+write, and the successor of a guest transition. The successor is checked
+**before** the guest's buffered control calls go out, so nothing is sent for a
+transition the host will not adopt.
+
+Two consequences worth knowing:
+
+- A `where` in a card is enforced, and enforced whole — including the
+  cross-field relations no per-field constraint could state.
+- A host reading a manifest **drops** a relation it does not recognise rather
+  than refusing the bundle. A guest built against a later vocabulary still
+  mounts; it is simply not held to the clause this host could not read. Unknown
+  is not wrong, at the wire as much as at the value.
 
 ### What it does NOT do
 
@@ -854,8 +927,11 @@ assert_eq(refused[0].sentence, "Cannot publish \"draft-2\": the title is empty."
   which is what makes a test about a guarded button mean something.
 - A `Refusal` carries `code`, `asked`, `rule`, `sentence`, `state` and `path`,
   and `to_line()` renders it. The codes are `PRECONDITION`, `POSTCONDITION`,
-  `INVARIANT` (a rule refused it), `NO_HANDLER` (nothing claimed the name) and
-  `PATH_UNRESOLVED` (nothing was there).
+  `INVARIANT` (a rule refused it), `NO_HANDLER` (nothing claimed the name),
+  `PATH_UNRESOLVED` (nothing was there) and `BAD_PAYLOAD` (the name IS declared
+  here and the arguments did not fit what it declares). `BAD_PAYLOAD` is the
+  one code whose `state` is not a state: it carries the argument list, because
+  no arm ran and that is the thing to go and look at.
 - **A decline is not a refusal.** An `update` arm answering `None`, and the
   generated mutator behind it, are the intended design and stay quiet.
 - One dispatch produces at most one record, and it is off until a host asks —

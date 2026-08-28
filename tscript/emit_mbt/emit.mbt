@@ -711,6 +711,15 @@ fn E::arm(
       self.contract_guard(inv, "      ", "invariant_failed", d.name),
     )
   }
+  // THE DOMAINS, beside the invariants and for the same reason.
+  //
+  // A `where` is a rule about the successor exactly as an `invariant` is, and
+  // the runtime already asks it after every dispatch. What it did not have
+  // until now was a place in the ARM — so an arm that raised effects and then
+  // put a field outside its domain flushed the queue first and was refused
+  // afterwards, leaving the state rolled back and the effects gone. That is the
+  // half a queue exists to prevent, and an invariant already got it.
+  after.write_string(self.domain_guard("      ", d.name))
   if stmts.contains("effects.push(") {
     b.write_string("      let effects : Array[() -> Unit] = []\n")
     b.write_string(stmts)
@@ -722,6 +731,53 @@ fn E::arm(
   }
   b.write_string("      Next(s)\n")
   b.write_string("    }\n")
+  b.to_string()
+}
+
+///|
+/// Every declared domain, as one check that reports and leaves.
+///
+/// ONE check for all of them, and CALLED rather than compiled — the opposite
+/// of what `contract_guard` does with a rule, on purpose. A rule is an
+/// arbitrary expression this backend has to be able to spell; a domain is a
+/// closed relation the runtime already evaluates, at the very door this guard
+/// stands in front of. Compiling a second reading of `index of` into the arm
+/// would buy nothing and could disagree with the first — and a component that
+/// abandons a transition its own compiled code passed is the worst shape that
+/// disagreement can take.
+///
+/// So the literal is emitted and `@tutuca.first_broken_domain` is asked. The
+/// sentence is composed rather than authored, which is why a `where` needs no
+/// `format` and why nothing here looks one up.
+fn E::domain_guard(self : E, pad : String, handler : String) -> String {
+  let domains = self.def.domains_src()
+  if domains == "[]" {
+    return ""
+  }
+  // `s` is the successor at this point, the same state the invariants above
+  // were just asked about. Encoded ONCE: the check reads it, the sentence
+  // reads it, and the record carries it.
+  let lines = [
+    "let domain_fields = @component.Fields::encode(s)",
+    "match @tutuca.first_broken_domain(" + domains + ", domain_fields) {",
+    "  Some(domain_broke) => {",
+    "    @tutuca.domain_failed(",
+    "      handler=" + quote(handler) + ",",
+    "      field=domain_broke.field,",
+    "      sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),",
+    "      state=(Map(domain_fields) : @tutuca.Value),",
+    "    )",
+    "    return Unchanged",
+    "  }",
+    "  None => ()",
+    "}",
+  ]
+  let b = StringBuilder()
+  for line in lines {
+    b.write_string(pad)
+    b.write_string(line)
+    b.write_char('\n')
+  }
   b.to_string()
 }
 
@@ -1576,6 +1632,23 @@ fn E::at(
     want is TInt(..) &&
     n == n.to_int().to_double() {
     return n.to_int().to_string()
+  }
+  // A nullable place is peeled HERE and nowhere else, because the two things
+  // that fill one are both decided by the place rather than by the value.
+  // `null` is the literal with no type of its own — `Value::Null` and `None`
+  // are the same absence, and only the wanted type says which spelling it
+  // gets. And a present value goes through the SAME `at` one level in, so
+  // `.n = 3` writes `Some(3)` and not `Some(3.0.to_int())`: the literal
+  // shortcut above is asked about `Int`, which is what it can answer.
+  //
+  // The recursion is also what keeps the widening honest — `Some(...)` is
+  // written only around a conversion that was already legal, so `Any` into a
+  // `String?` stays refused rather than becoming a `Some` around a guess.
+  if want is TOption(inner) {
+    if e is ELit(lit=LNull, ..) {
+      return "None"
+    }
+    return "Some(\{self.at(e, inner)})"
   }
   let (src, got) = self.expr(e)
   // An opaque value — a binding, a raw argument, another callable's answer —

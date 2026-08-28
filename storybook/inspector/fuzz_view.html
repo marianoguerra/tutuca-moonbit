@@ -34,7 +34,7 @@
     /// Where the cursor is parked, so stepping has something to point at.
     current : Bool
     /// The settled state, prebuilt as a value inspector.
-    after : Any
+    after : Component?
     open : Bool
 
     /// Two ways to dispatch, and the badge has a colour for each.
@@ -63,7 +63,7 @@
 
   /// The script, as something to scan.
   state FuzzLog {
-    rows : Array[Any]
+    rows : Array[FuzzRow]
     hasRows : Bool
     emptyHint : String
 
@@ -132,7 +132,7 @@
     unchecked : String
     hasUnchecked : Bool
     /// The shrunk reproducer, as dispatch lines.
-    reproducer : Array[Any]
+    reproducer : Array[FuzzRow]
     hasReproducer : Bool
 
     /// The five verdicts `fuzz_verdict` produces. `none` is the one before a
@@ -165,9 +165,9 @@
   }
 
   state FuzzPanel {
-    controls : Any
-    verdict : Any
-    log : Any
+    controls : FuzzControls
+    verdict : FuzzVerdict
+    log : FuzzLog
     hasRun : Bool
     /// Cursor position, 1-based for display.
     at : Int

@@ -75,6 +75,13 @@ pub(all) enum CounterReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn CounterReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> CounterReceive? {
@@ -83,7 +90,14 @@ pub fn CounterReceive::from_dispatch(
     match (name, args) {
       ("dec", []) => Dec
       ("inc", []) => Inc
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "dec" => @tutuca.bad_payload(name, "", args)
+          "inc" => @tutuca.bad_payload(name, "", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

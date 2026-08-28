@@ -3,7 +3,7 @@
     type : String
     label : String
     isOpen : Bool
-    items : Array[Any]
+    items : Array[TreeItem]
 
     /// A filesystem node is one of exactly two things, and every view here
     /// branches on nothing else. A domain rather than a rule, because a
@@ -19,7 +19,7 @@
   }
 
   state TreeRoot {
-    log : Array[Any]
+    log : Array[String]
     root : TreeItem
   }
 </script>

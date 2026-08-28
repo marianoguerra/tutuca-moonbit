@@ -70,6 +70,13 @@ pub(all) enum SelectorEntryReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SelectorEntryReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SelectorEntryReceive? {
@@ -78,7 +85,14 @@ pub fn SelectorEntryReceive::from_dispatch(
     match (name, args) {
       ("setLabel", [Str(a0)]) => SetLabel(a0)
       ("setValue", [Str(a0)]) => SetValue(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setLabel" => @tutuca.bad_payload(name, "String", args)
+          "setValue" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -265,6 +279,13 @@ pub(all) enum SelectorReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SelectorReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> SelectorReceive? {
@@ -272,7 +293,13 @@ pub fn SelectorReceive::from_dispatch(
   Some(
     match (name, args) {
       ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setSelectedValue" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -369,9 +396,9 @@ pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
 impl @component.Fields for SelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="Selector",
-    fingerprint="cd3bd82592ca418d",
+    fingerprint="57d7e12924180b89",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selectedValue", TyAny),
     ],
     view_handlers=["setSelectedValue"],
@@ -451,6 +478,13 @@ pub(all) enum EntryEditorAndSelectorReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn EntryEditorAndSelectorReceive::from_dispatch(
   d : @component.Dispatch,
 ) -> EntryEditorAndSelectorReceive? {
@@ -459,7 +493,14 @@ pub fn EntryEditorAndSelectorReceive::from_dispatch(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
       ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "onAddItem" => @tutuca.bad_payload(name, "", args)
+          "removeInItemsAt" => @tutuca.bad_payload(name, "Any", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }
@@ -569,9 +610,9 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="EntryEditorAndSelector",
-    fingerprint="cf139860993eb8fc",
+    fingerprint="baa0c9031d4d79c8",
     fields=[
-      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
     ],
     view_handlers=["onAddItem", "removeInItemsAt"],
@@ -639,12 +680,25 @@ pub(all) enum SheetReceive {
 /// A payload that does not match falls into `Unknown` rather than being
 /// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
 /// and silently truncating it would hide that.
+///
+/// It is also REPORTED. `Unknown` answers two different questions —
+/// nobody declares this name, and this name is declared here and was
+/// handed the wrong shape — and the second one is a bug in the sender
+/// that used to be indistinguishable from silence. Every arm below that
+/// can fail on a DECLARED name says so through `@tutuca.bad_payload`,
+/// which costs nothing unless a host is listening.
 pub fn SheetReceive::from_dispatch(d : @component.Dispatch) -> SheetReceive? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
       ("setTitle", [Str(a0)]) => SetTitle(a0)
-      _ => Unknown(name, args)
+      _ => {
+        match name {
+          "setTitle" => @tutuca.bad_payload(name, "String", args)
+          _ => ()
+        }
+        Unknown(name, args)
+      }
     },
   )
 }

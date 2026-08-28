@@ -1,6 +1,6 @@
 <script type="tutuca/spec">
   state BarChart {
-    values : Array[Any]
+    values : Array[Int]
 
     /// The two limits, named. A `pred` reads the state and nothing else, which
     /// is what lets it sit in a handler's header instead of at the top of its
@@ -28,19 +28,21 @@
     invariant neverEmpty
       format 'the chart lost its last bar' { (len .values) > 0 }
 
-    /// DELIBERATELY no `where values len between 1 and 9`, even though that
-    /// is exactly what the three rules above add up to.
-    ///
-    /// A domain is read BACKWARDS by the generator: declare it and `@arb`
-    /// stops drawing `setValues []` at all, and the property next door — the
-    /// one asking whether `neverEmpty` really does stand between a generated
-    /// mutator and a chart with no bars — would pass by never asking. The
-    /// clause would not make the component safer; it would make the test
-    /// that proves it safe stop testing.
-    ///
-    /// That is the trade the two halves make. Narrowing the draw is what a
-    /// `where` is FOR, and it is the wrong tool for the one field whose
-    /// out-of-domain values are the point.
+    // DELIBERATELY no `where values len between 1 and 9`, even though that is
+    // exactly what the three rules above add up to. A plain comment and not a
+    // `///` one, because a doc comment attaches to the declaration under it
+    // and there is none: what this says is about the clause that is NOT here.
+    //
+    // A domain is read BACKWARDS by the generator: declare it and `@arb` stops
+    // drawing `setValues []` at all, and the property next door — the one
+    // asking whether `neverEmpty` really does stand between a generated
+    // mutator and a chart with no bars — would pass by never asking. The
+    // clause would not make the component safer; it would make the test that
+    // proves it safe stop testing.
+    //
+    // That is the trade the two halves make. Narrowing the draw is what a
+    // `where` is FOR, and it is the wrong tool for the one field whose
+    // out-of-domain values are the point.
   }
 
   state IconGallery {

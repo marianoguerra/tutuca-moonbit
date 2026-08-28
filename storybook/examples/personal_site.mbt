@@ -194,9 +194,9 @@ fn ps_entry_comp() -> @component.Component {
       title: "?",
       description: "",
       lang: "en",
-      startYear: Null,
-      endYear: Null,
-      role: Null,
+      startYear: None,
+      endYear: None,
+      role: None,
       featured: false,
       url: "#",
       altUrls: [],
@@ -216,12 +216,12 @@ fn ps_entry_comp() -> @component.Component {
         YearDisplay =>
           Some((s, _args, _stack) => {
             match s.startYear {
-              Num(start) =>
+              Some(start) =>
                 match s.endYear {
-                  Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
-                  _ => Str("\{start.to_int()}")
+                  Some(e) => Str("\{start}-\{e}")
+                  None => Str("\{start}")
                 }
-              _ => Str("")
+              None => Str("")
             }
           })
       }
