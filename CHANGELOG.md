@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.39.1] - 2026-08-28
+
+### Fixed
+
+- **A fuzz run sent generated names that could not do anything.**
+  `@arb.mutator_dispatch_of` took its names from
+  `@component.schema_mutators` — deliberately, so it could not invent a name
+  the runtime lacks — but that table is every generated CALLABLE, and two of
+  its shapes only read. `<field>Len` and `hasIn<Field>` answer a scalar rather
+  than a successor, so they are `$`-callables a view writes as `$tabLen`, not
+  messages: the receive path takes a generated entry's result only when it is
+  `Obj(_)`, and a reader falls through to `Unhandled`.
+
+  So a run spent a share of every script on dispatches that could not move
+  anything, and reported each as a refusal badge shaped exactly like a
+  finding — noise that reads as a result. On the `tabbed-ui` story that is
+  `tabLen`, drawn beside `setTab`.
+
+  `@component.schema_writers` is the table minus those, and the split is
+  recorded where the names are installed rather than recomputed by a second
+  walk of the same fields: a second walk is a second opinion about which names
+  those are, and the whole value of the list is that it cannot disagree with
+  the table. `schema_mutators` is unchanged — the receive path and the
+  `$`-callable lookup both still want all of it.
+
+  The join guarded against names the runtime does not have. It did not guard
+  against names it has that cannot be sent, which is the other half of the same
+  question.
+
 ## [0.39.0] - 2026-08-28
 
 ### Added
@@ -5507,6 +5536,7 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.1...HEAD
+[0.39.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...v0.39.1
 [0.39.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...v0.39.0
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
