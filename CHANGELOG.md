@@ -6,6 +6,82 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-08-28
+
+### Added
+
+- **A message payload is decoded at the type it declares.** Declaring one used
+  to buy nothing: every composite payload was erased to `@tutuca.Value`, so
+  `loadDataOk(Array[Row])` and `loadDataOk(Any)` generated the same code and
+  every handler unpacked the shape by hand. The decode is now the state codec's
+  own — one rule for a payload and a field of the same declared type — so an
+  arm receives an `Array[BoardRow]`, a `Map[String, String]`, a `struct`, an
+  `enum`, a `T?` or a tuple. `Any` and `Component` are unchanged, because
+  `@tutuca.Value` is what they declare.
+
+  The objection this reverses is worth keeping: a payload ARRIVES as
+  `Array[@tutuca.Value]`, so typing one meant converting, and the only
+  converter to hand was a JSON round trip. `dec_stmts` and `to_value_src` are
+  not that — they are the halves the state codec was already written from.
+
+  **Payload types are now load-bearing.** A schema that declared a shape it
+  does not actually send was previously free; it now decodes to nothing.
+
+- **`BAD_PAYLOAD`, on the refusal channel.** `Unknown` answered two different
+  questions — nobody declares this name, and this name is declared here and was
+  handed the wrong shape — and the second is a bug in the sender that was
+  indistinguishable from silence. The decode's ANSWER is unchanged: the case
+  still falls into `Unknown`, uncoerced. It is now also SAID, carrying the
+  argument list that did not fit where a refusal normally carries the rejected
+  state — because no arm ran, and the arguments are the thing to go and look
+  at. Off until a host asks, like every other refusal.
+
+- **A guest's field domains reach the host.** `where` clauses travel in the
+  manifest as `FieldDomain`s, and `first_broken_domain` is the single function
+  the runtime's post-transition door, the guard `gen-views` weaves into a
+  generated arm, and the dynamic-component host all ask. A domain the woven
+  guard admitted and the runtime then refused would be a component abandoning a
+  transition its own compiled code called fine.
+
+### Changed
+
+- **A nullable field is writable from a `<script type="tutuca/script">`
+  block.** It could not be — not `null`, and not a present value either — so
+  every `T?` field pushed its own handlers out to MoonBit, and `Any`, which a
+  block CAN write, became the spelling people reached for instead. Both halves
+  are decided by the PLACE: `.sel = 'k'` compiles to `Some("k")` and
+  `.sel = null` to `None`. Widening stays honest — `Some(…)` wraps only a
+  conversion that was already legal, so `Any` into a `String?` is still
+  refused.
+
+  There is still no `clearX`, and there does not need to be: `resetX` writes
+  the field's zero, and a nullable field's zero is `None`.
+
+- **The corpus declares what its collections hold.** ~90 `Array[Any]` and
+  `Map[String, Any]` fields across the storybook, the inspector, the playground
+  examples, the dyncomp UI and the tutucard examples became `Array[Item]`,
+  `Array[Component[Entry]]`, `Array[String]`, `Map[String, DseEntry]`,
+  `Component?`, `Int?` and one `struct`. A field type may name a SIBLING
+  `state`, and naming it is what lets the checker read an `@each` body against
+  that component's own schema; `Array[Component]` over a mixed list is not
+  checked but does change fuzzing, since `@arb` draws `Any` as arbitrary junk
+  and a component slot as its zero. Three `Any`s remain, and each is one on
+  purpose.
+
+### Fixed
+
+- **A nullable field under a relation never drew its own empty.**
+  `domain_holds` admits `Null` under every relation — each guards on the shape
+  it reads — but a domain-derived draw only produces the shape it inverted, so
+  `sel : String?` under `where sel is key of .byKey` was never generated empty:
+  the one state the `?` exists for. Fixed once in `field_gen` rather than per
+  relation, at the same 1:2 ratio as the unconstrained `TOption` draw, so
+  adding a `where` does not quietly change how often a field is empty.
+
+  `or none` is not the fix and was never about optionality: it admits SENTINEL
+  INTEGERS — `-1`, or `0` over an empty list — which is a convention no type
+  can state, and why only `index of` has it.
+
 ## [0.39.2] - 2026-08-28
 
 ### Fixed
@@ -5568,7 +5644,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.2...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.40.0...HEAD
+[0.40.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.2...v0.40.0
 [0.39.2]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.1...v0.39.2
 [0.39.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...v0.39.1
 [0.39.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.38.0...v0.39.0
