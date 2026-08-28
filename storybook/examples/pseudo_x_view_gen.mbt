@@ -77,6 +77,10 @@ impl @component.Fields for TableRowState with fn schema() {
       @component.FieldInfo::new("qty", TyInt),
       @component.FieldInfo::new("price", TyFloat),
     ],
+    domains=[
+      { field: "qty", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "price", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }

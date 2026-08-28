@@ -14,9 +14,13 @@ pub const MAX_DEPTH : Int = 3
 
 pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @gen.Gen[@component.Dispatch]?
 
-pub fn mutator_args(@statedef.StateDef, depth? : Int) -> Map[String, @gen.Gen[Array[@core.Value]]]
+pub fn domain_deps(@core.Domain) -> Array[String]
 
-pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+pub fn implied_domains(Array[@core.FieldDomain], String) -> Array[@core.Domain]
+
+pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @gen.Gen[Array[@core.Value]]]
+
+pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[@component.Dispatch]?
 
 pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@component.Dispatch]?
 
@@ -26,7 +30,11 @@ pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @gen.Gen[Int], dep
 
 pub fn shrink_script(Array[@component.Dispatch]) -> Iter[Array[@component.Dispatch]]
 
+pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @gen.Gen[Int]?
+
 pub fn state_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[Map[String, @core.Value]]
+
+pub fn value_in_domain(@core.Domain, Map[String, @core.Value]) -> @gen.Gen[@core.Value]?
 
 pub fn value_of(@statedef.StateDef, @statedef.StateTy, depth? : Int) -> @gen.Gen[@core.Value]
 

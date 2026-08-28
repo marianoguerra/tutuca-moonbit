@@ -9,11 +9,36 @@
     before : Any
     after : Any
     hasAfter : Bool
+
+    /// `ObserveMatch::label` produces these two and nothing else.
+    where matched is one of ["exact", "none"]
+
+    /// A dispatch is addressed to a name; a record without one is a row with
+    /// nothing to say what happened.
+    where name is nonempty
+
+    /// `after` is absent — not null — when the handler made no change, and
+    /// that distinction is what the whole no-op path turns on. The flag has
+    /// to mean it.
+    invariant hasAfterTracksAfter
+      format 'hasAfter is set and there is no successor state on the row' {
+        .hasAfter implies (not (null? .after))
+      }
   }
 
   state ActivityLog {
     events : Array[Any]
     hasEvents : Bool
+
+    /// Newest-first and CAPPED — `appendEntry` drops the tail, and the cap
+    /// is a property of the log rather than of the handler that keeps it.
+    where events len <= 50
+
+    /// The flag the empty hint hangs off.
+    invariant hasEventsTracksEvents
+      format $'hasEvents says {.hasEvents} for {len .events} events' {
+        .hasEvents is ((len .events) > 0)
+      }
   }
 
   /// Prepends one entry and caps the list. Raised from a host's observer

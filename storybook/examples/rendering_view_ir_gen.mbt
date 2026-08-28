@@ -30,6 +30,8 @@ pub let push_view_spec_source : String =
   #|    items : Array[Any]
   #|    query : String
   #|    view : String
+  #|
+  #|    where view is one of ["main", "edit"]
   #|  }
   #|
   #|  state SeqItemAccess {
@@ -37,12 +39,23 @@ pub let push_view_spec_source : String =
   #|    byIndex : Array[Any]
   #|    currentKey : Any
   #|    currentIndex : Int
+  #|
+  #|    where currentIndex is index of .byIndex or none
+  #|    where currentKey   is key of .byKey
   #|  }
   #|
   #|  state Pagination {
   #|    items : Array[Any]
   #|    page : Int
   #|    pageSize : Int
+  #|
+  #|    where pageSize between 1 and 100
+  #|    where page >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.page} is past the last one' {
+  #|        (.page is 0) or ((.page * .pageSize) < (len .items))
+  #|      }
   #|  }
 
 ///|
@@ -447,6 +460,20 @@ fn pagination_inline_update(
           s.page.to_double() - 1.0
         }).to_int(),
       }
+      guard (Num(s.page.to_double()) : @tutuca.Value) ==
+        (Num(0.0) : @tutuca.Value) ||
+        s.page.to_double() * s.pageSize.to_double() <
+        s.items.length().to_double() else {
+        @tutuca.invariant_failed(
+          handler="prev",
+          pred="pageExists",
+          sentence="page " +
+            (Num(s.page.to_double()) : @tutuca.Value).to_display_string() +
+            " is past the last one",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("next", _args) => {
@@ -461,10 +488,49 @@ fn pagination_inline_update(
           (s.items.length().to_double() - 1.0) / d0
         }).to_int(),
       }
+      guard (Num(s.page.to_double()) : @tutuca.Value) ==
+        (Num(0.0) : @tutuca.Value) ||
+        s.page.to_double() * s.pageSize.to_double() <
+        s.items.length().to_double() else {
+        @tutuca.invariant_failed(
+          handler="next",
+          pred="pageExists",
+          sentence="page " +
+            (Num(s.page.to_double()) : @tutuca.Value).to_display_string() +
+            " is past the last one",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn pagination_compute_pageExists(
+  s : PaginationState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.page.to_double()) : @tutuca.Value) == (Num(0.0) : @tutuca.Value) ||
+      s.page.to_double() * s.pageSize.to_double() < s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn pagination_inline_compute() -> Map[
+  String,
+  (PaginationState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": pagination_compute_pageExists }
 }
 
 ///|
@@ -522,14 +588,20 @@ pub fn pagination_component(
         answered => answered
       }
     },
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]),
-          PaginationMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]),
+            PaginationMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in pagination_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

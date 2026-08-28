@@ -36,6 +36,14 @@ pub let schema_scalar_spec_source : String =
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state SchemaObject {
@@ -48,6 +56,14 @@ pub let schema_scalar_spec_source : String =
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state SchemaArray {
@@ -60,6 +76,14 @@ pub let schema_scalar_spec_source : String =
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state SchemaEnum {
@@ -72,6 +96,14 @@ pub let schema_scalar_spec_source : String =
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state SchemaCombinator {
@@ -84,6 +116,14 @@ pub let schema_scalar_spec_source : String =
   #|    title : String
   #|    description : String
   #|    deprecated : Bool
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state SchemaConst {
@@ -109,6 +149,8 @@ pub let schema_scalar_spec_source : String =
   #|
   #|  state SchemaRef {
   #|    target : String
+  #|
+  #|    where target is nonempty
   #|  }
 
 ///|
@@ -277,6 +319,33 @@ pub fn schema_scalar_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_scalar_compute_pageExists(
+  s : SchemaScalarState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_scalar_inline_compute() -> Map[
+  String,
+  (SchemaScalarState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": schema_scalar_compute_pageExists }
+}
+
+///|
 /// The SchemaScalar component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SchemaScalarState` states them
@@ -322,24 +391,30 @@ pub fn schema_scalar_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[SchemaScalarMethod]),
-          SchemaScalarMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[SchemaScalarMethod]),
+            SchemaScalarMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_scalar_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -533,6 +608,33 @@ pub fn schema_object_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_object_compute_pageExists(
+  s : SchemaObjectState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_object_inline_compute() -> Map[
+  String,
+  (SchemaObjectState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": schema_object_compute_pageExists }
+}
+
+///|
 /// The SchemaObject component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SchemaObjectState` states them
@@ -578,24 +680,30 @@ pub fn schema_object_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[SchemaObjectMethod]),
-          SchemaObjectMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[SchemaObjectMethod]),
+            SchemaObjectMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_object_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -789,6 +897,33 @@ pub fn schema_array_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_array_compute_pageExists(
+  s : SchemaArrayState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_array_inline_compute() -> Map[
+  String,
+  (SchemaArrayState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": schema_array_compute_pageExists }
+}
+
+///|
 /// The SchemaArray component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SchemaArrayState` states them
@@ -834,24 +969,30 @@ pub fn schema_array_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[SchemaArrayMethod]),
-          SchemaArrayMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[SchemaArrayMethod]),
+            SchemaArrayMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_array_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -1040,6 +1181,33 @@ pub fn schema_enum_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_enum_compute_pageExists(
+  s : SchemaEnumState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_enum_inline_compute() -> Map[
+  String,
+  (SchemaEnumState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": schema_enum_compute_pageExists }
+}
+
+///|
 /// The SchemaEnum component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SchemaEnumState` states them
@@ -1085,24 +1253,30 @@ pub fn schema_enum_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[SchemaEnumMethod]),
-          SchemaEnumMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[SchemaEnumMethod]),
+            SchemaEnumMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_enum_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -1295,6 +1469,33 @@ pub fn schema_combinator_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_combinator_compute_pageExists(
+  s : SchemaCombinatorState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_combinator_inline_compute() -> Map[
+  String,
+  (SchemaCombinatorState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": schema_combinator_compute_pageExists }
+}
+
+///|
 /// The SchemaCombinator component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SchemaCombinatorState` states them
@@ -1340,24 +1541,30 @@ pub fn schema_combinator_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[SchemaCombinatorMethod]),
-          SchemaCombinatorMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[SchemaCombinatorMethod]),
+            SchemaCombinatorMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_combinator_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

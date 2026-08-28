@@ -262,6 +262,9 @@ impl @component.Fields for RequestExampleState with fn schema() {
     ],
     view_handlers=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
     receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
+    methods=["notFailedWhileLoading"],
+    invariants=["notFailedWhileLoading"],
+    domains=[{ field: "view", domain: DOneOf(["main", "edit"]), }],
     view_names=["main"],
   )
 }

@@ -128,6 +128,7 @@ impl @component.Fields for StatusState with fn schema() {
       @component.FieldInfo::new("count", TyInt),
     ],
     receives=["flash", "clear"],
+    domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],
   )
 }
@@ -505,6 +506,10 @@ pub fn TreeItemMsg::from_dispatch(d : @component.Dispatch) -> TreeItemMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: filesAreLeaves.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum TreeItemMethod {
   AreChildsVisible
 } derive(Eq, @debug.Debug)
@@ -534,7 +539,9 @@ impl @component.Fields for TreeItemState with fn schema() {
       @component.FieldInfo::new("items", TyList(TyAny)),
     ],
     view_handlers=["onItemClick"],
-    methods=["areChildsVisible"],
+    methods=["areChildsVisible", "filesAreLeaves"],
+    invariants=["filesAreLeaves"],
+    domains=[{ field: "type", domain: DOneOf(["file", "dir"]), }],
     view_names=["main"],
   )
 }

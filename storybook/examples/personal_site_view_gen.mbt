@@ -73,6 +73,10 @@ impl @component.Fields for AltUrlState with fn schema() {
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("url", TyText),
     ],
+    domains=[
+      { field: "label", domain: DNonEmpty, },
+      { field: "url", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }
@@ -243,6 +247,11 @@ impl @component.Fields for PsEntryState with fn schema() {
       @component.FieldInfo::new("categories", TyList(TyAny)),
     ],
     methods=["isSpanish", "langFlag", "yearDisplay"],
+    domains=[
+      { field: "lang", domain: DOneOf(["en", "es"]), },
+      { field: "title", domain: DNonEmpty, },
+      { field: "url", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }

@@ -293,6 +293,13 @@ impl @component.Fields for FuzzRowState with fn schema() {
       @component.FieldInfo::new("open", TyBool),
     ],
     view_handlers=["toggle"],
+    methods=["breakNamesARule", "refusalNamesSomething"],
+    invariants=["breakNamesARule", "refusalNamesSomething"],
+    domains=[
+      { field: "verb", domain: DOneOf(["send", "intent"]), },
+      { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }
@@ -376,6 +383,8 @@ impl @component.Fields for FuzzLogState with fn schema() {
       @component.FieldInfo::new("hasRows", TyBool),
       @component.FieldInfo::new("emptyHint", TyText),
     ],
+    methods=["hasRowsTracksRows"],
+    invariants=["hasRowsTracksRows"],
     view_names=["main"],
   )
 }
@@ -667,6 +676,11 @@ impl @component.Fields for FuzzControlsState with fn schema() {
     view_handlers=[
       "burst", "play", "reset", "setSeed", "setSource", "setSteps", "step", "stop",
     ],
+    methods=["hintExplainsTheDisabledButton", "playingNeedsAPlan"],
+    invariants=["hintExplainsTheDisabledButton", "playingNeedsAPlan"],
+    domains=[
+      { field: "source", domain: DOneOf(["mutators", "declared", "either"]), },
+    ],
     view_names=["main"],
   )
 }
@@ -918,6 +932,19 @@ impl @component.Fields for FuzzVerdictState with fn schema() {
       @component.FieldInfo::new("hasReproducer", TyBool),
     ],
     view_handlers=["shrink"],
+    methods=[
+      "findingsNameTheirRule", "hasReproducerTracksReproducer", "hasUncheckedTracksUnchecked",
+    ],
+    invariants=[
+      "findingsNameTheirRule", "hasReproducerTracksReproducer", "hasUncheckedTracksUnchecked",
+    ],
+    domains=[
+      {
+        field: "kind",
+        domain: DOneOf(["none", "held", "broke", "disagreed", "stuck"]),
+      },
+      { field: "at", domain: DCompare(op=DGe, rhs=DLit(-1)), },
+    ],
     view_names=["main"],
   )
 }
@@ -1016,6 +1043,12 @@ impl @component.Fields for FuzzPanelState with fn schema() {
       @component.FieldInfo::new("hasRun", TyBool),
       @component.FieldInfo::new("at", TyInt),
       @component.FieldInfo::new("total", TyInt),
+    ],
+    methods=["atWithinTotal"],
+    invariants=["atWithinTotal"],
+    domains=[
+      { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )

@@ -9,6 +9,22 @@
     title : String
     description : String
     deprecated : Bool
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state SchemaObject {
@@ -21,6 +37,22 @@
     title : String
     description : String
     deprecated : Bool
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state SchemaArray {
@@ -33,6 +65,22 @@
     title : String
     description : String
     deprecated : Bool
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state SchemaEnum {
@@ -45,6 +93,22 @@
     title : String
     description : String
     deprecated : Bool
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state SchemaCombinator {
@@ -57,6 +121,22 @@
     title : String
     description : String
     deprecated : Bool
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state SchemaConst {
@@ -82,6 +162,10 @@
 
   state SchemaRef {
     target : String
+
+    /// A `$ref` is a pointer, and an empty one points at the whole document
+    /// — which renders as a node claiming to be its own parent.
+    where target is nonempty
   }
 </script>
 

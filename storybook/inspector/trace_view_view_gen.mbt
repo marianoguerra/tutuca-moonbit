@@ -296,6 +296,18 @@ impl @component.Fields for TraceRowState with fn schema() {
     ],
     view_handlers=["toggle"],
     receives=["toggle"],
+    methods=["hasWalkTracksWalk"],
+    invariants=["hasWalkTracksWalk"],
+    domains=[
+      {
+        field: "verb",
+        domain: DOneOf(["send", "intent", "offered", "answer", "refused"]),
+      },
+      { field: "seq", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "walk", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "depth", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }
@@ -457,6 +469,9 @@ impl @component.Fields for TraceLogState with fn schema() {
       @component.FieldInfo::new("emptyHint", TyText),
     ],
     receives=["setTurn", "showAllTurns"],
+    methods=["hasRowsTracksRows"],
+    invariants=["hasRowsTracksRows"],
+    domains=[{ field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],
   )
 }
@@ -588,6 +603,13 @@ impl @component.Fields for TraceHeaderState with fn schema() {
       @component.FieldInfo::new("relocatedFrom", TyText),
       @component.FieldInfo::new("isRelocated", TyBool),
       @component.FieldInfo::new("compacted", TyBool),
+    ],
+    methods=["inputsAreEvents", "isRelocatedTracksFrom", "turnsAreEvents"],
+    invariants=["inputsAreEvents", "isRelocatedTracksFrom", "turnsAreEvents"],
+    domains=[
+      { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "inputs", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -817,6 +839,10 @@ impl @component.Fields for TracePlaceState with fn schema() {
     ],
     view_handlers=["pickPlace"],
     receives=["pickPlace"],
+    domains=[
+      { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "depth", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }
@@ -918,6 +944,8 @@ impl @component.Fields for TracePlacesState with fn schema() {
       @component.FieldInfo::new("heading", TyText),
       @component.FieldInfo::new("emptyHint", TyText),
     ],
+    methods=["hasPlacesTracksPlaces"],
+    invariants=["hasPlacesTracksPlaces"],
     view_names=["main"],
   )
 }
@@ -1215,6 +1243,13 @@ impl @component.Fields for RecorderBarState with fn schema() {
       "setScope", "openPicker", "closePicker", "startRecording", "stopRecording",
       "clearRecording",
     ],
+    methods=["turnsAreEvents"],
+    invariants=["turnsAreEvents"],
+    domains=[
+      { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+      { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }
@@ -1510,6 +1545,13 @@ impl @component.Fields for TracePanelState with fn schema() {
     ],
     view_handlers=["setTab", "toggleSelecting"],
     receives=["setTab", "setAt", "toggleSelecting"],
+    methods=["atWithinTotal", "showTraceNeedsATrace"],
+    invariants=["atWithinTotal", "showTraceNeedsATrace"],
+    domains=[
+      { field: "tab", domain: DOneOf(["record", "trace", "pick"]), },
+      { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }

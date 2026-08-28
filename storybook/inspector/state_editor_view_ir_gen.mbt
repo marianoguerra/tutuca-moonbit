@@ -35,6 +35,16 @@ pub let state_editor_row_spec_source : String =
   #|    flag : Bool
   #|    readonly : String
   #|    editable : Bool
+  #|
+  #|    where kind is one of ["text", "num", "bool", "readonly"]
+  #|
+  #|    where name is nonempty
+  #|    where type is nonempty
+  #|
+  #|    invariant editableTracksKind
+  #|      format $'a {.kind} row says editable is {.editable}' {
+  #|        .editable is (.kind is not 'readonly')
+  #|      }
   #|  }
   #|
   #|  state StateEditor {
@@ -158,6 +168,34 @@ pub fn state_editor_row_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant editableTracksKind` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn state_editor_row_compute_editableTracksKind(
+  s : StateEditorRowState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.editable) : @tutuca.Value) ==
+      (
+        Bool(
+          !((Str(s.kind) : @tutuca.Value) == (Str("readonly") : @tutuca.Value)),
+        ) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn state_editor_row_inline_compute() -> Map[
+  String,
+  (StateEditorRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "editableTracksKind": state_editor_row_compute_editableTracksKind }
+}
+
+///|
 /// The StateEditorRow component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `StateEditorRowState` states them
@@ -193,6 +231,7 @@ pub fn state_editor_row_component(
     common_style~,
     global_style~,
     update?,
+    compute=state_editor_row_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

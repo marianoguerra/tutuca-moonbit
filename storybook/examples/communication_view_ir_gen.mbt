@@ -29,6 +29,8 @@ pub let status_spec_source : String =
   #|  state Status {
   #|    message : String
   #|    count : Int
+  #|
+  #|    where count >= 0
   #|  }
   #|
   #|  handle Status {
@@ -56,6 +58,13 @@ pub let status_spec_source : String =
   #|    label : String
   #|    isOpen : Bool
   #|    items : Array[Any]
+  #|
+  #|    where type is one of ["file", "dir"]
+  #|
+  #|    invariant filesAreLeaves
+  #|      format $'a file cannot hold {len .items} children' {
+  #|        (.type is 'file') implies ((len .items) is 0)
+  #|      }
   #|  }
   #|
   #|  state TreeRoot {
@@ -360,6 +369,32 @@ pub fn tree_item_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant filesAreLeaves` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn tree_item_compute_filesAreLeaves(
+  s : TreeItemState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !((Str(s.type_) : @tutuca.Value) == (Str("file") : @tutuca.Value)) ||
+      (Num(s.items.length().to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn tree_item_inline_compute() -> Map[
+  String,
+  (TreeItemState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "filesAreLeaves": tree_item_compute_filesAreLeaves }
+}
+
+///|
 /// The TreeItem component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `TreeItemState` states them
@@ -400,14 +435,20 @@ pub fn tree_item_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([AreChildsVisible] : Array[TreeItemMethod]),
-          TreeItemMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            ([AreChildsVisible] : Array[TreeItemMethod]),
+            TreeItemMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in tree_item_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

@@ -27,6 +27,11 @@ reading a handler.
 | `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
 | `provide` / `lookup` — the wiring | `compute` — a `$name` a view reads |
 | `pred`, `invariant` — the rules it keeps | — |
+| `where` — the domains its fields are drawn from | — |
+
+A `where` sits beside them because it is the same kind of statement about the
+state, narrowed to one field — and because it is the half a generator can read
+BACKWARDS, which is what separates it from a rule. See *Field domains* below.
 
 A rule sits in the spec block because it has no statements, no effects and no
 arguments: it is a fact about the state, not a step. A `compute` stays in the
@@ -570,6 +575,122 @@ Elsewhere, three things a body may otherwise say:
 - **a coercion `num` cannot make** — `num` converts a number, so a number
   arriving inside an `Any` (a file input's metadata `Map`, say) is unpacked in
   MoonBit. `str` renders any value and is not affected.
+
+## Field domains (`where`)
+
+A type says `currentIndex` holds an `Int`, which is true and useless. What is
+actually true is `0 <= currentIndex < len(items)` — a relation between two
+fields, which no type can state. A `where` clause states it:
+
+```html
+<script type="tutuca/spec">
+  state Gallery {
+    items        : Array[String]
+    entries      : Map[String, String]
+    currentIndex : Int
+    currentKey   : String
+    count        : Int
+
+    where currentIndex is index of .items
+    where currentKey   is key of .entries
+    where count >= 0
+  }
+</script>
+
+<template>
+  <div>
+    <span @text=".currentIndex"></span>
+    <b @text=".currentKey"></b>
+  </div>
+</template>
+```
+
+Several clauses may name one field and they **conjoin** (`where n >= 0` beside
+`where n <= 100`). Unlike a rule, a `where` has no name, so there is nothing
+for two of them to collide over.
+
+**Prefer the type where the type says it.** `where count >= 0` is already
+spelled `count : UInt`, which is checked on decode and needs no clause. Reach
+for `where` when the bound is tighter than a width (`between 0 and 100`) or
+when the relation mentions another field — which is the case no type covers.
+
+### The vocabulary
+
+It is **closed**, and that is the design rather than a first cut. Every clause
+below can be read in two directions: forwards to reject a value, and backwards
+to produce one. That second direction is the whole point — see *Why not an
+invariant* below.
+
+| you mean | you write |
+| -------- | --------- |
+| a position in a list | `where i is index of .items` |
+| …or nothing selected | `where i is index of .items or none` |
+| a key the map holds | `where k is key of .entries` |
+| a member of a set | `where t is member of .tags` |
+| a set within a set | `where some is subset of .allTags` |
+| an ordering, vs. a literal or another field | `where n >= 0`, `where hi >= .lo` (`>=` `>` `<=` `<`) |
+| a range, inclusive | `where n between 0 and 100` |
+| a closed set of strings | `where level is one of ["debug", "info"]` |
+| …or an enum's cases | `where level is one of Priority` |
+| a collection's length | `where items len <= 100`, `where tags len between 1 and 10` |
+| never empty | `where items is nonempty` |
+
+Anything outside this list is a `pred` or an `invariant`. A clause the block
+cannot state is refused by name, with the vocabulary in the message.
+
+### What a `where` does at runtime
+
+Two doors, and they catch different things:
+
+| when | what it covers |
+| --- | --- |
+| at the field write | the field being written — `setCurrentIndex 99` is turned down and the instance is unchanged |
+| after the transition | every field — including `setItems []`, which says nothing about `currentIndex` and leaves it stranded |
+
+Either way the transition is **abandoned** and a `Refusal` is raised with code
+`OUT_OF_RANGE`, carrying the **field** where a rule's refusal carries its name.
+
+There is no `format`. A rule needs a hand-written sentence because an arbitrary
+boolean cannot say why it failed; a relation knows what it wanted and what it
+got, so the sentence is composed:
+
+```
+`currentIndex` is 99, which is not an index of `items` (3 items)
+```
+
+**Unknown is not wrong**, the same rule an invariant follows. A clause whose
+target field holds something it cannot read admits the value rather than
+refusing it — a partially understood schema must not become a component that
+refuses every write.
+
+### Why not an invariant
+
+`invariant inRange { .currentIndex >= 0 and .currentIndex < $itemsLen }` checks
+exactly the same thing, and for checking alone it is the right tool. The
+difference is what a **generator** can do with each.
+
+A rule is an arbitrary boolean, so a generator can only filter: draw, ask,
+discard. For `0 <= i < len(items)` over a three-element list that lands about
+one time in 2^30, so the filter gives up rather than narrowing — and the fuzzer
+spends its whole run on states no interaction could reach.
+
+A `where` is a named relation, so the same declaration is a **range to draw
+from**. `statedef/arb` draws a constrained field after the fields its domain
+names, and every draw is in range. That is the reason the vocabulary is closed:
+a relation that cannot be inverted belongs in a rule.
+
+One inference comes free and is worth knowing: `where i is index of .items`
+with no `or none` says an index always exists, so the generator never produces
+an empty `items`. Write `or none` when the empty list is a real state.
+
+### What it does NOT do
+
+- **It is not part of the fingerprint.** A domain narrows which values are
+  legal; it does not change how a stored one is read. Tightening a `where`
+  costs what tightening an `invariant` costs — nothing.
+- **A cycle is refused** at build time (`where a >= .b` beside `where b >= .a`),
+  because a field is generated after the fields its domain names and a cycle
+  has no such order.
 
 ## Contracts (`requires` / `ensures` / `invariant`)
 

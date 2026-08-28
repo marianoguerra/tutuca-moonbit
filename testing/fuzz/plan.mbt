@@ -24,7 +24,14 @@ pub struct Plan {
   rules : @arb.Rules
   /// One dispatch, drawn from the chosen bucket. None when the component
   /// declares nothing to draw from: no fields to mutate and no messages.
+  ///
+  /// State-INDEPENDENT: built once, from the declaration alone. It is what
+  /// `script` samples and what a component with no `where` needs; `next_at`
+  /// rebuilds a state-aware one per step, which is why the two inputs it needs
+  /// are kept below rather than discarded after this was made.
   one : @gen.Gen[@component.Dispatch]?
+  source : Source
+  depth : Int
 }
 
 ///|
@@ -84,7 +91,9 @@ pub fn Plan::of_component(
     component: name,
     def,
     rules: @arb.rules_of(def),
-    one: dispatch_gen(def, source, depth),
+    one: dispatch_gen(def, source, depth, Map([])),
+    source,
+    depth,
   })
 }
 
@@ -94,14 +103,18 @@ fn dispatch_gen(
   def : @statedef.StateDef,
   source : Source,
   depth : Int,
+  /// The fields as they stand, for a `set<Field>` whose domain is relative to
+  /// them. Empty means "no state in hand", which is what the up-front build
+  /// passes and which draws exactly what it always did.
+  state : Map[String, @tutuca.Value],
 ) -> @gen.Gen[@component.Dispatch]? {
   match source {
-    Mutators => @arb.mutator_dispatch_of(def, depth~)
+    Mutators => @arb.mutator_dispatch_of(def, depth~, state~)
     Declared(bucket) => @arb.dispatch_of(def, bucket~, depth~)
     Either(bucket) =>
       match
         (
-          @arb.mutator_dispatch_of(def, depth~),
+          @arb.mutator_dispatch_of(def, depth~, state~),
           @arb.dispatch_of(def, bucket~, depth~),
         ) {
         (Some(m), Some(d)) => Some(@gen.one_of([m, d]))
@@ -129,6 +142,60 @@ pub fn Plan::script(
   guard self.one is Some(one) else { return [] }
   guard steps > 0 else { return [] }
   one.array_with_size(steps).sample(seed~)
+}
+
+///|
+/// The dispatch to send NEXT, drawn against the state the component is in.
+///
+/// The state-aware half of `script`, and the reason it exists: a domain is a
+/// relation between fields, so `setCurrentIndex` cannot be drawn in range
+/// until `items` has a length — and `script` samples the whole run before the
+/// first dispatch, when no field has a value yet.
+///
+/// Still addressed entirely by `(component, source, seed, steps)`: the seed
+/// for step `i` is derived from the run's seed and `i`, so the same four
+/// values redraw the identical run. What changed is only WHEN each step is
+/// drawn, not whether it is reproducible.
+///
+/// `None` when the component has nothing to draw from, exactly as `script`
+/// answers with an empty array.
+pub fn Plan::next_at(
+  self : Plan,
+  state : Map[String, @tutuca.Value],
+  seed~ : UInt64,
+  step~ : Int,
+) -> @component.Dispatch? {
+  guard self.one is Some(_) else { return None }
+  guard dispatch_gen(self.def, self.source, self.depth, state) is Some(g) else {
+    return None
+  }
+  Some(g.sample(seed=step_seed(seed, step)))
+}
+
+///|
+/// Whether drawing against the live state can produce anything `script` could
+/// not.
+///
+/// False for the great majority of components, and a caller that asks first
+/// keeps the cheap path: with no `where` in the block, a per-step draw and a
+/// sampled script are the same dispatches at more cost.
+pub fn Plan::state_aware(self : Plan) -> Bool {
+  !self.def.wheres.is_empty()
+}
+
+///|
+/// The seed for one step of a run.
+///
+/// SplitMix64's finalizer over `seed + i * GOLDEN`, written out rather than
+/// depended on: the property wanted is only that consecutive steps get
+/// unrelated streams, and `seed + i` does not give that — `@gen.Gen`s built
+/// from neighbouring seeds draw visibly similar values, which would make step
+/// three a near-copy of step two.
+fn step_seed(seed : UInt64, step : Int) -> UInt64 {
+  let mut z = seed + step.to_uint64() * 0x9E3779B97F4A7C15UL
+  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL
+  z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL
+  z ^ (z >> 31)
 }
 
 ///|

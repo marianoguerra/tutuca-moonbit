@@ -7,6 +7,11 @@
     personalSite : Component[Root]
     visualWasm : Component[Module]
     dnd : Component
+
+    /// Six tabs, six panes, and a seventh name would render a page with
+    /// nothing on it — `setActiveSection` is generated, so this is the only
+    /// place the closed set exists.
+    where activeSection is one of ["todo", "json", "tree", "personalSite", "dnd", "visualWasm"]
   }
 </script>
 

@@ -46,6 +46,11 @@ pub let spec_field_spec_source : String =
   #|    source : String
   #|    format : String
   #|    doc : String
+  #|
+  #|    where kind is one of ["pred", "invariant"]
+  #|
+  #|    where name is nonempty
+  #|    where source is nonempty
   #|  }
   #|
   #|  state SpecDoc {
@@ -58,6 +63,11 @@ pub let spec_field_spec_source : String =
   #|    hasSpec : Bool
   #|    hint : String
   #|    note : String
+  #|
+  #|    invariant hintExplainsTheEmptyView
+  #|      format 'there is no declaration to show, and the view does not say why' {
+  #|        (not .hasSpec) implies ((len .hint) > 0)
+  #|      }
   #|  }
   #|
   #|  handle SpecViewer {
@@ -72,6 +82,16 @@ pub let spec_field_spec_source : String =
   #|    hasSource : Bool
   #|    hint : String
   #|    note : String
+  #|
+  #|    invariant hasSourceTracksSource
+  #|      format 'hasSource and the source disagree' {
+  #|        .hasSource is ((len .source) > 0)
+  #|      }
+  #|
+  #|    invariant hintExplainsTheEmptySource
+  #|      format 'there is no block to show, and the view does not say why' {
+  #|        (not .hasSource) implies ((len .hint) > 0)
+  #|      }
   #|  }
 
 ///|
@@ -506,6 +526,27 @@ pub fn spec_viewer_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hintExplainsTheEmptyView` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn spec_viewer_compute_hintExplainsTheEmptyView(
+  s : SpecViewerState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!(!s.hasSpec) || s.hint.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn spec_viewer_inline_compute() -> Map[
+  String,
+  (SpecViewerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hintExplainsTheEmptyView": spec_viewer_compute_hintExplainsTheEmptyView }
+}
+
+///|
 /// The SpecViewer component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SpecViewerState` states them
@@ -536,6 +577,7 @@ pub fn spec_viewer_component(
     common_style~,
     global_style~,
     update?,
+    compute=spec_viewer_inline_compute(),
     slots~,
     slot_args~,
     provide~,
@@ -597,6 +639,45 @@ pub fn spec_source_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hasSourceTracksSource` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn spec_source_compute_hasSourceTracksSource(
+  s : SpecSourceState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasSource) : @tutuca.Value) ==
+      (Bool(s.source.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// `invariant hintExplainsTheEmptySource` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn spec_source_compute_hintExplainsTheEmptySource(
+  s : SpecSourceState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!(!s.hasSource) || s.hint.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn spec_source_inline_compute() -> Map[
+  String,
+  (SpecSourceState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "hasSourceTracksSource": spec_source_compute_hasSourceTracksSource,
+    "hintExplainsTheEmptySource": spec_source_compute_hintExplainsTheEmptySource,
+  }
+}
+
+///|
 /// The SpecSource component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SpecSourceState` states them
@@ -627,6 +708,7 @@ pub fn spec_source_component(
     common_style~,
     global_style~,
     update?,
+    compute=spec_source_inline_compute(),
     slots~,
     slot_args~,
     provide~,

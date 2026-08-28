@@ -342,6 +342,7 @@ impl @component.Fields for NestedStateState with fn schema() {
       @component.FieldInfo::new("size", TyTuple([TyInt, TyInt])),
     ],
     view_handlers=["bumpPriority", "toggleLabel"],
+    domains=[{ field: "title", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }

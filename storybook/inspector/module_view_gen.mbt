@@ -307,6 +307,7 @@ impl @component.Fields for RichSampleState with fn schema() {
     receives=["ping", "onData"],
     intents=["onChild"],
     methods=["double", "label"],
+    domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main", "compact"],
   )
 }
@@ -515,6 +516,7 @@ impl @component.Fields for SampleCardState with fn schema() {
     ],
     view_handlers=["bump"],
     methods=["label"],
+    domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],
   )
 }

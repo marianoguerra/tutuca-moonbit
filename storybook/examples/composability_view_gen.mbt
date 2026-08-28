@@ -222,6 +222,14 @@ impl @component.Fields for ComposabilityState with fn schema() {
       @component.FieldInfo::new("dnd", TyComp(None)),
     ],
     view_handlers=["setActiveSection"],
+    domains=[
+      {
+        field: "activeSection",
+        domain: DOneOf([
+          "todo", "json", "tree", "personalSite", "dnd", "visualWasm",
+        ]),
+      },
+    ],
     ids=[
       "tab-dnd", "tab-json", "tab-personal-site", "tab-todo", "tab-tree", "tab-visual-wasm",
     ],

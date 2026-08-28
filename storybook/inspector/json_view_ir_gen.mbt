@@ -53,6 +53,14 @@ pub let json_null_spec_source : String =
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state JsonObject {
@@ -60,6 +68,14 @@ pub let json_null_spec_source : String =
   #|    isExpanded : Bool
   #|    itemsPerPage : Int
   #|    currentPage : Int
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state JsonProperty {
@@ -617,6 +633,33 @@ pub fn json_array_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn json_array_compute_pageExists(
+  s : JsonArrayState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn json_array_inline_compute() -> Map[
+  String,
+  (JsonArrayState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": json_array_compute_pageExists }
+}
+
+///|
 /// The JsonArray component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `JsonArrayState` states them
@@ -662,24 +705,30 @@ pub fn json_array_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[JsonArrayMethod]),
-          JsonArrayMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[JsonArrayMethod]),
+            JsonArrayMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in json_array_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -818,6 +867,33 @@ pub fn json_object_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn json_object_compute_pageExists(
+  s : JsonObjectState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn json_object_inline_compute() -> Map[
+  String,
+  (JsonObjectState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": json_object_compute_pageExists }
+}
+
+///|
 /// The JsonObject component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `JsonObjectState` states them
@@ -863,24 +939,30 @@ pub fn json_object_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[JsonObjectMethod]),
-          JsonObjectMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[JsonObjectMethod]),
+            JsonObjectMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in json_object_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

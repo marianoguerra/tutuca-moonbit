@@ -181,6 +181,10 @@ pub fn SchemaViewerMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: rawPaneHasSomethingInIt.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaViewerMethod {
   ToggleLabel
 } derive(Eq, @debug.Debug)
@@ -210,7 +214,8 @@ impl @component.Fields for SchemaViewerState with fn schema() {
       @component.FieldInfo::new("showRaw", TyBool),
     ],
     view_handlers=["toggleShowRaw"],
-    methods=["toggleLabel"],
+    methods=["rawPaneHasSomethingInIt", "toggleLabel"],
+    invariants=["rawPaneHasSomethingInIt"],
     view_names=["main"],
   )
 }

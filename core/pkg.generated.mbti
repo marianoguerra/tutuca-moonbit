@@ -8,6 +8,10 @@ import {
 }
 
 // Values
+pub fn broken_domain(Array[FieldDomain], String, Value, Map[String, Value]) -> Domain?
+
+pub fn broken_domains(Array[FieldDomain], Map[String, Value]) -> Array[String]
+
 pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
@@ -15,6 +19,14 @@ pub fn builtin_names() -> Array[String]
 pub let component_key : String
 
 pub fn default_route() -> Array[Leg]
+
+pub fn domain_failed(handler~ : String, field~ : String, sentence? : String, state? : Value) -> Unit
+
+pub fn domain_holds(Domain, Value, Map[String, Value]) -> Bool
+
+pub fn domain_sentence(Domain, String, Value, Map[String, Value]) -> String
+
+pub fn domains_of(Array[FieldDomain], String) -> Array[Domain]
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
@@ -79,6 +91,35 @@ pub fn DispatchPath::to_transaction_path(Self) -> Path
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
   Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey?)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Domain {
+  DIndexOf(field~ : String, allow_none~ : Bool)
+  DKeyOf(field~ : String)
+  DMemberOf(field~ : String)
+  DCompare(op~ : DomainOp, rhs~ : DomainOperand)
+  DBetween(lo~ : DomainOperand, hi~ : DomainOperand)
+  DOneOf(Array[String])
+  DLen(Domain)
+  DNonEmpty
+  DSubsetOf(field~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum DomainOp {
+  DGe
+  DGt
+  DLe
+  DLt
+} derive(Eq, @debug.Debug)
+
+pub(all) enum DomainOperand {
+  DLit(Double)
+  DField(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct FieldDomain {
+  field : String
+  domain : Domain
 } derive(Eq, @debug.Debug)
 
 pub(all) struct FieldInfo {
@@ -273,6 +314,7 @@ pub(all) enum RefusalCode {
   Invariant
   IntentDepth
   TypeNotFound
+  OutOfRange
   NoSender
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
@@ -320,6 +362,7 @@ pub(all) struct SchemaInfo {
   express_intents : Array[String]
   methods : Array[String]
   invariants : Array[String]
+  domains : Array[FieldDomain]
   ids : Array[String]
   view_names : Array[String]
   init_names : Array[String]
@@ -333,7 +376,7 @@ pub(all) struct SchemaInfo {
 pub fn SchemaInfo::conforms(Self, ProtocolInfo) -> ProtocolConformance
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], domains? : Array[FieldDomain], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {

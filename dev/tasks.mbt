@@ -48,6 +48,44 @@ fn moon(label : String, args : Array[String]) -> Command {
 }
 
 ///|
+/// How many jobs the NATIVE test run may use at once.
+///
+/// Capped, and this is the one command in the file that needs a cap. `moon test
+/// --target native` links 49 separate test binaries, and a link is
+/// whole-program: the two largest objects are ~100 MB (`benchmarks`,
+/// `storybook`) and the `moonc` doing one peaks around 1.8 GB RESIDENT. With
+/// moon's default fan-out of one job per core, eight of those coincide on an
+/// 8-core machine and the machine is simply out of memory — the kernel kills
+/// `moonc` (or, just as often, whatever else was running), and the run dies
+/// with exit 137 rather than a test failure.
+///
+/// Measured on a 12 GB / 8-core box, whole suite, cold `_build`:
+///
+/// | jobs | peak RSS across all `moonc` | outcome |
+/// | ---- | --------------------------- | ------- |
+/// | 8 (default) | not measured | OOM-killed; the kill IS the observation |
+/// | 4    | 4.5 GB | passes, 131 s |
+/// | 2    | 3.5 GB | passes, slower |
+///
+/// The default row has no number on purpose: the run dies before a peak can be
+/// read, and the evidence for it is the kernel's own log
+/// (`Killed process … (moonc) anon-rss:1504960kB`) rather than a sample.
+///
+/// Four rather than two because the ceiling is what matters and not the
+/// average: most of the 49 links are small, so the cap costs little wall time
+/// and only bites when several heavy ones would have overlapped.
+///
+/// It is a fixed number rather than one derived from the machine because the
+/// failure it prevents is silent and confusing — an OOM kill reads as a
+/// mysterious crash, not as "too many jobs" — and a developer meeting it for
+/// the first time has no reason to suspect parallelism. A machine with more
+/// memory pays a little wall time for that; the trade is worth it.
+///
+/// The other native commands are deliberately uncapped: `build · native cli`
+/// links ONE package, and `check · native` does not link at all.
+const NATIVE_TEST_JOBS : String = "4"
+
+///|
 /// Shrink a wasm-gc module in place with `moon-wasm-opt` (ships with moon, on
 /// PATH via ~/.moon/bin). `-Oz` roughly halves the release module (~4.8 MB ->
 /// ~2.6 MB for storybook). `--all-features` lets the optimizer read moon's
@@ -116,7 +154,13 @@ pub fn tasks() -> Array[Task] {
       about: "run tests across default, native, and js browser adapters",
       commands: [
         moon("test · default", ["test"]),
-        moon("test · native", ["test", "--target", "native"]),
+        moon("test · native", [
+          "test",
+          "--target",
+          "native",
+          "-j",
+          NATIVE_TEST_JOBS,
+        ]),
         moon("test · js browser adapters", [
           "test", "--target", "js", "vdom/browser", "app/browser",
         ]),
@@ -514,6 +558,7 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/inspector/module.html", None),
     ("storybook/inspector/fuzz_view.html", None),
     ("storybook/inspector/spec_view.html", None),
+    ("storybook/inspector/trace_view.html", None),
     ("docs/tutorial.html", None),
     ("docs/first_principles.html", None),
     ("storybook/inspector/schema_viewer.html", Some("SchemaViewer")),
@@ -548,7 +593,11 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/visual_wasm.html", None),
     ("storybook/examples/web_component.html", Some("EmojiPicker")),
   ]
-  let commands = files.map(entry => {
+  // Snapshot the generated modules BEFORE regenerating, so the check at the end
+  // can ask whether regenerating changed anything rather than whether the tree
+  // matches a commit. See that check for why the two are not the same question.
+  let commands = [view_drift_snapshot(VIEW_DRIFT_BEFORE)]
+  for entry in files {
     let (path, name) = entry
     let args = [
       "run", "--target", "native", "cmd/tutuca", "--", "gen-views", path,
@@ -560,29 +609,77 @@ fn gen_views_commands() -> Array[Command] {
       }
       None => ()
     }
-    moon("gen-views · " + path, args)
-  })
+    commands.push(moon("gen-views · " + path, args))
+  }
   commands.push(moon("fmt", ["fmt"]))
-  // The drift check, the same shape `gen-guest-bindings` uses: regenerating is
-  // only a guarantee if the checked-in pair is what regenerating produces. This
-  // is what makes `gen-views` safe to put in CI.
+  // The drift check: regenerating is only a guarantee if the checked-in modules
+  // are what regenerating produces. This is what makes `gen-views` safe to put
+  // in CI — a stale generated module type-checks and tests green, so nothing
+  // else catches it.
+  //
+  // It compares the generated modules BEFORE this run against the same modules
+  // after, which is the question the check means to ask: did regenerating change
+  // anything? This used to ask git whether they matched `HEAD`, which is a
+  // different question and only the same one on a clean tree. Edit a `.html`,
+  // regenerate its module, and the pair is perfectly consistent while neither
+  // half is committed — the git form failed the whole of `ci` on correct work,
+  // which made `ci` unrunnable during exactly the kind of change it guards.
+  // (`skill-embed` had the same defect and is fixed the same way; the
+  // guest-binding and fetched-upstream checks still have it.)
   //
   // Scoped to the generated modules by pathspec rather than run over the whole
   // tree, because the `moon fmt` above formats every source: an unrelated file
-  // that was committed unformatted would otherwise fail here, reported as view
-  // drift. `*_view_gen.mbt` matches at any depth, so a new view file is covered
-  // the moment it is added to `files` above.
-  // `HEAD` rather than a bare `git diff`: the question is whether the COMMIT
-  // matches the sources, and a bare diff ignores anything already staged —
-  // which would let a `git add` of a stale module walk straight past.
+  // that was committed unformatted would otherwise be reported as view drift.
+  // `*_view_gen.mbt` matches at any depth, so a new view file is covered the
+  // moment it is added to `files` above.
+  //
+  // Nothing is lost by leaving git's own comparison behind. The `HEAD --` form
+  // was chosen so a `git add` of a stale module could not walk past a bare
+  // `git diff`; a before/after comparison never consults the index or the
+  // commit for its VERDICT at all, so there is no state a stale module can
+  // hide in.
+  commands.push(view_drift_snapshot(VIEW_DRIFT_AFTER))
   commands.push({
     label: "drift check · generated view modules match their .html",
-    prog: "git",
-    args: [
-      "diff", "--exit-code", "HEAD", "--", "*_view_gen.mbt", "*_view_ir_gen.mbt",
-    ],
+    prog: "diff",
+    args: [VIEW_DRIFT_BEFORE, VIEW_DRIFT_AFTER],
   })
   commands
+}
+
+///|
+/// Where the two views of the generated modules are parked.
+///
+/// In `_build` because it is already gitignored — a drift check that littered
+/// the tree with files the next drift check then had to ignore would be its own
+/// small joke.
+const VIEW_DRIFT_BEFORE : String = "_build/view_drift.before"
+
+///|
+const VIEW_DRIFT_AFTER : String = "_build/view_drift.after"
+
+///|
+/// Record what the generated view modules look like right now.
+///
+/// `git diff` is used as a CONTENT READER here and not as the verdict: it
+/// prints the modules as they currently stand against a fixed reference, so two
+/// such readings taken either side of a regeneration differ exactly when
+/// regenerating changed a file. Which commit it diffs against does not matter,
+/// as long as both readings use the same one.
+///
+/// A shell, because a `Command` spawns a program with arguments and has nowhere
+/// to put a redirect. The `mkdir -p` is part of it since `_build` is absent in a
+/// fresh clone, which is precisely the case CI runs in.
+fn view_drift_snapshot(to : String) -> Command {
+  {
+    label: "snapshot · generated view modules",
+    prog: "sh",
+    args: [
+      "-c",
+      "mkdir -p _build && git diff HEAD -- '*_view_gen.mbt' '*_view_ir_gen.mbt' > " +
+      to,
+    ],
+  }
 }
 
 ///|
@@ -1071,24 +1168,55 @@ pub fn skill_embed_steps() -> Array[Step] {
   // diff nobody asked for, on a file nobody edited. Same reason gen-views ends
   // this way.
   [
-    GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt"),
-    Run(moon("fmt", ["fmt"])),
-    // The drift check the other two generators have always had, and this one
-    // never did. It is the same `HEAD --` form as `gen-views`: compare against
-    // the commit, not the index, so a `git add` of a stale module cannot walk
-    // past. Safe to run only because the fmt above leaves this file alone.
+    // Snapshot FIRST, so the check below can compare the file against what
+    // regenerating produces rather than against a commit. See the comment on
+    // the diff step for why that difference matters.
     //
-    // What it would have caught: `skill/tutuca/cli.md` lost two sections and
-    // every paragraph blank line, and the broken text was embedded and shipped
-    // inside the CLI binary — which is what `tutuca install-skill` writes out,
-    // and the first thing an agent reads before writing any tutuca code.
+    // The mkdir is not optional: `copy_file` writes the file and does not make
+    // its parent, and `_build` is absent in a fresh clone — which is precisely
+    // the case CI runs in.
+    Mkdir("_build"),
+    Copy(from=SKILL_EMBED, to=SKILL_EMBED_WAS),
+    GenSkillAssets(src_dir="skill/tutuca", to=SKILL_EMBED),
+    Run(moon("fmt", ["fmt"])),
+    // The drift check: is the checked-in module what regenerating from
+    // `skill/tutuca/` produces? What it exists to catch is real and has
+    // happened — `skill/tutuca/cli.md` lost two sections and every paragraph
+    // blank line, and the broken text was embedded and shipped inside the CLI
+    // binary, which is what `tutuca install-skill` writes out and the first
+    // thing an agent reads before writing any tutuca code.
+    //
+    // It compares CONTENT — the file as it was against the file as regenerated
+    // — where this used to ask git whether the file matched `HEAD`. The git
+    // form answers a different question than the one the check means to ask,
+    // and the two only agree when the working tree is clean. Edit a skill file
+    // and re-embed it, and the pair on disk is perfectly consistent while
+    // neither half is committed yet: the content check passes, and the git form
+    // failed the whole of `ci` on work that was correct. Which made `ci`
+    // unrunnable during exactly the change it was meant to guard.
+    //
+    // Nothing is lost by moving off git. The `HEAD --` form was chosen so that
+    // a `git add` of a stale module could not walk past a bare `git diff`, and
+    // a content comparison is stronger still: it never consults the index or
+    // the commit at all, so there is no state a stale file can hide in.
     Run({
       label: "drift check · cli/skill_assets_gen.mbt matches skill/tutuca/",
-      prog: "git",
-      args: ["diff", "--exit-code", "HEAD", "--", "cli/skill_assets_gen.mbt"],
+      prog: "diff",
+      args: [SKILL_EMBED_WAS, SKILL_EMBED],
     }),
   ]
 }
+
+///|
+/// The embedded-skill module, and where its pre-regeneration copy is parked.
+///
+/// The snapshot sits in `_build` because that is already gitignored: a drift
+/// check that littered the tree with a file the next drift check then had to
+/// ignore would be its own small joke.
+const SKILL_EMBED : String = "cli/skill_assets_gen.mbt"
+
+///|
+const SKILL_EMBED_WAS : String = "_build/skill_assets_gen.mbt.was"
 
 ///|
 /// Regenerate the CLI's embedded guest template — the tree `tutuca new-guest`

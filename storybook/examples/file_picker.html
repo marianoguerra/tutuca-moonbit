@@ -5,6 +5,19 @@
     type : String
     lastModified : Double
     hasFile : Bool
+
+    /// A file has a length and an epoch timestamp; neither runs backwards.
+    where size >= 0
+    where lastModified >= 0
+
+    /// `hasFile` is the flag every row in the table hangs off, and the four
+    /// fields beside it are what it promises are filled in. The one that
+    /// cannot be empty is the name — a picked file always has one, and a
+    /// table saying otherwise means the flag and the fields disagreed.
+    invariant pickedFileIsDescribed
+      format 'the file table is showing, but no file name came with it' {
+        .hasFile implies ((len .name) > 0)
+      }
   }
 </script>
 

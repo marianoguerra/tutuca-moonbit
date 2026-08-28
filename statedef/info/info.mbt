@@ -188,6 +188,7 @@ pub fn schema_info(
     express_intents=def.express_intent.map(m => m.name),
     methods~,
     invariants=def.invariants(),
+    domains=domains_of(def),
     ids~,
     view_names~,
     init_names~,
@@ -198,4 +199,49 @@ pub fn schema_info(
     provide_bindings=binding_info(def.provide_bindings),
     lookup_bindings=binding_info(def.lookup_bindings),
   )
+}
+
+///|
+/// The `where` clauses as runtime domains.
+///
+/// The value twin of `@statedef.StateDef::domains_src`, and the same
+/// relationship every function in this package has with its emitting sibling:
+/// a card is compiled in a browser with no MoonBit toolchain, so what the
+/// generator writes as source has to be BUILDABLE here as well.
+pub fn domains_of(def : @statedef.StateDef) -> Array[@tutuca.FieldDomain] {
+  let out : Array[@tutuca.FieldDomain] = []
+  for w in def.wheres {
+    out.push({ field: w.subject, domain: domain_of(w.relation), })
+  }
+  out
+}
+
+///|
+fn domain_of(rel : @statedef.Relation) -> @tutuca.Domain {
+  let operand = (o : @statedef.Operand) => {
+    match o {
+      OLit(n) => (DLit(n) : @tutuca.DomainOperand)
+      OField(f) => DField(f)
+    }
+  }
+  match rel {
+    RIndexOf(field~, allow_none~) => DIndexOf(field~, allow_none~)
+    RKeyOf(field~) => DKeyOf(field~)
+    RMemberOf(field~) => DMemberOf(field~)
+    RSubsetOf(field~) => DSubsetOf(field~)
+    RNonEmpty => DNonEmpty
+    RLen(inner) => DLen(domain_of(inner))
+    ROneOf(ms) => DOneOf(ms)
+    RCompare(op~, rhs~) =>
+      DCompare(
+        op=match op {
+          CGe => DGe
+          CGt => DGt
+          CLe => DLe
+          CLt => DLt
+        },
+        rhs=operand(rhs),
+      )
+    RBetween(lo~, hi~) => DBetween(lo=operand(lo), hi=operand(hi))
+  }
 }

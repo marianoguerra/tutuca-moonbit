@@ -28,18 +28,25 @@
 pub let comp_name_spec_source : String =
   #|  state CompName {
   #|    name : String
+  #|
+  #|    where name is nonempty
   #|  }
   #|
   #|  state CompField {
   #|    name : String
   #|    typeName : String
   #|    child : Any
+  #|
+  #|    where name is nonempty
+  #|    where typeName is nonempty
   #|  }
   #|
   #|  state CompView {
   #|    name : String
   #|    rawView : String
   #|    isExpanded : Bool
+  #|
+  #|    where name is nonempty
   #|  }
   #|
   #|  state CompSection {
@@ -48,12 +55,23 @@ pub let comp_name_spec_source : String =
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    label : String
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state ComponentInspector {
   #|    compName : String
   #|    compId : Int
   #|    sections : Array[Any]
+  #|
+  #|    where compId >= 0
+  #|    where compName is nonempty
   #|  }
   #|
   #|  handle ComponentInspector {
@@ -476,6 +494,33 @@ pub fn comp_section_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn comp_section_compute_pageExists(
+  s : CompSectionState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn comp_section_inline_compute() -> Map[
+  String,
+  (CompSectionState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": comp_section_compute_pageExists }
+}
+
+///|
 /// The CompSection component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `CompSectionState` states them
@@ -521,24 +566,30 @@ pub fn comp_section_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[CompSectionMethod]),
-          CompSectionMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[CompSectionMethod]),
+            CompSectionMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in comp_section_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

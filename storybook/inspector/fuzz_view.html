@@ -36,6 +36,29 @@
     /// The settled state, prebuilt as a value inspector.
     after : Any
     open : Bool
+
+    /// Two ways to dispatch, and the badge has a colour for each.
+    where verb is one of ["send", "intent"]
+
+    /// A position in the script and a count of renders. Neither runs
+    /// backwards, and `renders` reaching 0 is the interesting case rather
+    /// than an impossible one — which is why the floor is 0 and not 1.
+    where at >= 0
+    where renders >= 0
+
+    /// The three findings each pair a flag with the words behind it. A flag
+    /// set with nothing to say renders an empty badge, which reads as a
+    /// rendering bug rather than as the finding it is — and that is exactly
+    /// the case `refusal_label` exists to prevent.
+    invariant refusalNamesSomething
+      format 'the row says it was refused and has nothing to show for it' {
+        .refused implies ((len .refusedRule) > 0)
+      }
+
+    invariant breakNamesARule
+      format 'the row says a rule broke and does not say which' {
+        .broke implies ((len .brokeRule) > 0)
+      }
   }
 
   /// The script, as something to scan.
@@ -43,6 +66,12 @@
     rows : Array[Any]
     hasRows : Bool
     emptyHint : String
+
+    /// The flag and the list it summarises, held to one answer.
+    invariant hasRowsTracksRows
+      format $'hasRows says {.hasRows} for {len .rows} rows' {
+        .hasRows is ((len .rows) > 0)
+      }
   }
 
   /// What a run is addressed by, and what came of it.
@@ -69,6 +98,22 @@
     canRun : Bool
     /// Why not, when it cannot.
     noPlanHint : String
+
+    /// The three radio buttons, as the closed set they are.
+    where source is one of ["mutators", "declared", "either"]
+
+    /// The hint exists to answer "why is Run disabled", so it is there when
+    /// the button is and gone when it is not.
+    invariant hintExplainsTheDisabledButton
+      format 'nothing can be generated, and the panel does not say why' {
+        (not .canRun) implies ((len .noPlanHint) > 0)
+      }
+
+    /// Nothing plays when there is nothing to play.
+    invariant playingNeedsAPlan
+      format 'a run is in flight with no plan behind it' {
+        .playing implies .canRun
+      }
   }
 
   /// The verdict, in the words the declaration used.
@@ -89,6 +134,34 @@
     /// The shrunk reproducer, as dispatch lines.
     reproducer : Array[Any]
     hasReproducer : Bool
+
+    /// The five verdicts `fuzz_verdict` produces. `none` is the one before a
+    /// run, and it is a verdict rather than an absence for the same reason
+    /// the badge is always rendered.
+    where kind is one of ["none", "held", "broke", "disagreed", "stuck"]
+
+    /// `-1` is "no position" — the answer for every verdict that is not
+    /// about one particular step — so the floor is one below the first step
+    /// rather than at it.
+    where at >= -1
+
+    /// A finding names the rule it is about; the verdicts that are not
+    /// findings name none.
+    invariant findingsNameTheirRule
+      format $'a {.kind} verdict with no rule on it' {
+        ((.kind is 'broke') or (.kind is 'disagreed')) implies ((len .rule) > 0)
+      }
+
+    /// The flag and the list, the same pairing `FuzzLog` makes.
+    invariant hasReproducerTracksReproducer
+      format 'hasReproducer and the reproducer disagree' {
+        .hasReproducer is ((len .reproducer) > 0)
+      }
+
+    invariant hasUncheckedTracksUnchecked
+      format 'hasUnchecked and the unchecked list disagree' {
+        .hasUnchecked is ((len .unchecked) > 0)
+      }
   }
 
   state FuzzPanel {
@@ -99,6 +172,16 @@
     /// Cursor position, 1-based for display.
     at : Int
     total : Int
+
+    /// 1-based, with 0 for "parked before the first step".
+    where at >= 0
+    where total >= 0
+
+    /// The cursor is inside the run it is a cursor into. Two fields, so no
+    /// type states it and a `where` cannot draw it — this is the shape that
+    /// is an `invariant` rather than a domain.
+    invariant atWithinTotal
+      format $'parked at step {.at} of {.total}' { .at <= .total }
   }
 </script>
 

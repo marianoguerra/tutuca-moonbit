@@ -11,6 +11,22 @@
     flag : Bool
     readonly : String
     editable : Bool
+
+    /// The four controls `control_for` picks between. A fifth name renders
+    /// a row with no control on it at all — every `@show` misses.
+    where kind is one of ["text", "num", "bool", "readonly"]
+
+    /// A field always has a name and a declared type; a row without them is
+    /// a form field nobody can address.
+    where name is nonempty
+    where type is nonempty
+
+    /// `editable` is `kind` asked as a question, and the one kind that
+    /// answers no is the one no control fits.
+    invariant editableTracksKind
+      format $'a {.kind} row says editable is {.editable}' {
+        .editable is (.kind is not 'readonly')
+      }
   }
 
   /// `target` is the instance being edited — the source of truth, replaced

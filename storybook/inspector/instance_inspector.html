@@ -5,6 +5,22 @@
     itemsPerPage : Int
     currentPage : Int
     typeName : String
+
+    /// A page is a window onto `items`, and both numbers that place it are
+    /// counts. A size of zero divides the list into no pages at all and the
+    /// pager silently shows nothing; the ceiling keeps a generated
+    /// `setItemsPerPage` from asking for a page nothing could paint.
+    where itemsPerPage between 1 and 500
+    where currentPage >= 0
+
+    /// Where the window actually falls. `itemsPerPage` is at least 1 by the
+    /// clause above, so the multiplication is safe wherever this is asked —
+    /// and page 0 is legal over an empty list, which is what the first
+    /// disjunct is for.
+    invariant pageExists
+      format $'page {.currentPage} is past the end of {len .items} items' {
+        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+      }
   }
 
   state InstanceInspector {
@@ -16,6 +32,16 @@
     instanceView : Any
     componentView : Any
     hasComponent : Bool
+
+    /// Two tabs, two panes.
+    where activeTab is one of ["instance", "component"]
+
+    /// The component tab is hidden when there is no component behind it, so
+    /// parking on it would show an empty pane with no tab to leave by.
+    invariant componentTabNeedsAComponent
+      format 'the component tab is selected and there is no component' {
+        (.activeTab is 'component') implies .hasComponent
+      }
   }
 </script>
 

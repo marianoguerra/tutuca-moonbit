@@ -2,6 +2,11 @@
   state Status {
     message : String
     count : Int
+
+    /// A running total that `flash` only ever adds to and `clear` leaves
+    /// alone. `setCount` is generated all the same, so the floor is stated
+    /// here rather than defended in a handler nobody wrote.
+    where count >= 0
   }
 
   /// The two names a sibling addresses this component by. No view writes
@@ -33,6 +38,19 @@
     label : String
     isOpen : Bool
     items : Array[Any]
+
+    /// A filesystem node is one of exactly two things, and the views branch
+    /// on nothing else. Stated as a domain rather than as a rule so the
+    /// fuzzer draws `"file"` and `"dir"` instead of drawing a string and
+    /// hoping — a `pred` here would be filtered at odds no run ever meets.
+    where type is one of ["file", "dir"]
+
+    /// The half a `where` cannot say: a leaf has no children. Two fields
+    /// have to agree, and no relation over one of them states it.
+    invariant filesAreLeaves
+      format $'a file cannot hold {len .items} children' {
+        (.type is 'file') implies ((len .items) is 0)
+      }
   }
 
   state TreeRoot {

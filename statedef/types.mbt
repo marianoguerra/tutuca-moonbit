@@ -380,6 +380,74 @@ fn edit_distance(a : String, b : String) -> Int {
 ///
 /// A closed set's members are INLINED rather than named: `TyInfo` is read at
 /// runtime, where the declaration they would refer to does not exist.
+/// The `where` clauses as a `FieldDomain` array literal, for the generated
+/// `SchemaInfo`.
+///
+/// The twin of `ty_info_src` and written beside it for the same reason: the
+/// generator emits SOURCE and the card runtime builds VALUES, so the two
+/// projections of one declaration sit where a change to either is visible
+/// from the other. `@info.domains_of` is the value half.
+///
+/// Bare constructors, exactly as `ty_info_src` writes them, and for the same
+/// reason — an enum constructor does not resolve through a `pub using`
+/// re-export, and the only position this is written into already knows the
+/// type.
+pub fn StateDef::domains_src(self : StateDef) -> String {
+  if self.wheres.is_empty() {
+    return "[]"
+  }
+  let out : Array[String] = []
+  for w in self.wheres {
+    out.push(
+      "{ field: " +
+      quoted(w.subject) +
+      ", domain: " +
+      domain_src(w.relation) +
+      " }",
+    )
+  }
+  "[" + out.join(", ") + "]"
+}
+
+///|
+fn domain_src(rel : Relation) -> String {
+  let operand = (o : Operand) => {
+    match o {
+      OLit(n) => "DLit(" + n.to_string() + ")"
+      OField(f) => "DField(" + quoted(f) + ")"
+    }
+  }
+  match rel {
+    RIndexOf(field~, allow_none~) =>
+      "DIndexOf(field=" +
+      quoted(field) +
+      ", allow_none=" +
+      allow_none.to_string() +
+      ")"
+    RKeyOf(field~) => "DKeyOf(field=" + quoted(field) + ")"
+    RMemberOf(field~) => "DMemberOf(field=" + quoted(field) + ")"
+    RSubsetOf(field~) => "DSubsetOf(field=" + quoted(field) + ")"
+    RNonEmpty => "DNonEmpty"
+    RLen(inner) => "DLen(" + domain_src(inner) + ")"
+    ROneOf(ms) => "DOneOf([" + ms.map(m => quoted(m)).join(", ") + "])"
+    RCompare(op~, rhs~) =>
+      "DCompare(op=" + cmp_src(op) + ", rhs=" + operand(rhs) + ")"
+    RBetween(lo~, hi~) =>
+      "DBetween(lo=" + operand(lo) + ", hi=" + operand(hi) + ")"
+  }
+}
+
+///|
+fn cmp_src(op : CmpOp) -> String {
+  match op {
+    CGe => "DGe"
+    CGt => "DGt"
+    CLe => "DLe"
+    CLt => "DLt"
+  }
+}
+
+///|
 pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
   match ty {
     TBool => "TyBool"
@@ -525,7 +593,12 @@ pub fn DefError::span(self : DefError) -> Span {
     | UnknownProtocol(span~, ..)
     | ProtocolConflict(span~, ..)
     | DuplicateRule(span~, ..)
-    | RuleOutsideState(span~, ..) => span
+    | RuleOutsideState(span~, ..)
+    | WhereOutsideState(span~)
+    | UnknownWhereSubject(span~, ..)
+    | UnknownWhereTarget(span~, ..)
+    | WhereTypeMismatch(span~, ..)
+    | CyclicWhere(span~, ..) => span
   }
 }
 
@@ -567,6 +640,16 @@ pub fn DefError::message(self : DefError) -> String {
       "spec block: two rules named `\{name}`; a `pred` and an `invariant` share one `$name`, so one name has one answer"
     RuleOutsideState(name~, ..) =>
       "spec block: `\{name}` is a rule, and a rule belongs to the `state` that keeps it — move it inside the `state` body"
+    WhereOutsideState(..) =>
+      "spec block: a `where` names a field beside it, so it belongs inside the `state` body"
+    UnknownWhereSubject(name~, hint~, ..) =>
+      "spec block: `where \{name}` — this state declares no field `\{name}`\{hint}"
+    UnknownWhereTarget(name~, hint~, ..) =>
+      "spec block: `.\{name}` — this state declares no field `\{name}`\{hint}"
+    WhereTypeMismatch(subject~, why~, ..) =>
+      "spec block: `where \{subject}` cannot say that — \{why}"
+    CyclicWhere(names~, ..) =>
+      "spec block: the `where` clauses on \{names.map(n => "`" + n + "`").join(", ")} depend on each other in a cycle; a field is drawn after the fields its domain names, and a cycle has no such order"
   }
 }
 

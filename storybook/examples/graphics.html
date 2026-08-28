@@ -2,6 +2,20 @@
   state SwatchPicker {
     color : String
     palette : Array[Any]
+
+    /// A picker with nothing to pick from is a preview rectangle and no way
+    /// to change it — and it is what a generator draws first unless told.
+    where palette is nonempty
+
+    /// The relation the swatch row draws: the selection is one of the
+    /// offered colours. It is an `invariant` and not a `where` because
+    /// `palette` is a LIST of colours rather than a set of them, and
+    /// `member of` reads a set — the vocabulary is closed exactly so that
+    /// what it does admit can also be run backwards.
+    invariant colorIsOnThePalette
+      format $'{.color} is not one of the swatches' {
+        has .palette .color
+      }
   }
 
   state Quadratic {

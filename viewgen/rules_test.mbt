@@ -125,3 +125,47 @@ test "a rule with no script block anywhere still gets a body" {
   assert_true(ir.contains("fn ledger_compute_positive("))
   assert_true(ir.contains("\"positive\": ledger_compute_positive,"))
 }
+
+///|
+let gallery_html : String =
+  #|<script type="tutuca/spec">
+  #|  state Gallery {
+  #|    items        : Array[String]
+  #|    currentIndex : Int
+  #|    count        : Int
+  #|
+  #|    where currentIndex is index of .items
+  #|    where count >= 0
+  #|  }
+  #|</script>
+  #|
+  #|<template>
+  #|  <div><x text=".currentIndex"></x></div>
+  #|</template>
+
+///|
+test "a `where` in the spec block reaches the generated schema as DATA" {
+  // The difference from an invariant, in the one place it shows: an invariant
+  // reaches the schema as a NAME, because its body is already a method the
+  // runtime can call. A domain has no body — the runtime evaluates the
+  // relation itself — so what the schema carries is the relation.
+  let f = @viewgen.split_file(gallery_html)
+  let types = @viewgen.emit_module("Gallery", "gallery.html", f)
+  assert_true(
+    types.contains(
+      "domains=[{ field: \"currentIndex\", domain: DIndexOf(field=\"items\", allow_none=false) }, { field: \"count\", domain: DCompare(op=DGe, rhs=DLit(0)) }]",
+    ),
+  )
+  // No rule was declared, so nothing claims one — the two lists are separate
+  // and a `where` does not become a nameless invariant.
+  assert_true(types.contains("invariants=[]") || !types.contains("invariants="))
+}
+
+///|
+test "a file with no `where` emits no domains at all" {
+  // Absent rather than empty, so 143 checked-in generated modules stay
+  // byte-identical and the drift check keeps meaning something.
+  let f = @viewgen.split_file(ledger_html)
+  let types = @viewgen.emit_module("Ledger", "ledger.html", f)
+  assert_false(types.contains("domains="))
+}

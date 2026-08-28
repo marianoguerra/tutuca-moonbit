@@ -53,6 +53,7 @@ pub using @core {
   precondition_failed,
   postcondition_failed,
   invariant_failed,
+  domain_failed,
   on_runtime_notice,
   protocol_mismatch,
   refuse,

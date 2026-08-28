@@ -262,6 +262,7 @@ impl @component.Fields for StoryNavState with fn schema() {
     ],
     view_handlers=["pick"],
     intents=["navPicked"],
+    domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],
   )
 }
@@ -541,6 +542,10 @@ pub fn StoryCardMsg::from_dispatch(d : @component.Dispatch) -> StoryCardMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: aCardShowsSomething.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum StoryCardMethod {
   RefLabel
 } derive(Eq, @debug.Debug)
@@ -575,7 +580,9 @@ impl @component.Fields for StoryCardState with fn schema() {
     ],
     view_handlers=["rebuild"],
     intents=["rebuildCard"],
-    methods=["refLabel"],
+    methods=["aCardShowsSomething", "refLabel"],
+    invariants=["aCardShowsSomething"],
+    domains=[{ field: "name", domain: DNonEmpty, }],
     view_names=["main", "details"],
   )
 }
@@ -999,6 +1006,15 @@ impl @component.Fields for DyncompStorybookState with fn schema() {
     receives=["catalogChanged", "setStatus"],
     intents=["catalogChanged"],
     methods=["detailsLabel", "isEmpty", "layoutLabel"],
+    domains=[
+      { field: "mode", domain: DOneOf(["main", "details"]), },
+      {
+        field: "theme",
+        domain: DOneOf([
+          "light", "dark", "corporate", "dracula", "nord", "retro", "winter",
+        ]),
+      },
+    ],
     view_names=["main"],
   )
 }

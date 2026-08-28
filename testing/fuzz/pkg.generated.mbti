@@ -31,13 +31,18 @@ pub struct Plan {
   def : @statedef.StateDef
   rules : @arb.Rules
   one : @gen.Gen[@component.Dispatch]?
+  source : Source
+  depth : Int
 }
 pub fn Plan::has_oracle(Self) -> Bool
+pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int) -> @component.Dispatch?
 pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) -> Self?
 pub fn[N] Plan::run(Self, @harness.Harness[N], Array[@component.Dispatch], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
+pub fn[N] Plan::run_live(Self, @harness.Harness[N], steps~ : Int, seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
 pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[@component.Dispatch]
 pub fn Plan::script_gen(Self, Int) -> @gen.Gen[Array[@component.Dispatch]]
 pub fn Plan::sentence_of(Self, String) -> String
+pub fn Plan::state_aware(Self) -> Bool
 pub fn[N] Plan::step(Self, @harness.Harness[N], @component.Dispatch, at? : @core.DispatchPath, read? : Reader) -> Step raise
 pub fn Plan::unchecked(Self) -> Array[(String, String)]
 

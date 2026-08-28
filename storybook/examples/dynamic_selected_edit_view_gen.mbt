@@ -195,6 +195,7 @@ impl @component.Fields for DseRootState with fn schema() {
       @component.FieldInfo::new("editor", TyComp(Some("Editor"))),
     ],
     view_handlers=["selectItem"],
+    domains=[{ field: "selectedKey", domain: DKeyOf(field="items"), }],
     view_names=["main"],
   )
 }

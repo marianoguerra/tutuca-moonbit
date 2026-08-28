@@ -3,6 +3,11 @@
     items : Array[Any]
     query : String
     view : String
+
+    /// `@push-view=".view"` looks a view up by this name and falls back to
+    /// `main` when it finds nothing — so a third name is not an error, it is
+    /// a component that silently stops switching. Two views exist; say so.
+    where view is one of ["main", "edit"]
   }
 
   state SeqItemAccess {
@@ -10,12 +15,39 @@
     byIndex : Array[Any]
     currentKey : Any
     currentIndex : Int
+
+    /// The two selections, each said against the collection it selects from.
+    /// This is the pair no type can state: `Int` and `String` are both true
+    /// and both useless, and `<x render=".byIndex[.currentIndex]">` renders
+    /// nothing at all when the relation does not hold.
+    ///
+    /// `or none` because the ZERO of this component is an empty catalogue
+    /// with the slider parked at 0 — a real state, and one the generator has
+    /// to be allowed to draw.
+    where currentIndex is index of .byIndex or none
+    where currentKey   is key of .byKey
   }
 
   state Pagination {
     items : Array[Any]
     page : Int
     pageSize : Int
+
+    /// A page size of zero divides by zero in `next`, and a negative one
+    /// asks `@loop-with` for a slice that runs backwards. The floor is the
+    /// interesting half; the ceiling keeps a generated `setPageSize` from
+    /// drawing a slice nothing could paginate.
+    where pageSize between 1 and 100
+    where page >= 0
+
+    /// What `prev` and `next` already clamp to, said once for the paths that
+    /// do not go through them — `setPage`, and anything added later.
+    /// `pageSize` is at least 1 by the clause above, so the division is safe
+    /// wherever this rule is asked.
+    invariant pageExists
+      format $'page {.page} is past the last one' {
+        (.page is 0) or ((.page * .pageSize) < (len .items))
+      }
   }
 </script>
 

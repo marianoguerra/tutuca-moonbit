@@ -21,6 +21,11 @@
     due : Due
     note : String?
     size : (Int, Int)
+
+    /// The card's heading. `priority` and `due` need no clause — their
+    /// closed sets are already the TYPE, which is where a closed set belongs
+    /// when a type can hold it.
+    where title is nonempty
   }
 </script>
 

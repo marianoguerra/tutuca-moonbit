@@ -785,6 +785,7 @@ impl @component.Fields for ShowHideState with fn schema() {
     ],
     view_handlers=["incCount", "toggleIsOpen"],
     methods=["label"],
+    domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],
     view_names=["main"],
   )
 }

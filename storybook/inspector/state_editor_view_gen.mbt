@@ -228,6 +228,13 @@ impl @component.Fields for StateEditorRowState with fn schema() {
       @component.FieldInfo::new("editable", TyBool),
     ],
     view_handlers=["edit"],
+    methods=["editableTracksKind"],
+    invariants=["editableTracksKind"],
+    domains=[
+      { field: "kind", domain: DOneOf(["text", "num", "bool", "readonly"]), },
+      { field: "name", domain: DNonEmpty, },
+      { field: "type", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }

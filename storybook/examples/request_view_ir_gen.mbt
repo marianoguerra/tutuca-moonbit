@@ -32,6 +32,13 @@ pub let request_example_spec_source : String =
   #|    view : String
   #|    isLoading : Bool
   #|    error : Any
+  #|
+  #|    where view is one of ["main", "edit"]
+  #|
+  #|    invariant notFailedWhileLoading
+  #|      format 'the spinner is up and an error is already showing' {
+  #|        .isLoading implies (null? .error)
+  #|      }
   #|  }
   #|
   #|  handle {
@@ -168,6 +175,19 @@ fn request_example_inline_update(
           "main"
         },
       }
+      guard !s.isLoading ||
+        (match @tutuca.builtin("null?") {
+          Some(b) => (b.apply)([s.error]).is_truthy()
+          None => false
+        }) else {
+        @tutuca.invariant_failed(
+          handler="toggleView",
+          pred="notFailedWhileLoading",
+          sentence="the spinner is up and an error is already showing",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("init", _args) => {
@@ -185,6 +205,19 @@ fn request_example_inline_update(
         )
       })
       let s = { ..s, isLoading: true, }
+      guard !s.isLoading ||
+        (match @tutuca.builtin("null?") {
+          Some(b) => (b.apply)([s.error]).is_truthy()
+          None => false
+        }) else {
+        @tutuca.invariant_failed(
+          handler="init",
+          pred="notFailedWhileLoading",
+          sentence="the spinner is up and an error is already showing",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -192,6 +225,34 @@ fn request_example_inline_update(
     }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant notFailedWhileLoading` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn request_example_compute_notFailedWhileLoading(
+  s : RequestExampleState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !s.isLoading ||
+      (match @tutuca.builtin("null?") {
+        Some(b) => (b.apply)([s.error]).is_truthy()
+        None => false
+      }),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn request_example_inline_compute() -> Map[
+  String,
+  (RequestExampleState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "notFailedWhileLoading": request_example_compute_notFailedWhileLoading }
 }
 
 ///|
@@ -246,6 +307,7 @@ pub fn request_example_component(
         answered => answered
       }
     },
+    compute=request_example_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

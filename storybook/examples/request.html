@@ -5,6 +5,19 @@
     view : String
     isLoading : Bool
     error : Any
+
+    /// `@push-view=".view"` falls back to `main` for a name it cannot find,
+    /// so a third value is not an error — it is a toggle that stops toggling.
+    where view is one of ["main", "edit"]
+
+    /// The three outcomes are exclusive, and this is the pair that a reader
+    /// of the handlers has to hold in their head otherwise: a request that
+    /// is still in flight has not failed yet. `loadDataError` clears the
+    /// flag as it sets the message, and this is what says why.
+    invariant notFailedWhileLoading
+      format 'the spinner is up and an error is already showing' {
+        .isLoading implies (null? .error)
+      }
   }
 
   /// The host dispatches `Init` after `start()`. No view writes it, so the

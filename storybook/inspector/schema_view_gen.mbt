@@ -76,6 +76,7 @@ impl @component.Fields for SchemaPropertyState with fn schema() {
       @component.FieldInfo::new("child", TyAny),
       @component.FieldInfo::new("required", TyBool),
     ],
+    domains=[{ field: "key", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }
@@ -163,6 +164,7 @@ impl @component.Fields for SchemaBranchState with fn schema() {
       @component.FieldInfo::new("labelClass", TyText),
     ],
     methods=["labelCssClass"],
+    domains=[{ field: "label", domain: DNonEmpty, }],
     view_names=["main", "_margauiClasses"],
   )
 }

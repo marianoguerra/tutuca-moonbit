@@ -627,6 +627,10 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum JsonArrayMethod {
   ArrowText
   CannotNextPage
@@ -685,7 +689,12 @@ impl @component.Fields for JsonArrayState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -889,6 +898,10 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum JsonObjectMethod {
   ArrowText
   CannotNextPage
@@ -947,7 +960,12 @@ impl @component.Fields for JsonObjectState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )

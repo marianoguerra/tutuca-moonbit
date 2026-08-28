@@ -243,6 +243,10 @@ pub fn SchemaScalarMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaScalarMethod {
   ArrowText
   CannotNextPage
@@ -306,7 +310,12 @@ impl @component.Fields for SchemaScalarState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -548,6 +557,10 @@ pub fn SchemaObjectMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaObjectMethod {
   ArrowText
   CannotNextPage
@@ -611,7 +624,12 @@ impl @component.Fields for SchemaObjectState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -853,6 +871,10 @@ pub fn SchemaArrayMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaArrayMethod {
   ArrowText
   CannotNextPage
@@ -916,7 +938,12 @@ impl @component.Fields for SchemaArrayState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -1156,6 +1183,10 @@ pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaEnumMethod {
   ArrowText
   CannotNextPage
@@ -1219,7 +1250,12 @@ impl @component.Fields for SchemaEnumState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -1461,6 +1497,10 @@ pub fn SchemaCombinatorMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum SchemaCombinatorMethod {
   ArrowText
   CannotNextPage
@@ -1526,7 +1566,12 @@ impl @component.Fields for SchemaCombinatorState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -1907,6 +1952,7 @@ impl @component.Fields for SchemaRefState with fn schema() {
     name="SchemaRef",
     fingerprint="bb36ff8507f91d66",
     fields=[@component.FieldInfo::new("target", TyText)],
+    domains=[{ field: "target", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }

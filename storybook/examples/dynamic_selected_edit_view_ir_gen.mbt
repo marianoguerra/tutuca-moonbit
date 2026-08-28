@@ -38,6 +38,8 @@ pub let dse_root_spec_source : String =
   #|    items : Map[String, Any]
   #|    selectedKey : String
   #|    editor : Component[Editor]
+  #|
+  #|    where selectedKey is key of .items
   #|  }
 
 ///|

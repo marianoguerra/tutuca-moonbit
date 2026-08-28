@@ -120,6 +120,19 @@ pub(all) struct SchemaInfo {
   /// depended on declaration order would move when an unrelated rule was added
   /// above it.
   invariants : Array[String]
+  /// The DOMAINS this component's fields are declared over: the `where`
+  /// clauses of its spec block, as data.
+  ///
+  /// Beside `invariants` rather than on `FieldInfo`, and for two reasons that
+  /// point the same way. `FieldInfo`'s own doc says its parts are FUNCTIONS of
+  /// the type, and a domain is not one — `0 <= i < len(items)` mentions a
+  /// second field, which no type can. And several clauses may name one field,
+  /// so what is carried is a list of pairs rather than an attribute of each
+  /// field.
+  ///
+  /// Source order, not sorted: `broken_domains` sorts what it REPORTS, and the
+  /// order here is the one a generator walks to decide what depends on what.
+  domains : Array[FieldDomain]
   /// Constant element ids — the selectors a test addresses.
   ids : Array[String]
   view_names : Array[String]
@@ -172,6 +185,7 @@ declare pub fn SchemaInfo::new(
   express_intents? : Array[String],
   methods? : Array[String],
   invariants? : Array[String],
+  domains? : Array[FieldDomain],
   ids? : Array[String],
   view_names? : Array[String],
   init_names? : Array[String],

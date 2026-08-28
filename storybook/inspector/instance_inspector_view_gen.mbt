@@ -217,6 +217,10 @@ pub fn InstanceFieldsMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum InstanceFieldsMethod {
   ArrowText
   CannotNextPage
@@ -276,7 +280,12 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -542,6 +551,9 @@ impl @component.Fields for InstanceExplorerState with fn schema() {
       @component.FieldInfo::new("hasComponent", TyBool),
     ],
     view_handlers=["setActiveTab"],
+    methods=["componentTabNeedsAComponent"],
+    invariants=["componentTabNeedsAComponent"],
+    domains=[{ field: "activeTab", domain: DOneOf(["instance", "component"]), }],
     view_names=["main"],
   )
 }

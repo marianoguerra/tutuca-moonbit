@@ -8,6 +8,10 @@
     count : Int
     tags : Array[Any]
     open : Bool
+
+    /// A sample carrying one of everything — a domain included, so the
+    /// inspector's own panels have a `where` to show.
+    where count >= 0
   }
 
   handle RichSample {
@@ -34,6 +38,8 @@
     count : Int
     tags : Array[Any]
     open : Bool
+
+    where count >= 0
   }
 </script>
 

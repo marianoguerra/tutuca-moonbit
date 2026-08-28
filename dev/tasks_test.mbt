@@ -19,7 +19,7 @@ test "plan resolves a base task to Run steps" {
       #|      {
       #|        label: "test · native",
       #|        prog: "moon",
-      #|        args: ["test", "--target", "native"],
+      #|        args: ["test", "--target", "native", "-j", "4"],
       #|      },
       #|    ),
       #|    Run(
@@ -60,10 +60,29 @@ test "gen-views ends in a drift check over the generated modules" {
   guard steps[steps.length() - 1] is Run(cmd) else {
     fail("last gen-views step is not a command")
   }
-  assert_eq(cmd.prog, "git")
-  assert_eq(cmd.args, [
-    "diff", "--exit-code", "HEAD", "--", "*_view_gen.mbt", "*_view_ir_gen.mbt",
-  ])
+  // A CONTENT comparison — the modules as they stood before this run against
+  // the same modules after — rather than a `git diff` against `HEAD`. The two
+  // answer different questions and agree only on a clean tree: a `.html` edited
+  // and regenerated is a consistent pair with neither half committed, which the
+  // git form failed and which is exactly when `gen-views` gets run.
+  assert_eq(cmd.prog, "diff")
+  assert_eq(cmd.args, ["_build/view_drift.before", "_build/view_drift.after"])
+  // …and the "after" reading is taken immediately before it, or the comparison
+  // is against a stale file and always passes.
+  guard steps[steps.length() - 2] is Run(snap) else {
+    fail("the step before the drift check is not a command")
+  }
+  assert_true(
+    snap.args.length() == 2 && snap.args[1].has_suffix("view_drift.after"),
+  )
+  // The "before" reading is the FIRST step: taken after any generator ran, it
+  // would read the regenerated modules and the check could never fail.
+  guard steps[0] is Run(first) else {
+    fail("first gen-views step is not a command")
+  }
+  assert_true(
+    first.args.length() == 2 && first.args[1].has_suffix("view_drift.before"),
+  )
 }
 
 ///|
@@ -74,12 +93,48 @@ test "plan returns None for an unknown task" {
 ///|
 test "dist plan builds all targets then assembles dist/" {
   let steps = @dev.plan("dist").unwrap_or([])
-  // both asset-embed codegens precede the target builds: each writes a module
-  // that the native binary compiles in, and each ends in its own `moon fmt`
-  assert_true(steps[0] is GenSkillAssets(_))
-  assert_true(steps.iter().any(fn(s) { s is GenGuestTemplate(_) }))
-  let builds = steps.iter().take(6).filter(fn(s) { s is Run(_) }).count()
-  assert_eq(builds, 4)
+  // Both asset-embed codegens precede the target builds: each writes a module
+  // that the native binary compiles in, and each ends in its own `moon fmt`.
+  //
+  // Asserted by ORDER rather than by index. The embed steps carry their own
+  // scaffolding — a snapshot taken before regenerating, so the drift check can
+  // compare content instead of asking git about a commit — and an assertion on
+  // `steps[0]` was really an assertion about how many of those there are, which
+  // is not the claim this test means to make.
+  let first_of = (pred : (@dev.Step) -> Bool) => {
+    let mut at = -1
+    for i, st in steps {
+      if at < 0 && pred(st) {
+        at = i
+      }
+    }
+    at
+  }
+  let embed = first_of(fn(s) { s is GenSkillAssets(_) })
+  let template = first_of(fn(s) { s is GenGuestTemplate(_) })
+  let first_build = first_of(fn(s) {
+    match s {
+      Run(cmd) =>
+        cmd.prog == "moon" && cmd.args.length() > 0 && cmd.args[0] == "build"
+      _ => false
+    }
+  })
+  assert_true(embed >= 0)
+  assert_true(template >= 0)
+  assert_true(first_build > embed)
+  assert_true(first_build > template)
+  // Four target builds: wasm-gc, native cli, js, and the js playground host.
+  let builds = steps
+    .iter()
+    .filter(fn(s) {
+      match s {
+        Run(cmd) =>
+          cmd.prog == "moon" && cmd.args.length() > 0 && cmd.args[0] == "build"
+        _ => false
+      }
+    })
+    .count()
+  assert_true(builds >= 4)
   // and it emits copies + the mkdirs
   assert_true(steps.iter().any(fn(s) { s is Mkdir(_) }))
   assert_true(steps.iter().any(fn(s) { s is Copy(_) }))

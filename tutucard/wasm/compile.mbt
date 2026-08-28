@@ -251,6 +251,7 @@ pub fn compile(
           provide: [],
           lookup: [],
           rules: [],
+          wheres: [],
           doc: None,
         }
     }

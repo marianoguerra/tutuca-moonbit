@@ -34,6 +34,8 @@ pub let composability_spec_source : String =
   #|    personalSite : Component[Root]
   #|    visualWasm : Component[Module]
   #|    dnd : Component
+  #|
+  #|    where activeSection is one of ["todo", "json", "tree", "personalSite", "dnd", "visualWasm"]
   #|  }
 
 ///|

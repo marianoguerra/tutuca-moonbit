@@ -531,6 +531,10 @@ impl @component.Fields for NaivePeopleState with fn schema() {
       @component.FieldInfo::new("pageSize", TyInt),
     ],
     view_handlers=["next", "prev", "removeInItemsAt", "search"],
+    domains=[
+      { field: "pageSize", domain: DBetween(lo=DLit(1), hi=DLit(100)), },
+      { field: "page", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }

@@ -14,6 +14,12 @@
 /// here, so a view that reads it type-checks and one that reads a name
 /// this struct lacks fails generation.
 pub(all) struct CounterState {
+  /// No clause. A counter with `inc` and `dec` and no floor has the whole
+  /// of `Int` for its domain, and `where count >= 0` would be a rule this
+  /// component does not keep — `dec` walks straight past it.
+  /// 
+  /// A domain is worth writing when it is TRUE. The empty spec block is
+  /// the honest answer here, and the counter is the example that says so.
   count : Int
 }
 

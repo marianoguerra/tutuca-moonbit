@@ -124,6 +124,12 @@ impl @component.Fields for ActivityEntryState with fn schema() {
       @component.FieldInfo::new("after", TyAny),
       @component.FieldInfo::new("hasAfter", TyBool),
     ],
+    methods=["hasAfterTracksAfter"],
+    invariants=["hasAfterTracksAfter"],
+    domains=[
+      { field: "matched", domain: DOneOf(["exact", "none"]), },
+      { field: "name", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }
@@ -259,6 +265,9 @@ impl @component.Fields for ActivityLogState with fn schema() {
       @component.FieldInfo::new("hasEvents", TyBool),
     ],
     receives=["appendEntry"],
+    methods=["hasEventsTracksEvents"],
+    invariants=["hasEventsTracksEvents"],
+    domains=[{ field: "events", domain: DLen(DCompare(op=DLe, rhs=DLit(50))), }],
     view_names=["main"],
   )
 }

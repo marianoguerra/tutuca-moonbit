@@ -3,12 +3,21 @@
     key : String
     child : Any
     required : Bool
+
+    /// A property of an object schema is named. `""` is a legal JSON key and
+    /// an illegal JSON Schema `properties` entry to render — the row would
+    /// draw a required marker beside nothing.
+    where key is nonempty
   }
 
   state SchemaBranch {
     label : String
     child : Any
     labelClass : String
+
+    /// A branch is the label above the subschema it introduces (`if`,
+    /// `then`, `items`, …). A blank one is an unlabelled indent.
+    where label is nonempty
   }
 </script>
 

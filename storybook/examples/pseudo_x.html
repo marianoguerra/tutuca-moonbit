@@ -3,6 +3,11 @@
     name : String
     qty : Int
     price : Double
+
+    /// A line item on an invoice: you cannot order fewer than none of
+    /// something, and a negative price is a different document.
+    where qty >= 0
+    where price >= 0
   }
 
   state ItemTable {

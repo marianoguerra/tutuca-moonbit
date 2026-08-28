@@ -192,6 +192,7 @@ impl @component.Fields for TrafficLightState with fn schema() {
     fields=[@component.FieldInfo::new("lightIndex", TyInt)],
     view_handlers=["nextLight"],
     methods=["light"],
+    domains=[{ field: "lightIndex", domain: DBetween(lo=DLit(0), hi=DLit(2)), }],
     view_names=["main"],
   )
 }
@@ -363,6 +364,9 @@ impl @component.Fields for TabbedUIState with fn schema() {
     fingerprint="e232ce34c046543a",
     fields=[@component.FieldInfo::new("tab", TyText)],
     view_handlers=["setTab"],
+    domains=[
+      { field: "tab", domain: DOneOf(["overview", "features", "pricing"]), },
+    ],
     ids=["t-features", "t-overview", "t-pricing"],
     view_names=["main"],
   )

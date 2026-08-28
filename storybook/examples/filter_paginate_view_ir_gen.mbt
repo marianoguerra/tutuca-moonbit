@@ -37,6 +37,9 @@ pub let person_spec_source : String =
   #|    query : String
   #|    page : Int
   #|    pageSize : Int
+  #|
+  #|    where pageSize between 1 and 100
+  #|    where page >= 0
   #|  }
   #|
   #|  state Strategies {

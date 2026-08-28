@@ -49,6 +49,21 @@ priv enum Tok {
   TComma
   TQuestion
   TEquals
+  /// `.`, which heads the field reference in a `where` clause: `.items`.
+  ///
+  /// Two tokens rather than one `.items`, because the dot and the name are
+  /// separately meaningful — the name is checked against the state's fields
+  /// and the dot is what says it IS a field rather than a bare word.
+  TDot
+  /// The four orderings a `where` compares with.
+  ///
+  /// No angle bracket means anything else in this block — type arguments are
+  /// `[…]`, a tuple is `(…)`, an option is `?` and a protocol intersection is
+  /// `&` — so these took nothing away from the grammar to add.
+  TGte
+  TGt
+  TLte
+  TLt
   /// A value-language expression, taken WHOLE: `.sheet`, `.items[.selId]`,
   /// `self`, `'gray'`.
   ///
@@ -446,6 +461,13 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       i = i + 2
       continue
     }
+    // The two-character orderings before the one-character ones, or `>=` would
+    // lex as `>` followed by an `=` that ends a wiring section.
+    if (c == '>' || c == '<') && i + 1 < n && chars[i + 1] == '=' {
+      push(if c == '>' { TGte } else { TLte }, i, i + 2)
+      i = i + 2
+      continue
+    }
     let single : Tok = match c {
       '{' => TLBrace
       '}' => TRBrace
@@ -458,6 +480,9 @@ fn tokenize(source : String) -> Array[Token] raise DefError {
       ',' => TComma
       '?' => TQuestion
       '=' => TEquals
+      '.' => TDot
+      '>' => TGt
+      '<' => TLt
       _ =>
         raise Syntax(msg="`\{c}` has no meaning in a state block", span={
           start: i,
@@ -502,6 +527,11 @@ fn Tok::describe(self : Tok) -> String {
     TComma => "`,`"
     TQuestion => "`?`"
     TEquals => "`=`"
+    TDot => "`.`"
+    TGte => "`>=`"
+    TGt => "`>`"
+    TLte => "`<=`"
+    TLt => "`<`"
     TExpr(e) => "the expression `\{e}`"
     TBody(_) => "a rule body"
     TEof => "the end of the block"

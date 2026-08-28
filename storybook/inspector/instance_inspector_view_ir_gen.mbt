@@ -32,6 +32,14 @@ pub let instance_fields_spec_source : String =
   #|    itemsPerPage : Int
   #|    currentPage : Int
   #|    typeName : String
+  #|
+  #|    where itemsPerPage between 1 and 500
+  #|    where currentPage >= 0
+  #|
+  #|    invariant pageExists
+  #|      format $'page {.currentPage} is past the end of {len .items} items' {
+  #|        (.currentPage is 0) or ((.currentPage * .itemsPerPage) < (len .items))
+  #|      }
   #|  }
   #|
   #|  state InstanceInspector {
@@ -43,6 +51,13 @@ pub let instance_fields_spec_source : String =
   #|    instanceView : Any
   #|    componentView : Any
   #|    hasComponent : Bool
+  #|
+  #|    where activeTab is one of ["instance", "component"]
+  #|
+  #|    invariant componentTabNeedsAComponent
+  #|      format 'the component tab is selected and there is no component' {
+  #|        (.activeTab is 'component') implies .hasComponent
+  #|      }
   #|  }
 
 ///|
@@ -158,6 +173,33 @@ pub fn instance_fields_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pageExists` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn instance_fields_compute_pageExists(
+  s : InstanceFieldsState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Num(s.currentPage.to_double()) : @tutuca.Value) ==
+      (Num(0.0) : @tutuca.Value) ||
+      s.currentPage.to_double() * s.itemsPerPage.to_double() <
+      s.items.length().to_double(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn instance_fields_inline_compute() -> Map[
+  String,
+  (InstanceFieldsState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pageExists": instance_fields_compute_pageExists }
+}
+
+///|
 /// The InstanceFields component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `InstanceFieldsState` states them
@@ -203,24 +245,30 @@ pub fn instance_fields_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          (
-            [
-              ArrowText,
-              CannotNextPage,
-              CannotPrevPage,
-              CountText,
-              IsItemsEmpty,
-              PageIndicatorText,
-              ShowPagination,
-              TypeText,
-            ] : Array[InstanceFieldsMethod]),
-          InstanceFieldsMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            (
+              [
+                ArrowText,
+                CannotNextPage,
+                CannotPrevPage,
+                CountText,
+                IsItemsEmpty,
+                PageIndicatorText,
+                ShowPagination,
+                TypeText,
+              ] : Array[InstanceFieldsMethod]),
+            InstanceFieldsMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in instance_fields_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>
@@ -419,6 +467,33 @@ pub fn instance_explorer_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant componentTabNeedsAComponent` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn instance_explorer_compute_componentTabNeedsAComponent(
+  s : InstanceExplorerState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !((Str(s.activeTab) : @tutuca.Value) == (Str("component") : @tutuca.Value)) ||
+      s.hasComponent,
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn instance_explorer_inline_compute() -> Map[
+  String,
+  (InstanceExplorerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "componentTabNeedsAComponent": instance_explorer_compute_componentTabNeedsAComponent,
+  }
+}
+
+///|
 /// The InstanceExplorer component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `InstanceExplorerState` states them
@@ -454,6 +529,7 @@ pub fn instance_explorer_component(
     common_style~,
     global_style~,
     update?,
+    compute=instance_explorer_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

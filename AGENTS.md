@@ -102,7 +102,7 @@ binary inside the `_build` they delete.
 |------------|------------------------------------------------------------------|
 | `check`    | `moon check` for default, js and native targets                  |
 | `fmt`      | `moon fmt` then `moon info` (format + regenerate `.mbti`)         |
-| `test`     | `moon test` for default, native, and js browser adapters         |
+| `test`     | `moon test` for default, native, and js browser adapters. The native leg is capped with `-j` — it links 49 whole-program test binaries and the biggest `moonc` peaks near 1.8 GB, so moon's default one-job-per-core fan-out OOMs an 8-core/12 GB box. See `NATIVE_TEST_JOBS` in `dev/tasks.mbt` |
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
@@ -111,7 +111,7 @@ binary inside the `_build` they delete.
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen-views` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
-| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
+| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check the CONTENT against a snapshot taken before regenerating — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
 | `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` |
 | `guest-harness` | build every guest bundle, then run the node harnesses in `dyncomp/test/` over them — the only runtime coverage the guest ABI and the table codec have. Not in `ci`: needs wasm-tools + jco |
 | `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
@@ -259,8 +259,13 @@ Two more generated-from-upstream files live elsewhere and follow the same rule:
   default configuration, from the **machine-readable `builtins/` in the spec
   repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
   Regenerate and verify with the `sanitizer-defaults` task, which does what
-  `skill-embed` and `gen-views` do — regenerate, `moon fmt`, then
-  `git diff --exit-code`. Prefer it to the script's own `--check`: that flag
+  `gen-views` does — regenerate, `moon fmt`, then `git diff --exit-code`.
+  (`skill-embed` no longer works this way: it snapshots the file first and
+  diffs the CONTENT, so it passes on a skill edit that has been re-embedded but
+  not yet committed. The git form fails that case, which made `ci` unrunnable
+  during exactly the change it guards. The remaining `git diff` checks have the
+  same blind spot and could move the same way.)
+  Prefer it to the script's own `--check`: that flag
   compares the generator's UNFORMATTED output against a file `moon fmt` has
   reformatted, so it reports "stale" on content that is byte-identical.
 

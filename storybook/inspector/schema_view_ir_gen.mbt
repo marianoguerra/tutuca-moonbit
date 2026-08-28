@@ -30,12 +30,16 @@ pub let schema_property_spec_source : String =
   #|    key : String
   #|    child : Any
   #|    required : Bool
+  #|
+  #|    where key is nonempty
   #|  }
   #|
   #|  state SchemaBranch {
   #|    label : String
   #|    child : Any
   #|    labelClass : String
+  #|
+  #|    where label is nonempty
   #|  }
 
 ///|

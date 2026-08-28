@@ -36,11 +36,27 @@ pub let activity_entry_spec_source : String =
   #|    before : Any
   #|    after : Any
   #|    hasAfter : Bool
+  #|
+  #|    where matched is one of ["exact", "none"]
+  #|
+  #|    where name is nonempty
+  #|
+  #|    invariant hasAfterTracksAfter
+  #|      format 'hasAfter is set and there is no successor state on the row' {
+  #|        .hasAfter implies (not (null? .after))
+  #|      }
   #|  }
   #|
   #|  state ActivityLog {
   #|    events : Array[Any]
   #|    hasEvents : Bool
+  #|
+  #|    where events len <= 50
+  #|
+  #|    invariant hasEventsTracksEvents
+  #|      format $'hasEvents says {.hasEvents} for {len .events} events' {
+  #|        .hasEvents is ((len .events) > 0)
+  #|      }
   #|  }
   #|
   #|  handle ActivityLog {
@@ -188,6 +204,34 @@ pub fn activity_entry_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hasAfterTracksAfter` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn activity_entry_compute_hasAfterTracksAfter(
+  s : ActivityEntryState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !s.hasAfter ||
+      !(match @tutuca.builtin("null?") {
+        Some(b) => (b.apply)([s.after]).is_truthy()
+        None => false
+      }),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn activity_entry_inline_compute() -> Map[
+  String,
+  (ActivityEntryState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasAfterTracksAfter": activity_entry_compute_hasAfterTracksAfter }
+}
+
+///|
 /// The ActivityEntry component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `ActivityEntryState` states them
@@ -218,6 +262,7 @@ pub fn activity_entry_component(
     common_style~,
     global_style~,
     update?,
+    compute=activity_entry_inline_compute(),
     slots~,
     slot_args~,
     provide~,
@@ -272,6 +317,31 @@ pub fn activity_log_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hasEventsTracksEvents` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn activity_log_compute_hasEventsTracksEvents(
+  s : ActivityLogState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasEvents) : @tutuca.Value) ==
+      (Bool(s.events.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn activity_log_inline_compute() -> Map[
+  String,
+  (ActivityLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasEventsTracksEvents": activity_log_compute_hasEventsTracksEvents }
+}
+
+///|
 /// The ActivityLog component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `ActivityLogState` states them
@@ -302,6 +372,7 @@ pub fn activity_log_component(
     common_style~,
     global_style~,
     update?,
+    compute=activity_log_inline_compute(),
     slots~,
     slot_args~,
     provide~,

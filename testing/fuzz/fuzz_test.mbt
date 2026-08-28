@@ -457,3 +457,205 @@ test "a failing run shrinks to its cause" {
   // setter to write a float the drawer cannot cover.
   assert_eq(small.length(), 1)
 }
+
+// ---------------------------------------------------------------------------
+// Domains: the `where` clauses, and what they do to a run.
+//
+// The Till above is about RULES — a named boolean the runtime asks after every
+// dispatch. What follows is about the other half: a relation between two
+// fields that no type can state, and that a rule can only ever check.
+//
+// The distinction shows in exactly one place, and it is the reason the feature
+// exists. `invariant inRange { … }` would catch a bad index and `Rules::filter`
+// would try to generate around it by rejection — draw, ask, discard — which
+// for `0 <= i < len(items)` never lands. A `where` is read BACKWARDS instead:
+// the same declaration is the range to draw from.
+
+///|
+priv struct AlbumState {
+  photos : Array[@tutuca.Value]
+  cursor : Int
+}
+
+///|
+const ALBUM_SPEC : String =
+  #|state Album {
+  #|  photos : Array[String]
+  #|  cursor : Int
+  #|
+  #|  where cursor is index of .photos
+  #|}
+
+///|
+impl @component.Fields for AlbumState with fn encode(s) {
+  { "photos": List(s.photos), "cursor": Num(s.cursor.to_double()) }
+}
+
+///|
+impl @component.Fields for AlbumState with fn decode(f) {
+  guard f.get("cursor") is Some(Num(c)) else { return None }
+  Some({
+    photos: match f.get("photos") {
+      Some(List(a)) => a
+      _ => []
+    },
+    cursor: c.to_int(),
+  })
+}
+
+///|
+impl @component.Fields for AlbumState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Album",
+    fingerprint="fuzz-album",
+    fields=[
+      @component.FieldInfo::new("photos", TyList(TyText)),
+      @component.FieldInfo::new("cursor", TyInt),
+    ],
+    domains=[
+      { field: "cursor", domain: DIndexOf(field="photos", allow_none=false), },
+    ],
+    view_names=["main"],
+  )
+}
+
+///|
+fn album_module() -> @component.ModuleDef {
+  let comp = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><span class=\"cursor\" @text=\".cursor\"></span></div>",
+      ),
+    },
+    name="Album",
+    init=AlbumState::{ photos: [Str("a"), Str("b"), Str("c")], cursor: 0, },
+    spec=ALBUM_SPEC,
+  )
+  @component.ModuleDef::new(name="album", components=[comp], examples=[
+    { component: "Album", title: "Three", args: Map([]), view: None, },
+  ])
+}
+
+///|
+fn album_plan() -> @fuzz.Plan raise {
+  guard @fuzz.Plan::of_component(album_module().components[0]) is Some(p) else {
+    fail("Album carries a spec block, so it has a plan")
+  }
+  p
+}
+
+///|
+test "a plan says whether drawing against the live state can help" {
+  assert_true(album_plan().state_aware())
+  // The Till declares rules and no domains, so a per-step draw would cost more
+  // and produce the same dispatches.
+  assert_false(till_plan().state_aware())
+}
+
+///|
+test "a live draw puts the cursor in range; a script drawn up front does not" {
+  // The whole complaint, as a measurement. Both runs send the same number of
+  // `setCursor`s to the same component from the same seed; the difference is
+  // only WHEN the argument was drawn.
+  let plan = album_plan()
+  let in_range = (d : @component.Dispatch) => {
+    match d {
+      Receive("setCursor", [Num(n)]) => n >= 0.0 && n < 3.0
+      _ => true
+    }
+  }
+  let count = (script : Array[@component.Dispatch]) => {
+    let mut good = 0
+    let mut total = 0
+    for d in script {
+      if d is Receive("setCursor", _) {
+        total = total + 1
+        if in_range(d) {
+          good = good + 1
+        }
+      }
+    }
+    (good, total)
+  }
+  // Drawn up front, with no field yet holding a value: `cursor` can only be
+  // drawn at `Int`'s own edges, so almost nothing lands.
+  let blind = plan.script(seed=7, steps=60)
+  let (blind_good, blind_total) = count(blind)
+  // Drawn against the state as it stands.
+  let h = @harness.mount_example(album_module(), "Three")
+  let live = plan.run_live(h, steps=60, seed=7)
+  let (live_good, live_total) = count(live.script)
+  // Both runs actually exercised the setter, or the comparison means nothing.
+  assert_true(blind_total > 5)
+  assert_true(live_total > 5)
+  // The claim: the live run mostly lands in range and the blind one mostly
+  // does not. Stated as a ratio rather than a count, because the number of
+  // `setCursor`s drawn differs between the two.
+  assert_true(live_good * 2 > live_total)
+  assert_true(blind_good * 2 < blind_total)
+}
+
+///|
+test "the out-of-domain share is kept, so the refusal itself is exercised" {
+  // A generator that only ever drew valid values would leave the runtime's
+  // rejection with no coverage from the one tool built to find gaps in it.
+  let plan = album_plan()
+  let h = @harness.mount_example(album_module(), "Three")
+  let run = plan.run_live(h, steps=120, seed=3)
+  let mut refused = 0
+  for s in run.steps {
+    for r in s.refused {
+      if r.code is OutOfRange {
+        refused = refused + 1
+      }
+    }
+  }
+  assert_true(refused > 0)
+}
+
+///|
+test "a live run is addressed by its seed, exactly as a script is" {
+  // What changed with per-step drawing is WHEN each step is drawn, not
+  // whether the run can be redrawn tomorrow.
+  let plan = album_plan()
+  let a = plan.run_live(
+    @harness.mount_example(album_module(), "Three"),
+    steps=25,
+    seed=11,
+  )
+  let b = plan.run_live(
+    @harness.mount_example(album_module(), "Three"),
+    steps=25,
+    seed=11,
+  )
+  assert_eq(a.script.length(), b.script.length())
+  for i, d in a.script {
+    assert_true(d == b.script[i])
+  }
+  // …and a different seed is a different run.
+  let c = plan.run_live(
+    @harness.mount_example(album_module(), "Three"),
+    steps=25,
+    seed=12,
+  )
+  assert_false(a.script == c.script)
+}
+
+///|
+test "every state a domain-carrying schema generates satisfies its domains" {
+  // The generator's own claim, over `state_of` rather than over a run: a whole
+  // state is drawn field by field in dependency order, so `cursor` is drawn
+  // after `photos` and against the length it actually got.
+  let defs = @statedef.parse_state(ALBUM_SPEC, name="Album")
+  let def = defs[0]
+  let domains = @info.domains_of(def)
+  for seed in 0UL..<40UL {
+    let st = @arb.state_of(def).sample(seed~)
+    for d in domains {
+      assert_true(
+        @tutuca.domain_holds(d.domain, st.get(d.field).unwrap_or(Null), st),
+      )
+    }
+  }
+}

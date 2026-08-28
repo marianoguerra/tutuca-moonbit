@@ -379,6 +379,13 @@ fn emit_schema(
   // of the methods above; this is what says the runtime should ask it after
   // every dispatch rather than only where a view names it.
   out.write_string(out_channel("invariants", def.invariants()))
+  // The DOMAINS, which nothing above records either. An invariant is a rule
+  // with a name and a body; a `where` is a relation between fields, and it is
+  // carried as data because the runtime evaluates it directly rather than
+  // calling a compiled method.
+  if !def.wheres.is_empty() {
+    out.write_string("    domains=\{def.domains_src()},\n")
+  }
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))
   out.write_string(out_channel("init_names", inits.map(st => st.name)))

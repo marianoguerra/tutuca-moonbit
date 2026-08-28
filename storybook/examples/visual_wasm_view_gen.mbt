@@ -422,13 +422,20 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="95670364407deab6", fields=[
-    @component.FieldInfo::new("id", TyInt),
-    @component.FieldInfo::new("name", TyText),
-    @component.FieldInfo::new("items", TyList(TyAny)),
-    @component.FieldInfo::new("expanded", TyBool),
-    @component.FieldInfo::new("defaultItem", TyAny),
-  ])
+  @component.SchemaInfo::new(
+    fingerprint="95670364407deab6",
+    fields=[
+      @component.FieldInfo::new("id", TyInt),
+      @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("expanded", TyBool),
+      @component.FieldInfo::new("defaultItem", TyAny),
+    ],
+    domains=[
+      { field: "id", domain: DBetween(lo=DLit(0), hi=DLit(12)), },
+      { field: "name", domain: DNonEmpty, },
+    ],
+  )
 }
 
 ///|
@@ -484,10 +491,18 @@ impl @component.Fields for VwMemoryState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwMemoryState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="122f4a56de474a40", fields=[
-    @component.FieldInfo::new("n", TyInt),
-    @component.FieldInfo::new("m", TyInt),
-  ])
+  @component.SchemaInfo::new(
+    fingerprint="122f4a56de474a40",
+    fields=[
+      @component.FieldInfo::new("n", TyInt),
+      @component.FieldInfo::new("m", TyInt),
+    ],
+    domains=[
+      { field: "n", domain: DBetween(lo=DLit(0), hi=DLit(65536)), },
+      { field: "m", domain: DBetween(lo=DLit(0), hi=DLit(65536)), },
+      { field: "m", domain: DCompare(op=DGe, rhs=DField("n")), },
+    ],
+  )
 }
 
 ///|
@@ -559,9 +574,18 @@ impl @component.Fields for VwPickerState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwPickerState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="3fdeef8c03b58885", fields=[
-    @component.FieldInfo::new("currentSection", TyText),
-    @component.FieldInfo::new("instructions", TyList(TyAny)),
-    @component.FieldInfo::new("filter", TyText),
-  ])
+  @component.SchemaInfo::new(
+    fingerprint="3fdeef8c03b58885",
+    fields=[
+      @component.FieldInfo::new("currentSection", TyText),
+      @component.FieldInfo::new("instructions", TyList(TyAny)),
+      @component.FieldInfo::new("filter", TyText),
+    ],
+    domains=[
+      {
+        field: "currentSection",
+        domain: DOneOf(["all", "i32", "i64", "f32", "f64", "control", "vars"]),
+      },
+    ],
+  )
 }

@@ -272,6 +272,11 @@ impl @component.Fields for SpecRuleState with fn schema() {
       @component.FieldInfo::new("format", TyText),
       @component.FieldInfo::new("doc", TyText),
     ],
+    domains=[
+      { field: "kind", domain: DOneOf(["pred", "invariant"]), },
+      { field: "name", domain: DNonEmpty, },
+      { field: "source", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }
@@ -499,6 +504,8 @@ impl @component.Fields for SpecViewerState with fn schema() {
       @component.FieldInfo::new("note", TyText),
     ],
     intents=["toggleAllSections"],
+    methods=["hintExplainsTheEmptyView"],
+    invariants=["hintExplainsTheEmptyView"],
     view_names=["main"],
   )
 }
@@ -585,6 +592,8 @@ impl @component.Fields for SpecSourceState with fn schema() {
       @component.FieldInfo::new("hint", TyText),
       @component.FieldInfo::new("note", TyText),
     ],
+    methods=["hasSourceTracksSource", "hintExplainsTheEmptySource"],
+    invariants=["hasSourceTracksSource", "hintExplainsTheEmptySource"],
     view_names=["main"],
   )
 }

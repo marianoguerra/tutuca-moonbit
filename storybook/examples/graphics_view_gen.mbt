@@ -203,6 +203,9 @@ impl @component.Fields for SwatchPickerState with fn schema() {
       @component.FieldInfo::new("palette", TyList(TyAny)),
     ],
     view_handlers=["setColor"],
+    methods=["colorIsOnThePalette"],
+    invariants=["colorIsOnThePalette"],
+    domains=[{ field: "palette", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }

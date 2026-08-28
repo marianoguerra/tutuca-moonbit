@@ -10,6 +10,12 @@
     query : String
     page : Int
     pageSize : Int
+
+    /// `pageSize` is a divisor and `page` is an offset into the filtered
+    /// list. A size of zero divides by zero in `next`, and a negative one
+    /// asks the pager for a slice that runs backwards.
+    where pageSize between 1 and 100
+    where page >= 0
   }
 
   state Strategies {

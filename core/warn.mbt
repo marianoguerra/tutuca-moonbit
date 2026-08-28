@@ -118,3 +118,27 @@ pub fn invariant_failed(
     "contract: `\{handler}` was abandoned — it broke the invariant `\{pred}`",
   )
 }
+
+///|
+/// A write left a field outside its declared domain, so it was abandoned.
+///
+/// `field` goes where a rule's name goes, and that is the point rather than a
+/// convenience: a `where` has no name, and what a reader needs is the FIELD
+/// and the relation it left. `sentence` is composed from the relation
+/// (`domain_sentence`) rather than written by an author, which is why a
+/// `where` carries no `format`.
+pub fn domain_failed(
+  handler~ : String,
+  field~ : String,
+  sentence? : String = "",
+  state? : Value = Null,
+) -> Unit {
+  contract_failed(
+    OutOfRange,
+    handler,
+    field,
+    sentence,
+    state,
+    "contract: `\{handler}` was abandoned — it put `\{field}` outside its declared domain",
+  )
+}

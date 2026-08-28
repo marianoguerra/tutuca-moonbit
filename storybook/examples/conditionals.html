@@ -1,10 +1,21 @@
 <script type="tutuca/spec">
   state TrafficLight {
     lightIndex : Int
+
+    /// Three lights, so three positions — the same `mod 3` the handler
+    /// applies, said once where a reader and a generator can both see it.
+    /// `nextLight` cannot leave the cycle, and a fuzzer drawing this field
+    /// never asks `$light` about a colour that does not exist.
+    where lightIndex between 0 and 2
   }
 
   state TabbedUI {
     tab : String
+
+    /// The tab strip is CLOSED: three buttons, three panels, and a fourth
+    /// name would render a page with nothing on it. `setTab` is generated, so
+    /// this is the only place the closed set can be stated.
+    where tab is one of ["overview", "features", "pricing"]
   }
 
   state ListAndFilter {

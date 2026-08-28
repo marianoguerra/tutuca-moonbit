@@ -20,6 +20,13 @@
 // the thing an author should be able to do freely, the most expensive edit in
 // the block.
 //
+// A `where` IS NOT HASHED either, by that same argument rather than by
+// analogy. A domain narrows which values are legal; it does not change how a
+// stored one is READ. A state that violates a newly added `where` decodes
+// exactly as it always did — what changes is that the next write to that field
+// is refused, which is the clause working, not a state that can no longer be
+// understood. Tightening a domain should cost what tightening a rule costs.
+//
 
 ///|
 /// A stable structural fingerprint of the whole schema.

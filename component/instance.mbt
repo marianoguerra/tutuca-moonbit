@@ -243,6 +243,44 @@ fn[S] TypedInstance::set(
   guard self.spec.comp is Some(comp) else { return self }
   guard comp.specs.get(name) is Some(fspec) else { return self }
   let coerced = fspec.coerce_or_default(v)
+  // THE FIRST DOOR a `where` has: the write itself.
+  //
+  // Only the domains of the field BEING WRITTEN, and against the fields as
+  // they stand — so `setCurrentIndex 99` is turned down here, while shrinking
+  // `items` under a `currentIndex` that was fine is not, because that write is
+  // about `items` and nothing said anything about its length. The second door
+  // (`broken_rule`, after the transition) is what catches the second case, and
+  // that division is exactly why there are two.
+  //
+  // Answering `self` is the refusal: `FieldBox.set` is documented to answer
+  // the instance's own value for a write the instance refused, and the
+  // transactor reads the unchanged identity as "nothing happened".
+  if !comp.schema.domains.is_empty() {
+    match
+      @tutuca.broken_domain(comp.schema.domains, name, coerced, self.fields) {
+      Some(d) => {
+        let sentence = @tutuca.domain_sentence(d, name, coerced, self.fields)
+        if @tutuca.refusing() {
+          @tutuca.refuse({
+            code: OutOfRange,
+            asked: @tutuca.mutator_name("set", name),
+            rule: name,
+            sentence,
+            state: self.to_value(),
+            path: @tutuca.Path::new(),
+          })
+        } else {
+          @tutuca.domain_failed(
+            handler=@tutuca.mutator_name("set", name),
+            field=name,
+            sentence~,
+          )
+        }
+        return self
+      }
+      None => ()
+    }
+  }
   // Writing a value equal to the one already stored changes nothing, so keep
   // THIS instance — a `$setCompleted value` that re-sends the value the
   // checkbox already holds must not look like a state change. Values are
@@ -478,6 +516,61 @@ fn[S] TypedInstance::broken_invariant(
 }
 
 ///|
+/// What the component declared, and the successor did not keep.
+///
+/// One type over the two, because the two commit points below have to ask one
+/// question: "may this successor stand?". A second `if` at each site would be
+/// the kind of pair that grows a bug on one side of it a year later.
+priv enum Broke {
+  /// An `invariant` answered false. Carries the rule's name.
+  BInvariant(String)
+  /// A field left its declared domain. Carries the field and the sentence the
+  /// relation composed — which is why a `where` needs no `format`.
+  BDomain(field~ : String, sentence~ : String)
+}
+
+///|
+/// The first thing the successor breaks, or None.
+///
+/// Invariants first, deliberately. An `invariant` is a sentence the author
+/// wrote about their component; a domain is a relation the schema states. When
+/// a transition breaks both, the author's own words are the more useful
+/// report, and the domain is usually the mechanism behind them.
+fn[S] TypedInstance::broken_rule(
+  self : TypedInstance[S],
+  successor : @tutuca.Value,
+) -> Broke? {
+  if self.broken_invariant(successor) is Some(rule) {
+    return Some(BInvariant(rule))
+  }
+  guard self.spec.comp is Some(comp) else { return None }
+  guard !comp.schema.domains.is_empty() else { return None }
+  // Read off the SUCCESSOR rather than off `self.fields`, because that is the
+  // state in question — and a domain is cross-field, so every field has to
+  // come from the same one.
+  //
+  // Field by field through `Obj::obj_field` rather than `Value::map`: an
+  // instance is an `Obj` and not a `Map`, so `map()` would answer empty and
+  // every relation would silently read `Null`.
+  let after : Map[String, @tutuca.Value] = Map([])
+  for f in comp.schema.fields {
+    after[f.name] = successor.field(f.name)
+  }
+  for d in comp.schema.domains {
+    let v = after.get(d.field).unwrap_or(Null)
+    if !@tutuca.domain_holds(d.domain, v, after) {
+      return Some(
+        BDomain(
+          field=d.field,
+          sentence=@tutuca.domain_sentence(d.domain, d.field, v, after),
+        ),
+      )
+    }
+  }
+  None
+}
+
+///|
 /// Report a broken invariant and answer the state that stands instead.
 ///
 /// The transition is ABANDONED, which is the answer every other refusal in a
@@ -509,6 +602,46 @@ fn[S] TypedInstance::refuse_invariant(
     @tutuca.invariant_failed(handler=asked, pred=rule, sentence="")
   }
   self.to_value()
+}
+
+///|
+/// Report whatever the successor broke, and answer the state that stands.
+///
+/// Same abandonment either way — the previous state stands, and a generated
+/// mutator raises no effects, so nothing half-done is left behind.
+///
+/// The difference is in what is REPORTED, and it is the difference between the
+/// two kinds of declaration. An invariant reports its NAME and no sentence:
+/// its `format` is compiled into the arm beside it, at the moment it fails,
+/// and there is no such moment here. A domain reports its FIELD and a sentence
+/// that always exists, because a relation knows what it wanted and what it
+/// got — the whole reason a `where` carries no `format`.
+fn[S] TypedInstance::refuse_broken(
+  self : TypedInstance[S],
+  broke : Broke,
+  asked : String,
+  rejected : @tutuca.Value,
+) -> @tutuca.Value {
+  match broke {
+    BInvariant(rule) => self.refuse_invariant(rule, asked, rejected)
+    BDomain(field~, sentence~) => {
+      if @tutuca.refusing() {
+        @tutuca.refuse({
+          code: OutOfRange,
+          asked,
+          // The FIELD goes where a rule's name goes: a `where` has no name,
+          // and the field is the thing a reader goes and looks at.
+          rule: field,
+          sentence,
+          state: rejected,
+          path: @tutuca.Path::new(),
+        })
+      } else {
+        @tutuca.domain_failed(handler=asked, field~, sentence~)
+      }
+      self.to_value()
+    }
+  }
 }
 
 ///|
@@ -550,8 +683,8 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
               // never reached here. What this covers is the hand-written
               // `update~`, whose effects may already have fired: the state is
               // rolled back, the effects are not, and that limit is real.
-              return match self.broken_invariant(nv) {
-                Some(rule) => Some(self.refuse_invariant(rule, name, nv))
+              return match self.broken_rule(nv) {
+                Some(broke) => Some(self.refuse_broken(broke, name, nv))
                 None => Some(nv)
               }
             }
@@ -586,8 +719,8 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
               // A mutator raises no effects, so the abandonment here is
               // complete — there is nothing half-done to leave behind.
               Obj(_) as nv =>
-                return match self.broken_invariant(nv) {
-                  Some(rule) => Some(self.refuse_invariant(rule, name, nv))
+                return match self.broken_rule(nv) {
+                  Some(broke) => Some(self.refuse_broken(broke, name, nv))
                   None => Some(nv)
                 }
               _ => ()

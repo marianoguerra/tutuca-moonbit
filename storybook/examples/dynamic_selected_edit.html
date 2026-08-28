@@ -11,6 +11,12 @@
     items : Map[String, Any]
     selectedKey : String
     editor : Component[Editor]
+
+    /// The whole point of this example, as a relation. `*selected` resolves
+    /// `.items[.selectedKey]`, so a key the map does not hold is an editor
+    /// bound to nothing — which renders as an empty panel rather than as an
+    /// error, and is exactly the failure a domain turns into a refusal.
+    where selectedKey is key of .items
   }
 </script>
 

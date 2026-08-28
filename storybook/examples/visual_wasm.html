@@ -32,16 +32,34 @@
     items : Array[Any]
     expanded : Bool
     defaultItem : Any
+
+    /// A wasm section id is a byte the binary format assigns, 0 (custom)
+    /// through 12 (data count). Nothing outside that range names a section.
+    where id between 0 and 12
+    where name is nonempty
   }
 
   state VwMemory {
     n : Int
     m : Int
+
+    /// A wasm memory type is a page range. The unit is a 64 KiB page and the
+    /// 32-bit address space holds 65536 of them, so both ends are facts about
+    /// wasm rather than a taste in limits — and `m >= .n` is the relation
+    /// between two fields that makes the pair a TYPE instead of two numbers.
+    where n between 0 and 65536
+    where m between 0 and 65536
+    where m >= .n
   }
 
   state VwPicker {
     currentSection : String
     instructions : Array[Any]
     filter : String
+
+    /// The radio row, as a closed set. Every name here answers a
+    /// `$setCurrent…` and fills `instructions` from its category; a name
+    /// outside it leaves the list showing whatever was there before.
+    where currentSection is one of ["all", "i32", "i64", "f32", "f64", "control", "vars"]
   }
 </script>

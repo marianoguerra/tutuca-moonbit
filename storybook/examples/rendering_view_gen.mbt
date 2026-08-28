@@ -238,6 +238,7 @@ impl @component.Fields for PushViewState with fn schema() {
     ],
     view_handlers=["resetQuery", "setQuery", "toggleView"],
     methods=["getToggleLabel"],
+    domains=[{ field: "view", domain: DOneOf(["main", "edit"]), }],
     view_names=["main"],
   )
 }
@@ -474,6 +475,13 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
     ],
     view_handlers=["setCurrentIndex", "setCurrentKey"],
     methods=["getMaxIndex"],
+    domains=[
+      {
+        field: "currentIndex",
+        domain: DIndexOf(field="byIndex", allow_none=true),
+      },
+      { field: "currentKey", domain: DKeyOf(field="byKey"), },
+    ],
     view_names=["main"],
   )
 }
@@ -657,6 +665,10 @@ pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum PaginationMethod {
   IsFirstPage
   IsLastPage
@@ -702,7 +714,12 @@ impl @component.Fields for PaginationState with fn schema() {
       @component.FieldInfo::new("pageSize", TyInt),
     ],
     view_handlers=["next", "prev"],
-    methods=["isFirstPage", "isLastPage", "pageLabel"],
+    methods=["isFirstPage", "isLastPage", "pageExists", "pageLabel"],
+    invariants=["pageExists"],
+    domains=[
+      { field: "pageSize", domain: DBetween(lo=DLit(1), hi=DLit(100)), },
+      { field: "page", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }

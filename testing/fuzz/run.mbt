@@ -268,6 +268,63 @@ pub fn[N] Plan::run(
 }
 
 ///|
+/// Run `steps` dispatches, each drawn against the state the last one left.
+///
+/// The state-aware twin of `run`, and the one a component with a `where`
+/// wants. `run` takes a script sampled before the first dispatch, when no
+/// field has a value — so `setCurrentIndex` could only ever be drawn at
+/// `Int`'s edges, and almost every step was a state no interaction could
+/// reach. Drawing per step is what lets the same declaration produce an index
+/// that is actually in range.
+///
+/// The outcomes and the stopping rule are `run`'s, unchanged: the rules are
+/// asked after every step and the first break is the answer.
+///
+/// `Run.script` is the dispatches that were ACTUALLY SENT, recorded as they
+/// were drawn. That is what the shrinker needs — a shortened script replayed
+/// against a different state would redraw different arguments, so shrinking
+/// has to work on the concrete dispatches rather than on the seed.
+pub fn[N] Plan::run_live(
+  self : Plan,
+  h : @harness.Harness[N],
+  steps~ : Int,
+  seed? : UInt64 = 0,
+  at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
+  read? : Reader,
+) -> Run raise {
+  let out : Array[Step] = []
+  let script : Array[@component.Dispatch] = []
+  for i in 0..<steps {
+    // The state the NEXT dispatch is drawn against: what the component is
+    // sitting in right now, which after step zero is what the run itself put
+    // there.
+    let now = settled(h, read?)
+    guard self.next_at(now, seed~, step=i) is Some(d) else { break }
+    script.push(d)
+    let s = self.step(h, d, at~, read?)
+    out.push(s)
+    if s.broke.length() > 0 {
+      let rule = s.broke[0]
+      return {
+        outcome: Broke(rule~, sentence=self.sentence_of(rule), at=i),
+        steps: out,
+        script,
+        seed,
+      }
+    }
+    if s.disagreed.length() > 0 {
+      return {
+        outcome: Disagreed(rule=s.disagreed[0], at=i),
+        steps: out,
+        script,
+        seed,
+      }
+    }
+  }
+  { outcome: Held, steps: out, script, seed, }
+}
+
+///|
 /// The words a rule says when it does not hold.
 ///
 /// Public because a caller that reports a break it found itself — the

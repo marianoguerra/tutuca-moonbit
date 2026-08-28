@@ -29,6 +29,9 @@ pub let alt_url_spec_source : String =
   #|  state AltUrl {
   #|    label : String
   #|    url : String
+  #|
+  #|    where label is nonempty
+  #|    where url is nonempty
   #|  }
   #|
   #|  state PsEntry {
@@ -42,6 +45,11 @@ pub let alt_url_spec_source : String =
   #|    url : String
   #|    altUrls : Array[Any]
   #|    categories : Array[Any]
+  #|
+  #|    where lang is one of ["en", "es"]
+  #|
+  #|    where title is nonempty
+  #|    where url is nonempty
   #|  }
   #|
   #|  state Root {

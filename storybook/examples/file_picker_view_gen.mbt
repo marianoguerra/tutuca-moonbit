@@ -183,6 +183,10 @@ pub fn FilePickerMsg::from_dispatch(d : @component.Dispatch) -> FilePickerMsg? {
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pickedFileIsDescribed.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum FilePickerMethod {
   LastModifiedLabel
   SizeLabel
@@ -217,7 +221,14 @@ impl @component.Fields for FilePickerState with fn schema() {
       @component.FieldInfo::new("hasFile", TyBool),
     ],
     view_handlers=["onPickFile"],
-    methods=["lastModifiedLabel", "sizeLabel", "typeLabel"],
+    methods=[
+      "lastModifiedLabel", "pickedFileIsDescribed", "sizeLabel", "typeLabel",
+    ],
+    invariants=["pickedFileIsDescribed"],
+    domains=[
+      { field: "size", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "lastModified", domain: DCompare(op=DGe, rhs=DLit(0)), },
+    ],
     view_names=["main"],
   )
 }

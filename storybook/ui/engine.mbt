@@ -1605,6 +1605,11 @@ fn FuzzSession::rearm(self : FuzzSession) -> Unit {
   self.outcome = None
   self.reproducer = []
   self.script = match self.plan {
+    // A component with a `where` draws its dispatches AS IT GOES, against the
+    // state each step lands in — an index cannot be drawn in range before the
+    // list it indexes has a length. So there is no script to sample up front,
+    // and `script` fills in one entry per step instead.
+    Some(p) if p.state_aware() => []
     Some(p) => p.script(seed=self.seed, steps=self.steps)
     None => []
   }
@@ -1682,7 +1687,14 @@ fn[N] aim_fuzz(
 fn[N] fuzz_step_once(app : @app.App[N], session : FuzzSession) -> Bool {
   guard session.plan is Some(plan) else { return false }
   let next = session.at + 1
-  guard next < session.script.length() else { return false }
+  // How many steps are LEFT differs between the two draws: a sampled script
+  // knows its own length, and a live one is bounded by the knob instead.
+  let planned = if plan.state_aware() {
+    session.steps
+  } else {
+    session.script.length()
+  }
+  guard next < planned else { return false }
   // A story lives at `.sN`, so a dispatch is addressed there and not at the
   // root — the same addressing the scoped recorder cuts at.
   let at = @tutuca.DispatchPath::of_steps(story_place(session.idx).to_steps())
@@ -1693,6 +1705,16 @@ fn[N] fuzz_step_once(app : @app.App[N], session : FuzzSession) -> Bool {
   // about the wrong component. `.sN` is the instance the rules are about, and
   // it is the same field the Story tab renders.
   let read = story_reader(app, session.idx)
+  // Drawn now, from the state the last step left, and RECORDED — a reproducer
+  // and the shrinker both work on the dispatches that were actually sent,
+  // because replaying a shortened script would redraw different arguments.
+  if plan.state_aware() {
+    let now = @fuzz.settled(h, read~)
+    guard plan.next_at(now, seed=session.seed, step=next) is Some(d) else {
+      return false
+    }
+    session.script.push(d)
+  }
   let step = plan.step(h, session.script[next], at~, read~) catch {
     _ => return false
   }
@@ -1709,7 +1731,7 @@ fn[N] fuzz_step_once(app : @app.App[N], session : FuzzSession) -> Bool {
     session.outcome = Some(Disagreed(rule=step.disagreed[0], at=next))
     return false
   }
-  if next == session.script.length() - 1 {
+  if next == planned - 1 {
     session.outcome = Some(Held)
     return false
   }

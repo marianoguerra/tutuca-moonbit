@@ -31,6 +31,8 @@ pub let rich_sample_spec_source : String =
   #|    count : Int
   #|    tags : Array[Any]
   #|    open : Bool
+  #|
+  #|    where count >= 0
   #|  }
   #|
   #|  handle RichSample {
@@ -53,6 +55,8 @@ pub let rich_sample_spec_source : String =
   #|    count : Int
   #|    tags : Array[Any]
   #|    open : Bool
+  #|
+  #|    where count >= 0
   #|  }
 
 ///|

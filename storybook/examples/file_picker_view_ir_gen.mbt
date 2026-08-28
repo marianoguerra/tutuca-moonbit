@@ -32,6 +32,14 @@ pub let file_picker_spec_source : String =
   #|    type : String
   #|    lastModified : Double
   #|    hasFile : Bool
+  #|
+  #|    where size >= 0
+  #|    where lastModified >= 0
+  #|
+  #|    invariant pickedFileIsDescribed
+  #|      format 'the file table is showing, but no file name came with it' {
+  #|        .hasFile implies ((len .name) > 0)
+  #|      }
   #|  }
 
 ///|
@@ -111,6 +119,27 @@ pub fn file_picker_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant pickedFileIsDescribed` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn file_picker_compute_pickedFileIsDescribed(
+  s : FilePickerState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.hasFile || s.name.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn file_picker_inline_compute() -> Map[
+  String,
+  (FilePickerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "pickedFileIsDescribed": file_picker_compute_pickedFileIsDescribed }
+}
+
+///|
 /// The FilePicker component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `FilePickerState` states them
@@ -151,14 +180,20 @@ pub fn file_picker_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([LastModifiedLabel, SizeLabel, TypeLabel] : Array[FilePickerMethod]),
-          FilePickerMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            ([LastModifiedLabel, SizeLabel, TypeLabel] : Array[FilePickerMethod]),
+            FilePickerMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in file_picker_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

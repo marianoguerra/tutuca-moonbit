@@ -474,6 +474,8 @@ pub fn trace_row_component(name? : String, views? : Map[String, @anode.View], in
 
 pub let trace_row_global_style : String
 
+pub let trace_row_spec_source : String
+
 pub fn trace_row_views() -> Map[String, @anode.View]
 
 pub fn trace_scope_label(String) -> String

@@ -43,12 +43,32 @@ pub let fuzz_row_spec_source : String =
   #|    current : Bool
   #|    after : Any
   #|    open : Bool
+  #|
+  #|    where verb is one of ["send", "intent"]
+  #|
+  #|    where at >= 0
+  #|    where renders >= 0
+  #|
+  #|    invariant refusalNamesSomething
+  #|      format 'the row says it was refused and has nothing to show for it' {
+  #|        .refused implies ((len .refusedRule) > 0)
+  #|      }
+  #|
+  #|    invariant breakNamesARule
+  #|      format 'the row says a rule broke and does not say which' {
+  #|        .broke implies ((len .brokeRule) > 0)
+  #|      }
   #|  }
   #|
   #|  state FuzzLog {
   #|    rows : Array[Any]
   #|    hasRows : Bool
   #|    emptyHint : String
+  #|
+  #|    invariant hasRowsTracksRows
+  #|      format $'hasRows says {.hasRows} for {len .rows} rows' {
+  #|        .hasRows is ((len .rows) > 0)
+  #|      }
   #|  }
   #|
   #|  state FuzzControls {
@@ -61,6 +81,18 @@ pub let fuzz_row_spec_source : String =
   #|    playing : Bool
   #|    canRun : Bool
   #|    noPlanHint : String
+  #|
+  #|    where source is one of ["mutators", "declared", "either"]
+  #|
+  #|    invariant hintExplainsTheDisabledButton
+  #|      format 'nothing can be generated, and the panel does not say why' {
+  #|        (not .canRun) implies ((len .noPlanHint) > 0)
+  #|      }
+  #|
+  #|    invariant playingNeedsAPlan
+  #|      format 'a run is in flight with no plan behind it' {
+  #|        .playing implies .canRun
+  #|      }
   #|  }
   #|
   #|  state FuzzVerdict {
@@ -74,6 +106,25 @@ pub let fuzz_row_spec_source : String =
   #|    hasUnchecked : Bool
   #|    reproducer : Array[Any]
   #|    hasReproducer : Bool
+  #|
+  #|    where kind is one of ["none", "held", "broke", "disagreed", "stuck"]
+  #|
+  #|    where at >= -1
+  #|
+  #|    invariant findingsNameTheirRule
+  #|      format $'a {.kind} verdict with no rule on it' {
+  #|        ((.kind is 'broke') or (.kind is 'disagreed')) implies ((len .rule) > 0)
+  #|      }
+  #|
+  #|    invariant hasReproducerTracksReproducer
+  #|      format 'hasReproducer and the reproducer disagree' {
+  #|        .hasReproducer is ((len .reproducer) > 0)
+  #|      }
+  #|
+  #|    invariant hasUncheckedTracksUnchecked
+  #|      format 'hasUnchecked and the unchecked list disagree' {
+  #|        .hasUnchecked is ((len .unchecked) > 0)
+  #|      }
   #|  }
   #|
   #|  state FuzzPanel {
@@ -83,6 +134,12 @@ pub let fuzz_row_spec_source : String =
   #|    hasRun : Bool
   #|    at : Int
   #|    total : Int
+  #|
+  #|    where at >= 0
+  #|    where total >= 0
+  #|
+  #|    invariant atWithinTotal
+  #|      format $'parked at step {.at} of {.total}' { .at <= .total }
   #|  }
 
 ///|
@@ -249,9 +306,62 @@ fn fuzz_row_inline_update(
   match msg {
     Receive("toggle", _args) => {
       let s = { ..s, open: !s.open, }
+      guard !s.broke || s.brokeRule.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="toggle",
+          pred="breakNamesARule",
+          sentence="the row says a rule broke and does not say which",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.refused || s.refusedRule.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="toggle",
+          pred="refusalNamesSomething",
+          sentence="the row says it was refused and has nothing to show for it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `invariant refusalNamesSomething` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_row_compute_refusalNamesSomething(
+  s : FuzzRowState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.refused || s.refusedRule.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// `invariant breakNamesARule` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_row_compute_breakNamesARule(
+  s : FuzzRowState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.broke || s.brokeRule.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn fuzz_row_inline_compute() -> Map[
+  String,
+  (FuzzRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "refusalNamesSomething": fuzz_row_compute_refusalNamesSomething,
+    "breakNamesARule": fuzz_row_compute_breakNamesARule,
   }
 }
 
@@ -296,6 +406,7 @@ pub fn fuzz_row_component(
         answered => answered
       }
     },
+    compute=fuzz_row_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -355,6 +466,31 @@ pub fn fuzz_log_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hasRowsTracksRows` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_log_compute_hasRowsTracksRows(
+  s : FuzzLogState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasRows) : @tutuca.Value) ==
+      (Bool(s.rows.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn fuzz_log_inline_compute() -> Map[
+  String,
+  (FuzzLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasRowsTracksRows": fuzz_log_compute_hasRowsTracksRows }
+}
+
+///|
 /// The FuzzLog component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `FuzzLogState` states them
@@ -385,6 +521,7 @@ pub fn fuzz_log_component(
     common_style~,
     global_style~,
     update?,
+    compute=fuzz_log_inline_compute(),
     slots~,
     slot_args~,
     provide~,
@@ -606,6 +743,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="setSeed",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSeed",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -626,6 +781,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="setSteps",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSteps",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -646,6 +819,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="setSource",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSource",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -660,6 +851,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="burst",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="burst",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -674,6 +883,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="play",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="play",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -688,6 +915,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="stop",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="stop",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -702,6 +947,24 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="step",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="step",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -716,12 +979,65 @@ fn fuzz_controls_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !s.playing || s.canRun else {
+        @tutuca.invariant_failed(
+          handler="reset",
+          pred="playingNeedsAPlan",
+          sentence="a run is in flight with no plan behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="reset",
+          pred="hintExplainsTheDisabledButton",
+          sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `invariant hintExplainsTheDisabledButton` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_controls_compute_hintExplainsTheDisabledButton(
+  s : FuzzControlsState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!(!s.canRun) || s.noPlanHint.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// `invariant playingNeedsAPlan` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_controls_compute_playingNeedsAPlan(
+  s : FuzzControlsState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.playing || s.canRun) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn fuzz_controls_inline_compute() -> Map[
+  String,
+  (FuzzControlsState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "hintExplainsTheDisabledButton": fuzz_controls_compute_hintExplainsTheDisabledButton,
+    "playingNeedsAPlan": fuzz_controls_compute_playingNeedsAPlan,
   }
 }
 
@@ -770,6 +1086,7 @@ pub fn fuzz_controls_component(
         answered => answered
       }
     },
+    compute=fuzz_controls_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -921,12 +1238,105 @@ fn fuzz_verdict_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard !((Str(s.kind) : @tutuca.Value) == (Str("broke") : @tutuca.Value) ||
+        (Str(s.kind) : @tutuca.Value) == (Str("disagreed") : @tutuca.Value)) ||
+        s.rule.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="shrink",
+          pred="findingsNameTheirRule",
+          sentence="a " +
+            (Str(s.kind) : @tutuca.Value).to_display_string() +
+            " verdict with no rule on it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasUnchecked) : @tutuca.Value) ==
+        (Bool(s.unchecked.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="shrink",
+          pred="hasUncheckedTracksUnchecked",
+          sentence="hasUnchecked and the unchecked list disagree",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasReproducer) : @tutuca.Value) ==
+        (Bool(s.reproducer.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="shrink",
+          pred="hasReproducerTracksReproducer",
+          sentence="hasReproducer and the reproducer disagree",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `invariant findingsNameTheirRule` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_verdict_compute_findingsNameTheirRule(
+  s : FuzzVerdictState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !((Str(s.kind) : @tutuca.Value) == (Str("broke") : @tutuca.Value) ||
+      (Str(s.kind) : @tutuca.Value) == (Str("disagreed") : @tutuca.Value)) ||
+      s.rule.length().to_double() > 0.0,
+    ) : @tutuca.Value)
+}
+
+///|
+/// `invariant hasReproducerTracksReproducer` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_verdict_compute_hasReproducerTracksReproducer(
+  s : FuzzVerdictState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasReproducer) : @tutuca.Value) ==
+      (Bool(s.reproducer.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// `invariant hasUncheckedTracksUnchecked` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_verdict_compute_hasUncheckedTracksUnchecked(
+  s : FuzzVerdictState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasUnchecked) : @tutuca.Value) ==
+      (Bool(s.unchecked.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn fuzz_verdict_inline_compute() -> Map[
+  String,
+  (FuzzVerdictState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "findingsNameTheirRule": fuzz_verdict_compute_findingsNameTheirRule,
+    "hasReproducerTracksReproducer": fuzz_verdict_compute_hasReproducerTracksReproducer,
+    "hasUncheckedTracksUnchecked": fuzz_verdict_compute_hasUncheckedTracksUnchecked,
   }
 }
 
@@ -975,6 +1385,7 @@ pub fn fuzz_verdict_component(
         answered => answered
       }
     },
+    compute=fuzz_verdict_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -1047,6 +1458,27 @@ pub fn fuzz_panel_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant atWithinTotal` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_panel_compute_atWithinTotal(
+  s : FuzzPanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.at.to_double() <= s.total.to_double()) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn fuzz_panel_inline_compute() -> Map[
+  String,
+  (FuzzPanelState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "atWithinTotal": fuzz_panel_compute_atWithinTotal }
+}
+
+///|
 /// The FuzzPanel component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `FuzzPanelState` states them
@@ -1077,6 +1509,7 @@ pub fn fuzz_panel_component(
     common_style~,
     global_style~,
     update?,
+    compute=fuzz_panel_inline_compute(),
     slots~,
     slot_args~,
     provide~,

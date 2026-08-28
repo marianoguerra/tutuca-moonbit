@@ -29,6 +29,13 @@ pub let swatch_picker_spec_source : String =
   #|  state SwatchPicker {
   #|    color : String
   #|    palette : Array[Any]
+  #|
+  #|    where palette is nonempty
+  #|
+  #|    invariant colorIsOnThePalette
+  #|      format $'{.color} is not one of the swatches' {
+  #|        has .palette .color
+  #|      }
   #|  }
   #|
   #|  state Quadratic {
@@ -108,6 +115,27 @@ pub fn swatch_picker_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant colorIsOnThePalette` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn swatch_picker_compute_colorIsOnThePalette(
+  s : SwatchPickerState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.palette.contains((Str(s.color) : @tutuca.Value))) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn swatch_picker_inline_compute() -> Map[
+  String,
+  (SwatchPickerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "colorIsOnThePalette": swatch_picker_compute_colorIsOnThePalette }
+}
+
+///|
 /// The SwatchPicker component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SwatchPickerState` states them
@@ -151,6 +179,7 @@ pub fn swatch_picker_component(
     common_style~,
     global_style~,
     update?,
+    compute=swatch_picker_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

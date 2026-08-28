@@ -68,6 +68,7 @@ impl @component.Fields for CompNameState with fn schema() {
     name="CompName",
     fingerprint="0f7bc95511eb74b8",
     fields=[@component.FieldInfo::new("name", TyText)],
+    domains=[{ field: "name", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }
@@ -140,6 +141,10 @@ impl @component.Fields for CompFieldState with fn schema() {
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("typeName", TyText),
       @component.FieldInfo::new("child", TyAny),
+    ],
+    domains=[
+      { field: "name", domain: DNonEmpty, },
+      { field: "typeName", domain: DNonEmpty, },
     ],
     view_names=["main"],
   )
@@ -338,6 +343,7 @@ impl @component.Fields for CompViewState with fn schema() {
     ],
     view_handlers=["toggle"],
     methods=["arrowText"],
+    domains=[{ field: "name", domain: DNonEmpty, }],
     view_names=["main"],
   )
 }
@@ -546,6 +552,10 @@ pub fn CompSectionMsg::from_dispatch(
 
 ///|
 /// Every `$name` the views call.
+///
+/// Absent, because the script block answers them: pageExists.
+/// The block's own handlers are merged into this bucket, so an arm for one of
+/// these could never run.
 pub(all) enum CompSectionMethod {
   ArrowText
   CannotNextPage
@@ -605,7 +615,12 @@ impl @component.Fields for CompSectionState with fn schema() {
     view_handlers=["nextPage", "prevPage", "toggle"],
     methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
-      "pageIndicatorText", "showPagination", "typeText",
+      "pageExists", "pageIndicatorText", "showPagination", "typeText",
+    ],
+    invariants=["pageExists"],
+    domains=[
+      { field: "itemsPerPage", domain: DBetween(lo=DLit(1), hi=DLit(500)), },
+      { field: "currentPage", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
     view_names=["main"],
   )
@@ -769,6 +784,10 @@ impl @component.Fields for ComponentInspectorState with fn schema() {
     ],
     intents=["toggleAllSections", "toggleAllViews"],
     methods=["idText"],
+    domains=[
+      { field: "compId", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      { field: "compName", domain: DNonEmpty, },
+    ],
     view_names=["main"],
   )
 }

@@ -31,6 +31,8 @@ pub let story_nav_spec_source : String =
   #|    name : String
   #|    count : Int
   #|    selected : Bool
+  #|
+  #|    where count >= 0
   #|  }
   #|
   #|  handle StoryNav {
@@ -49,6 +51,13 @@ pub let story_nav_spec_source : String =
   #|    args : String
   #|    target : Component
   #|    error : String
+  #|
+  #|    where name is nonempty
+  #|
+  #|    invariant aCardShowsSomething
+  #|      format $'{.module}/{.name} has neither an instance nor a reason' {
+  #|        (not (null? .target)) or ((len .error) > 0)
+  #|      }
   #|  }
   #|
   #|  handle StoryCard {
@@ -70,6 +79,10 @@ pub let story_nav_spec_source : String =
   #|    status : String
   #|    emptyMessage : String
   #|    devTools : Component
+  #|
+  #|    where mode is one of ["main", "details"]
+  #|
+  #|    where theme is one of ["light", "dark", "corporate", "dracula", "nord", "retro", "winter"]
   #|  }
   #|
   #|  handle DyncompStorybook {
@@ -390,6 +403,34 @@ pub fn story_card_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant aCardShowsSomething` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn story_card_compute_aCardShowsSomething(
+  s : StoryCardState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !(match @tutuca.builtin("null?") {
+        Some(b) => (b.apply)([s.target]).is_truthy()
+        None => false
+      }) ||
+      s.error.length().to_double() > 0.0,
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn story_card_inline_compute() -> Map[
+  String,
+  (StoryCardState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "aCardShowsSomething": story_card_compute_aCardShowsSomething }
+}
+
+///|
 /// The StoryCard component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `StoryCardState` states them
@@ -430,14 +471,20 @@ pub fn story_card_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([RefLabel] : Array[StoryCardMethod]),
-          StoryCardMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            ([RefLabel] : Array[StoryCardMethod]),
+            StoryCardMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in story_card_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

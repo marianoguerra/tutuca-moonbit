@@ -205,6 +205,15 @@ pub(all) struct StateDef {
   /// an invariant from a view exactly as `$canPush` reads a pred, and two rules
   /// with one name would be one `$name` with two answers.
   rules : Array[RuleDecl]
+  /// The `where` clauses this component declares, in source order.
+  ///
+  /// Separate from `rules` and not folded into them, because the two are not
+  /// the same kind of thing however similar they read. A rule is a NAME with a
+  /// body — it goes in the method bucket, a view reads it as `$name`, and two
+  /// rules with one name would be one `$name` with two answers. A `where` has
+  /// no name and nothing to collide with: it is a property of a field, several
+  /// may apply to one field, and they conjoin.
+  wheres : Array[WhereDecl]
   doc : String?
 } derive(Eq, @debug.Debug)
 
@@ -288,6 +297,100 @@ pub(all) struct RuleDecl {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// How a `where` clause compares.
+///
+/// Four and not six: `is` and `is not` are equality, and equality on a field
+/// is what a `pred` is for. What a domain states is an ORDERING, because an
+/// ordering is the half that can be inverted into a range to draw from.
+pub(all) enum CmpOp {
+  CGe
+  CGt
+  CLe
+  CLt
+} derive(Eq, @debug.Debug)
+
+///|
+/// The right-hand side of a comparison: a literal, or another field.
+///
+/// A field and not an expression. `where max >= .min` is a relation between
+/// two declared things, which a generator can order and draw in sequence;
+/// `where max >= (.min + 1)` is arithmetic, and arithmetic is what an
+/// `invariant` is for.
+pub(all) enum Operand {
+  OLit(Double)
+  OField(String)
+} derive(Eq, @debug.Debug)
+
+///|
+/// What a `where` clause says about one field.
+///
+/// A CLOSED vocabulary, and that is the whole design rather than a first cut.
+/// Every arm here can be read in two directions: forwards to check a value,
+/// and BACKWARDS to produce one. An arbitrary boolean can only ever be read
+/// forwards — which is exactly what `invariant` already offers, and exactly
+/// why an invariant cannot help a generator: rejection sampling for
+/// `0 <= i < len(items)` essentially never hits.
+///
+/// So a relation that cannot be inverted does not belong here. It belongs in
+/// a `pred` or an `invariant`, beside the other things the component merely
+/// checks.
+pub(all) enum Relation {
+  /// `is index of .items` — `0 <= v < len(items)`.
+  ///
+  /// `allow_none` is the sentinel spelling (`… or none`): a selection field
+  /// that is also allowed to hold the type's zero when nothing is selected.
+  /// Common enough that leaving it out would push authors back to a bare
+  /// `Int`, which is the state this whole clause exists to prevent.
+  RIndexOf(field~ : String, allow_none~ : Bool)
+  /// `is key of .entries` — the value is a key the map holds.
+  RKeyOf(field~ : String)
+  /// `is member of .tags` — the value is a member of the set.
+  RMemberOf(field~ : String)
+  /// `>= 0`, `< .max`, …
+  RCompare(op~ : CmpOp, rhs~ : Operand)
+  /// `between 0 and 100`, INCLUSIVE at both ends.
+  RBetween(lo~ : Operand, hi~ : Operand)
+  /// `is one of ["a", "b"]`, or `is one of Priority` for an enum's cases.
+  ROneOf(Array[String])
+  /// `len <= 100` / `len between 1 and 10` — the inner relation applies to
+  /// the subject's LENGTH rather than to the subject.
+  RLen(Relation)
+  /// `is nonempty` — sugar for `len >= 1`, spelled the way it is meant.
+  RNonEmpty
+  /// `is subset of .allTags` — every member is a member of the other set.
+  RSubsetOf(field~ : String)
+} derive(Eq, @debug.Debug)
+
+///|
+/// One `where` clause: a field, and the domain its values are drawn from.
+///
+/// It sits beside `pred` and `invariant` rather than inside the field's type
+/// because what it states is not a fact about the type. `Int` is true of
+/// `currentIndex` and useless; `0 <= currentIndex < len(items)` is the true
+/// thing, and it mentions a SECOND field, which no type can.
+///
+/// There is no `format`. A rule carries one because an arbitrary boolean
+/// cannot say why it failed; a relation can — the failure sentence is a
+/// function of the relation and the two values, and one written by hand could
+/// only be less specific. That is the same argument that makes the vocabulary
+/// closed, arriving at the other end.
+pub(all) struct WhereDecl {
+  subject : String
+  subject_span : Span
+  relation : Relation
+  /// Where each `.field` in the relation was written.
+  ///
+  /// Carried beside the relation rather than inside it for the reason
+  /// `RuleDecl.name_span` gives: a diagnostic about a NAME wants to point at
+  /// the name, and the relation itself is about meaning rather than position.
+  /// Nothing downstream of the resolver reads this.
+  ref_spans : Array[(String, Span)]
+  doc : String?
+  /// The whole clause, from `where` to the end of the relation.
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
 /// Anything that makes a state block unusable. Rendered by `Show` into the
 /// message the CLI reports.
 ///
@@ -340,6 +443,22 @@ pub suberror DefError {
   /// value and a value keeps nothing; a `protocol` describes a boundary, and a
   /// rule is private to the component that keeps it.
   RuleOutsideState(name~ : String, span~ : Span)
+  /// A `where` outside a `state` body. Same line `RuleOutsideState` draws, and
+  /// for a stricter reason: a `where` names a sibling FIELD, and only a state
+  /// has siblings.
+  WhereOutsideState(span~ : Span)
+  /// A `where` whose subject is not a field of this state.
+  UnknownWhereSubject(name~ : String, hint~ : String, span~ : Span)
+  /// A `where` whose relation names a field this state does not declare.
+  UnknownWhereTarget(name~ : String, hint~ : String, span~ : Span)
+  /// A `where` whose relation cannot mean anything for the types involved —
+  /// `index of` a `String`, `len` of an `Int`, `>=` on a `Bool`.
+  WhereTypeMismatch(subject~ : String, why~ : String, span~ : Span)
+  /// Two or more `where` clauses that name each other, directly or through a
+  /// chain. Refused rather than tolerated because a generator draws a
+  /// constrained field AFTER the fields it depends on, and a cycle has no
+  /// such order — so this is what lets the topological walk be total.
+  CyclicWhere(names~ : Array[String], span~ : Span)
 }
 
 ///|

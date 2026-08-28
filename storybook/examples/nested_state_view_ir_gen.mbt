@@ -48,6 +48,8 @@ pub let nested_state_spec_source : String =
   #|    due : Due
   #|    note : String?
   #|    size : (Int, Int)
+  #|
+  #|    where title is nonempty
   #|  }
 
 ///|

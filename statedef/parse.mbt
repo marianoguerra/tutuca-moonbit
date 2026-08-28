@@ -181,6 +181,8 @@ priv struct RawDecl {
   lookup : Array[LookupDecl]
   /// The rule layer, for `state`.
   rules : Array[RuleDecl]
+  /// The domain layer, for `state`.
+  wheres : Array[WhereDecl]
 }
 
 ///|
@@ -333,6 +335,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
     let provide : Array[ProvideDecl] = []
     let lookup : Array[LookupDecl] = []
     let rules : Array[RuleDecl] = []
+    let wheres : Array[WhereDecl] = []
     let takes_fields = actual_kind is (RState | RStruct)
     if actual_kind is RSurface(outer) {
       parse_channel_body(
@@ -368,6 +371,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
         provide,
         lookup,
         rules,
+        wheres,
       })
       continue
     }
@@ -430,6 +434,47 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
           )
         }
         continue
+      }
+      // A `where`: `where FIELD <relation>`. Armed on THREE tokens, the way a
+      // rule is, and for the same reason — the word must not be taken away
+      // from an author. `where : String` is still a field (the second token is
+      // `:`), and a case named `where` is still a case (a `where` is only read
+      // in a `state`, and two bare identifiers side by side never occur in a
+      // state body).
+      //
+      // The third token is what the relation opens with, so a state that
+      // happens to declare fields called `where` and `is` still parses: the
+      // arm needs `is`/`len`/`between` or an ordering, and a field is followed
+      // by `:`.
+      if actual_kind is RState &&
+        p.peek() is TIdent("where") &&
+        p.peek_at(1) is TIdent(_) &&
+        p.peek_at(2)
+        is (TIdent("is" | "len" | "between") | TGte | TGt | TLte | TLt) {
+        let kw_at = p.span()
+        p.bump() |> ignore
+        let (subject, subject_span) = p.ident("the field the `where` is about")
+        let ref_spans : Array[(String, Span)] = []
+        let relation = parse_relation(p, subject, ref_spans)
+        wheres.push({
+          subject,
+          subject_span,
+          relation,
+          ref_spans,
+          doc: member_doc,
+          span: { start: kw_at.start, end_: p.span().start, },
+        })
+        p.skip_comma()
+        continue
+      }
+      // The same shape outside a `state`. Caught HERE rather than falling
+      // through to the field parser, which would ask for a `:` after `where`
+      // and tell an author about a colon when the problem is the block.
+      if p.peek() is TIdent("where") &&
+        p.peek_at(1) is TIdent(_) &&
+        p.peek_at(2)
+        is (TIdent("is" | "len" | "between") | TGte | TGt | TLte | TLt) {
+        raise WhereOutsideState(span=p.span())
       }
       // A rule: `pred NAME [format <sentence>] { <expression> }`. The lexer
       // has already found where the sentence and the body END — both are the
@@ -583,6 +628,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
       provide,
       lookup,
       rules,
+      wheres,
     })
   }
   out
@@ -613,7 +659,239 @@ fn empty_raw(
     provide: [],
     lookup: [],
     rules: [],
+    wheres: [],
   }
+}
+
+///|
+/// The relation half of a `where` clause, after its subject.
+///
+/// A hand-written descent over a CLOSED vocabulary rather than a table, so
+/// each arm can say what it expected in its own words. `subject` is carried
+/// only to name it in those messages — nothing here looks at the field.
+fn parse_relation(
+  p : P,
+  subject : String,
+  refs : Array[(String, Span)],
+) -> Relation raise DefError {
+  match p.peek() {
+    TIdent("is") => {
+      p.bump() |> ignore
+      parse_is_relation(p, subject, refs)
+    }
+    // `len <= 100`, `len between 1 and 10`. The one prefix, because a length
+    // is the only projection of a subject this vocabulary admits — anything
+    // else about a collection is a fact about its ELEMENTS, and a domain is
+    // about the field.
+    TIdent("len") => {
+      p.bump() |> ignore
+      RLen(parse_ordering(p, subject, "`len`", refs))
+    }
+    _ => parse_ordering(p, subject, "`\{subject}`", refs)
+  }
+}
+
+///|
+/// Everything spelled `is …`.
+fn parse_is_relation(
+  p : P,
+  subject : String,
+  refs : Array[(String, Span)],
+) -> Relation raise DefError {
+  let (word, span) = p.ident(
+    "what `\{subject}` is — `index of`, `key of`, `member of`, `subset of`, `one of`, or `nonempty`",
+  )
+  match word {
+    "nonempty" => RNonEmpty
+    "index" => {
+      expect_of(p, "index")
+      let field = parse_field_ref(p, "the list `\{subject}` indexes", refs)
+      // `or none` — the sentinel half. Written out rather than inferred from
+      // the field being an option, because a selection field is as often a
+      // plain `Int` holding -1 or 0 as it is an `Int?`, and the clause has to
+      // be able to say so either way.
+      let allow_none = if p.peek() is TIdent("or") {
+        p.bump() |> ignore
+        let (n, nspan) = p.ident("`none`")
+        if n != "none" {
+          raise Syntax(
+            msg="`or` in a `where` is followed by `none` and nothing else",
+            span=nspan,
+          )
+        }
+        true
+      } else {
+        false
+      }
+      RIndexOf(field~, allow_none~)
+    }
+    "key" => {
+      expect_of(p, "key")
+      RKeyOf(field=parse_field_ref(p, "the map `\{subject}` keys", refs))
+    }
+    "member" => {
+      expect_of(p, "member")
+      RMemberOf(
+        field=parse_field_ref(p, "the set `\{subject}` is a member of", refs),
+      )
+    }
+    "subset" => {
+      expect_of(p, "subset")
+      RSubsetOf(
+        field=parse_field_ref(p, "the set `\{subject}` is a subset of", refs),
+      )
+    }
+    "one" => {
+      expect_of(p, "one")
+      parse_one_of(p, subject)
+    }
+    _ =>
+      raise Syntax(
+        msg="`\{word}` is not something a `where` can say; it says `index of`, `key of`, `member of`, `subset of`, `one of`, or `nonempty`",
+        span~,
+      )
+  }
+}
+
+///|
+/// The `of` that every relational spelling carries.
+fn expect_of(p : P, word : String) -> Unit raise DefError {
+  if p.peek() is TIdent("of") {
+    p.bump() |> ignore
+  } else {
+    raise Syntax(
+      msg="`\{word}` in a `where` is followed by `of`",
+      span=p.span(),
+    )
+  }
+}
+
+///|
+/// `is one of ["a", "b"]`, or `is one of Priority` for an enum's cases.
+///
+/// The enum spelling resolves in pass two, where the declarations are in
+/// hand; here it is recorded as the single name it was written as, and the
+/// resolver tells the two apart by whether the state declares that enum.
+fn parse_one_of(p : P, subject : String) -> Relation raise DefError {
+  match p.peek() {
+    TLBracket => {
+      p.bump() |> ignore
+      let out : Array[String] = []
+      while !(p.peek() is TRBracket) {
+        match p.peek() {
+          TStr(v) => {
+            p.bump() |> ignore
+            out.push(v)
+          }
+          _ => p.fail("a quoted member of the set")
+        }
+        if p.peek() is TComma {
+          p.bump() |> ignore
+        } else {
+          break
+        }
+      }
+      p.expect(TRBracket, "`]` closing the `one of` list")
+      if out.is_empty() {
+        raise Syntax(
+          msg="`where \{subject} is one of []` admits nothing, so the field could never hold a value",
+          span=p.span(),
+        )
+      }
+      ROneOf(out)
+    }
+    // A bare name: an enum whose cases are the members. Kept as a one-element
+    // list and resolved in pass two — see `resolve_wheres`.
+    TIdent(_) => {
+      let (n, _) = p.ident("an enum name")
+      ROneOf([ENUM_MEMBERS_OF + n])
+    }
+    _ => p.fail("a `[…]` list or an enum name after `one of`")
+  }
+}
+
+///|
+/// The marker that says a `ROneOf` still holds an ENUM NAME rather than its
+/// members.
+///
+/// A prefix and not a second constructor, because the distinction lives for
+/// exactly one pass: `resolve_wheres` replaces it with the enum's cases, and
+/// nothing downstream can ever see one. A constructor would make every
+/// consumer match an arm that is unreachable by then.
+///
+/// `:` cannot begin an identifier, so no author-written member can collide.
+const ENUM_MEMBERS_OF : String = ":enum:"
+
+///|
+/// `>= 0`, `< .max`, `between 0 and 100`.
+fn parse_ordering(
+  p : P,
+  subject : String,
+  what : String,
+  refs : Array[(String, Span)],
+) -> Relation raise DefError {
+  match p.peek() {
+    TIdent("between") => {
+      p.bump() |> ignore
+      let lo = parse_operand(p, "the low bound", refs)
+      if p.peek() is TIdent("and") {
+        p.bump() |> ignore
+      } else {
+        raise Syntax(
+          msg="`between` takes two bounds joined by `and`",
+          span=p.span(),
+        )
+      }
+      let hi = parse_operand(p, "the high bound", refs)
+      RBetween(lo~, hi~)
+    }
+    TGte | TGt | TLte | TLt => {
+      let op : CmpOp = match p.bump().tok {
+        TGte => CGe
+        TGt => CGt
+        TLte => CLe
+        _ => CLt
+      }
+      RCompare(
+        op~,
+        rhs=parse_operand(p, "what \{what} is compared against", refs),
+      )
+    }
+    _ =>
+      p.fail(
+        "`>=`, `>`, `<=`, `<` or `between` after \{what} — the orderings a `where` states about \{subject}",
+      )
+  }
+}
+
+///|
+/// A number, or another field.
+fn parse_operand(
+  p : P,
+  want : String,
+  refs : Array[(String, Span)],
+) -> Operand raise DefError {
+  match p.peek() {
+    TNum(v) => {
+      p.bump() |> ignore
+      OLit(v)
+    }
+    TDot => OField(parse_field_ref(p, want, refs))
+    _ => p.fail("\{want} — a number, or `.field`")
+  }
+}
+
+///|
+/// `.items` — the dot is what says it is a field rather than a bare word.
+fn parse_field_ref(
+  p : P,
+  want : String,
+  refs : Array[(String, Span)],
+) -> String raise DefError {
+  p.expect(TDot, "`.` before \{want}")
+  let (name, span) = p.ident(want)
+  refs.push((name, span))
+  name
 }
 
 ///|
@@ -1095,6 +1373,7 @@ fn build(
     provide: d.provide,
     lookup: d.lookup,
     rules: d.rules,
+    wheres: resolve_wheres(d.wheres, fields, types, d.name_span),
     doc: d.doc,
   }
 }

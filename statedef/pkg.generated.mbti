@@ -49,6 +49,11 @@ pub suberror DefError {
   ProtocolConflict(id~ : String, span~ : Span)
   DuplicateRule(name~ : String, span~ : Span)
   RuleOutsideState(name~ : String, span~ : Span)
+  WhereOutsideState(span~ : Span)
+  UnknownWhereSubject(name~ : String, hint~ : String, span~ : Span)
+  UnknownWhereTarget(name~ : String, hint~ : String, span~ : Span)
+  WhereTypeMismatch(subject~ : String, why~ : String, span~ : Span)
+  CyclicWhere(names~ : Array[String], span~ : Span)
 }
 pub fn DefError::message(Self) -> String
 pub fn DefError::span(Self) -> Span
@@ -73,6 +78,13 @@ pub(all) enum AttrValue {
   ANum(Double)
   AStr(String)
   AFlag
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CmpOp {
+  CGe
+  CGt
+  CLe
+  CLt
 } derive(Eq, @debug.Debug)
 
 pub(all) struct FieldDef {
@@ -108,6 +120,11 @@ pub(all) struct MsgDef {
   variant : String
   payload : Array[StateTy]
   doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Operand {
+  OLit(Double)
+  OField(String)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PropertyDef {
@@ -165,6 +182,18 @@ pub(all) struct ProvideDecl {
   span : Span
 } derive(Eq, @debug.Debug)
 
+pub(all) enum Relation {
+  RIndexOf(field~ : String, allow_none~ : Bool)
+  RKeyOf(field~ : String)
+  RMemberOf(field~ : String)
+  RCompare(op~ : CmpOp, rhs~ : Operand)
+  RBetween(lo~ : Operand, hi~ : Operand)
+  ROneOf(Array[String])
+  RLen(Relation)
+  RNonEmpty
+  RSubsetOf(field~ : String)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct RuleDecl {
   kind : RuleKind
   name : String
@@ -206,9 +235,11 @@ pub(all) struct StateDef {
   provide : Array[ProvideDecl]
   lookup : Array[LookupDecl]
   rules : Array[RuleDecl]
+  wheres : Array[WhereDecl]
   doc : String?
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String
+pub fn StateDef::domains_src(Self) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::invariants(Self) -> Array[String]
@@ -262,6 +293,15 @@ pub(all) enum UserTyKind {
 pub(all) enum ValidationMode {
   Strict
   Gradual
+} derive(Eq, @debug.Debug)
+
+pub(all) struct WhereDecl {
+  subject : String
+  subject_span : Span
+  relation : Relation
+  ref_spans : Array[(String, Span)]
+  doc : String?
+  span : Span
 } derive(Eq, @debug.Debug)
 
 // Type aliases

@@ -41,6 +41,8 @@ pub let bar_chart_spec_source : String =
   #|
   #|  state IconGallery {
   #|    size : Int
+  #|
+  #|    where size between 16 and 80
   #|  }
 
 ///|

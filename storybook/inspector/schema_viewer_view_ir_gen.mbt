@@ -31,6 +31,11 @@ pub let schema_viewer_spec_source : String =
   #|    raw : Any
   #|    rawSchema : Any
   #|    showRaw : Bool
+  #|
+  #|    invariant rawPaneHasSomethingInIt
+  #|      format 'the raw pane is showing and there is nothing behind it' {
+  #|        .showRaw implies (not (null? .raw))
+  #|      }
   #|  }
 
 ///|
@@ -70,6 +75,34 @@ fn schema_viewer_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn schema_viewer_views() -> Map[String, @anode.View] {
   { "main": schema_viewer_main_view_ir() }
+}
+
+///|
+/// `invariant rawPaneHasSomethingInIt` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn schema_viewer_compute_rawPaneHasSomethingInIt(
+  s : SchemaViewerState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      !s.showRaw ||
+      !(match @tutuca.builtin("null?") {
+        Some(b) => (b.apply)([s.raw]).is_truthy()
+        None => false
+      }),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn schema_viewer_inline_compute() -> Map[
+  String,
+  (SchemaViewerState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "rawPaneHasSomethingInIt": schema_viewer_compute_rawPaneHasSomethingInIt }
 }
 
 ///|
@@ -113,14 +146,20 @@ pub fn schema_viewer_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([ToggleLabel] : Array[SchemaViewerMethod]),
-          SchemaViewerMethod::name,
-          f,
-        )
-      None => Map([])
+    compute={
+      let bucket = match compute {
+        Some(f) =>
+          @component.build_bucket(
+            ([ToggleLabel] : Array[SchemaViewerMethod]),
+            SchemaViewerMethod::name,
+            f,
+          )
+        None => Map([])
+      }
+      for k, h in schema_viewer_inline_compute() {
+        bucket[k] = h
+      }
+      bucket
     },
     swap=match swap {
       Some(f) =>

@@ -35,6 +35,8 @@ import {
   "moonbitlang/core/debug",
   // The declared int widths, for a generator that draws at a field's own edges.
   "moonbitlang/core/int",
+  // `maximum` / `minimum`, for folding several length bounds into one range.
+  "moonbitlang/core/cmp",
 }
 
 import {

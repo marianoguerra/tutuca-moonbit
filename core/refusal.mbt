@@ -57,6 +57,20 @@ pub(all) enum RefusalCode {
   /// `ctx.make` walked its whole route and no leg answered: nothing above
   /// published the name and nothing is registered under it.
   TypeNotFound
+  /// A write whose value is outside the field's declared domain — a `where`
+  /// clause said no.
+  ///
+  /// The one code in this enum the design it comes from already named
+  /// (`OUT_OF_RANGE`) and that nothing raised. It arrives here with the site
+  /// that raises it, which is the rule the header states: a `where` on a field
+  /// is checked at the write and again after the transition, and both report
+  /// this.
+  ///
+  /// Distinct from `Invariant` even though the second door is the same
+  /// machinery, because the two answer different questions. An `Invariant`
+  /// names a RULE the author wrote; this names a FIELD and the relation it
+  /// left, which is the thing you go and look at.
+  OutOfRange
   /// `ctx.send_reply` with nobody waiting. A view's own `@on.*` and the host's
   /// `send_at_root` have no sender, so there is no position to answer at, and
   /// nothing is dispatched.
@@ -77,6 +91,7 @@ pub fn RefusalCode::word(self : RefusalCode) -> String {
     Invariant => "INVARIANT"
     IntentDepth => "INTENT_DEPTH"
     TypeNotFound => "TYPE_NOT_FOUND"
+    OutOfRange => "OUT_OF_RANGE"
     NoSender => "NO_SENDER"
   }
 }

@@ -45,6 +45,8 @@ pub let attribute_binding_spec_source : String =
   #|  state ShowHide {
   #|    isOpen : Bool
   #|    count : Int
+  #|
+  #|    where count >= 0
   #|  }
 
 ///|

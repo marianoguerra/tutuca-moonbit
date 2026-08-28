@@ -10,6 +10,12 @@
     query : String
     page : Int
     pageSize : Int
+
+    /// The pager's own domain — the same one `Pagination` in
+    /// `rendering.html` declares, and for the same reason: `pageSize` is a
+    /// divisor and `page` is an offset into a filtered list.
+    where pageSize between 1 and 100
+    where page >= 0
   }
 
   state Strategies {

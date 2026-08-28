@@ -36,6 +36,25 @@
     after : Any
     hasAfter : Bool
     open : Bool
+
+    /// The five words `verb_of` produces, and nothing else. A sixth would
+    /// render as a badge with a word no reader of the trace format knows.
+    where verb is one of ["send", "intent", "offered", "answer", "refused"]
+
+    /// Counters into a recording. `seq` is a position, `turn` groups them and
+    /// `walk` links a cascade; `depth` is how far the causal nesting goes.
+    /// All four are counts, and none of them runs backwards.
+    where seq >= 0
+    where turn >= 0
+    where walk >= 0
+    where depth >= 0
+
+    /// `hasWalk` is not a second fact — it is `walk` asked as a question, and
+    /// a row where the two disagree hides a link the recording made.
+    invariant hasWalkTracksWalk
+      format $'hasWalk says {.hasWalk} for walk {.walk}' {
+        .hasWalk is (.walk is not 0)
+      }
   }
 
   /// The rows, and the two questions a reader asks of them: show me only what
@@ -47,6 +66,17 @@
     /// 0 shows every turn.
     turn : Int
     emptyHint : String
+
+    /// 0 is "every turn", so the filter is a turn number or that sentinel.
+    where turn >= 0
+
+    /// The flag the empty hint hangs off. It is derived from `rows` and
+    /// stored anyway — a template picks a value, it does not decide one — so
+    /// this is where the two are held to being the same answer.
+    invariant hasRowsTracksRows
+      format $'hasRows says {.hasRows} for {len .rows} rows' {
+        .hasRows is ((len .rows) > 0)
+      }
   }
 
   /// What a recording says about itself, before any of its events.
@@ -61,6 +91,26 @@
     relocatedFrom : String
     isRelocated : Bool
     compacted : Bool
+
+    where events >= 0
+    where inputs >= 0
+    where turns >= 0
+
+    /// An input is an event — the ones a rerun would feed — so the count of
+    /// them cannot exceed the whole. Two fields, so no type states it.
+    invariant inputsAreEvents
+      format $'{.inputs} inputs out of {.events} events' { .inputs <= .events }
+
+    /// Same relation for turns: a turn is a group of events, and a recording
+    /// with no events has no turns to group.
+    invariant turnsAreEvents
+      format $'{.turns} turns out of {.events} events' { .turns <= .events }
+
+    /// The flag and the list it summarises.
+    invariant isRelocatedTracksFrom
+      format 'isRelocated and relocatedFrom disagree' {
+        .isRelocated is ((len .relocatedFrom) > 0)
+      }
   }
 
   /// One candidate for relocation: a place the recording touched, with how
@@ -77,6 +127,9 @@
     /// cut and an unmountable trace, and saying so before the click is
     /// cheaper than saying it after.
     mountable : Bool
+
+    where events >= 0
+    where depth >= 0
   }
 
   /// The places a recording is ABOUT, offered as relocation targets.
@@ -90,6 +143,14 @@
     /// the same reason, and only the sentence above them differs.
     heading : String
     emptyHint : String
+
+    /// The flag and the list, held to one answer — the same pairing
+    /// `TraceLog` makes, and the reason both are `invariant`s rather than
+    /// computes: the host decides them and a template only reads them.
+    invariant hasPlacesTracksPlaces
+      format $'hasPlaces says {.hasPlaces} for {len .places} places' {
+        .hasPlaces is ((len .places) > 0)
+      }
   }
 
   /// The recorder, as a control. Off is the default and the whole point:
@@ -112,6 +173,16 @@
     /// Whether the picker is open. Asked BEFORE recording starts, because
     /// what a recording covers is not something it can be told afterwards.
     picking : Bool
+
+    /// The three buttons, as the closed set they are. `setScope` is a
+    /// declared message rather than a generated mutator, so nothing else
+    /// checks its argument.
+    where scope is one of ["all", "section", "example"]
+
+    where events >= 0
+    where turns >= 0
+    invariant turnsAreEvents
+      format $'{.turns} turns out of {.events} events' { .turns <= .events }
   }
 
   /// Recording, in one control and one place.
@@ -145,6 +216,25 @@
     /// How far through the recording the viewer is parked.
     at : Int
     total : Int
+
+    /// Three panes, three names. `setTab` carries a `String` and is answered
+    /// by the host, so this clause is the only check its argument gets.
+    where tab is one of ["record", "trace", "pick"]
+
+    /// 1-based for display, and 0 for "parked before the first row".
+    where at >= 0
+    where total >= 0
+
+    /// The cursor is inside the recording it is a cursor into.
+    invariant atWithinTotal
+      format $'parked at {.at} of {.total}' { .at <= .total }
+
+    /// `showTrace` is the conjunction the host computes, and the reader of
+    /// this block should not have to find the handler that computes it.
+    invariant showTraceNeedsATrace
+      format 'the trace pane is showing without a trace behind it' {
+        .showTrace implies .hasTrace
+      }
   }
 
   /// The bar raises these AT THE HOST: only the host owns a transactor, and

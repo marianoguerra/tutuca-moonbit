@@ -18,6 +18,209 @@
 // data-cid onto it.
 
 ///|
+/// This file's `<script type="tutuca/spec">` block, as source, with its
+/// doc comments removed.
+///
+/// The schema each component carries is this block's PROJECTION, and the
+/// projection is lossy exactly where a generator needs it: a rule reaches
+/// `SchemaInfo` as a name with no body, and a message as a name with no
+/// payload. Re-parsing this recovers both — see `testing/fuzz`.
+pub let trace_row_spec_source : String =
+  #|  state TraceRow {
+  #|    seq : Int
+  #|    turn : Int
+  #|    walk : Int
+  #|    hasWalk : Bool
+  #|    verb : String
+  #|    verbClass : String
+  #|    name : String
+  #|    place : String
+  #|    args : String
+  #|    input : Bool
+  #|    rowClass : String
+  #|    depth : Int
+  #|    current : Bool
+  #|    after : Any
+  #|    hasAfter : Bool
+  #|    open : Bool
+  #|
+  #|    where verb is one of ["send", "intent", "offered", "answer", "refused"]
+  #|
+  #|    where seq >= 0
+  #|    where turn >= 0
+  #|    where walk >= 0
+  #|    where depth >= 0
+  #|
+  #|    invariant hasWalkTracksWalk
+  #|      format $'hasWalk says {.hasWalk} for walk {.walk}' {
+  #|        .hasWalk is (.walk is not 0)
+  #|      }
+  #|  }
+  #|
+  #|  state TraceLog {
+  #|    rows : Array[Any]
+  #|    hasRows : Bool
+  #|    inputsOnly : Bool
+  #|    turn : Int
+  #|    emptyHint : String
+  #|
+  #|    where turn >= 0
+  #|
+  #|    invariant hasRowsTracksRows
+  #|      format $'hasRows says {.hasRows} for {len .rows} rows' {
+  #|        .hasRows is ((len .rows) > 0)
+  #|      }
+  #|  }
+  #|
+  #|  state TraceHeader {
+  #|    component : String
+  #|    module : String
+  #|    example : String
+  #|    fingerprint : String
+  #|    events : Int
+  #|    inputs : Int
+  #|    turns : Int
+  #|    relocatedFrom : String
+  #|    isRelocated : Bool
+  #|    compacted : Bool
+  #|
+  #|    where events >= 0
+  #|    where inputs >= 0
+  #|    where turns >= 0
+  #|
+  #|    invariant inputsAreEvents
+  #|      format $'{.inputs} inputs out of {.events} events' { .inputs <= .events }
+  #|
+  #|    invariant turnsAreEvents
+  #|      format $'{.turns} turns out of {.events} events' { .turns <= .events }
+  #|
+  #|    invariant isRelocatedTracksFrom
+  #|      format 'isRelocated and relocatedFrom disagree' {
+  #|        .isRelocated is ((len .relocatedFrom) > 0)
+  #|      }
+  #|  }
+  #|
+  #|  state TracePlace {
+  #|    label : String
+  #|    display : String
+  #|    component : String
+  #|    events : Int
+  #|    depth : Int
+  #|    selected : Bool
+  #|    rowClass : String
+  #|    mountable : Bool
+  #|
+  #|    where events >= 0
+  #|    where depth >= 0
+  #|  }
+  #|
+  #|  state TracePlaces {
+  #|    places : Array[Any]
+  #|    hasPlaces : Bool
+  #|    selected : String
+  #|    heading : String
+  #|    emptyHint : String
+  #|
+  #|    invariant hasPlacesTracksPlaces
+  #|      format $'hasPlaces says {.hasPlaces} for {len .places} places' {
+  #|        .hasPlaces is ((len .places) > 0)
+  #|      }
+  #|  }
+  #|
+  #|  state RecorderBar {
+  #|    recording : Bool
+  #|    scope : String
+  #|    scopeLabel : String
+  #|    allClass : String
+  #|    sectionClass : String
+  #|    exampleClass : String
+  #|    events : Int
+  #|    turns : Int
+  #|    hasTrace : Bool
+  #|    picking : Bool
+  #|
+  #|    where scope is one of ["all", "section", "example"]
+  #|
+  #|    where events >= 0
+  #|    where turns >= 0
+  #|    invariant turnsAreEvents
+  #|      format $'{.turns} turns out of {.events} events' { .turns <= .events }
+  #|  }
+  #|
+  #|  state TracePanel {
+  #|    bar : RecorderBar
+  #|    header : TraceHeader
+  #|    places : TracePlaces
+  #|    log : TraceLog
+  #|    recordTabClass : String
+  #|    traceTabClass : String
+  #|    selectTabClass : String
+  #|    selectLabel : String
+  #|    tab : String
+  #|    hasTrace : Bool
+  #|    selecting : Bool
+  #|    showTrace : Bool
+  #|    at : Int
+  #|    total : Int
+  #|
+  #|    where tab is one of ["record", "trace", "pick"]
+  #|
+  #|    where at >= 0
+  #|    where total >= 0
+  #|
+  #|    invariant atWithinTotal
+  #|      format $'parked at {.at} of {.total}' { .at <= .total }
+  #|
+  #|    invariant showTraceNeedsATrace
+  #|      format 'the trace pane is showing without a trace behind it' {
+  #|        .showTrace implies .hasTrace
+  #|      }
+  #|  }
+  #|
+  #|  handle RecorderBar {
+  #|    message {
+  #|    setScope(String)
+  #|    openPicker
+  #|    closePicker
+  #|    startRecording
+  #|    stopRecording
+  #|    clearRecording
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle TracePanel {
+  #|    message {
+  #|    setTab(String)
+  #|    setAt(Int)
+  #|    toggleSelecting
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle TracePlace {
+  #|    message {
+  #|    pickPlace(String)
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle TraceLog {
+  #|    message {
+  #|    setTurn(Int)
+  #|    showAllTurns
+  #|
+  #|    }
+  #|  }
+  #|
+  #|  handle TraceRow {
+  #|    message {
+  #|    toggle
+  #|
+  #|    }
+  #|  }
+
+///|
 /// The compiled `main` view.
 fn trace_row_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -180,10 +383,56 @@ fn trace_row_inline_update(
   match msg {
     Receive("toggle", _args) => {
       let s = { ..s, open: !s.open, }
+      guard (Bool(s.hasWalk) : @tutuca.Value) ==
+        (
+          Bool(
+            !((Num(s.walk.to_double()) : @tutuca.Value) ==
+            (Num(0.0) : @tutuca.Value)),
+          ) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="toggle",
+          pred="hasWalkTracksWalk",
+          sentence="hasWalk says " +
+            (Bool(s.hasWalk) : @tutuca.Value).to_display_string() +
+            " for walk " +
+            (Num(s.walk.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant hasWalkTracksWalk` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_row_compute_hasWalkTracksWalk(
+  s : TraceRowState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasWalk) : @tutuca.Value) ==
+      (
+        Bool(
+          !((Num(s.walk.to_double()) : @tutuca.Value) ==
+          (Num(0.0) : @tutuca.Value)),
+        ) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn trace_row_inline_compute() -> Map[
+  String,
+  (TraceRowState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasWalkTracksWalk": trace_row_compute_hasWalkTracksWalk }
 }
 
 ///|
@@ -231,6 +480,7 @@ pub fn trace_row_component(
         answered => answered
       }
     },
+    compute=trace_row_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -244,6 +494,7 @@ pub fn trace_row_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -303,14 +554,67 @@ fn trace_log_inline_update(
     Receive("setTurn", args) => {
       guard args.get(0) is Some(Num(t_)) else { return Unchanged }
       let s = { ..s, turn: t_.to_int(), }
+      guard (Bool(s.hasRows) : @tutuca.Value) ==
+        (Bool(s.rows.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="setTurn",
+          pred="hasRowsTracksRows",
+          sentence="hasRows says " +
+            (Bool(s.hasRows) : @tutuca.Value).to_display_string() +
+            " for " +
+            (Num(s.rows.length().to_double()) : @tutuca.Value).to_display_string() +
+            " rows",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("showAllTurns", _args) => {
       let s = { ..s, turn: 0, }
+      guard (Bool(s.hasRows) : @tutuca.Value) ==
+        (Bool(s.rows.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="showAllTurns",
+          pred="hasRowsTracksRows",
+          sentence="hasRows says " +
+            (Bool(s.hasRows) : @tutuca.Value).to_display_string() +
+            " for " +
+            (Num(s.rows.length().to_double()) : @tutuca.Value).to_display_string() +
+            " rows",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant hasRowsTracksRows` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_log_compute_hasRowsTracksRows(
+  s : TraceLogState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasRows) : @tutuca.Value) ==
+      (Bool(s.rows.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn trace_log_inline_compute() -> Map[
+  String,
+  (TraceLogState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasRowsTracksRows": trace_log_compute_hasRowsTracksRows }
 }
 
 ///|
@@ -353,10 +657,12 @@ pub fn trace_log_component(
         answered => answered
       }
     },
+    compute=trace_log_inline_compute(),
     slots~,
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -484,6 +790,57 @@ pub fn trace_header_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant inputsAreEvents` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_header_compute_inputsAreEvents(
+  s : TraceHeaderState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.inputs.to_double() <= s.events.to_double()) : @tutuca.Value)
+}
+
+///|
+/// `invariant turnsAreEvents` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_header_compute_turnsAreEvents(
+  s : TraceHeaderState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.turns.to_double() <= s.events.to_double()) : @tutuca.Value)
+}
+
+///|
+/// `invariant isRelocatedTracksFrom` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_header_compute_isRelocatedTracksFrom(
+  s : TraceHeaderState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.isRelocated) : @tutuca.Value) ==
+      (Bool(s.relocatedFrom.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn trace_header_inline_compute() -> Map[
+  String,
+  (TraceHeaderState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "inputsAreEvents": trace_header_compute_inputsAreEvents,
+    "turnsAreEvents": trace_header_compute_turnsAreEvents,
+    "isRelocatedTracksFrom": trace_header_compute_isRelocatedTracksFrom,
+  }
+}
+
+///|
 /// The TraceHeader component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `TraceHeaderState` states them
@@ -514,10 +871,12 @@ pub fn trace_header_component(
     common_style~,
     global_style~,
     update?,
+    compute=trace_header_inline_compute(),
     slots~,
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -676,6 +1035,7 @@ pub fn trace_place_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -723,6 +1083,31 @@ pub fn trace_places_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `invariant hasPlacesTracksPlaces` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_places_compute_hasPlacesTracksPlaces(
+  s : TracePlacesState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasPlaces) : @tutuca.Value) ==
+      (Bool(s.places.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn trace_places_inline_compute() -> Map[
+  String,
+  (TracePlacesState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "hasPlacesTracksPlaces": trace_places_compute_hasPlacesTracksPlaces }
+}
+
+///|
 /// The TracePlaces component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `TracePlacesState` states them
@@ -753,10 +1138,12 @@ pub fn trace_places_component(
     common_style~,
     global_style~,
     update?,
+    compute=trace_places_inline_compute(),
     slots~,
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -983,14 +1370,50 @@ fn recorder_bar_inline_update(
           "btn btn-sm pick-example btn-outline"
         },
       }
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="setScope",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("openPicker", _args) => {
       let s = { ..s, picking: true, }
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="openPicker",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("closePicker", _args) => {
       let s = { ..s, picking: false, }
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="closePicker",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("startRecording", _args) => {
@@ -1003,6 +1426,18 @@ fn recorder_bar_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="startRecording",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -1017,6 +1452,18 @@ fn recorder_bar_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="stopRecording",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -1031,6 +1478,18 @@ fn recorder_bar_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard s.turns.to_double() <= s.events.to_double() else {
+        @tutuca.invariant_failed(
+          handler="clearRecording",
+          pred="turnsAreEvents",
+          sentence=(Num(s.turns.to_double()) : @tutuca.Value).to_display_string() +
+            " turns out of " +
+            (Num(s.events.to_double()) : @tutuca.Value).to_display_string() +
+            " events",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
@@ -1038,6 +1497,27 @@ fn recorder_bar_inline_update(
     }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant turnsAreEvents` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn recorder_bar_compute_turnsAreEvents(
+  s : RecorderBarState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.turns.to_double() <= s.events.to_double()) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn recorder_bar_inline_compute() -> Map[
+  String,
+  (RecorderBarState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  { "turnsAreEvents": recorder_bar_compute_turnsAreEvents }
 }
 
 ///|
@@ -1085,6 +1565,7 @@ pub fn recorder_bar_component(
         answered => answered
       }
     },
+    compute=recorder_bar_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -1106,6 +1587,7 @@ pub fn recorder_bar_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }
 
@@ -1240,12 +1722,68 @@ fn trace_panel_inline_update(
           @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
         )
       })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       for f in effects {
         f()
       }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `invariant atWithinTotal` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_atWithinTotal(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.at.to_double() <= s.total.to_double()) : @tutuca.Value)
+}
+
+///|
+/// `invariant showTraceNeedsATrace` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_showTraceNeedsATrace(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.showTrace || s.hasTrace) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn trace_panel_inline_compute() -> Map[
+  String,
+  (TracePanelState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "atWithinTotal": trace_panel_compute_atWithinTotal,
+    "showTraceNeedsATrace": trace_panel_compute_showTraceNeedsATrace,
   }
 }
 
@@ -1294,6 +1832,7 @@ pub fn trace_panel_component(
         answered => answered
       }
     },
+    compute=trace_panel_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -1307,5 +1846,6 @@ pub fn trace_panel_component(
     slot_args~,
     provide~,
     lookup~,
+    spec=trace_row_spec_source,
   )
 }

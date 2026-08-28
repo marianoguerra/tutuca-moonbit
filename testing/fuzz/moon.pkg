@@ -33,6 +33,9 @@ import {
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/vdom/memdom",
+  // `domains_of`: the suite builds the value form of a `where` the way a card
+  // runtime does, to hold the generator to the same declaration.
+  "marianoguerra/tutuca/statedef/info",
   "moonbitlang/core/cmp",
   "moonbitlang/core/debug",
 } for "test"

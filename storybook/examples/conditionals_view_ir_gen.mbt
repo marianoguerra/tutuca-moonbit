@@ -28,10 +28,14 @@
 pub let traffic_light_spec_source : String =
   #|  state TrafficLight {
   #|    lightIndex : Int
+  #|
+  #|    where lightIndex between 0 and 2
   #|  }
   #|
   #|  state TabbedUI {
   #|    tab : String
+  #|
+  #|    where tab is one of ["overview", "features", "pricing"]
   #|  }
   #|
   #|  state ListAndFilter {

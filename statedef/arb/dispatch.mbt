@@ -211,10 +211,11 @@ pub fn protocol_dispatch_of(
 pub fn mutator_dispatch_of(
   def : @statedef.StateDef,
   depth? : Int = MAX_DEPTH,
+  state? : Map[String, @tutuca.Value] = Map([]),
 ) -> @gen.Gen[@component.Dispatch]? {
   let installed = @component.schema_writers(@info.schema_info(def))
   let choices : Array[@gen.Gen[@component.Dispatch]] = []
-  for name, args in mutator_args(def, depth~) {
+  for name, args in mutator_args(def, depth~, state~) {
     // Dropped rather than sent: the join with the runtime's own table is what
     // keeps this from drifting into names nothing answers. `mutator_names`
     // below is the test that the drift never goes the other way.
@@ -238,11 +239,13 @@ pub fn mutator_dispatch_of(
 pub fn mutator_args(
   def : @statedef.StateDef,
   depth? : Int = MAX_DEPTH,
+  state? : Map[String, @tutuca.Value] = Map([]),
 ) -> Map[String, @gen.Gen[Array[@tutuca.Value]]] {
   let out : Map[String, @gen.Gen[Array[@tutuca.Value]]] = Map([])
   let none : @gen.Gen[Array[@tutuca.Value]] = @gen.pure([])
+  let domains = @info.domains_of(def)
   for f in def.fields {
-    let one = value_of(def, f.ty, depth~).fmap(v => [v])
+    let one = setter_arg(def, f, domains, state, depth).fmap(v => [v])
     out[@tutuca.mutator_name("set", f.name)] = one
     out[@tutuca.mutator_name("reset", f.name)] = none
     out[f.name + "Len"] = none
@@ -307,4 +310,45 @@ fn member_of(
     })
   }
   @gen.one_of_array(members.map(m => (Str(m) : @tutuca.Value)))
+}
+
+///|
+/// What `set<Field>` is called with.
+///
+/// This is where a `where` earns its keep, and the reason the argument is
+/// drawn against the CURRENT state rather than from a table built once: an
+/// index is only in range relative to a list that has a length right now, so a
+/// generator built before the run started could never produce one.
+///
+/// Mostly in the domain, and sometimes NOT — four to one. Both halves are
+/// load-bearing:
+///
+/// - In the domain is what the run is for. Every step that lands is a state
+///   the component could actually reach, which is where the interesting
+///   failures are; a run that spent itself on `setCurrentIndex 2147483647`
+///   was reporting the generator's aim rather than the component's behaviour.
+/// - Out of it is what tests the REFUSAL. A domain that nothing ever violates
+///   is a guard with no coverage, and the tool that motivated the feature is
+///   the obvious place to exercise it.
+///
+/// With no state in hand — a caller that built the table up front — nothing
+/// inverts and this is exactly the unconstrained draw it always was.
+fn setter_arg(
+  def : @statedef.StateDef,
+  f : @statedef.FieldDef,
+  domains : Array[@tutuca.FieldDomain],
+  state : Map[String, @tutuca.Value],
+  depth : Int,
+) -> @gen.Gen[@tutuca.Value] {
+  let free = value_of(def, f.ty, depth~)
+  let mine = @tutuca.domains_of(domains, f.name)
+  if mine.is_empty() || state.is_empty() {
+    return free
+  }
+  for d in mine {
+    if value_in_domain(d, state) is Some(inside) {
+      return @gen.frequency([(4, inside), (1, free)])
+    }
+  }
+  free
 }

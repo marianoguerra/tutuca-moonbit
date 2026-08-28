@@ -299,6 +299,10 @@ fn refusal_label(r : @tutuca.Refusal) -> String {
     Precondition => "precondition"
     Postcondition => "postcondition"
     Invariant => "invariant"
+    // Only reached when the refusal names no field, which a domain refusal
+    // always does — so this is the label for a code that in practice arrives
+    // labelled. Kept because the match is total and a silent arm is worse.
+    OutOfRange => "out of range"
     IntentDepth => "intent depth"
     TypeNotFound => "no such type"
     NoSender => "no sender"

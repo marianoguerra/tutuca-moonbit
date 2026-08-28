@@ -4,6 +4,18 @@
     label : String
     isOpen : Bool
     items : Array[Any]
+
+    /// A filesystem node is one of exactly two things, and every view here
+    /// branches on nothing else. A domain rather than a rule, because a
+    /// generator can draw from a closed set and can only filter for a rule.
+    where type is one of ["file", "dir"]
+
+    /// The half a `where` cannot say: a leaf has no children. Two fields
+    /// have to agree, and no relation over one of them states it.
+    invariant filesAreLeaves
+      format $'a file cannot hold {len .items} children' {
+        (.type is 'file') implies ((len .items) is 0)
+      }
   }
 
   state TreeRoot {

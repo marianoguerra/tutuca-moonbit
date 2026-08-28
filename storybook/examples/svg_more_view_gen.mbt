@@ -57,9 +57,11 @@ impl @component.Fields for IconGalleryState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for IconGalleryState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="1147465e1ad9f573", fields=[
-    @component.FieldInfo::new("size", TyInt),
-  ])
+  @component.SchemaInfo::new(
+    fingerprint="1147465e1ad9f573",
+    fields=[@component.FieldInfo::new("size", TyInt)],
+    domains=[{ field: "size", domain: DBetween(lo=DLit(16), hi=DLit(80)), }],
+  )
 }
 
 ///|

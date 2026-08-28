@@ -18,6 +18,10 @@
   state ShowHide {
     isOpen : Bool
     count : Int
+
+    /// A click tally: `inc` only adds, and nothing subtracts. The generated
+    /// `setCount` is the path that could, so the floor is stated here.
+    where count >= 0
   }
 </script>
 

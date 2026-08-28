@@ -4,6 +4,14 @@
     raw : Any
     rawSchema : Any
     showRaw : Bool
+
+    /// The raw pane has something behind it whenever it is showing. `raw` is
+    /// the JSON the viewer switches to, and toggling onto an empty one is a
+    /// blank panel with no way back but the toggle.
+    invariant rawPaneHasSomethingInIt
+      format 'the raw pane is showing and there is nothing behind it' {
+        .showRaw implies (not (null? .raw))
+      }
   }
 </script>
 

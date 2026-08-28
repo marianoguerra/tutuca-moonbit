@@ -30,6 +30,9 @@ pub let table_row_spec_source : String =
   #|    name : String
   #|    qty : Int
   #|    price : Double
+  #|
+  #|    where qty >= 0
+  #|    where price >= 0
   #|  }
   #|
   #|  state ItemTable {

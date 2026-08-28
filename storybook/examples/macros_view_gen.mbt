@@ -105,9 +105,11 @@ impl @component.Fields for MacroParamsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroParamsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="863f668d33521257", fields=[
-    @component.FieldInfo::new("status", TyText),
-  ])
+  @component.SchemaInfo::new(
+    fingerprint="863f668d33521257",
+    fields=[@component.FieldInfo::new("status", TyText)],
+    domains=[{ field: "status", domain: DOneOf(["active", "archived"]), }],
+  )
 }
 
 ///|

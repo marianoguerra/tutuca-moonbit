@@ -2,6 +2,10 @@
   state AltUrl {
     label : String
     url : String
+
+    /// A badge that links somewhere, with a word on it.
+    where label is nonempty
+    where url is nonempty
   }
 
   state PsEntry {
@@ -15,6 +19,14 @@
     url : String
     altUrls : Array[Any]
     categories : Array[Any]
+
+    /// The site is bilingual, and `$isSpanish` branches on nothing else.
+    where lang is one of ["en", "es"]
+
+    /// An entry is a link with a name on it: the card's heading and its
+    /// `:href` are both required for the card to be anything at all.
+    where title is nonempty
+    where url is nonempty
   }
 
   state Root {

@@ -83,14 +83,174 @@ pub fn state_of(
   def : @statedef.StateDef,
   depth? : Int = MAX_DEPTH,
 ) -> @gen.Gen[Map[String, @tutuca.Value]] {
-  let names = def.fields.map(f => f.name)
-  @gen.flatten_array(def.fields.map(f => value_of(def, f.ty, depth~))).fmap(vs => {
-    let out : Map[String, @tutuca.Value] = Map([])
-    for i, n in names {
-      out[n] = vs[i]
+  let domains = @info.domains_of(def)
+  // The unconstrained case is every field independently, which is what this
+  // did before domains existed and what most schemas still want. Kept as its
+  // own path rather than folded into the walk below, because the walk is
+  // sequential — one `bind` per field — and a schema with nothing to order
+  // should not pay for an ordering.
+  if domains.is_empty() {
+    let names = def.fields.map(f => f.name)
+    return @gen.flatten_array(def.fields.map(f => value_of(def, f.ty, depth~))).fmap(vs => {
+        let out : Map[String, @tutuca.Value] = Map([])
+        for i, n in names {
+          out[n] = vs[i]
+        }
+        out
+      },
+    )
+  }
+  draw_in_order(def, order_fields(def, domains), domains, depth)
+}
+
+///|
+/// The order to draw the fields in: every field after the fields its domains
+/// name.
+///
+/// A depth-first walk, and it needs no cycle handling because `statedef`
+/// refuses a cyclic `where` at parse time — which is the whole reason
+/// `CyclicWhere` exists rather than being left for a generator to survive. The
+/// `seen` guard here is for the DIAMOND (two fields naming a third), not for a
+/// cycle.
+fn order_fields(
+  def : @statedef.StateDef,
+  domains : Array[@tutuca.FieldDomain],
+) -> Array[String] {
+  let deps : Map[String, Array[String]] = Map([])
+  for d in domains {
+    let into = match deps.get(d.field) {
+      Some(a) => a
+      None => {
+        let a : Array[String] = []
+        deps[d.field] = a
+        a
+      }
     }
-    out
-  })
+    for n in domain_deps(d.domain) {
+      into.push(n)
+    }
+  }
+  let out : Array[String] = []
+  let seen : Map[String, Bool] = Map([])
+  fn visit(name : String) -> Unit {
+    if seen.contains(name) {
+      return
+    }
+    seen[name] = true
+    for d in deps.get(name).unwrap_or([]) {
+      visit(d)
+    }
+    out.push(name)
+  }
+
+  for f in def.fields {
+    visit(f.name)
+  }
+  out
+}
+
+///|
+/// Draw each field in turn, with the ones already drawn in hand.
+///
+/// Sequential by necessity: `currentIndex` cannot be drawn until `items` has a
+/// length, so this is a chain of `bind`s rather than the `flatten_array` the
+/// unconstrained path uses. That is the cost of the feature and it is paid
+/// only by the schemas that declare a `where`.
+fn draw_in_order(
+  def : @statedef.StateDef,
+  order : Array[String],
+  domains : Array[@tutuca.FieldDomain],
+  depth : Int,
+) -> @gen.Gen[Map[String, @tutuca.Value]] {
+  fn step(i : Int, drawn : Map[String, @tutuca.Value]) {
+    if i >= order.length() {
+      return @gen.pure(drawn)
+    }
+    let name = order[i]
+    guard def.field(name) is Some(f) else { return step(i + 1, drawn) }
+    // What this field's own clauses say, plus what OTHER fields' clauses say
+    // about it — a list something indexes into is not empty.
+    let mine = @tutuca.domains_of(domains, name) +
+      implied_domains(domains, name)
+    field_gen(def, f, mine, drawn, depth).bind(v => {
+      // A fresh map per draw rather than a mutated one: a `Gen` may be
+      // sampled more than once, and a shared map would carry the previous
+      // sample's values into the next.
+      let next = drawn.copy()
+      next[name] = v
+      step(i + 1, next)
+    })
+  }
+
+  step(0, Map([]))
+}
+
+///|
+/// One field, at its type and inside its declared domains.
+///
+/// A domain that cannot be inverted here falls back to the type's own
+/// generator, and that fallback is a feature rather than a gap: a draw the
+/// runtime then refuses is a truthful test of the refusal, and a generator
+/// that silently produced nothing would be a schema that could not be
+/// generated for at all.
+fn field_gen(
+  def : @statedef.StateDef,
+  f : @statedef.FieldDef,
+  mine : Array[@tutuca.Domain],
+  drawn : Map[String, @tutuca.Value],
+  depth : Int,
+) -> @gen.Gen[@tutuca.Value] {
+  if mine.is_empty() {
+    return value_of(def, f.ty, depth~)
+  }
+  // A length bound reaches the CONTAINER's generator rather than a value's,
+  // since a collection of a given size is built rather than picked.
+  if size_in_domain(mine, drawn) is Some(size) &&
+    f.ty.elem() is Some(e) &&
+    f.ty is (TList(_) | TOMap(_)) {
+    let elems = size.bind(n => {
+      value_of(def, e, depth=depth - 1).array_with_size(n)
+    })
+    return match f.ty {
+      TOMap(_) =>
+        elems.fmap(vs => {
+          let m : Map[String, @tutuca.Value] = Map([])
+          for i, x in vs {
+            m["k\{i}"] = x
+          }
+          (Map(m) : @tutuca.Value)
+        })
+      _ => elems.fmap(vs => (List(vs) : @tutuca.Value))
+    }
+  }
+  // Several clauses on one field CONJOIN, and only one of them can be
+  // inverted into a draw — so the first invertible one produces the value and
+  // the rest are filtered for. In practice one clause is the common case and
+  // the filter is a no-op; where it is not, `such_that_maybe` gives up rather
+  // than looping, and the fallback below is what stands.
+  for d in mine {
+    if value_in_domain(d, drawn) is Some(g) {
+      if mine.length() == 1 {
+        return g
+      }
+      return g
+        .such_that_maybe(v => {
+          for other in mine {
+            if !@tutuca.domain_holds(other, v, drawn) {
+              return false
+            }
+          }
+          true
+        })
+        .bind(picked => {
+          match picked {
+            Some(v) => @gen.pure(v)
+            None => g
+          }
+        })
+    }
+  }
+  value_of(def, f.ty, depth~)
 }
 
 ///|
