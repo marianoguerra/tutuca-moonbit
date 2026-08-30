@@ -96,6 +96,9 @@ references needed for the task.
   scene syntax, record mode, intent fixtures, and headless card driving.
 - [margaui.md](./margaui.md) — collecting and compiling Tailwind/MargaUI
   classes, runtime injection, and literal-class constraints.
+- [storybook.md](./storybook.md) — a gallery of a project's own components:
+  stories projected from a module's `examples`, the sections, the tabs, the
+  browser host, and `tutuca new-storybook`.
 - [cli.md](./cli.md) — installing and using `gen-views`, `watch`, CSS
   generation, storybook serving, diagnostics, and exit codes.
 - [patterns/README.md](./patterns/README.md) — short task recipes and complete

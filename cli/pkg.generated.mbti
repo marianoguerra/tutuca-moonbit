@@ -19,6 +19,12 @@ pub const CODE_SKILL_ASSETS_MISSING : String = "ERR_SKILL_ASSETS_MISSING"
 
 pub const CODE_SKILL_TARGET_EXISTS : String = "ERR_SKILL_TARGET_EXISTS"
 
+pub const CODE_STORYBOOK_NAME_INVALID : String = "ERR_STORYBOOK_NAME_INVALID"
+
+pub const CODE_STORYBOOK_TARGET_EXISTS : String = "ERR_STORYBOOK_TARGET_EXISTS"
+
+pub const CODE_STORYBOOK_TEMPLATE_MISSING : String = "ERR_STORYBOOK_TEMPLATE_MISSING"
+
 pub const CODE_USAGE_BAD_FLAG_VALUE : String = "ERR_USAGE_BAD_FLAG_VALUE"
 
 pub const CODE_USAGE_MISSING_ARGUMENT : String = "ERR_USAGE_MISSING_ARGUMENT"
@@ -30,6 +36,8 @@ pub const CODE_USAGE_UNKNOWN_COMMAND : String = "ERR_USAGE_UNKNOWN_COMMAND"
 pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 
 pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
+
+pub const MODULE_VERSION : String = "0.41.0"
 
 pub const VERSION : String = "0.12.2"
 
@@ -93,6 +101,10 @@ pub fn new_guest_success(String, String) -> String
 
 pub fn new_guest_target_exists(GlobalOpts, String) -> Emit
 
+pub fn new_storybook_success(String, String) -> String
+
+pub fn new_storybook_target_exists(GlobalOpts, String) -> Emit
+
 pub fn overview() -> String
 
 pub fn parse_flags(Array[String], CommandSpec) -> Result[ParsedArgs, ErrShape]
@@ -101,11 +113,17 @@ pub fn pascal_case(String) -> String
 
 pub fn plan(Array[String]) -> Outcome
 
+pub fn project_name_check(String) -> String?
+
 pub let skill_files : Array[(String, String)]
 
 pub fn snake_case(String) -> String
 
+pub let storybook_template_files : Array[(String, String)]
+
 pub fn substitute_guest_name(String, String) -> String
+
+pub fn substitute_storybook_name(String, String) -> String
 
 pub fn trace_apply(TracePlan, String) -> Result[TraceResult, ErrShape]
 
@@ -200,6 +218,7 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   NewGuest(GlobalOpts, plan~ : GuestScaffoldPlan)
+  NewStorybook(GlobalOpts, plan~ : StorybookScaffoldPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
@@ -224,6 +243,13 @@ pub(all) struct PositionalSpec {
 pub(all) struct SkillInstallPlan {
   target_rel : String
   user_scope : Bool
+  force : Bool
+  files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct StorybookScaffoldPlan {
+  dir : String
+  name : String
   force : Bool
   files : Array[(String, String)]
 } derive(Eq, @debug.Debug)

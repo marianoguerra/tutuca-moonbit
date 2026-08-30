@@ -1,0 +1,35 @@
+<script type="tutuca/spec">
+  state {
+    /// No clause: a counter with `inc` and `dec` and no floor has the whole of
+    /// `Int` for its domain, and a rule this component does not keep would be
+    /// a lie the Fuzz tab would catch.
+    count : Int
+  }
+</script>
+
+<script type="tutuca/script">
+  receive inc {
+    .count += 1
+  }
+
+  receive dec {
+    .count -= 1
+  }
+</script>
+
+<template id="Counter">
+  <div class="join join-vertical">
+    <button class="btn btn-error" @on.click="dec">-</button>
+    <div class="stats">
+      <div class="stat text-center">
+        <div class="stat-title">Count</div>
+        <div class="stat-value" @text=".count"></div>
+      </div>
+    </div>
+    <button class="btn btn-success" @on.click="inc">+</button>
+  </div>
+</template>
+
+<template id="Counter:compact">
+  <button class="btn btn-sm" @text=".count" @on.click="inc"></button>
+</template>

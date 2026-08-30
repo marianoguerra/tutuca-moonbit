@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/storybook",
   "moonbitlang/core/debug",
 }
 
@@ -525,6 +526,8 @@ pub let root_global_style : String
 
 pub fn root_views() -> Map[String, @anode.View]
 
+pub let section_order : Array[String]
+
 pub let select_option_common_style : String
 
 pub fn select_option_component(name? : String, views? : Map[String, @anode.View], init? : SelectOptionState, common_style? : String, global_style? : String, update? : (SelectOptionState, @component.Dispatch, &@core.Ctx) -> @component.Update[SelectOptionState], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
@@ -632,6 +635,8 @@ pub let status_global_style : String
 pub let status_spec_source : String
 
 pub fn status_views() -> Map[String, @anode.View]
+
+pub fn stories() -> Array[@storybook.Story]
 
 pub let strategies_common_style : String
 

@@ -97,11 +97,11 @@ let overview_body : String =
   #|                  Pass them here if your build passes them.
   #|
   #|  storybook [dir] [--port <n>] [--out <dir>]
-  #|      Serve the pre-built storybook gallery bundle over HTTP (default port
-  #|      4321, falling back to a free one), or copy it with --out. The gallery
-  #|      is a WebAssembly host built ahead of time by
-  #|      `moon run --target native cmd/dev -- dist`; this command is a static
-  #|      file server and nothing more.
+  #|      Serve a pre-built storybook gallery bundle over HTTP (default port
+  #|      4321, falling back to a free one), or copy it with --out. A bundle is
+  #|      a directory with an index.html and a .wasm beside it, built ahead of
+  #|      time by the project's own build script (see new-storybook); this
+  #|      command is a static file server and nothing more.
   #|
   #|  install-skill [--user | --project] [--dot-agents] [--dry-run] [--force]
   #|      Write the bundled tutuca Claude Code skill into .claude/skills/tutuca/.
@@ -120,6 +120,19 @@ let overview_body : String =
   #|      scripts. You need moon, wasm-tools and node — not wit-bindgen.
   #|        <name>        kebab-case; becomes the directory, the bundle name
   #|                      and the one source file you edit
+  #|        --dir <path>  write somewhere other than ./<name>/
+  #|        --dry-run     print the files that would be written
+  #|        --force, -f   overwrite existing files
+  #|
+  #|  new-storybook <name> [--dir <path>] [--dry-run] [--force]
+  #|      Scaffold a storybook gallery of YOUR components: a sidebar of stories
+  #|      with a live pane each, and Instance/Trace/Fuzz/Spec inspectors beside
+  #|      them. A story is an example on a ModuleDef, so the gallery is a
+  #|      projection of your own modules and there is no story list to keep.
+  #|      The gallery itself is a library (storybook/ui/wasm); what this writes
+  #|      is the page around it — the wasm export list, index.html, build.mjs.
+  #|      You need moon and node.
+  #|        <name>        kebab-case; becomes the directory and module name
   #|        --dir <path>  write somewhere other than ./<name>/
   #|        --dry-run     print the files that would be written
   #|        --force, -f   overwrite existing files

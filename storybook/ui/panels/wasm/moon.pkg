@@ -1,0 +1,20 @@
+// The browser half of the standard panel layer: the two effects a fuzz run
+// needs from a page, the click a Trace pick consumes, and the animation frame
+// a Play steps on.
+//
+// It exists as its own package so that `storybook/ui/wasm` can import no panel
+// layer at all. A page that mounts stories and no tabs never names this, and
+// carries neither the inspector nor the recorder nor the fuzz driver in its
+// wasm; a page that wants the gallery in full says so here.
+// Check: moon check --target wasm-gc storybook/ui/panels/wasm
+import {
+  "marianoguerra/tutuca/storybook" @sb,
+  "marianoguerra/tutuca/storybook/ui" @sbui,
+  "marianoguerra/tutuca/storybook/ui/panels",
+  "marianoguerra/tutuca/storybook/ui/wasm" @sbw,
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  // @core.Any: the DOM event the host's exported on_event receives from JS
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"

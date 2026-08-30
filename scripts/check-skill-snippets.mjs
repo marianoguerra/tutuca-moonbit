@@ -125,7 +125,8 @@ for (const [alias, pkg] of [
   ["app", "app"], ["render", "render"], ["vdom", "vdom"],
   ["transactor", "transactor"], ["css", "css"], ["harness", "testing/harness"],
   ["statedef", "statedef"], ["lint", "lint"], ["viewgen", "viewgen"],
-  ["memdom", "testing/memdom"], ["inspector", "inspector"],
+  ["memdom", "testing/memdom"], ["inspector", "storybook/inspector"],
+  ["sb", "storybook"], ["sbui", "storybook/ui"], ["sbw", "storybook/ui/wasm"],
 ]) {
   const f = join(REPO, pkg, "pkg.generated.mbti");
   if (existsSync(f)) MBTI.set(alias, readFileSync(f, "utf8"));

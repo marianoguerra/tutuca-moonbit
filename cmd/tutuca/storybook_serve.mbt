@@ -1,9 +1,12 @@
-// Shell half of `tutuca storybook`: resolve the pre-built gallery bundle, then
+// Shell half of `tutuca storybook`: resolve a pre-built gallery bundle, then
 // either copy it (--out) or serve it over HTTP. The pure @cli package decides
 // the flags (storybook.mbt); this file does the filesystem + socket I/O only.
 //
-// The bundle is the wasm host assembled by `moon run --target native cmd/dev --
-// dist` into dist/storybook (index.html + loader.mjs + storybook_wasm.wasm).
+// A bundle is whatever a build script wrote: an index.html and a wasm module
+// beside it. This repo's own is assembled into dist/storybook by
+// `moon run --target native cmd/dev -- dist`; a downstream project's is
+// whatever `build.mjs` produced (`tutuca new-storybook`). The server knows
+// nothing about either — it is a static file server with a sanity check.
 
 ///|
 /// Candidate bundle locations when no `dir` is passed, in priority order:
@@ -12,13 +15,27 @@
 let bundle_candidates : Array[String] = ["storybook", "dist/storybook"]
 
 ///|
-/// True when `dir` looks like a built storybook bundle (has the wasm module).
-/// Checking for the marker file, not just the directory, avoids matching the
-/// source `storybook/` package dir when serving from the repo root.
+/// True when `dir` looks like a built gallery bundle: an `index.html` with at
+/// least one `.wasm` module beside it.
+///
+/// Two markers rather than one filename. The old check was for
+/// `storybook_wasm.wasm` — the name THIS repo's demo host happens to compile
+/// to — which meant a downstream bundle, whose module is named after its own
+/// page package, could not be served by the command written for it. Checking
+/// markers rather than the bare directory still keeps the source `storybook/`
+/// package dir from matching when serving from the repo root: it has neither.
 async fn is_bundle(dir : String) -> Bool noraise {
-  @fs.exists("\{dir}/storybook_wasm.wasm") catch {
-    _ => false
+  let has_index = @fs.exists("\{dir}/index.html") catch { _ => false }
+  if !has_index {
+    return false
   }
+  let names = @fs.readdir(dir) catch { _ => return false }
+  for n in names {
+    if n.has_suffix(".wasm") {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -186,7 +203,7 @@ async fn run_serve_storybook(
           @cli.err(
             @cli.CODE_INTERNAL,
             "no storybook bundle found at \{where_}",
-            hint="build it first with `moon run --target native cmd/dev -- dist`, or pass a bundle directory",
+            hint="a bundle is a directory with an index.html and a .wasm beside it; build one with your project's build script (`tutuca new-storybook` writes one), or in this repo with `moon run --target native cmd/dev -- dist`",
           ),
         ),
       )

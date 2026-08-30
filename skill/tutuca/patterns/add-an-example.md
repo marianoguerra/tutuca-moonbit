@@ -43,18 +43,25 @@ mounting the module.
 
 ## Landing it in the gallery
 
-A gallery built from a compiled registry has more steps, and skipping any of them
-is **silent** rather than broken — the example appears, just unlabeled or in the
-wrong place:
+Nothing else to do: a gallery projects its story set from the modules it is
+given, so the example you just declared IS a story
+(`@sb.stories_of_modules([foo_module(), ...])`). Its id is
+`slug("<module> <component> <title>")`, its title is `"Foo · Loading"`, and its
+args and view are the ones above.
 
-1. **Register the module** in the registry the gallery reads.
-2. **Give its name a section.** Sidebar grouping is a curated
-   `name -> section` map, not derived from the module.
-   An unlisted name falls into **"Other"**, appended last. A section you add
-   that is not in `section_order` still renders, but after all the ordered ones.
-3. **Give it a title and description**, in the same file's `name -> (title,
-   description)` map. Unlisted, the story's title falls back to the raw
-   registry name and its description to the empty string.
+What a projection cannot derive, because no `ExampleDef` field implies it, is a
+`.map` over the projected list — `Story` is `pub(all)`:
 
-All three are display metadata: nothing about the component or its tests depends
-on them.
+```moonbit nocheck
+// nocheck: `stories` is the list the reader projected from their own modules
+stories.map(s => if s.id == "foo-foo-loading" { { ..s, init: true } } else { s })
+```
+
+- `init: true` for a root that loads its data on `init` (tutuca has no
+  lifecycle, so the host has to be told to send one).
+- `renderable: false` for a fixture that should be listed but never mounted.
+- `section` / `description` for the sidebar grouping and blurb.
+
+See [../storybook.md](../storybook.md), and
+[build-a-gallery.md](build-a-gallery.md) for the whole path from a module to a
+served page.

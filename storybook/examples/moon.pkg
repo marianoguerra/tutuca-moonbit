@@ -12,6 +12,9 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/storybook/inspector",
+  // the story model + the section grouping; stories.mbt is this repo's own
+  // story SET over it, which is why the set lives here and the model ships
+  "marianoguerra/tutuca/storybook" @sb,
   "moonbitlang/core/cmp",
   "moonbitlang/core/string",
   "moonbitlang/core/json",
@@ -26,6 +29,16 @@ import {
 // excluded from the published archive.
 import {
   "marianoguerra/tutuca/testing/harness",
+  // the gallery itself: gallery_test.mbt mounts this corpus through it. The
+  // dependency points this way because `storybook/ui` ships and this package
+  // does not — a `for "test"` block survives `moon publish`, so the shipping
+  // package may not reach in here.
+  "marianoguerra/tutuca/storybook/ui" @sbui,
+  // the standard panel layer, so the corpus test drives the whole gallery —
+  // tabs, recorder and fuzz runs included
+  "marianoguerra/tutuca/storybook/ui/panels",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/viewgen",

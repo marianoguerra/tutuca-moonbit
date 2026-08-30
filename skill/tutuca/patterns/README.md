@@ -75,4 +75,5 @@ task.
 
 ## Examples & catalog
 
-- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving the harness tests, the storybook, and the demo hosts — plus the registry/section/title steps a gallery needs.
+- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving the harness tests, the storybook, and the demo hosts.
+- [Build a gallery of your own components](build-a-gallery.md) — `tutuca new-storybook`, then stories projected from your modules' own examples.

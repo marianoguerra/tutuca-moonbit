@@ -1,0 +1,88 @@
+// {{Name}}'s storybook: which components the gallery shows, and the five
+// entry points the page calls.
+//
+// The story set is a PROJECTION of the modules below — one story per example a
+// module declares — so adding a story is adding an example to a `ModuleDef`,
+// not editing a list here. Sections, descriptions and per-story `init` are
+// `.map` overrides on top of it.
+
+///|
+fn main {
+
+}
+
+///|
+/// One module of components. `counter_component` is generated from
+/// counter.html by `tutuca gen-views`; nothing here restates the view file.
+///
+/// The `examples` are the stories: each names a component, the args to make it
+/// with, and optionally the view to render it under. They are also what
+/// `@harness.mount_example` mounts in a test, so a story and a test agree by
+/// construction.
+pub fn counter_module() -> @component.ModuleDef {
+  @component.ModuleDef::new(name="counter", components=[counter_component()], examples=[
+    { component: "Counter", title: "Zero", args: Map([]), view: None },
+    {
+      component: "Counter",
+      title: "Negative start",
+      args: { "count": Num(-5) },
+      view: None,
+    },
+    // `view` picks one of the component's named views — `<template
+    // id="Counter:compact">` in counter.html — instead of its default.
+    {
+      component: "Counter",
+      title: "Compact",
+      args: { "count": Num(3) },
+      view: Some("compact"),
+    },
+  ])
+}
+
+///|
+/// The gallery's sections, in the order the sidebar shows them. Add a module
+/// to the list and every example it declares becomes a story.
+fn sections() -> Array[@sb.Section] {
+  let stories = @sb.stories_of_modules([counter_module()], section_of=m => match
+    m.name {
+      "counter" => "Basics"
+      _ => "Other"
+    })
+  @sb.sections_of(stories, order=["Basics", "Other"])
+}
+
+///|
+/// Mount the gallery on #app. Called from JS once the DOM is ready.
+///
+/// `panels~` is asked for by name because `storybook/ui/wasm` links no panel
+/// layer of its own: this line is what puts the Instance, Trace, Fuzz, Spec and
+/// Raw tabs in the page. Drop it (and the `@panelsw` import) and the gallery is
+/// stories only — and megabytes lighter.
+pub fn mount() -> Unit {
+  let sections = sections()
+  @sbw.mount(sections, panels=@panelsw.all(sections)) |> ignore
+}
+
+///|
+/// The delegated DOM event entry point JS calls (via tdom.add_listener).
+pub fn on_event(ev : @core.Any) -> Unit {
+  @panelsw.on_event(ev)
+}
+
+///|
+/// Back/Forward: re-read the URL and restore the selection/filter/focus.
+pub fn on_popstate() -> Unit {
+  @sbw.on_popstate()
+}
+
+///|
+/// One animation frame of a playing fuzz run.
+pub fn on_fuzz_tick() -> Unit {
+  @panelsw.on_fuzz_tick()
+}
+
+///|
+/// Recompile + reinject the margaui sheet for the mounted gallery.
+pub fn refresh_margaui() -> Unit {
+  @sbw.refresh_margaui()
+}

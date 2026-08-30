@@ -63,9 +63,10 @@ exist is a separate `tutuca lint` command to invoke them with.
    what it rendered. Authoring
    patterns in [testing.md](./testing.md).
 
-4. **Look at it, if it is visual** — mount the module in a browser host,
-   or serve the project's storybook gallery if it has one
-   (`tutuca storybook` serves a pre-built bundle).
+4. **Look at it, if it is visual** — mount the module in a browser host, or
+   put it in a gallery: `tutuca new-storybook` scaffolds one, and every
+   example your modules declare becomes a story
+   ([storybook.md](./storybook.md)).
 
 Full reference: [cli.md](./cli.md).
 
@@ -219,10 +220,12 @@ The same `ModuleDef` value drives three hosts:
   }
   ```
 
-- **The storybook gallery** — register the module's examples and mount
-  the whole set as one app (see [cli.md](./cli.md) for building and
-  serving it, and
-  [patterns/add-an-example.md](./patterns/add-an-example.md) for adding one).
+- **The storybook gallery** — `@sb.stories_of_modules([...])` projects one
+  story per declared example and `@sbw.mount` puts the whole set on a page as
+  one app, each story in its own child scope. See
+  [storybook.md](./storybook.md), and
+  [patterns/add-an-example.md](./patterns/add-an-example.md) for the example
+  itself.
 
 ### Observing and tearing down an app
 

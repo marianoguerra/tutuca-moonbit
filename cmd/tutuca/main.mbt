@@ -171,25 +171,32 @@ async fn run_install_skill(
 }
 
 ///|
-/// Write the scaffolded guest tree (the shell half of `new-guest`). Simpler
-/// than `install-skill`'s: there is no home-vs-cwd scope to resolve, the base
-/// is always the cwd, and the core has already substituted every placeholder in
-/// every path and every byte. This creates directories, refuses to clobber, and
-/// writes.
-async fn run_new_guest(
+/// Write a scaffolded tree under `target`: create directories, refuse to
+/// clobber without `--force`, write every file. The core has already decided
+/// every path and every byte, placeholders and all, so this is the whole of the
+/// shell half of a scaffolding command.
+///
+/// Shared by `new-guest` and `new-storybook`, which differ only in what they
+/// print. The refusal is on the FIRST collision rather than afterwards:
+/// scaffolding into a directory someone has been working in is the one way
+/// these commands can destroy work.
+async fn write_tree(
   opts : @cli.GlobalOpts,
-  plan : @cli.GuestScaffoldPlan,
+  target : String,
+  files : Array[(String, String)],
+  force~ : Bool,
+  exists_emit~ : () -> @cli.Emit,
+  what~ : String,
 ) -> Unit noraise {
-  let target = plan.dir
   try {
-    if !plan.force && @fs.exists(target) {
-      for pair in plan.files {
+    if !force && @fs.exists(target) {
+      for pair in files {
         if @fs.exists("\{target}/\{pair.0}") {
-          emit_and_exit(@cli.new_guest_target_exists(opts, target))
+          emit_and_exit(exists_emit())
         }
       }
     }
-    for pair in plan.files {
+    for pair in files {
       let (rel, contents) = pair
       let dir = match parent_dir(rel) {
         "" => target
@@ -205,12 +212,51 @@ async fn run_new_guest(
       emit_and_exit(
         @cli.error_emit(
           opts,
-          @cli.err(@cli.CODE_INTERNAL, "failed to scaffold guest: \{e}"),
+          @cli.err(@cli.CODE_INTERNAL, "failed to scaffold \{what}: \{e}"),
         ),
       )
   }
+}
+
+///|
+/// Write the scaffolded guest tree (the shell half of `new-guest`).
+async fn run_new_guest(
+  opts : @cli.GlobalOpts,
+  plan : @cli.GuestScaffoldPlan,
+) -> Unit noraise {
+  let target = plan.dir
+  write_tree(
+    opts,
+    target,
+    plan.files,
+    force=plan.force,
+    exists_emit=() => @cli.new_guest_target_exists(opts, target),
+    what="guest",
+  )
   emit_and_exit({
     out: @cli.new_guest_success(plan.name, target),
+    err: "",
+    exit_code: 0,
+  })
+}
+
+///|
+/// Write the scaffolded gallery project (the shell half of `new-storybook`).
+async fn run_new_storybook(
+  opts : @cli.GlobalOpts,
+  plan : @cli.StorybookScaffoldPlan,
+) -> Unit noraise {
+  let target = plan.dir
+  write_tree(
+    opts,
+    target,
+    plan.files,
+    force=plan.force,
+    exists_emit=() => @cli.new_storybook_target_exists(opts, target),
+    what="storybook",
+  )
+  emit_and_exit({
+    out: @cli.new_storybook_success(plan.name, target),
     err: "",
     exit_code: 0,
   })
@@ -802,6 +848,7 @@ async fn main {
     Feedback(opts, message~) => run_feedback(opts, message)
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
     NewGuest(opts, plan~) => run_new_guest(opts, plan)
+    NewStorybook(opts, plan~) => run_new_storybook(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)
     GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>

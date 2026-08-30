@@ -29,7 +29,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 | is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
 | does the component behave? | `moon test` over `@harness` — mount it, fire real events, read the DOM back → [testing.md](./testing.md) |
-| what does it look like? | build the storybook bundle in the tutuca repo, then `tutuca storybook` |
+| what does it look like? | a gallery of your own components: `tutuca new-storybook`, then `node build.mjs && tutuca storybook dist` → [storybook.md](./storybook.md) |
 
 So the post-edit loop is `gen-views` (or leave `tutuca watch` running) →
 `moon check` → `moon test`. If you find yourself wanting a CLI command to
@@ -43,7 +43,8 @@ inspect a component, the answer is a `moon test` block.
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
-| `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server: the gallery is a wasm host built from the tutuca repo |
+| `storybook [dir]`        | Serve (or copy with `--out <dir>`) a pre-built gallery bundle over HTTP — a directory with an `index.html` and a `.wasm` beside it. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server; the gallery itself is a wasm page built from the project's own modules |
+| `new-storybook <name>`   | Scaffold that page: a gallery of your own components, one story per example a module declares. Writes the wasm export list, `index.html` and `build.mjs` — the parts a library cannot supply. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + node. See [storybook.md](./storybook.md) |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
 | `new-guest <name>`       | Scaffold a `tutuca:component` guest — a wasm component a running app can load. The whole tree (WIT, generated bindings, SDK, a working component, build scripts) is compiled into the binary. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + wasm-tools + node, not wit-bindgen |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
@@ -313,11 +314,11 @@ stylesheet in place; the next save fixes it.
   bad handler names — because those are type errors in the generated module now.
 - **`tutuca storybook` serves a pre-built gallery, not scanned `*.dev.js`.**
   The port compiles ahead of time and the native binary can't load user
-  code, so there is no runtime `*.dev.js` discovery. Stories are the
-  compiled example registry (`storybook/`), grouped into sections and baked
-  into a wasm host at build time. Build the bundle from the tutuca repo,
-  then `tutuca storybook [dir] [--port <n>] [--out <dir>]` serves it (static
-  HTTP) or copies it (`--out`).
+  code, so there is no runtime `*.dev.js` discovery. A gallery is a wasm page
+  built from the project's own modules — `tutuca new-storybook` scaffolds one,
+  `node build.mjs` builds it — and `tutuca storybook [dir] [--port <n>]
+  [--out <dir>]` serves it (static HTTP) or copies it (`--out`). Stories come
+  from the modules' own `examples`, so there is no story registry either.
 
 ## Global flags
 

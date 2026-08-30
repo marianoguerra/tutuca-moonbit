@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/storybook/ui/panels"
+
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/storybook",
+  "marianoguerra/tutuca/storybook/ui",
+  "marianoguerra/tutuca/vdom",
+}
+
+// Values
+pub fn[N] all(Array[@storybook.Section], effects? : FuzzEffects) -> @ui.PanelSet[N]
+
+pub let fuzz_fields : Map[String, @core.Value]
+
+pub fn fuzz_tick() -> Unit
+
+pub fn[N : @vdom.DomWalk] pick_at(@app.App[N], N, N) -> Array[(String, String)]
+
+pub fn[N : @vdom.DomWalk] take_select_click(@app.App[N], N, N) -> Bool
+
+pub fn trace_selecting() -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct FuzzEffects {
+  arm_frame : () -> Unit
+  mark : (String, String) -> Unit
+}
+pub fn FuzzEffects::none() -> Self
+
+// Type aliases
+
+// Traits

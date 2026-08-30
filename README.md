@@ -62,6 +62,9 @@ component — is REFUSED by name, with the reason, and comes back as an
   — a design for building a bundle client-side, with no server and no native
   toolchain. A plan rather than a description of shipped behaviour; it says so
   at the top.
+- **[docs/storybook.md](docs/storybook.md)** — the gallery as a library: how a
+  project gets one over its own components, why stories are a projection of a
+  module's `examples`, and what stays behind in this repo.
 - **[AGENTS.md](AGENTS.md)** — repo layout, tooling and testing conventions.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — how to propose a change.
 
@@ -76,8 +79,8 @@ As a library:
 moon add marianoguerra/tutuca
 ```
 
-The CLI (`gen-views`, `watch`, `gen-*-css`, `storybook`, `install-skill`,
-`new-guest`) is the `cmd/tutuca` package, and `moon install` names the binary
+The CLI (`gen-views`, `watch`, `gen-*-css`, `storybook`, `new-storybook`,
+`install-skill`, `new-guest`) is the `cmd/tutuca` package, and `moon install` names the binary
 after that package's last segment:
 
 ```sh

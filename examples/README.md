@@ -18,6 +18,7 @@ the thing it consumes would be a loop.
 | example | covers |
 | --- | --- |
 | [`dyncomp-dice`](dyncomp-dice/) | the universal dynamic-component host, and writing a `tutuca:component` guest — one page that loads WebAssembly components at runtime, plus a die of its own to load into it |
+| [`storybook-gallery`](storybook-gallery/) | the storybook as a library: a gallery of a project's own components, with stories projected from its modules' `examples`. Committed exactly as `tutuca new-storybook` emits it, so the example and the scaffold in the binary cannot drift |
 
 ## Running them
 
@@ -27,6 +28,10 @@ Each has a `build.mjs` and a README:
 cd examples/dyncomp-dice
 node build.mjs
 python3 -m http.server 8099 -d dist
+
+cd examples/storybook-gallery
+node build.mjs
+tutuca storybook dist
 ```
 
 Run them after a release, before announcing one. They are not part of `cmd/dev

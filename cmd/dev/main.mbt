@@ -140,6 +140,13 @@ const TEMPLATE_OVERLAY : String = "guests/template"
 const TEMPLATE_WIT : String = "dyncomp/wit/tutuca-component.wit"
 
 ///|
+/// The gallery project `tutuca new-storybook` writes out. One hand-written
+/// tree, unlike the guest template's three sources — a gallery borrows no
+/// generated bindings, only a demo component whose view module is kept honest
+/// by the `gen-views` sweep.
+const STORYBOOK_TEMPLATE : String = "storybook/template"
+
+///|
 /// The author's component source, inside the generated guest package — the one
 /// place a `declare` can be implemented and a method on `Instance` defined.
 const TEMPLATE_GUEST_PKG : String = "gen/interface/tutuca/component/guest"
@@ -195,6 +202,60 @@ fn overlay_dest(rel : String) -> String {
       } else {
         rel
       }
+  }
+}
+
+///|
+/// Where a storybook-template file lands. `.tmpl` marks a file carrying
+/// placeholders, or one whose real name would make the template a package of
+/// THIS module (`moon.pkg`, `moon.mod`); `dot.gitignore` is spelled without the
+/// dot so it does not act on `storybook/template/` itself.
+fn storybook_dest(rel : String) -> String {
+  match rel {
+    "dot.gitignore" => ".gitignore"
+    _ =>
+      if rel.has_suffix(".tmpl") {
+        rel[0:rel.length() - 5].to_owned()
+      } else {
+        rel
+      }
+  }
+}
+
+///|
+/// Embed the storybook template and write the generated module to `to`. Paths
+/// are sorted so two runs on the same tree agree.
+async fn gen_storybook_template(to : String) -> Int noraise {
+  try {
+    let files : Array[(String, String)] = []
+    for rel in walk_rel(STORYBOOK_TEMPLATE, "") {
+      if is_build_output(rel) {
+        continue
+      }
+      files.push(
+        (
+          storybook_dest(rel),
+          @fs.read_file("\{STORYBOOK_TEMPLATE}/\{rel}").text(),
+        ),
+      )
+    }
+    if files.is_empty() {
+      err("  ✗ no storybook template files found\n")
+      return 1
+    }
+    files.sort_by(fn(a, b) { path_before(a.0, b.0) })
+    @fs.write_file(
+      to,
+      @tasks.storybook_template_source(files),
+      create_mode=CreateOrTruncate,
+    )
+    out("  \{files.length()} files embedded\n")
+    0
+  } catch {
+    e => {
+      err("  ✗ storybook-template-embed -> \{to}: \{e}\n")
+      1
+    }
   }
 }
 
@@ -264,6 +325,10 @@ async fn run_step(step : @tasks.Step) -> Int noraise {
     GenSkillAssets(src_dir~, to~) => {
       out("› skill-embed \{src_dir} -> \{to}\n")
       gen_skill_assets(src_dir, to)
+    }
+    GenStorybookTemplate(to~) => {
+      out("• storybook-template-embed -> \{to}\n")
+      gen_storybook_template(to)
     }
     GenGuestTemplate(to~) => {
       out("› guest-template-embed -> \{to}\n")

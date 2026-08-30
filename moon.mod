@@ -1,6 +1,6 @@
 name = "marianoguerra/tutuca"
 
-version = "0.40.0"
+version = "0.41.0"
 
 readme = "README.mbt.md"
 
@@ -42,12 +42,23 @@ import {
 
 // What `moon publish` ships. Consumers get the library packages, the CLI
 // (cmd/tutuca -> cli/) and the docs; they don't get the demo/playground/guest
-// hosts, the dev tooling, or the storybook — those only make sense inside
-// this repo: `tutuca storybook` serves a pre-built bundle and needs no
-// story registry, and the harness's demo test defines its own module rather
-// than borrowing an example. The storybook packages stay in the repo as
-// demos and as the corpus the lint/view sweeps run over. Check with
-// `moon package --list`.
+// hosts or the dev tooling — those only make sense inside this repo. Check
+// with `moon package --list`.
+//
+// `storybook/` SHIPS, except its corpus and its scaffold. The model
+// (`storybook`), the gallery shell (`storybook/ui`), the panel layer
+// (`storybook/ui/panels`) and the two browser halves (`storybook/ui/wasm`,
+// `storybook/ui/panels/wasm`) are how a project gets a gallery of ITS OWN
+// components, which is the point of having written them. What stays behind is
+// `storybook/examples` — this repo's 52 demos plus the fixtures the lint and
+// view sweeps and `benchmarks` run over, editorial content rather than a
+// library — and `storybook/template`, which already travels inside the CLI.
+// The split is what `stories_of_module` is for: a consumer's story set is a
+// projection of their own modules, so nobody needs ours.
+//
+// The rule that keeps this honest is `scripts/check-publish-graph.mjs` in `ci`:
+// no shipping package may import an excluded one, in a `for "test"` block
+// either — test files are in the tarball too.
 //
 // `dyncomp/` SHIPS. It is the universal core — the `tutuca:component` contract,
 // the host that loads a bundle from anywhere, the policy that decides what one
@@ -91,7 +102,14 @@ options(
     "cmd/card-corpus",
     "cmd/conformance",
     "tutucard/wasm/test",
-    "storybook",
+    // this repo's own stories and view fixtures; the gallery itself ships
+    "storybook/examples",
+    // the scaffold `tutuca new-storybook` writes out. It is already IN the
+    // binary (cli/storybook_template_gen.mbt), and shipping the source beside
+    // it would put a second copy in the tarball that nothing reads — and a
+    // `page/moon.pkg.tmpl` that no longer looks like a package only by
+    // extension.
+    "storybook/template",
     "package.json",
     "package-lock.json",
   ],

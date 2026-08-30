@@ -1,7 +1,10 @@
-// wasm-gc host for the storybook gallery. The SAME compiled example registry
-// the headless tests drive is grouped into sections (storybook/) and mounted as
-// one live gallery app (storybook/ui). JS calls `mount()` after load, then
-// `on_event` on each DOM event (closures can't cross into JS on wasm-gc).
+// wasm-gc host for the storybook gallery: this repo's own story set, mounted
+// through the shipped browser host (`storybook/ui/wasm`).
+//
+// What is left here is the one thing a library cannot supply — a wasm-gc export
+// list is per-package `link` configuration and cannot come from a dependency —
+// plus the choice of which stories to show. `tutuca new-storybook` writes the
+// same five forwards for a downstream page.
 
 ///|
 fn main {
@@ -9,359 +12,35 @@ fn main {
 }
 
 ///|
-/// The mounted gallery app, stashed so the `on_popstate` export can re-restore
-/// URL state on Back/Forward. tutuca has no lifecycle, so — like the JS
-/// storybook's `window.addEventListener("popstate", …)` — the host re-sends
-/// `init`, which re-runs the shell's `loadState` restore.
-let current_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None, }
-
-///|
-/// The browser-history request handlers wired into the gallery's root scope:
-/// `loadState` reads the query string, `persistState` writes it. Kept in the
-/// host (not storybook/ui) so the pure gallery package never depends on the JS
-/// FFI — the same split as the JS storybook (mount.js owns the URL effects).
-/// The page's own services, on the LEX leg.
-///
-/// A LIST per name, because that leg walks: a declining handler hands the
-/// intent to the next one. These three never decline — a page that owns the
-/// URL is the only thing that can answer for it — so each list has one entry.
-fn url_request_handlers() -> Map[String, Array[@component.IntentFn]] {
-  {
-    "loadState": [
-      IntentFn((_call, answer) => {
-        let params = parse_query(
-          @core.global_this()._get("location")._get("search").to_string(),
-        )
-        let get = fn(k : String) -> @tutuca.Value {
-          Str(params.get(k).unwrap_or(""))
-        }
-        // Resolve+apply the starting theme (URL param, else the OS preference) so
-        // margaui's dark palette shows when the OS is dark; return the resolved
-        // name so the switcher displays it.
-        let theme = resolve_theme(params.get("theme").unwrap_or(""))
-        answer(
-          Ok(
-            Map({
-              "story": get("story"),
-              "focus": get("focus"),
-              "filter": get("filter"),
-              "theme": Str(theme),
-            }),
-          ),
-        )
-      }),
-    ],
-    "persistState": [
-      IntentFn((call, answer) => {
-        match call.args {
-          [Map(m), push] => write_url(m, push is Bool(true))
-          _ => ()
-        }
-        answer(Ok(Null))
-      }),
-    ],
-    // Switch the margaui palette: load its stylesheet (if not bundled) and flip
-    // document.documentElement's data-theme.
-    "applyTheme": [
-      IntentFn((call, answer) => {
-        match call.args {
-          [Str(name), ..] => apply_theme(name)
-          _ => ()
-        }
-        answer(Ok(Null))
-      }),
-    ],
-  }
-}
-
-///|
-/// Where margaui publishes its per-palette stylesheets. light + dark ship in the
-/// theme.css already on the page; the rest are fetched on first selection.
-let theme_base_url : String = "https://marianoguerra.github.io/margaui/themes/"
-
-///|
-/// "dark" when the OS prefers a dark scheme, else "light".
-fn os_theme() -> String {
-  let mm = @core.global_this()._call("matchMedia", [
-    @core.any("(prefers-color-scheme: dark)"),
-  ])
-  if @core.is_nullish(mm) {
-    "light"
-  } else if mm._get("matches").to_string() == "true" {
-    "dark"
-  } else {
-    "light"
-  }
-}
-
-///|
-/// Load a palette's stylesheet once (light/dark are bundled, so skipped).
-fn ensure_theme_link(name : String) -> Unit {
-  if name == "light" || name == "dark" {
-    return
-  }
-  let doc = @core.global_this()._get("document")
-  let id = "tutuca-theme-\{name}"
-  if !@core.is_nullish(doc._call("getElementById", [@core.any(id)])) {
-    return
-  }
-  let link = doc._call("createElement", [@core.any("link")])
-  link._set("rel", @core.any("stylesheet"))
-  link._set("id", @core.any(id))
-  link._set("href", @core.any("\{theme_base_url}\{name}.css"))
-  let _ = doc._get("head")._call("append", [link])
-}
-
-///|
-/// Apply a palette: ensure its stylesheet is loaded, then set data-theme (which
-/// every margaui utility reads through var(--color-*)).
-fn apply_theme(name : String) -> Unit {
-  if name == "" {
-    return
-  }
-  ensure_theme_link(name)
-  let _ = @core.global_this()
-    ._get("document")
-    ._get("documentElement")
-    ._call("setAttribute", [@core.any("data-theme"), @core.any(name)])
-}
-
-///|
-/// Pick the starting theme — the URL param if present, else the OS preference —
-/// apply it, and return the resolved name.
-fn resolve_theme(from_url : String) -> String {
-  let name = if from_url != "" { from_url } else { os_theme() }
-  apply_theme(name)
-  name
-}
-
-///|
-/// URL-decode a query-string fragment via the global decodeURIComponent
-/// (constructor-free FFI, so it works on wasm-gc where `mizchi/js` — js-only —
-/// is unavailable). "+" is a space in query strings; decode it first.
-fn uri_decode(s : String) -> String {
-  @core.global_this()
-  ._call("decodeURIComponent", [@core.any(s.replace(old="+", new="%20"))])
-  .to_string()
-}
-
-///|
-/// URL-encode a value for the query string.
-fn uri_encode(s : String) -> String {
-  @core.global_this()._call("encodeURIComponent", [@core.any(s)]).to_string()
-}
-
-///|
-/// Parse `?a=b&c=d` (leading `?` optional) into a map, decoding each value.
-fn parse_query(search : String) -> Map[String, String] {
-  let out : Map[String, String] = Map([])
-  let s = if search.has_prefix("?") { search[1:].to_owned() } else { search }
-  if s == "" {
-    return out
-  }
-  for pair in s.split("&") {
-    let p = pair.to_owned()
-    if p == "" {
-      continue
-    }
-    match p.split_once("=") {
-      Some((k, v)) => out[uri_decode(k.to_owned())] = uri_decode(v.to_owned())
-      None => out[uri_decode(p)] = ""
-    }
-  }
-  out
-}
-
-///|
-/// Merge the snapshot into the CURRENT query string — set non-empty keys, delete
-/// empty ones, leave keys the snapshot doesn't mention (e.g. `theme` while the
-/// filter changes) untouched — then push or replace the history entry. Built as
-/// a string and handed to history.pushState (no URL/URLSearchParams constructor,
-/// which `mizchi/js/core` doesn't expose on wasm-gc).
-fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
-  let g = @core.global_this()
-  let cur = parse_query(g._get("location")._get("search").to_string())
-  for k, v in m {
-    let s = match v {
-      Str(x) => x
-      _ => ""
-    }
-    if s == "" {
-      cur.remove(k)
-    } else {
-      cur[k] = s
-    }
-  }
-  let parts : Array[String] = []
-  for k, v in cur {
-    parts.push("\{uri_encode(k)}=\{uri_encode(v)}")
-  }
-  let path = g._get("location")._get("pathname").to_string()
-  let url = if parts.is_empty() { path } else { path + "?" + parts.join("&") }
-  let verb = if push { "pushState" } else { "replaceState" }
-  let _ = g
-    ._get("history")
-    ._call(verb, [@core.null(), @core.any(""), @core.any(url)])
-}
-
-///|
 /// Mount the whole gallery on #app. Called from JS once the DOM is ready.
 pub fn mount() -> Unit {
-  let doc = @wglue.document()
-  guard @wglue.element_by_id(doc, "app") is Some(root) else {
-    @tutuca.warn("no #app element")
-    return
-  }
-  // Runtime-loaded wasm component bundles are NOT a story here: the universal
-  // demo (demo/universal_wasm) is the one place that loading UX lives, and a
-  // second shell to maintain bought nothing the drop page does not do —
-  // including the hot-swap-with-migration this pane used to be for.
-  let sections = @sb.sections_of(@sb.stories())
-  let opts = @vdom.RenderOpts::new(doc)
-  let app = try! @sbui.mount(
-    sections,
-    root,
-    opts,
-    url_handlers=url_request_handlers(),
-    fuzz_effects=fuzz_effects(),
-  )
-  current_app.val = Some(app)
-  @wglue.install(app)
-  @wglue.install_styles(app, doc)
-  // compile the collected margaui class set (gallery chrome + every example's
-  // classes) to CSS in MoonBit and inject it — same path as the other wasm demo.
-  apply_margaui(app, doc)
-}
-
-///|
-/// Compile the collected margaui/Tailwind class set to CSS (via the MoonBit
-/// marianoguerra/tailwindcss port) and inject it as <style id="margaui-css">.
-/// Replaces the old page-side CDN margaui compile. index.html pre-places an
-/// empty <style id="margaui-css"> early in <head> so the upsert keeps it ahead
-/// of any lazily-loaded palette <link> in the cascade.
-fn apply_margaui(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
-  let css = @css.compile_margaui(app.scope.comps.collect_classes()) catch {
-    err => {
-      @tutuca.warn("margaui compile failed: \{err}")
-      return
-    }
-  }
-  @wglue.inject_style(doc, "margaui-css", css)
-}
-
-///|
-/// Recompile + reinject margaui CSS for the mounted gallery. No-op before
-/// mount; kept as an export so a host can refresh the sheet after registering
-/// views the initial compile did not see.
-pub fn refresh_margaui() -> Unit {
-  guard current_app.val is Some(app) else { return }
-  apply_margaui(app, @wglue.document())
+  let sections = @sb.sections_of(@ex.stories(), order=@ex.section_order)
+  // The standard tabs, asked for by name: `storybook/ui/wasm` links no panel
+  // layer of its own, so this is what puts the inspector, the recorder and the
+  // fuzz driver in the page.
+  @sbw.mount(sections, panels=@panelsw.all(sections)) |> ignore
 }
 
 ///|
 /// The delegated DOM event entry point JS calls (via tdom.add_listener).
-///
-/// One interception, and it is the page's job rather than the gallery's: while
-/// the Trace panel is waiting to be pointed at, a click MEANS something else.
-/// Letting it through as well would drive the app with the click that was meant
-/// to point at it — so the pick consumes it, and everything else goes on
-/// exactly as before.
 pub fn on_event(ev : @core.Any) -> Unit {
-  @wglue.on_event(ev, before=(node, name) => {
-    if name != "click" {
-      false
-    } else {
-      match current_app.val {
-        Some(app) => @sbui.take_select_click(app, node, app.root_node)
-        None => false
-      }
-    }
-  })
+  @panelsw.on_event(ev)
 }
 
 ///|
-/// Called from JS on `popstate` (Back/Forward). Re-sends `init` so the shell
-/// re-reads the URL and restores the selection/filter/focus for the new entry.
-/// Programmatic push/replaceState don't fire popstate, so this only runs on
-/// real navigation — the same guard the JS storybook relies on.
+/// Back/Forward: re-read the URL and restore the selection/filter/focus.
 pub fn on_popstate() -> Unit {
-  match current_app.val {
-    Some(app) => app.send_at_root("init") |> ignore
-    None => ()
-  }
+  @sbw.on_popstate()
 }
 
 ///|
-/// The Fuzz tab's two browser effects.
-///
-/// Here rather than in `storybook/ui` for the reason the URL handlers are: the
-/// gallery package is checked and tested on every backend, and a `globalThis`
-/// in it would make that untrue. The page owns its effects; the gallery is
-/// told what they are.
-fn fuzz_effects() -> @sbui.FuzzEffects {
-  { arm_frame: arm_fuzz_frame, mark: mark_fuzz, }
-}
-
-///|
-/// Ask the page for the next animation frame.
-///
-/// A call OUT and not a callback in: a closure cannot cross into JS on wasm-gc
-/// — the same constraint `on_event` and `on_popstate` are shaped by — so the
-/// page installs `__tutucaFuzzTick` as a one-shot `requestAnimationFrame` onto
-/// the `on_fuzz_tick` export, and this pulls it. Nothing arms it again once a
-/// run stops, so there is no permanent frame loop.
-///
-/// Silent when the page installed nothing: a gallery served by some other
-/// index.html gets a Play that does not advance rather than a crash, and Step
-/// and Burst still work.
-fn arm_fuzz_frame() -> Unit {
-  let g = @core.global_this()
-  if @core.is_nullish(g) {
-    return
-  }
-  let f = g._get("__tutucaFuzzTick")
-  if @core.is_nullish(f) {
-    return
-  }
-  let _ = f._invoke([])
-}
-
-///|
-/// Bracket one step on DevTools' Timings track.
-///
-/// A LABEL, not a measurement. The numbers are the profiler's — that is what
-/// it is for, and it sees layout, paint and GC that nothing in MoonBit can —
-/// and what a run owes it is a name against each dispatch so the flame chart
-/// can be read. No fallback clock where `performance` is absent, on purpose: a
-/// second timebase nobody asked for is worse than none.
-fn mark_fuzz(name : String, phase : String) -> Unit {
-  let g = @core.global_this()
-  if @core.is_nullish(g) {
-    return
-  }
-  let perf = g._get("performance")
-  if @core.is_nullish(perf) {
-    return
-  }
-  if phase == "start" {
-    let _ = perf._call("mark", [@core.any("fuzz:\{name}:start")])
-  } else {
-    let _ = perf._call("mark", [@core.any("fuzz:\{name}:end")])
-    // Named for the dispatch, so a reader scanning the track sees which
-    // message cost what without opening anything.
-    let _ = perf._call("measure", [
-      @core.any("fuzz \{name}"),
-      @core.any("fuzz:\{name}:start"),
-      @core.any("fuzz:\{name}:end"),
-    ])
-  }
-}
-
-///|
-/// Called from JS on each animation frame while a fuzz run is playing.
-///
-/// The fourth export, and the same shape as `on_popstate`: the page owns the
-/// scheduler, MoonBit owns what happens on the tick.
+/// One animation frame of a playing fuzz run.
 pub fn on_fuzz_tick() -> Unit {
-  @sbui.fuzz_tick()
+  @panelsw.on_fuzz_tick()
+}
+
+///|
+/// Recompile + reinject the margaui sheet for the mounted gallery.
+pub fn refresh_margaui() -> Unit {
+  @sbw.refresh_margaui()
 }

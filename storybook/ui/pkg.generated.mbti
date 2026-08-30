@@ -4,31 +4,57 @@ package "marianoguerra/tutuca/storybook/ui"
 import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/storybook",
   "marianoguerra/tutuca/vdom",
 }
 
 // Values
-pub fn fuzz_tick() -> Unit
+pub fn active_index(Array[@storybook.Section], String) -> Int
+
+pub fn[N] active_story(@app.App[N], Array[@storybook.Section]) -> Int
 
 pub fn fuzzy_match(String, String) -> Bool
 
-pub fn[N : @vdom.DomWalk] mount(Array[@storybook.Section], N, @vdom.RenderOpts[N], url_handlers? : Map[String, Array[@component.IntentFn]], fuzz_effects? : FuzzEffects) -> @app.App[N] raise
+pub fn margaui_themes() -> Array[String]
 
-pub fn[N : @vdom.DomWalk] pick_at(@app.App[N], N, N) -> Array[(String, String)]
+pub fn[N : @vdom.DomWalk] mount(Array[@storybook.Section], N, @vdom.RenderOpts[N], url_handlers? : Map[String, Array[@component.IntentFn]], themes? : Array[String], panels? : PanelSet[N]) -> @app.App[N] raise
 
-pub fn[N : @vdom.DomWalk] take_select_click(@app.App[N], N, N) -> Bool
+pub fn[N] push_panel(@app.App[N], Int, String, @core.Value) -> Unit
 
-pub fn trace_selecting() -> Bool
+pub fn[N] raise_panel_intent(@app.App[N], String, @core.Value) -> Unit
+
+pub fn[N] set_panel_fields(@app.App[N], Map[String, @core.Value]) -> Unit
+
+pub fn[N] set_story_value(@app.App[N], Int, @core.Value) -> Unit
+
+pub fn[N] shell_field(@app.App[N], String) -> @core.Value
+
+pub fn story_field(Int) -> String
+
+pub fn[N] story_value(@app.App[N], Int) -> @core.Value
 
 // Errors
 
 // Types and methods
-pub(all) struct FuzzEffects {
-  arm_frame : () -> Unit
-  mark : (String, String) -> Unit
+pub(all) struct PanelDef {
+  key : String
+  label : String
+  field : String
+  build : ((@core.Value, (String) -> @core.Value) -> @core.Value)?
+  live : Bool
+  keep : Bool
+  with_story : Bool
 }
-pub fn FuzzEffects::none() -> Self
+
+pub(all) struct PanelSet[N] {
+  defs : Array[PanelDef]
+  fields : Map[String, @core.Value]
+  components : Array[@component.Component]
+  intents : Map[String, Array[@component.IntentFn]]
+  attach : (@app.App[N]) -> Unit
+}
+pub fn[N] PanelSet::none() -> Self[N]
 
 // Type aliases
 

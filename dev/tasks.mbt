@@ -32,6 +32,12 @@ pub enum Step {
   // GenSkillAssets with a different src_dir: the sources are three, and two of
   // them are remapped on the way in (see cmd/dev's gen_guest_template).
   GenGuestTemplate(to~ : String)
+  // walk storybook/template/, remap the .tmpl names, and write the generated
+  // storybook_template_source(...) MoonBit module to `to`. Its own step rather
+  // than a GenSkillAssets because the names are remapped on the way in — a
+  // `moon.pkg.tmpl` that arrived as `moon.pkg` would make the template a
+  // package of this module.
+  GenStorybookTemplate(to~ : String)
 } derive(Eq, Debug)
 
 ///|
@@ -370,6 +376,47 @@ pub fn tasks() -> Array[Task] {
       commands: [guest_list_check()],
     },
     {
+      name: "check-storybook-template",
+      about: "scaffold a gallery with the embedded template and check its shape (structural: it depends on a PUBLISHED tutuca, so ci cannot compile it)",
+      commands: [
+        // The guest template can be compiled in `ci` because the tree it writes
+        // depends on no module at all. This one depends on the published
+        // `marianoguerra/tutuca` — which will not contain the packages the
+        // scaffold imports until the release that adds them — so the compile
+        // check belongs to `examples/`, after a release. What is checkable here
+        // is the shape: no placeholder left unsubstituted, the export list and
+        // the page's `pub fn`s agreeing, and every file index.html asks for
+        // being one build.mjs writes.
+        moon("build · native CLI (with the storybook template embedded)", [
+          "build", "--target", "native", "cmd/tutuca",
+        ]),
+        {
+          label: "check · scaffolded gallery is well-formed",
+          prog: "node",
+          args: ["scripts/check-storybook-template.mjs"],
+        },
+      ],
+    },
+    {
+      name: "check-publish-graph",
+      about: "no shipping package may import one moon.mod excludes (test blocks included)",
+      commands: [
+        // The invariant the tarball does not enforce for you: an excluded
+        // package is sitting right here in the working tree, so `moon check` is
+        // happy and only a consumer who unpacked the archive sees the break.
+        {
+          label: "check · published package graph is closed",
+          prog: "node",
+          args: ["scripts/check-publish-graph.mjs"],
+        },
+        {
+          label: "check · MODULE_VERSION matches moon.mod",
+          prog: "node",
+          args: ["scripts/check-module-version.mjs"],
+        },
+      ],
+    },
+    {
       name: "check-guest-template",
       about: "scaffold a guest with the embedded template and compile it (the only coverage `tutuca new-guest` has)",
       commands: [
@@ -592,6 +639,10 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/todo_macros.html", None),
     ("storybook/examples/visual_wasm.html", None),
     ("storybook/examples/web_component.html", Some("EmojiPicker")),
+    // Not a package of this module — it is the demo component inside the
+    // project `tutuca new-storybook` writes. It is swept here so the generated
+    // module the template hands a stranger is the one this generator produces.
+    ("storybook/template/page/counter.html", None),
   ]
   // Snapshot the generated modules BEFORE regenerating, so the check at the end
   // can ask whether regenerating changed anything rather than whether the tree
@@ -743,6 +794,10 @@ fn assembled() -> Array[(String, String, () -> Array[Step])] {
       guest_template_embed_steps,
     ),
     (
+      "storybook-template-embed", "regenerate cli/storybook_template_gen.mbt (the gallery project `tutuca new-storybook` writes) from storybook/template",
+      storybook_template_embed_steps,
+    ),
+    (
       "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
       universal_steps,
     ),
@@ -790,7 +845,8 @@ fn composites() -> Array[(String, String, Array[String])] {
       "gen-views drift + skill-embed drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
       [
         "gen-views", "skill-embed", "check", "check-examples", "check-skill", "check-guest-list",
-        "check-guest-template", "test", "build",
+        "check-guest-template", "check-storybook-template", "check-publish-graph",
+        "test", "build",
       ],
     ),
   ]
@@ -808,6 +864,9 @@ fn dist_steps() -> Array[Step] {
     steps.push(step)
   }
   for step in guest_template_embed_steps() {
+    steps.push(step)
+  }
+  for step in storybook_template_embed_steps() {
     steps.push(step)
   }
   for cmd in build_commands() {
@@ -1229,6 +1288,22 @@ const SKILL_EMBED_WAS : String = "_build/skill_assets_gen.mbt.was"
 /// everything would otherwise rewrite a file nobody edited.
 pub fn guest_template_embed_steps() -> Array[Step] {
   [GenGuestTemplate(to="cli/guest_template_gen.mbt"), Run(moon("fmt", ["fmt"]))]
+}
+
+///|
+/// Regenerate the CLI's embedded storybook template — the gallery project
+/// `tutuca new-storybook` writes out. Run after editing `storybook/template/`;
+/// `dist` runs it, and `check-storybook-template` is what proves the result is
+/// still well-formed.
+///
+/// Ends in `moon fmt` for the reason the other two embeds do: the generator
+/// writes one tuple per file on one line, and the next task that formats
+/// everything would otherwise rewrite a file nobody edited.
+pub fn storybook_template_embed_steps() -> Array[Step] {
+  [
+    GenStorybookTemplate(to="cli/storybook_template_gen.mbt"),
+    Run(moon("fmt", ["fmt"])),
+  ]
 }
 
 ///|

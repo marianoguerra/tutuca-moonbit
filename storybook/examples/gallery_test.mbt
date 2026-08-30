@@ -1,17 +1,24 @@
-// Smoke: mount a few stories on memdom and assert the gallery chrome + the
-// first story's live preview render. Per-component behavior is covered by each
-// example's own harness test; here we only check the storybook shell wiring.
+// Smoke: mount a few of THIS repo's stories on memdom and assert the gallery
+// chrome + the first story's live preview render. Per-component behavior is
+// covered by each example's own harness test; here we only check the storybook
+// shell wiring.
+//
+// It lives beside the corpus rather than in `storybook/ui` because it drives
+// the corpus: `storybook/ui` ships and `storybook/examples` does not, and a
+// shipping package may not test-import an excluded one — a `for "test"` block
+// survives `moon publish`. `storybook/ui`'s own smoke test builds its module
+// inside the test file.
 
 ///|
 fn pick(ids : Array[String]) -> Array[@sb.Section] {
-  let all = @sb.stories()
+  let all = stories()
   let picked : Array[@sb.Story] = []
   for s in all {
     if ids.contains(s.id) {
       picked.push(s)
     }
   }
-  @sb.sections_of(picked)
+  @sb.sections_of(picked, order=section_order)
 }
 
 ///|
@@ -19,7 +26,12 @@ test "storybook mounts sidebar + first preview" {
   let sections = pick(["counter", "traffic-light", "tabbed-ui", "lint-errors"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let _app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let html = container.to_html()
   // sidebar entries for every picked story
   assert_true(html.contains("nav-counter"))
@@ -42,7 +54,12 @@ test "init-driven story loads its data after mount" {
   let sections = pick(["request-example"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let _app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let html = container.to_html()
   assert_true(html.contains("Tutuca"))
   assert_true(html.contains("MoonBit"))
@@ -86,18 +103,18 @@ fn[N] root_field(app : @app.App[N], name : String) -> @tutuca.Value {
 ///|
 test "fuzzy_match: substring, subsequence budget, and empty query" {
   // empty query matches anything
-  assert_true(fuzzy_match("", "whatever"))
+  assert_true(@sbui.fuzzy_match("", "whatever"))
   // direct substring, case-insensitive
-  assert_true(fuzzy_match("Count", "counter"))
-  assert_true(fuzzy_match("light", "traffic light basics"))
+  assert_true(@sbui.fuzzy_match("Count", "counter"))
+  assert_true(@sbui.fuzzy_match("light", "traffic light basics"))
   // near-contiguous subsequence within budget (t-r-a-f: gap of 1)
-  assert_true(fuzzy_match("trf", "traffic"))
+  assert_true(@sbui.fuzzy_match("trf", "traffic"))
   // the same letters spread far apart exceed the query-scaled gap budget
-  assert_false(fuzzy_match("tft", "traffic light"))
+  assert_false(@sbui.fuzzy_match("tft", "traffic light"))
   // scattered letters across a long string exceed the gap budget
-  assert_false(fuzzy_match("counter", "composition and views example"))
+  assert_false(@sbui.fuzzy_match("counter", "composition and views example"))
   // a query absent from the target never matches
-  assert_false(fuzzy_match("zzz", "traffic light"))
+  assert_false(@sbui.fuzzy_match("zzz", "traffic light"))
 }
 
 ///|
@@ -105,7 +122,12 @@ test "storybook renders the filter box, focus buttons, and collapse toggle" {
   let sections = pick(["counter", "traffic-light", "lint-errors"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let _app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let html = container.to_html()
   // the sidebar filter input
   assert_true(html.contains("placeholder=\"Filter\""))
@@ -124,10 +146,11 @@ test "URL state restores the selected story, focus, and filter" {
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
   // restore: select traffic-light, focus tabbed-ui, filter "counter"
-  let app = mount(
+  let app = @sbui.mount(
     sections,
     container,
     @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
     url_handlers=url_fixture("traffic-light", "tabbed-ui", "counter"),
   )
   // selection + focus id came from the URL, overriding the default (counter)
@@ -143,10 +166,11 @@ test "URL state restores the theme into the switcher" {
   let sections = pick(["counter", "traffic-light"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(
+  let app = @sbui.mount(
     sections,
     container,
     @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
     url_handlers=url_fixture("", "", "", theme="dracula"),
   )
   // the resolved theme name syncs the switcher's shown value
@@ -158,10 +182,11 @@ test "empty URL state keeps the default selection and clears focus" {
   let sections = pick(["counter", "traffic-light"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(
+  let app = @sbui.mount(
     sections,
     container,
     @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
     url_handlers=url_fixture("", "", ""),
   )
   // default selection is the first story; no focus
@@ -198,7 +223,12 @@ test "each story pane offers a live Instance tab" {
   let sections = pick(["counter", "traffic-light"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   assert_true(container.to_html().contains("story-tab"))
   assert_true(container.to_html().contains("instance-tab"))
   let root = app.transactor.root
@@ -263,7 +293,12 @@ test "the Instance tab renders the explorer, not a blank pane" {
   let sections = pick(["counter"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   guard walk_by_class(container, "instance-tab") is Some(tab) else {
     fail("no Instance tab in the rendered gallery")
   }
@@ -286,7 +321,12 @@ test "the Instance tab renders the explorer, not a blank pane" {
 test "the gallery records what a story did, and shows it back" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   // Nothing is recording until somebody asks. That is the default and the
   // whole point.
@@ -326,7 +366,12 @@ test "the gallery records what a story did, and shows it back" {
 test "recording one example keeps only that example" {
   let sections = pick(["counter", "traffic-light"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -352,7 +397,12 @@ test "recording one example keeps only that example" {
 test "the recording survives leaving the tab" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -373,7 +423,12 @@ test "the recording survives leaving the tab" {
 test "discarding a recording puts the panel back where it started" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -399,7 +454,12 @@ test "discarding a recording puts the panel back where it started" {
 test "clicking the page offers the components under it" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -421,7 +481,7 @@ test "clicking the page offers the components under it" {
   // Picked while the story is showing, which is when a real click happens: the
   // pane re-renders on a tab switch, so a node kept across one is detached and
   // walks up to nothing.
-  let found = pick_at(app, h.find(".stat-value"), container)
+  let found = @panels.pick_at(app, h.find(".stat-value"), container)
   h.click(".trace-tab")
   // The shell, then the story's counter — outermost first, each named by the
   // instance its address resolves to rather than by the render-time id, which
@@ -432,7 +492,7 @@ test "clicking the page offers the components under it" {
   let payload : Array[@tutuca.Value] = found.map(c => {
     Map({ "place": Str(c.0), "component": Str(c.1) })
   })
-  h.send_at_root("onTraceCandidates", args=[List(payload)])
+  h.send_at_root("panelIntent", args=[Str("traceCandidates"), List(payload)])
   assert_eq(h.text(".places-heading"), "Components under what you clicked")
   assert_eq(h.texts(".place-component"), ["Storybook", "Counter"])
   // Picking one keeps it, rather than acting on it: choosing a place is the
@@ -455,7 +515,12 @@ test "clicking the page offers the components under it" {
 test "leaving selection mode restores the recording's own places" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -466,9 +531,10 @@ test "leaving selection mode restores the recording's own places" {
   h.click(".rec-stop")
   h.click(".tab-select")
   h.click(".story-tab")
-  let found = pick_at(app, h.find(".stat-value"), container)
+  let found = @panels.pick_at(app, h.find(".stat-value"), container)
   h.click(".trace-tab")
-  h.send_at_root("onTraceCandidates", args=[
+  h.send_at_root("panelIntent", args=[
+    Str("traceCandidates"),
     List(found.map(c => Map({ "place": Str(c.0), "component": Str(c.1) }))),
   ])
   assert_eq(h.text(".places-heading"), "Components under what you clicked")
@@ -484,7 +550,12 @@ test "leaving selection mode restores the recording's own places" {
 test "candidates are relative to the story a scoped recording is about" {
   let sections = pick(["counter", "traffic-light"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".trace-tab")
   h.click(".rec-start")
@@ -496,9 +567,10 @@ test "candidates are relative to the story a scoped recording is about" {
   h.click(".rec-stop")
   h.click(".tab-select")
   h.click(".story-tab")
-  let found = pick_at(app, h.find(".stat-value"), container)
+  let found = @panels.pick_at(app, h.find(".stat-value"), container)
   h.click(".trace-tab")
-  h.send_at_root("onTraceCandidates", args=[
+  h.send_at_root("panelIntent", args=[
+    Str("traceCandidates"),
     List(found.map(c => Map({ "place": Str(c.0), "component": Str(c.1) }))),
   ])
   // The shell is above the cut and drops out; the story becomes the root.
@@ -515,12 +587,19 @@ test "candidates are relative to the story a scoped recording is about" {
 test "a click is consumed only while the panel is waiting for one" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   // Nothing is waiting, so nothing is claimed — the gallery behaves exactly as
   // it always did.
-  assert_false(trace_selecting())
-  assert_false(take_select_click(app, h.find(".btn-success"), container))
+  assert_false(@panels.trace_selecting())
+  assert_false(
+    @panels.take_select_click(app, h.find(".btn-success"), container),
+  )
   h.click(".trace-tab")
   h.click(".rec-start")
   h.click(".picker-go")
@@ -529,15 +608,15 @@ test "a click is consumed only while the panel is waiting for one" {
   h.click(".trace-tab")
   h.click(".rec-stop")
   h.click(".tab-select")
-  assert_true(trace_selecting())
+  assert_true(@panels.trace_selecting())
   h.click(".story-tab")
   // Now it is, so the click is taken — and the counter does NOT move, which is
   // the whole point of the gate.
   let before = h.text(".stat-value")
-  assert_true(take_select_click(app, h.find(".btn-success"), container))
+  assert_true(@panels.take_select_click(app, h.find(".btn-success"), container))
   assert_eq(h.text(".stat-value"), before)
   // One click, and the panel is done waiting.
-  assert_false(trace_selecting())
+  assert_false(@panels.trace_selecting())
   h.click(".trace-tab")
   assert_eq(h.text(".places-heading"), "Components under what you clicked")
 }
@@ -553,7 +632,12 @@ test "a click is consumed only while the panel is waiting for one" {
 test "the Fuzz tab drives the story on screen" {
   let sections = pick(["svg-bar-chart"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   // The knobs are there, so a plan was derived — `canRun` gates the whole
@@ -565,7 +649,7 @@ test "the Fuzz tab drives the story on screen" {
   assert_eq(h.find_all("rect").length(), 6)
   let before = app.root_value().field("s0").field("values")
   h.click(".ctl-burst")
-  fuzz_tick()
+  @panels.fuzz_tick()
   // Forty generated dispatches ran, and each is a row.
   let rows = h.find_all(".fuzz-row")
   assert_eq(rows.length(), 40)
@@ -585,12 +669,17 @@ test "the Fuzz tab drives the story on screen" {
 test "a run reaches the dispatches the invariant has to decline" {
   let sections = pick(["svg-bar-chart"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   h.click(".src-internal")
   h.click(".ctl-burst")
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.texts(".verdict-kind"), ["held"])
   // At least one row was declined, by the invariant the block declares.
   //
@@ -614,12 +703,17 @@ test "a run is addressed by its seed" {
   fn names_at(seed : String) -> Array[String] raise {
     let sections = pick(["svg-bar-chart"])
     let (doc, container) = @harness.new_mount()
-    let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+    let app = @sbui.mount(
+      sections,
+      container,
+      @vdom.RenderOpts::new(doc),
+      panels=@panels.all(sections),
+    )
     let h = @harness.Harness::over(app, container)
     h.click(".fuzz-tab")
     h.type_into(".ctl-seed", seed)
     h.click(".ctl-burst")
-    fuzz_tick()
+    @panels.fuzz_tick()
     h.texts(".row-name")
   }
 
@@ -638,12 +732,17 @@ test "a run is addressed by its seed" {
 test "reset puts the story back" {
   let sections = pick(["svg-bar-chart"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   let before = app.root_value().field("s0").field("values")
   h.click(".ctl-burst")
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_not_eq(app.root_value().field("s0").field("values"), before)
   h.click(".ctl-reset")
   assert_eq(app.root_value().field("s0").field("values"), before)
@@ -662,7 +761,12 @@ test "reset puts the story back" {
 test "Play waits for a frame the host has to supply" {
   let sections = pick(["svg-bar-chart"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   h.click(".ctl-play")
@@ -670,13 +774,13 @@ test "Play waits for a frame the host has to supply" {
   assert_eq(h.find_all(".ctl-stop").length(), 1)
   assert_eq(h.find_all(".fuzz-row").length(), 0)
   // A frame, and exactly one dispatch lands.
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 1)
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 2)
   // Stop, and a stray frame is a no-op rather than a wrong answer.
   h.click(".ctl-stop")
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 2)
 }
 
@@ -690,20 +794,25 @@ test "Play waits for a frame the host has to supply" {
 test "Step walks a run, and restarts at the end of one" {
   let sections = pick(["svg-bar-chart"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   h.type_into(".ctl-steps", "3")
   for i in [1, 2, 3] {
     h.click(".ctl-step")
-    fuzz_tick()
+    @panels.fuzz_tick()
     assert_eq(h.find_all(".fuzz-row").length(), i)
   }
   // The script ran out and the run has a verdict.
   assert_eq(h.texts(".verdict-kind"), ["held"])
   // One more Step starts a new run rather than doing nothing.
   h.click(".ctl-step")
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 1)
 }
 
@@ -719,12 +828,17 @@ test "Step walks a run, and restarts at the end of one" {
 test "a run sends nothing the story leaves unhandled" {
   let sections = pick(["tabbed-ui"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
   h.click(".src-internal")
   h.click(".ctl-burst")
-  fuzz_tick()
+  @panels.fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 40)
   // No badge reading `unhandled`, and no row naming the reader.
   assert_false(h.texts(".row-refused").contains("unhandled"))
@@ -744,7 +858,12 @@ test "each story pane shows the block it was declared in" {
   let sections = pick(["counter"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   assert_true(container.to_html().contains("spec-tab"))
   assert_true(container.to_html().contains("raw-tab"))
   let root = app.transactor.root
@@ -783,7 +902,12 @@ test "each story pane shows the block it was declared in" {
 test "the Spec tab renders the declaration, not a blank pane" {
   let sections = pick(["counter"])
   let (doc, container) = @harness.new_mount()
-  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
   let h = @harness.Harness::over(app, container)
   h.click(".spec-tab")
   // the counter's arm, expanded, with the field it declares

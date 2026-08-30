@@ -72,6 +72,13 @@ versions are immutable, so a re-release always needs a new semver number
 (MAJOR = breaking API, MINOR = additive, PATCH = fixes; a breaking change under
 `0.x` takes the minor).
 
+One exception, and `ci` enforces it: `MODULE_VERSION` in `cli/version.mbt` is
+what `tutuca new-storybook` pins in the `moon.mod` it writes, so it moves with
+the module version. A change that makes the scaffold depend on packages a
+released version does not have has to bump both at once — otherwise the
+scaffold hands a new user a project resolving to a release without them.
+`scripts/check-module-version.mjs` fails on the mismatch either way.
+
 ### Then the examples, and only then the announcement
 
 `examples/*` are not packages of this module. Each has its own `moon.mod`
@@ -99,16 +106,25 @@ commit that migrates its source.
 ### What ships
 
 `options(exclude: ...)` in `moon.mod` keeps the tarball to the library
-packages, `dyncomp/`, the CLI and `docs/`. The storybook, demo, playground and
-guest trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and
-`package.json` are repo-only. `storybook/` is excluded because
-nothing published depends on it: `tutuca storybook` serves a pre-built bundle
-and needs no story registry, and `testing/harness`'s demo test defines its own
-module. It stays in the repo as a demo and as the corpus the lint and
-view-generation sweeps run over. If you add a package that a shipped
-package imports, make sure it is not under an excluded directory — verify by
-unpacking `_build/publish/*.zip` into an empty directory and running
-`moon check` / `moon test` there, which is what a consumer sees.
+packages, `dyncomp/`, the storybook, the CLI and `docs/`. The demo, playground
+and guest trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and
+`package.json` are repo-only.
+
+`storybook/` ships except for `storybook/examples` and `storybook/template`.
+The model, the gallery shell, the panel layer and the two browser halves are how
+a project gets a gallery of its OWN components (see
+[docs/storybook.md](docs/storybook.md)); the corpus is this repo's 52 demos plus
+the fixtures the lint and view-generation sweeps and `benchmarks` run over,
+which is editorial content and not a library, and the template already travels
+inside the CLI binary. Stories are projected from a module's own `examples`, so
+nobody needs ours.
+
+If you add a package that a shipped package imports, make sure it is not under
+an excluded directory. `scripts/check-publish-graph.mjs` (in `ci`) fails on that
+— including a `for "test"` import, since test files travel in the tarball too —
+and the end-to-end check is still unpacking `_build/publish/*.zip` into an empty
+directory and running `moon check` / `moon test` there, which is what a consumer
+sees.
 
 `dyncomp/` ships: it is the universal core, and without it a consumer can host
 no dynamic component at all — no contract, no loader, no catalog, no universal

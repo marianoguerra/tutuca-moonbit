@@ -1,6 +1,10 @@
 // The storybook data model: a Story wraps one compiled example (its ModuleDef
 // + root component + seed args) with gallery metadata (section, title). A
 // Section is a named, ordered group of stories for the sidebar.
+//
+// Both are `pub(all)`, so a consumer can write a Story literal or update one
+// with `{ ..s, init: true }`. The usual way to GET stories is not to write
+// them at all — `project.mbt` derives them from a module's own `examples`.
 
 ///|
 pub(all) struct Story {
@@ -17,13 +21,16 @@ pub(all) struct Story {
   root : String
   /// args the root is made with (from the example's own ExampleDef)
   args : Map[String, @tutuca.Value]
-  /// false for lint fixtures (e.g. lint-errors) whose views intentionally
-  /// contain malformed/self-referential bindings — they are meant to be
-  /// LINTED, not rendered, so the pane shows only the Lint panel.
+  /// the root's view name, empty for the component's default resolution
+  /// (`ExampleDef.view`, which the gallery honours through `@push-view`)
+  view : String
+  /// false for a fixture that is meant to be listed but never mounted —
+  /// a view that deliberately contains malformed or self-referential
+  /// bindings. Its pane shows a note instead of an instance.
   renderable : Bool
-  /// examples with no lifecycle that need a host-dispatched `init` to load
-  /// their data; the gallery forwards `init` to
-  /// these panes after mount. Mirrors examples/ ExampleModule.init.
+  /// tutuca has no lifecycle, so a story whose root loads its data on `init`
+  /// needs the host to say so: the gallery forwards `init` into these panes
+  /// after mount. No ExampleDef field implies it — set it yourself.
   init : Bool
 }
 

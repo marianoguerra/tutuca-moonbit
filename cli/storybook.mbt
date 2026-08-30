@@ -1,25 +1,27 @@
-// `tutuca storybook` — serve (or copy) the pre-built storybook gallery.
+// `tutuca storybook` — serve (or copy) a pre-built gallery bundle.
 //
 // The MoonBit port compiles AOT and the native binary cannot load user code,
-// so there is no runtime example discovery: the gallery is the compiled
-// example registry baked into a wasm host at build time by
-// `cmd/dev -- dist`. What is left for the CLI is a static file server, so
+// so there is no runtime story discovery: a gallery is a wasm page built from
+// the project's own modules (`tutuca new-storybook` scaffolds one; this repo's
+// is `cmd/dev -- dist`). What is left for the CLI is a static file server, so
 // that is all this command is — serve a directory, or copy it with --out.
-// It knows nothing about the story registry, which is why `cli` does not
+// It knows nothing about any story registry, which is why `cli` does not
 // depend on the `storybook` packages at all.
 
 ///|
 let storybook_help : String =
   #|tutuca storybook [dir] [--port <n>] [--out <dir>]
   #|
-  #|  Serve the pre-built storybook gallery bundle over HTTP.
+  #|  Serve a pre-built storybook gallery bundle over HTTP.
   #|
-  #|  dir         the bundle directory to serve (default: the bundle shipped
-  #|              next to the binary, i.e. dist/storybook).
+  #|  dir         the bundle directory to serve: an index.html with a .wasm
+  #|              beside it (default: ./storybook, then ./dist/storybook).
   #|  --port <n>  preferred port (default 4321; falls back to a free port).
   #|  --out <dir> copy the static bundle to <dir> instead of serving.
   #|
-  #|  Build the bundle with `moon run --target native cmd/dev -- dist`.
+  #|  Build the bundle with your project's build script (`tutuca
+  #|  new-storybook` writes one), or in the tutuca repo with
+  #|  `moon run --target native cmd/dev -- dist`.
   #|
 
 ///|

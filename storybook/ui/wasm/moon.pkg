@@ -1,0 +1,33 @@
+// The wasm-gc half of the storybook: the browser page a gallery needs, minus
+// the page.
+//
+// `storybook/ui` is backend-agnostic on purpose — it is checked and tested on
+// every target, and a `globalThis` in it would make that untrue. What it
+// therefore cannot do is exactly what lives here: read and write the query
+// string, load a palette stylesheet, ask for an animation frame, compile the
+// collected margaui classes and inject them.
+//
+// It imports no panel layer, on purpose: a page that mounts stories and no
+// tabs links no inspector, no recorder and no fuzz driver. Asking for them —
+// `panels=@panelsw.all(sections)` — is what pulls them in.
+//
+// It is a LIBRARY, not a page. A host writes an executable that calls `mount`
+// and re-exports the five wasm-gc entry points, because a wasm-gc export list
+// is per-package link configuration and cannot come from a dependency;
+// `demo/storybook_wasm` is this repo's, and `tutuca new-storybook` writes one.
+// Check: moon check --target wasm-gc storybook/ui/wasm
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/css",
+  "marianoguerra/tutuca/storybook" @sb,
+  "marianoguerra/tutuca/storybook/ui" @sbui,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  // @core.Any: the DOM event the host's exported on_event receives from JS
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"

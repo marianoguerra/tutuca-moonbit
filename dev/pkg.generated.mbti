@@ -30,6 +30,10 @@ pub fn skill_assets_source(Array[(String, String)]) -> String
 
 pub fn skill_embed_steps() -> Array[Step]
 
+pub fn storybook_template_embed_steps() -> Array[Step]
+
+pub fn storybook_template_source(Array[(String, String)]) -> String
+
 pub fn tasks() -> Array[Task]
 
 pub fn universal_steps() -> Array[Step]
@@ -50,6 +54,7 @@ pub enum Step {
   WriteRewritten(from~ : String, to~ : String, old_src~ : String, new_src~ : String)
   GenSkillAssets(src_dir~ : String, to~ : String)
   GenGuestTemplate(to~ : String)
+  GenStorybookTemplate(to~ : String)
 } derive(Eq, @debug.Debug)
 
 pub struct Task {

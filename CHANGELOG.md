@@ -6,6 +6,95 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The storybook ships.** `storybook` (the model), `storybook/ui` (the
+  gallery), `storybook/ui/wasm` (the browser host) and `storybook/inspector`
+  (the panels) are in the tarball, so a project can build a gallery of ITS OWN
+  components: a sidebar of stories, a live pane each, and Instance / Trace /
+  Fuzz / Spec / Raw beside them. `moon.mod` excludes `storybook/examples`
+  instead of `storybook` — this repo's 52 demos and the fixtures the lint and
+  view sweeps run over stay behind, because a story set is editorial content
+  about one project's components and not a library.
+
+- **A story is an example on a `ModuleDef`.** `stories_of_module` /
+  `stories_of_modules` project one `Story` per declared `ExampleDef` — id, title,
+  root, args and view all derived — so a consumer registers modules rather than
+  maintaining a list, and the same example a story shows is the one
+  `@harness.mount_example` mounts in a test. `sections_of` takes the sidebar
+  order as an argument; `Story` is `pub(all)`, so `init`, `renderable`,
+  `section` and `description` — the four things no `ExampleDef` field implies —
+  are a `.map` with a record update.
+
+  What made this possible was moving the corpus the other way: `stories()`, the
+  52-arm `section_for`, the 52-arm `meta_for` and the `lint-errors` special case
+  now live in `storybook/examples`, and the gallery's own integration test with
+  them. A shipping package may not test-import an excluded one — a `for "test"`
+  block survives `moon publish` — and `scripts/check-publish-graph.mjs` in `ci`
+  now says so out loud instead of leaving it to luck.
+
+- **`tutuca new-storybook <name>`** scaffolds the part a library cannot supply:
+  a page package with the wasm-gc `link.exports` list (per-package `link`
+  configuration cannot come from a dependency), an `index.html`, a `build.mjs`,
+  and a demo component to delete. Embedded in the binary like `new-guest`'s
+  tree, and its demo view is in the repo's `gen-views` sweep, so the generated
+  module a stranger receives is the one this generator produces.
+  `examples/storybook-gallery` is that scaffold committed unedited, and proves
+  after a release that it still builds against the published package.
+
+- **`themes~` and `panels~` on `mount`.** The 35 margaui palette names were
+  hardcoded; they are now the default value of an argument.
+
+- **The panels are a package, and the gallery links none of them by default.**
+  A tab is a `PanelDef` — a key, a label, a per-story field prefix, a closure
+  that builds its value, and `live`/`keep`/`with_story` — and a `PanelSet`
+  bundles those with the fields they own, the components they are drawn with,
+  the intents they answer and an `attach` the shell calls with the mounted app.
+  `storybook/ui` therefore imports no inspector, no recorder, no fuzz driver and
+  no renderer internals; `storybook/ui/panels` (with `storybook/ui/panels/wasm`
+  for the browser effects) supplies the standard five, and the trace and fuzz
+  SESSIONS moved there with them, since they were always host code.
+
+  Not a tidying: it is what the tabs cost. The scaffolded gallery is 3.1 MB of
+  wasm with them and 1.25 MB without (`--release`, before wasm-opt), and a page
+  that wants stories and nothing else now pays for stories and nothing else. It
+  also makes a project's own tab — a diff against a golden render, a props
+  table — a `PanelDef` rather than a fork.
+
+- **A story renders under the view its example named.** `ExampleDef.view` was
+  read by `@harness.mount_example` and dropped on the floor by the gallery,
+  which always resolved the component's default view. The Story and Fuzz panes
+  (and focus mode) now push it.
+
+### Changed
+
+- **`tutuca storybook` serves any bundle, not one filename.** A bundle is a
+  directory with an `index.html` and a `.wasm` beside it, rather than one named
+  `storybook_wasm.wasm` — the name this repo's demo host happens to compile to,
+  which meant the command could not serve a gallery built by the project it was
+  written for.
+
+- **`demo/storybook_wasm` is ~45 lines**: an export list and this repo's story
+  set. The URL and theme services, the query-string codec, the fuzz frame, the
+  event bridge and the margaui compile moved into `storybook/ui/wasm`, where a
+  downstream page gets them too. `theme_base_url` is an argument there rather
+  than a hardcoded GitHub Pages URL.
+
+### Fixed
+
+- **`mount` says when a story cannot render.** A `root` naming no component in
+  the story's module, and an arg holding a component instance the story's scope
+  cannot resolve, both produced a silently blank pane; both now warn through
+  `@tutuca.warn`. The second is the one hazard a hand-written `Story` list has
+  and a projected one cannot.
+
+- **`Story.renderable`'s documentation described a Lint panel** that does not
+  exist — lint is a compile-time concern and the gallery has five tabs beside
+  Story, none of them lint. Same pass over `demo/storybook_wasm/moon.pkg`'s
+  claim about a `mount()` lint callback, and `cli/version.mbt`'s claim that
+  `VERSION` tracks `moon.mod` (it tracks the CLI's surface; the new
+  `MODULE_VERSION` is the module's, checked against `moon.mod` in `ci`).
+
 ## [0.40.0] - 2026-08-28
 
 ### Added

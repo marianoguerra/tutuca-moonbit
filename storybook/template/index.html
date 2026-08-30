@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>storybook</title>
+    <!-- margaui CSS (utilities + light/dark theme vars) is compiled in MoonBit
+         and injected here by mount(); pre-placed early so lazily-loaded palette
+         <link>s (dracula, …) win the cascade over the light block. Keep the
+         empty element: the injector upserts into it. -->
+    <style id="margaui-css"></style>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!--
+      Build:  node build.mjs
+      Serve:  tutuca storybook dist     (or any static server over dist/)
+      Needs a browser with the JS String Builtins proposal (Chrome/Edge).
+    -->
+    <script type="module">
+      import { instantiate } from "./app-loader.mjs";
+      const exports = await instantiate("./page.wasm");
+      exports.mount();
+      // Re-restore selection/filter/focus on Back/Forward. tutuca has no
+      // lifecycle, so the host re-sends `init` (which re-reads the URL).
+      // Programmatic push/replaceState don't fire popstate, so this only runs
+      // on real navigation.
+      window.addEventListener("popstate", () => exports.on_popstate());
+      // The Fuzz tab's frame. MoonBit pulls this when a Play needs the next
+      // step; it schedules ONE frame and nothing re-arms it once the run stops,
+      // so there is no permanent rAF loop here. Drop it and Play silently does
+      // nothing while Step and Burst still work.
+      globalThis.__tutucaFuzzTick = () =>
+        requestAnimationFrame(() => exports.on_fuzz_tick());
+    </script>
+  </body>
+</html>

@@ -45,6 +45,8 @@ test "plan expands the ci composite into its member tasks' steps" {
     @dev.plan("check-skill").unwrap_or([]) +
     @dev.plan("check-guest-list").unwrap_or([]) +
     @dev.plan("check-guest-template").unwrap_or([]) +
+    @dev.plan("check-storybook-template").unwrap_or([]) +
+    @dev.plan("check-publish-graph").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])
   assert_true(ci == expected)
@@ -180,8 +182,8 @@ test "help_text lists every task name" {
   }
   for
     name in [
-      "ci", "dist", "skill-embed", "guest-template-embed", "universal", "dyncomp-storybook",
-      "guests", "css-bundle",
+      "ci", "dist", "skill-embed", "guest-template-embed", "storybook-template-embed",
+      "universal", "dyncomp-storybook", "guests", "css-bundle",
     ] {
     assert_true(@dev.plan(name) is Some(_))
     assert_true(help.contains(name))

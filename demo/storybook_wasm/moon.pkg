@@ -1,17 +1,18 @@
-// wasm-gc host for the storybook gallery: it mounts the whole grouped gallery
-// (storybook/ui) over the entire example registry as a single live app. Lint text for each pane comes
-// from the CLI's check_component, injected as the mount() lint callback.
+// wasm-gc PAGE for the storybook gallery: this repo's example registry, mounted
+// through `storybook/ui/wasm`. Nothing but the export list and the story set —
+// a downstream page is the same shape (`tutuca new-storybook`).
 // Build: moon build --target wasm-gc demo/storybook_wasm
 import {
-  "marianoguerra/tutuca/core" @tutuca,
-  "marianoguerra/tutuca/app",
-  "marianoguerra/tutuca/app/wasm" @wglue,
-  "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/storybook" @sb,
-  "marianoguerra/tutuca/storybook/ui" @sbui,
-  "marianoguerra/tutuca/vdom",
-  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  // this repo's own story set + its curated section order; a downstream host
+  // brings its own (see storybook/project.mbt)
+  "marianoguerra/tutuca/storybook/examples" @ex,
+  // the browser host: URL/theme services, the event bridge, margaui
+  "marianoguerra/tutuca/storybook/ui/wasm" @sbw,
+  // the standard tabs (Instance/Trace/Fuzz/Spec/Raw) and the page effects they
+  // need; naming it is what links them
+  "marianoguerra/tutuca/storybook/ui/panels/wasm" @panelsw,
+  // @core.Any: the DOM event the exported on_event receives from JS
   "mizchi/js/core",
 }
 

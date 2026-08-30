@@ -1,0 +1,40 @@
+// The standard panel layer: the tabs beside Story.
+//
+// `storybook/ui` draws a gallery and knows what a panel IS — a key, a label, a
+// field prefix and a closure — but nothing about what any panel CONTAINS. This
+// package is what they contain: the inspector's value explorer, the recorder,
+// the fuzz driver, the spec views. It is also where the host code lives, and
+// that is the point of the split rather than a side effect: a recorder is
+// installed on a transactor and a run remounts components, so the panels are
+// the half that has to reach past the component tree.
+//
+// A gallery that wants none of it passes `@sbui.PanelSet::none()` (the
+// default) and never links any of this.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/storybook" @sb,
+  "marianoguerra/tutuca/storybook/ui" @sbui,
+  // what the panels are made of
+  "marianoguerra/tutuca/storybook/inspector",
+  // the Trace tab: the host owns the recorder, because a transactor is the one
+  // thing a component cannot reach
+  "marianoguerra/tutuca/trace",
+  "marianoguerra/tutuca/transactor",
+  // the Fuzz tab: the host owns the run, for the same reason and one more —
+  // shrinking remounts the component, which a component can do even less
+  "marianoguerra/tutuca/testing/fuzz",
+  "marianoguerra/tutuca/testing/harness",
+  // selection mode: the component ancestry is read back out of the DOM markers
+  // the renderer stamped
+  "marianoguerra/tutuca/render",
+  "moonbitlang/core/string",
+}
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/test",
+} for "test"

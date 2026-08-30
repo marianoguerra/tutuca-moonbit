@@ -1,0 +1,26 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/storybook/ui/panels/wasm"
+
+import {
+  "marianoguerra/tutuca/storybook",
+  "marianoguerra/tutuca/storybook/ui",
+  "marianoguerra/tutuca/storybook/ui/panels",
+  "mizchi/js/core",
+}
+
+// Values
+pub fn all(Array[@storybook.Section]) -> @ui.PanelSet[@marianoguerra/tutuca/vdom/wasm.WasmNode]
+
+pub fn fuzz_effects() -> @panels.FuzzEffects
+
+pub fn on_event(@core.Any) -> Unit
+
+pub fn on_fuzz_tick() -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

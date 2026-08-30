@@ -182,8 +182,9 @@ language in one page; its cards are `playground/site/cards/*.html`, which
 repointed to sit beside the page), `dist/counter-wasm/`
 (the **wasm-gc** demo — a `.wasm`, a host page, and `app/wasm/loader.mjs`
 copied beside it as `app-loader.mjs`),
-`dist/storybook/` (the storybook
-gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
+`dist/storybook/` (this repo's storybook
+gallery compiled to wasm-gc — one of the bundles `tutuca storybook` serves; a
+downstream project builds its own with `tutuca new-storybook`),
 `dist/playground/` + `dist/site/` + `dist/tutucard/` (the landing page embeds
 BOTH kinds of live example: `<mb-playground>`, which compiles MoonBit in the
 browser against `dist/playground/`, and `<mb-card>`, which compiles no MoonBit
@@ -214,7 +215,8 @@ each DOM event instead of receiving a closure. `demo/counter_wasm`,
 `demo/universal_wasm`, `demo/storybook_wasm` and `demo/dyncomp_storybook_wasm`
 are the wasm-gc hosts
 (`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
-mounts the `storybook/ui` gallery over the whole example registry, and
+is the same ~45-line shape over the published `storybook/ui/wasm` — an export
+list and this repo's story set, nothing else — and
 `universal_wasm` hosts the dyncomp guest bundles — though almost nothing is left
 in it, since the host itself is the published `dyncomp/ui/wasm` and the page is
 the ~90 lines that call `mount` and re-export the entry points, an export list

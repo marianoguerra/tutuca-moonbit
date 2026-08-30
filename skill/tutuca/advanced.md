@@ -323,9 +323,11 @@ trait*.
 - **JS-side module loading** (`import()`-based CLI module input,
   `*.dev.js` discovery) — modules are `ModuleDef` **values** and the CLI is
   embedded in a project binary; see [cli.md](./cli.md). The storybook is
-  ported (`storybook/` + `demo/storybook_wasm`), but as a compiled gallery
-  of the example registry rather than scanned `*.dev.js`; `tutuca storybook`
-  serves that pre-built bundle.
+  ported and SHIPS as a library, but as a compiled gallery whose stories are
+  a projection of your modules' own `examples` rather than scanned
+  `*.dev.js`; `tutuca new-storybook` scaffolds the page and
+  `tutuca storybook` serves what it builds. See
+  [storybook.md](./storybook.md).
 - **`SEQ_INFO` registration** — replaced by the `Obj` trait (above).
 
 ## Tailwind / MargaUI Class Compilation

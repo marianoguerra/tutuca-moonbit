@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/storybook/ui/wasm"
+
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/storybook",
+  "marianoguerra/tutuca/storybook/ui",
+  "mizchi/js/core",
+}
+
+// Values
+pub fn current_gallery() -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
+
+pub let default_theme_base_url : String
+
+pub fn mount(Array[@storybook.Section], root_id? : String, themes? : Array[String], panels? : @ui.PanelSet[@marianoguerra/tutuca/vdom/wasm.WasmNode], intents? : Map[String, Array[@component.IntentFn]], theme_base_url? : String) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
+
+pub fn on_event(@core.Any, before? : (@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> Bool) -> Unit
+
+pub fn on_popstate() -> Unit
+
+pub fn refresh_margaui() -> Unit
+
+pub fn url_request_handlers(theme_base_url? : String) -> Map[String, Array[@component.IntentFn]]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

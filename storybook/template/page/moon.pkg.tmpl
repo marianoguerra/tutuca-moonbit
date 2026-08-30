@@ -1,0 +1,49 @@
+// The gallery page: the executable around `storybook/ui/wasm`.
+//
+// That package is a LIBRARY and does everything — mounts the gallery, owns the
+// URL and theme services, bridges DOM events, compiles margaui. This package
+// exists for one reason: a wasm-gc export list is per-package `link`
+// configuration and cannot come from a dependency. So the five entry points the
+// page calls are re-exported here as one-line forwards, and the only real
+// content is which stories to show.
+//
+// Build: moon build --target wasm-gc --release page   (or ../build.mjs)
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  // the story model: `stories_of_modules` and `sections_of`
+  "marianoguerra/tutuca/storybook" @sb,
+  // the browser host: mount + the four entry points
+  "marianoguerra/tutuca/storybook/ui/wasm" @sbw,
+  // the standard tabs (Instance/Trace/Fuzz/Spec/Raw) and the page effects they
+  // need. Naming it is what links them: drop this import and the `panels~`
+  // argument in main.mbt and the gallery is stories only.
+  "marianoguerra/tutuca/storybook/ui/panels/wasm" @panelsw,
+  // @core.Any: the DOM event the exported on_event receives from JS
+  "mizchi/js/core",
+  // `derive(Eq, @debug.Debug)` in the generated view module
+  "moonbitlang/core/debug",
+}
+
+supported_targets = "wasm-gc"
+
+pkgtype(kind: "executable")
+
+options(
+  link: {
+    "wasm-gc": {
+      "exports": [
+        "mount",
+        "on_event",
+        "on_popstate",
+        // The Fuzz tab's animation frame. An export rather than a callback for
+        // the reason `on_event` is one: closures cannot cross into JS on
+        // wasm-gc.
+        "on_fuzz_tick",
+        "refresh_margaui",
+      ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

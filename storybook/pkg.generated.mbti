@@ -7,9 +7,19 @@ import {
 }
 
 // Values
-pub fn sections_of(Array[Story]) -> Array[Section]
+pub fn sections_of(Array[Story], order? : Array[String]) -> Array[Section]
 
-pub fn stories() -> Array[Story]
+pub fn slug(String) -> String
+
+pub fn stories_of_module(@component.ModuleDef, section? : String) -> Array[Story]
+
+pub fn stories_of_modules(Array[@component.ModuleDef], section_of? : (@component.ModuleDef) -> String) -> Array[Story]
+
+pub fn story_id(String, @component.ExampleDef) -> String
+
+pub fn story_title(@component.ExampleDef) -> String
+
+pub fn unique_ids(Array[Story]) -> Array[Story]
 
 // Errors
 
@@ -27,9 +37,12 @@ pub(all) struct Story {
   module_ : @component.ModuleDef
   root : String
   args : Map[String, @core.Value]
+  view : String
   renderable : Bool
   init : Bool
 }
+pub fn Story::new(id~ : String, title~ : String, module_~ : @component.ModuleDef, root~ : String, section? : String, description? : String, args? : Map[String, @core.Value], view? : String, renderable? : Bool, init? : Bool) -> Self
+pub fn Story::of_example(@component.ModuleDef, @component.ExampleDef, section? : String, id? : String, title? : String, description? : String, renderable? : Bool, init? : Bool) -> Self
 
 // Type aliases
 
