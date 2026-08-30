@@ -65,8 +65,8 @@ impl @component.Fields for CounterState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum CounterReceive {
-  Dec
   Inc
+  Dec
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -89,13 +89,13 @@ pub fn CounterReceive::from_dispatch(d : @component.Dispatch) -> CounterReceive?
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
-      ("dec", []) => Dec
       ("inc", []) => Inc
+      ("dec", []) => Dec
       _ => {
         match name {
-          "dec" =>
-            @tutuca.bad_payload(name, "", args)
           "inc" =>
+            @tutuca.bad_payload(name, "", args)
+          "dec" =>
             @tutuca.bad_payload(name, "", args)
           _ => ()
         }
@@ -109,8 +109,8 @@ pub fn CounterReceive::from_dispatch(d : @component.Dispatch) -> CounterReceive?
 /// The dispatch name and arguments this message raises as.
 pub fn CounterReceive::to_dispatch(self : CounterReceive) -> (String, Array[@tutuca.Value]) {
   match self {
-    Dec => ("dec", [])
     Inc => ("inc", [])
+    Dec => ("dec", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -163,11 +163,11 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to counter.html breaks every `match` over this type
 /// until it is handled.
-///
-/// Absent, because the script block answers them: inc, dec.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
 pub(all) enum CounterMsg {
+  /// `@on.click="dec …"`
+  Dec
+  /// `@on.click="inc …"`
+  Inc
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -182,6 +182,8 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
+      ("dec", []) => Dec
+      ("inc", []) => Inc
       _ => Unknown(name, args)
     },
   )
@@ -197,11 +199,12 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
-    fingerprint="6600cf22c0b7a132",
+    fingerprint="f1e7380216f156aa",
     fields=[
       @component.FieldInfo::new("count", TyInt),
     ],
     view_handlers=["dec", "inc"],
+    receives=["inc", "dec"],
     view_names=["main", "compact"],
   )
 }

@@ -198,6 +198,51 @@ test "a file names every component or none of them, as its templates do" {
 }
 
 ///|
+test "a named surface block finds the file's bare state" {
+  // The bare `state` belongs to the file's single component, and the caller is
+  // who names it — so `handle Counter` beside `state { … }` is that component
+  // talking about itself. Matching the two raw names alone dropped the whole
+  // surface in silence: the component declared messages and had none, which
+  // reads downstream as a component with nothing to send and a Fuzz tab with
+  // nothing to draw.
+  let defs = @statedef.parse_state(
+    (
+      #|state { count: Int }
+      #|handle Counter { message { inc, dec } }
+    ),
+    name="Counter",
+  )
+  assert_eq(defs.length(), 1)
+  assert_eq(defs[0].component, "Counter")
+  assert_eq(defs[0].receive.map(m => m.name), ["inc", "dec"])
+}
+
+///|
+test "a surface block that names no component is refused" {
+  // Silence was the worst answer available: the author declared a surface,
+  // nothing carried it, and every reader downstream saw a component that
+  // declares nothing.
+  guard! def_err(
+      (
+        #|state Counter { count: Int }
+        #|handle Countr { message { inc } }
+      ),
+    )
+    is Some(e)
+  assert_true(e is Syntax(_))
+  // …and the bare form still attaches, so a file that names nothing is fine
+  assert_true(
+    def_err(
+      (
+        #|state { count: Int }
+        #|handle { message { inc } }
+      ),
+    )
+    is None,
+  )
+}
+
+///|
 test "a builtin type name cannot be declared" {
   // Reserved for the reason the markers were: a user type called `Any` would
   // silently change what every `Any` in the file means.

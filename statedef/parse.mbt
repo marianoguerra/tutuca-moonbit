@@ -1370,6 +1370,23 @@ pub fn parse_state(
       _ => ()
     }
   }
+  // A `handle`/`express` block that names no component in the file. It used to
+  // be dropped in silence, which is the worst possible answer: the author
+  // declared a surface, nothing carries it, and every reader downstream —
+  // the generator, the fuzz plan, the protocol check — sees a component that
+  // declares nothing.
+  for d in raw {
+    guard d.kind is RSurface(outer) else { continue }
+    let named = d.name == "" ||
+      comps.contains(d.name) ||
+      d.name == upper_name(name)
+    if !named {
+      raise Syntax(
+        msg="`\{outer} \{d.name}` names no `state` block in this file\{did_you_mean(d.name, comps.keys().filter(k => k != "").collect())}",
+        span=d.name_span,
+      )
+    }
+  }
   let env : Env = { decls, comps, protocols, }
   let out : Array[StateDef] = []
   for d in raw {
@@ -1419,7 +1436,14 @@ fn build(
   let express_message = d.express_message.copy()
   let express_intent = d.express_intent.copy()
   for r in raw {
-    if r.name == d.name {
+    // By name, and a BARE `state` answers to the component's name too: the
+    // file's single unnamed component is called whatever the caller says it is
+    // (`comps[""]`), so `handle Counter { … }` beside a bare `state { … }` is
+    // the same component talking about itself. Matching on the raw names alone
+    // dropped those messages on the floor — the component declared a surface
+    // and had none, which shows up as a Fuzz tab with nothing to draw and a
+    // `send` that reaches nothing.
+    if r.name == d.name || (d.name == "" && r.name == comp) {
       match r.kind {
         RSurface("handle") => {
           for c in r.handle_message {
