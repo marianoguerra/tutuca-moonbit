@@ -968,3 +968,112 @@ test "the Spec tab renders the declaration, not a blank pane" {
   h.click(".raw-tab")
   assert_true(h.text(".spec-source-text").contains("count : Int"))
 }
+
+///|
+/// Mount a gallery over `ids` with a file service of its own — a fresh page,
+/// as far as the panels are concerned.
+fn gallery_with_files(
+  ids : Array[String],
+  fs : @files.MemFiles,
+) -> @harness.MemHarness raise {
+  let sections = pick(ids)
+  let (doc, container) = @harness.new_mount()
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections, files=fs),
+  )
+  @harness.Harness::over(app, container)
+}
+
+///|
+/// The whole loop, and the question it answers is the one somebody actually
+/// asks of a recorder: can I take this away with me and bring it back?
+///
+/// Record in one gallery, download, mount a SECOND gallery that shares nothing
+/// with the first but the file, load it there, and replay it into the story.
+/// The second mount is the part that matters — a round trip that only works
+/// while the recording is still in memory is not a round trip, it is a
+/// variable.
+test "a recording survives a download, a reload and a replay" {
+  let fs = @files.MemFiles::new()
+  let h = gallery_with_files(["counter"], fs)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  // Scoped to the example, which is what a rerun needs: a recording of the
+  // whole gallery has the gallery for a root, and seeding that would replace
+  // the panel doing the seeding.
+  h.click(".pick-example")
+  h.click(".picker-go")
+  h.click(".story-tab")
+  h.click(".btn-success")
+  h.click(".btn-success")
+  h.click(".trace-tab")
+  h.click(".rec-stop")
+  let recorded = h.texts(".trace-row").length()
+  assert_true(recorded > 0)
+
+  // Download. The file is named for the component and spelled the way the CLI
+  // reads one, because a file `tutuca trace` cannot open is not an artifact.
+  h.click(".trace-export")
+  let saved = fs.last_saved().unwrap()
+  assert_true(saved.name.has_suffix(".trace.jsonl"))
+  assert_true(saved.text.contains("tutucaTrace"))
+
+  // --- reload: a second gallery, sharing only the text ---
+  let h2 = gallery_with_files(["counter"], @files.MemFiles::new())
+  h2.click(".trace-tab")
+  assert_eq(h2.find_all(".panel-empty").length(), 1)
+  h2.type_into(".trace-draft-empty", saved.text)
+  h2.click(".trace-import-empty")
+  // It came back as the same recording: same number of rows, and the panel
+  // switched to showing it.
+  assert_eq(h2.find_all(".trace-row").length(), recorded)
+  assert_eq(h2.find_all(".panel-trace").length(), 1)
+
+  // --- and it replays into the story that is on screen ---
+  h2.click(".tab-replay")
+  h2.click(".replay-run")
+  // No complaint, and the recording ran to the end.
+  assert_eq(h2.find_all(".trace-notice").length(), 0)
+  assert_eq(h2.text(".replay-pos"), "\{recorded} of \{recorded}")
+  // The story itself moved — which is the whole claim. Two presses were
+  // recorded, so the counter the rerun drove reads two.
+  h2.click(".story-tab")
+  assert_eq(h2.text(".stat-value"), "2")
+}
+
+///|
+/// A file that will not parse says WHERE, and changes nothing.
+///
+/// The sentence is the feature: `TraceError` carries a line number in every
+/// case, and "expected an object" with no position in it is a sentence nobody
+/// can act on. A half-loaded trace over a good one would be worse than no
+/// import, so the panel keeps what it had.
+test "a broken file reports its line and loads nothing" {
+  let h = gallery_with_files(["counter"], @files.MemFiles::new())
+  h.click(".trace-tab")
+  h.type_into(".trace-draft-empty", "{\"tutucaTrace\":1}\nnot json at all\n")
+  h.click(".trace-import-empty")
+  assert_eq(h.find_all(".trace-notice").length(), 1)
+  assert_true(h.text(".trace-notice").contains("line 2"))
+  // Nothing was loaded: the panel is still the empty one.
+  assert_eq(h.find_all(".panel-empty").length(), 1)
+  assert_eq(h.find_all(".trace-row").length(), 0)
+}
+
+///|
+/// Downloading with nothing recorded says so rather than saving an empty file.
+test "there is nothing to download before there is a recording" {
+  let fs = @files.MemFiles::new()
+  let h = gallery_with_files(["counter"], fs)
+  h.click(".trace-tab")
+  h.click(".rec-start")
+  h.click(".picker-go")
+  h.click(".rec-stop")
+  h.click(".trace-export")
+  // A recording with no events is still a recording — it has a root — so this
+  // saves. What it must not do is save nothing and say nothing.
+  assert_eq(fs.saved().length(), 1)
+}

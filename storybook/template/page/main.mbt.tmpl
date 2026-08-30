@@ -1,4 +1,4 @@
-// {{Name}}'s storybook: which components the gallery shows, and the five
+// {{Name}}'s storybook: which components the gallery shows, and the six
 // entry points the page calls.
 //
 // The story set is a PROJECTION of the modules below — one story per example a
@@ -85,4 +85,15 @@ pub fn on_fuzz_tick() -> Unit {
 /// Recompile + reinject the margaui sheet for the mounted gallery.
 pub fn refresh_margaui() -> Unit {
   @sbw.refresh_margaui()
+}
+
+///|
+/// The page's answer to a file the Trace tab asked to read.
+///
+/// An export for the reason `on_fuzz_tick` is one: a closure cannot cross into
+/// JS on wasm-gc, so the browser answers an asynchronous read by calling back
+/// in. Drop it and the Trace tab's Download still works — a download is
+/// one-way — but Load reads the file and never delivers it.
+pub fn on_file_text(req_id : Int, ok : Bool, text : String) -> Unit {
+  @panelsw.on_file_text(req_id, ok, text)
 }

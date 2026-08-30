@@ -109,7 +109,7 @@ standard tabs plus the browser effects they need.
 | --- | --- | --- |
 | Story | the live instance | — |
 | Instance | its fields, live, and its component's definition | — |
-| Trace | a recording of what the app did, cut to one component by clicking it | — |
+| Trace | a recording of what the app did: cut to one component by clicking it, downloaded as `.trace.jsonl`, loaded back, and replayed into the story | — |
 | Fuzz | generated dispatches driven at the instance on screen, with shrinking | a `<script type="tutuca/spec">` block on the component |
 | Spec / Raw | that block, parsed and verbatim | the same |
 

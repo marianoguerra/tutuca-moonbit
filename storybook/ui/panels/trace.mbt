@@ -23,10 +23,29 @@ priv struct TraceSession {
   /// nobody has clicked. Two lists of the same things offered for the same
   /// reason, so one field holds either.
   mut candidates : Array[(String, String)]?
+  /// Where somewhere else keeps files. `MemFiles` under `moon test`, the
+  /// browser's download and file read in a page.
+  files : &@files.FileService
+  /// What the last thing the reader asked for had to say for itself — a file
+  /// that would not parse, a cut that dropped something, a rerun that
+  /// diverged. Cleared by the next thing they ask for.
+  mut notice : String
+  /// The text a trace is being pasted into, held so a rebuild does not lose
+  /// a half-pasted recording.
+  mut draft : String
+  /// The rerun, once one is mounted.
+  mut driver : @replay.Driver?
+  /// The story's value before a rerun overwrote it, so Reset is exact.
+  mut before_replay : @tutuca.Value?
+  /// Where the loaded recording's root sits in the gallery. Known for a
+  /// recording this session made or cut; ASKED for one that arrived as a file,
+  /// because an `example`-scoped trace is story-relative and an `all`-scoped
+  /// one is not, and guessing wrong aims every event at the wrong component.
+  mut base : @trace.Place?
 }
 
 ///|
-fn TraceSession::new() -> TraceSession {
+fn TraceSession::new(files : &@files.FileService) -> TraceSession {
   {
     recorder: None,
     scoped: None,
@@ -36,6 +55,12 @@ fn TraceSession::new() -> TraceSession {
     selected_place: None,
     selecting: false,
     candidates: None,
+    files,
+    notice: "",
+    draft: "",
+    driver: None,
+    before_replay: None,
+    base: None,
   }
 }
 
@@ -98,6 +123,7 @@ fn[N] start_recording(
     })
     session.scoped = Some(r)
     session.recorder = None
+    session.base = Some(place)
     app.transactor.set_recorder(r)
   } else {
     let r = @trace.TraceRecorder::new(root~, origin={
@@ -109,6 +135,8 @@ fn[N] start_recording(
     })
     session.recorder = Some(r)
     session.scoped = None
+    // The whole gallery: the recording's addresses ARE the tree's.
+    session.base = Some(@trace.Place([]))
     app.transactor.set_recorder(r)
   }
 }
@@ -154,6 +182,18 @@ fn[N] push_trace_panel(
     scope=session.scope,
     selecting=session.selecting,
     selected_place?=session.selected_place,
+    notice=session.notice,
+    draft=session.draft,
+    // A rerun can be mounted once there is a recording AND somewhere to aim
+    // it. An imported trace with no base yet is a trace nobody has said where
+    // to put, and offering Step for it would aim it at the gallery's root.
+    can_replay=t is Some(_) &&
+      session.base.unwrap_or(@trace.Place([])).depth() > 0,
+    replaying=session.driver is Some(_),
+    at=match session.driver {
+      Some(d) => d.at() - 1
+      None => -1
+    },
     // A click replaces the picker's list with what is under it. The same
     // component either way: "the places this recording touched" and "the
     // components under what you clicked" are the same list of the same things,
@@ -182,6 +222,32 @@ fn[N] push_trace_panel(
 /// drives the app or points at it — and the alternative was threading a handle
 /// out of `mount` into the one export a wasm host is allowed.
 let selecting_now : Ref[Bool] = { val: false, }
+
+///|
+/// The gallery's current recording, for a page that wants to do something with
+/// it that the tab does not.
+///
+/// Public for the reason `pick_at` is: some things belong to whoever owns the
+/// page. Posting a recording to an issue tracker, writing it somewhere the
+/// browser's download does not reach, holding it for a crash reporter — none
+/// of those are a gallery's business, and all of them need the `Trace`.
+///
+/// `None` until something has been recorded or loaded. Reading it does not
+/// stop a recording in progress: this is a snapshot, the same one the Trace
+/// tab shows.
+pub fn current_trace() -> @trace.Trace? {
+  match current_session.val {
+    Some(s) => s.current()
+    None => None
+  }
+}
+
+///|
+/// The session the last `all()` built, so `current_trace` has something to ask.
+///
+/// A module-level slot for the reason the selection flag below is one: a
+/// gallery mounts ONCE per page.
+let current_session : Ref[TraceSession?] = { val: None, }
 
 ///|
 /// Whether the gallery is waiting to be pointed at.
@@ -290,6 +356,112 @@ pub fn[N : @vdom.DomWalk] take_select_click(
 }
 
 ///|
+/// Make sure the session knows which story it is about.
+///
+/// `start_recording` sets this, and for a long time nothing else needed to:
+/// every verb the panel had began with a recording. Importing one does not —
+/// a reader who just opened the gallery and pasted somebody else's file has a
+/// session that has never been told which story is on screen, and a panel
+/// pushed at story -1 goes nowhere. So the verbs that can come first ask.
+fn[N] ensure_story(
+  app : @app.App[N],
+  session : TraceSession,
+  sections : Array[@sb.Section],
+) -> Unit {
+  if session.idx < 0 {
+    session.idx = @sbui.active_story(app, sections)
+  }
+}
+
+///|
+/// Mount the rerun if it is not mounted, and hand it back.
+///
+/// Seeding the story is the whole of "mounting" here, because there is nothing
+/// else to mount: the story is already on screen, in a transactor the gallery
+/// owns. What a rerun needs is that instance put back to the state the
+/// recording started from, and `set_story_value` is the gallery's own exact
+/// reset — the same one a panel uses to undo a fuzz run.
+///
+/// The three guards come from `@replay.root_for` rather than being repeated
+/// here, and that is the point of it being public: a recording made against a
+/// component whose fields have since moved has ONE useful thing to say, and it
+/// is `ShapeChanged` naming the component. Losing that on the browser path
+/// would leave a replay that quietly does the wrong thing.
+fn[N] replay_mount(
+  app : @app.App[N],
+  session : TraceSession,
+) -> Result[@replay.Driver, String] {
+  match session.driver {
+    Some(d) => return Ok(d)
+    None => ()
+  }
+  guard session.current() is Some(t) else {
+    return Err("There is no recording to replay.")
+  }
+  guard session.base is Some(base) else {
+    return Err("Say where this recording belongs before replaying it.")
+  }
+  // A recording of the WHOLE gallery cannot be replayed here, and the reason
+  // is not a limitation to work around later: seeding it means replacing the
+  // gallery's root, and the gallery's root is where the panels live — the
+  // Trace tab would replace itself mid-press and the reader would be watching
+  // a rerun through a panel that no longer exists.
+  //
+  // A recording OF something is what a rerun wants anyway. `Cut to the picked
+  // place` is one press away and produces exactly that, so this says so rather
+  // than half-doing it.
+  if base.depth() == 0 {
+    return Err(
+      "This recording covers the whole storybook. Pick a component above and " +
+      "cut to it — a rerun drives one example, not the gallery it lives in.",
+    )
+  }
+  // The STORY's scope, not the gallery's. A story's components are registered
+  // in a scope of its own, so `app.scope` does not know their names, and a
+  // snapshot rebuilt against it fails with `RootUnbuildable` — a true sentence
+  // about the wrong scope, which is the worst kind of error message.
+  guard @sbui.story_scope(session.idx) is Some(scope) else {
+    return Err("There is no story on screen to replay into.")
+  }
+  let root = @replay.root_for(t, scope) catch { e => return Err(e.message()) }
+  // Kept before anything is fed, so Reset is exact rather than approximate:
+  // `set_story_value` is the gallery's own reset, and what it puts back is
+  // whatever was there.
+  match story_place(session.idx).to_path().lookup(app.root_value()) {
+    Some(v) => session.before_replay = Some(v)
+    None => ()
+  }
+  @sbui.set_story_value(app, session.idx, root)
+  // `verify` off: the gallery's transactor carries the shell, the panels and
+  // every other story, and at a story's base their dispatches are outside it —
+  // but a rerun that diverges mid-run would abandon the step rather than let
+  // the reader watch the rest, which is the opposite of what this view is for.
+  // Divergence is worth reporting in a test; here the reader is watching.
+  let d = @replay.Driver::new(t, app.transactor, base~, verify=false)
+  session.driver = Some(d)
+  Ok(d)
+}
+
+///|
+/// One turn, mounting first if this is the first press.
+fn[N] replay_step(
+  app : @app.App[N],
+  session : TraceSession,
+) -> Result[Unit, String] {
+  match replay_mount(app, session) {
+    Err(msg) => Err(msg)
+    Ok(d) =>
+      try {
+        d.step()
+        session.notice = ""
+        Ok(())
+      } catch {
+        e => Err(e.message())
+      }
+  }
+}
+
+///|
 /// The three intents the recorder bar raises, answered by the host.
 fn[N] trace_handlers(
   app_slot : Ref[@app.App[N]?],
@@ -381,6 +553,233 @@ fn[N] trace_handlers(
         selecting_now.val = false
         with_app(app => push_trace_panel(app, insp, session, tab="trace"))
         answer(Ok(Num(cs.length().to_double())))
+      }),
+    ],
+    // Hand the recording to the viewer as a file.
+    //
+    // JSONL and not the single-JSON form, because this is the artifact: the
+    // CLI reads `.trace.jsonl`, every shortening operation is a line
+    // operation, and a recording of a real session is mostly a list of events.
+    "traceExport": [
+      @component.IntentFn((_call, answer) => {
+        with_app(app => ensure_story(app, session, sections))
+        match session.current() {
+          Some(t) => {
+            let name = @files.trace_filename(
+              if t.origin.component == "" {
+                "storybook"
+              } else {
+                t.origin.component
+              },
+            )
+            session.files.save_text(name~, mime=@files.TRACE_MIME, t.to_jsonl())
+            session.notice = ""
+            with_app(app => push_trace_panel(app, insp, session, tab="trace"))
+            answer(Ok(Str(name)))
+          }
+          None => {
+            session.notice = "There is no recording to download yet."
+            with_app(app => push_trace_panel(app, insp, session))
+            answer(Ok(Null))
+          }
+        }
+      }),
+    ],
+    // Read a recording somebody else made.
+    //
+    // The failure is the interesting half. `TraceError` carries a line number
+    // in every case, and showing that sentence is the difference between "this
+    // file is wrong" and "this file is wrong on line 412" — so a parse that
+    // fails puts the message on the panel and changes nothing else. A trace
+    // half-loaded over a good one would be worse than no import at all.
+    "traceImport": [
+      @component.IntentFn((call, answer) => {
+        with_app(app => ensure_story(app, session, sections))
+        let text = match call.args {
+          [Str(s), ..] => s
+          _ => ""
+        }
+        if text.trim(chars=" \n\t").is_empty() {
+          session.notice = "Paste a recording first."
+          with_app(app => push_trace_panel(app, insp, session))
+          answer(Ok(Null))
+          return
+        }
+        let parsed = Some(@trace.from_jsonl(text)) catch {
+          e => {
+            session.notice = e.message()
+            with_app(app => push_trace_panel(app, insp, session))
+            answer(Failed(Str(e.message())))
+            None
+          }
+        }
+        match parsed {
+          Some(t) => {
+            session.taken = Some(t)
+            session.recorder = None
+            session.scoped = None
+            session.driver = None
+            session.before_replay = None
+            session.selected_place = None
+            session.candidates = None
+            session.draft = ""
+            // An imported recording does not say where it belongs. A relocated
+            // one is story-relative and a whole-gallery one is not, and the
+            // file carries `relocatedFrom` but not what it was relocated OUT
+            // of. So the reader is told to aim it rather than having it
+            // aimed for them at the wrong component.
+            session.base = if t.relocated_from.is_empty() {
+              Some(@trace.Place([]))
+            } else {
+              Some(story_place(session.idx))
+            }
+            session.notice = if t.relocated_from.is_empty() {
+              ""
+            } else {
+              "Loaded a recording cut to " +
+              t.relocated_from.map(p => p.label()).join(" > ") +
+              " — it will be replayed into this example."
+            }
+            with_app(app => push_trace_panel(app, insp, session, tab="trace"))
+            answer(Ok(Num(t.events.length().to_double())))
+          }
+          // The parse already reported itself.
+          None => ()
+        }
+      }),
+    ],
+    // Cut the recording down to the place that was picked.
+    //
+    // The press the picker has been waiting for since it was written. What a
+    // cut could not carry across is REPORTED — `relocate` answers gaps beside
+    // the result rather than failing — because a relocated trace missing
+    // something is usually missing something that did not matter, and is still
+    // worth having.
+    "traceRelocate": [
+      @component.IntentFn((_call, answer) => {
+        with_app(app => ensure_story(app, session, sections))
+        guard session.current() is Some(t) else {
+          session.notice = "There is no recording to cut."
+          with_app(app => push_trace_panel(app, insp, session))
+          answer(Ok(Null))
+          return
+        }
+        guard session.selected_place is Some(label) else {
+          session.notice = "Pick a place first — click one in the list above."
+          with_app(app => push_trace_panel(app, insp, session, tab="trace"))
+          answer(Ok(Null))
+          return
+        }
+        let place = Some(
+          @trace.parse_place(if label == "" { "." } else { label }),
+        ) catch {
+          e => {
+            session.notice = e.message()
+            with_app(app => push_trace_panel(app, insp, session, tab="trace"))
+            answer(Failed(Str(e.message())))
+            None
+          }
+        }
+        match place {
+          None => ()
+          Some(at) => {
+            let (cut, gaps) = t.relocate(at)
+            session.taken = Some(cut)
+            session.recorder = None
+            session.scoped = None
+            session.driver = None
+            session.selected_place = None
+            session.candidates = None
+            // A cut recording is about the subtree, so a rerun of it aims
+            // there — under whatever the recording was already relative to.
+            session.base = Some(
+              at.under(session.base.unwrap_or(@trace.Place([]))),
+            )
+            session.notice = if gaps.is_empty() {
+              ""
+            } else {
+              gaps.map(g => g.message()).join("; ")
+            }
+            with_app(app => push_trace_panel(app, insp, session, tab="trace"))
+            answer(Ok(Num(cut.events.length().to_double())))
+          }
+        }
+      }),
+    ],
+    // Feed one turn of the recording into the story on screen.
+    //
+    // Mounts on the first press rather than on a button of its own: "start the
+    // rerun" and "take the first step" are one thing a reader wants, and a
+    // mount that has to be asked for separately is a mode nobody remembers
+    // they are in.
+    "traceReplayStep": [
+      @component.IntentFn((_call, answer) => {
+        with_app(app => {
+          match replay_step(app, session) {
+            Ok(_) => ()
+            Err(msg) => session.notice = msg
+          }
+        })
+        with_app(app => push_trace_panel(app, insp, session, tab="replay"))
+        answer(Ok(Null))
+      }),
+    ],
+    "traceReplayRun": [
+      @component.IntentFn((_call, answer) => {
+        with_app(app => ensure_story(app, session, sections))
+        with_app(app => {
+          match replay_mount(app, session) {
+            Err(msg) => session.notice = msg
+            Ok(d) =>
+              try {
+                d.run()
+                session.notice = ""
+              } catch {
+                e => session.notice = e.message()
+              }
+          }
+        })
+        with_app(app => push_trace_panel(app, insp, session, tab="replay"))
+        answer(Ok(Null))
+      }),
+    ],
+    // Put the story back the way it was before the rerun touched it.
+    "traceReplayReset": [
+      @component.IntentFn((_call, answer) => {
+        with_app(app => {
+          match session.driver {
+            Some(d) => d.stop()
+            None => ()
+          }
+          session.driver = None
+          match session.before_replay {
+            Some(v) => {
+              @sbui.set_story_value(app, session.idx, v)
+              session.before_replay = None
+            }
+            None => ()
+          }
+          session.notice = ""
+          push_trace_panel(app, insp, session, tab="replay")
+        })
+        answer(Ok(Null))
+      }),
+    ],
+    // Which pane the reader asked for. The component set its own `.tab` on the
+    // way past; this is what makes the panes and the tab classes agree with it,
+    // both of which are computed here because only the host knows whether
+    // there is a recording behind them.
+    "traceSetTab": [
+      @component.IntentFn((call, answer) => {
+        let want = match call.args {
+          [Str(s), ..] => s
+          _ => "record"
+        }
+        with_app(app => {
+          ensure_story(app, session, sections)
+          push_trace_panel(app, insp, session, tab=want)
+        })
+        answer(Ok(Str(want)))
       }),
     ],
     // Which candidate the reader chose. Kept rather than acted on: cutting the

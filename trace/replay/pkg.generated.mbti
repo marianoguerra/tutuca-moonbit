@@ -17,6 +17,8 @@ pub fn mount(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, veri
 
 pub fn replay(@trace.Trace, @component.ComponentStack, fidelity? : Fidelity, verify? : Bool) -> Json raise ReplayError
 
+pub fn root_for(@trace.Trace, @component.ComponentStack) -> @core.Value raise ReplayError
+
 // Errors
 pub suberror ReplayError {
   Diverged(at~ : Int, want~ : @trace.Event, got~ : @trace.Event)
@@ -33,6 +35,22 @@ pub struct Answers {
 pub fn Answers::of_trace(@trace.Trace) -> Self
 pub fn Answers::take(Self, String) -> Array[@core.IntentAnswer]
 
+pub struct Driver {
+  // private fields
+}
+pub fn Driver::answers(Self) -> Answers?
+pub fn Driver::at(Self) -> Int
+pub fn Driver::done(Self) -> Bool
+pub fn Driver::new(@trace.Trace, @transactor.Transactor, base? : @trace.Place, verify? : Bool, answer_intents? : Bool) -> Self
+pub fn Driver::observed(Self) -> Array[@trace.Event]
+pub fn Driver::run(Self) -> Unit raise ReplayError
+pub fn Driver::run_to(Self, Int) -> Unit raise ReplayError
+pub fn Driver::step(Self) -> Unit raise ReplayError
+pub fn Driver::step_event(Self) -> Unit raise ReplayError
+pub fn Driver::stop(Self) -> Unit
+pub fn Driver::total(Self) -> Int
+pub fn Driver::trace(Self) -> @trace.Trace
+
 pub(all) enum Fidelity {
   Live
 } derive(Eq, @debug.Debug)
@@ -40,11 +58,10 @@ pub(all) enum Fidelity {
 pub struct Player {
   app : @app.App[@memdom.MemNode]
   container : @memdom.MemNode
-  trace : @trace.Trace
   fidelity : Fidelity
-  mut at : Int
   // private fields
 }
+pub fn Player::at(Self) -> Int
 pub fn Player::destroy(Self) -> Unit
 pub fn Player::done(Self) -> Bool
 pub fn Player::harness(Self) -> @harness.Harness[@memdom.MemNode]
@@ -55,6 +72,7 @@ pub fn Player::run_to(Self, Int) -> Unit raise ReplayError
 pub fn Player::snapshot(Self) -> Json
 pub fn Player::step(Self) -> Unit raise ReplayError
 pub fn Player::step_event(Self) -> Unit raise ReplayError
+pub fn Player::trace(Self) -> @trace.Trace
 
 pub struct RecordedHost {
   // private fields

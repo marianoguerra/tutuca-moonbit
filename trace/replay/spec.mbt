@@ -41,18 +41,13 @@ pub struct Player {
   /// again would be a second vocabulary for the same questions.
   app : @app.App[@memdom.MemNode]
   container : @memdom.MemNode
-  trace : @trace.Trace
   fidelity : Fidelity
-  /// How many events have been fed. The index of the next one.
-  mut at : Int
   // private fields
-  /// The rerun, recorded — so it can be compared with the recording being fed
-  /// as like with like. `None` when `verify` is off.
-  priv mut rerun : @trace.TraceRecorder?
-  /// How many dispatches have already been held against the recording, so a
-  /// step re-checks only what it added.
-  priv mut checked : Int
-  priv mut watching : (() -> Unit)?
+  /// The feeding, which a player does not do itself: this is a `Driver` over
+  /// the app's own transactor, at no base, because a player's recording IS its
+  /// tree. `trace` and `at` are asked of it rather than mirrored here — two
+  /// copies of a position is one copy too many.
+  priv driver : Driver
 }
 
 ///|
@@ -143,6 +138,21 @@ pub impl @transactor.Intents for RecordedHost
 /// `App::from_module`: a rebased or relocated recording starts from a state no
 /// example names, and being able to mount those is the whole reason the format
 /// stores a snapshot rather than a constructor call.
+
+///|
+/// The recording's initial state, rebuilt against `scope`.
+///
+/// The three guards `mount` applies, on their own, for a rerun that does not
+/// mount: a version this build cannot read, a snapshot naming a component the
+/// scope cannot build, and a component whose fields have moved since. Each is
+/// one sentence here and a mystery anywhere else, which is why a live replay
+/// calls this rather than reimplementing the checks or skipping them.
+declare pub fn root_for(
+  t : @trace.Trace,
+  scope : @component.ComponentStack,
+) -> @tutuca.Value raise ReplayError
+
+///|
 declare pub fn mount(
   t : @trace.Trace,
   scope : @component.ComponentStack,
@@ -173,6 +183,14 @@ declare pub fn Player::run(self : Player) -> Unit raise ReplayError
 ///|
 /// Whether there is anything left to feed.
 declare pub fn Player::done(self : Player) -> Bool
+
+///|
+/// How many events have been fed. The index of the next one.
+declare pub fn Player::at(self : Player) -> Int
+
+///|
+/// The recording being fed.
+declare pub fn Player::trace(self : Player) -> @trace.Trace
 
 ///|
 /// The settled state, as a tagged snapshot — what `Trace::rebase` takes.

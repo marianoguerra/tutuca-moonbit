@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/files"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const TRACE_MIME : String = "text/plain"
+
+pub fn trace_filename(String) -> String
+
+// Errors
+
+// Types and methods
+pub struct MemFiles {
+  // private fields
+}
+pub fn MemFiles::last_saved(Self) -> SavedFile?
+pub fn MemFiles::new() -> Self
+pub fn MemFiles::provide(Self, id~ : Int, String) -> Unit
+pub fn MemFiles::provide_error(Self, id~ : Int, String) -> Unit
+pub fn MemFiles::round_trip(Self) -> Int?
+pub fn MemFiles::saved(Self) -> Array[SavedFile]
+pub impl FileService for MemFiles
+
+pub(all) struct SavedFile {
+  name : String
+  mime : String
+  text : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+pub(open) trait FileService {
+  fn save_text(Self, name~ : String, mime~ : String, String) -> Unit
+  fn read_text(Self, id~ : Int, then~ : (Result[String, String]) -> Unit) -> Unit
+}

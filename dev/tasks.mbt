@@ -928,6 +928,19 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Copy(from="app/wasm/loader.mjs", to="\{DIST}/storybook/app-loader.mjs"),
   )
+  // The Trace tab's Download and Load. `@panelsw.all` names `files/wasm`, so
+  // the gallery's wasm declares the `tfiles` import and a page without this
+  // file does not instantiate at all. Rewritten on the way, for the reason
+  // `dyncomp-loader.mjs` is: it imports the app loader by a repo-relative
+  // path, and in dist the two land flat beside the page.
+  steps.push(
+    WriteRewritten(
+      from="files/wasm/loader.mjs",
+      to="\{DIST}/storybook/files-loader.mjs",
+      old_src="../../app/wasm/loader.mjs",
+      new_src="./app-loader.mjs",
+    ),
+  )
   steps.push(
     Copy(
       from="demo/storybook_wasm/index.html",

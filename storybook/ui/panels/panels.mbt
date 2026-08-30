@@ -28,13 +28,22 @@ pub let fuzz_fields : Map[String, @tutuca.Value] = {
 ///
 /// `effects` are the Fuzz tab's two browser effects; a headless mount passes
 /// none and gets the tab minus the frame loop and the profiler marks.
+/// `files` is where a downloaded recording goes and where an uploaded one
+/// comes from. The default keeps everything in memory, which is the honest
+/// answer for a headless mount and the reason the whole round trip is
+/// testable: a page passes `@fileswasm.browser_files()` and gets a real
+/// download.
 pub fn[N] all(
   sections : Array[@sb.Section],
   effects? : FuzzEffects = FuzzEffects::none(),
+  files? : &@files.FileService = @files.MemFiles::new(),
 ) -> @sbui.PanelSet[N] {
   let insp = @inspector.Inspector::new()
   let slot : Ref[@app.App[N]?] = { val: None, }
-  let trace = TraceSession::new()
+  let trace = TraceSession::new(files)
+  // So `current_trace()` can answer for a page that wants the recording for
+  // something the tab does not do.
+  current_session.val = Some(trace)
   let fuzz = FuzzSession::new()
   let intents : Map[String, Array[@component.IntentFn]] = Map([])
   for name, fns in trace_handlers(slot, insp, trace, sections) {
@@ -69,7 +78,11 @@ pub fn[N] all(
         build: Some((_inst, _read) => insp.trace_panel()),
         live: false,
         keep: true,
-        with_story: false,
+        // `with_story`, for the reason the Fuzz tab has it: a rerun you cannot
+        // watch is the headless rerun with extra steps. The Replay pane drives
+        // the instance ABOVE it, and a reader who has to change tabs to see
+        // what a Step did is reading a number instead of watching a component.
+        with_story: true,
       },
       // Same rule, and the knobs come from the shell's own fields so an
       // unopened tab still has a seed. `with_story`, because a run you cannot

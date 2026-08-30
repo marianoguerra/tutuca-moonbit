@@ -143,6 +143,7 @@ pub struct Transactor {
 }
 pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
+pub fn Transactor::intents(Self) -> &Intents
 pub fn Transactor::new(@core.Value, intents? : &Intents, names? : &Names) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
 pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
@@ -151,6 +152,7 @@ pub fn Transactor::push_intent(Self, @core.DispatchPath, String, Array[@core.Val
 pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, origin? : @core.DispatchPath, provenance? : @core.DispatchProvenance) -> Transaction
 pub fn Transactor::recorder(Self) -> &Recorder
 pub fn Transactor::reset_root(Self, @core.Value) -> Unit
+pub fn Transactor::set_intents(Self, &Intents) -> Unit
 pub fn Transactor::set_property(Self, @core.DispatchPath, String, @core.Value) -> @core.PropertyWrite
 pub fn Transactor::set_recorder(Self, &Recorder) -> Unit
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult

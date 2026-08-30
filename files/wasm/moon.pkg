@@ -1,0 +1,14 @@
+// The browser half of `files`: a real download, and a real read of a file the
+// viewer picked or dropped.
+//
+// Separate package because it is the only part that cannot run anywhere else —
+// `files` is backend-agnostic and tested on a Map, and this is two imports and
+// one export that make the same trait talk to a page. A gallery that never
+// names this carries no download code and declares no extra wasm import, which
+// is why the seam is where it is.
+// Check: moon check --target wasm-gc files/wasm
+import {
+  "marianoguerra/tutuca/files",
+}
+
+supported_targets = "wasm-gc"

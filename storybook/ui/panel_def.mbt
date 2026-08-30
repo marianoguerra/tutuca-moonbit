@@ -120,6 +120,37 @@ pub fn[N] story_value(app : @app.App[N], idx : Int) -> @tutuca.Value {
 }
 
 ///|
+/// The scopes the stories were built in, by index.
+///
+/// A module-level slot for the reason the Trace tab's selection flag is one: a
+/// gallery mounts ONCE per page, so there is one of these to be in, and the
+/// alternative was threading a handle out of `mount` into the one export a
+/// wasm host is allowed. A second mount in the same process replaces it, which
+/// is what a test that mounts twice should expect.
+let story_scopes : Ref[Array[@component.ComponentStack]] = { val: [], }
+
+///|
+/// The scope a story's components are registered in.
+///
+/// Stories get a scope EACH — `root_scope.enter()` per story — so that ~35
+/// panel component names and one story's components do not become visible to
+/// every other story. That is the right call and it has one consequence: a
+/// caller holding only the app cannot rebuild a story's value from a snapshot,
+/// because the names are not in `app.scope`.
+///
+/// A recording is exactly such a snapshot, so a rerun needs this. And it has
+/// to be the story's OWN scope rather than a fresh one built from the same
+/// module: a `Component` carries an id bound to the scope it was registered
+/// in, so a value built elsewhere renders as a blank pane.
+pub fn story_scope(idx : Int) -> @component.ComponentStack? {
+  if idx < 0 || idx >= story_scopes.val.length() {
+    None
+  } else {
+    Some(story_scopes.val[idx])
+  }
+}
+
+///|
 /// Put a value back into a story's pane.
 ///
 /// The one write a panel layer does to a story rather than to a panel, and it

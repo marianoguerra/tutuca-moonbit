@@ -94,6 +94,8 @@ references needed for the task.
 
 - [testing.md](./testing.md) — `moon test`, the in-memory `@harness`, card
   scene syntax, record mode, intent fixtures, and headless card driving.
+- [tracing.md](./tracing.md) — recording what an app did, saving it as JSONL,
+  shortening it, and running it back — `@trace`, `@replay` and the file seam.
 - [margaui.md](./margaui.md) — collecting and compiling Tailwind/MargaUI
   classes, runtime injection, and literal-class constraints.
 - [storybook.md](./storybook.md) — a gallery of a project's own components:

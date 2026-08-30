@@ -25,7 +25,13 @@
     -->
     <script type="module">
       import { instantiate } from "./app-loader.mjs";
-      const exports = await instantiate("./page.wasm");
+      import { createFilesImports } from "./files-loader.mjs";
+      // `tfiles` is the Trace tab's Download and Load. The gallery's wasm
+      // declares the import because `@panelsw.all` links `files/wasm`, so a
+      // page that leaves it out does not instantiate at all.
+      const exports = await instantiate("./page.wasm", (getExports) => ({
+        tfiles: createFilesImports(getExports),
+      }));
       exports.mount();
       // Re-restore selection/filter/focus on Back/Forward. tutuca has no
       // lifecycle, so the host re-sends `init` (which re-reads the URL).

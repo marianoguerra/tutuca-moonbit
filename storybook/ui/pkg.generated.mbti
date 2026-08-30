@@ -32,6 +32,8 @@ pub fn[N] shell_field(@app.App[N], String) -> @core.Value
 
 pub fn story_field(Int) -> String
 
+pub fn story_scope(Int) -> @component.ComponentStack?
+
 pub fn[N] story_value(@app.App[N], Int) -> @core.Value
 
 // Errors

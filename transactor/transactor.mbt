@@ -41,6 +41,16 @@ pub fn Transactor::recorder(self : Transactor) -> &Recorder {
 }
 
 ///|
+pub fn Transactor::set_intents(self : Transactor, i : &Intents) -> Unit {
+  self.intents = i
+}
+
+///|
+pub fn Transactor::intents(self : Transactor) -> &Intents {
+  self.intents
+}
+
+///|
 pub fn Transactor::reset_root(self : Transactor, root : @tutuca.Value) -> Unit {
   let cur = self.root
   if physical_equal(root, cur) {

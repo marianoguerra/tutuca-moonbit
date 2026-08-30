@@ -82,6 +82,7 @@ pub fn Place::strip_prefix(Self, Self) -> Self?
 pub fn Place::to_json(Self) -> Json
 pub fn Place::to_path(Self) -> @core.Path
 pub fn Place::to_steps(Self) -> Array[@core.Step]
+pub fn Place::under(Self, Self) -> Self
 
 pub struct RingRecorder {
   // private fields

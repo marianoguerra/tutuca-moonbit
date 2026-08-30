@@ -198,6 +198,18 @@ declare pub fn Place::starts_with(self : Place, prefix : Place) -> Bool
 declare pub fn Place::strip_prefix(self : Place, prefix : Place) -> Place?
 
 ///|
+/// The same address seen from ABOVE `prefix` — `strip_prefix` undone.
+///
+/// What a rerun into a live tree needs and a rerun into its own app does not.
+/// A recording cut to a story addresses `.rows[1]`; the gallery the story is
+/// mounted in addresses that same component `.s3.rows[1]`, so every event has
+/// to be re-prefixed on its way back in. `relocate` wrote the addresses down
+/// one way and this reads them the other, which is why the two live together:
+/// if they ever disagree, a replay aims at the wrong component and the symptom
+/// is a divergence with nothing wrong at either end.
+declare pub fn Place::under(self : Place, prefix : Place) -> Place
+
+///|
 declare pub fn Place::to_json(self : Place) -> Json
 
 ///|

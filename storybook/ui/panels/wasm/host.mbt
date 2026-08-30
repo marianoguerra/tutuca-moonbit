@@ -12,7 +12,21 @@
 /// What a page passes to `@sbw.mount`'s `panels~`, and naming it is what links
 /// the inspector, the recorder and the fuzz driver into the wasm.
 pub fn all(sections : Array[@sb.Section]) -> @sbui.PanelSet[@wdom.WasmNode] {
-  @panels.all(sections, effects=fuzz_effects())
+  @panels.all(
+    sections,
+    effects=fuzz_effects(),
+    files=@fileswasm.browser_files(),
+  )
+}
+
+///|
+/// The page's answer to a file read the Trace tab asked for.
+///
+/// Forwarded from the page's own export, for the reason `on_event` and
+/// `on_fuzz_tick` are: a closure cannot cross into JS on wasm-gc, so the reply
+/// to an asynchronous read comes back through an export or not at all.
+pub fn on_file_text(req_id : Int, ok : Bool, text : String) -> Unit {
+  @fileswasm.on_file_text(req_id, ok, text)
 }
 
 ///|

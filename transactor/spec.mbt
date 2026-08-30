@@ -518,7 +518,12 @@ declare pub fn Transaction::completion(self : Transaction) -> Completion
 /// Handlers resolve on the leaf (Value::handler); an intent's `lex` leg
 /// resolves through the external registry.
 pub struct Transactor {
-  priv intents : &Intents
+  /// Who answers an intent's `lex` leg.
+  ///
+  /// Mutable for the reason `recorder` is, and with the same warning attached:
+  /// there is exactly one at a time, and a caller that swaps one in owns
+  /// putting the old one back. See `set_intents`.
+  priv mut intents : &Intents
   priv names : &Names
   mut root : @tutuca.Value
   priv mut queue : Array[Transaction]
@@ -561,6 +566,27 @@ declare pub fn Transactor::set_recorder(
 ///|
 /// The installed strategy.
 declare pub fn Transactor::recorder(self : Transactor) -> &Recorder
+
+///|
+/// Install who answers intents, replacing whoever did.
+///
+/// The pair `set_recorder` has had all along, and it exists for one caller: a
+/// REPLAY, which must answer an intent with what the host said last time
+/// rather than what it would say now. `trace/replay`'s `RecordedHost` is that
+/// answerer, and a recording of a component that asked the time or the network
+/// is worth nothing without it.
+///
+/// Swap it for as short a time as possible — around the push and the settle
+/// that feed one turn, and back again. A recorded host is a finite supply of
+/// answers handed out in walk order, so leaving one installed while anything
+/// else raises an intent spends the recording's answers on questions it was
+/// not answering, and the divergence that follows points at the wrong place.
+declare pub fn Transactor::set_intents(self : Transactor, i : &Intents) -> Unit
+
+///|
+/// Who currently answers intents, so a caller that swapped can put it back
+/// rather than rebuild one and hope it matches.
+declare pub fn Transactor::intents(self : Transactor) -> &Intents
 
 ///|
 /// Install a whole tree, telling the subscribers.

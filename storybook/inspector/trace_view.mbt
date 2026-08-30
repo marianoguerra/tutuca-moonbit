@@ -414,6 +414,10 @@ pub fn Inspector::trace_panel(
   selected_place? : String,
   inputs_only? : Bool = false,
   places? : @tutuca.Value,
+  notice? : String = "",
+  draft? : String = "",
+  can_replay? : Bool = false,
+  replaying? : Bool = false,
 ) -> @tutuca.Value {
   let has_trace = trace is Some(_)
   let empty = @trace.Trace::new(root=Json::null())
@@ -435,6 +439,11 @@ pub fn Inspector::trace_panel(
     "tab": Str(tab),
     "hasTrace": Bool(has_trace),
     "showTrace": Bool(has_trace && tab == "trace"),
+    "showReplay": Bool(has_trace && tab == "replay"),
+    // Import lives on the Record pane, which is also where a reader with no
+    // recording lands: the person who has nothing to show is exactly the
+    // person who wants to load somebody else's.
+    "showImport": Bool(has_trace && tab == "record"),
     "selecting": Bool(selecting),
     "selectLabel": Str(
       if selecting {
@@ -445,9 +454,19 @@ pub fn Inspector::trace_panel(
     ),
     "recordTabClass": Str(tab_class("record", tab == "record")),
     "traceTabClass": Str(tab_class("trace", tab == "trace")),
+    "replayTabClass": Str(tab_class("replay", tab == "replay")),
     "selectTabClass": Str(tab_class("select", selecting)),
     "at": Num((at + 1).to_double()),
     "total": Num(t.events.length().to_double()),
+    "notice": Str(notice),
+    "hasNotice": Bool(notice != ""),
+    "draft": Str(draft),
+    // A rerun needs a recording to be a rerun OF, so the flag the invariant
+    // holds against `hasTrace` is computed from both rather than trusted from
+    // the caller — a host that got it wrong would trip the invariant rather
+    // than show dead buttons, and this is the cheaper answer.
+    "canReplay": Bool(can_replay && has_trace),
+    "replaying": Bool(replaying && can_replay && has_trace),
   })
 }
 

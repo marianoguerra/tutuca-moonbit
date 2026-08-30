@@ -35,6 +35,10 @@ options(
         // the reason `on_event` is one: closures cannot cross into JS on
         // wasm-gc.
         "on_fuzz_tick",
+        // The Trace tab's file read. Same reason as `on_fuzz_tick`: the
+        // browser answers a read asynchronously and cannot be handed a
+        // closure, so it calls back through an export.
+        "on_file_text",
         "refresh_margaui",
       ],
       "use-js-builtin-string": true,

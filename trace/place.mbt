@@ -74,6 +74,15 @@ pub fn Place::strip_prefix(self : Place, prefix : Place) -> Place? {
 }
 
 ///|
+pub fn Place::under(self : Place, prefix : Place) -> Place {
+  let Place(above) = prefix
+  let Place(mine) = self
+  let out : Array[@tutuca.StepKey] = above.copy()
+  out.append(mine)
+  Place(out)
+}
+
+///|
 pub fn Place::to_json(self : Place) -> Json {
   let Place(keys) = self
   Json::array(keys.map(k => k.to_json()))

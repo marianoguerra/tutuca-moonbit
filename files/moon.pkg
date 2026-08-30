@@ -1,0 +1,20 @@
+// Handing the viewer a file, and reading one they chose.
+//
+// A LEAF, like dyncomp/persist: what a file transfer IS is worth reasoning
+// about without a browser in hand, so this is the seam and an in-memory
+// implementation, and `files/wasm` is the four FFI calls that make the same
+// trait talk to a real page.
+//
+// It exists because a recording that cannot leave the tab is not an artifact.
+// `@trace.Trace::to_jsonl` produces text and `@trace.from_jsonl` consumes it;
+// what was missing between them was somewhere to put it. Nothing here knows
+// about traces — text with a filename is the whole vocabulary.
+// Check: moon check files
+import {
+  "moonbitlang/core/builtin",
+}
+
+import {
+  "moonbitlang/core/test",
+  "moonbitlang/core/debug",
+} for "test"

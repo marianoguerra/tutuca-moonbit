@@ -208,18 +208,60 @@
     /// Selection mode: click anything on the page and the component tree it
     /// belongs to comes back as relocation candidates.
     selecting : Bool
-    /// Whether the trace pane is the one showing. One field rather than an
-    /// expression over two, because "there is a trace" and "the reader asked
-    /// for it" are decided by the host and by a click, and neither belongs in
-    /// a template.
+    /// Which pane is the one showing. One field EACH rather than an expression
+    /// over `tab`, because "there is a trace" and "the reader asked for this
+    /// pane" are decided by the host and by a click, and neither belongs in a
+    /// template. Three flags because there are three panes and at most one of
+    /// them is ever right.
     showTrace : Bool
+    showReplay : Bool
+    showImport : Bool
     /// How far through the recording the viewer is parked.
     at : Int
     total : Int
 
-    /// Three panes, three names. `setTab` carries a `String` and is answered
+    /// Whatever the last thing the reader asked for had to say for itself: a
+    /// file that would not parse, a cut that could not carry something across,
+    /// a rerun that diverged. ONE field for all three because they are one
+    /// thing to a reader — the sentence explaining why what they just asked
+    /// for did not do what they expected — and three fields would be three
+    /// places to forget to clear.
+    notice : String
+    hasNotice : Bool
+    /// The draft a trace is pasted into. A textarea is the import path that
+    /// needs nothing of the host but the text, so it works on every backend
+    /// and in `moon test`; a file picker is the same message with a nicer way
+    /// to fill it in.
+    draft : String
+    /// Whether a rerun is loaded and has somewhere to go.
+    canReplay : Bool
+    /// Whether it is mid-run. A run steps on the animation frame, so this is
+    /// what says a frame is already armed.
+    replaying : Bool
+    replayTabClass : String
+
+    /// Four panes, four names. `setTab` carries a `String` and is answered
     /// by the host, so this clause is the only check its argument gets.
-    where tab is one of ["record", "trace", "pick"]
+    where tab is one of ["record", "trace", "pick", "replay"]
+
+    /// The flag and the sentence it summarises — the same pairing every other
+    /// flag here makes.
+    invariant hasNoticeTracksNotice
+      format $'hasNotice says {.hasNotice} for a notice of {len .notice}' {
+        .hasNotice is ((len .notice) > 0)
+      }
+
+    /// Nothing to rerun without a recording to rerun.
+    invariant canReplayNeedsATrace
+      format 'the replay controls are live without a trace behind them' {
+        .canReplay implies .hasTrace
+      }
+
+    /// A run is a run OF something.
+    invariant replayingNeedsAReplay
+      format 'a rerun is playing that was never mounted' {
+        .replaying implies .canReplay
+      }
 
     /// 1-based for display, and 0 for "parked before the first row".
     where at >= 0
@@ -234,6 +276,12 @@
     invariant showTraceNeedsATrace
       format 'the trace pane is showing without a trace behind it' {
         .showTrace implies .hasTrace
+      }
+
+    /// Same for the rerun's pane: there is nothing to rerun without one.
+    invariant showReplayNeedsATrace
+      format 'the replay pane is showing without a trace behind it' {
+        .showReplay implies .hasTrace
       }
   }
 
@@ -256,6 +304,12 @@
     setTab(String)
     setAt(Int)
     toggleSelecting
+    exportTrace
+    importDraft
+    cutToPlace
+    replayStep
+    replayRun
+    replayReset
 
     }
   }
@@ -289,6 +343,52 @@
   /// and a component cannot install one.
   receive toggleSelecting {
     intent lex 'traceSelect'
+  }
+
+  /// Which pane is showing.
+  ///
+  /// Set here AND sent on, which looks redundant and is not. The pane
+  /// visibility and the tab classes are the HOST's — it is the only thing that
+  /// knows whether there is a recording to show — so a click that only changed
+  /// `.tab` would move the highlight and leave the panes where they were.
+  /// Setting it locally too is what keeps the button responsive on the frame
+  /// the click landed on, rather than a round trip later.
+  receive setTab(t) {
+    .tab = t
+    intent lex 'traceSetTab' t
+  }
+
+  /// `draft` has no arm of its own: `@bind` synthesises the mutator that
+  /// fills it, which is the point of writing the textarea that way. A
+  /// half-typed recording is this component's business and never the host's —
+  /// asking the host to hold every keystroke would rebuild the panel on each
+  /// one.
+
+  /// Everything else leaves. A recording lives on the host — the component was
+  /// handed a rendering of one and never the thing itself — so every verb that
+  /// acts on it is a message to whoever holds it.
+  receive exportTrace {
+    intent lex 'traceExport'
+  }
+
+  receive importDraft {
+    intent lex 'traceImport' .draft
+  }
+
+  receive cutToPlace {
+    intent lex 'traceRelocate'
+  }
+
+  receive replayStep {
+    intent lex 'traceReplayStep'
+  }
+
+  receive replayRun {
+    intent lex 'traceReplayRun'
+  }
+
+  receive replayReset {
+    intent lex 'traceReplayReset'
   }
 </script>
 
@@ -493,20 +593,74 @@
     <div class="flex items-center gap-2 border-b border-base-content/10 px-2">
       <button :class=".recordTabClass" @on.click="setTab 'record'">Record</button>
       <button :class=".traceTabClass" @show=".hasTrace" @on.click="setTab 'trace'">Trace</button>
+      <button :class=".replayTabClass" @show=".hasTrace" @on.click="setTab 'replay'">Replay</button>
       <button :class=".selectTabClass" @show=".hasTrace" @on.click="toggleSelecting"
               @text=".selectLabel"></button>
       <span class="ml-auto text-xs opacity-40 tabular-nums panel-pos" @show=".hasTrace">
         <x text=".at"></x><x text="' / '"></x><x text=".total"></x>
       </span>
     </div>
+    <!-- Above every pane, because it is about the thing the reader just did
+         and not about the pane they happen to be looking at. A parse error on
+         import belongs where they can see it without changing tabs. -->
+    <div class="trace-notice alert alert-warning text-xs mx-2 py-1" @show=".hasNotice"
+         @text=".notice"></div>
     <x render=".bar"></x>
     <div class="panel-trace flex flex-col gap-2" @show=".showTrace">
+      <div class="flex items-center gap-2 px-2 flex-wrap">
+        <button class="btn btn-sm btn-ghost trace-export" @on.click="exportTrace">
+          Download
+        </button>
+        <!-- Enabled by a pick, and the pick is a separate press for the reason
+             the host's comment gives: choosing a place is the thing a person
+             does several times before they mean it. -->
+        <button class="btn btn-sm btn-ghost trace-cut" @on.click="cutToPlace">
+          Cut to the picked place
+        </button>
+      </div>
       <x render=".header"></x>
       <x render=".places"></x>
       <x render=".log"></x>
     </div>
-    <div class="panel-empty text-xs opacity-40 px-2 pb-2" @hide=".hasTrace">
-      Nothing recorded yet. Press Record, use the component, then stop.
+    <!-- The rerun. It drives the STORY, not a preview of one: the gallery is a
+         single transactor with every story mounted under it, so the events go
+         into the instance already on screen and the reader watches it move. -->
+    <div class="panel-replay flex flex-col gap-2 p-2" @show=".showReplay">
+      <div class="flex gap-2 flex-wrap" @show=".canReplay">
+        <button class="btn btn-sm btn-primary replay-step" @on.click="replayStep">Step</button>
+        <button class="btn btn-sm replay-run" @on.click="replayRun">Run</button>
+        <button class="btn btn-sm btn-ghost replay-reset" @on.click="replayReset">Reset</button>
+        <span class="text-xs opacity-60 tabular-nums replay-pos self-center">
+          <x text=".at"></x><x text="' of '"></x><x text=".total"></x>
+        </span>
+      </div>
+      <div class="text-xs opacity-50" @show=".canReplay">
+        The story above is the one being driven. A step feeds one whole turn —
+        what the recording drained together — so the app is never left
+        mid-cascade in a state it was never in.
+      </div>
+    </div>
+    <!-- Import lives on the empty pane as well as the full one: the reader who
+         has no recording is exactly the reader who wants to load somebody
+         else's. -->
+    <div class="panel-import flex flex-col gap-2 p-2" @show=".showImport">
+      <div class="text-xs opacity-50">Paste a .trace.jsonl to load it.</div>
+      <textarea class="textarea textarea-sm trace-draft" rows="3"
+                @bind=".draft"></textarea>
+      <div>
+        <button class="btn btn-sm trace-import" @on.click="importDraft">Load</button>
+      </div>
+    </div>
+    <div class="panel-empty flex flex-col gap-2 px-2 pb-2" @hide=".hasTrace">
+      <div class="text-xs opacity-40">
+        Nothing recorded yet. Press Record, use the component, then stop —
+        or paste a recording somebody else made.
+      </div>
+      <textarea class="textarea textarea-sm trace-draft-empty" rows="3"
+                @bind=".draft"></textarea>
+      <div>
+        <button class="btn btn-sm trace-import-empty" @on.click="importDraft">Load</button>
+      </div>
     </div>
   </div>
 </template>

@@ -6,6 +6,90 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A recording can leave the tab and come back.** `trace/` could already write
+  a recording as JSONL and read one back, and `trace/replay` could run one; what
+  was missing was every step between. The storybook's Trace tab now downloads a
+  recording as `.trace.jsonl`, loads one somebody else made, cuts one to the
+  component the picker has been selecting since it was written, and replays it
+  into the story on screen.
+
+  The round trip is a `moon test`, which is the only reason to believe it:
+  record in one gallery, download, mount a SECOND gallery sharing nothing but
+  the text, load it there, replay, and hold the story's rendered state against
+  what the first one produced. A round trip that only works while the recording
+  is still in memory is not a round trip, it is a variable.
+
+- **`files/` — handing the viewer a file, and reading one they chose.** A seam,
+  an in-memory implementation, and `files/wasm` for the browser. The two
+  directions are not alike and the trait says so: saving is synchronous and
+  one-way, and reading is asynchronous and can fail several ways — so
+  `read_text` takes a continuation rather than returning, because on wasm-gc a
+  closure cannot cross into JS and the answer has to come back through an
+  export.
+
+  `files/wasm` brings its own `tfiles` import namespace through `instantiate`'s
+  `makeExtra` hook rather than growing `tdom`. `tdom` is the namespace every
+  tutuca page declares, so a function added there is a function every page's
+  loader must supply — and a page carrying an older copy stops instantiating
+  entirely. That has happened in this repo before. A page that never links the
+  panel layer never mentions `tfiles`.
+
+- **`@replay.Driver` — a recording fed into a transactor somebody else owns.**
+  `Player` mounts its own app on the in-memory DOM, which is what `moon test`
+  wants and what a browser cannot use: a gallery is ONE transactor with every
+  story already mounted under it, and a component's view owns its subtree
+  outright, so there is nowhere to put a second app — the panel's next render
+  would destroy it, and the panel renders on every step.
+
+  So the feeding moved out, with no app, no DOM and no mounting in it, and
+  `Player` is now that plus "and I built the app myself". One thing is new:
+  `base`, where the recording's root sits in the tree being fed. A recording cut
+  to `.rows[0]` addresses its events relative to that, and the gallery calls the
+  same component `.s3.rows[0]` — so `Place::under` puts back what `relocate`'s
+  `strip_prefix` took off, and a test holds the two to being inverses.
+
+  `verify` defaults to whether the aim is narrow enough for a comparison to
+  mean anything: on under a base, off at the root of a tree that holds other
+  things, where every dispatch the shell and the other stories make is
+  indistinguishable from the app's.
+
+- **`Transactor::set_intents`, and `intents()` beside it.** The pair
+  `set_recorder` has had all along. It exists for one caller — a replay, which
+  must answer an intent with what the host said last time rather than what it
+  would say now — and it is swapped in around one push and one settle, never
+  left installed. `Answers` hands out one walk's replies per ask, in order, so a
+  recorded host left in place while anything else raises an intent spends the
+  recording's answers on questions it was not answering, and the divergence that
+  follows points nowhere useful.
+
+- **`@replay.root_for`** — the three guards `mount` applies, on their own, for a
+  rerun that does not mount. A version this build cannot read, a snapshot naming
+  a component the scope cannot build, and a component whose fields have moved
+  are each one sentence here and a mystery anywhere else.
+
+- **`skill/tutuca/tracing.md`** — recording, saving, shortening and running a
+  trace back, for a consumer building the same thing over their own components.
+
+### Fixed
+
+- **The Trace tab's tab strip moved the highlight and not the panes.** Which
+  pane shows is computed by the host — it is the only thing that knows whether
+  there is a recording behind one — so a click that only set the component's own
+  `.tab` left the panes where they were. It now says so as well, and the host
+  recomputes.
+
+### Changed
+
+- **A gallery page exports six entry points, not five.** `on_file_text` is the
+  Trace tab's file read, answered asynchronously by the page. `tutuca
+  new-storybook` scaffolds it; an existing page adds the forward, the export,
+  and the `tfiles` namespace in its loader.
+
+- **`Player.trace` and `Player.at` are methods rather than fields.** Both are
+  the driver's now, and two copies of a position is one copy too many.
+
 ## [0.42.0] - 2026-08-30
 
 ### Added

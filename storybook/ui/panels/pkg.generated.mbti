@@ -4,13 +4,17 @@ package "marianoguerra/tutuca/storybook/ui/panels"
 import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/files",
   "marianoguerra/tutuca/storybook",
   "marianoguerra/tutuca/storybook/ui",
+  "marianoguerra/tutuca/trace",
   "marianoguerra/tutuca/vdom",
 }
 
 // Values
-pub fn[N] all(Array[@storybook.Section], effects? : FuzzEffects) -> @ui.PanelSet[N]
+pub fn[N] all(Array[@storybook.Section], effects? : FuzzEffects, files? : &@files.FileService) -> @ui.PanelSet[N]
+
+pub fn current_trace() -> @trace.Trace?
 
 pub let fuzz_fields : Map[String, @core.Value]
 

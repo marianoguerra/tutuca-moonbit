@@ -1349,14 +1349,36 @@ pub(all) struct TracePanelState {
   /// Selection mode: click anything on the page and the component tree it
   /// belongs to comes back as relocation candidates.
   selecting : Bool
-  /// Whether the trace pane is the one showing. One field rather than an
-  /// expression over two, because "there is a trace" and "the reader asked
-  /// for it" are decided by the host and by a click, and neither belongs in
-  /// a template.
+  /// Which pane is the one showing. One field EACH rather than an expression
+  /// over `tab`, because "there is a trace" and "the reader asked for this
+  /// pane" are decided by the host and by a click, and neither belongs in a
+  /// template. Three flags because there are three panes and at most one of
+  /// them is ever right.
   showTrace : Bool
+  showReplay : Bool
+  showImport : Bool
   /// How far through the recording the viewer is parked.
   at : Int
   total : Int
+  /// Whatever the last thing the reader asked for had to say for itself: a
+  /// file that would not parse, a cut that could not carry something across,
+  /// a rerun that diverged. ONE field for all three because they are one
+  /// thing to a reader — the sentence explaining why what they just asked
+  /// for did not do what they expected — and three fields would be three
+  /// places to forget to clear.
+  notice : String
+  hasNotice : Bool
+  /// The draft a trace is pasted into. A textarea is the import path that
+  /// needs nothing of the host but the text, so it works on every backend
+  /// and in `moon test`; a file picker is the same message with a nicer way
+  /// to fill it in.
+  draft : String
+  /// Whether a rerun is loaded and has somewhere to go.
+  canReplay : Bool
+  /// Whether it is mid-run. A run steps on the animation frame, so this is
+  /// what says a frame is already armed.
+  replaying : Bool
+  replayTabClass : String
 }
 
 ///|
@@ -1381,8 +1403,16 @@ pub fn TracePanelState::zero() -> TracePanelState {
     hasTrace: false,
     selecting: false,
     showTrace: false,
+    showReplay: false,
+    showImport: false,
     at: 0,
     total: 0,
+    notice: "",
+    hasNotice: false,
+    draft: "",
+    canReplay: false,
+    replaying: false,
+    replayTabClass: "",
   }
 }
 
@@ -1407,8 +1437,16 @@ impl @component.Fields for TracePanelState with fn encode(s) {
     "hasTrace": Bool(s.hasTrace),
     "selecting": Bool(s.selecting),
     "showTrace": Bool(s.showTrace),
+    "showReplay": Bool(s.showReplay),
+    "showImport": Bool(s.showImport),
     "at": Num(s.at.to_double()),
     "total": Num(s.total.to_double()),
+    "notice": Str(s.notice),
+    "hasNotice": Bool(s.hasNotice),
+    "draft": Str(s.draft),
+    "canReplay": Bool(s.canReplay),
+    "replaying": Bool(s.replaying),
+    "replayTabClass": Str(s.replayTabClass),
   }
 }
 
@@ -1434,10 +1472,20 @@ impl @component.Fields for TracePanelState with fn decode(f) {
   guard f.get("hasTrace") is Some(Bool(v_hasTrace)) else { return None }
   guard f.get("selecting") is Some(Bool(v_selecting)) else { return None }
   guard f.get("showTrace") is Some(Bool(v_showTrace)) else { return None }
+  guard f.get("showReplay") is Some(Bool(v_showReplay)) else { return None }
+  guard f.get("showImport") is Some(Bool(v_showImport)) else { return None }
   guard f.get("at") is Some(Num(t1_at)) else { return None }
   let v_at = t1_at.to_int()
   guard f.get("total") is Some(Num(t1_total)) else { return None }
   let v_total = t1_total.to_int()
+  guard f.get("notice") is Some(Str(v_notice)) else { return None }
+  guard f.get("hasNotice") is Some(Bool(v_hasNotice)) else { return None }
+  guard f.get("draft") is Some(Str(v_draft)) else { return None }
+  guard f.get("canReplay") is Some(Bool(v_canReplay)) else { return None }
+  guard f.get("replaying") is Some(Bool(v_replaying)) else { return None }
+  guard f.get("replayTabClass") is Some(Str(v_replayTabClass)) else {
+    return None
+  }
   Some({
     bar: v_bar,
     header: v_header,
@@ -1451,8 +1499,16 @@ impl @component.Fields for TracePanelState with fn decode(f) {
     hasTrace: v_hasTrace,
     selecting: v_selecting,
     showTrace: v_showTrace,
+    showReplay: v_showReplay,
+    showImport: v_showImport,
     at: v_at,
     total: v_total,
+    notice: v_notice,
+    hasNotice: v_hasNotice,
+    draft: v_draft,
+    canReplay: v_canReplay,
+    replaying: v_replaying,
+    replayTabClass: v_replayTabClass,
   })
 }
 
@@ -1466,6 +1522,13 @@ pub(all) enum TracePanelReceive {
   SetTab(String)
   SetAt(Int)
   ToggleSelecting
+  ExportTrace
+  ImportDraft
+  CutToPlace
+  ReplayStep
+  ReplayRun
+  ReplayReset
+  SetDraft(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1495,11 +1558,25 @@ pub fn TracePanelReceive::from_dispatch(
         a0 >= -2147483648.0 &&
         a0 <= 2147483647.0 => SetAt(a0.to_int())
       ("toggleSelecting", []) => ToggleSelecting
+      ("exportTrace", []) => ExportTrace
+      ("importDraft", []) => ImportDraft
+      ("cutToPlace", []) => CutToPlace
+      ("replayStep", []) => ReplayStep
+      ("replayRun", []) => ReplayRun
+      ("replayReset", []) => ReplayReset
+      ("setDraft", [Str(a0)]) => SetDraft(a0)
       _ => {
         match name {
           "setTab" => @tutuca.bad_payload(name, "String", args)
           "setAt" => @tutuca.bad_payload(name, "Int", args)
           "toggleSelecting" => @tutuca.bad_payload(name, "", args)
+          "exportTrace" => @tutuca.bad_payload(name, "", args)
+          "importDraft" => @tutuca.bad_payload(name, "", args)
+          "cutToPlace" => @tutuca.bad_payload(name, "", args)
+          "replayStep" => @tutuca.bad_payload(name, "", args)
+          "replayRun" => @tutuca.bad_payload(name, "", args)
+          "replayReset" => @tutuca.bad_payload(name, "", args)
+          "setDraft" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -1517,6 +1594,13 @@ pub fn TracePanelReceive::to_dispatch(
     SetTab(a0) => ("setTab", [Str(a0)])
     SetAt(a0) => ("setAt", [Num(a0.to_double())])
     ToggleSelecting => ("toggleSelecting", [])
+    ExportTrace => ("exportTrace", [])
+    ImportDraft => ("importDraft", [])
+    CutToPlace => ("cutToPlace", [])
+    ReplayStep => ("replayStep", [])
+    ReplayRun => ("replayRun", [])
+    ReplayReset => ("replayReset", [])
+    SetDraft(a0) => ("setDraft", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1545,6 +1629,13 @@ pub let trace_panel_global_style : String = ""
 ///|
 /// Every bare `@on` handler name the views reference.
 pub(all) enum TracePanelInput {
+  CutToPlace
+  ExportTrace
+  ImportDraft
+  ReplayReset
+  ReplayRun
+  ReplayStep
+  SetDraft
   SetTab
   ToggleSelecting
 } derive(Eq, @debug.Debug)
@@ -1552,6 +1643,13 @@ pub(all) enum TracePanelInput {
 ///|
 pub fn TracePanelInput::name(self : TracePanelInput) -> String {
   match self {
+    CutToPlace => "cutToPlace"
+    ExportTrace => "exportTrace"
+    ImportDraft => "importDraft"
+    ReplayReset => "replayReset"
+    ReplayRun => "replayRun"
+    ReplayStep => "replayStep"
+    SetDraft => "setDraft"
     SetTab => "setTab"
     ToggleSelecting => "toggleSelecting"
   }
@@ -1560,6 +1658,13 @@ pub fn TracePanelInput::name(self : TracePanelInput) -> String {
 ///|
 pub fn TracePanelInput::parse(s : String) -> TracePanelInput? {
   match s {
+    "cutToPlace" => Some(CutToPlace)
+    "exportTrace" => Some(ExportTrace)
+    "importDraft" => Some(ImportDraft)
+    "replayReset" => Some(ReplayReset)
+    "replayRun" => Some(ReplayRun)
+    "replayStep" => Some(ReplayStep)
+    "setDraft" => Some(SetDraft)
     "setTab" => Some(SetTab)
     "toggleSelecting" => Some(ToggleSelecting)
     _ => None
@@ -1573,6 +1678,20 @@ pub fn TracePanelInput::parse(s : String) -> TracePanelInput? {
 /// handler added to trace_view.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum TracePanelMsg {
+  /// `@on.click="cutToPlace …"`
+  CutToPlace
+  /// `@on.click="exportTrace …"`
+  ExportTrace
+  /// `@on.click="importDraft …"`
+  ImportDraft
+  /// `@on.click="replayReset …"`
+  ReplayReset
+  /// `@on.click="replayRun …"`
+  ReplayRun
+  /// `@on.click="replayStep …"`
+  ReplayStep
+  /// `@on.input="setDraft …"`
+  SetDraft(String)
   /// `@on.click="setTab …"`
   SetTab(String)
   /// `@on.click="toggleSelecting …"`
@@ -1591,6 +1710,13 @@ pub fn TracePanelMsg::from_dispatch(d : @component.Dispatch) -> TracePanelMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
+      ("cutToPlace", []) => CutToPlace
+      ("exportTrace", []) => ExportTrace
+      ("importDraft", []) => ImportDraft
+      ("replayReset", []) => ReplayReset
+      ("replayRun", []) => ReplayRun
+      ("replayStep", []) => ReplayStep
+      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("setTab", [Str(a0)]) => SetTab(a0)
       ("toggleSelecting", []) => ToggleSelecting
       _ => Unknown(name, args)
@@ -1608,7 +1734,7 @@ pub fn TracePanelMsg::from_dispatch(d : @component.Dispatch) -> TracePanelMsg? {
 impl @component.Fields for TracePanelState with fn schema() {
   @component.SchemaInfo::new(
     name="TracePanel",
-    fingerprint="ee0572760016bab6",
+    fingerprint="5c59ef6fe48d16c0",
     fields=[
       @component.FieldInfo::new("bar", TyComp(Some("RecorderBar"))),
       @component.FieldInfo::new("header", TyComp(Some("TraceHeader"))),
@@ -1622,15 +1748,35 @@ impl @component.Fields for TracePanelState with fn schema() {
       @component.FieldInfo::new("hasTrace", TyBool),
       @component.FieldInfo::new("selecting", TyBool),
       @component.FieldInfo::new("showTrace", TyBool),
+      @component.FieldInfo::new("showReplay", TyBool),
+      @component.FieldInfo::new("showImport", TyBool),
       @component.FieldInfo::new("at", TyInt),
       @component.FieldInfo::new("total", TyInt),
+      @component.FieldInfo::new("notice", TyText),
+      @component.FieldInfo::new("hasNotice", TyBool),
+      @component.FieldInfo::new("draft", TyText),
+      @component.FieldInfo::new("canReplay", TyBool),
+      @component.FieldInfo::new("replaying", TyBool),
+      @component.FieldInfo::new("replayTabClass", TyText),
     ],
-    view_handlers=["setTab", "toggleSelecting"],
-    receives=["setTab", "setAt", "toggleSelecting"],
-    methods=["atWithinTotal", "showTraceNeedsATrace"],
-    invariants=["atWithinTotal", "showTraceNeedsATrace"],
+    view_handlers=[
+      "cutToPlace", "exportTrace", "importDraft", "replayReset", "replayRun", "replayStep",
+      "setDraft", "setTab", "toggleSelecting",
+    ],
+    receives=[
+      "setTab", "setAt", "toggleSelecting", "exportTrace", "importDraft", "cutToPlace",
+      "replayStep", "replayRun", "replayReset",
+    ],
+    methods=[
+      "atWithinTotal", "canReplayNeedsATrace", "hasNoticeTracksNotice", "replayingNeedsAReplay",
+      "showReplayNeedsATrace", "showTraceNeedsATrace",
+    ],
+    invariants=[
+      "atWithinTotal", "canReplayNeedsATrace", "hasNoticeTracksNotice", "replayingNeedsAReplay",
+      "showReplayNeedsATrace", "showTraceNeedsATrace",
+    ],
     domains=[
-      { field: "tab", domain: DOneOf(["record", "trace", "pick"]), },
+      { field: "tab", domain: DOneOf(["record", "trace", "pick", "replay"]), },
       { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],

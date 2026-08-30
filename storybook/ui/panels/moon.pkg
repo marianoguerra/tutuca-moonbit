@@ -22,6 +22,14 @@ import {
   // the Trace tab: the host owns the recorder, because a transactor is the one
   // thing a component cannot reach
   "marianoguerra/tutuca/trace",
+  // The rerun. `Driver` feeds a recording into the transactor the gallery
+  // already has, which is what lets a replay drive the story on screen rather
+  // than a second copy of it mounted somewhere a view would overwrite.
+  "marianoguerra/tutuca/trace/replay",
+  // Somewhere to put a downloaded recording and somewhere to get an uploaded
+  // one from. The SEAM, not the browser half: a headless gallery passes
+  // `MemFiles` and the whole round trip runs under `moon test`.
+  "marianoguerra/tutuca/files",
   "marianoguerra/tutuca/transactor",
   // the Fuzz tab: the host owns the run, for the same reason and one more —
   // shrinking remounts the component, which a component can do even less

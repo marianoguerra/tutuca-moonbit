@@ -103,3 +103,26 @@ test "a place becomes steps a dispatch can be aimed at" {
     "rows[1].label",
   )
 }
+
+///|
+/// `under` and `strip_prefix` are inverses, and a replay into a live tree is
+/// wrong the moment they are not: one wrote the recording's addresses, the
+/// other aims the rerun's dispatches.
+test "under and strip_prefix undo each other" {
+  let base = @trace.parse_place(".s3")
+  for src in [".rows[1].body", ".", ".a.b.c[0]"] {
+    let p = @trace.parse_place(src)
+    let moved = p.under(base)
+    assert_eq(moved.strip_prefix(base), Some(p))
+    assert_true(moved.starts_with(base))
+  }
+}
+
+///|
+/// Under the empty prefix an address is itself — the whole-gallery case, where
+/// a recording's addresses are already the live tree's.
+test "under the root prefix changes nothing" {
+  let root = @trace.Place([])
+  let p = @trace.parse_place(".rows[1]")
+  assert_eq(p.under(root), p)
+}

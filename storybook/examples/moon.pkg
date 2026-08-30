@@ -37,6 +37,9 @@ import {
   // the standard panel layer, so the corpus test drives the whole gallery —
   // tabs, recorder and fuzz runs included
   "marianoguerra/tutuca/storybook/ui/panels",
+  // `MemFiles`: the trace round-trip test downloads a recording and loads it
+  // back, and the seam is what lets that happen with no browser in the room.
+  "marianoguerra/tutuca/files",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/render",

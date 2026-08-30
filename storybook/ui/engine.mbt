@@ -1016,9 +1016,14 @@ pub fn[N : @vdom.DomWalk] mount(
     root_scope.register_intent_handlers(panels.intents)
   }
   let mut idx = 0
+  // Kept rather than dropped: a panel that rebuilds a story's value from a
+  // snapshot needs the scope its components are registered in, and that scope
+  // exists only here. See `story_scope`.
+  story_scopes.val = []
   for sec in sections {
     for s in sec.stories {
       let child = root_scope.enter()
+      story_scopes.val.push(child)
       child.register_components(s.module_.components)
       child.register_macros(s.module_.macros)
       child.register_intent_handlers(s.module_.intents)

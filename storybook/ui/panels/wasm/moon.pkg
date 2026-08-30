@@ -12,6 +12,11 @@ import {
   "marianoguerra/tutuca/storybook/ui" @sbui,
   "marianoguerra/tutuca/storybook/ui/panels",
   "marianoguerra/tutuca/storybook/ui/wasm" @sbw,
+  // The download and the file read behind the Trace tab's Download and Load.
+  // Naming it here is what puts the `tfiles` import in a gallery page's wasm,
+  // so a page that links this layer must supply that namespace and forward
+  // `on_file_text` — see files/wasm/loader.mjs.
+  "marianoguerra/tutuca/files/wasm" @fileswasm,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   // @core.Any: the DOM event the host's exported on_event receives from JS
   "mizchi/js/core",

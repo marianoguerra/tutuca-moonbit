@@ -81,10 +81,11 @@ pub fn mount() -> Unit {
 ```
 
 `storybook/ui/wasm` is a library, not a page. A project still writes an
-executable package that re-exports five entry points — `mount`, `on_event`,
-`on_popstate`, `on_fuzz_tick`, `refresh_margaui` — because a wasm-gc export list
-is per-package `link` configuration and cannot come from a dependency. It also
-writes an `index.html` and a build script. All three are scaffolded:
+executable package that re-exports six entry points — `mount`, `on_event`,
+`on_popstate`, `on_fuzz_tick`, `on_file_text`, `refresh_margaui` — because a
+wasm-gc export list is per-package `link` configuration and cannot come from a
+dependency. It also writes an `index.html` and a build script. All three are
+scaffolded:
 
 ```sh
 tutuca new-storybook my-gallery
@@ -114,6 +115,56 @@ a bundle is a directory with an `index.html` and a `.wasm` beside it.
   against a golden render, a props table — without touching the shell.
 - **`intents~`** (wasm host only) — the page's own request handlers, merged
   after the gallery's URL services on the walking LEX leg.
+
+## The Trace tab's files
+
+The Trace tab downloads a recording and loads one back, and both go through
+`@files.FileService` — a seam, not an FFI call at the call site, because the
+two directions are not alike. Saving is synchronous and one-way; reading is
+asynchronous and can fail, and on wasm-gc a closure cannot cross into JS, so
+the continuation stays MoonBit-side under a number and the page hands the
+number back with the text.
+
+`@panelsw.all` passes `@fileswasm.browser_files()`, so a page that links the
+panel layer **declares the `tfiles` import namespace and must supply it**:
+
+```js
+import { instantiate } from "./app-loader.mjs";
+import { createFilesImports } from "./files-loader.mjs";
+const exports = await instantiate("./page.wasm", (getExports) => ({
+  tfiles: createFilesImports(getExports),
+}));
+```
+
+A namespace of its own rather than four more functions in `tdom`, and that is
+the whole reason it is shaped this way: `tdom` is the namespace every tutuca
+page declares, so growing it breaks every page carrying an older loader — which
+has happened here before. A page that never links the panel layer never
+mentions `tfiles` and is unaffected.
+
+The sixth export, `on_file_text`, is the read's answer. Omit it and Download
+still works — a download is one-way — but Load reads the file and never
+delivers it.
+
+A headless gallery passes nothing and gets `@files.MemFiles`, which records
+what was saved and answers reads from a table. That is what makes the whole
+round trip — record, download, load, replay — a `moon test`.
+
+## Replaying into a story
+
+The Replay tab feeds a recording into the story already on screen rather than
+mounting a second copy of it. It has to: a component's view owns its subtree
+outright, so an app mounted into a node the panel's own view declares is
+destroyed the next time the panel re-renders — which is every step.
+
+So the rerun is a `@replay.Driver` over the gallery's own transactor, based at
+the story's place, and the reader watches the actual instance move.
+
+The consequence is worth stating: a recording of the WHOLE gallery cannot be
+replayed, because seeding it means replacing the root, and the root is where
+the panels live — the Trace tab would replace itself mid-press. Record scoped
+to an example, or cut a recording to a component first; the tab says so rather
+than half-doing it.
 
 ## What the gallery imposes
 

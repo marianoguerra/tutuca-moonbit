@@ -160,10 +160,34 @@ pub let trace_row_spec_source : String =
   #|    hasTrace : Bool
   #|    selecting : Bool
   #|    showTrace : Bool
+  #|    showReplay : Bool
+  #|    showImport : Bool
   #|    at : Int
   #|    total : Int
   #|
-  #|    where tab is one of ["record", "trace", "pick"]
+  #|    notice : String
+  #|    hasNotice : Bool
+  #|    draft : String
+  #|    canReplay : Bool
+  #|    replaying : Bool
+  #|    replayTabClass : String
+  #|
+  #|    where tab is one of ["record", "trace", "pick", "replay"]
+  #|
+  #|    invariant hasNoticeTracksNotice
+  #|      format $'hasNotice says {.hasNotice} for a notice of {len .notice}' {
+  #|        .hasNotice is ((len .notice) > 0)
+  #|      }
+  #|
+  #|    invariant canReplayNeedsATrace
+  #|      format 'the replay controls are live without a trace behind them' {
+  #|        .canReplay implies .hasTrace
+  #|      }
+  #|
+  #|    invariant replayingNeedsAReplay
+  #|      format 'a rerun is playing that was never mounted' {
+  #|        .replaying implies .canReplay
+  #|      }
   #|
   #|    where at >= 0
   #|    where total >= 0
@@ -174,6 +198,11 @@ pub let trace_row_spec_source : String =
   #|    invariant showTraceNeedsATrace
   #|      format 'the trace pane is showing without a trace behind it' {
   #|        .showTrace implies .hasTrace
+  #|      }
+  #|
+  #|    invariant showReplayNeedsATrace
+  #|      format 'the replay pane is showing without a trace behind it' {
+  #|        .showReplay implies .hasTrace
   #|      }
   #|  }
   #|
@@ -194,6 +223,12 @@ pub let trace_row_spec_source : String =
   #|    setTab(String)
   #|    setAt(Int)
   #|    toggleSelecting
+  #|    exportTrace
+  #|    importDraft
+  #|    cutToPlace
+  #|    replayStep
+  #|    replayRun
+  #|    replayReset
   #|
   #|    }
   #|  }
@@ -1830,7 +1865,16 @@ fn trace_panel_main_view_ir() -> @anode.View {
             Field("hasTrace"),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("selectTabClass")), @anode.eid(2)],
+              [@anode.dyn_attr("class", Field("replayTabClass")), @anode.eid(2)],
+              [@anode.text("Replay")],
+            ),
+          ),
+          @anode.text(" "),
+          @anode.show(
+            Field("hasTrace"),
+            @anode.h(
+              "button",
+              [@anode.dyn_attr("class", Field("selectTabClass")), @anode.eid(3)],
               [@anode.dyn_text(Field("selectLabel"))],
             ),
           ),
@@ -1854,6 +1898,23 @@ fn trace_panel_main_view_ir() -> @anode.View {
         ],
       ),
       @anode.text(" "),
+      @anode.comment(
+        " Above every pane, because it is about the thing the reader just did\n       and not about the pane they happen to be looking at. A parse error on\n       import belongs where they can see it without changing tabs. ",
+      ),
+      @anode.text(" "),
+      @anode.show(
+        Field("hasNotice"),
+        @anode.h(
+          "div",
+          [
+            @anode.attr(
+              "class", "trace-notice alert alert-warning text-xs mx-2 py-1",
+            ),
+          ],
+          [@anode.dyn_text(Field("notice"))],
+        ),
+      ),
+      @anode.text(" "),
       @anode.render(3, Field("bar")),
       @anode.text(" "),
       @anode.show(
@@ -1862,6 +1923,34 @@ fn trace_panel_main_view_ir() -> @anode.View {
           "div",
           [@anode.attr("class", "panel-trace flex flex-col gap-2")],
           [
+            @anode.h(
+              "div",
+              [@anode.attr("class", "flex items-center gap-2 px-2 flex-wrap")],
+              [
+                @anode.h(
+                  "button",
+                  [
+                    @anode.attr("class", "btn btn-sm btn-ghost trace-export"),
+                    @anode.eid(4),
+                  ],
+                  [@anode.text("\n        Download\n      ")],
+                ),
+                @anode.text(" "),
+                @anode.comment(
+                  " Enabled by a pick, and the pick is a separate press for the reason\n           the host's comment gives: choosing a place is the thing a person\n           does several times before they mean it. ",
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [
+                    @anode.attr("class", "btn btn-sm btn-ghost trace-cut"),
+                    @anode.eid(5),
+                  ],
+                  [@anode.text("\n        Cut to the picked place\n      ")],
+                ),
+              ],
+            ),
+            @anode.text(" "),
             @anode.render(4, Field("header")),
             @anode.text(" "),
             @anode.render(5, Field("places")),
@@ -1871,15 +1960,143 @@ fn trace_panel_main_view_ir() -> @anode.View {
         ),
       ),
       @anode.text(" "),
+      @anode.comment(
+        " The rerun. It drives the STORY, not a preview of one: the gallery is a\n       single transactor with every story mounted under it, so the events go\n       into the instance already on screen and the reader watches it move. ",
+      ),
+      @anode.text(" "),
+      @anode.show(
+        Field("showReplay"),
+        @anode.h(
+          "div",
+          [@anode.attr("class", "panel-replay flex flex-col gap-2 p-2")],
+          [
+            @anode.show(
+              Field("canReplay"),
+              @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
+                @anode.h(
+                  "button",
+                  [
+                    @anode.attr("class", "btn btn-sm btn-primary replay-step"),
+                    @anode.eid(6),
+                  ],
+                  [@anode.text("Step")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [@anode.attr("class", "btn btn-sm replay-run"), @anode.eid(7)],
+                  [@anode.text("Run")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [
+                    @anode.attr("class", "btn btn-sm btn-ghost replay-reset"),
+                    @anode.eid(8),
+                  ],
+                  [@anode.text("Reset")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "span",
+                  [
+                    @anode.attr(
+                      "class", "text-xs opacity-60 tabular-nums replay-pos self-center",
+                    ),
+                  ],
+                  [
+                    @anode.dyn_text(Field("at"), id=7),
+                    @anode.dyn_text(@anode.const_str(" of "), id=8),
+                    @anode.dyn_text(Field("total"), id=9),
+                  ],
+                ),
+              ]),
+            ),
+            @anode.text(" "),
+            @anode.show(
+              Field("canReplay"),
+              @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
+                @anode.text(
+                  "\n      The story above is the one being driven. A step feeds one whole turn —\n      what the recording drained together — so the app is never left\n      mid-cascade in a state it was never in.\n    ",
+                ),
+              ]),
+            ),
+          ],
+        ),
+      ),
+      @anode.text(" "),
+      @anode.comment(
+        " Import lives on the empty pane as well as the full one: the reader who\n       has no recording is exactly the reader who wants to load somebody\n       else's. ",
+      ),
+      @anode.text(" "),
+      @anode.show(
+        Field("showImport"),
+        @anode.h(
+          "div",
+          [@anode.attr("class", "panel-import flex flex-col gap-2 p-2")],
+          [
+            @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
+              @anode.text("Paste a .trace.jsonl to load it."),
+            ]),
+            @anode.text(" "),
+            @anode.h(
+              "textarea",
+              [
+                @anode.attr("class", "textarea textarea-sm trace-draft"),
+                @anode.attr("rows", "3"),
+                @anode.dyn_attr("value", Field("draft")),
+                @anode.eid(9),
+              ],
+              [],
+            ),
+            @anode.text(" "),
+            @anode.h("div", [], [
+              @anode.h(
+                "button",
+                [
+                  @anode.attr("class", "btn btn-sm trace-import"),
+                  @anode.eid(10),
+                ],
+                [@anode.text("Load")],
+              ),
+            ]),
+          ],
+        ),
+      ),
+      @anode.text(" "),
       @anode.hide(
         Field("hasTrace"),
         @anode.h(
           "div",
-          [@anode.attr("class", "panel-empty text-xs opacity-40 px-2 pb-2")],
+          [@anode.attr("class", "panel-empty flex flex-col gap-2 px-2 pb-2")],
           [
-            @anode.text(
-              "\n    Nothing recorded yet. Press Record, use the component, then stop.\n  ",
+            @anode.h("div", [@anode.attr("class", "text-xs opacity-40")], [
+              @anode.text(
+                "\n      Nothing recorded yet. Press Record, use the component, then stop —\n      or paste a recording somebody else made.\n    ",
+              ),
+            ]),
+            @anode.text(" "),
+            @anode.h(
+              "textarea",
+              [
+                @anode.attr("class", "textarea textarea-sm trace-draft-empty"),
+                @anode.attr("rows", "3"),
+                @anode.dyn_attr("value", Field("draft")),
+                @anode.eid(11),
+              ],
+              [],
             ),
+            @anode.text(" "),
+            @anode.h("div", [], [
+              @anode.h(
+                "button",
+                [
+                  @anode.attr("class", "btn btn-sm trace-import-empty"),
+                  @anode.eid(12),
+                ],
+                [@anode.text("Load")],
+              ),
+            ]),
           ],
         ),
       ),
@@ -1895,7 +2112,35 @@ fn trace_panel_main_view_ir() -> @anode.View {
           @anode.const_str("trace"),
         ]),
       ],
+      [
+        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+          @anode.const_str("replay"),
+        ]),
+      ],
       [@anode.on("click", HandlerName(name="toggleSelecting", ns=Receive))],
+      [@anode.on("click", HandlerName(name="exportTrace", ns=Receive))],
+      [@anode.on("click", HandlerName(name="cutToPlace", ns=Receive))],
+      [@anode.on("click", HandlerName(name="replayStep", ns=Receive))],
+      [@anode.on("click", HandlerName(name="replayRun", ns=Receive))],
+      [@anode.on("click", HandlerName(name="replayReset", ns=Receive))],
+      [
+        @anode.on(
+          "input",
+          HandlerName(name="setDraft", ns=Receive),
+          args=[EventPath(["value"])],
+          binding=@anode.BindString,
+        ),
+      ],
+      [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
+      [
+        @anode.on(
+          "input",
+          HandlerName(name="setDraft", ns=Receive),
+          args=[EventPath(["value"])],
+          binding=@anode.BindString,
+        ),
+      ],
+      [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
     ],
   )
 }
@@ -1940,6 +2185,15 @@ fn trace_panel_inline_update(
         )
         return Unchanged
       }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !s.showTrace || s.hasTrace else {
         @tutuca.invariant_failed(
           handler="toggleSelecting",
@@ -1949,11 +2203,45 @@ fn trace_panel_inline_update(
         )
         return Unchanged
       }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="toggleSelecting",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       let domain_fields = @component.Fields::encode(s)
       match
         @tutuca.first_broken_domain(
           [
-            { field: "tab", domain: DOneOf(["record", "trace", "pick"]), },
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1975,8 +2263,740 @@ fn trace_panel_inline_update(
       }
       Next(s)
     }
+    Receive("setTab", args) => {
+      guard args.get(0) is Some(Str(t_)) else { return Unchanged }
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, tab: t_, }
+      effects.push(() => {
+        ctx.intent(
+          "traceSetTab",
+          [(Str(t_) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="setTab",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="setTab",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("exportTrace", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceExport",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="exportTrace",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="exportTrace",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("importDraft", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceImport",
+          [(Str(s.draft) : @tutuca.Value)],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="importDraft",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="importDraft",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("cutToPlace", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceRelocate",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="cutToPlace",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="cutToPlace",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("replayStep", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceReplayStep",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayStep",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="replayStep",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("replayRun", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceReplayRun",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayRun",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="replayRun",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Receive("replayReset", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => {
+        ctx.intent(
+          "traceReplayReset",
+          [],
+          @tutuca.IntentOpts::new(route=[@tutuca.Leg::Lex]),
+        )
+      })
+      guard s.at.to_double() <= s.total.to_double() else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="atWithinTotal",
+          sentence="parked at " +
+            (Num(s.at.to_double()) : @tutuca.Value).to_display_string() +
+            " of " +
+            (Num(s.total.to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.canReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="canReplayNeedsATrace",
+          sentence="the replay controls are live without a trace behind them",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showTrace || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="showTraceNeedsATrace",
+          sentence="the trace pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard (Bool(s.hasNotice) : @tutuca.Value) ==
+        (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="hasNoticeTracksNotice",
+          sentence="hasNotice says " +
+            (Bool(s.hasNotice) : @tutuca.Value).to_display_string() +
+            " for a notice of " +
+            (Num(s.notice.length().to_double()) : @tutuca.Value).to_display_string(),
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.replaying || s.canReplay else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="replayingNeedsAReplay",
+          sentence="a rerun is playing that was never mounted",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !s.showReplay || s.hasTrace else {
+        @tutuca.invariant_failed(
+          handler="replayReset",
+          pred="showReplayNeedsATrace",
+          sentence="the replay pane is showing without a trace behind it",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      let domain_fields = @component.Fields::encode(s)
+      match
+        @tutuca.first_broken_domain(
+          [
+            {
+              field: "tab",
+              domain: DOneOf(["record", "trace", "pick", "replay"]),
+            },
+            { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
+            { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
+          ],
+          domain_fields,
+        ) {
+        Some(domain_broke) => {
+          @tutuca.domain_failed(
+            handler="replayReset",
+            field=domain_broke.field,
+            sentence=@tutuca.broken_domain_sentence(domain_broke, domain_fields),
+            state=(Map(domain_fields) : @tutuca.Value),
+          )
+          return Unchanged
+        }
+        None => ()
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
     _ => Unhandled
   }
+}
+
+///|
+/// `invariant hasNoticeTracksNotice` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_hasNoticeTracksNotice(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      (Bool(s.hasNotice) : @tutuca.Value) ==
+      (Bool(s.notice.length().to_double() > 0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// `invariant canReplayNeedsATrace` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_canReplayNeedsATrace(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.canReplay || s.hasTrace) : @tutuca.Value)
+}
+
+///|
+/// `invariant replayingNeedsAReplay` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_replayingNeedsAReplay(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.replaying || s.canReplay) : @tutuca.Value)
 }
 
 ///|
@@ -2002,6 +3022,17 @@ fn trace_panel_compute_showTraceNeedsATrace(
 }
 
 ///|
+/// `invariant showReplayNeedsATrace` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn trace_panel_compute_showReplayNeedsATrace(
+  s : TracePanelState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.showReplay || s.hasTrace) : @tutuca.Value)
+}
+
+///|
 /// The `compute` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
 fn trace_panel_inline_compute() -> Map[
@@ -2009,8 +3040,12 @@ fn trace_panel_inline_compute() -> Map[
   (TracePanelState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
 ] {
   {
+    "hasNoticeTracksNotice": trace_panel_compute_hasNoticeTracksNotice,
+    "canReplayNeedsATrace": trace_panel_compute_canReplayNeedsATrace,
+    "replayingNeedsAReplay": trace_panel_compute_replayingNeedsAReplay,
     "atWithinTotal": trace_panel_compute_atWithinTotal,
     "showTraceNeedsATrace": trace_panel_compute_showTraceNeedsATrace,
+    "showReplayNeedsATrace": trace_panel_compute_showReplayNeedsATrace,
   }
 }
 
@@ -2063,7 +3098,18 @@ pub fn trace_panel_component(
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
-          ([SetTab, ToggleSelecting] : Array[TracePanelInput]),
+          (
+            [
+              CutToPlace,
+              ExportTrace,
+              ImportDraft,
+              ReplayReset,
+              ReplayRun,
+              ReplayStep,
+              SetDraft,
+              SetTab,
+              ToggleSelecting,
+            ] : Array[TracePanelInput]),
           TracePanelInput::name,
           f,
         )

@@ -815,7 +815,7 @@ pub fn Inspector::spec_source_panel(Self, comp? : @component.Component) -> @core
 pub fn Inspector::trace_examples(Self) -> Array[@component.ExampleDef]
 pub fn Inspector::trace_header(Self, @trace.Trace) -> @core.Value
 pub fn Inspector::trace_log(Self, @trace.Trace, at? : Int, inputs_only? : Bool, turn? : Int) -> @core.Value
-pub fn Inspector::trace_panel(Self, trace? : @trace.Trace, tab? : String, recording? : Bool, scope? : String, picking? : Bool, selecting? : Bool, at? : Int, selected_place? : String, inputs_only? : Bool, places? : @core.Value) -> @core.Value
+pub fn Inspector::trace_panel(Self, trace? : @trace.Trace, tab? : String, recording? : Bool, scope? : String, picking? : Bool, selecting? : Bool, at? : Int, selected_place? : String, inputs_only? : Bool, places? : @core.Value, notice? : String, draft? : String, can_replay? : Bool, replaying? : Bool) -> @core.Value
 pub fn Inspector::trace_places(Self, @trace.Trace, selected? : String, heading? : String, empty_hint? : String) -> @core.Value
 pub fn Inspector::trace_row(Self, @trace.Event, depth? : Int, current? : Bool) -> @core.Value
 
@@ -1682,6 +1682,13 @@ pub(all) struct TraceLogState {
 pub fn TraceLogState::zero() -> Self
 
 pub(all) enum TracePanelInput {
+  CutToPlace
+  ExportTrace
+  ImportDraft
+  ReplayReset
+  ReplayRun
+  ReplayStep
+  SetDraft
   SetTab
   ToggleSelecting
 } derive(Eq, @debug.Debug)
@@ -1689,6 +1696,13 @@ pub fn TracePanelInput::name(Self) -> String
 pub fn TracePanelInput::parse(String) -> Self?
 
 pub(all) enum TracePanelMsg {
+  CutToPlace
+  ExportTrace
+  ImportDraft
+  ReplayReset
+  ReplayRun
+  ReplayStep
+  SetDraft(String)
   SetTab(String)
   ToggleSelecting
   Unknown(String, Array[@core.Value])
@@ -1699,6 +1713,13 @@ pub(all) enum TracePanelReceive {
   SetTab(String)
   SetAt(Int)
   ToggleSelecting
+  ExportTrace
+  ImportDraft
+  CutToPlace
+  ReplayStep
+  ReplayRun
+  ReplayReset
+  SetDraft(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn TracePanelReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -1718,8 +1739,16 @@ pub(all) struct TracePanelState {
   hasTrace : Bool
   selecting : Bool
   showTrace : Bool
+  showReplay : Bool
+  showImport : Bool
   at : Int
   total : Int
+  notice : String
+  hasNotice : Bool
+  draft : String
+  canReplay : Bool
+  replaying : Bool
+  replayTabClass : String
 }
 pub fn TracePanelState::zero() -> Self
 

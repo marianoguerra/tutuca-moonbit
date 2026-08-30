@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/files/wasm"
+
+import {
+  "marianoguerra/tutuca/files",
+}
+
+// Values
+pub fn browser_files() -> BrowserFiles
+
+pub fn on_file_text(Int, Bool, String) -> Unit
+
+// Errors
+
+// Types and methods
+pub struct BrowserFiles {
+}
+pub impl @files.FileService for BrowserFiles
+
+// Type aliases
+
+// Traits
