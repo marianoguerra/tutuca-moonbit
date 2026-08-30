@@ -238,6 +238,7 @@ fn domain_of(rel : @statedef.Relation) -> @tutuca.Domain {
     RKeyOf(field~) => DKeyOf(field~)
     RMemberOf(field~) => DMemberOf(field~)
     RSubsetOf(field~) => DSubsetOf(field~)
+    RElementOf(field~) => DElementOf(field~)
     RNonEmpty => DNonEmpty
     RLen(inner) => DLen(domain_of(inner))
     ROneOf(ms) => DOneOf(ms)

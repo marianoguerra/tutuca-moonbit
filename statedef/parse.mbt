@@ -758,7 +758,7 @@ fn parse_is_relation(
     }
     "one" => {
       expect_of(p, "one")
-      parse_one_of(p, subject)
+      parse_one_of(p, subject, refs)
     }
     _ =>
       raise Syntax(
@@ -787,8 +787,19 @@ fn expect_of(p : P, word : String) -> Unit raise DefError {
 /// The enum spelling resolves in pass two, where the declarations are in
 /// hand; here it is recorded as the single name it was written as, and the
 /// resolver tells the two apart by whether the state declares that enum.
-fn parse_one_of(p : P, subject : String) -> Relation raise DefError {
+fn parse_one_of(
+  p : P,
+  subject : String,
+  refs : Array[(String, Span)],
+) -> Relation raise DefError {
   match p.peek() {
+    // `.options` — the members are whatever a sibling list holds, which is
+    // what a select field's options are: ordered, so an `Array`, and the
+    // value stored is the option itself.
+    TDot =>
+      RElementOf(
+        field=parse_field_ref(p, "the list `\{subject}` is one of", refs),
+      )
     TLBracket => {
       p.bump() |> ignore
       let out : Array[String] = []
@@ -821,7 +832,7 @@ fn parse_one_of(p : P, subject : String) -> Relation raise DefError {
       let (n, _) = p.ident("an enum name")
       ROneOf([ENUM_MEMBERS_OF + n])
     }
-    _ => p.fail("a `[…]` list or an enum name after `one of`")
+    _ => p.fail("a `[…]` list, a `.field`, or an enum name after `one of`")
   }
 }
 

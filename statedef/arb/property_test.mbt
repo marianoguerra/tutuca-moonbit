@@ -521,3 +521,33 @@ test "the readers the generators skip are still generated callables" {
     assert_false(writers.contains(reader))
   }
 }
+
+///|
+/// `is one of .options` inverts: the draw comes out of the list the clause
+/// names, so a select field's generated writes are options it actually has.
+test "a value bounded by a list draws from that list" {
+  let drawn : Map[String, @tutuca.Value] = {
+    "options": List([Str("main"), Str("format"), Str("raw")]),
+  }
+  guard @arb.value_in_domain(@tutuca.DElementOf(field="options"), drawn)
+    is Some(g) else {
+    fail("no generator for a list-bounded value")
+  }
+  for seed in [1UL, 2UL, 3UL, 4UL, 5UL, 6UL] {
+    let v = g.sample(seed~)
+    assert_true(v == Str("main") || v == Str("format") || v == Str("raw"))
+  }
+  // An empty list bounds nothing a draw could satisfy, so there is no
+  // generator and the caller falls back to the field's own — the same answer
+  // `is key of` gives for an empty map.
+  assert_true(
+    @arb.value_in_domain(@tutuca.DElementOf(field="options"), {
+      "options": List([]),
+    })
+    is None,
+  )
+  // …and so does a list that has not been drawn yet.
+  assert_true(
+    @arb.value_in_domain(@tutuca.DElementOf(field="options"), Map([])) is None,
+  )
+}

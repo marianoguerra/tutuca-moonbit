@@ -85,7 +85,7 @@ pub struct Builtin {
   apply : (Array[Value]) -> Value
 }
 
-pub struct CtxStack(&Ctx)
+pub(all) struct CtxStack(&Ctx)
 pub impl Stack for CtxStack
 
 pub(all) struct DispatchPath {
@@ -117,6 +117,7 @@ pub(all) enum Domain {
   DCompare(op~ : DomainOp, rhs~ : DomainOperand)
   DBetween(lo~ : DomainOperand, hi~ : DomainOperand)
   DOneOf(Array[String])
+  DElementOf(field~ : String)
   DLen(Domain)
   DNonEmpty
   DSubsetOf(field~ : String)

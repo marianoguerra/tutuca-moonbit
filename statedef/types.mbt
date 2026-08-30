@@ -426,6 +426,7 @@ fn domain_src(rel : Relation) -> String {
       ")"
     RKeyOf(field~) => "DKeyOf(field=" + quoted(field) + ")"
     RMemberOf(field~) => "DMemberOf(field=" + quoted(field) + ")"
+    RElementOf(field~) => "DElementOf(field=" + quoted(field) + ")"
     RSubsetOf(field~) => "DSubsetOf(field=" + quoted(field) + ")"
     RNonEmpty => "DNonEmpty"
     RLen(inner) => "DLen(" + domain_src(inner) + ")"

@@ -14,6 +14,7 @@ priv struct GalleryState {
   currentIndex : Int
   currentKey : String
   count : Int
+  choice : String
 }
 
 ///|
@@ -24,6 +25,7 @@ impl @component.Fields for GalleryState with fn encode(s) {
     "currentIndex": Num(s.currentIndex.to_double()),
     "currentKey": Str(s.currentKey),
     "count": Num(s.count.to_double()),
+    "choice": Str(s.choice),
   }
 }
 
@@ -41,6 +43,7 @@ impl @component.Fields for GalleryState with fn decode(f) {
     currentIndex: f.get("currentIndex").unwrap_or(Null).int(),
     currentKey: f.get("currentKey").unwrap_or(Null).str(),
     count: f.get("count").unwrap_or(Null).int(),
+    choice: f.get("choice").unwrap_or(Null).str(),
   })
 }
 
@@ -54,6 +57,7 @@ impl @component.Fields for GalleryState with fn schema() {
       @component.FieldInfo::new("currentIndex", TyInt),
       @component.FieldInfo::new("currentKey", TyText),
       @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("choice", TyText),
     ],
     // What `where currentIndex is index of .items` and friends become. Data
     // rather than a compiled method, because the runtime reads the relation
@@ -65,6 +69,10 @@ impl @component.Fields for GalleryState with fn schema() {
       },
       { field: "currentKey", domain: DKeyOf(field="entries"), },
       { field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), },
+      // `where choice is one of .items` — a select field, whose options are
+      // ORDERED and so a list, and which stores the option rather than its
+      // position.
+      { field: "choice", domain: DElementOf(field="items"), },
     ],
   )
 }
@@ -85,6 +93,7 @@ fn gallery() -> @tutuca.Value {
       currentIndex: 0,
       currentKey: "k0",
       count: 0,
+      choice: "a",
     },
   ).make(Map([]))
 }
@@ -166,8 +175,12 @@ test "a write that keeps every relation true is unaffected by either door" {
   // Two items removed and the index moved into range in one dispatch is not
   // expressible through a mutator, so the honest version is: shrinking a list
   // that the index still fits.
+  //
+  // The remaining item is the one `choice` names, because `items` is now the
+  // subject of two relations — an index into it and the value drawn from it —
+  // and this test is about neither being disturbed.
   let g = send(gallery(), "setCurrentIndex", [Num(0)])
-  let after = send(g, "setItems", [List([Str("only")])])
+  let after = send(g, "setItems", [List([Str("a")])])
   assert_eq(after.field("items").size(), 1)
 }
 
@@ -282,4 +295,37 @@ test "an index has to be whole" {
       fields,
     ),
   )
+}
+
+///|
+/// `where value is one of .options`: the members are what a sibling LIST holds.
+///
+/// The shape `is member of` could not state — a select's options are ordered,
+/// so they are an `Array` and not a `Set` — and the shape `is index of` states
+/// only positionally, while what a select field stores is the option itself.
+test "a value bounded by a sibling list" {
+  // `items` holds "a", "b", "c".
+  assert_eq(send(gallery(), "setChoice", [Str("c")]).field("choice"), Str("c"))
+  // …and one it does not hold is turned down at the write, unchanged.
+  assert_eq(send(gallery(), "setChoice", [Str("z")]).field("choice"), Str("a"))
+}
+
+///|
+test "the list refusal names the list it read" {
+  let refusals = refusals_of(fn() {
+    send(gallery(), "setChoice", [Str("z")]) |> ignore
+  })
+  assert_eq(refusals.length(), 1)
+  assert_true(refusals[0].sentence.contains("`items` does not hold"))
+}
+
+///|
+/// The second door, over the same relation: shrinking the OPTIONS under a
+/// choice that was fine.
+test "removing the option a choice names is caught after the transition" {
+  let picked = send(gallery(), "setChoice", [Str("c")])
+  let after = send(picked, "setItems", [List([Str("a"), Str("b")])])
+  // the write is abandoned whole: the list is what it was, and so is the choice
+  assert_eq(after.field("choice"), Str("c"))
+  assert_eq(after.field("items").size(), 3)
 }

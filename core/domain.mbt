@@ -48,6 +48,15 @@ pub(all) enum Domain {
   /// Inclusive at both ends.
   DBetween(lo~ : DomainOperand, hi~ : DomainOperand)
   DOneOf(Array[String])
+  /// `v` is one of the elements of a sibling LIST field.
+  ///
+  /// The relation `DOneOf` states over a literal set, stated over a list the
+  /// component already holds — which is the shape a select field has: its
+  /// options are ordered, so they are an `Array` and not a `Set`, and the
+  /// value stored is the option itself rather than its index. `DIndexOf`
+  /// covers the positional half of that; this covers the half that keeps the
+  /// VALUE.
+  DElementOf(field~ : String)
   /// The inner domain applies to the value's LENGTH.
   DLen(Domain)
   DNonEmpty
@@ -126,6 +135,18 @@ pub fn domain_holds(
     DOneOf(members) => {
       guard v is Str(s) else { return true }
       members.contains(s)
+    }
+    // By VALUE, not by string: a list of numbers bounds a number the same way
+    // a list of strings bounds a string, and the elements are whatever the
+    // list holds.
+    DElementOf(field~) => {
+      guard fields.get(field) is Some(List(items)) else { return true }
+      for item in items {
+        if item == v {
+          return true
+        }
+      }
+      false
     }
     DNonEmpty =>
       match size_of(v) {
@@ -304,6 +325,8 @@ pub fn domain_sentence(
     DSubsetOf(field=set) => "`\{field}` holds a member `\{set}` does not"
     DOneOf(members) =>
       "`\{field}` is \{got}, and it is one of \{members.map(m => "`" + m + "`").join(", ")}"
+    DElementOf(field=list) =>
+      "`\{field}` is \{got}, which `\{list}` does not hold"
     DNonEmpty => "`\{field}` is empty"
     DLen(inner) =>
       "the length of `\{field}` is \{len_of(field)}, and " +
@@ -391,6 +414,7 @@ fn domain_to_json(d : Domain) -> Json {
     DKeyOf(field~) => of("keyOf", field)
     DMemberOf(field~) => of("memberOf", field)
     DSubsetOf(field~) => of("subsetOf", field)
+    DElementOf(field~) => of("elementOf", field)
     DNonEmpty => Json::object({ "rel": Json::string("nonempty") })
     DLen(inner) =>
       Json::object({
@@ -484,6 +508,11 @@ fn domain_of_json(j : Json) -> Domain? {
     "subsetOf" =>
       match field_of() {
         Some(field) => Some(DSubsetOf(field~))
+        None => None
+      }
+    "elementOf" =>
+      match field_of() {
+        Some(field) => Some(DElementOf(field~))
         None => None
       }
     "nonempty" => Some(DNonEmpty)

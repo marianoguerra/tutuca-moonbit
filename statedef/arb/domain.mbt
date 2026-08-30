@@ -113,6 +113,15 @@ pub fn value_in_domain(
       }
       Some(@gen.one_of_array(members.map(m => (Str(m) : @tutuca.Value))))
     }
+    // The list the value has to come from, drawn from. An empty one bounds
+    // nothing a draw can satisfy — the same answer `DKeyOf` gives for an empty
+    // map: no generator, and the caller falls back to the field's own.
+    @tutuca.DElementOf(field~) => {
+      guard drawn.get(field) is Some(List(items)) && !items.is_empty() else {
+        return None
+      }
+      Some(@gen.one_of_array(items))
+    }
     // A length, not a value. The caller is what knows how to build a
     // collection of a given size, so these two answer the SIZE and
     // `size_in_domain` is what reads them.
@@ -294,6 +303,7 @@ pub fn domain_deps(domain : @tutuca.Domain) -> Array[String] {
     @tutuca.DIndexOf(field~, ..)
     | @tutuca.DKeyOf(field~)
     | @tutuca.DMemberOf(field~)
+    | @tutuca.DElementOf(field~)
     | @tutuca.DSubsetOf(field~) => [field]
     @tutuca.DCompare(rhs~, ..) => operand_dep(rhs)
     @tutuca.DBetween(lo~, hi~) => operand_dep(lo) + operand_dep(hi)

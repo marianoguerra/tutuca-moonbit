@@ -128,6 +128,29 @@ fn check_relation(
       }
       RMemberOf(field~)
     }
+    // `is one of .options` — the value is an element of a sibling list. The
+    // element type has to be able to HOLD the subject: a list of strings
+    // bounds a string, a list of numbers bounds a number, and `Any` bounds
+    // anything, which is what a list of components is from here.
+    RElementOf(field~) => {
+      guard ty_of.get(field) is Some(at) && at is (TList(_) | TAny) else {
+        raise bad(
+          "`one of .\{field}` needs a list, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
+        )
+      }
+      let elem_ty = match at {
+        TList(e) => e
+        _ => TAny
+      }
+      if !(elem_ty is TAny) &&
+        !(subject_ty is TAny) &&
+        show_ty(elem_ty) != show_ty(subject_ty) {
+        raise bad(
+          "`\{subject}` is \{show_ty(subject_ty)} and `.\{field}` holds \{show_ty(elem_ty)}, so no element of it could ever be one",
+        )
+      }
+      RElementOf(field~)
+    }
     RSubsetOf(field~) => {
       guard subject_ty is (TSet | TFlags(_) | TAny) else {
         raise bad(

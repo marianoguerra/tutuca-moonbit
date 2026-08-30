@@ -192,6 +192,7 @@ pub(all) enum Relation {
   RCompare(op~ : CmpOp, rhs~ : Operand)
   RBetween(lo~ : Operand, hi~ : Operand)
   ROneOf(Array[String])
+  RElementOf(field~ : String)
   RLen(Relation)
   RNonEmpty
   RSubsetOf(field~ : String)

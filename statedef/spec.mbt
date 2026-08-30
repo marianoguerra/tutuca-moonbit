@@ -360,6 +360,13 @@ pub(all) enum Relation {
   RBetween(lo~ : Operand, hi~ : Operand)
   /// `is one of ["a", "b"]`, or `is one of Priority` for an enum's cases.
   ROneOf(Array[String])
+  /// `is one of .options` — the value is an element of a sibling LIST.
+  ///
+  /// The same relation `ROneOf` states over a literal set, stated over a list
+  /// the component holds. A select's options are ORDERED, so they are an
+  /// `Array` and not a `Set`, and what is stored is the option rather than its
+  /// position — which is the half `RIndexOf` does not cover.
+  RElementOf(field~ : String)
   /// `len <= 100` / `len between 1 and 10` — the inner relation applies to
   /// the subject's LENGTH rather than to the subject.
   RLen(Relation)

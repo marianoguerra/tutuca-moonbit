@@ -726,11 +726,28 @@ invariant* below.
 | a range, inclusive | `where n between 0 and 100` |
 | a closed set of strings | `where level is one of ["debug", "info"]` |
 | …or an enum's cases | `where level is one of Priority` |
+| …or whatever a sibling list holds | `where value is one of .options` |
 | a collection's length | `where items len <= 100`, `where tags len between 1 and 10` |
 | never empty | `where items is nonempty` |
 
 Anything outside this list is a `pred` or an `invariant`. A clause the block
 cannot state is refused by name, with the vocabulary in the message.
+
+The three list- and set-shaped relations answer three different questions, and
+picking the wrong one is the common mistake:
+
+- `is index of .items` — the field stores a POSITION, and the clause bounds it
+  by the list's length.
+- `is one of .options` — the field stores the VALUE, and the clause bounds it
+  by the list's contents. This is a select field: its options are ordered, so
+  they are an `Array` rather than a `Set`, and what it keeps is the option
+  itself.
+- `is member of .tags` — the field stores a member of a `Set`, where order is
+  not a fact the collection has.
+
+All three read backwards, which is what a generator needs: a draw for
+`is one of .options` comes out of the list, so a run presses values the
+component can actually take instead of spending itself on refusals.
 
 ### What a `where` does at runtime
 

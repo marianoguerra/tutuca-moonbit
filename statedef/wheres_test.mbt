@@ -68,6 +68,7 @@ test "the rest of the vocabulary" {
       #|  lo      : Int
       #|  hi      : Int
       #|  name    : String
+      #|  labels  : Array[String]
       #|
       #|  where sel is index of .items or none
       #|  where tag is member of .tags
@@ -76,6 +77,7 @@ test "the rest of the vocabulary" {
       #|  where items len <= 100
       #|  where tags len between 1 and 10
       #|  where level is one of ["debug", "info"]
+      #|  where name is one of .labels
       #|  where name is one of Priority
       #|  where hi >= .lo
       #|  where lo between 0 and 99
@@ -90,11 +92,14 @@ test "the rest of the vocabulary" {
   assert_true(r[4].relation is RLen(RCompare(op=CLe, rhs=OLit(100.0))))
   assert_true(r[5].relation is RLen(RBetween(lo=OLit(1.0), hi=OLit(10.0))))
   assert_true(r[6].relation is ROneOf(["debug", "info"]))
+  // The list spelling of the same relation: the members are what a sibling
+  // ARRAY holds, which is what a select field's options are.
+  assert_true(r[7].relation is RElementOf(field="labels"))
   // The enum spelling is expanded to its members, which the PARSER could not
   // do — a `where` may be written above the `enum` it names.
-  assert_true(r[7].relation is ROneOf(["Low", "High"]))
-  assert_true(r[8].relation is RCompare(op=CGe, rhs=OField("lo")))
-  assert_true(r[9].relation is RBetween(lo=OLit(0.0), hi=OLit(99.0)))
+  assert_true(r[8].relation is ROneOf(["Low", "High"]))
+  assert_true(r[9].relation is RCompare(op=CGe, rhs=OField("lo")))
+  assert_true(r[10].relation is RBetween(lo=OLit(0.0), hi=OLit(99.0)))
 }
 
 ///|
