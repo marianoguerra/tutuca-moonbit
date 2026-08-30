@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-08-30
+
 ### Fixed
 
 - **A protocol member declared under an alias tripped two rules that read its
