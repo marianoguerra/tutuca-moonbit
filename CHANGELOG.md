@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.41.2] - 2026-08-30
+
+### Fixed
+
+- **The scaffold's own demo component declared no message surface**, so a
+  gallery written by `tutuca new-storybook` opened its Fuzz tab on the hint
+  0.41.1 had just added — the first run of the first thing a new user builds,
+  explaining why nothing could be generated. `Counter` declares
+  `handle Counter { message { inc, dec } }` now, so the tab draws a script,
+  and the block is there to be copied when a component of one's own is added.
+  The `receive`s beside it are the implementations and the `@on.click`s are
+  call sites; neither is a declaration, and the comment in the file says so.
+
 ## [0.41.1] - 2026-08-30
 
 ### Fixed
