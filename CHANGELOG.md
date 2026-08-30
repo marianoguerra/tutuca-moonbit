@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The scaffold README `tutuca new-storybook` writes was a release behind.**
+  0.41.0 embedded a copy showing `panels=@sbui.Panels::none()` — an API the
+  same release renamed — because editing `storybook/template/` and forgetting
+  to re-embed leaves a file that compiles and that
+  `check-storybook-template` does not read: that check drives the SCAFFOLD, not
+  the embed it came from. The scaffolded project itself was correct.
+
+  `storybook-template-embed` now snapshots, regenerates and diffs, the way
+  `skill-embed` has since the same class of miss shipped a broken skill, and
+  `ci` runs it.
+
 ## [0.41.0] - 2026-08-30
 
 ### Added

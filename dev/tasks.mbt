@@ -844,9 +844,9 @@ fn composites() -> Array[(String, String, Array[String])] {
       "ci",
       "gen-views drift + skill-embed drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
       [
-        "gen-views", "skill-embed", "check", "check-examples", "check-skill", "check-guest-list",
-        "check-guest-template", "check-storybook-template", "check-publish-graph",
-        "test", "build",
+        "gen-views", "skill-embed", "storybook-template-embed", "check", "check-examples",
+        "check-skill", "check-guest-list", "check-guest-template", "check-storybook-template",
+        "check-publish-graph", "test", "build",
       ],
     ),
   ]
@@ -1278,6 +1278,12 @@ const SKILL_EMBED : String = "cli/skill_assets_gen.mbt"
 const SKILL_EMBED_WAS : String = "_build/skill_assets_gen.mbt.was"
 
 ///|
+const STORYBOOK_EMBED : String = "cli/storybook_template_gen.mbt"
+
+///|
+const STORYBOOK_EMBED_WAS : String = "_build/storybook_template_gen.mbt.was"
+
+///|
 /// Regenerate the CLI's embedded guest template — the tree `tutuca new-guest`
 /// writes out. Run after editing `guests/template/`, the WIT, or anything under
 /// `guests/counter` that the template borrows; `dist` runs it, and
@@ -1301,8 +1307,21 @@ pub fn guest_template_embed_steps() -> Array[Step] {
 /// everything would otherwise rewrite a file nobody edited.
 pub fn storybook_template_embed_steps() -> Array[Step] {
   [
-    GenStorybookTemplate(to="cli/storybook_template_gen.mbt"),
+    // Snapshot, regenerate, compare — the shape `skill-embed` uses, and for the
+    // reason it was given one: this embed IS what a stranger reads. It shipped
+    // once carrying a scaffold README that showed an API the same release had
+    // renamed, because editing `storybook/template/` and forgetting to re-embed
+    // leaves a file that compiles, passes `check-storybook-template` (which
+    // reads the SCAFFOLD, not this) and is wrong.
+    Mkdir("_build"),
+    Copy(from=STORYBOOK_EMBED, to=STORYBOOK_EMBED_WAS),
+    GenStorybookTemplate(to=STORYBOOK_EMBED),
     Run(moon("fmt", ["fmt"])),
+    Run({
+      label: "drift check · cli/storybook_template_gen.mbt matches storybook/template/",
+      prog: "diff",
+      args: [STORYBOOK_EMBED_WAS, STORYBOOK_EMBED],
+    }),
   ]
 }
 
