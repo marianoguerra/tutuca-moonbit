@@ -314,6 +314,20 @@ export function createTcompImports(getExports) {
   const bundles = new Map(); // id -> { guest, instances: Map<int, {inst, comp}>, next }
   let nextBundle = 1;
   let currentBundle = 0; // the bundle a tcomp call is executing against
+  // Which guest entry point is active. Public property access is a pure,
+  // synchronous transition even for a hand-written guest, so the bridge — not
+  // merely tutuca's source checker — refuses control effects from it.
+  let callPhase = "idle";
+  const inPhase = (phase, fn) => {
+    const previous = callPhase;
+    callPhase = phase;
+    try { return fn(); } finally { callPhase = previous; }
+  };
+  const requirePhase = (name, ...allowed) => {
+    if (!allowed.includes(callPhase)) {
+      throw new Error(`control.${name} is not available during ${callPhase}`);
+    }
+  };
 
   // JS-side arena for compound guest values; entries live for one tcomp call
   const arena = new Map();
@@ -322,6 +336,10 @@ export function createTcompImports(getExports) {
 
   // control messages a guest buffers during one dispatch
   let controlBuf = [];
+  const bufferControl = (name, message) => {
+    requirePhase(name, "dispatch");
+    controlBuf.push(message);
+  };
   // The host's answers to the dispatching component's declared lookups, valid
   // for the duration of one dispatch. Empty outside one.
   let bindings = {};
@@ -399,28 +417,28 @@ export function createTcompImports(getExports) {
   });
   const controlImpl = {
     log: (level, msg) => console.log(`[guest ${level}]`, msg),
-    send: (name, args) => controlBuf.push({ kind: "send", name, args: args.map(guestToJson) }),
-    sendAt: (path, name, args) => controlBuf.push({
+    send: (name, args) => bufferControl("send", { kind: "send", name, args: args.map(guestToJson) }),
+    sendAt: (path, name, args) => bufferControl("send-at", {
       kind: "sendAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
     }),
-    intent: (name, args, opts) => controlBuf.push({
+    intent: (name, args, opts) => bufferControl("intent", {
       kind: "intent", name, args: args.map(guestToJson), opts: optsToJson(opts),
     }),
-    intentAt: (path, name, args, opts) => controlBuf.push({
+    intentAt: (path, name, args, opts) => bufferControl("intent-at", {
       kind: "intentAt", path: path.map(stepToJson), name,
       args: args.map(guestToJson), opts: optsToJson(opts),
     }),
     // Empty `args` means "the ones that arrived" and an empty `route` means
     // "the one the walk is already on"; both are decided host-side, so both
     // cross as they came.
-    forward: (args, opts) => controlBuf.push({
+    forward: (args, opts) => bufferControl("forward", {
       kind: "forward", args: args.map(guestToJson), opts: optsToJson(opts),
     }),
-    reply: (v) => controlBuf.push({ kind: "reply", value: guestToJson(v) }),
-    fail: (e) => controlBuf.push({ kind: "fail", value: guestToJson(e) }),
-    stopPropagation: () => controlBuf.push({ kind: "stopPropagation" }),
+    reply: (v) => bufferControl("reply", { kind: "reply", value: guestToJson(v) }),
+    fail: (e) => bufferControl("fail", { kind: "fail", value: guestToJson(e) }),
+    stopPropagation: () => bufferControl("stop-propagation", { kind: "stopPropagation" }),
     // A reply names itself, so it carries a name the way a `send` does.
-    sendReply: (name, args) => controlBuf.push({
+    sendReply: (name, args) => bufferControl("send-reply", {
       kind: "sendReply", name, args: args.map(guestToJson),
     }),
     // The one import that ANSWERS rather than buffering. `bindings` is what
@@ -428,8 +446,8 @@ export function createTcompImports(getExports) {
     // the guest — see the WIT: everything else here is an effect applied
     // afterwards, and a value a handler is using cannot wait for that.
     //
-    // Both entry points fill it: `dispatch` from the dispatch position,
-    // `call_method` from the render one. A value body that reads `*name` goes
+    // Both entry-point families fill it: handlers from the dispatch position,
+    // render operations from the render one. A value body that reads `*name` goes
     // through the second, and read nil until it did.
     lookup: (name) =>
       Object.hasOwn(bindings, name)
@@ -441,6 +459,7 @@ export function createTcompImports(getExports) {
     // NOW and the child is constructed after the current guest call returns
     // (drainChildren, before the arena clears so captured args stay valid).
     makeInstance: (component, args) => {
+      requirePhase("make-instance", "construct", "dispatch");
       const b = bundles.get(currentBundle);
       const h = b.next++;
       b.instances.set(h, { inst: null, comp: component });
@@ -448,6 +467,7 @@ export function createTcompImports(getExports) {
       return BigInt(h);
     },
     dropInstance: (token) => {
+      requirePhase("drop-instance", "construct", "dispatch");
       bundles.get(currentBundle)?.instances.delete(Number(token));
     },
   };
@@ -485,11 +505,11 @@ export function createTcompImports(getExports) {
   // which is a legible error rather than a missing import.
   const guestImports = {
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.10.0": valuesImpl,
+    "tutuca:component/values@0.11.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.10.0": controlImpl,
+    "tutuca:component/control@0.11.0": controlImpl,
     "tutuca:component/config": configImpl,
-    "tutuca:component/config@0.10.0": configImpl,
+    "tutuca:component/config@0.11.0": configImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
   // functions, so there is nothing for a host to implement and jco asks for
@@ -539,13 +559,13 @@ export function createTcompImports(getExports) {
     getExports().dyncomp_on_loaded(loadId, id, manifestJson);
   };
 
-  // A v0.6 descriptor carries the declaration as data. Views are separate
+  // A v2 descriptor carries the declaration as data. Views are separate
   // HTML assets so authors and editors handle HTML rather than a string inside
   // source code; hydrate them only after untarring, before MoonBit parses the
   // manifest exactly as it did for v0.5's get-manifest result.
   const hydrateManifest = (descriptor, files) => {
     const manifest = structuredClone(descriptor.manifest);
-    if (!manifest || manifest.manifestVersion !== 1) {
+    if (!manifest || manifest.manifestVersion !== 2) {
       throw new Error("tutuca.json has no supported static manifest");
     }
     for (const component of manifest.components ?? []) {
@@ -680,8 +700,11 @@ export function createTcompImports(getExports) {
       currentBundle = bundle;
       const b = bundles.get(bundle);
       const args = Object.entries(JSON.parse(argsJson)).map(([k, v]) => [k, jsonToGuest(v)]);
-      const h = register(bundle, new b.guest.Instance(component, args), component);
-      drainChildren();
+      const h = inPhase("construct", () => {
+        const handle = register(bundle, new b.guest.Instance(component, args), component);
+        drainChildren();
+        return handle;
+      });
       arena.clear();
       return h;
     },
@@ -695,15 +718,19 @@ export function createTcompImports(getExports) {
       return out;
     },
     dispatch: (bundle, handle, bucketInt, name, argsJson, bindingsJson) => {
-      const bucket = ["receive", "intent"][bucketInt] ?? "receive";
       controlBuf = [];
       bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
       const comp = bundles.get(bundle).instances.get(handle).comp;
-      const result = inst.handleEvent(bucket, name, args);
-      drainChildren();
+      const result = inPhase("dispatch", () => {
+        const handled = bucketInt === 1
+          ? inst.handleIntent(name, args)
+          : inst.handleMessage(name, args);
+        drainChildren();
+        return handled;
+      });
       const out = JSON.stringify({
         handled: result.tag !== "unhandled",
         next: result.tag === "changed" ? register(bundle, result.val, comp) : null,
@@ -720,20 +747,61 @@ export function createTcompImports(getExports) {
     // this is the only thing that answers it. Set and cleared around the call
     // exactly as `dispatch` does — a binding must not outlive the call it was
     // resolved for.
-    call_method: (bundle, handle, name, argsJson, bindingsJson) => {
+    render_call: (bundle, handle, category, name, argsJson, bindingsJson) => {
       const inst = instOf(bundle, handle);
       if (!inst) return '';
       bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       const args = JSON.parse(argsJson).map(jsonToGuest);
       try {
-        const v = inst.callMethod(name, args);
-        drainChildren();
+        const v = inPhase("render", () => category === "when"
+          ? { tag: "boolean", val: inst.when(name, args) }
+          : category === "enrich"
+            ? inst.enrich(name, args)
+            : category === "enrichScope"
+              ? inst.enrichScope(name)
+              : inst.compute(name, args));
         const out = JSON.stringify(guestToJson(v));
         arena.clear();
         return out;
       } finally {
         bindings = {};
       }
+    },
+    get_property: (bundle, handle, name) => {
+      const inst = instOf(bundle, handle);
+      if (!inst) return "";
+      let value;
+      try {
+        value = inPhase("property", () => inst.getProperty(name));
+      } catch (error) {
+        console.warn(`tutuca dyncomp: property '${name}' getter refused`, error);
+        value = undefined;
+      }
+      pendingChildren = [];
+      controlBuf = [];
+      const out = value === undefined ? "" : JSON.stringify(guestToJson(value));
+      arena.clear();
+      return out;
+    },
+    set_property: (bundle, handle, name, valueJson) => {
+      const inst = instOf(bundle, handle);
+      if (!inst) return JSON.stringify({ tag: "missing" });
+      const comp = bundles.get(bundle).instances.get(handle).comp;
+      let result;
+      try {
+        result = inPhase("property", () =>
+          inst.setProperty(name, jsonToGuest(JSON.parse(valueJson))));
+      } catch (error) {
+        console.warn(`tutuca dyncomp: property '${name}' refused`, error);
+        result = { tag: "refused" };
+      }
+      pendingChildren = [];
+      controlBuf = [];
+      const out = result.tag === "changed"
+        ? { tag: "changed", next: register(bundle, result.val, comp) }
+        : { tag: result.tag };
+      arena.clear();
+      return JSON.stringify(out);
     },
     // a request the BUNDLE serves; module-scoped, so no instance handle
     serve_intent: (bundle, name, argsJson) => {
@@ -752,8 +820,7 @@ export function createTcompImports(getExports) {
       if (!inst) return -1;
       const comp = bundles.get(bundle).instances.get(handle).comp;
       const v = jsonToGuest(JSON.parse(valueJson));
-      const next = inst.withField(name, v);
-      drainChildren();
+      const next = inPhase("mutation", () => inst.withField(name, v));
       arena.clear();
       return next === undefined ? -1 : register(bundle, next, comp);
     },
@@ -772,8 +839,11 @@ export function createTcompImports(getExports) {
       const b = bundles.get(bundle);
       if (!b) return -1;
       currentBundle = bundle;
-      const inst = b.guest.Instance.restore(component, b64ToBytes(stateB64));
-      drainChildren();
+      const inst = inPhase("construct", () => {
+        const restored = b.guest.Instance.restore(component, b64ToBytes(stateB64));
+        drainChildren();
+        return restored;
+      });
       arena.clear();
       return inst === undefined ? -1 : register(bundle, inst, component);
     },

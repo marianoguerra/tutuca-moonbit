@@ -44,7 +44,7 @@ pub let fuzz_row_spec_source : String =
   #|    after : Component?
   #|    open : Bool
   #|
-  #|    where verb is one of ["send", "intent"]
+  #|    where verb is one of ["send", "intent", "set", "internal"]
   #|
   #|    where at >= 0
   #|    where renders >= 0
@@ -75,14 +75,15 @@ pub let fuzz_row_spec_source : String =
   #|    seed : String
   #|    steps : String
   #|    source : String
-  #|    mutatorsClass : String
-  #|    declaredClass : String
-  #|    eitherClass : String
+  #|    publicClass : String
+  #|    messagesClass : String
+  #|    propertiesClass : String
+  #|    internalClass : String
   #|    playing : Bool
   #|    canRun : Bool
   #|    noPlanHint : String
   #|
-  #|    where source is one of ["mutators", "declared", "either"]
+  #|    where source is one of ["public", "messages", "properties", "internal"]
   #|
   #|    invariant hintExplainsTheDisabledButton
   #|      format 'nothing can be generated, and the panel does not say why' {
@@ -328,7 +329,10 @@ fn fuzz_row_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "verb", domain: DOneOf(["send", "intent"]), },
+            {
+              field: "verb",
+              domain: DOneOf(["send", "intent", "set", "internal"]),
+            },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -617,20 +621,29 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
           @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("mutatorsClass")), @anode.eid(2)],
-              [@anode.text("Generated mutators")],
+              [@anode.dyn_attr("class", Field("publicClass")), @anode.eid(2)],
+              [@anode.text("Public API")],
             ),
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("declaredClass")), @anode.eid(3)],
-              [@anode.text("Declared messages")],
+              [@anode.dyn_attr("class", Field("messagesClass")), @anode.eid(3)],
+              [@anode.text("Messages")],
             ),
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("eitherClass")), @anode.eid(4)],
-              [@anode.text("Either")],
+              [
+                @anode.dyn_attr("class", Field("propertiesClass")),
+                @anode.eid(4),
+              ],
+              [@anode.text("Properties")],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [@anode.dyn_attr("class", Field("internalClass")), @anode.eid(5)],
+              [@anode.text("Internal mutators")],
             ),
           ]),
         ),
@@ -639,7 +652,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
           Field("canRun"),
           @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
             @anode.text(
-              "\n    A mutator is installed for every declared field whether or not anything sends one, so\n    these are the dispatches no hand-written test covers. The same seed always draws the\n    same script — which is what makes a run worth profiling twice.\n  ",
+              "\n    Public API is the default: declared messages and writable properties. Generated field\n    mutators are component internals and appear only in the explicit diagnostic mode. The\n    same seed always draws the same script.\n  ",
             ),
           ]),
         ),
@@ -653,7 +666,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                 "button",
                 [
                   @anode.attr("class", "btn btn-sm btn-primary ctl-play"),
-                  @anode.eid(5),
+                  @anode.eid(6),
                 ],
                 [@anode.text("Play")],
               ),
@@ -665,7 +678,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                 "button",
                 [
                   @anode.attr("class", "btn btn-sm btn-error ctl-stop"),
-                  @anode.eid(6),
+                  @anode.eid(7),
                 ],
                 [@anode.text("Stop")],
               ),
@@ -673,13 +686,13 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.attr("class", "btn btn-sm ctl-step"), @anode.eid(7)],
+              [@anode.attr("class", "btn btn-sm ctl-step"), @anode.eid(8)],
               [@anode.text("Step")],
             ),
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.attr("class", "btn btn-sm ctl-burst"), @anode.eid(8)],
+              [@anode.attr("class", "btn btn-sm ctl-burst"), @anode.eid(9)],
               [@anode.text("Burst")],
             ),
             @anode.text(" "),
@@ -687,7 +700,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
               "button",
               [
                 @anode.attr("class", "btn btn-sm btn-ghost ctl-reset"),
-                @anode.eid(9),
+                @anode.eid(10),
               ],
               [@anode.text("Reset")],
             ),
@@ -708,17 +721,22 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
       ],
       [
         @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
-          @anode.const_str("mutators"),
+          @anode.const_str("public"),
         ]),
       ],
       [
         @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
-          @anode.const_str("declared"),
+          @anode.const_str("messages"),
         ]),
       ],
       [
         @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
-          @anode.const_str("either"),
+          @anode.const_str("properties"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
+          @anode.const_str("internal"),
         ]),
       ],
       [@anode.on("click", HandlerName(name="play", ns=Receive))],
@@ -788,7 +806,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -848,7 +866,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -908,7 +926,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -962,7 +980,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -1016,7 +1034,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -1070,7 +1088,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -1124,7 +1142,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,
@@ -1178,7 +1196,7 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["mutators", "declared", "either"]),
+              domain: DOneOf(["public", "messages", "properties", "internal"]),
             },
           ],
           domain_fields,

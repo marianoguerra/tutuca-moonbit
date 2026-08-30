@@ -220,7 +220,7 @@ pub fn column_of_value(v : @values.Value) -> @tables.Column? {
     _ => id
   }
   let (values, nulls) = col_values_of_value(ty, vh)
-  Some({ id, label, values, nulls })
+  Some({ id, label, values, nulls, })
 }
 
 ///|
@@ -249,14 +249,14 @@ pub fn table_of_value(v : @values.Value) -> @tables.Table? {
       columns.push(c)
     }
   }
-  Some({ columns, row_count: width.reinterpret_as_uint() })
+  Some({ columns, row_count: width.reinterpret_as_uint(), })
 }
 
 ///|
 /// The empty table: no columns, no rows. What a `ty-table` field holds before
 /// anything has been loaded into it.
 pub fn table_empty() -> @tables.Table {
-  { columns: [], row_count: 0 }
+  { columns: [], row_count: 0, }
 }
 
 ///|
@@ -297,7 +297,11 @@ pub fn cell_text(c : @tables.Cell) -> String {
 ///|
 /// The headers, in column order — a row's worth of identity with no data.
 pub fn table_fields(t : @tables.Table) -> Array[@tables.FieldRef] {
-  t.columns.map(c => { id: c.id, label: c.label, ty: col_values_type(c.values) })
+  t.columns.map(c => {
+    id: c.id,
+    label: c.label,
+    ty: col_values_type(c.values),
+  })
 }
 
 ///|
@@ -309,7 +313,7 @@ pub fn table_row(t : @tables.Table, row : Int) -> @tables.Row {
   for i in 0..<t.columns.length() {
     cells.push(table_cell(t, i, row))
   }
-  { fields: table_fields(t), cells, index: row.reinterpret_as_uint() }
+  { fields: table_fields(t), cells, index: row.reinterpret_as_uint(), }
 }
 
 // ── Commands ────────────────────────────────────────────────────────────────
@@ -353,7 +357,7 @@ fn permute_column(c : @tables.Column, order : Array[Int]) -> @tables.Column {
     Strs(a) => Strs(order.map(i => a[i]))
     Bools(a) => Bools(order.map(i => a[i]))
   }
-  { id: c.id, label: c.label, values, nulls: FixedArray::from_array(nulls) }
+  { id: c.id, label: c.label, values, nulls: FixedArray::from_array(nulls), }
 }
 
 ///|
@@ -434,7 +438,7 @@ fn blank_column(
     STR => Strs(Array::make(n, ""))
     BOOL => Bools(Array::make(n, false))
   }
-  { id, label, values, nulls: FixedArray::from_array(nulls) }
+  { id, label, values, nulls: FixedArray::from_array(nulls), }
 }
 
 ///|
@@ -519,7 +523,7 @@ fn append_one(t : @tables.Table, row : Array[@tables.Cell]) -> @tables.Table? {
       nulls: FixedArray::from_array(nulls),
     })
   }
-  Some({ columns: cols, row_count: (table_width(t) + 1).reinterpret_as_uint() })
+  Some({ columns: cols, row_count: (table_width(t) + 1).reinterpret_as_uint(), })
 }
 
 ///|
@@ -546,7 +550,7 @@ pub fn apply_command(
           )
         }
       }
-      Ok({ columns: next.columns, row_count: w.reinterpret_as_uint() })
+      Ok({ columns: next.columns, row_count: w.reinterpret_as_uint(), })
     }
     Clear =>
       Ok({
@@ -620,7 +624,7 @@ pub fn apply_command(
       }
       let cols = t.columns.copy()
       cols[ci] = updated
-      Ok({ columns: cols, row_count: t.row_count })
+      Ok({ columns: cols, row_count: t.row_count, })
     }
     AppendRows(rows) => {
       let mut acc = t
@@ -734,7 +738,7 @@ pub fn apply_command(
         values: old.values,
         nulls: old.nulls,
       }
-      Ok({ columns: cols, row_count: t.row_count })
+      Ok({ columns: cols, row_count: t.row_count, })
     }
     MoveColumn(m) => {
       guard col_index(t, m.column) is Some(ci) else {
@@ -755,7 +759,7 @@ pub fn apply_command(
       if to >= rest.length() {
         cols.push(t.columns[ci])
       }
-      Ok({ columns: cols, row_count: t.row_count })
+      Ok({ columns: cols, row_count: t.row_count, })
     }
     RetypeColumn(r) => {
       guard col_index(t, r.column) is Some(ci) else {
@@ -839,7 +843,7 @@ pub fn apply_command(
         values,
         nulls: FixedArray::from_array(nulls),
       }
-      Ok({ columns: cols, row_count: t.row_count })
+      Ok({ columns: cols, row_count: t.row_count, })
     }
   }
 }

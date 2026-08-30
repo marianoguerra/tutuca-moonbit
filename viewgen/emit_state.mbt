@@ -323,6 +323,21 @@ fn emit_schema(
     }
     out.write_string("    ],\n")
   }
+  if !def.properties.is_empty() {
+    out.write_string("    properties=[\n")
+    for p in def.properties {
+      out.write_string(
+        "      @tutuca.PropertyInfo::{name: " +
+        quote(p.name) +
+        ", ty: " +
+        def.ty_info_src(p.ty) +
+        ", writable: " +
+        p.writable.to_string() +
+        "},\n",
+      )
+    }
+    out.write_string("    ],\n")
+  }
   out.write_string(
     out_channel("view_handlers", surface.inputs.map(i => i.name)),
   )
@@ -356,7 +371,17 @@ fn emit_schema(
         ", express_intents: " +
         str_array_src(p.express_intent.map(m => m.name)) +
         ", properties: [" +
-        typed(p.properties) +
+        p.properties
+        .map(x => {
+          "@tutuca.PropertyInfo::{name: " +
+          quote(x.name) +
+          ", ty: " +
+          def.ty_info_src(x.ty) +
+          ", writable: " +
+          x.writable.to_string() +
+          "}"
+        })
+        .join(", ") +
         "]" +
         ", views: " +
         str_array_src(p.views) +

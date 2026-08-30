@@ -10,35 +10,6 @@ pub(all) enum ServeResult {
 } derive(Debug, Eq)
 
 ///|
-/// The dispatch buckets a handler can live in.
-///
-/// Two, and the difference is who decides where a dispatch lands: `receive`
-/// is an addressed message, which stops at the component it names, and
-/// `intent` is a routed one, which walks until something answers. A case's
-/// position is its wire number.
-pub(all) enum Bucket {
-  RECEIVE
-  INTENT
-} derive(Debug, Eq)
-
-///|
-pub fn Bucket::ordinal(self : Bucket) -> Int {
-  match self {
-    RECEIVE => 0
-    INTENT => 1
-  }
-}
-
-///|
-pub fn Bucket::from(self : Int) -> Bucket {
-  match self {
-    0 => RECEIVE
-    1 => INTENT
-    _ => panic()
-  }
-}
-
-///|
 /// One guest component instance with OPAQUE state. Instances are
 /// immutable by convention: handlers return a NEW instance in `changed`
 /// and the host swaps its wrapper — new instance, new
@@ -53,7 +24,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.10.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.11.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -63,7 +34,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.10.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.11.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -73,7 +44,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.10.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.11.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.
@@ -88,6 +59,17 @@ declare pub fn Instance::dtor(_self : Instance) -> Unit
 pub(all) enum EventResult {
   Unhandled
   Unchanged
+  Changed(Instance)
+} derive(Debug, Eq)
+
+///|
+/// The synchronous public-property write result. `refused` means the
+/// property exists but is read-only or rejected the proposed successor;
+/// `missing` means it is not part of the component's public interface.
+pub(all) enum PropertyResult {
+  Missing
+  Unchanged
+  Refused
   Changed(Instance)
 } derive(Debug, Eq)
 
@@ -140,19 +122,25 @@ declare pub fn Instance::get_field(
 
 ///|
 /// Self in, self out. The result distinguishes "not my name" from a
-/// handled event that caused no state change. The `intent` bucket is how a
-/// guest component hears one raised by a guest child of its own
-/// (`control.intent` one level down); the host walks the route exactly as
-/// it does between host components.
+/// handled message that caused no state change. A guest component hears a
+/// child message here; routed intents use the separate operation below.
 ///
 /// There is no event object: what a handler needs from the DOM event is
 /// named in the view (`@on.input="setName e.value"`) and arrives evaluated
 /// in `args`, which is also how a host component receives it. A DOM object
 /// is not a value, so `event` and `ctx` are not handler arguments in
 /// tutuca; the event itself is reached through the `e.` path.
-declare pub fn Instance::handle_event(
+declare pub fn Instance::handle_message(
   self : Instance,
-  b : Bucket,
+  name : String,
+  args : Array[@values.Value],
+) -> EventResult
+
+///|
+/// The routed twin of `handle-message`, split at the ABI because these are
+/// distinct protocol surfaces rather than cases of a guest-side switch.
+declare pub fn Instance::handle_intent(
+  self : Instance,
   name : String,
   args : Array[@values.Value],
 ) -> EventResult
@@ -161,14 +149,55 @@ declare pub fn Instance::handle_event(
 /// Pure render-time method call (view expressions). Must not mutate.
 ///
 /// The host resolves this component's declared lookups for the RENDER
-/// position before the call, exactly as it does for `handle-event` at the
+/// position before the call, exactly as it does for a handler at the
 /// dispatch one, so a `compute`, a `pred`, a `@when` or an `enrich` that
 /// reads `*name` through `control.lookup` gets an answer rather than nil.
-declare pub fn Instance::call_method(
+declare pub fn Instance::compute(
   self : Instance,
   name : String,
   args : Array[@values.Value],
 ) -> @values.Value
+
+///|
+/// Render-time predicate. Its boolean result is part of the ABI rather
+/// than an interpretation of an arbitrary method value.
+declare pub fn Instance::when(
+  self : Instance,
+  name : String,
+  args : Array[@values.Value],
+) -> Bool
+
+///|
+/// Per-row binding enrichment; returns a map-shaped value.
+declare pub fn Instance::enrich(
+  self : Instance,
+  name : String,
+  args : Array[@values.Value],
+) -> @values.Value
+
+///|
+/// Scope binding enrichment; returns a map-shaped value.
+declare pub fn Instance::enrich_scope(
+  self : Instance,
+  name : String,
+) -> @values.Value
+
+///|
+/// Public abstract property access. Unlike `get-field`, this is the
+/// component's declared interface and may compute a value.
+declare pub fn Instance::get_property(
+  self : Instance,
+  name : String,
+) -> @values.Value?
+
+///|
+/// Pure synchronous public transition. It may update any number of
+/// internal fields and returns a whole immutable successor.
+declare pub fn Instance::set_property(
+  self : Instance,
+  name : String,
+  v : @values.Value,
+) -> PropertyResult
 
 ///|
 /// COW write-through: successor with one field replaced. It is what host

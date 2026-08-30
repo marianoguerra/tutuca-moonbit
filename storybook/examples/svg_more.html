@@ -53,6 +53,13 @@
     /// `setSize` bounds nothing, and a 0-pixel icon renders as an empty box.
     where size between 16 and 80
   }
+
+  /// The operations a host-side tool may drive. View wiring alone is not a
+  /// public protocol declaration, so the fuzzer deliberately ignores names
+  /// that appear only in `@on` attributes.
+  handle BarChart {
+    message { addBar, removeBar, randomize }
+  }
 </script>
 
 <script type="tutuca/script" for="BarChart">

@@ -83,7 +83,8 @@ fn drawer_module() -> @component.ModuleDef {
 /// transitions instead and this fails — which is the moment the examples stop
 /// describing the component and want rewriting.
 test "the fixture really is a component whose invariant nothing enforces" {
-  guard @fuzz.Plan::of_component(drawer_comp()) is Some(plan) else {
+  guard @fuzz.Plan::of_component(drawer_comp(), source=InternalMutators)
+    is Some(plan) else {
     fail("Drawer carries a spec block, so it has a plan")
   }
   // Both rules the block declares are ones `@core.Val` can answer.
@@ -108,18 +109,18 @@ test "the fixture really is a component whose invariant nothing enforces" {
 test "the examples name dispatches the runtime really installs" {
   let installed = @component.schema_mutators(drawer_comp().schema)
   for step in [quiet_step(), broken_step()] {
-    guard step.dispatch is Receive(name, _) else {
+    guard step.dispatch is InternalMutator(Receive(name, _)) else {
       fail("the examples' steps are mutators, and a mutator is a Receive")
     }
     assert_true(installed.contains(name))
   }
   // `declined_step` is the same, and `unclaimed_step` deliberately is NOT:
   // it is the case where nothing answers the name.
-  guard declined_step().dispatch is Receive(n, _) else {
+  guard declined_step().dispatch is InternalMutator(Receive(n, _)) else {
     fail("a mutator is a Receive")
   }
   assert_true(installed.contains(n))
-  guard unclaimed_step().dispatch is Receive(gone, _) else {
+  guard unclaimed_step().dispatch is InternalMutator(Receive(gone, _)) else {
     fail("a mutator is a Receive")
   }
   assert_false(installed.contains(gone))

@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "rusttemplib",
   "doc": "The polyglot proof: the same contract, in Rust, with no tutuca code.",
   "version": "0.4.0",
@@ -109,7 +109,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

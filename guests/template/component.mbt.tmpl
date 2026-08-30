@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.10.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.11.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying how to construct it. Its schema,
 /// docs and view live in `manifest.json` and `views/` as ordinary data.
@@ -37,17 +37,17 @@ impl DynComponent for {{Name}} with fn get_field(self, name) {
 /// field mutator).
 ///
 /// The two buckets, and one question separates them: does the sender know who
-/// handles this? RECEIVE is an ADDRESSED message — what this component's own
+/// handles this? MessageDispatch is an ADDRESSED message — what this component's own
 /// views raise (`@on.click`), what a parent sends it, and every answer it
-/// reads. INTENT is a ROUTED one, offered to each hop of a route until
+/// reads. IntentDispatch is a ROUTED one, offered to each hop of a route until
 /// something replies.
-impl DynComponent for {{Name}} with fn handle(self, bucket, name, args) {
+impl DynComponent for {{Name}} with fn handle_dispatch(self, bucket, name, args) {
   match (bucket, name) {
-    (RECEIVE, "inc") =>
+    (MessageDispatch, "inc") =>
       Changed({ ..self, count: self.count + 1.0 } as &DynComponent)
-    (RECEIVE, "dec") =>
+    (MessageDispatch, "dec") =>
       Changed({ ..self, count: self.count - 1.0 } as &DynComponent)
-    (RECEIVE, "set") =>
+    (MessageDispatch, "set") =>
       match args {
         [@values.Value::Number(n), ..] =>
           Changed({ ..self, count: n } as &DynComponent)
@@ -57,7 +57,7 @@ impl DynComponent for {{Name}} with fn handle(self, bucket, name, args) {
     // `dyn` leg — the parent, then ITS parent — and the first hop that replies
     // ends the walk. This component does not know, and must not know, who
     // answers.
-    (RECEIVE, "announce") => {
+    (MessageDispatch, "announce") => {
       @control.intent("counted", [@values.Value::Number(self.count)], {
         route: [DYN],
         on_ok: None,
@@ -72,8 +72,33 @@ impl DynComponent for {{Name}} with fn handle(self, bucket, name, args) {
 }
 
 ///|
+/// Read the component's public abstract state. This deliberately mirrors the
+/// backing field in the simple case; a derived property can compute instead.
+impl DynComponent for {{Name}} with fn get_property(self, name) {
+  match name {
+    "count" => Some(@values.Value::Number(self.count))
+    _ => None
+  }
+}
+
+///|
+/// A synchronous, pure property transition: old self in, successor out.
+impl DynComponent for {{Name}} with fn set_property(self, name, value) {
+  match (name, value) {
+    ("count", @values.Value::Number(n)) =>
+      if n == self.count {
+        PropertyUnchanged
+      } else {
+        PropertyChanged({ ..self, count: n } as &DynComponent)
+      }
+    ("count", _) => PropertyRefused
+    _ => PropertyMissing
+  }
+}
+
+///|
 /// Answer a `$name` call from a view. Pure: it computes, it does not change.
-impl DynComponent for {{Name}} with fn call_method(self, name, _args) {
+impl DynComponent for {{Name}} with fn render_call(self, name, _args) {
   match name {
     "caption" => @values.Value::Text("\{self.label}: \{self.count}")
     _ => @values.Value::Nil

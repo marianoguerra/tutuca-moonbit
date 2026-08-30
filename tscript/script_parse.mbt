@@ -207,6 +207,8 @@ pub fn kind_word(k : DeclKind) -> String {
     DReceive => "receive"
     DIntent => "intent"
     DCompute => "compute"
+    DGet => "get"
+    DSet => "set"
     DPred => "pred"
     DInvariant => "invariant"
     DEnrich => "enrich"
@@ -220,6 +222,8 @@ fn kind_of_word(w : String) -> DeclKind? {
     "receive" => Some(DReceive)
     "intent" => Some(DIntent)
     "compute" => Some(DCompute)
+    "get" => Some(DGet)
+    "set" => Some(DSet)
     "pred" => Some(DPred)
     "invariant" => Some(DInvariant)
     "enrich" => Some(DEnrich)
@@ -232,7 +236,7 @@ fn kind_of_word(w : String) -> DeclKind? {
 /// True when a declaration's body holds statements rather than one expression.
 fn kind_takes_stmts(k : DeclKind) -> Bool {
   match k {
-    DCompute | DPred | DInvariant => false
+    DCompute | DGet | DPred | DInvariant => false
     _ => true
   }
 }
@@ -374,7 +378,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     }
     _ =>
       p.fail(
-        "a declaration: on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope",
+        "a declaration: receive, intent, compute, get, set, pred, invariant, enrich or enrichScope",
       )
   }
   guard kind_of_word(word) is Some(kind) else {
@@ -382,7 +386,11 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
   }
   let (name, name_span) = p.ident("the name this declaration answers")
   let params : Array[Param] = []
-  if p.peek() is TLParen {
+  if kind is DSet {
+    // Fixed by the property type: every setter body sees exactly `value` and
+    // an author never restates or renames it.
+    params.push({ name: "value", span: name_span, })
+  } else if p.peek() is TLParen {
     p.bump() |> ignore
     if !(p.peek() is TRParen) {
       for ;; {

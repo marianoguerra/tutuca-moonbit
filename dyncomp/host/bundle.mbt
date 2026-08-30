@@ -214,6 +214,7 @@ pub fn register_bundle(
       name=def.name,
       fingerprint="",
       fields=def.field_infos(),
+      properties=def.property_infos(),
       domains=def.domains,
       receives=def.receives,
       intents=def.intents,
@@ -228,7 +229,11 @@ pub fn register_bundle(
         handle_intents: p.handle_intents,
         express_messages: p.express_messages,
         express_intents: p.express_intents,
-        properties: p.properties.map(n => (n, @tutuca.TyAny)),
+        properties: p.properties.map(prop => @tutuca.PropertyInfo::{
+          name: prop.name,
+          ty: ty_info_at(def.types, prop.ty),
+          writable: prop.writable,
+        }),
         views: p.views,
         provides: p.provides.map(n => (n, @tutuca.TyAny)),
         lookups: p.lookups.map(n => (n, @tutuca.TyAny)),
@@ -513,7 +518,7 @@ fn constraint_hint(
 /// declared fields imply — and for nothing else. Any other name falls through
 /// to `get-field`, comes back `Null`, and `Null` in an attribute means "omit
 /// the attribute". So a name missing from `methods` fails NOWHERE: the element
-/// renders without its class, `call-method` is never reached, and the guest has
+/// renders without its class, no fixed render operation is reached, and the guest has
 /// no way to learn it was asked. The silence is the bug; this is what breaks it.
 ///
 /// Advisory, like the other passes — the view is legal and the bundle renders.

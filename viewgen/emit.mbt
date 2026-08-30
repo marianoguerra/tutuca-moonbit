@@ -60,12 +60,22 @@ priv struct Answered {
   whens : Array[String]
   enriches : Array[String]
   enrich_scopes : Array[String]
+  property_get : Array[String]
+  property_set : Array[String]
 }
 
 ///|
 /// What a file with no script block answers: nothing, in every bucket.
 fn Answered::none() -> Answered {
-  { inputs: [], methods: [], whens: [], enriches: [], enrich_scopes: [], }
+  {
+    inputs: [],
+    methods: [],
+    whens: [],
+    enriches: [],
+    enrich_scopes: [],
+    property_get: [],
+    property_set: [],
+  }
 }
 
 ///|
@@ -79,6 +89,8 @@ fn Answered::of(e : @emit_mbt.Emitted?) -> Answered {
     whens: e.answers_whens,
     enriches: e.answers_enriches,
     enrich_scopes: e.answers_enrich_scopes,
+    property_get: e.answers_property_get,
+    property_set: e.answers_property_set,
   }
 }
 

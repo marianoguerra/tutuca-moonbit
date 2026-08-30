@@ -74,8 +74,8 @@ fn manifest_json(
     component_defs.push(entry)
   }
   Json::object({
-    "manifestVersion": Json::number(1),
-    "apiVersion": Json::number(9),
+    "manifestVersion": Json::number(2),
+    "apiVersion": Json::number(10),
     // Named after the ROOT rather than after the `name~` argument: a terminal
     // passes a file's basename and the browser passes the first template's
     // component, and the root is the one answer both of those agree with.
@@ -118,6 +118,27 @@ fn component_json(
         "ty": Json::number(at.to_double()),
         "doc": Json::string(f.doc.unwrap_or("")),
         "required": Json::boolean(false),
+      }),
+    )
+  }
+  let properties : Array[Json] = []
+  for p in g.def.properties {
+    let key = p.ty.show_source()
+    let at = match ty_index.get(key) {
+      Some(i) => i
+      None => {
+        let i = types.length()
+        types.push(ty_entry(p.ty))
+        ty_index[key] = i
+        i
+      }
+    }
+    properties.push(
+      Json::object({
+        "name": Json::string(p.name),
+        "ty": Json::number(at.to_double()),
+        "writable": Json::boolean(p.writable),
+        "doc": Json::string(p.doc.unwrap_or("")),
       }),
     )
   }
@@ -166,6 +187,7 @@ fn component_json(
     "views": Json::array(view_defs),
     "types": Json::array(types),
     "fields": Json::array(fields),
+    "properties": Json::array(properties),
     // The `where` clauses, as the host's own vocabulary rather than as the
     // block's. A card's rules are COMPILED into the module and kept inside it;
     // a domain is not, and this is how it leaves. The host that mounts this

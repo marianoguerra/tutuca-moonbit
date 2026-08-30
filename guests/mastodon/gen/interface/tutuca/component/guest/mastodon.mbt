@@ -286,7 +286,7 @@ fn media_of(items : Array[@values.Value]) -> Array[Media] {
   for v in items {
     match v {
       @values.Value::Text(s) =>
-        out.push({ description: s, preview: "", url: "", kind: "image" })
+        out.push({ description: s, preview: "", url: "", kind: "image", })
       @values.Value::Map(m) =>
         out.push({
           description: str_at(m, "description"),
@@ -333,9 +333,9 @@ fn poll_options_of(items : Array[@values.Value]) -> Array[PollOpt] {
   let out : Array[PollOpt] = []
   for v in items {
     match v {
-      @values.Value::Text(s) => out.push({ title: s, votes: 0 })
+      @values.Value::Text(s) => out.push({ title: s, votes: 0, })
       @values.Value::Map(m) =>
-        out.push({ title: str_at(m, "title"), votes: int_at(m, "votesCount") })
+        out.push({ title: str_at(m, "title"), votes: int_at(m, "votesCount"), })
       _ => ()
     }
   }
@@ -1173,8 +1173,8 @@ impl DynComponent for Poll with fn get_field(self, name) {
 /// here and the bubble is what somebody with a network connection turns into a
 /// `POST /api/v1/polls/:id/votes`. This bundle has no network and is only saying
 /// what happened.
-impl DynComponent for Poll with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE && name == "vote" else { return Unhandled }
+impl DynComponent for Poll with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch && name == "vote" else { return Unhandled }
   guard args is [@values.Value::Number(n), ..] else { return Unhandled }
   let i = n.to_int()
   let d = self.data
@@ -1209,11 +1209,11 @@ impl DynComponent for Poll with fn handle(self, bucket, name, args) {
       live_path: false,
     },
   )
-  Changed({ ..self, data: { ..d, own_votes, } } as &DynComponent)
+  Changed({ ..self, data: { ..d, own_votes, }, } as &DynComponent)
 }
 
 ///|
-impl DynComponent for Poll with fn call_method(self, name, _args) {
+impl DynComponent for Poll with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let n = self.data.options.length()
@@ -1235,27 +1235,27 @@ impl DynComponent for Poll with fn with_field(self, name, v) {
   let d = self.data
   match (name, v) {
     ("statusId", @values.Value::Text(s)) =>
-      Some({ ..self, status_id: s } as &DynComponent)
+      Some({ ..self, status_id: s, } as &DynComponent)
     ("options", @values.Value::List(h)) =>
       Some(
-        { ..self, data: { ..d, options: poll_options_of(list_items(h)) } }
+        { ..self, data: { ..d, options: poll_options_of(list_items(h)), }, }
         as &DynComponent,
       )
     ("votesCount", @values.Value::Number(n)) =>
-      Some({ ..self, data: { ..d, votes: n.to_int() } } as &DynComponent)
+      Some({ ..self, data: { ..d, votes: n.to_int(), }, } as &DynComponent)
     ("votersCount", @values.Value::Number(n)) =>
-      Some({ ..self, data: { ..d, voters: n.to_int() } } as &DynComponent)
+      Some({ ..self, data: { ..d, voters: n.to_int(), }, } as &DynComponent)
     ("expiresAt", @values.Value::Text(s)) =>
-      Some({ ..self, data: { ..d, expires_at: s } } as &DynComponent)
+      Some({ ..self, data: { ..d, expires_at: s, }, } as &DynComponent)
     ("expired", @values.Value::Boolean(b)) =>
-      Some({ ..self, data: { ..d, expired: b } } as &DynComponent)
+      Some({ ..self, data: { ..d, expired: b, }, } as &DynComponent)
     ("multiple", @values.Value::Boolean(b)) =>
-      Some({ ..self, data: { ..d, multiple: b } } as &DynComponent)
+      Some({ ..self, data: { ..d, multiple: b, }, } as &DynComponent)
     ("voted", @values.Value::Boolean(b)) =>
-      Some({ ..self, data: { ..d, voted: b } } as &DynComponent)
+      Some({ ..self, data: { ..d, voted: b, }, } as &DynComponent)
     ("ownVotes", @values.Value::List(h)) =>
       Some(
-        { ..self, data: { ..d, own_votes: ints_of(list_items(h)) } }
+        { ..self, data: { ..d, own_votes: ints_of(list_items(h)), }, }
         as &DynComponent,
       )
     _ => None
@@ -1277,7 +1277,7 @@ fn make_poll(args : Array[(String, @values.Value)]) -> &DynComponent {
       @values.map_set(m, name, v)
     }
   }
-  ({ data: poll_of(Some(@values.Value::Map(m))), status_id } : Poll)
+  ({ data: poll_of(Some(@values.Value::Map(m))), status_id, } : Poll)
   as &DynComponent
 }
 
@@ -1336,7 +1336,7 @@ fn bump(on : Bool) -> Int {
 /// `make-instance` only reserves.
 fn Status::build_poll(self : Status) -> Status {
   guard self.toot.poll.options.length() > 0 else {
-    return { ..self, poll_rows: [] }
+    return { ..self, poll_rows: [], }
   }
   let p = self.toot.poll
   let token = @control.make_instance("Poll", [
@@ -1350,7 +1350,7 @@ fn Status::build_poll(self : Status) -> Status {
     ("voted", vbool(p.voted)),
     ("ownVotes", vlist(p.own_votes.map(vnum))),
   ])
-  { ..self, poll_rows: [token] }
+  { ..self, poll_rows: [token], }
 }
 
 ///|
@@ -1442,8 +1442,8 @@ impl DynComponent for Status with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Status with fn handle(self, bucket, name, _args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Status with fn handle_dispatch(self, bucket, name, _args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     // Optimistic, and announced: the flag is THIS row's — it returns its own
     // successor, and the host writes it home into whatever list holds it — while
@@ -1467,7 +1467,7 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, favourited: !self.favourited } as &DynComponent)
+      Changed({ ..self, favourited: !self.favourited, } as &DynComponent)
     }
     "toggleBoost" => {
       // A post nobody but its author and its mentions can see is a post there
@@ -1489,7 +1489,7 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, reblogged: !self.reblogged } as &DynComponent)
+      Changed({ ..self, reblogged: !self.reblogged, } as &DynComponent)
     }
     "toggleBookmark" => {
       @control.intent(
@@ -1507,13 +1507,13 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, bookmarked: !self.bookmarked } as &DynComponent)
+      Changed({ ..self, bookmarked: !self.bookmarked, } as &DynComponent)
     }
     // Opening a content warning is this reader's, is nobody else's business and
     // is not announced: unlike a favourite there is nothing for a host to write.
     "toggleReveal" => {
       guard self.toot.spoiler != "" else { return Unchanged }
-      Changed({ ..self, revealed: !self.revealed } as &DynComponent)
+      Changed({ ..self, revealed: !self.revealed, } as &DynComponent)
     }
     // There is no composer here, so replying is entirely an announcement: this
     // bundle says which post was answered and whoever holds it opens something.
@@ -1548,7 +1548,7 @@ impl DynComponent for Status with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, folded: !self.folded } as &DynComponent)
+      Changed({ ..self, folded: !self.folded, } as &DynComponent)
     }
     _ => Unhandled
   }
@@ -1562,7 +1562,7 @@ fn Status::can_boost(self : Status) -> Bool {
 }
 
 ///|
-impl DynComponent for Status with fn call_method(self, name, _args) {
+impl DynComponent for Status with fn render_call(self, name, _args) {
   let t = self.toot
   match name {
     // the accessible one-line description of the card, and the `title` a reader
@@ -1598,75 +1598,75 @@ impl DynComponent for Status with fn with_field(self, name, v) {
   let t = self.toot
   match (name, v) {
     ("id", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, id: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, id: s, }, } as &DynComponent)
     ("url", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, url: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, url: s, }, } as &DynComponent)
     ("acct", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, acct: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, acct: s, }, } as &DynComponent)
     ("displayName", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, display_name: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, display_name: s, }, } as &DynComponent)
     ("avatar", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, avatar: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, avatar: s, }, } as &DynComponent)
     ("content", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, content: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, content: s, }, } as &DynComponent)
     ("spoilerText", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, spoiler: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, spoiler: s, }, } as &DynComponent)
     ("createdAt", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, created_at: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, created_at: s, }, } as &DynComponent)
     ("visibility", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, visibility: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, visibility: s, }, } as &DynComponent)
     ("tags", @values.Value::List(h)) =>
       Some(
-        { ..self, toot: { ..t, tags: names_of(list_items(h), "name") } }
+        { ..self, toot: { ..t, tags: names_of(list_items(h), "name"), }, }
         as &DynComponent,
       )
     ("mentions", @values.Value::List(h)) =>
       Some(
-        { ..self, toot: { ..t, mentions: names_of(list_items(h), "acct") } }
+        { ..self, toot: { ..t, mentions: names_of(list_items(h), "acct"), }, }
         as &DynComponent,
       )
     ("media", @values.Value::List(h)) =>
       Some(
-        { ..self, toot: { ..t, media: media_of(list_items(h)) } }
+        { ..self, toot: { ..t, media: media_of(list_items(h)), }, }
         as &DynComponent,
       )
     // rewriting the poll rebuilds its child, since a poll is told at build time
     // what it is
     ("poll", _) =>
       Some(
-        ({ ..self, toot: { ..t, poll: poll_of(Some(v)) } } : Status).build_poll()
+        ({ ..self, toot: { ..t, poll: poll_of(Some(v)), }, } : Status).build_poll()
         as &DynComponent,
       )
     ("repliesCount", @values.Value::Number(n)) =>
-      Some({ ..self, toot: { ..t, replies: n.to_int() } } as &DynComponent)
+      Some({ ..self, toot: { ..t, replies: n.to_int(), }, } as &DynComponent)
     ("reblogsCount", @values.Value::Number(n)) =>
-      Some({ ..self, toot: { ..t, reblogs: n.to_int() } } as &DynComponent)
+      Some({ ..self, toot: { ..t, reblogs: n.to_int(), }, } as &DynComponent)
     ("favouritesCount", @values.Value::Number(n)) =>
-      Some({ ..self, toot: { ..t, favourites: n.to_int() } } as &DynComponent)
+      Some({ ..self, toot: { ..t, favourites: n.to_int(), }, } as &DynComponent)
     ("boostedBy", @values.Value::Text(s)) =>
-      Some({ ..self, toot: { ..t, boosted_by: s } } as &DynComponent)
+      Some({ ..self, toot: { ..t, boosted_by: s, }, } as &DynComponent)
     ("pinned", @values.Value::Boolean(b)) =>
-      Some({ ..self, toot: { ..t, pinned: b } } as &DynComponent)
+      Some({ ..self, toot: { ..t, pinned: b, }, } as &DynComponent)
     ("edited", @values.Value::Boolean(b)) =>
-      Some({ ..self, toot: { ..t, edited: b } } as &DynComponent)
+      Some({ ..self, toot: { ..t, edited: b, }, } as &DynComponent)
     ("depth", @values.Value::Number(n)) =>
-      Some({ ..self, toot: { ..t, depth: n.to_int() } } as &DynComponent)
+      Some({ ..self, toot: { ..t, depth: n.to_int(), }, } as &DynComponent)
     ("favourited", @values.Value::Boolean(b)) =>
-      Some({ ..self, favourited: b } as &DynComponent)
+      Some({ ..self, favourited: b, } as &DynComponent)
     ("reblogged", @values.Value::Boolean(b)) =>
-      Some({ ..self, reblogged: b } as &DynComponent)
+      Some({ ..self, reblogged: b, } as &DynComponent)
     ("bookmarked", @values.Value::Boolean(b)) =>
-      Some({ ..self, bookmarked: b } as &DynComponent)
+      Some({ ..self, bookmarked: b, } as &DynComponent)
     ("revealed", @values.Value::Boolean(b)) =>
-      Some({ ..self, revealed: b } as &DynComponent)
+      Some({ ..self, revealed: b, } as &DynComponent)
     ("focus", @values.Value::Boolean(b)) =>
-      Some({ ..self, focus: b } as &DynComponent)
+      Some({ ..self, focus: b, } as &DynComponent)
     ("foldable", @values.Value::Number(n)) =>
-      Some({ ..self, foldable: n.to_int() } as &DynComponent)
+      Some({ ..self, foldable: n.to_int(), } as &DynComponent)
     ("folded", @values.Value::Boolean(b)) =>
-      Some({ ..self, folded: b } as &DynComponent)
+      Some({ ..self, folded: b, } as &DynComponent)
     ("owned", @values.Value::Boolean(b)) =>
-      Some({ ..self, owned: b } as &DynComponent)
+      Some({ ..self, owned: b, } as &DynComponent)
     // the poll returned a successor and the host is writing it home
     ("pollRows", _) =>
       match tokens_of(v) {
@@ -1720,34 +1720,35 @@ fn make_status(args : Array[(String, @values.Value)]) -> &DynComponent {
   for arg in args {
     let (name, v) = arg
     match (name, v) {
-      ("id", @values.Value::Text(s)) => toot = { ..toot, id: s }
-      ("url", @values.Value::Text(s)) => toot = { ..toot, url: s }
-      ("acct", @values.Value::Text(s)) => toot = { ..toot, acct: s }
+      ("id", @values.Value::Text(s)) => toot = { ..toot, id: s, }
+      ("url", @values.Value::Text(s)) => toot = { ..toot, url: s, }
+      ("acct", @values.Value::Text(s)) => toot = { ..toot, acct: s, }
       ("displayName", @values.Value::Text(s)) =>
-        toot = { ..toot, display_name: s }
-      ("avatar", @values.Value::Text(s)) => toot = { ..toot, avatar: s }
-      ("content", @values.Value::Text(s)) => toot = { ..toot, content: s }
-      ("spoilerText", @values.Value::Text(s)) => toot = { ..toot, spoiler: s }
-      ("createdAt", @values.Value::Text(s)) => toot = { ..toot, created_at: s }
-      ("visibility", @values.Value::Text(s)) => toot = { ..toot, visibility: s }
+        toot = { ..toot, display_name: s, }
+      ("avatar", @values.Value::Text(s)) => toot = { ..toot, avatar: s, }
+      ("content", @values.Value::Text(s)) => toot = { ..toot, content: s, }
+      ("spoilerText", @values.Value::Text(s)) => toot = { ..toot, spoiler: s, }
+      ("createdAt", @values.Value::Text(s)) => toot = { ..toot, created_at: s, }
+      ("visibility", @values.Value::Text(s)) =>
+        toot = { ..toot, visibility: s, }
       ("tags", @values.Value::List(h)) =>
-        toot = { ..toot, tags: names_of(list_items(h), "name") }
+        toot = { ..toot, tags: names_of(list_items(h), "name"), }
       ("mentions", @values.Value::List(h)) =>
-        toot = { ..toot, mentions: names_of(list_items(h), "acct") }
+        toot = { ..toot, mentions: names_of(list_items(h), "acct"), }
       ("media", @values.Value::List(h)) =>
-        toot = { ..toot, media: media_of(list_items(h)) }
-      ("poll", _) => toot = { ..toot, poll: poll_of(Some(v)) }
+        toot = { ..toot, media: media_of(list_items(h)), }
+      ("poll", _) => toot = { ..toot, poll: poll_of(Some(v)), }
       ("repliesCount", @values.Value::Number(n)) =>
-        toot = { ..toot, replies: n.to_int() }
+        toot = { ..toot, replies: n.to_int(), }
       ("reblogsCount", @values.Value::Number(n)) =>
-        toot = { ..toot, reblogs: n.to_int() }
+        toot = { ..toot, reblogs: n.to_int(), }
       ("favouritesCount", @values.Value::Number(n)) =>
-        toot = { ..toot, favourites: n.to_int() }
-      ("boostedBy", @values.Value::Text(s)) => toot = { ..toot, boosted_by: s }
-      ("pinned", @values.Value::Boolean(b)) => toot = { ..toot, pinned: b }
-      ("edited", @values.Value::Boolean(b)) => toot = { ..toot, edited: b }
+        toot = { ..toot, favourites: n.to_int(), }
+      ("boostedBy", @values.Value::Text(s)) => toot = { ..toot, boosted_by: s, }
+      ("pinned", @values.Value::Boolean(b)) => toot = { ..toot, pinned: b, }
+      ("edited", @values.Value::Boolean(b)) => toot = { ..toot, edited: b, }
       ("depth", @values.Value::Number(n)) =>
-        toot = { ..toot, depth: n.to_int() }
+        toot = { ..toot, depth: n.to_int(), }
       ("favourited", @values.Value::Boolean(b)) => favourited = b
       ("reblogged", @values.Value::Boolean(b)) => reblogged = b
       ("bookmarked", @values.Value::Boolean(b)) => bookmarked = b
@@ -1922,7 +1923,7 @@ impl DynComponent for Scope with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Scope with fn call_method(self, name, _args) {
+impl DynComponent for Scope with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let parts : Array[String] = []
@@ -1955,13 +1956,13 @@ impl DynComponent for Scope with fn call_method(self, name, _args) {
 impl DynComponent for Scope with fn with_field(self, name, v) {
   match (name, v) {
     ("truncated", @values.Value::Boolean(b)) =>
-      Some({ ..self, truncated: b } as &DynComponent)
+      Some({ ..self, truncated: b, } as &DynComponent)
     ("truncatedBy", @values.Value::Text(s)) =>
-      Some({ ..self, truncated_by: s } as &DynComponent)
+      Some({ ..self, truncated_by: s, } as &DynComponent)
     ("more", @values.Value::Boolean(b)) =>
-      Some({ ..self, more: b } as &DynComponent)
+      Some({ ..self, more: b, } as &DynComponent)
     ("notes", @values.Value::List(h)) =>
-      Some({ ..self, notes: strs_of(list_items(h)) } as &DynComponent)
+      Some({ ..self, notes: strs_of(list_items(h)), } as &DynComponent)
     _ => None
   }
 }
@@ -1982,7 +1983,7 @@ fn make_scope(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  ({ truncated, truncated_by, more, notes } : Scope) as &DynComponent
+  ({ truncated, truncated_by, more, notes, } : Scope) as &DynComponent
 }
 
 ///|
@@ -2090,7 +2091,7 @@ fn paging(page : Int, total : Int, page_size : Int) -> Pager {
   let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
   let last = if on { (total + size - 1) / size - 1 } else { 0 }
   let page = if page < 0 { 0 } else if page > last { last } else { page }
-  { page, size, on, total }
+  { page, size, on, total, }
 }
 
 ///|
@@ -2194,7 +2195,7 @@ fn Pager::answer(self : Pager, name : String) -> @values.Value? {
 }
 
 ///|
-/// Either the pager's answer or nothing, as a `call_method` has to answer.
+/// Either the pager's answer or nothing, as a `compute` has to answer.
 fn Pager::answer_or_nil(self : Pager, name : String) -> @values.Value {
   match self.answer(name) {
     Some(v) => v
@@ -2384,18 +2385,18 @@ impl DynComponent for Thread with fn get_field(self, name) {
 /// thing that can act on it. A favourite, a boost and a vote are handled by
 /// nobody on the way up: this bundle cannot write to a server, so the component
 /// above is the one that turns them into API calls.
-impl DynComponent for Thread with fn handle(self, bucket, name, args) {
+impl DynComponent for Thread with fn handle_dispatch(self, bucket, name, args) {
   // The pager's four buttons are the only input of its own a thread has;
   // everything else that reaches it came up from a row. A page moves nothing
   // but which rows are drawn, so no row is rebuilt and nothing is announced —
   // there is nobody above who could act on "the reader turned a page".
-  if bucket is RECEIVE && is_page_message(name) {
+  if bucket is MessageDispatch && is_page_message(name) {
     return match self.pager().moved(name) {
       Some(page) => Changed({ ..self, page, } as &DynComponent)
       None => Unchanged
     }
   }
-  guard bucket is INTENT else { return Unhandled }
+  guard bucket is IntentDispatch else { return Unhandled }
   guard args is [@values.Value::Text(id), ..] else { return Unhandled }
   guard id != "" && self.has(id) else { return Unchanged }
   match name {
@@ -2409,7 +2410,7 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
       let on = name == "folded"
       guard self.collapsed.contains(id) != on else { return Unchanged }
       Changed(
-        { ..self, collapsed: with_id(self.collapsed, id, on) } as &DynComponent,
+        { ..self, collapsed: with_id(self.collapsed, id, on), } as &DynComponent,
       )
     }
     _ => Unhandled
@@ -2417,7 +2418,7 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
 }
 
 ///|
-impl DynComponent for Thread with fn call_method(self, name, _args) {
+impl DynComponent for Thread with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let total = self.posts.length()
@@ -2461,14 +2462,14 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
       Some(next.build_rows() as &DynComponent)
     }
     ("focus", @values.Value::Text(s)) =>
-      Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
+      Some(({ ..self, focus: s, } : Thread).build_rows() as &DynComponent)
     ("scope", @values.Value::Instance(t)) =>
-      Some({ ..self, scope: t } as &DynComponent)
+      Some({ ..self, scope: t, } as &DynComponent)
     // Asking for a page size is asking to be paged, so it starts at the first
     // page: the window a host just chose is not one this reader has been
     // anywhere in.
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the list it was SHOWN — `shown()` — so it goes home
     // through the same function that decided those positions.
@@ -2551,7 +2552,7 @@ priv struct Timeline {
 fn Timeline::make_row(self : Timeline, i : Int) -> UInt64 {
   @control.make_instance(
     "Status",
-    child_args({ ..self.posts[i], depth: 0 }, focus=false, foldable=0),
+    child_args({ ..self.posts[i], depth: 0, }, focus=false, foldable=0),
   )
 }
 
@@ -2626,8 +2627,8 @@ impl DynComponent for Timeline with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Timeline with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Timeline with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     // The filter does NOT rebuild the rows: the children are built once and the
     // filter chooses among them, so what a reader did to a row is still there
@@ -2639,17 +2640,17 @@ impl DynComponent for Timeline with fn handle(self, bucket, name, args) {
       match args {
         [@values.Value::Text(s), ..] => {
           guard s != self.query else { return Unchanged }
-          Changed({ ..self, query: s, page: 0 } as &DynComponent)
+          Changed({ ..self, query: s, page: 0, } as &DynComponent)
         }
         _ => Unhandled
       }
     "clearQuery" => {
       guard self.query != "" else { return Unchanged }
-      Changed({ ..self, query: "", page: 0 } as &DynComponent)
+      Changed({ ..self, query: "", page: 0, } as &DynComponent)
     }
     "toggleMediaOnly" =>
       Changed(
-        { ..self, media_only: !self.media_only, page: 0 } as &DynComponent,
+        { ..self, media_only: !self.media_only, page: 0, } as &DynComponent,
       )
     // Paging is not a filter: it changes which rows are drawn and nothing about
     // which rows there are, so no row is rebuilt.
@@ -2663,7 +2664,7 @@ impl DynComponent for Timeline with fn handle(self, bucket, name, args) {
 }
 
 ///|
-impl DynComponent for Timeline with fn call_method(self, name, _args) {
+impl DynComponent for Timeline with fn render_call(self, name, _args) {
   match name {
     "countLabel" => {
       let total = self.posts.length()
@@ -2684,20 +2685,20 @@ impl DynComponent for Timeline with fn call_method(self, name, _args) {
 impl DynComponent for Timeline with fn with_field(self, name, v) {
   match (name, v) {
     ("title", @values.Value::Text(s)) =>
-      Some({ ..self, title: s } as &DynComponent)
+      Some({ ..self, title: s, } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: toots_of(h), page: 0 } : Timeline).build_rows()
+        ({ ..self, posts: toots_of(h), page: 0, } : Timeline).build_rows()
         as &DynComponent,
       )
     ("query", @values.Value::Text(s)) =>
-      Some({ ..self, query: s, page: 0 } as &DynComponent)
+      Some({ ..self, query: s, page: 0, } as &DynComponent)
     ("mediaOnly", @values.Value::Boolean(b)) =>
-      Some({ ..self, media_only: b, page: 0 } as &DynComponent)
+      Some({ ..self, media_only: b, page: 0, } as &DynComponent)
     ("scope", @values.Value::Instance(t)) =>
-      Some({ ..self, scope: t } as &DynComponent)
+      Some({ ..self, scope: t, } as &DynComponent)
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     ("rows", _) =>
       match write_rows(self.children, self.shown(), v) {
         Some(children) => Some({ ..self, children, } as &DynComponent)
@@ -2782,7 +2783,7 @@ priv struct Profile {
 fn Profile::make_row(self : Profile, i : Int) -> UInt64 {
   @control.make_instance(
     "Status",
-    child_args({ ..self.posts[i], depth: 0 }, focus=false, foldable=0),
+    child_args({ ..self.posts[i], depth: 0, }, focus=false, foldable=0),
   )
 }
 
@@ -2882,12 +2883,12 @@ impl DynComponent for Profile with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
+impl DynComponent for Profile with fn handle_dispatch(self, bucket, name, _args) {
   match (bucket, name) {
     // Same shape as a row's favourite: the flag moves, the follower count
     // follows it through `bump`, and the bubble is what a host would turn into
     // the follow it alone is allowed to write.
-    (RECEIVE, "toggleFollow") => {
+    (MessageDispatch, "toggleFollow") => {
       @control.intent(
         if self.following {
           "unfollowed"
@@ -2903,10 +2904,10 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, following: !self.following } as &DynComponent)
+      Changed({ ..self, following: !self.following, } as &DynComponent)
     }
     // The pager under the account's posts.
-    (RECEIVE, _) => {
+    (MessageDispatch, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -2922,7 +2923,7 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
 }
 
 ///|
-impl DynComponent for Profile with fn call_method(self, name, _args) {
+impl DynComponent for Profile with fn render_call(self, name, _args) {
   match name {
     "summary" =>
       vtext(
@@ -2946,38 +2947,38 @@ impl DynComponent for Profile with fn call_method(self, name, _args) {
 impl DynComponent for Profile with fn with_field(self, name, v) {
   match (name, v) {
     ("displayName", @values.Value::Text(s)) =>
-      Some({ ..self, display_name: s } as &DynComponent)
+      Some({ ..self, display_name: s, } as &DynComponent)
     ("acct", @values.Value::Text(s)) =>
-      Some({ ..self, acct: s } as &DynComponent)
+      Some({ ..self, acct: s, } as &DynComponent)
     ("note", @values.Value::Text(s)) =>
-      Some({ ..self, note: s } as &DynComponent)
+      Some({ ..self, note: s, } as &DynComponent)
     ("avatar", @values.Value::Text(s)) =>
-      Some({ ..self, avatar: s } as &DynComponent)
+      Some({ ..self, avatar: s, } as &DynComponent)
     ("header", @values.Value::Text(s)) =>
-      Some({ ..self, header: s } as &DynComponent)
+      Some({ ..self, header: s, } as &DynComponent)
     ("followersCount", @values.Value::Number(n)) =>
-      Some({ ..self, followers: n.to_int() } as &DynComponent)
+      Some({ ..self, followers: n.to_int(), } as &DynComponent)
     ("followingCount", @values.Value::Number(n)) =>
-      Some({ ..self, follows: n.to_int() } as &DynComponent)
+      Some({ ..self, follows: n.to_int(), } as &DynComponent)
     ("statusesCount", @values.Value::Number(n)) =>
-      Some({ ..self, statuses: n.to_int() } as &DynComponent)
+      Some({ ..self, statuses: n.to_int(), } as &DynComponent)
     ("createdAt", @values.Value::Text(s)) =>
-      Some({ ..self, created_at: s } as &DynComponent)
+      Some({ ..self, created_at: s, } as &DynComponent)
     ("bot", @values.Value::Boolean(b)) =>
-      Some({ ..self, bot: b } as &DynComponent)
+      Some({ ..self, bot: b, } as &DynComponent)
     ("locked", @values.Value::Boolean(b)) =>
-      Some({ ..self, locked: b } as &DynComponent)
+      Some({ ..self, locked: b, } as &DynComponent)
     ("following", @values.Value::Boolean(b)) =>
-      Some({ ..self, following: b } as &DynComponent)
+      Some({ ..self, following: b, } as &DynComponent)
     ("fields", @values.Value::List(h)) =>
-      Some({ ..self, fields: fields_of(list_items(h)) } as &DynComponent)
+      Some({ ..self, fields: fields_of(list_items(h)), } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: toots_of(h), page: 0 } : Profile).build_rows()
+        ({ ..self, posts: toots_of(h), page: 0, } : Profile).build_rows()
         as &DynComponent,
       )
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the page it was shown, so it goes home through the
     // same function that decided those positions.

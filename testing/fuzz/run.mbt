@@ -5,7 +5,7 @@
 /// What one dispatch did.
 pub(all) struct Step {
   /// What was sent.
-  dispatch : @component.Dispatch
+  dispatch : Action
   /// Everything the runtime refused while it was delivered.
   ///
   /// A refusal is not a failure. It is the runtime declining a transition
@@ -71,7 +71,7 @@ pub(all) struct Run {
   /// everything up to and including the breaking one when it did not.
   steps : Array[Step]
   /// The script as drawn, which is longer than `steps` after a break.
-  script : Array[@component.Dispatch]
+  script : Array[Action]
   seed : UInt64
 }
 
@@ -79,7 +79,7 @@ pub(all) struct Run {
 /// The dispatches that reproduce this run's outcome — its failing prefix.
 ///
 /// The whole script when it held, since holding is about all of it.
-pub fn Run::reproducer(self : Run) -> Array[@component.Dispatch] {
+pub fn Run::reproducer(self : Run) -> Array[Action] {
   match self.outcome {
     Broke(at~, ..) | Disagreed(at~, ..) => self.script[:at + 1].to_owned()
     _ => self.script
@@ -147,7 +147,7 @@ pub fn[N] settled(
 pub fn[N] Plan::step(
   self : Plan,
   h : @harness.Harness[N],
-  d : @component.Dispatch,
+  d : Action,
   at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
 ) -> Step raise {
@@ -166,10 +166,17 @@ pub fn[N] Plan::step(
   // component was ever in.
   let refused = @harness.refusals_while(() => {
     match d {
-      Receive(name, args) =>
+      Message(Receive(name, args)) =>
         h.app.transactor.push_send(at, name, args) |> ignore
-      Intent(name, args) =>
+      Message(Intent(name, args)) =>
         h.app.transactor.push_intent(at, name, args) |> ignore
+      InternalMutator(Receive(name, args)) =>
+        h.app.transactor.push_send(at, name, args, provenance=Diagnostic)
+        |> ignore
+      InternalMutator(Intent(name, args)) =>
+        h.app.transactor.push_intent(at, name, args) |> ignore
+      SetProperty(name, value) =>
+        h.app.transactor.set_property(at, name, value) |> ignore
     }
     h.app.transactor.settle() |> ignore
   })
@@ -234,7 +241,7 @@ fn Plan::disagreements(
 pub fn[N] Plan::run(
   self : Plan,
   h : @harness.Harness[N],
-  script : Array[@component.Dispatch],
+  script : Array[Action],
   seed? : UInt64 = 0,
   at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
@@ -293,7 +300,7 @@ pub fn[N] Plan::run_live(
   read? : Reader,
 ) -> Run raise {
   let out : Array[Step] = []
-  let script : Array[@component.Dispatch] = []
+  let script : Array[Action] = []
   for i in 0..<steps {
     // The state the NEXT dispatch is drawn against: what the component is
     // sitting in right now, which after step zero is what the run itself put

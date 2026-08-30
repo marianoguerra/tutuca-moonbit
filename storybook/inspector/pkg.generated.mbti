@@ -685,9 +685,10 @@ pub(all) struct FuzzControlsState {
   seed : String
   steps : String
   source : String
-  mutatorsClass : String
-  declaredClass : String
-  eitherClass : String
+  publicClass : String
+  messagesClass : String
+  propertiesClass : String
+  internalClass : String
   playing : Bool
   canRun : Bool
   noPlanHint : String
@@ -796,9 +797,9 @@ pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Component
 pub fn Inspector::fuzz_controls(Self, seed~ : String, steps~ : String, source~ : String, playing? : Bool, can_run? : Bool, no_plan_hint? : String) -> @core.Value
 pub fn Inspector::fuzz_examples(Self) -> Array[@component.ExampleDef]
 pub fn Inspector::fuzz_log(Self, Array[@fuzz.Step], at? : Int, planned? : Int) -> @core.Value
-pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@component.Dispatch]) -> @core.Value
+pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
 pub fn Inspector::fuzz_row(Self, @fuzz.Step, at~ : Int, current? : Bool) -> @core.Value
-pub fn Inspector::fuzz_verdict(Self, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@component.Dispatch]) -> @core.Value
+pub fn Inspector::fuzz_verdict(Self, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
 pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
 pub fn Inspector::module_(Self) -> @component.ModuleDef

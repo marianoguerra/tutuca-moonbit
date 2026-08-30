@@ -110,7 +110,9 @@ const make = (component, args = {}) => {
 /// Dispatch, settle, and answer the successor (or undefined when unchanged).
 const dispatch = (inst, bucket, name, args = []) => {
   emitted = [];
-  const result = inst.handleEvent(bucket, name, args);
+  const result = bucket === 'intent'
+    ? inst.handleIntent(name, args)
+    : inst.handleMessage(name, args);
   drain();
   return result.tag === 'changed' ? result.val : undefined;
 };
@@ -132,9 +134,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.10.0': values,
+    'tutuca:component/values@0.11.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.10.0': control,
+    'tutuca:component/control@0.11.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -144,7 +146,7 @@ before(async () => {
 });
 
 test('the static manifest declares eight nesting components', { skip: !built }, () => {
-  assert.equal(manifest.apiVersion, 9);
+  assert.equal(manifest.apiVersion, 10);
   assert.equal(manifest.moduleName, 'slacklib');
   // nothing ambient — no clock for the timestamps, no entropy for the ids;
   // the pictures' origins are the host's to allow (`allowing_external_urls`)
@@ -202,17 +204,17 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
 test('a segment composes its classes from independent flags', { skip: !built }, () => {
   const plain = make('Segment', { text: 'plain text' });
   assert.deepEqual(plain.getField('text'), text('plain text'));
-  assert.equal(plain.callMethod('segClass', []).val, 'seg');
+  assert.equal(plain.compute('segClass', []).val, 'seg');
 
   const both = make('Segment', { text: 'x', bold: true, code: true });
   assert.equal(
-    both.callMethod('segClass', []).val,
+    both.compute('segClass', []).val,
     'seg font-bold font-mono text-sm bg-base-200 rounded px-1',
   );
 
   // every field is scalar, so the host's generated mutators all land
   const italic = plain.withField('italic', bool(true));
-  assert.match(italic.callMethod('segClass', []).val, /italic/);
+  assert.match(italic.compute('segClass', []).val, /italic/);
   assert.equal(plain.withField('segments', text('nope')), undefined);
 });
 
@@ -243,11 +245,11 @@ test('a reaction changes its own count and tells whoever is above', { skip: !bui
 
 test('a message builds its body out of segments and reads its own timestamp', { skip: !built }, () => {
   const m = make('Message', initArgs('Message', 'root'));
-  assert.deepEqual(m.callMethod('authorLabel', []), text('@Ada Lovelace'));
-  assert.deepEqual(m.callMethod('channelLabel', []), text('#general'));
+  assert.deepEqual(m.compute('authorLabel', []), text('@Ada Lovelace'));
+  assert.deepEqual(m.compute('channelLabel', []), text('#general'));
   // sliced out of the data it arrived with — no clock anywhere
-  assert.deepEqual(m.callMethod('timeLabel', []), text('09:12'));
-  assert.deepEqual(m.callMethod('hasChannel', []), bool(true));
+  assert.deepEqual(m.compute('timeLabel', []), text('09:12'));
+  assert.deepEqual(m.compute('hasChannel', []), bool(true));
 
   // `body` accepted a bare segment list and wrapped it in a RichText
   const body = childOf(m, 'body');
@@ -261,13 +263,13 @@ test('a message builds its body out of segments and reads its own timestamp', { 
 
   // a reply is compact, and compact is what drops the channel badge
   const reply = make('Message', initArgs('Message', 'reply'));
-  assert.deepEqual(reply.callMethod('hasChannel', []), bool(false));
+  assert.deepEqual(reply.compute('hasChannel', []), bool(false));
   assert.deepEqual(reply.getField('compact'), bool(true));
 
   // and a message with nothing in it still renders something sayable
   const blank = make('Message');
-  assert.deepEqual(blank.callMethod('authorLabel', []), text('@someone'));
-  assert.deepEqual(blank.callMethod('timeLabel', []), text(''));
+  assert.deepEqual(blank.compute('authorLabel', []), text('@someone'));
+  assert.deepEqual(blank.compute('timeLabel', []), text(''));
 });
 
 test('a message draws its picture over the initials it always has', { skip: !built }, () => {
@@ -275,7 +277,7 @@ test('a message draws its picture over the initials it always has', { skip: !bui
   // it is what shows for a message that has none — and for one whose fetch
   // fails, which an untrusted view has no `onerror` to notice.
   const m = make('Message', initArgs('Message', 'root'));
-  assert.deepEqual(m.callMethod('initials', []), text('AL'));
+  assert.deepEqual(m.compute('initials', []), text('AL'));
 
   // One initial per word, which is the rule `bluesky/Post` uses: a host drawing
   // a Slack card beside a Bluesky one must not draw two kinds of disc. A
@@ -288,20 +290,20 @@ test('a message draws its picture over the initials it always has', { skip: !bui
     ['U0123ABCD', 'U'],
   ]) {
     assert.deepEqual(
-      make('Message', { author: name }).callMethod('initials', []),
+      make('Message', { author: name }).compute('initials', []),
       text(want), name);
   }
 
   // Nothing to take initials from is drawn as a placeholder rather than as an
   // empty circle, which would read as a rendering bug.
-  assert.deepEqual(make('Message').callMethod('initials', []), text('?'));
+  assert.deepEqual(make('Message').compute('initials', []), text('?'));
 });
 
 test('a picture is a path under one of the three origins the view names', { skip: !built }, () => {
   const paths = (avatar) => {
     const m = make('Message', { author: 'Ada Lovelace', avatar });
     return ['slackCdnPath', 'slackAvatarsPath', 'gravatarPath']
-      .map((name) => m.callMethod(name, []).val);
+      .map((name) => m.compute(name, []).val);
   };
   // Each origin is paired with the path it gets, and only ever one of them:
   // what crosses to the view is the path, and the origin is the view's own
@@ -341,8 +343,8 @@ test('a thread forces its replies compact and folds them', { skip: !built }, () 
   const t = make('Thread', initArgs('Thread', 'expanded'));
   assert.deepEqual(t.getField('expanded'), bool(true));
   assert.deepEqual(t.getField('replyCount'), num(2));
-  assert.deepEqual(t.callMethod('hasReplies', []), bool(true));
-  assert.deepEqual(t.callMethod('replyLabel', []), text('▾ 2 replies'));
+  assert.deepEqual(t.compute('hasReplies', []), bool(true));
+  assert.deepEqual(t.compute('replyLabel', []), text('▾ 2 replies'));
 
   // "is this a reply" is a fact about position, so the thread decides it and
   // the fixture does not have to say `compact` on every reply
@@ -352,7 +354,7 @@ test('a thread forces its replies compact and folds them', { skip: !built }, () 
 
   const folded = dispatch(t, 'receive', 'toggle', []);
   assert.deepEqual(folded.getField('expanded'), bool(false));
-  assert.deepEqual(folded.callMethod('replyLabel', []), text('▸ 2 replies'));
+  assert.deepEqual(folded.compute('replyLabel', []), text('▸ 2 replies'));
 
   // from outside: a receive rather than an input, which is what a channel's
   // expand-all reaches with control.send-at
@@ -360,17 +362,17 @@ test('a thread forces its replies compact and folds them', { skip: !built }, () 
   assert.deepEqual(reopened.getField('expanded'), bool(true));
 
   const alone = make('Thread', initArgs('Thread', 'no-replies'));
-  assert.deepEqual(alone.callMethod('hasReplies', []), bool(false));
+  assert.deepEqual(alone.compute('hasReplies', []), bool(false));
   assert.deepEqual(alone.getField('replyCount'), num(0));
 });
 
 test('a channel builds its whole tree from one init', { skip: !built }, () => {
   const c = make('ChannelHistory', initArgs('ChannelHistory', 'general'));
-  assert.deepEqual(c.callMethod('channelLabel', []), text('#general'));
-  assert.deepEqual(c.callMethod('memberLabel', []), text('214 members'));
-  assert.deepEqual(c.callMethod('countLabel', []), text('3 conversations'));
-  assert.deepEqual(c.callMethod('isEmpty', []), bool(false));
-  assert.deepEqual(c.callMethod('hasError', []), bool(false));
+  assert.deepEqual(c.compute('channelLabel', []), text('#general'));
+  assert.deepEqual(c.compute('memberLabel', []), text('214 members'));
+  assert.deepEqual(c.compute('countLabel', []), text('3 conversations'));
+  assert.deepEqual(c.compute('isEmpty', []), bool(false));
+  assert.deepEqual(c.compute('hasError', []), bool(false));
 
   // five levels down, from one `new Instance`: channel -> thread -> message
   // -> rich text -> segment
@@ -392,17 +394,17 @@ test('the filter box and the ordering toggle reshape what renders', { skip: !bui
   assert.deepEqual(authors(c), ['Alan Turing', 'Ada Lovelace', 'Grace Hopper']);
   const oldest = dispatch(c, 'receive', 'toggleOrder', []);
   assert.deepEqual(authors(oldest), ['Grace Hopper', 'Ada Lovelace', 'Alan Turing']);
-  assert.deepEqual(oldest.callMethod('orderLabel', []), text('oldest first'));
+  assert.deepEqual(oldest.compute('orderLabel', []), text('oldest first'));
 
   // the filter reaches reply text too — "compiler" is in a reply only
   const filtered = dispatch(c, 'receive', 'setQuery', [text('compiler')]);
   assert.deepEqual(authors(filtered), ['Ada Lovelace']);
-  assert.deepEqual(filtered.callMethod('countLabel', []), text('1 of 3 conversations'));
+  assert.deepEqual(filtered.compute('countLabel', []), text('1 of 3 conversations'));
 
   // a query nothing matches is the empty state, not an error
   const none = dispatch(c, 'receive', 'setQuery', [text('zzz')]);
   assert.deepEqual(childrenOf(none, 'threads'), []);
-  assert.deepEqual(none.callMethod('isEmpty', []), bool(true));
+  assert.deepEqual(none.compute('isEmpty', []), bool(true));
 
   // and clearing it brings everything back
   const cleared = dispatch(none, 'receive', 'setQuery', [text('')]);
@@ -449,21 +451,21 @@ test('a long channel is paged, and a page is not a filter', { skip: !built }, ()
   // Below the threshold nothing changed: no window, no footer, every
   // conversation on screen — which is what this card did before it could page.
   const short = make('ChannelHistory', initArgs('ChannelHistory', 'general'));
-  assert.deepEqual(short.callMethod('paged', []), bool(false));
+  assert.deepEqual(short.compute('paged', []), bool(false));
   assert.deepEqual(short.getField('pageCount'), num(1));
-  assert.deepEqual(short.callMethod('rangeLabel', []), text(''));
+  assert.deepEqual(short.compute('rangeLabel', []), text(''));
 
   // Asking for a page size is asking to be paged, whatever the length.
   let c = make('ChannelHistory', { channel: 'general', threads: MANY_THREADS, pageSize: 3 });
-  assert.deepEqual(c.callMethod('paged', []), bool(true));
+  assert.deepEqual(c.compute('paged', []), bool(true));
   // 1-based, because it is a label rather than an index
   assert.deepEqual(c.getField('page'), num(1));
   assert.deepEqual(c.getField('pageCount'), num(3));
-  assert.deepEqual(c.callMethod('rangeLabel', []), text('1–3 of 7'));
+  assert.deepEqual(c.compute('rangeLabel', []), text('1–3 of 7'));
   // newest first, so the newest three are the first page
   assert.deepEqual(drawn(c), ['1700000016.000001', '1700000015.000001', '1700000014.000001']);
   // the count is about the channel, not about the page
-  assert.deepEqual(c.callMethod('countLabel', []), text('7 conversations'));
+  assert.deepEqual(c.compute('countLabel', []), text('7 conversations'));
 
   // A button that would not move answers `unchanged`, and a name the pager
   // does not know keeps travelling.
@@ -472,7 +474,7 @@ test('a long channel is paged, and a page is not a filter', { skip: !built }, ()
 
   c = dispatch(c, 'receive', 'nextPage', []);
   assert.deepEqual(drawn(c), ['1700000013.000001', '1700000012.000001', '1700000011.000001']);
-  assert.deepEqual(c.callMethod('atFirst', []), bool(false));
+  assert.deepEqual(c.compute('atFirst', []), bool(false));
 
   // Expand-all addresses THIS page: the paths are positions in what the
   // renderer drew, and a reader pressing it means the ones in front of them.
@@ -482,8 +484,8 @@ test('a long channel is paged, and a page is not a filter', { skip: !built }, ()
   // the last page is the short one, and it says so
   const end = dispatch(c, 'receive', 'lastPage', []);
   assert.deepEqual(drawn(end), ['1700000010.000001']);
-  assert.deepEqual(end.callMethod('rangeLabel', []), text('7–7 of 7'));
-  assert.deepEqual(end.callMethod('atLast', []), bool(true));
+  assert.deepEqual(end.compute('rangeLabel', []), text('7–7 of 7'));
+  assert.deepEqual(end.compute('atLast', []), bool(true));
   assert.equal(dispatch(end, 'receive', 'nextPage', []), undefined);
 
   // Filtering and reordering each make a different list, so page three of the
@@ -492,7 +494,7 @@ test('a long channel is paged, and a page is not a filter', { skip: !built }, ()
   assert.deepEqual(dispatch(end, 'receive', 'toggleOrder', []).getField('page'), num(1));
   // and a filter narrow enough to fit on one page puts the pager away
   const one = dispatch(end, 'receive', 'setQuery', [text('message 4')]);
-  assert.deepEqual(one.callMethod('paged', []), bool(false));
+  assert.deepEqual(one.compute('paged', []), bool(false));
   assert.deepEqual(drawn(one), ['1700000014.000001']);
 });
 
@@ -501,12 +503,12 @@ test('a thread pages its replies, and a file list pages its rows', { skip: !buil
   // many exist, which is a different number and stays put.
   const replies = Array.from({ length: 7 }, (_, i) => ({ author: 'bob', body: [{ text: `reply ${i}` }] }));
   let t = make('Thread', { root: { id: '1', author: 'alice' }, replies, replyCount: 21, pageSize: 3 });
-  assert.deepEqual(t.callMethod('paged', []), bool(true));
+  assert.deepEqual(t.compute('paged', []), bool(true));
   assert.deepEqual(t.getField('pageCount'), num(3));
-  assert.deepEqual(t.callMethod('replyLabel', []), text('▾ 7 of 21 replies'));
+  assert.deepEqual(t.compute('replyLabel', []), text('▾ 7 of 21 replies'));
   assert.equal(childrenOf(t, 'replies').length, 3);
   t = dispatch(t, 'receive', 'lastPage', []);
-  assert.deepEqual(t.callMethod('rangeLabel', []), text('7–7 of 7'));
+  assert.deepEqual(t.compute('rangeLabel', []), text('7–7 of 7'));
   assert.equal(childrenOf(t, 'replies').length, 1);
 
   // A host that went and fetched the replies writes a whole new list home,
@@ -519,8 +521,8 @@ test('a thread pages its replies, and a file list pages its rows', { skip: !buil
   // A file row is a record rather than a child, so `@key` counts the rows the
   // view was GIVEN — which on page two are not the first files in the list.
   let f = make('FileList', { ...initArgs('FileList', 'a channel’s files'), pageSize: 2 });
-  assert.deepEqual(f.callMethod('countLabel', []), text('3 files'));
-  assert.deepEqual(f.callMethod('rangeLabel', []), text('1–2 of 3'));
+  assert.deepEqual(f.compute('countLabel', []), text('3 files'));
+  assert.deepEqual(f.compute('rangeLabel', []), text('1–2 of 3'));
   f = dispatch(f, 'receive', 'nextPage', []);
   dispatch(f, 'receive', 'openFile', [num(0)]);
   // position 0 of page two is the third file, which has no permalink to offer
@@ -546,17 +548,17 @@ test('a channel catches what its children report', { skip: !built }, () => {
 
 test('the empty, loading and error inits are the states a host has to draw', { skip: !built }, () => {
   const empty = make('ChannelHistory', initArgs('ChannelHistory', 'empty'));
-  assert.deepEqual(empty.callMethod('isEmpty', []), bool(true));
-  assert.deepEqual(empty.callMethod('countLabel', []), text('0 conversations'));
+  assert.deepEqual(empty.compute('isEmpty', []), bool(true));
+  assert.deepEqual(empty.compute('countLabel', []), text('0 conversations'));
 
   // loading is not empty: a spinner and "nothing here yet" are different claims
   const loading = make('ChannelHistory', initArgs('ChannelHistory', 'loading'));
   assert.deepEqual(loading.getField('loading'), bool(true));
-  assert.deepEqual(loading.callMethod('isEmpty', []), bool(false));
+  assert.deepEqual(loading.compute('isEmpty', []), bool(false));
 
   const failed = make('ChannelHistory', initArgs('ChannelHistory', 'error'));
-  assert.deepEqual(failed.callMethod('hasError', []), bool(true));
-  assert.deepEqual(failed.callMethod('isEmpty', []), bool(false));
+  assert.deepEqual(failed.compute('hasError', []), bool(true));
+  assert.deepEqual(failed.compute('isEmpty', []), bool(false));
 });
 
 test('a message shows the timestamp every follow-up call takes', { skip: !built }, () => {
@@ -569,12 +571,12 @@ test('a message shows the timestamp every follow-up call takes', { skip: !built 
   // it was always carried and never drawn, which is what sent a reader off to
   // retype it off the prose and hit thread_not_found
   assert.deepEqual(m.getField('id'), text('1700000001.000001'));
-  assert.deepEqual(m.callMethod('hasId', []), bool(true));
-  assert.match(m.callMethod('idTitle', []).val, /^ts 1700000001\.000001 —/);
+  assert.deepEqual(m.compute('hasId', []), bool(true));
+  assert.match(m.compute('idTitle', []).val, /^ts 1700000001\.000001 —/);
 
   // the permalink travels up rather than being followed: a workspace subdomain
   // is not an origin a view can write as a literal, so there is no href to have
-  assert.deepEqual(m.callMethod('hasPermalink', []), bool(true));
+  assert.deepEqual(m.compute('hasPermalink', []), bool(true));
   dispatch(m, 'receive', 'openPermalink', []);
   assert.deepEqual(emitted, [{
     kind: 'intent',
@@ -585,9 +587,9 @@ test('a message shows the timestamp every follow-up call takes', { skip: !built 
 
   // a message with neither says neither, and offers no button to press
   const bare = make('Message', { author: 'alice' });
-  assert.deepEqual(bare.callMethod('hasId', []), bool(false));
-  assert.deepEqual(bare.callMethod('hasPermalink', []), bool(false));
-  assert.deepEqual(bare.callMethod('idTitle', []), text(''));
+  assert.deepEqual(bare.compute('hasId', []), bool(false));
+  assert.deepEqual(bare.compute('hasPermalink', []), bool(false));
+  assert.deepEqual(bare.compute('idTitle', []), text(''));
   dispatch(bare, 'receive', 'openPermalink', []);
   assert.deepEqual(emitted, []);
 });
@@ -602,12 +604,12 @@ test('a counted thread with no replies says the call that would fetch them', { s
   });
   assert.deepEqual(t.getField('replyCount'), num(21));
   // the caret is for replies that are HERE, so it is not offered
-  assert.deepEqual(t.callMethod('hasReplies', []), bool(false));
-  assert.deepEqual(t.callMethod('hasUnloadedReplies', []), bool(true));
-  assert.deepEqual(t.callMethod('loadLabel', []), text('21 replies — not loaded'));
+  assert.deepEqual(t.compute('hasReplies', []), bool(false));
+  assert.deepEqual(t.compute('hasUnloadedReplies', []), bool(true));
+  assert.deepEqual(t.compute('loadLabel', []), text('21 replies — not loaded'));
   // both arguments, filled in — the difference between a dead end and a step
   assert.deepEqual(
-    t.callMethod('loadTitle', []),
+    t.compute('loadTitle', []),
     text('read them with channel=general, ts=1700000001.000001'),
   );
   // and they are taken off the root's own JSON, so a caller writes them once
@@ -629,9 +631,9 @@ test('a counted thread with no replies says the call that would fetch them', { s
     replies: [{ author: 'bob' }, { author: 'carol' }],
     replyCount: 21,
   });
-  assert.deepEqual(paged.callMethod('hasReplies', []), bool(true));
-  assert.deepEqual(paged.callMethod('hasUnloadedReplies', []), bool(false));
-  assert.deepEqual(paged.callMethod('replyLabel', []), text('▾ 2 of 21 replies'));
+  assert.deepEqual(paged.compute('hasReplies', []), bool(true));
+  assert.deepEqual(paged.compute('hasUnloadedReplies', []), bool(false));
+  assert.deepEqual(paged.compute('replyLabel', []), text('▾ 2 of 21 replies'));
 
   // a thread read whole takes the count from what arrived, which is the same
   // number — nothing had to be told to it
@@ -640,15 +642,15 @@ test('a counted thread with no replies says the call that would fetch them', { s
     replies: [{ author: 'bob' }],
   });
   assert.deepEqual(whole.getField('replyCount'), num(1));
-  assert.deepEqual(whole.callMethod('replyLabel', []), text('▾ 1 reply'));
-  assert.deepEqual(whole.callMethod('hasUnloadedReplies', []), bool(false));
+  assert.deepEqual(whole.compute('replyLabel', []), text('▾ 1 reply'));
+  assert.deepEqual(whole.compute('hasUnloadedReplies', []), bool(false));
 
   // writing the replies home does not move the count: how many exist is a fact
   // about the conversation, and how many are on screen is a fact about this
   // page of it
   const swapped = paged.withField('replies', { tag: 'list', val: put([]) });
   assert.deepEqual(swapped.getField('replyCount'), num(21));
-  assert.deepEqual(swapped.callMethod('hasUnloadedReplies', []), bool(true));
+  assert.deepEqual(swapped.compute('hasUnloadedReplies', []), bool(true));
   // and a list of plain data is refused rather than silently emptying the field
   assert.equal(paged.withField('replies', toGuest([{ author: 'bob' }])), undefined);
 });
@@ -661,17 +663,17 @@ test('a channel history says what it does not cover', { skip: !built }, () => {
   });
   assert.deepEqual(c.getField('hasScope'), bool(true));
   const s = childOf(c, 'scope');
-  assert.deepEqual(s.callMethod('hasAny', []), bool(true));
+  assert.deepEqual(s.compute('hasAny', []), bool(true));
   assert.deepEqual(
-    s.callMethod('kindsLabel', []),
+    s.compute('kindsLabel', []),
     text('public channels, and the private ones this token is in'),
   );
-  assert.deepEqual(s.callMethod('scannedLabel', []), text('11 conversations read'));
+  assert.deepEqual(s.compute('scannedLabel', []), text('11 conversations read'));
   // the absence is the disclosure: a card listing what it DID cover and saying
   // nothing about DMs reads as covering everything
-  assert.deepEqual(s.callMethod('hasDmNote', []), bool(true));
-  assert.match(s.callMethod('truncatedLabel', []).val, /max_search_channels cap/);
-  assert.match(s.callMethod('summary', []).val, /^scope: public channels and the private/);
+  assert.deepEqual(s.compute('hasDmNote', []), bool(true));
+  assert.match(s.compute('truncatedLabel', []).val, /max_search_channels cap/);
+  assert.match(s.compute('summary', []).val, /^scope: public channels and the private/);
 
   // a card whose builder said nothing about coverage does not grow a coverage
   // box out of defaults it was never given
@@ -692,10 +694,10 @@ test('a channel history says what it does not cover', { skip: !built }, () => {
 
 test('a file list is metadata, and says so', { skip: !built }, () => {
   const f = make('FileList', initArgs('FileList', 'a channel’s files'));
-  assert.deepEqual(f.callMethod('title', []), text('Files in #incidents'));
-  assert.deepEqual(f.callMethod('countLabel', []), text('3 files'));
-  assert.deepEqual(f.callMethod('isEmpty', []), bool(false));
-  assert.match(f.callMethod('note', []).val, /contents are not available/);
+  assert.deepEqual(f.compute('title', []), text('Files in #incidents'));
+  assert.deepEqual(f.compute('countLabel', []), text('3 files'));
+  assert.deepEqual(f.compute('isEmpty', []), bool(false));
+  assert.match(f.compute('note', []).val, /contents are not available/);
 
   const rows = arena.get(f.getField('rows').val).map((v) =>
     Object.fromEntries([...arena.get(v.val)].map(([k, x]) => [k, x.val])));
@@ -728,8 +730,8 @@ test('a file list is metadata, and says so', { skip: !built }, () => {
   assert.deepEqual(emitted, []);
 
   const empty = make('FileList', { files: [] });
-  assert.deepEqual(empty.callMethod('title', []), text('Files'));
-  assert.deepEqual(empty.callMethod('isEmpty', []), bool(true));
+  assert.deepEqual(empty.compute('title', []), text('Files'));
+  assert.deepEqual(empty.compute('isEmpty', []), bool(true));
   assert.deepEqual(empty.getField('hasScope'), bool(false));
 });
 

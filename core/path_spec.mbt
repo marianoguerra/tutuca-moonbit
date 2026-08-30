@@ -199,6 +199,19 @@ pub(all) enum IntentAnswer {
 } derive(Debug, Eq)
 
 ///|
+/// Who is invoking a component handler.
+///
+/// Generated field mutators are representation-level helpers and are only
+/// eligible for component-owned traffic (`View`/`Component`) or an explicit
+/// diagnostic stress run. A host call is restricted to declared handlers.
+pub(all) enum DispatchProvenance {
+  Host
+  View
+  Component
+  Diagnostic
+} derive(Debug, Eq)
+
+///|
 /// What a handler can do besides transforming its leaf.
 /// Defined here so Handler can carry it without depending on the transactor;
 /// every method defaults to a no-op so tests and Path::update can run
@@ -207,6 +220,7 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
+  fn provenance(Self) -> DispatchProvenance = _
   fn send(Self, name : String, args : Array[Value]) -> Unit = _
   fn send_at_path(Self, path : DispatchPath, name : String, args : Array[Value]) -> Unit = _
   /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
@@ -283,6 +297,11 @@ impl Ctx with fn target_path(_self) {
 ///|
 impl Ctx with fn name(_self) {
   None
+}
+
+///|
+impl Ctx with fn provenance(_self) {
+  Host
 }
 
 ///|
@@ -367,7 +386,12 @@ impl Ctx with fn walk_path(_self, _callback) {
 pub(all) struct NullCtx {}
 
 ///|
-pub impl Ctx for NullCtx
+pub impl Ctx for NullCtx with fn provenance(_self) {
+  // `Path::update` is the pure, transactor-free diagnostic seam used by unit
+  // tests and model runners. Real host/view/component calls carry an
+  // `EventContext` with their actual provenance.
+  Diagnostic
+}
 
 ///|
 /// A leaf-update handler, resolved ON the leaf so `self` is pre-bound (the

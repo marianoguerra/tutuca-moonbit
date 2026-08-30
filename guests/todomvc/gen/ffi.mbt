@@ -19,20 +19,50 @@ pub fn wasmExportInstanceDtor(handle : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceCallMethod(
+pub fn wasmExportMethodInstanceCompute(
   p0 : Int,
   p1 : Int,
   p2 : Int,
   p3 : Int,
   p4 : Int,
 ) -> Int {
-  @guest.wasmExportMethodInstanceCallMethod(p0, p1, p2, p3, p4)
+  @guest.wasmExportMethodInstanceCompute(p0, p1, p2, p3, p4)
 }
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceCallMethodPostReturn(p0 : Int) -> Unit {
-  @guest.wasmExportMethodInstanceCallMethodPostReturn(p0)
+pub fn wasmExportMethodInstanceComputePostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportMethodInstanceComputePostReturn(p0)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrich(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  @guest.wasmExportMethodInstanceEnrich(p0, p1, p2, p3, p4)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichPostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportMethodInstanceEnrichPostReturn(p0)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichScope(p0 : Int, p1 : Int, p2 : Int) -> Int {
+  @guest.wasmExportMethodInstanceEnrichScope(p0, p1, p2)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichScopePostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportMethodInstanceEnrichScopePostReturn(p0)
 }
 
 ///|
@@ -49,15 +79,38 @@ pub fn wasmExportMethodInstanceGetFieldPostReturn(p0 : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceHandleEvent(
+pub fn wasmExportMethodInstanceGetProperty(p0 : Int, p1 : Int, p2 : Int) -> Int {
+  @guest.wasmExportMethodInstanceGetProperty(p0, p1, p2)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceGetPropertyPostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportMethodInstanceGetPropertyPostReturn(p0)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceHandleIntent(
   p0 : Int,
   p1 : Int,
   p2 : Int,
   p3 : Int,
   p4 : Int,
-  p5 : Int,
 ) -> Int {
-  @guest.wasmExportMethodInstanceHandleEvent(p0, p1, p2, p3, p4, p5)
+  @guest.wasmExportMethodInstanceHandleIntent(p0, p1, p2, p3, p4)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceHandleMessage(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  @guest.wasmExportMethodInstanceHandleMessage(p0, p1, p2, p3, p4)
 }
 
 ///|
@@ -70,6 +123,31 @@ pub fn wasmExportMethodInstancePersist(p0 : Int) -> Int {
 #doc(hidden)
 pub fn wasmExportMethodInstancePersistPostReturn(p0 : Int) -> Unit {
   @guest.wasmExportMethodInstancePersistPostReturn(p0)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceSetProperty(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int64,
+  p5 : Int,
+) -> Int {
+  @guest.wasmExportMethodInstanceSetProperty(p0, p1, p2, p3, p4, p5)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceWhen(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  @guest.wasmExportMethodInstanceWhen(p0, p1, p2, p3, p4)
 }
 
 ///|

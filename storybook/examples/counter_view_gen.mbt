@@ -198,6 +198,10 @@ impl @component.Fields for CounterState with fn schema() {
     name="Counter",
     fingerprint="6600cf22c0b7a132",
     fields=[@component.FieldInfo::new("count", TyInt)],
+    properties=[
+      @tutuca.PropertyInfo::{ name: "count", ty: TyInt, writable: true, },
+      @tutuca.PropertyInfo::{ name: "magnitude", ty: TyInt, writable: true, },
+    ],
     view_handlers=["dec", "inc"],
     view_names=["main"],
   )

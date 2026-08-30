@@ -65,7 +65,7 @@ pub fn wasmExportInstanceDtor(handle : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceCallMethod(
+pub fn wasmExportMethodInstanceCompute(
   p0 : Int,
   p1 : Int,
   p2 : Int,
@@ -109,7 +109,7 @@ pub fn wasmExportMethodInstanceCallMethod(
   }
   mbt_ffi_free(p3)
 
-  let result1 : @values.Value = Instance::call_method(
+  let result1 : @values.Value = Instance::compute(
     Instance::Instance(p0),
     result,
     array,
@@ -168,7 +168,201 @@ pub fn wasmExportMethodInstanceCallMethod(
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceCallMethodPostReturn(p0 : Int) -> Unit {
+pub fn wasmExportMethodInstanceComputePostReturn(p0 : Int) -> Unit {
+  match mbt_ffi_load8_u(p0 + 0) {
+    0 => ()
+    1 => ()
+    2 => ()
+    3 => mbt_ffi_free(mbt_ffi_load32(p0 + 8))
+    4 => ()
+    5 => ()
+    6 => ()
+    _ => panic()
+  }
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrich(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let array : Array[@values.Value] = []
+  for index = 0; index < p4; index = index + 1 {
+    let iter_base = p3 + index * 16
+
+    let lifted = match mbt_ffi_load8_u(iter_base + 0) {
+      0 => @values.Value::Nil
+      1 => @values.Value::Boolean(mbt_ffi_load8_u(iter_base + 8) != 0)
+      2 => @values.Value::Number(mbt_ffi_loadf64(iter_base + 8))
+      3 => {
+        let result0 = mbt_ffi_ptr2str(
+          mbt_ffi_load32(iter_base + 8),
+          mbt_ffi_load32(iter_base + 12),
+        )
+
+        @values.Value::Text(result0)
+      }
+      4 =>
+        @values.Value::List(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      5 =>
+        @values.Value::Map(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      6 =>
+        @values.Value::Instance(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      _ => panic()
+    }
+
+    array.push(lifted)
+  }
+  mbt_ffi_free(p3)
+
+  let result1 : @values.Value = Instance::enrich(
+    Instance::Instance(p0),
+    result,
+    array,
+  )
+  let return_area = mbt_ffi_malloc(16)
+
+  match result1 {
+    Nil => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Boolean(payload2) => {
+      mbt_ffi_store8(return_area + 0, 1)
+      mbt_ffi_store8(return_area + 8, if payload2 { 1 } else { 0 })
+
+      ()
+    }
+    Number(payload3) => {
+      mbt_ffi_store8(return_area + 0, 2)
+      mbt_ffi_storef64(return_area + 8, payload3)
+
+      ()
+    }
+    Text(payload4) => {
+      mbt_ffi_store8(return_area + 0, 3)
+
+      let ptr = mbt_ffi_str2ptr(payload4)
+      mbt_ffi_store32(return_area + 12, payload4.length())
+      mbt_ffi_store32(return_area + 8, ptr)
+
+      ()
+    }
+    List(payload5) => {
+      mbt_ffi_store8(return_area + 0, 4)
+      mbt_ffi_store64(return_area + 8, payload5.reinterpret_as_int64())
+
+      ()
+    }
+    Map(payload6) => {
+      mbt_ffi_store8(return_area + 0, 5)
+      mbt_ffi_store64(return_area + 8, payload6.reinterpret_as_int64())
+
+      ()
+    }
+    Instance(payload7) => {
+      mbt_ffi_store8(return_area + 0, 6)
+      mbt_ffi_store64(return_area + 8, payload7.reinterpret_as_int64())
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichPostReturn(p0 : Int) -> Unit {
+  match mbt_ffi_load8_u(p0 + 0) {
+    0 => ()
+    1 => ()
+    2 => ()
+    3 => mbt_ffi_free(mbt_ffi_load32(p0 + 8))
+    4 => ()
+    5 => ()
+    6 => ()
+    _ => panic()
+  }
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichScope(p0 : Int, p1 : Int, p2 : Int) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let result0 : @values.Value = Instance::enrich_scope(
+    Instance::Instance(p0),
+    result,
+  )
+  let return_area = mbt_ffi_malloc(16)
+
+  match result0 {
+    Nil => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Boolean(payload1) => {
+      mbt_ffi_store8(return_area + 0, 1)
+      mbt_ffi_store8(return_area + 8, if payload1 { 1 } else { 0 })
+
+      ()
+    }
+    Number(payload2) => {
+      mbt_ffi_store8(return_area + 0, 2)
+      mbt_ffi_storef64(return_area + 8, payload2)
+
+      ()
+    }
+    Text(payload3) => {
+      mbt_ffi_store8(return_area + 0, 3)
+
+      let ptr = mbt_ffi_str2ptr(payload3)
+      mbt_ffi_store32(return_area + 12, payload3.length())
+      mbt_ffi_store32(return_area + 8, ptr)
+
+      ()
+    }
+    List(payload4) => {
+      mbt_ffi_store8(return_area + 0, 4)
+      mbt_ffi_store64(return_area + 8, payload4.reinterpret_as_int64())
+
+      ()
+    }
+    Map(payload5) => {
+      mbt_ffi_store8(return_area + 0, 5)
+      mbt_ffi_store64(return_area + 8, payload5.reinterpret_as_int64())
+
+      ()
+    }
+    Instance(payload6) => {
+      mbt_ffi_store8(return_area + 0, 6)
+      mbt_ffi_store64(return_area + 8, payload6.reinterpret_as_int64())
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceEnrichScopePostReturn(p0 : Int) -> Unit {
   match mbt_ffi_load8_u(p0 + 0) {
     0 => ()
     1 => ()
@@ -277,19 +471,112 @@ pub fn wasmExportMethodInstanceGetFieldPostReturn(p0 : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceHandleEvent(
+pub fn wasmExportMethodInstanceGetProperty(p0 : Int, p1 : Int, p2 : Int) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let result0 : @values.Value? = Instance::get_property(
+    Instance::Instance(p0),
+    result,
+  )
+  let return_area = mbt_ffi_malloc(24)
+
+  match result0 {
+    None => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Some(payload1) => {
+      mbt_ffi_store8(return_area + 0, 1)
+
+      match payload1 {
+        Nil => {
+          mbt_ffi_store8(return_area + 8, 0)
+
+          ()
+        }
+        Boolean(payload3) => {
+          mbt_ffi_store8(return_area + 8, 1)
+          mbt_ffi_store8(return_area + 16, if payload3 { 1 } else { 0 })
+
+          ()
+        }
+        Number(payload4) => {
+          mbt_ffi_store8(return_area + 8, 2)
+          mbt_ffi_storef64(return_area + 16, payload4)
+
+          ()
+        }
+        Text(payload5) => {
+          mbt_ffi_store8(return_area + 8, 3)
+
+          let ptr = mbt_ffi_str2ptr(payload5)
+          mbt_ffi_store32(return_area + 20, payload5.length())
+          mbt_ffi_store32(return_area + 16, ptr)
+
+          ()
+        }
+        List(payload6) => {
+          mbt_ffi_store8(return_area + 8, 4)
+          mbt_ffi_store64(return_area + 16, payload6.reinterpret_as_int64())
+
+          ()
+        }
+        Map(payload7) => {
+          mbt_ffi_store8(return_area + 8, 5)
+          mbt_ffi_store64(return_area + 16, payload7.reinterpret_as_int64())
+
+          ()
+        }
+        Instance(payload8) => {
+          mbt_ffi_store8(return_area + 8, 6)
+          mbt_ffi_store64(return_area + 16, payload8.reinterpret_as_int64())
+
+          ()
+        }
+      }
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceGetPropertyPostReturn(p0 : Int) -> Unit {
+  match mbt_ffi_load8_u(p0 + 0) {
+    0 => ()
+    1 =>
+      match mbt_ffi_load8_u(p0 + 8) {
+        0 => ()
+        1 => ()
+        2 => ()
+        3 => mbt_ffi_free(mbt_ffi_load32(p0 + 16))
+        4 => ()
+        5 => ()
+        6 => ()
+        _ => panic()
+      }
+    _ => panic()
+  }
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceHandleIntent(
   p0 : Int,
   p1 : Int,
   p2 : Int,
   p3 : Int,
   p4 : Int,
-  p5 : Int,
 ) -> Int {
-  let result = mbt_ffi_ptr2str(p2, p3)
+  let result = mbt_ffi_ptr2str(p1, p2)
 
   let array : Array[@values.Value] = []
-  for index = 0; index < p5; index = index + 1 {
-    let iter_base = p4 + index * 16
+  for index = 0; index < p4; index = index + 1 {
+    let iter_base = p3 + index * 16
 
     let lifted = match mbt_ffi_load8_u(iter_base + 0) {
       0 => @values.Value::Nil
@@ -320,11 +607,87 @@ pub fn wasmExportMethodInstanceHandleEvent(
 
     array.push(lifted)
   }
-  mbt_ffi_free(p4)
+  mbt_ffi_free(p3)
 
-  let result1 : EventResult = Instance::handle_event(
+  let result1 : EventResult = Instance::handle_intent(
     Instance::Instance(p0),
-    Bucket::from(p1),
+    result,
+    array,
+  )
+  let return_area = mbt_ffi_malloc(8)
+
+  match result1 {
+    Unhandled => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Unchanged => {
+      mbt_ffi_store8(return_area + 0, 1)
+
+      ()
+    }
+    Changed(payload3) => {
+      mbt_ffi_store8(return_area + 0, 2)
+
+      let Instance(handle) = payload3
+      mbt_ffi_store32(return_area + 4, handle)
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceHandleMessage(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let array : Array[@values.Value] = []
+  for index = 0; index < p4; index = index + 1 {
+    let iter_base = p3 + index * 16
+
+    let lifted = match mbt_ffi_load8_u(iter_base + 0) {
+      0 => @values.Value::Nil
+      1 => @values.Value::Boolean(mbt_ffi_load8_u(iter_base + 8) != 0)
+      2 => @values.Value::Number(mbt_ffi_loadf64(iter_base + 8))
+      3 => {
+        let result0 = mbt_ffi_ptr2str(
+          mbt_ffi_load32(iter_base + 8),
+          mbt_ffi_load32(iter_base + 12),
+        )
+
+        @values.Value::Text(result0)
+      }
+      4 =>
+        @values.Value::List(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      5 =>
+        @values.Value::Map(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      6 =>
+        @values.Value::Instance(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      _ => panic()
+    }
+
+    array.push(lifted)
+  }
+  mbt_ffi_free(p3)
+
+  let result1 : EventResult = Instance::handle_message(
+    Instance::Instance(p0),
     result,
     array,
   )
@@ -372,6 +735,120 @@ pub fn wasmExportMethodInstancePersist(p0 : Int) -> Int {
 #doc(hidden)
 pub fn wasmExportMethodInstancePersistPostReturn(p0 : Int) -> Unit {
   mbt_ffi_free(mbt_ffi_load32(p0 + 0))
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceSetProperty(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int64,
+  p5 : Int,
+) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let lifted = match p3 {
+    0 => @values.Value::Nil
+    1 => @values.Value::Boolean(Int64::to_int(p4) != 0)
+    2 => @values.Value::Number(p4.reinterpret_as_double())
+    3 => {
+      let result0 = mbt_ffi_ptr2str(Int64::to_int(p4), p5)
+
+      @values.Value::Text(result0)
+    }
+    4 => @values.Value::List(p4.reinterpret_as_uint64())
+    5 => @values.Value::Map(p4.reinterpret_as_uint64())
+    6 => @values.Value::Instance(p4.reinterpret_as_uint64())
+    _ => panic()
+  }
+
+  let result1 : PropertyResult = Instance::set_property(
+    Instance::Instance(p0),
+    result,
+    lifted,
+  )
+  let return_area = mbt_ffi_malloc(8)
+
+  match result1 {
+    Missing => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Unchanged => {
+      mbt_ffi_store8(return_area + 0, 1)
+
+      ()
+    }
+    Refused => {
+      mbt_ffi_store8(return_area + 0, 2)
+
+      ()
+    }
+    Changed(payload4) => {
+      mbt_ffi_store8(return_area + 0, 3)
+
+      let Instance(handle) = payload4
+      mbt_ffi_store32(return_area + 4, handle)
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstanceWhen(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+) -> Int {
+  let result = mbt_ffi_ptr2str(p1, p2)
+
+  let array : Array[@values.Value] = []
+  for index = 0; index < p4; index = index + 1 {
+    let iter_base = p3 + index * 16
+
+    let lifted = match mbt_ffi_load8_u(iter_base + 0) {
+      0 => @values.Value::Nil
+      1 => @values.Value::Boolean(mbt_ffi_load8_u(iter_base + 8) != 0)
+      2 => @values.Value::Number(mbt_ffi_loadf64(iter_base + 8))
+      3 => {
+        let result0 = mbt_ffi_ptr2str(
+          mbt_ffi_load32(iter_base + 8),
+          mbt_ffi_load32(iter_base + 12),
+        )
+
+        @values.Value::Text(result0)
+      }
+      4 =>
+        @values.Value::List(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      5 =>
+        @values.Value::Map(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      6 =>
+        @values.Value::Instance(
+          mbt_ffi_load64(iter_base + 8).reinterpret_as_uint64(),
+        )
+      _ => panic()
+    }
+
+    array.push(lifted)
+  }
+  mbt_ffi_free(p3)
+
+  let result1 : Bool = Instance::when(Instance::Instance(p0), result, array)
+  let ret = if result1 { 1 } else { 0 }
+  return ret
 }
 
 ///|

@@ -1,4 +1,4 @@
-// The canonical ABI for `tutuca:component@0.10.0`, written once, host-side.
+// The canonical ABI for `tutuca:component@0.11.0`, written once, host-side.
 //
 // This replaces the `*.component.js` that `jco transpile` emits into every
 // bundle archive. That file is ~5,000-7,500 lines and 38-57% of a gzipped
@@ -102,12 +102,16 @@ const INTENT_OPTS = record([
   ["onUnhandled", option(STRING)],
   ["livePath", BOOL],
 ]);
-// Two buckets, and a case's position is its wire number.
-const BUCKET = enumeration(["receive", "intent"]);
 const SERVE_RESULT = variant([["ok", VALUE], ["err", VALUE]]);
 const EVENT_RESULT = variant([
   ["unhandled", null],
   ["unchanged", null],
+  ["changed", OWN],
+]);
+const PROPERTY_RESULT = variant([
+  ["missing", null],
+  ["unchanged", null],
+  ["refused", null],
   ["changed", OWN],
 ]);
 
@@ -174,7 +178,7 @@ export const IMPORTS = {
   },
 };
 
-const GUEST = "tutuca:component/guest@0.10.0";
+const GUEST = "tutuca:component/guest@0.11.0";
 const RESOURCE_NS = `[export]${GUEST}`;
 
 // The export side. `post` names the `cabi_post_*` that frees what a lift
@@ -202,16 +206,49 @@ const EXPORTS = {
     result: option(VALUE),
     post: true,
   },
-  handleEvent: {
-    core: `${GUEST}#[method]instance.handle-event`,
-    params: [BORROW, BUCKET, STRING, list(VALUE)],
+  handleMessage: {
+    core: `${GUEST}#[method]instance.handle-message`,
+    params: [BORROW, STRING, list(VALUE)],
     result: EVENT_RESULT,
   },
-  callMethod: {
-    core: `${GUEST}#[method]instance.call-method`,
+  handleIntent: {
+    core: `${GUEST}#[method]instance.handle-intent`,
+    params: [BORROW, STRING, list(VALUE)],
+    result: EVENT_RESULT,
+  },
+  compute: {
+    core: `${GUEST}#[method]instance.compute`,
     params: [BORROW, STRING, list(VALUE)],
     result: VALUE,
     post: true,
+  },
+  when: {
+    core: `${GUEST}#[method]instance.when`,
+    params: [BORROW, STRING, list(VALUE)],
+    result: BOOL,
+  },
+  enrich: {
+    core: `${GUEST}#[method]instance.enrich`,
+    params: [BORROW, STRING, list(VALUE)],
+    result: VALUE,
+    post: true,
+  },
+  enrichScope: {
+    core: `${GUEST}#[method]instance.enrich-scope`,
+    params: [BORROW, STRING],
+    result: VALUE,
+    post: true,
+  },
+  getProperty: {
+    core: `${GUEST}#[method]instance.get-property`,
+    params: [BORROW, STRING],
+    result: option(VALUE),
+    post: true,
+  },
+  setProperty: {
+    core: `${GUEST}#[method]instance.set-property`,
+    params: [BORROW, STRING, VALUE],
+    result: PROPERTY_RESULT,
   },
   withField: {
     core: `${GUEST}#[method]instance.with-field`,
@@ -797,7 +834,7 @@ const unversioned = (m) => m.replace(/@[\d.]+$/, "");
 // versioned fallbacks are tried newest-first and cover the worlds this host
 // still accepts, so a harness that keys its table one way keeps working across
 // a package bump.
-const IMPL_VERSIONS = ["@0.10.0", "@0.9.0"];
+const IMPL_VERSIONS = ["@0.11.0"];
 
 function implFor(imports, iface, spec, fnName) {
   const table = imports[iface] ??
@@ -878,7 +915,7 @@ function liftExport(cx, spec, coreFn, postFn) {
 // ---------------------------------------------------------------------------
 
 /**
- * Instantiate a `tutuca:component@0.10.0` guest from its core module alone.
+ * Instantiate a `tutuca:component@0.11.0` guest from its core module alone.
  *
  * `getCoreModule(name)` resolves a name to a `WebAssembly.Module` (or a promise
  * of one), exactly as it does for a transpiled bundle. `imports` is the host's
@@ -887,7 +924,7 @@ function liftExport(cx, spec, coreFn, postFn) {
  *
  * `descriptor` is what the archive carries in place of 200KB of JavaScript:
  *
- *   { world: "tutuca:component@0.10.0", encoding: "utf16" | "utf8",
+ *   { world: "tutuca:component@0.11.0", encoding: "utf16" | "utf8",
  *     core: "<name>.component.core.wasm" }
  *
  * The two trampoline modules a transpiled bundle carries are not needed. They
@@ -896,9 +933,9 @@ function liftExport(cx, spec, coreFn, postFn) {
  * time, so the main module is the only one instantiated.
  */
 export async function instantiate(getCoreModule, imports, descriptor = {}) {
-  const { world = "tutuca:component@0.10.0", encoding = "utf16", core } = descriptor;
-  if (world !== "tutuca:component@0.10.0") {
-    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.10.0)`);
+  const { world = "tutuca:component@0.11.0", encoding = "utf16", core } = descriptor;
+  if (world !== "tutuca:component@0.11.0") {
+    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.11.0)`);
   }
   const module = await getCoreModule(core);
   const cx = new Cx(encoding);
@@ -930,7 +967,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
     if (!spec) {
       throw new Error(
         `bundle imports ${imp.module}#${imp.name}, which is outside ` +
-        `tutuca:component@0.10.0 — refused`,
+        `tutuca:component@0.11.0 — refused`,
       );
     }
     bind(imp.module, imp.name, lowerImport(cx, spec, implFor(imports, iface, spec, imp.name)));
@@ -945,7 +982,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
   // A bundle built against an older package exports its functions under that
   // package's namespace, so every lookup below would miss and the first one to
   // report would say "core module exports no
-  // tutuca:component/guest@0.10.0#[constructor]instance" — which is true and
+  // tutuca:component/guest@0.11.0#[constructor]instance" — which is true and
   // tells nobody what to do. This says what to do.
   //
   // The ABI bump is deliberate and is not backwards compatible: the `bucket`
@@ -1013,15 +1050,45 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
       return call.getField(this.#rep(), name);
     }
 
-    handleEvent(bucket, name, args) {
-      const result = call.handleEvent(this.#rep(), bucket, name, args);
+    handleMessage(name, args) {
+      const result = call.handleMessage(this.#rep(), name, args);
       return result.tag === "changed"
         ? { tag: "changed", val: wrap(result.val) }
         : result;
     }
 
-    callMethod(name, args) {
-      return call.callMethod(this.#rep(), name, args);
+    handleIntent(name, args) {
+      const result = call.handleIntent(this.#rep(), name, args);
+      return result.tag === "changed"
+        ? { tag: "changed", val: wrap(result.val) }
+        : result;
+    }
+
+    compute(name, args) {
+      return call.compute(this.#rep(), name, args);
+    }
+
+    when(name, args) {
+      return call.when(this.#rep(), name, args);
+    }
+
+    enrich(name, args) {
+      return call.enrich(this.#rep(), name, args);
+    }
+
+    enrichScope(name) {
+      return call.enrichScope(this.#rep(), name);
+    }
+
+    getProperty(name) {
+      return call.getProperty(this.#rep(), name);
+    }
+
+    setProperty(name, value) {
+      const result = call.setProperty(this.#rep(), name, value);
+      return result.tag === "changed"
+        ? { tag: "changed", val: wrap(result.val) }
+        : result;
     }
 
     withField(name, v) {
@@ -1051,7 +1118,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
 // the world without instantiating anything.
 export const _abi = {
   alignment, sizeOf, flatten, payloadOffset, discSize,
-  WORLD: { IMPORTS, EXPORTS, VALUE, EVENT_RESULT, SERVE_RESULT, PATH_STEP, LOG_LEVEL, INTENT_OPTS, ARGS },
+  WORLD: { IMPORTS, EXPORTS, VALUE, EVENT_RESULT, PROPERTY_RESULT, SERVE_RESULT, PATH_STEP, LOG_LEVEL, INTENT_OPTS, ARGS },
   // The two codecs, so a test can check they agree. They are written
   // independently — one walks linear memory, the other walks flat core values
   // — and a type they disagree about is a type that survives being passed one

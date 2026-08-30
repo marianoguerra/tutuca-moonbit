@@ -137,7 +137,31 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl Guest for FakeGuest with fn dispatch(
+impl Guest for FakeGuest with fn get_property(self, handle, name) {
+  match name {
+    "count" => self.counters.get(handle).map(n => (Num(n) : @tutuca.Value))
+    _ => None
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn set_property(self, handle, name, value) {
+  match (name, value) {
+    ("count", Num(n)) => {
+      let count = self.counters.get(handle).unwrap()
+      if n == count {
+        GuestPropertyUnchanged
+      } else {
+        GuestPropertyChanged(self.next_of(handle, n))
+      }
+    }
+    ("count", _) => GuestPropertyRefused
+    _ => GuestPropertyMissing
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn handle_dispatch(
   self,
   handle,
   bucket,
@@ -308,7 +332,14 @@ impl Guest for FakeGuest with fn serve_intent(self, name, args) {
 }
 
 ///|
-impl Guest for FakeGuest with fn call_method(self, handle, name, args, bindings) {
+impl Guest for FakeGuest with fn render_call(
+  self,
+  handle,
+  _category,
+  name,
+  args,
+  bindings,
+) {
   match name {
     "label" => Str("count is \{self.counters.get(handle).unwrap()}")
     // A value body reading a dynamic binding — the render-time twin of
@@ -435,7 +466,7 @@ fn counter_manifest() -> DynManifest {
     members: [],
   }
   {
-    api_version: 6,
+    api_version: 10,
     module_name: "counterlib",
     doc: "Sample counters, for exercising the contract.",
     version: "0.1.0",
@@ -479,6 +510,9 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("count", 0), plain_field("history", 1)],
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
+        properties: [
+          { name: "count", ty: 0, writable: true, doc: "The public count.", },
+        ],
         domains: [],
         receives: ["init", "setTo"],
         intents: [],
@@ -541,6 +575,7 @@ fn counter_manifest() -> DynManifest {
         // other case.
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
+        properties: [],
         domains: [],
         receives: [],
         intents: ["counted"],
@@ -596,6 +631,7 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         fields: [plain_field("title", 0), plain_field("body", 1)],
+        properties: [],
         domains: [],
         receives: [],
         intents: [],
@@ -1154,7 +1190,7 @@ test "a guest answers a view's @when filter" {
   h.click(".inc") // history [0]
   h.click(".inc") // history [0, 1]
   h.click(".inc") // history [0, 1, 2]
-  // `@when="nonZero"` reaches the guest's call-method with (key, item, iter)
+  // `@when="nonZero"` reaches the guest's `when` with (key, item, iter)
   // and its answer filters the iteration: the leading 0 is gone
   debug_inspect(h.texts("li.h"), content="[\"1\", \"2\"]")
 }
@@ -1169,14 +1205,30 @@ test "component_names lists the manifest's components in order" {
 }
 
 ///|
+test "a guest property is public, synchronous, and copy-on-write" {
+  let fake = FakeGuest::new()
+  let (_, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(4) }) is Some(c)
+  let before = c.to_value()
+  assert_eq(before.property("count"), Num(4))
+  guard! before.set_property("count", Num(9)) is PChanged(after)
+  assert_eq(before.property("count"), Num(4))
+  assert_eq(after.property("count"), Num(9))
+  assert_true(after.set_property("count", Num(9)) is PUnchanged)
+  assert_true(after.set_property("count", Str("bad")) is PRefused)
+  assert_true(after.set_property("private", Num(1)) is PMissing)
+}
+
+///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 9, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
     #|             {"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "count", "ty": 0}, {"name": "history", "ty": 1}],
+    #|   "properties": [{"name": "count", "ty": 0, "writable": true}],
     #|   "receives": ["init", "double"], "intents": [],
     #|   "methods": ["label"], "style": ""}]}
   let m = DynManifest::from_json_string(json)
@@ -1356,7 +1408,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs and constraints" {
   let json =
-    #|{"apiVersion": 9, "moduleName": "formlib",
+    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
@@ -1369,6 +1421,7 @@ test "catalog metadata parses: docs and constraints" {
     #|               "constraint": {"maxLen": 254, "format": "email",
     #|                              "enumJson": "", "defaultJson": "\"a@b.c\"",
     #|                              "pattern": ""}}],
+    #|   "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "inits": [{"name": "blank", "argsJson": "{}", "doc": "Nothing filled in."}],
     #|   "style": ""}]}
@@ -1412,9 +1465,9 @@ test "catalog metadata parses: docs and constraints" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 9, "moduleName": "bare", "components": [
+    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
-    #|   "types": [], "fields": [],
+    #|   "types": [], "fields": [], "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
@@ -1426,10 +1479,11 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 9, "moduleName": "m", "components": [
+    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
+    #|   "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
     #|   "style": ""}]}
   let m = DynManifest::from_json_string(json)
@@ -1442,7 +1496,7 @@ test "a cyclic or out-of-range type index reads as `any`, not a hang" {
 ///|
 test "manifest with wrong api version is rejected" {
   let bad =
-    #|{"apiVersion": 1, "moduleName": "x", "components": []}
+    #|{"manifestVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
@@ -1461,6 +1515,23 @@ test "manifest with wrong api version is rejected" {
     }
   }
   assert_true(failed)
+}
+
+///|
+test "old manifest shapes and implicit property surfaces are rejected" {
+  let old =
+    #|{"manifestVersion": 1, "apiVersion": 10, "moduleName": "x", "components": []}
+  let implicit =
+    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "x", "components": [
+    #| {"name": "C", "views": [], "types": [], "fields": [], "style": ""}
+    #|]}
+  let mut refused = 0
+  for text in [old, implicit] {
+    try DynManifest::from_json_string(text) |> ignore catch {
+      _ => refused = refused + 1
+    }
+  }
+  assert_eq(refused, 2)
 }
 
 ///|
@@ -1486,7 +1557,7 @@ impl @component.Fields for TestShellState with fn schema() {
 ///|
 test "a bundle's views are linted at load" {
   let bad : DynManifest = {
-    api_version: 6,
+    api_version: 10,
     module_name: "sloppylib",
     doc: "",
     version: "",
@@ -1509,6 +1580,7 @@ test "a bundle's views are linted at load" {
         ],
         types: [],
         fields: [],
+        properties: [],
         domains: [],
         receives: [],
         intents: [],
@@ -1552,7 +1624,7 @@ test "a bundle's views are linted at load" {
 
 ///|
 /// The failure this catches renders as NOTHING: a `$name` the manifest forgot
-/// to declare never reaches `call-method`, evaluates to Null, and an attribute
+/// to declare never reaches a fixed render operation, evaluates to Null, and an attribute
 /// bound to Null is omitted — so the guest author sees an element quietly
 /// missing its class and the guest itself is never told it was asked.
 test "a `$method` the manifest never declared is reported at load" {
@@ -1564,7 +1636,7 @@ test "a `$method` the manifest never declared is reported at load" {
     members: [],
   }
   let sloppy : DynManifest = {
-    api_version: 6,
+    api_version: 10,
     module_name: "statlib",
     doc: "",
     version: "",
@@ -1593,6 +1665,7 @@ test "a `$method` the manifest never declared is reported at load" {
         ],
         types: [float_ty],
         fields: [plain_field("count", 0)],
+        properties: [],
         domains: [],
         receives: [],
         intents: [],

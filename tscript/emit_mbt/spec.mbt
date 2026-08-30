@@ -67,6 +67,10 @@ declare pub fn value_fn_name(
 ) -> String
 
 ///|
+/// The generated fixed-signature function for a complex property setter.
+declare pub fn property_set_fn_name(prefix : String, name : String) -> String
+
+///|
 /// What the backend produced.
 pub(all) struct Emitted {
   /// The whole `<v>_inline_update` function, followed by one function per
@@ -94,6 +98,10 @@ pub(all) struct Emitted {
   answers_whens : Array[String]
   answers_enriches : Array[String]
   answers_enrich_scopes : Array[String]
+  /// Complex property bodies that compiled. The wrapper routes these through
+  /// the synchronous property maps, never through a dispatch bucket.
+  answers_property_get : Array[String]
+  answers_property_set : Array[String]
   refusals : Array[Refusal]
 } derive(Debug, Eq)
 

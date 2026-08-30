@@ -1,6 +1,6 @@
 # tutucard/wasm
 
-Compile a [tutucard](../) `.html` file into a `tutuca:component@0.10.0` **core
+Compile a [tutucard](../) `.html` file into a `tutuca:component@0.11.0` **core
 wasm module**, in the browser, with no MoonBit toolchain anywhere on the page.
 
 ```
@@ -66,7 +66,7 @@ several — one `state` each in the one state block, one
 and this backend turned such a file away whole until it learned to number them.
 
 Inside the module a component IS an index: its slot in `tc_types`, its arm of
-the constructor, its arm of `handle-event` and `call-method`. The constructor
+the constructor, its fixed message/intent handlers and render operations. The constructor
 was always handed the component's NAME and threw it away; it reads it now, with
 the `tc_str_in` / `tc_is` pair every dispatch arm already used. An instance says
 which component it is through `jv_record_definition` — the record carries its
@@ -129,7 +129,7 @@ refused for being unrecognized: "this backend does not know" and "you may not"
 are different answers.
 
 **Declarations.** `receive`, `intent`, `compute`, `pred`,
-`invariant`, `enrich`, `enrichScope`, and the `requires` / `ensures` clauses
+`invariant`, `enrich`, `enrichScope`, property `get` / `set`, and the `requires` / `ensures` clauses
 that attach to a transition.
 
 The last two were the worst gap this backend had, and the only one that was
@@ -141,7 +141,7 @@ which was the other half of the same hole.
 
 **The render stack's row.** `@key`, `@value` and `@iter` arrive at a compiled
 declaration as ARGUMENTS: `component/instance.mbt` passes them positionally
-through what is, for a guest, `call-method`. A filter is written
+through the fixed `when` / `enrich` operations. A filter is written
 `pred matches { … @value … }` with no parameter list at all, and every `@name` in
 one used to be a refusal — so a compiled filter kept every row. The offsets
 differ by shape, which is what `bind_index` is for:

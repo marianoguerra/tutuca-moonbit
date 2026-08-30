@@ -51,7 +51,7 @@ let tc_types: &?pv_vector = null;
 // Set when a body did something with no answer — a division by zero, an index
 // past the end of a list. The language answers `None` for these and the
 // `None` propagates until the transition is abandoned; a compiled body has no
-// option type to propagate, so it raises this flag and `handle-event` reads it
+// option type to propagate, so it raises this flag and the handler export reads it
 // where the interpreter would have seen the None.
 //
 // "Failure is no change" is the contract, and this is what keeps it.
@@ -933,7 +933,7 @@ fn tc_get(s: &jv_record_value, name: &utf8_string) -> &jv_value {
 // old runtime did when `field_index` missed.
 //
 // Identity is preserved when the value is equal (`record.wax`), and that is
-// what `handle-event` reads to tell `changed` from `unchanged` — a reference
+// what the handler export reads to tell `changed` from `unchanged` — a reference
 // comparison where the cell runtime compared every byte of the instance.
 fn tc_set(
     s: &jv_record_value,

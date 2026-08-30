@@ -50,7 +50,7 @@ That declared shape is what makes both layers possible from one core.
 
 | package | status | responsibility |
 |---|---|---|
-| `dyncomp/wit` | v0.10.0 | the runtime behavior contract; static declaration lives in each bundle |
+| `dyncomp/wit` | v0.11.0 | the fixed runtime behavior contract; static fields, protocols, and public properties live in manifest v2 |
 | `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
 | `dyncomp/policy` | built | trust tiers, the external-URL allowance, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |

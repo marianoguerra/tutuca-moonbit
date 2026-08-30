@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "counterlib",
   "doc": "Sample counters — the reference bundle for the tutuca:component contract.",
   "version": "0.4.0",
@@ -116,7 +116,15 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": [
+        {
+          "name": "count",
+          "ty": 0,
+          "writable": true,
+          "doc": "The public current value."
+        }
+      ]
     },
     {
       "name": "Pair",
@@ -189,7 +197,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

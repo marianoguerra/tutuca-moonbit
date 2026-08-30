@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "slacklib",
   "doc": "Slack-style conversation components: a message, a thread, and a channel's history.",
   "version": "0.1.0",
@@ -172,7 +172,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Scope",
@@ -324,7 +325,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "RichText",
@@ -397,7 +399,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Reaction",
@@ -495,7 +498,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Message",
@@ -725,7 +729,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Thread",
@@ -947,7 +952,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "FileList",
@@ -1122,7 +1128,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "ChannelHistory",
@@ -1418,7 +1425,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

@@ -60,6 +60,10 @@ pub let bar_chart_spec_source : String =
   #|
   #|    where size between 16 and 80
   #|  }
+  #|
+  #|  handle BarChart {
+  #|    message { addBar, removeBar, randomize }
+  #|  }
 
 ///|
 /// The compiled `main` view.

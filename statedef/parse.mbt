@@ -172,7 +172,7 @@ priv struct RawDecl {
   handle_intent : Array[RawCase]
   express_message : Array[RawCase]
   express_intent : Array[RawCase]
-  properties : Array[RawField]
+  properties : Array[RawProperty]
   views : Array[RawCase]
   implements : Array[(String, Span)]
   bindings : Array[RawBinding]
@@ -201,6 +201,19 @@ priv struct RawField {
   doc : String?
   attrs : Array[(String, AttrValue)]
   ty : RawTy
+}
+
+///|
+priv struct RawProperty {
+  /// `property`, `provide`, `lookup`, or `local`.
+  section : String
+  name : String
+  span : Span
+  doc : String?
+  ty : RawTy
+  writable : Bool
+  getter : String?
+  setter : String?
 }
 
 ///|
@@ -329,7 +342,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
     let handle_intent : Array[RawCase] = []
     let express_message : Array[RawCase] = []
     let express_intent : Array[RawCase] = []
-    let properties : Array[RawField] = []
+    let properties : Array[RawProperty] = []
     let views : Array[RawCase] = []
     let bindings : Array[RawBinding] = []
     let provide : Array[ProvideDecl] = []
@@ -424,6 +437,8 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
         } else if actual_kind is RState {
           if w == "provide" || w == "lookup" {
             parse_state_wiring(p, w, provide, lookup, bindings)
+          } else if w == "property" {
+            parse_state_properties(p, properties, bindings)
           } else {
             parse_bindings(p, w, bindings)
           }
@@ -997,29 +1012,123 @@ fn parse_bindings(
 fn parse_protocol_members(
   p : P,
   section : String,
-  properties : Array[RawField],
+  properties : Array[RawProperty],
   views : Array[RawCase],
 ) -> Unit raise DefError {
   p.expect(TLBrace, "`{` opening the \{section} section")
   while !(p.peek() is (TRBrace | TEof)) {
     let doc = p.docs()
-    let attrs = p.attrs()
+    p.attrs() |> ignore
     let (name, span) = p.ident("a \{section} name")
     if section == "view" {
       views.push({ name, span, doc, payload: [], })
     } else {
       p.expect(TColon, "`:` before the \{section} type")
+      let ty = parse_ty(p)
+      let writable = section == "property" && p.peek() is TIdent("set")
+      if writable {
+        p.bump() |> ignore
+      }
       properties.push({
-        name: section + "::" + name,
+        section,
+        name,
         span,
         doc,
-        attrs,
-        ty: parse_ty(p),
+        ty,
+        writable,
+        getter: None,
+        setter: None,
       })
     }
     p.skip_comma()
   }
   p.expect(TRBrace, "`}` closing the \{section} section")
+}
+
+///|
+/// A state's public property declarations and protocol bindings.
+///
+/// Simple implementations name storage explicitly:
+/// `value: Int { get .raw set .raw }`. Omitting the field after `get` or
+/// `set` delegates that operation to the fixed-signature script declaration.
+fn parse_state_properties(
+  p : P,
+  properties : Array[RawProperty],
+  bindings : Array[RawBinding],
+) -> Unit raise DefError {
+  p.expect(TLBrace, "`{` opening the property section")
+  while !(p.peek() is (TRBrace | TEof)) {
+    let doc = p.docs()
+    // A qualified name is an implementation binding, as before; its source is
+    // now the local property name rather than `.field` / `$compute`.
+    if p.peek() is TIdent(_) && p.peek_at(1) is TDoubleColon {
+      let (protocol_name, member_name, span) = qualified(p)
+      p.expect(TEquals, "`=` before the implementation")
+      let source = match p.peek() {
+        TExpr(s) => {
+          p.bump() |> ignore
+          s
+        }
+        TIdent(s) => {
+          p.bump() |> ignore
+          s
+        }
+        _ => p.fail("a local property name")
+      }
+      bindings.push({
+        section: "property",
+        protocol_name,
+        member_name,
+        source,
+        span,
+      })
+      p.skip_comma()
+      continue
+    }
+    p.attrs() |> ignore
+    let (name, span) = p.ident("a local property name")
+    p.expect(TColon, "`:` before the property type")
+    let ty = parse_ty(p)
+    p.expect(TLBrace, "`{` opening the property implementation")
+    let (get_word, get_span) = p.ident("`get`")
+    if get_word != "get" {
+      raise Syntax(
+        msg="a property implementation starts with `get`",
+        span=get_span,
+      )
+    }
+    let getter = if p.peek() is TDot {
+      p.bump() |> ignore
+      let (field, _) = p.ident("the getter's backing field")
+      Some("." + field)
+    } else {
+      None
+    }
+    let mut writable = false
+    let mut setter : String? = None
+    if p.peek() is TIdent("set") {
+      p.bump() |> ignore
+      writable = true
+      if p.peek() is TDot {
+        p.bump() |> ignore
+        let (field, _) = p.ident("the setter's backing field")
+        setter = Some("." + field)
+      }
+    }
+    p.expect(TRBrace, "`}` closing the property implementation")
+    properties.push({
+      section: "local",
+      name,
+      span,
+      doc,
+      ty,
+      writable,
+      getter,
+      setter,
+    })
+    p.skip_comma()
+  }
+  p.expect(TRBrace, "`}` closing the property section")
 }
 
 ///|
@@ -1281,6 +1390,30 @@ fn build(
   let _ = fallback
   let comp = env.comps.get(d.name).unwrap()
   let fields = fields_of(d.fields, env)
+  let local_properties = property_defs(d.properties, "local", env)
+  for raw_property in d.properties {
+    guard raw_property.section == "local" else { continue }
+    let resolved = local_properties
+      .iter()
+      .find_first(p => p.name == raw_property.name)
+      .unwrap()
+    for source in [raw_property.getter, raw_property.setter] {
+      guard source is Some(s) && s.has_prefix(".") else { continue }
+      let field_name = s[1:].to_owned()
+      guard fields.iter().find_first(f => f.name == field_name) is Some(field) else {
+        raise Syntax(
+          msg="property `\{raw_property.name}` names missing backing field `.\{field_name}`",
+          span=raw_property.span,
+        )
+      }
+      if field.ty != resolved.ty {
+        raise Syntax(
+          msg="property `\{raw_property.name}` is \{resolved.ty.show_source()}, but `.\{field_name}` is \{field.ty.show_source()}",
+          span=raw_property.span,
+        )
+      }
+    }
+  }
   let handle_message = d.handle_message.copy()
   let handle_intent = d.handle_intent.copy()
   let express_message = d.express_message.copy()
@@ -1356,6 +1489,7 @@ fn build(
     source_name: d.name,
     component: comp,
     fields,
+    properties: local_properties,
     receive: msgs_of(handle_message, env),
     intent: msgs_of(handle_intent, env),
     express_message: msgs_of(express_message, env),
@@ -1384,20 +1518,7 @@ fn protocol_of(
   id : String,
   env : Env,
 ) -> ProtocolDef raise DefError {
-  let props = (section : String) => {
-    let out : Array[PropertyDef] = []
-    let prefix = section + "::"
-    for f in d.properties {
-      if f.name.has_prefix(prefix) {
-        out.push({
-          name: f.name[prefix.length():].to_owned(),
-          ty: resolve(f.ty, env),
-          doc: f.doc,
-        })
-      }
-    }
-    out
-  }
+  let props = (section : String) => property_defs(d.properties, section, env)
   {
     local_name: d.name,
     id,
@@ -1412,6 +1533,28 @@ fn protocol_of(
     doc: d.doc,
     span: d.name_span,
   }
+}
+
+///|
+fn property_defs(
+  raw : Array[RawProperty],
+  section : String,
+  env : Env,
+) -> Array[PropertyDef] raise DefError {
+  let out : Array[PropertyDef] = []
+  for p in raw {
+    if p.section == section {
+      out.push({
+        name: p.name,
+        ty: resolve(p.ty, env),
+        writable: p.writable,
+        getter: p.getter,
+        setter: p.setter,
+        doc: p.doc,
+      })
+    }
+  }
+  out
 }
 
 ///|

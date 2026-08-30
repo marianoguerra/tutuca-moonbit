@@ -279,8 +279,9 @@ pub fn emit(
   // `@when` when the views use it that way, and the two enrichers. One
   // function each, so a body that calls a sibling calls a function.
   let values = e.value_bodies(decls, prefix, roles, refusals)
+  let setters = e.property_setters(decls, prefix, surface, refusals)
   {
-    source: source + values.source,
+    source: source + values.source + setters.source,
     answers_input: answers.get("Input").unwrap(),
     answers_receive: answers.get("Receive").unwrap(),
     answers_intent: answers.get("Intent").unwrap(),
@@ -288,6 +289,8 @@ pub fn emit(
     answers_whens: values.whens,
     answers_enriches: values.enriches,
     answers_enrich_scopes: values.enrich_scopes,
+    answers_property_get: values.property_get,
+    answers_property_set: setters.names,
     refusals,
   }
 }
@@ -309,6 +312,11 @@ pub fn value_fn_name(prefix : String, role : Role, name : String) -> String {
 }
 
 ///|
+pub fn property_set_fn_name(prefix : String, name : String) -> String {
+  "\{prefix}_property_set_\{name}"
+}
+
+///|
 /// What one pass over the value bodies produced.
 priv struct Values {
   source : String
@@ -316,6 +324,7 @@ priv struct Values {
   whens : Array[String]
   enriches : Array[String]
   enrich_scopes : Array[String]
+  property_get : Array[String]
 }
 
 ///|
@@ -337,6 +346,7 @@ fn E::value_bodies(
     whens: [],
     enriches: [],
     enrich_scopes: [],
+    property_get: [],
   }
   if prefix == "" {
     return out
@@ -382,6 +392,7 @@ fn E::value_bodies(
           take(d, RWhen, roles.whens, out.whens)
         }
       }
+      DGet => take(d, RMethod, [d.name], out.property_get)
       DEnrich => take(d, REnrich, roles.enriches, out.enriches)
       DEnrichScope =>
         take(d, REnrichScope, roles.enrich_scopes, out.enrich_scopes)
@@ -389,6 +400,63 @@ fn E::value_bodies(
     }
   }
   { ..out, source: b.to_string(), }
+}
+
+///|
+priv struct PropertySetters {
+  source : String
+  names : Array[String]
+}
+
+///|
+fn E::property_setters(
+  self : E,
+  decls : Array[@tscript.Decl],
+  prefix : String,
+  surface : @check.Surface,
+  refusals : Array[Refusal],
+) -> PropertySetters {
+  let source = StringBuilder()
+  let names : Array[String] = []
+  if prefix == "" {
+    return { source: "", names, }
+  }
+  for d in decls {
+    guard d.kind is DSet else { continue }
+    self.params = Map([])
+    self.prelude = []
+    self.tmp = 0
+    self.guards = Map([])
+    self.target = None
+    let before_ctx = self.uses_ctx
+    let arm = self.arm(d, "Receive", surface) catch {
+      Cannot(why) => {
+        self.uses_ctx = before_ctx
+        refusals.push({ name: d.name, why, span: d.span, })
+        continue
+      }
+    }
+    if self.uses_ctx != before_ctx {
+      self.uses_ctx = before_ctx
+      refusals.push({
+        name: d.name,
+        why: "a property setter is synchronous and pure, so it cannot use component effects or context",
+        span: d.span,
+      })
+      continue
+    }
+    let fn_name = property_set_fn_name(prefix, d.name)
+    source.write_string(
+      "///|\nfn \{fn_name}(s : \{self.state_ty}, value : @tutuca.Value) -> @component.Update[\{self.state_ty}] {\n" +
+      "  match (@component.Receive(\{quote(d.name)}, [value]) : @component.Dispatch) {\n" +
+      arm +
+      "    _ => Unhandled\n" +
+      "  }\n" +
+      "}\n\n",
+    )
+    names.push(d.name)
+  }
+  { source: source.to_string(), names, }
 }
 
 ///|
@@ -1044,6 +1112,11 @@ fn E::param_types(
       }
       d.params.map(_p => None)
     }
+    DSet =>
+      match self.def.properties.iter().find_first(p => p.name == d.name) {
+        Some(p) => [Some(p.ty)]
+        None => [None]
+      }
     _ =>
       match surface.inputs.get(d.name) {
         Some(ts) => d.params.mapi((i, _p) => ts.get(i).unwrap_or(None))

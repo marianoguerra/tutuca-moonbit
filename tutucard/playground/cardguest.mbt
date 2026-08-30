@@ -1,7 +1,7 @@
 // The compiled card, mounted — the other half of the boundary `card-wasm.js`
 // holds.
 //
-// The page next door compiles a card to a `tutuca:component@0.10.0` core module
+// The page next door compiles a card to a `tutuca:component@0.11.0` core module
 // and hands you the archive. That proves the BYTES are right. It does not prove
 // the module runs, and until something instantiated one and asked it for a
 // field, "this page produced a real guest" was a claim about a download.
@@ -77,14 +77,32 @@ extern "js" fn cardguest_dispatch(
   #|(key, handle, bucket, name, args, bindings) => globalThis.__cardguest[key].dispatch(handle, bucket, name, args, bindings)
 
 ///|
-extern "js" fn cardguest_call_method(
+extern "js" fn cardguest_render_call(
   key : String,
   handle : Int,
+  category : String,
   name : String,
   args_json : String,
   bindings_json : String,
 ) -> String =
-  #|(key, handle, name, args, bindings) => globalThis.__cardguest[key].callMethod(handle, name, args, bindings)
+  #|(key, handle, category, name, args, bindings) => globalThis.__cardguest[key].renderCall(handle, category, name, args, bindings)
+
+///|
+extern "js" fn cardguest_get_property(
+  key : String,
+  handle : Int,
+  name : String,
+) -> String =
+  #|(key, handle, name) => globalThis.__cardguest[key].getProperty(handle, name)
+
+///|
+extern "js" fn cardguest_set_property(
+  key : String,
+  handle : Int,
+  name : String,
+  value_json : String,
+) -> String =
+  #|(key, handle, name, value) => globalThis.__cardguest[key].setProperty(handle, name, value)
 
 ///|
 extern "js" fn cardguest_with_field(
@@ -208,7 +226,7 @@ impl @dyncomp.Guest for CardGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn dispatch(
+impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
   self,
   handle,
   bucket,
@@ -391,22 +409,64 @@ fn path_steps(j : Json?) -> Array[@tutuca.Step] {
 }
 
 ///|
-impl @dyncomp.Guest for CardGuest with fn call_method(
+impl @dyncomp.Guest for CardGuest with fn render_call(
   self,
   handle,
+  category,
   name,
   args,
   bindings,
 ) {
   self.value_of(
-    cardguest_call_method(
+    cardguest_render_call(
       self.key,
       handle,
+      category,
       name,
       list_json(args),
       bindings_json(bindings),
     ),
   )
+}
+
+///|
+impl @dyncomp.Guest for CardGuest with fn get_property(self, handle, name) {
+  let raw = cardguest_get_property(self.key, handle, name)
+  if raw == "" {
+    None
+  } else {
+    Some(self.value_of(raw))
+  }
+}
+
+///|
+impl @dyncomp.Guest for CardGuest with fn set_property(
+  self,
+  handle,
+  name,
+  value,
+) {
+  let raw = cardguest_set_property(
+    self.key,
+    handle,
+    name,
+    @dyncomp.child_json(value).stringify(),
+  )
+  let parsed = @json.parse(raw) catch { _ => return GuestPropertyMissing }
+  match parsed {
+    Object(m) =>
+      match m.get("tag") {
+        Some(String("changed")) =>
+          match m.get("next") {
+            Some(Number(n, ..)) => GuestPropertyChanged(n.to_int())
+            _ => GuestPropertyRefused
+          }
+        Some(String("unchanged")) => GuestPropertyUnchanged
+        Some(String("refused")) => GuestPropertyRefused
+        _ => GuestPropertyMissing
+      }
+    _ => GuestPropertyMissing
+  }
 }
 
 ///|

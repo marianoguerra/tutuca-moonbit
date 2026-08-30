@@ -46,6 +46,14 @@ pub(all) struct DispatchResult {
 } derive(Debug, Eq)
 
 ///|
+pub(all) enum GuestPropertyResult {
+  GuestPropertyMissing
+  GuestPropertyUnchanged
+  GuestPropertyRefused
+  GuestPropertyChanged(Int)
+} derive(Debug, Eq)
+
+///|
 /// The wire number of a dispatch bucket: its case index in the WIT's `bucket`
 /// enum.
 ///
@@ -71,7 +79,7 @@ pub(open) trait Guest {
   /// effect applied afterwards, and a value a handler is in the middle of
   /// using cannot wait for that. Empty for a component that declares no
   /// lookup, which is most of them.
-  fn dispatch(
+  fn handle_dispatch(
     Self,
     handle : Int,
     bucket : @tutuca.HandlerBucket,
@@ -79,6 +87,20 @@ pub(open) trait Guest {
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> DispatchResult
+  fn handle_message(
+    Self,
+    handle : Int,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> DispatchResult = _
+  fn handle_intent(
+    Self,
+    handle : Int,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> DispatchResult = _
   /// Call one render-time method: a `compute`, a `pred`, a `@when` filter, an
   /// enricher. Pure — it must not mutate.
   ///
@@ -88,13 +110,43 @@ pub(open) trait Guest {
   /// `control.lookup` reads these and nothing else. Without it a card's `pred`
   /// compiled `tc_lookup` and read nil — silently, which is the failure this
   /// argument exists to remove.
-  fn call_method(
+  fn render_call(
+    Self,
+    handle : Int,
+    category : String,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value
+  fn compute(
     Self,
     handle : Int,
     name : String,
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
-  ) -> @tutuca.Value
+  ) -> @tutuca.Value = _
+  fn when(
+    Self,
+    handle : Int,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> Bool = _
+  fn enrich(
+    Self,
+    handle : Int,
+    name : String,
+    args : Array[@tutuca.Value],
+    bindings : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value = _
+  fn enrich_scope(
+    Self,
+    handle : Int,
+    name : String,
+    bindings : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value = _
+  fn get_property(Self, handle : Int, name : String) -> @tutuca.Value? = _
+  fn set_property(Self, handle : Int, name : String, value : @tutuca.Value) -> GuestPropertyResult = _
   fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?
   /// Serve one of the intents the bundle declares on its own scope.
   /// Synchronous, like every call across this boundary: a guest that must wait
@@ -112,4 +164,44 @@ pub(open) trait Guest {
   /// caller then rebuilds from the declared fields instead.
   fn restore(Self, component : String, state : Bytes) -> Int?
   fn drop_instance(Self, handle : Int) -> Unit
+}
+
+///|
+impl Guest with fn get_property(_self, _handle, _name) {
+  None
+}
+
+///|
+impl Guest with fn set_property(_self, _handle, _name, _value) {
+  GuestPropertyMissing
+}
+
+///|
+impl Guest with fn handle_message(self, handle, name, args, bindings) {
+  self.handle_dispatch(handle, Receive, name, args, bindings)
+}
+
+///|
+impl Guest with fn handle_intent(self, handle, name, args, bindings) {
+  self.handle_dispatch(handle, Intent, name, args, bindings)
+}
+
+///|
+impl Guest with fn compute(self, handle, name, args, bindings) {
+  self.render_call(handle, "compute", name, args, bindings)
+}
+
+///|
+impl Guest with fn when(self, handle, name, args, bindings) {
+  self.render_call(handle, "when", name, args, bindings).bool(default=false)
+}
+
+///|
+impl Guest with fn enrich(self, handle, name, args, bindings) {
+  self.render_call(handle, "enrich", name, args, bindings)
+}
+
+///|
+impl Guest with fn enrich_scope(self, handle, name, bindings) {
+  self.render_call(handle, "enrichScope", name, [], bindings)
 }

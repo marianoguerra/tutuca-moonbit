@@ -36,7 +36,7 @@ const ERROR : String = "error"
 
 ///|
 fn Calc::zero() -> Calc {
-  { display: "0", pending: None, op: "", entering: false }
+  { display: "0", pending: None, op: "", entering: false, }
 }
 
 ///|
@@ -85,26 +85,26 @@ fn apply_op(op : String, a : Double, b : Double) -> Double? {
 /// The display with `d` appended, as a calculator appends it.
 fn Calc::digit(self : Calc, d : String) -> Calc {
   if !self.entering || self.display == "0" || self.display == ERROR {
-    return { ..self, display: d, entering: true }
+    return { ..self, display: d, entering: true, }
   }
   // Long enough to be useful, short enough to stay on screen. A calculator you
   // can type into forever is one whose display you cannot read.
   if self.display.length() >= 14 {
     return self
   }
-  { ..self, display: self.display + d, entering: true }
+  { ..self, display: self.display + d, entering: true, }
 }
 
 ///|
 /// A decimal point, at most one per number.
 fn Calc::point(self : Calc) -> Calc {
   if !self.entering || self.display == ERROR {
-    return { ..self, display: "0.", entering: true }
+    return { ..self, display: "0.", entering: true, }
   }
   if self.display.contains(".") {
     return self
   }
-  { ..self, display: self.display + ".", entering: true }
+  { ..self, display: self.display + ".", entering: true, }
 }
 
 ///|
@@ -125,8 +125,8 @@ fn Calc::operate(self : Calc, op : String) -> Calc {
     (None, _) => Some(self.value())
   }
   match left {
-    None => { display: ERROR, pending: None, op: "", entering: false }
-    Some(v) => { display: show_num(v), pending: Some(v), op, entering: false }
+    None => { display: ERROR, pending: None, op: "", entering: false, }
+    Some(v) => { display: show_num(v), pending: Some(v), op, entering: false, }
   }
 }
 
@@ -134,12 +134,12 @@ fn Calc::operate(self : Calc, op : String) -> Calc {
 /// Evaluate, leaving the answer on screen and nothing pending.
 fn Calc::equals(self : Calc) -> Calc {
   match self.pending {
-    None => { ..self, entering: false }
+    None => { ..self, entering: false, }
     Some(p) =>
       match apply_op(self.op, p, self.value()) {
-        None => { display: ERROR, pending: None, op: "", entering: false }
+        None => { display: ERROR, pending: None, op: "", entering: false, }
         Some(out) =>
-          { display: show_num(out), pending: None, op: "", entering: false }
+          { display: show_num(out), pending: None, op: "", entering: false, }
       }
   }
 }
@@ -152,9 +152,9 @@ fn Calc::back(self : Calc) -> Calc {
     return Calc::zero()
   }
   if self.display.length() <= 1 {
-    return { ..self, display: "0", entering: false }
+    return { ..self, display: "0", entering: false, }
   }
-  { ..self, display: self.display[0:self.display.length() - 1].to_owned() }
+  { ..self, display: self.display[0:self.display.length() - 1].to_owned(), }
 }
 
 ///|
@@ -168,9 +168,9 @@ fn Calc::negate(self : Calc) -> Calc {
     return self
   }
   if self.display.has_prefix("-") {
-    { ..self, display: self.display[1:].to_owned() }
+    { ..self, display: self.display[1:].to_owned(), }
   } else {
-    { ..self, display: "-" + self.display }
+    { ..self, display: "-" + self.display, }
   }
 }
 
@@ -185,8 +185,8 @@ impl DynComponent for Calc with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Calc with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Calc with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     "digit" =>
       match args {
@@ -209,7 +209,7 @@ impl DynComponent for Calc with fn handle(self, bucket, name, args) {
 }
 
 ///|
-impl DynComponent for Calc with fn call_method(self, name, _args) {
+impl DynComponent for Calc with fn render_call(self, name, _args) {
   match name {
     // What is waiting, for the small line above the display. It is the half of
     // the state the screen does not show, and a calculator that hides it makes
@@ -232,7 +232,7 @@ impl DynComponent for Calc with fn with_field(_self, name, v) {
     // belonged to a sum nobody else can finish.
     ("display", @values.Value::Text(s)) =>
       Some(
-        ({ display: s, pending: None, op: "", entering: false } : Calc)
+        ({ display: s, pending: None, op: "", entering: false, } : Calc)
         as &DynComponent,
       )
     _ => None
@@ -282,7 +282,7 @@ fn restore_calc(state : FixedArray[Byte]) -> &DynComponent? {
     Some(Number(n, ..)) => Some(n)
     _ => None
   }
-  Some(({ display, pending, op, entering } : Calc) as &DynComponent)
+  Some(({ display, pending, op, entering, } : Calc) as &DynComponent)
 }
 
 ///|

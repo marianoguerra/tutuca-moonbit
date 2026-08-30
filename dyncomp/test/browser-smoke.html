@@ -66,12 +66,12 @@ try {
   assert(a.getField('count').val === 10 && b.getField('count').val === 0,
     'independent instances');
 
-  const a2 = a.handleEvent('receive', 'inc', []).val;
+  const a2 = a.handleMessage('inc', []).val;
   assert(a2.getField('count').val === 11 && a.getField('count').val === 10,
-    'handle-event: new instance out, old unchanged');
+    'handle-message: new instance out, old unchanged');
 
   const list = put([{ tag: 'number', val: 40 }, { tag: 'number', val: 2 }]);
-  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]).val;
+  const summed = b.handleMessage('sum', [{ tag: 'list', val: list }]).val;
   assert(summed.getField('count').val === 42, 'guest read host arena mid-dispatch (sum=42)');
 
   const N = 1000;

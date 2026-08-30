@@ -249,7 +249,7 @@ impl DynComponent for Segment with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Segment with fn call_method(self, name, _args) {
+impl DynComponent for Segment with fn render_call(self, name, _args) {
   match name {
     "segClass" => @values.Value::Text(self.seg_class())
     _ => @values.Value::Nil
@@ -257,12 +257,12 @@ impl DynComponent for Segment with fn call_method(self, name, _args) {
 }
 
 ///|
-impl DynComponent for Segment with fn handle(self, bucket, name, _args) {
+impl DynComponent for Segment with fn handle_dispatch(self, bucket, name, _args) {
   match (bucket, name) {
     // A link segment cannot navigate: `href` is refused for an untrusted
     // bundle, so the URL travels UP and whoever is above decides. That is the
     // same shape as asking the host over an intent, one level cheaper.
-    (RECEIVE, "open") => {
+    (MessageDispatch, "open") => {
       if self.link && self.url != "" {
         @control.intent(
           "openLink",
@@ -288,15 +288,15 @@ impl DynComponent for Segment with fn handle(self, bucket, name, _args) {
 /// storybook without this bundle declaring a single input handler for it.
 impl DynComponent for Segment with fn with_field(self, name, v) {
   let next : Segment? = match (name, v) {
-    ("text", @values.Value::Text(s)) => Some({ ..self, text: s })
-    ("bold", @values.Value::Boolean(b)) => Some({ ..self, bold: b })
-    ("italic", @values.Value::Boolean(b)) => Some({ ..self, italic: b })
-    ("strike", @values.Value::Boolean(b)) => Some({ ..self, strike: b })
-    ("code", @values.Value::Boolean(b)) => Some({ ..self, code: b })
-    ("mention", @values.Value::Boolean(b)) => Some({ ..self, mention: b })
-    ("channel", @values.Value::Boolean(b)) => Some({ ..self, channel: b })
-    ("link", @values.Value::Boolean(b)) => Some({ ..self, link: b })
-    ("url", @values.Value::Text(s)) => Some({ ..self, url: s })
+    ("text", @values.Value::Text(s)) => Some({ ..self, text: s, })
+    ("bold", @values.Value::Boolean(b)) => Some({ ..self, bold: b, })
+    ("italic", @values.Value::Boolean(b)) => Some({ ..self, italic: b, })
+    ("strike", @values.Value::Boolean(b)) => Some({ ..self, strike: b, })
+    ("code", @values.Value::Boolean(b)) => Some({ ..self, code: b, })
+    ("mention", @values.Value::Boolean(b)) => Some({ ..self, mention: b, })
+    ("channel", @values.Value::Boolean(b)) => Some({ ..self, channel: b, })
+    ("link", @values.Value::Boolean(b)) => Some({ ..self, link: b, })
+    ("url", @values.Value::Text(s)) => Some({ ..self, url: s, })
     _ => None
   }
   match next {
@@ -338,7 +338,7 @@ impl DynComponent for RichText with fn get_field(self, name) {
 
 ///|
 fn make_rich_text(args : Array[(String, @values.Value)]) -> &DynComponent {
-  let r : RichText = { segments: children("Segment", arg(args, "segments")) }
+  let r : RichText = { segments: children("Segment", arg(args, "segments")), }
   r as &DynComponent
 }
 
@@ -362,11 +362,16 @@ impl DynComponent for Reaction with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Reaction with fn handle(self, bucket, name, _args) {
+impl DynComponent for Reaction with fn handle_dispatch(
+  self,
+  bucket,
+  name,
+  _args,
+) {
   match (bucket, name) {
     // Both halves: the count is this component's own state, and the fact that
     // somebody reacted is news for whoever is above.
-    (RECEIVE, "toggle") => {
+    (MessageDispatch, "toggle") => {
       let reacted = !self.reacted
       let count = if reacted { self.count + 1.0 } else { self.count - 1.0 }
       @control.intent(
@@ -380,7 +385,7 @@ impl DynComponent for Reaction with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, reacted, count } as &DynComponent)
+      Changed({ ..self, reacted, count, } as &DynComponent)
     }
     _ => Unhandled
   }
@@ -389,9 +394,9 @@ impl DynComponent for Reaction with fn handle(self, bucket, name, _args) {
 ///|
 impl DynComponent for Reaction with fn with_field(self, name, v) {
   let next : Reaction? = match (name, v) {
-    ("emoji", @values.Value::Text(s)) => Some({ ..self, emoji: s })
-    ("count", @values.Value::Number(n)) => Some({ ..self, count: n })
-    ("reacted", @values.Value::Boolean(b)) => Some({ ..self, reacted: b })
+    ("emoji", @values.Value::Text(s)) => Some({ ..self, emoji: s, })
+    ("count", @values.Value::Number(n)) => Some({ ..self, count: n, })
+    ("reacted", @values.Value::Boolean(b)) => Some({ ..self, reacted: b, })
     _ => None
   }
   match next {
@@ -561,7 +566,7 @@ fn upper_char(c : Char) -> Char {
 }
 
 ///|
-impl DynComponent for Message with fn call_method(self, name, _args) {
+impl DynComponent for Message with fn render_call(self, name, _args) {
   match name {
     "initials" => @values.Value::Text(initials_of(self.author))
     // One per origin the view names, and only one of them is ever non-empty:
@@ -615,9 +620,9 @@ impl DynComponent for Message with fn call_method(self, name, _args) {
 /// subdomain is not known when the view is registered. Neither is an origin a
 /// view can write as a literal, so neither is an `href` an untrusted bundle may
 /// have — and both are perfectly good things to announce.
-impl DynComponent for Message with fn handle(self, bucket, name, _args) {
+impl DynComponent for Message with fn handle_dispatch(self, bucket, name, _args) {
   match (bucket, name) {
-    (RECEIVE, "openPermalink") => {
+    (MessageDispatch, "openPermalink") => {
       if self.permalink != "" {
         @control.intent(
           "openLink",
@@ -643,18 +648,19 @@ impl DynComponent for Message with fn handle(self, bucket, name, _args) {
 ///|
 impl DynComponent for Message with fn with_field(self, name, v) {
   let next : Message? = match (name, v) {
-    ("id", @values.Value::Text(s)) => Some({ ..self, id: s })
-    ("author", @values.Value::Text(s)) => Some({ ..self, author: s })
-    ("avatar", @values.Value::Text(s)) => Some({ ..self, avatar: s })
-    ("channelName", @values.Value::Text(s)) => Some({ ..self, channel_name: s })
-    ("createdAt", @values.Value::Text(s)) => Some({ ..self, created_at: s })
-    ("compact", @values.Value::Boolean(b)) => Some({ ..self, compact: b })
-    ("edited", @values.Value::Boolean(b)) => Some({ ..self, edited: b })
-    ("pinned", @values.Value::Boolean(b)) => Some({ ..self, pinned: b })
-    ("permalink", @values.Value::Text(s)) => Some({ ..self, permalink: s })
+    ("id", @values.Value::Text(s)) => Some({ ..self, id: s, })
+    ("author", @values.Value::Text(s)) => Some({ ..self, author: s, })
+    ("avatar", @values.Value::Text(s)) => Some({ ..self, avatar: s, })
+    ("channelName", @values.Value::Text(s)) =>
+      Some({ ..self, channel_name: s, })
+    ("createdAt", @values.Value::Text(s)) => Some({ ..self, created_at: s, })
+    ("compact", @values.Value::Boolean(b)) => Some({ ..self, compact: b, })
+    ("edited", @values.Value::Boolean(b)) => Some({ ..self, edited: b, })
+    ("pinned", @values.Value::Boolean(b)) => Some({ ..self, pinned: b, })
+    ("permalink", @values.Value::Text(s)) => Some({ ..self, permalink: s, })
     // The child write-back path: a `Reaction` that counted itself up returns a
     // successor, and the host puts the whole list back through here.
-    ("body", @values.Value::Instance(t)) => Some({ ..self, body: t })
+    ("body", @values.Value::Instance(t)) => Some({ ..self, body: t, })
     ("reactions", _) =>
       match tokens_of(v) {
         Some(reactions) => Some({ ..self, reactions, })
@@ -765,7 +771,7 @@ fn paging(page : Int, total : Int, page_size : Int) -> Pager {
   let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
   let last = if on { (total + size - 1) / size - 1 } else { 0 }
   let page = if page < 0 { 0 } else if page > last { last } else { page }
-  { page, size, on, total }
+  { page, size, on, total, }
 }
 
 ///|
@@ -870,7 +876,7 @@ fn Pager::answer(self : Pager, name : String) -> @values.Value? {
 }
 
 ///|
-/// Either the pager's answer or nothing, as a `call_method` has to answer.
+/// Either the pager's answer or nothing, as a `compute` has to answer.
 fn Pager::answer_or_nil(self : Pager, name : String) -> @values.Value {
   match self.answer(name) {
     Some(v) => v
@@ -955,7 +961,7 @@ impl DynComponent for Thread with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Thread with fn call_method(self, name, _args) {
+impl DynComponent for Thread with fn render_call(self, name, _args) {
   match name {
     // The caret is for replies that are HERE. A count with nothing behind it
     // got one anyway until this split existed, and a caret that expands onto
@@ -997,15 +1003,15 @@ impl DynComponent for Thread with fn call_method(self, name, _args) {
 }
 
 ///|
-impl DynComponent for Thread with fn handle(self, bucket, name, args) {
+impl DynComponent for Thread with fn handle_dispatch(self, bucket, name, args) {
   match (bucket, name) {
-    (RECEIVE, "toggle") =>
-      Changed({ ..self, expanded: !self.expanded } as &DynComponent)
+    (MessageDispatch, "toggle") =>
+      Changed({ ..self, expanded: !self.expanded, } as &DynComponent)
     // The replies are not here and this bundle cannot go and get them: it has
     // no network, and the whole point of that is that it is checkable by
     // looking. So it says which two arguments would, and whoever is above is
     // the one that can make the call.
-    (RECEIVE, "openThread") => {
+    (MessageDispatch, "openThread") => {
       @control.intent(
         "openThread",
         [
@@ -1026,15 +1032,15 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
     // What `ChannelHistory`'s expand-all/collapse-all reaches with
     // `control.send-at`: a receive rather than an input, because it is not
     // this component's own button that raised it.
-    (RECEIVE, "setExpanded") =>
+    (MessageDispatch, "setExpanded") =>
       match args {
         [@values.Value::Boolean(b), ..] =>
-          Changed({ ..self, expanded: b } as &DynComponent)
+          Changed({ ..self, expanded: b, } as &DynComponent)
         _ => Unchanged
       }
     // The pager under the replies. A page moves nothing but which of them are
     // drawn, so no child is rebuilt and nothing is announced.
-    (RECEIVE, _) => {
+    (MessageDispatch, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -1049,17 +1055,17 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
 impl DynComponent for Thread with fn with_field(self, name, v) {
   match (name, v) {
     ("expanded", @values.Value::Boolean(b)) =>
-      Some({ ..self, expanded: b } as &DynComponent)
+      Some({ ..self, expanded: b, } as &DynComponent)
     ("root", @values.Value::Instance(t)) =>
-      Some({ ..self, root: t } as &DynComponent)
+      Some({ ..self, root: t, } as &DynComponent)
     ("replyCount", @values.Value::Number(n)) =>
-      Some({ ..self, reply_count: n.to_int() } as &DynComponent)
+      Some({ ..self, reply_count: n.to_int(), } as &DynComponent)
     ("channelName", @values.Value::Text(s)) =>
-      Some({ ..self, channel_name: s } as &DynComponent)
+      Some({ ..self, channel_name: s, } as &DynComponent)
     ("rootTs", @values.Value::Text(s)) =>
-      Some({ ..self, root_ts: s } as &DynComponent)
+      Some({ ..self, root_ts: s, } as &DynComponent)
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // Writing the replies home does NOT move the count: how many exist is a
     // fact about the conversation, and how many are on screen is a fact about
     // this page of it.
@@ -1076,7 +1082,7 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
         Some(shown) => {
           let at = self.shown()
           if at.length() != shown.length() {
-            Some({ ..self, replies: shown, page: 0 } as &DynComponent)
+            Some({ ..self, replies: shown, page: 0, } as &DynComponent)
           } else {
             let replies = self.replies.copy()
             for k, i in at {
@@ -1198,7 +1204,7 @@ impl DynComponent for Scope with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Scope with fn call_method(self, name, _args) {
+impl DynComponent for Scope with fn render_call(self, name, _args) {
   match name {
     "hasAny" => @values.Value::Boolean(self.has_any())
     "kindsLabel" =>
@@ -1279,15 +1285,16 @@ impl DynComponent for Scope with fn call_method(self, name, _args) {
 impl DynComponent for Scope with fn with_field(self, name, v) {
   let next : Scope? = match (name, v) {
     ("publicChannels", @values.Value::Boolean(b)) =>
-      Some({ ..self, public_channels: b })
+      Some({ ..self, public_channels: b, })
     ("privateChannels", @values.Value::Boolean(b)) =>
-      Some({ ..self, private_channels: b })
-    ("dms", @values.Value::Boolean(b)) => Some({ ..self, dms: b })
+      Some({ ..self, private_channels: b, })
+    ("dms", @values.Value::Boolean(b)) => Some({ ..self, dms: b, })
     ("channelsScanned", @values.Value::Number(n)) =>
-      Some({ ..self, channels_scanned: n })
-    ("truncated", @values.Value::Boolean(b)) => Some({ ..self, truncated: b })
-    ("truncatedBy", @values.Value::Text(s)) => Some({ ..self, truncated_by: s })
-    ("note", @values.Value::Text(s)) => Some({ ..self, note: s })
+      Some({ ..self, channels_scanned: n, })
+    ("truncated", @values.Value::Boolean(b)) => Some({ ..self, truncated: b, })
+    ("truncatedBy", @values.Value::Text(s)) =>
+      Some({ ..self, truncated_by: s, })
+    ("note", @values.Value::Text(s)) => Some({ ..self, note: s, })
     _ => None
   }
   match next {
@@ -1492,7 +1499,7 @@ impl DynComponent for FileList with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for FileList with fn call_method(self, name, _args) {
+impl DynComponent for FileList with fn render_call(self, name, _args) {
   match name {
     "title" =>
       @values.Value::Text(
@@ -1517,12 +1524,12 @@ impl DynComponent for FileList with fn call_method(self, name, _args) {
 }
 
 ///|
-impl DynComponent for FileList with fn handle(self, bucket, name, args) {
+impl DynComponent for FileList with fn handle_dispatch(self, bucket, name, args) {
   match (bucket, name) {
     // The row's index, not its url: `@key` is what a loop can hand a handler,
     // and looking the row up here means the view never carries a link it might
     // pass to the wrong component.
-    (RECEIVE, "openFile") => {
+    (MessageDispatch, "openFile") => {
       // The index is into the rows the view was GIVEN, which on page two are
       // not the first rows of the list — so it is read back through the same
       // window that decided them.
@@ -1546,7 +1553,7 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
       }
       Unchanged
     }
-    (RECEIVE, _) => {
+    (MessageDispatch, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -1561,16 +1568,16 @@ impl DynComponent for FileList with fn handle(self, bucket, name, args) {
 impl DynComponent for FileList with fn with_field(self, name, v) {
   match (name, v) {
     ("filter", @values.Value::Text(s)) =>
-      Some({ ..self, filter: s } as &DynComponent)
+      Some({ ..self, filter: s, } as &DynComponent)
     ("files", @values.Value::List(_)) =>
       Some(
-        { ..self, files: as_items(Some(v)).map(file_row_of), page: 0 }
+        { ..self, files: as_items(Some(v)).map(file_row_of), page: 0, }
         as &DynComponent,
       )
     ("scope", @values.Value::Instance(t)) =>
-      Some({ ..self, scope: t } as &DynComponent)
+      Some({ ..self, scope: t, } as &DynComponent)
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     _ => None
   }
 }
@@ -1755,7 +1762,7 @@ impl DynComponent for ChannelHistory with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for ChannelHistory with fn call_method(self, name, _args) {
+impl DynComponent for ChannelHistory with fn render_call(self, name, _args) {
   match name {
     "channelLabel" => @values.Value::Text("#\{self.channel}")
     "memberLabel" =>
@@ -1792,55 +1799,60 @@ impl DynComponent for ChannelHistory with fn call_method(self, name, _args) {
 }
 
 ///|
-impl DynComponent for ChannelHistory with fn handle(self, bucket, name, args) {
+impl DynComponent for ChannelHistory with fn handle_dispatch(
+  self,
+  bucket,
+  name,
+  args,
+) {
   match (bucket, name) {
     // The filter and the ordering each go back to the first page: both make a
     // different list, and page four of the old one is a position in a channel
     // that is not there any more.
-    (RECEIVE, "setQuery") =>
+    (MessageDispatch, "setQuery") =>
       match args {
         [@values.Value::Text(q), ..] =>
-          Changed({ ..self, query: q, page: 0 } as &DynComponent)
+          Changed({ ..self, query: q, page: 0, } as &DynComponent)
         _ => Unchanged
       }
-    (RECEIVE, "toggleOrder") =>
+    (MessageDispatch, "toggleOrder") =>
       Changed(
-        { ..self, newest_first: !self.newest_first, page: 0 } as &DynComponent,
+        { ..self, newest_first: !self.newest_first, page: 0, } as &DynComponent,
       )
     // Paging is not a filter: it changes which conversations are drawn and
     // nothing about which ones there are, so no child is rebuilt.
-    (RECEIVE, "firstPage" | "prevPage" | "nextPage" | "lastPage") =>
+    (MessageDispatch, "firstPage" | "prevPage" | "nextPage" | "lastPage") =>
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
         None => Unchanged
       }
-    (RECEIVE, "expandAll") => {
+    (MessageDispatch, "expandAll") => {
       self.set_all_expanded(true)
       Unchanged
     }
-    (RECEIVE, "collapseAll") => {
+    (MessageDispatch, "collapseAll") => {
       self.set_all_expanded(false)
       Unchanged
     }
     // A `Segment` deep inside a reply asked for a URL to be opened. Nothing
     // below here could decide what that means; this component can, and it
     // stops the bubble rather than letting the page hear it too.
-    (INTENT, "openLink") => {
+    (IntentDispatch, "openLink") => {
       @control.stop_propagation()
       let url = as_text(args.get(0))
-      Changed({ ..self, last_action: "link: \{url}" } as &DynComponent)
+      Changed({ ..self, last_action: "link: \{url}", } as &DynComponent)
     }
-    (INTENT, "reacted") => {
+    (IntentDispatch, "reacted") => {
       @control.stop_propagation()
       let emoji = as_text(args.get(0))
       let on = as_bool(args.get(1))
       let verb = if on { "reacted" } else { "took back" }
-      Changed({ ..self, last_action: "\{verb} \{emoji}" } as &DynComponent)
+      Changed({ ..self, last_action: "\{verb} \{emoji}", } as &DynComponent)
     }
     // A thread with a count and no replies asked for them. This bundle has no
     // network, so what it can do is say the call — with both arguments filled
     // in, which is the whole difference between a dead end and a next step.
-    (INTENT, "openThread") => {
+    (IntentDispatch, "openThread") => {
       @control.stop_propagation()
       let channel = as_text(args.get(0))
       let ts = as_text(args.get(1))
@@ -1890,18 +1902,18 @@ fn ChannelHistory::set_all_expanded(self : ChannelHistory, on : Bool) -> Unit {
 ///|
 impl DynComponent for ChannelHistory with fn with_field(self, name, v) {
   let next : ChannelHistory? = match (name, v) {
-    ("channel", @values.Value::Text(s)) => Some({ ..self, channel: s })
-    ("topic", @values.Value::Text(s)) => Some({ ..self, topic: s })
+    ("channel", @values.Value::Text(s)) => Some({ ..self, channel: s, })
+    ("topic", @values.Value::Text(s)) => Some({ ..self, topic: s, })
     ("memberCount", @values.Value::Number(n)) =>
-      Some({ ..self, member_count: n })
-    ("query", @values.Value::Text(s)) => Some({ ..self, query: s, page: 0 })
+      Some({ ..self, member_count: n, })
+    ("query", @values.Value::Text(s)) => Some({ ..self, query: s, page: 0, })
     ("newestFirst", @values.Value::Boolean(b)) =>
-      Some({ ..self, newest_first: b, page: 0 })
+      Some({ ..self, newest_first: b, page: 0, })
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 })
-    ("loading", @values.Value::Boolean(b)) => Some({ ..self, loading: b })
-    ("error", @values.Value::Text(s)) => Some({ ..self, error: s })
-    ("scope", @values.Value::Instance(t)) => Some({ ..self, scope: t })
+      Some({ ..self, page_size: n.to_int(), page: 0, })
+    ("loading", @values.Value::Boolean(b)) => Some({ ..self, loading: b, })
+    ("error", @values.Value::Text(s)) => Some({ ..self, error: s, })
+    ("scope", @values.Value::Instance(t)) => Some({ ..self, scope: t, })
     // What the host hands back is the list it was SHOWN — filtered, ordered
     // and paged — so it goes home through `shown()`, which is the same
     // function that decided those positions in the first place. A length that

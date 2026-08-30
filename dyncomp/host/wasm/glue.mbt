@@ -13,14 +13,15 @@
 ///
 /// Value JSON conventions with the JS bridge:
 ///   - args/maps cross as plain JSON (Value::to_json / from_json)
-///   - get_field/call_method return "" for none, else a JSON value
+///   - get_field/get_property/render operations return "" for none, else JSON
 ///   - dispatch returns {"handled": bool, "next": handle|null,
 ///     "msgs": [{kind,name,args,...}]},
 ///     where a msg may also carry `path` (relative steps) or `opts` (request
 ///     routing) — see control_msg below
 ///   - serve_intent returns {"ok": value} or {"err": value}
 ///   - with_field returns -1 for none, else the successor handle
-///   - bucket ints follow WIT order: 0=input, 1=receive, 2=response, 3=bubble
+///   - the internal dispatch category is 0=message, 1=intent; the WIT exports
+///     are fixed `handle-message` / `handle-intent` operations
 
 ///|
 extern "wasm" fn tcomp_create(
@@ -47,13 +48,29 @@ extern "wasm" fn tcomp_dispatch(
 ) -> String = "tcomp" "dispatch"
 
 ///|
-extern "wasm" fn tcomp_call_method(
+extern "wasm" fn tcomp_render_call(
   bundle : Int,
   handle : Int,
+  category : String,
   name : String,
   args_json : String,
   bindings_json : String,
-) -> String = "tcomp" "call_method"
+) -> String = "tcomp" "render_call"
+
+///|
+extern "wasm" fn tcomp_get_property(
+  bundle : Int,
+  handle : Int,
+  name : String,
+) -> String = "tcomp" "get_property"
+
+///|
+extern "wasm" fn tcomp_set_property(
+  bundle : Int,
+  handle : Int,
+  name : String,
+  value_json : String,
+) -> String = "tcomp" "set_property"
 
 ///|
 extern "wasm" fn tcomp_with_field(
@@ -331,7 +348,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
+pub impl @dyncomp.Guest for WasmGuest with fn handle_dispatch(
   self,
   handle,
   bucket,
@@ -425,22 +442,64 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
 }
 
 ///|
-pub impl @dyncomp.Guest for WasmGuest with fn call_method(
+pub impl @dyncomp.Guest for WasmGuest with fn render_call(
   self,
   handle,
+  category,
   name,
   args,
   bindings,
 ) {
   parse_value(
-    tcomp_call_method(
+    tcomp_render_call(
       self.bundle,
       handle,
+      category,
       name,
       args_json(args),
       map_json(bindings),
     ),
   )
+}
+
+///|
+pub impl @dyncomp.Guest for WasmGuest with fn get_property(self, handle, name) {
+  let raw = tcomp_get_property(self.bundle, handle, name)
+  if raw == "" {
+    None
+  } else {
+    Some(parse_value(raw))
+  }
+}
+
+///|
+pub impl @dyncomp.Guest for WasmGuest with fn set_property(
+  self,
+  handle,
+  name,
+  value,
+) {
+  let raw = tcomp_set_property(
+    self.bundle,
+    handle,
+    name,
+    @dyncomp.child_json(value).stringify(),
+  )
+  let parsed = @json.parse(raw) catch { _ => return GuestPropertyMissing }
+  match parsed {
+    Object(m) =>
+      match m.get("tag") {
+        Some(String("changed")) =>
+          match m.get("next") {
+            Some(Number(n, ..)) => GuestPropertyChanged(n.to_int())
+            _ => GuestPropertyRefused
+          }
+        Some(String("unchanged")) => GuestPropertyUnchanged
+        Some(String("refused")) => GuestPropertyRefused
+        _ => GuestPropertyMissing
+      }
+    _ => GuestPropertyMissing
+  }
 }
 
 ///|

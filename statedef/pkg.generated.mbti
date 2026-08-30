@@ -130,6 +130,9 @@ pub(all) enum Operand {
 pub(all) struct PropertyDef {
   name : String
   ty : StateTy
+  writable : Bool
+  getter : String?
+  setter : String?
   doc : String?
 } derive(Eq, @debug.Debug)
 
@@ -220,6 +223,7 @@ pub(all) struct StateDef {
   source_name : String
   component : String
   fields : Array[FieldDef]
+  properties : Array[PropertyDef]
   receive : Array[MsgDef]
   intent : Array[MsgDef]
   express_message : Array[MsgDef]

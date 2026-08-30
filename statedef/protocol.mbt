@@ -189,41 +189,38 @@ fn check_property_types(
   for property in protocol.properties {
     for b in def.property_bindings {
       if b.protocol_id == protocol.id && b.member_name == property.name {
-        if b.source.has_prefix(".") {
-          let field_name = b.source[1:].to_owned()
-          match def.field(field_name) {
-            None =>
-              add(
-                ProtocolPropertyMissing,
-                def,
-                protocol.id,
-                property.name,
-                "property `\{property.name}` reads missing field `\{field_name}`",
-                true,
-                b.span,
-              )
-            Some(f) if f.ty != property.ty =>
-              add(
-                ProtocolPropertyType,
-                def,
-                protocol.id,
-                property.name,
-                "property `\{property.name}` requires \{property.ty.show_source()}, but `.\{field_name}` is \{f.ty.show_source()}",
-                true,
-                b.span,
-              )
-            Some(_) => ()
-          }
-        } else if !b.source.has_prefix("$") {
-          add(
-            ProtocolPropertyMissing,
-            def,
-            protocol.id,
-            property.name,
-            "property provider must be `.field` or `$compute`",
-            true,
-            b.span,
-          )
+        match def.properties.iter().find_first(p => p.name == b.source) {
+          None =>
+            add(
+              ProtocolPropertyMissing,
+              def,
+              protocol.id,
+              property.name,
+              "property `\{property.name}` binds missing local property `\{b.source}`",
+              true,
+              b.span,
+            )
+          Some(implementation) if implementation.ty != property.ty =>
+            add(
+              ProtocolPropertyType,
+              def,
+              protocol.id,
+              property.name,
+              "property `\{property.name}` requires \{property.ty.show_source()}, but `\{b.source}` is \{implementation.ty.show_source()}",
+              true,
+              b.span,
+            )
+          Some(implementation) if property.writable && !implementation.writable =>
+            add(
+              ProtocolPropertyType,
+              def,
+              protocol.id,
+              property.name,
+              "property `\{property.name}` is writable, but `\{b.source}` is read-only",
+              true,
+              b.span,
+            )
+          Some(_) => ()
         }
       }
     }

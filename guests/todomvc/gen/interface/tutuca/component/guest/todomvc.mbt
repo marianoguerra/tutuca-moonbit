@@ -75,7 +75,7 @@ fn items_of(h : UInt64) -> Array[MvcItem] {
           Some(@values.Value::Boolean(b)) => b
           _ => false
         }
-        items.push({ text, done })
+        items.push({ text, done, })
       }
       _ => ()
     }
@@ -154,8 +154,8 @@ impl DynComponent for TodoMvc with fn with_field(self, name, v) {
 }
 
 ///|
-impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for TodoMvc with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     "typeDraft" =>
       match text_arg(args) {
@@ -185,7 +185,7 @@ impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
       let all_done = self.items.length() > 0 &&
         self.items.filter(it => !it.done).length() == 0
       let items = self.items.map(it => {
-        ({ text: it.text, done: !all_done } : MvcItem)
+        ({ text: it.text, done: !all_done, } : MvcItem)
       })
       Changed(self.changed(items=Some(items)))
     }
@@ -227,7 +227,7 @@ fn TodoMvc::add_draft(self : TodoMvc) -> &DynComponent? {
   let text = self.draft.trim(chars=" ").to_owned()
   guard text != "" else { return None }
   let items = self.items.copy()
-  items.push({ text, done: false })
+  items.push({ text, done: false, })
   Some(self.changed(items=Some(items), draft=Some("")))
 }
 
@@ -236,7 +236,7 @@ fn TodoMvc::toggle_at(self : TodoMvc, i : Int) -> &DynComponent? {
   guard i >= 0 && i < self.items.length() else { return None }
   let items = self.items.copy()
   let it = items[i]
-  items[i] = { text: it.text, done: !it.done }
+  items[i] = { text: it.text, done: !it.done, }
   Some(self.changed(items=Some(items)))
 }
 
@@ -267,7 +267,7 @@ fn TodoMvc::commit_edit(self : TodoMvc) -> &DynComponent? {
     return self.remove_at(self.editing)
   }
   let items = self.items.copy()
-  items[self.editing] = { text, done: items[self.editing].done }
+  items[self.editing] = { text, done: items[self.editing].done, }
   Some(self.changed(items=Some(items), editing=Some(-1), edit_text=Some("")))
 }
 
@@ -278,7 +278,7 @@ fn TodoMvc::commit_edit(self : TodoMvc) -> &DynComponent? {
 /// iterates every item and this answers, per item, whether the filter lets it
 /// through — so an item's `@key` stays its index in the WHOLE list and the
 /// per-row handlers keep working while a filter is on.
-impl DynComponent for TodoMvc with fn call_method(self, name, args) {
+impl DynComponent for TodoMvc with fn render_call(self, name, args) {
   match name {
     "draft" => @values.Value::Text(self.draft)
     "editText" => @values.Value::Text(self.edit_text)
@@ -372,7 +372,7 @@ fn restore_todomvc(state : FixedArray[Byte]) -> &DynComponent? {
         Some(String(s)) => s
         _ => ""
       }
-      items.push({ text, done: im.get("done") is Some(True) })
+      items.push({ text, done: im.get("done") is Some(True), })
     }
   }
   let editing = match m.get("editing") {
@@ -418,7 +418,7 @@ fn make_todomvc(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  ({ items, filter, draft: "", editing: -1, edit_text: "" } : TodoMvc)
+  ({ items, filter, draft: "", editing: -1, edit_text: "", } : TodoMvc)
   as &DynComponent
 }
 

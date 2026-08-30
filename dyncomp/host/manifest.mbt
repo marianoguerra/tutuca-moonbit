@@ -33,13 +33,21 @@ pub(all) struct DynFieldDef {
 } derive(Debug, Eq)
 
 ///|
+pub(all) struct DynPropertyDef {
+  name : String
+  ty : Int
+  writable : Bool
+  doc : String
+} derive(Debug, Eq)
+
+///|
 pub(all) struct DynProtocolDef {
   id : String
   handle_messages : Array[String]
   handle_intents : Array[String]
   express_messages : Array[String]
   express_intents : Array[String]
-  properties : Array[String]
+  properties : Array[DynPropertyDef]
   views : Array[String]
   provides : Array[String]
   lookups : Array[String]
@@ -113,6 +121,8 @@ pub(all) struct DynComponentDef {
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
+  /// Public abstract state, separately declared from internal storage fields.
+  properties : Array[DynPropertyDef]
   /// The FIELD DOMAINS the guest declared — its spec block's `where` clauses,
   /// in the runtime vocabulary.
   ///
@@ -217,7 +227,11 @@ pub(all) struct DynMacroDef {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 9
+pub let supported_api_version : Int = 10
+
+///|
+/// The archive JSON shape paired with `supported_api_version`.
+pub let supported_manifest_version : Int = 2
 
 ///|
 suberror ManifestError {
@@ -558,6 +572,39 @@ pub fn DynComponentDef::field_infos(
 }
 
 ///|
+fn parse_properties(
+  c : Map[String, Json],
+) -> Array[DynPropertyDef] raise ManifestError {
+  guard c.get("properties") is Some(Array(items)) else {
+    raise ManifestError("manifest: missing properties array")
+  }
+  let out : Array[DynPropertyDef] = []
+  for item in items {
+    guard item is Object(p) else {
+      raise ManifestError("manifest: bad property-def")
+    }
+    out.push({
+      name: str_field(p, "name"),
+      ty: int_field(p, "ty"),
+      writable: bool_field(p, "writable"),
+      doc: opt_str(p, "doc"),
+    })
+  }
+  out
+}
+
+///|
+pub fn DynComponentDef::property_infos(
+  self : DynComponentDef,
+) -> Array[@tutuca.PropertyInfo] {
+  self.properties.map(p => @tutuca.PropertyInfo::{
+    name: p.name,
+    ty: ty_info_at(self.types, p.ty),
+    writable: p.writable,
+  })
+}
+
+///|
 /// The named initial states of one component. An entry whose `argsJson` is not
 /// a JSON object is dropped: a fixture the host cannot read is a fixture it
 /// must not offer.
@@ -615,7 +662,7 @@ fn parse_protocols(
       handle_intents: str_array(p, "handleIntents"),
       express_messages: str_array(p, "expressMessages"),
       express_intents: str_array(p, "expressIntents"),
-      properties: str_array(p, "properties"),
+      properties: parse_properties(p),
       views: str_array(p, "views"),
       provides: str_array(p, "provides"),
       lookups: str_array(p, "lookups"),
@@ -654,6 +701,12 @@ pub fn DynManifest::from_json_string(
   }
   guard parsed is Object(root) else {
     raise ManifestError("manifest: not a JSON object")
+  }
+  let manifest_version = int_field(root, "manifestVersion")
+  if manifest_version != supported_manifest_version {
+    raise ManifestError(
+      "manifest: unsupported manifestVersion \{manifest_version} (host supports \{supported_manifest_version})",
+    )
   }
   let api_version = int_field(root, "apiVersion")
   if api_version != supported_api_version {
@@ -704,6 +757,7 @@ pub fn DynManifest::from_json_string(
       views,
       types: parse_types(c),
       fields,
+      properties: parse_properties(c),
       domains: match c.get("domains") {
         Some(d) => @tutuca.domains_of_json(d)
         None => []

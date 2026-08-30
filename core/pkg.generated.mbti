@@ -98,6 +98,13 @@ pub fn DispatchPath::of_steps(Array[Step]) -> Self
 pub fn DispatchPath::pop_step(Self) -> Self
 pub fn DispatchPath::to_transaction_path(Self) -> Path
 
+pub(all) enum DispatchProvenance {
+  Host
+  View
+  Component
+  Diagnostic
+} derive(Eq, @debug.Debug)
+
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
   Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey?)
@@ -264,6 +271,19 @@ pub fn PathKey::to_json(Self) -> Json
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
 
+pub(all) struct PropertyInfo {
+  name : String
+  ty : TyInfo
+  writable : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PropertyWrite {
+  PMissing
+  PUnchanged
+  PRefused
+  PChanged(Value)
+}
+
 pub(all) struct ProtocolBindingInfo {
   protocol_id : String
   member_name : String
@@ -282,7 +302,7 @@ pub(all) struct ProtocolInfo {
   handle_intents : Array[String]
   express_messages : Array[String]
   express_intents : Array[String]
-  properties : Array[(String, TyInfo)]
+  properties : Array[PropertyInfo]
   views : Array[String]
   provides : Array[(String, TyInfo)]
   lookups : Array[(String, TyInfo)]
@@ -366,6 +386,7 @@ pub(all) struct SchemaInfo {
   name : String
   fingerprint : String
   fields : Array[FieldInfo]
+  properties : Array[PropertyInfo]
   view_handlers : Array[String]
   receives : Array[String]
   intents : Array[String]
@@ -387,7 +408,7 @@ pub(all) struct SchemaInfo {
 pub fn SchemaInfo::conforms(Self, ProtocolInfo) -> ProtocolConformance
 pub fn SchemaInfo::field(Self, String) -> FieldInfo?
 pub fn SchemaInfo::field_names(Self) -> Array[String]
-pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], domains? : Array[FieldDomain], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], properties? : Array[PropertyInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], domains? : Array[FieldDomain], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
 pub(all) enum Step {
@@ -496,8 +517,12 @@ pub fn Value::map_opt(Self) -> Map[String, Self]?
 pub fn Value::method_at(Self, String, &Stack) -> Self?
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
+pub fn Value::property(Self, String) -> Self
+pub fn Value::property_opt(Self, String) -> Self?
 pub fn Value::protocol_property(Self, String, String, &Stack) -> Self
 pub fn Value::schema(Self) -> SchemaInfo?
+pub fn Value::set_property(Self, String, Self) -> PropertyWrite
+pub fn Value::set_property_at(Self, Path, String, Self) -> PropertyWrite
 pub fn Value::size(Self, default? : Int) -> Int
 pub fn Value::snapshot(Self) -> Map[String, Self]
 pub fn Value::str(Self, default? : String) -> String
@@ -527,6 +552,7 @@ pub(open) trait Ctx {
   fn path(Self) -> DispatchPath = _
   fn target_path(Self) -> DispatchPath = _
   fn name(Self) -> String? = _
+  fn provenance(Self) -> DispatchProvenance = _
   fn send(Self, String, Array[Value]) -> Unit = _
   fn send_at_path(Self, DispatchPath, String, Array[Value]) -> Unit = _
   fn intent(Self, String, Array[Value], IntentOpts) -> Unit = _
@@ -552,6 +578,8 @@ pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
   fn obj_field(Self, String) -> Value? = _
   fn obj_with_field(Self, String, Value) -> Value? = _
+  fn obj_property(Self, String) -> Value? = _
+  fn obj_set_property(Self, String, Value) -> PropertyWrite = _
   fn obj_item(Self, PathKey) -> Value? = _
   fn obj_with_item(Self, PathKey, Value) -> Value? = _
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _

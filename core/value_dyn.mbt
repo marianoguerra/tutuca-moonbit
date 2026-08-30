@@ -36,6 +36,22 @@ pub fn Value::field(self : Value, name : String) -> Value {
 }
 
 ///|
+/// Read a component's public abstract property. Maps deliberately do not
+/// participate: a property is a component interface, not another spelling of
+/// ordinary record lookup.
+pub fn Value::property_opt(self : Value, name : String) -> Value? {
+  match self {
+    Obj(o) => o.obj_property(name)
+    _ => None
+  }
+}
+
+///|
+pub fn Value::property(self : Value, name : String) -> Value {
+  self.property_opt(name).unwrap_or(Null)
+}
+
+///|
 /// A `$name` read, asked with the stack it is being asked from.
 ///
 /// The same question `field` asks — a `compute` surfaces as a pre-bound `Fn`
@@ -255,6 +271,49 @@ pub fn Value::with_field(self : Value, name : String, v : Value) -> Value {
 }
 
 ///|
+/// Apply a public synchronous property transition.
+pub fn Value::set_property(
+  self : Value,
+  name : String,
+  v : Value,
+) -> PropertyWrite {
+  match self {
+    Obj(o) => o.obj_set_property(name, v)
+    _ => PMissing
+  }
+}
+
+///|
+/// Apply a property setter to a nested value and rebuild every parent in one
+/// pure copy-on-write operation.
+///
+/// A missing path/property or a refusal rebuilds nothing. This is the
+/// component-side primitive behind synchronous parent-to-child property
+/// writes: the child transition either contributes its whole successor to the
+/// parent's successor or the parent keeps the original tree.
+pub fn Value::set_property_at(
+  self : Value,
+  path : Path,
+  name : String,
+  v : Value,
+) -> PropertyWrite {
+  guard path.lookup(self) is Some(child) else { return PMissing }
+  match child.set_property(name, v) {
+    PMissing => PMissing
+    PUnchanged => PUnchanged
+    PRefused => PRefused
+    PChanged(next) => {
+      let root = path.set_value(self, next)
+      if physical_equal(root, self) {
+        PUnchanged
+      } else {
+        PChanged(root)
+      }
+    }
+  }
+}
+
+///|
 /// Copy-on-write item write; None when the key addresses no item (an index out
 /// of range, a key of the wrong kind for the container).
 pub fn Value::with_item_opt(self : Value, key : PathKey, v : Value) -> Value? {
@@ -380,7 +439,7 @@ pub fn Value::schema(self : Value) -> SchemaInfo? {
 }
 
 ///|
-/// Read a protocol property through its explicit field/computation binding.
+/// Read a protocol property through its explicit local-property binding.
 /// A failed gradual assumption returns Null and reports the resolution; it
 /// never tears down rendering.
 pub fn Value::protocol_property(
@@ -406,32 +465,24 @@ pub fn Value::protocol_property(
     )
     return Null
   }
-  let result = if binding.source.has_prefix(".") {
-    self.field_opt(binding.source[1:].to_owned()).unwrap_or(Null)
-  } else if binding.source.has_prefix("$") {
-    self
-    .method_at(binding.source[1:].to_owned(), stack)
-    .map(f => f.call([], this=self))
-    .unwrap_or(Null)
-  } else {
-    Null
-  }
-  let mut expected : (String, TyInfo)? = None
+  let _ = stack
+  let result = self.property(binding.source)
+  let mut expected : PropertyInfo? = None
   for p in schema.protocols {
     if p.id == protocol_id {
-      for pair in p.properties {
-        if pair.0 == member_name {
-          expected = Some(pair)
+      for property in p.properties {
+        if property.name == member_name {
+          expected = Some(property)
         }
       }
     }
   }
-  if expected is Some(pair) && !pair.1.accepts(result) {
+  if expected is Some(property) && !property.ty.accepts(result) {
     protocol_property_notice(
       self,
       protocol_id,
       member_name,
-      "property result does not match \{pair.1.show_source()}",
+      "property result does not match \{property.ty.show_source()}",
     )
     return Null
   }

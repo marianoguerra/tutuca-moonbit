@@ -24,7 +24,7 @@ priv struct Game {
 
 ///|
 fn Game::empty() -> Game {
-  { squares: Array::make(9, "") }
+  { squares: Array::make(9, ""), }
 }
 
 ///|
@@ -133,8 +133,8 @@ impl DynComponent for Game with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Game with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Game with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     // The loop `@key` a per-square handler carries. It arrives as a number
     // because a list's key is its index.
@@ -155,7 +155,7 @@ impl DynComponent for Game with fn handle(self, bucket, name, args) {
 }
 
 ///|
-impl DynComponent for Game with fn call_method(self, name, _args) {
+impl DynComponent for Game with fn render_call(self, name, _args) {
   match name {
     // The one line above the board: whose turn, who won, or nobody.
     "status" => {

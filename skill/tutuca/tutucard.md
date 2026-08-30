@@ -26,7 +26,10 @@ A card keeps its concerns in one file:
 
 ```html
 <script type="tutuca/spec">
-  state Counter { count: Int }
+  state Counter {
+    count: Int
+    property { count: Int { get .count set .count } }
+  }
 </script>
 
 <script type="tutuca/script">
@@ -50,7 +53,7 @@ A card keeps its concerns in one file:
 </template>
 ```
 
-- `tutuca/spec` declares components, field types, records, enums, flags,
+- `tutuca/spec` declares components, field types, public properties, records, enums, flags,
   message buckets, dynamic `provide`/`lookup`, named initial states, and the
   `pred` / `invariant` rules the component keeps.
 - `tutuca/script` declares receives, derived values, enrichment, intents,
@@ -74,6 +77,7 @@ options, tuples, records, enums, flags, `Any`, and sibling component slots.
 Their handler language covers:
 
 - field and nested collection updates;
+- simple field-backed properties and fixed-signature complex property getters/setters;
 - `receive`, `compute`, `enrich`, and `enrichScope` in the script block, and
   `pred` / `invariant` in the spec block beside the state they are about;
 - `requires` and `ensures` clauses attaching one of those rules to a
@@ -196,8 +200,9 @@ sentence so a rejected transition explains itself. In a card scene, assert
 that output with `expect: log`.
 
 Do not use `refused` as the default card assertion. A card guest normally
-answers an unknown receive as `unhandled`, allowing the host to try generated
-field mutators; therefore the host often has no refusal to report. Use `log`
+answers an unknown receive as `unhandled`, and a host-origin call does not get
+the component's internal generated-field fallback; therefore the host often
+has no refusal to report. Use `log`
 for failed `requires`, `ensures`, and invariants. The distinction and examples
 are in [testing.md](./testing.md#assert-on-log-not-just-on-the-dom).
 

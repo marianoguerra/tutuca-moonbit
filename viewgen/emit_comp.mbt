@@ -38,7 +38,7 @@ fn emit_wrapper(
   name : String,
   t : String,
   v : String,
-  _def : @statedef.StateDef,
+  def : @statedef.StateDef,
   surface : Surface,
   /// The `<comp>_inline_update` this wrapper composes ahead of `update~`, when
   /// the file's script block compiled one.
@@ -142,6 +142,71 @@ fn emit_wrapper(
     "    global_style~,\n" +
     update_arg,
   )
+  let getters = def.properties.filter(p => {
+    p.getter is Some(_) || answered.property_get.contains(p.name)
+  })
+  if !getters.is_empty() {
+    out.write_string("    get_property={\n")
+    for p in getters {
+      match p.getter {
+        Some(source) => {
+          let field = source[1:].to_owned()
+          out.write_string(
+            "      " +
+            quote(p.name) +
+            ": s => @component.Fields::encode(s).get(" +
+            quote(field) +
+            ").unwrap_or(Null),\n",
+          )
+        }
+        None =>
+          out.write_string(
+            "      " +
+            quote(p.name) +
+            ": s => " +
+            @emit_mbt.value_fn_name(v, RMethod, p.name) +
+            "(s, [], @tutuca.NullStack::{ }),\n",
+          )
+      }
+    }
+    out.write_string("    },\n")
+  }
+  let setters = def.properties.filter(p => {
+    p.setter is Some(_) || answered.property_set.contains(p.name)
+  })
+  if !setters.is_empty() {
+    out.write_string("    set_property={\n")
+    for p in setters {
+      match p.setter {
+        Some(source) => {
+          let field = source[1:].to_owned()
+          out.write_string(
+            "      " +
+            quote(p.name) +
+            ": (s, value) => {\n" +
+            "        let fields = @component.Fields::encode(s)\n" +
+            "        fields[" +
+            quote(field) +
+            "] = value\n" +
+            "        match @component.Fields::decode(fields) {\n" +
+            "          Some(next) => Next(next)\n" +
+            "          None => Unchanged\n" +
+            "        }\n" +
+            "      },\n",
+          )
+        }
+        None =>
+          out.write_string(
+            "      " +
+            quote(p.name) +
+            ": (s, value) => " +
+            @emit_mbt.property_set_fn_name(v, p.name) +
+            "(s, value),\n",
+          )
+      }
+    }
+    out.write_string("    },\n")
+  }
   for b in wrapper_buckets(t, s, surface, methods, answered) {
     // The two halves are disjoint by construction — the author's enum holds
     // exactly the names the router does not — so this is a merge and not a

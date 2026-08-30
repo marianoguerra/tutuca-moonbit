@@ -46,6 +46,18 @@ pub(all) struct FieldInfo {
 }
 
 ///|
+/// One public abstract property of a component.
+///
+/// A property is an operation, not a promise about storage. `writable` says
+/// whether callers may request its synchronous, pure transition; it does not
+/// imply that a field with the same name exists.
+pub(all) struct PropertyInfo {
+  name : String
+  ty : TyInfo
+  writable : Bool
+} derive(Eq, Debug)
+
+///|
 /// Runtime projection of a protocol surface. All names are wire names and the
 /// id is canonical; source aliases never cross this boundary.
 pub(all) struct ProtocolInfo {
@@ -54,7 +66,7 @@ pub(all) struct ProtocolInfo {
   handle_intents : Array[String]
   express_messages : Array[String]
   express_intents : Array[String]
-  properties : Array[(String, TyInfo)]
+  properties : Array[PropertyInfo]
   views : Array[String]
   provides : Array[(String, TyInfo)]
   lookups : Array[(String, TyInfo)]
@@ -92,6 +104,9 @@ pub(all) struct SchemaInfo {
   /// Structural identity of the schema — over shape, not source text.
   fingerprint : String
   fields : Array[FieldInfo]
+  /// Public abstract observations and transitions. Unlike `fields`, these are
+  /// deliberately safe for parents, hosts, tests and generated fuzz actions.
+  properties : Array[PropertyInfo]
   /// The `@on` handler names the views raise.
   ///
   /// Distinct from `receives` — which is what the SCHEMA declares — because the
@@ -178,6 +193,7 @@ declare pub fn SchemaInfo::new(
   name? : String,
   fingerprint~ : String,
   fields? : Array[FieldInfo],
+  properties? : Array[PropertyInfo],
   view_handlers? : Array[String],
   receives? : Array[String],
   intents? : Array[String],

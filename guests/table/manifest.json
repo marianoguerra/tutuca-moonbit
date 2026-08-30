@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "tablelib",
   "doc": "A typed data table — the reference consumer of the shared tutuca:component/tables vocabulary.",
   "version": "0.1.0",
@@ -119,7 +119,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

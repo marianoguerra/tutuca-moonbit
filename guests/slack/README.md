@@ -133,7 +133,7 @@ asking a host for.
 
 `Segment` composes its class string from eight independent flags, and the host's
 margaui scanner reads `class=` LITERALS off the compiled views to decide which
-utility CSS to emit — so a string built in `call-method` is invisible to it. The
+utility CSS to emit — so a string built in `compute` is invisible to it. The
 bundle therefore ships a second view, `views/Segment.margauiClasses.html`, which
 is never rendered and exists only to be scanned. `Components::collect_classes`
 walks every view of every registered component, so being unrendered costs

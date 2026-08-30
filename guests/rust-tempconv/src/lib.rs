@@ -22,7 +22,7 @@ wit_bindgen::generate!({
 });
 
 use exports::tutuca::component::guest::{
-    Bucket, EventResult, Guest, GuestInstance, Instance, ServeResult,
+    EventResult, Guest, GuestInstance, Instance, PropertyResult, ServeResult,
 };
 use tutuca::component::values::Value;
 
@@ -266,13 +266,10 @@ impl GuestInstance for TempConv {
         }
     }
 
-    fn handle_event(&self, b: Bucket, name: String, args: Vec<Value>) -> EventResult {
+    fn handle_message(&self, name: String, args: Vec<Value>) -> EventResult {
         // There is no "setCelsius" case: `celsius` is a declared field, so the
         // host generates the mutator and writes it through `with_field`. A
         // handler here would be the same assignment written twice.
-        if !matches!(b, Bucket::Receive) {
-            return EventResult::Unhandled;
-        }
         match name.as_str() {
             "editC" => text_arg(&args)
                 .and_then(|text| self.typed('c', &text))
@@ -296,7 +293,11 @@ impl GuestInstance for TempConv {
         }
     }
 
-    fn call_method(&self, name: String, _args: Vec<Value>) -> Value {
+    fn handle_intent(&self, _name: String, _args: Vec<Value>) -> EventResult {
+        EventResult::Unhandled
+    }
+
+    fn compute(&self, name: String, _args: Vec<Value>) -> Value {
         match name.as_str() {
             "cText" => Value::Text(self.shown('c')),
             "fText" => Value::Text(self.shown('f')),
@@ -304,6 +305,26 @@ impl GuestInstance for TempConv {
             "note" => Value::Text(note_for(self.celsius)),
             _ => Value::Nil,
         }
+    }
+
+    fn when(&self, _name: String, _args: Vec<Value>) -> bool {
+        false
+    }
+
+    fn enrich(&self, _name: String, _args: Vec<Value>) -> Value {
+        Value::Nil
+    }
+
+    fn enrich_scope(&self, _name: String) -> Value {
+        Value::Nil
+    }
+
+    fn get_property(&self, _name: String) -> Option<Value> {
+        None
+    }
+
+    fn set_property(&self, _name: String, _v: Value) -> PropertyResult {
+        PropertyResult::Missing
     }
 
     fn with_field(&self, name: String, v: Value) -> Option<Instance> {

@@ -76,7 +76,7 @@ const routeWords = (opts) =>
  * right bucket.
  */
 function schemaOf(c) {
-  const word = c.bucket === "intent" ? "intent" : "receive";
+  const word = c.bucket === "intent" ? "intent" : "message";
   // The dispatched name, and the declared one when they differ — one case
   // declares `receive inc` and dispatches `nope`, which is the point of it.
   const want = [c.variant, c.declVariant].filter(Boolean);
@@ -90,18 +90,21 @@ function schemaOf(c) {
     // a state block declares the dispatched spelling, which starts lower.
     // statedef normalizes the two to one name, so testing for the capitalized
     // form finds nothing and appends a duplicate the schema then refuses.
-    const declared = (v) => {
+    const declaredName = (v) => {
       const n = v.split("(")[0];
       return n.charAt(0).toLowerCase() + n.slice(1);
     };
+    const declared = (v) => declaredName(v) + v.slice(v.split("(")[0].length);
     const missing = want.filter(
-      (v) => !new RegExp(`\\b${declared(v)}\\b`).test(l),
+      (v) => !new RegExp(`\\b${declaredName(v)}\\b`).test(l),
     );
     return missing.length
-      ? line.replace(/\}\s*$/, `, ${missing.join(", ")} }`)
+      ? line.replace(/\}\s*$/, `, ${missing.map(declared).join(", ")} }`)
       : line;
   });
-  return placed ? out.join("\n") : `${c.schema}\n${word} C { ${want.join(", ")} }`;
+  return placed
+    ? out.join("\n")
+    : `${c.schema}\nhandle ${c.component} { ${word} { ${want.map(declared).join(", ")} } }`;
 }
 
 /**
@@ -224,8 +227,8 @@ test("the wasm backend agrees with the corpus about value bodies", async () => {
   const failures = [];
   let ran = 0;
   for (const [i, c] of VALUE_CORPUS.entries()) {
-    // The declaration is reached through `call-method` in every role, so the
-    // card is built the same way and only the ARGUMENTS differ. The kind word
+    // Each declaration is reached through its fixed render operation. The
+    // card is built the same way and only the operation and ARGUMENTS differ. The kind word
     // a refusal is reported under differs too: a `@when` is a `pred`, and an
     // enricher is its own word.
     const b = await build(c, 1000 + i);
@@ -261,7 +264,13 @@ test("the wasm backend agrees with the corpus about value bodies", async () => {
 
     let out;
     try {
-      out = inst.callMethod(c.callable, args);
+      out = c.role === "when"
+        ? { tag: "boolean", val: inst.when(c.callable, args) }
+        : c.role === "enrich"
+          ? inst.enrich(c.callable, args)
+          : c.role === "enrichScope"
+            ? inst.enrichScope(c.callable)
+            : inst.compute(c.callable, args);
     } catch (e) {
       failures.push(`${c.name}: the call threw — ${e.message}`);
       continue;
@@ -271,7 +280,7 @@ test("the wasm backend agrees with the corpus about value bodies", async () => {
     const got = fromWire(out, arena);
     const want = c.answer;
     // `ANothing` is a body that could not finish. Across this boundary that is
-    // nil, which is the same thing `call_method_fn` answers for a `tc_fail`.
+    // nil, which is the same thing a value render operation answers for a `tc_fail`.
     if (want.kind === "nothing") {
       if (got !== null) failures.push(`${c.name}: answered ${JSON.stringify(got)}, want nothing`);
       continue;
@@ -350,7 +359,10 @@ test("the wasm backend agrees with the conformance corpus", async () => {
     }
     let res;
     try {
-      res = inst.handleEvent(c.bucket, c.handler, c.args.map((a) => toWire(a, put)));
+      const args = c.args.map((a) => toWire(a, put));
+      res = c.bucket === "intent"
+        ? inst.handleIntent(c.handler, args)
+        : inst.handleMessage(c.handler, args);
     } catch (e) {
       failed.push(`${c.name}: the dispatch threw — ${e.message}`);
       continue;
@@ -422,7 +434,7 @@ test("a map field keeps its contents AND its insertion order", async () => {
   const { root, arena } = b;
 
   const put = (c, k, v) => {
-    const r = c.handleEvent("receive", "put", [
+    const r = c.handleMessage("put", [
       { tag: "text", val: k },
       { tag: "number", val: v },
     ]);
@@ -438,7 +450,7 @@ test("a map field keeps its contents AND its insertion order", async () => {
   assert.deepEqual(keys(put(c, "mango", 99)), ORDER);
 
   // Removing drops it, and re-adding appends at the end.
-  let d = c.handleEvent("receive", "drop", [{ tag: "text", val: "mango" }]).val;
+  let d = c.handleMessage("drop", [{ tag: "text", val: "mango" }]).val;
   assert.deepEqual(keys(d), ORDER.filter((k) => k !== "mango"));
   assert.deepEqual(keys(put(d, "mango", 1)), [
     ...ORDER.filter((k) => k !== "mango"),

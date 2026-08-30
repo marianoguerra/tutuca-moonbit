@@ -59,7 +59,7 @@ fn project(t : @tables.Table, page : Int, page_size : Int) -> Cells {
     }
     rows.push(row)
   }
-  { labels, types, ids, rows }
+  { labels, types, ids, rows, }
 }
 
 ///|
@@ -153,23 +153,28 @@ fn text_list(xs : Array[String]) -> @values.Value {
 }
 
 ///|
-impl DynComponent for TableView with fn handle(self, bucket, name, args) {
+impl DynComponent for TableView with fn handle_dispatch(
+  self,
+  bucket,
+  name,
+  args,
+) {
   match (bucket, name) {
-    (RECEIVE, "nextPage") =>
+    (MessageDispatch, "nextPage") =>
       Changed(
         self.retable(self.table, self.page + 1, self.sort, self.descending)
         as &DynComponent,
       )
-    (RECEIVE, "prevPage") =>
+    (MessageDispatch, "prevPage") =>
       Changed(
         self.retable(self.table, self.page - 1, self.sort, self.descending)
         as &DynComponent,
       )
-    (RECEIVE, "firstPage") =>
+    (MessageDispatch, "firstPage") =>
       Changed(
         self.retable(self.table, 0, self.sort, self.descending) as &DynComponent,
       )
-    (RECEIVE, "lastPage") =>
+    (MessageDispatch, "lastPage") =>
       Changed(
         self.retable(
           self.table,
@@ -182,7 +187,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
     // The view passes the column id: `@on.click="sortBy @value"` over `.ids`.
     // Clicking the column already sorted reverses it, which is what every
     // table in the world does and what nobody thinks to ask for.
-    (RECEIVE, "sortBy") =>
+    (MessageDispatch, "sortBy") =>
       match args {
         [@values.Value::Text(id), ..] => {
           let descending = if self.sort == id {
@@ -190,7 +195,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
           } else {
             false
           }
-          let cmd : @tables.Command = SortBy({ column: id, descending })
+          let cmd : @tables.Command = SortBy({ column: id, descending, })
           match apply_command(self.table, cmd) {
             Ok(sorted) =>
               Changed(self.retable(sorted, 0, id, descending) as &DynComponent)
@@ -203,7 +208,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
       }
     // Replace the data wholesale — how a parent or the host hands this
     // component a new table (`ctx.send("load", [table])`).
-    (RECEIVE, "load") =>
+    (MessageDispatch, "load") =>
       match args {
         [v, ..] =>
           match table_of_value(v) {
@@ -212,7 +217,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
           }
         _ => Unchanged
       }
-    (RECEIVE, "clear") =>
+    (MessageDispatch, "clear") =>
       match apply_command(self.table, Clear) {
         Ok(t) =>
           Changed(
@@ -220,7 +225,7 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
           )
         Err(_) => Unchanged
       }
-    (RECEIVE, "init") => Unchanged
+    (MessageDispatch, "init") => Unchanged
     _ => Unhandled
   }
 }
@@ -240,7 +245,7 @@ impl DynComponent for TableView with fn with_field(self, name, v) {
 }
 
 ///|
-impl DynComponent for TableView with fn call_method(self, name, args) {
+impl DynComponent for TableView with fn render_call(self, name, args) {
   match name {
     // Is this the column the table is sorted by? Drives the header arrow.
     "sortedBy" =>

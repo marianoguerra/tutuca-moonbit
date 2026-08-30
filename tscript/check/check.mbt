@@ -192,6 +192,27 @@ pub fn check(
     predicate[r.name] = 0
   }
   let out : Array[Finding] = []
+  for p in def.properties {
+    if p.getter is None &&
+      !decls.iter().any(d => d.kind is DGet && d.name == p.name) {
+      out.push({
+        code: "MISSING_PROPERTY_GETTER",
+        message: "property `\{p.name}` uses a complex `get` but the script block declares no `get \{p.name}` body",
+        severity: SError,
+        span: @tscript.no_span,
+      })
+    }
+    if p.writable &&
+      p.setter is None &&
+      !decls.iter().any(d => d.kind is DSet && d.name == p.name) {
+      out.push({
+        code: "MISSING_PROPERTY_SETTER",
+        message: "property `\{p.name}` opts into a complex `set` but the script block declares no `set \{p.name}` body",
+        severity: SError,
+        span: @tscript.no_span,
+      })
+    }
+  }
   for d in decls {
     if d.kind is (DPred | DCompute | DInvariant) {
       // A rule written in BOTH blocks is not a silent win for either. It is
@@ -317,6 +338,11 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   // answers both, because one bucket now holds both.
   match d.kind {
     DReceive | DIntent => self.msg_params(d)
+    DSet =>
+      match self.def.properties.iter().find_first(p => p.name == d.name) {
+        Some(p) => self.params["value"] = Some(p.ty)
+        None => self.params["value"] = None
+      }
     // A `compute` or a `pred` is called from a slot or from another body, and
     // nothing declares what it is passed. Opaque, which is the honest answer.
     _ =>
@@ -336,6 +362,47 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
       d.name_span,
     )
   }
+  match d.kind {
+    DGet =>
+      match self.def.properties.iter().find_first(p => p.name == d.name) {
+        None =>
+          self.say(
+            "NO_PROPERTY",
+            "`get {d.name}` names no property in the spec block",
+            d.name_span,
+          )
+        Some(p) if p.getter is Some(_) =>
+          self.say(
+            "PROPERTY_ALREADY_BACKED",
+            "property `{d.name}` already names a backing field for `get`, so it cannot also have a complex getter",
+            d.name_span,
+          )
+        _ => ()
+      }
+    DSet =>
+      match self.def.properties.iter().find_first(p => p.name == d.name) {
+        None =>
+          self.say(
+            "NO_PROPERTY",
+            "`set {d.name}` names no property in the spec block",
+            d.name_span,
+          )
+        Some(p) if !p.writable =>
+          self.say(
+            "READ_ONLY_PROPERTY",
+            "property `{d.name}` did not opt into `set`",
+            d.name_span,
+          )
+        Some(p) if p.setter is Some(_) =>
+          self.say(
+            "PROPERTY_ALREADY_BACKED",
+            "property `{d.name}` already names a backing field for `set`, so it cannot also have a complex setter",
+            d.name_span,
+          )
+        _ => ()
+      }
+    _ => ()
+  }
   match d.body {
     Stmts(ss) => self.stmts(ss)
     // A `pred` answers yes or no, so its body is a CONDITION and is judged by
@@ -346,6 +413,13 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
     Value(e) =>
       if @tscript.is_predicate(d.kind) {
         self.condition(e)
+      } else if d.kind is DGet {
+        let got = self.expr(e)
+        let want = self.def.properties
+          .iter()
+          .find_first(p => p.name == d.name)
+          .map(p => p.ty)
+        self.assignable(want, got, expr_span(e))
       } else {
         self.expr(e) |> ignore
       }
@@ -595,6 +669,12 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       }
     }
     SEffect(name~, args~, span~, ..) => {
+      if self.decl_kind is DSet {
+        self.say(
+          "PROPERTY_EFFECT", "a property setter is synchronous and pure; move `{name}` to a message handler",
+          span,
+        )
+      }
       let message_arg = if names_a_message(name) {
         Some(if name == "sendAt" { 1 } else { 0 })
       } else {
@@ -661,6 +741,15 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
         }
       }
     }
+    SNew(ty~, span~) => {
+      if self.decl_kind is DSet {
+        self.say(
+          "PROPERTY_EFFECT", "a property setter cannot create a component; move `new` to a message handler",
+          span,
+        )
+      }
+      self.target = TSet(self.ty_ref(ty))
+    }
     SIf(cond~, then_~, else_~, ..) => {
       self.condition(cond)
       let before = self.target
@@ -677,7 +766,6 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
         (TUnset, _) | (_, TUnset) => TUnset
       }
     }
-    SNew(ty~, ..) => self.target = TSet(self.ty_ref(ty))
   }
 }
 
@@ -1268,6 +1356,26 @@ fn comparable(a : @statedef.StateTy, b : @statedef.StateTy) -> Bool {
 }
 
 ///|
+/// Whether a known value type fits a known assignment target.
+fn assignment_types_fit(
+  want : @statedef.StateTy,
+  got : @statedef.StateTy,
+) -> Bool {
+  match (want, got) {
+    // A present value fills an optional slot; `null` has no definite type and
+    // is accepted by the caller before reaching this helper.
+    (TOption(inner), _) => assignment_types_fit(inner, got)
+    // One numeric surface: assigning into an `s32` truncates and range-checks
+    // against the same bounds the generated decode already applies, and fails
+    // — no change — outside them. That is a runtime answer, not a type error.
+    (TInt(..) | TFloat, TInt(..) | TFloat) => true
+    // An enum is a string at runtime, so a computed string can name a case.
+    (TEnum(_), TText) => true
+    _ => want == got
+  }
+}
+
+///|
 /// Whether `got` may be written where `want` is expected.
 fn C::assignable(
   self : C,
@@ -1276,16 +1384,7 @@ fn C::assignable(
   span : @tscript.Span,
 ) -> Unit {
   guard definite(want) is Some(w) && definite(got) is Some(g) else { return }
-  let ok = match (w, g) {
-    // One numeric surface: assigning into an `s32` truncates and range-checks
-    // against the same bounds the generated decode already applies, and fails
-    // — no change — outside them. That is a runtime answer, not a type error.
-    (TInt(..) | TFloat, TInt(..) | TFloat) => true
-    // An enum is a string at runtime, so a computed string can name a case.
-    (TEnum(_), TText) => true
-    _ => w == g
-  }
-  if !ok {
+  if !assignment_types_fit(w, g) {
     self.say(
       "TYPE",
       "this place is \{w.show_source()}, but the value is \{g.show_source()}",

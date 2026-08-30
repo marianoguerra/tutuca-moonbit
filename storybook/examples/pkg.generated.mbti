@@ -823,15 +823,17 @@ pub(all) enum BarChartLoopWith {
 pub fn BarChartLoopWith::name(Self) -> String
 
 pub(all) enum BarChartMsg {
+  AddBar
   Randomize
+  RemoveBar
   Unknown(String, Array[@core.Value])
 }
 pub fn BarChartMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum BarChartReceive {
   AddBar
-  Randomize
   RemoveBar
+  Randomize
   Unknown(String, Array[@core.Value])
 }
 pub fn BarChartReceive::from_dispatch(@component.Dispatch) -> Self?

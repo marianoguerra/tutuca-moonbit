@@ -45,7 +45,11 @@ pub let ret_get_field : Int = 16
 
 ///|
 /// `event-result` — 8 bytes: discriminant, then the successor handle at +4.
-pub let ret_handle_event : Int = 48
+pub let ret_event_result : Int = 48
+
+///|
+/// `property-result`, which has the same maximum payload and alignment.
+pub let ret_set_property : Int = 48
 
 ///|
 /// `option<own<instance>>` — 8 bytes, handle at +4.
@@ -56,8 +60,12 @@ pub let ret_with_field : Int = 64
 pub let ret_restore : Int = 80
 
 ///|
-/// `value` — 16 bytes.
-pub let ret_call_method : Int = 96
+/// The shared value return area for `compute`, `enrich`, and `enrich-scope`.
+pub let ret_render_value : Int = 96
+
+///|
+/// `option<value>` has the same wire layout as `get-field`.
+pub let ret_get_property : Int = 16
 
 ///|
 /// `value` — 16 bytes, for the one IMPORT that answers.
@@ -68,7 +76,7 @@ pub let ret_call_method : Int = 96
 /// makes this a return area like the ones around it, read once during the call
 /// that wrote it, even though the direction is the other way round.
 ///
-/// 112 is the gap `ret_call_method` (96, 16 bytes) leaves before `ret_persist`.
+/// 112 is the gap `ret_render_value` (96, 16 bytes) leaves before `ret_persist`.
 pub let ret_lookup : Int = 112
 
 ///|
@@ -100,18 +108,18 @@ pub let pool_base : Int = 1024
 
 ///|
 /// The guest world's names, spelled once.
-pub let guest_iface : String = "tutuca:component/guest@0.10.0"
+pub let guest_iface : String = "tutuca:component/guest@0.11.0"
 
 ///|
 /// The namespace an exported resource's intrinsics are imported from.
-pub let resource_iface : String = "[export]tutuca:component/guest@0.10.0"
+pub let resource_iface : String = "[export]tutuca:component/guest@0.11.0"
 
 ///|
-pub let control_iface : String = "tutuca:component/control@0.10.0"
+pub let control_iface : String = "tutuca:component/control@0.11.0"
 
 ///|
-/// The buckets `handle-event` is called with, in WIT order. Two, and a case's
-/// position is its wire number.
+/// The card compiler's two handler categories. The fixed WIT operations pick
+/// one directly; the compact internal dispatch chain uses these numbers.
 pub let bucket_receive : Int = 0
 
 ///|

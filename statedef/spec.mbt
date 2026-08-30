@@ -107,6 +107,12 @@ pub(all) struct ProtocolRef {
 pub(all) struct PropertyDef {
   name : String
   ty : StateTy
+  writable : Bool
+  /// `.field` for the simple case; None means a `get name` script body.
+  getter : String?
+  /// `.field` for the simple case; None on a writable property means a
+  /// `set name(value)` script body.
+  setter : String?
   doc : String?
 } derive(Eq, @debug.Debug)
 
@@ -169,6 +175,8 @@ pub(all) struct StateDef {
   /// The component name, as a MoonBit type prefix (`Counter`).
   component : String
   fields : Array[FieldDef]
+  /// Public abstract observations/transitions implemented by this component.
+  properties : Array[PropertyDef]
   /// Every MESSAGE the component accepts beyond the ones its own views send:
   /// what a parent sends it, what the host sends it, and every answer it reads.
   receive : Array[MsgDef]

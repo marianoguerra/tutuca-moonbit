@@ -11,6 +11,8 @@ import {
 // Values
 pub fn emit(Array[@tscript.Decl], @statedef.StateDef, state_ty~ : String, fn_name~ : String, prefix? : String, roles? : Roles, surface? : @check.Surface) -> Emitted
 
+pub fn property_set_fn_name(String, String) -> String
+
 pub fn value_fn_name(String, Role, String) -> String
 
 // Errors
@@ -25,6 +27,8 @@ pub(all) struct Emitted {
   answers_whens : Array[String]
   answers_enriches : Array[String]
   answers_enrich_scopes : Array[String]
+  answers_property_get : Array[String]
+  answers_property_set : Array[String]
   refusals : Array[Refusal]
 } derive(Eq, @debug.Debug)
 

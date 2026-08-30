@@ -6,6 +6,11 @@
     /// How much a step moves it.
     step: Int
 
+    property {
+      count: Int { get .count set .count }
+      magnitude: Int { get set }
+    }
+
     /// True while the count is above zero.
     pred positive { .count > 0 }
   }
@@ -43,6 +48,18 @@
 
   /// The count as a sentence.
   compute label { $'the count is {.count}' }
+
+  get magnitude {
+    if (.count < 0) { -.count } else { .count }
+  }
+
+  set magnitude {
+    if (.count < 0) {
+      .count = -value
+    } else {
+      .count = value
+    }
+  }
 </script>
 
 <script type="tutuca/test">

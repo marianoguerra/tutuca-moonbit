@@ -18,7 +18,7 @@ import { instantiate } from "./abi.mjs";
 // Compound guest values travel as u64 handles into a host-side arena. A card
 // can neither read nor build one — the generator emits no `values` import at
 // all, so `instantiate` never binds this interface — but a host may still
-// hand a list into `handleEvent`, and it has to come back out the same shape.
+// hand a list into a fixed handler operation, and it has to come back out the same shape.
 function makeArena() {
   const cells = new Map();
   let next = 1n;
@@ -345,13 +345,11 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       // see the WIT: an effect is applied after the call, and a value a
       // handler is in the middle of using cannot wait for that.
       bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
-      // The WIT's `bucket` order, and `intent` is last so the four that were
-      // there keep their numbers.
-      const bucket =
-        ["receive", "intent"][bucketInt] ?? "receive";
       const inst = instOf(handle);
       if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
-      const result = inst.handleEvent(bucket, name, JSON.parse(argsJson).map(to));
+      const result = bucketInt === 1
+        ? inst.handleIntent(name, JSON.parse(argsJson).map(to))
+        : inst.handleMessage(name, JSON.parse(argsJson).map(to));
       const out = JSON.stringify({
         handled: result.tag !== "unhandled",
         next:
@@ -372,12 +370,16 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
     // the only thing that answers it. Set and cleared around the call exactly
     // as `dispatch` does — a binding must not outlive the call it was resolved
     // for.
-    callMethod(handle, name, argsJson, bindingsJson) {
+    renderCall(handle, category, name, argsJson, bindingsJson) {
       const inst = instOf(handle);
       if (!inst) return "";
       bindings = bindingsJson ? JSON.parse(bindingsJson) : {};
       try {
-        const v = inst.callMethod(name, JSON.parse(argsJson).map(to));
+        const args = JSON.parse(argsJson).map(to);
+        const v = category === "when" ? { tag: "boolean", val: inst.when(name, args) }
+          : category === "enrich" ? inst.enrich(name, args)
+          : category === "enrichScope" ? inst.enrichScope(name)
+          : inst.compute(name, args);
         const out = JSON.stringify(from(v));
         drainChildren();
         arena.clear();
@@ -385,6 +387,24 @@ export async function loadGuest(bytes, descriptor, key = "default", { module } =
       } finally {
         bindings = {};
       }
+    },
+    getProperty(handle, name) {
+      const v = instOf(handle)?.getProperty(name);
+      const out = v === undefined ? "" : JSON.stringify(from(v));
+      drainChildren();
+      arena.clear();
+      return out;
+    },
+    setProperty(handle, name, valueJson) {
+      const inst = instOf(handle);
+      if (!inst) return JSON.stringify({ tag: "missing" });
+      const result = inst.setProperty(name, to(JSON.parse(valueJson)));
+      const out = result.tag === "changed"
+        ? { tag: "changed", next: register(result.val, compOf(handle)) }
+        : { tag: result.tag };
+      drainChildren();
+      arena.clear();
+      return JSON.stringify(out);
     },
     withField(handle, name, valueJson) {
       const inst = instOf(handle);

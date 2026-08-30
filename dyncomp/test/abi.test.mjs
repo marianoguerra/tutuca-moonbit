@@ -35,7 +35,7 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
     log: () => {}, send: () => {}, sendAt: () => {},
     intent: () => {}, intentAt: () => {}, forward: () => {},
     reply: () => {}, fail: () => {}, stopPropagation: () => {},
-    // 0.10.0: a reply names itself, and a lookup ANSWERS — a harness with
+    // 0.11.0: fixed handler/render operations and public properties.
     // no ancestor has nothing to answer with, so nil is the truth here.
     sendReply: () => {}, lookup: () => ({ tag: 'nil' }),
     after: () => {}, makeInstance: () => 0n, dropInstance: () => {},
@@ -47,7 +47,7 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
       'tutuca:component/control': control,
     },
     {
-      world: 'tutuca:component@0.10.0',
+      world: 'tutuca:component@0.11.0',
       encoding: 'utf16',
       core: 'counter.component.core.wasm',
     },
@@ -56,10 +56,20 @@ test('host ABI loads a core-only guest and preserves event results', async () =>
   const counter = new root.guest.Instance('Counter', [
     ['count', { tag: 'number', val: 4 }],
   ]);
-  assert.deepEqual(counter.handleEvent('receive', 'unknown', []), { tag: 'unhandled' });
-  assert.deepEqual(counter.handleEvent('receive', 'init', []), { tag: 'unchanged' });
-  const changed = counter.handleEvent('receive', 'inc', []);
+  assert.deepEqual(counter.handleMessage('unknown', []), { tag: 'unhandled' });
+  assert.deepEqual(counter.handleMessage('init', []), { tag: 'unchanged' });
+  const changed = counter.handleMessage('inc', []);
   assert.equal(changed.tag, 'changed');
   assert.deepEqual(changed.val.getField('count'), { tag: 'number', val: 5 });
+  assert.deepEqual(counter.getProperty('count'), { tag: 'number', val: 4 });
+  const propertyChanged = counter.setProperty('count', { tag: 'number', val: 9 });
+  assert.equal(propertyChanged.tag, 'changed');
+  assert.deepEqual(propertyChanged.val.getProperty('count'), { tag: 'number', val: 9 });
+  assert.deepEqual(counter.setProperty('count', { tag: 'text', val: 'bad' }), {
+    tag: 'refused',
+  });
+  assert.deepEqual(counter.setProperty('private', { tag: 'number', val: 1 }), {
+    tag: 'missing',
+  });
   assert.equal(root.guest.getManifest, undefined);
 });

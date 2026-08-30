@@ -53,6 +53,39 @@ pub fn Transactor::reset_root(self : Transactor, root : @tutuca.Value) -> Unit {
 }
 
 ///|
+pub fn Transactor::set_property(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  value : @tutuca.Value,
+) -> @tutuca.PropertyWrite {
+  let path = at.to_transaction_path().pin_keys(self.root)
+  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  match leaf.set_property(name, value) {
+    PMissing => PMissing
+    PUnchanged => PUnchanged
+    PRefused => PRefused
+    PChanged(next) => {
+      let root = path.set_value(self.root, next)
+      if physical_equal(root, self.root) {
+        PUnchanged
+      } else {
+        self.reset_root(root)
+        // A property call made outside queue draining is its own synchronous
+        // transaction. Wake the batched consumers now; inside a handler the
+        // surrounding settle owns the one drained notification.
+        if !self.draining {
+          for cb in self.drain_subs {
+            cb()
+          }
+        }
+        PChanged(root)
+      }
+    }
+  }
+}
+
+///|
 /// The next walk id. Never 0: 0 is what a record carries when it belongs to no
 /// walk, so a real walk must not be able to collide with it.
 fn Transactor::next_walk_id(self : Transactor) -> Int {
@@ -259,6 +292,7 @@ fn Transactor::mk_txn(
   bucket : @tutuca.HandlerBucket,
   name : String,
   args : Array[@tutuca.Value],
+  provenance? : @tutuca.DispatchProvenance = Host,
   target_path? : @tutuca.DispatchPath,
   txn_path? : @tutuca.Path,
   parent? : Transaction,
@@ -275,6 +309,7 @@ fn Transactor::mk_txn(
     bucket,
     name,
     args,
+    provenance,
     target_path: target_path.unwrap_or(path),
     txn_path,
     parent,
@@ -314,6 +349,7 @@ pub fn Transactor::push_send(
   args : Array[@tutuca.Value],
   parent? : Transaction,
   origin? : @tutuca.DispatchPath,
+  provenance? : @tutuca.DispatchProvenance = Host,
 ) -> Transaction {
   let origin_pinned : @tutuca.Path? = match origin {
     Some(o) => Some(o.to_transaction_path().pin_keys(self.root))
@@ -324,6 +360,7 @@ pub fn Transactor::push_send(
     Receive,
     name,
     args,
+    provenance~,
     parent?,
     origin?,
     origin_pinned?,
@@ -564,6 +601,11 @@ impl @tutuca.Ctx for EventContext with fn name(self) {
 }
 
 ///|
+impl @tutuca.Ctx for EventContext with fn provenance(self) {
+  self.txn.provenance
+}
+
+///|
 // `send` / `bubble` are not implemented: the trait defaults route them to the
 // two below at `path()`.
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
@@ -573,6 +615,7 @@ impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
     args,
     parent=self.txn,
     origin=self.txn.path,
+    provenance=Component,
   )
 }
 

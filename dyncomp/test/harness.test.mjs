@@ -66,16 +66,16 @@ const control = {
 
 let guest;
 let manifest;
-let rawHandleEvent;
+let rawHandleMessage;
 before(async () => {
   const { instantiate } = await import(new URL('counter.component.js', jsDir));
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.10.0': values,
+    'tutuca:component/values@0.11.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.10.0': control,
+    'tutuca:component/control@0.11.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -89,16 +89,21 @@ before(async () => {
   }
   // Most behavioral assertions care about the successor. Keep those terse,
   // while retaining the raw v0.6 method for the result-semantics assertion.
-  rawHandleEvent = guest.Instance.prototype.handleEvent;
-  guest.Instance.prototype.handleEvent = function (...args) {
-    const result = rawHandleEvent.call(this, ...args);
+  rawHandleMessage = guest.Instance.prototype.handleMessage;
+  guest.Instance.prototype.handleMessage = function (...args) {
+    const result = rawHandleMessage.call(this, ...args);
+    return result.tag === 'changed' ? result.val : undefined;
+  };
+  const rawHandleIntent = guest.Instance.prototype.handleIntent;
+  guest.Instance.prototype.handleIntent = function (...args) {
+    const result = rawHandleIntent.call(this, ...args);
     return result.tag === 'changed' ? result.val : undefined;
   };
 });
 
 test('manifest declares the component, its views and its state', () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 9);
+  assert.equal(m.apiVersion, 10);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
@@ -168,21 +173,21 @@ test('instances are independent and constructor args apply', () => {
   assert.equal(a.getField('nope'), undefined);
 });
 
-test('handle-event is functional: new instance out, old unchanged', () => {
+test('handle-message is functional: new instance out, old unchanged', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
-  const a2 = a.handleEvent('receive', 'inc', []);
+  const a2 = a.handleMessage('inc', []);
   assert.ok(a2 instanceof guest.Instance);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 11 });
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
-  assert.equal(a.handleEvent('receive', 'unknown', []), undefined);
-  assert.equal(a.handleEvent('receive', 'init', []), undefined);
+  assert.equal(a.handleMessage('unknown', []), undefined);
+  assert.equal(a.handleMessage('init', []), undefined);
 });
 
-test('handle-event distinguishes unknown names from handled no-ops', () => {
+test('handle-message distinguishes unknown names from handled no-ops', () => {
   const a = new guest.Instance('Counter', []);
-  assert.deepEqual(rawHandleEvent.call(a, 'receive', 'unknown', []), { tag: 'unhandled' });
-  assert.deepEqual(rawHandleEvent.call(a, 'receive', 'init', []), { tag: 'unchanged' });
-  const result = rawHandleEvent.call(a, 'receive', 'inc', []);
+  assert.deepEqual(rawHandleMessage.call(a, 'unknown', []), { tag: 'unhandled' });
+  assert.deepEqual(rawHandleMessage.call(a, 'init', []), { tag: 'unchanged' });
+  const result = rawHandleMessage.call(a, 'inc', []);
   assert.equal(result.tag, 'changed');
   assert.ok(result.val instanceof guest.Instance);
 });
@@ -192,7 +197,7 @@ test('the declared fields ARE the projection: no to-json, no eq', () => {
   // declares instead (Value::to_json / Obj::obj_eq over obj_schema), so a
   // guest states its shape once and cannot restate it wrongly.
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 5 }]]);
-  const c = a.handleEvent('receive', 'inc', []);
+  const c = a.handleMessage('inc', []);
   assert.equal(a.toJson, undefined);
   assert.equal(a.eq, undefined);
   assert.deepEqual(c.getField('count'), { tag: 'number', val: 6 });
@@ -202,18 +207,18 @@ test('the declared fields ARE the projection: no to-json, no eq', () => {
 
 test('history crosses as an arena list; label is a callable method', () => {
   const a = new guest.Instance('Counter', []);
-  const a1 = a.handleEvent('receive', 'inc', []);
-  const a2 = a1.handleEvent('receive', 'inc', []);
+  const a1 = a.handleMessage('inc', []);
+  const a2 = a1.handleMessage('inc', []);
   const hist = a2.getField('history');
   assert.equal(hist.tag, 'list');
   assert.deepEqual(arena.get(hist.val).map((v) => v.val), [0, 1]);
-  assert.deepEqual(a2.callMethod('label', []), { tag: 'text', val: 'count is 2' });
+  assert.deepEqual(a2.compute('label', []), { tag: 'text', val: 'count is 2' });
 });
 
 test('"double" raises a lex intent, and its answer applies', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 21 }]]);
   controlBuf = [];
-  assert.equal(a.handleEvent('receive', 'double', []), undefined);
+  assert.equal(a.handleMessage('double', []), undefined);
   assert.equal(controlBuf.length, 1);
   assert.equal(controlBuf[0].kind, 'intent');
   assert.equal(controlBuf[0].name, 'double');
@@ -222,7 +227,7 @@ test('"double" raises a lex intent, and its answer applies', () => {
   // value (the intent opts' on_ok name)
   assert.equal(controlBuf[0].opts.onOk, 'doubled');
   assert.equal(controlBuf[0].opts.livePath, false);
-  const a2 = a.handleEvent('receive', 'doubled', [{ tag: 'number', val: 42 }]);
+  const a2 = a.handleMessage('doubled', [{ tag: 'number', val: 42 }]);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 42 });
 });
 
@@ -238,7 +243,7 @@ test('the bundle serves its own intents', () => {
 test('a guest raises an intent, and a guest parent ends the walk', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 4 }]]);
   controlBuf = [];
-  assert.equal(a.handleEvent('receive', 'announce', []), undefined);
+  assert.equal(a.handleMessage('announce', []), undefined);
   assert.equal(controlBuf.length, 1);
   assert.equal(controlBuf[0].kind, 'intent');
   assert.equal(controlBuf[0].name, 'counted');
@@ -252,7 +257,7 @@ test('a guest raises an intent, and a guest parent ends the walk', () => {
   const left = p.getField('left');
   const right = p.getField('right');
   controlBuf = [];
-  const p2 = p.handleEvent('intent', 'counted', [{ tag: 'number', val: 4 }]);
+  const p2 = p.handleIntent('counted', [{ tag: 'number', val: 4 }]);
   assert.deepEqual(controlBuf, [{ kind: 'stopPropagation' }]);
   assert.deepEqual(p2.getField('left'), right);
   assert.deepEqual(p2.getField('right'), left);
@@ -262,7 +267,7 @@ test('a guest addresses its own subtree with send-at', () => {
   const p = new guest.Instance('Pair', []);
   drainChildren();
   controlBuf = [];
-  assert.equal(p.handleEvent('receive', 'zeroLeft', []), undefined);
+  assert.equal(p.handleMessage('zeroLeft', []), undefined);
   assert.equal(controlBuf.length, 1);
   const [msg] = controlBuf;
   assert.equal(msg.kind, 'sendAt');
@@ -276,11 +281,11 @@ test('a @when filter is a method that answers a boolean', () => {
   // called with (key, item, iter-data) — the zero the counter started at is
   // filtered out of the history badges
   assert.deepEqual(
-    a.callMethod('nonZero', [{ tag: 'text', val: 'h0' }, { tag: 'number', val: 0 }, { tag: 'nil' }]),
+    a.compute('nonZero', [{ tag: 'text', val: 'h0' }, { tag: 'number', val: 0 }, { tag: 'nil' }]),
     { tag: 'boolean', val: false },
   );
   assert.deepEqual(
-    a.callMethod('nonZero', [{ tag: 'text', val: 'h1' }, { tag: 'number', val: 3 }, { tag: 'nil' }]),
+    a.compute('nonZero', [{ tag: 'text', val: 'h1' }, { tag: 'number', val: 3 }, { tag: 'nil' }]),
     { tag: 'boolean', val: true },
   );
 });
@@ -321,7 +326,7 @@ test('guest reads host arena compounds mid-dispatch (re-entrancy)', () => {
     { tag: 'number', val: 39 },
   ]);
   importCalls = 0;
-  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]);
+  const summed = b.handleMessage('sum', [{ tag: 'list', val: list }]);
   assert.deepEqual(summed.getField('count'), { tag: 'number', val: 42 });
   assert.equal(importCalls, 4); // 1 list-len + 3 list-get
 });

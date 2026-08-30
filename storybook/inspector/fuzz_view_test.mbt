@@ -13,7 +13,7 @@ fn fv_mount(title : String) -> @harness.MemHarness raise {
 /// A row reads the step it came from.
 test "a row reads the step it came from" {
   let h = fv_mount("Fuzz Row · a rule nothing enforced")
-  inspect(h.text(".row-verb"), content="send")
+  inspect(h.text(".row-verb"), content="internal")
   inspect(h.text(".row-name"), content="setOwed")
   inspect(h.text(".row-args"), content="99")
   inspect(h.text(".row-broke"), content="covered")
@@ -101,10 +101,10 @@ test "the controls show the run's whole address" {
   inspect(h.find_all(".no-plan").length(), content="0")
   // The active source is the one marked, and only that one.
   assert_true(
-    h.attr(".src-mutators", "class").unwrap_or("").contains("btn-primary"),
+    h.attr(".src-internal", "class").unwrap_or("").contains("btn-primary"),
   )
   assert_true(
-    h.attr(".src-declared", "class").unwrap_or("").contains("btn-ghost"),
+    h.attr(".src-public", "class").unwrap_or("").contains("btn-ghost"),
   )
 }
 

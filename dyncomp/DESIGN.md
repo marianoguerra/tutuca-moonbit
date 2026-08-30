@@ -1,7 +1,7 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.10.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.11.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
 
@@ -45,13 +45,13 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
    compiles them with anode exactly like local views (so the renderer, event
    delegation, morphing, modifiers and the linter apply unchanged). The guest
    renders nothing.
-3. **State is opaque, its SHAPE is statically declared.** The WIT exposes only
-   behavior; the bundle manifest carries the schema. Handlers take self and
-   return `unhandled | unchanged | changed(instance)`. The distinction lets
-   the host try a generated field mutator only when a name is not the guest's;
-   fields are read lazily by the host at render time
-   (`get-field`). The schema says what fields exist and what they hold — it
-   never carries their values.
+3. **State is opaque, its SHAPE and public interface are statically declared.**
+   The WIT exposes behavior; manifest v2 carries internal fields and public
+   abstract properties separately. Handlers take self and return `unhandled |
+   unchanged | changed(instance)`. Fields are read lazily by the host at render
+   time (`get-field`). Properties use `get-property` and, only when declared
+   writable, a synchronous `set-property` transition. A property may mirror
+   one field or derive/update several; callers do not observe that choice.
 
 4. **Ambient authority is absent, never assumed.** The world imports no WASI —
    and no clock, no entropy either: `values`, `control`, `config` and `tables`
@@ -62,12 +62,15 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
    whether, and how weakly, to answer each one.
 
 That third principle is what makes the contract small. Everything generic over
-a schema works on a guest without the guest implementing any of it: structural
-equality (`Obj::obj_eq`), the JSON projection (`Value::to_json`), the debug
-rendering, hot-swap migration, the inspector's form, the generated per-field
-mutators (`setCount`, `toggleDone`, `pushInItems`, …), and — since v3 — the
-catalog entry a search ranks and a language model reads. A guest that declares
-`count: s32` gets a working `setCount` with no guest code at all.
+a schema works on a guest without the guest implementing it: structural
+equality (`Obj::obj_eq`), the JSON projection (`Value::to_json`), debug output,
+hot-swap migration, inspector forms, and the catalog entry a search ranks and
+a language model reads. Generated per-field mutators (`setCount`,
+`toggleDone`, `pushInItems`, …) still exist for a component's own views and
+handlers, but they are implementation machinery, not the component's public
+protocol. A host, Storybook, or property fuzzer sees only declared messages,
+intents, and properties. Diagnostic fuzzing may request internal mutators
+explicitly.
 
 The fourth is what makes the first three worth having. A component whose state
 is opaque but whose shape is declared can be searched, formed and described
@@ -84,11 +87,56 @@ mounted from anywhere. Neither property is useful alone.
 | Handlers take self, return self | `Handler((Array[Value], &Ctx) -> Value?)` is already self-pre-bound; the guest's new handle wraps into a fresh `DynObj` |
 | Change detection / re-render | a fresh `DynObj` is a new physical identity — the COW model everything keys on — carrying the predecessor's `ObjId` at the next revision, so the render cache still hits |
 | Render reads | `Obj::obj_field` is a lazy per-name read; only fields the views evaluate cross the boundary |
-| Generated mutators | `@component.schema_mutators` over a `FieldBox` — one implementation, used by typed instances and guests alike |
+| Public property reads/writes | `Obj::obj_property` / `obj_set_property`; the latter returns missing, unchanged, refused, or a complete successor |
+| Generated mutators | `@component.schema_mutators` over a `FieldBox`, gated by dispatch provenance so external host calls cannot reach them |
 | Mounting a foreign bundle | a child scope of the app scope (per-bundle name isolation, shared id registry), resolution by component id |
 | A bundle's own services | request handlers registered in that child scope, so `lookup_request` finds them before the host's |
 
 No changes to `render/` or `vdom/` are needed.
+
+## Public property contract
+
+A property declaration is `(name, type, writable, doc)`. Readability is
+intrinsic: every declared property has a getter. Writability is opt-in and is
+the only authority a caller gets; an internal field with the same name does
+not make a property writable or even public.
+
+`get-property(name)` answers `option<value>`. `set-property(name, value)`
+answers one of four results:
+
+- `missing`: the name is not implemented;
+- `unchanged`: it was accepted but produced the same state;
+- `refused`: the name is read-only, the value has the wrong type, or a domain,
+  invariant, or component-specific rule rejects the transition;
+- `changed(instance)`: the complete immutable successor.
+
+The host checks the manifest before entering the guest, checks the returned
+successor against the declared schema/domains, and adopts it atomically. A
+failed transition leaves the entire old tree intact. Nested writes use the
+same copy-on-write operation: set the child property synchronously, then
+rebuild every parent spine in the current transaction. No message, reply name,
+follow-up transaction, or child-specific message handler is involved.
+
+Property access is synchronous by design. A setter is a pure transition and
+cannot send, raise an intent, construct/drop a child, or otherwise use
+`control`; Tutuca's script checker rejects those operations and the WebAssembly
+host bridge enforces the same rule for hand-written guests. This gives a parent
+an immediate successor without permitting re-entrancy or partially visible
+state. Long-running guest code remains an availability concern, as for every
+other synchronous guest call (`SECURITY.md` §6).
+
+### Why `call-method` was removed
+
+The v0.10 `call-method` export was audited before this change. Every active use
+was a pure render read: `compute`/`pred`, `@when`, per-row enrichment, or scope
+enrichment. It could not mutate and its answer was consumed while rendering;
+it was not a latent command surface. v0.11 therefore replaces the generic
+category/name switch with fixed operations — `compute`, `when`, `enrich`, and
+`enrich-scope` — whose signatures match the protocol concepts directly.
+Property access is separate because it names public abstract state, and the
+setter returns a state transition rather than a render value. Likewise the old
+bucketed `handle-event` is now the fixed `handle-message` and `handle-intent`
+pair. The repository carries no v0.10 adapters.
 
 ## Constraints (discovered by research, mid-2026)
 
@@ -148,18 +196,20 @@ No changes to `render/` or `vdom/` are needed.
   as the compile error; lint findings surface as `Bundle::diagnostics()`.
   The compiled tree is also where every `$name` a view CALLS is collected
   (`View::collect_method_names`) and checked against the component's declared
-  `methods` plus the mutators its fields imply — an `UNDECLARED_METHOD` warning
+  render operations plus internal mutators its fields imply — an `UNDECLARED_METHOD` warning
   in the same list. Nothing else catches that one: an undeclared `$name` never
-  reaches `call-method`, evaluates to `Null`, and a `Null` attribute is simply
+  reaches the corresponding fixed render operation, evaluates to `Null`, and a `Null` attribute is simply
   omitted, so the whole failure is an element quietly missing its `class`.
 - **`DynObj`** implements `&Obj`: `component_id` → the synthesized component
   (stock view resolution); `obj_field` → `get-field` (arena-decoded; `instance`
   payloads wrap as nested `DynObj`s), falling back to the schema's mutators;
-  `obj_schema` → what the bundle declared;
-  `obj_callable` → `call-method`, in the value namespace and the render-time
-  (`@when`) one; `obj_handler` → a `Handler` that forwards to `handle-event`,
-  drains buffered `control` calls, and falls back
-  to a generated mutator through `with-field` only on `unhandled`.
+  `obj_schema` → what the bundle declared; `obj_property` / `obj_set_property`
+  → the public property operations; `obj_callable` → the fixed compute/when/
+  enrich operation appropriate to its namespace; `obj_handler` → a `Handler`
+  that forwards to `handle-message` or `handle-intent`, drains buffered
+  `control` calls, and falls back to a generated mutator through `with-field`
+  only on `unhandled` from component/view/diagnostic provenance. Host-origin
+  dispatch never gets that fallback.
 - **Lifecycle**: a load registers the bundle, refreshes listeners and styles,
   and pushes a `dyncompLoaded` message so a host component seeds instances as a
   plain state change. Loading a module that is already registered hot-swaps it:
@@ -212,9 +262,10 @@ JavaScript at page authority and a warning was not an isolation boundary.
 |---|---|
 | its views (tutuca template source) | which `@on` names those views raise — the host reads them off the compiled views |
 | its fields, over a flat type table | how to project them to JSON, or how to compare two instances — the host does both from the schema |
+| public properties, their type, and whether each is writable | which fields or logic implement them |
 | `receives` / `intents` | the names a guest answers: `event-result` distinguishes a guest handler from a host mutator dynamically |
 | — | how messages are routed — that is the transactor's |
-| `methods` and `whens` (`@when` filters) | — |
+| `methods`, `whens`, enrichers, and scope enrichers | a generic render-method switch — the ABI gives each category its fixed operation |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
 | what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is its module, version and the config it was registered with (`Bundle::key`) |
 | — | which external origins its views may reference — the host's policy alone allows those (`allowing_external_urls`, or `with_config` binding an origin), and the manifest has nothing to say about it |
@@ -232,9 +283,10 @@ JavaScript at page authority and a warning was not an isolation boundary.
 - Guest views are parsed by the *host's* anode; the manifest `api-version`
   covers template-syntax and contract evolution, and a mismatch is refused
   rather than adapted.
-- Every input reaches `handle-event` once before a generated mutator can run.
-  That extra call buys a single source of truth: authors no longer duplicate
-  their handler names in a manifest merely to disambiguate unchanged state.
+- A view/component input reaches its fixed handler operation once before an
+  internal generated mutator can run. External host calls stop at `unhandled`;
+  public tooling generates property writes instead. The diagnostic fuzzer can
+  opt back into the internal surface when testing implementation robustness.
 - `@dangerouslysetinnerhtml` is refused in a guest view, so a bundle that
   genuinely needs to render markup cannot. Its value is an expression, so no
   registration-time pass can see what it will hold; refusing the construct is
@@ -256,8 +308,6 @@ JavaScript at page authority and a warning was not an isolation boundary.
 - A render-generation sweep as an alternative to explicit `destroy` for
   instances a host seeded and dropped.
 - Playground emission of dyncomp bundles (needs in-browser componentize).
-- `@enrich-with` / `@loop-with` for guests: `@when` reaches `call-method`
-  today, the other two render-time buckets do not.
 - A per-bundle cap on LIVE INSTANCES, which unlike the other quotas has to be
   enforced at `make_instance` time rather than at registration.
 - Caller-aware authorization of HOST request handlers, which needs `RequestFn`

@@ -166,21 +166,22 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.10.0': values,
+    'tutuca:component/values@0.11.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.10.0': control,
+    'tutuca:component/control@0.11.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
   manifest = JSON.parse(
     await readFile(new URL('../../guests/bluesky/manifest.json', import.meta.url), 'utf8'),
   );
-  const rawEvent = guest.Instance.prototype.handleEvent;
-  guest.Instance.prototype.handleEvent = function (...args) {
-    const result = rawEvent.call(this, ...args);
+  const settle = (raw) => function (...args) {
+    const result = raw.call(this, ...args);
     drain();
     return result.tag === 'changed' ? result.val : undefined;
   };
+  guest.Instance.prototype.handleMessage = settle(guest.Instance.prototype.handleMessage);
+  guest.Instance.prototype.handleIntent = settle(guest.Instance.prototype.handleIntent);
   const rawWith = guest.Instance.prototype.withField;
   guest.Instance.prototype.withField = function (...args) {
     const next = rawWith.call(this, ...args);
@@ -191,7 +192,7 @@ before(async () => {
 
 test('the static manifest declares five components', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 9);
+  assert.equal(m.apiVersion, 10);
   assert.equal(m.moduleName, 'blueskylib');
   // the origins its views name are the whole of its network reach, and the
   // host's policy (`allowing_external_urls`) is what decides them — the
@@ -390,7 +391,7 @@ test('liking is optimistic and announced, and leaves the record count alone', { 
 
   // on its own, a post is not `owned`, so it keeps the answer itself
   assert.equal(field(p, 'owned'), false);
-  p = p.handleEvent('receive', 'toggleLike', []);
+  p = p.handleMessage('toggleLike', []);
   assert.equal(field(p, 'liked'), true);
   assert.equal(field(p, 'likes'), '100');
   // the count the record came with is untouched, so a refused write needs no
@@ -399,19 +400,19 @@ test('liking is optimistic and announced, and leaves the record count alone', { 
   assert.deepEqual(emitted, [['liked', [{ tag: 'text', val: uri }]]]);
 
   emitted.length = 0;
-  p = p.handleEvent('receive', 'toggleLike', []);
+  p = p.handleMessage('toggleLike', []);
   assert.equal(field(p, 'liked'), false);
   assert.equal(field(p, 'likes'), '99');
   assert.deepEqual(emitted.map(([n]) => n), ['unliked']);
 
   // a message with nothing under it has no fold to toggle
   emitted.length = 0;
-  assert.equal(p.handleEvent('receive', 'toggleFold', []), undefined);
+  assert.equal(p.handleMessage('toggleFold', []), undefined);
   assert.deepEqual(emitted, []);
 
   // a name this component does not answer falls through to the host, which is
   // what `unhandled` is for
-  assert.equal(p.handleEvent('receive', 'somethingElse', []), undefined);
+  assert.equal(p.handleMessage('somethingElse', []), undefined);
   // and its state is exactly the declared fields, so it does not persist
   assert.deepEqual([...p.persist()], []);
 });
@@ -436,7 +437,7 @@ test('a thread is a list of Posts, indented by depth', { skip: !built }, () => {
   // and each row is told how much hangs under it, which is what its fold
   // button counts — the row cannot see the thread to work that out
   assert.deepEqual(rowField(t, 'foldable'), [3, 1, 0, 0]);
-  assert.equal(t.callMethod('summary', []).val, '4 messages');
+  assert.equal(t.compute('summary', []).val, '4 messages');
 });
 
 test('folding is the row\'s flag and the thread\'s filter, not one or the other', { skip: !built }, () => {
@@ -446,7 +447,7 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
 
   // The row keeps its own flag — it returns a successor — AND announces, because
   // the thread is the only one that knows what sits under it.
-  const folded = child(rows[1]).handleEvent('receive', 'toggleFold', []);
+  const folded = child(rows[1]).handleMessage('toggleFold', []);
   assert.notEqual(folded, undefined);
   assert.equal(field(folded, 'folded'), true);
   assert.equal(field(folded, 'foldLabel'), '+1');
@@ -457,11 +458,11 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
   // that has no use for it.
   emitted.length = 0;
   const t2 = writeRow(t, 1, folded)
-    .handleEvent('intent', 'folded', [text('at://b/app.bsky.feed.post/2')]);
+    .handleIntent('folded', [text('at://b/app.bsky.feed.post/2')]);
   assert.deepEqual(rowField(t2, 'name'), ['Alice', 'Bob', 'Carol']);
   assert.deepEqual(rowField(t2, 'folded'), [false, true, false]);
   assert.deepEqual(rowField(t2, 'foldLabel'), ['−', '+1', '−']);
-  assert.equal(t2.callMethod('summary', []).val, '4 messages · 1 folded away');
+  assert.equal(t2.compute('summary', []).val, '4 messages · 1 folded away');
   assert.deepEqual(emitted.map(([n]) => n), ['stopPropagation']);
 
   // The thread rebuilt NOTHING: every row it did not touch is the same child it
@@ -474,13 +475,13 @@ test('folding is the row\'s flag and the thread\'s filter, not one or the other'
 
   // folding the root takes everything below it
   const rootRow = child(field(t2, 'rows')[0]);
-  const rootFolded = writeRow(t2, 0, rootRow.handleEvent('receive', 'toggleFold', []))
-    .handleEvent('intent', 'folded', [text('at://a/app.bsky.feed.post/1')]);
+  const rootFolded = writeRow(t2, 0, rootRow.handleMessage('toggleFold', []))
+    .handleIntent('folded', [text('at://a/app.bsky.feed.post/1')]);
   assert.deepEqual(rowField(rootFolded, 'name'), ['Alice']);
   // and unfolding puts them back
   const back = rootFolded
-    .handleEvent('intent', 'unfolded', [text('at://a/app.bsky.feed.post/1')])
-    .handleEvent('intent', 'unfolded', [text('at://b/app.bsky.feed.post/2')]);
+    .handleIntent('unfolded', [text('at://a/app.bsky.feed.post/1')])
+    .handleIntent('unfolded', [text('at://b/app.bsky.feed.post/2')]);
   assert.equal(field(back, 'rows').length, 4);
 });
 
@@ -492,7 +493,7 @@ test('a row keeps its own like, and still announces it', { skip: !built }, () =>
   // successor. The thread has nothing to add — it does not handle the bubble at
   // all, and does not stop it: only whoever is above can write the record.
   const row = child(field(t, 'rows')[0]);
-  const liked = row.handleEvent('receive', 'toggleLike', []);
+  const liked = row.handleMessage('toggleLike', []);
   assert.notEqual(liked, undefined);
   assert.equal(field(liked, 'liked'), true);
   // the count the record came with is untouched; the flag is added on top
@@ -505,14 +506,14 @@ test('a row keeps its own like, and still announces it', { skip: !built }, () =>
   assert.deepEqual(rowField(t2, 'liked'), [true, false, false, false]);
   assert.deepEqual(rowField(t2, 'likes'), ['1', '0', '0', '0']);
   // the thread neither claimed the bubble nor stopped it
-  assert.equal(t2.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.equal(t2.handleIntent('liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.deepEqual(emitted, []);
 
-  const unliked = child(field(t2, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
+  const unliked = child(field(t2, 'rows')[0]).handleMessage('toggleLike', []);
   assert.equal(field(unliked, 'liked'), false);
 
   // a repost is the same shape, and lands on a different row
-  const reposted = child(field(t2, 'rows')[3]).handleEvent('receive', 'toggleRepost', []);
+  const reposted = child(field(t2, 'rows')[3]).handleMessage('toggleRepost', []);
   const t3 = writeRow(t2, 3, reposted);
   assert.deepEqual(rowField(t3, 'reposted'), [false, false, false, true]);
   // and the like three rows up is still there, because nothing was rebuilt
@@ -559,13 +560,13 @@ test('a profile counts a follow on top of the number the record came with', { sk
   assert.equal(field(p, 'followersLabel'), '12K');
   assert.equal(field(p, 'followsLabel'), '312');
   assert.equal(field(p, 'postsLabel'), '2.8K');
-  assert.equal(p.callMethod('followLabel', []).val, 'Follow');
+  assert.equal(p.compute('followLabel', []).val, 'Follow');
 
-  p = p.handleEvent('receive', 'toggleFollow', []);
+  p = p.handleMessage('toggleFollow', []);
   assert.equal(field(p, 'following'), true);
   assert.equal(field(p, 'followersLabel'), '12K');
   assert.equal(field(p, 'followersCount'), 12400);
-  assert.equal(p.callMethod('followLabel', []).val, 'Following');
+  assert.equal(p.compute('followLabel', []).val, 'Following');
   assert.deepEqual(emitted, [['followed', [{ tag: 'text', val: 'alice.bsky.social' }]]]);
 
   // its recent messages are Posts too, standing on their own: a feed has no
@@ -578,11 +579,11 @@ test('a profile counts a follow on top of the number the record came with', { sk
   // A row of the feed keeps its own like, exactly as a row of a thread does.
   // The feed itself has nothing to add — no fold, so nothing it alone knows —
   // so it does not handle the bubble and does not stop it.
-  const liked = child(field(p, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
+  const liked = child(field(p, 'rows')[0]).handleMessage('toggleLike', []);
   const withLike = writeRow(p, 0, liked);
   assert.deepEqual(rowField(withLike, 'liked'), [true, false]);
-  assert.equal(p.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
-  assert.match(p.callMethod('summary', []).val, /^Alice Alpha @alice\.bsky\.social — 12K followers/);
+  assert.equal(p.handleIntent('liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.match(p.compute('summary', []).val, /^Alice Alpha @alice\.bsky\.social — 12K followers/);
 });
 
 test('a profile says when it was created and what it pinned', { skip: !built }, () => {
@@ -736,7 +737,7 @@ test('a feed is a list, and says what the list left out', { skip: !built }, () =
   assert.deepEqual(rowField(f, 'rail').map((r) => r.length), [0, 0, 0]);
   assert.deepEqual(rowField(f, 'foldable'), [0, 0, 0]);
   assert.deepEqual(rowField(f, 'focus'), [false, false, false]);
-  assert.equal(f.callMethod('summary', []).val, '3 messages');
+  assert.equal(f.compute('summary', []).val, '3 messages');
   // no heading unless one was given: the summary line stands on its own
   assert.equal(field(f, 'hasTitle'), false);
   const titled = instance('Feed', [
@@ -754,19 +755,19 @@ test('a feed is a list, and says what the list left out', { skip: !built }, () =
   assert.equal(field(s, 'truncatedLabel'), 'stopped at the limit cap — this is not everything');
   assert.equal(field(s, 'moreLabel'), 'more pages were not read');
   assert.deepEqual(field(s, 'notes'), ['search indexes recent public posts only']);
-  assert.match(s.callMethod('summary', []).val, /^scope: stopped at the limit cap; more pages unread;/);
+  assert.match(s.compute('summary', []).val, /^scope: stopped at the limit cap; more pages unread;/);
 
   // an answer with nothing to disclose still HAS a scope, and it draws nothing
   const complete = instance('Feed', [['posts', list(CONVERSATION.slice(0, 1).map(message))]]);
   assert.equal(field(complete, 'hasScope'), false);
   assert.equal(field(child(complete.getField('scope').val), 'hasAny'), false);
-  assert.equal(child(complete.getField('scope').val).callMethod('summary', []).val, '');
+  assert.equal(child(complete.getField('scope').val).compute('summary', []).val, '');
 
   // a row of a feed keeps its own like and the feed does not claim the bubble,
   // the same way a profile's feed behaves
-  const liked = child(field(f, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
+  const liked = child(field(f, 'rows')[0]).handleMessage('toggleLike', []);
   assert.deepEqual(rowField(writeRow(f, 0, liked), 'liked'), [true, false, false]);
-  assert.equal(f.handleEvent('intent', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
+  assert.equal(f.handleIntent('liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
 
   // rewriting the messages rebuilds the rows and keeps the scope: a new list is
   // not a new claim about what was covered
@@ -781,7 +782,7 @@ test('a feed is a list, and says what the list left out', { skip: !built }, () =
       map({ uri: text('at://c/app.bsky.feed.post/9'), displayName: text('Carol'), repostedBy: text('alice.bsky.social') }),
     ])],
   ]);
-  assert.equal(mixed.callMethod('summary', []).val, '2 messages · 1 reposted in');
+  assert.equal(mixed.compute('summary', []).val, '2 messages · 1 reposted in');
   assert.deepEqual(rowField(mixed, 'repostLabel'), ['', 'Reposted by @alice.bsky.social']);
 });
 
@@ -797,51 +798,51 @@ test('a long feed is paged, and a page is not a rebuild', { skip: !built }, () =
   // Below the threshold nothing changed: no window, no footer, every row on
   // screen — which is what these cards did before they could page at all.
   const short = instance('Feed', [['posts', list(CONVERSATION.map(message))]]);
-  assert.equal(short.callMethod('paged', []).val, false);
+  assert.equal(short.compute('paged', []).val, false);
   assert.equal(field(short, 'pageCount'), 1);
   assert.equal(field(short, 'rows').length, 4);
 
   // Asking for a page size is asking to be paged, whatever the length.
   let f = instance('Feed', [['posts', manyPosts()], ['pageSize', num(3)]]);
-  assert.equal(f.callMethod('paged', []).val, true);
+  assert.equal(f.compute('paged', []).val, true);
   // 1-based, because it is a label rather than an index
   assert.equal(field(f, 'page'), 1);
   assert.equal(field(f, 'pageCount'), 3);
-  assert.equal(f.callMethod('rangeLabel', []).val, '1–3 of 7');
+  assert.equal(f.compute('rangeLabel', []).val, '1–3 of 7');
   assert.deepEqual(rowField(f, 'text'), ['message 0', 'message 1', 'message 2']);
   // the summary is about the feed, not about the page
-  assert.equal(f.callMethod('summary', []).val, '7 messages');
+  assert.equal(f.compute('summary', []).val, '7 messages');
 
   // A button that would not move answers `unchanged` rather than rebuilding the
   // same page, and a name the pager does not know keeps travelling.
-  assert.equal(f.handleEvent('receive', 'prevPage', []), undefined);
-  assert.equal(f.handleEvent('receive', 'somethingElse', []), undefined);
+  assert.equal(f.handleMessage('prevPage', []), undefined);
+  assert.equal(f.handleMessage('somethingElse', []), undefined);
 
   const first = field(f, 'rows');
-  f = f.handleEvent('receive', 'nextPage', []);
+  f = f.handleMessage('nextPage', []);
   assert.deepEqual(rowField(f, 'text'), ['message 3', 'message 4', 'message 5']);
-  assert.equal(f.callMethod('atFirst', []).val, false);
+  assert.equal(f.compute('atFirst', []).val, false);
 
   // The host writes a successor home by its position IN THE PAGE — position 0
   // here is message 3 — so the write-back and the render have to agree about
   // which rows those are.
-  const liked = child(field(f, 'rows')[0]).handleEvent('receive', 'toggleLike', []);
+  const liked = child(field(f, 'rows')[0]).handleMessage('toggleLike', []);
   f = writeRow(f, 0, liked);
   assert.deepEqual(rowField(f, 'liked'), [true, false, false]);
 
   // Page back: the rows are the same children, not rebuilt ones, so the like
   // three rows on is still where the reader left it.
-  f = f.handleEvent('receive', 'prevPage', []);
+  f = f.handleMessage('prevPage', []);
   assert.deepEqual(field(f, 'rows'), first);
   assert.deepEqual(rowField(f, 'liked'), [false, false, false]);
-  assert.deepEqual(rowField(f.handleEvent('receive', 'nextPage', []), 'liked'), [true, false, false]);
+  assert.deepEqual(rowField(f.handleMessage('nextPage', []), 'liked'), [true, false, false]);
 
   // the last page is the short one, and it says so
-  const end = f.handleEvent('receive', 'lastPage', []);
+  const end = f.handleMessage('lastPage', []);
   assert.deepEqual(rowField(end, 'text'), ['message 6']);
-  assert.equal(end.callMethod('rangeLabel', []).val, '7–7 of 7');
-  assert.equal(end.callMethod('atLast', []).val, true);
-  assert.equal(end.handleEvent('receive', 'nextPage', []), undefined);
+  assert.equal(end.compute('rangeLabel', []).val, '7–7 of 7');
+  assert.equal(end.compute('atLast', []).val, true);
+  assert.equal(end.handleMessage('nextPage', []), undefined);
 
   // A new list starts at its beginning, and so does a window a host just chose.
   assert.equal(field(end.withField('posts', manyPosts()), 'page'), 1);
@@ -855,14 +856,14 @@ test('a thread pages what the folds left, and a profile pages its messages', { s
   const posts = MANY.map((m, i) => ({ ...m, depth: i === 0 ? 0 : 1 }));
   let t = instance('Thread', [['posts', list(posts.map(message))], ['pageSize', num(3)]]);
   assert.equal(field(t, 'pageCount'), 3);
-  t = t.handleEvent('receive', 'lastPage', []);
+  t = t.handleMessage('lastPage', []);
   assert.deepEqual(rowField(t, 'text'), ['message 6']);
 
   // Folding the root hides the six under it, which leaves one page — and the
   // stored page comes back inside it rather than showing nothing.
-  t = t.handleEvent('intent', 'folded', [text(posts[0].uri)]);
+  t = t.handleIntent('folded', [text(posts[0].uri)]);
   assert.equal(field(t, 'pageCount'), 1);
-  assert.equal(t.callMethod('paged', []).val, false);
+  assert.equal(t.compute('paged', []).val, false);
   assert.deepEqual(rowField(t, 'text'), ['message 0']);
 
   // An account's messages page the same way, with no fold in front of them.
@@ -872,11 +873,11 @@ test('a thread pages what the folds left, and a profile pages its messages', { s
     ['pageSize', num(4)],
   ]);
   assert.equal(field(p, 'pageCount'), 2);
-  assert.equal(p.callMethod('rangeLabel', []).val, '1–4 of 7');
-  assert.deepEqual(rowField(p.handleEvent('receive', 'nextPage', []), 'text'),
+  assert.equal(p.compute('rangeLabel', []).val, '1–4 of 7');
+  assert.deepEqual(rowField(p.handleMessage('nextPage', []), 'text'),
     ['message 4', 'message 5', 'message 6']);
   // and its own button still works, which is the arm the pager was added beside
-  assert.notEqual(p.handleEvent('receive', 'toggleFollow', []), undefined);
+  assert.notEqual(p.handleMessage('toggleFollow', []), undefined);
 });
 
 test('a thread carries a scope too, and keeps it across a rewrite', { skip: !built }, () => {

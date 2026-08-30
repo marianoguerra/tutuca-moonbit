@@ -1,4 +1,4 @@
-// Card in, `tutuca:component@0.10.0` core module out.
+// Card in, `tutuca:component@0.11.0` core module out.
 //
 // The pipeline is the card runtime's, with one stage swapped:
 //
@@ -236,6 +236,7 @@ pub fn compile(
           source_name: comp,
           component: comp,
           fields: [],
+          properties: [],
           receive: [],
           intent: [],
           express_message: [],
@@ -381,8 +382,8 @@ pub fn compile(
     for i, f in def.fields {
       g.index[f.name] = i
     }
-    // Every declaration that answers through `call-method`, which is five
-    // kinds: the two enrichers reach a view through the Alter namespace.
+    // Every declaration that answers through a fixed render operation. The
+    // two enrichers reach a view through the Alter namespace.
     //
     // An enricher's name is NOT callable from an expression, and does not
     // become so by being in here: `tscript/check` answers `NO_NAME` for a bare
@@ -523,7 +524,7 @@ pub fn compile(
     fields: g.def.fields.map(f => f.name),
     manifest: manifest_json(comps, file, g),
     descriptor: Json::object({
-      "world": Json::string("tutuca:component@0.10.0"),
+      "world": Json::string("tutuca:component@0.11.0"),
       // utf8 rather than the shipped guests' utf16: a constant pool laid down
       // as a data segment is bytes, and `abi.mjs` implements both.
       "encoding": Json::string("utf8"),
@@ -1114,6 +1115,9 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
     for f in callable_fields(c.g, c.decls) {
       fs.push(f)
     }
+    for f in property_getter_fields(c.g, c.decls) {
+      fs.push(f)
+    }
     if !c.escape_fields.is_empty() {
       for f in escape_prelude(c.g) {
         fs.push(f)
@@ -1128,8 +1132,14 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
       }
     }
   }
-  fs.push(handle_event_fn(comps))
-  fs.push(call_method_fn(comps))
+  fs.push(handle_message_fn(comps))
+  fs.push(handle_intent_fn(comps))
+  fs.push(compute_fn(comps))
+  fs.push(when_fn(comps))
+  fs.push(enrich_fn(comps))
+  fs.push(enrich_scope_fn(comps))
+  fs.push(get_property_fn(comps))
+  fs.push(set_property_fn(comps))
   // Every body has now compiled, so what the CARD uses is finally knowable.
   union_uses(comps)
   if g.uses_control {
@@ -1160,7 +1170,10 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
   for
     name in [
       @abi.guest_iface + "#[method]instance.get-field",
-      @abi.guest_iface + "#[method]instance.call-method",
+      @abi.guest_iface + "#[method]instance.compute",
+      @abi.guest_iface + "#[method]instance.enrich",
+      @abi.guest_iface + "#[method]instance.enrich-scope",
+      @abi.guest_iface + "#[method]instance.get-property",
       @abi.guest_iface + "#[method]instance.persist",
       @abi.guest_iface + "#serve-intent",
     ] {

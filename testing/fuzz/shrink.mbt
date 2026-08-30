@@ -18,12 +18,12 @@
 /// that only exist to reach it.
 pub fn[N] shrink(
   plan : Plan,
-  script : Array[@component.Dispatch],
+  script : Array[Action],
   remount : () -> @harness.Harness[N]?,
   at? : @tutuca.DispatchPath = @tutuca.DispatchPath::new(),
   read? : Reader,
   rounds? : Int = 200,
-) -> Array[@component.Dispatch] {
+) -> Array[Action] {
   let mut best = script
   let mut budget = rounds
   // Repeat until a pass finds nothing smaller: one pass over the candidates
@@ -32,7 +32,7 @@ pub fn[N] shrink(
   // terminate is worse than one that stops early.
   for ;; {
     let mut improved = false
-    for cand in @arb.shrink_script(best) {
+    for cand in shrink_actions(best) {
       if budget <= 0 {
         break
       }
@@ -53,6 +53,33 @@ pub fn[N] shrink(
 }
 
 ///|
+/// Length-first shrinking for public actions. Arguments stay concrete for the
+/// same reason the dispatch shrinker keeps them concrete: a reproducer should
+/// minimize the interaction sequence before it minimizes data.
+pub fn shrink_actions(script : Array[Action]) -> Iter[Array[Action]] {
+  let out : Array[Array[Action]] = []
+  let n = script.length()
+  if n == 0 {
+    return out.iter()
+  }
+  let mut cut = n / 2
+  while cut > 0 {
+    out.push(script[0:cut].to_owned())
+    cut = cut / 2
+  }
+  for i in 0..<n {
+    let without : Array[Action] = []
+    for j, action in script {
+      if j != i {
+        without.push(action)
+      }
+    }
+    out.push(without)
+  }
+  out.iter()
+}
+
+///|
 /// Whether `script` still breaks an invariant, from a fresh mount.
 ///
 /// A candidate that could not be mounted answers false: it is not a candidate
@@ -60,7 +87,7 @@ pub fn[N] shrink(
 /// component's.
 fn[N] still_fails(
   plan : Plan,
-  script : Array[@component.Dispatch],
+  script : Array[Action],
   remount : () -> @harness.Harness[N]?,
   at : @tutuca.DispatchPath,
   read? : Reader,

@@ -333,6 +333,8 @@ declare pub fn[S : @tutuca.Fields] component(
   common_style? : String,
   global_style? : String,
   update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],
+  get_property? : Map[String, (S) -> @tutuca.Value],
+  set_property? : Map[String, (S, @tutuca.Value) -> Update[S]],
   compute? : Map[
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,

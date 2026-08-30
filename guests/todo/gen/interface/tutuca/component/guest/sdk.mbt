@@ -40,10 +40,32 @@ pub fn handled(next : &DynComponent?) -> HandleResult {
 }
 
 ///|
+/// Internal sharing for components whose message and intent handlers use one
+/// implementation. This is not part of the WIT surface: the exported methods
+/// are split, and a component may override either fixed category directly.
+pub(all) enum DispatchKind {
+  MessageDispatch
+  IntentDispatch
+}
+
+///|
 pub(open) trait DynComponent {
   fn get_field(Self, name : String) -> @values.Value? = _
-  fn handle(Self, bucket : Bucket, name : String, args : Array[@values.Value]) -> HandleResult = _
-  fn call_method(Self, name : String, args : Array[@values.Value]) -> @values.Value = _
+  fn handle_dispatch(
+    Self,
+    kind : DispatchKind,
+    name : String,
+    args : Array[@values.Value],
+  ) -> HandleResult = _
+  fn render_call(Self, name : String, args : Array[@values.Value]) -> @values.Value = _
+  fn handle_message(Self, name : String, args : Array[@values.Value]) -> HandleResult = _
+  fn handle_intent(Self, name : String, args : Array[@values.Value]) -> HandleResult = _
+  fn compute(Self, name : String, args : Array[@values.Value]) -> @values.Value = _
+  fn when(Self, name : String, args : Array[@values.Value]) -> Bool = _
+  fn enrich(Self, name : String, args : Array[@values.Value]) -> @values.Value = _
+  fn enrich_scope(Self, name : String) -> @values.Value = _
+  fn get_property(Self, name : String) -> @values.Value? = _
+  fn set_property(Self, name : String, v : @values.Value) -> PropertyHandleResult = _
   fn with_field(Self, name : String, v : @values.Value) -> &DynComponent? = _
   /// This instance's state as bytes ONLY THIS GUEST reads (WIT
   /// `instance.persist`). The host stores them and hands them back to the
@@ -62,13 +84,56 @@ impl DynComponent with fn get_field(_self, _name) {
 }
 
 ///|
-impl DynComponent with fn handle(_self, _bucket, _name, _args) {
+impl DynComponent with fn handle_dispatch(_self, _kind, _name, _args) {
   Unhandled
 }
 
 ///|
-impl DynComponent with fn call_method(_self, _name, _args) {
+impl DynComponent with fn render_call(_self, _name, _args) {
   @values.Value::Nil
+}
+
+///|
+impl DynComponent with fn handle_message(self, name, args) {
+  self.handle_dispatch(MessageDispatch, name, args)
+}
+
+///|
+impl DynComponent with fn handle_intent(self, name, args) {
+  self.handle_dispatch(IntentDispatch, name, args)
+}
+
+///|
+impl DynComponent with fn compute(self, name, args) {
+  self.render_call(name, args)
+}
+
+///|
+impl DynComponent with fn when(self, name, args) {
+  match self.render_call(name, args) {
+    @values.Value::Boolean(v) => v
+    _ => false
+  }
+}
+
+///|
+impl DynComponent with fn enrich(self, name, args) {
+  self.render_call(name, args)
+}
+
+///|
+impl DynComponent with fn enrich_scope(self, name) {
+  self.render_call(name, [])
+}
+
+///|
+impl DynComponent with fn get_property(_self, _name) {
+  None
+}
+
+///|
+impl DynComponent with fn set_property(_self, _name, _v) {
+  PropertyMissing
 }
 
 ///|
@@ -79,6 +144,14 @@ impl DynComponent with fn with_field(_self, _name, _v) {
 ///|
 impl DynComponent with fn persist(_self) {
   no_bytes()
+}
+
+///|
+pub(all) enum PropertyHandleResult {
+  PropertyMissing
+  PropertyUnchanged
+  PropertyRefused
+  PropertyChanged(&DynComponent)
 }
 
 ///|
@@ -100,7 +173,7 @@ pub fn dyn_comp(
   make : (Array[(String, @values.Value)]) -> &DynComponent,
   restore? : (FixedArray[Byte]) -> &DynComponent? = no_restore,
 ) -> ComponentFactory {
-  { name, make, restore }
+  { name, make, restore, }
 }
 
 ///|
@@ -151,7 +224,7 @@ pub fn module_def(
   components : Array[ComponentFactory],
   serve? : (String, Array[@values.Value]) -> ServeResult = no_serves,
 ) -> DynModule {
-  { components, serve }
+  { components, serve, }
 }
 
 ///|
@@ -166,7 +239,7 @@ let module_ : DynModule = dyn_module()
 let states : Map[Int, &DynComponent] = Map([])
 
 ///|
-let next_rep : Ref[Int] = { val: 0 }
+let next_rep : Ref[Int] = { val: 0, }
 
 ///|
 fn alloc(state : &DynComponent) -> Instance {
@@ -221,13 +294,12 @@ pub fn Instance::get_field(self : Instance, name : String) -> @values.Value? {
 }
 
 ///|
-pub fn Instance::handle_event(
+pub fn Instance::handle_message(
   self : Instance,
-  b : Bucket,
   name : String,
   args : Array[@values.Value],
 ) -> EventResult {
-  match state_of(self).handle(b, name, args) {
+  match state_of(self).handle_message(name, args) {
     Unhandled => EventResult::Unhandled
     Unchanged => EventResult::Unchanged
     Changed(next) => EventResult::Changed(alloc(next))
@@ -235,12 +307,67 @@ pub fn Instance::handle_event(
 }
 
 ///|
-pub fn Instance::call_method(
+pub fn Instance::handle_intent(
+  self : Instance,
+  name : String,
+  args : Array[@values.Value],
+) -> EventResult {
+  match state_of(self).handle_intent(name, args) {
+    Unhandled => EventResult::Unhandled
+    Unchanged => EventResult::Unchanged
+    Changed(next) => EventResult::Changed(alloc(next))
+  }
+}
+
+///|
+pub fn Instance::compute(
   self : Instance,
   name : String,
   args : Array[@values.Value],
 ) -> @values.Value {
-  state_of(self).call_method(name, args)
+  state_of(self).compute(name, args)
+}
+
+///|
+pub fn Instance::when(
+  self : Instance,
+  name : String,
+  args : Array[@values.Value],
+) -> Bool {
+  state_of(self).when(name, args)
+}
+
+///|
+pub fn Instance::enrich(
+  self : Instance,
+  name : String,
+  args : Array[@values.Value],
+) -> @values.Value {
+  state_of(self).enrich(name, args)
+}
+
+///|
+pub fn Instance::enrich_scope(self : Instance, name : String) -> @values.Value {
+  state_of(self).enrich_scope(name)
+}
+
+///|
+pub fn Instance::get_property(self : Instance, name : String) -> @values.Value? {
+  state_of(self).get_property(name)
+}
+
+///|
+pub fn Instance::set_property(
+  self : Instance,
+  name : String,
+  v : @values.Value,
+) -> PropertyResult {
+  match state_of(self).set_property(name, v) {
+    PropertyMissing => PropertyResult::Missing
+    PropertyUnchanged => PropertyResult::Unchanged
+    PropertyRefused => PropertyResult::Refused
+    PropertyChanged(next) => PropertyResult::Changed(alloc(next))
+  }
 }
 
 ///|

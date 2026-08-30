@@ -41,6 +41,14 @@ pub(all) enum DeclKind {
   DIntent
   /// A `$name` in a value position. One expression.
   DCompute
+  /// A complex public property getter. Its name fixes the property and its
+  /// signature is always `(state) -> property-type`; no parameter list is
+  /// written.
+  DGet
+  /// A complex public property setter. Its implicit `value` parameter has the
+  /// property's declared type and its result is a synchronous state
+  /// transition. Effects are forbidden.
+  DSet
   /// A named boolean. One expression, and the subset of `compute` whose
   /// return type is declared — which is what lets a condition slot be
   /// type-checked and what a contract attaches to.
@@ -132,8 +140,7 @@ pub(all) struct Decl {
 ///|
 /// What a declaration's braces hold.
 pub(all) enum Body {
-  /// Statements: `on` / `receive` / `bubble` / `response` / `enrich` /
-  /// `enrich-scope`.
+  /// Statements: `receive` / `intent` / `set` / `enrich` / `enrichScope`.
   Stmts(Array[Stmt])
   /// One expression: `compute` / `pred` / `invariant`, and every body written
   /// in a slot.

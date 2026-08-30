@@ -135,7 +135,7 @@ fn till_comp(enforced? : Bool = true) -> @component.Component {
 
 ///|
 fn till_plan(
-  source? : @fuzz.Source = Mutators,
+  source? : @fuzz.Source = InternalMutators,
   enforced? : Bool = true,
 ) -> @fuzz.Plan raise {
   guard @fuzz.Plan::of_component(till_comp(enforced~), source~) is Some(p) else {
@@ -235,7 +235,7 @@ test "the mutator source draws only receives, and only declared field names" {
   let p = till_plan()
   let names : Array[String] = []
   for d in p.script(seed=3, steps=40) {
-    guard d is Receive(name, _) else {
+    guard d is InternalMutator(Receive(name, _)) else {
       fail("every generated mutator is a Receive")
     }
     if !names.contains(name) {
@@ -260,7 +260,7 @@ test "the declared source draws a message with its payload" {
   let script = p.script(seed=11, steps=25)
   assert_true(script.length() > 0)
   for d in script {
-    guard d is Receive("draw", args) else {
+    guard d is Message(Receive("draw", args)) else {
       fail("Till declares one message, and a draw is what should be drawn")
     }
     assert_eq(args.length(), 1)
@@ -386,7 +386,7 @@ test "the interpreted rule agrees with every refusal the compiled one raised" {
 test "a refused transition is recorded, not failed" {
   let p = till_plan()
   let h = fresh()
-  let declined = p.step(h, Receive("setTill", [Num(0.0)]))
+  let declined = p.step(h, InternalMutator(Receive("setTill", [Num(0.0)])))
   assert_eq(declined.refused.length(), 1)
   assert_eq(declined.refused[0].code, Invariant)
   assert_eq(declined.refused[0].rule, "floatCovered")
@@ -394,8 +394,11 @@ test "a refused transition is recorded, not failed" {
   // Abandoned means abandoned: the till did not move.
   assert_eq(declined.after.get("till"), Some(Num(10)))
   // Lower the float first and the same dispatch goes through.
-  assert_eq(p.step(h, Receive("setFloat_", [Num(0.0)])).refused, [])
-  let ok = p.step(h, Receive("setTill", [Num(0.0)]))
+  assert_eq(
+    p.step(h, InternalMutator(Receive("setFloat_", [Num(0.0)]))).refused,
+    [],
+  )
+  let ok = p.step(h, InternalMutator(Receive("setTill", [Num(0.0)])))
   assert_eq(ok.refused, [])
   assert_eq(ok.after.get("till"), Some(Num(0)))
 }
@@ -412,12 +415,18 @@ test "a refused transition is recorded, not failed" {
 test "a pred no handler requires is not a precondition" {
   let p = till_plan()
   let h = fresh()
-  assert_eq(p.step(h, Receive("setFloat_", [Num(0.0)])).refused, [])
-  assert_eq(p.step(h, Receive("setTill", [Num(0.0)])).refused, [])
+  assert_eq(
+    p.step(h, InternalMutator(Receive("setFloat_", [Num(0.0)]))).refused,
+    [],
+  )
+  assert_eq(
+    p.step(h, InternalMutator(Receive("setTill", [Num(0.0)]))).refused,
+    [],
+  )
   // The drawer is empty, so `canDraw` does not hold…
   assert_eq(p.rules.holds("canDraw", @fuzz.settled(h)), Some(false))
   // …and drawing is not declined, because nothing asked.
-  let drew = p.step(h, Receive("draw", [Num(1.0)]))
+  let drew = p.step(h, Message(Receive("draw", [Num(1.0)])))
   assert_eq(drew.refused, [])
   assert_eq(drew.disagreed, [])
 }
@@ -431,9 +440,15 @@ test "a pred no handler requires is not a precondition" {
 test "a step counts the renders it caused" {
   let p = till_plan()
   let h = fresh()
-  assert_eq(p.step(h, Receive("setTill", [Num(14.0)])).renders, 1)
+  assert_eq(
+    p.step(h, InternalMutator(Receive("setTill", [Num(14.0)]))).renders,
+    1,
+  )
   // The same value again: the root does not swap, so nothing re-renders.
-  assert_eq(p.step(h, Receive("setTill", [Num(14.0)])).renders, 0)
+  assert_eq(
+    p.step(h, InternalMutator(Receive("setTill", [Num(14.0)]))).renders,
+    0,
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -539,7 +554,11 @@ fn album_module() -> @component.ModuleDef {
 
 ///|
 fn album_plan() -> @fuzz.Plan raise {
-  guard @fuzz.Plan::of_component(album_module().components[0]) is Some(p) else {
+  guard @fuzz.Plan::of_component(
+      album_module().components[0],
+      source=InternalMutators,
+    )
+    is Some(p) else {
     fail("Album carries a spec block, so it has a plan")
   }
   p
@@ -559,17 +578,17 @@ test "a live draw puts the cursor in range; a script drawn up front does not" {
   // `setCursor`s to the same component from the same seed; the difference is
   // only WHEN the argument was drawn.
   let plan = album_plan()
-  let in_range = (d : @component.Dispatch) => {
+  let in_range = (d : @fuzz.Action) => {
     match d {
-      Receive("setCursor", [Num(n)]) => n >= 0.0 && n < 3.0
+      InternalMutator(Receive("setCursor", [Num(n)])) => n >= 0.0 && n < 3.0
       _ => true
     }
   }
-  let count = (script : Array[@component.Dispatch]) => {
+  let count = (script : Array[@fuzz.Action]) => {
     let mut good = 0
     let mut total = 0
     for d in script {
-      if d is Receive("setCursor", _) {
+      if d is InternalMutator(Receive("setCursor", _)) {
         total = total + 1
         if in_range(d) {
           good = good + 1

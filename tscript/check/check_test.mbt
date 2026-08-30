@@ -35,6 +35,7 @@ fn schema() -> String {
     #|  byKey  : Map[String, String]
     #|  pri    : Priority
     #|  blob   : Any
+    #|  maybe  : String?
     #|  provide { count = .count }
     #|  lookup { theme, color = 'gray' }
     #|}
@@ -123,6 +124,9 @@ test "assignment types have to fit, and the numeric surface is one" {
   assert_eq(codes("receive x { .blob = 'hi' }"), [])
   // …and an enum is a string at runtime, so a computed string can name a case.
   assert_eq(codes("receive x { .pri = 'high' }"), [])
+  // A non-null value fills an optional slot; `null` empties it.
+  assert_eq(codes("receive x { .maybe = 'hi' }"), [])
+  assert_eq(codes("receive x { .maybe = null }"), [])
 }
 
 ///|

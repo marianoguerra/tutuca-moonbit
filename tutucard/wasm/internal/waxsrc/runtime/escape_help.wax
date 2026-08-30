@@ -45,7 +45,7 @@ fn tcx_str(bytes: &wax_hash_bytes) -> &jv_value {
 
 // The truncation an Int field takes on the way in. `set_<field>` already
 // applies it for a declared Int, so this is for a value going somewhere else —
-// into a list, or back out through `call-method`.
+// into a list, or back out through a fixed render operation.
 fn tcx_int(v: &jv_value) -> &jv_value { tc_trunc(v) }
 
 // Whether a transition has failed so far. An escape that calls several runtime

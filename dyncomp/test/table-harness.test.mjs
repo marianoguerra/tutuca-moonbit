@@ -108,17 +108,17 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.10.0': values,
+    'tutuca:component/values@0.11.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.10.0': control,
+    'tutuca:component/control@0.11.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
   manifest = JSON.parse(
     await readFile(new URL('../../guests/table/manifest.json', import.meta.url), 'utf8'),
   );
-  const raw = guest.Instance.prototype.handleEvent;
-  guest.Instance.prototype.handleEvent = function (...args) {
+  const raw = guest.Instance.prototype.handleMessage;
+  guest.Instance.prototype.handleMessage = function (...args) {
     const result = raw.call(this, ...args);
     return result.tag === 'changed' ? result.val : undefined;
   };
@@ -126,7 +126,7 @@ before(async () => {
 
 test('the manifest declares one ty-table field', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 9);
+  assert.equal(m.apiVersion, 10);
   assert.equal(m.moduleName, 'tablelib');
   const [c] = m.components;
   assert.equal(c.name, 'Table');
@@ -159,14 +159,14 @@ test('paging shows a window, and clamps at both ends', { skip: !built }, () => {
   assert.equal(fromGuest(inst.getField('pageCount')), 2);
   assert.deepEqual(fromGuest(inst.getField('rows')).map((r) => r[0]), ['Berlin', 'Athens', 'Lima']);
 
-  const p2 = inst.handleEvent('receive', 'nextPage', []);
+  const p2 = inst.handleMessage('nextPage', []);
   assert.equal(fromGuest(p2.getField('page')), 2);
   assert.deepEqual(fromGuest(p2.getField('rows')).map((r) => r[0]), ['Oslo']);
 
   // past the end is the last page, not an empty one
-  const past = p2.handleEvent('receive', 'nextPage', []);
+  const past = p2.handleMessage('nextPage', []);
   assert.equal(fromGuest(past.getField('page')), 2);
-  const first = past.handleEvent('receive', 'firstPage', []);
+  const first = past.handleMessage('firstPage', []);
   assert.equal(fromGuest(first.getField('page')), 1);
   // and a missing cell renders as a gap, not as "null" or a zero
   const shown = fromGuest(first.getField('rows'));
@@ -175,7 +175,7 @@ test('paging shows a window, and clamps at both ends', { skip: !built }, () => {
 
 test('sorting moves whole rows, and missing values sort last', { skip: !built }, () => {
   const inst = make([['data', toGuest(CITIES)], ['pageSize', num(10)]]);
-  const asc = inst.handleEvent('receive', 'sortBy', [text('pop')]);
+  const asc = inst.handleMessage('sortBy', [text('pop')]);
   const t = fromGuest(asc.getField('data'));
   // ascending by population, with the missing one last in BOTH directions
   assert.deepEqual(t.columns[1].values, [664000, 709000, 3664000, null]);
@@ -187,19 +187,19 @@ test('sorting moves whole rows, and missing values sort last', { skip: !built },
   assert.equal(fromGuest(asc.getField('descending')), false);
 
   // clicking the sorted column reverses it, and the gap STILL sorts last
-  const desc = asc.handleEvent('receive', 'sortBy', [text('pop')]);
+  const desc = asc.handleMessage('sortBy', [text('pop')]);
   const d = fromGuest(desc.getField('data'));
   assert.deepEqual(d.columns[1].values, [3664000, 709000, 664000, null]);
   assert.deepEqual(d.columns[0].values, ['Berlin', 'Oslo', 'Athens', 'Lima']);
   assert.equal(fromGuest(desc.getField('descending')), true);
 
   // a column that is not there is a no-op, not a crash
-  assert.equal(desc.handleEvent('receive', 'sortBy', [text('nope')]), undefined);
+  assert.equal(desc.handleMessage('sortBy', [text('nope')]), undefined);
 });
 
 test('sorting a str column orders text, and a bool column orders false first', { skip: !built }, () => {
   const inst = make([['data', toGuest(CITIES)]]);
-  const byCity = fromGuest(inst.handleEvent('receive', 'sortBy', [text('city')]).getField('data'));
+  const byCity = fromGuest(inst.handleMessage('sortBy', [text('city')]).getField('data'));
   assert.deepEqual(byCity.columns[0].values, ['Athens', 'Berlin', 'Lima', 'Oslo']);
   // the null in `pop` travelled with Lima, which is now third
   assert.deepEqual(byCity.columns[1].values, [664000, 3664000, null, 709000]);
@@ -211,7 +211,7 @@ test('sorting a str column orders text, and a bool column orders false first', {
     ],
   };
   const b = fromGuest(
-    make([['data', toGuest(mixed)]]).handleEvent('receive', 'sortBy', [text('on')]).getField('data'),
+    make([['data', toGuest(mixed)]]).handleMessage('sortBy', [text('on')]).getField('data'),
   );
   assert.deepEqual(b.columns[0].values, [false, true, true]);
   assert.deepEqual(b.columns[1].values, [2, 1, 3]);
@@ -222,13 +222,13 @@ test('load replaces the data and clear keeps the columns', { skip: !built }, () 
   const other = {
     columns: [{ id: 'a', label: 'A', type: 'str', values: ['x', 'y'] }],
   };
-  const loaded = inst.handleEvent('receive', 'load', [toGuest(other)]);
+  const loaded = inst.handleMessage('load', [toGuest(other)]);
   assert.equal(fromGuest(loaded.getField('rowCount')), 2);
   assert.equal(fromGuest(loaded.getField('colCount')), 1);
   // loading resets the sort, because the column it named may be gone
   assert.equal(fromGuest(loaded.getField('sort')), '');
 
-  const cleared = loaded.handleEvent('receive', 'clear', []);
+  const cleared = loaded.handleMessage('clear', []);
   assert.equal(fromGuest(cleared.getField('rowCount')), 0);
   assert.equal(fromGuest(cleared.getField('colCount')), 1, 'clear drops rows, not columns');
   assert.equal(fromGuest(cleared.getField('empty')), true);

@@ -255,7 +255,7 @@ fn ECtx::read(
     }
     // The row a `@when` filter or an enricher is called about. These DO arrive
     // at a compiled declaration — `component/instance.mbt` passes them
-    // positionally through `call-method` — so the only thing that was ever
+    // positionally through the fixed render operation — so the only thing that was ever
     // missing is knowing which position each one is at.
     PBind(name) if self.binds.get(name) is Some(i) =>
       self.walk(call("tc_arg_at", [get(self.args), i32c(i)]), place.steps)

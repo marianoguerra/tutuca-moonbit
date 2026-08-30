@@ -13,6 +13,8 @@ priv struct TypedSpec[S] {
   init : S
   s_fields : Array[String]
   update : ((S, Dispatch, &@tutuca.Ctx) -> Update[S])?
+  get_property : Map[String, (S) -> @tutuca.Value]
+  set_property : Map[String, (S, @tutuca.Value) -> Update[S]]
   compute : Map[
     String,
     (S, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
@@ -370,6 +372,54 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 }
 
 ///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_property(self, name) {
+  guard self.spec.comp is Some(comp) else { return None }
+  guard comp.schema.properties.iter().any(p => p.name == name) else {
+    return None
+  }
+  self.spec.get_property.get(name).map(f => f(self.state))
+}
+
+///|
+/// Public property writes never enter the message dispatcher. The setter is a
+/// typed, synchronous state transition, and the same invariant/domain commit
+/// gate used by handlers decides whether its successor may stand.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_property(
+  self,
+  name,
+  value,
+) {
+  guard self.spec.comp is Some(comp) else { return PMissing }
+  guard comp.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    return PMissing
+  }
+  if !property.writable {
+    return PRefused
+  }
+  guard self.spec.set_property.get(name) is Some(setter) else {
+    return PRefused
+  }
+  match setter(self.state, value) {
+    Unhandled => PMissing
+    Unchanged => PUnchanged
+    Next(next) => {
+      let successor = self.with_state(next).to_value()
+      if physical_equal(successor, self.to_value()) {
+        return PUnchanged
+      }
+      match self.broken_rule(successor) {
+        Some(broke) => {
+          ignore(self.refuse_broken(broke, name, successor))
+          PRefused
+        }
+        None => PChanged(successor)
+      }
+    }
+  }
+}
+
+///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
   @tutuca.Obj::obj_callable_at(self, name, ns, @tutuca.NullStack::{ })
 }
@@ -655,6 +705,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
   }
   Some(
     Handler((args, ctx) => {
+      let allow_generated = ctx.provenance() is (View | Component | Diagnostic)
       // swap handlers are name-keyed and may replace this node with an
       // arbitrary Value (another component's instance) — they win over the
       // opaque update match.
@@ -707,7 +758,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
       // view writing `setTitle 'x'` reaches the setter every field gets
       // without the component declaring one — and so does a parent sending the
       // same name, which is the widening `answers_at_home` names.
-      if answers_at_home(bucket) {
+      if answers_at_home(bucket) && allow_generated {
         match self.spec.generated.get(name) {
           Some(g) =>
             match g(self.field_box(), args) {

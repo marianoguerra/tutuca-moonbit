@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "blueskylib",
   "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data — no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
   "version": "0.1.0",
@@ -118,7 +118,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Post",
@@ -470,7 +471,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Feed",
@@ -653,7 +655,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Thread",
@@ -846,7 +849,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Profile",
@@ -1113,7 +1117,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

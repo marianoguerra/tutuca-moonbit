@@ -454,6 +454,7 @@ pub struct Transaction {
   bucket : @tutuca.HandlerBucket
   name : String
   args : Array[@tutuca.Value]
+  provenance : @tutuca.DispatchProvenance
   target_path : @tutuca.DispatchPath
   txn_path : @tutuca.Path?
   parent : Transaction?
@@ -579,6 +580,22 @@ declare pub fn Transactor::reset_root(
 ) -> Unit
 
 ///|
+/// Apply a public property setter at an addressed component and install its
+/// successor synchronously.
+///
+/// The setter itself is a pure copy-on-write transition. Resolving the path,
+/// rebuilding its parents, and swapping the root happen as one call, so a
+/// caller never observes the child successor detached from its parent tree.
+/// Missing paths/properties and refused writes leave the root untouched and
+/// are distinguished by `PropertyWrite`.
+declare pub fn Transactor::set_property(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  value : @tutuca.Value,
+) -> @tutuca.PropertyWrite
+
+///|
 /// Subscribe to a normalized record for every handler invocation — a receive,
 /// one hop of an intent's walk, or an answer. Returns an unsubscribe function.
 /// Purely observational; empty by default (zero overhead).
@@ -624,6 +641,7 @@ declare pub fn Transactor::push_send(
   args : Array[@tutuca.Value],
   parent? : Transaction,
   origin? : @tutuca.DispatchPath,
+  provenance? : @tutuca.DispatchProvenance,
 ) -> Transaction
 
 ///|

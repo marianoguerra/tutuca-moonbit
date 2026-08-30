@@ -110,7 +110,7 @@ pub fn log(level : LogLevel, msg : String) -> Unit {
 ///
 /// The `dyn` leg starts at this component's PARENT, so a component never
 /// re-enters its own handler and a cycle needs two of them. The answer, if
-/// any, arrives as a later handle-event(receive, ...) — an answer is an
+/// any, arrives as a later handle-message(...) — an answer is an
 /// ordinary message and a handler cannot tell it from one a parent sent.
 ///
 /// One channel: the route says which scope answers, rather than the verb
@@ -613,7 +613,7 @@ pub fn fail(e : @values.Value) -> Unit {
 }
 
 ///|
-/// Send a message to self: arrives as a later handle-event(receive, name, ...).
+/// Send a message to self: arrives as a later handle-message(name, ...).
 pub fn send(name : String, args : Array[@values.Value]) -> Unit {
   let cleanup_list : Array[Int] = []
 
@@ -681,7 +681,7 @@ pub fn send(name : String, args : Array[@values.Value]) -> Unit {
 
 ///|
 /// Send to a component in this one's own subtree (`ctx.send-at-path`): the
-/// message arrives as handle-event(receive, ...) at `path`, e.g.
+/// message arrives as handle-message(...) at `path`, e.g.
 /// `[field("left")]` for the child a `left` field holds.
 pub fn send_at(
   path : Array[PathStep],
@@ -898,11 +898,12 @@ pub fn send_reply(name : String, args : Array[@values.Value]) -> Unit {
 /// could not change what came back. Which environments were walked is the
 /// host's business, the same way the default route is.
 ///
-/// Both entry points resolve them, from the position each one stands in: a
-/// `handle-event` walks the dispatch route `[dyn, lex]`, and a `call-method`
-/// asks the render chain the call is being made under — which is what a
-/// `*name` in this component's own VIEW reads. So a `*name` in a `pred` and
-/// a `*name` in the template beside it answer the same thing.
+/// Every entry point resolves them from the position it stands in: a
+/// message/intent handler walks its dispatch route, while a render operation
+/// (`compute`, `when`, `enrich`, `enrich-scope`) asks the render chain the
+/// call is being made under — which is what a `*name` in this component's
+/// own VIEW reads. So a `*name` in a `pred` and a `*name` in the template
+/// beside it answer the same thing.
 ///
 /// `nil` for a name the manifest's `lookup` list does not declare, and for a
 /// declared one that nothing above supplies and that carries no default.

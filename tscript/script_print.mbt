@@ -275,7 +275,7 @@ pub fn Decl::to_source(self : Decl) -> String {
   b.write_string(kind_word(self.kind))
   b.write_char(' ')
   b.write_string(self.name)
-  if !self.params.is_empty() {
+  if !self.params.is_empty() && !(self.kind is DSet) {
     b.write_char('(')
     b.write_string(self.params.map(p => p.name).join(", "))
     b.write_char(')')

@@ -14,11 +14,19 @@ import {
 // Values
 pub fn[N] settled(@harness.Harness[N], read? : Reader) -> Map[String, @core.Value]
 
-pub fn[N] shrink(Plan, Array[@component.Dispatch], () -> @harness.Harness[N]?, at? : @core.DispatchPath, read? : Reader, rounds? : Int) -> Array[@component.Dispatch]
+pub fn[N] shrink(Plan, Array[Action], () -> @harness.Harness[N]?, at? : @core.DispatchPath, read? : Reader, rounds? : Int) -> Array[Action]
+
+pub fn shrink_actions(Array[Action]) -> Iter[Array[Action]]
 
 // Errors
 
 // Types and methods
+pub(all) enum Action {
+  Message(@component.Dispatch)
+  SetProperty(String, @core.Value)
+  InternalMutator(@component.Dispatch)
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Outcome {
   Held
   Broke(rule~ : String, sentence~ : String, at~ : Int)
@@ -30,20 +38,20 @@ pub struct Plan {
   component : String
   def : @statedef.StateDef
   rules : @arb.Rules
-  one : @gen.Gen[@component.Dispatch]?
+  one : @gen.Gen[Action]?
   source : Source
   depth : Int
 }
 pub fn Plan::has_oracle(Self) -> Bool
-pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int) -> @component.Dispatch?
+pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int) -> Action?
 pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) -> Self?
-pub fn[N] Plan::run(Self, @harness.Harness[N], Array[@component.Dispatch], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
+pub fn[N] Plan::run(Self, @harness.Harness[N], Array[Action], seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
 pub fn[N] Plan::run_live(Self, @harness.Harness[N], steps~ : Int, seed? : UInt64, at? : @core.DispatchPath, read? : Reader) -> Run raise
-pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[@component.Dispatch]
-pub fn Plan::script_gen(Self, Int) -> @gen.Gen[Array[@component.Dispatch]]
+pub fn Plan::script(Self, seed~ : UInt64, steps~ : Int) -> Array[Action]
+pub fn Plan::script_gen(Self, Int) -> @gen.Gen[Array[Action]]
 pub fn Plan::sentence_of(Self, String) -> String
 pub fn Plan::state_aware(Self) -> Bool
-pub fn[N] Plan::step(Self, @harness.Harness[N], @component.Dispatch, at? : @core.DispatchPath, read? : Reader) -> Step raise
+pub fn[N] Plan::step(Self, @harness.Harness[N], Action, at? : @core.DispatchPath, read? : Reader) -> Step raise
 pub fn Plan::unchecked(Self) -> Array[(String, String)]
 
 pub(all) struct Reader(() -> @core.Value)
@@ -51,19 +59,21 @@ pub(all) struct Reader(() -> @core.Value)
 pub(all) struct Run {
   outcome : Outcome
   steps : Array[Step]
-  script : Array[@component.Dispatch]
+  script : Array[Action]
   seed : UInt64
 }
-pub fn Run::reproducer(Self) -> Array[@component.Dispatch]
+pub fn Run::reproducer(Self) -> Array[Action]
 
 pub(all) enum Source {
-  Mutators
+  Public(@arb.Bucket)
   Declared(@arb.Bucket)
-  Either(@arb.Bucket)
+  Properties
+  InternalMutators
+  All(@arb.Bucket)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Step {
-  dispatch : @component.Dispatch
+  dispatch : Action
   refused : Array[@core.Refusal]
   broke : Array[String]
   disagreed : Array[String]

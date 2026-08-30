@@ -29,7 +29,7 @@ pub struct Plan {
   /// `script` samples and what a component with no `where` needs; `next_at`
   /// rebuilds a state-aware one per step, which is why the two inputs it needs
   /// are kept below rather than discarded after this was made.
-  one : @gen.Gen[@component.Dispatch]?
+  one : @gen.Gen[Action]?
   source : Source
   depth : Int
 }
@@ -40,16 +40,38 @@ pub struct Plan {
 /// The distinction that matters is not `Receive` vs `Intent` — `@arb.Bucket`
 /// already says that — but whether a name was WRITTEN DOWN. `Declared` draws
 /// the messages the block spells, which is what an author asks about when they
-/// ask "does my component survive its own protocol". `Mutators` draws the
-/// per-field setters the runtime installs for every field whether or not
-/// anything sends them, which is what nobody writes a test for and where the
-/// interesting failures are: `setValues []` is a legal dispatch that no button
-/// in `svg_more.html` can produce, and `neverEmpty` is all that stands between
-/// it and a chart with no bars.
+/// ask "does my component survive its own protocol". `Public` adds writable
+/// properties to those declared operations. `InternalMutators` is the
+/// deliberately diagnostic mode for per-field setters installed for component
+/// implementation code; ordinary callers cannot dispatch them.
 pub(all) enum Source {
-  Mutators
+  /// The component's public interface: declared messages/intents and writable
+  /// properties. This is the default because these are the operations an
+  /// outside caller can actually perform.
+  Public(@arb.Bucket)
+  /// Only messages/intents written in the component declaration.
   Declared(@arb.Bucket)
-  Either(@arb.Bucket)
+  /// Only writable public properties.
+  Properties
+  /// Generated field mutators are an internal diagnostic surface. They stay
+  /// available for deliberately stress-testing the implementation, but never
+  /// enter an ordinary public run.
+  InternalMutators
+  /// Public operations plus the internal diagnostic mutators.
+  All(@arb.Bucket)
+} derive(Eq, @debug.Debug)
+
+///|
+/// One operation the driver can perform.
+///
+/// A property write is not encoded as a pretend message: it goes through the
+/// synchronous property transition seam. Internal generated mutators are
+/// tagged separately so the driver can supply diagnostic provenance without
+/// accidentally granting that provenance to public messages.
+pub(all) enum Action {
+  Message(@component.Dispatch)
+  SetProperty(String, @tutuca.Value)
+  InternalMutator(@component.Dispatch)
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -60,7 +82,7 @@ pub(all) enum Source {
 /// generate from.
 pub fn Plan::of_component(
   comp : @component.Component,
-  source? : Source = Mutators,
+  source? : Source = Public(BEither),
   depth? : Int = @arb.MAX_DEPTH,
 ) -> Plan? {
   guard comp.spec != "" else { return None }
@@ -107,20 +129,69 @@ fn dispatch_gen(
   /// them. Empty means "no state in hand", which is what the up-front build
   /// passes and which draws exactly what it always did.
   state : Map[String, @tutuca.Value],
-) -> @gen.Gen[@component.Dispatch]? {
+) -> @gen.Gen[Action]? {
   match source {
-    Mutators => @arb.mutator_dispatch_of(def, depth~, state~)
-    Declared(bucket) => @arb.dispatch_of(def, bucket~, depth~)
-    Either(bucket) =>
+    Public(bucket) =>
+      combine(declared_gen(def, bucket, depth), property_gen(def, depth))
+    Declared(bucket) => declared_gen(def, bucket, depth)
+    Properties => property_gen(def, depth)
+    InternalMutators => internal_gen(def, depth, state)
+    All(bucket) =>
       match
         (
-          @arb.mutator_dispatch_of(def, depth~, state~),
-          @arb.dispatch_of(def, bucket~, depth~),
+          combine(declared_gen(def, bucket, depth), property_gen(def, depth)),
+          internal_gen(def, depth, state),
         ) {
-        (Some(m), Some(d)) => Some(@gen.one_of([m, d]))
-        (Some(m), None) => Some(m)
-        (None, d) => d
+        (Some(p), Some(i)) => Some(@gen.one_of([p, i]))
+        (Some(p), None) => Some(p)
+        (None, i) => i
       }
+  }
+}
+
+///|
+fn combine(a : @gen.Gen[Action]?, b : @gen.Gen[Action]?) -> @gen.Gen[Action]? {
+  match (a, b) {
+    (Some(x), Some(y)) => Some(@gen.one_of([x, y]))
+    (Some(x), None) => Some(x)
+    (None, y) => y
+  }
+}
+
+///|
+fn declared_gen(
+  def : @statedef.StateDef,
+  bucket : @arb.Bucket,
+  depth : Int,
+) -> @gen.Gen[Action]? {
+  @arb.dispatch_of(def, bucket~, depth~).map(g => g.fmap(d => Message(d)))
+}
+
+///|
+fn internal_gen(
+  def : @statedef.StateDef,
+  depth : Int,
+  state : Map[String, @tutuca.Value],
+) -> @gen.Gen[Action]? {
+  @arb.mutator_dispatch_of(def, depth~, state~).map(g => {
+    g.fmap(d => InternalMutator(d))
+  })
+}
+
+///|
+fn property_gen(def : @statedef.StateDef, depth : Int) -> @gen.Gen[Action]? {
+  let choices : Array[@gen.Gen[Action]] = []
+  for p in def.properties {
+    if p.writable {
+      choices.push(
+        @arb.value_of(def, p.ty, depth~).fmap(v => SetProperty(p.name, v)),
+      )
+    }
+  }
+  if choices.is_empty() {
+    None
+  } else {
+    Some(@gen.one_of(choices))
   }
 }
 
@@ -134,11 +205,7 @@ fn dispatch_gen(
 /// be the same one twice.
 ///
 /// Empty when the component has nothing to draw from.
-pub fn Plan::script(
-  self : Plan,
-  seed~ : UInt64,
-  steps~ : Int,
-) -> Array[@component.Dispatch] {
+pub fn Plan::script(self : Plan, seed~ : UInt64, steps~ : Int) -> Array[Action] {
   guard self.one is Some(one) else { return [] }
   guard steps > 0 else { return [] }
   one.array_with_size(steps).sample(seed~)
@@ -164,7 +231,7 @@ pub fn Plan::next_at(
   state : Map[String, @tutuca.Value],
   seed~ : UInt64,
   step~ : Int,
-) -> @component.Dispatch? {
+) -> Action? {
   guard self.one is Some(_) else { return None }
   guard dispatch_gen(self.def, self.source, self.depth, state) is Some(g) else {
     return None
@@ -180,7 +247,7 @@ pub fn Plan::next_at(
 /// keeps the cheap path: with no `where` in the block, a per-step draw and a
 /// sampled script are the same dispatches at more cost.
 pub fn Plan::state_aware(self : Plan) -> Bool {
-  !self.def.wheres.is_empty()
+  !self.def.wheres.is_empty() && self.source is (InternalMutators | All(_))
 }
 
 ///|
@@ -211,10 +278,7 @@ fn step_seed(seed : UInt64, step : Int) -> UInt64 {
 /// Empty scripts when the component has nothing to draw from, rather than a
 /// missing generator: a `forall` over nothing is a property that passes
 /// vacuously either way, and an Option here would make every call site say so.
-pub fn Plan::script_gen(
-  self : Plan,
-  steps : Int,
-) -> @gen.Gen[Array[@component.Dispatch]] {
+pub fn Plan::script_gen(self : Plan, steps : Int) -> @gen.Gen[Array[Action]] {
   guard self.one is Some(one) && steps > 0 else { return @gen.pure([]) }
   one.array_with_size(steps)
 }

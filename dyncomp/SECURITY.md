@@ -18,6 +18,7 @@ Where a claim is weaker than it sounds, it says so.
 | guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; a CONSTANT inline `style` or SVG presentation attribute is parsed and re-emitted rather than refused (§4), while a dynamic one stays refused; `<img src>`/`<a href>` reopen only when the host allows external URLs, and only to an origin settled before render — a literal the view states, or a config var the HOST bound (§3a); autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that. The declaration half now has a validator (§4); the selector and at-rule half does not |
 | `control.intent` → host handlers | the host's own services | **open** — needs caller-aware authorization; `IntentCall.from` is the plumbing that closes it, and no host uses it yet (§5) |
+| public property setter | the component's own state tree | **contained** — synchronous pure COW transition; manifest type/writable checks, guest refusal, successor-domain validation, and no `control` effects (§5b) |
 | guest view event paths (`e.<path>`) | the host's DOM, and through it the page | **handled** — every step through a host object is checked against a curated allow-list, not just the first one (§9) |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
@@ -39,7 +40,7 @@ That is stronger than the usual "it's sandboxed, it's wasm". Several specific
 properties follow from the contract's shape rather than from the wasm engine:
 
 - **Control calls are buffered, not performed.** Everything in `control` except
-  `log` is collected during `handle-event` and applied by the HOST afterwards,
+  `log` is collected during `handle-message` / `handle-intent` and applied by the HOST afterwards,
   through the dispatching `&Ctx` (`host/dynobj.mbt`, `obj_handler`). The guest
   does not act; it asks, and the host chooses.
 - **Paths are relative only.** `send-at` / `intent-at` address the dispatching
@@ -652,10 +653,35 @@ The reach is therefore exactly what the guest's own VIEWS already had: a view's
 `*name` resolves against the same frames. What 0.10.0 added is a place to use
 it from, not a place to reach.
 
+### 5b. Public properties: state transition, not an effect channel
+
+Manifest v2 declares properties separately from storage fields. A declaration
+fixes a name and type, and opts into writing explicitly; matching an internal
+field name grants nothing. The host checks all three before calling a setter.
+It also validates the value returned by the successor's getter and evaluates
+the successor against the manifest's field domains before adopting it
+(`host/dynobj.mbt`, `obj_property` / `obj_set_property`). A refusal or malformed
+successor is dropped and the old root remains intact.
+
+The transition is synchronous, which is what lets a parent replace a nested
+child in the same transaction instead of sending it a message and waiting for
+a second one. It is nevertheless pure. Tutuca-generated complex setters reject
+send/intent/new/effectful bodies in `tscript/check`; for a hand-written guest,
+`host/wasm/loader.mjs` marks property calls as a pure phase and refuses every
+buffered `control` operation plus child creation/destruction. `log` remains the
+one immediate diagnostic operation, as everywhere else. The setter can compute
+arbitrarily and can return a successor containing several internal field
+changes, but nothing becomes visible until the host adopts that whole value.
+
+This is not a new route through the component tree. A setter receives no
+`Ctx`, path, sender, lookup bindings, or reply channel. Nested access is a host
+copy-on-write walk over a path it already holds, and the guest sees only its own
+property name and typed value.
+
 ## 6. Availability
 
 Guest calls are synchronous, so an infinite loop or a runaway `memory.grow`
-inside `handle-event` freezes the tab. This is an availability problem, not a
+inside a handler, render operation, property accessor, or setter freezes the tab. This is an availability problem, not a
 confidentiality or integrity one, and the fix — instantiating guests in a Web
 Worker so a hung call can be terminated — turns the whole `tcomp` bridge async.
 It is recorded, not built.
@@ -825,6 +851,21 @@ imports.
 - Adding a WIT export: is it runtime behavior that genuinely cannot be static
   bundle data? Metadata in wasm executes code merely to describe code and
   expands the canonical ABI attack surface.
+- **Changing the WIT is a whole-repository migration, not a compatibility
+  exercise.** Bump the one world version; update `host/wasm/abi.mjs`, loader
+  imports and MoonBit glue; regenerate every name in `guests/guests.mjs` from
+  the one WIT; migrate the canonical SDK, all handwritten MoonBit and Rust
+  guests, every linker export list, the card compiler/Wax runtime/CardGuest
+  bridge, descriptor packers, manifest version/api/properties, the scaffold
+  template embed, and the self-contained dyncomp-dice consumer. Run the core
+  ABI/archive harnesses and `guest-harness`. Do not retain older import keys,
+  export descriptors, adapters, optional manifest fields, or world fallbacks:
+  a partial old bundle must be refused rather than half-work.
+- Adding or widening a property setter: is it separately declared writable,
+  type-checked before the call, type/domain-checked after it, atomic on
+  refusal, and barred from every `control`/child effect at both the source and
+  wasm boundaries? Public fuzzing should discover it from `properties`; only
+  an explicitly diagnostic mode may generate schema mutators.
 - Adding to `control`: is it buffered and applied by the host, or does it act?
   Only `log` acts, and only because logging cannot be misused into anything.
   v2's five — `intent`, `intent-at`, `forward`, `reply`, `fail` — are all

@@ -18,6 +18,7 @@ fn row_schema() -> @core.SchemaInfo {
       @core.FieldInfo::new("title", TyText),
       @core.FieldInfo::new("tags", TyList(TyText)),
     ],
+    properties=[{ name: "label", ty: TyText, writable: false, }],
     methods=["shout"],
     protocols=[
       {
@@ -26,7 +27,7 @@ fn row_schema() -> @core.SchemaInfo {
         handle_intents: [],
         express_messages: [],
         express_intents: [],
-        properties: [("label", TyText)],
+        properties: [{ name: "label", ty: TyText, writable: false, }],
         views: [],
         provides: [],
         lookups: [],
@@ -37,7 +38,7 @@ fn row_schema() -> @core.SchemaInfo {
       {
         protocol_id: "example/ListItem@1",
         member_name: "label",
-        source: ".title",
+        source: "label",
       },
     ],
   )
@@ -100,6 +101,14 @@ impl @core.Obj for Row with fn obj_field(self, name) {
 impl @core.Obj for Row with fn obj_with_field(self, name, v) {
   match (name, v) {
     ("title", Str(s)) => Some(row(s, tags=self.tags))
+    _ => None
+  }
+}
+
+///|
+impl @core.Obj for Row with fn obj_property(self, name) {
+  match name {
+    "label" => Some(Str(self.title))
     _ => None
   }
 }

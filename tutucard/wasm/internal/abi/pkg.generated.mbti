@@ -26,19 +26,23 @@ pub let pool_base : Int
 
 pub let resource_iface : String
 
-pub let ret_call_method : Int
+pub let ret_event_result : Int
 
 pub let ret_get_field : Int
 
-pub let ret_handle_event : Int
+pub let ret_get_property : Int
 
 pub let ret_lookup : Int
 
 pub let ret_persist : Int
 
+pub let ret_render_value : Int
+
 pub let ret_restore : Int
 
 pub let ret_serve_intent : Int
+
+pub let ret_set_property : Int
 
 pub let ret_with_field : Int
 

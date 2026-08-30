@@ -19,10 +19,12 @@
 /// the dispatch that caused them rather than as rows of their own — because a
 /// script is a list of what was SENT, and a reader stepping through it is
 /// counting the sends.
-fn fuzz_verb_of(d : @component.Dispatch) -> (String, String) {
+fn fuzz_verb_of(d : @fuzz.Action) -> (String, String) {
   let (word, colour) = match d {
-    Receive(_, _) => ("send", "badge-neutral")
-    Intent(_, _) => ("intent", "badge-info")
+    Message(Receive(_, _)) => ("send", "badge-neutral")
+    Message(Intent(_, _)) => ("intent", "badge-info")
+    SetProperty(_, _) => ("set", "badge-accent")
+    InternalMutator(_) => ("internal", "badge-warning")
   }
   // The WHOLE class list, because `:class` replaces the written one rather
   // than adding to it — so the hook a test selects on has to be in here too.
@@ -31,9 +33,11 @@ fn fuzz_verb_of(d : @component.Dispatch) -> (String, String) {
 
 ///|
 /// A dispatch's name.
-fn fuzz_name_of(d : @component.Dispatch) -> String {
+fn fuzz_name_of(d : @fuzz.Action) -> String {
   match d {
-    Receive(name, _) | Intent(name, _) => name
+    Message(Receive(name, _)) | Message(Intent(name, _)) => name
+    SetProperty(name, _) => name
+    InternalMutator(Receive(name, _)) | InternalMutator(Intent(name, _)) => name
   }
 }
 
@@ -43,9 +47,11 @@ fn fuzz_name_of(d : @component.Dispatch) -> String {
 /// Compact and lossy on purpose: this is the closed row, and a reader who
 /// wants the whole value opens it. `to_display_string` is the framework's own
 /// short form, so a row and a `@text` of the same value agree.
-fn fuzz_args_of(d : @component.Dispatch) -> String {
+fn fuzz_args_of(d : @fuzz.Action) -> String {
   let args = match d {
-    Receive(_, a) | Intent(_, a) => a
+    Message(Receive(_, a)) | Message(Intent(_, a)) => a
+    SetProperty(_, value) => [value]
+    InternalMutator(Receive(_, a)) | InternalMutator(Intent(_, a)) => a
   }
   args.map(v => v.to_display_string()).join(", ")
 }
@@ -149,9 +155,10 @@ pub fn Inspector::fuzz_controls(
     "seed": Str(seed),
     "steps": Str(steps),
     "source": Str(source),
-    "mutatorsClass": Str(source_class("mutators", source)),
-    "declaredClass": Str(source_class("declared", source)),
-    "eitherClass": Str(source_class("either", source)),
+    "publicClass": Str(source_class("public", source)),
+    "messagesClass": Str(source_class("messages", source)),
+    "propertiesClass": Str(source_class("properties", source)),
+    "internalClass": Str(source_class("internal", source)),
     "playing": Bool(playing),
     "canRun": Bool(can_run),
     "noPlanHint": Str(no_plan_hint),
@@ -176,7 +183,7 @@ pub fn Inspector::fuzz_verdict(
   self : Inspector,
   outcome? : @fuzz.Outcome,
   unchecked? : Array[(String, String)] = [],
-  reproducer? : Array[@component.Dispatch] = [],
+  reproducer? : Array[@fuzz.Action] = [],
 ) -> @tutuca.Value {
   let (kind, colour, headline, sentence, rule, at) = match outcome {
     None => ("none", "badge-ghost", "", "", "", -1)
@@ -242,7 +249,7 @@ pub fn Inspector::fuzz_panel(
   no_plan_hint? : String = "",
   outcome? : @fuzz.Outcome,
   unchecked? : Array[(String, String)] = [],
-  reproducer? : Array[@component.Dispatch] = [],
+  reproducer? : Array[@fuzz.Action] = [],
 ) -> @tutuca.Value {
   self.make_("FuzzPanel", args={
     "controls": self.fuzz_controls(

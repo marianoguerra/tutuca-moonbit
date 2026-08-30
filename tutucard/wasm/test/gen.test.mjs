@@ -5,7 +5,7 @@
 // card is loaded through `dyncomp/host/wasm/abi.mjs` and driven. Nothing here
 // knows how the module was produced, so what it proves is not "the generator
 // emitted what the generator meant" but "the host accepts this as a
-// tutuca:component@0.10.0 guest".
+// tutuca:component@0.11.0 guest".
 //
 //   node --test tutucard/wasm/test/
 //
@@ -164,52 +164,69 @@ test("a compiled card is a guest the host ABI accepts", async () => {
   assert.equal(root.guest.Instance.restore("Counter", new Uint8Array()), undefined);
 });
 
+test("simple and abstract card properties use the synchronous ABI", async () => {
+  const { root, manifest } = await load("Counter");
+  const c = new root.guest.Instance("Counter", [["count", num(-4)]]);
+  assert.deepEqual(c.getProperty("count"), num(-4));
+  assert.deepEqual(c.getProperty("magnitude"), num(4));
+  assert.deepEqual(c.setProperty("count", num(2)).val.getProperty("count"), num(2));
+  assert.deepEqual(c.setProperty("magnitude", num(9)).val.getField("count"), num(-9));
+  assert.deepEqual(c.setProperty("nope", num(1)), { tag: "missing" });
+  assert.deepEqual(
+    manifest.components[0].properties.map(({ name, writable }) => ({ name, writable })),
+    [
+      { name: "count", writable: true },
+      { name: "magnitude", writable: true },
+    ],
+  );
+});
+
 test("an unknown dispatch is unhandled, so the host can fall back", async () => {
   const { root } = await load("Counter");
   const c = new root.guest.Instance("Counter", []);
-  assert.deepEqual(c.handleEvent("receive", "nope", []), { tag: "unhandled" });
+  assert.deepEqual(c.handleMessage("nope", []), { tag: "unhandled" });
   // Right name, wrong bucket: the two are separate dispatch spaces, so a
   // `receive inc` is not reachable by routing an intent at the same name.
-  assert.deepEqual(c.handleEvent("intent", "inc", []), { tag: "unhandled" });
+  assert.deepEqual(c.handleIntent("inc", []), { tag: "unhandled" });
 });
 
 test("a transition answers with a new instance, and a no-op with unchanged", async () => {
   const { root } = await load("Counter");
   const c = new root.guest.Instance("Counter", [["count", num(4)], ["step", num(3)]]);
-  const inc = c.handleEvent("receive", "inc", []);
+  const inc = c.handleMessage("inc", []);
   assert.equal(inc.tag, "changed");
   assert.deepEqual(inc.val.getField("count"), num(7));
   // The predecessor is untouched: self in, self out.
   assert.deepEqual(c.getField("count"), num(4));
-  const dec = inc.val.handleEvent("receive", "dec", []);
+  const dec = inc.val.handleMessage("dec", []);
   assert.deepEqual(dec.val.getField("count"), num(4));
   // `reset` on a count that is already zero changes nothing, and the guest
   // says so rather than handing back an equal instance with a new identity.
   const zero = c.withField("count", num(0));
-  assert.deepEqual(zero.handleEvent("receive", "reset", []), { tag: "unchanged" });
+  assert.deepEqual(zero.handleMessage("reset", []), { tag: "unchanged" });
 });
 
 test("event arguments arrive as the declared parameters", async () => {
   const { root } = await load("Counter");
   const c = new root.guest.Instance("Counter", []);
-  const init = c.handleEvent("receive", "init", []);
+  const init = c.handleMessage("init", []);
   assert.deepEqual(init.val.getField("step"), num(1));
 });
 
-test("call-method serves computes and preds, and templates format numbers", async () => {
+test("compute serves computes and preds, and templates format numbers", async () => {
   const { root } = await load("Counter");
   const c = new root.guest.Instance("Counter", [["count", num(4)]]);
-  assert.deepEqual(c.callMethod("label", []), text("the count is 4"));
-  assert.deepEqual(c.callMethod("positive", []), { tag: "boolean", val: true });
+  assert.deepEqual(c.compute("label", []), text("the count is 4"));
+  assert.deepEqual(c.compute("positive", []), { tag: "boolean", val: true });
   assert.deepEqual(
-    c.withField("count", num(0)).callMethod("positive", []),
+    c.withField("count", num(0)).compute("positive", []),
     { tag: "boolean", val: false },
   );
   // Fractions to six digits with the trailing zeros trimmed, and a sign.
-  assert.deepEqual(c.withField("count", num(2.5)).callMethod("label", []), text("the count is 2.5"));
-  assert.deepEqual(c.withField("count", num(-17)).callMethod("label", []), text("the count is -17"));
+  assert.deepEqual(c.withField("count", num(2.5)).compute("label", []), text("the count is 2.5"));
+  assert.deepEqual(c.withField("count", num(-17)).compute("label", []), text("the count is -17"));
   // A method the card does not declare is nil rather than a trap.
-  assert.deepEqual(c.callMethod("nope", []), { tag: "nil" });
+  assert.deepEqual(c.compute("nope", []), { tag: "nil" });
 });
 
 test("with-field round-trips every value shape, text included", async () => {
@@ -250,10 +267,10 @@ test("with-field refuses a value the field's declared type cannot hold", async (
 test("effects reach the host, and a precondition declines the transition", async () => {
   const { root, control } = await load("Cart");
   const c = new root.guest.Instance("Cart", [["qty", num(2)], ["price", num(3.5)]]);
-  assert.deepEqual(c.callMethod("total", []), num(7));
-  assert.deepEqual(c.callMethod("line", []), text("2 x  = 7"));
+  assert.deepEqual(c.compute("total", []), num(7));
+  assert.deepEqual(c.compute("line", []), text("2 x  = 7"));
   // `requires hasItem` — no item, so nothing happens and nothing is emitted.
-  assert.deepEqual(c.handleEvent("receive", "checkout", []), { tag: "unchanged" });
+  assert.deepEqual(c.handleMessage("checkout", []), { tag: "unchanged" });
   // …but the card SAYS so, on the one channel a guest has for saying anything:
   // the line `core/warn.mbt` prints, with the rule's own `format` sentence
   // evaluated over the state that was rejected. The record the interpreter
@@ -269,9 +286,9 @@ test("effects reach the host, and a precondition declines the transition", async
   ]);
   control.length = 0;
 
-  const named = c.handleEvent("receive", "rename", [text("coffee")]).val;
-  assert.deepEqual(named.callMethod("line", []), text("2 x coffee = 7"));
-  const out = named.handleEvent("receive", "checkout", []);
+  const named = c.handleMessage("rename", [text("coffee")]).val;
+  assert.deepEqual(named.compute("line", []), text("2 x coffee = 7"));
+  const out = named.handleMessage("checkout", []);
   assert.equal(out.tag, "changed");
   assert.deepEqual(out.val.getField("sent"), { tag: "boolean", val: true });
   assert.deepEqual(control, [
@@ -283,17 +300,17 @@ test("effects reach the host, and a precondition declines the transition", async
 test("`max` clamps, so the invariant holds without ever declining", async () => {
   const { root, control } = await load("Cart");
   const c = new root.guest.Instance("Cart", [["qty", num(1)]]);
-  assert.deepEqual(c.handleEvent("receive", "fewer", []).val.getField("qty"), num(0));
+  assert.deepEqual(c.handleMessage("fewer", []).val.getField("qty"), num(0));
   // At zero the clamp is a no-op, which the byte comparison reports honestly.
   const zero = c.withField("qty", num(0));
-  assert.deepEqual(zero.handleEvent("receive", "fewer", []), { tag: "unchanged" });
+  assert.deepEqual(zero.handleMessage("fewer", []), { tag: "unchanged" });
   assert.deepEqual(control, []);
 
   // Reached round the clamp, the invariant DOES decline — and says so with the
   // short line, because `sane` declares no `format`. A refusal that cannot
   // describe itself is still a refusal, which is `sentence()`'s `""`.
   const bad = c.withField("qty", num(-5));
-  assert.deepEqual(bad.handleEvent("receive", "more", []), { tag: "unchanged" });
+  assert.deepEqual(bad.handleMessage("more", []), { tag: "unchanged" });
   assert.deepEqual(control, [
     {
       kind: "log",
@@ -322,9 +339,9 @@ test("a list field holds a list, and pushing to it compiles", async () => {
   assert.deepEqual(listOf(c.getField("history")), []);
 
   // `receive remember { .history.push .qty }`, three times over a changing qty.
-  const one = c.withField("qty", num(2)).handleEvent("receive", "remember", []).val;
+  const one = c.withField("qty", num(2)).handleMessage("remember", []).val;
   assert.deepEqual(listOf(one.getField("history")), [num(2)]);
-  const two = one.withField("qty", num(5)).handleEvent("receive", "remember", []).val;
+  const two = one.withField("qty", num(5)).handleMessage("remember", []).val;
   assert.deepEqual(listOf(two.getField("history")), [num(2), num(5)]);
   // The predecessor is untouched: a successor SHARES structure with it rather
   // than being a copy of it, which is the whole of tutuca's COW model and now
@@ -361,7 +378,7 @@ test("`num` and `int` read a string, and refuse what is not one", async () => {
     ["1e3", 1000],
     ["2.5e-2", 0.025],
   ]) {
-    const r = c.withField("raw", text(raw)).handleEvent("receive", "parse", []);
+    const r = c.withField("raw", text(raw)).handleMessage("parse", []);
     assert.equal(r.tag, "changed", `${raw} should parse`);
     assert.deepEqual(r.val.getField("value"), num(value), raw);
   }
@@ -370,19 +387,19 @@ test("`num` and `int` read a string, and refuse what is not one", async () => {
   // which is `eval.mbt` returning None, not a zero written into the field.
   for (const raw of ["12px", "", "abc", "1.2.3", "1e", "+", "."]) {
     assert.deepEqual(
-      c.withField("raw", text(raw)).handleEvent("receive", "parse", []),
+      c.withField("raw", text(raw)).handleMessage("parse", []),
       { tag: "unchanged" },
       raw,
     );
   }
 
   // `int` is `num` and then a truncation, string reading included.
-  const t = c.withField("raw", text("-3.9")).handleEvent("receive", "truncate", []);
+  const t = c.withField("raw", text("-3.9")).handleMessage("truncate", []);
   assert.deepEqual(t.val.getField("whole"), num(-3));
   // …and it declines the same values `num` declines, where it used to answer
   // null and let the field take it.
   assert.deepEqual(
-    c.withField("raw", text("nope")).handleEvent("receive", "truncate", []),
+    c.withField("raw", text("nope")).handleMessage("truncate", []),
     { tag: "unchanged" },
   );
 });
@@ -394,8 +411,8 @@ test("a call and a send carry more than four values", async () => {
   const c = new root.guest.Instance("Reading", []);
   // Six arguments through a `compute`, which the fixed `tc_args1..4` family
   // could not express — the sixth used to be dropped, so this refused.
-  assert.deepEqual(c.callMethod("total", [num(1), num(2), num(3), num(4), num(5), num(6)]), num(21));
-  const r = c.handleEvent("receive", "wide", []);
+  assert.deepEqual(c.compute("total", [num(1), num(2), num(3), num(4), num(5), num(6)]), num(21));
+  const r = c.handleMessage("wide", []);
   assert.deepEqual(r.val.getField("tally"), num(21));
   // And six payload values out through `control.send`, in order.
   assert.deepEqual(control, [
@@ -408,7 +425,7 @@ test("an intent reaches the host, and its answer comes back", async () => {
   assert.doesNotMatch(log, /refused receive lookup/);
   assert.doesNotMatch(log, /refused receive rowsOk/);
   const c = new root.guest.Instance("Reading", [["raw", text("ada")]]);
-  assert.deepEqual(c.handleEvent("receive", "lookup", []), { tag: "unchanged" });
+  assert.deepEqual(c.handleMessage("lookup", []), { tag: "unchanged" });
   // The name, the arguments, and the route the call site wrote: `lex` is the
   // scope chain and nothing above it, and it crosses as the WIT's `list<leg>`.
   assert.deepEqual(control, [
@@ -418,14 +435,14 @@ test("an intent reaches the host, and its answer comes back", async () => {
   // name and carrying only what that outcome is about: a handler cannot tell
   // it from one a parent sent, and no arm is handed a result AND an error to
   // discriminate.
-  const back = c.handleEvent("receive", "rowsOk", [text("lovelace")]);
+  const back = c.handleMessage("rowsOk", [text("lovelace")]);
   assert.equal(back.tag, "changed");
   assert.deepEqual(back.val.getField("raw"), text("lovelace"));
 
   // And a request in a transition that goes on to FAIL never escapes: effects
   // are buffered and flushed only once every rule has held.
   assert.deepEqual(
-    c.withField("raw", text("nope")).handleEvent("receive", "parse", []),
+    c.withField("raw", text("nope")).handleMessage("parse", []),
     { tag: "unchanged" },
   );
   assert.equal(control.length, 1);
@@ -439,7 +456,7 @@ test("`sendAt` reifies a place into the path steps the host resolves", async () 
   const c = new root.guest.Instance("Addressing", [["word", text("hi")]]);
 
   // A bare `.field` — the whole slot.
-  c.handleEvent("receive", "pokeAll", []);
+  c.handleMessage("pokeAll", []);
   assert.deepEqual(control.at(-1), {
     kind: "sendAt",
     path: [{ tag: "field", val: "rows" }],
@@ -449,26 +466,26 @@ test("`sendAt` reifies a place into the path steps the host resolves", async () 
 
   // An index from a parameter, frozen to the value in hand. A number key is
   // `at`, which is what `control.path-step` calls a positional element.
-  c.handleEvent("receive", "pokeRow", [num(2)]);
+  c.handleMessage("pokeRow", [num(2)]);
   assert.deepEqual(control.at(-1).path, [
     { tag: "at", val: { field: "rows", index: 2 } },
   ]);
 
   // A literal key is the same step written out.
-  c.handleEvent("receive", "pokeFirst", []);
+  c.handleMessage("pokeFirst", []);
   assert.deepEqual(control.at(-1).path, [
     { tag: "at", val: { field: "rows", index: 0 } },
   ]);
 
   // A text key is `item`, and WHICH case it is was decided by the key's value
   // at run time — `.rows[k]` and `.panes[k]` are the same syntax.
-  c.handleEvent("receive", "pokePane", [text("left")]);
+  c.handleMessage("pokePane", [text("left")]);
   assert.deepEqual(control.at(-1).path, [
     { tag: "item", val: { field: "panes", key: "left" } },
   ]);
 
   // Two steps: the keyed one, then the trailing field.
-  c.handleEvent("receive", "pokeDeep", [num(1)]);
+  c.handleMessage("pokeDeep", [num(1)]);
   assert.deepEqual(control.at(-1).path, [
     { tag: "at", val: { field: "rows", index: 1 } },
     { tag: "field", val: "inner" },
@@ -477,7 +494,7 @@ test("`sendAt` reifies a place into the path steps the host resolves", async () 
   // A key that is not a key at all abandons the transition, and nothing goes
   // out — `Value::as_key` answers None for a fraction, and a None is no change.
   const before = control.length;
-  assert.deepEqual(c.handleEvent("receive", "pokeRow", [num(1.5)]), {
+  assert.deepEqual(c.handleMessage("pokeRow", [num(1.5)]), {
     tag: "unchanged",
   });
   assert.equal(control.length, before);
@@ -487,7 +504,7 @@ test("`sendAt` reifies a place into the path steps the host resolves", async () 
   // would be a different path that looks like this one.
   assert.match(log, /refused receive pokeSelected/);
   // Refused means absent, so the host hears `unhandled` and falls back.
-  assert.deepEqual(c.handleEvent("receive", "pokeSelected", []), {
+  assert.deepEqual(c.handleMessage("pokeSelected", []), {
     tag: "unhandled",
   });
 });
@@ -511,23 +528,11 @@ test("a `@when` filter is handed the row, not parameters", async () => {
   // read every `@name` as a refusal, so a compiled filter kept every row.
   const c = new root.guest.Instance("Enriched", [["needle", text("b")]]);
   const when = (name, key, value) =>
-    c.callMethod(name, [key, value, { tag: "nil" }]);
-  assert.deepEqual(when("matches", num(0), text("abc")), {
-    tag: "boolean",
-    val: true,
-  });
-  assert.deepEqual(when("matches", num(1), text("xyz")), {
-    tag: "boolean",
-    val: false,
-  });
-  assert.deepEqual(when("second", num(1), text("x")), {
-    tag: "boolean",
-    val: true,
-  });
-  assert.deepEqual(when("second", num(0), text("x")), {
-    tag: "boolean",
-    val: false,
-  });
+    c.when(name, [key, value, { tag: "nil" }]);
+  assert.equal(when("matches", num(0), text("abc")), true);
+  assert.equal(when("matches", num(1), text("xyz")), false);
+  assert.equal(when("second", num(1), text("x")), true);
+  assert.equal(when("second", num(0), text("x")), false);
   // And the manifest says both names belong to the render-time namespace, or
   // the host would never route to them.
   assert.deepEqual(manifest.components[0].whens, ["matches", "second"]);
@@ -549,7 +554,7 @@ test("an enricher binds what the row does not carry", async () => {
   // is the case the corpus pins.
   const binds = put(new Map());
   const enriched = mapOf(
-    c.callMethod("row", [
+    c.enrich("row", [
       { tag: "map", val: binds },
       num(3),
       text("b"),
@@ -562,12 +567,12 @@ test("an enricher binds what the row does not carry", async () => {
   // ones it wrote.
   const seeded = put(new Map([["from", text("earlier")]]));
   assert.deepEqual(
-    mapOf(c.callMethod("row", [{ tag: "map", val: seeded }, num(0), text("z"), { tag: "nil" }])),
+    mapOf(c.enrich("row", [{ tag: "map", val: seeded }, num(0), text("z"), { tag: "nil" }])),
     { from: text("earlier"), tag: text("z"), echo: text("z"), at: num(0) },
   );
 
   // The scope form is handed no row at all, and its answer IS the map.
-  assert.deepEqual(mapOf(c.callMethod("info", [])), {
+  assert.deepEqual(mapOf(c.enrichScope("info")), {
     heading: text("Rows"),
     width: num(4),
   });
@@ -608,7 +613,7 @@ test("an escape answers what the block language turned away", async () => {
 
   // The added handler runs, reads its argument, writes two fields through the
   // generated `set_<field>` accessors, and answers a successor.
-  const up = c.handleEvent("receive", "accumulate", [num(2.5)]);
+  const up = c.handleMessage("accumulate", [num(2.5)]);
   assert.equal(up.tag, "changed");
   assert.deepEqual(up.val.getField("total"), num(2.5));
   assert.deepEqual(up.val.getField("hits"), num(1));
@@ -616,22 +621,22 @@ test("an escape answers what the block language turned away", async () => {
 
   // `tcx_fail()` is how a hand-written body says "no answer", and the wrapper
   // reads it exactly where a compiled body's `tc_fail` is read.
-  assert.deepEqual(c.handleEvent("receive", "accumulate", [num(-1)]), {
+  assert.deepEqual(c.handleMessage("accumulate", [num(-1)]), {
     tag: "unchanged",
   });
 
   // The replaced handler runs, and its effect is buffered and flushed like any
   // other — the escape said `tcx_send` and the wrapper did the rest.
   control.length = 0;
-  assert.deepEqual(c.handleEvent("receive", "ping", []), { tag: "unchanged" });
+  assert.deepEqual(c.handleMessage("ping", []), { tag: "unchanged" });
   assert.deepEqual(control, [
     { kind: "send", name: "ping", args: [text("b")] },
   ]);
 
   // A `compute` escape answers a value, through the same `cm_<name>` every
   // other callable is reached by — which is what `escape_wrappers` buys.
-  assert.deepEqual(c.withField("total", num(2.4)).callMethod("rounded", []), num(2));
-  assert.deepEqual(c.withField("total", num(2.5)).callMethod("rounded", []), num(3));
+  assert.deepEqual(c.withField("total", num(2.4)).compute("rounded", []), num(2));
+  assert.deepEqual(c.withField("total", num(2.5)).compute("rounded", []), num(3));
 
   // And every escaped name is in the manifest, or a host would never route to
   // it. `rounded` is there despite the script block never declaring it.
@@ -645,7 +650,7 @@ test("an escape gets the wrapper, so the card's rules still hold", async () => {
   // hand-written transition exactly as it guards a compiled one. An escape
   // answers a declaration's body, not its rules.
   const bad = c.withField("total", num(-5));
-  assert.deepEqual(bad.handleEvent("receive", "accumulate", [num(1)]), {
+  assert.deepEqual(bad.handleMessage("accumulate", [num(1)]), {
     tag: "unchanged",
   });
   assert.deepEqual(control.at(-1), {
@@ -708,16 +713,16 @@ test("the builtins that needed a collection or a string now compile", async () =
   assert.doesNotMatch(log, /refused pred namable/);
 
   const c = new root.guest.Instance("Cart", []);
-  assert.deepEqual(c.callMethod("remembered", []), num(0));
-  const one = c.withField("qty", num(7)).handleEvent("receive", "remember", []).val;
-  assert.deepEqual(one.callMethod("remembered", []), num(1));
+  assert.deepEqual(c.compute("remembered", []), num(0));
+  const one = c.withField("qty", num(7)).handleMessage("remember", []).val;
+  assert.deepEqual(one.compute("remembered", []), num(1));
 
   // `trim` is exactly " \t\n\r", which is the `chars=` the interpreter passes.
   const spaced = c.withField("item", text("  cheese \n"));
-  assert.deepEqual(spaced.callMethod("tidy", []), text("cheese"));
-  assert.deepEqual(spaced.callMethod("namable", []), { tag: "boolean", val: true });
+  assert.deepEqual(spaced.compute("tidy", []), text("cheese"));
+  assert.deepEqual(spaced.compute("namable", []), { tag: "boolean", val: true });
   assert.deepEqual(
-    c.withField("item", text("   ")).callMethod("namable", []),
+    c.withField("item", text("   ")).compute("namable", []),
     { tag: "boolean", val: false },
   );
 });
@@ -735,7 +740,7 @@ test("`new` builds a declared record, and `@cur` fills it before it is pushed", 
   const one = c
     .withField("item", text("cheese"))
     .withField("qty", num(2))
-    .handleEvent("receive", "receipt", []).val;
+    .handleMessage("receipt", []).val;
   const rows = arena.get(one.getField("receipt").val);
   assert.equal(rows.length, 1);
   assert.deepEqual(
@@ -748,7 +753,7 @@ test("`new` builds a declared record, and `@cur` fills it before it is pushed", 
   const two = one
     .withField("item", text("bread"))
     .withField("qty", num(1))
-    .handleEvent("receive", "receipt", []).val;
+    .handleMessage("receipt", []).val;
   const rows2 = arena.get(two.getField("receipt").val);
   assert.equal(rows2.length, 2);
   assert.deepEqual(
@@ -776,21 +781,21 @@ test("a card with only scalar fields does not import the value arena", async () 
 test("a compute may call another, and an invariant guards every transition", async () => {
   const { root } = await load("Temperature");
   const t = new root.guest.Instance("Temperature", [["c", num(20)]]);
-  assert.deepEqual(t.callMethod("f", []), num(68));
+  assert.deepEqual(t.compute("f", []), num(68));
   // `both` interpolates `f`, which reads the same state it does.
-  assert.deepEqual(t.callMethod("both", []), text("20 °C is 68 °F"));
+  assert.deepEqual(t.compute("both", []), text("20 °C is 68 °F"));
   assert.deepEqual(
-    t.handleEvent("receive", "warmer", []).val.callMethod("both", []),
+    t.handleMessage("warmer", []).val.compute("both", []),
     text("21 °C is 69.8 °F"),
   );
   // `invariant physical { .c >= -273.15 }` — asked of the SUCCESSOR, so the
   // step that would cross absolute zero simply does not happen.
   assert.deepEqual(
-    t.withField("c", num(-273)).handleEvent("receive", "cooler", []),
+    t.withField("c", num(-273)).handleMessage("cooler", []),
     { tag: "unchanged" },
   );
   assert.equal(
-    t.withField("c", num(-272)).handleEvent("receive", "cooler", []).tag,
+    t.withField("c", num(-272)).handleMessage("cooler", []).tag,
     "changed",
   );
 });
@@ -870,18 +875,18 @@ test("a dispatch lands on the component that declared it, and nowhere else", asy
   const { root } = await load("Two");
   const board = new root.guest.Instance("Board", [["title", text("Sprint")]]);
   const row = new root.guest.Instance("Row", [["label", text("write it")]]);
-  const bumped = board.handleEvent("receive", "bump", []);
+  const bumped = board.handleMessage("bump", []);
   assert.equal(bumped.tag, "changed");
   assert.deepEqual(bumped.val.getField("tally"), num(1));
-  const toggled = row.handleEvent("receive", "toggle", []);
+  const toggled = row.handleMessage("toggle", []);
   assert.equal(toggled.tag, "changed");
   assert.deepEqual(toggled.val.getField("done"), { tag: "boolean", val: true });
-  // The crux. `handle-event` is handed a HANDLE, not a component name, so the
+  // The crux. A fixed handler operation is handed a HANDLE, not a component name, so the
   // module has to work out which component an instance is before it picks an
   // arm — otherwise a `Board` would answer `toggle` and write a field it does
   // not have. It answers `unhandled`, which is what lets the host fall back.
-  assert.deepEqual(board.handleEvent("receive", "toggle", []), { tag: "unhandled" });
-  assert.deepEqual(row.handleEvent("receive", "bump", []), { tag: "unhandled" });
+  assert.deepEqual(board.handleMessage("toggle", []), { tag: "unhandled" });
+  assert.deepEqual(row.handleMessage("bump", []), { tag: "unhandled" });
 });
 
 test("two components may declare the same name and mean different things", async () => {
@@ -895,10 +900,10 @@ test("two components may declare the same name and mean different things", async
   // so a generated name carries its component when the file needs it to — and
   // does not when it does not, which is what keeps every card that ever
   // compiled compiling.
-  assert.deepEqual(board.callMethod("caption", []), text("Sprint: 3"));
-  assert.deepEqual(row.callMethod("caption", []), text("write it"));
-  const toggled = row.handleEvent("receive", "toggle", []);
-  assert.deepEqual(toggled.val.callMethod("caption", []), text("done"));
+  assert.deepEqual(board.compute("caption", []), text("Sprint: 3"));
+  assert.deepEqual(row.compute("caption", []), text("write it"));
+  const toggled = row.handleMessage("toggle", []);
+  assert.deepEqual(toggled.val.compute("caption", []), text("done"));
 });
 
 // ---------------------------------------------------------------------------
@@ -943,7 +948,7 @@ test("a child token survives a transition that rebuilds the state", async () => 
   // `bump` writes `.tally` and says nothing about `.focus`, so the successor
   // shares the slot with its predecessor rather than dropping it. That is what
   // `jv_record_set` sharing every part it did not change means for a token.
-  const bumped = withChild.handleEvent("receive", "bump", []);
+  const bumped = withChild.handleMessage("bump", []);
   assert.equal(bumped.tag, "changed");
   assert.deepEqual(bumped.val.getField("tally"), num(1));
   assert.deepEqual(bumped.val.getField("focus"), { tag: "instance", val: 3n });
@@ -984,21 +989,21 @@ test("a child slot is not a number, however it is carried", async () => {
 test("a handler builds a child, and the host holds it", async () => {
   const { root } = await load("Todos");
   const list = new root.guest.Instance("Todos", []);
-  const typed = list.handleEvent("receive", "setDraft", [text("write it")]);
+  const typed = list.handleMessage("setDraft", [text("write it")]);
   assert.equal(typed.tag, "changed");
-  const added = typed.val.handleEvent("receive", "add", []);
+  const added = typed.val.handleMessage("add", []);
   assert.equal(added.tag, "changed");
   // The draft is cleared and the list has one row.
   assert.deepEqual(added.val.getField("draft"), text(""));
-  assert.deepEqual(added.val.callMethod("count", []), num(1));
+  assert.deepEqual(added.val.compute("count", []), num(1));
 });
 
 test("the child is a real instance of the sibling component", async () => {
   const { root, arena } = await load("Todos");
   const list = new root.guest.Instance("Todos", []);
   const added = list
-    .handleEvent("receive", "setDraft", [text("write it")])
-    .val.handleEvent("receive", "add", []);
+    .handleMessage("setDraft", [text("write it")])
+    .val.handleMessage("add", []);
   // `.items` is a list, so it crosses through the value arena; its one element
   // is an `instance`, which is the token — not a map of the child's fields.
   const items = added.val.getField("items");
@@ -1014,16 +1019,16 @@ test("a guard still guards a handler that builds", async () => {
   // `add requires typed`, and the draft is empty — so nothing is built and no
   // token is spent. A rule that does not hold means the transition did not
   // happen, children included.
-  assert.deepEqual(list.handleEvent("receive", "add", []), { tag: "unchanged" });
-  assert.deepEqual(list.callMethod("count", []), num(0));
+  assert.deepEqual(list.handleMessage("add", []), { tag: "unchanged" });
+  assert.deepEqual(list.compute("count", []), num(0));
 });
 
 test("the child is built with the arguments the handler accumulated", async () => {
   const { root, drain } = await load("Todos");
   const list = new root.guest.Instance("Todos", []);
   list
-    .handleEvent("receive", "setDraft", [text("write it")])
-    .val.handleEvent("receive", "add", []);
+    .handleMessage("setDraft", [text("write it")])
+    .val.handleMessage("add", []);
   // One child, and it is the sibling component with the fields the handler
   // put in it — `@cur.text = .draft` and `@cur.done = false`, accumulated into
   // an argument map and handed over at the push.
@@ -1033,18 +1038,18 @@ test("the child is built with the arguments the handler accumulated", async () =
   assert.deepEqual(kids[0].inst.getField("text"), text("write it"));
   assert.deepEqual(kids[0].inst.getField("done"), { tag: "boolean", val: false });
   // …and it answers its OWN component's declarations, not the list's.
-  assert.deepEqual(kids[0].inst.callMethod("caption", []), text("write it"));
-  const toggled = kids[0].inst.handleEvent("receive", "toggle", []);
+  assert.deepEqual(kids[0].inst.compute("caption", []), text("write it"));
+  const toggled = kids[0].inst.handleMessage("toggle", []);
   assert.equal(toggled.tag, "changed");
-  assert.deepEqual(toggled.val.callMethod("caption", []), text("write it (done)"));
+  assert.deepEqual(toggled.val.compute("caption", []), text("write it (done)"));
 });
 
 test("pushing the same @cur twice makes ONE child", async () => {
   const { root, drain } = await load("Todos");
   const list = new root.guest.Instance("Todos", []);
   list
-    .handleEvent("receive", "setDraft", [text("a")])
-    .val.handleEvent("receive", "add", []);
+    .handleMessage("setDraft", [text("a")])
+    .val.handleMessage("add", []);
   // The materialization replaces the target with the TOKEN and clears the
   // marker, so a second read is a read of the token rather than a second
   // construction. `add` pushes once, but the rule is what makes it safe to
@@ -1078,10 +1083,10 @@ test("a child in a list survives being written back through the parent", async (
   const { root, drain, put, arena } = await load("Todos");
   const list = new root.guest.Instance("Todos", []);
   const added = list
-    .handleEvent("receive", "setDraft", [text("write it")])
-    .val.handleEvent("receive", "add", []);
+    .handleMessage("setDraft", [text("write it")])
+    .val.handleMessage("add", []);
   const child = drain()[0];
-  const toggled = child.inst.handleEvent("receive", "toggle", []);
+  const toggled = child.inst.handleMessage("toggle", []);
   assert.equal(toggled.tag, "changed");
   // What the HOST does with that successor: it rebuilds the parent's list and
   // writes the whole thing back. The new child is a token like any other.
@@ -1105,5 +1110,5 @@ test("only a card that builds a child imports make-instance", async () => {
   // A counter has no `new` at all; asking it to build one is unhandled rather
   // than a module that quietly imported a factory.
   const c = new root.guest.Instance("Counter", []);
-  assert.deepEqual(c.handleEvent("receive", "add", []), { tag: "unhandled" });
+  assert.deepEqual(c.handleMessage("add", []), { tag: "unhandled" });
 });

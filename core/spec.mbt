@@ -141,6 +141,19 @@ pub(all) enum Value {
 }
 
 ///|
+/// Result of a synchronous public property write.
+///
+/// `PRefused` means the property exists and is writable, but its setter or a
+/// child setter declined the transition. Refusal details travel through the
+/// existing refusal recorder, so this value remains small and composable.
+pub(all) enum PropertyWrite {
+  PMissing
+  PUnchanged
+  PRefused
+  PChanged(Value)
+}
+
+///|
 /// A render-cache bucket for one instance: a structural fingerprint fixed when
 /// the instance was created, and a revision bumped by each successor.
 ///
@@ -191,6 +204,11 @@ pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
   fn obj_field(Self, name : String) -> Value? = _ // fields; methods surface as pre-bound Fn
   fn obj_with_field(Self, name : String, v : Value) -> Value? = _ // COW -> Some(Obj(new_self))
+  /// Read a declared public abstract property. This is distinct from
+  /// `obj_field`: fields are representation; properties are interface.
+  fn obj_property(Self, name : String) -> Value? = _
+  /// Apply one synchronous, pure property transition.
+  fn obj_set_property(Self, name : String, v : Value) -> PropertyWrite = _
   fn obj_item(Self, key : PathKey) -> Value? = _
   fn obj_with_item(Self, key : PathKey, v : Value) -> Value? = _
   // Custom-sequence hook (the analogue of SEQ_INFO): ordered (key, value)
@@ -278,6 +296,16 @@ impl Obj with fn obj_field(_self, _name) {
 ///|
 impl Obj with fn obj_with_field(_self, _name, _v) {
   None
+}
+
+///|
+impl Obj with fn obj_property(_self, _name) {
+  None
+}
+
+///|
+impl Obj with fn obj_set_property(_self, _name, _v) {
+  PMissing
 }
 
 ///|

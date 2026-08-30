@@ -28,6 +28,11 @@
 pub let counter_spec_source : String =
   #|  state {
   #|    count : Int
+  #|
+  #|    property {
+  #|      count : Int { get .count set .count }
+  #|      magnitude : Int { get set }
+  #|    }
   #|  }
 
 ///|
@@ -101,6 +106,45 @@ fn counter_inline_update(
 }
 
 ///|
+/// `get magnitude` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn counter_compute_magnitude(
+  s : CounterState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Num(
+      if s.count.to_double() < 0.0 {
+        -s.count.to_double()
+      } else {
+        s.count.to_double()
+      },
+    ) : @tutuca.Value)
+}
+
+///|
+fn counter_property_set_magnitude(
+  s : CounterState,
+  value : @tutuca.Value,
+) -> @component.Update[CounterState] {
+  match (@component.Receive("magnitude", [value]) : @component.Dispatch) {
+    Receive("magnitude", args) => {
+      guard args.get(0) is Some(Num(value_)) else { return Unchanged }
+      let s = if s.count.to_double() < 0.0 {
+        let s : CounterState = { count: (-value_).to_int(), }
+        s
+      } else {
+        let s : CounterState = { count: value_.to_int(), }
+        s
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The Counter component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `CounterState` states them
@@ -140,6 +184,21 @@ pub fn counter_component(
           }
         answered => answered
       }
+    },
+    get_property={
+      "count": s => @component.Fields::encode(s).get("count").unwrap_or(Null),
+      "magnitude": s => counter_compute_magnitude(s, [], @tutuca.NullStack::{ }),
+    },
+    set_property={
+      "count": (s, value) => {
+        let fields = @component.Fields::encode(s)
+        fields["count"] = value
+        match @component.Fields::decode(fields) {
+          Some(next) => Next(next)
+          None => Unchanged
+        }
+      },
+      "magnitude": (s, value) => counter_property_set_magnitude(s, value),
     },
     swap=match swap {
       Some(f) =>

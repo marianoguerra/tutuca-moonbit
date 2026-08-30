@@ -26,7 +26,7 @@
 /// A step that did nothing: the same value written twice.
 fn quiet_step() -> @fuzz.Step {
   {
-    dispatch: Receive("setHeld", [Num(10)]),
+    dispatch: InternalMutator(Receive("setHeld", [Num(10)])),
     refused: [],
     broke: [],
     disagreed: [],
@@ -40,7 +40,7 @@ fn quiet_step() -> @fuzz.Step {
 /// the only place a decline is visible at all.
 fn declined_step() -> @fuzz.Step {
   {
-    dispatch: Receive("setHeld", [Num(1)]),
+    dispatch: InternalMutator(Receive("setHeld", [Num(1)])),
     refused: [
       {
         code: Invariant,
@@ -64,7 +64,7 @@ fn declined_step() -> @fuzz.Step {
 /// A step that landed a state the block forbids, with nothing to stop it.
 fn broken_step() -> @fuzz.Step {
   {
-    dispatch: Receive("setOwed", [Num(99)]),
+    dispatch: InternalMutator(Receive("setOwed", [Num(99)])),
     refused: [],
     broke: ["covered"],
     disagreed: [],
@@ -82,7 +82,7 @@ fn broken_step() -> @fuzz.Step {
 /// rendering bug rather than as a finding.
 fn unclaimed_step() -> @fuzz.Step {
   {
-    dispatch: Receive("nope", []),
+    dispatch: InternalMutator(Receive("nope", [])),
     refused: [
       {
         code: NoHandler,
@@ -152,7 +152,7 @@ pub fn Inspector::fuzz_examples(
       component: "FuzzControls",
       title: "Fuzz Controls",
       args: self
-      .fuzz_controls(seed="1", steps="12", source="mutators")
+      .fuzz_controls(seed="1", steps="12", source="internal")
       .snapshot(),
       view: None,
     },
@@ -163,7 +163,7 @@ pub fn Inspector::fuzz_examples(
       .fuzz_controls(
         seed="1",
         steps="12",
-        source="mutators",
+        source="internal",
         can_run=false,
         no_plan_hint="This story's component declares no <script type=\"tutuca/spec\"> block, so there is nothing to derive generators from.",
       )
@@ -193,7 +193,7 @@ pub fn Inspector::fuzz_examples(
       .fuzz_panel(
         seed="1",
         steps="12",
-        source="mutators",
+        source="internal",
         run_steps=steps,
         at=2,
         planned=12,

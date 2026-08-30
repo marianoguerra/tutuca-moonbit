@@ -562,8 +562,8 @@ test "the Fuzz tab drives the story on screen" {
   assert_eq(h.find_all(".ctl-burst").length(), 1)
   assert_eq(h.find_all(".no-plan").length(), 0)
   // Six bars to start with, from the story's args.
-  let before = h.find_all("rect").length()
-  assert_eq(before, 6)
+  assert_eq(h.find_all("rect").length(), 6)
+  let before = app.root_value().field("s0").field("values")
   h.click(".ctl-burst")
   fuzz_tick()
   // Forty generated dispatches ran, and each is a row.
@@ -571,7 +571,7 @@ test "the Fuzz tab drives the story on screen" {
   assert_eq(rows.length(), 40)
   // The chart moved: the run drove the instance the Story tab renders, not a
   // copy of it.
-  assert_not_eq(h.find_all("rect").length(), before)
+  assert_not_eq(app.root_value().field("s0").field("values"), before)
 }
 
 ///|
@@ -588,6 +588,7 @@ test "a run reaches the dispatches the invariant has to decline" {
   let app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
+  h.click(".src-internal")
   h.click(".ctl-burst")
   fuzz_tick()
   assert_eq(h.texts(".verdict-kind"), ["held"])
@@ -640,12 +641,12 @@ test "reset puts the story back" {
   let app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
-  let before = h.find_all("rect").length()
+  let before = app.root_value().field("s0").field("values")
   h.click(".ctl-burst")
   fuzz_tick()
-  assert_not_eq(h.find_all("rect").length(), before)
+  assert_not_eq(app.root_value().field("s0").field("values"), before)
   h.click(".ctl-reset")
-  assert_eq(h.find_all("rect").length(), before)
+  assert_eq(app.root_value().field("s0").field("values"), before)
   // And the rows went with it: a reset that left the old script on screen
   // would be showing a run of a component that no longer exists.
   assert_eq(h.find_all(".fuzz-row").length(), 0)
@@ -721,6 +722,7 @@ test "a run sends nothing the story leaves unhandled" {
   let app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let h = @harness.Harness::over(app, container)
   h.click(".fuzz-tab")
+  h.click(".src-internal")
   h.click(".ctl-burst")
   fuzz_tick()
   assert_eq(h.find_all(".fuzz-row").length(), 40)

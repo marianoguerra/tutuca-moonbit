@@ -64,7 +64,7 @@ impl @dyncomp.Guest for StubGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn dispatch(
+impl @dyncomp.Guest for StubGuest with fn handle_dispatch(
   self,
   handle,
   bucket,
@@ -102,9 +102,10 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn call_method(
+impl @dyncomp.Guest for StubGuest with fn render_call(
   _self,
   _handle,
+  _category,
   _name,
   _args,
   _bindings,
@@ -155,7 +156,7 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 /// the generated form worth generating.
 fn stub_manifest() -> @dyncomp.DynManifest {
   {
-    api_version: 6,
+    api_version: 10,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",
@@ -212,6 +213,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             constraint: None,
           },
         ],
+        properties: [],
         domains: [],
         receives: [],
         intents: [],

@@ -56,10 +56,10 @@ function archive(entries) {
 
 test("untar extracts a descriptor archive", () => {
   const files = untar(archive([
-    ["bundle/tutuca.json", '{"manifestVersion":1}'],
+    ["bundle/tutuca.json", '{"manifestVersion":2}'],
     ["bundle/main.wasm", new Uint8Array([0, 97, 115, 109])],
   ]));
-  assert.equal(new TextDecoder().decode(requireDescriptor(files)), '{"manifestVersion":1}');
+  assert.equal(new TextDecoder().decode(requireDescriptor(files)), '{"manifestVersion":2}');
   assert.deepEqual([...files["main.wasm"]], [0, 97, 115, 109]);
 });
 
@@ -156,7 +156,7 @@ async function loadOutcome(manifest, extraFiles = []) {
 // say every card with a view at all — died before it could be instantiated.
 test("a manifest whose views are already html hydrates untouched", async () => {
   const outcome = await loadOutcome({
-    manifestVersion: 1,
+    manifestVersion: 2,
     components: [{ name: "card", views: [{ name: "main", html: "<div>hi</div>" }] }],
   });
   assert.doesNotMatch(outcome, /static manifest view is missing/);
@@ -167,7 +167,7 @@ test("a manifest whose views are already html hydrates untouched", async () => {
 // names a file is a view whose file has to be there.
 test("a manifest view naming an absent file is still refused", async () => {
   const outcome = await loadOutcome({
-    manifestVersion: 1,
+    manifestVersion: 2,
     components: [{ name: "card", views: [{ name: "main", src: "views/gone.html" }] }],
   });
   assert.match(outcome, /static manifest view is missing from archive: views\/gone.html/);
@@ -178,7 +178,7 @@ test("a manifest view naming an absent file is still refused", async () => {
 test("html and src views hydrate side by side", async () => {
   const outcome = await loadOutcome(
     {
-      manifestVersion: 1,
+      manifestVersion: 2,
       components: [{
         name: "card",
         views: [
@@ -228,7 +228,7 @@ function heldArchive(manifest) {
 }
 
 const HELD = {
-  manifestVersion: 1,
+  manifestVersion: 2,
   components: [{ name: "card", views: [{ name: "main", html: "<div>held</div>" }] }],
 };
 

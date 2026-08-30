@@ -241,9 +241,7 @@ fn DynObj::method_fn(
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value {
   let bindings = self.render_bindings(stack)
-  Fn(args => {
-    self.guest.call_method(self.handle, name, drop_this(args), bindings)
-  })
+  Fn(args => self.guest.compute(self.handle, name, drop_this(args), bindings))
 }
 
 ///|
@@ -496,6 +494,62 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 }
 
 ///|
+pub impl @tutuca.Obj for DynObj with fn obj_property(self, name) {
+  guard self.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    return None
+  }
+  guard self.guest.get_property(self.handle, name) is Some(value) else {
+    return None
+  }
+  if property.ty.accepts(value) {
+    Some(value)
+  } else {
+    None
+  }
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_set_property(self, name, value) {
+  guard self.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    return PMissing
+  }
+  if !property.writable {
+    return PRefused
+  }
+  if !property.ty.accepts(value) {
+    return PRefused
+  }
+  match self.guest.set_property(self.handle, name, value) {
+    GuestPropertyMissing => PMissing
+    GuestPropertyUnchanged => PUnchanged
+    GuestPropertyRefused => PRefused
+    GuestPropertyChanged(handle) => {
+      // A declared getter is part of the same typed contract as its setter.
+      // Validate the successor before it enters the host tree; a hand-written
+      // guest must not smuggle an ill-typed public result past its manifest.
+      guard self.guest.get_property(handle, name) is Some(next_value) &&
+        property.ty.accepts(next_value) else {
+        self.guest.drop_instance(handle)
+        return PRefused
+      }
+      let candidate : @tutuca.Value = Obj(self.successor(handle))
+      match self.adopt(name, candidate) {
+        None => {
+          self.guest.drop_instance(handle)
+          PRefused
+        }
+        Some(next) => {
+          superseded.push((self.guest, self.handle))
+          PChanged(next)
+        }
+      }
+    }
+  }
+}
+
+///|
 pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
   self.callable_at(name, ns, @tutuca.NullStack::{ })
 }
@@ -513,11 +567,16 @@ fn DynObj::callable_at(
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value? {
   // The render-time (alter) namespace is where a `@when` filter is looked up.
-  // It reaches `call-method` like any other declared callable — the guest
-  // writes one function and the host reads its answer as a boolean — and this
+  // It reaches the fixed `when` operation — the guest writes one function and
+  // the host reads its answer as a boolean — and this
   // list is what says the name belongs to that namespace.
   if ns is Alter && self.def.whens.contains(name) {
-    return Some(self.method_fn(name, stack))
+    let bindings = self.render_bindings(stack)
+    return Some(
+      Fn(args => {
+        Bool(self.guest.when(self.handle, name, drop_this(args), bindings))
+      }),
+    )
   }
   // An ENRICHER answers a map of bindings, and the renderer reads the map it
   // PASSED IN rather than what the call returned (`render/render.mbt` discards
@@ -535,7 +594,7 @@ fn DynObj::callable_at(
             // write, then `key` / `value` / `iter`, which is the shape
             // `component/instance.mbt` uses and the offsets the generated
             // guest reads them at.
-            let out = self.guest.call_method(
+            let out = self.guest.enrich(
               self.handle,
               name,
               [
@@ -574,10 +633,9 @@ fn DynObj::callable_at(
     return Some(
       Fn(_args => {
         match
-          self.guest.call_method(
+          self.guest.enrich_scope(
             self.handle,
             name,
-            [],
             self.render_bindings(stack),
           ) {
           Map(_) as m => m
@@ -623,13 +681,10 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
       for pair in self.def.lookup {
         bindings[pair.0] = ctx.lookup(pair.0, @tutuca.LookupOpts::new())
       }
-      let result = self.guest.dispatch(
-        self.handle,
-        bucket,
-        name,
-        args,
-        bindings,
-      )
+      let result = match bucket {
+        Receive => self.guest.handle_message(self.handle, name, args, bindings)
+        Intent => self.guest.handle_intent(self.handle, name, args, bindings)
+      }
       // THE DOMAINS, BEFORE the guest's buffered control calls go out.
       //
       // A guest buffers its effects for exactly this reason — the interpreter

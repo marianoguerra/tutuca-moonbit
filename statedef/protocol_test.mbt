@@ -14,7 +14,10 @@ test "protocols resolve by canonical id and validate a complete implementation" 
       #|  active: Bool
       #|  provide { Lifecycle::lifecycleState = .active }
       #|  lookup { Lifecycle::clock = 0 }
-      #|  property { Lifecycle::active = .active }
+      #|  property {
+      #|    active: Bool { get .active }
+      #|    Lifecycle::active = active
+      #|  }
       #|  view { Lifecycle::display = main }
       #|}
       #|handle Screen {
@@ -32,6 +35,39 @@ test "protocols resolve by canonical id and validate a complete implementation" 
   assert_eq(def.protocols[0].views, ["display"])
   assert_eq(def.property_bindings[0].protocol_id, "tutuca.dev/std/Lifecycle@1")
   let validation = @statedef.validate_protocols(defs)
+  assert_true(validation.mode is Strict)
+  assert_eq(validation.diagnostics.length(), 0)
+}
+
+///|
+test "properties distinguish public operations from backing fields" {
+  let def = @statedef.parse_state(
+      (
+        #|protocol Adjustable = "example/Adjustable@1" {
+        #|  property { value: Int set, label: String }
+        #|}
+        #|state Dial implements Adjustable {
+        #|  raw: Int
+        #|  text: String
+        #|  dirty: Bool
+        #|  property {
+        #|    value: Int { get .raw set .raw }
+        #|    label: String { get .text }
+        #|    percentage: Int { get set }
+        #|    Adjustable::value = value
+        #|    Adjustable::label = label
+        #|  }
+        #|}
+      ),
+    )[0]
+  assert_eq(def.properties.length(), 3)
+  assert_true(def.properties[0].writable)
+  assert_eq(def.properties[0].getter, Some(".raw"))
+  assert_eq(def.properties[0].setter, Some(".raw"))
+  assert_true(def.properties[2].getter is None)
+  assert_true(def.properties[2].setter is None)
+  assert_true(def.protocols[0].properties[0].writable)
+  let validation = @statedef.validate_protocols([def])
   assert_true(validation.mode is Strict)
   assert_eq(validation.diagnostics.length(), 0)
 }

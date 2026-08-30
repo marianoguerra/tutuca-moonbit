@@ -21,7 +21,8 @@
 
     /// True while there is something to send.
     pred hasItem
-      format $'a line with no item cannot be checked out ({.qty}
+      format $'a line with no item cannot be checked out ({.qty} of nothing)'
+      { not (empty? .item) }
 
     /// True once the item names something a receipt would print.
     pred namable { not (empty? (trim .item)) }
@@ -29,8 +30,6 @@
 </script>
 
 <script type="tutuca/script">
- of nothing)' { not (empty? .item) }
-
   /// What this line costs.
   compute total { .qty * .price }
 

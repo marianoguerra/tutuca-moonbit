@@ -1,6 +1,6 @@
 {
-  "manifestVersion": 1,
-  "apiVersion": 9,
+  "manifestVersion": 2,
+  "apiVersion": 10,
   "moduleName": "mastodonlib",
   "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data — no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",
   "version": "0.1.0",
@@ -138,7 +138,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Status",
@@ -528,7 +529,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Poll",
@@ -696,7 +698,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Thread",
@@ -889,7 +892,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Timeline",
@@ -1113,7 +1117,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     },
     {
       "name": "Profile",
@@ -1394,7 +1399,8 @@
       "propertyBindings": [],
       "viewBindings": [],
       "provideBindings": [],
-      "lookupBindings": []
+      "lookupBindings": [],
+      "properties": []
     }
   ]
 }

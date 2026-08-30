@@ -19,7 +19,7 @@ priv struct Counter {
 fn Counter::next(self : Counter, count : Double) -> Counter {
   let history = self.history.copy()
   history.push(self.count)
-  { count, history }
+  { count, history, }
 }
 
 ///|
@@ -38,13 +38,37 @@ impl DynComponent for Counter with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Counter with fn handle(self, bucket, name, args) {
+impl DynComponent for Counter with fn get_property(self, name) {
+  match name {
+    "count" => Some(@values.Value::Number(self.count))
+    _ => None
+  }
+}
+
+///|
+impl DynComponent for Counter with fn set_property(self, name, value) {
+  match (name, value) {
+    ("count", @values.Value::Number(n)) =>
+      if n == self.count {
+        PropertyUnchanged
+      } else {
+        PropertyChanged(self.next(n) as &DynComponent)
+      }
+    ("count", _) => PropertyRefused
+    _ => PropertyMissing
+  }
+}
+
+///|
+impl DynComponent for Counter with fn handle_dispatch(self, bucket, name, args) {
   match (bucket, name) {
-    (RECEIVE, "inc") => Changed(self.next(self.count + 1.0) as &DynComponent)
-    (RECEIVE, "dec") => Changed(self.next(self.count - 1.0) as &DynComponent)
+    (MessageDispatch, "inc") =>
+      Changed(self.next(self.count + 1.0) as &DynComponent)
+    (MessageDispatch, "dec") =>
+      Changed(self.next(self.count - 1.0) as &DynComponent)
     // a request the HOST serves; `on_ok` routes the answer to a handler of
     // its own, which then carries just the value instead of [result, error]
-    (RECEIVE, "double") => {
+    (MessageDispatch, "double") => {
       @control.intent("double", [@values.Value::Number(self.count)], {
         route: [LEX],
         on_ok: Some("doubled"),
@@ -54,7 +78,7 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
       })
       Unchanged
     }
-    (RECEIVE, "doubled") =>
+    (MessageDispatch, "doubled") =>
       match args {
         [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
         _ => Unchanged
@@ -65,7 +89,7 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
     // The ANSWER is named `tripled`, not `triple`. One bucket holds both the
     // click and the answer, so reusing the name would collide: the first arm
     // would take the answer and dispatch the intent all over again.
-    (RECEIVE, "triple") => {
+    (MessageDispatch, "triple") => {
       @control.intent("triple", [@values.Value::Number(self.count)], {
         route: [LEX],
         on_ok: Some("tripled"),
@@ -75,13 +99,13 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
       })
       Unchanged
     }
-    (RECEIVE, "tripled") =>
+    (MessageDispatch, "tripled") =>
       match args {
         [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
         _ => Unchanged
       }
     // tell whoever is above: a Pair parent hears this, and so would the host
-    (RECEIVE, "announce") => {
+    (MessageDispatch, "announce") => {
       @control.intent("counted", [@values.Value::Number(self.count)], {
         route: [DYN],
         on_ok: None,
@@ -92,7 +116,7 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
       Unchanged
     }
     // boundary exercise: sum a host list of numbers (guest -> values import)
-    (RECEIVE, "sum") =>
+    (MessageDispatch, "sum") =>
       match args {
         [@values.Value::List(h)] => {
           let mut total = 0.0
@@ -107,13 +131,13 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
         }
         _ => Unchanged
       }
-    (RECEIVE, "init") => Unchanged
+    (MessageDispatch, "init") => Unchanged
     _ => Unhandled
   }
 }
 
 ///|
-impl DynComponent for Counter with fn call_method(self, name, args) {
+impl DynComponent for Counter with fn render_call(self, name, args) {
   match name {
     "label" => @values.Value::Text("count is \{self.count}")
     // a `@when` filter over the history: called with (key, item, iter-data),
@@ -155,7 +179,7 @@ fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  let c : Counter = { count, history }
+  let c : Counter = { count, history, }
   c as &DynComponent
 }
 
@@ -177,17 +201,17 @@ impl DynComponent for Pair with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
+impl DynComponent for Pair with fn handle_dispatch(self, bucket, name, _args) {
   match (bucket, name) {
     // a child announced itself: swap the two, and keep the bubble from
     // travelling further up (the host would hear it otherwise)
-    (INTENT, "counted") => {
+    (IntentDispatch, "counted") => {
       @control.stop_propagation()
-      Changed({ left: self.right, right: self.left } as &DynComponent)
+      Changed({ left: self.right, right: self.left, } as &DynComponent)
     }
     // reach INTO this component's own subtree: `.left` is the child the left
     // field holds, and "sum" is its receive handler
-    (RECEIVE, "zeroLeft") => {
+    (MessageDispatch, "zeroLeft") => {
       @control.send_at([@control.PathStep::Field("left")], "sum", [
         @values.Value::List(@values.list_new()),
       ])
@@ -201,11 +225,11 @@ impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
 impl DynComponent for Pair with fn with_field(self, name, v) {
   match (name, v) {
     ("left", @values.Value::Instance(t)) => {
-      let p : Pair = { left: t, right: self.right }
+      let p : Pair = { left: t, right: self.right, }
       Some(p as &DynComponent)
     }
     ("right", @values.Value::Instance(t)) => {
-      let p : Pair = { left: self.left, right: t }
+      let p : Pair = { left: self.left, right: t, }
       Some(p as &DynComponent)
     }
     _ => None
@@ -220,7 +244,7 @@ fn make_pair(_args : Array[(String, @values.Value)]) -> &DynComponent {
   let right = @control.make_instance("Counter", [
     ("count", @values.Value::Number(100)),
   ])
-  let p : Pair = { left, right }
+  let p : Pair = { left, right, }
   p as &DynComponent
 }
 

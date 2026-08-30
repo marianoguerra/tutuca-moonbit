@@ -24,7 +24,7 @@
 /// the host for over an intent, and the host decides per call — and it never
 /// touches the DOM — its views are DATA the host compiles. See ../SECURITY.md
 /// for what that does and does not cover.
-package tutuca:component@0.10.0;
+package tutuca:component@0.11.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -257,7 +257,7 @@ interface config {
 
 /// Framework services available to a running handler. Calls are buffered by
 /// the host and applied through the dispatching handler's context when
-/// `handle-event` returns (tutuca ctx.send / ctx.intent).
+/// `handle-message` / `handle-intent` returns (tutuca ctx.send / ctx.intent).
 /// `log` is immediate and always legal.
 interface control {
   use values.{value};
@@ -314,7 +314,7 @@ interface control {
   ///
   /// The `dyn` leg starts at this component's PARENT, so a component never
   /// re-enters its own handler and a cycle needs two of them. The answer, if
-  /// any, arrives as a later handle-event(receive, ...) — an answer is an
+  /// any, arrives as a later handle-message(...) — an answer is an
   /// ordinary message and a handler cannot tell it from one a parent sent.
   ///
   /// One channel: the route says which scope answers, rather than the verb
@@ -342,11 +342,11 @@ interface control {
   /// Answer it with a failure, and end the walk: `<name>Error`.
   fail: func(e: value);
 
-  /// Send a message to self: arrives as a later handle-event(receive, name, ...).
+  /// Send a message to self: arrives as a later handle-message(name, ...).
   send: func(name: string, args: list<value>);
 
   /// Send to a component in this one's own subtree (`ctx.send-at-path`): the
-  /// message arrives as handle-event(receive, ...) at `path`, e.g.
+  /// message arrives as handle-message(...) at `path`, e.g.
   /// `[field("left")]` for the child a `left` field holds.
   send-at: func(path: list<path-step>, name: string, args: list<value>);
 
@@ -378,11 +378,12 @@ interface control {
   /// could not change what came back. Which environments were walked is the
   /// host's business, the same way the default route is.
   ///
-  /// Both entry points resolve them, from the position each one stands in: a
-  /// `handle-event` walks the dispatch route `[dyn, lex]`, and a `call-method`
-  /// asks the render chain the call is being made under — which is what a
-  /// `*name` in this component's own VIEW reads. So a `*name` in a `pred` and
-  /// a `*name` in the template beside it answer the same thing.
+  /// Every entry point resolves them from the position it stands in: a
+  /// message/intent handler walks its dispatch route, while a render operation
+  /// (`compute`, `when`, `enrich`, `enrich-scope`) asks the render chain the
+  /// call is being made under — which is what a `*name` in this component's
+  /// own VIEW reads. So a `*name` in a `pred` and a `*name` in the template
+  /// beside it answer the same thing.
   ///
   /// `nil` for a name the manifest's `lookup` list does not declare, and for a
   /// declared one that nothing above supplies and that carries no default.
@@ -435,14 +436,6 @@ interface guest {
   /// a host-side handler can give.
   serve-intent: func(name: string, args: list<value>) -> serve-result;
 
-  /// The dispatch buckets a handler can live in.
-  ///
-  /// Two, and the difference is who decides where a dispatch lands: `receive`
-  /// is an addressed message, which stops at the component it names, and
-  /// `intent` is a routed one, which walks until something answers. A case's
-  /// position is its wire number.
-  enum bucket { receive, intent }
-
   /// Whether a dispatch name belonged to the guest, independently of whether
   /// it changed state. `unhandled` lets the host fall back to the mutator a
   /// declared field implies; `unchanged` is a real handler that only dispatched
@@ -451,6 +444,16 @@ interface guest {
   variant event-result {
     unhandled,
     unchanged,
+    changed(instance),
+  }
+
+  /// The synchronous public-property write result. `refused` means the
+  /// property exists but is read-only or rejected the proposed successor;
+  /// `missing` means it is not part of the component's public interface.
+  variant property-result {
+    missing,
+    unchanged,
+    refused,
     changed(instance),
   }
 
@@ -480,26 +483,45 @@ interface guest {
     get-field: func(name: string) -> option<value>;
 
     /// Self in, self out. The result distinguishes "not my name" from a
-    /// handled event that caused no state change. The `intent` bucket is how a
-    /// guest component hears one raised by a guest child of its own
-    /// (`control.intent` one level down); the host walks the route exactly as
-    /// it does between host components.
+    /// handled message that caused no state change. A guest component hears a
+    /// child message here; routed intents use the separate operation below.
     ///
     /// There is no event object: what a handler needs from the DOM event is
     /// named in the view (`@on.input="setName e.value"`) and arrives evaluated
     /// in `args`, which is also how a host component receives it. A DOM object
     /// is not a value, so `event` and `ctx` are not handler arguments in
     /// tutuca; the event itself is reached through the `e.` path.
-    handle-event: func(b: bucket, name: string,
-                       args: list<value>) -> event-result;
+    handle-message: func(name: string, args: list<value>) -> event-result;
+
+    /// The routed twin of `handle-message`, split at the ABI because these are
+    /// distinct protocol surfaces rather than cases of a guest-side switch.
+    handle-intent: func(name: string, args: list<value>) -> event-result;
 
     /// Pure render-time method call (view expressions). Must not mutate.
     ///
     /// The host resolves this component's declared lookups for the RENDER
-    /// position before the call, exactly as it does for `handle-event` at the
+    /// position before the call, exactly as it does for a handler at the
     /// dispatch one, so a `compute`, a `pred`, a `@when` or an `enrich` that
     /// reads `*name` through `control.lookup` gets an answer rather than nil.
-    call-method: func(name: string, args: list<value>) -> value;
+    compute: func(name: string, args: list<value>) -> value;
+
+    /// Render-time predicate. Its boolean result is part of the ABI rather
+    /// than an interpretation of an arbitrary method value.
+    when: func(name: string, args: list<value>) -> bool;
+
+    /// Per-row binding enrichment; returns a map-shaped value.
+    enrich: func(name: string, args: list<value>) -> value;
+
+    /// Scope binding enrichment; returns a map-shaped value.
+    enrich-scope: func(name: string) -> value;
+
+    /// Public abstract property access. Unlike `get-field`, this is the
+    /// component's declared interface and may compute a value.
+    get-property: func(name: string) -> option<value>;
+
+    /// Pure synchronous public transition. It may update any number of
+    /// internal fields and returns a whole immutable successor.
+    set-property: func(name: string, v: value) -> property-result;
 
     /// COW write-through: successor with one field replaced. It is what host
     /// paths write through to reach a nested child, AND what the generated

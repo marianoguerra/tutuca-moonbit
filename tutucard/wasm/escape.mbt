@@ -224,7 +224,7 @@ fn escape_prelude(g : Gen) -> Array[@abi.Field] {
 /// A `cm_<name>` for every callable an escape answers.
 ///
 /// A three-line forwarder rather than teaching four call sites about escapes:
-/// `call-method`, a `requires`, an `ensures` and a body that calls one bare all
+/// a render operation, a `requires`, an `ensures` and a body that calls one bare all
 /// reach a callable as `cm_<name>`, and giving an escaped one the same name
 /// means none of them has to know the difference.
 ///

@@ -56,8 +56,8 @@ impl DynComponent for Todo with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Todo with fn handle(self, bucket, name, args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Todo with fn handle_dispatch(self, bucket, name, args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     // There is no "setDraft" case: `draft` is a declared field, so the host
     // generates `setDraft` from the schema and writes it through `with_field`
@@ -83,7 +83,7 @@ impl DynComponent for Todo with fn handle(self, bucket, name, args) {
       }
     "clearDone" => {
       let kept = self.items.filter(it => !it.done)
-      Changed({ items: kept, draft: self.draft } as &DynComponent)
+      Changed({ items: kept, draft: self.draft, } as &DynComponent)
     }
     _ => Unhandled
   }
@@ -94,8 +94,8 @@ fn Todo::add_draft(self : Todo) -> &DynComponent? {
   let text = self.draft.trim(chars=" ").to_owned()
   guard text != "" else { return None }
   let items = self.items.copy()
-  items.push({ text, done: false })
-  Some({ items, draft: "" } as &DynComponent)
+  items.push({ text, done: false, })
+  Some({ items, draft: "", } as &DynComponent)
 }
 
 ///|
@@ -103,8 +103,8 @@ fn Todo::toggle_at(self : Todo, i : Int) -> &DynComponent? {
   guard i >= 0 && i < self.items.length() else { return None }
   let items = self.items.copy()
   let it = items[i]
-  items[i] = { text: it.text, done: !it.done }
-  Some({ items, draft: self.draft } as &DynComponent)
+  items[i] = { text: it.text, done: !it.done, }
+  Some({ items, draft: self.draft, } as &DynComponent)
 }
 
 ///|
@@ -112,12 +112,12 @@ fn Todo::remove_at(self : Todo, i : Int) -> &DynComponent? {
   guard i >= 0 && i < self.items.length() else { return None }
   let items = self.items.copy()
   items.remove(i) |> ignore
-  Some({ items, draft: self.draft } as &DynComponent)
+  Some({ items, draft: self.draft, } as &DynComponent)
 }
 
 ///|
 /// `$summary` — a render-time view method (count of done / total).
-impl DynComponent for Todo with fn call_method(self, name, _args) {
+impl DynComponent for Todo with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let total = self.items.length()
@@ -135,9 +135,9 @@ impl DynComponent for Todo with fn call_method(self, name, _args) {
 impl DynComponent for Todo with fn with_field(self, name, v) {
   match (name, v) {
     ("draft", @values.Value::Text(s)) =>
-      Some({ items: self.items, draft: s } as &DynComponent)
+      Some({ items: self.items, draft: s, } as &DynComponent)
     ("items", @values.Value::List(h)) =>
-      Some({ items: items_of(h), draft: self.draft } as &DynComponent)
+      Some({ items: items_of(h), draft: self.draft, } as &DynComponent)
     _ => None
   }
 }
@@ -159,7 +159,7 @@ fn items_of(h : UInt64) -> Array[TodoItem] {
           Some(@values.Value::Boolean(b)) => b
           _ => false
         }
-        items.push({ text, done })
+        items.push({ text, done, })
       }
       _ => ()
     }
@@ -211,10 +211,10 @@ fn restore_todo(state : FixedArray[Byte]) -> &DynComponent? {
         _ => ""
       }
       let done = im.get("done") is Some(True)
-      items.push({ text, done })
+      items.push({ text, done, })
     }
   }
-  Some(({ items, draft } : Todo) as &DynComponent)
+  Some(({ items, draft, } : Todo) as &DynComponent)
 }
 
 ///|
@@ -230,7 +230,7 @@ fn make_todo(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  ({ items, draft } : Todo) as &DynComponent
+  ({ items, draft, } : Todo) as &DynComponent
 }
 
 ///|

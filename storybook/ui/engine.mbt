@@ -429,7 +429,7 @@ fn ShellInst::handler_for(
                     self.spec.insp.fuzz_panel(
                       seed=self.get("fzSeed").str(default="1"),
                       steps=self.get("fzSteps").str(default="40"),
-                      source=self.get("fzSource").str(default="mutators"),
+                      source=self.get("fzSource").str(default="public"),
                     ),
                   )
                 } else {
@@ -737,7 +737,7 @@ fn build_shell(
     // next when you are looking for the same shape of bug.
     "fzSeed": Str("1"),
     "fzSteps": Str("40"),
-    "fzSource": Str("mutators"),
+    "fzSource": Str("public"),
   }
   // Metadata captured by the handlers, aligned with the global story index N:
   // the fuzzy-match haystack and the owning section index. `id_to_field` maps
@@ -1546,7 +1546,7 @@ priv struct FuzzSession {
   mut source : String
   /// The script as drawn. Redrawn whenever a knob moves, because a row list
   /// that outlived its seed would be a lie about what is going to be sent.
-  mut script : Array[@component.Dispatch]
+  mut script : Array[@fuzz.Action]
   /// What has run so far, and how far in.
   mut ran : Array[@fuzz.Step]
   mut at : Int
@@ -1565,7 +1565,7 @@ priv struct FuzzSession {
   mut playing : Bool
   mut outcome : @fuzz.Outcome?
   /// The shrunk reproducer, once somebody asked for one.
-  mut reproducer : Array[@component.Dispatch]
+  mut reproducer : Array[@fuzz.Action]
 }
 
 ///|
@@ -1575,7 +1575,7 @@ fn FuzzSession::new() -> FuzzSession {
     idx: -1,
     seed: 1,
     steps: 40,
-    source: "mutators",
+    source: "public",
     mode: "",
     script: [],
     ran: [],
@@ -1590,9 +1590,10 @@ fn FuzzSession::new() -> FuzzSession {
 /// The generator source a button names.
 fn fuzz_source_of(name : String) -> @fuzz.Source {
   match name {
-    "declared" => Declared(BReceive)
-    "either" => Either(BReceive)
-    _ => Mutators
+    "messages" => Declared(BEither)
+    "properties" => Properties
+    "internal" => InternalMutators
+    _ => Public(BEither)
   }
 }
 
@@ -1779,7 +1780,9 @@ fn[N] fuzz_step_marked(
   let next = session.at + 1
   let name = if next < session.script.length() {
     match session.script[next] {
-      Receive(n, _) | Intent(n, _) => n
+      Message(Receive(n, _)) | Message(Intent(n, _)) => n
+      SetProperty(n, _) => n
+      InternalMutator(Receive(n, _)) | InternalMutator(Intent(n, _)) => n
     }
   } else {
     ""

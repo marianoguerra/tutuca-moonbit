@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.10.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.11.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
 ///
@@ -73,15 +73,15 @@ impl DynComponent for Dice with fn get_field(self, name) {
 /// `None`, which left the host unable to tell a handler that declined from a
 /// component that had no such handler.
 ///
-/// The buckets: RECEIVE is what this component's own views raise (`@on.click`),
-/// RECEIVE is what a parent sends it, INTENT is what a child raised, RECEIVE
-/// is an answer to a request this component made.
-impl DynComponent for Dice with fn handle(self, bucket, name, args) {
+/// The internal SDK categories: MessageDispatch is what this component's own
+/// views or a parent send and what an answer arrives through. IntentDispatch
+/// is a routed intent offered at this component.
+impl DynComponent for Dice with fn handle_dispatch(self, bucket, name, args) {
   match (bucket, name) {
     // The whole point. A request leaves now and the answer comes back later as
-    // a RECEIVE — so this is `Unchanged`: the click was handled, and a die
+    // a MessageDispatch — so this is `Unchanged`: the click was handled, and a die
     // that showed a new face before the host had answered would be lying.
-    (RECEIVE, "roll") => {
+    (MessageDispatch, "roll") => {
       @control.intent("roll", [@values.Value::Number(self.faces)], {
         route: [LEX],
         on_ok: Some("rolled"),
@@ -93,7 +93,7 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
     }
     // `on_ok` means these args carry just the value; without it a response
     // arrives as [result, error] and this would have to unpack both.
-    (RECEIVE, "rolled") =>
+    (MessageDispatch, "rolled") =>
       match args {
         [@values.Value::Number(n), ..] => {
           let rolls = self.rolls.copy()
@@ -108,7 +108,7 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
             on_unhandled: None,
             live_path: false,
           })
-          Changed({ ..self, last: n, rolls } as &DynComponent)
+          Changed({ ..self, last: n, rolls, } as &DynComponent)
         }
         // An answer shaped wrong is still an answer to a question this die
         // asked, so it is Unchanged rather than Unhandled.
@@ -116,10 +116,10 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
       }
     // A host that refuses to roll is a host that refuses; there is nothing to
     // do about it here, and nothing to show that would not be a made-up face.
-    (RECEIVE, "rollFailed") => Unchanged
-    (RECEIVE, "clear") =>
-      Changed({ ..self, last: 0.0, rolls: [] } as &DynComponent)
-    (RECEIVE, "init") => Unchanged
+    (MessageDispatch, "rollFailed") => Unchanged
+    (MessageDispatch, "clear") =>
+      Changed({ ..self, last: 0.0, rolls: [], } as &DynComponent)
+    (MessageDispatch, "init") => Unchanged
     // Everything else is somebody else's message. Saying so — rather than
     // saying "handled, nothing changed" — is what lets the host keep routing it.
     _ => Unhandled
@@ -128,7 +128,7 @@ impl DynComponent for Dice with fn handle(self, bucket, name, args) {
 
 ///|
 /// Answer a `$name` call from a view. Pure: it computes, it does not change.
-impl DynComponent for Dice with fn call_method(self, name, args) {
+impl DynComponent for Dice with fn render_call(self, name, args) {
   match name {
     "caption" =>
       @values.Value::Text(
@@ -151,9 +151,9 @@ impl DynComponent for Dice with fn call_method(self, name, args) {
 }
 
 ///|
-/// Write one declared field. The host uses this for the mutators your fields
-/// imply and for the config form, so a component that declares fields wants it
-/// — otherwise every edit has to go through a handler you wrote by hand.
+/// Write one declared field. The runtime uses this for internal mutators the
+/// component's own views invoke and for host-owned reconstruction. It is not
+/// the public interface; that is the manifest's `properties` list.
 ///
 /// `setFaces` is NOT in `handlers` below, and that is the point: the host
 /// synthesizes it from the declared field and routes it here. Changing the
@@ -163,10 +163,10 @@ impl DynComponent for Dice with fn with_field(self, name, v) {
   match (name, v) {
     ("faces", @values.Value::Number(n)) => {
       let faces = if n < 2.0 { 2.0 } else { n }
-      Some({ faces, last: 0.0, rolls: [] } as &DynComponent)
+      Some({ faces, last: 0.0, rolls: [], } as &DynComponent)
     }
     ("last", @values.Value::Number(n)) =>
-      Some({ ..self, last: n } as &DynComponent)
+      Some({ ..self, last: n, } as &DynComponent)
     ("rolls", @values.Value::List(l)) => {
       let rolls = []
       for i in 0U..<@values.list_len(l) {
@@ -208,7 +208,7 @@ fn make_dice(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  let d : Dice = { faces: if faces < 2.0 { 2.0 } else { faces }, last, rolls }
+  let d : Dice = { faces: if faces < 2.0 { 2.0 } else { faces }, last, rolls, }
   d as &DynComponent
 }
 

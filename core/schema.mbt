@@ -22,6 +22,7 @@ pub fn SchemaInfo::new(
   name? : String = "",
   fingerprint~ : String,
   fields? : Array[FieldInfo] = [],
+  properties? : Array[PropertyInfo] = [],
   view_handlers? : Array[String] = [],
   receives? : Array[String] = [],
   intents? : Array[String] = [],
@@ -44,6 +45,7 @@ pub fn SchemaInfo::new(
     name,
     fingerprint,
     fields,
+    properties,
     view_handlers,
     receives,
     intents,
@@ -96,11 +98,32 @@ pub fn SchemaInfo::conforms(
       missing.push("express intent `\{n}`")
     }
   }
-  for pair in protocol.properties {
+  for property in protocol.properties {
     if !self.property_bindings
       .iter()
-      .any(b => b.protocol_id == protocol.id && b.member_name == pair.0) {
-      missing.push("property `\{pair.0}`")
+      .any(b => b.protocol_id == protocol.id && b.member_name == property.name) {
+      missing.push("property `\{property.name}`")
+      continue
+    }
+    guard self.property_bindings
+      .iter()
+      .find_first(b => {
+        b.protocol_id == protocol.id && b.member_name == property.name
+      })
+      is Some(binding) else {
+      continue
+    }
+    guard self.properties.iter().find_first(p => p.name == binding.source)
+      is Some(implementation) else {
+      missing.push(
+        "property `\{property.name}` binds missing local property `\{binding.source}`",
+      )
+      continue
+    }
+    if implementation.ty != property.ty {
+      missing.push("property `\{property.name}` has the wrong type")
+    } else if property.writable && !implementation.writable {
+      missing.push("property `\{property.name}` is not writable")
     }
   }
   for n in protocol.views {
@@ -171,6 +194,10 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
     for m in f.ty.members() {
       sb.write_string("m:\{m},")
     }
+  }
+  for p in self.properties {
+    let access = if p.writable { "w" } else { "r" }
+    sb.write_string("a:\{p.name}:\{p.ty.show_source()}:\{access};")
   }
   for
     pair in [

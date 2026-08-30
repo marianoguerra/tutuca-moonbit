@@ -47,28 +47,28 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.10.0': values,
+    'tutuca:component/values@0.11.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.10.0': control,
+    'tutuca:component/control@0.11.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
   manifest = JSON.parse(
     await readFile(new URL('../../guests/rust-tempconv/manifest.json', import.meta.url), 'utf8'),
   );
-  const raw = guest.Instance.prototype.handleEvent;
-  guest.Instance.prototype.handleEvent = function (...args) {
+  const raw = guest.Instance.prototype.handleMessage;
+  guest.Instance.prototype.handleMessage = function (...args) {
     const result = raw.call(this, ...args);
     return result.tag === 'changed' ? result.val : undefined;
   };
 });
 
 /// A method's answer, as plain text.
-const said = (inst, name) => inst.callMethod(name, []).val;
+const said = (inst, name) => inst.compute(name, []).val;
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
   const m = manifest;
-  assert.equal(m.apiVersion, 9);
+  assert.equal(m.apiVersion, 10);
   assert.equal(m.moduleName, 'rusttemplib');
   assert.equal(m.components[0].views[0].src, 'views/TempConv.main.html');
 
@@ -79,7 +79,7 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
   assert.equal(said(a, 'kText'), '293.15');
   assert.equal(said(a, 'note'), 'room temperature');
 
-  const b = a.handleEvent('receive', 'editF', [{ tag: 'text', val: '212' }]);
+  const b = a.handleMessage('editF', [{ tag: 'text', val: '212' }]);
   assert.deepEqual(b.getField('celsius'), { tag: 'number', val: 100 });
   assert.equal(said(b, 'note'), 'water boils');
   // self in, self out: the predecessor is untouched
@@ -100,31 +100,31 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
 
 test('the box being typed in keeps its characters', { skip: !built }, () => {
   let t = new guest.Instance('TempConv', []);
-  t = t.handleEvent('receive', 'preset', [{ tag: 'number', val: 37 }]);
+  t = t.handleMessage('preset', [{ tag: 'number', val: 37 }]);
   assert.equal(said(t, 'cText'), '37');
   assert.equal(said(t, 'fText'), '98.6');
 
   // A lone minus is a real thing to have typed on the way to a number. It is
   // not a number, so the temperature does not move — but the box has to show
   // it, or the character disappears as you type it.
-  const drafting = t.handleEvent('receive', 'editC', [{ tag: 'text', val: '-' }]);
+  const drafting = t.handleMessage('editC', [{ tag: 'text', val: '-' }]);
   assert.equal(said(drafting, 'cText'), '-');
   assert.equal(said(drafting, 'fText'), '98.6');
   assert.deepEqual(drafting.getField('celsius'), { tag: 'number', val: 37 });
 
   // ...and a box that is NOT being typed in shows the number, formatted.
-  const typed = t.handleEvent('receive', 'editC', [{ tag: 'text', val: '-40' }]);
+  const typed = t.handleMessage('editC', [{ tag: 'text', val: '-40' }]);
   assert.equal(said(typed, 'cText'), '-40');
   assert.equal(said(typed, 'fText'), '-40');
 
   // A preset settles everything: no draft, so every box shows its number.
-  const settled = typed.handleEvent('receive', 'preset', [{ tag: 'number', val: 0 }]);
+  const settled = typed.handleMessage('preset', [{ tag: 'number', val: 0 }]);
   assert.equal(said(settled, 'cText'), '0');
   assert.equal(said(settled, 'note'), 'water freezes');
 
   // Below absolute zero is not a temperature, so it is clamped rather than
   // refused: the number arrives a keystroke at a time.
-  const cold = settled.handleEvent('receive', 'editK', [{ tag: 'text', val: '-5' }]);
+  const cold = settled.handleMessage('editK', [{ tag: 'text', val: '-5' }]);
   assert.deepEqual(cold.getField('celsius'), { tag: 'number', val: -273.15 });
 
   // Writing the declared field is the host's mutator, and it settles the draft
@@ -135,10 +135,10 @@ test('the box being typed in keeps its characters', { skip: !built }, () => {
 
 test('a converter persists and restores its own bytes', { skip: !built }, () => {
   let t = new guest.Instance('TempConv', []);
-  t = t.handleEvent('receive', 'editF', [{ tag: 'text', val: '98.6' }]);
+  t = t.handleMessage('editF', [{ tag: 'text', val: '98.6' }]);
   // Mid-edit, in a box, with a lone minus: a real thing to have typed and not
   // a number, so the temperature is still body heat underneath it.
-  t = t.handleEvent('receive', 'editC', [{ tag: 'text', val: '-' }]);
+  t = t.handleMessage('editC', [{ tag: 'text', val: '-' }]);
 
   const bytes = t.persist();
   assert.ok(bytes.length > 0);
@@ -153,7 +153,7 @@ test('a converter persists and restores its own bytes', { skip: !built }, () => 
   // A draft that IS a number still comes back as typed rather than as
   // formatted: `-4.` parses, so the temperature moves, but the box keeps the
   // trailing point somebody is about to type digits after.
-  const mid = t.handleEvent('receive', 'editC', [{ tag: 'text', val: '-4.' }]);
+  const mid = t.handleMessage('editC', [{ tag: 'text', val: '-4.' }]);
   const midBack = guest.Instance.restore('TempConv', mid.persist());
   assert.deepEqual(midBack.getField('celsius'), { tag: 'number', val: -4 });
   assert.equal(said(midBack, 'cText'), '-4.');

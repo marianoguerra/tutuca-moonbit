@@ -110,6 +110,8 @@ pub(all) enum DeclKind {
   DReceive
   DIntent
   DCompute
+  DGet
+  DSet
   DPred
   DInvariant
   DEnrich

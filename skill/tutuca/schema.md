@@ -23,7 +23,7 @@ reading a handler.
 
 | Spec block (`tutuca/spec`) | Script block (`tutuca/script`) |
 | --- | --- |
-| `state`, `struct`, `enum` — the data | `receive`, `intent` — the transitions |
+| `state`, `struct`, `enum`, `property` — data and public abstract state | `receive`, `intent`, property `get`/`set` — the transitions |
 | `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
 | `provide` / `lookup` — the wiring | `compute` — a `$name` a view reads |
 | `pred`, `invariant` — the rules it keeps | — |
@@ -127,6 +127,67 @@ object's key is a string), and a type that contains itself with no `?` or
 Behaviour is not declared here. A `$`-callable no view of the component names —
 a method a PARENT calls, say — is a `pred` or a `compute` in the
 `<script type="tutuca/script">` block, beside every other callable.
+
+## Public properties
+
+Fields describe storage and generate conveniences for the component's own
+views and handlers. They are not automatically the interface a parent, host,
+storybook, or property fuzzer may drive. Declare that interface explicitly in
+a `property` section inside the state:
+
+```html
+<script type="tutuca/spec">
+  state Counter {
+    count: Int
+    property {
+      count: Int { get .count set .count }
+      magnitude: Int { get set }
+      label: String { get }
+    }
+  }
+</script>
+
+<script type="tutuca/script">
+  get magnitude {
+    if (.count < 0) { -.count } else { .count }
+  }
+
+  set magnitude {
+    if (.count < 0) { .count = -value } else { .count = value }
+  }
+
+  get label { $'count: {.count}' }
+</script>
+```
+
+The compact form names a backing field after `get` or `set`; its type must
+match the property type. Bare `get` / `set` opt into a script implementation.
+Those implementations have fixed signatures: a getter returns the declared
+property type and a setter receives one implicit `value` of that type. There is
+no argument list to declare and no overload surface to keep in sync.
+
+Every property is readable. Writing is opt-in: omit `set` for a read-only
+property. A complex setter is a synchronous, pure, atomic state transition. It
+may update several internal fields and its successor must satisfy the same
+domains, predicates, and invariants as any handler result, but it cannot send,
+raise an intent, construct a component, or enqueue another transaction. A
+refusal changes nothing. `Transactor::set_property(path, name, value)` also
+works through a child path and rebuilds the parent spine in the current
+transaction, so do not add a message merely to expose a synchronous value
+assignment.
+
+Protocols use the same abstract surface without implementation details:
+
+```text
+protocol Adjustable = "example/Adjustable@1" {
+  property { value: Int set, label: String }
+}
+```
+
+An implementing state binds those names in its `property` section. Public
+fuzzing derives property writes from this declaration. Generated field
+mutators are excluded unless the caller explicitly chooses diagnostic/internal
+fuzzing.
 
 ## What each field kind generates
 
@@ -512,8 +573,10 @@ inserting at the end is a real answer.
 > the field's declared kind. They are not compiled from the block, so no
 > script-refusal can disable one and no `update` arm is needed to keep one
 > working — a button wired to a mutator works whatever the block does or does
-> not compile. Write a handler only when there is something the mutator does
-> not say.
+> not compile. It is also not a public property: an external host call cannot
+> dispatch it merely because the field generated its name. Write a handler
+> only when there is something the mutator does not say; write a property when
+> callers should be allowed to read or synchronously set abstract state.
 
 ## Building a value (`new <Type>` / `@cur`)
 

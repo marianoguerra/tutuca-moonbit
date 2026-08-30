@@ -27,8 +27,8 @@ let bind_local : String = "binds"
 ///   `enrichScope`     (this)
 ///
 /// `drop_this` takes the receiver off, so what a compiled declaration sees
-/// through `call-method` is what is left. A `compute` called from a view slot
-/// is handed its own parameters instead and none of this, which is why the map
+/// through its fixed render operation is what is left. A `compute` called from
+/// a view slot is handed its own parameters instead and none of this, which is why the map
 /// is empty for one: a `compute` that read `@value` would be reading whatever
 /// the caller's first argument happened to be.
 fn bind_index(kind : @tscript.DeclKind) -> Map[String, Int] {
@@ -138,6 +138,54 @@ fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
 }
 
 ///|
+/// Complex property getters are fixed zero-argument observations. They are
+/// compiled after ordinary callables so their expressions may call a
+/// `compute`/`pred`, but they live in a distinct symbol namespace because a
+/// property and a compute may intentionally share a public name.
+fn property_getter_fields(
+  g : Gen,
+  decls : Array[@tscript.Decl],
+) -> Array[@abi.Field] {
+  let fields : Array[@abi.Field] = []
+  for d in decls {
+    guard d.kind is DGet else { continue }
+    guard d.body is Value(e) else { continue }
+    let ctx : ECtx = {
+      g,
+      state: "s",
+      params: Map([]),
+      binds: Map([]),
+      bind_local: None,
+      args: "args",
+      kind: "get",
+      name: d.name,
+      uses_target: false,
+      uses_child: false,
+    }
+    g.temp = 0
+    try {
+      fields.push(
+        func(
+          property_getter_fn(g, d.name),
+          params=[("s", rec_), ("args", args_)],
+          results=[jv_],
+          body=[ctx.expr(e)],
+        ),
+      )
+      g.callables["get/" + d.name] = d
+    } catch {
+      _ => ()
+    }
+  }
+  fields
+}
+
+///|
+fn property_getter_fn(g : Gen, name : String) -> String {
+  g.sym("cpg_", name)
+}
+
+///|
 /// An enricher's body: the bindings it starts with, what it writes, and the map
 /// it answers.
 ///
@@ -149,7 +197,7 @@ fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
 ///
 /// It answers the WHOLE map rather than only what it added, because a guest
 /// cannot write into a host's map: the interpreter's in-loop form mutates the
-/// argument it was passed (`tutucard/obj.mbt`), and `call-method` has a return
+/// argument it was passed (`tutucard/obj.mbt`), and `enrich` has a return
 /// value and no arguments it can reach back through. The host merges what comes
 /// back — see `dyncomp/host/dynobj.mbt`.
 fn enrich_body(ctx : ECtx, d : @tscript.Decl) -> Array[@abi.I] raise Bail {
@@ -226,8 +274,8 @@ fn escape_transition(
     uses_child: false,
   }
   let unchanged = [
-    mem("store32", [i32c(@abi.ret_handle_event), i32c(1)]),
-    ret(Some(i32c(@abi.ret_handle_event))),
+    mem("store32", [i32c(@abi.ret_event_result), i32c(1)]),
+    ret(Some(i32c(@abi.ret_event_result))),
   ]
   fn declined(
     kind : ContractKind,
@@ -305,29 +353,46 @@ fn escape_transition(
     out.push(call("tc_flush", []))
   }
   out.push(if_(call("tc_same", [get("t"), get("s")]), unchanged, []))
-  out.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(2)]))
+  out.push(mem("store32", [i32c(@abi.ret_event_result), i32c(2)]))
   out.push(
     mem("store32", [
-      i32c(@abi.ret_handle_event + 4),
+      i32c(@abi.ret_event_result + 4),
       call("resource_new", [call("tc_intern", [get("t")])]),
     ]),
   )
-  out.push(ret(Some(i32c(@abi.ret_handle_event))))
+  out.push(ret(Some(i32c(@abi.ret_event_result))))
   out
 }
 
 ///|
-/// `instance.handle-event`: the two buckets, and the transitions in each.
-fn handle_event_fn(comps : Array[Comp]) -> @abi.Field {
+/// The addressed transition surface.
+fn handle_message_fn(comps : Array[Comp]) -> @abi.Field {
+  handle_fn(comps, DReceive, "handle_message", "handle-message")
+}
+
+///|
+/// The routed transition surface.
+fn handle_intent_fn(comps : Array[Comp]) -> @abi.Field {
+  handle_fn(comps, DIntent, "handle_intent", "handle-intent")
+}
+
+///|
+/// One of the two fixed handler exports.
+fn handle_fn(
+  comps : Array[Comp],
+  kind : @tscript.DeclKind,
+  local_name : String,
+  wire_name : String,
+) -> @abi.Field {
   let all : Array[@abi.I] = []
   for c in comps {
-    let arms = handle_event_arms(c.g, c.decls)
+    let arms = handle_arms(c.g, c.decls, kind)
     if arms.is_empty() {
       continue
     }
     // Which component this instance IS. A card with one has one arm and the
     // test is a pointer compare that always holds; a card with several needs
-    // it, because `handle-event` is handed a HANDLE and two components can
+    // it, because a handler is handed a HANDLE and two components can
     // answer the same name.
     if comps.length() == 1 {
       for i in arms {
@@ -337,8 +402,8 @@ fn handle_event_fn(comps : Array[Comp]) -> @abi.Field {
       all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
     }
   }
-  all.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(0)]))
-  all.push(i32c(@abi.ret_handle_event))
+  all.push(mem("store32", [i32c(@abi.ret_event_result), i32c(0)]))
+  all.push(i32c(@abi.ret_event_result))
   // The instance, the name and the arguments are lifted ONCE, ahead of every
   // arm: one `utf8_string` is built and hashes are compared.
   let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
@@ -351,91 +416,77 @@ fn handle_event_fn(comps : Array[Comp]) -> @abi.Field {
     body.push(i)
   }
   func(
-    "handle_event",
-    params=[
-      ("h", i32_),
-      ("b", i32_),
-      ("np", i32_),
-      ("nl", i32_),
-      ("ap", i32_),
-      ("al", i32_),
-    ],
+    local_name,
+    params=[("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
     results=[i32_],
-    export_as=@abi.guest_iface + "#[method]instance.handle-event",
+    export_as=@abi.guest_iface + "#[method]instance." + wire_name,
     body~,
   )
 }
 
 ///|
-/// One component's bucket blocks, without the lifting or the fallthrough.
-fn handle_event_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
+/// One component's handler arms, without the lifting or the fallthrough.
+fn handle_arms(
+  g : Gen,
+  decls : Array[@tscript.Decl],
+  kind : @tscript.DeclKind,
+) -> Array[@abi.I] {
   let invariants = decls
     .filter(d => d.kind is DInvariant && g.callables.get(d.name) is Some(_))
     .map(d => d.name)
   let arms : Array[@abi.I] = []
-  for
-    pair in [
-      (@tscript.DeclKind::DReceive, @abi.bucket_receive),
-      (DIntent, @abi.bucket_intent),
-    ] {
-    let (kind, bucket) = pair
-    let word = @tscript.kind_word(kind)
-    let inner : Array[@abi.I] = []
-    // The escapes FIRST, so a name the block language also declared and this
-    // backend refused is answered by the hand-written function rather than
-    // falling through to a compiled arm that does not exist.
-    for _key, e in g.escapes {
-      guard e.kind == word else { continue }
-      g.temp = 0
-      let d = decls.filter(x => x.kind == kind && x.name == e.name).get(0)
-      inner.push(
-        if_(
-          call("tc_is", [get("name"), i32c(g.pool.string_index(e.name))]),
-          escape_transition(g, e, d, invariants),
-          [],
-        ),
+  let word = @tscript.kind_word(kind)
+  // The escapes FIRST, so a name the block language also declared and this
+  // backend refused is answered by the hand-written function rather than
+  // falling through to a compiled arm that does not exist.
+  for _key, e in g.escapes {
+    guard e.kind == word else { continue }
+    g.temp = 0
+    let d = decls.filter(x => x.kind == kind && x.name == e.name).get(0)
+    arms.push(
+      if_(
+        call("tc_is", [get("name"), i32c(g.pool.string_index(e.name))]),
+        escape_transition(g, e, d, invariants),
+        [],
+      ),
+    )
+  }
+  for d in decls {
+    guard d.kind == kind else { continue }
+    // A transition with a VALUE body is not a thing the parser makes
+    // (`kind_takes_stmts`), so this is an AST built by hand — and a
+    // declaration that leaves without a `Refusal` would be absent from the
+    // module, the manifest, and the reason list a host or an author reads.
+    guard d.body is Stmts(ss) else {
+      g.refuse(
+        @tscript.kind_word(d.kind),
+        d.name,
+        "a transition's body is statements, and this one is a single expression",
+        d.span,
       )
+      continue
     }
-    for d in decls {
-      guard d.kind == kind else { continue }
-      // A transition with a VALUE body is not a thing the parser makes
-      // (`kind_takes_stmts`), so this is an AST built by hand — and a
-      // declaration that leaves without a `Refusal` would be absent from the
-      // module, the manifest, and the reason list a host or an author reads.
-      guard d.body is Stmts(ss) else {
-        g.refuse(
-          @tscript.kind_word(d.kind),
-          d.name,
-          "a transition's body is statements, and this one is a single expression",
-          d.span,
+    g.temp = 0
+    let sink = g.refusals.length()
+    try {
+      let block = transition(g, d, invariants, ss)
+      // Compiled — but ANSWERED IN WAX, so the arm is the escape's and this
+      // one is dropped. It is still built rather than skipped, because a
+      // declaration the block language turns away records its reason on the
+      // way out, and that reason is the whole story of why the escape is
+      // there. Skipping the build to save it would lose the reason with it.
+      if !g.escaped(word, d.name) {
+        arms.push(
+          if_(
+            call("tc_is", [get("name"), i32c(g.pool.string_index(d.name))]),
+            block,
+            [],
+          ),
         )
-        continue
       }
-      g.temp = 0
-      let sink = g.refusals.length()
-      try {
-        let block = transition(g, d, invariants, ss)
-        // Compiled — but ANSWERED IN WAX, so the arm is the escape's and this
-        // one is dropped. It is still built rather than skipped, because a
-        // declaration the block language turns away records its reason on the
-        // way out, and that reason is the whole story of why the escape is
-        // there. Skipping the build to save it would lose the reason with it.
-        if !g.escaped(word, d.name) {
-          inner.push(
-            if_(
-              call("tc_is", [get("name"), i32c(g.pool.string_index(d.name))]),
-              block,
-              [],
-            ),
-          )
-        }
-      } catch {
-        // Refused, with the reason already recorded against its own span.
-        _ => ignore(sink)
-      }
-    }
-    if inner.length() > 0 {
-      arms.push(if_(eq(get("b"), i32c(bucket)), inner, []))
+    } catch {
+      // Refused, with the reason already recorded against its own span.
+      _ => ignore(sink)
     }
   }
   arms
@@ -578,6 +629,9 @@ fn transition(
   d : @tscript.Decl,
   invariants : Array[String],
   ss : Array[@tscript.Stmt],
+  result_area? : Int = @abi.ret_event_result,
+  changed_tag? : Int = 2,
+  declined_tag? : Int = 1,
 ) -> Array[@abi.I] raise Bail {
   let ctx : ECtx = {
     g,
@@ -594,8 +648,8 @@ fn transition(
     uses_child: false,
   }
   let unchanged = [
-    mem("store32", [i32c(@abi.ret_handle_event), i32c(1)]),
-    ret(Some(i32c(@abi.ret_handle_event))),
+    mem("store32", [i32c(result_area), i32c(1)]),
+    ret(Some(i32c(result_area))),
   ]
   // A rule that does not hold takes the same exit, and says so on the way.
   // `state` is the one the rule was ASKED about — the arriving state for a
@@ -607,9 +661,8 @@ fn transition(
     state : String,
   ) -> Array[@abi.I] {
     let out = ctx.contract_log(d.name, kind, rule, state)
-    for i in unchanged {
-      out.push(i)
-    }
+    out.push(mem("store32", [i32c(result_area), i32c(declined_tag)]))
+    out.push(ret(Some(i32c(result_area))))
     out
   }
   // A body has no option type to propagate, so an operation with no answer —
@@ -725,26 +778,53 @@ fn transition(
     out.push(call("tc_flush", []))
   }
   out.push(if_(call("tc_same", [get("t"), get("s")]), unchanged, []))
-  out.push(mem("store32", [i32c(@abi.ret_handle_event), i32c(2)]))
+  out.push(mem("store32", [i32c(result_area), i32c(changed_tag)]))
   out.push(
     mem("store32", [
-      i32c(@abi.ret_handle_event + 4),
+      i32c(result_area + 4),
       call("resource_new", [call("tc_intern", [get("t")])]),
     ]),
   )
-  out.push(ret(Some(i32c(@abi.ret_handle_event))))
+  out.push(ret(Some(i32c(result_area))))
   out
 }
 
 ///|
-/// `instance.call-method`: the value-returning declarations, by name.
-///
-/// Gated on which component the handle IS, exactly as `handle-event` is, and
-/// for the same reason: two components can each declare a `total`.
-fn call_method_fn(comps : Array[Comp]) -> @abi.Field {
+/// A pure computed value from the component.
+fn compute_fn(comps : Array[Comp]) -> @abi.Field {
+  value_call_fn(
+    comps,
+    [DCompute, DPred, DInvariant],
+    "compute",
+    "compute",
+    true,
+  )
+}
+
+///|
+/// Per-row enrichment.
+fn enrich_fn(comps : Array[Comp]) -> @abi.Field {
+  value_call_fn(comps, [DEnrich], "enrich", "enrich", true)
+}
+
+///|
+/// Scope enrichment has no argument list in the public ABI.
+fn enrich_scope_fn(comps : Array[Comp]) -> @abi.Field {
+  value_call_fn(comps, [DEnrichScope], "enrich_scope", "enrich-scope", false)
+}
+
+///|
+/// One of the value-returning render operations.
+fn value_call_fn(
+  comps : Array[Comp],
+  kinds : Array[@tscript.DeclKind],
+  local_name : String,
+  wire_name : String,
+  has_args : Bool,
+) -> @abi.Field {
   let all : Array[@abi.I] = []
   for c in comps {
-    let arms = call_method_arms(c.g, c.decls)
+    let arms = value_call_arms(c.g, c.decls, kinds)
     if arms.is_empty() {
       continue
     }
@@ -757,43 +837,55 @@ fn call_method_fn(comps : Array[Comp]) -> @abi.Field {
     }
   }
   all.push(
-    mem("fill", [i32c(@abi.ret_call_method), i32c(0), i32c(@abi.cell_size)]),
+    mem("fill", [i32c(@abi.ret_render_value), i32c(0), i32c(@abi.cell_size)]),
   )
-  all.push(i32c(@abi.ret_call_method))
+  all.push(i32c(@abi.ret_render_value))
   let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
   if comps.length() > 1 {
     body.push(let_("c", call("tc_comp_of", [get("s")])))
   }
   body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
-  body.push(let_("args", call("tc_args_lift", [get("ap"), get("al")])))
+  if has_args {
+    body.push(let_("args", call("tc_args_lift", [get("ap"), get("al")])))
+  } else {
+    body.push(let_zero("args", args_))
+  }
   for i in all {
     body.push(i)
   }
   func(
-    "call_method",
-    params=[("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
+    local_name,
+    params=if has_args {
+      [("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)]
+    } else {
+      [("h", i32_), ("np", i32_), ("nl", i32_)]
+    },
     results=[i32_],
-    export_as=@abi.guest_iface + "#[method]instance.call-method",
+    export_as=@abi.guest_iface + "#[method]instance." + wire_name,
     body~,
   )
 }
 
 ///|
-/// One component's method arms, without the lifting or the fallthrough.
-fn call_method_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
-  // Every name this card answers a method call with: the ones it compiled, and
+/// One component's value-operation arms, without lifting or fallthrough.
+fn value_call_arms(
+  g : Gen,
+  decls : Array[@tscript.Decl],
+  kinds : Array[@tscript.DeclKind],
+) -> Array[@abi.I] {
+  // Every name this card answers this operation with: compiled and escaped.
   // the ones its escape block answered. Both reach the same `cm_<name>` —
   // `escape_wrappers` is what makes that true — so the arm is one shape.
   let names : Array[String] = []
   for _key, e in g.escapes {
-    if !escape_is_transition(e.kind) {
-      names.push(e.name)
+    for kind in kinds {
+      if e.kind == @tscript.kind_word(kind) {
+        names.push(e.name)
+      }
     }
   }
   for d in decls {
-    guard d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) else {
-      continue
-    }
+    guard kinds.contains(d.kind) else { continue }
     guard g.callables.get(d.name) is Some(_) else { continue }
     guard !g.escaped(@tscript.kind_word(d.kind), d.name) else { continue }
     names.push(d.name)
@@ -813,17 +905,266 @@ fn call_method_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
             ne(get("tc_fail"), i32c(0)),
             [
               mem("fill", [
-                i32c(@abi.ret_call_method),
+                i32c(@abi.ret_render_value),
                 i32c(0),
                 i32c(@abi.cell_size),
               ]),
-              ret(Some(i32c(@abi.ret_call_method))),
+              ret(Some(i32c(@abi.ret_render_value))),
             ],
             [],
           ),
-          call("tc_lower", [get("v"), i32c(@abi.ret_call_method)]),
-          ret(Some(i32c(@abi.ret_call_method))),
+          call("tc_lower", [get("v"), i32c(@abi.ret_render_value)]),
+          ret(Some(i32c(@abi.ret_render_value))),
         ],
+        [],
+      ),
+    )
+  }
+  arms
+}
+
+///|
+/// The boolean render operation has a scalar ABI result.
+fn when_fn(comps : Array[Comp]) -> @abi.Field {
+  let all : Array[@abi.I] = []
+  for c in comps {
+    let arms = when_arms(c.g, c.decls)
+    if arms.is_empty() {
+      continue
+    }
+    if comps.length() == 1 {
+      for i in arms {
+        all.push(i)
+      }
+    } else {
+      all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
+    }
+  }
+  all.push(i32c(0))
+  let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
+  if comps.length() > 1 {
+    body.push(let_("c", call("tc_comp_of", [get("s")])))
+  }
+  body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
+  body.push(let_("args", call("tc_args_lift", [get("ap"), get("al")])))
+  for i in all {
+    body.push(i)
+  }
+  func(
+    "when",
+    params=[("h", i32_), ("np", i32_), ("nl", i32_), ("ap", i32_), ("al", i32_)],
+    results=[i32_],
+    export_as=@abi.guest_iface + "#[method]instance.when",
+    body~,
+  )
+}
+
+///|
+fn when_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
+  let arms : Array[@abi.I] = []
+  for d in decls {
+    guard d.kind is (DPred | DInvariant) else { continue }
+    guard g.callables.get(d.name) is Some(_) else { continue }
+    arms.push(
+      if_(
+        call("tc_is", [get("name"), i32c(g.pool.string_index(d.name))]),
+        [
+          ret(
+            Some(
+              call("tc_truthy", [
+                call(callable_fn(g, d.name), [get("s"), get("args")]),
+              ]),
+            ),
+          ),
+        ],
+        [],
+      ),
+    )
+  }
+  arms
+}
+
+///|
+/// Public abstract property read.
+fn get_property_fn(comps : Array[Comp]) -> @abi.Field {
+  let all : Array[@abi.I] = []
+  for c in comps {
+    let arms = get_property_arms(c.g)
+    if arms.is_empty() {
+      continue
+    }
+    if comps.length() == 1 {
+      for i in arms {
+        all.push(i)
+      }
+    } else {
+      all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
+    }
+  }
+  all.push(mem("store32", [i32c(@abi.ret_get_property), i32c(0)]))
+  all.push(i32c(@abi.ret_get_property))
+  let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
+  if comps.length() > 1 {
+    body.push(let_("c", call("tc_comp_of", [get("s")])))
+  }
+  body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
+  for i in all {
+    body.push(i)
+  }
+  func(
+    "get_property",
+    params=[("h", i32_), ("np", i32_), ("nl", i32_)],
+    results=[i32_],
+    export_as=@abi.guest_iface + "#[method]instance.get-property",
+    body~,
+  )
+}
+
+///|
+fn get_property_arms(g : Gen) -> Array[@abi.I] {
+  let arms : Array[@abi.I] = []
+  for p in g.def.properties {
+    let read = match p.getter {
+      Some(source) =>
+        call("tc_get", [get("s"), text_const_str(g.pool, source[1:].to_owned())])
+      None if g.callables.contains("get/" + p.name) =>
+        call(property_getter_fn(g, p.name), [get("s"), nullref()])
+      None => continue
+    }
+    arms.push(
+      if_(
+        call("tc_is", [get("name"), i32c(g.pool.string_index(p.name))]),
+        [
+          mem("store32", [i32c(@abi.ret_get_property), i32c(1)]),
+          call("tc_lower", [read, i32c(@abi.ret_get_property + 8)]),
+          ret(Some(i32c(@abi.ret_get_property))),
+        ],
+        [],
+      ),
+    )
+  }
+  arms
+}
+
+///|
+/// Public synchronous property transition.
+fn set_property_fn(comps : Array[Comp]) -> @abi.Field {
+  let all : Array[@abi.I] = []
+  for c in comps {
+    let arms = set_property_arms(c.g, c.decls)
+    if arms.is_empty() {
+      continue
+    }
+    if comps.length() == 1 {
+      for i in arms {
+        all.push(i)
+      }
+    } else {
+      all.push(if_(eq(get("c"), i32c(c.g.idx)), arms, []))
+    }
+  }
+  all.push(mem("store32", [i32c(@abi.ret_set_property), i32c(0)]))
+  all.push(i32c(@abi.ret_set_property))
+  let body : Array[@abi.I] = [let_("s", call("tc_deref", [get("h")]))]
+  if comps.length() > 1 {
+    body.push(let_("c", call("tc_comp_of", [get("s")])))
+  }
+  body.push(let_("name", call("tc_str_in", [get("np"), get("nl")])))
+  body.push(
+    let_("value", call("tc_lift_flat", [get("kind"), get("p64"), get("p32")])),
+  )
+  body.push(let_("args", call("tc_args1", [get("value")])))
+  for i in all {
+    body.push(i)
+  }
+  func(
+    "set_property",
+    params=[
+      ("h", i32_),
+      ("np", i32_),
+      ("nl", i32_),
+      ("kind", i32_),
+      ("p64", i64_),
+      ("p32", i32_),
+    ],
+    results=[i32_],
+    export_as=@abi.guest_iface + "#[method]instance.set-property",
+    body~,
+  )
+}
+
+///|
+fn set_property_arms(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.I] {
+  let invariants = decls
+    .filter(d => d.kind is DInvariant && g.callables.get(d.name) is Some(_))
+    .map(d => d.name)
+  let arms : Array[@abi.I] = []
+  for p in g.def.properties {
+    let answer : Array[@abi.I] = if !p.writable {
+      [
+        mem("store32", [i32c(@abi.ret_set_property), i32c(2)]),
+        ret(Some(i32c(@abi.ret_set_property))),
+      ]
+    } else {
+      match p.setter {
+        Some(source) => {
+          let field = source[1:].to_owned()
+          [
+            let_(
+              "t",
+              call("tc_set", [
+                get("s"),
+                text_const_str(g.pool, field),
+                get("value"),
+              ]),
+            ),
+            if_(
+              call("tc_same", [get("t"), get("s")]),
+              [
+                mem("store32", [i32c(@abi.ret_set_property), i32c(1)]),
+                ret(Some(i32c(@abi.ret_set_property))),
+              ],
+              [],
+            ),
+            mem("store32", [i32c(@abi.ret_set_property), i32c(3)]),
+            mem("store32", [
+              i32c(@abi.ret_set_property + 4),
+              call("resource_new", [call("tc_intern", [get("t")])]),
+            ]),
+            ret(Some(i32c(@abi.ret_set_property))),
+          ]
+        }
+        None => {
+          guard decls.iter().find_first(d => d.kind is DSet && d.name == p.name)
+            is Some(d) &&
+            d.body is Stmts(ss) else {
+            [
+              mem("store32", [i32c(@abi.ret_set_property), i32c(2)]),
+              ret(Some(i32c(@abi.ret_set_property))),
+            ]
+          }
+          transition(
+            g,
+            d,
+            invariants,
+            ss,
+            result_area=@abi.ret_set_property,
+            changed_tag=3,
+            declined_tag=2,
+          ) catch {
+            _ =>
+              [
+                mem("store32", [i32c(@abi.ret_set_property), i32c(2)]),
+                ret(Some(i32c(@abi.ret_set_property))),
+              ]
+          }
+        }
+      }
+    }
+    arms.push(
+      if_(
+        call("tc_is", [get("name"), i32c(g.pool.string_index(p.name))]),
+        answer,
         [],
       ),
     )

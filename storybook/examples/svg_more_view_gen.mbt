@@ -120,8 +120,8 @@ impl @component.Fields for BarChartState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum BarChartReceive {
   AddBar
-  Randomize
   RemoveBar
+  Randomize
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -147,13 +147,13 @@ pub fn BarChartReceive::from_dispatch(
   Some(
     match (name, args) {
       ("addBar", []) => AddBar
-      ("randomize", []) => Randomize
       ("removeBar", []) => RemoveBar
+      ("randomize", []) => Randomize
       _ => {
         match name {
           "addBar" => @tutuca.bad_payload(name, "", args)
-          "randomize" => @tutuca.bad_payload(name, "", args)
           "removeBar" => @tutuca.bad_payload(name, "", args)
+          "randomize" => @tutuca.bad_payload(name, "", args)
           _ => ()
         }
         Unknown(name, args)
@@ -169,8 +169,8 @@ pub fn BarChartReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     AddBar => ("addBar", [])
-    Randomize => ("randomize", [])
     RemoveBar => ("removeBar", [])
+    Randomize => ("randomize", [])
     Unknown(n, args) => (n, args)
   }
 }
@@ -229,13 +229,13 @@ pub fn BarChartInput::parse(s : String) -> BarChartInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to svg_more.html breaks every `match` over this type
 /// until it is handled.
-///
-/// Absent, because the script block answers them: addBar, removeBar.
-/// `update` is consulted only for a dispatch the block did not claim, so
-/// an arm for one of these could never run.
 pub(all) enum BarChartMsg {
+  /// `@on.click="addBar …"`
+  AddBar
   /// `@on.click="randomize …"`
   Randomize
+  /// `@on.click="removeBar …"`
+  RemoveBar
   /// A dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -250,7 +250,9 @@ pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
   guard d is Receive(name, args) else { return None }
   Some(
     match (name, args) {
+      ("addBar", []) => AddBar
       ("randomize", []) => Randomize
+      ("removeBar", []) => RemoveBar
       _ => Unknown(name, args)
     },
   )
@@ -292,9 +294,10 @@ pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {
 impl @component.Fields for BarChartState with fn schema() {
   @component.SchemaInfo::new(
     name="BarChart",
-    fingerprint="6425046999b21101",
+    fingerprint="b116f9f5d1dcbeb9",
     fields=[@component.FieldInfo::new("values", TyList(TyInt))],
     view_handlers=["addBar", "randomize", "removeBar"],
+    receives=["addBar", "removeBar", "randomize"],
     methods=["hasRoom", "hasSpare", "neverEmpty"],
     invariants=["neverEmpty"],
     view_names=["main"],

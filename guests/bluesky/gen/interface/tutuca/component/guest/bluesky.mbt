@@ -244,9 +244,9 @@ fn images_of(items : Array[@values.Value]) -> Array[Img] {
   let out : Array[Img] = []
   for v in items {
     match v {
-      @values.Value::Text(s) => out.push({ alt: s, thumb: "" })
+      @values.Value::Text(s) => out.push({ alt: s, thumb: "", })
       @values.Value::Map(m) =>
-        out.push({ alt: str_at(m, "alt"), thumb: str_at(m, "thumb") })
+        out.push({ alt: str_at(m, "alt"), thumb: str_at(m, "thumb"), })
       _ => ()
     }
   }
@@ -356,7 +356,7 @@ fn video_of(m : UInt64) -> Vid? {
   let thumb = str_at(h, "thumb")
   let alt = str_at(h, "alt")
   guard thumb != "" || alt != "" else { return None }
-  Some({ thumb, alt })
+  Some({ thumb, alt, })
 }
 
 ///|
@@ -1167,8 +1167,8 @@ fn facets_value(facets : Array[Facet]) -> @values.Value {
 }
 
 ///|
-impl DynComponent for Post with fn handle(self, bucket, name, _args) {
-  guard bucket is RECEIVE else { return Unhandled }
+impl DynComponent for Post with fn handle_dispatch(self, bucket, name, _args) {
+  guard bucket is MessageDispatch else { return Unhandled }
   match name {
     // Optimistic, and announced: the flag is THIS row's — it returns its own
     // successor, and the host writes it home into whatever list holds it — while
@@ -1192,7 +1192,7 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, liked: !self.liked } as &DynComponent)
+      Changed({ ..self, liked: !self.liked, } as &DynComponent)
     }
     "toggleRepost" => {
       @control.intent(
@@ -1210,7 +1210,7 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, reposted: !self.reposted } as &DynComponent)
+      Changed({ ..self, reposted: !self.reposted, } as &DynComponent)
     }
     // The fold flag is THIS row's too, and the bubble is what the thread above
     // hears: the row knows it is folded, and only the thread knows which rows
@@ -1233,14 +1233,14 @@ impl DynComponent for Post with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, folded: !self.folded } as &DynComponent)
+      Changed({ ..self, folded: !self.folded, } as &DynComponent)
     }
     _ => Unhandled
   }
 }
 
 ///|
-impl DynComponent for Post with fn call_method(self, name, _args) {
+impl DynComponent for Post with fn render_call(self, name, _args) {
   match name {
     // the accessible one-line description of the card, and the `title` a
     // reader gets on hover
@@ -1266,54 +1266,54 @@ impl DynComponent for Post with fn with_field(self, name, v) {
   let m = self.msg
   match (name, v) {
     ("uri", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, uri: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, uri: s, }, } as &DynComponent)
     ("displayName", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, display_name: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, display_name: s, }, } as &DynComponent)
     ("handle", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, handle: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, handle: s, }, } as &DynComponent)
     ("text", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, text: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, text: s, }, } as &DynComponent)
     ("createdAt", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, created_at: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, created_at: s, }, } as &DynComponent)
     ("avatar", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, avatar: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, avatar: s, }, } as &DynComponent)
     ("facets", @values.Value::List(h)) =>
       Some(
-        { ..self, msg: { ..m, facets: facets_of(list_items(h)) } }
+        { ..self, msg: { ..m, facets: facets_of(list_items(h)), }, }
         as &DynComponent,
       )
     ("images", @values.Value::List(h)) =>
       Some(
-        { ..self, msg: { ..m, images: images_of(list_items(h)) } }
+        { ..self, msg: { ..m, images: images_of(list_items(h)), }, }
         as &DynComponent,
       )
     ("replyCount", @values.Value::Number(n)) =>
-      Some({ ..self, msg: { ..m, replies: n.to_int() } } as &DynComponent)
+      Some({ ..self, msg: { ..m, replies: n.to_int(), }, } as &DynComponent)
     ("repostCount", @values.Value::Number(n)) =>
-      Some({ ..self, msg: { ..m, reposts: n.to_int() } } as &DynComponent)
+      Some({ ..self, msg: { ..m, reposts: n.to_int(), }, } as &DynComponent)
     ("likeCount", @values.Value::Number(n)) =>
-      Some({ ..self, msg: { ..m, likes: n.to_int() } } as &DynComponent)
+      Some({ ..self, msg: { ..m, likes: n.to_int(), }, } as &DynComponent)
     ("depth", @values.Value::Number(n)) =>
-      Some({ ..self, msg: { ..m, depth: n.to_int() } } as &DynComponent)
+      Some({ ..self, msg: { ..m, depth: n.to_int(), }, } as &DynComponent)
     ("liked", @values.Value::Boolean(b)) =>
-      Some({ ..self, liked: b } as &DynComponent)
+      Some({ ..self, liked: b, } as &DynComponent)
     ("reposted", @values.Value::Boolean(b)) =>
-      Some({ ..self, reposted: b } as &DynComponent)
+      Some({ ..self, reposted: b, } as &DynComponent)
     ("focus", @values.Value::Boolean(b)) =>
-      Some({ ..self, focus: b } as &DynComponent)
+      Some({ ..self, focus: b, } as &DynComponent)
     ("foldable", @values.Value::Number(n)) =>
-      Some({ ..self, foldable: n.to_int() } as &DynComponent)
+      Some({ ..self, foldable: n.to_int(), } as &DynComponent)
     ("folded", @values.Value::Boolean(b)) =>
-      Some({ ..self, folded: b } as &DynComponent)
+      Some({ ..self, folded: b, } as &DynComponent)
     ("owned", @values.Value::Boolean(b)) =>
-      Some({ ..self, owned: b } as &DynComponent)
+      Some({ ..self, owned: b, } as &DynComponent)
     ("repostedBy", @values.Value::Text(s)) =>
-      Some({ ..self, msg: { ..m, reposted_by: s } } as &DynComponent)
+      Some({ ..self, msg: { ..m, reposted_by: s, }, } as &DynComponent)
     ("pinned", @values.Value::Boolean(b)) =>
-      Some({ ..self, msg: { ..m, pinned: b } } as &DynComponent)
+      Some({ ..self, msg: { ..m, pinned: b, }, } as &DynComponent)
     ("labels", @values.Value::List(h)) =>
       Some(
-        { ..self, msg: { ..m, labels: strs_of(list_items(h)) } }
+        { ..self, msg: { ..m, labels: strs_of(list_items(h)), }, }
         as &DynComponent,
       )
     // An embed is written whole or cleared whole. `Nil` is the clear, and it is
@@ -1323,25 +1323,25 @@ impl DynComponent for Post with fn with_field(self, name, v) {
     // because a write could not be understood is the quiet kind of wrong.
     ("external", @values.Value::Map(_)) =>
       Some(
-        { ..self, msg: { ..m, external: ext_of(wrapped("external", v)) } }
+        { ..self, msg: { ..m, external: ext_of(wrapped("external", v)), }, }
         as &DynComponent,
       )
     ("external", @values.Value::Nil) =>
-      Some({ ..self, msg: { ..m, external: None } } as &DynComponent)
+      Some({ ..self, msg: { ..m, external: None, }, } as &DynComponent)
     ("quote", @values.Value::Map(_)) =>
       Some(
-        { ..self, msg: { ..m, quote: quote_of(wrapped("quote", v)) } }
+        { ..self, msg: { ..m, quote: quote_of(wrapped("quote", v)), }, }
         as &DynComponent,
       )
     ("quote", @values.Value::Nil) =>
-      Some({ ..self, msg: { ..m, quote: None } } as &DynComponent)
+      Some({ ..self, msg: { ..m, quote: None, }, } as &DynComponent)
     ("video", @values.Value::Map(_)) =>
       Some(
-        { ..self, msg: { ..m, video: video_of(wrapped("video", v)) } }
+        { ..self, msg: { ..m, video: video_of(wrapped("video", v)), }, }
         as &DynComponent,
       )
     ("video", @values.Value::Nil) =>
-      Some({ ..self, msg: { ..m, video: None } } as &DynComponent)
+      Some({ ..self, msg: { ..m, video: None, }, } as &DynComponent)
     _ => None
   }
 }
@@ -1390,44 +1390,44 @@ fn make_post(args : Array[(String, @values.Value)]) -> &DynComponent {
   for arg in args {
     let (name, v) = arg
     match (name, v) {
-      ("uri", @values.Value::Text(s)) => msg = { ..msg, uri: s }
+      ("uri", @values.Value::Text(s)) => msg = { ..msg, uri: s, }
       ("displayName", @values.Value::Text(s)) =>
-        msg = { ..msg, display_name: s }
-      ("handle", @values.Value::Text(s)) => msg = { ..msg, handle: s }
-      ("text", @values.Value::Text(s)) => msg = { ..msg, text: s }
-      ("createdAt", @values.Value::Text(s)) => msg = { ..msg, created_at: s }
-      ("avatar", @values.Value::Text(s)) => msg = { ..msg, avatar: s }
+        msg = { ..msg, display_name: s, }
+      ("handle", @values.Value::Text(s)) => msg = { ..msg, handle: s, }
+      ("text", @values.Value::Text(s)) => msg = { ..msg, text: s, }
+      ("createdAt", @values.Value::Text(s)) => msg = { ..msg, created_at: s, }
+      ("avatar", @values.Value::Text(s)) => msg = { ..msg, avatar: s, }
       ("facets", @values.Value::List(h)) =>
-        msg = { ..msg, facets: facets_of(list_items(h)) }
+        msg = { ..msg, facets: facets_of(list_items(h)), }
       ("images", @values.Value::List(h)) =>
-        msg = { ..msg, images: images_of(list_items(h)) }
+        msg = { ..msg, images: images_of(list_items(h)), }
       ("replyCount", @values.Value::Number(n)) =>
-        msg = { ..msg, replies: n.to_int() }
+        msg = { ..msg, replies: n.to_int(), }
       ("repostCount", @values.Value::Number(n)) =>
-        msg = { ..msg, reposts: n.to_int() }
+        msg = { ..msg, reposts: n.to_int(), }
       ("likeCount", @values.Value::Number(n)) =>
-        msg = { ..msg, likes: n.to_int() }
-      ("depth", @values.Value::Number(n)) => msg = { ..msg, depth: n.to_int() }
+        msg = { ..msg, likes: n.to_int(), }
+      ("depth", @values.Value::Number(n)) => msg = { ..msg, depth: n.to_int(), }
       ("liked", @values.Value::Boolean(b)) => liked = b
       ("reposted", @values.Value::Boolean(b)) => reposted = b
       ("focus", @values.Value::Boolean(b)) => focus = b
       ("foldable", @values.Value::Number(n)) => foldable = n.to_int()
       ("folded", @values.Value::Boolean(b)) => folded = b
       ("owned", @values.Value::Boolean(b)) => owned = b
-      ("repostedBy", @values.Value::Text(s)) => msg = { ..msg, reposted_by: s }
-      ("pinned", @values.Value::Boolean(b)) => msg = { ..msg, pinned: b }
+      ("repostedBy", @values.Value::Text(s)) => msg = { ..msg, reposted_by: s, }
+      ("pinned", @values.Value::Boolean(b)) => msg = { ..msg, pinned: b, }
       ("labels", @values.Value::List(h)) =>
-        msg = { ..msg, labels: strs_of(list_items(h)) }
+        msg = { ..msg, labels: strs_of(list_items(h)), }
       ("external", @values.Value::Map(_)) =>
-        msg = { ..msg, external: ext_of(wrapped("external", v)) }
+        msg = { ..msg, external: ext_of(wrapped("external", v)), }
       ("quote", @values.Value::Map(_)) =>
-        msg = { ..msg, quote: quote_of(wrapped("quote", v)) }
+        msg = { ..msg, quote: quote_of(wrapped("quote", v)), }
       ("video", @values.Value::Map(_)) =>
-        msg = { ..msg, video: video_of(wrapped("video", v)) }
+        msg = { ..msg, video: video_of(wrapped("video", v)), }
       _ => ()
     }
   }
-  ({ msg, liked, reposted, focus, foldable, folded, owned } : Post)
+  ({ msg, liked, reposted, focus, foldable, folded, owned, } : Post)
   as &DynComponent
 }
 
@@ -1542,7 +1542,7 @@ impl DynComponent for Scope with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Scope with fn call_method(self, name, _args) {
+impl DynComponent for Scope with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let parts : Array[String] = []
@@ -1575,13 +1575,13 @@ impl DynComponent for Scope with fn call_method(self, name, _args) {
 impl DynComponent for Scope with fn with_field(self, name, v) {
   match (name, v) {
     ("truncated", @values.Value::Boolean(b)) =>
-      Some({ ..self, truncated: b } as &DynComponent)
+      Some({ ..self, truncated: b, } as &DynComponent)
     ("truncatedBy", @values.Value::Text(s)) =>
-      Some({ ..self, truncated_by: s } as &DynComponent)
+      Some({ ..self, truncated_by: s, } as &DynComponent)
     ("more", @values.Value::Boolean(b)) =>
-      Some({ ..self, more: b } as &DynComponent)
+      Some({ ..self, more: b, } as &DynComponent)
     ("notes", @values.Value::List(h)) =>
-      Some({ ..self, notes: strs_of(list_items(h)) } as &DynComponent)
+      Some({ ..self, notes: strs_of(list_items(h)), } as &DynComponent)
     _ => None
   }
 }
@@ -1602,7 +1602,7 @@ fn make_scope(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  ({ truncated, truncated_by, more, notes } : Scope) as &DynComponent
+  ({ truncated, truncated_by, more, notes, } : Scope) as &DynComponent
 }
 
 ///|
@@ -1707,7 +1707,7 @@ fn paging(page : Int, total : Int, page_size : Int) -> Pager {
   let on = if page_size > 0 { total > page_size } else { total > PAGE_ABOVE }
   let last = if on { (total + size - 1) / size - 1 } else { 0 }
   let page = if page < 0 { 0 } else if page > last { last } else { page }
-  { page, size, on, total }
+  { page, size, on, total, }
 }
 
 ///|
@@ -1811,7 +1811,7 @@ fn Pager::answer(self : Pager, name : String) -> @values.Value? {
 }
 
 ///|
-/// Either the pager's answer or nothing, as a `call_method` has to answer.
+/// Either the pager's answer or nothing, as a `compute` has to answer.
 fn Pager::answer_or_nil(self : Pager, name : String) -> @values.Value {
   match self.answer(name) {
     Some(v) => v
@@ -2056,18 +2056,18 @@ impl DynComponent for Thread with fn get_field(self, name) {
 /// thing that can act on it. `liked` and `reposted` are handled AND left to
 /// travel on: this bundle cannot write to a PDS, so the component above is the
 /// one that turns a like into an `app.bsky.feed.like` record.
-impl DynComponent for Thread with fn handle(self, bucket, name, args) {
+impl DynComponent for Thread with fn handle_dispatch(self, bucket, name, args) {
   // The pager's four buttons are the only input of its own a thread has;
   // everything else that reaches it came up from a row. A page moves nothing
   // but which rows are drawn, so no row is rebuilt and nothing is announced —
   // there is nobody above who could act on "the reader turned a page".
-  if bucket is RECEIVE && is_page_message(name) {
+  if bucket is MessageDispatch && is_page_message(name) {
     return match self.pager().moved(name) {
       Some(page) => Changed({ ..self, page, } as &DynComponent)
       None => Unchanged
     }
   }
-  guard bucket is INTENT else { return Unhandled }
+  guard bucket is IntentDispatch else { return Unhandled }
   guard args is [@values.Value::Text(uri), ..] else { return Unhandled }
   guard uri != "" && self.has(uri) else { return Unchanged }
   match name {
@@ -2081,7 +2081,7 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
       let on = name == "folded"
       guard self.collapsed.contains(uri) != on else { return Unchanged }
       Changed(
-        { ..self, collapsed: with_uri(self.collapsed, uri, on) }
+        { ..self, collapsed: with_uri(self.collapsed, uri, on), }
         as &DynComponent,
       )
     }
@@ -2092,7 +2092,7 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
 }
 
 ///|
-impl DynComponent for Thread with fn call_method(self, name, _args) {
+impl DynComponent for Thread with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let total = self.posts.length()
@@ -2139,14 +2139,14 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
       Some(next.build_rows() as &DynComponent)
     }
     ("focus", @values.Value::Text(s)) =>
-      Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
+      Some(({ ..self, focus: s, } : Thread).build_rows() as &DynComponent)
     ("scope", @values.Value::Instance(t)) =>
-      Some({ ..self, scope: t } as &DynComponent)
+      Some({ ..self, scope: t, } as &DynComponent)
     // Asking for a page size is asking to be paged, so it starts at the first
     // page: the window a host just chose is not one this reader has been
     // anywhere in.
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the list it was SHOWN — `shown()` — so it goes
     // home through the same function that decided those positions. A length that
@@ -2258,7 +2258,7 @@ fn Feed::make_row(self : Feed, i : Int) -> UInt64 {
   let m = self.posts[i]
   @control.make_instance(
     "Post",
-    child_args({ ..m, depth: 0 }, focus=false, foldable=0),
+    child_args({ ..m, depth: 0, }, focus=false, foldable=0),
   )
 }
 
@@ -2299,8 +2299,10 @@ impl DynComponent for Feed with fn get_field(self, name) {
 ///|
 /// A feed's only input of its own is the pager: everything else that reaches it
 /// came up from a row, and a row's like is the row's.
-impl DynComponent for Feed with fn handle(self, bucket, name, _args) {
-  guard bucket is RECEIVE && is_page_message(name) else { return Unhandled }
+impl DynComponent for Feed with fn handle_dispatch(self, bucket, name, _args) {
+  guard bucket is MessageDispatch && is_page_message(name) else {
+    return Unhandled
+  }
   match self.pager().moved(name) {
     Some(page) => Changed({ ..self, page, } as &DynComponent)
     None => Unchanged
@@ -2308,7 +2310,7 @@ impl DynComponent for Feed with fn handle(self, bucket, name, _args) {
 }
 
 ///|
-impl DynComponent for Feed with fn call_method(self, name, _args) {
+impl DynComponent for Feed with fn render_call(self, name, _args) {
   match name {
     "summary" => {
       let n = self.posts.length()
@@ -2327,16 +2329,16 @@ impl DynComponent for Feed with fn call_method(self, name, _args) {
 impl DynComponent for Feed with fn with_field(self, name, v) {
   match (name, v) {
     ("title", @values.Value::Text(s)) =>
-      Some({ ..self, title: s } as &DynComponent)
+      Some({ ..self, title: s, } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: msgs_of(h), page: 0 } : Feed).build_rows()
+        ({ ..self, posts: msgs_of(h), page: 0, } : Feed).build_rows()
         as &DynComponent,
       )
     ("scope", @values.Value::Instance(t)) =>
-      Some({ ..self, scope: t } as &DynComponent)
+      Some({ ..self, scope: t, } as &DynComponent)
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the page it was shown, so it goes home through the
     // same function that decided those positions.
@@ -2366,7 +2368,7 @@ fn make_feed(args : Array[(String, @values.Value)]) -> &DynComponent {
     }
   }
   let (scope, has_scope) = scope_child(scope_arg)
-  ({ title, posts, children: [], scope, has_scope, page: 0, page_size } : Feed).build_rows()
+  ({ title, posts, children: [], scope, has_scope, page: 0, page_size, } : Feed).build_rows()
   as &DynComponent
 }
 
@@ -2417,7 +2419,7 @@ fn Profile::make_row(self : Profile, i : Int) -> UInt64 {
   let m = self.posts[i]
   @control.make_instance(
     "Post",
-    child_args({ ..m, depth: 0 }, focus=false, foldable=0),
+    child_args({ ..m, depth: 0, }, focus=false, foldable=0),
   )
 }
 
@@ -2494,12 +2496,12 @@ impl DynComponent for Profile with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
+impl DynComponent for Profile with fn handle_dispatch(self, bucket, name, _args) {
   match (bucket, name) {
     // Same shape as a row's like: the flag moves, the follower count follows
     // it through `bump`, and the bubble is what a host would turn into the
     // `app.bsky.graph.follow` record it alone is allowed to write.
-    (RECEIVE, "toggleFollow") => {
+    (MessageDispatch, "toggleFollow") => {
       @control.intent(
         if self.following {
           "unfollowed"
@@ -2515,10 +2517,10 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
           live_path: false,
         },
       )
-      Changed({ ..self, following: !self.following } as &DynComponent)
+      Changed({ ..self, following: !self.following, } as &DynComponent)
     }
     // The pager under the account's messages.
-    (RECEIVE, _) => {
+    (MessageDispatch, _) => {
       guard is_page_message(name) else { return Unhandled }
       match self.pager().moved(name) {
         Some(page) => Changed({ ..self, page, } as &DynComponent)
@@ -2534,7 +2536,7 @@ impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
 }
 
 ///|
-impl DynComponent for Profile with fn call_method(self, name, _args) {
+impl DynComponent for Profile with fn render_call(self, name, _args) {
   match name {
     "summary" =>
       vtext(
@@ -2549,34 +2551,34 @@ impl DynComponent for Profile with fn call_method(self, name, _args) {
 impl DynComponent for Profile with fn with_field(self, name, v) {
   match (name, v) {
     ("displayName", @values.Value::Text(s)) =>
-      Some({ ..self, display_name: s } as &DynComponent)
+      Some({ ..self, display_name: s, } as &DynComponent)
     ("handle", @values.Value::Text(s)) =>
-      Some({ ..self, handle: s } as &DynComponent)
+      Some({ ..self, handle: s, } as &DynComponent)
     ("description", @values.Value::Text(s)) =>
-      Some({ ..self, description: s } as &DynComponent)
+      Some({ ..self, description: s, } as &DynComponent)
     ("avatar", @values.Value::Text(s)) =>
-      Some({ ..self, avatar: s } as &DynComponent)
+      Some({ ..self, avatar: s, } as &DynComponent)
     ("banner", @values.Value::Text(s)) =>
-      Some({ ..self, banner: s } as &DynComponent)
+      Some({ ..self, banner: s, } as &DynComponent)
     ("followersCount", @values.Value::Number(n)) =>
-      Some({ ..self, followers: n.to_int() } as &DynComponent)
+      Some({ ..self, followers: n.to_int(), } as &DynComponent)
     ("followsCount", @values.Value::Number(n)) =>
-      Some({ ..self, follows: n.to_int() } as &DynComponent)
+      Some({ ..self, follows: n.to_int(), } as &DynComponent)
     ("postsCount", @values.Value::Number(n)) =>
-      Some({ ..self, posts_count: n.to_int() } as &DynComponent)
+      Some({ ..self, posts_count: n.to_int(), } as &DynComponent)
     ("following", @values.Value::Boolean(b)) =>
-      Some({ ..self, following: b } as &DynComponent)
+      Some({ ..self, following: b, } as &DynComponent)
     ("createdAt", @values.Value::Text(s)) =>
-      Some({ ..self, created_at: s } as &DynComponent)
+      Some({ ..self, created_at: s, } as &DynComponent)
     ("pinnedPost", @values.Value::Text(s)) =>
-      Some({ ..self, pinned_post: s } as &DynComponent)
+      Some({ ..self, pinned_post: s, } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: msgs_of(h), page: 0 } : Profile).build_rows()
+        ({ ..self, posts: msgs_of(h), page: 0, } : Profile).build_rows()
         as &DynComponent,
       )
     ("pageSize", @values.Value::Number(n)) =>
-      Some({ ..self, page_size: n.to_int(), page: 0 } as &DynComponent)
+      Some({ ..self, page_size: n.to_int(), page: 0, } as &DynComponent)
     // A row returned a successor and the host is writing the whole list home.
     // What it hands back is the page it was shown, so it goes home through the
     // same function that decided those positions.

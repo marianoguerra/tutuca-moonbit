@@ -7,6 +7,14 @@
     /// A domain is worth writing when it is TRUE. The empty spec block is
     /// the honest answer here, and the counter is the example that says so.
     count : Int
+
+    property {
+      /// Direct public storage: the compact form needs no script body.
+      count : Int { get .count set .count }
+      /// An abstract property: its implementation preserves the sign while
+      /// exposing and accepting a non-negative magnitude.
+      magnitude : Int { get set }
+    }
   }
 </script>
 
@@ -20,6 +28,18 @@
 
   receive dec {
     .count -= 1
+  }
+
+  get magnitude {
+    if (.count < 0) { -.count } else { .count }
+  }
+
+  set magnitude {
+    if (.count < 0) {
+      .count = -value
+    } else {
+      .count = value
+    }
   }
 </script>
 

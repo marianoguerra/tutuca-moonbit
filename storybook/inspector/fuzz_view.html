@@ -37,8 +37,8 @@
     after : Component?
     open : Bool
 
-    /// Two ways to dispatch, and the badge has a colour for each.
-    where verb is one of ["send", "intent"]
+    /// The three public operation shapes (plus an explicitly internal send).
+    where verb is one of ["send", "intent", "set", "internal"]
 
     /// A position in the script and a count of renders. Neither runs
     /// backwards, and `renders` reaching 0 is the interesting case rather
@@ -87,11 +87,12 @@
     /// address lives anyway.
     seed : String
     steps : String
-    /// `mutators`, `declared` or `either`.
+    /// `public`, `messages`, `properties` or `internal`.
     source : String
-    mutatorsClass : String
-    declaredClass : String
-    eitherClass : String
+    publicClass : String
+    messagesClass : String
+    propertiesClass : String
+    internalClass : String
     /// A run is in flight, one step per frame.
     playing : Bool
     /// The component declares a block, so there is something to generate.
@@ -99,8 +100,8 @@
     /// Why not, when it cannot.
     noPlanHint : String
 
-    /// The three radio buttons, as the closed set they are.
-    where source is one of ["mutators", "declared", "either"]
+    /// The four radio buttons, as the closed set they are.
+    where source is one of ["public", "messages", "properties", "internal"]
 
     /// The hint exists to answer "why is Run disabled", so it is there when
     /// the button is and gone when it is not.
@@ -295,14 +296,15 @@
              :value=".steps" @on.input="setSteps e.value">
     </div>
     <div class="flex gap-2 flex-wrap" @show=".canRun">
-      <button :class=".mutatorsClass" @on.click="setSource 'mutators'">Generated mutators</button>
-      <button :class=".declaredClass" @on.click="setSource 'declared'">Declared messages</button>
-      <button :class=".eitherClass" @on.click="setSource 'either'">Either</button>
+      <button :class=".publicClass" @on.click="setSource 'public'">Public API</button>
+      <button :class=".messagesClass" @on.click="setSource 'messages'">Messages</button>
+      <button :class=".propertiesClass" @on.click="setSource 'properties'">Properties</button>
+      <button :class=".internalClass" @on.click="setSource 'internal'">Internal mutators</button>
     </div>
     <div class="text-xs opacity-50" @show=".canRun">
-      A mutator is installed for every declared field whether or not anything sends one, so
-      these are the dispatches no hand-written test covers. The same seed always draws the
-      same script — which is what makes a run worth profiling twice.
+      Public API is the default: declared messages and writable properties. Generated field
+      mutators are component internals and appear only in the explicit diagnostic mode. The
+      same seed always draws the same script.
     </div>
     <div class="flex gap-2 flex-wrap" @show=".canRun">
       <button class="btn btn-sm btn-primary ctl-play" @hide=".playing" @on.click="play">Play</button>
