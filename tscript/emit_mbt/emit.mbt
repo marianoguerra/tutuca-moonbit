@@ -1099,7 +1099,14 @@ fn E::param_types(
         _ => self.def.receive
       }
       for m in cases {
-        if m.name == d.name {
+        // Either spelling. A protocol member is DECLARED as `Alias::member`
+        // and carries the canonical `id::member` as its runtime name, and a
+        // script body writes the alias — the same name the author declared it
+        // by, since the alias is what the file imported. Matching only the
+        // runtime name meant every qualified `receive` lost its payload types
+        // and was refused into MoonBit for want of an annotation the block had
+        // already written.
+        if m.name == d.name || m.source_name == d.name {
           return m.payload.map(t => Some(t))
         }
       }

@@ -130,14 +130,43 @@ fn message_case_diagnostics(
   let where_ = def.component_name(fallback)
   for pair in [("receive", def.receive), ("intent", def.intent)] {
     for m in pair.1 {
-      if m.source_name != m.name {
+      // A protocol member's declared name and its runtime name differ BY
+      // DESIGN: `Openable::setOpen` is what the file imported the protocol as,
+      // and `tutuca.dev/std/Openable@1::setOpen` is the identity it travels
+      // under. Comparing the whole strings warned on every declared member of
+      // every protocol whose id is not its alias, and asked for a spelling the
+      // declaration grammar cannot parse — the qualifier is an identifier
+      // there, not a URL. So the qualifier is dropped on both sides and only
+      // the member is compared, which is the casing question this rule is for.
+      let (declared, used) = (member_of(m.source_name), member_of(m.name))
+      if declared != used {
+        let fix = qualifier_of(m.source_name) + used
         out.push(
-          "message-case (warning) \{where_}: `\{pair.0}` declares `\{m.source_name}`, but every use of it is `\{m.name}` — a handler writes `\{pair.0} \{m.name}` and a view writes `'\{m.name}'`. Declare it `\{m.name}`.",
+          "message-case (warning) \{where_}: `\{pair.0}` declares `\{m.source_name}`, but every use of it is `\{fix}` — a handler writes `\{pair.0} \{fix}` and a view writes `'\{fix}'`. Declare it `\{fix}`.",
         )
       }
     }
   }
   out
+}
+
+///|
+/// The member half of a possibly-qualified message name.
+fn member_of(name : String) -> String {
+  match name.rev_find("::") {
+    Some(i) => name[i + 2:].to_owned()
+    None => name
+  }
+}
+
+///|
+/// The qualifier half, `::` included, or empty for a bare name. Taken from the
+/// name as WRITTEN, so a suggestion is spelled the way the file spells it.
+fn qualifier_of(name : String) -> String {
+  match name.rev_find("::") {
+    Some(i) => name[:i + 2].to_owned()
+    None => ""
+  }
 }
 
 ///|

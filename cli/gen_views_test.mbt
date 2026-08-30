@@ -278,6 +278,73 @@ test "view-only lint rules report at generation time" {
 }
 
 ///|
+/// A protocol member's declared name and its runtime name differ by design —
+/// the alias is local, the canonical id is the identity — and the two rules
+/// that read those names both used to treat the difference as a mistake: the
+/// case lint asked for a spelling the grammar cannot parse, and the script
+/// emitter could not find the declaration at all, so a qualified `receive`
+/// lost its payload types and was refused into MoonBit.
+test "a protocol member keeps its payload and draws no case warning" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  protocol Openable = "tutuca.dev/std/Openable@1" {
+      #|    handle { message { setOpen(Bool) } }
+      #|  }
+      #|  state Node implements Openable { open: Bool }
+      #|  handle Node { message { Openable::setOpen(Bool) } }
+      #|</script>
+      #|<script type="tutuca/script" for="Node">
+      #|  receive Openable::setOpen(b) {
+      #|    .open = b
+      #|  }
+      #|</script>
+      #|<template id="Node"><b @text=".open"></b></template>
+    ),
+    name="Node",
+    input="views/node.html",
+    target="views/node_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  // No case warning for `Openable::setOpen`, and — the second half — no script
+  // refusal, which is what an untyped `b` would have produced right here.
+  inspect(plan.diagnostics.join("\n"), content="")
+  // And the payload survived as the type the protocol declared.
+  assert_true(plan.files[0].1.contains("OpenableSetOpen(Bool)"))
+}
+
+///|
+/// The rule still fires on the half it is for: the MEMBER's spelling. The
+/// suggestion keeps the file's own qualifier, because that is the only
+/// spelling the declaration grammar accepts.
+test "a mis-cased protocol member is reported under its alias" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  protocol Openable = "tutuca.dev/std/Openable@1" {
+      #|    handle { message { setOpen(Bool) } }
+      #|  }
+      #|  state Node implements Openable { open: Bool }
+      #|  handle Node { message { Openable::SetOpen(Bool) } }
+      #|</script>
+      #|<template id="Node"><b @text=".open"></b></template>
+    ),
+    name="Node",
+    input="views/node.html",
+    target="views/node_view_gen.mbt",
+    ir=false,
+  )
+  guard! r is Ok(plan)
+  inspect(
+    plan.diagnostics.join("\n"),
+    content=(
+      #|message-case (warning) Node: `receive` declares `Openable::SetOpen`, but every use of it is `Openable::setOpen` — a handler writes `receive Openable::setOpen` and a view writes `'Openable::setOpen'`. Declare it `Openable::setOpen`.
+    ),
+  )
+}
+
+///|
 test "a message declared in a spelling nothing uses is reported" {
   // The schema is the one place a message name is written UPPER and read
   // lower: the parser derives the runtime name and the MoonBit variant from
