@@ -1,6 +1,6 @@
 name = "marianoguerra/tutuca"
 
-version = "0.41.4"
+version = "0.41.5"
 
 readme = "README.mbt.md"
 

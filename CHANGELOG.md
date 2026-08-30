@@ -6,6 +6,46 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.41.5] - 2026-08-30
+
+Three more from the same two migrations, all in the generated code.
+
+### Fixed
+
+- **A component-typed list payload forced its handler out of the script
+  language.** `message { redraw(Array[ChatModelGroup]) }` bound raw, so
+  assigning it to the field it came from was refused with "type is not known
+  from the call sites" — and `Array[Any]` was refused the other way, because
+  the field wants the element type. Both spellings produce the same runtime
+  value: a list of component instances is `Array[@tutuca.Value]`, exactly as
+  `Array[Any]` is, and there is nothing to decode. So the element type costs
+  nothing at the handler now, which is the point of declaring one — 0.40 asks
+  for typed collections, and this was the bill.
+
+  A list of a declared RECORD is still refused, and honestly: that field holds
+  decoded structs, and the decode loop is the thing this backend does not
+  write.
+
+- **A transition that reads no state warned in generated code.** On a one-field
+  state the rebind is a whole record literal rather than `{ ..s, … }`, so a
+  handler that only assigns never touched the parameter — `unused variable 's'`
+  in a file nobody can edit. The parameter is `_s` when nothing reads it, the
+  way the value bodies have always named theirs.
+
+- **A doc comment above a section in a `handle`/`express` block** — carried over
+  from 0.41.4's list, where it was described but landed in the same batch.
+
+### Verified against the corpora
+
+Both projects that reported the 0.41.x findings now build and pass on the
+released package, from this repo:
+
+- 320 components, 605 tests, `moon check` clean of warnings. The protocol
+  migration that was blocked — 97 `implements Openable` with a canonical id —
+  is green, and the seven ctrl-click/sibling failures are gone.
+- 19 components across two packages, 442 tests over three targets, with the
+  `invariant` calling its `pred`s rather than restating them.
+
 ## [0.41.4] - 2026-08-30
 
 Four bugs found by two projects migrating a real corpus onto 0.41.x — 320
