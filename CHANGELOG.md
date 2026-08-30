@@ -6,6 +6,63 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.41.4] - 2026-08-30
+
+Four bugs found by two projects migrating a real corpus onto 0.41.x — 320
+components in one, 19 in the other. Every one of them was silent.
+
+### Fixed
+
+- **A component slot declared `Component[X]?` stopped tracking its child.** The
+  parent's fields map was updated and its STATE STRUCT was not, so the child's
+  own view re-rendered while every `compute`, `loop_with` and `update` arm
+  reading `s.pager` saw the child the parent was born with. The wrapper was not
+  the cause: `s_fields` — the names a write re-decodes into the struct — was
+  read off `encode(init)`, and a generated `encode` omits an option that is
+  None. Seeded `None`, the field was absent from that list forever after.
+
+  It comes from the schema now, which is where the question belongs: whether a
+  field is part of the state type is a fact about the type, not about one value
+  of it. Any option-typed field was affected; a component slot is where it
+  showed, because a slot is the field whose successor arrives from elsewhere.
+
+- **The other half of the protocol alias.** 0.41.1 taught the emitter to find a
+  declared message by either spelling; the ARM it wrote still used the
+  declaration spelling. So `receive Openable::setOpen(b)` compiled to
+  `Receive("Openable::setOpen", …)` while `send`, `intent`, the codec and
+  `receives=[…]` all used the canonical `id::member` — and the handler never
+  ran. In a component with no `update~`, without a word. The arm now emits the
+  runtime name, resolved in the one place that maps a written name to what the
+  schema says it is.
+
+- **An `invariant` that calls a `pred` generated MoonBit that does not
+  compile.** The guard woven into a handler arm constructs a
+  `@tutuca.CtxStack(ctx)` to call the pred with, and `CtxStack` was a plain
+  `pub struct` — read-only outside `core`. `gen-views` said nothing and
+  `moon check` failed afterwards, on advice the RENDER_ONLY diagnostic gives:
+  it tells you to call the pred bare, and calling it bare is what produces the
+  file. `pub(all)` now, and `demo/counterlib` carries the shape so `check`
+  compiles it on every run.
+
+- **A writable property drew arbitrary values of its type, ignoring the domain
+  of the field it names.** `property { reading : String { get .view set .view } }`
+  over `where view is one of ["main", "format"]` drew `"a/b"`, `"<script>"`,
+  `"líne break"` — and the runtime declined every one, 16 of 40 steps spent
+  proving the domain works while the two values that exercise the component
+  were never drawn. It hit hardest on components whose surface is mostly
+  properties, which is what 0.41.1's "empty Public API" hint pushes you toward.
+
+  Two causes, both fixed: the property generator drew the property's TYPE and
+  never looked at the backing field, and the field draw itself gave up whenever
+  no state was in hand — which is every up-front draw — even for a domain like
+  `is one of [...]` that needs nothing but itself to invert.
+
+- **A doc comment above a section in a `handle`/`express` block was refused.**
+  `/// what a parent may send` over `message { … }` is a sentence about the
+  section, and the only place it reads is there; the parser wanted a keyword
+  and reported "found a doc comment", sending an author to delete a comment
+  that was in the right place.
+
 ## [0.41.3] - 2026-08-30
 
 ### Fixed
