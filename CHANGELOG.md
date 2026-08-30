@@ -6,6 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.41.3] - 2026-08-30
+
+### Fixed
+
+- **A `handle`/`express` block naming the component of a BARE `state` was
+  dropped in silence.** The blocks were matched to a state declaration by raw
+  name, and a bare `state { … }` has none — the file's single component is
+  called whatever the caller says it is. So `handle Counter { message { inc,
+  dec } }` beside `state { … }` declared a surface that nothing carried: no
+  generated message type, nothing for a `send` to reach, and a Fuzz tab with
+  nothing to draw.
+
+  This is why 0.41.2's scaffold fix did nothing. The declaration was right and
+  the parser discarded it, which is the same shape of bug as the two 0.41.1
+  fixed: a name written one way, read another way, and the difference resolved
+  by dropping something.
+
+  A surface block that names no component in the file is now a **generation
+  error** naming the nearest declared component. It used to be silence, which
+  is the worst answer available for "you declared this and nothing has it".
+
 ## [0.41.2] - 2026-08-30
 
 ### Fixed

@@ -85,9 +85,14 @@ configuration and cannot come from a dependency.
 `@sbw.mount` takes more than the sections:
 
 ```moonbit
+let sections = sections()
 @sbw.mount(
-  sections(),
+  sections,
   themes=["light", "dark"],        // the palettes the switcher offers
-  panels=@sbui.Panels::none(),     // story panes only, no inspector tabs
+  panels=@panelsw.all(sections),   // the tabs — drop it for stories only
 ) |> ignore
 ```
+
+The tabs are opt-in because they are what most of the wasm IS: dropping the
+`panels~` argument and the `@panelsw` import takes the page from ~3.1 MB to
+~1.25 MB (`--release`, before wasm-opt).

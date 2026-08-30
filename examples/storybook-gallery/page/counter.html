@@ -5,6 +5,16 @@
     /// a lie the Fuzz tab would catch.
     count : Int
   }
+
+  /// What this component accepts, declared. The `receive`s below are the
+  /// IMPLEMENTATIONS of these names and the `@on.click`s are call sites, and
+  /// neither is a declaration — so without this block the component's public
+  /// API is empty and the Fuzz tab has nothing to draw. Declaring it is what
+  /// gives the tab a script, and it is the first thing to copy when you add a
+  /// component of your own.
+  handle Counter {
+    message { inc, dec }
+  }
 </script>
 
 <script type="tutuca/script">
