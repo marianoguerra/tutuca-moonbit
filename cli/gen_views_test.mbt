@@ -315,6 +315,91 @@ test "a protocol member keeps its payload and draws no case warning" {
 }
 
 ///|
+/// A transition that only ASSIGNS never reads the state it was handed, and on
+/// a one-field state the rebind is a whole record literal rather than
+/// `{ ..s, … }` — so the parameter went unread and the generated module was
+/// the thing that warned, in a file nobody can edit.
+test "a transition that reads no state takes an underscored parameter" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Toggle { theme: String }
+      #|  handle Toggle { message { setTheme(String) } }
+      #|</script>
+      #|<script type="tutuca/script" for="Toggle">
+      #|  receive setTheme(t) { .theme = t }
+      #|</script>
+      #|<template id="Toggle"><b @text=".theme"></b></template>
+    ),
+    name="Toggle",
+    input="views/toggle.html",
+    target="views/toggle_view_gen.mbt",
+    ir=true,
+  )
+  guard! r is Ok(plan)
+  assert_true(plan.files.map(f => f.1).join("\n").contains("_s : ToggleState,"))
+}
+
+///|
+/// …and one that DOES read it keeps the name, or the arm would not compile.
+test "a transition that reads state keeps its parameter" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Counter { count: Int, label: String }
+      #|  handle Counter { message { add(Int) } }
+      #|</script>
+      #|<script type="tutuca/script" for="Counter">
+      #|  receive add(d) { .count += d }
+      #|</script>
+      #|<template id="Counter"><b @text=".count"></b></template>
+    ),
+    name="Counter",
+    input="views/counter.html",
+    target="views/counter_view_gen.mbt",
+    ir=true,
+  )
+  guard! r is Ok(plan)
+  assert_true(
+    plan.files.map(f => f.1).join("\n").contains("  s : CounterState,"),
+  )
+}
+
+///|
+/// A list of COMPONENTS is `Array[@tutuca.Value]` at runtime, exactly as
+/// `Array[Any]` is, so declaring the element type costs nothing at the
+/// handler. It used to cost the whole handler: the payload bound raw and the
+/// assignment into the typed field was refused into MoonBit, which is what an
+/// author got for taking 0.40's advice to type their collections.
+test "a component-typed list payload stays in the script language" {
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  state Group { label: String }
+      #|  state App { models: Array[Group] }
+      #|  handle App { message { redraw(Array[Group]) } }
+      #|</script>
+      #|<script type="tutuca/script" for="App">
+      #|  receive redraw(models) { .models = models }
+      #|</script>
+      #|<template id="Group"><b @text=".label"></b></template>
+      #|<template id="App"><div><x render-each=".models"></x></div></template>
+    ),
+    name="App",
+    input="views/app.html",
+    target="views/app_view_gen.mbt",
+    ir=true,
+  )
+  guard! r is Ok(plan)
+  // no script refusal…
+  inspect(plan.diagnostics.join("\n"), content="")
+  // …and the arm takes the payload apart as the list it is
+  assert_true(
+    plan.files.map(f => f.1).join("\n").contains("is Some(List(models_))"),
+  )
+}
+
+///|
 /// The rule still fires on the half it is for: the MEMBER's spelling. The
 /// suggestion keeps the file's own qualifier, because that is the only
 /// spelling the declaration grammar accepts.

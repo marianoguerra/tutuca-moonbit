@@ -44,6 +44,14 @@ priv struct E {
   /// transition function every arm shares. Treating the two as one flag is
   /// half of why a `*name` in a value body used to emit a free `ctx`.
   mut uses_stack : Bool
+  /// Whether any arm of the transition function READS the state parameter.
+  ///
+  /// A one-field state rebinds with a whole record literal rather than
+  /// `{ ..s, … }`, so a handler that only assigns can leave the parameter
+  /// untouched — and a generated file must not be the thing that warns. Set
+  /// wherever the emitter writes an expression over `s`, and read once, at the
+  /// signature.
+  mut uses_state : Bool
   /// Which function is being written: a transition, which is handed a
   /// `&@tutuca.Ctx`, or one of the four value bodies, which are handed the
   /// state and the row and a `&@tutuca.Stack`.
@@ -164,6 +172,7 @@ pub fn emit(
     prelude: [],
     uses_ctx: false,
     uses_stack: false,
+    uses_state: false,
     in_value_body: false,
     binds: Map([]),
     binds_map: "",
@@ -262,7 +271,7 @@ pub fn emit(
     )
     b.write_string("/// block, not this.\n")
     b.write_string(
-      "fn \{fn_name}(\n  s : \{state_ty},\n  msg : @component.Dispatch,\n  \{if e.uses_ctx { "ctx" } else { "_ctx" }} : &@tutuca.Ctx,\n) -> @component.Update[\{state_ty}] {\n",
+      "fn \{fn_name}(\n  \{if e.uses_state { "s" } else { "_s" }} : \{state_ty},\n  msg : @component.Dispatch,\n  \{if e.uses_ctx { "ctx" } else { "_ctx" }} : &@tutuca.Ctx,\n) -> @component.Update[\{state_ty}] {\n",
     )
     b.write_string("  match msg {\n")
     for a in arms {
@@ -743,6 +752,18 @@ fn E::arm(
       Some(TBool) => ("Bool(\{binder})", declared)
       Some(TList(TAny)) => ("List(\{binder})", declared)
       Some(TOMap(TAny)) => ("Map(\{binder})", declared)
+      // A list of COMPONENTS is `Array[@tutuca.Value]` at runtime, exactly as
+      // `Array[Any]` is — a component instance travels as a `Value` and there
+      // is nothing to decode. So the element type costs nothing here, which is
+      // the point of declaring one: `Array[ChatModelGroup]` buys the `@each`
+      // body check and the generator drawing instances instead of junk, and it
+      // used to cost the whole handler, because the payload bound raw and its
+      // assignment into the typed field was refused into MoonBit.
+      //
+      // A list of a declared RECORD is not this case: that field holds decoded
+      // structs, and the decode loop is what this backend does not write.
+      Some(TList(TComp(_))) | Some(TList(TCompProtocols(_))) =>
+        ("List(\{binder})", declared)
       // `Any` is already a `Value`, so the raw binding is the right one.
       Some(TAny) | None => (binder, declared)
       _ => (binder, None)
@@ -797,6 +818,12 @@ fn E::arm(
   } else {
     b.write_string(stmts)
     b.write_string(after.to_string())
+  }
+  // `Next(s)` at the end of an arm that never rebound is the parameter going
+  // straight back out — the one use that is not an expression the emitter
+  // wrote.
+  if !stmts.contains("let s ") && !stmts.contains("let s :") {
+    self.uses_state = true
   }
   b.write_string("      Next(s)\n")
   b.write_string("    }\n")
@@ -1200,6 +1227,9 @@ fn E::rebind(self : E, field : String, rhs : String, pad : String) -> String {
   if self.def.fields.length() == 1 {
     "\{pad}let s : \{self.state_ty} = { \{binding_of(field)}: \{rhs} }\n"
   } else {
+    // `..s` reads the state the arm was handed, whether or not anything else
+    // in the body does.
+    self.uses_state = true
     "\{pad}let s = { ..s, \{binding_of(field)}: \{rhs} }\n"
   }
 }
@@ -1373,6 +1403,7 @@ fn E::root_field(
 /// Read the current value of a place, at its own type.
 fn E::read_field(self : E, p : @tscript.Place) -> String raise NoWay {
   let (name, ty) = self.root_field(p)
+  self.uses_state = true
   self.to_ty("s.\{binding_of(name)}", ty, TFloat)
 }
 
@@ -1391,6 +1422,7 @@ fn E::collection_call(
   ty : @statedef.StateTy,
   args : Array[@tscript.Expr],
 ) -> String raise NoWay {
+  self.uses_state = true
   self.collection_call_at(call, "s.\{binding_of(field)}", ".\{field}", ty, args)
 }
 
@@ -1620,6 +1652,10 @@ fn E::stack_arg(self : E) -> String {
     "stack"
   } else {
     self.uses_ctx = true
+    // The call this belongs to passes `s` alongside it, and in a transition
+    // that is the parameter — a `requires`/`invariant` guard runs before the
+    // arm has rebound anything.
+    self.uses_state = true
     "@tutuca.CtxStack(ctx)"
   }
 }
@@ -2127,6 +2163,7 @@ fn E::read(
   guard self.def.field(name) is Some(f) else {
     raise Cannot("`.\{name}` is not a field of the state")
   }
+  self.uses_state = true
   let mut src = "s.\{binding_of(name)}"
   let mut ty = f.ty
   for st in p.steps {
