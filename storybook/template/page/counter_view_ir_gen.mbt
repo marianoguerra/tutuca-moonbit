@@ -29,6 +29,10 @@ pub let counter_spec_source : String =
   #|  state {
   #|    count : Int
   #|  }
+  #|
+  #|  handle Counter {
+  #|    message { inc, dec }
+  #|  }
 
 ///|
 /// The compiled `main` view.
