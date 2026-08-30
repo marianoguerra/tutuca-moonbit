@@ -6,6 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-08-30
+
+### Added
+
+- **`where value is one of .options`** — a scalar bounded by the contents of a
+  sibling LIST, alongside the literal `is one of ["a", "b"]` it reads like.
+
+  The shape the vocabulary could not state. `is member of .tags` wants a `Set`,
+  and a select field's options are ORDERED, so they are an `Array`; `is index
+  of .options` states the positional half, and what a select keeps is the
+  option itself rather than its position. Twenty components in one corpus were
+  carrying four to six `pred`s over the same field with no statement of the set
+  anywhere, which is the state a `where` exists to replace.
+
+  It reads backwards like every other relation: a generated write draws an
+  element OF the list, so a run presses the values the component can take
+  rather than spending itself on refusals it provoked. An empty list bounds
+  nothing a draw could satisfy, so the generator falls back to the field's own
+  — the same answer `is key of` gives for an empty map.
+
+  Both doors enforce it: a write naming a value the list does not hold is
+  turned down at the field, and shrinking the LIST out from under a value that
+  was fine is caught after the transition.
+
 ## [0.41.5] - 2026-08-30
 
 Three more from the same two migrations, all in the generated code.
