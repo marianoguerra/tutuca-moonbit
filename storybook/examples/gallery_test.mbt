@@ -622,6 +622,58 @@ test "a click is consumed only while the panel is waiting for one" {
 }
 
 ///|
+/// The bug this pair is about: `traffic-light` had a `receive nextLight` in its
+/// script block and nothing declared in a `handle` block, so the Public API
+/// source drew an empty script and Play, Step and Burst all did nothing —
+/// silently, because a plan EXISTED and the panel only ever explained a
+/// missing one.
+test "a declared message is what the public API draws" {
+  let sections = pick(["traffic-light"])
+  let (doc, container) = @harness.new_mount()
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  // the default source has something to draw, so the buttons are there and the
+  // hint is not
+  assert_eq(h.find_all(".no-draw").length(), 0)
+  assert_eq(h.find_all(".ctl-burst").length(), 1)
+  h.click(".ctl-burst")
+  @panels.fuzz_tick()
+  assert_eq(h.find_all(".fuzz-row").length(), 40)
+}
+
+///|
+/// …and a component that declares no surface says so instead of offering
+/// buttons that cannot act. `tabbed-ui` declares state and a domain and no
+/// `handle` block at all.
+test "a source with nothing to draw says why, and keeps the switcher" {
+  let sections = pick(["tabbed-ui"])
+  let (doc, container) = @harness.new_mount()
+  let app = @sbui.mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    panels=@panels.all(sections),
+  )
+  let h = @harness.Harness::over(app, container)
+  h.click(".fuzz-tab")
+  assert_true(h.text(".no-draw").contains("nothing to draw"))
+  assert_eq(h.find_all(".ctl-play").length(), 0)
+  // the component DOES declare a block, so this is not the no-plan state
+  assert_eq(h.find_all(".no-plan").length(), 0)
+  // switching to the internal mutators draws `setTab`, and the buttons come
+  // back — which is what the hint tells the reader to try
+  h.click(".src-internal")
+  assert_eq(h.find_all(".no-draw").length(), 0)
+  assert_eq(h.find_all(".ctl-burst").length(), 1)
+}
+
+///|
 /// The Fuzz tab derives its generators from the story's own spec block, and
 /// runs them against the instance on screen.
 ///

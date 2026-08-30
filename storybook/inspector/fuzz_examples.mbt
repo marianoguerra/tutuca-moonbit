@@ -171,6 +171,20 @@ pub fn Inspector::fuzz_examples(
       view: None,
     },
     {
+      component: "FuzzControls",
+      title: "Fuzz Controls · nothing to draw",
+      args: self
+      .fuzz_controls(
+        seed="1",
+        steps="12",
+        source="public",
+        can_draw=false,
+        no_draw_hint="This story's component declares no messages and no writable properties, so this source has nothing to draw. Try another source, or declare one.",
+      )
+      .snapshot(),
+      view: None,
+    },
+    {
       component: "FuzzVerdict",
       title: "Fuzz Verdict · a rule nothing enforced",
       args: self.fuzz_verdict(outcome~).snapshot(),

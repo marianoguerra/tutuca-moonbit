@@ -32,6 +32,10 @@ pub let traffic_light_spec_source : String =
   #|    where lightIndex between 0 and 2
   #|  }
   #|
+  #|  handle TrafficLight {
+  #|    message { nextLight }
+  #|  }
+  #|
   #|  state TabbedUI {
   #|    tab : String
   #|

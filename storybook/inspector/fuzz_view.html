@@ -95,10 +95,18 @@
     internalClass : String
     /// A run is in flight, one step per frame.
     playing : Bool
-    /// The component declares a block, so there is something to generate.
+    /// The component declares a block, so there is a plan behind the knobs.
     canRun : Bool
     /// Why not, when it cannot.
     noPlanHint : String
+    /// The chosen SOURCE draws something. A component can declare a block —
+    /// state, rules, the lot — and still have an empty public API, and the
+    /// difference matters at the button: with no plan there is nothing to
+    /// configure either, but with a plan and an empty source the switcher is
+    /// exactly what is wanted, because another source may draw.
+    canDraw : Bool
+    /// Why this source draws nothing, when it draws nothing.
+    noDrawHint : String
 
     /// The four radio buttons, as the closed set they are.
     where source is one of ["public", "messages", "properties", "internal"]
@@ -114,6 +122,18 @@
     invariant playingNeedsAPlan
       format 'a run is in flight with no plan behind it' {
         .playing implies .canRun
+      }
+
+    /// The same rule one level down: a source that draws nothing says so, and
+    /// nothing runs against it.
+    invariant drawHintExplainsTheHiddenButtons
+      format 'this source generates nothing, and the panel does not say why' {
+        (not .canDraw) implies ((len .noDrawHint) > 0)
+      }
+
+    invariant playingNeedsSomethingToDraw
+      format 'a run is in flight with nothing to draw from' {
+        .playing implies .canDraw
       }
   }
 
@@ -306,7 +326,10 @@
       mutators are component internals and appear only in the explicit diagnostic mode. The
       same seed always draws the same script.
     </div>
-    <div class="flex gap-2 flex-wrap" @show=".canRun">
+    <div @show=".canRun">
+      <div class="text-xs opacity-50 no-draw" @hide=".canDraw" @text=".noDrawHint"></div>
+    </div>
+    <div class="flex gap-2 flex-wrap" @show=".canDraw">
       <button class="btn btn-sm btn-primary ctl-play" @hide=".playing" @on.click="play">Play</button>
       <button class="btn btn-sm btn-error ctl-stop" @show=".playing" @on.click="stop">Stop</button>
       <button class="btn btn-sm ctl-step" @on.click="step">Step</button>

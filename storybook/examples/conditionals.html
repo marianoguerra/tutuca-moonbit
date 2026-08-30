@@ -9,6 +9,15 @@
     where lightIndex between 0 and 2
   }
 
+  /// The component's whole input surface, declared. The `receive` below is the
+  /// IMPLEMENTATION of this name, not a declaration of it — view wiring and a
+  /// handler body are not a public protocol — so without this the public API is
+  /// empty and the Fuzz tab has nothing to draw, which used to show as a Play
+  /// button doing nothing at all.
+  handle TrafficLight {
+    message { nextLight }
+  }
+
   state TabbedUI {
     tab : String
 

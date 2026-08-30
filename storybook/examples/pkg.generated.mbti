@@ -2528,6 +2528,7 @@ pub(all) enum TrafficLightMethod {
 pub fn TrafficLightMethod::name(Self) -> String
 
 pub(all) enum TrafficLightMsg {
+  NextLight
   Unknown(String, Array[@core.Value])
 }
 pub fn TrafficLightMsg::from_dispatch(@component.Dispatch) -> Self?

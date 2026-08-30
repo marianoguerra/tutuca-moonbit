@@ -82,6 +82,8 @@ pub let fuzz_row_spec_source : String =
   #|    playing : Bool
   #|    canRun : Bool
   #|    noPlanHint : String
+  #|    canDraw : Bool
+  #|    noDrawHint : String
   #|
   #|    where source is one of ["public", "messages", "properties", "internal"]
   #|
@@ -93,6 +95,16 @@ pub let fuzz_row_spec_source : String =
   #|    invariant playingNeedsAPlan
   #|      format 'a run is in flight with no plan behind it' {
   #|        .playing implies .canRun
+  #|      }
+  #|
+  #|    invariant drawHintExplainsTheHiddenButtons
+  #|      format 'this source generates nothing, and the panel does not say why' {
+  #|        (not .canDraw) implies ((len .noDrawHint) > 0)
+  #|      }
+  #|
+  #|    invariant playingNeedsSomethingToDraw
+  #|      format 'a run is in flight with nothing to draw from' {
+  #|        .playing implies .canDraw
   #|      }
   #|  }
   #|
@@ -659,6 +671,20 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
         @anode.text(" "),
         @anode.show(
           Field("canRun"),
+          @anode.h("div", [], [
+            @anode.hide(
+              Field("canDraw"),
+              @anode.h(
+                "div",
+                [@anode.attr("class", "text-xs opacity-50 no-draw")],
+                [@anode.dyn_text(Field("noDrawHint"))],
+              ),
+            ),
+          ]),
+        ),
+        @anode.text(" "),
+        @anode.show(
+          Field("canDraw"),
           @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
             @anode.hide(
               Field("playing"),
@@ -791,11 +817,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="setSeed",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="setSeed",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSeed",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -851,11 +895,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="setSteps",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="setSteps",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSteps",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -911,11 +973,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="setSource",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="setSource",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="setSource",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -965,11 +1045,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="burst",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="burst",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="burst",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -1019,11 +1117,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="play",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="play",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="play",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -1073,11 +1189,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="stop",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="stop",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="stop",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -1127,11 +1261,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="step",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="step",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="step",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -1181,11 +1333,29 @@ fn fuzz_controls_inline_update(
         )
         return Unchanged
       }
+      guard !s.playing || s.canDraw else {
+        @tutuca.invariant_failed(
+          handler="reset",
+          pred="playingNeedsSomethingToDraw",
+          sentence="a run is in flight with nothing to draw from",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       guard !(!s.canRun) || s.noPlanHint.length().to_double() > 0.0 else {
         @tutuca.invariant_failed(
           handler="reset",
           pred="hintExplainsTheDisabledButton",
           sentence="nothing can be generated, and the panel does not say why",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
+      guard !(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0 else {
+        @tutuca.invariant_failed(
+          handler="reset",
+          pred="drawHintExplainsTheHiddenButtons",
+          sentence="this source generates nothing, and the panel does not say why",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -1244,6 +1414,30 @@ fn fuzz_controls_compute_playingNeedsAPlan(
 }
 
 ///|
+/// `invariant drawHintExplainsTheHiddenButtons` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_controls_compute_drawHintExplainsTheHiddenButtons(
+  s : FuzzControlsState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(!(!s.canDraw) || s.noDrawHint.length().to_double() > 0.0) :
+    @tutuca.Value)
+}
+
+///|
+/// `invariant playingNeedsSomethingToDraw` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn fuzz_controls_compute_playingNeedsSomethingToDraw(
+  s : FuzzControlsState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(!s.playing || s.canDraw) : @tutuca.Value)
+}
+
+///|
 /// The `compute` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
 fn fuzz_controls_inline_compute() -> Map[
@@ -1253,6 +1447,8 @@ fn fuzz_controls_inline_compute() -> Map[
   {
     "hintExplainsTheDisabledButton": fuzz_controls_compute_hintExplainsTheDisabledButton,
     "playingNeedsAPlan": fuzz_controls_compute_playingNeedsAPlan,
+    "drawHintExplainsTheHiddenButtons": fuzz_controls_compute_drawHintExplainsTheHiddenButtons,
+    "playingNeedsSomethingToDraw": fuzz_controls_compute_playingNeedsSomethingToDraw,
   }
 }
 

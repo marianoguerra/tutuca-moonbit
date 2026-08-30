@@ -119,10 +119,19 @@ fn[N] push_fuzz_panel(
     planned=session.script.length(),
     playing=session.playing,
     can_run=session.plan is Some(_),
-    no_plan_hint=if session.plan is Some(_) {
-      ""
-    } else {
-      "This story's component declares no <script type=\"tutuca/spec\"> block, so there is nothing to derive generators from."
+    no_plan_hint=if session.plan is Some(_) { "" } else { NO_SPEC_HINT },
+    // A plan and an empty source are different states, and the panel says
+    // which. A component can declare state, domains and rules and still put
+    // nothing in its public API — `receive` in the script block is an
+    // implementation, and the `message { … }` block is the declaration — and
+    // the old panel answered that with a Play button that did nothing.
+    can_draw=match session.plan {
+      Some(p) => p.has_inputs()
+      None => false
+    },
+    no_draw_hint=match session.plan {
+      Some(p) if !p.has_inputs() => draw_hint(session.source)
+      _ => ""
     },
     outcome?=session.outcome,
     unchecked=match session.plan {
@@ -132,6 +141,68 @@ fn[N] push_fuzz_panel(
     reproducer=session.reproducer,
   )
   @sbui.push_panel(app, session.idx, "fuzz", panel)
+}
+
+///|
+/// The Fuzz panel as it looks before anything has been pressed.
+///
+/// It resolves the component and derives a plan, which is the only way to know
+/// whether the buttons can act — the panel used to claim they could until the
+/// first press, so a component with no spec block, or with an empty public
+/// API, opened on a full set of controls that did nothing.
+fn[N] opening_panel(
+  insp : @inspector.Inspector,
+  slot : Ref[@app.App[N]?],
+  instance : @tutuca.Value,
+  read : (String) -> @tutuca.Value,
+) -> @tutuca.Value {
+  let source = read("fzSource").str(default="public")
+  let plan = match slot.val {
+    Some(app) =>
+      match app.scope.comps.get_comp_for(instance) {
+        Some(comp) =>
+          @fuzz.Plan::of_component(comp, source=fuzz_source_of(source))
+        None => None
+      }
+    None => None
+  }
+  insp.fuzz_panel(
+    seed=read("fzSeed").str(default="1"),
+    steps=read("fzSteps").str(default="40"),
+    source~,
+    can_run=plan is Some(_),
+    no_plan_hint=if plan is Some(_) { "" } else { NO_SPEC_HINT },
+    can_draw=match plan {
+      Some(p) => p.has_inputs()
+      None => false
+    },
+    no_draw_hint=match plan {
+      Some(p) if !p.has_inputs() => draw_hint(source)
+      _ => ""
+    },
+  )
+}
+
+///|
+/// What a component with no `<script type="tutuca/spec">` block gets told.
+const NO_SPEC_HINT : String = "This story's component declares no <script type=\"tutuca/spec\"> block, so there is nothing to derive generators from."
+
+///|
+/// Why the chosen source draws nothing, named for the source.
+///
+/// It says what to DO, twice over: another source may draw (the switcher is
+/// right there), and the lasting fix is a declaration in the block.
+fn draw_hint(source : String) -> String {
+  let what = match source {
+    "messages" => "declares no messages"
+    "properties" => "declares no writable properties"
+    "internal" => "has no fields a generated mutator could write"
+    _ => "declares no messages and no writable properties"
+  }
+  "This story's component \{what}, so this source has nothing to draw. " +
+  "A `receive` in the script block is an implementation; the surface is the " +
+  "`message { … }` and `property { … }` blocks in the spec. Try another source, " +
+  "or declare one."
 }
 
 ///|

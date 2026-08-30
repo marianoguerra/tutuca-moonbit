@@ -437,10 +437,18 @@ pub(all) struct FuzzControlsState {
   internalClass : String
   /// A run is in flight, one step per frame.
   playing : Bool
-  /// The component declares a block, so there is something to generate.
+  /// The component declares a block, so there is a plan behind the knobs.
   canRun : Bool
   /// Why not, when it cannot.
   noPlanHint : String
+  /// The chosen SOURCE draws something. A component can declare a block —
+  /// state, rules, the lot — and still have an empty public API, and the
+  /// difference matters at the button: with no plan there is nothing to
+  /// configure either, but with a plan and an empty source the switcher is
+  /// exactly what is wanted, because another source may draw.
+  canDraw : Bool
+  /// Why this source draws nothing, when it draws nothing.
+  noDrawHint : String
 }
 
 ///|
@@ -463,6 +471,8 @@ pub fn FuzzControlsState::zero() -> FuzzControlsState {
     playing: false,
     canRun: false,
     noPlanHint: "",
+    canDraw: false,
+    noDrawHint: "",
   }
 }
 
@@ -485,6 +495,8 @@ impl @component.Fields for FuzzControlsState with fn encode(s) {
     "playing": Bool(s.playing),
     "canRun": Bool(s.canRun),
     "noPlanHint": Str(s.noPlanHint),
+    "canDraw": Bool(s.canDraw),
+    "noDrawHint": Str(s.noDrawHint),
   }
 }
 
@@ -508,6 +520,8 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
   guard f.get("playing") is Some(Bool(v_playing)) else { return None }
   guard f.get("canRun") is Some(Bool(v_canRun)) else { return None }
   guard f.get("noPlanHint") is Some(Str(v_noPlanHint)) else { return None }
+  guard f.get("canDraw") is Some(Bool(v_canDraw)) else { return None }
+  guard f.get("noDrawHint") is Some(Str(v_noDrawHint)) else { return None }
   Some({
     seed: v_seed,
     steps: v_steps,
@@ -519,6 +533,8 @@ impl @component.Fields for FuzzControlsState with fn decode(f) {
     playing: v_playing,
     canRun: v_canRun,
     noPlanHint: v_noPlanHint,
+    canDraw: v_canDraw,
+    noDrawHint: v_noDrawHint,
   })
 }
 
@@ -710,7 +726,7 @@ pub fn FuzzControlsMsg::from_dispatch(
 impl @component.Fields for FuzzControlsState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzControls",
-    fingerprint="25c138b15ecab9a0",
+    fingerprint="d970a1888f666e63",
     fields=[
       @component.FieldInfo::new("seed", TyText),
       @component.FieldInfo::new("steps", TyText),
@@ -722,12 +738,20 @@ impl @component.Fields for FuzzControlsState with fn schema() {
       @component.FieldInfo::new("playing", TyBool),
       @component.FieldInfo::new("canRun", TyBool),
       @component.FieldInfo::new("noPlanHint", TyText),
+      @component.FieldInfo::new("canDraw", TyBool),
+      @component.FieldInfo::new("noDrawHint", TyText),
     ],
     view_handlers=[
       "burst", "play", "reset", "setSeed", "setSource", "setSteps", "step", "stop",
     ],
-    methods=["hintExplainsTheDisabledButton", "playingNeedsAPlan"],
-    invariants=["hintExplainsTheDisabledButton", "playingNeedsAPlan"],
+    methods=[
+      "drawHintExplainsTheHiddenButtons", "hintExplainsTheDisabledButton", "playingNeedsAPlan",
+      "playingNeedsSomethingToDraw",
+    ],
+    invariants=[
+      "drawHintExplainsTheHiddenButtons", "hintExplainsTheDisabledButton", "playingNeedsAPlan",
+      "playingNeedsSomethingToDraw",
+    ],
     domains=[
       {
         field: "source",

@@ -78,13 +78,7 @@ pub fn[N] all(
         key: "fuzz",
         label: "Fuzz",
         field: "f",
-        build: Some((_inst, read) => {
-          insp.fuzz_panel(
-            seed=read("fzSeed").str(default="1"),
-            steps=read("fzSteps").str(default="40"),
-            source=read("fzSource").str(default="public"),
-          )
-        }),
+        build: Some((inst, read) => opening_panel(insp, slot, inst, read)),
         live: false,
         keep: true,
         with_story: true,

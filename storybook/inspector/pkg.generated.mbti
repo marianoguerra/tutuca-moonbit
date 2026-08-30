@@ -692,6 +692,8 @@ pub(all) struct FuzzControlsState {
   playing : Bool
   canRun : Bool
   noPlanHint : String
+  canDraw : Bool
+  noDrawHint : String
 }
 pub fn FuzzControlsState::zero() -> Self
 
@@ -794,10 +796,10 @@ pub fn Inspector::components(Self) -> Array[@component.Component]
 pub fn Inspector::edit_instance(Self, @core.Value) -> @core.Value
 pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
 pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Components) -> @core.Value
-pub fn Inspector::fuzz_controls(Self, seed~ : String, steps~ : String, source~ : String, playing? : Bool, can_run? : Bool, no_plan_hint? : String) -> @core.Value
+pub fn Inspector::fuzz_controls(Self, seed~ : String, steps~ : String, source~ : String, playing? : Bool, can_run? : Bool, no_plan_hint? : String, can_draw? : Bool, no_draw_hint? : String) -> @core.Value
 pub fn Inspector::fuzz_examples(Self) -> Array[@component.ExampleDef]
 pub fn Inspector::fuzz_log(Self, Array[@fuzz.Step], at? : Int, planned? : Int) -> @core.Value
-pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
+pub fn Inspector::fuzz_panel(Self, seed~ : String, steps~ : String, source~ : String, run_steps? : Array[@fuzz.Step], at? : Int, planned? : Int, playing? : Bool, can_run? : Bool, no_plan_hint? : String, can_draw? : Bool, no_draw_hint? : String, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
 pub fn Inspector::fuzz_row(Self, @fuzz.Step, at~ : Int, current? : Bool) -> @core.Value
 pub fn Inspector::fuzz_verdict(Self, outcome? : @fuzz.Outcome, unchecked? : Array[(String, String)], reproducer? : Array[@fuzz.Action]) -> @core.Value
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value

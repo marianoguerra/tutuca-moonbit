@@ -240,6 +240,20 @@ pub fn Plan::next_at(
 }
 
 ///|
+/// Whether this plan's source draws anything at all.
+///
+/// A plan EXISTS whenever the component declares a spec block, and that is a
+/// different question from whether the chosen source has any input in it: a
+/// component with state and rules but no `message` block and no writable
+/// property has a plan whose Public API surface is empty. `next_at` guards on
+/// the same generator, so a plan without one draws nothing in any mode — which
+/// is worth saying out loud, because the alternative is a Play button that
+/// does nothing and explains nothing.
+pub fn Plan::has_inputs(self : Plan) -> Bool {
+  self.one is Some(_)
+}
+
+///|
 /// Whether drawing against the live state can produce anything `script` could
 /// not.
 ///

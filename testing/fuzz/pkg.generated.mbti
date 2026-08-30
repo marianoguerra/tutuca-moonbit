@@ -42,6 +42,7 @@ pub struct Plan {
   source : Source
   depth : Int
 }
+pub fn Plan::has_inputs(Self) -> Bool
 pub fn Plan::has_oracle(Self) -> Bool
 pub fn Plan::next_at(Self, Map[String, @core.Value], seed~ : UInt64, step~ : Int) -> Action?
 pub fn Plan::of_component(@component.Component, source? : Source, depth? : Int) -> Self?

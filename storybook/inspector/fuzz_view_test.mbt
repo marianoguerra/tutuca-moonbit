@@ -93,6 +93,21 @@ test "nothing to generate says why" {
 }
 
 ///|
+/// A plan with an empty SOURCE is not a component with no plan, and the panel
+/// says which: the run buttons go, the switcher stays — because switching is
+/// the thing to do about it.
+test "a source that draws nothing keeps the switcher" {
+  let h = fv_mount("Fuzz Controls · nothing to draw")
+  assert_true(h.text(".no-draw").contains("no messages"))
+  inspect(h.find_all(".ctl-play").length(), content="0")
+  inspect(h.find_all(".ctl-burst").length(), content="0")
+  // …and everything that could change the answer is still there
+  inspect(h.find_all(".src-internal").length(), content="1")
+  inspect(h.find_all(".ctl-seed").length(), content="1")
+  inspect(h.find_all(".no-plan").length(), content="0")
+}
+
+///|
 /// The knobs are there when there is something to run.
 test "the controls show the run's whole address" {
   let h = fv_mount("Fuzz Controls")

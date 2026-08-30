@@ -150,6 +150,8 @@ pub fn Inspector::fuzz_controls(
   playing? : Bool = false,
   can_run? : Bool = true,
   no_plan_hint? : String = "",
+  can_draw? : Bool = true,
+  no_draw_hint? : String = "",
 ) -> @tutuca.Value {
   self.make_("FuzzControls", args={
     "seed": Str(seed),
@@ -162,6 +164,13 @@ pub fn Inspector::fuzz_controls(
     "playing": Bool(playing),
     "canRun": Bool(can_run),
     "noPlanHint": Str(no_plan_hint),
+    // The two states NEST: no plan is also nothing to draw, so a caller that
+    // says the first need not say the second. Derived here rather than asked
+    // of every caller, because the pair is what the panel's own invariants are
+    // written against — a `canRun: false, canDraw: true` panel would offer
+    // buttons for a plan that does not exist.
+    "canDraw": Bool(can_run && can_draw),
+    "noDrawHint": Str(if can_run { no_draw_hint } else { no_plan_hint }),
   })
 }
 
@@ -247,6 +256,8 @@ pub fn Inspector::fuzz_panel(
   playing? : Bool = false,
   can_run? : Bool = true,
   no_plan_hint? : String = "",
+  can_draw? : Bool = true,
+  no_draw_hint? : String = "",
   outcome? : @fuzz.Outcome,
   unchecked? : Array[(String, String)] = [],
   reproducer? : Array[@fuzz.Action] = [],
@@ -259,6 +270,8 @@ pub fn Inspector::fuzz_panel(
       playing~,
       can_run~,
       no_plan_hint~,
+      can_draw~,
+      no_draw_hint~,
     ),
     "verdict": self.fuzz_verdict(outcome?, unchecked~, reproducer~),
     "log": self.fuzz_log(run_steps, at~, planned~),

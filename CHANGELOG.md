@@ -8,6 +8,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A protocol member declared under an alias tripped two rules that read its
+  name.** A protocol's identity is its canonical id and a file imports it under
+  a local alias, so `Openable::setOpen` and
+  `tutuca.dev/std/Openable@1::setOpen` are the same member — the declaration
+  spelling and the runtime spelling, different by design. Both readers treated
+  the difference as a mistake:
+
+  - `message-case` fired on every declared member, asking for the canonical
+    spelling — which the declaration grammar cannot parse, since the qualifier
+    there is an identifier and not a URL. It now compares the MEMBER halves,
+    which is the casing question the rule is for, and suggests the fix under
+    the file's own alias.
+  - `receive Openable::setOpen(b)` found no declaration, so `b` had no type and
+    the handler was refused out of the script language into MoonBit with a note
+    asking for an annotation the block had already written. The emitter now
+    matches a declared message by either spelling.
+
+  Both vanished when the id string happened to equal the alias, which is what
+  made this look like a naming preference rather than a bug.
+
+- **The Fuzz tab's Play did nothing, and said nothing, when the source drew
+  nothing.** A plan exists whenever the component declares a spec block, and
+  that is a different question from whether the chosen source has any input in
+  it: a component with state and rules but no `message` block and no writable
+  property has an empty Public API. The panel only ever explained a MISSING
+  plan, so an empty one showed a full set of controls that could not act.
+
+  There are three states now, not two, and the middle one keeps the source
+  switcher — switching is the thing to do about it. `Plan::has_inputs` is what
+  the panel asks, and the opening panel derives a plan rather than assuming
+  one, so the answer is right before anything is pressed.
+
+- **`traffic-light` declared no message surface.** Its `receive nextLight` is a
+  handler body, and view wiring is not a declaration either, so the story's
+  public API was empty and the Fuzz tab drew an empty script. It declares
+  `handle TrafficLight { message { nextLight } }` now. The same silence is
+  waiting in most of the corpus, and the hint above is what says so.
+
 - **The scaffold README `tutuca new-storybook` writes was a release behind.**
   0.41.0 embedded a copy showing `panels=@sbui.Panels::none()` — an API the
   same release renamed — because editing `storybook/template/` and forgetting
