@@ -929,6 +929,15 @@ fn parse_channel_body(
   intents : Array[RawCase],
 ) -> Unit raise DefError {
   while !(p.peek() is (TRBrace | TEof)) {
+    // A sentence about the SECTION, not about a member: `/// the outbound
+    // half` above `message { … }`. Collected and dropped — the section is not
+    // a declaration anything carries a doc for — because the alternative was
+    // refusing it, and "expected `message` or `intent`, found a doc comment"
+    // sends an author to delete a comment that reads exactly where it belongs.
+    p.docs() |> ignore
+    if p.peek() is (TRBrace | TEof) {
+      break
+    }
     let (kind, span) = p.ident("`message` or `intent`")
     let target = match kind {
       "message" => messages

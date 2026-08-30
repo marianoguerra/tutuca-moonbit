@@ -243,6 +243,27 @@ test "a surface block that names no component is refused" {
 }
 
 ///|
+test "a doc comment may sit above a section in a surface block" {
+  // A sentence about the outbound half is about the SECTION, and the only
+  // place it reads is above it. Refusing it sent an author to delete a comment
+  // that was in the right place.
+  assert_true(
+    def_err(
+      (
+        #|state W { open: Bool }
+        #|handle W {
+        #|  /// what a parent may send
+        #|  message { setOpen(Bool) }
+        #|  /// what it asks the route for
+        #|  intent { wantsFocus }
+        #|}
+      ),
+    )
+    is None,
+  )
+}
+
+///|
 test "a builtin type name cannot be declared" {
   // Reserved for the reason the markers were: a user type called `Any` would
   // silently change what every `Any` in the file means.

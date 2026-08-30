@@ -238,8 +238,7 @@ pub fn emit(
     // A `receive` the schema declares trims `<T>Receive`; one only the views
     // write trims `<T>Msg`. `"Input"` is the key that half still goes under —
     // the bucket is gone, the DISTINCTION is not.
-    let key = if bucket == "Receive" &&
-      !e.def.receive.iter().any(m => m.name == d.name) {
+    let key = if bucket == "Receive" && e.declared_msg(d) is None {
       "Input"
     } else {
       bucket
@@ -703,7 +702,9 @@ fn E::arm(
   // `_args` when the declaration takes none: a generated file must not be the
   // thing that warns.
   let args_binder = if d.params.is_empty() { "_args" } else { "args" }
-  b.write_string("    \{bucket}(\{quote(d.name)}, \{args_binder}) => {\n")
+  b.write_string(
+    "    \{bucket}(\{quote(self.wire_name(d))}, \{args_binder}) => {\n",
+  )
   // Parameters, decoded from the dispatch arguments by their declared or
   // inferred type. A shape that does not match is `None` — the same answer
   // every generated mutator gives when handed something it cannot use.
@@ -1087,6 +1088,47 @@ fn decl_any(d : @tscript.Decl, ask : (@tscript.Expr) -> Bool) -> Bool {
 ///|
 /// Where a handler's parameter types come from — the schema for a message it
 /// declares, the views' call sites for a name only they write.
+
+///|
+/// The declared message a handler answers, by either spelling.
+///
+/// A protocol member is DECLARED as `Alias::member` and travels as
+/// `id::member`; a case declared `Nudge` travels as `nudge`. A script body
+/// writes the declaration spelling, because that is the only one the grammar
+/// takes — so this is the one place that turns what the author wrote into what
+/// the schema says it IS, and every reader downstream asks here rather than
+/// comparing strings of its own.
+fn E::declared_msg(self : E, d : @tscript.Decl) -> @statedef.MsgDef? {
+  let cases = match d.kind {
+    DIntent => self.def.intent
+    _ => self.def.receive
+  }
+  for m in cases {
+    if m.name == d.name || m.source_name == d.name {
+      return Some(m)
+    }
+  }
+  None
+}
+
+///|
+/// The name a handler's arm must MATCH — the runtime name, always.
+///
+/// The arm used to be written with `d.name`, the declaration spelling, while
+/// `send` and `intent` and the generated codec all emit the runtime name. For
+/// a bare lowercase message those are the same string and nothing showed; for
+/// `receive Openable::setOpen` they are not, so the arm listened for
+/// `"Openable::setOpen"`, every sender emitted
+/// `"…/Openable@1::setOpen"`, and the handler never ran. Silently, in a
+/// component with no `update~` to report the miss.
+fn E::wire_name(self : E, d : @tscript.Decl) -> String {
+  match self.declared_msg(d) {
+    Some(m) => m.name
+    None => d.name
+  }
+}
+
+///|
 fn E::param_types(
   self : E,
   d : @tscript.Decl,
@@ -1094,21 +1136,8 @@ fn E::param_types(
 ) -> Array[@statedef.StateTy?] {
   match d.kind {
     DReceive | DIntent => {
-      let cases = match d.kind {
-        DIntent => self.def.intent
-        _ => self.def.receive
-      }
-      for m in cases {
-        // Either spelling. A protocol member is DECLARED as `Alias::member`
-        // and carries the canonical `id::member` as its runtime name, and a
-        // script body writes the alias — the same name the author declared it
-        // by, since the alias is what the file imported. Matching only the
-        // runtime name meant every qualified `receive` lost its payload types
-        // and was refused into MoonBit for want of an annotation the block had
-        // already written.
-        if m.name == d.name || m.source_name == d.name {
-          return m.payload.map(t => Some(t))
-        }
+      if self.declared_msg(d) is Some(m) {
+        return m.payload.map(t => Some(t))
       }
       // A `receive` whose name the VIEWS send is declared by the call sites
       // rather than by the schema — the merge, and the same fallback

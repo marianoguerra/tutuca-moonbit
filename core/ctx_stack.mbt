@@ -17,7 +17,14 @@
 /// `Null` default, and that is a statement rather than an omission: a value
 /// body reads its state through `s.field` and its row through its own
 /// parameters, so `*name` is the only stack question it emits.
-pub struct CtxStack(&Ctx)
+///
+/// `pub(all)`, because the code that CONSTRUCTS one is generated into somebody
+/// else's package: `gen-views` weaves `@tutuca.CtxStack(ctx)` into a handler
+/// arm whose `invariant` calls a `pred`, and a plain `pub struct` is read-only
+/// outside the package that declares it — so that arm did not compile, with
+/// nothing said at generation time and a `moon check` error afterwards. The
+/// wrapped `&Ctx` is the whole representation and there is nothing to hide.
+pub(all) struct CtxStack(&Ctx)
 
 ///|
 pub impl Stack for CtxStack with fn lookup_dynamic(self, name) {

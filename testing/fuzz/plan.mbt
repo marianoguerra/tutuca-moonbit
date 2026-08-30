@@ -132,20 +132,36 @@ fn dispatch_gen(
 ) -> @gen.Gen[Action]? {
   match source {
     Public(bucket) =>
-      combine(declared_gen(def, bucket, depth), property_gen(def, depth))
+      combine(declared_gen(def, bucket, depth), property_gen(def, depth, state))
     Declared(bucket) => declared_gen(def, bucket, depth)
-    Properties => property_gen(def, depth)
+    Properties => property_gen(def, depth, state)
     InternalMutators => internal_gen(def, depth, state)
     All(bucket) =>
       match
         (
-          combine(declared_gen(def, bucket, depth), property_gen(def, depth)),
+          combine(
+            declared_gen(def, bucket, depth),
+            property_gen(def, depth, state),
+          ),
           internal_gen(def, depth, state),
         ) {
         (Some(p), Some(i)) => Some(@gen.one_of([p, i]))
         (Some(p), None) => Some(p)
         (None, i) => i
       }
+  }
+}
+
+///|
+/// The field a compact-form accessor names (`.view` -> `view`), or None for a
+/// script body.
+fn backing_field(source : String?) -> String? {
+  guard source is Some(s) && s.has_prefix(".") else { return None }
+  let name = s[1:].to_owned()
+  if name == "" {
+    None
+  } else {
+    Some(name)
   }
 }
 
@@ -179,13 +195,26 @@ fn internal_gen(
 }
 
 ///|
-fn property_gen(def : @statedef.StateDef, depth : Int) -> @gen.Gen[Action]? {
+fn property_gen(
+  def : @statedef.StateDef,
+  depth : Int,
+  state : Map[String, @tutuca.Value],
+) -> @gen.Gen[Action]? {
   let choices : Array[@gen.Gen[Action]] = []
   for p in def.properties {
     if p.writable {
-      choices.push(
-        @arb.value_of(def, p.ty, depth~).fmap(v => SetProperty(p.name, v)),
-      )
+      // A property declared `set .view` writes THAT field, so it draws what
+      // that field may hold — the same generator `setView` gets, domains and
+      // all. A property with a script body names no field and there is nothing
+      // to look at, so it draws its type, which is the honest answer.
+      let g = match backing_field(p.setter) {
+        Some(field) =>
+          @arb.field_value_of(def, field, depth~, state~).unwrap_or(
+            @arb.value_of(def, p.ty, depth~),
+          )
+        None => @arb.value_of(def, p.ty, depth~)
+      }
+      choices.push(g.fmap(v => SetProperty(p.name, v)))
     }
   }
   if choices.is_empty() {

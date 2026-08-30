@@ -264,6 +264,8 @@ impl @component.Fields for CounterState with fn schema() {
     ],
     view_handlers=["add", "resetCount", "setLabel"],
     receives=["resetTo"],
+    methods=["historyFollowsCount", "recorded"],
+    invariants=["historyFollowsCount"],
     ids=["count", "dec", "history", "inc", "label", "reset"],
     view_names=["main"],
     init_names=["fresh", "with-history"],

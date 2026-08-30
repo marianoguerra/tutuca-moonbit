@@ -170,10 +170,6 @@ pub fn[S : @tutuca.Fields] component(
   let encode = (s : S) => s.encode()
   let decode = (f : Map[String, @tutuca.Value]) => S::decode(f)
   let init_fields = encode(init)
-  let s_fields : Array[String] = []
-  for k, _ in init_fields {
-    s_fields.push(k)
-  }
   // Every spec comes from the SCHEMA now. The kind is `fi.kind()` and the
   // default `fi.ty.zero()`, both projections of the declared type, so there is
   // nothing here a caller could state differently from what the block says.
@@ -219,6 +215,30 @@ pub fn[S : @tutuca.Fields] component(
       }
     }
     { ..schema, fields, }
+  }
+  // Which fields the STATE TYPE carries — the question `set` asks to decide
+  // whether a write has to be decoded back into the struct or only recorded in
+  // the fields map.
+  //
+  // From the SCHEMA, because it is a question about the type and not about one
+  // value of it. Reading it off `encode(init)` was wrong for every field an
+  // encoder may omit: a generated `encode` leaves an `option` out when it is
+  // None, so `kid : Component[Child]?` seeded `None` produced no `kid` key, no
+  // `kid` in this list, and every later write to `.kid` updated the fields map
+  // while the struct kept the value it was born with. The child's own view
+  // re-rendered (it renders from the map) and everything reading `s.kid` — a
+  // `compute`, a `loop_with`, an `update` arm — saw the first child forever.
+  //
+  // The union with the encoded keys keeps what was there before: a
+  // hand-written state whose encoder emits a field its schema does not declare.
+  let s_fields : Array[String] = []
+  for fi in schema.fields {
+    s_fields.push(fi.name)
+  }
+  for k, _ in init_fields {
+    if !s_fields.contains(k) {
+      s_fields.push(k)
+    }
   }
   // Every declared field, from the schema. The kind is `fi.kind()` and the
   // default the encoded seed where there is one, `fi.ty.zero()` otherwise, so

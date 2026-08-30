@@ -3,6 +3,21 @@
     label : String
     count : Int
     history : Array[Int]
+
+    /// A named question about the state, asked in one place and used in two.
+    pred recorded { (len .history) > 0 }
+
+    /// An invariant that CALLS a pred rather than restating it — the shape
+    /// that used to generate code no compiler would take: the guard woven into
+    /// a handler arm constructs a `@tutuca.CtxStack(ctx)` to call the pred
+    /// with, and that type was read-only outside `core`, so `gen-views`
+    /// reported nothing and `moon check` failed afterwards. This file is where
+    /// that stays fixed: the demo is compiled by `check`, and the arm below is
+    /// the one the guard lands in.
+    invariant historyFollowsCount
+      format 'the counter moved and the history did not' {
+        recorded or (.count is 0)
+      }
   }
 
   /// Messages this counter raises at itself. The views never write these

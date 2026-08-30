@@ -331,8 +331,14 @@ fn member_of(
 ///   is a guard with no coverage, and the tool that motivated the feature is
 ///   the obvious place to exercise it.
 ///
-/// With no state in hand — a caller that built the table up front — nothing
-/// inverts and this is exactly the unconstrained draw it always was.
+/// With no state in hand — a caller that built the table up front — a
+/// RELATIONAL domain cannot be inverted and this is the unconstrained draw it
+/// always was. A domain that names its own members can still narrow: `is one
+/// of ["main", "format"]` and `between 0 and 100` need nothing but themselves,
+/// and asking `value_in_domain` is what tells the two apart. Bailing on an
+/// empty state map instead meant every up-front draw for such a field was
+/// arbitrary, and every one of those writes was declined by the runtime that
+/// reads the same clause.
 fn setter_arg(
   def : @statedef.StateDef,
   f : @statedef.FieldDef,
@@ -342,7 +348,7 @@ fn setter_arg(
 ) -> @gen.Gen[@tutuca.Value] {
   let free = value_of(def, f.ty, depth~)
   let mine = @tutuca.domains_of(domains, f.name)
-  if mine.is_empty() || state.is_empty() {
+  if mine.is_empty() {
     return free
   }
   for d in mine {
@@ -351,4 +357,27 @@ fn setter_arg(
     }
   }
   free
+}
+
+///|
+/// The generator for one field's own values, narrowed by its domains where
+/// they can be inverted.
+///
+/// The same draw `set<Field>` gets, offered by NAME so a caller that knows a
+/// field only through something bound to it — a `property` declared
+/// `set .view` — can ask for it. Without this a property backed by a
+/// constrained field drew arbitrary values of its TYPE, and the runtime
+/// declined every one of them: a public surface made of properties is the
+/// shape the docs push toward, and it was the shape a fuzz run could not
+/// press.
+pub fn field_value_of(
+  def : @statedef.StateDef,
+  field : String,
+  depth? : Int = MAX_DEPTH,
+  state? : Map[String, @tutuca.Value] = Map([]),
+) -> @gen.Gen[@tutuca.Value]? {
+  guard def.fields.iter().find_first(f => f.name == field) is Some(f) else {
+    return None
+  }
+  Some(setter_arg(def, f, @info.domains_of(def), state, depth))
 }

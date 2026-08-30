@@ -30,6 +30,13 @@ pub let counter_spec_source : String =
   #|    label : String
   #|    count : Int
   #|    history : Array[Int]
+  #|
+  #|    pred recorded { (len .history) > 0 }
+  #|
+  #|    invariant historyFollowsCount
+  #|      format 'the counter moved and the history did not' {
+  #|        recorded or (.count is 0)
+  #|      }
   #|  }
   #|
   #|  handle {
@@ -127,22 +134,81 @@ pub fn counter_views() -> Map[String, @anode.View] {
 fn counter_inline_update(
   s : CounterState,
   msg : @component.Dispatch,
-  _ctx : &@tutuca.Ctx,
+  ctx : &@tutuca.Ctx,
 ) -> @component.Update[CounterState] {
   match msg {
     Receive("add", args) => {
       guard args.get(0) is Some(Num(d_)) else { return Unchanged }
       let s = { ..s, count: (s.count.to_double() + d_).to_int(), }
       let s = { ..s, history: s.history + [s.count], }
+      guard counter_compute_recorded(s, [], @tutuca.CtxStack(ctx)).is_truthy() ||
+        (Num(s.count.to_double()) : @tutuca.Value) == (Num(0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="add",
+          pred="historyFollowsCount",
+          sentence="the counter moved and the history did not",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     Receive("resetTo", args) => {
       guard args.get(0) is Some(Num(n_)) else { return Unchanged }
       let s = { ..s, count: n_.to_int(), }
       let s = { ..s, history: s.history + [s.count], }
+      guard counter_compute_recorded(s, [], @tutuca.CtxStack(ctx)).is_truthy() ||
+        (Num(s.count.to_double()) : @tutuca.Value) == (Num(0.0) : @tutuca.Value) else {
+        @tutuca.invariant_failed(
+          handler="resetTo",
+          pred="historyFollowsCount",
+          sentence="the counter moved and the history did not",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
+        return Unchanged
+      }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `pred recorded` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn counter_compute_recorded(
+  s : CounterState,
+  _args : Array[@tutuca.Value],
+  _stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (Bool(s.history.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// `invariant historyFollowsCount` from the `<script type="tutuca/spec">` block. GENERATED — edit
+/// the block, not this.
+fn counter_compute_historyFollowsCount(
+  s : CounterState,
+  _args : Array[@tutuca.Value],
+  stack : &@tutuca.Stack,
+) -> @tutuca.Value {
+  (
+    Bool(
+      counter_compute_recorded(s, [], stack).is_truthy() ||
+      (Num(s.count.to_double()) : @tutuca.Value) == (Num(0.0) : @tutuca.Value),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn counter_inline_compute() -> Map[
+  String,
+  (CounterState, Array[@tutuca.Value], &@tutuca.Stack) -> @tutuca.Value,
+] {
+  {
+    "recorded": counter_compute_recorded,
+    "historyFollowsCount": counter_compute_historyFollowsCount,
   }
 }
 
@@ -187,6 +253,7 @@ pub fn counter_component(
         answered => answered
       }
     },
+    compute=counter_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -201,5 +268,27 @@ pub fn counter_component(
     provide~,
     lookup~,
     spec=counter_spec_source,
+  )
+}
+
+///|
+/// Every declared initial state keeps every declared invariant.
+///
+/// A rule that does not hold in the state a component STARTS in is broken
+/// before anything happens, and every transition after it is refused — so
+/// this is the one check worth making before the component ever runs.
+/// GENERATED — edit the spec block, not this.
+test "counter: the declared initial states keep the invariants" {
+  let s = CounterState::fresh()
+  assert_false(
+    counter_compute_historyFollowsCount(s, [], @tutuca.NullStack::{ })
+    is Bool(false),
+    msg="the `fresh` initial state breaks `historyFollowsCount`",
+  )
+  let s = CounterState::withHistory()
+  assert_false(
+    counter_compute_historyFollowsCount(s, [], @tutuca.NullStack::{ })
+    is Bool(false),
+    msg="the `with-history` initial state breaks `historyFollowsCount`",
   )
 }

@@ -318,6 +318,42 @@ test "a protocol member keeps its payload and draws no case warning" {
 /// The rule still fires on the half it is for: the MEMBER's spelling. The
 /// suggestion keeps the file's own qualifier, because that is the only
 /// spelling the declaration grammar accepts.
+test "a script handler for a protocol message answers the canonical name" {
+  // The arm has to MATCH what a sender emits, and a sender emits the runtime
+  // name. Written with the declaration spelling it listened for
+  // `"Openable::setOpen"` while every `send` addressed
+  // `"tutuca.dev/std/Openable@1::setOpen"`, so the handler never ran — in a
+  // component with no `update~`, without a word.
+  let r = @cli.gen_views(
+    (
+      #|<script type="tutuca/spec">
+      #|  protocol Openable = "tutuca.dev/std/Openable@1" {
+      #|    handle { message { setOpen(Bool) } }
+      #|  }
+      #|  state Node implements Openable { open: Bool }
+      #|  handle Node { message { Openable::setOpen(Bool) } }
+      #|</script>
+      #|<script type="tutuca/script" for="Node">
+      #|  receive Openable::setOpen(b) {
+      #|    .open = b
+      #|  }
+      #|</script>
+      #|<template id="Node"><b @text=".open"></b></template>
+    ),
+    name="Node",
+    input="views/node.html",
+    target="views/node_view_gen.mbt",
+    ir=true,
+  )
+  guard! r is Ok(plan)
+  let all = plan.files.map(f => f.1).join("\n")
+  assert_true(
+    all.contains("Receive(\"tutuca.dev/std/Openable@1::setOpen\", args)"),
+  )
+  assert_false(all.contains("Receive(\"Openable::setOpen\""))
+}
+
+///|
 test "a mis-cased protocol member is reported under its alias" {
   let r = @cli.gen_views(
     (
