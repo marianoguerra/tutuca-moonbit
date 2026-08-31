@@ -6,6 +6,55 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-08-31
+
+### Fixed
+
+- **A `provide` inside an `@each` published the ROOT's address.** `@each`
+  re-binds `it` to the item whether or not the body is a component, but the
+  step recorded for the item was chosen off the body NODE, and only an
+  `<x render-it>` directly under the loop earned an addressing one. The
+  canonical `<div @each=".rows"><x render-it></x></div>` fell to a frame-only
+  step, which resolves as the identity — so everything the item published
+  claimed the address of the collection's owner, and because that path has no
+  wire form the base written into `§Comp§` collapsed to `[]`, the root. A
+  `<x render="*name">` below it resumed the whole app there, and every edit
+  made inside it was silently dropped. The render still looked right: a value
+  is published beside its path and rendering uses the value; only dispatch uses
+  the path.
+
+  The item step now comes from the iterated VALUE — `.rows` at `key` IS
+  `rows[key]` — so the position moves with `it` for every body shape, not just
+  the one spelling `<x render-each>` desugars to.
+
+### Changed
+
+- **A provide's path may be absent, and `LocatedValue.path` says so.** Before
+  publishing, the render position is compacted and then CHECKED against the
+  value actually being rendered; a position that cannot be written down as an
+  address publishes no path at all. `*name` still reads such a value, and
+  `<x render="*name">` renders it in place, entering no continuation frame —
+  which is better than resuming at an address nobody verified. A constant
+  `lookup` default reaches the same answer, and for the same reason.
+  `render_path_text` now answers `None` rather than `"[]"`, since the empty
+  path names the root.
+
+- **An iteration directive on an `<x>` op is rejected, and the node is
+  dropped.** `@each`, `@enrich-with`, and — outside the `<x render-each>` that
+  consumes them — `@when` and `@loop-with` raise `LOOP_DIRECTIVE_ON_X_OP` (a
+  new `@anode.ParseIssue` and `@lint.LintCode`) instead of the generic
+  unknown-attribute warning that used to keep the site. An `<x>` op is one
+  render site with no body to iterate, so dropping the directive quietly turned
+  N renders into one — and `<x render-it @each=".rows">` without its loop
+  renders the value that was to be iterated, which is the value already
+  rendering. Write `<x render-each=".rows">`, or put the loop on a wrapper
+  element around the `<x>`.
+
+- **A render site that would re-enter the value already rendering stops
+  there.** It leaves a `RECURSION AVOIDED` comment and no component boundary
+  rather than descending until the stack runs out. The JS renderer has carried
+  this guard all along; the port had not.
+
 ## [0.43.0] - 2026-08-31
 
 ### Changed
@@ -6094,7 +6143,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.43.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.44.0...HEAD
+[0.44.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.43.0...v0.44.0
 [0.43.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.42.0...v0.43.0
 [0.42.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.41.5...v0.42.0
 [0.40.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.2...v0.40.0
