@@ -96,6 +96,67 @@ pub fn Transactor::set_property(
 }
 
 ///|
+pub fn Transactor::set_member(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  value : @tutuca.Value,
+) -> @tutuca.PropertyWrite {
+  let path = at.to_transaction_path().pin_keys(self.root)
+  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  match leaf.set_member(name, value) {
+    PMissing => PMissing
+    PUnchanged => PUnchanged
+    PRefused => PRefused
+    PChanged(next) => {
+      let root = path.set_value(self.root, next)
+      if physical_equal(root, self.root) {
+        PUnchanged
+      } else {
+        self.reset_root(root)
+        if !self.draining {
+          for cb in self.drain_subs {
+            cb()
+          }
+        }
+        PChanged(root)
+      }
+    }
+  }
+}
+
+///|
+pub fn Transactor::mutate_member(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  operation : String,
+  args : Array[@tutuca.Value],
+) -> @tutuca.PropertyWrite {
+  let path = at.to_transaction_path().pin_keys(self.root)
+  guard path.lookup(self.root) is Some(leaf) else { return PMissing }
+  match leaf.mutate_member(name, operation, args) {
+    PMissing => PMissing
+    PUnchanged => PUnchanged
+    PRefused => PRefused
+    PChanged(next) => {
+      let root = path.set_value(self.root, next)
+      if physical_equal(root, self.root) {
+        PUnchanged
+      } else {
+        self.reset_root(root)
+        if !self.draining {
+          for cb in self.drain_subs {
+            cb()
+          }
+        }
+        PChanged(root)
+      }
+    }
+  }
+}
+
+///|
 /// The next walk id. Never 0: 0 is what a record carries when it belongs to no
 /// walk, so a real walk must not be able to collide with it.
 fn Transactor::next_walk_id(self : Transactor) -> Int {

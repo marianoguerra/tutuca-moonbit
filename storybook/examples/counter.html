@@ -10,10 +10,10 @@
 
     property {
       /// Direct public storage: the compact form needs no script body.
-      count : Int { get .count set .count }
+      pub count : Int { get .count set .count }
       /// An abstract property: its implementation preserves the sign while
       /// exposing and accepting a non-negative magnitude.
-      magnitude : Int { get set }
+      pub magnitude : Int { get set }
     }
   }
 </script>

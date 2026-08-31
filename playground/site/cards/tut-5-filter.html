@@ -9,6 +9,10 @@
     query  : String
     names  : Array[String]
     picked : Set[String]
+
+    property {
+      caption: String { get }
+    }
   }
 
   handle Crew {
@@ -42,7 +46,7 @@
     @picked = has .picked @value
   }
 
-  compute caption { $'{len .picked} picked of {len .names}' }
+  get caption { $'{len .picked} picked of {len .names}' }
 </script>
 
 <template>
@@ -50,20 +54,20 @@
     <div class="card-body gap-3">
       <input type="search" class="input input-sm w-full"
              placeholder="filter" :value=".query"
-             @on.input="setQuery e.value">
+             @on.input=".query = e.value">
       <ul class="flex flex-col gap-1">
         <li @each=".names" @when="matches" @enrich-with="row">
           <label @if.class="@picked"
                  @then="'flex gap-2 items-center font-semibold'"
                  @else="'flex gap-2 items-center'">
             <input type="checkbox" class="checkbox checkbox-sm"
-                   :checked="@picked" @on.click="toggleInPicked @value">
+                   :checked="@picked" @on.click=".picked.toggle @value">
             <x text="@value"></x>
           </label>
         </li>
       </ul>
       <span class="badge badge-sm badge-neutral">
-        <x text="$caption"></x>
+        <x text=".caption"></x>
       </span>
     </div>
   </div>

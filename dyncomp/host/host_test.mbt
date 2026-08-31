@@ -139,7 +139,8 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 ///|
 impl Guest for FakeGuest with fn get_property(self, handle, name) {
   match name {
-    "count" => self.counters.get(handle).map(n => (Num(n) : @tutuca.Value))
+    "count" | "secret" =>
+      self.counters.get(handle).map(n => (Num(n) : @tutuca.Value))
     _ => None
   }
 }
@@ -488,6 +489,7 @@ fn counter_manifest() -> DynManifest {
               #|<div class="counter">
               #|  <button class="dec" @on.click="dec">-</button>
               #|  <span class="count" @text=".count"></span>
+              #|  <span class="secret" @text=".secret"></span>
               #|  <button class="inc" @on.click="inc">+</button>
               #|  <button class="double" @on.click="double">double</button>
               #|  <button class="notify" @on.click="notify">notify</button>
@@ -511,7 +513,20 @@ fn counter_manifest() -> DynManifest {
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
         properties: [
-          { name: "count", ty: 0, writable: true, doc: "The public count.", },
+          {
+            name: "count",
+            ty: 0,
+            public_: true,
+            writable: true,
+            doc: "The public count.",
+          },
+          {
+            name: "secret",
+            ty: 0,
+            public_: false,
+            writable: false,
+            doc: "A private derived view member.",
+          },
         ],
         domains: [],
         receives: ["init", "setTo"],
@@ -1216,19 +1231,23 @@ test "a guest property is public, synchronous, and copy-on-write" {
   assert_eq(after.property("count"), Num(9))
   assert_true(after.set_property("count", Num(9)) is PUnchanged)
   assert_true(after.set_property("count", Str("bad")) is PRefused)
+  assert_eq(before.property("secret"), Null)
+  assert_eq(before.member_at("secret", @tutuca.NullStack::{ }), Some(Num(4)))
+  assert_true(before.set_property("secret", Num(1)) is PMissing)
+  assert_true(before.set_member("secret", Num(1)) is PRefused)
   assert_true(after.set_property("private", Num(1)) is PMissing)
 }
 
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
     #|             {"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "count", "ty": 0}, {"name": "history", "ty": 1}],
-    #|   "properties": [{"name": "count", "ty": 0, "writable": true}],
+    #|   "properties": [{"name": "count", "ty": 0, "writable": true, "public": true}],
     #|   "receives": ["init", "double"], "intents": [],
     #|   "methods": ["label"], "style": ""}]}
   let m = DynManifest::from_json_string(json)
@@ -1408,7 +1427,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs and constraints" {
   let json =
-    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "formlib",
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "components": [
     #|  {"name": "Signup", "doc": "Collects an address.",
@@ -1465,7 +1484,7 @@ test "catalog metadata parses: docs and constraints" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "bare", "components": [
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [], "properties": [],
     #|   "receives": [], "intents": [], "methods": [],
@@ -1479,7 +1498,7 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "m", "components": [
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1496,7 +1515,7 @@ test "a cyclic or out-of-range type index reads as `any`, not a hang" {
 ///|
 test "manifest with wrong api version is rejected" {
   let bad =
-    #|{"manifestVersion": 2, "apiVersion": 1, "moduleName": "x", "components": []}
+    #|{"manifestVersion": 3, "apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
@@ -1522,7 +1541,7 @@ test "old manifest shapes and implicit property surfaces are rejected" {
   let old =
     #|{"manifestVersion": 1, "apiVersion": 10, "moduleName": "x", "components": []}
   let implicit =
-    #|{"manifestVersion": 2, "apiVersion": 10, "moduleName": "x", "components": [
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "x", "components": [
     #| {"name": "C", "views": [], "types": [], "fields": [], "style": ""}
     #|]}
   let mut refused = 0

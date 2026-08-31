@@ -68,6 +68,74 @@ fn check_views(
   for view in views {
     let c = Checker::{ def, prog, view: view.raw.name, hints, }
     c.node(view.root, { self_ty: SState, item: SOpaque, })
+    for events in view.events {
+      for handler in events.handlers {
+        c.property_action(handler.handler.action)
+      }
+    }
+  }
+}
+
+///|
+fn Checker::property_action(
+  self : Checker,
+  action : @tscript.PropertyAction?,
+) -> Unit raise GenError {
+  guard action is Some(action) else { return }
+  let name = match action {
+    PropertySet(name~, ..) | PropertyCall(name~, ..) => name
+    PropertyReset(name) => name
+  }
+  guard self.def.member_ty(name) is Some(_) else {
+    raise InvalidPropertyAction(
+      view=self.view,
+      reason="targets unknown member `.\{name}`",
+    )
+  }
+  if self.def.property(name) is Some(p) && !p.writable {
+    raise InvalidPropertyAction(
+      view=self.view,
+      reason="targets read-only property `.\{name}`",
+    )
+  }
+  guard action is PropertyCall(operation~, ..) else { return }
+  if self.def.property(name) is Some(_) {
+    raise InvalidPropertyAction(
+      view=self.view,
+      reason="cannot apply `.\{name}.\{operation}` through an explicit property; assign its complete value",
+    )
+  }
+  guard self.def.field(name) is Some(field) else { return }
+  let allowed = match field.ty {
+    TList(_) =>
+      operation
+      is ("push"
+      | "insertAt"
+      | "setAt"
+      | "set"
+      | "deleteAt"
+      | "removeAt"
+      | "delete"
+      | "remove"
+      | "clear")
+    TOMap(_) =>
+      operation
+      is ("setAt"
+      | "set"
+      | "deleteAt"
+      | "removeAt"
+      | "delete"
+      | "remove"
+      | "clear")
+    TSet | TFlags(_) =>
+      operation is ("add" | "toggle" | "delete" | "remove" | "clear")
+    _ => false
+  }
+  if !allowed {
+    raise InvalidPropertyAction(
+      view=self.view,
+      reason="`.\{name}.\{operation}` does not apply to \{field.ty.show_source()}",
+    )
   }
 }
 
@@ -82,9 +150,9 @@ fn Checker::ty_of(
   match val {
     Field(name) =>
       match sc.self_ty {
-        SState => self.def.field(name).map(f => f.ty)
+        SState => self.def.member_ty(name)
         STy(t) => self.def.field_of(t, name)
-        SComp(d) => d.field(name).map(f => f.ty)
+        SComp(d) => d.member_ty(name)
         SOpaque => None
       }
     // `@value` in a loop body. Other binds belong to @enrich-with, which
@@ -150,8 +218,13 @@ fn Checker::val(
     Field(name) =>
       match sc.self_ty {
         SState =>
-          if self.def.field(name) is None {
+          if self.def.member_ty(name) is None {
             let known = self.def.fields.map(f => f.name)
+            for p in self.def.properties {
+              if !known.contains(p.name) {
+                known.push(p.name)
+              }
+            }
             raise UnknownStateField(
               view=self.view,
               name~,
@@ -170,7 +243,7 @@ fn Checker::val(
             )
           }
         SComp(d) =>
-          if d.field(name) is None {
+          if d.member_ty(name) is None {
             raise UnknownStateField(
               view=self.view,
               name~,

@@ -202,7 +202,7 @@ fn property_gen(
 ) -> @gen.Gen[Action]? {
   let choices : Array[@gen.Gen[Action]] = []
   for p in def.properties {
-    if p.writable {
+    if p.public_ && p.writable {
       // A property declared `set .view` writes THAT field, so it draws what
       // that field may hold — the same generator `setView` gets, domains and
       // all. A property with a script body names no field and there is nothing

@@ -18,7 +18,7 @@ fn row_schema() -> @core.SchemaInfo {
       @core.FieldInfo::new("title", TyText),
       @core.FieldInfo::new("tags", TyList(TyText)),
     ],
-    properties=[{ name: "label", ty: TyText, writable: false, }],
+    properties=[{ name: "label", ty: TyText, public_: true, writable: false, }],
     methods=["shout"],
     protocols=[
       {
@@ -27,7 +27,9 @@ fn row_schema() -> @core.SchemaInfo {
         handle_intents: [],
         express_messages: [],
         express_intents: [],
-        properties: [{ name: "label", ty: TyText, writable: false, }],
+        properties: [
+          { name: "label", ty: TyText, public_: true, writable: false, },
+        ],
         views: [],
         provides: [],
         lookups: [],

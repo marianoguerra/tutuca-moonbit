@@ -352,13 +352,16 @@ block that path skips.
 
 ```html
 <script type="tutuca/spec">
-  state Counter { count: Int, step: Int }
+  state Counter {
+    count: Int, step: Int
+    property { label: String { get } }
+  }
 </script>
 
 <script type="tutuca/script">
   receive init { .step = 1 }
   receive inc  { .count += .step }
-  compute label { $'the count is {.count}' }
+  get label { $'the count is {state.count}' }
 </script>
 
 <script type="tutuca/test">

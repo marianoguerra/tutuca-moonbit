@@ -197,6 +197,31 @@ pub fn on(
   args? : Array[@tutuca.Val] = [],
   modifiers? : Array[String] = [],
   binding? : BindCoercion,
+  action? : @tscript.PropertyAction,
 ) -> NodeEvent {
-  { name, handler: { handler, args, }, modifiers, binding, }
+  { name, handler: { handler, args, action, }, modifiers, binding, }
+}
+
+///|
+/// Build an event action that assigns a component property. Kept in `anode`
+/// so generated view modules need no direct dependency on the script parser.
+pub fn set_property_action(
+  name : String,
+  value : @tutuca.Val,
+) -> @tscript.PropertyAction {
+  PropertySet(name~, value~)
+}
+
+///|
+pub fn reset_property_action(name : String) -> @tscript.PropertyAction {
+  PropertyReset(name)
+}
+
+///|
+pub fn call_property_action(
+  name : String,
+  operation : String,
+  args : Array[@tutuca.Val],
+) -> @tscript.PropertyAction {
+  PropertyCall(name~, operation~, args~)
 }

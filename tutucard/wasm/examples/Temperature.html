@@ -4,6 +4,11 @@
     /// Degrees Celsius.
     c: Double
 
+    property {
+      f: Double { get }
+      both: String { get }
+    }
+
     /// Never below absolute zero.
     invariant physical { .c >= (-273.15) }
   }
@@ -11,7 +16,7 @@
 
 <script type="tutuca/script">
   /// The same temperature in Fahrenheit.
-  compute f { (.c * 1.8) + 32 }
+  get f { (.c * 1.8) + 32 }
 
   /// Warmer by one degree.
   receive warmer {
@@ -24,13 +29,13 @@
   }
 
   /// Both scales, in one sentence.
-  compute both { $'{.c} °C is {f} °F' }
+  get both { $'{.c} °C is {(.c * 1.8) + 32} °F' }
 </script>
 
 <template id="Temperature">
   <div>
     <button @on.click="cooler">cooler</button>
     <button @on.click="warmer">warmer</button>
-    <p @text="$both"></p>
+    <p @text=".both"></p>
   </div>
 </template>

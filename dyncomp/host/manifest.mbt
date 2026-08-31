@@ -36,6 +36,7 @@ pub(all) struct DynFieldDef {
 pub(all) struct DynPropertyDef {
   name : String
   ty : Int
+  public_ : Bool
   writable : Bool
   doc : String
 } derive(Debug, Eq)
@@ -231,7 +232,7 @@ pub let supported_api_version : Int = 10
 
 ///|
 /// The archive JSON shape paired with `supported_api_version`.
-pub let supported_manifest_version : Int = 2
+pub let supported_manifest_version : Int = 3
 
 ///|
 suberror ManifestError {
@@ -586,6 +587,7 @@ fn parse_properties(
     out.push({
       name: str_field(p, "name"),
       ty: int_field(p, "ty"),
+      public_: bool_field(p, "public"),
       writable: bool_field(p, "writable"),
       doc: opt_str(p, "doc"),
     })
@@ -600,6 +602,7 @@ pub fn DynComponentDef::property_infos(
   self.properties.map(p => @tutuca.PropertyInfo::{
     name: p.name,
     ty: ty_info_at(self.types, p.ty),
+    public_: p.public_,
     writable: p.writable,
   })
 }

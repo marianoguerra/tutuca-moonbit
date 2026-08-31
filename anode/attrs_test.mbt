@@ -152,8 +152,12 @@ test "@bind parses to a mirrored property and a pending setter event" {
   assert_eq(px.events[0].handlers.length(), 1)
   let h = px.events[0].handlers[0]
   assert_eq(h.name, "input")
-  assert_true(h.handler.handler is HandlerName(name="setDone", ns=Receive))
-  assert_true(h.handler.args is [EventPath(["value"])])
+  assert_true(h.handler.handler is Const(lit=LNull, ..))
+  assert_true(
+    h.handler.action
+    is Some(PropertySet(name="done", value=EventPath(["value"]))),
+  )
+  assert_true(h.handler.args.is_empty())
   assert_true(h.binding is Some(BindPending))
 }
 

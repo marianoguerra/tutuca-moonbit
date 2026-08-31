@@ -655,9 +655,10 @@ it from, not a place to reach.
 
 ### 5b. Public properties: state transition, not an effect channel
 
-Manifest v2 declares properties separately from storage fields. A declaration
-fixes a name and type, and opts into writing explicitly; matching an internal
-field name grants nothing. The host checks all three before calling a setter.
+Manifest v3 declares properties separately from storage fields. A declaration
+fixes a name, type, and visibility, and opts into writing explicitly; matching
+an internal field name grants nothing. Only `public: true` admits host access.
+The host checks all four before calling a setter.
 It also validates the value returned by the successor's getter and evaluates
 the successor against the manifest's field domains before adopting it
 (`host/dynobj.mbt`, `obj_property` / `obj_set_property`). A refusal or malformed
@@ -864,8 +865,8 @@ imports.
 - Adding or widening a property setter: is it separately declared writable,
   type-checked before the call, type/domain-checked after it, atomic on
   refusal, and barred from every `control`/child effect at both the source and
-  wasm boundaries? Public fuzzing should discover it from `properties`; only
-  an explicitly diagnostic mode may generate schema mutators.
+  wasm boundaries? Public fuzzing should discover only `public: true`
+  properties; field-operation tables remain internal implementation detail.
 - Adding to `control`: is it buffered and applied by the host, or does it act?
   Only `log` acts, and only because logging cannot be misused into anything.
   v2's five — `intent`, `intent-at`, `forward`, `reply`, `fail` — are all

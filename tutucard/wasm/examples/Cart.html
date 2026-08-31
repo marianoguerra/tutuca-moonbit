@@ -16,6 +16,13 @@
     /// The receipt lines, each one a record this card builds with `new`.
     receipt: Array[Line]
 
+    property {
+      total: Double { get }
+      line: String { get }
+      remembered: Int { get }
+      tidy: String { get }
+    }
+
     /// A line is only ever worth a non-negative amount.
     invariant sane { .qty >= 0 }
 
@@ -31,10 +38,10 @@
 
 <script type="tutuca/script">
   /// What this line costs.
-  compute total { .qty * .price }
+  get total { .qty * .price }
 
   /// The line as a sentence.
-  compute line { $'{.qty} x {.item} = {total}' }
+  get line { $'{.qty} x {.item} = {.qty * .price}' }
 
   /// One more.
   receive more {
@@ -53,7 +60,7 @@
 
   /// Tell the parent about this line, once it has an item.
   receive checkout requires hasItem {
-    intent dyn 'lineReady' .item total
+    intent dyn 'lineReady' .item (.qty * .price)
     .sent = true
     stop
   }
@@ -72,10 +79,10 @@
   }
 
   /// How many quantities have been remembered.
-  compute remembered { len .history }
+  get remembered { len .history }
 
   /// The item, tidied: no stray spaces, and compared case-blind.
-  compute tidy { trim .item }
+  get tidy { trim .item }
 </script>
 
 <template id="Cart">
@@ -84,10 +91,10 @@
     <button @on.click="fewer">-</button>
     <span @text=".qty"></span>
     <button @on.click="more">+</button>
-    <p @text="$line"></p>
+    <p @text=".line"></p>
     <button @on.click="remember">remember</button>
     <button @on.click="receipt">to receipt</button>
-    <p @text="$'{$remembered} remembered: {.history}'"></p>
+    <p @text="$'{.remembered} remembered: {.history}'"></p>
     <button @on.click="checkout" @show="$hasItem">checkout</button>
     <p @text="'sent'" @show=".sent"></p>
   </div>

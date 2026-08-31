@@ -4,6 +4,7 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
   // `App::new` installs the markdown filter, which is what makes `@setinnermd`

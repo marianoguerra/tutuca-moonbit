@@ -232,6 +232,7 @@ pub fn register_bundle(
         properties: p.properties.map(prop => @tutuca.PropertyInfo::{
           name: prop.name,
           ty: ty_info_at(def.types, prop.ty),
+          public_: true,
           writable: prop.writable,
         }),
         views: p.views,

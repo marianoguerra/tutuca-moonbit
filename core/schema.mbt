@@ -196,8 +196,11 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
     }
   }
   for p in self.properties {
+    let visibility = if p.public_ { "pub" } else { "priv" }
     let access = if p.writable { "w" } else { "r" }
-    sb.write_string("a:\{p.name}:\{p.ty.show_source()}:\{access};")
+    sb.write_string(
+      "a:\{p.name}:\{p.ty.show_source()}:\{visibility}:\{access};",
+    )
   }
   for
     pair in [

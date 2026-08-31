@@ -46,11 +46,13 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
    delegation, morphing, modifiers and the linter apply unchanged). The guest
    renders nothing.
 3. **State is opaque, its SHAPE and public interface are statically declared.**
-   The WIT exposes behavior; manifest v2 carries internal fields and public
-   abstract properties separately. Handlers take self and return `unhandled |
+   The WIT exposes behavior; manifest v3 carries fields and properties, with
+   visibility on every property. Handlers take self and return `unhandled |
    unchanged | changed(instance)`. Fields are read lazily by the host at render
    time (`get-field`). Properties use `get-property` and, only when declared
-   writable, a synchronous `set-property` transition. A property may mirror
+   writable, a synchronous `set-property` transition. Private properties are
+   available only to the component's own views; `pub` properties also form the
+   host-facing interface. A property may mirror
    one field or derive/update several; callers do not observe that choice.
 
 4. **Ambient authority is absent, never assumed.** The world imports no WASI —
@@ -65,12 +67,11 @@ That third principle is what makes the contract small. Everything generic over
 a schema works on a guest without the guest implementing it: structural
 equality (`Obj::obj_eq`), the JSON projection (`Value::to_json`), debug output,
 hot-swap migration, inspector forms, and the catalog entry a search ranks and
-a language model reads. Generated per-field mutators (`setCount`,
-`toggleDone`, `pushInItems`, …) still exist for a component's own views and
-handlers, but they are implementation machinery, not the component's public
-protocol. A host, Storybook, or property fuzzer sees only declared messages,
-intents, and properties. Diagnostic fuzzing may request internal mutators
-explicitly.
+a language model reads. State fields are implicit private read/write
+properties. The old generated per-field names (`setCount`, `toggleDone`,
+`pushInItems`, …) survive only as an implementation table below the property
+operation API; source and manifests never expose them. A host, Storybook, or
+property fuzzer sees only declared messages, intents, and `pub` properties.
 
 The fourth is what makes the first three worth having. A component whose state
 is opaque but whose shape is declared can be searched, formed and described
@@ -86,9 +87,9 @@ mounted from anywhere. Neither property is useful alone.
 | What the instance IS | `Obj::obj_schema` — built from static bundle data in `register_bundle` |
 | Handlers take self, return self | `Handler((Array[Value], &Ctx) -> Value?)` is already self-pre-bound; the guest's new handle wraps into a fresh `DynObj` |
 | Change detection / re-render | a fresh `DynObj` is a new physical identity — the COW model everything keys on — carrying the predecessor's `ObjId` at the next revision, so the render cache still hits |
-| Render reads | `Obj::obj_field` is a lazy per-name read; only fields the views evaluate cross the boundary |
+| Render reads | `Obj::obj_member_at` resolves private/public properties before raw fields; only members the views evaluate cross the boundary |
 | Public property reads/writes | `Obj::obj_property` / `obj_set_property`; the latter returns missing, unchanged, refused, or a complete successor |
-| Generated mutators | `@component.schema_mutators` over a `FieldBox`, gated by dispatch provenance so external host calls cannot reach them |
+| View property writes/operations | `Obj::obj_set_member` / `obj_mutate_member`; assignments and collection verbs reach an internal `FieldBox` operation without synthesizing a message name |
 | Mounting a foreign bundle | a child scope of the app scope (per-bundle name isolation, shared id registry), resolution by component id |
 | A bundle's own services | request handlers registered in that child scope, so `lookup_request` finds them before the host's |
 
@@ -96,10 +97,10 @@ No changes to `render/` or `vdom/` are needed.
 
 ## Public property contract
 
-A property declaration is `(name, type, writable, doc)`. Readability is
-intrinsic: every declared property has a getter. Writability is opt-in and is
-the only authority a caller gets; an internal field with the same name does
-not make a property writable or even public.
+A property declaration is `(name, type, writable, public, doc)`. Readability
+is intrinsic: every declared property has a getter. Visibility defaults to
+private and `pub` opts into the external interface. Writability is independent
+and opt-in; an internal field with the same name makes neither promise.
 
 `get-property(name)` answers `option<value>`. `set-property(name, value)`
 answers one of four results:

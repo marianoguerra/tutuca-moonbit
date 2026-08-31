@@ -2126,18 +2126,18 @@ fn trace_panel_main_view_ir() -> @anode.View {
       [
         @anode.on(
           "input",
-          HandlerName(name="setDraft", ns=Receive),
-          args=[EventPath(["value"])],
+          @anode.const_null(),
           binding=@anode.BindString,
+          action=@anode.set_property_action("draft", EventPath(["value"])),
         ),
       ],
       [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
       [
         @anode.on(
           "input",
-          HandlerName(name="setDraft", ns=Receive),
-          args=[EventPath(["value"])],
+          @anode.const_null(),
           binding=@anode.BindString,
+          action=@anode.set_property_action("draft", EventPath(["value"])),
         ),
       ],
       [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
@@ -3106,7 +3106,6 @@ pub fn trace_panel_component(
               ReplayReset,
               ReplayRun,
               ReplayStep,
-              SetDraft,
               SetTab,
               ToggleSelecting,
             ] : Array[TracePanelInput]),

@@ -103,10 +103,14 @@ pub(all) struct ProtocolRef {
 
 ///|
 /// A typed readable observation. It promises an operation, not storage: an
-/// implementation may bind it to a field or to a zero-argument computation.
+/// implementation may bind it to a field or to a getter body.
 pub(all) struct PropertyDef {
   name : String
   ty : StateTy
+  /// Whether this property is part of the component's direct host/parent
+  /// interface. Properties are private virtual fields unless the declaration
+  /// carries `pub`; protocol members are public by definition.
+  public_ : Bool
   writable : Bool
   /// `.field` for the simple case; None means a `get name` script body.
   getter : String?
@@ -553,6 +557,18 @@ declare pub fn StateDef::component_name(
 ///|
 /// The field with this runtime name, or None.
 declare pub fn StateDef::field(self : StateDef, name : String) -> FieldDef?
+
+///|
+/// A declared virtual property by source/runtime name.
+declare pub fn StateDef::property(
+  self : StateDef,
+  name : String,
+) -> PropertyDef?
+
+///|
+/// The type read by `.name`: a declared property first, then the implicit
+/// private property supplied by a state field.
+declare pub fn StateDef::member_ty(self : StateDef, name : String) -> StateTy?
 
 ///|
 /// The named type with this source name, or None.

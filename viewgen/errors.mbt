@@ -26,6 +26,8 @@ pub fn GenError::message(self : GenError) -> String {
         None => "; declare it in the <script type=\"tutuca/spec\"> block"
       })
     InvalidBind(view~, reason~) => "view \"\{view}\": `@bind` \{reason}"
+    InvalidPropertyAction(view~, reason~) =>
+      "view \"\{view}\": property action \{reason}"
     PayloadDisagrees(name~, declared~, written~, sites~) =>
       "`\{name}` is declared in the state block as `\{declared}` and called from \{sites} as `\{written}` — the schema declares what a message carries, so the call sites have to match it"
     IdInLoop(view~, id~) =>
@@ -64,6 +66,7 @@ pub fn GenError::code(self : GenError) -> String {
     BareEventArg(..) => "BARE_EVENT_ARG"
     UnknownStateField(..) => "UNKNOWN_STATE_FIELD"
     InvalidBind(..) => "INVALID_BIND"
+    InvalidPropertyAction(..) => "INVALID_PROPERTY_ACTION"
     IdInLoop(..) => "ID_IN_LOOP"
     PayloadDisagrees(..) => "PAYLOAD_DISAGREES"
     AlwaysTruthy(..) => "ALWAYS_TRUTHY"
@@ -89,6 +92,7 @@ pub fn GenError::view(self : GenError) -> String? {
     | BareEventArg(view~, ..)
     | UnknownStateField(view~, ..)
     | InvalidBind(view~, ..)
+    | InvalidPropertyAction(view~, ..)
     | IdInLoop(view~, ..)
     | AlwaysTruthy(view~, ..)
     | NotIterable(view~, ..)

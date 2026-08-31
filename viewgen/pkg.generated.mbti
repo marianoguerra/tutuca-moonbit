@@ -44,6 +44,7 @@ pub suberror GenError {
   BareEventArg(view~ : String, name~ : String, site~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
   InvalidBind(view~ : String, reason~ : String)
+  InvalidPropertyAction(view~ : String, reason~ : String)
   IdInLoop(view~ : String, id~ : String)
   PayloadDisagrees(name~ : String, declared~ : String, written~ : String, sites~ : String)
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)

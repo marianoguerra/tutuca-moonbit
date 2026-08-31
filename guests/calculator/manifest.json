@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "calclib",
   "doc": "A calculator, as a loadable component.",

@@ -52,6 +52,17 @@ pub fn Value::property(self : Value, name : String) -> Value {
 }
 
 ///|
+/// Read a virtual member from the owning component's render context. This is
+/// the internal counterpart of `property`: private properties participate,
+/// and ordinary fields remain the fallback.
+pub fn Value::member_at(self : Value, name : String, stack : &Stack) -> Value? {
+  match self {
+    Obj(o) => o.obj_member_at(name, stack)
+    _ => self.field_opt(name)
+  }
+}
+
+///|
 /// A `$name` read, asked with the stack it is being asked from.
 ///
 /// The same question `field` asks — a `compute` surfaces as a pre-bound `Fn`
@@ -279,6 +290,34 @@ pub fn Value::set_property(
 ) -> PropertyWrite {
   match self {
     Obj(o) => o.obj_set_property(name, v)
+    _ => PMissing
+  }
+}
+
+///|
+/// Apply a private-or-public property transition on behalf of the component's
+/// own view.
+pub fn Value::set_member(
+  self : Value,
+  name : String,
+  v : Value,
+) -> PropertyWrite {
+  match self {
+    Obj(o) => o.obj_set_member(name, v)
+    _ => PMissing
+  }
+}
+
+///|
+/// Apply a source-level operation to a member on behalf of its owning view.
+pub fn Value::mutate_member(
+  self : Value,
+  name : String,
+  operation : String,
+  args : Array[Value],
+) -> PropertyWrite {
+  match self {
+    Obj(o) => o.obj_mutate_member(name, operation, args)
     _ => PMissing
   }
 }

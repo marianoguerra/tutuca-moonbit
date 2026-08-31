@@ -11,6 +11,10 @@
     mode   : String
     log    : Array[String]
 
+    property {
+      reading: String { get }
+    }
+
     pred isAway { .mode is 'away' }
   }
 
@@ -65,7 +69,7 @@
     send 'setMode' 'auto'
   }
 
-  compute reading { if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' } }
+  get reading { if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' } }
 </script>
 
 <template>
@@ -73,7 +77,7 @@
     <div class="card-body gap-3">
       <p @if.class="$isAway" @then="'text-3xl tabular-nums opacity-50'"
          @else="'text-3xl tabular-nums'">
-        <x text="$reading"></x>
+        <x text=".reading"></x>
       </p>
       <div class="flex gap-2 items-center">
         <div class="join">

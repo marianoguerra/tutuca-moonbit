@@ -130,6 +130,7 @@ pub(all) enum Operand {
 pub(all) struct PropertyDef {
   name : String
   ty : StateTy
+  public_ : Bool
   writable : Bool
   getter : String?
   setter : String?
@@ -248,8 +249,10 @@ pub fn StateDef::domains_src(Self) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::invariants(Self) -> Array[String]
+pub fn StateDef::member_ty(Self, String) -> StateTy?
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
 pub fn StateDef::operation_name(Self, String) -> String?
+pub fn StateDef::property(Self, String) -> PropertyDef?
 pub fn StateDef::resolve_ty(Self, String, Array[StateTy]) -> StateTy?
 pub fn StateDef::rule(Self, String) -> RuleDecl?
 pub fn StateDef::to_value_src(Self, StateTy, String) -> String

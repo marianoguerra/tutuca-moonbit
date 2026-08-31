@@ -43,8 +43,8 @@ The template language uses one-character sigils. Each sigil maps to one way of r
 
 | Syntax | Meaning |
 |---|---|
-| `.name` | a component **field** (single level — no dotted paths) |
-| `$name` | a **`mutate`/`compute`** call (or a generated mutator) |
+| `.name` | a component **property** (explicit properties win over implicit field properties) |
+| `$name args…` | a parameterized **method/compute** call |
 | `name` | an **update** dispatch (bare lowercase name, `Input` bucket) |
 | `@name` | a local **binding** from iteration or scope enrichment |
 | `^name` | a **macro parameter** |
@@ -52,6 +52,10 @@ The template language uses one-character sigils. Each sigil maps to one way of r
 | `.seq[.key]` | sequence/map **item access** |
 | `'text'`, `$'a {.b} c'` | string literal, string template |
 | `truthy? .x`, `.a is .b` | one expression, the same language a `pred` body takes: the shape predicates `empty?` / `truthy?` / `null?`, the operators (`not` `and` `or` `is` `<` `<=` `>` `>=` `implies`) and the reading builtins |
+
+Event attributes may instead contain a direct property action:
+`.name = e.value`, `.open = not .open`, `.items.removeAt @key`, or
+`.selection = default`. These are synchronous writes, not update messages.
 
 ## Your first component
 

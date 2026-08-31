@@ -499,6 +499,25 @@ pub impl @tutuca.Obj for DynObj with fn obj_property(self, name) {
     is Some(property) else {
     return None
   }
+  if !property.public_ {
+    return None
+  }
+  guard self.guest.get_property(self.handle, name) is Some(value) else {
+    return None
+  }
+  if property.ty.accepts(value) {
+    Some(value)
+  } else {
+    None
+  }
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_member_at(self, name, _stack) {
+  guard self.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    return self.field_at(name, _stack)
+  }
   guard self.guest.get_property(self.handle, name) is Some(value) else {
     return None
   }
@@ -515,6 +534,83 @@ pub impl @tutuca.Obj for DynObj with fn obj_set_property(self, name, value) {
     is Some(property) else {
     return PMissing
   }
+  if !property.public_ {
+    return PMissing
+  }
+  self.write_member(name, value, property)
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_set_member(self, name, value) {
+  guard self.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    match self.mutators.get(@tutuca.mutator_name("set", name)) {
+      Some(setter) => {
+        let successor = setter(self.field_box(), [value])
+        if successor.identity() == (Obj(self) : @tutuca.Value).identity() {
+          PUnchanged
+        } else if successor is Obj(_) {
+          PChanged(successor)
+        } else {
+          PRefused
+        }
+      }
+      None => PMissing
+    }
+  }
+  self.write_member(name, value, property)
+}
+
+///|
+pub impl @tutuca.Obj for DynObj with fn obj_mutate_member(
+  self,
+  name,
+  operation,
+  args,
+) {
+  guard self.schema.field(name) is Some(field) else { return PMissing }
+  guard member_mutator_name(name, operation, field.kind()) is Some(key) &&
+    self.mutators.get(key) is Some(mutate) else {
+    return PMissing
+  }
+  let successor = mutate(self.field_box(), args)
+  guard successor is Obj(_) else { return PRefused }
+  if successor.identity() == (Obj(self) : @tutuca.Value).identity() {
+    return PUnchanged
+  }
+  PChanged(successor)
+}
+
+///|
+fn member_mutator_name(
+  name : String,
+  operation : String,
+  kind : @tutuca.FieldKind,
+) -> String? {
+  match (operation, kind) {
+    ("clear", _) => Some(@tutuca.mutator_name("reset", name))
+    ("push", _) => Some(@tutuca.mutator_name("pushIn", name))
+    ("insertAt", _) => Some(@tutuca.mutator_name("insertIn", name) + "At")
+    ("setAt" | "set", _) => Some(@tutuca.mutator_name("setIn", name) + "At")
+    ("deleteAt", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
+    ("removeAt", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    ("add", _) => Some(@tutuca.mutator_name("addIn", name))
+    ("toggle", _) => Some(@tutuca.mutator_name("toggleIn", name))
+    ("delete", FSet) => Some(@tutuca.mutator_name("deleteIn", name))
+    ("remove", FSet) => Some(@tutuca.mutator_name("removeIn", name))
+    ("delete", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
+    ("remove", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    _ => None
+  }
+}
+
+///|
+fn DynObj::write_member(
+  self : DynObj,
+  name : String,
+  value : @tutuca.Value,
+  property : @tutuca.PropertyInfo,
+) -> @tutuca.PropertyWrite {
   if !property.writable {
     return PRefused
   }

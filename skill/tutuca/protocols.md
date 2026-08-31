@@ -39,8 +39,10 @@ Import by id, never by a path:
 import protocol "tutuca.dev/std/Lifecycle@1" as Lifecycle
 ```
 
-`property` means a typed read operation. Bind it explicitly to `.field` or a
-zero-argument `$compute`; it does not require a same-named stored field.
+`property` means a typed read operation. Bind it explicitly to `.field`, or use
+a bare `get` plus a `get name { … }` script body; it does not require a
+same-named stored field. A local property is private unless marked `pub`, while
+binding it to a protocol exposes it under the protocol's member name.
 Protocol views are semantic roles mapped to local view names. Qualified
 provide/lookup values use the canonical-id namespace.
 
@@ -64,8 +66,8 @@ the static checker.
 
 Protocols cover boundary-visible behavior: handled/expressed operations,
 semantic views, typed properties, dynamic bindings, and component constraints.
-Fields, helper types, fixtures, generated mutators, `pred` / `invariant` rules,
-the `requires` / `ensures` clauses that attach them, and script `compute`
+Fields, helper types, fixtures, private properties, `pred` / `invariant` rules,
+the `requires` / `ensures` clauses that attach them, and parameterized `compute`
 declarations stay private — declared in the spec block does not mean visible at
 the boundary, and a protocol says nothing about what an implementor promises
 itself. Promote a stable observation to a protocol `property`, and model an

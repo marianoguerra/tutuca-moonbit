@@ -184,6 +184,7 @@ pub impl @core.Obj for DynObj
 pub(all) struct DynPropertyDef {
   name : String
   ty : Int
+  public_ : Bool
   writable : Bool
   doc : String
 } derive(Eq, @debug.Debug)

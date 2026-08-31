@@ -113,6 +113,9 @@ pub suberror GenError {
   )
   /// `@bind` could not be lowered to a property plus a type-safe setter.
   InvalidBind(view~ : String, reason~ : String)
+  /// A direct event property action names no writable member, or applies a
+  /// collection verb to a member whose declared kind cannot answer it.
+  InvalidPropertyAction(view~ : String, reason~ : String)
   /// A constant `id` inside an `@each` body. The loop emits the body once per
   /// item, so the id is not unique the moment the sequence holds two.
   IdInLoop(view~ : String, id~ : String)

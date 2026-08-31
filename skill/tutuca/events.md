@@ -12,16 +12,18 @@ modifiers, or handling a custom element's `CustomEvent`.
 <button @on.click="dec">-</button>
 
 <!-- pass args: an event read is written `e.<something>` -->
-<input @on.input="setStr e.value" />
-<input @on.input="setN e.valueAsInt" />
+<input @on.input=".str = e.value" />
+<input @on.input=".n = e.valueAsInt" />
 <button @on.click="pick @key e.isAlt">pick</button>
 <button @on.click="loadAnotherWay">load</button>
 ```
 
-The **handler name** is written bare. A leading `$` is refused in an event
-position: a `$name` and a bare name are the same dispatch there, so the sigil
-would claim a distinction that does not exist. `$` belongs in value positions
-(`@text="$label"`), where a `compute` entry answers it.
+An event value is either a **property action** beginning with `.`, or a semantic
+handler name written bare. `.str = e.value`, `.open = not .open`, and
+`.items.removeAt @key` are synchronous member operations and dispatch no
+message. A leading `$` is refused in an event position. `$` belongs to calls
+with arguments in value positions; a zero-argument derived value is a property
+and is read as `.label`.
 
 Its **arguments** carry a sigil that says where the value comes from, and there
 are three:
@@ -38,7 +40,7 @@ them directly (`Receive("search", [Str(q), ..]) => ...`). For an `update` arm th
 ctx (it is pure). So `loadAnotherWay` dispatches `Receive("loadAnotherWay", [])`
 plus ctx.
 
-> **Every argument carries a sigil.** A bare name — `@on.input="setStr value"`
+> **Every handler argument carries a sigil.** A bare name — `@on.input="save value"`
 > — is refused at generation time, as `BareEventArg`, and the message names the
 > three prefixes above. Without a sigil the same word reads two ways: `value`
 > could be the DOM event's value or an enclosing `@each` bind's, decided by
@@ -48,8 +50,8 @@ plus ctx.
 
 ## Two-way scalar fields with `@bind`
 
-`@bind` is the checked shorthand for mirroring a direct state field into a
-form control and dispatching its generated `setX` mutator:
+`@bind` is the checked shorthand for mirroring a direct writable property into
+a form control and assigning the event value to it:
 
 ```html
 <input @bind=".name" />
@@ -72,8 +74,8 @@ schema and accepts exactly these combinations:
 
 Text-like input types are a missing `type`, `text`, `search`, `email`, `url`,
 `tel`, `password`, `date`, `month`, `week`, `time`, `datetime-local`, or
-`color`. `@bind` expands conceptually to `:value`/`:checked` plus the matching
-`@on` setter, but the generated event carries a checked coercion too. An empty,
+`color`. `@bind` expands conceptually to `:value`/`:checked` plus a property
+assignment, and the generated action carries a checked coercion. An empty,
 malformed, fractional integer, non-finite, or out-of-range numeric edit does
 not dispatch the setter, so it leaves the previous field value intact.
 

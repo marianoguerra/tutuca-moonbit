@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "mastodonlib",
   "doc": "Mastodon / fediverse content, read-only: one post, its poll, a conversation, a feed and an account. Renders from plain Mastodon-shaped data — no network of its own and no clock. Which server it reads is CONFIGURATION, not code: the two origins its views name and the name it writes in prose are variables a host binds at load, so one build serves mastodon.social, hachyderm.io or any instance there is.",

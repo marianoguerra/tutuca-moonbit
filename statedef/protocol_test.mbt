@@ -51,7 +51,7 @@ test "properties distinguish public operations from backing fields" {
         #|  text: String
         #|  dirty: Bool
         #|  property {
-        #|    value: Int { get .raw set .raw }
+        #|    pub value: Int { get .raw set .raw }
         #|    label: String { get .text }
         #|    percentage: Int { get set }
         #|    Adjustable::value = value
@@ -62,6 +62,8 @@ test "properties distinguish public operations from backing fields" {
     )[0]
   assert_eq(def.properties.length(), 3)
   assert_true(def.properties[0].writable)
+  assert_true(def.properties[0].public_)
+  assert_false(def.properties[1].public_)
   assert_eq(def.properties[0].getter, Some(".raw"))
   assert_eq(def.properties[0].setter, Some(".raw"))
   assert_true(def.properties[2].getter is None)

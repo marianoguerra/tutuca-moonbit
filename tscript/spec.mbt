@@ -156,10 +156,20 @@ declare pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Val?
 declare pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val?
 
 ///|
-/// Handler reference plus parsed args for @on.<event>
+/// A synchronous virtual-property action authored directly in an event slot.
+/// The target is always a property of the component that owns the view.
+pub(all) enum PropertyAction {
+  PropertySet(name~ : String, value~ : @tutuca.Val)
+  PropertyReset(String)
+  PropertyCall(name~ : String, operation~ : String, args~ : Array[@tutuca.Val])
+} derive(Debug, Eq)
+
+///|
+/// Handler reference plus parsed args for @on.<event>, or a property action.
 pub(all) struct HandlerParse {
   handler : @tutuca.Val
   args : Array[@tutuca.Val]
+  action : PropertyAction?
 } derive(Debug, Eq)
 
 ///|

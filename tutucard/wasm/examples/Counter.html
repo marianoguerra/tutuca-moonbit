@@ -7,8 +7,9 @@
     step: Int
 
     property {
-      count: Int { get .count set .count }
-      magnitude: Int { get set }
+      pub count: Int { get .count set .count }
+      pub magnitude: Int { get set }
+      label: String { get }
     }
 
     /// True while the count is above zero.
@@ -47,7 +48,7 @@
   }
 
   /// The count as a sentence.
-  compute label { $'the count is {.count}' }
+  get label { $'the count is {.count}' }
 
   get magnitude {
     if (.count < 0) { -.count } else { .count }
@@ -93,7 +94,7 @@
     <button @on.click="dec">-</button>
     <output @text=".count"></output>
     <button @on.click="inc">+</button>
-    <p @text="$label"></p>
+    <p @text=".label"></p>
     <button @on.click="reset" @show="$positive">reset</button>
   </div>
 </template>

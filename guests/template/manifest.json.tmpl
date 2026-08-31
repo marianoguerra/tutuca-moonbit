@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "{{name}}",
   "doc": "A tutuca:component bundle.",
@@ -30,7 +30,7 @@
         { "name": "label", "ty": 1, "doc": "What to call it.", "required": false, "constraint": null }
       ],
       "properties": [
-        { "name": "count", "ty": 0, "writable": true, "doc": "The public count." }
+        { "name": "count", "ty": 0, "writable": true, "public": true, "doc": "The public count." }
       ],
       "receives": ["set"],
       "intents": ["counted"],

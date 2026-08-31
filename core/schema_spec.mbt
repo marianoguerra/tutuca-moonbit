@@ -46,7 +46,7 @@ pub(all) struct FieldInfo {
 }
 
 ///|
-/// One public abstract property of a component.
+/// One abstract property of a component.
 ///
 /// A property is an operation, not a promise about storage. `writable` says
 /// whether callers may request its synchronous, pure transition; it does not
@@ -54,6 +54,9 @@ pub(all) struct FieldInfo {
 pub(all) struct PropertyInfo {
   name : String
   ty : TyInfo
+  /// Direct component visibility. Private properties are available to the
+  /// component's own views but are not part of host/parent introspection.
+  public_ : Bool
   writable : Bool
 } derive(Eq, Debug)
 
@@ -104,8 +107,8 @@ pub(all) struct SchemaInfo {
   /// Structural identity of the schema — over shape, not source text.
   fingerprint : String
   fields : Array[FieldInfo]
-  /// Public abstract observations and transitions. Unlike `fields`, these are
-  /// deliberately safe for parents, hosts, tests and generated fuzz actions.
+  /// Abstract observations and transitions. Consumers outside the component
+  /// must filter this list by `public_`.
   properties : Array[PropertyInfo]
   /// The `@on` handler names the views raise.
   ///

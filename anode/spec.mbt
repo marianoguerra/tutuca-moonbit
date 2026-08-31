@@ -565,6 +565,7 @@ declare pub fn on(
   args? : Array[@tutuca.Val],
   modifiers? : Array[String],
   binding? : BindCoercion,
+  action? : @tscript.PropertyAction,
 ) -> NodeEvent
 
 ///|

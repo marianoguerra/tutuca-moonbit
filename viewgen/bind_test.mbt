@@ -46,7 +46,11 @@ test "@bind emits its exact coercion in the compiled event table" {
     bind_file("count: Int", "<input type=\"number\" @bind=\".count\">"),
   )
   let ir = @viewgen.emit_ir_module("Form", "form.html", file)
-  assert_true(ir.contains("args=[EventPath([\"valueAsInt\"])]"))
+  assert_true(
+    ir.contains(
+      "action=@anode.set_property_action(\"count\", EventPath([\"value\"]))",
+    ),
+  )
   assert_true(ir.contains("binding=@anode.BindInt(width=32, signed=true)"))
 }
 
@@ -105,4 +109,43 @@ test "@bind requires a direct root field and a schema" {
   assert_true(
     no_schema.contains("needs a `<script type=\"tutuca/spec\">` schema"),
   )
+}
+
+///|
+test "property actions are checked against member access and collection kind" {
+  assert_eq(
+    bind_error(
+      "items: Array[String]", "<button @on.click=\".items.removeAt 0\">x</button>",
+    ),
+    "",
+  )
+  assert_true(
+    bind_error(
+      "name: String", "<button @on.click=\".name.push 'x'\">x</button>",
+    ).contains("does not apply to String"),
+  )
+  assert_true(
+    bind_error(
+      "name: String property { label: String { get .name } }", "<button @on.click=\".label = 'x'\">x</button>",
+    ).contains("read-only property `.label`"),
+  )
+  assert_true(
+    bind_error(
+      "name: String", "<button @on.click=\".missing = 'x'\">x</button>",
+    ).contains("unknown member `.missing`"),
+  )
+}
+
+///|
+test "a property action does not become a generated input message" {
+  let file = @viewgen.split_file(
+    bind_file("name: String", "<input @on.input=\".name = e.value\">"),
+  )
+  let ir = @viewgen.emit_ir_module("Form", "form.html", file)
+  assert_true(
+    ir.contains(
+      "action=@anode.set_property_action(\"name\", EventPath([\"value\"]))",
+    ),
+  )
+  assert_false(ir.contains("HandlerName(name=\"setName\""))
 }

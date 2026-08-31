@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "todolib",
   "doc": "A sample task list, for exercising list fields and item mutators.",

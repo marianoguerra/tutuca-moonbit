@@ -1688,7 +1688,6 @@ pub(all) enum TracePanelInput {
   ReplayReset
   ReplayRun
   ReplayStep
-  SetDraft
   SetTab
   ToggleSelecting
 } derive(Eq, @debug.Debug)
@@ -1702,7 +1701,6 @@ pub(all) enum TracePanelMsg {
   ReplayReset
   ReplayRun
   ReplayStep
-  SetDraft(String)
   SetTab(String)
   ToggleSelecting
   Unknown(String, Array[@core.Value])
@@ -1719,7 +1717,6 @@ pub(all) enum TracePanelReceive {
   ReplayStep
   ReplayRun
   ReplayReset
-  SetDraft(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn TracePanelReceive::from_dispatch(@component.Dispatch) -> Self?

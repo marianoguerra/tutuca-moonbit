@@ -14,6 +14,10 @@
     /// record, not an instance — but it can hold one a host put here, and that
     /// is what makes a child token something worth being able to carry.
     focus: Row
+
+    property {
+      caption: String { get }
+    }
   }
 
   /// A row of the board, declared here rather than in a file of its own —
@@ -24,6 +28,10 @@
     label: String
     /// Whether it is struck through.
     done: Bool
+
+    property {
+      caption: String { get }
+    }
   }
 </script>
 
@@ -34,7 +42,7 @@
   }
 
   /// The header, as a sentence.
-  compute caption { $'{.title}: {.tally}' }
+  get caption { $'{.title}: {.tally}' }
 </script>
 
 <script type="tutuca/script" for="Row">
@@ -45,7 +53,7 @@
 
   /// The same name the board declares, and a different answer — which is the
   /// whole reason a generated name has to carry its component.
-  compute caption { if .done { 'done' } else { .label } }
+  get caption { if .done { 'done' } else { .label } }
 </script>
 
 <script type="tutuca/test">
@@ -86,12 +94,12 @@
 
 <template id="Board:main">
   <section>
-    <h1 class="title" @text="$caption"></h1>
+    <h1 class="title" @text=".caption"></h1>
     <button class="bump" @on.click="bump">count</button>
   </section>
 </template>
 
 <template id="Row:main">
   <li class="row" @if.class=".done" @then="'row done'" @else="'row'"
-      @text="$caption" @on.click="toggle"></li>
+      @text=".caption" @on.click="toggle"></li>
 </template>

@@ -5,13 +5,16 @@ string from several values.
 
 ```html
 <script type="tutuca/spec">
-  state Label { str: String, url: String, name: String, kind: String }
+  state Label {
+    str: String, url: String, name: String, kind: String
+    property { strUpper: String { get } }
+  }
 </script>
 
 <script type="tutuca/script" for="Label">
   /// A value the state does not hold. One expression, one name, and the only
   /// place the transformation is written.
-  compute getStrUpper { upper .str }
+  get strUpper { upper state.str }
 
   /// Derived values for a SUBTREE, with no `@each` in sight: a scope
   /// enricher sees the state and writes bindings.
@@ -22,10 +25,10 @@ string from several values.
   <div>
     <!-- text -->
     <span @text=".str"></span>      <!-- into a host element -->
-    <x text="$getStrUpper"></x>     <!-- $ calls a compute; no wrapping element -->
+    <x text=".strUpper"></x>        <!-- derived property; no wrapping element -->
 
     <!-- attributes: plain = static, :attr = dynamic -->
-    <input :value=".str" @on.input="setStr e.value" />
+    <input :value=".str" @on.input=".str = e.value" />
     <a :href=".url" :title="$'Hi {.name}'">link</a>   <!-- $'…' string template -->
     <button :class="$'btn btn-{.kind}'">x</button>
 
@@ -37,7 +40,7 @@ string from several values.
 
 A view slot NAMES things; it does not call them. `{(len .str)}` written in an
 attribute has nothing to interpolate — an expression belongs in a body, and
-`$getStrUpper` / `@len` is how the view reaches its result.
+`.strUpper` / `@len` is how the view reaches its result.
 
 Value slots take `.field`, `$handler`, or `@binding` — never a path
 (`.user.name` fails; a body may walk one, a slot may not). Multi-word strings
@@ -46,13 +49,15 @@ Value slots take `.field`, `$handler`, or `@binding` — never a path
 attributes (`disabled`, `checked`, …) are auto-recognized — pass a boolean
 field.
 
-A `compute` is pure by type: it answers a value, cannot assign, and so can
-never be the reason a render is wrong. When the answer is a yes or a no,
-declare it a `pred` instead — that is the same construct with its type stated,
-and it is what a `@show` / `@if` / `@when` slot takes.
+A read-only property is pure by type: its getter answers a value and cannot
+assign. When the answer is a yes or a no used as a contract, declare it a
+`pred` instead. A derivation that takes arguments or depends on a render-only
+`@binding`/`*lookup` remains a `compute` method because it is not a stable
+member of the component state.
 
-**When it stays MoonBit.** A `compute` the block cannot spell — one reaching a
-value no builtin produces — falls through to the `compute` bucket, whose
-entries are `(state, args) -> Value` keyed by a generated enum
-(`GetStrUpper`); the scope enricher's is `(state) -> Map[String, Value]`. See
+**When it stays MoonBit.** A property getter the block cannot spell — one
+reaching a value no builtin produces — is implemented through the generated
+component wrapper. Parameterized or render-context-dependent derivations use
+the `compute` bucket; the scope enricher's bucket is
+`(state) -> Map[String, Value]`. See
 [the handler buckets](../core.md#the-handler-buckets).

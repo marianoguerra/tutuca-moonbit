@@ -30,8 +30,8 @@ pub let counter_spec_source : String =
   #|    count : Int
   #|
   #|    property {
-  #|      count : Int { get .count set .count }
-  #|      magnitude : Int { get set }
+  #|      pub count : Int { get .count set .count }
+  #|      pub magnitude : Int { get set }
   #|    }
   #|  }
 

@@ -86,7 +86,7 @@ fn lower_bind(
       reason="needs a `<script type=\"tutuca/spec\">` schema to determine its coercion",
     )
   }
-  guard schema.field(field_name) is Some(field) else {
+  guard schema.member_ty(field_name) is Some(member_ty) else {
     let schema_name = if schema.component == "" {
       "component"
     } else {
@@ -96,8 +96,14 @@ fn lower_bind(
       view~,
       name=field_name,
       scope="the \{schema_name} state",
-      suggestion=@statedef.nearest(field_name, schema.fields.map(f => f.name)),
+      suggestion=@statedef.nearest(
+        field_name,
+        schema.fields.map(f => f.name) + schema.properties.map(p => p.name),
+      ),
     )
+  }
+  if schema.property(field_name) is Some(p) && !p.writable {
+    raise InvalidBind(view~, reason="targets read-only property .\{field_name}")
   }
   let input_type = bind_input_type(dom.attrs)
   guard input_type is StaticBindAttr(typ) else {
@@ -106,7 +112,7 @@ fn lower_bind(
       reason="cannot use a dynamic `:type`; the input kind must be statically known",
     )
   }
-  let kind : @anode.BindCoercion = match field.ty {
+  let kind : @anode.BindCoercion = match member_ty {
     TText =>
       if dom.tag == "textarea" {
         BindString
@@ -166,14 +172,6 @@ fn lower_bind(
     )
   }
   bind.event.binding = Some(kind)
-  bind.event.handler.args[0] = EventPath([
-    match kind {
-      BindPending => "value"
-      BindInt(..) => "valueAsInt"
-      BindDouble => "valueAsFloat"
-      BindString | BindBool => "value"
-    },
-  ])
 }
 
 ///|

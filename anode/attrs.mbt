@@ -284,8 +284,9 @@ fn AttrParser::finish_bind(self : AttrParser) -> BindData? {
   let event : NodeEvent = {
     name: event_name,
     handler: {
-      handler: HandlerName(name=@tutuca.mutator_name("set", field), ns=Receive),
-      args: [EventPath(["value"])],
+      handler: Const(lit=LNull, from_macro=false),
+      args: [],
+      action: Some(PropertySet(name=field, value=EventPath(["value"]))),
     },
     modifiers: [],
     binding: Some(BindPending),

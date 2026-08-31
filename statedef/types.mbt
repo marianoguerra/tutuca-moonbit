@@ -30,6 +30,19 @@ pub fn StateDef::field(self : StateDef, name : String) -> FieldDef? {
 }
 
 ///|
+pub fn StateDef::property(self : StateDef, name : String) -> PropertyDef? {
+  self.properties.iter().find_first(p => p.name == name)
+}
+
+///|
+pub fn StateDef::member_ty(self : StateDef, name : String) -> StateTy? {
+  match self.property(name) {
+    Some(p) => Some(p.ty)
+    None => self.field(name).map(f => f.ty)
+  }
+}
+
+///|
 /// The rule of this name, of either kind. `pred` and `invariant` share one
 /// namespace, so one name has one answer.
 pub fn StateDef::rule(self : StateDef, name : String) -> RuleDecl? {

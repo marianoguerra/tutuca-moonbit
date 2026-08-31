@@ -283,6 +283,7 @@ pub fn PathKey::to_value(Self) -> Value
 pub(all) struct PropertyInfo {
   name : String
   ty : TyInfo
+  public_ : Bool
   writable : Bool
 } derive(Eq, @debug.Debug)
 
@@ -523,13 +524,16 @@ pub fn Value::list(Self) -> Array[Self]
 pub fn Value::list_opt(Self) -> Array[Self]?
 pub fn Value::map(Self) -> Map[String, Self]
 pub fn Value::map_opt(Self) -> Map[String, Self]?
+pub fn Value::member_at(Self, String, &Stack) -> Self?
 pub fn Value::method_at(Self, String, &Stack) -> Self?
+pub fn Value::mutate_member(Self, String, String, Array[Self]) -> PropertyWrite
 pub fn Value::num(Self, default? : Double) -> Double
 pub fn Value::num_opt(Self) -> Double?
 pub fn Value::property(Self, String) -> Self
 pub fn Value::property_opt(Self, String) -> Self?
 pub fn Value::protocol_property(Self, String, String, &Stack) -> Self
 pub fn Value::schema(Self) -> SchemaInfo?
+pub fn Value::set_member(Self, String, Self) -> PropertyWrite
 pub fn Value::set_property(Self, String, Self) -> PropertyWrite
 pub fn Value::set_property_at(Self, Path, String, Self) -> PropertyWrite
 pub fn Value::size(Self, default? : Int) -> Int
@@ -589,6 +593,9 @@ pub(open) trait Obj {
   fn obj_with_field(Self, String, Value) -> Value? = _
   fn obj_property(Self, String) -> Value? = _
   fn obj_set_property(Self, String, Value) -> PropertyWrite = _
+  fn obj_member_at(Self, String, &Stack) -> Value? = _
+  fn obj_set_member(Self, String, Value) -> PropertyWrite = _
+  fn obj_mutate_member(Self, String, String, Array[Value]) -> PropertyWrite = _
   fn obj_item(Self, PathKey) -> Value? = _
   fn obj_with_item(Self, PathKey, Value) -> Value? = _
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
@@ -610,6 +617,7 @@ pub(open) trait Stack {
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
+  fn lookup_member(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }

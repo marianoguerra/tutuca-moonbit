@@ -36,11 +36,13 @@ references needed for the task.
 
 - State is immutable. A handler returns a successor; the transactor commits it
   and rerenders.
-- `.field` reads state, `$name` calls a derived handler in a value position,
-  and `@name` reads the current render binding. Event handler names are bare.
-- Event handlers belong in `update` on the compiled path. End its dispatch
-  match with `_ => Unhandled`; `Unchanged` vetoes while `Unhandled` falls
-  through to generated mutators.
+- `.name` reads a property (state fields are implicit private properties),
+  `$name args…` calls a parameterized method in a value position, and `@name`
+  reads the current render binding. Event handler names are bare; direct
+  property actions begin with `.`, such as `.name = e.value`.
+- Semantic event handlers belong in `update` on the compiled path. End its
+  dispatch match with `_ => Unhandled`; `Unchanged` vetoes while `Unhandled`
+  declines the message. Simple writes belong in property actions instead.
 - View expressions do not traverse arbitrary state paths. Use a child render,
   a computed value, or enrichment; a render binding may read one member.
 - Tutuca has no automatic `init` lifecycle. The host or a test must send it.
@@ -71,9 +73,9 @@ references needed for the task.
 
 ### Views, state, and behavior
 
-- [schema.md](./schema.md) — state types, records, enums, flags, slots,
-  generated mutators, `tutuca/init`, the script language, `new` and `@cur`,
-  contracts, and script refusals.
+- [schema.md](./schema.md) — state types, properties and visibility, records,
+  enums, flags, slots, property actions, `tutuca/init`, the script language,
+  `new` and `@cur`, contracts, and script refusals.
 - [events.md](./events.md) — event payloads, generated message types,
   modifiers, safe event paths, files, and custom events.
 - [iteration.md](./iteration.md) — `@each`, filtering, enrichment,

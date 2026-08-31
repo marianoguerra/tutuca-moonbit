@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "counterlib",
   "doc": "Sample counters — the reference bundle for the tutuca:component contract.",
@@ -122,6 +122,7 @@
           "name": "count",
           "ty": 0,
           "writable": true,
+          "public": true,
           "doc": "The public current value."
         }
       ]

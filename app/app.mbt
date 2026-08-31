@@ -136,6 +136,45 @@ fn run_handlers(
       continue
     }
     apply_event_effects(h.modifiers, e)
+    match h.handler.action {
+      Some(PropertySet(name~, value~)) => {
+        guard arg_stack is Some(st) else { continue }
+        let assigned = match h.binding {
+          Some(coercion) =>
+            match e.bind_value(coercion) {
+              Some(v) => v
+              None => continue
+            }
+          None => value.eval(st)
+        }
+        ignore(tx.set_member(ed.path, name, assigned))
+        continue
+      }
+      Some(PropertyReset(name)) => {
+        guard ed.path.to_transaction_path().lookup(tx.root) is Some(leaf) &&
+          leaf.schema() is Some(schema) else {
+          continue
+        }
+        let zero = match
+          schema.properties.iter().find_first(p => p.name == name) {
+          Some(p) => p.ty.zero()
+          None =>
+            match schema.field(name) {
+              Some(f) => f.default()
+              None => continue
+            }
+        }
+        ignore(tx.set_member(ed.path, name, zero))
+        continue
+      }
+      Some(PropertyCall(name~, operation~, args~)) => {
+        guard arg_stack is Some(st) else { continue }
+        let values = args.map(a => a.eval(st))
+        ignore(tx.mutate_member(ed.path, name, operation, values))
+        continue
+      }
+      None => ()
+    }
     let name = match h.handler.handler {
       HandlerName(name~, ..) => name
       Method(m) => m

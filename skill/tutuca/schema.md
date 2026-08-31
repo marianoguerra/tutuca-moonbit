@@ -23,9 +23,9 @@ reading a handler.
 
 | Spec block (`tutuca/spec`) | Script block (`tutuca/script`) |
 | --- | --- |
-| `state`, `struct`, `enum`, `property` — data and public abstract state | `receive`, `intent`, property `get`/`set` — the transitions |
+| `state`, `struct`, `enum`, `property` — data and private-by-default abstract state | `receive`, `intent`, property `get`/`set` — the transitions |
 | `protocol`, `implements`, `handle`, `express` — the boundary | `enrich`, `enrich-scope` — render-time bindings |
-| `provide` / `lookup` — the wiring | `compute` — a `$name` a view reads |
+| `provide` / `lookup` — the wiring | parameterized `compute` — a `$name args…` a view calls |
 | `pred`, `invariant` — the rules it keeps | — |
 | `where` — the domains its fields are drawn from | — |
 
@@ -124,24 +124,28 @@ carry one as a `String`), a `Map` keyed by anything but `String` (a JSON
 object's key is a string), and a type that contains itself with no `?` or
 `Array` in between (it has no size and no zero).
 
-Behaviour is not declared here. A `$`-callable no view of the component names —
-a method a PARENT calls, say — is a `pred` or a `compute` in the
-`<script type="tutuca/script">` block, beside every other callable.
+Behaviour is not declared here. A parameterized observation is still a method:
+declare it as `compute name(args…)` and call it with `$name …`. Predicates and
+invariants remain named boolean rules because contracts attach to them.
+A zero-argument derivation that depends on render context (`@value`, an
+enriched binding, or `*lookup`) also remains a `compute`: its answer belongs to
+one render position, not to the component as an independently readable member.
+Semantic commands, messages/intents, and asynchronous work remain handlers.
 
-## Public properties
+## Properties
 
-Fields describe storage and generate conveniences for the component's own
-views and handlers. They are not automatically the interface a parent, host,
-storybook, or property fuzzer may drive. Declare that interface explicitly in
-a `property` section inside the state:
+Properties are the component's unified member model. A state field is an
+implicit private read/write property. An explicit property can derive its
+value, redirect a write, or do both. Properties are private by default; add
+`pub` only when a parent, host, storybook, or property fuzzer may drive it:
 
 ```html
 <script type="tutuca/spec">
   state Counter {
     count: Int
     property {
-      count: Int { get .count set .count }
-      magnitude: Int { get set }
+      pub count: Int { get .count set .count }
+      pub magnitude: Int { get set }
       label: String { get }
     }
   }
@@ -167,7 +171,9 @@ property type and a setter receives one implicit `value` of that type. There is
 no argument list to declare and no overload surface to keep in sync.
 
 Every property is readable. Writing is opt-in: omit `set` for a read-only
-property. A complex setter is a synchronous, pure, atomic state transition. It
+property. Visibility is independent: `label` above is a private read-only
+property, while `count` and `magnitude` are public. A complex setter is a
+synchronous, pure, atomic state transition. It
 may update several internal fields and its successor must satisfy the same
 domains, predicates, and invariants as any handler result, but it cannot send,
 raise an intent, construct a component, or enqueue another transaction. A
@@ -185,49 +191,49 @@ protocol Adjustable = "example/Adjustable@1" {
 ```
 
 An implementing state binds those names in its `property` section. Public
-fuzzing derives property writes from this declaration. Generated field
-mutators are excluded unless the caller explicitly chooses diagnostic/internal
-fuzzing.
+fuzzing derives writes only from properties marked `pub`. A protocol binding
+may expose a private local property under the protocol's public member name.
 
-## What each field kind generates
+Views read properties with `.name`; an explicit property wins over a same-named
+field. Inside script bodies, use `state.name` when the raw stored field is what
+you mean. The legacy `.name` spelling in a script body remains the canonical
+printed form for raw state, but new code should prefer `state.name` wherever a
+same-named property could make the distinction unclear.
 
-Every declared field becomes a struct field of the generated state type, and
-the field's **kind** decides which camelCase mutators come with it. The
-generated names keep their **JS spelling** — that is what makes views port
-verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery e.value"`,
-`@on.click="toggleView"` all call generated mutators.
+## Property actions in views
 
-| Field kind | MoonBit type | Extra auto-generated mutators (for field `x`) |
-| ---------- | ------------ | --------------------------------------------- |
-| text | `String` | — |
-| int / float | `Int` / `Double` | — |
-| bool | `Bool` | `toggleX` |
-| any | `@tutuca.Value` | — (`Null`, instances, `Fn`s, heterogeneous data) |
-| list | `Array[...]` | `pushInX`, `insertInXAt`, `setInXAt`, `deleteInXAt`/`removeInXAt` |
-| map / omap | `Map[String, ...]` | `setInXAt`, `deleteInXAt`/`removeInXAt` |
-| set (`Set[String]`, `Set[Enum]`) | `Map[String, Bool]` | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
-| nullable | `T?` | — (`setX` takes the bare `T`; `resetX` is the clear) |
-| comp | `@tutuca.Value` | — a slot, filled through the scope at `make()` (see [Slots](#slots)) |
+An event can update an implicit or explicit writable property directly. These
+are synchronous property transitions, not messages, so they do not add cases
+to the generated input enum:
 
-**Every** field additionally gets `setX`, `resetX`, and `xLen` (`Null` for
-non-sized values). A `compute` entry of the same name wins over the generated
-one.
+```html
+<input :value=".query" @on.input=".query = e.value">
+<button @on.click=".open = not .open">toggle</button>
+<button @on.click=".items.removeAt @key">remove</button>
+<button @on.click=".tags.toggle @value">tag</button>
+<button @on.click=".selection = default">clear</button>
+```
 
-`resetX` is what empties a `T?`: it writes the field's zero, and a nullable
-field's zero is `None`. There is no separate `clearX`, and `setX` on a `T?`
-takes the bare `T` — a view that means "nothing selected" sends `resetSel`,
-not `setSel` with an empty string. In a `<script type="tutuca/script">` block
-the same field is written directly, both ways: `.sel = 'k'` compiles to
-`Some("k")` and `.sel = null` to `None`, with the wanted type deciding which
-spelling `null` gets.
+The field's **kind** decides which operations are valid:
 
-Two of the generated names only **read**: `xLen` and `hasInX` answer a scalar
-and touch nothing. Write them in a view as `$xLen` / `$hasInX tag`; SENDING one
-as a message does nothing, because the receive path takes a generated name's
-result only when it is a new instance, so a reader falls through to
-`Unhandled`. `@component.schema_mutators` is every generated callable and
-`@component.schema_writers` is the half that can be sent — reach for the second
-when you are deciding what to dispatch.
+| Field kind | MoonBit type | Property operations |
+| ---------- | ------------ | ------------------- |
+| scalar / record / component | the declared type | assignment, `= default` |
+| bool | `Bool` | assignment; toggle with `.x = not .x` |
+| list | `Array[...]` | `push`, `insertAt`, `setAt`, `deleteAt` / `removeAt` |
+| map / omap | `Map[String, ...]` | `setAt`, `deleteAt` / `removeAt` |
+| set | `Set[String]`, `Set[Enum]` | `add`, `delete` / `remove`, `toggle` |
+| nullable | `T?` | assignment; `= default` writes `None` |
+
+`= default` writes the declared type's zero. For a nullable property that is
+`None`; it is not an empty string. Collection operations are atomic and retain
+the existing no-op rules for missing keys or out-of-range positions.
+
+The runtime may implement these operations with a generated table, but names
+such as `setX`, `resetX`, `toggleX`, and `removeInXAt` are not language or
+manifest surface. Do not dispatch or document them. Code that needs to perform
+an externally callable semantic action declares a message; code that needs to
+expose synchronous abstract state declares a `pub` property.
 
 There is deliberately **no `updateX`** and no `updateInXAt`. Both would take a
 function value and apply it to the current one, and a view can write values but
@@ -547,10 +553,9 @@ receiver first:
 </script>
 ```
 
-These mirror the **generated mutators** one for one, with the `In<Field>At`
-infix dropped because the receiver is written: `pushInSongs` is `.songs.push`,
-`setInSongsAt` is `.songs.setAt`, `toggleInTags` is `.tags.toggle`. One idea,
-one spelling, wherever it is written.
+These are the same receiver operations available in a view property action.
+The receiver is written directly (`.songs.push`, `.songs.setAt`,
+`.tags.toggle`), so there is one source spelling in both places.
 
 | receiver | what it takes |
 | -------- | ------------- |
@@ -568,15 +573,12 @@ An index out of range is a **no-op**, not a crash: `setAt`/`deleteAt` past the
 end leave the collection alone, and `insertAt` *at* the length appends, because
 inserting at the end is a real answer.
 
-> **A generated mutator is not a handler.** `removeInItemsAt @key`,
-> `toggleHideCompleted` and `setQuery e.value` are answered by the RUNTIME from
-> the field's declared kind. They are not compiled from the block, so no
-> script-refusal can disable one and no `update` arm is needed to keep one
-> working — a button wired to a mutator works whatever the block does or does
-> not compile. It is also not a public property: an external host call cannot
-> dispatch it merely because the field generated its name. Write a handler
-> only when there is something the mutator does not say; write a property when
-> callers should be allowed to read or synchronously set abstract state.
+> **A property action is not a handler.** `.items.removeAt @key`,
+> `.hideCompleted = not .hideCompleted`, and `.query = e.value` are resolved
+> from the declared member and field kind. They do not dispatch a message and
+> cannot be intercepted by an `update` arm. Write a handler when the action has
+> semantic meaning beyond the property operation; mark a property `pub` only
+> when an external caller should be allowed to read or synchronously set it.
 
 ## Building a value (`new <Type>` / `@cur`)
 

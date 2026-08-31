@@ -9,6 +9,10 @@
     /// The rows, each a child instance.
     items: Array[Todo]
 
+    property {
+      count: Int { get }
+    }
+
     /// True while there is something to add.
     pred typed
       format $'nothing to add' { not (empty? .draft) }
@@ -20,15 +24,14 @@
     text: String
     /// Whether it is struck through.
     done: Bool
+
+    property {
+      caption: String { get }
+    }
   }
 </script>
 
 <script type="tutuca/script" for="Todos">
-  /// Remember what is being typed.
-  receive setDraft(t) {
-    .draft = t
-  }
-
   /// Add a row, if there is anything to add.
   ///
   /// `new Todo` builds nothing yet: it opens an argument map for the sibling
@@ -53,7 +56,7 @@
   }
 
   /// How many rows there are.
-  compute count { len .items }
+  get count { len .items }
 </script>
 
 <script type="tutuca/script" for="Todo">
@@ -63,7 +66,7 @@
   }
 
   /// What the row reads as.
-  compute caption { if .done { $'{.text} (done)' } else { .text } }
+  get caption { if .done { $'{.text} (done)' } else { .text } }
 </script>
 
 <script type="tutuca/init">
@@ -147,14 +150,14 @@
 
 <template id="Todos:main">
   <div>
-    <input class="draft" :value=".draft" @on.input="setDraft e.value">
+    <input class="draft" :value=".draft" @on.input=".draft = e.value">
     <button class="add" @on.click="add">add</button>
     <ul><x render-each=".items"></x></ul>
     <button class="drop" @on.click="drop 0">drop the first</button>
-    <output class="count" @text="$count"></output>
+    <output class="count" @text=".count"></output>
   </div>
 </template>
 
 <template id="Todo:main">
-  <li class="todo" @text="$caption" @on.click="toggle"></li>
+  <li class="todo" @text=".caption" @on.click="toggle"></li>
 </template>

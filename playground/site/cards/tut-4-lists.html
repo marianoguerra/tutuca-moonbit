@@ -9,6 +9,10 @@
     draft : String
     songs : Array[String]
 
+    property {
+      caption: String { get }
+    }
+
     pred any { not (empty? .songs) }
   }
 
@@ -46,7 +50,7 @@
     }
   }
 
-  compute caption { $'{len .songs} song(s)' }
+  get caption { $'{len .songs} song(s)' }
 </script>
 
 <template>
@@ -55,7 +59,7 @@
       <h2 class="card-title">Playlist</h2>
       <div class="flex gap-2 items-center">
         <input class="input input-sm w-full" placeholder="add a song"
-               :value=".draft" @on.input="setDraft e.value"
+               :value=".draft" @on.input=".draft = e.value"
                @on.keydown+send="add">
         <button class="btn btn-sm btn-primary"
                 @on.click="add">add</button>
@@ -67,14 +71,14 @@
                   @on.click="up @key">↑</button>
           <button class="btn btn-xs btn-soft btn-error btn-circle"
                   title="remove"
-                  @on.click="removeInSongsAt @key">×</button>
+                  @on.click=".songs.removeAt @key">×</button>
         </li>
       </ul>
       <p class="opacity-60 italic" @hide="$any">
         nothing queued — press Enter to add
       </p>
       <span class="badge badge-sm badge-neutral">
-        <x text="$caption"></x>
+        <x text=".caption"></x>
       </span>
     </div>
   </div>

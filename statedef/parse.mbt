@@ -211,6 +211,7 @@ priv struct RawProperty {
   span : Span
   doc : String?
   ty : RawTy
+  public_ : Bool
   writable : Bool
   getter : String?
   setter : String?
@@ -1055,6 +1056,8 @@ fn parse_protocol_members(
         span,
         doc,
         ty,
+        // A protocol is already a public capability surface.
+        public_: true,
         writable,
         getter: None,
         setter: None,
@@ -1106,6 +1109,12 @@ fn parse_state_properties(
       continue
     }
     p.attrs() |> ignore
+    let public_ = if p.peek() is TIdent("pub") {
+      p.bump() |> ignore
+      true
+    } else {
+      false
+    }
     let (name, span) = p.ident("a local property name")
     p.expect(TColon, "`:` before the property type")
     let ty = parse_ty(p)
@@ -1142,6 +1151,7 @@ fn parse_state_properties(
       span,
       doc,
       ty,
+      public_,
       writable,
       getter,
       setter,
@@ -1591,6 +1601,7 @@ fn property_defs(
       out.push({
         name: p.name,
         ty: resolve(p.ty, env),
+        public_: p.public_,
         writable: p.writable,
         getter: p.getter,
         setter: p.setter,

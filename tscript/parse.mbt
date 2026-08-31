@@ -743,7 +743,83 @@ pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 
 ///|
 pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse? {
-  parse_handler(s, ctx, Receive, allow_args=true, report=true)
+  match parse_property_action(s, ctx) {
+    Some(action) =>
+      Some({
+        handler: Const(lit=LNull, from_macro=false),
+        args: [],
+        action: Some(action),
+      })
+    None => parse_handler(s, ctx, Receive, allow_args=true, report=true)
+  }
+}
+
+///|
+/// Parse the one synchronous statement an event slot may carry. The block
+/// parser remains the single grammar for assignments and collection methods;
+/// this function only narrows its result to a direct component property.
+fn parse_property_action(s : String, ctx : ParseCtx) -> PropertyAction? {
+  let trimmed = s.trim()
+  if !trimmed.has_prefix(".") {
+    return None
+  }
+  let wrapped = "receive eventAction { " + s + " }"
+  let parsed = parse_script(wrapped) catch { _ => return None }
+  guard parsed is [decl] && decl.body is Stmts([stmt]) else { return None }
+  match stmt {
+    SAssign(place~, op~, value~, ..) if place.root is PState(name) &&
+      place.steps.is_empty() => {
+      if op is ASet && value is EName(name="default", ..) {
+        return Some(PropertyReset(name))
+      }
+      guard lower_action_expr(value, ctx, wrapped) is Some(rhs) else {
+        return None
+      }
+      let assigned = match op {
+        ASet => rhs
+        AAdd => App(name="+", args=[Field(name), rhs])
+        ASub => App(name="-", args=[Field(name), rhs])
+      }
+      Some(PropertySet(name~, value=assigned))
+    }
+    SMethod(place~, call~, args~, ..) if place.root is PState(name) &&
+      place.steps.is_empty() => {
+      let lowered : Array[@tutuca.Val] = []
+      for arg in args {
+        guard lower_action_expr(arg, ctx, wrapped) is Some(v) else {
+          return None
+        }
+        lowered.push(v)
+      }
+      Some(PropertyCall(name~, operation=call, args=lowered))
+    }
+    _ => None
+  }
+}
+
+///|
+/// Lower an event action operand. The block language sees `e.value` as a
+/// parameter path; in an attribute it is instead the event value source.
+fn lower_action_expr(
+  expr : Expr,
+  ctx : ParseCtx,
+  source : String,
+) -> @tutuca.Val? {
+  match expr {
+    ERead(place={ root: PParam("e"), steps, .. }, ..) => {
+      let path : Array[String] = []
+      for step in steps {
+        guard step is PField(name) else { return None }
+        path.push(name)
+      }
+      if path.is_empty() {
+        None
+      } else {
+        Some(EventPath(path))
+      }
+    }
+    _ => lower_expr(expr, ctx, source)
+  }
 }
 
 ///|
@@ -785,7 +861,7 @@ fn parse_handler(
   }
   if !allow_args {
     return if tokens.length() == 1 {
-      Some({ handler, args: [], })
+      Some({ handler, args: [], action: None, })
     } else {
       None
     }
@@ -804,5 +880,5 @@ fn parse_handler(
       }
     }
   }
-  Some({ handler, args, })
+  Some({ handler, args, action: None, })
 }

@@ -146,12 +146,15 @@ script block, and qualify template ids:
 
 ```html
 <script type="tutuca/spec">
-  state Todos { draft: String, items: Array[Todo] }
+  state Todos {
+    draft: String, items: Array[Todo]
+    property { count: Int { get } }
+  }
   state Todo  { text: String, done: Bool }
 </script>
 
 <script type="tutuca/script" for="Todos">
-  compute count { len .items }
+  get count { len state.items }
 </script>
 
 <script type="tutuca/script" for="Todo">

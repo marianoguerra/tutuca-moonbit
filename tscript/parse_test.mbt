@@ -335,6 +335,26 @@ test "$ is a method handler, a bare name is an input handler" {
 }
 
 ///|
+test "input handler parses direct property actions before message handlers" {
+  let ctx = @tscript.ParseCtx::new()
+  guard! @tscript.parse_input_handler(".name = e.value", ctx) is Some(set)
+  assert_true(
+    set.action is Some(PropertySet(name="name", value=EventPath(["value"]))),
+  )
+  guard! @tscript.parse_input_handler(".name = default", ctx) is Some(reset)
+  assert_true(reset.action is Some(PropertyReset("name")))
+  guard! @tscript.parse_input_handler(".items.push e.value", ctx) is Some(call)
+  assert_true(
+    call.action
+    is Some(
+      PropertyCall(name="items", operation="push", args=[EventPath(["value"])])
+    ),
+  )
+  guard! @tscript.parse_input_handler("save e.value", ctx) is Some(message)
+  assert_true(message.action is None)
+}
+
+///|
 test ". cannot be used in handler position" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(@tscript.parse_input_handler(".inc", ctx) is None)

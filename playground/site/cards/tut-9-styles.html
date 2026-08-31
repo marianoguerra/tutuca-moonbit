@@ -55,7 +55,7 @@
         </span>
       </h2>
       <input class="input input-sm w-full" :value=".title"
-             @on.input="setTitle e.value" placeholder="what is it">
+             @on.input=".title = e.value" placeholder="what is it">
       <div class="join">
         <button class="btn btn-sm join-item" @on.click="pick 'feature'">
           feature

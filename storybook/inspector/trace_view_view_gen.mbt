@@ -1528,7 +1528,6 @@ pub(all) enum TracePanelReceive {
   ReplayStep
   ReplayRun
   ReplayReset
-  SetDraft(String)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1564,7 +1563,6 @@ pub fn TracePanelReceive::from_dispatch(
       ("replayStep", []) => ReplayStep
       ("replayRun", []) => ReplayRun
       ("replayReset", []) => ReplayReset
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       _ => {
         match name {
           "setTab" => @tutuca.bad_payload(name, "String", args)
@@ -1576,7 +1574,6 @@ pub fn TracePanelReceive::from_dispatch(
           "replayStep" => @tutuca.bad_payload(name, "", args)
           "replayRun" => @tutuca.bad_payload(name, "", args)
           "replayReset" => @tutuca.bad_payload(name, "", args)
-          "setDraft" => @tutuca.bad_payload(name, "String", args)
           _ => ()
         }
         Unknown(name, args)
@@ -1600,7 +1597,6 @@ pub fn TracePanelReceive::to_dispatch(
     ReplayStep => ("replayStep", [])
     ReplayRun => ("replayRun", [])
     ReplayReset => ("replayReset", [])
-    SetDraft(a0) => ("setDraft", [Str(a0)])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1635,7 +1631,6 @@ pub(all) enum TracePanelInput {
   ReplayReset
   ReplayRun
   ReplayStep
-  SetDraft
   SetTab
   ToggleSelecting
 } derive(Eq, @debug.Debug)
@@ -1649,7 +1644,6 @@ pub fn TracePanelInput::name(self : TracePanelInput) -> String {
     ReplayReset => "replayReset"
     ReplayRun => "replayRun"
     ReplayStep => "replayStep"
-    SetDraft => "setDraft"
     SetTab => "setTab"
     ToggleSelecting => "toggleSelecting"
   }
@@ -1664,7 +1658,6 @@ pub fn TracePanelInput::parse(s : String) -> TracePanelInput? {
     "replayReset" => Some(ReplayReset)
     "replayRun" => Some(ReplayRun)
     "replayStep" => Some(ReplayStep)
-    "setDraft" => Some(SetDraft)
     "setTab" => Some(SetTab)
     "toggleSelecting" => Some(ToggleSelecting)
     _ => None
@@ -1690,8 +1683,6 @@ pub(all) enum TracePanelMsg {
   ReplayRun
   /// `@on.click="replayStep …"`
   ReplayStep
-  /// `@on.input="setDraft …"`
-  SetDraft(String)
   /// `@on.click="setTab …"`
   SetTab(String)
   /// `@on.click="toggleSelecting …"`
@@ -1716,7 +1707,6 @@ pub fn TracePanelMsg::from_dispatch(d : @component.Dispatch) -> TracePanelMsg? {
       ("replayReset", []) => ReplayReset
       ("replayRun", []) => ReplayRun
       ("replayStep", []) => ReplayStep
-      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("setTab", [Str(a0)]) => SetTab(a0)
       ("toggleSelecting", []) => ToggleSelecting
       _ => Unknown(name, args)
@@ -1761,7 +1751,7 @@ impl @component.Fields for TracePanelState with fn schema() {
     ],
     view_handlers=[
       "cutToPlace", "exportTrace", "importDraft", "replayReset", "replayRun", "replayStep",
-      "setDraft", "setTab", "toggleSelecting",
+      "setTab", "toggleSelecting",
     ],
     receives=[
       "setTab", "setAt", "toggleSelecting", "exportTrace", "importDraft", "cutToPlace",

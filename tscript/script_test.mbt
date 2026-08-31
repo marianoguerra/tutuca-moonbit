@@ -86,6 +86,11 @@ test "the seven declaration kinds" {
 }
 
 ///|
+test "state dot names the raw state root" {
+  assert_eq(trip("get label { state.name }"), "get label { .name }")
+}
+
+///|
 test "a doc comment attaches to the declaration under it" {
   assert_eq(
     trip(

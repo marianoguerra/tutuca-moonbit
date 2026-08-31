@@ -390,7 +390,18 @@ fn handler_expr(h : @anode.NodeEvent) -> String {
     Some(BindDouble) => ", binding=\{q}BindDouble"
     None => ""
   }
-  "\{q}on(\{quote(h.name)}, \{val_expr(h.handler.handler)}\{args}\{mods}\{binding})"
+  let action = match h.handler.action {
+    Some(PropertySet(name~, value~)) =>
+      ", action=\{q}set_property_action(\{quote(name)}, \{val_expr(value)})"
+    Some(PropertyReset(name)) =>
+      ", action=\{q}reset_property_action(\{quote(name)})"
+    Some(PropertyCall(name~, operation~, args~)) =>
+      ", action=\{q}call_property_action(\{quote(name)}, \{quote(operation)}, [" +
+      args.map(val_expr).join(", ") +
+      "])"
+    None => ""
+  }
+  "\{q}on(\{quote(h.name)}, \{val_expr(h.handler.handler)}\{args}\{mods}\{binding}\{action})"
 }
 
 ///|

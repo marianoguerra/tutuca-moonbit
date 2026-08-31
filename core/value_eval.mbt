@@ -239,8 +239,9 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
         _ => Null
       }
     Dyn(name) => stack.lookup_dynamic(name)
-    // `.name` never invokes: a function field comes back raw.
-    Field(name) => stack.lookup_field_raw(name)
+    // `.name` is a virtual member read. A state field is the implicit private
+    // property case; a declared getter may compute instead.
+    Field(name) => stack.lookup_member(name)
     // `$name` in a value slot: the stack invokes and returns the result.
     Method(name) => stack.lookup_method(name)
     // `.seq[.key]`. Through the shared item lookup, which is what makes a

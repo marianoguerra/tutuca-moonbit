@@ -1,8 +1,8 @@
 # Tutuca — Core (MoonBit port)
 
 Tutuca is an immutable-state web framework: a component is a plain typed
-**state struct** plus handler buckets — auto-generated mutators (`setX`,
-`pushInX`, …), HTML-template `view`s with `@`-prefixed directives, and one
+**state struct** plus properties and handler buckets — direct property actions,
+HTML-template `view`s with `@`-prefixed directives, and one
 `update` dispatch match for orchestration. This is the **MoonBit port**
 (`marianoguerra/tutuca`): the template language is identical to the JS
 original, but everything around the views — component definition, state,
@@ -76,42 +76,37 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 
 ## Common pitfalls
 
-- **`.name` reads a field, `$name` calls a handler IN A VALUE POSITION.**
-  `.count` reads field `count`; `$label` in `@text="$label"` or
-  `@show="$canSubmit"` calls the `compute` entry (or generated mutator)
-  by that name. In an EVENT position (`@on.click`) the `$` is refused:
-  a `$name` and a bare name are the same dispatch there — app/app.mbt
-  hands both to `push_input` — so the sigil would claim a distinction
-  that does not exist.
-- **Every event handler goes in `update`.** There is one bucket for them,
-  and a view names it bare. A `compute` entry is pure — `(s, args, stack) => Value`
-  — and exists for the other job: a `$`-callable evaluated in a VALUE
-  position (`@text="$label"`), where no event and no ctx exist. The
+- **`.name` reads a property; `$name args…` calls a method.** A field is an
+  implicit private property, and an explicit property of the same name wins.
+  A zero-argument derivation is a read-only property and is still `.label`.
+  In an event position, `.name = value` and `.items.removeAt key` are property
+  actions; a bare name is a semantic handler.
+- **Semantic event handlers go in `update`.** A view names one bare. A
+  parameterized `compute` entry is pure — `(s, args, stack) => Value` — and
+  exists for `$` calls in value positions. The
   `update` fn — `(s, msg, ctx) => Update[S]` — gets the `&Ctx` and can
   `ctx.send` / `ctx.intent`. Every `@on` handler is written bare,
   whichever bucket serves it; `$` is for value positions only.
 - **`update` returns `Update[S]`, which has three cases.** `Next(s2)`
   commits a successor. `Unchanged` says "my arm ran and the state stays as
   it is" — nothing further is tried, which is how a handler VETOES a write.
-  `Unhandled` says "no arm claimed this name" and hands the dispatch on to
-  the generated mutators. The match must be total — always end with
+  `Unhandled` says "no arm claimed this name". Property actions do not enter
+  this dispatch. The match must be total — always end with
   `_ => Unhandled`.
 
-  The three are distinct on purpose. Under `S?` both refusals were `None`,
-  so a `Receive("setTitle", _) => None` meant to veto fell through to the
-  generated setter and the write landed anyway.
+  The three are distinct on purpose: a handled no-op is not an unknown name.
 - **The bucket enums are closed and view-driven.** With generated views,
   `compute` / `when` / `enrich` / … are functions over enums whose cases
   come from the names the views reference. You cannot pre-declare a
   handler the view doesn't call yet — the constructor doesn't exist and
   the match won't compile. Add the name to the view first, regenerate,
   then write the handler.
-- **Paths are not allowed in values.** `.foo` resolves a single field on
+- **Paths are not allowed in values.** `.foo` resolves a single property on
   the state — `@text=".foo.bar"`, `:value=".user.name"`,
   `@show=".item.isOpen"` all fail. To reach into nested data: render the
   child as a component (`<x render=".foo">` then `@text=".bar"` inside),
-  add a `compute` entry (read the nested value off a `@tutuca.Value`
-  field with `v.field("name")` — use `$fullName`), or use `@enrich-with`
+  add a read-only property (read the nested value off a `@tutuca.Value`
+  field with `v.field("name")`), or use `@enrich-with`
   for scope-level derivation. The one exception: a **binding** may read
   exactly one **binding member** — `@text="@value.title"` inside `@each`
   works (any `@`-binding, one level only; `@value.a.b` fails generation
@@ -361,8 +356,8 @@ implicit** — so `(.n > 0) and .open` rather than `.n > 0 and .open`, and the
 error message names the parentheses to add. There is no precedence table to
 remember and none to get wrong.
 
-A conditional slot also accepts the plain value forms `@text` does — a field
-(`@show=".isOpen"`), a no-arg `compute` (`@show="$canSubmit"`), or a
+A conditional slot also accepts the plain value forms `@text` does — a property
+(`@show=".isOpen"`), or a
 loop/scope `@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read as a
 boolean. String literals are `'detail'`, or `'two words'` for one with spaces
 (escape an interior quote as `\'`).
@@ -387,8 +382,8 @@ around it — so read the value in the view and pass it in.
 
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
-| `.x`     | field on the state (single-level — no `.foo.bar` paths) | `.count`, `.title` |
-| `$x`     | a `compute` call (or a generated mutator), in a VALUE position only | `$label`, `$canSubmit` |
+| `.x`     | property on the component (explicit property before implicit field property) | `.count`, `.title` |
+| `$x`     | a parameterized `compute` call, in a VALUE position only | `$format .value` |
 | `@x`     | local binding (loop / scope)              | `@key`, `@value`      |
 | `^x`     | macro parameter                           | `^label`              |
 | `*x`     | dynamic binding — see [advanced.md](./advanced.md) | `*theme`          |
@@ -399,18 +394,15 @@ around it — so read the value in the view and pass it in.
 | `.s[.k]` | sequence/map item access                  | `.byKey[.currentKey]` |
 | `pred? .x` | an expression in a conditional slot | `empty? .items`, `.view is 'detail'`, `not .open` |
 
-`.x` and `$x` are not interchangeable: `.x` only reads a field, `$x`
-only calls a `$`-handler. `gen-views` reports a mismatch and names the
-prefix to use (`MAYBE_ADD_AT_PREFIX` / `MAYBE_DROP_AT_PREFIX` for the
-`@` case).
+`.x` and `$x` are not interchangeable: `.x` reads a property, while `$x`
+calls a method. `gen-views` reports a mismatch and names the prefix to use.
 
 A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
 resolves by slot:
 
-- **First slot** — an event name dispatched as `Receive(name, args)` to
-  the `update` fn; when no `update` arm claims it, dispatch falls back
-  to a generated mutator of the same name. `$name` is for VALUE
-  positions, where a `compute` entry answers it.
+- **First slot** — a semantic event name dispatched as `Receive(name, args)`
+  to the `update` fn. A property action instead begins with `.`, for example
+  `.query = e.value` or `.items.removeAt @key`.
 - **Subsequent slots** — built-in handler argument name (full list in
   *Event Handling*); anything else triggers a lint warning.
 
@@ -557,15 +549,12 @@ file's `<script type="tutuca/spec">` block; `gen-views` writes the struct, and
 every handler body is compiler-checked against it — `s.cuont` is a compile
 error, not a silently-Null render.
 
-How a field's type is spelled, and which camelCase mutators each kind
-generates (`pushInX`, `toggleInX`, `setInXAt`, …), is one table in
-[schema.md](./schema.md#what-each-field-kind-generates). Two consequences worth
+How a field's type is spelled, and which property operations its kind admits,
+is one table in [schema.md](./schema.md#property-actions-in-views). Two consequences worth
 carrying here:
 
-- The generated mutator names keep their **JS camelCase spelling** — that is
-  what makes views port verbatim: `@on.click="removeInItemsAt @key"`,
-  `@on.input="setQuery e.value"`, `@on.click="toggleView"` all call generated
-  mutators. A `compute` entry of the same name wins over the generated one.
+- Views write the receiver directly: `@on.click=".items.removeAt @key"`,
+  `@on.input=".query = e.value"`, and `@on.click=".view = not .view"`.
 - Emptiness / truthiness / null checks are **not** generated — use the shape
   predicates `empty?`, `truthy?`, `null?` in a conditional slot instead (e.g.
   `@hide="empty? .x"`, `@show=".view is 'detail'"`).
@@ -575,12 +564,26 @@ the dynamic escape hatch inside an otherwise typed struct. That includes fields
 holding component instances or `Fn` values: they survive state updates
 losslessly.
 
-## Computed values & predicates (`compute`)
+## Derived properties and parameterized computes
 
-A no-arg `compute` entry called via `$name` is invoked and its return
-value is used. Works anywhere a value is read — `@text`, `:attr`,
-`@show` / `@hide`, `@if.<attr>`, and `{…}` interpolation. (`.name` is a
-field read and never invokes; `$name` is the call.)
+A zero-argument derived value is a read-only private property. Declare its type
+in the state and implement the getter in the script block; every value slot
+reads it with `.name`:
+
+```html
+<script type="tutuca/spec">
+  state Form {
+    title: String
+    property { label: String { get } }
+  }
+</script>
+<script type="tutuca/script">
+  get label { if state.title is '' { 'untitled' } else { state.title } }
+</script>
+<p @text=".label"></p>
+```
+
+A computation that takes arguments remains a method and uses `$name args…`.
 
 The map form below is the raw `@component.component(...)` spelling; a
 generated wrapper takes the enum-match form instead, with one `Some(...)` arm
@@ -601,8 +604,8 @@ compute={
 ```
 
 ```html
-<button @show="$canSubmit" :class="$buttonClass">Save</button>
-<p :title="$'Hello, {$fullName}'" @text="$fullName"></p>
+<button @show=".canSubmit" :class=".buttonClass">Save</button>
+<p :title="$'Hello, {.fullName}'" @text=".fullName"></p>
 ```
 
 The shape predicates (`empty?`, `truthy?`, `null?`) and the operators
@@ -618,7 +621,7 @@ the value lives behind a field, your options are:
 - **Render the child as a component** — `<x render=".user">` then
   `@text=".name"` inside the child's view. Best when the nested thing is
   already (or could be) a component.
-- **Add a `compute`** — reading through the value coercers when the
+- **Add a read-only property** — reading through the value coercers when the
   field is a `@tutuca.Value`:
 
   ```moonbit nocheck
@@ -626,7 +629,7 @@ the value lives behind a field, your options are:
   "userName": (s : PageState, _args) => s.user.field("name"),
   ```
 
-  then `@text="$userName"`. Best for one-off derivations or formatting.
+  then `@text=".userName"`. Best for one-off derivations or formatting.
 - **Use `@enrich-with`** — exposes computed values as `@`-bindings to a
   subtree without putting them on the component. See *Scope Enrichment*
   in [iteration.md](./iteration.md).
@@ -642,20 +645,20 @@ or use `@when` with a `when` entry.
 ```html
 <span @text=".str"></span>          <!-- prepend text into span -->
 <x text=".bool"></x>                <!-- text-only, no DOM element -->
-<x text="$getStrUpper"></x>         <!-- $ calls a compute -->
+<x text=".strUpper"></x>            <!-- derived property -->
 <x text="@value"></x>               <!-- loop binding -->
 ```
 
 Use `@text` when you already have a host element to put the text in; use
 `<x text=…>` for bare text with no wrapping element (e.g. text interleaved with
 other inline content, or a loop binding). Both take the same value forms
-(`.field`, `$handler`, `@binding`). A `Null` text value renders nothing
+(`.property`, `$method args…`, `@binding`). A `Null` text value renders nothing
 (not the string `"null"`).
 
 ## Attribute Binding
 
 ```html
-<input :value=".str" @on.input="setStr e.value" />
+<input :value=".str" @on.input=".str = e.value" />
 <a :href=".url" :title="$'Hi {.name}'">link</a>       <!-- string template -->
 <button :class="$'btn {.color}'">x</button>
 ```
@@ -844,7 +847,7 @@ Named views are `<template id="Comp:name">` entries in the view file:
 ```html
 <template id="Note"><p @text=".title"></p></template>
 <template id="Note:edit">
-  <input :value=".title" @on.input="setTitle e.value">
+  <input :value=".title" @on.input=".title = e.value">
 </template>
 ```
 
@@ -880,11 +883,11 @@ Everything you write **in MoonBit** beside a generated view goes in one of
 these. This is the canonical list; other files link here rather than restating
 it.
 
-Reach for a bucket third, not first. A name is answered by the first of three
-that claims it, and the buckets are the last:
+Reach for a bucket after the declarative forms. A source operation is answered
+by the first applicable layer:
 
-1. a **generated mutator** — `setX`, `toggleX`, `pushInX`, `removeInXAt`, from
-   the field's declared kind. No code at all.
+1. a **property action** — `.x = value`, `.x = default`, or a collection
+   operation such as `.items.push value`. No message name is generated.
 2. a **declaration in one of the two blocks** — `receive`, `intent`,
    `compute`, `enrich`, `enrichScope` and the `send` / `sendAt` / `intent` /
    `forward` effects in `<script type="tutuca/script">`; `pred` and `invariant`

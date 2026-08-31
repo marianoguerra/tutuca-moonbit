@@ -631,6 +631,29 @@ declare pub fn Transactor::set_property(
 ) -> @tutuca.PropertyWrite
 
 ///|
+/// Apply a private-or-public property setter from the component's own view.
+/// It has the same atomic path rebuilding as `set_property`; only visibility
+/// differs.
+declare pub fn Transactor::set_member(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  value : @tutuca.Value,
+) -> @tutuca.PropertyWrite
+
+///|
+/// Apply a source-level member operation from the component's own view and
+/// install its successor atomically. Generated mutator names are an
+/// implementation detail below this API.
+declare pub fn Transactor::mutate_member(
+  self : Transactor,
+  at : @tutuca.DispatchPath,
+  name : String,
+  operation : String,
+  args : Array[@tutuca.Value],
+) -> @tutuca.PropertyWrite
+
+///|
 /// Subscribe to a normalized record for every handler invocation — a receive,
 /// one hop of an intent's walk, or an answer. Returns an unsubscribe function.
 /// Purely observational; empty by default (zero overhead).

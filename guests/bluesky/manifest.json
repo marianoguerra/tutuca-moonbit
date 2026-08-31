@@ -1,5 +1,5 @@
 {
-  "manifestVersion": 2,
+  "manifestVersion": 3,
   "apiVersion": 10,
   "moduleName": "blueskylib",
   "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data — no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",

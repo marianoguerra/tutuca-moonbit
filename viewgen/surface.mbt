@@ -640,6 +640,18 @@ fn walk_view(
   for ev in events {
     for h in ev.handlers {
       let site = "@on." + h.name
+      match h.handler.action {
+        Some(PropertySet(value~, ..)) => {
+          walk_val(value, c, false)
+          check_event_arg(value, view_name, site, c.hints)
+        }
+        Some(PropertyCall(args~, ..)) =>
+          for arg in args {
+            walk_val(arg, c, false)
+            check_event_arg(arg, view_name, site, c.hints)
+          }
+        Some(PropertyReset(_)) | None => ()
+      }
       match h.handler.handler {
         // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
         // Method into one string and pushes both as the same `Receive`, so the

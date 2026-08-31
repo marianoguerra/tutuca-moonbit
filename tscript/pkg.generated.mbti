@@ -138,6 +138,7 @@ pub fn Expr::to_source(Self) -> String
 pub(all) struct HandlerParse {
   handler : @core.Val
   args : Array[@core.Val]
+  action : PropertyAction?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Issue {
@@ -197,6 +198,12 @@ pub(all) enum PlaceRoot {
   PState(String)
   PBind(String)
   PParam(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PropertyAction {
+  PropertySet(name~ : String, value~ : @core.Val)
+  PropertyReset(String)
+  PropertyCall(name~ : String, operation~ : String, args~ : Array[@core.Val])
 } derive(Eq, @debug.Debug)
 
 pub(all) enum STok {

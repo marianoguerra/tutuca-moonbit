@@ -331,6 +331,8 @@ fn emit_schema(
         quote(p.name) +
         ", ty: " +
         def.ty_info_src(p.ty) +
+        ", public_: " +
+        p.public_.to_string() +
         ", writable: " +
         p.writable.to_string() +
         "},\n",
@@ -377,6 +379,7 @@ fn emit_schema(
           quote(x.name) +
           ", ty: " +
           def.ty_info_src(x.ty) +
+          ", public_: true" +
           ", writable: " +
           x.writable.to_string() +
           "}"

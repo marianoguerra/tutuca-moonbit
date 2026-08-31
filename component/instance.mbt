@@ -374,10 +374,24 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 ///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_property(self, name) {
   guard self.spec.comp is Some(comp) else { return None }
-  guard comp.schema.properties.iter().any(p => p.name == name) else {
+  guard comp.schema.properties.iter().any(p => p.name == name && p.public_) else {
     return None
   }
   self.spec.get_property.get(name).map(f => f(self.state))
+}
+
+///|
+/// The owning view's virtual-member read. Declared getters win; state fields
+/// are implicit private properties and therefore form the fallback.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_member_at(
+  self,
+  name,
+  _stack,
+) {
+  match self.spec.get_property.get(name) {
+    Some(f) => Some(f(self.state))
+    None => self.fields.get(name)
+  }
 }
 
 ///|
@@ -394,6 +408,102 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_property(
     is Some(property) else {
     return PMissing
   }
+  if !property.public_ {
+    return PMissing
+  }
+  self.write_member(name, value, property)
+}
+
+///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_member(
+  self,
+  name,
+  value,
+) {
+  guard self.spec.comp is Some(comp) else { return PMissing }
+  guard comp.schema.properties.iter().find_first(p => p.name == name)
+    is Some(property) else {
+    // State fields are implicit private read/write properties. Reuse the
+    // generated setter so coercion and schema defaults stay in one place.
+    match self.spec.generated.get(@tutuca.mutator_name("set", name)) {
+      Some(setter) => {
+        let successor = setter(self.field_box(), [value])
+        guard successor is Obj(_) else { return PRefused }
+        if physical_equal(successor, self.to_value()) {
+          return PUnchanged
+        }
+        return match self.broken_rule(successor) {
+          Some(broke) => {
+            ignore(self.refuse_broken(broke, name, successor))
+            PRefused
+          }
+          None => PChanged(successor)
+        }
+      }
+      None => return PMissing
+    }
+  }
+  self.write_member(name, value, property)
+}
+
+///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_mutate_member(
+  self,
+  name,
+  operation,
+  args,
+) {
+  guard self.spec.comp is Some(comp) && comp.schema.field(name) is Some(field) else {
+    return PMissing
+  }
+  guard member_mutator_name(name, operation, field.kind()) is Some(key) &&
+    self.spec.generated.get(key) is Some(mutate) else {
+    return PMissing
+  }
+  let successor = mutate(self.field_box(), args)
+  guard successor is Obj(_) else { return PRefused }
+  if successor.identity() == self.to_value().identity() {
+    return PUnchanged
+  }
+  match self.broken_rule(successor) {
+    Some(broke) => {
+      ignore(self.refuse_broken(broke, name, successor))
+      PRefused
+    }
+    None => PChanged(successor)
+  }
+}
+
+///|
+fn member_mutator_name(
+  name : String,
+  operation : String,
+  kind : @tutuca.FieldKind,
+) -> String? {
+  match (operation, kind) {
+    ("clear", _) => Some(@tutuca.mutator_name("reset", name))
+    ("push", _) => Some(@tutuca.mutator_name("pushIn", name))
+    ("insertAt", _) => Some(@tutuca.mutator_name("insertIn", name) + "At")
+    ("setAt" | "set", _) => Some(@tutuca.mutator_name("setIn", name) + "At")
+    ("deleteAt", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
+    ("removeAt", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    ("add", _) => Some(@tutuca.mutator_name("addIn", name))
+    ("toggle", _) => Some(@tutuca.mutator_name("toggleIn", name))
+    ("delete", FSet) => Some(@tutuca.mutator_name("deleteIn", name))
+    ("remove", FSet) => Some(@tutuca.mutator_name("removeIn", name))
+    ("delete", _) => Some(@tutuca.mutator_name("deleteIn", name) + "At")
+    ("remove", _) => Some(@tutuca.mutator_name("removeIn", name) + "At")
+    _ => None
+  }
+}
+
+///|
+fn[S] TypedInstance::write_member(
+  self : TypedInstance[S],
+  name : String,
+  value : @tutuca.Value,
+  property : @tutuca.PropertyInfo,
+) -> @tutuca.PropertyWrite {
   if !property.writable {
     return PRefused
   }

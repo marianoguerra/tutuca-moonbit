@@ -559,13 +559,13 @@ export function createTcompImports(getExports) {
     getExports().dyncomp_on_loaded(loadId, id, manifestJson);
   };
 
-  // A v2 descriptor carries the declaration as data. Views are separate
+  // A v3 descriptor carries the declaration as data. Views are separate
   // HTML assets so authors and editors handle HTML rather than a string inside
   // source code; hydrate them only after untarring, before MoonBit parses the
   // manifest exactly as it did for v0.5's get-manifest result.
   const hydrateManifest = (descriptor, files) => {
     const manifest = structuredClone(descriptor.manifest);
-    if (!manifest || manifest.manifestVersion !== 2) {
+    if (!manifest || manifest.manifestVersion !== 3) {
       throw new Error("tutuca.json has no supported static manifest");
     }
     for (const component of manifest.components ?? []) {

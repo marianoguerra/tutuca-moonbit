@@ -77,3 +77,24 @@ test "the fingerprint reads a name, not its spelling" {
     ),
   )
 }
+
+///|
+test "property visibility and access are part of the interface shape" {
+  let private_read = defs_of(
+    "state C { n: Int property { value: Int { get .n } } }",
+  )
+  let public_read = defs_of(
+    "state C { n: Int property { pub value: Int { get .n } } }",
+  )
+  let public_write = defs_of(
+    "state C { n: Int property { pub value: Int { get .n set .n } } }",
+  )
+  assert_not_eq(
+    @statedef.fingerprint(private_read),
+    @statedef.fingerprint(public_read),
+  )
+  assert_not_eq(
+    @statedef.fingerprint(public_read),
+    @statedef.fingerprint(public_write),
+  )
+}

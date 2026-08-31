@@ -74,7 +74,7 @@ fn manifest_json(
     component_defs.push(entry)
   }
   Json::object({
-    "manifestVersion": Json::number(2),
+    "manifestVersion": Json::number(3),
     "apiVersion": Json::number(10),
     // Named after the ROOT rather than after the `name~` argument: a terminal
     // passes a file's basename and the browser passes the first template's
@@ -137,6 +137,7 @@ fn component_json(
       Json::object({
         "name": Json::string(p.name),
         "ty": Json::number(at.to_double()),
+        "public": Json::boolean(p.public_),
         "writable": Json::boolean(p.writable),
         "doc": Json::string(p.doc.unwrap_or("")),
       }),

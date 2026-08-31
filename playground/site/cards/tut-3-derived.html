@@ -9,6 +9,12 @@
     text  : String
     limit : Int
 
+    property {
+      left: Int { get }
+      bar: String { get }
+      status: String { get }
+    }
+
     /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
     pred over { (len .text) > .limit }
   }
@@ -26,9 +32,9 @@
     .limit = 80
   }
 
-  /// `$left` is how a template calls this, and this is the only
+  /// `.left` is how a template reads this, and this is the only
   /// place the subtraction is written.
-  compute left { .limit - (len .text) }
+  get left { .limit - (len .text) }
 
   /// The bar's width, as a whole style declaration.
   ///
@@ -37,7 +43,7 @@
   /// things, it does not call them, so `{(len .text)}` written in an
   /// attribute has nothing to interpolate. A body is where an
   /// expression may be written.
-  compute bar { $'width: {min (len .text) 100}%' }
+  get bar { $'width: {min (len .text) 100}%' }
 
   /// One declaration calling two others, and `if` in a value
   /// position — where both arms are required, because an expression
@@ -46,20 +52,26 @@
   /// `over` and `left` are written BARE. The `$` spelling belongs to
   /// a template, where the render stack answers it; inside a body it
   /// names nothing, and the compiler refuses it in so many words.
-  compute status { if over { $'{0 - left} over' } else { $'{left} to spare' } }
+  get status {
+    if over {
+      $'{0 - (.limit - (len .text))} over'
+    } else {
+      $'{.limit - (len .text)} to spare'
+    }
+  }
 </script>
 
 <template>
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
       <input class="input input-sm w-full" :value=".text"
-             @on.input="setText e.value"
+             @on.input=".text = e.value"
              placeholder="write something and watch the numbers move">
       <div @if.class="$over" @then="'h-2 rounded bg-error'"
-           @else="'h-2 rounded bg-success'" :style="$bar"></div>
+           @else="'h-2 rounded bg-success'" :style=".bar"></div>
       <p @if.class="$over" @then="'font-mono text-sm text-error'"
          @else="'font-mono text-sm opacity-70'">
-        <x text="$status"></x>
+        <x text=".status"></x>
       </p>
       <div class="alert alert-warning" @show="$over">
         <span>trim it — the same predicate hid this line

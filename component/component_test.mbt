@@ -90,6 +90,20 @@ test "generated mutators: set/toggle/push/setAt/delete/len/reset" {
 }
 
 ///|
+test "member actions hide generated mutator spellings" {
+  let t0 = todo_comp().make(Map([]))
+  guard! t0.set_member("title", Str("named")) is PChanged(t1)
+  assert_eq(t1.field("title"), Str("named"))
+  guard! t1.mutate_member("items", "push", [Str("a")]) is PChanged(t2)
+  assert_eq(t2.field("items"), List([Str("a")]))
+  guard! t2.mutate_member("items", "removeAt", [Num(0)]) is PChanged(t3)
+  assert_eq(t3.field("items"), List([]))
+  guard! t3.set_member("done", Bool(true)) is PChanged(t4)
+  assert_eq(t4.field("done"), Bool(true))
+  assert_true(t4.mutate_member("items", "frobnicate", []) is PMissing)
+}
+
+///|
 priv struct NoFields {} derive(Default)
 
 ///|

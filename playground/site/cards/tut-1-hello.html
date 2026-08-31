@@ -1,8 +1,8 @@
 <!-- Step 1 — the schema on its own.
 
      No <script type="tutuca/script"> in this file, and the card still
-     answers three events: the STATE block generated every name the
-     view calls. -->
+     still answers its events: direct property actions need no named
+     message declarations. -->
 
 <script type="tutuca/spec">
   state Greeter {
@@ -17,11 +17,11 @@
       <label class="flex gap-2 items-center">
         <span class="opacity-70">your name</span>
         <input class="input input-sm w-full" :value=".name"
-               @on.input="setName e.value" placeholder="type here">
+               @on.input=".name = e.value" placeholder="type here">
       </label>
       <label class="flex gap-2 items-center">
         <input type="checkbox" class="checkbox checkbox-sm"
-               :checked=".loud" @on.click="toggleLoud">
+               :checked=".loud" @on.click=".loud = not .loud">
         <span class="opacity-70">shout it</span>
       </label>
       <p @if.class=".loud"

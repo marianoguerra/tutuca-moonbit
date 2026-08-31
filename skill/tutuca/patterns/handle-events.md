@@ -20,26 +20,26 @@
 <template id="Counter">
   <div>
     <button @on.click="inc">+</button>      <!-- bare name = a handler -->
-    <button @on.click="dec">-</button>        <!-- ...or a generated mutator -->
+    <button @on.click="dec">-</button>
 
     <!-- pass args by name -->
-    <input @on.input="setStr e.value" />
-    <input @on.input="setN e.valueAsInt" />
+    <input @on.input=".str = e.value" />
+    <input @on.input=".n = e.valueAsInt" />
 
     <!-- modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt -->
     <input @on.keydown+send="submit e.value" @on.keydown+cancel="reset" />
 
     <!-- custom elements: any CustomEvent reaches @on.<name>, detail is `e.value` -->
-    <emoji-picker @on.emoji-click="setStr e.value"></emoji-picker>
+    <emoji-picker @on.emoji-click=".str = e.value"></emoji-picker>
   </div>
 </template>
 ```
 
-An `@on` name is answered by the first of three that claims it: a `receive` in
-the script block, an arm of your `update`, or the generated mutator the field's
-kind comes with (`setStr`, `setN`, `toggleDone`, `removeInItemsAt`). Reach for
-a mutator when one already says it — `@on.click="toggleHideCompleted"` needs no
-handler anywhere.
+An `@on` value is either a property action beginning with `.` or a semantic
+handler. Use `.str = e.value`, `.done = not .done`, or
+`.items.removeAt @key` for a direct synchronous member operation; it dispatches
+no message and needs no handler. Use a bare name when the action has domain
+meaning, several effects, messaging, or asynchronous work.
 
 Written args arrive in template order. The first slot is a handler name —
 always bare in an event position, and dispatched as `Receive(name, args)`;
@@ -70,8 +70,8 @@ the views raise:
 
 ```moonbit nocheck
 // nocheck: a bucket argument, not a top-level item
-// gets ctx: (s, msg, ctx) => Update[S]; Unhandled falls through to the
-// generated mutators. `CounterMsg` is generated from the @on names, so adding
+// gets ctx: (s, msg, ctx) => Update[S]; Unhandled declines this message.
+// `CounterMsg` is generated from the bare @on names, so adding
 // one to the view makes this match non-exhaustive until it is answered.
 update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
   Some(Inc) => Next({ ..s, count: s.count + 1 })
@@ -90,8 +90,8 @@ and `e.value`/`e.valueAsInt`-style accessors arrive **unwrapped** (`String` /
 the inferred shape land in `Unknown(name, args)` — the full table is in
 [events.md](../events.md) *Generated `Msg` payload types*. `e.value` follows the host element's
 static `type`: `Bool` on a checkbox, metadata `@tutuca.Value` on a file
-input, `String` otherwise (including when `:type` is dynamic — handle
-that case via the generated mutator or a raw `Receive` arm).
+input, `String` otherwise (including when `:type` is dynamic — handle that
+case via an explicit property action or a raw `Receive` arm).
 
 Pass the most granular arg the handler needs — `e.value`/`e.valueAsInt`/`e.key` — so
 tests drive it with plain literals. Why this keeps tests simple:

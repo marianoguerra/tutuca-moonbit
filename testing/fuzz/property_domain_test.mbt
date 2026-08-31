@@ -23,7 +23,7 @@ test "a property backed by a domained field draws inside the domain" {
       #|state Widget {
       #|  view : String
       #|  where view is one of ["main", "format"]
-      #|  property { reading : String { get .view set .view } }
+      #|  property { pub reading : String { get .view set .view } }
       #|}
     ),
     Properties,
@@ -55,7 +55,7 @@ test "a property with a script body still draws its type" {
       #|state Widget {
       #|  view : String
       #|  where view is one of ["main", "format"]
-      #|  property { reading : String { get set } }
+      #|  property { pub reading : String { get set } }
       #|}
     ),
     Properties,

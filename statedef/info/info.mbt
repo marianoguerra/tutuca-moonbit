@@ -168,6 +168,7 @@ pub fn schema_info(
     properties: p.properties.map(x => @tutuca.PropertyInfo::{
       name: x.name,
       ty: ty_info(def, x.ty),
+      public_: true,
       writable: x.writable,
     }),
     views: p.views,
@@ -188,6 +189,7 @@ pub fn schema_info(
     properties=def.properties.map(p => @tutuca.PropertyInfo::{
       name: p.name,
       ty: ty_info(def, p.ty),
+      public_: p.public_,
       writable: p.writable,
     }),
     view_handlers~,

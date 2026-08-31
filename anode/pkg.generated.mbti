@@ -21,6 +21,8 @@ pub fn attr_val(String, @core.Val) -> AttrItem
 
 pub fn attrs_of_items(Array[AttrItem]) -> Attrs
 
+pub fn call_property_action(String, String, Array[@core.Val]) -> @tscript.PropertyAction
+
 pub fn comment(String) -> ANode
 
 pub fn condense_childs_whites(Array[ANode]) -> Array[ANode]
@@ -51,7 +53,7 @@ pub fn hide(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
 
-pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String], binding? : BindCoercion) -> NodeEvent
+pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String], binding? : BindCoercion, action? : @tscript.PropertyAction) -> NodeEvent
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
@@ -65,6 +67,8 @@ pub fn render(Int, @core.Val, view? : @core.Val) -> ANode
 
 pub fn render_it(Int, view? : @core.Val) -> ANode
 
+pub fn reset_property_action(String) -> @tscript.PropertyAction
+
 pub fn scope(Int, @core.Val, ANode) -> ANode
 
 pub fn set_inner_html(val? : @core.Val) -> AttrItem
@@ -72,6 +76,8 @@ pub fn set_inner_html(val? : @core.Val) -> AttrItem
 pub fn set_inner_md(val? : @core.Val) -> AttrItem
 
 pub fn set_inner_svg(val? : @core.Val) -> AttrItem
+
+pub fn set_property_action(String, @core.Val) -> @tscript.PropertyAction
 
 pub fn show(@core.Val, ANode, id? : Int) -> ANode
 

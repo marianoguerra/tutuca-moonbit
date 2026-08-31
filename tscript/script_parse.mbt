@@ -629,7 +629,8 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
     return SEffect(name~, args~, route~, span=p.since(from))
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
-  if !(p.peek() is (TDot | TAt)) {
+  if !(p.peek() is (TDot | TAt)) &&
+    !(p.peek() is TIdent("state") && p.peek_at(1) is TDot) {
     // `f.name = 'x'` parses as far as the path and then stops here. Saying
     // what a path into an argument IS beats listing what a statement may be:
     // an argument is a value the caller handed over, and this component owns
@@ -747,6 +748,12 @@ fn parse_ty_ref(p : P) -> TyRef raise ScriptError {
 fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
   let from = p.span()
   let root : PlaceRoot = match p.peek() {
+    TIdent("state") => {
+      p.bump() |> ignore
+      p.expect(TDot, "`.` after the raw state root")
+      let (n, _) = p.ident("a state field after `state.`")
+      PState(n)
+    }
     TDot => {
       p.bump() |> ignore
       let (n, _) = p.ident("a state field after `.`")
@@ -1003,6 +1010,18 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
     }
     TIdent(n) => {
       p.bump() |> ignore
+      if n == "state" && starts_attached_step(p) {
+        let steps = parse_steps(p, for_ref=false)
+        guard steps is [PField(field), .. rest] else {
+          p.fail("a state field after `state.`")
+        }
+        let place : Place = {
+          root: PState(field),
+          steps: rest.to_owned(),
+          span: p.since(from),
+        }
+        return ERead(place~, span=place.span)
+      }
       // `f.name`, `f[0]` — a path into a parameter. Attached only, and read
       // before the application loop, so `len f.items` is `len` applied to one
       // path rather than to two things.

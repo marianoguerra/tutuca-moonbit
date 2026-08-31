@@ -164,6 +164,11 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_field_raw(self, name) {
 }
 
 ///|
+pub impl @tutuca.Stack for RenderStack with fn lookup_member(self, name) {
+  self.it.member_at(name, self).unwrap_or(Null)
+}
+
+///|
 /// `$name` in value position is the RESULT of the no-arg method call, with
 /// the current item as `this` (Obj method Fns are pre-bound and drop it).
 pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {

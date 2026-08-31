@@ -59,9 +59,11 @@ express Screen {
 ```
 
 A `property` is a typed read operation, not a promise that storage has a
-particular field. `.active` binds it to a field; `$isActive` binds it to a
-zero-argument computation. Reads that cannot be satisfied return `Null` and
-emit a structured runtime notice.
+particular field. `.active` binds it to a field; a bare `get` is implemented by
+`get active { … }` in the script block. Local properties are private by
+default; `pub` exposes one directly, while a protocol binding exposes it under
+the protocol member regardless of the local name. Reads that cannot be
+satisfied return `Null` and emit a structured runtime notice.
 
 A protocol view is a semantic role. Its implementation maps that role to a
 local view. Runtime selection tries the mapping, a same-named view, then

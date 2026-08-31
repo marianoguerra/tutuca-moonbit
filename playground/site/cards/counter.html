@@ -21,6 +21,10 @@
     count   : Int
     history : Array[Int]
 
+    property {
+      summary: String { get }
+    }
+
     /// A named boolean — the same thing, with its answer declared, which is what
     /// lets `@show` be checked.
     pred moved { (len .history) > 0 }
@@ -58,19 +62,19 @@
     .history.push .count
   }
 
-  /// A derived value. `$summary` is how a template calls it.
+  /// A derived private property. `.summary` is how a template reads it.
   ///
   /// A card starts at the schema's ZERO state — there is no seed to pass, since
   /// there is no MoonBit here to pass one — so the label is empty until someone
   /// types it, and this says what to show meanwhile. Both arms are required:
   /// an expression has to have a value.
-  compute summary { if .label is '' { $'{.count}' } else { $'{.label}: {.count}' } }
+  get summary { if .label is '' { $'{.count}' } else { $'{.label}: {.count}' } }
 </script>
 
 <template>
   <div class="card bg-base-200 max-w-md">
     <div class="card-body gap-3">
-      <h2 class="card-title"><x text="$summary"></x></h2>
+      <h2 class="card-title"><x text=".summary"></x></h2>
       <div class="join">
         <button class="btn btn-sm join-item" @on.click="add 1">+1</button>
         <button class="btn btn-sm join-item" @on.click="add -1">-1</button>
@@ -81,7 +85,7 @@
       <label class="flex gap-2 items-center">
         <span>label</span>
         <input class="input input-sm w-full" :value=".label"
-               @on.input="setLabel e.value" placeholder="name it">
+               @on.input=".label = e.value" placeholder="name it">
       </label>
       <ul class="flex gap-2 flex-wrap" @show="$moved">
         <li @each=".history">

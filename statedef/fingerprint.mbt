@@ -47,6 +47,13 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
     for f in def.fields {
       sb.write_string("f:\{f.name}:\{f.ty.show_source()};")
     }
+    for p in def.properties {
+      let visibility = if p.public_ { "pub" } else { "priv" }
+      let access = if p.writable { "w" } else { "r" }
+      sb.write_string(
+        "a:\{p.name}:\{p.ty.show_source()}:\{visibility}:\{access};",
+      )
+    }
     for t in def.types {
       sb.write_string("t:\{upper_name(t.source_name)}:")
       match t.kind {

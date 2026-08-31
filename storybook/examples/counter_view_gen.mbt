@@ -196,11 +196,21 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
-    fingerprint="6600cf22c0b7a132",
+    fingerprint="4de0b2e7e5e16c55",
     fields=[@component.FieldInfo::new("count", TyInt)],
     properties=[
-      @tutuca.PropertyInfo::{ name: "count", ty: TyInt, writable: true, },
-      @tutuca.PropertyInfo::{ name: "magnitude", ty: TyInt, writable: true, },
+      @tutuca.PropertyInfo::{
+        name: "count",
+        ty: TyInt,
+        public_: true,
+        writable: true,
+      },
+      @tutuca.PropertyInfo::{
+        name: "magnitude",
+        ty: TyInt,
+        public_: true,
+        writable: true,
+      },
     ],
     view_handlers=["dec", "inc"],
     view_names=["main"],

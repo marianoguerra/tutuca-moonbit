@@ -209,6 +209,23 @@ pub(open) trait Obj {
   fn obj_property(Self, name : String) -> Value? = _
   /// Apply one synchronous, pure property transition.
   fn obj_set_property(Self, name : String, v : Value) -> PropertyWrite = _
+  /// Read a virtual member for the component's own view. Unlike
+  /// `obj_property`, this includes private properties. The stack-bearing form
+  /// leaves room for computed members that resolve dynamic render bindings.
+  fn obj_member_at(Self, name : String, stack : &Stack) -> Value? = _
+  /// Apply a property transition from the component's own view. This is the
+  /// private-capable counterpart of `obj_set_property`.
+  fn obj_set_member(Self, name : String, v : Value) -> PropertyWrite = _
+  /// Apply a collection/scalar operation to a private-or-public member from
+  /// the component's own view. Operation names are source-level verbs such as
+  /// `push`, `removeAt`, and `toggle`; generated handler spellings never cross
+  /// this boundary.
+  fn obj_mutate_member(
+    Self,
+    name : String,
+    operation : String,
+    args : Array[Value],
+  ) -> PropertyWrite = _
   fn obj_item(Self, key : PathKey) -> Value? = _
   fn obj_with_item(Self, key : PathKey, v : Value) -> Value? = _
   // Custom-sequence hook (the analogue of SEQ_INFO): ordered (key, value)
@@ -305,6 +322,24 @@ impl Obj with fn obj_property(_self, _name) {
 
 ///|
 impl Obj with fn obj_set_property(_self, _name, _v) {
+  PMissing
+}
+
+///|
+impl Obj with fn obj_member_at(self, name, _stack) {
+  match self.obj_property(name) {
+    Some(v) => Some(v)
+    None => self.obj_field(name)
+  }
+}
+
+///|
+impl Obj with fn obj_set_member(self, name, v) {
+  self.obj_set_property(name, v)
+}
+
+///|
+impl Obj with fn obj_mutate_member(_self, _name, _operation, _args) {
   PMissing
 }
 
@@ -445,6 +480,9 @@ pub(open) trait Stack {
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
+  /// `.name` in a value position: a private-or-public virtual property first,
+  /// then the raw field fallback for record-like values.
+  fn lookup_member(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
@@ -472,6 +510,11 @@ impl Stack with fn lookup_dynamic(_self, _name) {
 ///|
 impl Stack with fn lookup_field_raw(_self, _name) {
   Null
+}
+
+///|
+impl Stack with fn lookup_member(self, name) {
+  self.lookup_field_raw(name)
 }
 
 ///|
