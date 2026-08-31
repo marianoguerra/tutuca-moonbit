@@ -6,7 +6,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-08-31
+
 ### Changed
+
+- **Component state is one member model, and the model is properties.** `.name`
+  in a view resolves a declared property first and a state field second, so a
+  field is an implicit private read/write property rather than a different kind
+  of thing that happened to share the notation. An explicit property may derive
+  its value, redirect a write, or both, and nothing downstream of `.name` can
+  tell which one it read.
+
+  Visibility became the property's own word. `pub` opts one into the interface a
+  parent, host, storybook or property fuzzer may drive; everything else is
+  private to the component's own views, and a protocol member is public by
+  definition — so a protocol binding may expose a private local property under
+  the protocol's name. Public fuzzing draws writes from `pub` properties only.
+
+  What that costs a file already written:
+
+  - A zero-argument `compute` becomes `get name` beside a `name: T { get }`
+    declaration, and `$` in a view now means only a call with arguments. A
+    derivation that reads `@value`, an enriched binding or a `*lookup` stays a
+    `compute`: its answer belongs to one render position, not to the component
+    as a member anyone can read.
+  - Inside a script body, `state.name` reads the raw stored field past a
+    same-named property.
+  - `@bind` targets a member rather than a field, so it accepts a writable
+    property and refuses a read-only one at generation.
+  - Manifest v3. Every property carries visibility (`DynPropertyDef.public_`),
+    and `supported_manifest_version` is 3.
+
+  The generated per-field mutator names (`setCount`, `pushInItems`, …) survive
+  only as an implementation table under `Obj::obj_set_member` /
+  `obj_mutate_member` and `Transactor::set_member` / `mutate_member`; source,
+  manifests and the host interface never spell them again. `obj_member_at` is
+  the private-capable read, `Stack::lookup_member` its value-position half, and
+  `StateDef::property` / `member_ty` are how a generator asks what `.name` means
+  here.
 
 - **Dynamic `*name` rendering is a located continuation, not a portal.** A
   provider now publishes its value together with its absolute path, and a
@@ -22,7 +59,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   solely as a wrapper. The normal lookup order remains `dyn lex`, so a nearer
   runtime provider wins before a lexical resume path.
 
+- **A gallery page exports six entry points, not five.** `on_file_text` is the
+  Trace tab's file read, answered asynchronously by the page. `tutuca
+  new-storybook` scaffolds it; an existing page adds the forward, the export,
+  and the `tfiles` namespace in its loader.
+
+- **`Player.trace` and `Player.at` are methods rather than fields.** Both are
+  the driver's now, and two copies of a position is one copy too many.
+
 ### Added
+
+- **An event attribute can write a property, with no message in between.**
+  `@on.input=".query = e.value"`, `.open = not .open`, `.items.removeAt @key`,
+  `.tags.toggle @value`, `.selection = default` — synchronous property
+  transitions that dispatch nothing, so the generated input enum stops gaining a
+  case for a state edit that was never anything more than one. A leading `$` is
+  refused in an event position; that sigil is a call with arguments.
+
+  The field's kind decides the verbs — `push` / `insertAt` / `setAt` /
+  `deleteAt` / `removeAt` on a list, `setAt` / `removeAt` on a map, `add` /
+  `toggle` / `remove` on a set, assignment and `= default` on everything — and
+  `viewgen` refuses the rest before anything runs, with `InvalidPropertyAction`:
+  an unknown member, a read-only property, a collection verb applied through an
+  explicit property (assign its complete value instead), or a verb the field's
+  type cannot answer. `= default` writes the declared type's zero, which for a
+  `T?` is `None` and not an empty string.
 
 - **A recording can leave the tab and come back.** `trace/` could already write
   a recording as JSONL and read one back, and `trace/replay` could run one; what
@@ -95,16 +156,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   there is a recording behind one — so a click that only set the component's own
   `.tab` left the panes where they were. It now says so as well, and the host
   recomputes.
-
-### Changed
-
-- **A gallery page exports six entry points, not five.** `on_file_text` is the
-  Trace tab's file read, answered asynchronously by the page. `tutuca
-  new-storybook` scaffolds it; an existing page adds the forward, the export,
-  and the `tfiles` namespace in its loader.
-
-- **`Player.trace` and `Player.at` are methods rather than fields.** Both are
-  the driver's now, and two copies of a position is one copy too many.
 
 ## [0.42.0] - 2026-08-30
 
@@ -6043,7 +6094,9 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.40.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.43.0...HEAD
+[0.43.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.42.0...v0.43.0
+[0.42.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.41.5...v0.42.0
 [0.40.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.2...v0.40.0
 [0.39.2]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.1...v0.39.2
 [0.39.1]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.39.0...v0.39.1
