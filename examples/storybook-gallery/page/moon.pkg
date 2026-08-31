@@ -3,7 +3,7 @@
 // That package is a LIBRARY and does everything — mounts the gallery, owns the
 // URL and theme services, bridges DOM events, compiles margaui. This package
 // exists for one reason: a wasm-gc export list is per-package `link`
-// configuration and cannot come from a dependency. So the five entry points the
+// configuration and cannot come from a dependency. So the six entry points the
 // page calls are re-exported here as one-line forwards, and the only real
 // content is which stories to show.
 //
@@ -41,6 +41,8 @@ options(
         // the reason `on_event` is one: closures cannot cross into JS on
         // wasm-gc.
         "on_fuzz_tick",
+        // The Trace tab's file read, answered asynchronously by the page.
+        "on_file_text",
         "refresh_margaui",
       ],
       "use-js-builtin-string": true,
