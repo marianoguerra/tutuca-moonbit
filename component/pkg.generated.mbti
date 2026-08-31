@@ -116,7 +116,7 @@ pub(all) struct IntentFn((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Uni
 
 pub(all) struct LocatedValue {
   value : @core.Value
-  path : @core.Path
+  path : @core.Path?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct LookupInfo {

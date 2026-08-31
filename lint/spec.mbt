@@ -24,6 +24,7 @@ pub(all) enum LintCode {
   UnknownDirective
   UnknownXOp
   UnknownXAttr
+  LoopDirectiveOnXOp
   BadValue
   UnsupportedExprSyntax
   BindingMemberTooDeep

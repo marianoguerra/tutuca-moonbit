@@ -153,7 +153,13 @@ pub(all) struct LookupInfo {
 /// frame order for both.
 pub(all) struct LocatedValue {
   value : @tutuca.Value
-  path : @tutuca.Path
+  /// Where the value lives, app-root-relative — None when this position cannot
+  /// be written down as an address (a constant default, or a render position a
+  /// scope moved without contributing an addressing step). A pathless value
+  /// still READS fine as `*name`; it simply cannot be resumed at, so
+  /// `<x render="*name">` renders it in place and enters no frame rather than
+  /// editing whatever happens to live at a guessed address.
+  path : @tutuca.Path?
 } derive(Debug, Eq)
 
 ///|

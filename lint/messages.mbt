@@ -14,6 +14,7 @@ pub fn lint_code_name(code : LintCode) -> String {
     UnknownDirective => "UNKNOWN_DIRECTIVE"
     UnknownXOp => "UNKNOWN_X_OP"
     UnknownXAttr => "UNKNOWN_X_ATTR"
+    LoopDirectiveOnXOp => "LOOP_DIRECTIVE_ON_X_OP"
     BadValue => "BAD_VALUE"
     UnsupportedExprSyntax => "UNSUPPORTED_EXPR_SYNTAX"
     BindingMemberTooDeep => "BINDING_MEMBER_TOO_DEEP"
@@ -171,6 +172,15 @@ pub fn finding_message(f : Finding) -> String {
     UnknownDirective => "Unknown directive '@\{name}=\{value}'" + tags
     UnknownXOp => "Unknown <x> op '\{name}=\{value}'" + tags
     UnknownXAttr => "Unknown attribute '\{name}=\{value}' on <x \{op}>" + tags
+    // `@each` names the sequence, so it can be rewritten; its companions only
+    // qualify a loop that is not here, so they can only be moved.
+    LoopDirectiveOnXOp =>
+      (if name == "@each" {
+        "'\{name}=\{value}' describes an iteration, but <x \{op}> is a single render site with no body to iterate — the whole <x> is dropped; write <x render-each=\{value}>, or put @each on a wrapper element around the <x>"
+      } else {
+        "'\{name}=\{value}' only qualifies an iteration, and <x \{op}> is not one — the whole <x> is dropped; move it to the @each (or <x render-each>) it belongs to"
+      }) +
+      tags
     XOpIgnoresChildren =>
       "<x \{op}> has child content, but the '\{op}' op ignores its children — they are silently dropped when the template is parsed; remove them" +
       tags

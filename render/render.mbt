@@ -153,10 +153,14 @@ fn render_target(
   stack : RenderStack,
 ) -> (@tutuca.Value, @tutuca.DispatchPath, @tutuca.Path?) {
   match val {
+    // A `*name` that resolved to a pathless value (a constant default, or a
+    // position that could not be written down) reads fine but has nowhere to
+    // resume, so it enters no frame.
     Dyn(name) =>
       match stack.lookup_dynamic_located(name) {
-        Some(loc) =>
-          (loc.value, stack.render_path.push_frame(loc.path), Some(loc.path))
+        Some({ value, path: Some(path), }) =>
+          (value, stack.render_path.push_frame(path), Some(path))
+        Some({ value, path: None, }) => (value, stack.render_path, None)
         None => (val.eval(stack), stack.render_path, None)
       }
     _ =>
@@ -182,15 +186,17 @@ fn render_target(
 /// Stamp every element root of a component body. A fragment has one comment
 /// boundary before its first child, so later root siblings need the same base
 /// on the element to reconstruct an event without seeing that comment.
-fn stamp_render_base(vdom : @vdom.Vdom, path : @tutuca.Path) -> @vdom.Vdom {
+/// Takes the ENCODED base, so a path with no wire form stamps nothing here and
+/// writes no `base` into the §Comp§ meta either — the two cannot disagree.
+fn stamp_render_base(vdom : @vdom.Vdom, text : String) -> @vdom.Vdom {
   match vdom {
     Node(el) => {
       let attrs = el.attrs.copy()
-      attrs["data-rp"] = Str(render_path_text(path))
+      attrs["data-rp"] = Str(text)
       Node({ ..el, attrs, })
     }
     Fragment(childs) =>
-      Fragment(childs.map(child => stamp_render_base(child, path)))
+      Fragment(childs.map(child => stamp_render_base(child, text)))
     Text(_) | Comment(_) => vdom
   }
 }
@@ -211,6 +217,13 @@ fn render_site(
   render_path? : @tutuca.DispatchPath,
   base? : @tutuca.Path,
 ) -> @vdom.Vdom? {
+  // Before anything is resolved or cached: a site that would re-enter the
+  // value already being rendered leaves a marker instead of recursing. It
+  // emits no §Comp§ boundary, for the same reason a view that renders nothing
+  // does not — event-path reconstruction must not cross an absent component.
+  if stack.would_recurse(value) {
+    return Some(@vdom.comment("RECURSION AVOIDED"))
+  }
   let site_path = render_path.unwrap_or(stack.render_path)
   // The `as=` selector evaluates against the HOST stack;
   // without one, the `@push-view` trail applies innermost-first.
@@ -263,8 +276,8 @@ fn render_site(
           ctx,
         ) {
         Some(raw_body) => {
-          let body = match base {
-            Some(path) => stamp_render_base(raw_body, path)
+          let body = match base.bind(render_path_text) {
+            Some(text) => stamp_render_base(raw_body, text)
             None => raw_body
           }
           let frag = @vdom.fragment([
@@ -348,8 +361,14 @@ fn render_each(
   ctx : RenderCtx,
 ) -> @vdom.Vdom? {
   let seq = d.iter_info.val.eval(stack)
-  let located_seq = match d.iter_info.val {
-    Dyn(name) => stack.lookup_dynamic_located(name)
+  // A dynamic sequence carries the absolute path it lives at, so each item is
+  // that path keyed — iterating it resumes there exactly as rendering one does.
+  let located_seq : @tutuca.Path? = match d.iter_info.val {
+    Dyn(name) =>
+      match stack.lookup_dynamic_located(name) {
+        Some({ path: Some(p), .. }) => Some(p)
+        _ => None
+      }
     _ => None
   }
   let it = stack.it
@@ -384,25 +403,27 @@ fn render_each(
     }
     let pk = value_seq_key(key)
     let (item_path, pending) = match located_seq {
-      Some(loc) =>
-        match keyed_path(loc.path, pk) {
+      Some(seq_path) =>
+        match keyed_path(seq_path, pk) {
           Some(base) => (stack.render_path.push_frame(base), true)
           None => (stack.render_path, false)
         }
-      None => {
-        let step : @tutuca.Step = match (d.node, d.iter_info.val) {
-          (RenderIt(_), Field(field)) => EachRenderItStep(field~, key=pk)
-          _ =>
-            EachBindStep(
-              val=d.iter_info.val,
-              when_val=d.iter_info.when_val,
-              enrich_with_val=d.iter_info.enrich_with_val,
-              loop_with_val=d.iter_info.loop_with_val,
-              key=pk,
-            )
+      // `@each` re-binds `it` to the item whether or not the body is a
+      // component, so the render position moves either way and the step has to
+      // ADDRESS it: `.rows` iterated at `key` is `rows[key]`. Keying off the
+      // body node instead left a plain `<div @each><x render-it>` — the
+      // canonical spelling — contributing a frame-only step, so everything the
+      // item published claimed the address of the whole collection's owner.
+      //
+      // A sequence that is not a plain field cannot be written down (a
+      // seq-access iterated at a key is not an expressible Path), so the
+      // position stays put and `publish_base` refuses to publish it.
+      None =>
+        match d.iter_info.val {
+          Field(field) =>
+            (stack.render_path.concat([SeqStep(field~, key=pk)]), false)
+          _ => (stack.render_path, false)
         }
-        (stack.render_path.concat([step]), false)
-      }
     }
     match
       render(

@@ -33,7 +33,15 @@ test "render path text preserves fields, keys, and live-key access" {
     SeqStep(field="rows", key=KStr("a")),
     SeqAccessStep(seq_field="themes", key_field="selected"),
   ])
-  assert_eq(parse_render_path_text(render_path_text(path)), Some(path))
+  assert_eq(render_path_text(path).bind(parse_render_path_text), Some(path))
+  // A frame-only step has no wire form, and the answer is "no path" rather
+  // than the empty path — which would name the root.
+  assert_true(
+    render_path_text(
+      @tutuca.Path::new(steps=[FieldStep("rows"), BindStep(binds=Map([]))]),
+    )
+    is None,
+  )
 }
 
 ///|

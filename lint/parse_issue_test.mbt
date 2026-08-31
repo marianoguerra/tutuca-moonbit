@@ -58,6 +58,40 @@ test "unknown x attr on render-it" {
 }
 
 ///|
+/// The name is spelled right; the PLACE is wrong. So: an error, no
+/// did-you-mean, and a rewrite that names the spelling that works. The parser
+/// drops the whole `<x>` rather than building a render site with the loop
+/// silently missing — see anode/xops.mbt `is_loop_directive`.
+test "an iteration directive on an <x> op is an error with a rewrite" {
+  let findings = lint_parse("<x render-it @each=\".rows\"></x>")
+  assert_eq(findings.length(), 1)
+  guard! findings[0]
+    is { code: LoopDirectiveOnXOp, level: Error, info, suggestion, .. }
+  assert_true(info.contains(("op", "render-it")))
+  assert_true(info.contains(("name", "@each")))
+  assert_true(
+    suggestion
+    is Some(Rewrite(from="@each=\".rows\"", to="<x render-each=\".rows\">")),
+  )
+  assert_true(
+    @lint.lint_code_name(findings[0].code) == "LOOP_DIRECTIVE_ON_X_OP",
+  )
+  assert_true(@lint.finding_message(findings[0]).contains("render-each"))
+}
+
+///|
+/// `@each` names the sequence, so it can be rewritten. Its companions only
+/// qualify a loop that is not here: the only advice is to move them.
+test "a loop companion on an <x> op is told to move, not to rewrite" {
+  let findings = lint_parse("<x render=\".v\" @when=\"$w\"></x>")
+  assert_eq(findings.length(), 1)
+  guard! findings[0]
+    is { code: LoopDirectiveOnXOp, level: Error, suggestion, .. }
+  assert_true(suggestion is Some(Remove(what="'@when'")))
+  assert_true(@lint.finding_message(findings[0]).contains("only qualifies"))
+}
+
+///|
 test "x op ignoring children warns with a remove suggestion" {
   let findings = lint_parse("<x render-it><p>meaningful</p></x>")
   guard! findings[0]

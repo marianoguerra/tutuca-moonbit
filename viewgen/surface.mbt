@@ -112,6 +112,8 @@ fn issue_message(issue : @anode.ParseIssue) -> String {
     UnknownXOp(name~, value~) => "unknown <x> op '\{name}=\"\{value}\"'"
     UnknownXAttr(op~, name~, value~) =>
       "unknown attribute '\{name}=\"\{value}\"' on <x \{op}>"
+    LoopDirectiveOnXOp(op~, name~, value~) =>
+      "'\{name}=\"\{value}\"' cannot go on <x \{op}>"
     XOpIgnoresChildren(op~) => "<x \{op}> ignores its children"
     BadValue(role~, value~) => {
       if role is ValueIssue(r) && value_issue_sentence(r, value) is Some(said) {

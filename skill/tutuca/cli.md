@@ -202,7 +202,9 @@ The codes fall into four families:
 
 - **Directive rules** — `UNKNOWN_DIRECTIVE`, `UNKNOWN_X_OP`, `UNKNOWN_X_ATTR`,
   `BAD_VALUE`, `UNSUPPORTED_EXPR_SYNTAX`, `BINDING_MEMBER_TOO_DEEP`,
-  `X_OP_IGNORES_CHILDREN`.
+  `X_OP_IGNORES_CHILDREN`, `LOOP_DIRECTIVE_ON_X_OP`. The last one is the only
+  parse issue that DROPS the node it is about (see
+  [iteration.md](./iteration.md)).
 - **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`.
 - **Event paths** — `EVENT_PATH_UNSAFE_STEP`: an `e.<path>` handler argument
   traverses a step off the allowlist (`e.target.form.action`). It still

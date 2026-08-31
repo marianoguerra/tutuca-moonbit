@@ -40,6 +40,14 @@ pub(all) enum ParseIssue {
   UnknownDirective(name~ : String, value~ : String)
   UnknownXOp(name~ : String, value~ : String)
   UnknownXAttr(op~ : String, name~ : String, value~ : String)
+  /// An iteration/scope directive (`@each`, `@enrich-with`, `@when`,
+  /// `@loop-with`) written on an `<x>` op that cannot carry it. Not folded
+  /// into `UnknownXAttr` because it is not a warning: the node is REJECTED.
+  /// Dropping one of these does not lose a decoration, it changes how many
+  /// times the site renders — and a `<x render-it>` left without its `@each`
+  /// renders the very value that was to be iterated, which is the value
+  /// already rendering.
+  LoopDirectiveOnXOp(op~ : String, name~ : String, value~ : String)
   XOpIgnoresChildren(op~ : String)
   BadValue(role~ : BadValueRole, value~ : String)
 } derive(Debug, Eq)

@@ -77,11 +77,17 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
     return self
   }
   let binds : Map[String, @component.LocatedValue] = Map([])
-  let base = self.render_path.to_transaction_path()
+  let base = self.publish_base()
   for _, p in comp.provide {
     match p.val.to_path_item() {
       Some(step) =>
-        binds[p.name] = { value: p.val.eval(self), path: base.concat([step]), }
+        binds[p.name] = {
+          value: p.val.eval(self),
+          path: match base {
+            Some(b) => Some(b.concat([step]))
+            None => None
+          },
+        }
       None => () // compile() already drops this shape
     }
   }
@@ -90,6 +96,56 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
     types[tname] = cid
   }
   { ..self, dyn_binds: Some({ binds, types, parent: self.dyn_binds, }), }
+}
+
+///|
+/// The absolute address of the position being rendered, or None when it cannot
+/// be written down as one.
+///
+/// Frame-only steps carry bindings and address nothing, so they are compacted
+/// away first; what is left is then CHECKED against the value actually being
+/// rendered, because a scope can move the render position without contributing
+/// an addressing step. Publishing an address that does not resolve to `it` is
+/// worse than publishing none: an unwritable path compacts to the empty one,
+/// which addresses the ROOT, so a consumer would silently resume the whole app
+/// there and drop every edit made inside it.
+fn RenderStack::publish_base(self : RenderStack) -> @tutuca.Path? {
+  let base = self.render_path.compact().to_transaction_path()
+  match base.lookup(self.root) {
+    Some(at) if physical_equal(at, self.it) => Some(base)
+    _ => None
+  }
+}
+
+///|
+/// Would entering `value` as a component frame render something that is
+/// already rendering? The nearest enclosing FRAME is the test: a component
+/// whose own body renders its own value again never terminates, because the
+/// second pass reaches the same node with the same value and does it again.
+///
+/// Scopes are transparent and skipped, which is what keeps the ordinary
+/// `@each` + `<x render-it>` shape working: there the entered value is the
+/// ITEM and the enclosing frame holds the collection's owner, so the two
+/// differ. It is the loop-less `<x render-it>` — the one an author writes by
+/// mistake, or is left with when a dropped `@each` was the only thing bounding
+/// it — that hits this.
+fn RenderStack::would_recurse(
+  self : RenderStack,
+  value : @tutuca.Value,
+) -> Bool {
+  if self.is_frame {
+    // The bottom frame is the mount itself: `RenderStack::new` opens it on the
+    // very value `render_root` then renders, so a match there is the root site
+    // standing one frame deeper than every other rather than recursion. A root
+    // component that does name itself is still caught on the next pass, one
+    // level in and long before the stack is in danger.
+    self.parent is Some(_) && physical_equal(self.it, value)
+  } else {
+    match self.parent {
+      Some(p) => p.would_recurse(value)
+      None => false
+    }
+  }
 }
 
 ///|
@@ -242,7 +298,7 @@ pub fn RenderStack::lookup_dynamic_located(
       match scope.lookup_path(name) {
         Some(path) =>
           match path.lookup(self.root) {
-            Some(value) => return Some({ value, path, })
+            Some(value) => return Some({ value, path: Some(path), })
             None => ()
           }
         None => ()
@@ -250,15 +306,18 @@ pub fn RenderStack::lookup_dynamic_located(
     None => ()
   }
   match comp.lookup.get(name) {
+    // The default belongs to the CONSUMER, so it is located from the consumer's
+    // own position — and only when that position is writable. A constant
+    // default (`'gray'`) has no step at all: it reads fine and can never be
+    // resumed at.
     Some({ default_val: Some(d), .. }) =>
-      match d.to_path_item() {
-        Some(step) =>
-          Some({
-            value: d.eval(self),
-            path: self.render_path.to_transaction_path().concat([step]),
-          })
-        None => None
-      }
+      Some({
+        value: d.eval(self),
+        path: match (d.to_path_item(), self.publish_base()) {
+          (Some(step), Some(base)) => Some(base.concat([step]))
+          _ => None
+        },
+      })
     _ => None
   }
 }

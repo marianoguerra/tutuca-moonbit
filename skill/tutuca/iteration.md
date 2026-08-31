@@ -41,6 +41,24 @@ each item as a component in its own frame and drops child content, so
 nothing is left to read the `@X` binds an enricher would set. Reach for a
 host-element `@each` loop when you need enrichment.
 
+**An iteration directive cannot go on an `<x>` op.** `@each`, `@enrich-with`,
+and — outside the `<x render-each>` that consumes them — `@when` and
+`@loop-with` are rejected there, and the whole `<x>` is dropped with a
+`LOOP_DIRECTIVE_ON_X_OP` error. An `<x>` op is one render site with no body to
+iterate, so the directive has nothing to wrap; dropping it and keeping the site
+would quietly turn N renders into one. `<x render-it @each=".rows">` is the
+trap this exists for: without its loop that `render-it` renders the value that
+was to be iterated, which is the value already rendering. Write it one of the
+two ways that work:
+
+```html
+<x render-each=".rows"></x>              <!-- the sugar -->
+<div @each=".rows"><x render-it></x></div>   <!-- the loop on a wrapper -->
+```
+
+Should a self-referential render site reach the renderer another way, it stops
+there and leaves a `<!--RECURSION AVOIDED-->` comment rather than descending.
+
 Each iteration directive has its own **typed bucket** on the component,
 so the handler signatures say exactly what the renderer hands them —
 state first, always. With generated views the bucket is a match over a

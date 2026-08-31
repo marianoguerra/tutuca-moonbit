@@ -162,3 +162,64 @@ test "x slot wraps childs and keeps the name" {
   assert_eq(s.name, "header")
   assert_true(s.node is Dom(_))
 }
+
+///|
+/// An `<x>` op is one render site: there is no body for an iteration to wrap.
+/// Naming one REJECTS the node instead of warning and building it — see
+/// `is_loop_directive`. Left as a warning, `<x render-it @each=".rows">` parsed
+/// to a bare `render-it`, which renders the value that was to be iterated: the
+/// value already rendering.
+test "an iteration directive on an <x> op rejects the node" {
+  let issues : Array[@anode.ParseIssue] = []
+  let (root, _) = collecting_parse("<x render-it @each=\".rows\"></x>", issues)
+  assert_true(root is None)
+  assert_true(
+    issues is [LoopDirectiveOnXOp(op="render-it", name="@each", value=".rows")],
+  )
+}
+
+///|
+test "the whole iteration family is rejected, on every <x> op" {
+  for
+    spelling in [
+      ("<x render-it @enrich-with=\"$e\"></x>", "render-it", "@enrich-with"),
+      ("<x render=\".v\" @when=\"$w\"></x>", "render", "@when"),
+      ("<x text=\"'hi'\" @loop-with=\"$l\"></x>", "text", "@loop-with"),
+      ("<x render-each=\".items\" @each=\".rows\"></x>", "render-each", "@each"),
+    ] {
+    let (html, op, name) = spelling
+    let issues : Array[@anode.ParseIssue] = []
+    let (root, _) = collecting_parse(html, issues)
+    assert_true(root is None)
+    assert_true(
+      issues is [LoopDirectiveOnXOp(op=got_op, name=got_name, ..)] &&
+      got_op == op &&
+      got_name == name,
+    )
+  }
+}
+
+///|
+/// Rejected like a failed op: the site is dropped, its siblings are not.
+test "a rejected <x> leaves the surrounding tree alone" {
+  let issues : Array[@anode.ParseIssue] = []
+  let (root, _) = collecting_parse(
+    "<div><x render-it @each=\".rows\"></x><p>after</p></div>", issues,
+  )
+  guard! root is Some(Dom(d))
+  assert_true(d.childs.length() == 1)
+  assert_true(d.childs[0] is Dom({ tag: "p", .. }))
+  assert_true(issues.length() == 1)
+}
+
+///|
+/// `render-each` consumes its own `@when`/`@loop-with` before the check runs,
+/// so the one spelling that DOES pair a loop with an `<x>` keeps working.
+test "render-each still takes when and loop-with" {
+  let issues : Array[@anode.ParseIssue] = []
+  let (root, _) = collecting_parse(
+    "<x render-each=\".items\" @when=\"$whenH\" @loop-with=\"$lwith\"></x>", issues,
+  )
+  assert_true(root is Some(Each(_)))
+  assert_true(issues.is_empty())
+}

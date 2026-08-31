@@ -46,6 +46,17 @@ fn XOp::ignores_children(self : XOp) -> Bool {
 }
 
 ///|
+/// Directives that describe an ITERATION over a body. An `<x>` op is one
+/// render site and has no body to iterate, so naming one here is an error
+/// rather than an unknown attribute: dropping it would silently turn N renders
+/// into one — and on `render-it` that one renders the value that was to be
+/// iterated, which is the value already rendering. `<x render-each>` consumes
+/// its own `@when`/`@loop-with` before this is ever consulted.
+fn is_loop_directive(base_name : String) -> Bool {
+  base_name is ("each" | "enrich-with" | "when" | "loop-with")
+}
+
+///|
 /// Ops usable as wrapper attrs on other <x> ops (the X_OPS[..].wrapper set).
 fn xop_wrapper_kind(name : String) -> WrapperKind? {
   match name {
@@ -156,6 +167,10 @@ fn process_x_extras(
   px : ParseContext,
 ) -> ANode? {
   let wrappers : Array[(WrapperKind, @tutuca.Val?)] = []
+  // An iteration directive the op cannot carry FAILS the node, the same way a
+  // failed op does — see the divergence note below. Every attribute is still
+  // visited first, so one bad spelling does not hide the rest.
+  let mut rejected = false
   for i in start_idx..<attrs.length() {
     let (a_name, a_value) = attrs[i]
     if op.consumed(a_name) {
@@ -165,6 +180,11 @@ fn process_x_extras(
     // is an unknown attribute.
     let at_prefixed = a_name is ['@', ..]
     let base_name = if at_prefixed { a_name[1:].to_owned() } else { a_name }
+    if at_prefixed && is_loop_directive(base_name) {
+      px.issue(LoopDirectiveOnXOp(op=op_name, name=a_name, value=a_value))
+      rejected = true
+      continue
+    }
     let wrapper = if at_prefixed && op.wrappable() {
       xop_wrapper_kind(base_name)
     } else {
@@ -186,7 +206,7 @@ fn process_x_extras(
   }
   // Divergence: a failed op stays None after its extras reported their
   // issues, rather than being wrapped (which would crash later when rendered).
-  guard node is Some(inner) else { return None }
+  guard node is Some(inner) && !rejected else { return None }
   let mut result = inner
   for i = wrappers.length() - 1; i >= 0; i = i - 1 {
     let (kind, val) = wrappers[i]

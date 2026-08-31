@@ -251,6 +251,7 @@ pub(all) enum ParseIssue {
   UnknownDirective(name~ : String, value~ : String)
   UnknownXOp(name~ : String, value~ : String)
   UnknownXAttr(op~ : String, name~ : String, value~ : String)
+  LoopDirectiveOnXOp(op~ : String, name~ : String, value~ : String)
   XOpIgnoresChildren(op~ : String)
   BadValue(role~ : BadValueRole, value~ : String)
 } derive(Eq, @debug.Debug)

@@ -272,8 +272,9 @@ declare pub fn Meta::parse(text : String) -> Meta?
 
 ///|
 /// Encode/decode the address stored on fragment-root siblings of a resumed
-/// component. The comment meta uses the same representation.
-declare fn render_path_text(path : @tutuca.Path) -> String
+/// component. The comment meta uses the same representation. None when the
+/// path holds a step with no wire form: `[]` would address the root.
+declare fn render_path_text(path : @tutuca.Path) -> String?
 
 ///|
 declare fn parse_render_path_text(text : String) -> @tutuca.Path?

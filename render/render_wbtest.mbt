@@ -156,6 +156,39 @@ test "render-it with as= picks the named view" {
 }
 
 ///|
+/// A view that renders its own value again is unbounded — the second pass
+/// reaches the same node with the same value and does it again. The site
+/// leaves a marker instead, and no §Comp§ boundary: an event walking back up
+/// must not cross a component that is not there.
+test "a view that renders its own value again stops instead of recursing" {
+  let selfish = parse_node("<div class=\"loop\"><x render-it></x></div>")
+  let resolver = ViewMap::{ views: { "main": selfish }, }
+  assert_eq(
+    render_html("<x render-it></x>", resolver~),
+    "<!--§{\"$\":\"Comp\",\"nid\":0,\"cid\":0,\"vid\":\"main\"}§--><div class=\"loop\"><!--RECURSION AVOIDED--></div>",
+  )
+}
+
+///|
+/// The guard reads the nearest enclosing FRAME, and `@each` items are
+/// transparent scopes: the item is a different value from the collection's
+/// owner, so the ordinary iteration shape renders through untouched.
+test "an @each item is not its owner, so render-it inside a loop is fine" {
+  let row = parse_node("<li><x text=\".n\"></x></li>")
+  let resolver = ViewMap::{ views: { "main": row }, }
+  let rows : Array[@tutuca.Value] = [
+    Map({ "n": Str("a") }),
+    Map({ "n": Str("b") }),
+  ]
+  let state = state_of([("rows", List(rows))])
+  assert_true(
+    render_html("<ul><x render-each=\".rows\"></x></ul>", state~, resolver~).contains(
+      "<li>a</li>",
+    ),
+  )
+}
+
+///|
 test "unresolved render site is suppressed like JS" {
   assert_eq(render_html("<x render-it></x>"), "<!-- suppressed -->")
   assert_eq(

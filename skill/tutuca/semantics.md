@@ -152,6 +152,20 @@ a component type and is not a render target because it carries no value path.
 When the located path is a seq-access (`.sheets[.selId]`), the frame base
 contains a `SeqAccessStep` — which is where async key races come from.
 
+A provider inside an `@each` publishes the ITEM's address: the loop re-binds
+`it` to the item whether or not the body is a component, so a `.rows` iterated
+at `key` contributes `rows[key]` to the render position, and everything
+published below it is located under that.
+
+The path half can be **absent**. A provider whose own render position cannot be
+written down as an address — a constant `lookup` default, or a sequence that is
+not a plain field — publishes the value with no path. `*name` still READS it;
+`<x render="*name">` renders it in place and enters no continuation frame, so
+an event inside it belongs to the enclosing component rather than to a guessed
+address. This is deliberate: the empty path names the ROOT, so publishing an
+address that does not resolve back to the value being rendered would silently
+resume the whole app there and drop every edit made inside.
+
 ## Name lookup — two environments, one route
 
 Type lookup, `provide`/`lookup` and intent routing ask ONE question: what does

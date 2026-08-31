@@ -128,6 +128,27 @@ pub fn check_collected(collector : LintCollector) -> Array[Finding] {
           x_known_op_names,
           tag,
         )
+      // Error, and with no "did you mean": the name is spelled right, it is
+      // the PLACE that is wrong. The fix is a rewrite, not a rename.
+      LoopDirectiveOnXOp(op~, name~, value~) =>
+        out.push(
+          finding(
+            LoopDirectiveOnXOp,
+            Error,
+            [("op", op), ("name", name), ("value", value)],
+            tag,
+            if name == "@each" {
+              Some(
+                Rewrite(
+                  from="\{name}=\"\{value}\"",
+                  to="<x render-each=\"\{value}\">",
+                ),
+              )
+            } else {
+              Some(Remove(what="'\{name}'"))
+            },
+          ),
+        )
       UnknownXAttr(op~, name~, value~) =>
         push_unknown_name(
           out,

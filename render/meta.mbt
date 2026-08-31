@@ -26,10 +26,10 @@ pub fn Meta::to_comment_text(self : Meta) -> String {
       sb.write_string(cid.to_string())
       sb.write_string(",\"vid\":")
       write_json_string(sb, vid)
-      match base {
-        Some(path) => {
+      match base.bind(render_path_text) {
+        Some(text) => {
           sb.write_string(",\"base\":")
-          sb.write_string(render_path_text(path))
+          sb.write_string(text)
         }
         None => ()
       }
@@ -115,15 +115,18 @@ fn render_json_to_step(j : Json) -> @tutuca.Step? {
 }
 
 ///|
-fn render_path_text(path : @tutuca.Path) -> String {
+/// None, not `"[]"`: an empty path addresses the ROOT, so encoding a path that
+/// could not be written down as one would silently resume the whole app there.
+/// Only addressing steps have a wire form, which is all a base can be made of.
+fn render_path_text(path : @tutuca.Path) -> String? {
   let items : Array[Json] = []
   for step in path.steps {
     match step_to_render_json(step) {
       Some(j) => items.push(j)
-      None => return "[]"
+      None => return None
     }
   }
-  Json::array(items).stringify()
+  Some(Json::array(items).stringify())
 }
 
 ///|
