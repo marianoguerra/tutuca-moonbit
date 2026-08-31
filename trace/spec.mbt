@@ -20,16 +20,15 @@ pub const VERSION : Int = 1
 /// A position in the state tree, as data.
 ///
 /// The only form of a path that survives being written down. A `DispatchPath`
-/// names render-time producers by component id — a counter that restarts every
-/// process, so persisting one is persisting a number that will mean something
-/// else tomorrow — and `Step`'s frame-only variants carry `Val` expressions and
-/// `Value::Fn` closures, which JSON has no shape for.
+/// includes render-continuation frames, and `Step`'s frame-only variants carry
+/// `Val` expressions and `Value::Fn` closures, which JSON has no shape for.
 ///
 /// So a `Place` is the TRANSACTION path: `DispatchPath::to_transaction_path()`
 /// with its keys pinned, which is a plain sequence of fields and keys. For a
-/// message that loses nothing that matters — `to_transaction_path` has already
-/// teleported every dynamic marker to where the data actually lives, and that
-/// teleported path is exactly what the message mutates.
+/// message that loses nothing that matters: the active frame is rooted at the
+/// value being rendered, so its transaction path is exactly what the message
+/// mutates. Caller frames matter to bubbling and intent routing, not to the
+/// mutation address recorded here.
 pub(all) struct Place(Array[@tutuca.StepKey]) derive(Eq, Debug)
 
 ///|

@@ -23,7 +23,7 @@ pub impl @tutuca.Ctx for Recorder with fn send_at_path(self, path, name, args) {
   // path with steps is its `sendAt`. One method answers both because
   // `Ctx::send` is defined as `send_at_path` at the ctx's own path, which is
   // the whole reason there are only four to implement.
-  let verb = if path.items.is_empty() { "send" } else { "sendAt" }
+  let verb = if path.is_root() { "send" } else { "sendAt" }
   self.seen.push(@conformance.show_effect(verb + " " + name, args))
 }
 

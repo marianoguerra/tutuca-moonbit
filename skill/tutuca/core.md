@@ -1256,7 +1256,7 @@ its examples never reach the storybook or a harness test.
 - [margaui.md](./margaui.md) — setting up MargaUI styling:
   `collect_classes()`, the MoonBit compile step, and `inject_style`.
 - [semantics.md](./semantics.md) — runtime semantics: path steps, the
-  transaction lifecycle, dyn-var teleporting, and async key pinning
+  transaction lifecycle, resumed render paths, and async key pinning
   (`live_path`).
 - [testing.md](./testing.md) — `moon test` blocks and the `@harness`
   mount/drive/read API.

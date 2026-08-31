@@ -570,7 +570,7 @@ It captures the immutable dispatch root/path at call time.
 - [protocols.md](./protocols.md) — implicit and named communication surfaces,
   raw versus checked effect names, and runtime mismatch notices.
 - [semantics.md](./semantics.md) — the path/transaction model behind
-  these channels: path steps, the transaction lifecycle, teleporting,
+  these channels: path steps, the transaction lifecycle, resumed render paths,
   and the key-pinning rules `live_path` toggles.
 - [testing.md](./testing.md) — driving message and intent flows from
   tests via the harness.

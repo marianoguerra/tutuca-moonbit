@@ -49,17 +49,25 @@ fn step_enter_frame(
   step : @tutuca.Step,
   stack : RenderStack,
   next : @tutuca.Value,
+  render_path : @tutuca.DispatchPath,
 ) -> RenderStack {
   match step {
     // component boundary: clean frame on the entered value
-    FieldStep(_) | SeqAccessStep(..) => stack.enter(next, Map([]))
-    SeqStep(field=_, key~) => stack.enter(next, { "key": key.to_value() })
+    FieldStep(_) | SeqAccessStep(..) => stack.enter(next, Map([]), render_path~)
+    SeqStep(field=_, key~) =>
+      stack.enter(next, { "key": key.to_value() }, render_path~)
     // iterated render target: the @each item scope, then the component frame
     EachRenderItStep(field=_, key~) =>
       stack
-      .enter(next, { "key": key.to_value(), "value": next }, is_frame=false)
-      .enter(next, Map([]))
-    BindStep(binds~) => stack.enter(next, binds.copy(), is_frame=false)
+      .enter(
+        next,
+        { "key": key.to_value(), "value": next },
+        is_frame=false,
+        render_path~,
+      )
+      .enter(next, Map([]), render_path~)
+    BindStep(binds~) =>
+      stack.enter(next, binds.copy(), is_frame=false, render_path~)
     ScopeBindStep(val~) => {
       // re-evaluate the @enrich-with handler against the rebuilt stack so
       // its custom binds are present
@@ -69,7 +77,7 @@ fn step_enter_frame(
         Map(m) => m
         _ => Map([])
       }
-      stack.enter(next, binds, is_frame=false)
+      stack.enter(next, binds, is_frame=false, render_path~)
     }
     // `next` is the pass-through component value: binds carry the item,
     // `it` stays the component
@@ -78,6 +86,7 @@ fn step_enter_frame(
         next,
         each_binds(stack, val, when_val, enrich_with_val, loop_with_val, key),
         is_frame=false,
+        render_path~,
       )
   }
 }
@@ -85,11 +94,38 @@ fn step_enter_frame(
 ///|
 pub fn build_stack(path : @tutuca.Path, stack : RenderStack) -> RenderStack? {
   let mut st = stack
+  let mut render_path = stack.render_path
   for step in path.steps {
     guard @tutuca.step_get(st.it, step) is Some(next) else { // bad path item (warn and return null)
       return None
     }
-    st = step_enter_frame(step, st, next)
+    render_path = render_path.concat([step])
+    st = step_enter_frame(step, st, next, render_path)
+  }
+  Some(st)
+}
+
+///|
+pub fn build_dispatch_stack(
+  path : @tutuca.DispatchPath,
+  stack : RenderStack,
+) -> RenderStack? {
+  let mut st = stack
+  let mut render_path = @tutuca.DispatchPath::new()
+  for frame_index, frame in path.frames {
+    if frame_index > 0 || !frame.base.steps.is_empty() {
+      render_path = render_path.push_frame(frame.base)
+      guard frame.base.lookup(stack.root) is Some(base_value) else {
+        return None
+      }
+      st = st.enter(base_value, Map([]), render_path~, pending_frame=false)
+    }
+    for item in frame.items {
+      let Plain(step~, ..) = item
+      guard @tutuca.step_get(st.it, step) is Some(next) else { return None }
+      render_path = render_path.push_item(item)
+      st = step_enter_frame(step, st, next, render_path)
+    }
   }
   Some(st)
 }

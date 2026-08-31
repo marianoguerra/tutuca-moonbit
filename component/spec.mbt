@@ -151,11 +151,23 @@ pub(all) struct LookupInfo {
 /// still partitions the keyspace, so the two maps behave as one frame: a name
 /// is looked for in exactly one of them, and nearest-ancestor-wins falls out of
 /// frame order for both.
+pub(all) struct LocatedValue {
+  value : @tutuca.Value
+  path : @tutuca.Path
+} derive(Debug, Eq)
+
+///|
 pub(all) struct DynBinds {
-  binds : Map[String, @tutuca.Value]
+  binds : Map[String, LocatedValue]
   types : Map[String, Int]
   parent : DynBinds?
 }
+
+///|
+declare pub fn DynBinds::lookup_located(
+  self : DynBinds,
+  name : String,
+) -> LocatedValue?
 
 ///|
 declare pub fn DynBinds::lookup(
@@ -165,14 +177,6 @@ declare pub fn DynBinds::lookup(
 
 ///|
 declare pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int?
-
-///|
-/// The resolved dynamic producer: the producer component id plus its
-/// own addressing steps to the provided value (spliced by teleporting).
-pub(all) struct DynProducer {
-  producer : Int
-  steps : Array[@tutuca.Step]
-} derive(Debug, Eq)
 
 ///|
 /// All effectful dispatches in one enum — the typed-state `update` bucket
@@ -302,8 +306,8 @@ pub struct Component {
   provide : Map[String, ProvideInfo] // filled by compile()
   /// Component TYPES this component publishes to its subtree, name -> id.
   /// Kept apart from `provide` because a type is not addressable: it can never
-  /// be a render target, so it must not reach `resolve_dyn_producer` or a
-  /// `*name` read. Filled by compile().
+  /// be a render target and carries no located value for a `*name` read.
+  /// Filled by compile().
   provide_type : Map[String, Int]
   lookup : Map[String, LookupInfo] // filled by compile()
   mut scope : ComponentStack?
@@ -486,6 +490,7 @@ pub struct ComponentStack {
   comps : Components
   parent : ComponentStack?
   by_name : Map[String, Component]
+  paths : Map[String, @tutuca.Path]
   intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
@@ -495,6 +500,21 @@ declare pub fn ComponentStack::new(comps? : Components) -> ComponentStack
 
 ///|
 declare pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack
+
+///|
+/// Register lowercase value names as absolute paths from the mounted app's
+/// state root. A later registration in this frame replaces an earlier one.
+declare pub fn ComponentStack::register_paths(
+  self : ComponentStack,
+  paths : Map[String, @tutuca.Path],
+) -> Unit
+
+///|
+/// The nearest app-root-relative path registered under `name`.
+declare pub fn ComponentStack::lookup_path(
+  self : ComponentStack,
+  name : String,
+) -> @tutuca.Path?
 
 ///|
 /// Register components in this scope: each gets scope = self.enter(), an id
@@ -520,19 +540,6 @@ declare pub fn ComponentStack::lookup_component(
 ) -> Component?
 
 ///|
-/// The first component along this chain that PROVIDES `name` — the producer a
-/// consumer never had to name.
-///
-/// A lookup names what it wants rather than who supplies it, so the producer
-/// is found by searching the scope. That is a well-defined answer only while
-/// one provide name has one producer per chain, which is what
-/// `PROVIDE_NAME_COLLISION` holds authors to.
-declare pub fn ComponentStack::lookup_provider(
-  self : ComponentStack,
-  name : String,
-) -> Component?
-
-///|
 /// Every name registered along this chain, innermost first.
 declare pub fn ComponentStack::component_names(
   self : ComponentStack,
@@ -541,7 +548,7 @@ declare pub fn ComponentStack::component_names(
 ///|
 /// The name-wiring findings for every component in this scope and the scopes
 /// below it: a provide that is not addressable, a published type that is not
-/// `"self"`, two producers of one name, a lookup with no provider, an
+/// `"self"`, a lookup with no dynamic provider or lexical path, an
 /// uppercase lookup that names no registered component.
 ///
 /// Run after `compile_all`. Half of what it reports is the difference between
@@ -589,18 +596,6 @@ declare pub impl @anode.MacroScope for ComponentStack
 declare pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise
 
 ///|
-/// Resolve the dynamic producer: which component produces `*name` for `comp`
-/// — its own `provide`, else the nearest one in its registration scope — plus
-/// the producer's addressing steps to the value.
-///
-/// `None` for an uppercase name: a published TYPE has no path, so it can never
-/// be a render target and `<x render="*Board">` must stay unresolvable.
-declare pub fn resolve_dyn_producer(
-  comp : Component,
-  name : String,
-) -> DynProducer?
-
-///|
 /// One renderable example (a Section item): make `args`
 /// for `component`, rendered under `view` (None = default view resolution).
 pub(all) struct ExampleDef {
@@ -617,6 +612,8 @@ pub(all) struct ExampleDef {
 pub(all) struct ModuleDef {
   name : String
   components : Array[Component]
+  /// Lowercase lexical value names, as absolute paths from the mounted root.
+  paths : Map[String, @tutuca.Path]
   macros : Map[String, @anode.Macro]
   intents : Map[String, Array[IntentFn]]
   examples : Array[ExampleDef]
@@ -626,6 +623,7 @@ pub(all) struct ModuleDef {
 declare pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
+  paths? : Map[String, @tutuca.Path],
   macros? : Map[String, @anode.Macro],
   intents? : Map[String, Array[IntentFn]],
   examples? : Array[ExampleDef],

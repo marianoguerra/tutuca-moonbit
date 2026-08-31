@@ -443,7 +443,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
   // published type a component by construction, so the `dyn` leg never has to
   // trust an arbitrary expression. Anything else is a value, and must be
   // ADDRESSABLE (`.field` / `.seq[.key]`) because a provide doubles as the
-  // teleport target for `<x render="*name">`.
+  // resume target for `<x render="*name">`.
   //
   // Both bad shapes are dropped here rather than raised: what is wrong with a
   // declaration is a finding, with a name and a place to point at, and

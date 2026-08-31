@@ -4,8 +4,19 @@
 ///|
 test "Meta round-trips through comment text" {
   let metas : Array[Meta] = [
-    Comp(nid=Some(3), cid=7, vid="main"),
-    Comp(nid=None, cid=0, vid="detail"),
+    Comp(nid=Some(3), cid=7, vid="main", base=None),
+    Comp(nid=None, cid=0, vid="detail", base=None),
+    Comp(
+      nid=Some(4),
+      cid=9,
+      vid="resumed",
+      base=Some(
+        @tutuca.Path::new(steps=[
+          FieldStep("session"),
+          SeqAccessStep(seq_field="themes", key_field="activeTheme"),
+        ]),
+      ),
+    ),
     Each(nid=1, key=KInt(4)),
     Each(nid=2, key=KStr("b")),
     Scope(nid=5),
@@ -13,6 +24,16 @@ test "Meta round-trips through comment text" {
   for m in metas {
     assert_true(Meta::parse(m.to_comment_text()) == Some(m))
   }
+}
+
+///|
+test "render path text preserves fields, keys, and live-key access" {
+  let path = @tutuca.Path::new(steps=[
+    FieldStep("session"),
+    SeqStep(field="rows", key=KStr("a")),
+    SeqAccessStep(seq_field="themes", key_field="selected"),
+  ])
+  assert_eq(parse_render_path_text(render_path_text(path)), Some(path))
 }
 
 ///|
@@ -26,11 +47,11 @@ test "Meta::parse rejects non-meta comments" {
 ///|
 test "the JSON wire shape matches the JS renderer" {
   assert_eq(
-    Meta::Comp(nid=Some(1), cid=0, vid="main").to_comment_text(),
+    Meta::Comp(nid=Some(1), cid=0, vid="main", base=None).to_comment_text(),
     "§{\"$\":\"Comp\",\"nid\":1,\"cid\":0,\"vid\":\"main\"}§",
   )
   assert_eq(
-    Meta::Comp(nid=None, cid=2, vid="m").to_comment_text(),
+    Meta::Comp(nid=None, cid=2, vid="m", base=None).to_comment_text(),
     "§{\"$\":\"Comp\",\"nid\":null,\"cid\":2,\"vid\":\"m\"}§",
   )
   assert_eq(

@@ -539,7 +539,7 @@ re-render. That check is one pointer comparison.
 Two refinements exist on top of plain `Path`:
 
 - `DispatchPath` — a path whose steps can also be *frames* (loop bindings,
-  scope enrichments) and *dynamic* segments (provide/lookup teleports). It
+  scope enrichments) and *dynamic* segments (provide/lookup continuation frames). It
   is what event routing produces; `to_transaction_path()` strips it back to
   a plain state path.
 - `Handler` — the uniform shape every bucket entry is wrapped into:

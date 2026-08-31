@@ -166,7 +166,7 @@ fn lint_demo_comp() -> @component.Component {
     },
     provide={
       // PROVIDE_NOT_ADDRESSABLE: a provide must be a field (.f) or
-      // seq-access (.s[.k]) path — it doubles as a render-target / teleport
+      // seq-access (.s[.k]) path — it doubles as a render-target / resume
       // path, so a method ($doClick) is rejected.
       "badProvide": "$doClick",
     },

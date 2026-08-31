@@ -20,6 +20,8 @@
 /// `@push-view` trail, and the dynamic-binding chain published by component
 /// frames.
 pub(all) struct RenderStack {
+  /// The current app state root; lexical paths are absolute from here.
+  root : @tutuca.Value
   it : @tutuca.Value
   binds : Map[String, @tutuca.Value]
   parent : RenderStack?
@@ -32,6 +34,12 @@ pub(all) struct RenderStack {
   comps : @component.Components?
   /// Provide frames, consed by component-frame enters.
   dyn_binds : @component.DynBinds?
+  /// The current render continuation. Its active transaction path is where
+  /// this component value lives; saved frames are its visual callers.
+  render_path : @tutuca.DispatchPath
+  /// A transparent item/scope crossed into a located path. The next component
+  /// boundary must emit the active frame base, then clear this flag.
+  pending_frame : Bool
   /// The DOM event being dispatched, when this stack evaluates handler args
   /// (the InputEvent as the stack's ctx). Bare names that miss the binds
   /// chain resolve against it (value/key/isCtrl/…).
@@ -162,7 +170,17 @@ declare pub fn RenderStack::enter(
   it : @tutuca.Value,
   binds : Map[String, @tutuca.Value],
   is_frame? : Bool,
+  render_path? : @tutuca.DispatchPath,
+  pending_frame? : Bool,
 ) -> RenderStack
+
+///|
+/// Resolve `*name` to both its value and absolute state path: nearest runtime
+/// provide, then nearest lexical registered path, then an addressable default.
+declare pub fn RenderStack::lookup_dynamic_located(
+  self : RenderStack,
+  name : String,
+) -> @component.LocatedValue?
 
 ///|
 declare pub fn RenderStack::push_view_name(
@@ -240,7 +258,7 @@ declare pub fn RenderCtx::new(
 /// marks a loop-less @enrich-with subtree. One type shared by emission
 /// (renderer) and parsing (event-path reconstruction) so they cannot drift.
 pub(all) enum Meta {
-  Comp(nid~ : Int?, cid~ : Int, vid~ : String)
+  Comp(nid~ : Int?, cid~ : Int, vid~ : String, base~ : @tutuca.Path?)
   Each(nid~ : Int, key~ : @tutuca.PathKey)
   Scope(nid~ : Int)
 } derive(Debug, Eq)
@@ -251,6 +269,14 @@ declare pub fn Meta::to_comment_text(self : Meta) -> String
 ///|
 /// Parse a comment's character data; None when it is not a §…§ meta.
 declare pub fn Meta::parse(text : String) -> Meta?
+
+///|
+/// Encode/decode the address stored on fragment-root siblings of a resumed
+/// component. The comment meta uses the same representation.
+declare fn render_path_text(path : @tutuca.Path) -> String
+
+///|
+declare fn parse_render_path_text(text : String) -> @tutuca.Path?
 
 ///|
 /// Render a value as the app root component: resolve its view, emit the root §Comp§ boundary
@@ -299,9 +325,9 @@ declare pub fn is_meta_comment(text : String) -> Bool
 // ---------------------------------------------------------------------------
 // Event-path reconstruction: walk up from an
 // event target reading §…§ metas and data-* stamps, crossing component
-// boundaries, resolving one path step per crossed component. Dynamic-var
-// (`*dyn`) render targets produce Dyn markers, which the dispatch path
-// teleports to the producing component (DispatchPath::to_transaction_path).
+// boundaries, resolving one path step per crossed component. A resumed render
+// site carries its absolute base in the boundary metadata; reconstruction
+// pushes that base as a new dispatch frame.
 
 ///|
 /// Registry seam for reconstruction: resolve a compiled view's parse node /
@@ -310,11 +336,6 @@ declare pub fn is_meta_comment(text : String) -> Bool
 pub(open) trait Boundaries {
   fn node_for(Self, cid : Int, vid : String, nid : Int) -> @anode.ANode? = _
   fn events_for(Self, cid : Int, vid : String, eid : Int) -> @anode.NodeEvents? = _
-  /// Which component produces `*name` for component `cid`, plus the
-  /// producer's addressing steps. Default None
-  /// keeps mocks and component-less registries working — dynamic render
-  /// targets then simply contribute no step.
-  fn dyn_producer(Self, cid : Int, name : String) -> @component.DynProducer? = _
 }
 
 ///|
@@ -324,11 +345,6 @@ impl Boundaries with fn node_for(_self, _cid, _vid, _nid) {
 
 ///|
 impl Boundaries with fn events_for(_self, _cid, _vid, _eid) {
-  None
-}
-
-///|
-impl Boundaries with fn dyn_producer(_self, _cid, _name) {
   None
 }
 
@@ -361,10 +377,20 @@ declare pub fn[N : @vdom.DomWalk] from_node_and_event_name(
 /// renderer pushed — one Step kind per render context (component steps are
 /// barriers; Bind/Scope/EachBind replay transparent scopes with lazily
 /// evaluated binds; EachRenderItStep pushes the item scope then the
-/// component frame). Call on a transaction path (Dyn steps teleported).
+/// component frame). Call on one ordinary transaction path; use
+/// `build_dispatch_stack` when continuation frames must be retained.
 /// None when a step no longer resolves against the stack's values.
 declare pub fn build_stack(
   path : @tutuca.Path,
+  stack : RenderStack,
+) -> RenderStack?
+
+///|
+/// Rebuild every frame of a dispatch path. A resumed frame begins at its
+/// app-root-relative base while retaining the visual caller as its parent, so
+/// dynamic bindings still follow render ancestry.
+declare pub fn build_dispatch_stack(
+  path : @tutuca.DispatchPath,
   stack : RenderStack,
 ) -> RenderStack?
 

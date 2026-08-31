@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub fn build_dispatch_stack(@core.DispatchPath, RenderStack) -> RenderStack?
+
 pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
@@ -68,7 +70,7 @@ pub(all) struct EventPathReader((Array[String]) -> @core.Value)
 pub impl @debug.Debug for EventPathReader
 
 pub(all) enum Meta {
-  Comp(nid~ : Int?, cid~ : Int, vid~ : String)
+  Comp(nid~ : Int?, cid~ : Int, vid~ : String, base~ : @core.Path?)
   Each(nid~ : Int, key~ : @core.PathKey)
   Scope(nid~ : Int)
 } derive(Eq, @debug.Debug)
@@ -90,6 +92,7 @@ pub(all) struct RenderCtx {
 pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_cache? : RenderCache, filter? : &@filter.VdomFilter) -> Self
 
 pub(all) struct RenderStack {
+  root : @core.Value
   it : @core.Value
   binds : Map[String, @core.Value]
   parent : RenderStack?
@@ -97,11 +100,14 @@ pub(all) struct RenderStack {
   is_frame : Bool
   comps : @component.Components?
   dyn_binds : @component.DynBinds?
+  render_path : @core.DispatchPath
+  pending_frame : Bool
   event : DomEvent?
   event_paths : @eventpath.EventPathProfile
 }
-pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool) -> Self
+pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool, render_path? : @core.DispatchPath, pending_frame? : Bool) -> Self
 pub fn RenderStack::lookup_dyn_type(Self, String) -> Int?
+pub fn RenderStack::lookup_dynamic_located(Self, String) -> @component.LocatedValue?
 pub fn RenderStack::new(@core.Value, binds? : Map[String, @core.Value], comps? : @component.Components, event? : DomEvent, event_paths? : @eventpath.EventPathProfile) -> Self
 pub fn RenderStack::push_view_name(Self, String) -> Self
 pub impl @core.Stack for RenderStack
@@ -118,7 +124,6 @@ pub(all) struct ResolvedView {
 pub(open) trait Boundaries {
   fn node_for(Self, Int, String, Int) -> @anode.ANode? = _
   fn events_for(Self, Int, String, Int) -> @anode.NodeEvents? = _
-  fn dyn_producer(Self, Int, String) -> @component.DynProducer? = _
 }
 pub impl Boundaries for @component.Components
 

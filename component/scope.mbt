@@ -73,6 +73,7 @@ pub fn ComponentStack::new(comps? : Components) -> ComponentStack {
     },
     parent: None,
     by_name: Map([]),
+    paths: Map([]),
     intents: Map([]),
     macros: Map([]),
   }
@@ -84,6 +85,7 @@ pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack {
     comps: self.comps,
     parent: Some(self),
     by_name: Map([]),
+    paths: Map([]),
     intents: Map([]),
     macros: Map([]),
   }
@@ -105,6 +107,33 @@ pub fn ComponentStack::register_components(
       Some(c) => self.by_name[alias_name] = c
       None => ()
     }
+  }
+}
+
+///|
+pub fn ComponentStack::register_paths(
+  self : ComponentStack,
+  paths : Map[String, @tutuca.Path],
+) -> Unit {
+  for name, path in paths {
+    if !@tutuca.is_type_name(name) {
+      self.paths[name] = path
+    }
+  }
+}
+
+///|
+pub fn ComponentStack::lookup_path(
+  self : ComponentStack,
+  name : String,
+) -> @tutuca.Path? {
+  match self.paths.get(name) {
+    Some(path) => Some(path)
+    None =>
+      match self.parent {
+        Some(parent) => parent.lookup_path(name)
+        None => None
+      }
   }
 }
 
@@ -192,63 +221,32 @@ pub fn ComponentStack::compile_all(self : ComponentStack) -> Unit raise {
 }
 
 ///|
-/// The first component along the chain that PROVIDES `name` — the producer a
-/// consumer never had to name.
-///
-/// Innermost frame first, and within a frame whichever registration answers
-/// first. That is only a well-defined choice while one provide name has one
-/// producer per chain, which is what `PROVIDE_NAME_COLLISION` holds authors to;
-/// with two, this answers the innermost and the checker has already said the
-/// name is ambiguous.
-pub fn ComponentStack::lookup_provider(
-  self : ComponentStack,
-  name : String,
-) -> Component? {
+/// Whether some component visible in this registration chain can publish
+/// `name` at runtime. This is only the checker's existence test; the live
+/// render stack decides which provider is nearest for an instance.
+fn ComponentStack::has_provider(self : ComponentStack, name : String) -> Bool {
   for _, comp in self.by_name {
     if comp.provide.contains(name) {
-      return Some(comp)
+      return true
     }
   }
   match self.parent {
-    Some(p) => p.lookup_provider(name)
-    None => None
+    Some(p) => p.has_provider(name)
+    None => false
   }
 }
 
 ///|
-/// Where `*name` physically lives: the component that produces it, plus that
-/// component's own steps to the value. What the render-target teleport splices
-/// in.
-///
-/// A consumer no longer names its producer, so the producer is found by scope
-/// search. A published TYPE answers `None` on purpose — a component has no
-/// path, so `<x render="*Board">` must stay unresolvable rather than resolve to
-/// something that cannot be edited through.
-pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
-  fn steps_of(val : @tutuca.Val) -> Array[@tutuca.Step] {
-    match val.to_path_item() {
-      Some(s) => [s]
-      None => []
-    }
-  }
-
-  if @tutuca.is_type_name(name) {
-    return None
-  }
-  match comp.provide.get(name) {
-    Some(p) => Some({ producer: comp.id, steps: steps_of(p.val), })
+/// The nearest located value published under `name`, walking outward.
+pub fn DynBinds::lookup_located(
+  self : DynBinds,
+  name : String,
+) -> LocatedValue? {
+  match self.binds.get(name) {
+    Some(v) => Some(v)
     None =>
-      match comp.scope {
-        Some(s) =>
-          match s.lookup_provider(name) {
-            Some(producer) =>
-              match producer.provide.get(name) {
-                Some(p) =>
-                  Some({ producer: producer.id, steps: steps_of(p.val), })
-                None => None
-              }
-            None => None
-          }
+      match self.parent {
+        Some(p) => p.lookup_located(name)
         None => None
       }
   }
@@ -257,13 +255,9 @@ pub fn resolve_dyn_producer(comp : Component, name : String) -> DynProducer? {
 ///|
 /// The nearest value published under `name`, walking outward.
 pub fn DynBinds::lookup(self : DynBinds, name : String) -> @tutuca.Value? {
-  match self.binds.get(name) {
-    Some(v) => Some(v)
-    None =>
-      match self.parent {
-        Some(p) => p.lookup(name)
-        None => None
-      }
+  match self.lookup_located(name) {
+    Some(v) => Some(v.value)
+    None => None
   }
 }
 

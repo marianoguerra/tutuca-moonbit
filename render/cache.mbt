@@ -34,10 +34,10 @@
 /// enters the component with `is_frame=true` and empty binds, and
 /// `lookup_bind_chain` stops at a frame — so the enclosing `@each` binds and
 /// every `@name` scope around it cannot reach inside, and are not here.
-/// Position is not here either: handlers are reconstructed at dispatch time
-/// from `data-eid` stamps and the meta comments (see events.mbt), never baked
-/// into the subtree. What IS baked in is the `§Comp§` meta, which carries
-/// `nid`/`cid`/`vid` — hence those three.
+/// Position is part of the entry: a resumed site bakes its frame base into the
+/// `§Comp§` meta, and component provides capture their absolute location from
+/// the render path. Reusing a subtree at another position would therefore
+/// preserve the wrong continuation.
 ///
 /// `trail` is the `@push-view` stack, and it is here for a reason that is easy
 /// to miss: a site reads the trail even when its OWN resolved view does not
@@ -52,6 +52,8 @@ priv struct CacheEntry {
   node_id : Int?
   cid : Int
   vid : String
+  render_path : @tutuca.DispatchPath
+  base : @tutuca.Path?
   trail : Array[String]
   /// The validator. Physical identity, because the transactor swaps the root
   /// with structural sharing: a subtree the last transaction did not touch
@@ -129,6 +131,8 @@ fn CacheEntry::valid(
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
   trail : Array[String],
+  render_path : @tutuca.DispatchPath,
+  base : @tutuca.Path?,
 ) -> Bool {
   self.rev == id.rev &&
   self.node_id == node_id &&
@@ -136,7 +140,9 @@ fn CacheEntry::valid(
   self.vid == rv.vid &&
   physical_equal(self.value, value) &&
   dyn_binds_eq(self.dyn_binds, dyn_binds) &&
-  trail_eq(self.trail, trail)
+  trail_eq(self.trail, trail) &&
+  self.render_path == render_path &&
+  self.base == base
 }
 
 ///|
@@ -151,12 +157,18 @@ fn RenderCache::get(
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
   trail : Array[String],
+  render_path : @tutuca.DispatchPath,
+  base : @tutuca.Path?,
 ) -> @vdom.Vdom? {
   match self.cur.get(id.origin) {
-    Some(e) if e.valid(id, node_id, rv, value, dyn_binds, trail) => Some(e.vdom)
+    Some(e) if e.valid(
+        id, node_id, rv, value, dyn_binds, trail, render_path, base,
+      ) => Some(e.vdom)
     _ =>
       match self.prev.get(id.origin) {
-        Some(e) if e.valid(id, node_id, rv, value, dyn_binds, trail) => {
+        Some(e) if e.valid(
+            id, node_id, rv, value, dyn_binds, trail, render_path, base,
+          ) => {
           self.cur[id.origin] = e
           Some(e.vdom)
         }
@@ -174,6 +186,8 @@ fn RenderCache::set(
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
   trail : Array[String],
+  render_path : @tutuca.DispatchPath,
+  base : @tutuca.Path?,
   vdom : @vdom.Vdom,
 ) -> Unit {
   self.cur[id.origin] = {
@@ -181,6 +195,8 @@ fn RenderCache::set(
     node_id,
     cid: rv.cid,
     vid: rv.vid,
+    render_path,
+    base,
     trail,
     value,
     dyn_binds,

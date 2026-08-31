@@ -306,6 +306,8 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
 ///|
 test "registration scopes: chains, aliases, sibling independence" {
   let root_scope = @component.ComponentStack::new()
+  let root_theme = @tutuca.Path::new(steps=[FieldStep("session")])
+  root_scope.register_paths({ "theme": root_theme })
   let a = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>a</i>") },
     name="A",
@@ -321,12 +323,39 @@ test "registration scopes: chains, aliases, sibling independence" {
   // A's own (child) scope sees the registration scope's entries
   assert_true(a_scope.lookup_component("A") is Some(_))
   assert_true(a_scope.lookup_component("Alias") is Some(_))
+  assert_eq(a_scope.lookup_path("theme"), Some(root_theme))
+  let local_theme = @tutuca.Path::new(steps=[FieldStep("previewTheme")])
+  a_scope.register_paths({ "theme": local_theme, "Theme": root_theme })
+  assert_eq(a_scope.lookup_path("theme"), Some(local_theme))
+  assert_true(a_scope.lookup_path("Theme") is None)
   // a sibling scope registered elsewhere is invisible
   let other = root_scope.enter()
   other.register_components([b])
   assert_true(a_scope.lookup_component("B") is None)
   guard b.scope is Some(b_scope) else { fail("no scope on B") }
   assert_true(b_scope.lookup_component("A") is Some(_)) // parent chain
+}
+
+///|
+test "ModuleDef registers lexical value paths outside the root component" {
+  let consumer = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<i></i>") },
+    name="PathConsumer",
+    init=NoFields::{ },
+    lookup=[@component.lookup_name("session")],
+  )
+  let session = @tutuca.Path::new(steps=[FieldStep("session")])
+  let module_def = @component.ModuleDef::new(
+    name="path-module",
+    components=[consumer],
+    paths={ "session": session },
+  )
+  let _scope = module_def.build_scope()
+  guard consumer.scope is Some(consumer_scope) else {
+    fail("consumer has no registration scope")
+  }
+  assert_eq(consumer_scope.lookup_path("session"), Some(session))
+  assert_true(consumer.provide.is_empty())
 }
 
 ///|
@@ -377,13 +406,8 @@ test "compile parses provide/lookup and stamps view ids" {
   )
   // A lookup with no default carries none, and is still declared.
   assert_true(ws.lookup.get("theme") is Some(lk2) && lk2.default_val is None)
-  // A lookup names what it wants, so its producer is found by scope search
-  // rather than by a name it wrote down.
-  guard! @component.resolve_dyn_producer(ws, "active") is Some(dp)
-  assert_eq(dp.producer, ws.id)
-  assert_true(dp.steps.length() == 1 && dp.steps[0] is FieldStep("sheet"))
-  // A published type has no path, so it can never be a render target.
-  assert_true(@component.resolve_dyn_producer(ws, "Cell") is None)
+  // Producer discovery is deliberately absent: the render stack records the
+  // concrete path when it evaluates a provide.
   // the compiled view stamped data-cid/data-vid on its root
   guard ws.get_view(None) is Some(v) && v.anode is Some(_) else {
     fail("view not compiled")

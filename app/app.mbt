@@ -130,7 +130,7 @@ fn run_handlers(
     event=e,
     event_paths~,
   )
-  let arg_stack = @render.build_stack(ed.path.to_transaction_path(), root_stack)
+  let arg_stack = @render.build_dispatch_stack(ed.path, root_stack)
   for h in ed.handlers {
     if !modifiers_pass(e.name, h.modifiers, e) {
       continue

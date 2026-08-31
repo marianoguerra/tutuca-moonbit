@@ -68,10 +68,32 @@ pub fn render(
         Null => None
         v => Some(@vdom.text(v.to_display_string()))
       }
-    Render(d) =>
-      render_site(d.val.eval(stack), d.view_val, Some(d.node_id), stack, ctx)
+    Render(d) => {
+      let (value, render_path, base) = render_target(d.val, stack)
+      render_site(
+        value,
+        d.view_val,
+        Some(d.node_id),
+        stack,
+        ctx,
+        render_path~,
+        base?,
+      )
+    }
     RenderIt(d) =>
-      render_site(stack.it, d.view_val, Some(d.node_id), stack, ctx)
+      render_site(
+        stack.it,
+        d.view_val,
+        Some(d.node_id),
+        stack,
+        ctx,
+        render_path=stack.render_path,
+        base?=if stack.pending_frame {
+          Some(stack.render_path.to_transaction_path())
+        } else {
+          None
+        },
+      )
     Show(d) =>
       if d.val.eval(stack).is_truthy() {
         render(d.node, stack, ctx)
@@ -123,6 +145,57 @@ pub fn render(
 }
 
 ///|
+/// Resolve a render operand together with the dispatch continuation it enters.
+/// A dynamic/lexical name supplies an absolute app path and therefore pushes a
+/// frame; an ordinary field extends the current frame.
+fn render_target(
+  val : @tutuca.Val,
+  stack : RenderStack,
+) -> (@tutuca.Value, @tutuca.DispatchPath, @tutuca.Path?) {
+  match val {
+    Dyn(name) =>
+      match stack.lookup_dynamic_located(name) {
+        Some(loc) =>
+          (loc.value, stack.render_path.push_frame(loc.path), Some(loc.path))
+        None => (val.eval(stack), stack.render_path, None)
+      }
+    _ =>
+      match val.to_path_item() {
+        Some(step) => {
+          let path = stack.render_path.concat([step])
+          (
+            val.eval(stack),
+            path,
+            if stack.pending_frame {
+              Some(path.to_transaction_path())
+            } else {
+              None
+            },
+          )
+        }
+        None => (val.eval(stack), stack.render_path, None)
+      }
+  }
+}
+
+///|
+/// Stamp every element root of a component body. A fragment has one comment
+/// boundary before its first child, so later root siblings need the same base
+/// on the element to reconstruct an event without seeing that comment.
+fn stamp_render_base(vdom : @vdom.Vdom, path : @tutuca.Path) -> @vdom.Vdom {
+  match vdom {
+    Node(el) => {
+      let attrs = el.attrs.copy()
+      attrs["data-rp"] = Str(render_path_text(path))
+      Node({ ..el, attrs, })
+    }
+    Fragment(childs) =>
+      Fragment(childs.map(child => stamp_render_base(child, path)))
+    Text(_) | Comment(_) => vdom
+  }
+}
+
+///|
 /// `<x render>` / `<x render-it>`: enter a frame on the rendered value and
 /// render the resolved view behind a §Comp§ boundary meta.
 /// An unresolved view suppresses the site; a component whose view renders
@@ -135,7 +208,10 @@ fn render_site(
   stack : RenderStack,
   ctx : RenderCtx,
   view? : String = "",
+  render_path? : @tutuca.DispatchPath,
+  base? : @tutuca.Path,
 ) -> @vdom.Vdom? {
+  let site_path = render_path.unwrap_or(stack.render_path)
   // The `as=` selector evaluates against the HOST stack;
   // without one, the `@push-view` trail applies innermost-first.
   //
@@ -160,16 +236,39 @@ fn render_site(
       let slot = match (ctx.render_cache, value.identity()) {
         (Some(cache), Some(id)) =>
           match
-            cache.get(id, node_id, rv, value, stack.dyn_binds, stack.view_names) {
+            cache.get(
+              id,
+              node_id,
+              rv,
+              value,
+              stack.dyn_binds,
+              stack.view_names,
+              site_path,
+              base,
+            ) {
             Some(v) => return Some(v)
             None => Some((cache, id))
           }
         _ => None
       }
-      match render(rv.node, stack.enter(value, Map([])), ctx) {
-        Some(body) => {
+      match
+        render(
+          rv.node,
+          stack.enter(
+            value,
+            Map([]),
+            render_path=site_path,
+            pending_frame=false,
+          ),
+          ctx,
+        ) {
+        Some(raw_body) => {
+          let body = match base {
+            Some(path) => stamp_render_base(raw_body, path)
+            None => raw_body
+          }
           let frag = @vdom.fragment([
-            Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
+            Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid, base~).to_comment(),
             body,
           ])
           // Cache only a rendered (non-null) body.
@@ -181,6 +280,8 @@ fn render_site(
               value,
               stack.dyn_binds,
               stack.view_names,
+              site_path,
+              base,
               frag,
             )
           }
@@ -223,6 +324,18 @@ fn value_seq_key(v : @tutuca.Value) -> @tutuca.PathKey {
 }
 
 ///|
+fn keyed_path(path : @tutuca.Path, key : @tutuca.PathKey) -> @tutuca.Path? {
+  guard path.steps is [.. init, last] else { return None }
+  match last {
+    FieldStep(field) =>
+      Some(@tutuca.Path::new(steps=[..init, SeqStep(field~, key~)]))
+    SeqStep(field~, ..) | EachRenderItStep(field~, ..) =>
+      Some(@tutuca.Path::new(steps=[..init, SeqStep(field~, key~)]))
+    _ => None
+  }
+}
+
+///|
 /// `@each` / `<x render-each>`: run @loop-with for the
 /// plan (iterData / start / end / keys), iterate the sequence — an explicit
 /// keys list is authoritative and skips @when; otherwise slice-ranged order
@@ -235,6 +348,10 @@ fn render_each(
   ctx : RenderCtx,
 ) -> @vdom.Vdom? {
   let seq = d.iter_info.val.eval(stack)
+  let located_seq = match d.iter_info.val {
+    Dyn(name) => stack.lookup_dynamic_located(name)
+    _ => None
+  }
   let it = stack.it
   let filter_h : @tutuca.Value? = match d.iter_info.when_val {
     Some(v) => Some(v.eval_as_handler(stack))
@@ -265,11 +382,44 @@ fn render_each(
       binds["key"] = key
       binds["value"] = value
     }
-    match render(d.node, stack.enter(value, binds, is_frame=false), ctx) {
+    let pk = value_seq_key(key)
+    let (item_path, pending) = match located_seq {
+      Some(loc) =>
+        match keyed_path(loc.path, pk) {
+          Some(base) => (stack.render_path.push_frame(base), true)
+          None => (stack.render_path, false)
+        }
+      None => {
+        let step : @tutuca.Step = match (d.node, d.iter_info.val) {
+          (RenderIt(_), Field(field)) => EachRenderItStep(field~, key=pk)
+          _ =>
+            EachBindStep(
+              val=d.iter_info.val,
+              when_val=d.iter_info.when_val,
+              enrich_with_val=d.iter_info.enrich_with_val,
+              loop_with_val=d.iter_info.loop_with_val,
+              key=pk,
+            )
+        }
+        (stack.render_path.concat([step]), false)
+      }
+    }
+    match
+      render(
+        d.node,
+        stack.enter(
+          value,
+          binds,
+          is_frame=false,
+          render_path=item_path,
+          pending_frame=pending,
+        ),
+        ctx,
+      ) {
       Some(v) => {
         // One §Each§ meta precedes each visible item; a
         // hidden item leaves neither entry nor dangling meta.
-        out.push(Meta::Each(nid=d.node_id, key=value_seq_key(key)).to_comment())
+        out.push(Meta::Each(nid=d.node_id, key=pk).to_comment())
         out.push(v)
       }
       None => ()

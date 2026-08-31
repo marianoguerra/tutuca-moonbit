@@ -168,7 +168,7 @@ pub(all) struct DynComponentDef {
   ///
   /// A lowercase name publishes a VALUE and takes an addressable path
   /// (`.field`, `.seq[.key]`), because a provide doubles as the path a
-  /// `<x render="*name">` teleports through. An uppercase name publishes the
+  /// `<x render="*name">` resumes through. An uppercase name publishes the
   /// component itself as a TYPE, and `"self"` is the only thing it can be.
   ///
   /// The host evaluates these against the guest instance while rendering, the

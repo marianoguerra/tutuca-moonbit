@@ -400,15 +400,15 @@ through every component in between. Two sections inside a `state` body:
 A **`provide`** publishes a name to the whole subtree below the component,
 re-evaluated every time it renders. A lowercase name publishes a VALUE, and its
 expression must be **addressable** — `.field` or `.seq[.key]` and nothing else
-— because a provide doubles as the path a `<x render="*name">` teleports
+— because a provide doubles as the path a `<x render="*name">` resumes
 through. There is no shorthand for "the field of the same name": write
 `theme = .theme`.
 
 A **`lookup`** names what it WANTS, not who supplies it. `theme` is the whole
 declaration; `color = 'gray'` adds the fallback used when nothing above
 provides it (without one, a miss reads as null). The local name IS the provided
-name — there is no alias. Because a lookup does not name its producer, **one
-provide name has one producer per scope chain**.
+name — there is no alias. Multiple providers may use the same name; the nearest
+one in the live render ancestry shadows the others.
 
 An **uppercase** name publishes a component TYPE rather than a value, and
 `self` is the only thing it can be: `Cell = self` injects this component as

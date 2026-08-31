@@ -56,7 +56,7 @@ test "dynamic-path: a dynamic var as a RENDER TARGET, across a deep tree" {
 }
 
 ///|
-test "dynamic-path: editing the teleported Sheet mutates Workspace.sheet" {
+test "dynamic-path: editing the resumed Sheet mutates Workspace.sheet" {
   let h = @harness.mount_example(dynamic_path_module(), "Default")
   // The Sheet is rendered inside Toolbar but LIVES at Workspace.sheet. The
   // transaction skips the intermediate components and lands on the real owner —

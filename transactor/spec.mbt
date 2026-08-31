@@ -92,12 +92,16 @@ pub(open) trait Names {
     at : @tutuca.DispatchPath,
     name : String,
   ) -> Int? = _
-  /// The `lex` leg: what `name` means in the registration scope of the
-  /// component at `at`.
-  ///
-  /// A scope chain holds components, so a VALUE never answers here. That is
-  /// not a hole: it is why ONE default route serves both a value lookup and a
-  /// type lookup — the leg that cannot answer simply misses.
+  /// The `lex` leg for a VALUE: the app-root-relative path registered under
+  /// `name` in the scope of the component at `at`.
+  fn lex_value(
+    Self,
+    root : @tutuca.Value,
+    at : @tutuca.DispatchPath,
+    name : String,
+  ) -> @tutuca.Value? = _
+  /// The `lex` leg for a TYPE: the component registered under `name` in the
+  /// scope of the component at `at`.
   fn lex_type(
     Self,
     root : @tutuca.Value,
@@ -115,6 +119,11 @@ impl Names with fn dyn_value(_self, _root, _at, _name) {
 
 ///|
 impl Names with fn dyn_type(_self, _root, _at, _name) {
+  None
+}
+
+///|
+impl Names with fn lex_value(_self, _root, _at, _name) {
   None
 }
 
@@ -299,7 +308,7 @@ pub(all) enum Source {
 /// producers by component id — a process-global counter nothing may persist —
 /// and `Step`'s frame-only variants hold `Val` expressions and closures. The
 /// transaction path is what the dispatch actually lands on, with every dynamic
-/// marker already teleported to where the data lives.
+/// active render frame already addresses where the data lives.
 pub(all) struct Dispatched {
   source : Source
   bucket : @tutuca.HandlerBucket

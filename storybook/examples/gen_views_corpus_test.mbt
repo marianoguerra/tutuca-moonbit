@@ -1,6 +1,6 @@
 // The same equivalence claim as cli/gen_views_ir_test.mbt, swept over every
 // runtime-compiled view in THIS example library (covering loops, scopes,
-// macros, teleport, drag-and-drop, SVG, components rendering components).
+// macros, resumed paths, drag-and-drop, SVG, components rendering components).
 // It lives here, with the corpus, rather than in cli/: the CLI package has no
 // dependency on the storybook packages in either direction, so that they can
 // stay repo demos and be excluded from the published archive.

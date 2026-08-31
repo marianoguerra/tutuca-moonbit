@@ -56,7 +56,7 @@ task.
 ## Context & dynamic bindings
 
 - [Share state across the tree](share-state-across-the-tree.md) — `provide` / `lookup` and reading `*name`.
-- [Edit through a dynamic target](edit-through-a-dynamic-target.md) — render `*name` and teleport edits back to the owner.
+- [Edit through a dynamic target](edit-through-a-dynamic-target.md) — render `*name` at its stored path and edit the owner.
 
 ## Composition
 

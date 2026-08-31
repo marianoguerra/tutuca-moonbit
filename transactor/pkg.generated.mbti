@@ -167,6 +167,7 @@ pub(open) trait Intents {
 pub(open) trait Names {
   fn dyn_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value? = _
   fn dyn_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
+  fn lex_value(Self, @core.Value, @core.DispatchPath, String) -> @core.Value? = _
   fn lex_type(Self, @core.Value, @core.DispatchPath, String) -> Int? = _
   fn build(Self, Int, Map[String, @core.Value]) -> @core.Value? = _
 }

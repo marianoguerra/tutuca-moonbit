@@ -37,22 +37,23 @@ the child land back on the owner — without forwarding events up by hand.
 /// The producer exposes one of its fields as a dynamic. `provide` values must be
 /// addressable, so a seq-access works too: `".items[.selectedKey]"`.
 fn workspace_comp() -> @component.Component {
-  workspace_component(provide={ "sheet": ".sheet" })
+  workspace_component(provide={ "active": ".sheet" })
 }
 
 ///|
-/// A distant consumer names what it wants; the producer is found by scope.
+/// A distant consumer names what it wants; the nearest rendered provider wins.
 fn toolbar_comp() -> @component.Component {
-  toolbar_component(lookup=[@component.lookup_name("sheet")])
+  toolbar_component(lookup=[@component.lookup_name("active")])
 }
 ```
 
 Both calls are wiring — where a value comes from, not what a component does —
 so they are `component()` arguments and no script block states them.
 
-Because `*active` resolves to a real **path** (not a copied value), the event
-fired by the `setText` input inside the rendered child is *teleported*: the
-mutation skips the intermediate components and lands on `Workspace.sheet`, so the
+Because `*active` resolves to a value together with its real **path** (not a
+copied value), rendering pushes that path as a continuation. The event fired by
+the `setText` input mutates `Workspace.sheet`; when bubbling reaches the top of
+the resumed frame it returns directly to `Toolbar`, the visual caller. The
 owner and any other view of the same value update in lock-step. A `provide` can
 point at a seq-access (`.items[.selectedKey]`) to expose "the selected item".
 

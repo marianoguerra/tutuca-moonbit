@@ -91,7 +91,7 @@ fn Transactor::advance_walk(self : Transactor, w : IntentWalk) -> Unit {
       Dyn =>
         // The position to visit is the PARENT of where we are, so the pop
         // comes first. An empty path has no parent, which is what ends the leg.
-        if w.dyn_at.items.length() > 0 {
+        if w.dyn_at.can_pop() {
           w.dyn_at = w.dyn_at.pop_step()
           self.queue_hop(w)
           return

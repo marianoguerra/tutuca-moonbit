@@ -1,5 +1,6 @@
-// Dyn teleporting tests: DynStep internals +
-// the workspace/panel/toolbar/sheet end-to-end scenario, data-side.
+// Render-path stack tests: ordinary descent extends the active frame, a
+// located render target pushes an absolute base, and bubbling pops back to the
+// saved visual caller.
 
 ///|
 fn plain(step : @core.Step, origin? : Int) -> @core.DispatchStep {
@@ -7,125 +8,115 @@ fn plain(step : @core.Step, origin? : Int) -> @core.DispatchStep {
 }
 
 ///|
-test "to_transaction_path without dynamics keeps the plain steps" {
+test "to_transaction_path without a resume keeps the plain steps" {
   let p = @core.DispatchPath::of_steps([FieldStep("a"), FieldStep("b")])
   assert_true(p.to_transaction_path().steps is [FieldStep("a"), FieldStep("b")])
 }
 
 ///|
-test "a Dyn marker rewinds the interior span and splices the producer steps" {
-  // producer 0 provides `.sheet`; components 1,2,3 are interior hops
-  let p = @core.DispatchPath::new(items=[
-    plain(FieldStep("s1"), origin=1),
-    plain(FieldStep("s2"), origin=2),
-    plain(FieldStep("s3"), origin=3),
-    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2, 3], key=None),
+test "a pushed frame changes the active transaction path" {
+  let caller = @core.DispatchPath::of_steps([
+    FieldStep("panel"),
+    FieldStep("toolbar"),
   ])
-  assert_true(p.to_transaction_path().steps is [FieldStep("sheet")])
+  let resumed = caller
+    .push_frame(@core.Path::new(steps=[FieldStep("sheet")]))
+    .concat([FieldStep("title")])
+  assert_true(
+    resumed.to_transaction_path().steps
+    is [FieldStep("sheet"), FieldStep("title")],
+  )
+  assert_eq(resumed.frames.length(), 2)
 }
 
 ///|
-test "steps outside the interior span survive the rewind" {
-  // the producer (9) sits below a root-level step that must be kept
-  let p = @core.DispatchPath::new(items=[
-    plain(FieldStep("app"), origin=9),
-    plain(FieldStep("panel"), origin=1),
-    Dyn(producer=9, steps=[FieldStep("sheet")], interior=[1], key=None),
+test "popping a resumed root returns directly to its visual caller" {
+  let caller = @core.DispatchPath::of_steps([
+    FieldStep("panel"),
+    FieldStep("toolbar"),
   ])
+  let leaf = caller
+    .push_frame(@core.Path::new(steps=[FieldStep("sheet")]))
+    .concat([FieldStep("child")])
+  let resumed_root = leaf.pop_step()
+  assert_true(resumed_root.to_transaction_path().steps is [FieldStep("sheet")])
   assert_true(
-    p.to_transaction_path().steps is [FieldStep("app"), FieldStep("sheet")],
+    resumed_root.pop_step().to_transaction_path().steps
+    is [FieldStep("panel"), FieldStep("toolbar")],
   )
 }
 
 ///|
-test "an iterated Dyn splices a keyed SeqStep for the producer's field" {
-  let p = @core.DispatchPath::new(items=[
-    plain(FieldStep("s1"), origin=1),
-    Dyn(
-      producer=0,
-      steps=[FieldStep("rows")],
-      interior=[1],
-      key=Some(KStr("b")),
-    ),
-  ])
+test "nested resumes restore each saved caller" {
+  let first = @core.DispatchPath::of_steps([FieldStep("visual")])
+    .push_frame(@core.Path::new(steps=[FieldStep("outer")]))
+    .concat([FieldStep("inside")])
+  let second = first.push_frame(@core.Path::new(steps=[FieldStep("inner")]))
+  assert_true(second.to_transaction_path().steps is [FieldStep("inner")])
   assert_true(
-    p.to_transaction_path().steps is [SeqStep(field="rows", key=KStr("b"))],
+    second.pop_step().to_transaction_path().steps
+    is [FieldStep("outer"), FieldStep("inside")],
+  )
+  assert_true(
+    second.pop_step().pop_step().to_transaction_path().steps
+    is [FieldStep("outer")],
+  )
+  assert_true(
+    second.pop_step().pop_step().pop_step().to_transaction_path().steps
+    is [FieldStep("visual")],
   )
 }
 
 ///|
-test "an iterated Dyn over a seq-access dynamic splices unchanged (cannot be iterated)" {
-  let p = @core.DispatchPath::new(items=[
-    Dyn(
-      producer=0,
-      steps=[SeqAccessStep(seq_field="a", key_field="b")],
-      interior=[],
-      key=Some(KStr("k")),
-    ),
-  ])
-  assert_true(
-    p.to_transaction_path().steps
-    is [SeqAccessStep(seq_field="a", key_field="b")],
-  )
-}
-
-///|
-test "nested dynamics: spliced steps carry the producer id for outer rewinds" {
-  // inner Dyn teleports to producer 5; the outer Dyn's interior includes 5,
-  // so the spliced steps are rewound again (each splice carries its
-  // producer id)
-  let p = @core.DispatchPath::new(items=[
-    plain(FieldStep("root"), origin=9),
-    plain(FieldStep("mid"), origin=5),
-    Dyn(producer=5, steps=[FieldStep("inner")], interior=[], key=None),
-    Dyn(producer=9, steps=[FieldStep("outer")], interior=[5], key=None),
-  ])
-  assert_true(
-    p.to_transaction_path().steps is [FieldStep("root"), FieldStep("outer")],
-  )
-}
-
-///|
-test "teleported path addresses the producer's data (end to end)" {
-  // Workspace(cid 0) provides active=.sheet; Toolbar(cid 2) renders *active.
-  // The event path walks Toolbar's tree but the mutation must land on
-  // Workspace.sheet (semantics.md §7).
+test "a resumed path addresses the located data end to end" {
   let root : @core.Value = Map({
     "sheet": Map({ "title": Str("Q1") }),
     "panel": Map({ "toolbar": Null }),
   })
-  let dispatch = @core.DispatchPath::new(items=[
-    plain(FieldStep("panel"), origin=1),
-    plain(FieldStep("toolbar"), origin=2),
-    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2], key=None),
-    plain(FieldStep("title"), origin=0),
-  ])
+  let dispatch = @core.DispatchPath::of_steps([
+      FieldStep("panel"),
+      FieldStep("toolbar"),
+    ])
+    .push_frame(@core.Path::new(steps=[FieldStep("sheet")]))
+    .concat([FieldStep("title")])
   let txn = dispatch.to_transaction_path()
-  assert_true(txn.steps is [FieldStep("sheet"), FieldStep("title")])
-  assert_true(txn.lookup(root) is Some(n) && n is Str("Q1"))
-  let root2 = txn.set_value(root, Str("Q2"))
-  assert_true(txn.lookup(root2) is Some(n2) && n2 is Str("Q2"))
+  assert_true(txn.lookup(root) is Some(Str("Q1")))
+  assert_true(txn.lookup(txn.set_value(root, Str("Q2"))) is Some(Str("Q2")))
 }
 
 ///|
-test "compact drops frame-only plains, keeps Dyn markers, preserves origins" {
+test "compact projects every frame independently" {
   let p = @core.DispatchPath::new(items=[
-    plain(BindStep(binds=Map([]))),
-    plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
-    Dyn(producer=0, steps=[FieldStep("x")], interior=[1], key=None),
-  ])
+      plain(BindStep(binds=Map([]))),
+      plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
+    ])
+    .push_frame(@core.Path::new(steps=[FieldStep("x")]))
+    .concat([ScopeBindStep(val=Field("ignored")), FieldStep("child")])
+    .compact()
   assert_true(
-    p.compact().items
+    p.frames
     is [
-      Plain(step=SeqStep(field="items", key=KInt(0)), origin=Some(1)),
-      Dyn(producer=0, steps=[FieldStep("x")], interior=[1], key=None),
+      {
+        base: { steps: [], },
+        items: [Plain(step=SeqStep(field="items", key=KInt(0)), origin=Some(1))],
+      },
+      {
+        base: { steps: [FieldStep("x")], },
+        items: [Plain(step=FieldStep("child"), origin=None)],
+      },
     ],
   )
 }
 
 ///|
-test "pop_step drops one component hop" {
-  let p = @core.DispatchPath::of_steps([FieldStep("a"), FieldStep("b")])
-  assert_true(p.pop_step().items is [Plain(step=FieldStep("a"), origin=None)])
-  assert_true(@core.DispatchPath::new().pop_step().items is [])
+test "root and bubbling predicates include saved frames" {
+  let root = @core.DispatchPath::new()
+  assert_true(root.is_root())
+  assert_false(root.can_pop())
+  let child = root.concat([FieldStep("a")])
+  assert_false(child.is_root())
+  assert_true(child.can_pop())
+  let resumed_root = child.push_frame(@core.Path::new())
+  assert_true(resumed_root.is_root())
+  assert_true(resumed_root.can_pop())
 }

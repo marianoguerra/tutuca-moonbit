@@ -58,7 +58,7 @@ test "click on the root component: empty path, handlers found" {
   }
   assert_eq(ed.handlers.length(), 1)
   assert_eq(ed.handlers[0].name, "click")
-  assert_eq(ed.path.items.length(), 0)
+  assert_true(ed.path.frames is [{ base: { steps: [], }, items: [], }])
   assert_true(resolve_leaf(ed, state) == state)
 }
 
@@ -96,7 +96,15 @@ test "click inside a rendered child component: one FieldStep per boundary" {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
-  assert_true(ed.path.items is [Plain(step=FieldStep("child"), origin=Some(0))])
+  assert_true(
+    ed.path.frames
+    is [
+      {
+        base: { steps: [], },
+        items: [Plain(step=FieldStep("child"), origin=Some(0))],
+      },
+    ],
+  )
   assert_true(resolve_leaf(ed, state) == child)
 }
 
@@ -120,12 +128,12 @@ test "click on an @each + render-it item resolves the keyed item" {
   }
   assert_eq(ed.handlers.length(), 1)
   assert_true(
-    ed.path.items
+    ed.path.frames[0].items
     is [Plain(step=EachRenderItStep(field="items", key=KStr("b")), origin=_)],
   )
   // compact abstracts it to a SeqStep; both address items["b"]
   assert_true(
-    ed.path.compact().items
+    ed.path.compact().frames[0].items
     is [Plain(step=SeqStep(field="items", key=KStr("b")), origin=_)],
   )
   assert_true(resolve_leaf(ed, state) == item_b)
@@ -149,7 +157,7 @@ test "an @each over a list resolves the indexed item" {
     fail("no event info")
   }
   assert_true(
-    ed.path.items
+    ed.path.frames[0].items
     is [Plain(step=EachRenderItStep(field="items", key=KInt(1)), origin=_)],
   )
   assert_true(resolve_leaf(ed, state) == Str("second"))
@@ -170,7 +178,9 @@ test "a scope boundary contributes a frame-only ScopeBindStep" {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
-  assert_true(ed.path.items is [Plain(step=ScopeBindStep(val=_), origin=_)])
+  assert_true(
+    ed.path.frames[0].items is [Plain(step=ScopeBindStep(val=_), origin=_)],
+  )
   // frame-only: the transaction path still resolves to the root value
   assert_true(resolve_leaf(ed, state) == state)
 }

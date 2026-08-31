@@ -1,6 +1,6 @@
 // Drag support (touch synthesis
 // lives in the browser glue). dragstart captures a DragInfo from the SOURCE
-// render: the teleported value plus a stack rebuilt WITH frame-only steps,
+// render: the resumed value plus a stack rebuilt WITH frame-only steps,
 // so handlers can read the source's @each binds via dragInfo.lookupBind.
 // `drop` bubbles across component boundaries (reconstruction's
 // BUBBLING_EVENTS) and every dispatch while a drag is active sees the
@@ -119,19 +119,17 @@ fn[N : @vdom.DomWalk] App::handle_drag(
     "dragstart" => {
       @vdom.DomNode::set_attribute(node, "data-dragging", "1")
       let root_val = self.transactor.root
-      // teleported so the dragged value resolves to its real location
+      // The active resume frame is the dragged value's real location.
       let txn_path = path.compact().to_transaction_path()
       let value = match txn_path.lookup(self.transactor.root) {
         Some(n) => n
         None => Null
       }
       let drag_type = node.attribute("data-dragtype").unwrap_or("?")
-      // the drag stack keeps frame-only steps (@each binds) — compact()
-      // would strip them; DynSteps are still teleported
+      // The drag stack keeps frame-only steps (@each binds); compact() would
+      // strip them.
       let stack0 = @render.RenderStack::new(root_val, comps=self.scope.comps)
-      let stack = @render.build_stack(path.to_transaction_path(), stack0).unwrap_or(
-        stack0,
-      )
+      let stack = @render.build_dispatch_stack(path, stack0).unwrap_or(stack0)
       self.drag = Some({
         node,
         info: Obj(DragInfoObj::{ drag_type, val: value, stack, }),

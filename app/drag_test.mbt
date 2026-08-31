@@ -1,4 +1,4 @@
-// Drag flow on the in-memory DOM: dragstart captures the teleport-resolved
+// Drag flow on the in-memory DOM: dragstart captures the resume-resolved
 // value + the source render's binds; dragover/drop manage droptarget attrs;
 // the drop handler reads dragInfo (type/value/lookupBind); dragend cleans up.
 //
@@ -33,7 +33,7 @@ fn board_comp() -> @component.Component {
       match msg {
         Receive("dropped", [Obj(info)]) => {
           // a plain @each li contributes only a frame-only step, so the
-          // teleported dragInfo.value is the COMPONENT instance (JS
+          // resumed dragInfo.value is the COMPONENT instance (JS
           // semantics); the dragged item comes from the source render's
           // binds through the kept frame steps
           let bind = (name : String) => {
@@ -92,7 +92,7 @@ test "drag lifecycle: capture, dragover attrs, drop with dragInfo, cleanup" {
   // dragover a droptarget marks it with the drag's type
   assert_true(a.dispatch(zone, @render.DomEvent::new(name="dragover")))
   assert_true(zone.get_attribute("data-draggingover") == Some("card"))
-  // drop: handler reads dragInfo (teleported value, type, source @each bind)
+  // drop: handler reads dragInfo (resumed value, type, source @each bind)
   assert_true(a.dispatch(zone, @render.DomEvent::new(name="drop")))
   assert_true(field_v(a, "received") == Str("second/yes"))
   assert_true(field_v(a, "kind") == Str("card"))
@@ -119,7 +119,7 @@ test "dragKey / dragValue / dragType answer what dragInfo would have to be opene
   }
   assert_true(a.dispatch(li, @render.DomEvent::new(name="dragstart")))
   assert_true(a.dispatch(nzone, @render.DomEvent::new(name="drop")))
-  // the source row's key, and the teleported value beside it
+  // the source row's key, and the resumed value beside it
   assert_true(field_v(a, "received") == Str("y/obj"))
   assert_true(field_v(a, "from") == Str("y"))
   assert_true(field_v(a, "kind") == Str("card"))

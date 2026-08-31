@@ -196,7 +196,7 @@ test "a view raises a message, and the lexical leg answers an intent" {
         answer(Pass)
       }),
       IntentFn((call, answer) => {
-        asked.push("second@\{call.from.items.length()}")
+        asked.push("second@\{call.from.to_transaction_path().steps.length()}")
         answer(Ok(Str("rows")))
       }),
     ],

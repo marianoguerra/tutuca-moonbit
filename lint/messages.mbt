@@ -23,7 +23,6 @@ pub fn lint_code_name(code : LintCode) -> String {
     UndeclaredMethod => "UNDECLARED_METHOD"
     ProvideNotAddressable => "PROVIDE_NOT_ADDRESSABLE"
     ProvideTypeBadShape => "PROVIDE_TYPE_BAD_SHAPE"
-    ProvideNameCollision => "PROVIDE_NAME_COLLISION"
     LookupNoProvider => "LOOKUP_NO_PROVIDER"
     UnknownComponentName => "UNKNOWN_COMPONENT_NAME"
     EventPathUnsafeStep => "EVENT_PATH_UNSAFE_STEP"
@@ -188,16 +187,11 @@ pub fn finding_message(f : Finding) -> String {
     }
     ProvideNotAddressable => {
       let comp = info_or(info, "comp", "?")
-      "'\{comp}' provides '\{name}' as \{value}, which is not addressable — a provide doubles as the path `<x render=\"*\{name}\">` teleports through, so it must be a field (`.f`) or a seq access (`.s[.k]`); this one is dropped and `*\{name}` resolves to nothing"
+      "'\{comp}' provides '\{name}' as \{value}, which is not addressable — a provide doubles as the path `<x render=\"*\{name}\">` resumes at, so it must be a field (`.f`) or a seq access (`.s[.k]`); this one is dropped and `*\{name}` resolves to nothing"
     }
     ProvideTypeBadShape => {
       let comp = info_or(info, "comp", "?")
       "'\{comp}' provides the TYPE '\{name}' as \{value}: an uppercase name publishes a component, and `\"self\"` is the only thing one can be — which is what makes a published type a component by construction rather than by trusting an expression"
-    }
-    ProvideNameCollision => {
-      let comp = info_or(info, "comp", "?")
-      let other = info_or(info, "other", "?")
-      "'\{comp}' and '\{other}' both provide '\{name}' in one scope chain, and a lookup names what it WANTS rather than who provides it — so which one a consumer reaches, and which one an edit through `*\{name}` lands on, is not decidable; rename one"
     }
     LookupNoProvider => {
       let comp = info_or(info, "comp", "?")

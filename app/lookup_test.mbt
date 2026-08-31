@@ -19,6 +19,7 @@ priv struct LkCellState {
 ///|
 priv struct LkBoardState {
   theme : String
+  lex_theme : String
   label : String
 }
 
@@ -141,7 +142,11 @@ fn lk_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Board",
-    init=LkBoardState::{ theme: "dark", label: "published", },
+    init=LkBoardState::{
+      theme: "dark",
+      lex_theme: "scope-light",
+      label: "published",
+    },
     provide={ "Cell": "self", "theme": ".theme" },
     update=(s : LkBoardState, msg, ctx) => {
       match msg {
@@ -165,6 +170,9 @@ fn lk_scope() -> @component.ComponentStack raise {
     name="Plain",
     init=LkPlainState::{ },
   )
+  scope.register_paths({
+    "theme": @tutuca.Path::new(steps=[FieldStep("lex_theme")]),
+  })
   scope.register_components([cell, slot, board, plain])
   scope.compile_all()
   scope
@@ -247,13 +255,11 @@ test "ctx.make: a name nothing answers is TYPE_NOT_FOUND" {
 }
 
 ///|
-test "ctx.lookup: a value answers on dyn, never on lex, and never on an empty route" {
+test "ctx.lookup: dyn shadows a lexical root path; explicit lex reads the scope" {
   let scope = lk_scope()
   let (tx, _) = lk_mount(scope, "Board")
   assert_eq(lk_made(tx, "readTheme"), "dark")
-  // A scope chain holds components, so a value simply misses there. That is
-  // what lets ONE default route serve both `lookup` and `make`.
-  assert_eq(lk_made(tx, "readThemeLex"), "null")
+  assert_eq(lk_made(tx, "readThemeLex"), "scope-light")
   // An empty route asks nothing rather than falling back to the default.
   assert_eq(lk_made(tx, "readThemeEmpty"), "null")
 }
@@ -339,6 +345,7 @@ impl @component.Fields for LkCellState with fn decode(f) {
 impl @component.Fields for LkBoardState with fn schema() {
   @component.SchemaInfo::new(fingerprint="lk_board_state", fields=[
     @component.FieldInfo::new("theme", TyText),
+    @component.FieldInfo::new("lex_theme", TyText),
     @component.FieldInfo::new("label", TyText),
     @component.FieldInfo::new("slot", TyComp(Some("Slot"))),
   ])
@@ -346,15 +353,21 @@ impl @component.Fields for LkBoardState with fn schema() {
 
 ///|
 impl @component.Fields for LkBoardState with fn encode(s) {
-  { "theme": Str(s.theme), "label": Str(s.label) }
+  {
+    "theme": Str(s.theme),
+    "lex_theme": Str(s.lex_theme),
+    "label": Str(s.label),
+  }
 }
 
 ///|
 impl @component.Fields for LkBoardState with fn decode(f) {
-  guard f.get("theme") is Some(Str(t)) && f.get("label") is Some(Str(l)) else {
+  guard f.get("theme") is Some(Str(t)) &&
+    f.get("lex_theme") is Some(Str(lt)) &&
+    f.get("label") is Some(Str(l)) else {
     return None
   }
-  Some({ theme: t, label: l, })
+  Some({ theme: t, lex_theme: lt, label: l, })
 }
 
 ///|

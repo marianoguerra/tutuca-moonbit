@@ -307,4 +307,12 @@ test "a compute reading `*name` is answered by the render chain it is under" {
   // Both halves read "dark": the slot's `*theme` and the compute's
   // `stack.lookup_dynamic("theme")` are the same question.
   assert_true(html.contains("dark|dark"))
+
+  // A second provider of the same name is valid and shadows by live render
+  // ancestry. No static producer search is involved.
+  let inner = shell.make({ "label": Str("light"), "child": child })
+  let outer = shell.make({ "label": Str("dark"), "child": inner })
+  let nested_root : @tutuca.Value = Map({ "a": outer })
+  let nested = to_html(pass(one_slot(), nested_root, scope, RenderCache::new()))
+  assert_true(nested.contains("light|light"))
 }

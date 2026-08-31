@@ -58,8 +58,8 @@ nothing to say about them.
 same name and resolves `*name` to the nearest binding above, falling back to
 the `default` expression when nothing is in scope (no default → `null`).
 `*name` works wherever a `.field` does, iteration and render targets included.
-The consumer never names the producer, which is why one provide name may have
-only one producer per scope chain.
+The consumer never names the producer. Multiple providers may use the same
+name; the nearest one in the live render ancestry wins.
 
 A `provide` expression must be **addressable** (`.field` or `.seq[.key]`), and
 a bad one is dropped rather than raised — `ComponentStack::check_names` reports

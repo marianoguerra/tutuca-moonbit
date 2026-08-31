@@ -35,10 +35,11 @@ handler runs against — a **position**, not a captured reference (see
 | `EachRenderItStep(field~, key~)` | an iterated `render-it` item | `<x render-it>` per iter |
 | `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `@enrich-with` |
 
-Dispatch additionally wraps steps in a `DispatchPath` of `DispatchStep`s, of
-which there are exactly two: `Plain(step~, origin~)` and `Dyn` — the
-dynamic-var (`*x`) render-target **teleport marker**, carrying the producer id,
-its own steps, and the interior component ids to drop.
+Dispatch additionally keeps the steps in a `DispatchPath`, a stack of render
+continuations. Each frame is `{ base: Path, items: Array[DispatchStep] }`; a
+`DispatchStep` is `Plain(step~, origin~)`. The first frame starts at the app
+root. Rendering a value located elsewhere pushes a frame whose `base` is that
+value's absolute app-root-relative path.
 
 `SeqAccessStep` is the important one for async correctness: it stores the
 field *names* `seq_field` and `key_field`, and resolves the key from the
@@ -49,16 +50,15 @@ live data each time it runs — see *Key resolution & async races* below.
 The reconstructed path is transformed two ways depending on use:
 
 - **`DispatchPath::compact()` → the dispatch path.** Drops frame-only
-  steps, keeps one step per crossed component (including the `Dyn`
-  markers). `pop_step()` over it walks up through every component. Used
+  steps independently in every frame and keeps the continuation stack.
+  `pop_step()` walks the active frame upward; at its top it pops the frame and
+  resumes the saved visual caller. Used
   to drive `ctx.send` and the `Dyn` leg of an intent walk, and to locate
   handlers.
 - **`DispatchPath::to_transaction_path()` → the transaction path.**
-  Teleports every `Dyn` marker (drops the steps interior to its
-  producer..consumer span and splices in the producer's own steps) so a
-  mutation lands on the data's real location. A path with no `Dyn` is
-  returned unchanged. Used by `Path::lookup` / `Path::set_value` to read
-  and write state.
+  Reads only the active frame: its absolute `base` plus its items. That is the
+  value the current handler owns, regardless of where it was visually
+  rendered. Used by `Path::lookup` / `Path::set_value` to read and write state.
 
 ## Reconstructing a path from the DOM
 
@@ -66,7 +66,8 @@ The DOM is the only thing that survives between render and click, so the
 renderer leaves breadcrumbs: `data-cid` / `data-nid` / `data-eid` on
 elements, and `§…§` comment "metas" adjacent to component boundaries,
 iteration entries, and scope boundaries (loop-less `@enrich-with`, so
-their custom binds can be replayed). On an event, the render package's
+their custom binds can be replayed). A resumed component boundary also stores
+its absolute base (and repeats it as `data-rp` on fragment-root siblings). On an event, the render package's
 event-path reconstruction walks from the target up to the root, reads
 the breadcrumbs, and rebuilds the path (`render/build_stack.mbt` mirrors
 the exact frames the renderer pushed). Along the way it resolves the
@@ -128,30 +129,28 @@ home, and is also what an intent handler can address directly with
 Walks are bounded by `@transactor.INTENT_DEPTH` hops; past it the transactor
 refuses with `RefusalCode::IntentDepth` rather than looping.
 
-## Dynamic-var teleporting
+## Rendering with a resumed path
 
-A component rendered through `<x render="*sel">` *physically lives* at the
-producer that declared `provide={ "sel": … }`, not under the consumer that
-wrote the render. The reconstructed dispatch path keeps every intermediate
-component (so bubbling visits them), but `to_transaction_path()` teleports
-the `Dyn` marker: it pops the steps tagged with the marker's `interior`
-component ids and splices in the producer's own `steps`. The mutation
-therefore lands on the producer's data, and the consumer's view of it
-updates in lock-step. Authoring view: *Teleporting* in
-[advanced.md](./advanced.md).
+A provider evaluates both halves of a lowercase binding: its value and the
+absolute path of that value. The pair is pushed into the dynamic render stack
+under the provided name. A descendant `<x render="*sel">` retrieves the nearest
+pair and renders the value after pushing its path as a continuation frame.
+There is no producer search, producer id, interior list, portal, or teleport
+rewrite during event reconstruction.
 
-`resolve_dyn_producer` recovers the producer by SCOPE SEARCH: the consumer's
-own `provide` first, then the nearest component in its registration chain that
-provides that name. A consumer does not name its producer, so that search is
-the only way back — and it is well-defined only while one provide name has one
-producer per chain, which is what `PROVIDE_NAME_COLLISION` holds authors to.
-A published TYPE (an uppercase provide name, always `"self"`) resolves to
-nothing here on purpose: a component has no path, so `<x render="*Cell">` stays
-unresolvable rather than resolving to something no edit can land on.
+This gives the two behaviors the feature needs directly:
 
-When the producer's `provide` value is a seq-access (`.sheets[.selId]`),
-the teleported steps include a `SeqAccessStep` — which is where async key
-races come from.
+- mutation uses the active frame, so an event inside the resumed component
+  updates the provider's data;
+- bubbling reaches the top of that frame and pops directly back to the visual
+  caller, then continues through the caller's ancestry.
+
+Nested providers of one lowercase name are therefore valid: ordinary render
+stack shadowing makes the nearest one win. An uppercase provide still publishes
+a component type and is not a render target because it carries no value path.
+
+When the located path is a seq-access (`.sheets[.selId]`), the frame base
+contains a `SeqAccessStep` — which is where async key races come from.
 
 ## Name lookup — two environments, one route
 
@@ -162,7 +161,7 @@ route vocabulary.
 | leg   | environment                                                        |
 |-------|--------------------------------------------------------------------|
 | `dyn` | the render ancestry — `RenderStack.dyn_binds`, keyed by plain NAME  |
-| `lex` | the registration scope chain — `ComponentStack`                     |
+| `lex` | the registration scope chain — component types and app-root-relative value paths |
 
 `ctx.lookup(name, opts)` and `ctx.make(name, args, opts)` take `opts.route`
 with the same legs, the same array-is-walk-order contract and the same default
@@ -171,8 +170,10 @@ is the one walk all of them share: legs in the order written, first non-`None`
 wins, legs evaluated lazily, and an empty route answering nothing rather than
 falling back to the default.
 
-The `lex` leg needs no stack — it is the registration scope of the component
-whose handler is running, which the dispatch position alone identifies. The
+The `lex` leg needs no render-stack search — it is the registration scope of
+the component whose handler is running. Lowercase entries are absolute paths
+looked up against the current app root; uppercase entries are component types.
+The
 `dyn` leg REBUILDS one from the ctx (`@app.ScopeNames`), because the stack that
 evaluated a handler's arguments is a local in the dispatch pipeline and is gone
 once the body runs, and a `send` or an `intent` transaction never built one.
@@ -206,9 +207,8 @@ at dispatch time by running `Path::pin_keys(cur_root)` over the
 transaction path — each `SeqAccessStep(seq_field, key_field)` becomes a
 literal `SeqStep(field, resolved_key)`. The pinned path is stored on the
 walk, so the answer updates the item that raised the intent regardless of
-later key changes. (Pinning runs on the transaction path, after
-teleporting, because the `SeqAccessStep` may have come from a `Dyn`
-marker.)
+later key changes. Pinning runs on the active transaction path, so a
+`SeqAccessStep` in a resumed frame base is pinned too.
 
 **Opt out per intent with `live_path=true`:**
 
@@ -257,5 +257,5 @@ things per step kind:
   `send`-`Receive`, `intent` and its `dyn` / `lex` route, the three
   answers, `ctx.at()`, catch-all arms, `IntentFn` registration, and the
   `live_path` option.
-- [advanced.md](./advanced.md) — dynamic bindings (`*x`) and the authoring
-  view of teleporting.
+- [advanced.md](./advanced.md) — dynamic bindings (`*x`) and resumed render
+  paths from provider or lexical scope.

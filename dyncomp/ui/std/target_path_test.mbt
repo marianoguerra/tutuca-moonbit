@@ -78,7 +78,10 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         Intent("addRequested", _) => {
           target.val = Some(ctx.target_path())
           ctx.stop_propagation()
-          Next({ ..s, status: "asked:\{ctx.target_path().items.length()}", })
+          Next({
+            ..s,
+            status: "asked:\{ctx.target_path().to_transaction_path().steps.length()}",
+          })
         }
         // A LATER dispatch, with nothing of the first one still on the stack —
         // which is the case the app is actually in when somebody picks a row

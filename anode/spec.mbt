@@ -4,9 +4,8 @@
 // declares in separate files; this file and the anode *_test.mbt suites
 // define the contract.
 //
-// Scope: parse-only. No render(stack, rx), no Renderer, no compileModifiers
-// runtime, no toPathStep/resolveDynProducer (event-path reconstruction is
-// render territory). Fragment parsing is provided by html_adapter.mbt
+// Scope: parse-only. No render stack, continuation frames, or event-path
+// reconstruction (those are render territory). Fragment parsing is provided by html_adapter.mbt
 // (parse_fragment) on top of moonbit-community/html.
 
 // ---------------------------------------------------------------------------

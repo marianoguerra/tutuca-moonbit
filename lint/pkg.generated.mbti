@@ -49,7 +49,6 @@ pub(all) enum LintCode {
   UndeclaredMethod
   ProvideNotAddressable
   ProvideTypeBadShape
-  ProvideNameCollision
   LookupNoProvider
   UnknownComponentName
   EventPathUnsafeStep

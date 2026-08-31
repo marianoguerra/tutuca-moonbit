@@ -66,7 +66,7 @@ test "dynamic-selected-edit: select changes the edit target" {
 }
 
 ///|
-test "dynamic-selected-edit: edits in the child teleport to the owner" {
+test "dynamic-selected-edit: edits in the resumed child reach the owner" {
   let h = @harness.mount_example(
     dynamic_selected_edit_module(),
     "Second selected",

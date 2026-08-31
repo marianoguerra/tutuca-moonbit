@@ -5,7 +5,7 @@
 // suites define the contract.
 //
 // Layering note: this package owns the path CORE (steps, resolve/update,
-// dispatch-path compaction + teleporting via DispatchPath::to_transaction_path
+// dispatch-path compaction + render-continuation frames
 // below). The pieces that need the view registry, the rendered DOM, or the
 // component stack live one layer up, where they were implemented:
 //   - frame-only steps + stack rebuild -> render's
@@ -15,8 +15,7 @@
 //     backend glue + App::dispatch (which extract target/event-name);
 //   - dispatch channels (send/bubble/request/response) -> the transactor
 //     package.
-// DynStep teleporting itself IS here — see
-// DispatchPath::to_transaction_path.
+// Resumed render paths are represented directly as DispatchPath frames.
 
 ///|
 /// Dispatch buckets a handler can live in (semantics.md §6). Alter is
@@ -256,9 +255,8 @@ pub(open) trait Ctx {
   ///
   /// The same two environments an intent walks: `dyn` the render ancestry —
   /// what an ancestor published with `provide` — and `lex` the registration
-  /// scope. A scope chain holds components, so a VALUE never answers on the
-  /// `lex` leg; that is not a hole but the reason one default route serves both
-  /// this and `make`.
+  /// scope. A lexical value name denotes an app-root-relative path; a lexical
+  /// type name denotes a registered component.
   ///
   /// `Null` when every leg misses and the component declares no default.
   fn lookup(Self, name : String, opts : LookupOpts) -> Value = _
@@ -471,34 +469,27 @@ declare pub fn Path::pin_keys(self : Path, root : Value) -> Path
 declare pub fn Path::to_keys(self : Path) -> Array[StepKey]
 
 ///|
-/// One hop of a dispatch path — the component-boundary projection of an event
-/// path. Plain wraps an addressing step with its origin (the id of the
-/// component that contributed it — teleport provenance); Dyn marks a dynamic
-/// variable (`*dyn`) used as a render target: the rendered data lives at the
-/// PRODUCER component (where the dynamic was defined), not at the consumer
-/// that wrote `<x render="*dyn">`, so `interior` lists the component ids
-/// crossed between producer and consumer, and `steps` is the producer's own
-/// path to the data. `key` is set when the dynamic is ITERATED (the item lives
-/// at the producer's sequence field under that key) — the one thing that used
-/// to be a whole second variant, `DynEach`, which differed in nothing else and
-/// so was matched alongside `Dyn` everywhere except the one line that reads
-/// the key.
+/// One ordinary hop inside a render-path frame. `origin` is the component id
+/// that contributed it.
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
-  Dyn(
-    producer~ : Int,
-    steps~ : Array[Step],
-    interior~ : Array[Int],
-    key~ : PathKey?
-  )
 } derive(Debug, Eq)
 
 ///|
-/// A path that still knows which component contributed each hop. Bubbling
-/// pops one hop per component; converting to a transaction Path teleports
-/// every Dyn marker so mutations land on the data's real location.
-pub(all) struct DispatchPath {
+/// One frame of a render path. `base` is the absolute transaction path where
+/// rendering resumed; `items` are the ordinary visual descendants rendered
+/// from there.
+pub(all) struct DispatchFrame {
+  base : Path
   items : Array[DispatchStep]
+} derive(Debug, Eq)
+
+///|
+/// A render path as a stack of continuations. Normal rendering extends the
+/// top frame. Rendering a located binding pushes a new frame. Bubbling removes
+/// top-frame steps, then pops the frame to return to the visual caller.
+pub(all) struct DispatchPath {
+  frames : Array[DispatchFrame]
 } derive(Debug, Eq)
 
 ///|
@@ -516,22 +507,38 @@ declare pub fn DispatchPath::concat(
 ) -> DispatchPath
 
 ///|
+/// Append one already-annotated item to the active frame.
+declare pub fn DispatchPath::push_item(
+  self : DispatchPath,
+  item : DispatchStep,
+) -> DispatchPath
+
+///|
+/// Push a render continuation based at the absolute transaction `path`.
+declare pub fn DispatchPath::push_frame(
+  self : DispatchPath,
+  path : Path,
+) -> DispatchPath
+
+///|
+/// Whether bubbling has a visual parent to visit.
+declare pub fn DispatchPath::can_pop(self : DispatchPath) -> Bool
+
+///|
+/// Whether the active transaction address is the state root.
+declare pub fn DispatchPath::is_root(self : DispatchPath) -> Bool
+
+///|
 /// One component closer to the root (bubbling walks this).
 declare pub fn DispatchPath::pop_step(self : DispatchPath) -> DispatchPath
 
 ///|
-/// The dispatch projection: frame-only plain steps dropped, EachRenderItStep
-/// abstracted, Dyn markers KEPT (bubbling must still visit the components
-/// interior to a dynamic-var render). Origins are preserved.
+/// Drop frame-only steps independently inside every continuation frame.
 declare pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath
 
 ///|
-/// The abstract path used to apply a transaction: every Dyn marker is
-/// teleported — the trailing steps whose origin is interior to the
-/// producer..consumer span are dropped and the producer's own steps spliced
-/// in (stamped with the producer id, so a Dyn nested inside another
-/// teleports correctly). An iterated Dyn splices a keyed SeqStep for its last
-/// FieldStep; a seq-access dynamic cannot be iterated and splices unchanged.
+/// The active transaction address: the top frame's absolute base followed by
+/// its ordinary descendant steps. Saved caller frames affect bubbling only.
 declare pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path
 
 ///|

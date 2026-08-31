@@ -1,7 +1,7 @@
-// Dynamic-var teleporting end-to-end (semantics.md §7): Workspace provides `.sheet`; a Toolbar deep in the tree
+// Dynamic render resumption end-to-end: Workspace provides `.sheet`; a Toolbar deep in the tree
 // renders `*active`; clicking inside the sheet must reconstruct a dispatch
 // path that walks every intermediate component (bubbling) while the
-// TRANSACTION path teleports to the producer's data.
+// active transaction frame addresses the provider's data.
 
 ///|
 priv struct SheetState {
@@ -38,20 +38,20 @@ fn sheet_comp() -> @component.Component {
 // component rather than in what its state says about itself.
 
 ///|
-priv struct TelePanelState {
+priv struct ResumePanelState {
   seen : Bool
 }
 
 ///|
-priv struct TeleWorkspaceState {
+priv struct ResumeWorkspaceState {
   seen : Bool
 }
 
 ///|
-priv struct TeleSoloState {} derive(Default)
+priv struct ResumeSoloState {} derive(Default)
 
 ///|
-priv struct TeleLonelyState {} derive(Default)
+priv struct ResumeLonelyState {} derive(Default)
 
 ///|
 priv struct SeenState {
@@ -71,7 +71,7 @@ fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> @component
 }
 
 ///|
-fn teleport_scope() -> @component.ComponentStack raise {
+fn resume_path_scope() -> @component.ComponentStack raise {
   let scope = @component.ComponentStack::new()
   let toolbar = @component.component(
     views={
@@ -93,7 +93,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Panel",
-    init=TelePanelState::{ seen: false, },
+    init=ResumePanelState::{ seen: false, },
     update=(_s, msg, _ctx) => {
       match msg {
         Intent("sheet-poked", _) => Next({ seen: true, })
@@ -109,7 +109,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Workspace",
-    init=TeleWorkspaceState::{ seen: false, },
+    init=ResumeWorkspaceState::{ seen: false, },
     provide={ "active": ".sheet" },
     update=(_s, msg, _ctx) => {
       match msg {
@@ -140,8 +140,8 @@ fn assert_v(got : @tutuca.Value, want : @tutuca.Value) -> Unit raise {
 }
 
 ///|
-test "dyn render: dispatch path keeps intermediates, txn path teleports" {
-  let scope = teleport_scope()
+test "dyn render: caller frame is saved and active frame addresses the value" {
+  let scope = resume_path_scope()
   guard scope.lookup_component("Workspace") is Some(ws) else {
     fail("no Workspace")
   }
@@ -161,23 +161,22 @@ test "dyn render: dispatch path keeps intermediates, txn path teleports" {
     is Some(ed) else {
     fail("no event info")
   }
-  // one hop per crossed component, ending in the Dyn marker whose interior
-  // spans consumer..producer (toolbar, panel, AND the producer's own
-  // render-site step)
+  // The visual caller remains in the first frame; the dynamic render pushes
+  // the provider's concrete value path as a second frame.
   assert_true(
-    ed.path.items
+    ed.path.frames
     is [
-      Plain(step=FieldStep("panel"), ..),
-      Plain(step=FieldStep("toolbar"), ..),
-      Dyn(steps=[FieldStep("sheet")], ..),
+      {
+        base: { steps: [], },
+        items: [
+          Plain(step=FieldStep("panel"), ..),
+          Plain(step=FieldStep("toolbar"), ..),
+        ],
+      },
+      { base: { steps: [FieldStep("sheet")], }, items: [], },
     ],
   )
-  guard ed.path.items is [_, _, Dyn(producer~, interior~, ..)] else {
-    fail("no dyn marker")
-  }
-  assert_eq(producer, ws.id)
-  assert_eq(interior.length(), 3)
-  // the transaction path collapses to the producer's data
+  // The active transaction path is the resumed provider data.
   assert_true(ed.path.to_transaction_path().steps is [FieldStep("sheet")])
   // and dispatching the click mutates Workspace.sheet in place
   let tx = @transactor.Transactor::new(root)
@@ -188,8 +187,78 @@ test "dyn render: dispatch path keeps intermediates, txn path teleports" {
 }
 
 ///|
-test "bubbling from a teleported leaf visits every intermediate component" {
-  let scope = teleport_scope()
+test "lexical resume path renders and dispatches without a root provider" {
+  let dynamic_scope = resume_path_scope()
+  guard dynamic_scope.lookup_component("Toolbar") is Some(toolbar) &&
+    dynamic_scope.lookup_component("Panel") is Some(panel) else {
+    fail("missing fixture components")
+  }
+  let sheet = @component.component(
+    views={
+      // A fragment root forces the second button to reconstruct from the
+      // repeated data-cid/data-rp attributes rather than the first Comp meta.
+      "main": @anode.View::new(
+        "main",
+        raw_view="<h2><x text=\".title\"></x></h2><button>first</button><button class=\"rename\" @on.click=\"rename 'Q2'\">r</button>",
+      ),
+    },
+    name="Sheet",
+    init=SheetState::{ title: "Q1", },
+    update=(_s : SheetState, msg, _ctx) => {
+      match msg {
+        Receive("rename", [Str(title)]) => Next({ title, })
+        _ => Unhandled
+      }
+    },
+  )
+  let workspace = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<main><x render=\".panel\"></x></main>",
+      ),
+    },
+    name="LexWorkspace",
+    init=ResumeWorkspaceState::{ seen: false, },
+  )
+  let scope = @component.ComponentStack::new()
+  // This belongs to the lexical module/session scope. LexWorkspace itself
+  // publishes nothing and exists only because it is the component we mount.
+  scope.register_paths({
+    "active": @tutuca.Path::new(steps=[FieldStep("sheet")]),
+  })
+  scope.register_components([sheet, toolbar, panel, workspace])
+  scope.compile_all()
+  let root = workspace.make(Map([]))
+  let container = mount(scope.comps, root)
+  assert_true(container.to_html().contains("Q1"))
+  guard find_el(container, "BUTTON", nth=1) is Some(rename_btn) else {
+    fail("no rename button")
+  }
+  guard @render.from_node_and_event_name(
+      rename_btn,
+      "click",
+      container,
+      scope.comps,
+    )
+    is Some(ed) else {
+    fail("no event info")
+  }
+  assert_true(ed.path.frames.length() == 2)
+  assert_true(ed.path.frames[1].base.steps is [FieldStep("sheet")])
+  let tx = @transactor.Transactor::new(
+    root,
+    names=@app.ScopeNames::new(scope.comps),
+  )
+  assert_true(
+    @app.dispatch_dom_event(tx, rename_btn, "click", container, scope.comps),
+  )
+  assert_true(v_at(tx, [FieldStep("sheet"), FieldStep("title")]) == Str("Q2"))
+}
+
+///|
+test "bubbling from a resumed leaf returns through the visual caller" {
+  let scope = resume_path_scope()
   guard scope.lookup_component("Workspace") is Some(ws) else {
     fail("no Workspace")
   }
@@ -213,7 +282,7 @@ test "bubbling from a teleported leaf visits every intermediate component" {
 }
 
 ///|
-test "own-provide: a component rendering its own dynamic teleports to itself" {
+test "own-provide: a component can resume at its own dynamic value" {
   let scope = @component.ComponentStack::new()
   let solo = @component.component(
     views={
@@ -223,7 +292,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
       ),
     },
     name="Solo",
-    init=TeleSoloState::{ },
+    init=ResumeSoloState::{ },
     provide={ "active": ".sheet" },
   )
   scope.register_components([sheet_comp(), solo])
@@ -243,7 +312,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
 }
 
 ///|
-test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
+test "iterated dynamic (@each *rows + render-it) resumes at the keyed item" {
   let scope = @component.ComponentStack::new()
   let list = @component.component(
     views={
@@ -306,7 +375,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
 }
 
 ///|
-test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
+test "seq-access dynamic (.sheets[.selId]) resumes at the live-keyed item" {
   let scope = @component.ComponentStack::new()
   let viewer = @component.component(
     views={
@@ -376,7 +445,7 @@ test "lookup default: a consumer without its producer falls back" {
       ),
     },
     name="Lonely",
-    init=TeleLonelyState::{ },
+    init=ResumeLonelyState::{ },
     lookup=[@component.lookup_or("active", ".backup")],
   )
   scope.register_components([sheet_comp(), lonely])
@@ -474,7 +543,7 @@ impl @component.Fields for SeenState with fn schema() {
 }
 
 ///|
-impl @component.Fields for TelePanelState with fn schema() {
+impl @component.Fields for ResumePanelState with fn schema() {
   @component.SchemaInfo::new(fingerprint="tele_panel_state", fields=[
     @component.FieldInfo::new("seen", TyBool),
     @component.FieldInfo::new("toolbar", TyComp(Some("Toolbar"))),
@@ -482,18 +551,18 @@ impl @component.Fields for TelePanelState with fn schema() {
 }
 
 ///|
-impl @component.Fields for TelePanelState with fn encode(s) {
+impl @component.Fields for ResumePanelState with fn encode(s) {
   { "seen": Bool(s.seen) }
 }
 
 ///|
-impl @component.Fields for TelePanelState with fn decode(f) {
+impl @component.Fields for ResumePanelState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
   Some({ seen: v, })
 }
 
 ///|
-impl @component.Fields for TeleWorkspaceState with fn schema() {
+impl @component.Fields for ResumeWorkspaceState with fn schema() {
   @component.SchemaInfo::new(fingerprint="tele_workspace_state", fields=[
     @component.FieldInfo::new("seen", TyBool),
     @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
@@ -502,47 +571,47 @@ impl @component.Fields for TeleWorkspaceState with fn schema() {
 }
 
 ///|
-impl @component.Fields for TeleWorkspaceState with fn encode(s) {
+impl @component.Fields for ResumeWorkspaceState with fn encode(s) {
   { "seen": Bool(s.seen) }
 }
 
 ///|
-impl @component.Fields for TeleWorkspaceState with fn decode(f) {
+impl @component.Fields for ResumeWorkspaceState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
   Some({ seen: v, })
 }
 
 ///|
-impl @component.Fields for TeleSoloState with fn schema() {
+impl @component.Fields for ResumeSoloState with fn schema() {
   @component.SchemaInfo::new(fingerprint="tele_solo_state", fields=[
     @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
   ])
 }
 
 ///|
-impl @component.Fields for TeleSoloState with fn encode(_s) {
+impl @component.Fields for ResumeSoloState with fn encode(_s) {
   Map([])
 }
 
 ///|
-impl @component.Fields for TeleSoloState with fn decode(_f) {
+impl @component.Fields for ResumeSoloState with fn decode(_f) {
   Some(Default::default())
 }
 
 ///|
-impl @component.Fields for TeleLonelyState with fn schema() {
+impl @component.Fields for ResumeLonelyState with fn schema() {
   @component.SchemaInfo::new(fingerprint="tele_lonely_state", fields=[
     @component.FieldInfo::new("backup", TyComp(Some("Sheet"))),
   ])
 }
 
 ///|
-impl @component.Fields for TeleLonelyState with fn encode(_s) {
+impl @component.Fields for ResumeLonelyState with fn encode(_s) {
   Map([])
 }
 
 ///|
-impl @component.Fields for TeleLonelyState with fn decode(_f) {
+impl @component.Fields for ResumeLonelyState with fn decode(_f) {
   Some(Default::default())
 }
 

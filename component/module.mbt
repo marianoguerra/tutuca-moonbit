@@ -4,11 +4,12 @@
 pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
+  paths? : Map[String, @tutuca.Path] = Map([]),
   macros? : Map[String, @anode.Macro] = Map([]),
   intents? : Map[String, Array[IntentFn]] = Map([]),
   examples? : Array[ExampleDef] = [],
 ) -> ModuleDef {
-  { name, components, macros, intents, examples, }
+  { name, components, paths, macros, intents, examples, }
 }
 
 ///|
@@ -18,6 +19,7 @@ pub fn ModuleDef::register_into(
   self : ModuleDef,
   scope : ComponentStack,
 ) -> Unit {
+  scope.register_paths(self.paths)
   scope.register_macros(self.macros)
   scope.register_intent_handlers(self.intents)
   scope.register_components(self.components)

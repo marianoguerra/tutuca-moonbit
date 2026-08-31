@@ -48,7 +48,7 @@ fn ScopeNames::stack_at(
     _ => ()
   }
   let base = @render.RenderStack::new(root, comps=self.comps)
-  let built = @render.build_stack(at.to_transaction_path(), base)
+  let built = @render.build_dispatch_stack(at, base)
   self.memo_root = Some(root)
   self.memo_at = Some(at)
   self.memo_stack = built
@@ -96,6 +96,20 @@ pub impl @transactor.Names for ScopeNames with fn dyn_type(self, root, at, name)
     Some(s) => s.lookup_dyn_type(name)
     None => None
   }
+}
+
+///|
+/// Lexical values are registered as absolute paths from the app state root.
+pub impl @transactor.Names for ScopeNames with fn lex_value(
+  self,
+  root,
+  at,
+  name,
+) {
+  guard self.comp_at(root, at) is Some(comp) else { return None }
+  guard comp.scope is Some(scope) else { return None }
+  guard scope.lookup_path(name) is Some(path) else { return None }
+  path.lookup(root)
 }
 
 ///|

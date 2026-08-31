@@ -17,8 +17,6 @@ pub fn lookup_name(String) -> LookupSpec
 
 pub fn lookup_or(String, String) -> LookupSpec
 
-pub fn resolve_dyn_producer(Component, String) -> DynProducer?
-
 pub fn schema_mutators(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
 
 pub fn schema_writers(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
@@ -58,6 +56,7 @@ pub struct ComponentStack {
   comps : Components
   parent : ComponentStack?
   by_name : Map[String, Component]
+  paths : Map[String, @core.Path]
   intents : Map[String, Array[IntentFn]]
   macros : Map[String, @anode.Macro]
 }
@@ -67,11 +66,12 @@ pub fn ComponentStack::component_names(Self) -> Array[String]
 pub fn ComponentStack::enter(Self) -> Self
 pub fn ComponentStack::lookup_component(Self, String) -> Component?
 pub fn ComponentStack::lookup_intent(Self, String) -> Array[IntentFn]
-pub fn ComponentStack::lookup_provider(Self, String) -> Component?
+pub fn ComponentStack::lookup_path(Self, String) -> @core.Path?
 pub fn ComponentStack::new(comps? : Components) -> Self
 pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
 pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[IntentFn]]) -> Unit
 pub fn ComponentStack::register_macros(Self, Map[String, @anode.Macro]) -> Unit
+pub fn ComponentStack::register_paths(Self, Map[String, @core.Path]) -> Unit
 pub impl @anode.MacroScope for ComponentStack
 pub impl @core.ComponentSource for ComponentStack
 
@@ -91,17 +91,13 @@ pub(all) enum Dispatch {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynBinds {
-  binds : Map[String, @core.Value]
+  binds : Map[String, LocatedValue]
   types : Map[String, Int]
   parent : DynBinds?
 }
 pub fn DynBinds::lookup(Self, String) -> @core.Value?
+pub fn DynBinds::lookup_located(Self, String) -> LocatedValue?
 pub fn DynBinds::lookup_type(Self, String) -> Int?
-
-pub(all) struct DynProducer {
-  producer : Int
-  steps : Array[@core.Step]
-} derive(Eq, @debug.Debug)
 
 pub(all) struct ExampleDef {
   component : String
@@ -117,6 +113,11 @@ pub(all) struct FieldBox {
 }
 
 pub(all) struct IntentFn((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Unit)
+
+pub(all) struct LocatedValue {
+  value : @core.Value
+  path : @core.Path
+} derive(Eq, @debug.Debug)
 
 pub(all) struct LookupInfo {
   name : String
@@ -148,12 +149,13 @@ pub fn LoopWith::to_value(Self) -> @core.Value
 pub(all) struct ModuleDef {
   name : String
   components : Array[Component]
+  paths : Map[String, @core.Path]
   macros : Map[String, @anode.Macro]
   intents : Map[String, Array[IntentFn]]
   examples : Array[ExampleDef]
 }
 pub fn ModuleDef::build_scope(Self) -> ComponentStack raise
-pub fn ModuleDef::new(name~ : String, components~ : Array[Component], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
+pub fn ModuleDef::new(name~ : String, components~ : Array[Component], paths? : Map[String, @core.Path], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
 pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
 
 pub(all) struct ProvideInfo {

@@ -72,7 +72,7 @@ fn chk_findings(
 ///|
 test "a provide that is not addressable is reported, not raised" {
   // `$doIt` is a method call: it has no path, so it cannot be the target a
-  // `<x render="*bad">` teleports through. compile() drops it silently and
+  // `<x render="*bad">` resumes at. compile() drops it silently and
   // this is where that is said.
   let fs = chk_findings([
     chk_comp("Solo", provide={ "bad": "$doIt", "ok": ".n" }),
@@ -94,18 +94,14 @@ test "a published type that is not \"self\" is reported" {
 }
 
 ///|
-test "two producers of one name in a chain is an error" {
-  // A lookup names what it WANTS, so with two producers there is no answer to
-  // which one it reaches — or which one an edit through `*items` lands on.
+test "two producers of one name are valid: render ancestry shadows nearest" {
+  // The provider is selected from the live render stack, so two declarations
+  // are not ambiguous. The innermost rendered provider wins.
   let fs = chk_findings([
     chk_comp("Left", provide={ "items": ".n" }),
     chk_comp("Right", provide={ "items": ".n" }),
   ])
-  assert_eq(
-    fs.filter(f => f.0 == "PROVIDE_NAME_COLLISION").length(),
-    // Once per producer: each is the other's collision.
-    2,
-  )
+  assert_false(fs.iter().any(f => f.2 == "items"))
 }
 
 ///|

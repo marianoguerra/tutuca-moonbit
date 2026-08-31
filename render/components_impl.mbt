@@ -99,15 +99,3 @@ pub impl Boundaries for @component.Components with fn events_for(
     None => None
   }
 }
-
-///|
-pub impl Boundaries for @component.Components with fn dyn_producer(
-  self,
-  cid,
-  name,
-) {
-  match self.get_component_for_id(cid) {
-    Some(comp) => @component.resolve_dyn_producer(comp, name)
-    None => None
-  }
-}

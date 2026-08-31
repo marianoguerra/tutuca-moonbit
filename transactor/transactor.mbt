@@ -677,14 +677,9 @@ impl @tutuca.Ctx for EventContext with fn lookup(self, name, opts) {
   let root = tx.root
   let at = self.txn.path
   match
-    @tutuca.route_lookup(
-      opts.route,
-      // The registration scope holds components, so a value never answers
-      // here. Walking the leg anyway is what keeps `route=[Lex]` an honest
-      // miss rather than a silent fallthrough to the other one.
-      () => None,
-      () => tx.names.dyn_value(root, at, name),
-    ) {
+    @tutuca.route_lookup(opts.route, () => tx.names.lex_value(root, at, name), () => {
+      tx.names.dyn_value(root, at, name)
+    }) {
     Some(v) => v
     None => {
       // A qualified lookup is an exercised protocol assumption. Keep the

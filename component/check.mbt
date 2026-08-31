@@ -74,22 +74,6 @@ fn Component::check_provides(
       )
     }
   }
-  // One provide name, one producer per chain. Without it `lookup_provider`
-  // has no defensible answer, and neither does the teleport that reads it.
-  guard self.scope is Some(scope) else { return }
-  for pname, _ in self.provide {
-    match scope.lookup_provider_other(pname, self.id) {
-      Some(other) =>
-        out.push(
-          name_finding(ProvideNameCollision, Error, [
-            ("comp", self.name),
-            ("name", pname),
-            ("other", other.name),
-          ]),
-        )
-      None => ()
-    }
-  }
 }
 
 ///|
@@ -114,7 +98,7 @@ fn Component::check_lookups(
       }
       continue
     }
-    if scope.lookup_provider(name) is None {
+    if !scope.has_provider(name) && scope.lookup_path(name) is None {
       // Whether a provider is actually ABOVE this component when it renders is
       // a runtime fact no checker can settle, so a declared default makes this
       // advice rather than an error: the default is what every read gets, and
@@ -128,25 +112,6 @@ fn Component::check_lookups(
         ]),
       )
     }
-  }
-}
-
-///|
-/// The first component OTHER than `except` along the chain that provides
-/// `name`. The collision check's half of `lookup_provider`.
-fn ComponentStack::lookup_provider_other(
-  self : ComponentStack,
-  name : String,
-  except : Int,
-) -> Component? {
-  for _, comp in self.by_name {
-    if comp.id != except && comp.provide.contains(name) {
-      return Some(comp)
-    }
-  }
-  match self.parent {
-    Some(p) => p.lookup_provider_other(name, except)
-    None => None
   }
 }
 

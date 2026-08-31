@@ -1,8 +1,8 @@
 // Dynamic bindings — a producer publishes a value under a name; any
 // descendant reads it as `*name` (provide / lookup), and `*name` also works
-// as a RENDER TARGET (teleport).
+// as a RENDER TARGET (path resumption).
 // `provide` must be ADDRESSABLE (a field or a `.seq[.key]` access), because it
-// doubles as the teleport path — a method or a constant is a lint error.
+// doubles as the resume path — a method or a constant is a lint error.
 
 ///|
 fn selector_entry_comp() -> @component.Component {

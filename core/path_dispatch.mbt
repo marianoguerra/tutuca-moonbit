@@ -1,17 +1,13 @@
-// Dispatch paths: compact()/to_transaction_path() over paths that
-// carry DynStep markers and per-step component provenance.
+// Dispatch paths as a stack of render continuations.
 
 ///|
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> DispatchPath {
-  match items {
-    Some(i) => { items: i, }
-    None => { items: [], }
-  }
+  { frames: [{ base: Path::new(), items: items.unwrap_or([]), }], }
 }
 
 ///|
 pub fn DispatchPath::of_steps(steps : Array[Step]) -> DispatchPath {
-  { items: steps.map(s => Plain(step=s, origin=None)), }
+  DispatchPath::new(items=steps.map(s => Plain(step=s, origin=None)))
 }
 
 ///|
@@ -19,79 +15,92 @@ pub fn DispatchPath::concat(
   self : DispatchPath,
   steps : Array[Step],
 ) -> DispatchPath {
-  let items = self.items.copy()
+  guard self.frames is [.. init, last] else {
+    return DispatchPath::of_steps(steps)
+  }
+  let items = last.items.copy()
   for s in steps {
     items.push(Plain(step=s, origin=None))
   }
-  { items, }
+  { frames: [..init, { ..last, items, }], }
+}
+
+///|
+pub fn DispatchPath::push_item(
+  self : DispatchPath,
+  item : DispatchStep,
+) -> DispatchPath {
+  guard self.frames is [.. init, last] else {
+    return DispatchPath::new(items=[item])
+  }
+  let items = last.items.copy()
+  items.push(item)
+  { frames: [..init, { ..last, items, }], }
+}
+
+///|
+pub fn DispatchPath::push_frame(
+  self : DispatchPath,
+  path : Path,
+) -> DispatchPath {
+  let frames = self.frames.copy()
+  frames.push({ base: path, items: [], })
+  { frames, }
+}
+
+///|
+pub fn DispatchPath::can_pop(self : DispatchPath) -> Bool {
+  match self.frames {
+    [.. init, last] => !last.items.is_empty() || !init.is_empty()
+    [] => false
+  }
+}
+
+///|
+pub fn DispatchPath::is_root(self : DispatchPath) -> Bool {
+  self.to_transaction_path().steps.is_empty()
 }
 
 ///|
 pub fn DispatchPath::pop_step(self : DispatchPath) -> DispatchPath {
-  let n = self.items.length()
-  if n == 0 {
-    self
+  guard self.frames is [.. init, last] else { return self }
+  if !last.items.is_empty() {
+    let items = last.items[0:last.items.length() - 1].to_owned()
+    { frames: [..init, { ..last, items, }], }
+  } else if !init.is_empty() {
+    { frames: init.to_owned(), }
   } else {
-    { items: self.items[0:n - 1].to_owned(), }
+    self
   }
 }
 
 ///|
 pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath {
-  let items : Array[DispatchStep] = []
-  for item in self.items {
-    match item {
-      Plain(step~, origin~) =>
-        match step_to_abstract(step) {
-          Some(s) => items.push(Plain(step=s, origin~))
-          None => () // frame-only: dropped
-        }
-      _ => items.push(item) // Dyn markers survive: bubbling visits them
-    }
-  }
-  { items, }
-}
-
-///|
-/// The steps a Dyn marker splices into the transaction path in place of the
-/// dropped interior span.
-fn teleport_steps(item : DispatchStep) -> Array[Step] {
-  match item {
-    Plain(..) => []
-    Dyn(steps~, key=None, ..) => steps
-    // Iterated: the last field access becomes a keyed one.
-    Dyn(steps~, key=Some(key), ..) =>
-      match steps {
-        [.. init, FieldStep(f)] => {
-          let out = init.to_owned()
-          out.push(SeqStep(field=f, key~))
-          out
-        }
-        // A seq-access dynamic (`.a[.b]`) cannot address an iterated item; a
-        // key-only step does not exist. Splice unchanged rather than build a
-        // broken step.
-        _ => steps
+  let frames : Array[DispatchFrame] = []
+  for frame in self.frames {
+    let items : Array[DispatchStep] = []
+    for item in frame.items {
+      match item {
+        Plain(step~, origin~) =>
+          match step_to_abstract(step) {
+            Some(s) => items.push(Plain(step=s, origin~))
+            None => ()
+          }
       }
+    }
+    frames.push({ ..frame, items, })
   }
+  { frames, }
 }
 
 ///|
 pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path {
-  let out : Array[(Step, Int?)] = []
-  for item in self.items {
+  guard self.frames is [.., frame] else { return Path::new() }
+  let out = frame.base.steps.copy()
+  for item in frame.items {
     match item {
-      Plain(step~, origin~) => out.push((step, origin))
-      Dyn(producer~, interior~, ..) => {
-        // rewind the steps contributed by components interior to the
-        // producer..consumer span — the data does not live under them
-        while out is [.., (_, Some(cid))] && interior.contains(cid) {
-          let _ = out.pop()
-        }
-        for ts in teleport_steps(item) {
-          out.push((ts, Some(producer)))
-        }
-      }
+      Plain(step~, ..) => out.push(step)
     }
   }
-  { steps: out.map(p => p.0), }
+  { steps: out, }
 }

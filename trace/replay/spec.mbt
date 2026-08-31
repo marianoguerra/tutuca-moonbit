@@ -21,13 +21,14 @@
 /// the file does not already prove.
 ///
 /// The limit that mode would have covered is real and is left standing: an
-/// intent raised inside a `*dyn` render target walks the RENDER ancestry, and a
-/// stored address is the transaction path, so a reconstructed walk follows the
-/// data ancestry instead. For a MESSAGE this is lossless —
-/// `to_transaction_path` has already teleported the marker to where the data
-/// lives, which is what the message mutates. For such an intent it is not, and
-/// what happens then is the good failure: `verify` reports a divergence rather
-/// than a rerun that quietly did something else.
+/// intent raised inside a `*dyn` render target walks the RENDER continuation
+/// frames, while a stored address keeps only the active transaction path. A
+/// reconstructed walk therefore cannot recover the visual callers that were
+/// popped after the active path reached its root. For a MESSAGE this is
+/// lossless — the active transaction path is exactly what the message mutates.
+/// For such an intent it is not, and what happens then is the good failure:
+/// `verify` reports a divergence rather than a rerun that quietly did something
+/// else.
 pub(all) enum Fidelity {
   Live
 } derive(Eq, Debug)
@@ -60,10 +61,9 @@ pub suberror ReplayError {
   /// difference between them is the whole report.
   ///
   /// The one case where this fires and the app is fine: an intent that bubbles
-  /// through a `*dyn` render target. A stored address is the TRANSACTION path,
-  /// which teleports a dynamic marker to where the data lives — right for a
-  /// message, and not the route the walk actually took. `Fidelity::Scripted`
-  /// is for that case.
+  /// through a `*dyn` render target. A stored address is the active TRANSACTION
+  /// path, which is right for a message but omits the caller frames the live
+  /// intent walk used.
   Diverged(at~ : Int, want~ : @trace.Event, got~ : @trace.Event)
   /// The root component's shape moved since the recording was taken.
   ///

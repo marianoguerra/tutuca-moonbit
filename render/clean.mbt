@@ -8,7 +8,8 @@ pub fn is_internal_attr(name : String) -> Bool {
   name == "data-eid" ||
   name == "data-vid" ||
   name == "data-si" ||
-  name == "data-sk"
+  name == "data-sk" ||
+  name == "data-rp"
 }
 
 ///|

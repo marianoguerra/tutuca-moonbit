@@ -13,6 +13,7 @@ pub fn RenderStack::new(
   event_paths? : @eventpath.EventPathProfile = Open,
 ) -> RenderStack {
   let stack : RenderStack = {
+    root: it,
     it,
     binds,
     parent: None,
@@ -20,6 +21,8 @@ pub fn RenderStack::new(
     is_frame: true,
     comps,
     dyn_binds: None,
+    render_path: @tutuca.DispatchPath::new(),
+    pending_frame: false,
     event,
     event_paths,
   }
@@ -32,8 +35,24 @@ pub fn RenderStack::enter(
   it : @tutuca.Value,
   binds : Map[String, @tutuca.Value],
   is_frame? : Bool = true,
+  render_path? : @tutuca.DispatchPath,
+  pending_frame? : Bool,
 ) -> RenderStack {
-  let stack : RenderStack = { ..self, it, binds, parent: Some(self), is_frame, }
+  let stack : RenderStack = {
+    ..self,
+    it,
+    binds,
+    parent: Some(self),
+    is_frame,
+    render_path: render_path.unwrap_or(self.render_path),
+    pending_frame: pending_frame.unwrap_or(
+      if is_frame {
+        false
+      } else {
+        self.pending_frame
+      },
+    ),
+  }
   // only frames publish provides (JS: enter() calls _pushProvides when
   // isFrame — dynamic vars come from component boundaries, not scopes)
   if is_frame {
@@ -57,9 +76,14 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   if comp.provide.is_empty() && comp.provide_type.is_empty() {
     return self
   }
-  let binds : Map[String, @tutuca.Value] = Map([])
+  let binds : Map[String, @component.LocatedValue] = Map([])
+  let base = self.render_path.to_transaction_path()
   for _, p in comp.provide {
-    binds[p.name] = p.val.eval(self)
+    match p.val.to_path_item() {
+      Some(step) =>
+        binds[p.name] = { value: p.val.eval(self), path: base.concat([step]), }
+      None => () // compile() already drops this shape
+    }
   }
   let types : Map[String, Int] = Map([])
   for tname, cid in comp.provide_type {
@@ -180,24 +204,57 @@ pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
 /// CONSUMER's declaration and is evaluated against the consumer's stack, which
 /// is why it is consulted only after the whole chain has missed.
 pub impl @tutuca.Stack for RenderStack with fn lookup_dynamic(self, name) {
-  let bound : @tutuca.Value? = match self.dyn_binds {
-    Some(db) => db.lookup(name)
-    None => None
-  }
-  match bound {
-    Some(v) => v
+  match self.lookup_dynamic_located(name) {
+    Some(v) => v.value
     None => {
       guard self.comps is Some(comps) else { return Null }
       guard comps.get_comp_for(self.it) is Some(comp) else { return Null }
       match comp.lookup.get(name) {
-        Some(lk) =>
-          match lk.default_val {
-            Some(d) => d.eval(self)
-            None => Null
-          }
-        None => Null
+        Some({ default_val: Some(d), .. }) => d.eval(self)
+        _ => Null
       }
     }
+  }
+}
+
+///|
+pub fn RenderStack::lookup_dynamic_located(
+  self : RenderStack,
+  name : String,
+) -> @component.LocatedValue? {
+  match self.dyn_binds {
+    Some(db) =>
+      match db.lookup_located(name) {
+        Some(v) => return Some(v)
+        None => ()
+      }
+    None => ()
+  }
+  guard self.comps is Some(comps) else { return None }
+  guard comps.get_comp_for(self.it) is Some(comp) else { return None }
+  match comp.scope {
+    Some(scope) =>
+      match scope.lookup_path(name) {
+        Some(path) =>
+          match path.lookup(self.root) {
+            Some(value) => return Some({ value, path, })
+            None => ()
+          }
+        None => ()
+      }
+    None => ()
+  }
+  match comp.lookup.get(name) {
+    Some({ default_val: Some(d), .. }) =>
+      match d.to_path_item() {
+        Some(step) =>
+          Some({
+            value: d.eval(self),
+            path: self.render_path.to_transaction_path().concat([step]),
+          })
+        None => None
+      }
+    _ => None
   }
 }
 

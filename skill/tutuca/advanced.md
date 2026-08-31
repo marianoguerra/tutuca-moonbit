@@ -151,10 +151,8 @@ when no producer is above the consumer (without one, a miss resolves to
 resolves to the nearest binding above, which includes the component's own
 `provide` (pushed on entering it).
 
-Because a lookup does not name its producer, **one provide name has one
-producer per scope chain**. Two components in one chain providing `items` is
-`PROVIDE_NAME_COLLISION`, and that rule is also how the teleport below
-recovers the producer.
+More than one component may provide the same name. The live render stack is a
+normal shadowing stack, so the nearest rendered provider wins.
 
 ### Dynamic vars as render targets
 
@@ -171,7 +169,7 @@ iteration source:
 
 A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
 seq-access, nothing else. It is both read as `*name` *and* used as a
-render-target / teleport path, so a `$`-handler or constant — which has no
+render-target / resume path, so a `$`-handler or constant — which has no
 path — cannot work. `Component::compile` **drops a bad `provide`** rather
 than raising on it, and the consumer's `*name` then resolves to its
 `default`, or to `null`; `ComponentStack::check_names` reports it as
@@ -208,14 +206,34 @@ There is **no `*name[.key]` form** — a consumer never indexes a dynamic
 var. The seq-access lives in the producer's `provide` declaration; the
 consumer just reads the resolved value as `*name`.
 
-**Teleporting.** The component rendered via `<x render="*selected">`
-physically lives at the producer (e.g. `Root.items`), not under the
-consumer. When an event fires inside that dynamically-rendered subtree,
-the runtime expands the *render* path (consumer → … → the rendered
-node) to reconstruct the handler, but the *transaction* is teleported:
-the mutation skips the intermediate components and lands on the
-producer's data. Editing the entry in the consumer and the same entry
-in the producer's own view update in lock-step.
+**Resuming at the value's path.** The component rendered via
+`<x render="*selected">` uses the concrete app path stored beside the dynamic
+value. Rendering pushes that path as a continuation frame. An event inside the
+subtree therefore mutates the selected value, while bubbling pops back to the
+visual caller at the top of the frame. Editing it here and in the owner's own
+view updates the same state in lock-step.
+
+The same mechanism can start from lexical scope rather than a rendered
+provider. Register lowercase names as absolute paths from the app state root:
+
+```moonbit nocheck
+// nocheck: module fragment; the target values still live in the one app root
+@component.ModuleDef::new(
+  name="workspace",
+  components=[workspace_comp(), toolbar_comp()],
+  paths={
+    "session": @tutuca.Path::new(steps=[FieldStep("session")]),
+    "theme": @tutuca.Path::new(steps=[FieldStep("theme")]),
+  },
+)
+```
+
+Descendants may declare `lookup_name("session")` / `lookup_name("theme")` and
+read or render `*session` / `*theme`. The mounted root component does not have
+to publish them, and no artificial `App` component is needed solely to push
+ambient values. Register on a nested `ComponentStack` to scope a path more
+tightly; nearest lexical registration wins. A rendered dynamic provider still
+wins first under the default `dyn lex` lookup order.
 
 ### Publishing a component TYPE
 
@@ -251,19 +269,20 @@ in the order written, the first that resolves wins:
 | leg   | environment                                                       |
 |-------|-------------------------------------------------------------------|
 | `dyn` | the render ancestry: what an ancestor published with `provide`     |
-| `lex` | the registration scope chain                                       |
+| `lex` | registered component types and app-root-relative value paths        |
 
 `@tutuca.LookupOpts::new()` is `dyn lex`. `route=[Lex]` skips what was
 published and reads the registration; `route=[Dyn]` refuses to fall back to it;
-`route=[]` asks nothing. A VALUE never answers on `lex` — a scope chain holds
-components — which is why one default route serves both calls.
+`route=[]` asks nothing. For lowercase names the lexical answer is the value at
+the registered root path; for uppercase names it is the registered component
+type. One route vocabulary therefore serves both calls.
 
 Worked recipes:
 [patterns/share-state-across-the-tree.md](./patterns/share-state-across-the-tree.md)
 (the value-read side) and
 [patterns/edit-through-a-dynamic-target.md](./patterns/edit-through-a-dynamic-target.md)
 (seq-access provide, "edit the selected entry"). Runtime mechanics:
-[semantics.md](./semantics.md) *Dynamic-var teleporting*.
+[semantics.md](./semantics.md) *Rendering with a resumed path*.
 
 ## Pseudo-`x` (`@x`)
 

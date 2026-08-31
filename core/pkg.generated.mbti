@@ -88,14 +88,23 @@ pub struct Builtin {
 pub(all) struct CtxStack(&Ctx)
 pub impl Stack for CtxStack
 
-pub(all) struct DispatchPath {
+pub(all) struct DispatchFrame {
+  base : Path
   items : Array[DispatchStep]
 } derive(Eq, @debug.Debug)
+
+pub(all) struct DispatchPath {
+  frames : Array[DispatchFrame]
+} derive(Eq, @debug.Debug)
+pub fn DispatchPath::can_pop(Self) -> Bool
 pub fn DispatchPath::compact(Self) -> Self
 pub fn DispatchPath::concat(Self, Array[Step]) -> Self
+pub fn DispatchPath::is_root(Self) -> Bool
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> Self
 pub fn DispatchPath::of_steps(Array[Step]) -> Self
 pub fn DispatchPath::pop_step(Self) -> Self
+pub fn DispatchPath::push_frame(Self, Path) -> Self
+pub fn DispatchPath::push_item(Self, DispatchStep) -> Self
 pub fn DispatchPath::to_transaction_path(Self) -> Path
 
 pub(all) enum DispatchProvenance {
@@ -107,7 +116,6 @@ pub(all) enum DispatchProvenance {
 
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
-  Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey?)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Domain {

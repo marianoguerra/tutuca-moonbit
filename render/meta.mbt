@@ -16,7 +16,7 @@ pub fn Meta::to_comment_text(self : Meta) -> String {
   let sb = StringBuilder()
   sb.write_char('§')
   match self {
-    Comp(nid~, cid~, vid~) => {
+    Comp(nid~, cid~, vid~, base~) => {
       sb.write_string("{\"$\":\"Comp\",\"nid\":")
       match nid {
         Some(n) => sb.write_string(n.to_string())
@@ -26,6 +26,13 @@ pub fn Meta::to_comment_text(self : Meta) -> String {
       sb.write_string(cid.to_string())
       sb.write_string(",\"vid\":")
       write_json_string(sb, vid)
+      match base {
+        Some(path) => {
+          sb.write_string(",\"base\":")
+          sb.write_string(render_path_text(path))
+        }
+        None => ()
+      }
     }
     Each(nid~, key~) => {
       sb.write_string("{\"$\":\"Each\",\"nid\":")
@@ -73,6 +80,72 @@ fn Meta::to_comment(self : Meta) -> @vdom.Vdom {
 }
 
 ///|
+fn step_to_render_json(step : @tutuca.Step) -> Json? {
+  let out : Map[String, Json] = Map([])
+  match step {
+    FieldStep(field) => out["f"] = Json::string(field)
+    SeqStep(field~, key~) | EachRenderItStep(field~, key~) => {
+      out["f"] = Json::string(field)
+      out["k"] = key.to_json()
+    }
+    SeqAccessStep(seq_field~, key_field~) => {
+      out["f"] = Json::string(seq_field)
+      out["a"] = Json::string(key_field)
+    }
+    _ => return None
+  }
+  Some(Json::object(out))
+}
+
+///|
+fn render_json_to_step(j : Json) -> @tutuca.Step? {
+  guard j is Object(m) else { return None }
+  guard m.get("f") is Some(String(field)) else { return None }
+  match (m.get("k"), m.get("a")) {
+    (Some(key), None) =>
+      match @tutuca.PathKey::from_json(key) {
+        Some(k) => Some(SeqStep(field~, key=k))
+        None => None
+      }
+    (None, Some(String(key_field))) =>
+      Some(SeqAccessStep(seq_field=field, key_field~))
+    (None, None) => Some(FieldStep(field))
+    _ => None
+  }
+}
+
+///|
+fn render_path_text(path : @tutuca.Path) -> String {
+  let items : Array[Json] = []
+  for step in path.steps {
+    match step_to_render_json(step) {
+      Some(j) => items.push(j)
+      None => return "[]"
+    }
+  }
+  Json::array(items).stringify()
+}
+
+///|
+fn render_path_from_json(j : Json) -> @tutuca.Path? {
+  guard j is Array(items) else { return None }
+  let steps : Array[@tutuca.Step] = []
+  for item in items {
+    match render_json_to_step(item) {
+      Some(step) => steps.push(step)
+      None => return None
+    }
+  }
+  Some(@tutuca.Path::new(steps~))
+}
+
+///|
+fn parse_render_path_text(text : String) -> @tutuca.Path? {
+  let json = @json.parse(text) catch { _ => return None }
+  render_path_from_json(json)
+}
+
+///|
 pub fn Meta::parse(text : String) -> Meta? {
   guard text.length() >= 2 && text[0] is '§' && text[text.length() - 1] is '§' else {
     return None
@@ -85,7 +158,11 @@ pub fn Meta::parse(text : String) -> Meta? {
         { "nid": Number(n, ..), .. } => Some(n.to_int())
         _ => None
       }
-      Some(Comp(nid~, cid=cid.to_int(), vid~))
+      let base = match obj {
+        { "base": base_json, .. } => render_path_from_json(base_json)
+        _ => None
+      }
+      Some(Comp(nid~, cid=cid.to_int(), vid~, base~))
     }
     { "$": "Each", "nid": Number(nid, ..), .. } as obj =>
       match obj {

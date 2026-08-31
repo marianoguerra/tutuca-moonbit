@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Dynamic `*name` rendering is a located continuation, not a portal.** A
+  provider now publishes its value together with its absolute path, and a
+  consumer renders that value by pushing a render-path frame. Dispatch walks
+  the active frame upward and, at its top, pops directly back to the visual
+  caller. Nested providers therefore shadow by live render ancestry without
+  producer-qualified targets or teleport markers.
+
+  Lowercase continuation names may also be registered lexically with
+  `ModuleDef(paths=...)` or `ComponentStack::register_paths`. This makes
+  session-, theme-, and host-owned resume points available in their natural
+  registration scope; the application root need not publish them or exist
+  solely as a wrapper. The normal lookup order remains `dyn lex`, so a nearer
+  runtime provider wins before a lexical resume path.
+
 ### Added
 
 - **A recording can leave the tab and come back.** `trace/` could already write
