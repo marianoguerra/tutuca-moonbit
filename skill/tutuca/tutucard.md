@@ -115,9 +115,11 @@ Current language boundaries that matter when authoring are:
   cannot live in card state at all: nothing the guest ABI can carry holds one.
   A field declared as a bare `component` (or by protocol) is held by the HOST
   instead, so a card can be a holder: pass an instance in and `<x render>`
-  draws it, a list of them draws all of them, and the card sees only that the
-  field is not null. It cannot message one — for that, the child has to be a
-  component of the card itself.
+  draws it, and a list of them draws all of them. The card never holds the
+  instance — reading such a field tells it only that something is there — but
+  it can still `sendAt` a literal path into the hole, because a message needs
+  an address and the HOST resolves the path. What stays out of reach is
+  reading through it: `.slot.field` is not traversable from card code.
 
 The ahead-of-time MoonBit emitter has a different refusal set. When the same
 file must work on both paths, validate both; see

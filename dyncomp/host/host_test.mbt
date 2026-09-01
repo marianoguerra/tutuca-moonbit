@@ -15,6 +15,10 @@ priv struct FakeGuest {
   /// `Framed` instances, by handle. Its OTHER field — the placeholder — is not
   /// here and cannot be: the guest never sees what fills it.
   titles : Map[Int, String]
+  /// `Rack` instances. Nothing but the handle: both of its fields are bare
+  /// `component` holes the HOST holds, so the guest has no state for them and
+  /// could not read one if it did.
+  racks : Map[Int, Bool]
   next : Ref[Int]
   bundle : Ref[Bundle?]
   /// requests the bundle served, in order (the guest-served request test)
@@ -28,6 +32,7 @@ fn FakeGuest::new() -> FakeGuest {
     histories: Map([]),
     pairs: Map([]),
     titles: Map([]),
+    racks: Map([]),
     next: { val: 0, },
     bundle: { val: None, },
     served: [],
@@ -95,6 +100,12 @@ impl Guest for FakeGuest with fn create(self, component, args) {
       }
       h
     }
+    "Rack" => {
+      let h = self.next.val
+      self.next.val = h + 1
+      self.racks[h] = true
+      h
+    }
     _ => {
       let count = match args.get("count") {
         Some(Num(n)) => n
@@ -109,6 +120,9 @@ impl Guest for FakeGuest with fn create(self, component, args) {
 impl Guest for FakeGuest with fn get_field(self, handle, name) {
   // A Framed answers its title and nothing else. Asked for `body` it says
   // None — which it never is, because the host answers that one itself.
+  if self.racks.contains(handle) {
+    return None
+  }
   if self.titles.get(handle) is Some(title) {
     return if name == "title" { Some(Str(title)) } else { None }
   }
@@ -188,6 +202,20 @@ impl Guest for FakeGuest with fn handle_dispatch(
           handled: true,
           next: None,
           msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])],
+        }
+      _ => { handled: false, next: None, msgs: [], }
+    }
+  }
+  if self.racks.contains(handle) {
+    return match (bucket, name) {
+      // Reach into the HOLE: `.holds` is a field the guest cannot read and
+      // does not own, and the path is resolved by the host — which is the
+      // whole reason this can work at all.
+      (Receive, "bumpHeld") =>
+        {
+          handled: true,
+          next: None,
+          msgs: [SendAt([FieldStep("holds")], "bump", [])],
         }
       _ => { handled: false, next: None, msgs: [], }
     }
@@ -700,6 +728,7 @@ fn counter_manifest() -> DynManifest {
             name: "main",
             html: (
               #|<div class="rack">
+              #|  <button class="rack-poke" @on.click="bumpHeld">poke</button>
               #|  <div class="rack-one"><x render=".holds"></div>
               #|  <div class="rack-cells"><x render-each=".cells"></div>
               #|</div>
@@ -713,7 +742,7 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("holds", 0), plain_field("cells", 1)],
         properties: [],
         domains: [],
-        receives: [],
+        receives: ["bumpHeld"],
         intents: [],
         express_messages: [],
         express_intents: [],
@@ -2807,4 +2836,31 @@ test "a same-bundle instance in a bare component field stays the guest's" {
   guard! bundle.make_instance("Rack", args={ "holds": mine.to_value() })
     is Some(rack)
   assert_eq(rack.to_value().field("holds"), Null)
+}
+
+///|
+/// A guest can MESSAGE what it cannot hold.
+///
+/// It never gets the instance — `.holds` is answered from `owned`, on the
+/// host's side of the boundary — but a message does not need the instance. It
+/// needs an ADDRESS, and `sendAt` carries a path the HOST resolves against the
+/// tree, where the hole's contents are. So a card can reach into a hole it
+/// cannot read, which is what makes a holder a component and not a decoration.
+///
+/// What it still cannot do is traverse: `.holds.note` is not readable, the
+/// value cannot be passed around, and a path whose key is reread from live
+/// state is refused by the card compiler for unrelated reasons.
+test "a guest can address a message into a hole it does not own" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("x") }),
+    })
+    is Some(rack)
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  assert_eq(h.text(".filler-note"), "x")
+  // The guest answers this by asking the HOST to deliver `bump` at `.holds`.
+  h.click(".rack-poke")
+  assert_eq(h.text(".filler-note"), "x!")
 }

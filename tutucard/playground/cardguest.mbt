@@ -115,21 +115,27 @@ extern "js" fn cardguest_with_field(
 
 // --- value codecs ----------------------------------------------------------
 //
-// Plain JSON in both directions, which is the whole codec. The wasm-gc bridge
-// additionally decodes `{"$dyn": …}` markers into child instances at any depth;
-// there is nothing to decode here, because a compiled card has no
-// `make-instance` to produce one with.
+// Plain JSON in both directions, with one exception in each — the `{"$dyn": …}`
+// child marker, which is how an INSTANCE crosses. A compiled card has no
+// `make-instance` of its own, so nothing here produces a child; but a host can
+// hand it one, and that is the holder case.
 
 ///|
+/// Arguments on their way INTO the card. `child_json` rather than `to_json`,
+/// because `Value::to_json` has no form for an `Obj` and writes the object's
+/// FIELDS instead — a copy of an instance's state under a name that no longer
+/// refers to it. What has to cross is the handle. See the twin in
+/// `dyncomp/host/wasm/glue.mbt`.
 fn list_json(args : Array[@tutuca.Value]) -> String {
-  Json::array(args.map(v => v.to_json())).stringify()
+  Json::array(args.map(v => @dyncomp.child_json(v))).stringify()
 }
 
 ///|
+/// The same, keyed — a constructor's arguments. See `list_json`.
 fn fields_json(args : Map[String, @tutuca.Value]) -> String {
   let obj : Map[String, Json] = Map([])
   for name, v in args {
-    obj[name] = v.to_json()
+    obj[name] = @dyncomp.child_json(v)
   }
   Json::object(obj).stringify()
 }

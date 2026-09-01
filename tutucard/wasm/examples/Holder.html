@@ -1,0 +1,23 @@
+<script type="tutuca/spec">
+  /// A hole that names nothing: `child` is a bare `component`, so what goes in
+  /// it is anybody's — a sibling declared below, or something from outside the
+  /// card entirely. A card cannot BUILD one, and does not have to: what makes
+  /// a holder work is that a host can PUT one here and the card can render it.
+  state Hole {
+    /// The hole.
+    child: Component
+    /// Something beside it, so a test can tell an empty read from a lost one.
+    kept: String
+  }
+
+  /// The sibling a hole usually holds. Same card, same bundle, which is the
+  /// case a holder meets first: ship your container and your primitives
+  /// together and every hole holds one of your own.
+  state Text {
+    /// What it says.
+    body: String
+  }
+</script>
+
+<template id="Hole:main"><div class="hole"><x render=".child"></x></div></template>
+<template id="Text:main"><span class="text" @text=".body"></span></template>

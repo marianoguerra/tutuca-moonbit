@@ -159,16 +159,31 @@ fn parse_value(s : String) -> @tutuca.Value {
 }
 
 ///|
+/// Values on their way INTO a guest — a message's arguments, a constructor's
+/// arguments, a render call's bindings.
+///
+/// `child_json` rather than `to_json`, and the difference is the whole of what
+/// an instance IS on the other side. `Value::to_json` has no form for an `Obj`
+/// so it writes the object's FIELDS, which for a guest instance is a copy of
+/// its state under a name that no longer refers to it: the guest stores a map,
+/// answers reads with a map, and a `<x render>` over that field draws nothing.
+/// What has to cross is the HANDLE.
+///
+/// `with_field` and `set_property` always did this; `create` and `dispatch`
+/// did not, so an instance handed to a component as a constructor argument or
+/// in a message was flattened on the way in — the same instance survived being
+/// written to a field afterwards, which is what made it look like a rendering
+/// bug rather than an encoding one.
 fn args_json(args : Array[@tutuca.Value]) -> String {
-  let arr : Array[Json] = args.map(v => v.to_json())
-  Json::array(arr).stringify()
+  Json::array(args.map(v => @dyncomp.child_json(v))).stringify()
 }
 
 ///|
+/// The same, keyed. See `args_json`.
 fn map_json(args : Map[String, @tutuca.Value]) -> String {
   let obj : Map[String, Json] = Map([])
   for name, v in args {
-    obj[name] = v.to_json()
+    obj[name] = @dyncomp.child_json(v)
   }
   Json::object(obj).stringify()
 }
