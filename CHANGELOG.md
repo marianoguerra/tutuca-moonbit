@@ -6,6 +6,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-09-01
+
+### Fixed
+
+- **A card declaring a protocol with a `property` member could never be
+  registered.** The two sides disagreed about the shape of a protocol's
+  property list: `tutucard/wasm` emitted an array of NAMES, and
+  `dyncomp/host` read it with the same parser it uses for a component's
+  properties, which requires objects and RAISES on anything else. One protocol
+  property took the whole manifest down — `manifest: bad property-def` — while
+  `parse_protocols` one level up was carefully skipping malformed entries.
+
+  Both sides move, in the direction the host was already asking for. The
+  emitter writes objects, with the member's declared type interned into the
+  component's own type table like a field's or a property's: `DynProtocolDef`
+  carries a property-def per member and resolves that index to build a
+  `PropertyInfo`, so a list of names was dropping something the host has a use
+  for. And the parser now accepts a bare string as a name-only member — what a
+  hand-written manifest, or a compiler that had only the member list, can
+  honestly say — reading it back as `TyAny` instead of refusing the bundle.
+  Anything else in that list is skipped rather than raised, which is the stance
+  the protocol parser around it already took.
+
+### Added
+
+- **`@dhw.load_error(load_id)`, and `dyncomp_load_error` beside the other host
+  exports.** A refused registration told the PAGE (a `dyncompError` receive at
+  the load's path) and told the caller nothing, so a host that resolves its own
+  callback anywhere other than the `dyncompLoaded` handler could not tell a
+  bundle that registered from one that did not. The symptom was a page
+  reporting success with `loaded_components` empty and nothing anywhere saying
+  why. The reason is now also answerable on demand, as many times as you like,
+  and the JS bridge asks too — dropping the bundle it had registered on its
+  side and putting the refusal in the console. Re-exporting it is optional: a
+  host that does not is exactly as it was.
+
 ## [0.45.0] - 2026-09-01
 
 ### Fixed
@@ -6173,7 +6209,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.45.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.46.0...HEAD
+[0.46.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.45.0...v0.46.0
 [0.45.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.44.0...v0.45.0
 [0.44.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.43.0...v0.44.0
 [0.43.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.42.0...v0.43.0
