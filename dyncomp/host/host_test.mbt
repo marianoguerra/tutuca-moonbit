@@ -395,8 +395,16 @@ impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
 ///
 /// A Pair persists nothing, so the two paths are both exercised: its children
 /// are instances, and the host rebuilds it from the fields instead.
+///
+/// A Framed persists its title and NOT its `body`, because it cannot: the
+/// placeholder is the host's field and the guest was never told about it. That
+/// is what makes it the case worth having here — a guest that comes back
+/// whole through its own bytes, with a hole the host has to carry itself.
 impl Guest for FakeGuest with fn persist(self, handle) {
   guard self.pairs.get(handle) is None else { return b"" }
+  if self.titles.get(handle) is Some(title) {
+    return @utf8.encode("title|\{title}")
+  }
   guard self.counters.get(handle) is Some(count) else { return b"" }
   let history = self.histories
     .get(handle)
@@ -408,6 +416,14 @@ impl Guest for FakeGuest with fn persist(self, handle) {
 
 ///|
 impl Guest for FakeGuest with fn restore(self, component, state) {
+  if component == "Framed" {
+    let text = @utf8.decode(state[:]) catch { _ => return None }
+    guard text.has_prefix("title|") else { return None }
+    let h = self.next.val
+    self.next.val = h + 1
+    self.titles[h] = text[6:].to_owned()
+    return Some(h)
+  }
   guard component == "Counter" else { return None }
   let text = @utf8.decode(state[:]) catch { _ => return None }
   let parts = text.split("|").map(v => v.to_owned()).collect()
@@ -2555,4 +2571,69 @@ test "a refused mutator frees the successor and keeps the live handle" {
   collect_superseded()
   assert_true(fake.counters.length() == 1)
   inspect(h.text(".count"), content="10")
+}
+
+///|
+/// The other half of a snapshot: what a person put in the guest's HOLE.
+///
+/// A placeholder is the host's field — the guest is never told about it and
+/// cannot write it — so it is not in the bytes the guest persists. It is in
+/// the projection beside them, tagged, which is what lets a restore build it
+/// back rather than dropping in a fresh one.
+test "what a person put in a placeholder survives a snapshot" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Framed", args={
+      "title": Str("panel"),
+      "body": filler.make({ "note": Str("mine") }),
+    })
+    is Some(framed)
+  assert_eq(framed.to_value().field("body").field("note"), Str("mine"))
+  guard! bundle.snapshot(framed.to_value()) is Some(snap)
+  // The guest kept its own state, and the hole is not part of it.
+  assert_true(snap.has_state())
+  // Restored through the scope the placeholder's component is registered in —
+  // the same one `make_instance` fills a fresh placeholder from.
+  guard! bundle.restore(snap, src=h.app.scope) is Some(back)
+  assert_eq(back.to_value().field("title"), Str("panel"))
+  assert_eq(back.to_value().field("body").field("note"), Str("mine"))
+}
+
+///|
+/// Without a resolver the hole comes back as the fresh instance
+/// `fill_placeholders` puts there — no worse than before, and never a plain
+/// Map wearing the field's name.
+test "a restore with nothing to resolve the hole fills it fresh" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Framed", args={
+      "title": Str("panel"),
+      "body": filler.make({ "note": Str("mine") }),
+    })
+    is Some(framed)
+  guard! bundle.snapshot(framed.to_value()) is Some(snap)
+  guard! bundle.restore(snap) is Some(back)
+  assert_eq(back.to_value().field("body").field("note"), Str("fresh"))
+}
+
+///|
+/// A `ty-comp` field naming one of the bundle's OWN components is a nested
+/// child the guest makes and owns. A restore does not rebuild it host-side,
+/// even when the source could: the guest's constructor is what fills it, and
+/// two instances for one field is what refusing avoids.
+test "a restore leaves a same-bundle child to the guest" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Pair") is Some(pair)
+  guard! bundle.snapshot(pair.to_value()) is Some(snap)
+  let before = fake.counters.length()
+  guard! bundle.restore(snap, src=h.app.scope) is Some(back)
+  // Two, and only two: the pair the guest built for itself.
+  assert_eq(fake.counters.length(), before + 2)
+  assert_eq(back.to_value().field("left").field("count"), Num(1))
 }

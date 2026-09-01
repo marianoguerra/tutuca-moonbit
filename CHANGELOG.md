@@ -6,6 +6,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A component nested inside another did not survive a reload.**
+  `Snapshot.fields` was the UNTAGGED projection (`Value::to_json`), which walks
+  by what a value happens to be rather than by what the schema declares: a
+  field holding another component was stored as a plain object with no name on
+  it, and came back as a Map, which is to say as nothing. What a person put in
+  a guest's placeholder was lost on every reload while the guest around it came
+  back fine.
+
+  The projection is now `Value::to_component_json` — the TAGGED one, already
+  what a saved page is written with — so the two finally agree, and
+  `Snapshot::field_args` decodes it through an optional `src~`
+  (`&ComponentSource`) that resolves the `$component` names in it.
+  `Bundle::restore` and `@dhw.restore` take the same `src?` and thread it, and
+  the universal host passes its own `UniversalUi`, which names the standard
+  components and every loaded bundle.
+
+  Two things fall out of doing it at the codec. A restore through the GUEST'S
+  OWN BYTES now fills the placeholders too: they are host fields the guest was
+  never told about, so they are not in its bytes, and only the projection
+  beside them has them. And a component of the restoring bundle is deliberately
+  NOT rebuilt host-side — that is a nested child the guest makes and owns, and
+  building one here would hand the guest a second instance for the field.
+
+  A session stored by an older host still restores: the snapshot names its own
+  component, so a projection with no tag in it decodes exactly as it did.
+
 ## [0.44.0] - 2026-08-31
 
 ### Fixed

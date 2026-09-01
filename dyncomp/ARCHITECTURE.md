@@ -307,14 +307,18 @@ What is left, in order:
 
 Stated here rather than left to be discovered:
 
-- **A guest's placeholder does not survive a reload.** `Bundle::make_instance`
-  fills a declared foreign `ty-comp` field, and a restore rebuilds the guest
-  from its snapshot — which fills the placeholder fresh. What a person put in
-  it is lost. Carrying it needs the placeholder's contents in the snapshot,
-  which the host can do and does not yet. The codec is no longer the obstacle:
-  `Snapshot.fields` is a flat `Value::from_json` per key
-  (`dyncomp/persist/persist.mbt`), and moving it to `from_component_json` would
-  make a nested instance in that projection come back.
+- **A guest's placeholder survives a reload only where a resolver is passed.**
+  `Snapshot.fields` is the TAGGED projection now
+  (`Value::to_component_json`, `dyncomp/persist/persist.mbt`), so what a person
+  put in a hole is IN the snapshot and comes back through
+  `Snapshot::field_args(src~)` — including on the guest-bytes path, where
+  `Bundle::restore` fills `owned` from it, because a placeholder is the host's
+  field and never part of what a guest persists. What the restore can rebuild
+  is whatever `src` names: the universal host passes its own `UniversalUi`
+  (standard components and every loaded bundle), and a caller that passes
+  nothing still gets the fresh placeholder it got before. A component of the
+  RESTORING bundle is refused on purpose — that is a nested child the guest
+  makes and owns, which is the gap below.
 - **A nested same-bundle child gets no placeholders at all.**
   `Bundle::wrap_instance` runs on every read of such a field, so filling there
   would rebuild the placeholder per read; the fix is a host-side table keyed by

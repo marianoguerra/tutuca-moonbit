@@ -34,7 +34,7 @@ pub(all) struct Snapshot {
   state : Bytes
   fields : Json
 } derive(Eq, @debug.Debug)
-pub fn Snapshot::field_args(Self) -> Map[String, @core.Value]
+pub fn Snapshot::field_args(Self, src? : &@core.ComponentSource) -> Map[String, @core.Value]
 pub fn Snapshot::from_json(Json) -> Self?
 pub fn Snapshot::has_state(Self) -> Bool
 pub fn Snapshot::to_json(Self) -> Json

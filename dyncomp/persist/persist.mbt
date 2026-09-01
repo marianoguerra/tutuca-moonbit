@@ -27,7 +27,13 @@ pub(all) struct Snapshot {
   /// The guest's opaque bytes. Empty means the guest does not persist, which
   /// is a decision rather than a failure: `fields` is then the whole story.
   state : Bytes
-  /// The declared-field projection (`Value::to_json` over the schema).
+  /// The declared-field projection: `Value::to_component_json` over the
+  /// schema, which is the TAGGED one. Tagged because a declared field may
+  /// hold another component — what a person put in a placeholder — and the
+  /// untagged projection would bring that back as a plain Map, which is to
+  /// say not at all. It is also the projection a saved page is written with
+  /// (`UniversalUi::tree_of_json`), so an instance means the same thing
+  /// whether it travelled in the tree or in a snapshot beside it.
   fields : Json
 } derive(Eq, Debug)
 
@@ -156,14 +162,35 @@ pub fn Snapshot::from_json(j : Json) -> Snapshot? {
 /// The declared fields as a Map a constructor takes — the restore path that
 /// needs no guest code, and the one a host falls back to when the guest
 /// refuses its own bytes.
-pub fn Snapshot::field_args(self : Snapshot) -> Map[String, @tutuca.Value] {
-  let out : Map[String, @tutuca.Value] = Map([])
-  if self.fields is Object(m) {
-    for name, v in m {
-      out[name] = @tutuca.Value::from_json(v)
-    }
+///
+/// `src` is where a nested `$component` resolves, and it is the difference
+/// between a placeholder that survives a reload and one that does not: a field
+/// holding an instance decodes into an instance only if something can build
+/// the name it carries. A caller with no resolver — a host reading a snapshot
+/// it will not rebuild, a test — omits it and gets the scalars, which is what
+/// this answered before there was a source to pass.
+///
+/// The snapshot's own module and component are what the decode assumes when
+/// the projection does not say, so a session stored by an older host, whose
+/// `fields` carry no tag, still decodes by declared type.
+pub fn Snapshot::field_args(
+  self : Snapshot,
+  src? : &@tutuca.ComponentSource,
+) -> Map[String, @tutuca.Value] {
+  let src = match src {
+    Some(s) => s
+    // Builds nothing, describes nothing: every nested instance is then
+    // unresolvable, which omits the field and leaves the constructor's own
+    // default in it.
+    None =>
+      @tutuca.FnSource::new((_, _, _, _) => None) as &@tutuca.ComponentSource
   }
-  out
+  @tutuca.Value::args_of_component_json(
+    self.fields,
+    src,
+    component=self.component,
+    module_=self.module_,
+  )
 }
 
 ///|

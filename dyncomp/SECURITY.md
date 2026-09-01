@@ -720,6 +720,18 @@ decode reads as "no guest bytes" rather than as a failure. Anything else on the
 origin can write to `localStorage`, so what comes out of it is exactly as
 trustworthy as what comes off the network.
 
+That projection is TAGGED (`Value::to_component_json`), so a field in it may
+NAME a component — which is what carries a placeholder's contents across a
+reload, and is also a construction the store gets to ask for. Three things
+bound it. The name resolves only through the `&ComponentSource` the caller
+passes, which is the page's own namespace and not the document's: a name
+nothing answers to omits the field and leaves the constructor's default, so the
+worst a hostile store can name is something the page was already willing to
+build. `Bundle::restore` refuses the RESTORING bundle's own components, so a
+document cannot make a guest adopt a second instance of a child it builds
+itself. And a constructed instance is a component, not code: it goes through
+`Component::make` and the same coercion a generated form's output does.
+
 **Storage is a channel, and it is the page's.** `dyncomp/persist` names no
 backend; the browser one (`dyncomp/persist/wasm`) is the page's own
 `localStorage` under a prefix the page chooses. A guest cannot reach it — the

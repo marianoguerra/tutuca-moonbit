@@ -878,7 +878,10 @@ pub fn Bundle::snapshot(self : Bundle, v : @tutuca.Value) -> @persist.Snapshot? 
     Some(Num(h)) => self.guest.persist(h.to_int())
     _ => b""
   }
-  let fields = v.to_json()
+  // The TAGGED projection, because a declared field may hold another
+  // component — a placeholder somebody filled — and the untagged one would
+  // store it as a plain Map that no restore can turn back into an instance.
+  let fields = v.to_component_json()
   // An instance that answers NOTHING is not an empty instance — it is a
   // handle the bridge no longer has, which is a host bookkeeping slip
   // somewhere upstream. Storing what it "said" would overwrite a good
@@ -897,14 +900,63 @@ pub fn Bundle::snapshot(self : Bundle, v : @tutuca.Value) -> @persist.Snapshot? 
 }
 
 ///|
-/// Whether a field projection has anything in it. `{}` and `null` are what a
-/// dead handle projects to, and neither is worth storing.
+/// Whether a field projection has anything in it. `null` is what a dead handle
+/// projects to, and a tag with no fields under it says only what component it
+/// was — neither is worth storing.
+///
+/// The reserved keys do not count, which is what keeps this the same question
+/// it was when the projection was untagged: a component that declares no
+/// fields still projects to nothing.
 fn says_something(fields : Json) -> Bool {
   match fields {
-    Object(m) => !m.is_empty()
+    Object(m) => {
+      for k, _ in m {
+        if k != @tutuca.component_key && k != @tutuca.module_key {
+          return true
+        }
+      }
+      false
+    }
     Null => false
     _ => true
   }
+}
+
+///|
+/// A source that refuses THIS bundle's own components.
+///
+/// The same discriminator `fill_placeholders` draws, for the same reason: a
+/// `ty-comp` field naming one of our components is a nested child the guest
+/// makes and owns, and rebuilding it here would hand the guest an instance it
+/// did not ask for beside the one it builds itself. A foreign name is a hole,
+/// and a hole is the host's.
+///
+/// Refusing means the field is OMITTED, which leaves the guest's constructor
+/// to fill it — what a restore did before there was a source at all.
+priv struct ForeignOnly {
+  bundle : Bundle
+  src : &@tutuca.ComponentSource
+}
+
+///|
+impl @tutuca.ComponentSource for ForeignOnly with fn describe(
+  self,
+  module_,
+  name,
+) {
+  @tutuca.ComponentSource::describe(self.src, module_, name)
+}
+
+///|
+impl @tutuca.ComponentSource for ForeignOnly with fn build(
+  self,
+  module_,
+  name,
+  args,
+  at~,
+) {
+  guard !self.bundle.comps.contains(name) else { return None }
+  @tutuca.ComponentSource::build(self.src, module_, name, args, at~)
 }
 
 ///|
@@ -917,15 +969,45 @@ fn says_something(fields : Json) -> Bool {
 ///
 /// None only when the component is unknown here — which is the honest answer
 /// for a snapshot from a bundle that is not this one.
-pub fn Bundle::restore(self : Bundle, snap : @persist.Snapshot) -> DynObj? {
+///
+/// `src` is where a nested component in the stored fields resolves, and a
+/// caller that has one should pass it: a placeholder holds whatever a person
+/// put there, which is as likely to be a standard component or another
+/// bundle's as it is one of ours, and this bundle alone cannot name those.
+/// Without it the placeholder comes back as the fresh one `make_instance`
+/// fills in, which is what a restore did before.
+pub fn Bundle::restore(
+  self : Bundle,
+  snap : @persist.Snapshot,
+  src? : &@tutuca.ComponentSource,
+) -> DynObj? {
   guard self.comps.get(snap.component) is Some((comp_id, schema, def)) else {
     return None
   }
   let pid = if snap.id == "" { self.mint_pid(snap.component) } else { snap.id }
+  let args = match src {
+    Some(s) => snap.field_args(src=ForeignOnly::{ bundle: self, src: s, })
+    None => snap.field_args()
+  }
   if snap.has_state() {
     if self.guest.restore(snap.component, snap.state) is Some(handle) {
-      return Some(DynObj::new(comp_id, def, self.guest, handle, schema~, pid~))
+      // The guest brought back its own state, and its PLACEHOLDERS are not
+      // part of it: they are the host's fields, and the only record of what
+      // was in them is the projection beside the bytes. Filling them here is
+      // what carries a person's contents across a reload — without it the
+      // guest returns whole and its holes return empty.
+      return Some(
+        DynObj::new(
+          comp_id,
+          def,
+          self.guest,
+          handle,
+          schema~,
+          pid~,
+          owned=self.fill_placeholders(schema, args),
+        ),
+      )
     }
   }
-  self.make_instance(snap.component, args=snap.field_args(), pid~)
+  self.make_instance(snap.component, args~, pid~)
 }

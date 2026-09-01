@@ -496,6 +496,7 @@ pub(all) enum Value {
   Fn((Array[Value]) -> Value)
   Obj(&Obj)
 }
+pub fn Value::args_of_component_json(Json, &ComponentSource, component? : String, module_? : String, at? : String) -> Map[String, Self]
 pub fn Value::as_key(Self) -> PathKey?
 pub fn Value::at(Self, Path) -> Self
 pub fn Value::at_opt(Self, Path) -> Self?

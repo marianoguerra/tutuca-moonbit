@@ -93,3 +93,48 @@ test "field_args is what a constructor takes" {
   @debug.assert_eq(args.get("count").unwrap(), Num(3))
   @debug.assert_eq(args.get("tags").unwrap(), List([Str("a")]))
 }
+
+///|
+/// The projection is TAGGED, which is what makes a placeholder's contents part
+/// of a snapshot: a field holding another component says which one, and comes
+/// back as that component when something can build the name.
+test "a component in the fields is rebuilt through the source" {
+  let snap : @persist.Snapshot = {
+    ..sample(),
+    fields: {
+      "$component": "Notepad",
+      "title": Json::string("shopping"),
+      "body": { "$component": "Sticky", "text": Json::string("milk") },
+    },
+  }
+  // The tag is the document's, not a field: no constructor is offered it.
+  let bare = snap.field_args()
+  assert_true(bare.get("$component") is None)
+  @debug.assert_eq(bare.get("title").unwrap(), Str("shopping"))
+  // With nothing to resolve `Sticky`, the hole comes back empty rather than as
+  // a plain Map pretending to be a component.
+  @debug.assert_eq(bare.get("body").unwrap(), Null)
+  let src = @tutuca.FnSource::new((_module, name, args, _at) => {
+    match args.get("text") {
+      Some(Str(t)) => Some(Str("\{name}:\{t}"))
+      _ => None
+    }
+  })
+  let args = snap.field_args(src~)
+  @debug.assert_eq(args.get("title").unwrap(), Str("shopping"))
+  @debug.assert_eq(args.get("body").unwrap(), Str("Sticky:milk"))
+}
+
+///|
+/// A session stored before the projection was tagged has no `$component` in
+/// it. The snapshot names the component itself, so such fields still decode —
+/// there is simply nothing nested in them to find.
+test "an untagged projection still decodes" {
+  let snap : @persist.Snapshot = {
+    ..sample(),
+    fields: { "title": Json::string("old"), "count": Json::number(2) },
+  }
+  let args = snap.field_args()
+  @debug.assert_eq(args.get("title").unwrap(), Str("old"))
+  @debug.assert_eq(args.get("count").unwrap(), Num(2))
+}

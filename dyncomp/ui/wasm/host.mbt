@@ -145,7 +145,12 @@ pub fn tree_of_json(
     // one, which is what a guest that persists nothing wants anyway.
     restore=(at, ref_) => {
       match snaps.get(at) {
-        Some(snap) => @dhw.restore(snap)
+        // `ui` as the source, because a guest's placeholder holds whatever a
+        // person put in it — a standard component as easily as another
+        // bundle's — and the app's own namespace is the only one that answers
+        // for both. Without it the snapshot's nested instances would resolve
+        // to nothing and the hole would come back empty.
+        Some(snap) => @dhw.restore(snap, src=ui as &@tutuca.ComponentSource)
         None => @dhw.make_instance(ref_.module_, ref_.name)
       }
     },

@@ -46,7 +46,7 @@ pub fn on_loaded(Int, Int, String) -> Unit
 
 pub fn registry() -> @registry.Registry
 
-pub fn restore(@persist.Snapshot) -> @core.Value?
+pub fn restore(@persist.Snapshot, src? : &@core.ComponentSource) -> @core.Value?
 
 pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode, policy? : @policy.Policy) -> Unit
 

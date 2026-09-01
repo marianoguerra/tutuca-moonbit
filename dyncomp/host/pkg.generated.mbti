@@ -61,7 +61,7 @@ pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value], pid
 pub fn Bundle::manifest(Self) -> DynManifest
 pub fn Bundle::migrate_instance(Self, @core.Value, String) -> DynObj?
 pub fn Bundle::module_name(Self) -> String
-pub fn Bundle::restore(Self, @persist.Snapshot) -> DynObj?
+pub fn Bundle::restore(Self, @persist.Snapshot, src? : &@core.ComponentSource) -> DynObj?
 pub fn Bundle::schema_of(Self, String) -> @core.SchemaInfo?
 pub fn Bundle::snapshot(Self, @core.Value) -> @persist.Snapshot?
 pub fn Bundle::wrap_instance(Self, String, Int) -> @core.Value?

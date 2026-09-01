@@ -1057,12 +1057,20 @@ pub fn snapshot(v : @tutuca.Value) -> @persist.Snapshot? {
 /// The inverse: a stored snapshot back into a live instance, through the
 /// bundle it names. None when that bundle is not loaded — which is the honest
 /// answer, and why a page that restores a session loads its bundles first.
-pub fn restore(snap : @persist.Snapshot) -> @tutuca.Value? {
+///
+/// `src` is where a component nested in the stored fields resolves — what a
+/// person put in a placeholder, which may be standard, may be another
+/// bundle's, and is not this bundle's to name. A page restoring a session has
+/// one and should pass it; without it the placeholder comes back empty.
+pub fn restore(
+  snap : @persist.Snapshot,
+  src? : &@tutuca.ComponentSource,
+) -> @tutuca.Value? {
   // A snapshot names its bundle the way everything else here does — by key or
   // by module name. Sessions taken before config vars existed carry a module
   // name, and they still restore.
   guard find_bundle(snap.module_) is Some(bundle) else { return None }
-  match bundle.restore(snap) {
+  match bundle.restore(snap, src?) {
     Some(d) => Some(d.to_value())
     None => None
   }

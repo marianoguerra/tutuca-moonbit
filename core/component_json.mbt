@@ -419,15 +419,39 @@ fn decode_instance(
   fallback~ : String,
 ) -> Value? {
   guard j is Object(m) else { return None }
-  let name = match m.get(component_key) {
+  let name = tag_of(m, fallback)
+  guard name != "" else { return None }
+  let module_ = module_of(m, None)
+  src.build(module_, name, decode_args(m, module_, name, at, src), at~)
+}
+
+///|
+/// The component a tagged object names, or `fallback` when it names none.
+fn tag_of(m : Map[String, Json], fallback : String) -> String {
+  match m.get(component_key) {
     Some(String(s)) => s
     _ => fallback
   }
-  guard name != "" else { return None }
-  let module_ = match m.get(module_key) {
+}
+
+///|
+/// The bundle a tagged object names, or `fallback` when it names none.
+fn module_of(m : Map[String, Json], fallback : String?) -> String? {
+  match m.get(module_key) {
     Some(String(s)) => Some(s)
-    _ => None
+    _ => fallback
   }
+}
+
+///|
+/// A tagged object's fields, as the args a constructor takes.
+fn decode_args(
+  m : Map[String, Json],
+  module_ : String?,
+  name : String,
+  at : String,
+  src : &ComponentSource,
+) -> Map[String, Value] {
   let args : Map[String, Value] = Map([])
   let schema = src.describe(module_, name)
   for k, v in m {
@@ -447,5 +471,33 @@ fn decode_instance(
       None => args[k] = decode_any(v, ptr(at, k), src)
     }
   }
-  src.build(module_, name, args, at~)
+  args
+}
+
+///|
+/// A tagged object's fields as constructor args, WITHOUT building it — the
+/// half of `from_component_json` a caller needs when it builds by another
+/// route.
+///
+/// A snapshot is that caller: what to build is already settled (a bundle, a
+/// component, an id, and a guest that gets first refusal on its own bytes),
+/// and what is missing is only the args — decoded BY DECLARED TYPE, so a field
+/// holding an instance comes back as one instead of as a plain Map.
+///
+/// `component~` and `module_?` say what to assume when the document does not,
+/// which is what lets a projection written before there were tags still decode
+/// by type. A tag in the document wins, the same way it does in a slot.
+///
+/// Anything that is not an object has no args: an empty Map, not an error,
+/// because the constructor's own defaults are the answer either way.
+pub fn Value::args_of_component_json(
+  j : Json,
+  src : &ComponentSource,
+  component? : String = "",
+  module_? : String,
+  at? : String = "",
+) -> Map[String, Value] {
+  guard j is Object(m) else { return Map([]) }
+  let name = tag_of(m, component)
+  decode_args(m, module_of(m, module_), name, at, src)
 }
