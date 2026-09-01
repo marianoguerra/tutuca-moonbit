@@ -742,6 +742,20 @@ pub fn current_policy() -> @policy.Policy {
 let notify_paths : Map[Int, @tutuca.DispatchPath] = Map([])
 
 ///|
+/// Why a load did NOT register, by load id, for the JS side to read back.
+///
+/// The completion messages go to the APP — a `dyncompError` receive at the
+/// path that started the load — which is the right channel for a page showing
+/// a person what happened, and the wrong one for the code that CALLED load.
+/// That caller is a JS promise, and until it can see a refusal it resolves the
+/// same way for a bundle that registered and one that did not: the page says
+/// "loaded", `loaded_components` is empty, and nothing anywhere says why.
+///
+/// So the reason is kept here too, and `load_error` hands it over once. Both
+/// channels carry the same sentence; neither is the other's fallback.
+let load_errors : Map[Int, String] = Map([])
+
+///|
 /// The next load id, with `path` recorded as where its completion messages
 /// dispatch — pass `ctx.path()` from the loading handler so any component
 /// anywhere in the tree can host bundles without root-level plumbing.
@@ -856,6 +870,7 @@ pub fn on_loaded(
     // bundle", "no such component"), so they reach the page rather than
     // collapsing into a generic sentence.
     e => {
+      load_errors[load_id] = e.message()
       notify(load_id, "dyncompError", [Str(e.message())])
       return
     }
@@ -935,7 +950,25 @@ pub fn registry() -> @registry.Registry {
 ///|
 /// Wire this to the demo's exported `dyncomp_on_load_error`.
 pub fn on_load_error(load_id : Int, msg : String) -> Unit {
+  load_errors[load_id] = msg
   notify(load_id, "dyncompError", [Str(msg)])
+}
+
+///|
+/// Why load `load_id` was refused, or "" if it was not.
+///
+/// Answerable at any point after the load finishes, and answerable more than
+/// once: the JS bridge asks the moment `dyncomp_on_loaded` returns, so it can
+/// drop the bundle it registered on its side and say so in the console, and a
+/// host asks whenever it wants to know whether the load it started actually
+/// produced components. Both are the same question and neither consumes the
+/// other's answer.
+///
+/// Only a REFUSED load leaves a row here, so the table holds one string per
+/// bundle a page tried and failed to register — a handful over a session, and
+/// nothing at all for a page whose loads all work.
+pub fn load_error(load_id : Int) -> String {
+  load_errors.get(load_id).unwrap_or("")
 }
 
 ///|

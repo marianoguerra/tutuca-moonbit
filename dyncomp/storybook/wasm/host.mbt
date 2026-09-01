@@ -142,6 +142,13 @@ pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
 }
 
 ///|
+/// Why the load the bridge just finished was refused, or "" if it was not —
+/// what turns a refusal into a rejected promise on the JS side.
+pub fn dyncomp_load_error(load_id : Int) -> String {
+  @dhw.load_error(load_id)
+}
+
+///|
 /// Recompile + reinject margaui CSS. A page exports this for its loader to call
 /// after a bundle lands; the bar already calls it, and the two are idempotent.
 pub fn refresh_margaui() -> Unit {

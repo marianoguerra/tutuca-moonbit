@@ -10,7 +10,7 @@
 /// `@shell.sample_host_intents` — the storybook page offers the same one.)
 ///
 /// An export list is per-package `link` configuration and cannot come from a
-/// dependency, so the five entry points are re-exported here as one-line
+/// dependency, so the six entry points are re-exported here as one-line
 /// forwards. That is the whole reason this is a package at all.
 
 ///|
@@ -130,6 +130,14 @@ pub fn dyncomp_on_loaded(
 ///|
 pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
   @uiw.dyncomp_on_load_error(load_id, msg)
+}
+
+///|
+/// Why the load that just finished was refused, or "" if it was not. The
+/// bridge asks right after `dyncomp_on_loaded`, so a caller awaiting the load
+/// hears about a bundle that did not register.
+pub fn dyncomp_load_error(load_id : Int) -> String {
+  @uiw.dyncomp_load_error(load_id)
 }
 
 ///|

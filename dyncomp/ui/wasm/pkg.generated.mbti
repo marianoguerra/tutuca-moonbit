@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub fn dyncomp_load_error(Int) -> String
+
 pub fn dyncomp_on_load_error(Int, String) -> Unit
 
 pub fn dyncomp_on_loaded(Int, Int, String) -> Unit

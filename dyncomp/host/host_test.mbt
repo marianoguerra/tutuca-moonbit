@@ -2637,3 +2637,57 @@ test "a restore leaves a same-bundle child to the guest" {
   assert_eq(fake.counters.length(), before + 2)
   assert_eq(back.to_value().field("left").field("count"), Num(1))
 }
+
+///|
+/// A protocol's property list, in both spellings a manifest can carry.
+///
+/// The objects are what the card compiler emits and what this host wants: the
+/// member's declared type, resolved through the component's table like every
+/// other type reference. The bare names are what a manifest written by hand —
+/// or by a compiler that had only the member list — can say, and they read as
+/// `TyAny` rather than taking the bundle down: a member list that names its
+/// members correctly is not a broken manifest.
+test "a protocol's properties parse as objects or as bare names" {
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "holderlib", "components": [
+    #|  {"name": "Hole",
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "types": [{"kind": "ty-bool", "elem": null, "items": [], "name": "", "members": []}],
+    #|   "fields": [], "properties": [],
+    #|   "protocols": [
+    #|     {"id": "x/Holder@1", "handleMessages": ["hold"], "handleIntents": [],
+    #|      "expressMessages": [], "expressIntents": [],
+    #|      "properties": [{"name": "filled", "ty": 0, "writable": true, "public": true}],
+    #|      "views": [], "provides": [], "lookups": []},
+    #|     {"id": "x/Named@1", "handleMessages": [], "handleIntents": [],
+    #|      "expressMessages": [], "expressIntents": [],
+    #|      "properties": ["title"],
+    #|      "views": [], "provides": [], "lookups": []}],
+    #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  let comp = m.components[0]
+  let typed = comp.protocols[0].properties[0]
+  assert_eq(typed.name, "filled")
+  assert_eq(typed.writable, true)
+  let named = comp.protocols[1].properties[0]
+  assert_eq(named.name, "title")
+  // Public by definition: a protocol member is what the protocol promises.
+  assert_true(named.public_)
+  // And the whole point of carrying the index: the registered schema hands a
+  // host the member's TYPE. A name alone says what it is called and nothing
+  // more, which is `any`.
+  let h = @harness.mount(shell_module(), "Shell")
+  let bundle = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    m,
+    policy=vouched(),
+  )
+  guard! bundle.schema_of("Hole") is Some(schema)
+  @debug.assert_eq(
+    schema.protocols.map(p => {
+      p.properties.map(x => "\{x.name}:\{x.ty.show_source()}")
+    }),
+    [["filled:Bool"], ["title:Any"]],
+  )
+}

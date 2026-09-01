@@ -13,7 +13,7 @@
 ///   click a + -> the app opens the bar -> pick -> `make_instance` through the
 ///     bridge -> the instance is sent to the cell that asked
 ///
-/// A host holds this and re-exports the five wasm-gc entry points; it cannot
+/// A host holds this and re-exports the six wasm-gc entry points; it cannot
 /// be a dependency's job, because an export list is per-package link
 /// configuration. See `demo/universal_wasm` for the ~90 lines that does it.
 
@@ -415,6 +415,17 @@ pub fn dyncomp_on_loaded(
 ///|
 pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
   @dhw.on_load_error(load_id, msg)
+}
+
+///|
+/// Why the load the bridge just finished was REFUSED, or "" if it was not.
+///
+/// The bridge asks this the moment `dyncomp_on_loaded` returns, so a caller
+/// awaiting the load learns that the bundle did not register. Wire it into the
+/// export list beside the other two; a host that does not is no worse off than
+/// before, since the same reason still reaches the page as `dyncompError`.
+pub fn dyncomp_load_error(load_id : Int) -> String {
+  @dhw.load_error(load_id)
 }
 
 ///|

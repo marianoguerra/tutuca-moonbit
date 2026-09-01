@@ -34,6 +34,7 @@ options(
         "on_event",
         "dyncomp_on_loaded",
         "dyncomp_on_load_error",
+        "dyncomp_load_error",
         "refresh_margaui",
         "state_json",
       ],

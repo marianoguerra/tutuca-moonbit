@@ -141,7 +141,7 @@ exports.mount();
 ```
 
 Your MoonBit side is an executable that calls `@uiw.mount` and re-exports the
-five entry points the loader calls. It is short, and it has to be a package of
+six entry points the loader calls. It is short, and it has to be a package of
 your own for exactly one reason: a wasm-gc export list is per-package `link`
 configuration and cannot come from a dependency.
 
@@ -172,6 +172,7 @@ pub fn dyncomp_on_loaded(a : Int, b : Int, m : String) -> Unit {
 pub fn dyncomp_on_load_error(a : Int, m : String) -> Unit {
   @uiw.dyncomp_on_load_error(a, m)
 }
+pub fn dyncomp_load_error(a : Int) -> String { @uiw.dyncomp_load_error(a) }
 ```
 
 `session` is one option rather than two flags on purpose: persistence has to be
@@ -231,6 +232,16 @@ Two things follow from this, and they are the mistakes worth naming:
 When a load does fail, `reason` is the refusal's own words — "this host takes no
 CSS from a bundle", "no such component". They are what a person can act on;
 collapsing them into a generic sentence throws away the whole of the answer.
+
+**And it can be ASKED for, not only waited for.** `@dhw.load_error(load_id)`
+answers the reason a load was refused, or `""` if it was not, at any point after
+the load finishes and as many times as you like. That is for the call site
+rather than for the page: a host that resolves its own callback somewhere other
+than the `dyncompLoaded` handler — the mistake named above — otherwise cannot
+tell a bundle that registered from one that did not, and the symptom is a page
+that says "loaded" with `loaded_components` empty and nothing anywhere saying
+why. Re-export it as `dyncomp_load_error` and the JS bridge asks too, dropping
+the bundle it had registered on its side and putting the reason in the console.
 
 For a lookup that failed rather than a load that did, `make_instance` answering
 `None` does not say why, by design — it is the mount call, not the diagnostic.

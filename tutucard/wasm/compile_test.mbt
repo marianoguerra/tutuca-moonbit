@@ -265,3 +265,49 @@ test "a card with no `where` carries an empty domain list" {
   guard! comps.get(0) is Some(Object(plain))
   @debug.assert_eq(plain.get("domains"), Some(Json::array([])))
 }
+
+///|
+/// A protocol's properties reach the manifest as OBJECTS, with the type the
+/// declaration wrote down.
+///
+/// Names alone would be a lossy spelling of something the host has a use for:
+/// `DynProtocolDef` carries a property-def per member and resolves its `ty`
+/// through the component's type table to build a `PropertyInfo`. They were
+/// names once, and `dyncomp/host` refused every bundle that had one — the
+/// parser wanted the shape the declaration could have given it all along.
+test "a protocol's properties reach the manifest with their types" {
+  let out = @wasm.compile(
+    (
+      #|<script type="tutuca/spec">
+      #|  protocol Holder = "x/Holder@1" {
+      #|    property { filled: Bool }
+      #|  }
+      #|  state Hole implements Holder {
+      #|    kept: String
+      #|    flag: Bool
+      #|    property {
+      #|      filled: Bool { get .flag }
+      #|      Holder::filled = filled
+      #|    }
+      #|  }
+      #|</script>
+      #|<template id="Hole:main"><div @text=".kept"></div></template>
+    ),
+    name="Card",
+  )
+  guard! out.manifest is Object(root)
+  guard! root.get("components") is Some(Array(comps))
+  guard! comps.get(0) is Some(Object(hole))
+  guard! hole.get("protocols") is Some(Array(protos))
+  guard! protos.get(0) is Some(Object(holder))
+  guard! holder.get("properties") is Some(Array(props))
+  guard! props.get(0) is Some(Object(filled))
+  @debug.assert_eq(filled.get("name"), Some(Json::string("filled")))
+  @debug.assert_eq(filled.get("public"), Some(Json::boolean(true)))
+  // The type is an INDEX into the component's own table, and the entry it
+  // points at is the type the protocol declared.
+  guard! filled.get("ty") is Some(Number(at, ..))
+  guard! hole.get("types") is Some(Array(types))
+  guard! types.get(at.to_int()) is Some(Object(ty))
+  @debug.assert_eq(ty.get("kind"), Some(Json::string("ty-bool")))
+}

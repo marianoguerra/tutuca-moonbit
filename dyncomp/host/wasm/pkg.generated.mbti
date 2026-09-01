@@ -28,6 +28,8 @@ pub fn load_bytes(@core.DispatchPath, Int) -> Int
 
 pub fn load_dropped(@core.DispatchPath, Int) -> Int
 
+pub fn load_error(Int) -> String
+
 pub fn load_url(@core.DispatchPath, String) -> Int
 
 pub fn loaded_components() -> Array[(String, String)]

@@ -100,18 +100,26 @@ fn component_json(
 ) -> Json {
   let types : Array[Json] = []
   let ty_index : Map[String, Int] = Map([])
-  let fields : Array[Json] = []
-  for f in g.fields {
-    let key = f.ty.show_source()
-    let at = match ty_index.get(key) {
+  // One type table per component, and one way into it. A declared type is
+  // written down once and referred to by INDEX everywhere after, which is what
+  // lets a field, a property and a protocol member that share a type share an
+  // entry rather than three copies of it.
+  fn intern(t : @statedef.StateTy) -> Int {
+    let key = t.show_source()
+    match ty_index.get(key) {
       Some(i) => i
       None => {
         let i = types.length()
-        types.push(ty_entry(f.ty))
+        types.push(ty_entry(t))
         ty_index[key] = i
         i
       }
     }
+  }
+
+  let fields : Array[Json] = []
+  for f in g.fields {
+    let at = intern(f.ty)
     fields.push(
       Json::object({
         "name": Json::string(f.name),
@@ -123,16 +131,7 @@ fn component_json(
   }
   let properties : Array[Json] = []
   for p in g.def.properties {
-    let key = p.ty.show_source()
-    let at = match ty_index.get(key) {
-      Some(i) => i
-      None => {
-        let i = types.length()
-        types.push(ty_entry(p.ty))
-        ty_index[key] = i
-        i
-      }
-    }
+    let at = intern(p.ty)
     properties.push(
       Json::object({
         "name": Json::string(p.name),
@@ -143,6 +142,9 @@ fn component_json(
       }),
     )
   }
+  // Built BEFORE the object literal below, because a protocol member's type is
+  // interned into `types` and the literal writes that array out.
+  let protocol_defs = g.def.protocols.map(p => protocol_json(p, intern))
   // Every name this card answers, of one kind — the ones it compiled and the
   // ones its escape block answered. A host routes by this list, so a name
   // answered in Wax has to be in it for the same reason a refused one has to be
@@ -200,7 +202,7 @@ fn component_json(
     "expressMessages": strings(g.def.express_message.map(m => m.name)),
     "expressIntents": strings(g.def.express_intent.map(m => m.name)),
     "implements": strings(g.def.implements),
-    "protocols": Json::array(g.def.protocols.map(p => protocol_json(p))),
+    "protocols": Json::array(protocol_defs),
     "propertyBindings": bindings_json(g.def.property_bindings),
     "viewBindings": bindings_json(g.def.view_bindings),
     "provideBindings": bindings_json(g.def.provide_bindings),
@@ -285,14 +287,39 @@ fn component_json(
 }
 
 ///|
-fn protocol_json(p : @statedef.ProtocolDef) -> Json {
+/// One protocol's entry, with `intern` the owning component's type table.
+///
+/// The properties are OBJECTS, spelled exactly as a component's are, and that
+/// is not decoration: `DynProtocolDef` carries a `DynPropertyDef` per member
+/// and the host resolves its `ty` through the same table to build a
+/// `PropertyInfo`. A list of bare names would drop the type the declaration
+/// wrote down, and the host that reads one has no way to ask for it back.
+///
+/// The other member lists ARE names, because that is all they have: a message
+/// or a view is named by a protocol and described by whoever implements it.
+fn protocol_json(
+  p : @statedef.ProtocolDef,
+  intern : (@statedef.StateTy) -> Int,
+) -> Json {
   Json::object({
     "id": Json::string(p.id),
     "handleMessages": strings(p.handle_message.map(m => m.name)),
     "handleIntents": strings(p.handle_intent.map(m => m.name)),
     "expressMessages": strings(p.express_message.map(m => m.name)),
     "expressIntents": strings(p.express_intent.map(m => m.name)),
-    "properties": strings(p.properties.map(x => x.name)),
+    "properties": Json::array(
+      p.properties.map(x => {
+        Json::object({
+          "name": Json::string(x.name),
+          "ty": Json::number(intern(x.ty).to_double()),
+          // A protocol member is public by definition: it is what the protocol
+          // promises, and a private one would promise nothing.
+          "public": Json::boolean(true),
+          "writable": Json::boolean(x.writable),
+          "doc": Json::string(x.doc.unwrap_or("")),
+        })
+      }),
+    ),
     "views": strings(p.views),
     "provides": strings(p.provides.map(x => x.name)),
     "lookups": strings(p.lookups.map(x => x.name)),

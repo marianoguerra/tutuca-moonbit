@@ -9,7 +9,7 @@
 /// them at once, what it accepts from one, and the wasm-gc export list.
 ///
 /// An export list is per-package `link` configuration and cannot come from a
-/// dependency, so the five entry points are re-exported here as one-line
+/// dependency, so the six entry points are re-exported here as one-line
 /// forwards. That is the whole reason this is a package at all.
 
 ///|
@@ -84,6 +84,11 @@ pub fn dyncomp_on_loaded(
 ///|
 pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
   @sbw.dyncomp_on_load_error(load_id, msg)
+}
+
+///|
+pub fn dyncomp_load_error(load_id : Int) -> String {
+  @sbw.dyncomp_load_error(load_id)
 }
 
 ///|

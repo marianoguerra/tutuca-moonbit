@@ -596,6 +596,48 @@ fn parse_properties(
 }
 
 ///|
+/// A PROTOCOL's property list, which is the same shape as a component's with
+/// one spelling more: a bare string, meaning a member named and not typed.
+///
+/// The extra spelling is not a convenience. A protocol is an INTERFACE, and a
+/// manifest written by hand — or by a compiler that had only the member list —
+/// can name what it requires without claiming a type for it; such a member
+/// reads back as `TyAny` (`ty` = -1, which `ty_info_at` answers that way).
+/// Refusing it would take a whole bundle down over a member list that named
+/// its members correctly.
+///
+/// Absent or malformed entries are SKIPPED rather than raised, which is the
+/// stance `parse_protocols` already takes one level up: a protocol nobody can
+/// read is a protocol the host does not offer, and the components around it
+/// still register.
+fn parse_protocol_properties(c : Map[String, Json]) -> Array[DynPropertyDef] {
+  let out : Array[DynPropertyDef] = []
+  guard c.get("properties") is Some(Array(items)) else { return out }
+  for item in items {
+    match item {
+      String(name) =>
+        out.push({ name, ty: -1, public_: true, writable: false, doc: "", })
+      Object(p) =>
+        out.push({
+          name: opt_str(p, "name"),
+          ty: opt_int(p, "ty").unwrap_or(-1),
+          // A protocol member is public by definition — it is what the
+          // protocol PROMISES — so a projection that omits the flag is not
+          // saying "private".
+          public_: match p.get("public") {
+            Some(v) => v is True
+            None => true
+          },
+          writable: bool_field(p, "writable"),
+          doc: opt_str(p, "doc"),
+        })
+      _ => ()
+    }
+  }
+  out
+}
+
+///|
 pub fn DynComponentDef::property_infos(
   self : DynComponentDef,
 ) -> Array[@tutuca.PropertyInfo] {
@@ -665,7 +707,7 @@ fn parse_protocols(
       handle_intents: str_array(p, "handleIntents"),
       express_messages: str_array(p, "expressMessages"),
       express_intents: str_array(p, "expressIntents"),
-      properties: parse_properties(p),
+      properties: parse_protocol_properties(p),
       views: str_array(p, "views"),
       provides: str_array(p, "provides"),
       lookups: str_array(p, "lookups"),

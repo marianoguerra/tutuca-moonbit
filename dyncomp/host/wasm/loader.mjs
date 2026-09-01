@@ -557,6 +557,26 @@ export function createTcompImports(getExports) {
     bundles.set(id, { guest: root.guest, instances: new Map(), next: 1 });
     const manifestJson = JSON.stringify(manifest ?? root.guest.getManifest());
     getExports().dyncomp_on_loaded(loadId, id, manifestJson);
+    // Registration can REFUSE — a manifest this host cannot read, a component
+    // the policy will not take. MoonBit answers that to the page as a
+    // `dyncompError` message at the path that started the load, and says so
+    // here too, which is what this reads.
+    //
+    // Two things to do about it, and NEITHER is to report it again: the page
+    // has already been told, and a second `dyncomp_on_load_error` would break
+    // the one-completion-per-load rule the whole load id exists to keep. So:
+    // drop the bundle registered on THIS side, which nothing will ever ask
+    // about again, and put the reason where a person debugging a page that
+    // "loaded" but has no components will actually find it.
+    //
+    // Optional on purpose: a host that has not added `dyncomp_load_error` to
+    // its export list keeps the old behaviour rather than breaking on an
+    // export it does not have.
+    const refused = getExports().dyncomp_load_error?.(loadId);
+    if (refused) {
+      bundles.delete(id);
+      console.error(`tutuca dyncomp: bundle refused: ${refused}`);
+    }
   };
 
   // A v3 descriptor carries the declaration as data. Views are separate
