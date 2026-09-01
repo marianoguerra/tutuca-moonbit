@@ -37,7 +37,7 @@ pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 
 pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
 
-pub const MODULE_VERSION : String = "0.47.0"
+pub const MODULE_VERSION : String = "0.47.1"
 
 pub const VERSION : String = "0.12.2"
 
