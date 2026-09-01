@@ -319,10 +319,23 @@ Stated here rather than left to be discovered:
   nothing still gets the fresh placeholder it got before. A component of the
   RESTORING bundle is refused on purpose — that is a nested child the guest
   makes and owns, which is the gap below.
-- **A nested same-bundle child gets no placeholders at all.**
-  `Bundle::wrap_instance` runs on every read of such a field, so filling there
-  would rebuild the placeholder per read; the fix is a host-side table keyed by
-  guest token.
+- **A nested same-bundle child gets no placeholders at all, so a HOLDER inside
+  a container loses what the host put in it.** `Bundle::wrap_instance` runs on
+  every read of such a field, so filling there would rebuild the placeholder
+  per read and throw away the last one.
+
+  The shape it bites is `Grid > Hole > a drawn card`: the Grid and the Hole are
+  one bundle's, so they cross as tokens and come back fine, and the card in the
+  Hole is the host's, so it lives in `owned` — which the re-wrap does not
+  carry. Same-bundle nesting all the way down is unaffected; one foreign thing
+  one level in is not. `host_test.mbt`'s "a holder nested in a container loses
+  what the host put in it" asserts the current answer, so the day this changes
+  the test says so.
+
+  The fix is a host-side table keyed by guest token, and it is bigger than a
+  re-keying: a write into a nested slot mints a successor the parent guest
+  never hears about, because the parent holds the old token. Whoever takes it
+  should expect to rewrite the parent's field too.
 - **A live `config` view costs the cell it came from.** An instance rendered in
   two places has one of them holding a handle the host has already collected,
   so the sidebar MOVES it and the canvas shows a placeholder until the panel

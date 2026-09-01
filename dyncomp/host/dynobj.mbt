@@ -120,27 +120,87 @@ pub fn DynObj::new(
 }
 
 ///|
-/// The fields this component declared as holding a component from another
-/// module — the placeholders the host BUILDS. `TyComp(None)` (the bare
-/// `component` marker) is NOT one of them: it says "some component" and names
-/// nothing to build, so the host has nothing to put there and says so by
-/// leaving it out.
+/// Who keeps one declared SLOT's value.
 ///
-/// Building is not the same as holding. A caller can pass an instance for such
-/// a field, and the host keeps that one too (`Bundle::fill_placeholders`), for
-/// the reason `owned` exists at all — a component from outside the guest
-/// cannot cross to it. This list is the "what would I put there myself"
-/// question, and for a field that names nothing the answer is still nothing.
-pub fn placeholder_fields(
-  schema : @tutuca.SchemaInfo,
-) -> Array[(String, String)] {
-  let out : Array[(String, String)] = []
-  for f in schema.fields {
-    if f.ty is TyComp(Some(comp)) {
-      out.push((f.name, comp))
-    }
+/// A slot is a field where a child component goes, in any of the spellings
+/// that mean it: `ty-comp` with a name, `ty-comp` without one, `ty-comp-
+/// protocols`, and a list of any of those. They were three separate questions
+/// in three places once, which is how they drifted into four different
+/// answers; this is the one question, asked once.
+pub(all) enum SlotOwner {
+  /// The GUEST's. It can hold this, so it is the source of truth — and that
+  /// is the whole reason this case exists rather than the host taking
+  /// everything: a guest that dispatches to its own child and keeps the
+  /// successor would leave a host-held copy stale.
+  Guest
+  /// The HOST's, and this is the value. The caller supplied something the
+  /// guest cannot hold (see `DynObj.owned`).
+  HostHolds(@tutuca.Value)
+  /// The HOST's, and nobody supplied one: build the component the slot NAMES.
+  /// Only a named slot reaches this — "some component" names nothing to build,
+  /// and a LIST of them has no count to build.
+  HostBuilds(String)
+} derive(Eq, Debug)
+
+///|
+/// Who keeps this slot, given what the caller supplied.
+///
+/// `declared_here` says whether a name is one of the guest's own components,
+/// which is the line the whole thing turns on: a `ty-comp` field naming a
+/// SIBLING is a nested child the guest makes and manages, and a field naming
+/// anything else is a hole only the host can fill.
+///
+/// A non-slot type is `Guest`, which is the right answer twice over: there is
+/// no child there, and nothing for the host to keep.
+pub fn slot_owner(
+  ty : @tutuca.TyInfo,
+  given : @tutuca.Value?,
+  declared_here~ : (String) -> Bool,
+) -> SlotOwner {
+  match ty {
+    TyComp(Some(name)) =>
+      if declared_here(name) {
+        Guest
+      } else {
+        match given {
+          Some(v) if v is Obj(_) => HostHolds(v)
+          _ => HostBuilds(name)
+        }
+      }
+    // Names nothing, so there is nothing to build — but a caller can still
+    // PASS one, and that is what makes a holder a holder.
+    TyComp(None) | TyCompProtocols(_) =>
+      match given {
+        Some(v) if uncrossable(v) => HostHolds(v)
+        _ => Guest
+      }
+    // A list of slots, answered whole: a container whose cells the host
+    // supplied is a container the host keeps. One element the guest could
+    // never have handed over settles it for the list, because the list is one
+    // field and `owned` keeps fields.
+    TyList(TyComp(_) | TyCompProtocols(_)) =>
+      match given {
+        Some(List(items)) if items.iter().any(uncrossable) =>
+          HostHolds(given.unwrap())
+        _ => Guest
+      }
+    _ => Guest
   }
-  out
+}
+
+///|
+/// Whether this value is one NO guest could have handed over: an instance with
+/// no guest handle on it.
+///
+/// The test is the VALUE rather than the field, and that is the point. An
+/// instance of the guest's own bundle crosses as a token it holds and reads
+/// back through `Bundle::wrap_instance`; a host component cannot cross at all,
+/// because `child_json` has nothing to write for it but its fields — which
+/// come back as a Map with the shape of a component and none of its
+/// behaviour. So the host keeps what the guest could not have held, and leaves
+/// the rest where it is.
+fn uncrossable(v : @tutuca.Value) -> Bool {
+  v is Obj(o) && o.obj_field(handle_field) is None
 }
 
 ///|

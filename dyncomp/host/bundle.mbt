@@ -693,102 +693,37 @@ pub fn Bundle::make_instance(
 }
 
 ///|
-/// Build what this component's declared PLACEHOLDERS hold (see `DynObj.owned`).
+/// What this component's declared SLOTS hold (see `DynObj.owned`) — the ones
+/// the host keeps, which is not all of them.
 ///
-/// FOREIGN ones only. A `ty-comp` field naming one of this bundle's OWN
-/// components is a nested child the guest makes and owns (`control.make-instance`
-/// is same-bundle by contract), and filling it here would shadow the guest's
-/// value with a host-built one — which is what `Pair { left: Counter }` is, and
-/// what would silently break if this did not check.
+/// `slot_owner` decides, once, for every spelling of a slot; this is only the
+/// part that needs a bundle in hand: building the component a `HostBuilds`
+/// names, through the scope this bundle registered into.
 ///
-/// So the discriminator is the boundary itself: same-bundle means the guest's,
-/// foreign means a hole only the host can fill.
-///
-/// A caller that passed one in `args` wins — that is how a restore puts back
-/// what was in the hole. A name nothing answers to leaves the field empty
-/// rather than refusing the instance: a guest whose placeholder cannot be
-/// filled is still a guest that works, minus the hole.
+/// A name nothing answers to leaves the field empty rather than refusing the
+/// instance — a guest whose placeholder cannot be filled is still a guest that
+/// works, minus the hole.
 fn Bundle::fill_placeholders(
   self : Bundle,
   schema : @tutuca.SchemaInfo,
   args : Map[String, @tutuca.Value],
 ) -> Map[String, @tutuca.Value] {
   let owned : Map[String, @tutuca.Value] = Map([])
-  for pair in placeholder_fields(schema) {
-    let (field, comp) = pair
-    if self.comps.contains(comp) {
-      continue
-    }
-    owned[field] = match args.get(field) {
-      Some(given) if given is Obj(_) => given
-      _ =>
-        match self.scope.lookup_component(comp) {
+  for f in schema.fields {
+    match
+      slot_owner(f.ty, args.get(f.name), declared_here=n => {
+        self.comps.contains(n)
+      }) {
+      Guest => ()
+      HostHolds(v) => owned[f.name] = v
+      HostBuilds(comp) =>
+        owned[f.name] = match self.scope.lookup_component(comp) {
           Some(c) => c.make(Map([]))
           None => Null
         }
     }
   }
-  for f in schema.fields {
-    // Decided already, by name, above.
-    if f.ty is TyComp(Some(_)) {
-      continue
-    }
-    if held_for_guest(f.ty, args.get(f.name)) is Some(v) {
-      owned[f.name] = v
-    }
-  }
   owned
-}
-
-///|
-/// A value the host must keep ITSELF, because the guest cannot hold it.
-///
-/// A `component` field that names no component is the case: `ty-comp` with no
-/// name, or `ty-comp-protocols`, which says what a thing must do and not what
-/// it is. There is nothing to build for such a field — which is why
-/// `placeholder_fields` leaves it out — but a caller can still PASS one, and
-/// that is the holder a card is written to be.
-///
-/// What decides it is the value rather than the type: an instance of THIS
-/// bundle crosses as a token the guest holds and reads back through
-/// `wrap_instance`, and taking that one over would put the host in charge of a
-/// child the guest makes and manages. An instance with no guest handle cannot
-/// cross at all — `child_json` has nothing to write but its fields, and what
-/// comes back is a Map with the shape of a component and none of its
-/// behaviour. So the ones the guest cannot hold are held here, and the ones it
-/// can are left where they are.
-///
-/// A LIST of them is the same answer per element, taken whole: a container
-/// whose cells the host supplied is a container the host owns, and one the
-/// guest fills for itself never reaches this at all.
-fn held_for_guest(
-  ty : @tutuca.TyInfo,
-  given : @tutuca.Value?,
-) -> @tutuca.Value? {
-  guard given is Some(v) else { return None }
-  match (ty, v) {
-    (TyComp(None) | TyCompProtocols(_), Obj(_)) =>
-      if foreign_instance(v) {
-        Some(v)
-      } else {
-        None
-      }
-    (TyList(TyComp(_) | TyCompProtocols(_)), List(items)) =>
-      if items.iter().any(foreign_instance) {
-        Some(v)
-      } else {
-        None
-      }
-    _ => None
-  }
-}
-
-///|
-/// Whether this value is an instance NO guest could have handed over: an `Obj`
-/// with no guest handle on it. A host component is one; so is anything a host
-/// built out of its own components.
-fn foreign_instance(v : @tutuca.Value) -> Bool {
-  v is Obj(o) && o.obj_field(handle_field) is None
 }
 
 ///|
@@ -985,11 +920,12 @@ fn says_something(fields : Json) -> Bool {
 ///|
 /// A source that refuses THIS bundle's own components.
 ///
-/// The same discriminator `fill_placeholders` draws, for the same reason: a
-/// `ty-comp` field naming one of our components is a nested child the guest
-/// makes and owns, and rebuilding it here would hand the guest an instance it
-/// did not ask for beside the one it builds itself. A foreign name is a hole,
-/// and a hole is the host's.
+/// `slot_owner`'s line, drawn one step earlier. It answers who KEEPS a slot;
+/// this answers whether the host should BUILD one at all while decoding a
+/// stored projection, and the reason is the same: a component of this bundle
+/// is a nested child the guest makes and manages. Building one here would hand
+/// the guest a second instance for a field it fills itself, and the first
+/// would be a handle nothing refers to.
 ///
 /// Refusing means the field is OMITTED, which leaves the guest's constructor
 /// to fill it — what a restore did before there was a source at all.

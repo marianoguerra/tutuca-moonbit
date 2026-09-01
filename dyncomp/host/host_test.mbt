@@ -15,10 +15,12 @@ priv struct FakeGuest {
   /// `Framed` instances, by handle. Its OTHER field — the placeholder — is not
   /// here and cannot be: the guest never sees what fills it.
   titles : Map[Int, String]
-  /// `Rack` instances. Nothing but the handle: both of its fields are bare
-  /// `component` holes the HOST holds, so the guest has no state for them and
-  /// could not read one if it did.
-  racks : Map[Int, Bool]
+  /// `Rack` instances, by handle, holding the HANDLES of the cells they were
+  /// given. Its `holds` is a bare `component` the host keeps, so the guest has
+  /// no state for that one; its `cells` are whatever crossed, which for an
+  /// instance of this bundle is a token — so the guest keeps the tokens and
+  /// answers reads through `wrap_instance`, exactly as the wasm bridge does.
+  racks : Map[Int, Array[Int]]
   next : Ref[Int]
   bundle : Ref[Bundle?]
   /// requests the bundle served, in order (the guest-served request test)
@@ -76,6 +78,12 @@ fn FakeGuest::wrap_child(self : FakeGuest, handle : Int) -> @tutuca.Value {
 }
 
 ///|
+/// The same, for a `Rack` in another `Rack`'s cells.
+fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int) -> @tutuca.Value {
+  self.bundle.val.unwrap().wrap_instance("Rack", handle).unwrap()
+}
+
+///|
 fn child_handle(v : @tutuca.Value) -> Int? {
   match v {
     Obj(o) =>
@@ -103,7 +111,15 @@ impl Guest for FakeGuest with fn create(self, component, args) {
     "Rack" => {
       let h = self.next.val
       self.next.val = h + 1
-      self.racks[h] = true
+      let cells : Array[Int] = []
+      if args.get("cells") is Some(List(items)) {
+        for item in items {
+          if child_handle(item) is Some(token) {
+            cells.push(token)
+          }
+        }
+      }
+      self.racks[h] = cells
       h
     }
     _ => {
@@ -120,8 +136,15 @@ impl Guest for FakeGuest with fn create(self, component, args) {
 impl Guest for FakeGuest with fn get_field(self, handle, name) {
   // A Framed answers its title and nothing else. Asked for `body` it says
   // None — which it never is, because the host answers that one itself.
-  if self.racks.contains(handle) {
-    return None
+  if self.racks.get(handle) is Some(cells) {
+    // `holds` is the host's and never reaches here. `cells` is the guest's,
+    // and comes back the way a nested child always does: re-wrapped from its
+    // token, which is the read `wrap_instance` exists for.
+    return if name == "cells" {
+      Some(List(cells.map(token => self.wrap_rack(token))))
+    } else {
+      None
+    }
   }
   if self.titles.get(handle) is Some(title) {
     return if name == "title" { Some(Str(title)) } else { None }
@@ -2863,4 +2886,153 @@ test "a guest can address a message into a hole it does not own" {
   // The guest answers this by asking the HOST to deliver `bump` at `.holds`.
   h.click(".rack-poke")
   assert_eq(h.text(".filler-note"), "x!")
+}
+
+///|
+/// A holder nested in a container LOSES what the host put in it. Known gap,
+/// asserted so it cannot change unnoticed.
+///
+/// `Bundle::wrap_instance` rebuilds a nested child on every read and passes no
+/// `owned` — deliberately, because filling placeholders there would build a
+/// fresh one per read and throw away the last. The cost is this: a slot the
+/// HOST holds does not survive the rebuild, so a holder is only a holder while
+/// something addresses it directly.
+///
+/// It bites the composed-tree case one level down — `Grid > Hole > a drawn
+/// card` — where the Grid and the Hole are the same bundle's and the card is
+/// not. Same-bundle nesting all the way down is fine: those are tokens, and
+/// tokens are what survives.
+///
+/// The fix is a host-side table keyed by guest token (see
+/// `dyncomp/ARCHITECTURE.md`), which is more than a re-keying: a write into a
+/// nested slot mints a successor the parent guest never hears about. When it
+/// lands, this test flips to the value and the gap entry goes.
+test "a holder nested in a container loses what the host put in it" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard! _h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("deep") }),
+    })
+    is Some(inner)
+  // Held here, before it goes anywhere.
+  assert_eq(inner.to_value().field("holds").field("note"), Str("deep"))
+  // Now put that holder in a container of the SAME bundle, which means it
+  // crosses as a token and comes back through `wrap_instance`.
+  guard! bundle.make_instance("Rack", args={ "cells": List([inner.to_value()]) })
+    is Some(outer)
+  guard! outer.to_value().field("cells") is List(cells)
+  assert_eq(cells.length(), 1)
+  // The cell itself came back — it is the guest's, and a token survives.
+  assert_eq(cells[0].schema().unwrap().name, "Rack")
+  // What the host was holding inside it did not.
+  assert_eq(cells[0].field("holds"), Null)
+}
+
+///|
+/// WHO KEEPS A SLOT — the whole decision, as a table.
+///
+/// The rule this pins is the one that used to be written in three places with
+/// three different scopes, which is how the same question grew four different
+/// answers and cost three releases in a day. Each of those bugs is one row
+/// here.
+///
+/// Read the table, not the code: a change to `slot_owner` shows up as a diff
+/// in the answers, and any row that moves is a decision somebody has to have
+/// made on purpose.
+///
+/// `Counter` is this bundle's own; `Filler` is the host's. A "guest value" is
+/// an instance of this bundle, which crosses as a token; a "host value" is a
+/// host component, which cannot cross at all.
+///
+/// Two rows in it are worth knowing rather than guessing at:
+///
+///  - `comp[foreign] + guest value -> HOST holds`. A slot declared to hold a
+///    named foreign component, handed one of ours instead, is the caller
+///    passing the wrong thing; the host keeps what it was given rather than
+///    silently building over it. Long-standing behaviour, and this is where it
+///    is now written down.
+///  - `list[foreign] + nothing -> guest`. A list slot builds no default,
+///    because there is no count to build one FROM. That is the difference
+///    between a list and the scalar above it, not an oversight.
+test "who keeps a slot, for every spelling and every value" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  let host_value = filler.make({ "note": Str("host") })
+  guard! bundle.make_instance("Counter", args={ "count": Num(1) })
+    is Some(guest_obj)
+  let guest_value = guest_obj.to_value()
+  let spellings : Array[(String, @tutuca.TyInfo)] = [
+    ("comp[ours]", TyComp(Some("Counter"))),
+    ("comp[foreign]", TyComp(Some("Filler"))),
+    ("comp[bare]", TyComp(None)),
+    ("comp[protocols]", TyCompProtocols(["x/P@1"])),
+    ("list[bare]", TyList(TyComp(None))),
+    ("list[foreign]", TyList(TyComp(Some("Filler")))),
+    ("text", TyText),
+  ]
+  let givens : Array[(String, @tutuca.Value?)] = [
+    ("nothing", None),
+    ("host value", Some(host_value)),
+    ("guest value", Some(guest_value)),
+    ("list of host", Some(@tutuca.Value::List([host_value]))),
+    ("list of guest", Some(@tutuca.Value::List([guest_value]))),
+  ]
+  let rows : Array[String] = []
+  for spelling in spellings {
+    for given in givens {
+      let answer = match
+        slot_owner(spelling.1, given.1, declared_here=n => {
+          bundle.def_of(n) is Some(_)
+        }) {
+        Guest => "guest"
+        HostHolds(_) => "HOST holds"
+        HostBuilds(name) => "HOST builds \{name}"
+      }
+      rows.push("\{spelling.0} + \{given.0} -> \{answer}")
+    }
+  }
+  inspect(
+    rows.join("\n"),
+    content=(
+      #|comp[ours] + nothing -> guest
+      #|comp[ours] + host value -> guest
+      #|comp[ours] + guest value -> guest
+      #|comp[ours] + list of host -> guest
+      #|comp[ours] + list of guest -> guest
+      #|comp[foreign] + nothing -> HOST builds Filler
+      #|comp[foreign] + host value -> HOST holds
+      #|comp[foreign] + guest value -> HOST holds
+      #|comp[foreign] + list of host -> HOST builds Filler
+      #|comp[foreign] + list of guest -> HOST builds Filler
+      #|comp[bare] + nothing -> guest
+      #|comp[bare] + host value -> HOST holds
+      #|comp[bare] + guest value -> guest
+      #|comp[bare] + list of host -> guest
+      #|comp[bare] + list of guest -> guest
+      #|comp[protocols] + nothing -> guest
+      #|comp[protocols] + host value -> HOST holds
+      #|comp[protocols] + guest value -> guest
+      #|comp[protocols] + list of host -> guest
+      #|comp[protocols] + list of guest -> guest
+      #|list[bare] + nothing -> guest
+      #|list[bare] + host value -> guest
+      #|list[bare] + guest value -> guest
+      #|list[bare] + list of host -> HOST holds
+      #|list[bare] + list of guest -> guest
+      #|list[foreign] + nothing -> guest
+      #|list[foreign] + host value -> guest
+      #|list[foreign] + guest value -> guest
+      #|list[foreign] + list of host -> HOST holds
+      #|list[foreign] + list of guest -> guest
+      #|text + nothing -> guest
+      #|text + host value -> guest
+      #|text + guest value -> guest
+      #|text + list of host -> guest
+      #|text + list of guest -> guest
+    ),
+  )
 }

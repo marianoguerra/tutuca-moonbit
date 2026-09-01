@@ -23,9 +23,9 @@ pub let handle_field : String
 
 pub fn install_gc(@transactor.Transactor) -> Unit
 
-pub fn placeholder_fields(@core.SchemaInfo) -> Array[(String, String)]
-
 pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest, policy? : @policy.Policy) -> Bundle raise ManifestError
+
+pub fn slot_owner(@core.TyInfo, @core.Value?, declared_here~ : (String) -> Bool) -> SlotOwner
 
 pub fn superseded_count() -> Int
 
@@ -230,6 +230,12 @@ pub(all) enum GuestPropertyResult {
 pub(all) struct ResolvedConfig {
   all : Map[String, String]
   view : Map[String, String]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SlotOwner {
+  Guest
+  HostHolds(@core.Value)
+  HostBuilds(String)
 } derive(Eq, @debug.Debug)
 
 // Type aliases
