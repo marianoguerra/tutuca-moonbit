@@ -6,6 +6,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-09-01
+
+### Fixed
+
+- **A card could not be a holder: a component from outside the guest did not
+  survive a round trip through its state.** A field declared as a bare
+  `component` — "some component", naming none — was neither built by the host
+  (`placeholder_fields` matches only a NAMED `ty-comp`, and rightly: there is
+  nothing to build) nor holdable by the guest, because nothing the guest ABI
+  carries can hold a host component. What crossed was `child_json`'s fallback,
+  the instance's FIELDS, so the guest stored an object with the shape of a
+  component and none of its behaviour and `<x render>` drew nothing at all —
+  no refusal, no console error, an empty cell.
+
+  Such a field is now held by the HOST when a caller passes an instance for
+  it, through the same `owned` mechanism a named placeholder uses. A list of
+  them is held the same way, so a container whose cells the host supplied
+  renders all of them.
+
+  The discriminator is the VALUE, not the field: an instance of the guest's
+  OWN bundle crosses as a token it holds and reads back through
+  `wrap_instance`, and taking that one over would put the host in charge of a
+  child the guest makes and manages. Only an instance with no guest handle —
+  one the guest could never have handed over — is held here. Same field, same
+  declared type, different answer.
+
+  `skill/tutuca/tutucard.md` said a card "may carry, render, and message" a
+  child component, which was true only of its own components. It now says what
+  each kind can do.
+
 ## [0.46.0] - 2026-09-01
 
 ### Fixed
@@ -6209,7 +6239,8 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.46.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.47.0...HEAD
+[0.47.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.46.0...v0.47.0
 [0.46.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.45.0...v0.46.0
 [0.45.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.44.0...v0.45.0
 [0.44.0]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.43.0...v0.44.0
