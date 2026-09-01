@@ -684,6 +684,55 @@ fn counter_manifest() -> DynManifest {
         inits: [],
         style: "",
       },
+      // A guest with a hole that names NOTHING: `holds` is a bare `component`
+      // and `cells` a list of them. There is nothing for the host to build
+      // there — which is the difference from `Framed` — and everything for it
+      // to hold, because what a caller puts in one is as likely to be a
+      // component no guest could hand over as one of its own.
+      {
+        name: "Rack",
+        doc: "A hole that names nothing, and a row of them.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="rack">
+              #|  <div class="rack-one"><x render=".holds"></div>
+              #|  <div class="rack-cells"><x render-each=".cells"></div>
+              #|</div>
+            ),
+          },
+        ],
+        types: [
+          { kind: "ty-comp", elem: None, items: [], name: "", members: [], },
+          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [], },
+        ],
+        fields: [plain_field("holds", 0), plain_field("cells", 1)],
+        properties: [],
+        domains: [],
+        receives: [],
+        intents: [],
+        express_messages: [],
+        express_intents: [],
+        implements: [],
+        protocols: [],
+        property_bindings: [],
+        view_bindings: [],
+        provide_bindings: [],
+        lookup_bindings: [],
+        methods: [],
+        whens: [],
+        enriches: [],
+        enrich_scopes: [],
+        serves: [],
+        provide: [],
+        lookup: [],
+        inits: [],
+        style: "",
+      },
     ],
   }
 }
@@ -1231,7 +1280,7 @@ test "component_names lists the manifest's components in order" {
   let (_, bundle) = mount_with_bundle(FakeGuest::new())
   debug_inspect(
     bundle.component_names(),
-    content="[\"Counter\", \"Pair\", \"Framed\"]",
+    content="[\"Counter\", \"Pair\", \"Framed\", \"Rack\"]",
   )
 }
 
@@ -2690,4 +2739,72 @@ test "a protocol's properties parse as objects or as bare names" {
     }),
     [["filled:Bool"], ["title:Any"]],
   )
+}
+
+///|
+/// A hole that names NOTHING still holds what the host puts in it.
+///
+/// `Framed`'s `body` names `Filler`, so the host knows what to build there.
+/// `Rack`'s `holds` is a bare `component`: it says "some component" and there
+/// is nothing to build — but a caller can still pass one, and that is the
+/// whole shape of a holder. What crosses to a guest cannot carry a host
+/// component (`child_json` has nothing to write but its FIELDS, which come
+/// back as a Map with the shape of a component and none of its behaviour), so
+/// the host keeps it and answers reads itself.
+test "a bare component field holds what the host puts in it" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Rack", args={
+      "holds": filler.make({ "note": Str("mine") }),
+    })
+    is Some(rack)
+  // An instance, not a Map wearing its fields.
+  assert_eq(rack.to_value().field("holds").field("note"), Str("mine"))
+  // And it RENDERS: `<x render=".holds">` draws the component itself.
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  assert_eq(h.text(".filler-note"), "mine")
+}
+
+///|
+/// The same, for a row of them. A container whose cells the host supplied is a
+/// container the host owns.
+test "a list of bare component fields holds what the host puts in it" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard! h.app.scope.lookup_component("Filler") is Some(filler)
+  guard! bundle.make_instance("Rack", args={
+      "cells": List([
+        filler.make({ "note": Str("one") }),
+        filler.make({ "note": Str("two") }),
+      ]),
+    })
+    is Some(rack)
+  // Held as a list of instances, not as a list of their fields.
+  guard! rack.to_value().field("cells") is List(cells)
+  @debug.assert_eq(cells.map(c => c.field("note").to_display_string()), [
+    "one", "two",
+  ])
+  h.send_at_root("setSlot", args=[rack.to_value()])
+  @debug.assert_eq(h.texts(".filler-note"), ["one", "two"])
+}
+
+///|
+/// And what the guest CAN hold is left where it is.
+///
+/// An instance of this bundle crosses as a token the guest keeps and reads
+/// back through `wrap_instance`; taking that one over would put the host in
+/// charge of a child the guest makes and manages. The discriminator is the
+/// VALUE, not the field: same field, same declared type, different answer.
+///
+/// The fake's constructor ignores the arg, which is what makes this visible —
+/// a host that had claimed the field would answer with it anyway.
+test "a same-bundle instance in a bare component field stays the guest's" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard! bundle.make_instance("Counter", args={ "count": Num(4) }) is Some(mine)
+  guard! bundle.make_instance("Rack", args={ "holds": mine.to_value() })
+    is Some(rack)
+  assert_eq(rack.to_value().field("holds"), Null)
 }

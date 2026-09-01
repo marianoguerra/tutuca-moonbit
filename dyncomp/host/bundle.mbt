@@ -728,7 +728,67 @@ fn Bundle::fill_placeholders(
         }
     }
   }
+  for f in schema.fields {
+    // Decided already, by name, above.
+    if f.ty is TyComp(Some(_)) {
+      continue
+    }
+    if held_for_guest(f.ty, args.get(f.name)) is Some(v) {
+      owned[f.name] = v
+    }
+  }
   owned
+}
+
+///|
+/// A value the host must keep ITSELF, because the guest cannot hold it.
+///
+/// A `component` field that names no component is the case: `ty-comp` with no
+/// name, or `ty-comp-protocols`, which says what a thing must do and not what
+/// it is. There is nothing to build for such a field — which is why
+/// `placeholder_fields` leaves it out — but a caller can still PASS one, and
+/// that is the holder a card is written to be.
+///
+/// What decides it is the value rather than the type: an instance of THIS
+/// bundle crosses as a token the guest holds and reads back through
+/// `wrap_instance`, and taking that one over would put the host in charge of a
+/// child the guest makes and manages. An instance with no guest handle cannot
+/// cross at all — `child_json` has nothing to write but its fields, and what
+/// comes back is a Map with the shape of a component and none of its
+/// behaviour. So the ones the guest cannot hold are held here, and the ones it
+/// can are left where they are.
+///
+/// A LIST of them is the same answer per element, taken whole: a container
+/// whose cells the host supplied is a container the host owns, and one the
+/// guest fills for itself never reaches this at all.
+fn held_for_guest(
+  ty : @tutuca.TyInfo,
+  given : @tutuca.Value?,
+) -> @tutuca.Value? {
+  guard given is Some(v) else { return None }
+  match (ty, v) {
+    (TyComp(None) | TyCompProtocols(_), Obj(_)) =>
+      if foreign_instance(v) {
+        Some(v)
+      } else {
+        None
+      }
+    (TyList(TyComp(_) | TyCompProtocols(_)), List(items)) =>
+      if items.iter().any(foreign_instance) {
+        Some(v)
+      } else {
+        None
+      }
+    _ => None
+  }
+}
+
+///|
+/// Whether this value is an instance NO guest could have handed over: an `Obj`
+/// with no guest handle on it. A host component is one; so is anything a host
+/// built out of its own components.
+fn foreign_instance(v : @tutuca.Value) -> Bool {
+  v is Obj(o) && o.obj_field(handle_field) is None
 }
 
 ///|

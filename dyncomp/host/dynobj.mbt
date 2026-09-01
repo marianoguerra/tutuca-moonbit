@@ -34,9 +34,11 @@ pub struct DynObj {
   /// the handle is the only thing about the instance the host can hash without
   /// paying for a round trip, and it is enough: a bucket only has to spread.
   id : @tutuca.ObjId
-  /// The PLACEHOLDERS this instance declared: fields whose type names a
-  /// component from another module (`resource universal; body: universal`),
-  /// held by the host and never shown to the guest.
+  /// The PLACEHOLDERS this instance declared: fields holding a component the
+  /// guest cannot — one whose type names a component from another module
+  /// (`resource universal; body: universal`), and one declared as a bare
+  /// `component` that a caller filled with an instance from outside this
+  /// bundle. Held by the host and never shown to the guest.
   ///
   /// This is how a guest with internal layout offers a hole for a person to
   /// fill. It has to be the host's because the boundary allows nothing else: a
@@ -119,10 +121,16 @@ pub fn DynObj::new(
 
 ///|
 /// The fields this component declared as holding a component from another
-/// module — the placeholders the host fills. `TyComp(None)` (the bare
+/// module — the placeholders the host BUILDS. `TyComp(None)` (the bare
 /// `component` marker) is NOT one of them: it says "some component" and names
 /// nothing to build, so the host has nothing to put there and says so by
 /// leaving it out.
+///
+/// Building is not the same as holding. A caller can pass an instance for such
+/// a field, and the host keeps that one too (`Bundle::fill_placeholders`), for
+/// the reason `owned` exists at all — a component from outside the guest
+/// cannot cross to it. This list is the "what would I put there myself"
+/// question, and for a field that names nothing the answer is still nothing.
 pub fn placeholder_fields(
   schema : @tutuca.SchemaInfo,
 ) -> Array[(String, String)] {

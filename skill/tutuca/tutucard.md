@@ -109,8 +109,15 @@ Current language boundaries that matter when authoring are:
 - collection mutations use the canonical `push`, `insertAt`, `setAt`,
   `deleteAt`, `add`, `remove`, and `toggle` names; parsed aliases such as
   `clear`, `delete`, `set`, and `removeAt` have no backend behavior;
-- a child component is an opaque host-owned instance token, so a card may
-  carry, render, and message it but cannot traverse into its fields.
+- a child component is an opaque instance token, so a card may carry, render,
+  and message one of its OWN components but cannot traverse into its fields;
+- a component from OUTSIDE the card — the host's own, or another bundle's —
+  cannot live in card state at all: nothing the guest ABI can carry holds one.
+  A field declared as a bare `component` (or by protocol) is held by the HOST
+  instead, so a card can be a holder: pass an instance in and `<x render>`
+  draws it, a list of them draws all of them, and the card sees only that the
+  field is not null. It cannot message one — for that, the child has to be a
+  component of the card itself.
 
 The ahead-of-time MoonBit emitter has a different refusal set. When the same
 file must work on both paths, validate both; see
