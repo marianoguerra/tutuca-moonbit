@@ -117,19 +117,17 @@ fn loader_bar_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("loadSample", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("loadSample"), args=[
           @tutuca.Expr::bind_member("value", "url"),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("typeUrl", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("typeUrl"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", @tutuca.Expr::handler_name("loadUrl", Receive), modifiers=[
-          "send",
-        ]),
+        @anode.on("keydown", @tutuca.Expr::name("loadUrl"), modifiers=["send"]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("loadUrl", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("loadUrl"))],
     ],
   )
 }

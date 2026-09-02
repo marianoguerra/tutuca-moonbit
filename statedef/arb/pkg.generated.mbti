@@ -2,7 +2,6 @@
 package "marianoguerra/tutuca/statedef/arb"
 
 import {
-  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "moonbitlang/core/debug",
@@ -12,7 +11,7 @@ import {
 // Values
 pub const MAX_DEPTH : Int = 3
 
-pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+pub fn dispatch_of(@statedef.StateDef, bucket? : Bucket, depth? : Int) -> @gen.Gen[@core.Dispatch]?
 
 pub fn domain_deps(@core.Domain) -> Array[String]
 
@@ -22,15 +21,15 @@ pub fn implied_domains(Array[@core.FieldDomain], String) -> Array[@core.Domain]
 
 pub fn mutator_args(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> Map[String, @gen.Gen[Array[@core.Value]]]
 
-pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[@component.Dispatch]?
+pub fn mutator_dispatch_of(@statedef.StateDef, depth? : Int, state? : Map[String, @core.Value]) -> @gen.Gen[@core.Dispatch]?
 
-pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@component.Dispatch]?
+pub fn protocol_dispatch_of(@statedef.StateDef, String, depth? : Int) -> @gen.Gen[@core.Dispatch]?
 
 pub fn rules_of(@statedef.StateDef) -> Rules
 
-pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @gen.Gen[Int], depth? : Int) -> @gen.Gen[Array[@component.Dispatch]]?
+pub fn script_of(@statedef.StateDef, bucket? : Bucket, len? : @gen.Gen[Int], depth? : Int) -> @gen.Gen[Array[@core.Dispatch]]?
 
-pub fn shrink_script(Array[@component.Dispatch]) -> Iter[Array[@component.Dispatch]]
+pub fn shrink_script(Array[@core.Dispatch]) -> Iter[Array[@core.Dispatch]]
 
 pub fn size_in_domain(Array[@core.Domain], Map[String, @core.Value]) -> @gen.Gen[Int]?
 

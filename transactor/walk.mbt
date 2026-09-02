@@ -155,13 +155,13 @@ fn Transactor::queue_hop(self : Transactor, w : IntentWalk) -> Unit {
 /// Ask the lexical chain, one handler at a time, stopping at the first that
 /// does not decline.
 ///
-/// Continuation-passing because an `IntentHandler` is handed a callback and may
+/// Continuation-passing because an `IntentFn` is handed a callback and may
 /// answer later; the walk does not get to assume it answers before returning. A
 /// synchronous `Pass` therefore costs one call and one frame.
 fn Transactor::try_lex(
   self : Transactor,
   w : IntentWalk,
-  handlers : Array[IntentHandler],
+  handlers : Array[IntentFn],
   i : Int,
 ) -> Unit {
   if w.answered || w.stopped {
@@ -186,7 +186,7 @@ fn Transactor::try_lex(
     self.exhaust_walk(w)
     return
   }
-  let IntentHandler(f) = handlers[i]
+  let IntentFn(f) = handlers[i]
   let from = w.origin.to_transaction_path().pin_keys(self.root)
   let call : @tutuca.IntentCall = {
     name: w.name,

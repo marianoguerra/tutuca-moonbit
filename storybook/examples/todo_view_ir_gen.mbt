@@ -65,14 +65,12 @@ fn item_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setCompleted", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setCompleted"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setText"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -178,13 +176,11 @@ fn items_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("onAddItem", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("onAddItem"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
     ],
   )

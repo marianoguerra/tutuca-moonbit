@@ -55,7 +55,7 @@ fn row_views() -> Map[String, @anode.View] {
           @anode.dyn_text(@tutuca.Expr::field("n")),
         ]),
       ]),
-      [[@anode.on("click", @tutuca.Expr::handler_name("bump", Receive))]],
+      [[@anode.on("click", @tutuca.Expr::name("bump"))]],
     ),
   }
 }

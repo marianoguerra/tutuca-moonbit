@@ -60,8 +60,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("dec"))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }
@@ -75,7 +75,7 @@ fn counter_compact_view_ir() -> @anode.View {
       @anode.dyn_text(@tutuca.Expr::field("count")),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }

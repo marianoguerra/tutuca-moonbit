@@ -85,12 +85,12 @@ fn selector_entry_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setValue", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setValue"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setLabel"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -189,11 +189,9 @@ fn selector_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setSelectedValue", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setSelectedValue"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
     ],
   )
@@ -305,13 +303,11 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("onAddItem", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("onAddItem"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
     ],
   )
@@ -403,7 +399,7 @@ fn sheet_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setTitle", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setTitle"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

@@ -456,7 +456,7 @@ fn E::property_setters(
     let fn_name = property_set_fn_name(prefix, d.name)
     source.write_string(
       "///|\nfn \{fn_name}(s : \{self.state_ty}, value : @tutuca.Value) -> @component.Update[\{self.state_ty}] {\n" +
-      "  match (@component.Receive(\{quote(d.name)}, [value]) : @component.Dispatch) {\n" +
+      "  match (Receive(\{quote(d.name)}, [value]) : @component.Dispatch) {\n" +
       arm +
       "    _ => Unhandled\n" +
       "  }\n" +
@@ -1017,7 +1017,7 @@ fn expr_uses(e : @tutuca.Expr, name : String) -> Bool {
       expr_uses(cond, name) || expr_uses(then_, name) || expr_uses(else_, name)
     // Three forms a SLOT produces and a block body never writes. They name
     // nothing a body has a binder for, so they use no parameter.
-    ETypeName(..) | EHandlerName(..) | EEventPath(..) => false
+    ETypeName(..) | EEventPath(..) => false
   }
 }
 
@@ -2080,16 +2080,12 @@ fn E::expr(
         "`$$\{name}` is a value the host bound, and a block is compiled ahead of any host",
       )
     ERef(..) => raise Cannot("a place is not a value")
-    // The three forms only a SLOT produces. A block body cannot write one, so
+    // The two forms only a SLOT produces. A block body cannot write either, so
     // reaching here means an AST assembled elsewhere — refused by name for the
     // reason the two above are, rather than emitted as something plausible.
     ETypeName(name~, ..) =>
       raise Cannot(
         "`\{name}` names a component type, and a handler asks for one with `ctx.make`",
-      )
-    EHandlerName(name~, ..) =>
-      raise Cannot(
-        "`\{name}` here is a handler name, which the render stack answers and a handler runs after",
       )
     EEventPath(segments~, ..) =>
       raise Cannot(

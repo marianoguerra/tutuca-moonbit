@@ -58,7 +58,7 @@ fn render_with_scope_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.scope(
         0,
-        @tutuca.Expr::handler_name("enrichScope", Alter),
+        @tutuca.Expr::name("enrichScope"),
         @anode.h("div", [@anode.attr_num("data-nid", 0.0)], [
           @anode.h("p", [], [
             @anode.text("Text: "),
@@ -83,7 +83,7 @@ fn render_with_scope_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setText"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -194,21 +194,19 @@ fn list_filter_enrich_main_view_ir() -> @anode.View {
             @anode.dyn_text(@tutuca.Expr::bind("count"), id=1),
             @anode.text(" characters)\n    "),
           ]),
-          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
-          enrich_with_val=@tutuca.Expr::handler_name("enrichItem", Alter),
+          when_val=@tutuca.Expr::name("filterItem"),
+          enrich_with_val=@tutuca.Expr::name("enrichItem"),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )
@@ -339,22 +337,20 @@ fn list_filter_enrich_with_main_view_ir() -> @anode.View {
             @anode.dyn_text(@tutuca.Expr::bind("total"), id=2),
             @anode.text(")\n    "),
           ]),
-          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
-          loop_with_val=@tutuca.Expr::handler_name("getIterData", Alter),
-          enrich_with_val=@tutuca.Expr::handler_name("enrichItem", Alter),
+          when_val=@tutuca.Expr::name("filterItem"),
+          loop_with_val=@tutuca.Expr::name("getIterData"),
+          enrich_with_val=@tutuca.Expr::name("enrichItem"),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )

@@ -158,7 +158,7 @@ fn tpl_piece(v : Value) -> String {
 /// the case the enum cannot rule out — an arm that answers `None`, meaning
 /// "another bucket serves this", where no other bucket does. That is a real
 /// mistake worth reporting rather than a shape the engine has to tolerate.
-fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
+fn mk_404_handler(name : String) -> Value {
   Fn(args => {
     // The same silence `Path::update` reports for a dispatch, one layer out: a
     // name a view wrote and no bucket answers. There is no state in hand here —
@@ -174,7 +174,7 @@ fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
         path: Path::new(),
       })
     } else {
-      warn("handler not found \{Repr((ns, name))}")
+      warn("handler not found \{Repr(name)}")
     }
     args.get(0).unwrap_or(Null)
   })
@@ -293,11 +293,6 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
         _ => Null
       }
     EName(name~, ..) => stack.lookup_name(name)
-    EHandlerName(name~, ns~, ..) =>
-      match stack.get_handler_for(name, ns) {
-        Null => mk_404_handler(ns, name)
-        handler => handler
-      }
     // An Uppercase name parses (a handler arg may be written as one, and the
     // linter reads them) but resolves to nothing: a type is not a Value, so
     // there is nothing for a stack to hand back.
@@ -345,11 +340,22 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
 }
 
 ///|
+/// Evaluate in a HANDLER position: `@on`'s name, and the three render-time
+/// directives' (`@when`, `@enrich-with`, `@loop-with`).
+///
+/// A separate entry rather than a case on the value, which is what the retired
+/// `HandlerNamespace` was: the same bare name means "a parameter" in a body and
+/// "the thing to run" here, and which one it means is a fact about the position
+/// it was written in. So the position asks, and the name carries nothing.
 pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
   match self {
-    // Handler position hands back the raw function for the dispatch
-    // machinery to call with event args.
+    // The raw function, for the dispatch machinery to call with event args.
     EMethod(name~, ..) => stack.lookup_field_raw(name)
+    EName(name~, ..) =>
+      match stack.lookup_trigger(name) {
+        Null => mk_404_handler(name)
+        handler => handler
+      }
     _ => self.eval(stack)
   }
 }

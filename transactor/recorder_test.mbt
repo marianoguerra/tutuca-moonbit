@@ -179,8 +179,8 @@ test "the seam sees an intent leave for the host and the answer come back" {
   let asked : Array[String] = []
   let reg = Reg::{
     handlers: [
-      @transactor.IntentHandler((_c, answer) => answer(Pass)),
-      @transactor.IntentHandler((c, answer) => {
+      @tutuca.IntentFn((_c, answer) => answer(Pass)),
+      @tutuca.IntentFn((c, answer) => {
         asked.push(c.name)
         answer(Ok(Str("stored")))
       }),
@@ -206,7 +206,7 @@ test "the seam sees an intent leave for the host and the answer come back" {
 
 ///|
 priv struct Reg {
-  handlers : Array[@transactor.IntentHandler]
+  handlers : Array[@tutuca.IntentFn]
 }
 
 ///|
@@ -220,7 +220,7 @@ impl @transactor.Intents for Reg with fn intents_for(self, _leaf, _name) {
 /// pair an answer with the question — only this can.
 test "one walk id spans every hop and the answer" {
   let reg = Reg::{
-    handlers: [@transactor.IntentHandler((_c, answer) => answer(Ok(Str("y"))))],
+    handlers: [@tutuca.IntentFn((_c, answer) => answer(Ok(Str("y"))))],
   }
   let tx = @transactor.Transactor::new(rooted(), intents=reg)
   let tape = Tape::new()

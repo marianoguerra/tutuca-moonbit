@@ -103,7 +103,7 @@ fn file_picker_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("change", @tutuca.Expr::handler_name("onPickFile", Receive), args=[
+        @anode.on("change", @tutuca.Expr::name("onPickFile"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

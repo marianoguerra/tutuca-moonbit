@@ -39,17 +39,6 @@ pub struct Builtin {
 }
 
 ///|
-/// Which namespace a handler name is looked up in.
-///
-/// `Receive` is the dispatch side — a name an `@on.<event>` raises, delivered
-/// as an addressed message. `Alter` is the render side, where a name answers a
-/// question about a row instead of changing anything.
-pub(all) enum HandlerNamespace {
-  Receive // @on.<event>
-  Alter // @when, @enrich-with, @loop-with
-} derive(Debug, Eq)
-
-///|
 /// A concrete sequence key: list index or map key (int|string)
 pub(all) enum PathKey {
   KInt(Int)
@@ -148,7 +137,7 @@ declare pub fn ObjId::to_hex(self : ObjId) -> String
 /// the Value-backed Instance (component package) and user-defined typed
 /// structs. Instances live INSIDE Value so they flow through every
 /// Value-typed seam (binds, handler args, dynamic lookups, iterated seqs).
-/// Fns returned by obj_field / obj_callable and the Handler returned
+/// Fns returned by obj_field / trigger and the Handler returned
 /// by obj_handler are SELF-PRE-BOUND (they close over the concrete Self —
 /// the no-downcast analogue of late-bound `this`) and ignore args element 0.
 /// Every method defaults to an empty/None answer.
@@ -185,12 +174,15 @@ pub(open) trait Obj {
   // (the default iteration falls back to empty). Keyed entries use KStr keys ("sk" breadcrumbs),
   // indexed ones KInt ("si"); obj_item resolves the same keys for path lookup.
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
-  // The named CALLABLE this instance exposes for evaluation: the render-time
-  // buckets (@when / @enrich-with / @loop-with) under Alter, and whatever
-  // answers a bare name otherwise. Distinct from obj_handler, which resolves a
-  // leaf-UPDATING handler in a dispatch bucket — different question, different
-  // answer.
-  fn obj_callable(Self, name : String, ns : HandlerNamespace) -> Value? = _
+  // The TRIGGER this name answers: the render-time buckets (@when /
+  // @enrich-with / @loop-with), then whatever answers a bare name. Distinct
+  // from obj_handler, which resolves a leaf-UPDATING handler in a dispatch
+  // bucket — different question, different answer.
+  //
+  // It used to take a NAMESPACE, `Receive` or `Alter`, and the `Receive` half
+  // never resolved anything a render position asked for: an `@on` name is
+  // DISPATCHED by name and is never evaluated. One question, so one method.
+  fn trigger(Self, name : String) -> Value? = _
   // The two above, asked WITH the stack they are being asked from.
   //
   // A `Value::Fn` carries `(Array[Value]) -> Value` and nothing else, so a
@@ -198,12 +190,12 @@ pub(open) trait Obj {
   // has no way to ask its environment anything. These are the one seam that
   // hands it one, and they exist as a PAIR because the two questions already
   // are one: `obj_field` surfaces a `$compute` as a pre-bound Fn and
-  // `obj_callable` does the same for the render-time buckets.
+  // `trigger` does the same for the render-time buckets.
   //
   // Defaulted to the stackless answer, so an `Obj` with nothing to do with a
   // stack — every hand-written one — implements neither and keeps working.
   fn obj_method_at(Self, name : String, stack : &Stack) -> Value? = _
-  fn obj_callable_at(Self, name : String, ns : HandlerNamespace, stack : &Stack) -> Value? = _
+  fn trigger_at(Self, name : String, stack : &Stack) -> Value? = _
   fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
   // What this instance DECLARES: the one method that makes the nine above
   // describable. Without it a holder of a bare `Value` can ask for a NAMED
@@ -311,7 +303,7 @@ impl Obj with fn obj_seq_entries(_self) {
 }
 
 ///|
-impl Obj with fn obj_callable(_self, _name, _ns) {
+impl Obj with fn trigger(_self, _name) {
   None
 }
 
@@ -323,8 +315,8 @@ impl Obj with fn obj_method_at(self, name, _stack) {
 }
 
 ///|
-impl Obj with fn obj_callable_at(self, name, ns, _stack) {
-  self.obj_callable(name, ns)
+impl Obj with fn trigger_at(self, name, _stack) {
+  self.trigger(name)
 }
 
 ///|
@@ -414,7 +406,7 @@ declare pub impl Debug for Value
 /// Evaluation environment (the `stack`). Every method defaults to Null so
 /// implementations (and test mocks) provide only the lookups they use.
 /// lookup_method returns the RESULT of the no-arg call — the stack invokes.
-/// get_handler_for returns Null when no handler is registered.
+/// lookup_trigger returns Null when no render-time handler answers the name.
 pub(open) trait Stack {
   fn lookup_name(Self, String) -> Value = _
   /// Resolve `e.<segments>` against the event being handled.
@@ -436,7 +428,9 @@ pub(open) trait Stack {
   /// then the raw field fallback for record-like values.
   fn lookup_member(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
-  fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
+  /// The render-time handler this name answers — `@when`, `@enrich-with`,
+  /// `@loop-with`. Null when none does.
+  fn lookup_trigger(Self, String) -> Value = _
 }
 
 ///|
@@ -475,7 +469,7 @@ impl Stack with fn lookup_method(_self, _name) {
 }
 
 ///|
-impl Stack with fn get_handler_for(_self, _name, _namespace) {
+impl Stack with fn lookup_trigger(_self, _name) {
   Null
 }
 

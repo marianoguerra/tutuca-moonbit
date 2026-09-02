@@ -81,18 +81,11 @@ fn emoji_picker_main_view_ir() -> @anode.View {
       ],
     ),
     [
+      [@anode.on("click", @tutuca.Expr::name("toggleIsPickerVisible"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsPickerVisible", Receive),
-        ),
-      ],
-      [
-        @anode.on(
-          "emoji-click",
-          @tutuca.Expr::handler_name("onEmojiClick", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("emoji-click", @tutuca.Expr::name("onEmojiClick"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
     ],
   )

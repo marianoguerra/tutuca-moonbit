@@ -714,27 +714,25 @@ fn DynObj::write_member(
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
-  self.callable_at(name, ns, @tutuca.NullStack::{ })
+pub impl @tutuca.Obj for DynObj with fn trigger(self, name) {
+  self.callable_at(name, @tutuca.NullStack::{ })
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_callable_at(self, name, ns, stack) {
-  self.callable_at(name, ns, stack)
+pub impl @tutuca.Obj for DynObj with fn trigger_at(self, name, stack) {
+  self.callable_at(name, stack)
 }
 
 ///|
 fn DynObj::callable_at(
   self : DynObj,
   name : String,
-  ns : @tutuca.HandlerNamespace,
   stack : &@tutuca.Stack,
 ) -> @tutuca.Value? {
-  // The render-time (alter) namespace is where a `@when` filter is looked up.
-  // It reaches the fixed `when` operation — the guest writes one function and
-  // the host reads its answer as a boolean — and this
-  // list is what says the name belongs to that namespace.
-  if ns is Alter && self.def.whens.contains(name) {
+  // A `@when` filter reaches the fixed `when` operation — the guest writes one
+  // function and the host reads its answer as a boolean — and the manifest's
+  // `whens` list is what says the name is one.
+  if self.def.whens.contains(name) {
     let bindings = self.render_bindings(stack)
     return Some(
       Fn(args => {
@@ -749,7 +747,7 @@ fn DynObj::callable_at(
   // guest returns one and this writes it back — the same contract
   // `tutucard/obj.mbt`'s `alter_fn` documents, with the write-back moved to the
   // side of the boundary that can do it.
-  if ns is Alter && self.def.enriches.contains(name) {
+  if self.def.enriches.contains(name) {
     return Some(
       Fn(args => {
         match drop_this(args) {
@@ -793,7 +791,7 @@ fn DynObj::callable_at(
   }
   // The scope form is handed no row and its answer IS the map, so there is
   // nothing to write back.
-  if ns is Alter && self.def.enrich_scopes.contains(name) {
+  if self.def.enrich_scopes.contains(name) {
     return Some(
       Fn(_args => {
         match

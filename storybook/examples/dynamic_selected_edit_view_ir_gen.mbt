@@ -87,7 +87,7 @@ fn dse_root_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("selectItem", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("selectItem"), args=[
           @tutuca.Expr::bind("key"),
         ]),
       ],
@@ -271,7 +271,7 @@ fn dse_entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setName"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

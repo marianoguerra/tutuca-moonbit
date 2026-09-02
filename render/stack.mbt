@@ -241,12 +241,12 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {
 ///|
 /// Render-time handlers (@when / @enrich-with / @loop-with): the alter
 /// bucket on instances, plain Fn fields on the Map fallback.
-pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
+pub impl @tutuca.Stack for RenderStack with fn lookup_trigger(self, name) {
   match self.it {
     // The render-time twin of `lookup_method` above, and the stack is handed
     // over for the same reason: a `@when` or an `enrich` reading `*name` is
     // asking THIS position.
-    Obj(o) => o.obj_callable_at(name, ns, self).unwrap_or(Null)
+    Obj(o) => o.trigger_at(name, self).unwrap_or(Null)
     _ =>
       match self.it.field(name) {
         Fn(_) as f => f

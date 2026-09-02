@@ -24,16 +24,10 @@
 // and render/dom_event.mbt.)
 
 ///|
-/// A static intent handler.
-///
-/// It receives an `IntentCall` — which carries `from`, the sender's position,
-/// so a host can decide whether this sender may ask — rather than a bare
-/// argument list, and it may answer `Pass`. `Pass` DECLINES: a handler with
-/// nothing to say hands the intent to the next one rather than inventing an
-/// error to discharge an obligation to respond.
-pub(all) struct IntentHandler(
-  (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
-)
+/// A static intent handler. `@tutuca.IntentFn`, which is the same struct the
+/// component layer registers — there were two, identical to the field, with an
+/// adapter in `app` that unwrapped one and rewrapped it as the other.
+pub using @tutuca {type IntentFn}
 
 ///|
 /// The lexical leg's registry.
@@ -46,9 +40,7 @@ pub(all) struct IntentHandler(
 /// running, so a `Pass` costs a call rather than a queue step — which is why
 /// the chain comes back as a list and not as a "next" continuation.
 pub(open) trait Intents {
-  fn intents_for(Self, leaf : @tutuca.Value, name : String) -> Array[
-    IntentHandler,
-  ] = _
+  fn intents_for(Self, leaf : @tutuca.Value, name : String) -> Array[IntentFn] = _
 }
 
 ///|

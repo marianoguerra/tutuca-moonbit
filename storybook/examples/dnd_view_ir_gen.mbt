@@ -70,23 +70,21 @@ fn dn_d_example_main_view_ir() -> @anode.View {
               @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
             ],
           ),
-          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+          when_val=@tutuca.Expr::name("filterItem"),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("onDropOnItem", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
           @tutuca.Expr::bind("key"),
           @tutuca.Expr::event_path(["dragInfo"]),
         ]),

@@ -172,14 +172,14 @@ fn universal_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("add"), args=[
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("pick", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("remove", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("pick"))],
+      [@anode.on("click", @tutuca.Expr::name("remove"))],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("dropped", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("dropped"), args=[
           @tutuca.Expr::event_path(["dragInfo"]),
         ]),
       ],
@@ -346,11 +346,11 @@ fn stack_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("insertAt", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("insertAt"), args=[
           @tutuca.Expr::bind("key"),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("appendCell", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("appendCell"))],
     ],
   )
 }
@@ -526,10 +526,10 @@ fn grid_edit_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("addColBefore", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("addColAfter", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("addRowBefore", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("addRowAfter", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("addColBefore"))],
+      [@anode.on("click", @tutuca.Expr::name("addColAfter"))],
+      [@anode.on("click", @tutuca.Expr::name("addRowBefore"))],
+      [@anode.on("click", @tutuca.Expr::name("addRowAfter"))],
     ],
   )
 }
@@ -631,20 +631,16 @@ fn tab_page_tabname_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setLabel"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("doneRename", Receive),
-          modifiers=["send"],
-        ),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("cancelRename", Receive),
-          modifiers=["cancel"],
-        ),
-        @anode.on("focusout", @tutuca.Expr::handler_name("doneRename", Receive)),
+        @anode.on("keydown", @tutuca.Expr::name("doneRename"), modifiers=[
+          "send",
+        ]),
+        @anode.on("keydown", @tutuca.Expr::name("cancelRename"), modifiers=[
+          "cancel",
+        ]),
+        @anode.on("focusout", @tutuca.Expr::name("doneRename")),
       ],
     ],
   )
@@ -739,7 +735,7 @@ fn tabs_main_view_ir() -> @anode.View {
                 ],
                 [@anode.dyn_text(@tutuca.Expr::bind_member("value", "label"))],
               ),
-              enrich_with_val=@tutuca.Expr::handler_name("markActive", Alter),
+              enrich_with_val=@tutuca.Expr::name("markActive"),
             ),
           ],
         ),
@@ -748,14 +744,14 @@ fn tabs_main_view_ir() -> @anode.View {
           2,
           @tutuca.Expr::field("tabs"),
           @anode.render_it(1),
-          when_val=@tutuca.Expr::handler_name("isActivePage", Alter),
+          when_val=@tutuca.Expr::name("isActivePage"),
           from_render_each=true,
         ),
       ],
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("activate", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("activate"), args=[
           @tutuca.Expr::bind("key"),
         ]),
       ],
@@ -811,7 +807,7 @@ fn tabs_edit_view_ir() -> @anode.View {
                   id=1,
                 ),
               ]),
-              enrich_with_val=@tutuca.Expr::handler_name("markActive", Alter),
+              enrich_with_val=@tutuca.Expr::name("markActive"),
             ),
             @anode.text(" "),
             @anode.h(
@@ -835,20 +831,20 @@ fn tabs_edit_view_ir() -> @anode.View {
           4,
           @tutuca.Expr::field("tabs"),
           @anode.render_it(3),
-          when_val=@tutuca.Expr::handler_name("isActivePage", Alter),
+          when_val=@tutuca.Expr::name("isActivePage"),
           from_render_each=true,
         ),
       ],
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("activate", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("activate"), args=[
           @tutuca.Expr::bind("key"),
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("addTab", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("closeActive", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("addTab"))],
+      [@anode.on("click", @tutuca.Expr::name("closeActive"))],
     ],
   )
 }
@@ -1035,7 +1031,7 @@ fn textarea_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setText"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

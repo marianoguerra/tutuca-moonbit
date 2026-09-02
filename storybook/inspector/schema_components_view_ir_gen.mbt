@@ -306,7 +306,7 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                 3,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -315,14 +315,9 @@ fn schema_scalar_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }
@@ -611,7 +606,7 @@ fn schema_object_main_view_ir() -> @anode.View {
                 3,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -620,14 +615,9 @@ fn schema_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }
@@ -916,7 +906,7 @@ fn schema_array_main_view_ir() -> @anode.View {
                 3,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -925,14 +915,9 @@ fn schema_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }
@@ -1216,7 +1201,7 @@ fn schema_enum_main_view_ir() -> @anode.View {
                 3,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -1225,14 +1210,9 @@ fn schema_enum_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }
@@ -1520,7 +1500,7 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                 3,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -1529,14 +1509,9 @@ fn schema_combinator_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsExpanded"))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }

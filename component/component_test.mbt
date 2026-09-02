@@ -732,11 +732,11 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let t = comp.make(Map([]))
   guard! t is Obj(o)
   // @when: Fn-convention [this, key, value, iterData] -> Bool
-  guard! o.obj_callable("keep", Alter) is Some(Fn(keep))
+  guard! o.trigger("keep") is Some(Fn(keep))
   assert_eq(keep([Null, Num(0), Str("cat")]), Bool(true))
   assert_eq(keep([Null, Num(0), Str("dog")]), Bool(false))
   // @enrich-with: mutates the binds map, return ignored
-  guard! o.obj_callable("annotate", Alter) is Some(Fn(annotate))
+  guard! o.trigger("annotate") is Some(Fn(annotate))
   let binds : Map[String, @tutuca.Value] = {
     "key": Num(0),
     "value": Str("cat"),
@@ -744,10 +744,10 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let _ = annotate([Null, Map(binds), Num(0), Str("cat"), Null])
   assert_eq(binds.get("len"), Some(Num(3)))
   // scope form: called with no args, returns the binds map
-  guard! o.obj_callable("derived", Alter) is Some(Fn(derived))
+  guard! o.trigger("derived") is Some(Fn(derived))
   assert_eq(derived([Null]), Map({ "upper": Str("A") }))
   // @loop-with: returns the {start, end} plan the renderer unpacks
-  guard! o.obj_callable("page", Alter) is Some(Fn(page))
+  guard! o.trigger("page") is Some(Fn(page))
   assert_eq(
     page([Null, List([]), Null]),
     Map({ "start": Num(1), "end": Num(3) }),
@@ -1252,7 +1252,7 @@ test "a @when is handed the stack too, through the alter seam" {
     name: "theme",
     value: Str("dark"),
   }
-  guard! o.obj_callable_at("isTheme", Alter, stack) is Some(Fn(f))
+  guard! o.trigger_at("isTheme", stack) is Some(Fn(f))
   assert_true(f([Null, Null, Str("dark"), Null]) == Bool(true))
   assert_true(f([Null, Null, Str("light"), Null]) == Bool(false))
 }
@@ -1314,7 +1314,7 @@ test "sending a read-only generated name leaves the instance alone" {
   let v = comp.make(Map([]))
   guard v is Obj(o) else { fail("a made component is an instance") }
   // It reads: `$itemsLen` answers three.
-  guard o.obj_callable("itemsLen", Receive) is Some(Fn(f)) else {
+  guard o.trigger("itemsLen") is Some(Fn(f)) else {
     fail("itemsLen is a generated `$`-callable")
   }
   assert_eq(f([v]), Num(3))

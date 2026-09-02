@@ -158,13 +158,16 @@ pub(all) enum Expr {
   EConfigVar(name~ : String, span~ : Span)
   /// A bare name. In a declaration body it is a parameter; in a handler slot
   /// it is an event argument, resolved against the closed table in
-  /// `render/dom_event.mbt`. Never a value in a value slot.
-  EName(name~ : String, span~ : Span)
-  /// A bare name in a HANDLER position, with the namespace it is looked up in.
+  /// `render/dom_event.mbt`; in a HANDLER position it is the name of the
+  /// thing to run. Never a value in a value slot.
   ///
-  /// The same word as `EName` and a different question: this one is answered
-  /// by the render stack rather than by a parameter list.
-  EHandlerName(name~ : String, ns~ : HandlerNamespace, span~ : Span)
+  /// One case, where there were two. The second carried a NAMESPACE — the
+  /// dispatch side or the render side — and the dispatch side never resolved
+  /// anything: an `@on` name is dispatched BY NAME and never evaluated. What
+  /// the namespace really said was which POSITION the name was written in,
+  /// which is `Position`'s question and is asked where the name is read
+  /// (`Val::eval_as_handler`) rather than carried on it.
+  EName(name~ : String, span~ : Span)
   /// A bare Uppercase name — a component TYPE (`@tutuca.is_type_name`).
   ETypeName(name~ : String, span~ : Span)
   /// A name applied to arguments — `len .items`, `clamp .page 0 (.n - 1)`,
@@ -217,7 +220,6 @@ pub fn Expr::span(self : Expr) -> Span {
     | EMacroVar(span~, ..)
     | EConfigVar(span~, ..)
     | EName(span~, ..)
-    | EHandlerName(span~, ..)
     | ETypeName(span~, ..)
     | EApp(span~, ..)
     | EChain(span~, ..)
@@ -247,8 +249,6 @@ pub impl Eq for Expr with fn equal(self, other) {
     (EMacroVar(name~, ..), EMacroVar(name=n2, ..)) => name == n2
     (EConfigVar(name~, ..), EConfigVar(name=n2, ..)) => name == n2
     (EName(name~, ..), EName(name=n2, ..)) => name == n2
-    (EHandlerName(name~, ns~, ..), EHandlerName(name=n2, ns=s2, ..)) =>
-      name == n2 && ns == s2
     (ETypeName(name~, ..), ETypeName(name=n2, ..)) => name == n2
     (EApp(name~, args~, ..), EApp(name=n2, args=a2, ..)) =>
       name == n2 && args == a2
@@ -310,11 +310,6 @@ pub impl Debug for Expr with fn to_repr(self) {
     EConfigVar(name~, ..) =>
       Repr::ctor("EConfigVar", [(Some("name"), Repr(name))])
     EName(name~, ..) => Repr::ctor("EName", [(Some("name"), Repr(name))])
-    EHandlerName(name~, ns~, ..) =>
-      Repr::ctor("EHandlerName", [
-        (Some("name"), Repr(name)),
-        (Some("ns"), Repr(ns)),
-      ])
     ETypeName(name~, ..) =>
       Repr::ctor("ETypeName", [(Some("name"), Repr(name))])
     EApp(name~, args~, ..) =>

@@ -22,9 +22,9 @@ pub fn shrink_actions(Array[Action]) -> Iter[Array[Action]]
 
 // Types and methods
 pub(all) enum Action {
-  Message(@component.Dispatch)
+  Message(@core.Dispatch)
   SetProperty(String, @core.Value)
-  InternalMutator(@component.Dispatch)
+  InternalMutator(@core.Dispatch)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Outcome {

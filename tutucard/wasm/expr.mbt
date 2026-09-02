@@ -171,24 +171,15 @@ fn ECtx::expr(self : ECtx, e : @tutuca.Expr) -> @abi.I raise Bail {
       )
       call("tc_null", [])
     }
-    // The three forms only a VIEW SLOT produces: a component type, a handler
-    // name the render stack answers, and a read of the DOM event a view is
-    // handling. A block has none of the three, and the same sentence rule
-    // applies as above — refused where the code would be emitted.
+    // The two forms only a VIEW SLOT produces: a component type and a read of
+    // the DOM event a view is handling. A block has neither, and the same
+    // sentence rule applies as above — refused where the code would be
+    // emitted.
     ETypeName(name~, span~) => {
       self.bail(
         "`" +
         name +
         "` names a component type, and a block cannot build one — a card carries a child by declaring it and `new`ing it",
-        span,
-      )
-      call("tc_null", [])
-    }
-    EHandlerName(name~, span~, ..) => {
-      self.bail(
-        "`" +
-        name +
-        "` here is a handler name, which the render stack answers — a block calls a `compute` or a `pred` by name instead",
         span,
       )
       call("tc_null", [])

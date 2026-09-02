@@ -143,7 +143,7 @@ fn fields_json(args : Map[String, @tutuca.Value]) -> String {
 ///|
 /// WIT order, which is what the bridge counts in: 0=receive, 1=intent.
 fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
-  @dyncomp.bucket_ordinal(bucket)
+  bucket.ordinal()
 }
 
 // --- the Guest impl over __cardguest ---------------------------------------

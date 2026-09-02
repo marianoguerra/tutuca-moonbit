@@ -476,8 +476,11 @@ pub fn Component::view_handler_names(self : Component) -> Array[String] {
         for ne in px.events {
           for h in ne.handlers {
             match h.handler.handler {
-              EHandlerName(name~, ns~, ..) =>
-                if ns is Receive && !seen.contains(name) {
+              // Every name in an `@on` position is one, which is what dropping
+              // the namespace made plain: these ARE the event table's
+              // handlers, and a render-time directive's name never reaches it.
+              EName(name~, ..) =>
+                if !seen.contains(name) {
                   seen[name] = ()
                   out.push(name)
                 }

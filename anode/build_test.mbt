@@ -40,7 +40,7 @@ test "a hand-built tree is the parsed tree" {
       Repr(
         @anode.events_of([
           [
-            @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
+            @anode.on("click", @tutuca.Expr::name("add"), args=[
               @anode.const_num(1),
             ]),
             @anode.on("keydown", @tutuca.Expr::method_("inc"), modifiers=[

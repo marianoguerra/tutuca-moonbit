@@ -329,7 +329,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
 ///|
 /// A `$`-callable by name: a `compute` first, then a `generated` one.
 ///
-/// Both `obj_field` and `obj_callable` end in exactly this lookup.
+/// Both `obj_field` and `trigger` end in exactly this lookup.
 fn[S] TypedInstance::callable_of(
   self : TypedInstance[S],
   name : String,
@@ -530,8 +530,8 @@ fn[S] TypedInstance::write_member(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
-  @tutuca.Obj::obj_callable_at(self, name, ns, @tutuca.NullStack::{ })
+impl[S] @tutuca.Obj for TypedInstance[S] with fn trigger(self, name) {
+  @tutuca.Obj::trigger_at(self, name, @tutuca.NullStack::{ })
 }
 
 ///|
@@ -548,20 +548,15 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_method_at(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable_at(
-  self,
-  name,
-  ns,
-  stack,
-) {
-  // Alter namespace: the four typed render-time buckets first, each adapted
-  // to its directive's Fn-convention call shape (element 0 = this).
+impl[S] @tutuca.Obj for TypedInstance[S] with fn trigger_at(self, name, stack) {
+  // The four typed render-time buckets first, each adapted to its directive's
+  // Fn-convention call shape (element 0 = this).
   //
   // Three of the four take `stack` as their last argument, because a `pred`
   // compiled as a `@when` and the same `pred` compiled as a `$name` are ONE
   // body — so if one of them can read `*name`, both must. `loop_with` does
   // not: no value body compiles into it.
-  if ns is Alter {
+  {
     match self.spec.when.get(name) {
       Some(f) =>
         return Some(

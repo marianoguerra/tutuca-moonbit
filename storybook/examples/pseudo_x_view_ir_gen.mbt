@@ -275,7 +275,7 @@ fn item_select_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setCurrent", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setCurrent"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

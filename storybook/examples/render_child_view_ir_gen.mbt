@@ -220,16 +220,14 @@ fn entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setTitle", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setTitle"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setDescription", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setDescription"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
     ],
   )

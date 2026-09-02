@@ -230,13 +230,6 @@ fn val_expr(val : @tutuca.Val) -> String {
       segments.map(seg => quote(seg)).join(", ") +
       "])"
     EName(name~, ..) => "\{t}Expr::name(\{quote(name)})"
-    EHandlerName(name~, ns~, ..) => {
-      let ns_name = match ns {
-        Receive => "Receive"
-        Alter => "Alter"
-      }
-      "\{t}Expr::handler_name(\{quote(name)}, \{ns_name})"
-    }
     ETypeName(name~, ..) => "\{t}Expr::type_name(\{quote(name)})"
     EDyn(name~, ..) => "\{t}Expr::dyn_(\{quote(name)})"
     EMethod(name~, ..) => "\{t}Expr::method_(\{quote(name)})"

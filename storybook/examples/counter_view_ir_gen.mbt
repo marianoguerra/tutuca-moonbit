@@ -68,8 +68,8 @@ fn counter_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("dec"))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }
@@ -128,7 +128,7 @@ fn counter_property_set_magnitude(
   s : CounterState,
   value : @tutuca.Value,
 ) -> @component.Update[CounterState] {
-  match (@component.Receive("magnitude", [value]) : @component.Dispatch) {
+  match (Receive("magnitude", [value]) : @component.Dispatch) {
     Receive("magnitude", args) => {
       guard args.get(0) is Some(Num(value_)) else { return Unchanged }
       let s = if s.count.to_double() < 0.0 {

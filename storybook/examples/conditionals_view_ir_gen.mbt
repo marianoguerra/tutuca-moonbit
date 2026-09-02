@@ -90,7 +90,7 @@ fn traffic_light_main_view_ir() -> @anode.View {
         ),
       ]),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("nextLight", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("nextLight"))]],
   )
 }
 
@@ -329,17 +329,17 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("overview"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("features"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("pricing"),
         ]),
       ],
@@ -434,20 +434,18 @@ fn list_and_filter_main_view_ir() -> @anode.View {
             @anode.text(": "),
             @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
           ]),
-          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+          when_val=@tutuca.Expr::name("filterItem"),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )

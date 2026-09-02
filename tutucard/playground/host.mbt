@@ -242,7 +242,7 @@ fn playground_intents(
 
   {
     "rows": [
-      @component.IntentFn((_call, answer) => {
+      @tutuca.IntentFn((_call, answer) => {
         later(500, () => {
           answer(
             Ok(
@@ -268,12 +268,12 @@ fn playground_intents(
       }),
     ],
     "echo": [
-      @component.IntentFn((call, answer) => {
+      @tutuca.IntentFn((call, answer) => {
         later(300, () => answer(Ok(call.args.get(0).unwrap_or(Null))))
       }),
     ],
     "fail": [
-      @component.IntentFn((_call, answer) => {
+      @tutuca.IntentFn((_call, answer) => {
         later(500, () => answer(Failed(Str("the host said no"))))
       }),
     ],

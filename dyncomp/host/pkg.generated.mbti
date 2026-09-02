@@ -12,8 +12,6 @@ import {
 }
 
 // Values
-pub fn bucket_ordinal(@core.HandlerBucket) -> Int
-
 pub fn child_json(@core.Value) -> Json
 
 pub fn collect_superseded() -> Unit

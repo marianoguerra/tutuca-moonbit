@@ -106,8 +106,8 @@ fn bar_chart_main_view_ir() -> @anode.View {
               [],
               ns=Svg,
             ),
-            loop_with_val=@tutuca.Expr::handler_name("layout", Alter),
-            enrich_with_val=@tutuca.Expr::handler_name("bar", Alter),
+            loop_with_val=@tutuca.Expr::name("layout"),
+            enrich_with_val=@tutuca.Expr::name("bar"),
           ),
           @anode.text(" "),
           @anode.each(
@@ -125,8 +125,8 @@ fn bar_chart_main_view_ir() -> @anode.View {
               [@anode.dyn_text(@tutuca.Expr::bind("value"))],
               ns=Svg,
             ),
-            loop_with_val=@tutuca.Expr::handler_name("layout", Alter),
-            enrich_with_val=@tutuca.Expr::handler_name("bar", Alter),
+            loop_with_val=@tutuca.Expr::name("layout"),
+            enrich_with_val=@tutuca.Expr::name("bar"),
           ),
         ],
         ns=Svg,
@@ -156,9 +156,9 @@ fn bar_chart_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("randomize", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("addBar", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("removeBar", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("randomize"))],
+      [@anode.on("click", @tutuca.Expr::name("addBar"))],
+      [@anode.on("click", @tutuca.Expr::name("removeBar"))],
     ],
   )
 }

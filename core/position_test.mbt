@@ -10,6 +10,8 @@
 fn positions() -> Array[(String, @core.Position)] {
   [
     ("condition", PosCondition),
+    ("event", PosEvent),
+    ("trigger", PosTrigger),
     ("text", PosText),
     ("component", PosComponent),
     ("sequence", PosSequence),
@@ -43,7 +45,6 @@ fn forms() -> Array[(String, @core.Expr)] {
     ("$total", @core.Expr::method_("total")),
     ("bare", @core.Expr::name("bare")),
     ("Uppercase", @core.Expr::type_name("Cell")),
-    ("handler", @core.Expr::handler_name("inc", Receive)),
     ("truthy? .count", @core.Expr::app("truthy?", [field])),
     ("e.value", @core.Expr::event_path(["value"])),
     (
@@ -138,31 +139,30 @@ test "the admission table, every form against every position" {
   inspect(
     out.to_string(),
     content=(
-      #|form                  condition text component sequence provide field event-arg macro-attr body
-      #|'text'                .         .    -         -        -       .     .         .          .    
-      #|$'a{.b}'              !         .    -         -        -       -     -         .          .    
-      #|$'literal'            .         .    -         -        -       .     .         .          .    
-      #|.count                .         .    .         .        .       .     .         .          .    
-      #|@value                .         .    -         -        -       -     .         .          .    
-      #|@value.title          .         .    -         -        -       -     .         .          .    
-      #|.rows[.key]           -         -    .         -        .       .     -         .          .    
-      #|*theme                .         .    .         .        -       -     .         .          .    
-      #|$total                .         .    -         -        -       .     .         .          .    
-      #|bare                  -         -    -         -        -       -     .         .          .    
-      #|Uppercase             -         -    -         -        -       -     -         -          .    
-      #|handler               -         -    -         -        -       -     .         .          .    
-      #|truthy? .count        .         -    -         -        -       -     -         -          .    
-      #|e.value               -         -    -         -        -       -     .         -          .    
-      #|.a.b                  !         !    !         !        !       !     !         !          .    
-      #|param.x               !         !    !         !        !       !     !         !          .    
-      #|&.rows[.k]            !         !    !         !        !       !     !         !          .    
-      #|^macroVar             -         -    -         -        -       -     -         -          .    
-      #|$$configVar           -         -    -         -        -       -     -         -          .    
-      #|not .count            .         -    -         -        -       -     -         -          .    
-      #|-.count               !         !    !         !        !       !     !         !          .    
-      #|a and b               .         -    -         -        -       -     -         -          .    
-      #|a + b                 !         !    !         !        !       !     !         !          .    
-      #|if c { a } else { b } !         !    !         !        !       !     !         !          .    
+      #|form                  condition event trigger text component sequence provide field event-arg macro-attr body
+      #|'text'                .         -     -       .    -         -        -       .     .         .          .    
+      #|$'a{.b}'              !         -     -       .    -         -        -       -     -         .          .    
+      #|$'literal'            .         -     -       .    -         -        -       .     .         .          .    
+      #|.count                .         -     -       .    .         .        .       .     .         .          .    
+      #|@value                .         -     -       .    -         -        -       -     .         .          .    
+      #|@value.title          .         -     -       .    -         -        -       -     .         .          .    
+      #|.rows[.key]           -         -     -       -    .         -        .       .     -         .          .    
+      #|*theme                .         -     -       .    .         .        -       -     .         .          .    
+      #|$total                .         .     .       .    -         -        -       .     .         .          .    
+      #|bare                  -         .     .       -    -         -        -       -     .         .          .    
+      #|Uppercase             -         -     -       -    -         -        -       -     -         -          .    
+      #|truthy? .count        .         -     -       -    -         -        -       -     -         -          .    
+      #|e.value               -         -     -       -    -         -        -       -     .         -          .    
+      #|.a.b                  !         !     !       !    !         !        !       !     !         !          .    
+      #|param.x               !         !     !       !    !         !        !       !     !         !          .    
+      #|&.rows[.k]            !         !     !       !    !         !        !       !     !         !          .    
+      #|^macroVar             -         -     -       -    -         -        -       -     -         -          .    
+      #|$$configVar           -         -     -       -    -         -        -       -     -         -          .    
+      #|not .count            .         -     -       -    -         -        -       -     -         -          .    
+      #|-.count               !         !     !       !    !         !        !       !     !         !          .    
+      #|a and b               .         -     -       -    -         -        -       -     -         -          .    
+      #|a + b                 !         !     !       !    !         !        !       !     !         !          .    
+      #|if c { a } else { b } !         !     !       !    !         !        !       !     !         !          .    
       #|
     ),
   )

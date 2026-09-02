@@ -13,7 +13,7 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> @component.Update[CounterState], swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @core.Dispatch, &@core.Ctx) -> @component.Update[CounterState], swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let counter_global_style : String
 
@@ -41,7 +41,7 @@ pub(all) enum CounterMsg {
   SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn CounterMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum CounterReceive {
   ResetTo(Int)
@@ -50,7 +50,7 @@ pub(all) enum CounterReceive {
   SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn CounterReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CounterReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn CounterReceive::send(Self, &@core.Ctx) -> Unit
 pub fn CounterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 

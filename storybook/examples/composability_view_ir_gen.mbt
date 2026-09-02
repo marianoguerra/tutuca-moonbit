@@ -229,46 +229,34 @@ fn composability_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("todo")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("todo"),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("json")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("json"),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("tree")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("tree"),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("personalSite")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("personalSite"),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("dnd")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("dnd"),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("setActiveSection", Receive),
-          args=[@anode.const_str("visualWasm")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("setActiveSection"), args=[
+          @anode.const_str("visualWasm"),
+        ]),
       ],
     ],
   )

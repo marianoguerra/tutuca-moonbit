@@ -1102,7 +1102,7 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
     // Opaque here rather than reported, by the rule at the head of this file —
     // a body that somehow holds one has a type nobody declared, and unknown is
     // not wrong.
-    ETypeName(..) | EHandlerName(..) | EEventPath(..) => None
+    ETypeName(..) | EEventPath(..) => None
   }
 }
 

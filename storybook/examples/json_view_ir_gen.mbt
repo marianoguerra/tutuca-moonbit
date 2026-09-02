@@ -123,16 +123,16 @@ fn json_selector_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("setToNull", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("setToNull"))],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setToBool", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setToBool"), args=[
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("setToNumber", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("setToString", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("setToArray", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("setToObject", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("setToNumber"))],
+      [@anode.on("click", @tutuca.Expr::name("setToString"))],
+      [@anode.on("click", @tutuca.Expr::name("setToArray"))],
+      [@anode.on("click", @tutuca.Expr::name("setToObject"))],
     ],
   )
 }
@@ -298,7 +298,7 @@ fn json_bool_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("toggleValue", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("toggleValue"))]],
   )
 }
 
@@ -380,7 +380,7 @@ fn json_string_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setValue", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setValue"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -468,7 +468,7 @@ fn json_number_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setRawValue", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setRawValue"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -593,16 +593,14 @@ fn json_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("addItem", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("addItem"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("onDropOnItem", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
           @tutuca.Expr::bind("key"),
           @tutuca.Expr::event_path(["dragInfo"]),
         ]),
@@ -704,7 +702,7 @@ fn json_object_key_val_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setKey", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setKey"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -831,16 +829,14 @@ fn json_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("addItem", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("addItem"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("onDropOnItem", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("onDropOnItem"), args=[
           @tutuca.Expr::bind("key"),
           @tutuca.Expr::event_path(["dragInfo"]),
         ]),

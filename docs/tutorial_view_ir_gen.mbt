@@ -110,8 +110,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("dec"))],
+      [@anode.on("click", @tutuca.Expr::name("inc"))],
     ],
   )
 }
@@ -244,11 +244,11 @@ fn profile_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setName"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleWaving", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleWaving"))],
     ],
   )
 }
@@ -331,20 +331,18 @@ fn search_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          @tutuca.Expr::handler_name("setSent", Receive),
+          @tutuca.Expr::name("setSent"),
           args=[@tutuca.Expr::event_path(["value"])],
           modifiers=["send"],
         ),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetDraft", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetDraft"), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )
@@ -444,7 +442,7 @@ fn toggle_main_view_ir() -> @anode.View {
         ]),
       ),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("toggleOn", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("toggleOn"))]],
   )
 }
 
@@ -520,7 +518,7 @@ fn fruits_main_view_ir() -> @anode.View {
           @anode.text(": "),
           @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
         ]),
-        when_val=@tutuca.Expr::handler_name("notTooLong", Alter),
+        when_val=@tutuca.Expr::name("notTooLong"),
       ),
     ]),
     [],
@@ -812,11 +810,11 @@ fn chat_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("submit", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("submit"))],
     ],
   )
 }

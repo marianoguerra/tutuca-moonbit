@@ -117,7 +117,7 @@ fn request_example_main_view_ir() -> @anode.View {
                 1,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+                when_val=@tutuca.Expr::name("filterItem"),
                 from_render_each=true,
               ),
             ],
@@ -134,22 +134,15 @@ fn request_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("loadAnotherWay", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleView", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("loadAnotherWay"))],
+      [@anode.on("click", @tutuca.Expr::name("toggleView"))],
     ],
   )
 }

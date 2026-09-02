@@ -34,6 +34,83 @@ pub(all) enum HandlerBucket {
 } derive(Debug, Eq)
 
 ///|
+/// The bucket's case index on the WIRE.
+///
+/// A numbering, not a vocabulary: the host's buckets and the guest's are the
+/// same two, so there is nothing to translate — what this pins is the ORDER,
+/// which is the WIT variant's case order and cannot be changed without
+/// changing the contract. It lives here, beside the enum, because it used to
+/// live in `dyncomp/host/guest.mbt` while `guests/sdk.mbt` and
+/// `internal/abi/layout.mbt` carried the same two numbers separately.
+pub fn HandlerBucket::ordinal(self : HandlerBucket) -> Int {
+  match self {
+    Receive => 0
+    Intent => 1
+  }
+}
+
+///|
+/// A dispatch: which bucket, the name, and what it carries.
+///
+/// The payload-bearing twin of `HandlerBucket`, and it lives beside it for that
+/// reason. It was `@component.Dispatch` — a second enum with the same two cases
+/// — so a reader who had one and wanted the other wrote a two-arm match, and
+/// there were five of those.
+///
+/// An arm matches on what the dispatch IS, never on where it came from: a
+/// view's `@on` name and a parent's `ctx.send` of that name are the same
+/// message and reach the same arm. Where it came from is `Origin`'s question.
+///
+/// Debug because a dispatch is what a failing property REPORTS. A generated
+/// message sequence that breaks a component is the counterexample, and one that
+/// cannot be printed leaves the reader with "a property failed".
+pub(all) enum Dispatch {
+  Receive(String, Array[Value])
+  Intent(String, Array[Value])
+} derive(Debug, Eq)
+
+///|
+/// Which bucket answers this dispatch.
+pub fn Dispatch::bucket(self : Dispatch) -> HandlerBucket {
+  match self {
+    Receive(_, _) => Receive
+    Intent(_, _) => Intent
+  }
+}
+
+///|
+/// The name this dispatch asks for.
+pub fn Dispatch::name(self : Dispatch) -> String {
+  match self {
+    Receive(name, _) | Intent(name, _) => name
+  }
+}
+
+///|
+/// What this dispatch carries.
+pub fn Dispatch::args(self : Dispatch) -> Array[Value] {
+  match self {
+    Receive(_, args) | Intent(_, args) => args
+  }
+}
+
+///|
+/// An intent handler registered in a scope.
+///
+/// It receives an `IntentCall` — carrying `from`, the sender's position, which
+/// is what lets a host decide whether this sender may ask — and it may answer
+/// `Pass`. `Pass` DECLINES: a handler with nothing to say hands the intent to
+/// its parent scope instead of inventing an error to satisfy an obligation to
+/// answer. That is the whole of why `lookup_intent` is a walk rather than a
+/// lookup — declining only means something if there is somewhere left to go.
+///
+/// ONE of these, in `core`, where there were two: `@component.IntentFn` and
+/// `@tutuca.IntentFn`, identical to the field, with an adapter in
+/// `app` that unwrapped one and rewrapped it as the other. Neither package may
+/// depend on the other, which is exactly the case `core` exists for.
+pub(all) struct IntentFn((IntentCall, (IntentAnswer) -> Unit) -> Unit)
+
+///|
 /// A leg of an intent's route.
 ///
 /// `Dyn` walks the dynamic scope — the dispatch path, from the sender's PARENT

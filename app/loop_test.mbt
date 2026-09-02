@@ -88,7 +88,7 @@ test "checked @bind coercion skips invalid numeric edits" {
       [
         @anode.on(
           "input",
-          @tutuca.Expr::handler_name("setCount", Receive),
+          @tutuca.Expr::name("setCount"),
           args=[@tutuca.Expr::event_path(["valueAsInt"])],
           binding=BindInt(width=32, signed=true),
         ),

@@ -120,7 +120,6 @@ fn val_source(val : Expr) -> String {
         name + " " + args.map(a => operand_source(a)).join(" ")
       }
     EName(name~, ..) => name
-    EHandlerName(name~, ..) => name
     ETypeName(name~, ..) => name
     EDyn(name~, ..) => "*" + name
     EMethod(name~, ..) => "$" + name

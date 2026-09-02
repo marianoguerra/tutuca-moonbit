@@ -43,8 +43,6 @@ pub(all) struct Dispatched {
   seq : Int
 }
 
-pub(all) struct IntentHandler((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Unit)
-
 pub struct IntentWalk {
   mut raise_seq : Int
   id : Int
@@ -160,10 +158,11 @@ pub fn Transactor::set_recorder(Self, &Recorder) -> Unit
 pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 
 // Type aliases
+pub using @core {type IntentFn}
 
 // Traits
 pub(open) trait Intents {
-  fn intents_for(Self, @core.Value, String) -> Array[IntentHandler] = _
+  fn intents_for(Self, @core.Value, String) -> Array[@core.IntentFn] = _
 }
 
 pub(open) trait Names {

@@ -265,9 +265,9 @@ test "state Fn fields back methods and handlers" {
     }),
   })
   let stack = RenderStack::new(state)
-  // lookup_method invokes; get_handler_for returns the raw Fn
+  // lookup_method invokes; lookup_trigger returns the raw Fn
   assert_true(@tutuca.Stack::lookup_method(stack, "greet") is Str("hi"))
-  assert_true(@tutuca.Stack::get_handler_for(stack, "greet", Receive) is Fn(_))
+  assert_true(@tutuca.Stack::lookup_trigger(stack, "greet") is Fn(_))
   assert_true(@tutuca.Stack::lookup_method(stack, "missing") is Null)
 }
 

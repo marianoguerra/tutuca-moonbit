@@ -102,6 +102,14 @@ pub struct Builtin {
 pub(all) struct CtxStack(&Ctx)
 pub impl Stack for CtxStack
 
+pub(all) enum Dispatch {
+  Receive(String, Array[Value])
+  Intent(String, Array[Value])
+} derive(Eq, @debug.Debug)
+pub fn Dispatch::args(Self) -> Array[Value]
+pub fn Dispatch::bucket(Self) -> HandlerBucket
+pub fn Dispatch::name(Self) -> String
+
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
@@ -173,7 +181,6 @@ pub(all) enum Expr {
   EMacroVar(name~ : String, span~ : Span)
   EConfigVar(name~ : String, span~ : Span)
   EName(name~ : String, span~ : Span)
-  EHandlerName(name~ : String, ns~ : HandlerNamespace, span~ : Span)
   ETypeName(name~ : String, span~ : Span)
   EApp(name~ : String, args~ : Array[Expr], span~ : Span)
   EChain(family~ : OpFamily, ops~ : Array[String], operands~ : Array[Expr], span~ : Span)
@@ -196,7 +203,6 @@ pub fn Expr::eval(Self, &Stack) -> Value
 pub fn Expr::eval_as_handler(Self, &Stack) -> Value
 pub fn Expr::event_path(Array[String], span? : Span) -> Self
 pub fn Expr::field(String, span? : Span) -> Self
-pub fn Expr::handler_name(String, HandlerNamespace, span? : Span) -> Self
 pub fn Expr::is_literal(Self) -> Bool
 pub fn Expr::lit(Lit, from_macro? : Bool, span? : Span) -> Self
 pub fn Expr::method_(String, span? : Span) -> Self
@@ -254,11 +260,7 @@ pub(all) enum HandlerBucket {
   Receive
   Intent
 } derive(Eq, @debug.Debug)
-
-pub(all) enum HandlerNamespace {
-  Receive
-  Alter
-} derive(Eq, @debug.Debug)
+pub fn HandlerBucket::ordinal(Self) -> Int
 
 pub(all) enum IntentAnswer {
   Ok(Value)
@@ -271,6 +273,8 @@ pub(all) struct IntentCall {
   args : Array[Value]
   from : DispatchPath
 } derive(Eq, @debug.Debug)
+
+pub(all) struct IntentFn((IntentCall, (IntentAnswer) -> Unit) -> Unit)
 
 pub(all) struct IntentOpts {
   route : Array[Leg]
@@ -391,6 +395,8 @@ pub(all) enum Position {
   PosProvide
   PosField
   PosEventArg
+  PosEvent
+  PosTrigger
   PosMacroAttr
   PosBody
 } derive(Eq, @debug.Debug)
@@ -627,7 +633,6 @@ pub fn Value::bool(Self, default? : Bool) -> Bool
 pub fn Value::bool_opt(Self) -> Bool?
 pub fn Value::call(Self, Array[Self], this? : Self) -> Self
 pub fn Value::call_field(Self, String, Array[Self]) -> Self
-pub fn Value::callable_at(Self, String, HandlerNamespace, &Stack) -> Self?
 pub fn Value::entries(Self) -> Array[(PathKey, Self)]
 pub fn Value::field(Self, String) -> Self
 pub fn Value::field_info(Self, String) -> FieldInfo?
@@ -667,6 +672,7 @@ pub fn Value::str_opt(Self) -> String?
 pub fn Value::to_component_json(Self, claim? : (Self, String) -> Json?) -> Json
 pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
+pub fn Value::trigger_at(Self, String, &Stack) -> Self?
 pub fn Value::with_at(Self, Path, Self) -> Self
 pub fn Value::with_field(Self, String, Self) -> Self
 pub fn Value::with_field_opt(Self, String, Self) -> Self?
@@ -723,9 +729,9 @@ pub(open) trait Obj {
   fn obj_item(Self, PathKey) -> Value? = _
   fn obj_with_item(Self, PathKey, Value) -> Value? = _
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
-  fn obj_callable(Self, String, HandlerNamespace) -> Value? = _
+  fn trigger(Self, String) -> Value? = _
   fn obj_method_at(Self, String, &Stack) -> Value? = _
-  fn obj_callable_at(Self, String, HandlerNamespace, &Stack) -> Value? = _
+  fn trigger_at(Self, String, &Stack) -> Value? = _
   fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
   fn obj_schema(Self) -> SchemaInfo? = _
   fn obj_size(Self) -> Int? = _
@@ -743,5 +749,5 @@ pub(open) trait Stack {
   fn lookup_field_raw(Self, String) -> Value = _
   fn lookup_member(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
-  fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
+  fn lookup_trigger(Self, String) -> Value = _
 }

@@ -156,10 +156,10 @@ test "the generated counter tree" {
       #|      ]),
       #|    ]),
       #|    [
-      #|      [@anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[@anode.const_num(1.0)])],
-      #|      [@anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[@anode.const_num(-1.0)])],
-      #|      [@anode.on("click", @tutuca.Expr::handler_name("resetCount", Receive))],
-      #|      [@anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[@tutuca.Expr::event_path(["value"])]), @anode.on("keydown", @tutuca.Expr::handler_name("setLabel", Receive), args=[@anode.const_str("sent!")], modifiers=["send"])],
+      #|      [@anode.on("click", @tutuca.Expr::name("add"), args=[@anode.const_num(1.0)])],
+      #|      [@anode.on("click", @tutuca.Expr::name("add"), args=[@anode.const_num(-1.0)])],
+      #|      [@anode.on("click", @tutuca.Expr::name("resetCount"))],
+      #|      [@anode.on("input", @tutuca.Expr::name("setLabel"), args=[@tutuca.Expr::event_path(["value"])]), @anode.on("keydown", @tutuca.Expr::name("setLabel"), args=[@anode.const_str("sent!")], modifiers=["send"])],
       #|    ],
       #|  )
       #|}

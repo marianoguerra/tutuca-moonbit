@@ -3,7 +3,6 @@ package "marianoguerra/tutuca/tutucard/drive"
 
 import {
   "marianoguerra/tutuca/app",
-  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
   "marianoguerra/tutuca/scenedef",
@@ -24,7 +23,7 @@ pub fn fixture_drive(@host.DynInitDef) -> (Array[@scenedef.Step], Map[String, @s
 
 pub fn fixture_of(@host.Bundle, String, String) -> @host.DynInitDef?
 
-pub fn intent_handlers(Map[String, @scenedef.Answer]) -> Map[String, Array[@component.IntentFn]]
+pub fn intent_handlers(Map[String, @scenedef.Answer]) -> Map[String, Array[@core.IntentFn]]
 
 pub fn report_json(Array[SceneResult]) -> Json
 

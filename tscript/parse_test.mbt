@@ -361,7 +361,7 @@ test "$ is a method handler, a bare name is an input handler" {
   guard! @tscript.parse_input_handler("$inc", ctx) is Some(h1)
   assert_true(h1.handler is EMethod(name="inc", ..))
   guard! @tscript.parse_input_handler("dec", ctx) is Some(h2)
-  assert_true(h2.handler is EHandlerName(name="dec", ns=Receive, ..))
+  assert_true(h2.handler is EName(name="dec", ..))
 }
 
 ///|
@@ -560,7 +560,7 @@ test "handler arg accepts a quoted literal with spaces" {
   // parse_input_handler.
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("showView 'detail mode'", ctx) is Some(h)
-  assert_true(h.handler is EHandlerName(name="showView", ns=Receive, ..))
+  assert_true(h.handler is EName(name="showView", ..))
   assert_eq(h.args.length(), 1)
   assert_true(h.args[0] is ELit(lit=LStr("detail mode"), ..))
 }

@@ -17,7 +17,7 @@ pub let loader_bar_common_style : String
 
 pub fn loader_bar_comp(samples? : Array[LoaderBarSample], show_url? : Bool, status? : String, notify? : (LoaderEvent, &@core.Ctx) -> Unit) -> @component.Component
 
-pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], init? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @component.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], swap? : (LoaderBarInput) -> ((LoaderBarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn loader_bar_component(name? : String, views? : Map[String, @anode.View], init? : LoaderBarState, common_style? : String, global_style? : String, update? : (LoaderBarState, @core.Dispatch, &@core.Ctx) -> @component.Update[LoaderBarState], swap? : (LoaderBarInput) -> ((LoaderBarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let loader_bar_global_style : String
 
@@ -29,7 +29,7 @@ pub fn make_instance(@registry.ComponentRef, String, Map[String, @core.Value]) -
 
 pub fn refresh_margaui() -> Unit
 
-pub fn sample_host_intents() -> Map[String, Array[@component.IntentFn]]
+pub fn sample_host_intents() -> Map[String, Array[@core.IntentFn]]
 
 pub fn sample_policy() -> @policy.Policy
 
@@ -51,7 +51,7 @@ pub(all) enum LoaderBarIntent {
   Unknown(String, Array[@core.Value])
 }
 pub fn LoaderBarIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
-pub fn LoaderBarIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn LoaderBarIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn LoaderBarIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum LoaderBarMsg {
@@ -60,7 +60,7 @@ pub(all) enum LoaderBarMsg {
   TypeUrl(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn LoaderBarMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn LoaderBarMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum LoaderBarReceive {
   FilesDropped(@core.Value)
@@ -71,7 +71,7 @@ pub(all) enum LoaderBarReceive {
   TypeUrl(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn LoaderBarReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn LoaderBarReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn LoaderBarReceive::send(Self, &@core.Ctx) -> Unit
 pub fn LoaderBarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 

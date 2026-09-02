@@ -223,20 +223,12 @@ declare pub fn DynBinds::lookup_type(self : DynBinds, name : String) -> Int?
 
 ///|
 /// All effectful dispatches in one enum — the typed-state `update` bucket
-/// pattern-matches it like a TEA Msg. The payload is (handler name, args).
+/// pattern-matches it like a TEA Msg.
 ///
-/// TWO of these, mirroring `@tutuca.HandlerBucket`: `Receive` for an ADDRESSED
-/// message, whoever sent it, and `Intent` for a ROUTED one. An arm matches on
-/// what the dispatch IS, never on where it came from — a view's `@on` name and
-/// a parent's `ctx.send` of that name are the same message and reach the same
-/// arm.
-/// Debug because a dispatch is what a failing property REPORTS. A generated
-/// message sequence that breaks a component is the counterexample, and one
-/// that cannot be printed leaves the reader with "a property failed".
-pub(all) enum Dispatch {
-  Receive(String, Array[@tutuca.Value])
-  Intent(String, Array[@tutuca.Value])
-} derive(Eq, @debug.Debug)
+/// `core`'s (`core/path_spec.mbt`), beside the `HandlerBucket` it is the
+/// payload-bearing twin of. It used to be a second enum with the same two
+/// cases, and a reader who had one and wanted the other wrote a two-arm match.
+pub using @tutuca {type Dispatch}
 
 ///|
 /// What an `update` arm answers.
@@ -287,19 +279,10 @@ declare pub fn LoopWith::new(
 ) -> LoopWith
 
 ///|
-/// Scope-registered intent handler: root-typed twin of
-/// `@transactor.IntentHandler` (the component package must not depend on the
-/// transactor; the app layer adapts).
-///
-/// It receives an `IntentCall` — carrying `from`, the sender's position, which
-/// is what lets a host decide whether this sender may ask — and it may answer
-/// `Pass`. `Pass` DECLINES: a handler with nothing to say hands the intent to
-/// its parent scope instead of inventing an error to satisfy an obligation to
-/// answer. That is the whole of why `lookup_intent` is a walk rather than a
-/// lookup — declining only means something if there is somewhere left to go.
-pub(all) struct IntentFn(
-  (@tutuca.IntentCall, (@tutuca.IntentAnswer) -> Unit) -> Unit
-)
+/// Scope-registered intent handler. `core`'s (`core/path_spec.mbt`), because
+/// the transactor declared the same struct and neither package may depend on
+/// the other — which is the case `core` exists for.
+pub using @tutuca {type IntentFn}
 
 ///|
 /// the typed-state half (S, handlers) erased behind the make closure.
@@ -686,7 +669,7 @@ declare pub fn ModuleDef::register_into(
 declare pub fn ModuleDef::build_scope(self : ModuleDef) -> ComponentStack raise
 
 ///|
-/// Encode a `@loop-with` return into the Map it crosses the `Obj::obj_callable`
+/// Encode a `@loop-with` return into the Map it crosses the `Obj::trigger`
 /// boundary as; `of_value` reads one back. Both halves live in one file
 /// (loop_codec.mbt) so the key names cannot drift apart.
 declare pub fn LoopWith::to_value(self : LoopWith) -> @tutuca.Value

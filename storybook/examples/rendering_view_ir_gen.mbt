@@ -101,7 +101,7 @@ fn push_view_main_view_ir() -> @anode.View {
               1,
               @tutuca.Expr::field("items"),
               @anode.render_it(0),
-              when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+              when_val=@tutuca.Expr::name("filterItem"),
               from_render_each=true,
             ),
           ],
@@ -110,16 +110,14 @@ fn push_view_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleView", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleView"))],
     ],
   )
 }
@@ -311,18 +309,14 @@ fn seq_item_access_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setCurrentIndex", Receive),
-          args=[@tutuca.Expr::event_path(["valueAsInt"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setCurrentIndex"), args=[
+          @tutuca.Expr::event_path(["valueAsInt"]),
+        ]),
       ],
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setCurrentKey", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setCurrentKey"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
     ],
   )
@@ -446,13 +440,13 @@ fn pagination_main_view_ir() -> @anode.View {
             @anode.text(" "),
             @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
           ]),
-          loop_with_val=@tutuca.Expr::handler_name("paginate", Alter),
+          loop_with_val=@tutuca.Expr::name("paginate"),
         ),
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("prev"))],
+      [@anode.on("click", @tutuca.Expr::name("next"))],
     ],
   )
 }

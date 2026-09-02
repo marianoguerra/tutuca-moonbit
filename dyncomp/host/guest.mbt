@@ -54,19 +54,6 @@ pub(all) enum GuestPropertyResult {
 } derive(Debug, Eq)
 
 ///|
-/// The wire number of a dispatch bucket: its case index in the WIT's `bucket`
-/// enum.
-///
-/// The host's buckets and the wire's are the same two, so there is no separate
-/// enum here and nothing to translate — this is a numbering, not a vocabulary.
-pub fn bucket_ordinal(b : @tutuca.HandlerBucket) -> Int {
-  match b {
-    Receive => 0
-    Intent => 1
-  }
-}
-
-///|
 pub(open) trait Guest {
   fn create(Self, component : String, args : Map[String, @tutuca.Value]) -> Int
   fn get_field(Self, handle : Int, name : String) -> @tutuca.Value?

@@ -303,7 +303,7 @@ fn fuzz_row_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("toggle", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("toggle"))]],
   )
 }
 
@@ -759,40 +759,40 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setSeed", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setSeed"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setSteps", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setSteps"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setSource"), args=[
           @anode.const_str("public"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setSource"), args=[
           @anode.const_str("messages"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setSource"), args=[
           @anode.const_str("properties"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setSource"), args=[
           @anode.const_str("internal"),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("play", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("stop", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("step", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("burst", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("reset", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("play"))],
+      [@anode.on("click", @tutuca.Expr::name("stop"))],
+      [@anode.on("click", @tutuca.Expr::name("step"))],
+      [@anode.on("click", @tutuca.Expr::name("burst"))],
+      [@anode.on("click", @tutuca.Expr::name("reset"))],
     ],
   )
 }
@@ -1686,7 +1686,7 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
         ],
       ),
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("shrink", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("shrink"))]],
   )
 }
 

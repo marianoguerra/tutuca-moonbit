@@ -9,6 +9,7 @@
 //
 // `internal/`, so none of it is a promise to anyone outside this module.
 import {
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/wax/ast",
   "marianoguerra/wax/basic",
   "marianoguerra/wax/wasm/types" @wasm_types,

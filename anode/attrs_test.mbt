@@ -30,7 +30,7 @@ test "@enrich-with without @each wraps in a registered Scope" {
   // Bare handler-name form resolves through the alter namespace.
   let (root2, _) = aparse("<div @enrich-with=\"enrich\">hi</div>")
   guard! root2 is Scope(s2)
-  assert_true(s2.val is EHandlerName(name="enrich", ns=Alter, ..))
+  assert_true(s2.val is EName(name="enrich", ..))
 }
 
 ///|
@@ -113,9 +113,7 @@ test "events register data-eid and handler args" {
   assert_eq(ev.handlers.length(), 1)
   let h = ev.handlers[0]
   assert_eq(h.name, "click")
-  assert_true(
-    h.handler.handler is EHandlerName(name="myHandler", ns=Receive, ..),
-  )
+  assert_true(h.handler.handler is EName(name="myHandler", ..))
   assert_eq(h.handler.args.length(), 6)
   assert_true(
     h.handler.args[0] is ERead(place={ root: PBind("v"), steps: [], .. }, ..),

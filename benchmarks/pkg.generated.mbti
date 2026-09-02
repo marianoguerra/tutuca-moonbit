@@ -15,7 +15,7 @@ pub fn build(String) -> Int
 
 pub let corpora : Array[(String, String)]
 
-pub fn declining_scope(Int) -> Map[String, Array[@component.IntentFn]]
+pub fn declining_scope(Int) -> Map[String, Array[@core.IntentFn]]
 
 pub fn dispatch_answered(@harness.Harness[@memdom.MemNode]) -> Int
 

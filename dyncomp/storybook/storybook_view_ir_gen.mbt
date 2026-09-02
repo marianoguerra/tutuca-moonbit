@@ -140,7 +140,7 @@ fn story_nav_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("pick", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("pick"))]],
   )
 }
 
@@ -280,7 +280,7 @@ fn story_card_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("rebuild", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("rebuild"))]],
   )
 }
 
@@ -391,7 +391,7 @@ fn story_card_details_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("rebuild", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("rebuild"))]],
   )
 }
 
@@ -689,7 +689,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                       4,
                       @tutuca.Expr::field("cards"),
                       @anode.render_it(3),
-                      when_val=@tutuca.Expr::handler_name("matches", Alter),
+                      when_val=@tutuca.Expr::name("matches"),
                       from_render_each=true,
                     ),
                   ],
@@ -711,20 +711,20 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("showAll", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("showAll"))],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("chooseTheme", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("chooseTheme"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleWide", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleDetails", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleWide"))],
+      [@anode.on("click", @tutuca.Expr::name("toggleDetails"))],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("filesDropped", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("filesDropped"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

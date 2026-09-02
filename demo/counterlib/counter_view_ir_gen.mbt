@@ -94,23 +94,23 @@ fn counter_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("add"), args=[
           @anode.const_num(1.0),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("add"), args=[
           @anode.const_num(-1.0),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("resetCount", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("resetCount"))],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setLabel"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          @tutuca.Expr::handler_name("setLabel", Receive),
+          @tutuca.Expr::name("setLabel"),
           args=[@anode.const_str("sent!")],
           modifiers=["send"],
         ),

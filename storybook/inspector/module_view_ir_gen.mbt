@@ -73,10 +73,10 @@ fn rich_sample_main_view_ir() -> @anode.View {
         @anode.h("span", [], [
           @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
         ]),
-        loop_with_val=@tutuca.Expr::handler_name("rows", Alter),
+        loop_with_val=@tutuca.Expr::name("rows"),
       ),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("inc"))]],
   )
 }
 
@@ -90,7 +90,7 @@ fn rich_sample_compact_view_ir() -> @anode.View {
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("label"))]),
       @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("double"))]),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("reset", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("reset"))]],
   )
 }
 
@@ -193,7 +193,7 @@ fn sample_card_main_view_ir() -> @anode.View {
     @anode.h("div", [@anode.attr("class", "card"), @anode.eid(0)], [
       @anode.dyn_text(@tutuca.Expr::method_("label")),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("bump", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("bump"))]],
   )
 }
 

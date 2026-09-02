@@ -245,15 +245,13 @@ fn send_receive_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setDraft"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", @tutuca.Expr::handler_name("submit", Receive), modifiers=[
-          "send",
-        ]),
+        @anode.on("keydown", @tutuca.Expr::name("submit"), modifiers=["send"]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("submit", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("clearStatus", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("submit"))],
+      [@anode.on("click", @tutuca.Expr::name("clearStatus"))],
     ],
   )
 }
@@ -390,7 +388,7 @@ fn tree_item_main_view_ir() -> @anode.View {
         ),
       ),
     ]),
-    [[@anode.on("click", @tutuca.Expr::handler_name("onItemClick", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("onItemClick"))]],
     style="user-select: none;\n.head { cursor: pointer; }\n.head:before { content: \"⏺️\"; margin-right: 0.25rem; }\n.head.type-file:before { content: \"📄️\"; }\n.head.open.type-dir:before { content: \"📂️\"; }\n.head.closed.type-dir:before { content: \"📁️\"; }",
   )
 }

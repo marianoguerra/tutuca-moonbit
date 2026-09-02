@@ -1,7 +1,7 @@
 // The `@loop-with` protocol as it crosses the Fn boundary, both directions in
 // one file.
 //
-// A `@loop-with` handler is reached through `Obj::obj_callable`, which — like
+// A `@loop-with` handler is reached through `Obj::trigger`, which — like
 // every seam below the component layer — speaks `Value`. So the typed `LoopCtx`
 // the renderer builds travels as a Map of Fn-convention closures, and the typed
 // `LoopWith` the handler returns travels as a Map of four optional entries.

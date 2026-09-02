@@ -45,8 +45,6 @@ pub using @core {type Expr}
 
 pub using @core {type FieldDomain}
 
-pub using @core {type HandlerNamespace}
-
 pub using @core {type IntentAnswer}
 
 pub using @core {type IntentCall}

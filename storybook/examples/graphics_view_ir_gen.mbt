@@ -86,7 +86,7 @@ fn swatch_picker_main_view_ir() -> @anode.View {
               [],
               ns=Svg,
             ),
-            enrich_with_val=@tutuca.Expr::handler_name("swatch", Alter),
+            enrich_with_val=@tutuca.Expr::name("swatch"),
           ),
         ],
         ns=Svg,
@@ -99,7 +99,7 @@ fn swatch_picker_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setColor", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setColor"), args=[
           @tutuca.Expr::bind("value"),
         ]),
       ],
@@ -324,17 +324,17 @@ fn quadratic_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setA", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setA"), args=[
           @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setB", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setB"), args=[
           @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setC", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setC"), args=[
           @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],

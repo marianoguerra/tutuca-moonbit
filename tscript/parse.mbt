@@ -655,7 +655,7 @@ pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse? {
         args: [],
         action: Some(action),
       })
-    None => parse_handler(s, ctx, Receive, allow_args=true, report=true)
+    None => parse_handler(s, ctx, PosEvent, allow_args=true, report=true)
   }
 }
 
@@ -729,19 +729,25 @@ fn resolve_action_expr(
 
 ///|
 pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  match parse_handler(s, ctx, Alter, allow_args=false, report=false) {
+  match parse_handler(s, ctx, PosTrigger, allow_args=false, report=false) {
     Some(h) => Some(h.handler)
     None => None
   }
 }
 
 ///|
-/// `$name` → Method (dispatched via eval_as_handler); bare name →
-/// HandlerName. No field syntax: a `.field` cannot be a handler.
+/// A handler slot: `$name`, or a bare name. No field syntax — a `.field`
+/// cannot be a handler.
+///
+/// `pos` is `PosEvent` or `PosTrigger`, and it replaced a NAMESPACE the parsed
+/// name used to carry. What the namespace said was which position the name was
+/// written in, which the caller already knows — and what it decided,
+/// downstream, was how the name is read, which is `Val::eval_as_handler`'s
+/// question rather than the value's.
 fn parse_handler(
   s : String,
   ctx : ParseCtx,
-  ns : @tutuca.HandlerNamespace,
+  pos : @tutuca.Position,
   allow_args~ : Bool,
   report~ : Bool,
 ) -> HandlerParse? {
@@ -755,8 +761,7 @@ fn parse_handler(
     parse_tok(head_tok, ctx)
   }
   let handler : @tutuca.Val = match head {
-    Some(EMethod(..) as m) => m
-    Some(EName(name~, span~)) => @tutuca.Expr::handler_name(name, ns, span~)
+    Some(h) if val_in_position(h, pos) => h
     _ => {
       if report {
         ctx.issue(BadHandlerName, head_tok.text, head_tok.span)

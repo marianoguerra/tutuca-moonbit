@@ -228,10 +228,7 @@ fn ps_entry_main_view_ir() -> @anode.View {
                 [@anode.dyn_attr("class", @tutuca.Expr::bind("badgeClass"))],
                 [@anode.dyn_text(@tutuca.Expr::bind("value"))],
               ),
-              enrich_with_val=@tutuca.Expr::handler_name(
-                "enrichCategoryBadge",
-                Alter,
-              ),
+              enrich_with_val=@tutuca.Expr::name("enrichCategoryBadge"),
             ),
           ],
         ),
@@ -374,10 +371,7 @@ fn root_main_view_ir() -> @anode.View {
                     ],
                     [@anode.dyn_text(@tutuca.Expr::bind("value"))],
                   ),
-                  enrich_with_val=@tutuca.Expr::handler_name(
-                    "enrichCategoryBindings",
-                    Alter,
-                  ),
+                  enrich_with_val=@tutuca.Expr::name("enrichCategoryBindings"),
                 ),
               ],
             ),
@@ -403,10 +397,7 @@ fn root_main_view_ir() -> @anode.View {
                     ],
                     [@anode.dyn_text(@tutuca.Expr::bind("value"))],
                   ),
-                  enrich_with_val=@tutuca.Expr::handler_name(
-                    "enrichRoleBindings",
-                    Alter,
-                  ),
+                  enrich_with_val=@tutuca.Expr::name("enrichRoleBindings"),
                 ),
               ],
             ),
@@ -541,44 +532,27 @@ fn root_main_view_ir() -> @anode.View {
           @anode.h("div", [@anode.attr("class", "entry-row")], [
             @anode.render_it(2),
           ]),
-          when_val=@tutuca.Expr::handler_name("filterEntry", Alter),
+          when_val=@tutuca.Expr::name("filterEntry"),
         ),
       ]),
     ]),
     [
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("onCategoryToggle", Receive),
-          args=[@tutuca.Expr::bind("key"), @tutuca.Expr::event_path(["isAlt"])],
-        ),
+        @anode.on("click", @tutuca.Expr::name("onCategoryToggle"), args=[
+          @tutuca.Expr::bind("key"),
+          @tutuca.Expr::event_path(["isAlt"]),
+        ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("onRoleToggle", Receive),
-          args=[@tutuca.Expr::bind("key"), @tutuca.Expr::event_path(["isAlt"])],
-        ),
+        @anode.on("click", @tutuca.Expr::name("onRoleToggle"), args=[
+          @tutuca.Expr::bind("key"),
+          @tutuca.Expr::event_path(["isAlt"]),
+        ]),
       ],
-      [
-        @anode.on(
-          "change",
-          @tutuca.Expr::handler_name("onToggleSortByEnd", Receive),
-        ),
-      ],
-      [
-        @anode.on(
-          "change",
-          @tutuca.Expr::handler_name("onToggleSortAsc", Receive),
-        ),
-      ],
-      [
-        @anode.on(
-          "change",
-          @tutuca.Expr::handler_name("onToggleFeaturedFirst", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("clearFilters", Receive))],
+      [@anode.on("change", @tutuca.Expr::name("onToggleSortByEnd"))],
+      [@anode.on("change", @tutuca.Expr::name("onToggleSortAsc"))],
+      [@anode.on("change", @tutuca.Expr::name("onToggleFeaturedFirst"))],
+      [@anode.on("click", @tutuca.Expr::name("clearFilters"))],
     ],
   )
 }

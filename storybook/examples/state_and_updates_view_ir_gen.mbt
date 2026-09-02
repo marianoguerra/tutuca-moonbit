@@ -115,19 +115,17 @@ fn attribute_binding_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setStr", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setStr"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on(
-          "input",
-          @tutuca.Expr::handler_name("setRawNumber", Receive),
-          args=[@tutuca.Expr::event_path(["value"])],
-        ),
+        @anode.on("input", @tutuca.Expr::name("setRawNumber"), args=[
+          @tutuca.Expr::event_path(["value"]),
+        ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setBool", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setBool"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -235,14 +233,7 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
       ),
     ]),
-    [
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleIsActive", Receive),
-        ),
-      ],
-    ],
+    [[@anode.on("click", @tutuca.Expr::name("toggleIsActive"))]],
   )
 }
 
@@ -339,20 +330,18 @@ fn event_modifiers_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("onInput", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("onInput"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          @tutuca.Expr::handler_name("setLastSentSearch", Receive),
+          @tutuca.Expr::name("setLastSentSearch"),
           args=[@tutuca.Expr::event_path(["value"])],
           modifiers=["send"],
         ),
-        @anode.on(
-          "keydown",
-          @tutuca.Expr::handler_name("resetQuery", Receive),
-          modifiers=["cancel"],
-        ),
+        @anode.on("keydown", @tutuca.Expr::name("resetQuery"), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )
@@ -470,8 +459,8 @@ fn show_hide_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleIsOpen", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("incCount", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleIsOpen"))],
+      [@anode.on("click", @tutuca.Expr::name("incCount"))],
     ],
   )
 }

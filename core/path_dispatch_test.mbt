@@ -140,3 +140,21 @@ test "root and bubbling predicates include saved frames" {
   assert_true(resumed_root.is_root())
   assert_true(resumed_root.can_pop())
 }
+
+///|
+test "the bucket ordinals ARE the wire's case order" {
+  // A numbering rather than a vocabulary, and the one thing about it that is a
+  // contract: `tutuca:component`'s dispatch variant lists `receive` first and
+  // `intent` second, and a guest compiled against that order is a binary
+  // nothing here can recompile. It was written down three times — here, in the
+  // host's guest bridge, and in the card compiler's ABI constants — and a
+  // number stated three times is a number that can disagree with itself.
+  assert_eq(@core.HandlerBucket::ordinal(Receive), 0)
+  assert_eq(@core.HandlerBucket::ordinal(Intent), 1)
+  // A dispatch knows its own bucket, which is what folding the two enums
+  // bought: a reader who has one and wants the other stops writing a match.
+  assert_eq(@core.Dispatch::Receive("inc", []).bucket(), Receive)
+  assert_eq(@core.Dispatch::Intent("loadData", []).bucket(), Intent)
+  assert_eq(@core.Dispatch::Receive("inc", [Num(1.0)]).name(), "inc")
+  assert_eq(@core.Dispatch::Intent("x", [Num(2.0)]).args(), [Num(2.0)])
+}

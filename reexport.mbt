@@ -109,6 +109,5 @@ pub using @core {
   type TplPart,
   type OpFamily,
   type UnOp,
-  type HandlerNamespace,
   no_span,
 }

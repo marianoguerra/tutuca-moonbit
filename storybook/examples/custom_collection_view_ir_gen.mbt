@@ -56,7 +56,7 @@ fn playlist_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("removeSong", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("removeSong"), args=[
           @tutuca.Expr::bind("key"),
         ]),
       ],

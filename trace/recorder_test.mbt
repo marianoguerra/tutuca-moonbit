@@ -82,7 +82,7 @@ priv struct Host {
 ///|
 impl @transactor.Intents for Host with fn intents_for(self, _leaf, name) {
   [
-    @transactor.IntentHandler((_c, answer) => {
+    @tutuca.IntentFn((_c, answer) => {
       self.asked.push(name)
       let i = self.asked.length() - 1
       answer(self.answers[if i < self.answers.length() { i } else { 0 }])

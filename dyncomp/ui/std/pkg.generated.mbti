@@ -11,7 +11,7 @@ import {
 // Values
 pub let grid_common_style : String
 
-pub fn grid_component(name? : String, views? : Map[String, @anode.View], init? : GridState, common_style? : String, global_style? : String, update? : (GridState, @component.Dispatch, &@core.Ctx) -> @component.Update[GridState], compute? : (GridMethod) -> ((GridState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (GridInput) -> ((GridState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn grid_component(name? : String, views? : Map[String, @anode.View], init? : GridState, common_style? : String, global_style? : String, update? : (GridState, @core.Dispatch, &@core.Ctx) -> @component.Update[GridState], compute? : (GridMethod) -> ((GridState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (GridInput) -> ((GridState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let grid_global_style : String
 
@@ -21,7 +21,7 @@ pub let module_name : String
 
 pub let stack_common_style : String
 
-pub fn stack_component(name? : String, views? : Map[String, @anode.View], init? : StackState, common_style? : String, global_style? : String, update? : (StackState, @component.Dispatch, &@core.Ctx) -> @component.Update[StackState], compute? : (StackMethod) -> ((StackState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (StackInput) -> ((StackState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn stack_component(name? : String, views? : Map[String, @anode.View], init? : StackState, common_style? : String, global_style? : String, update? : (StackState, @core.Dispatch, &@core.Ctx) -> @component.Update[StackState], compute? : (StackMethod) -> ((StackState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (StackInput) -> ((StackState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let stack_global_style : String
 
@@ -33,7 +33,7 @@ pub fn std_module() -> @component.ModuleDef
 
 pub let tab_page_common_style : String
 
-pub fn tab_page_component(name? : String, views? : Map[String, @anode.View], init? : TabPageState, common_style? : String, global_style? : String, update? : (TabPageState, @component.Dispatch, &@core.Ctx) -> @component.Update[TabPageState], swap? : (TabPageInput) -> ((TabPageState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn tab_page_component(name? : String, views? : Map[String, @anode.View], init? : TabPageState, common_style? : String, global_style? : String, update? : (TabPageState, @core.Dispatch, &@core.Ctx) -> @component.Update[TabPageState], swap? : (TabPageInput) -> ((TabPageState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let tab_page_global_style : String
 
@@ -41,7 +41,7 @@ pub fn tab_page_views() -> Map[String, @anode.View]
 
 pub let tabs_common_style : String
 
-pub fn tabs_component(name? : String, views? : Map[String, @anode.View], init? : TabsState, common_style? : String, global_style? : String, update? : (TabsState, @component.Dispatch, &@core.Ctx) -> @component.Update[TabsState], swap? : (TabsInput) -> ((TabsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (TabsWhen) -> ((TabsState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, enrich? : (TabsEnrich) -> ((TabsState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn tabs_component(name? : String, views? : Map[String, @anode.View], init? : TabsState, common_style? : String, global_style? : String, update? : (TabsState, @core.Dispatch, &@core.Ctx) -> @component.Update[TabsState], swap? : (TabsInput) -> ((TabsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (TabsWhen) -> ((TabsState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, enrich? : (TabsEnrich) -> ((TabsState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let tabs_global_style : String
 
@@ -49,7 +49,7 @@ pub fn tabs_views() -> Map[String, @anode.View]
 
 pub let text_common_style : String
 
-pub fn text_component(name? : String, views? : Map[String, @anode.View], init? : TextState, common_style? : String, global_style? : String, update? : (TextState, @component.Dispatch, &@core.Ctx) -> @component.Update[TextState], compute? : (TextMethod) -> ((TextState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn text_component(name? : String, views? : Map[String, @anode.View], init? : TextState, common_style? : String, global_style? : String, update? : (TextState, @core.Dispatch, &@core.Ctx) -> @component.Update[TextState], compute? : (TextMethod) -> ((TextState, Array[@core.Value], &@core.Stack) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let text_global_style : String
 
@@ -57,7 +57,7 @@ pub fn text_views() -> Map[String, @anode.View]
 
 pub let textarea_common_style : String
 
-pub fn textarea_component(name? : String, views? : Map[String, @anode.View], init? : TextareaState, common_style? : String, global_style? : String, update? : (TextareaState, @component.Dispatch, &@core.Ctx) -> @component.Update[TextareaState], swap? : (TextareaInput) -> ((TextareaState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn textarea_component(name? : String, views? : Map[String, @anode.View], init? : TextareaState, common_style? : String, global_style? : String, update? : (TextareaState, @core.Dispatch, &@core.Ctx) -> @component.Update[TextareaState], swap? : (TextareaInput) -> ((TextareaState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let textarea_global_style : String
 
@@ -65,7 +65,7 @@ pub fn textarea_views() -> Map[String, @anode.View]
 
 pub let universal_common_style : String
 
-pub fn universal_component(name? : String, views? : Map[String, @anode.View], init? : UniversalState, common_style? : String, global_style? : String, update? : (UniversalState, @component.Dispatch, &@core.Ctx) -> @component.Update[UniversalState], compute? : (UniversalMethod) -> ((UniversalState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (UniversalInput) -> ((UniversalState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn universal_component(name? : String, views? : Map[String, @anode.View], init? : UniversalState, common_style? : String, global_style? : String, update? : (UniversalState, @core.Dispatch, &@core.Ctx) -> @component.Update[UniversalState], compute? : (UniversalMethod) -> ((UniversalState, Array[@core.Value], &@core.Stack) -> @core.Value)?, swap? : (UniversalInput) -> ((UniversalState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let universal_global_style : String
 
@@ -97,7 +97,7 @@ pub(all) enum GridMsg {
   AddRowBefore
   Unknown(String, Array[@core.Value])
 }
-pub fn GridMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn GridMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum GridReceive {
   AddColAfter
@@ -106,7 +106,7 @@ pub(all) enum GridReceive {
   AddRowBefore
   Unknown(String, Array[@core.Value])
 }
-pub fn GridReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn GridReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn GridReceive::send(Self, &@core.Ctx) -> Unit
 pub fn GridReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
@@ -137,14 +137,14 @@ pub(all) enum StackMsg {
   InsertAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn StackMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn StackMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum StackReceive {
   AppendCell
   InsertAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn StackReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StackReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn StackReceive::send(Self, &@core.Ctx) -> Unit
 pub fn StackReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
@@ -185,7 +185,7 @@ pub(all) enum TabPageIntent {
   Unknown(String, Array[@core.Value])
 }
 pub fn TabPageIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
-pub fn TabPageIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn TabPageIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum TabPageMsg {
@@ -194,7 +194,7 @@ pub(all) enum TabPageMsg {
   SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn TabPageMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum TabPageReceive {
   CancelRename
@@ -202,7 +202,7 @@ pub(all) enum TabPageReceive {
   SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn TabPageReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn TabPageReceive::send(Self, &@core.Ctx) -> Unit
 pub fn TabPageReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
@@ -231,7 +231,7 @@ pub(all) enum TabsMsg {
   CloseActive
   Unknown(String, Array[@core.Value])
 }
-pub fn TabsMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabsMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum TabsReceive {
   Activate
@@ -239,7 +239,7 @@ pub(all) enum TabsReceive {
   CloseActive
   Unknown(String, Array[@core.Value])
 }
-pub fn TabsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabsReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn TabsReceive::send(Self, &@core.Ctx) -> Unit
 pub fn TabsReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
@@ -277,13 +277,13 @@ pub(all) enum TextareaMsg {
   SetText(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn TextareaMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn TextareaMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum TextareaReceive {
   SetText(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn TextareaReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn TextareaReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn TextareaReceive::send(Self, &@core.Ctx) -> Unit
 pub fn TextareaReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
@@ -309,7 +309,7 @@ pub(all) enum UniversalIntent {
   Unknown(String, Array[@core.Value])
 }
 pub fn UniversalIntent::dispatch(Self, &@core.Ctx, opts? : @core.IntentOpts) -> Unit
-pub fn UniversalIntent::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalIntent::from_dispatch(@core.Dispatch) -> Self?
 pub fn UniversalIntent::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) enum UniversalMethod {
@@ -324,7 +324,7 @@ pub(all) enum UniversalMsg {
   Remove
   Unknown(String, Array[@core.Value])
 }
-pub fn UniversalMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalMsg::from_dispatch(@core.Dispatch) -> Self?
 
 pub(all) enum UniversalReceive {
   Hold(@core.Value)
@@ -336,7 +336,7 @@ pub(all) enum UniversalReceive {
   Remove
   Unknown(String, Array[@core.Value])
 }
-pub fn UniversalReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalReceive::from_dispatch(@core.Dispatch) -> Self?
 pub fn UniversalReceive::send(Self, &@core.Ctx) -> Unit
 pub fn UniversalReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 

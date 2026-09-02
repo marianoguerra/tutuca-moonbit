@@ -192,7 +192,7 @@ fn palette_row_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("pick", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("pick"), args=[
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
@@ -345,14 +345,14 @@ fn command_bar_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setQuery"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", @tutuca.Expr::handler_name("nav", Receive), args=[
+        @anode.on("keydown", @tutuca.Expr::name("nav"), args=[
           @tutuca.Expr::event_path(["key"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("close", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("close"))],
     ],
   )
 }
@@ -572,27 +572,27 @@ fn schema_field_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -741,12 +741,12 @@ fn schema_form_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("useInit", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("useInit"), args=[
           @tutuca.Expr::bind_member("value", "name"),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("create", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("cancel", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("create"))],
+      [@anode.on("click", @tutuca.Expr::name("cancel"))],
     ],
   )
 }
@@ -872,7 +872,7 @@ fn config_panel_main_view_ir() -> @anode.View {
         @anode.render(1, @tutuca.Expr::field("form")),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("close", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("close"))]],
   )
 }
 
@@ -1012,10 +1012,10 @@ fn universal_app_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("openCommand", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("toggleMode", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("openCommand"))],
+      [@anode.on("click", @tutuca.Expr::name("toggleMode"))],
       [
-        @anode.on("drop", @tutuca.Expr::handler_name("filesDropped", Receive), args=[
+        @anode.on("drop", @tutuca.Expr::name("filesDropped"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

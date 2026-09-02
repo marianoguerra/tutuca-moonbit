@@ -250,7 +250,7 @@ fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
 
 ///|
 fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
-  @dyncomp.bucket_ordinal(bucket)
+  bucket.ordinal()
 }
 
 ///|

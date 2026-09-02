@@ -88,5 +88,5 @@ pub impl @transactor.Intents for RecordedHost with fn intents_for(
       None => []
     }
   }
-  recorded.map(a => @transactor.IntentHandler((_call, answer) => answer(a)))
+  recorded.map(a => @tutuca.IntentFn((_call, answer) => answer(a)))
 }

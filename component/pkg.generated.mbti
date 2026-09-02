@@ -11,7 +11,7 @@ import {
 // Values
 pub fn[E, H] build_bucket(Array[E], (E) -> String, (E) -> H?) -> Map[String, H]
 
-pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> Update[S], get_property? : Map[String, (S) -> @core.Value], set_property? : Map[String, (S, @core.Value) -> Update[S]], compute? : Map[String, (S, Array[@core.Value], &@core.Stack) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit], enrich_scope? : Map[String, (S, &@core.Stack) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[LookupSpec], spec? : String) -> Component
+pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, @core.Dispatch, &@core.Ctx) -> Update[S], get_property? : Map[String, (S) -> @core.Value], set_property? : Map[String, (S, @core.Value) -> Update[S]], compute? : Map[String, (S, Array[@core.Value], &@core.Stack) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value, &@core.Stack) -> Unit], enrich_scope? : Map[String, (S, &@core.Stack) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[LookupSpec], spec? : String) -> Component
 
 pub fn lookup_name(String) -> LookupSpec
 
@@ -59,7 +59,7 @@ pub struct ComponentStack {
   parent : ComponentStack?
   by_name : Map[String, Component]
   paths : Map[String, @core.Path]
-  intents : Map[String, Array[IntentFn]]
+  intents : Map[String, Array[@core.IntentFn]]
   macros : Map[String, @anode.Macro]
 }
 pub fn ComponentStack::check_names(Self) -> Array[@lint.Finding]
@@ -67,11 +67,11 @@ pub fn ComponentStack::compile_all(Self) -> Unit raise
 pub fn ComponentStack::component_names(Self) -> Array[String]
 pub fn ComponentStack::enter(Self) -> Self
 pub fn ComponentStack::lookup_component(Self, String) -> Component?
-pub fn ComponentStack::lookup_intent(Self, String) -> Array[IntentFn]
+pub fn ComponentStack::lookup_intent(Self, String) -> Array[@core.IntentFn]
 pub fn ComponentStack::lookup_path(Self, String) -> @core.Path?
 pub fn ComponentStack::new(comps? : Components) -> Self
 pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
-pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[IntentFn]]) -> Unit
+pub fn ComponentStack::register_intent_handlers(Self, Map[String, Array[@core.IntentFn]]) -> Unit
 pub fn ComponentStack::register_macros(Self, Map[String, @anode.Macro]) -> Unit
 pub fn ComponentStack::register_paths(Self, Map[String, @core.Path]) -> Unit
 pub impl @anode.MacroScope for ComponentStack
@@ -86,11 +86,6 @@ pub fn Components::get_comp_for(Self, @core.Value) -> Component?
 pub fn Components::get_component_for_id(Self, Int) -> Component?
 pub fn Components::new() -> Self
 pub fn Components::register(Self, Component) -> Unit
-
-pub(all) enum Dispatch {
-  Receive(String, Array[@core.Value])
-  Intent(String, Array[@core.Value])
-} derive(Eq, @debug.Debug)
 
 pub(all) struct DynBinds {
   binds : Map[String, LocatedValue]
@@ -113,8 +108,6 @@ pub(all) struct FieldBox {
   set : (String, @core.Value) -> @core.Value
   value : () -> @core.Value
 }
-
-pub(all) struct IntentFn((@core.IntentCall, (@core.IntentAnswer) -> Unit) -> Unit)
 
 pub(all) struct LocatedValue {
   value : @core.Value
@@ -153,11 +146,11 @@ pub(all) struct ModuleDef {
   components : Array[Component]
   paths : Map[String, @core.Path]
   macros : Map[String, @anode.Macro]
-  intents : Map[String, Array[IntentFn]]
+  intents : Map[String, Array[@core.IntentFn]]
   examples : Array[ExampleDef]
 }
 pub fn ModuleDef::build_scope(Self) -> ComponentStack raise
-pub fn ModuleDef::new(name~ : String, components~ : Array[Component], paths? : Map[String, @core.Path], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[IntentFn]], examples? : Array[ExampleDef]) -> Self
+pub fn ModuleDef::new(name~ : String, components~ : Array[Component], paths? : Map[String, @core.Path], macros? : Map[String, @anode.Macro], intents? : Map[String, Array[@core.IntentFn]], examples? : Array[ExampleDef]) -> Self
 pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
 
 pub(all) struct ProvideInfo {
@@ -178,9 +171,13 @@ pub(all) enum Update[S] {
 }
 
 // Type aliases
+pub using @core {type Dispatch}
+
 pub using @core {type FieldInfo}
 
 pub using @core {type FieldKind}
+
+pub using @core {type IntentFn}
 
 pub using @core {type SchemaInfo}
 

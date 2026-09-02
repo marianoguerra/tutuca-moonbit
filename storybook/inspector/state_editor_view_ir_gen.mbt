@@ -151,17 +151,17 @@ fn state_editor_row_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["valueAsFloat"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("edit"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],

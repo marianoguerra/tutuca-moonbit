@@ -18,7 +18,7 @@ pub fn fuzzy_match(String, String) -> Bool
 
 pub fn margaui_themes() -> Array[String]
 
-pub fn[N : @vdom.DomWalk] mount(Array[@storybook.Section], N, @vdom.RenderOpts[N], url_handlers? : Map[String, Array[@component.IntentFn]], themes? : Array[String], panels? : PanelSet[N]) -> @app.App[N] raise
+pub fn[N : @vdom.DomWalk] mount(Array[@storybook.Section], N, @vdom.RenderOpts[N], url_handlers? : Map[String, Array[@core.IntentFn]], themes? : Array[String], panels? : PanelSet[N]) -> @app.App[N] raise
 
 pub fn[N] push_panel(@app.App[N], Int, String, @core.Value) -> Unit
 
@@ -53,7 +53,7 @@ pub(all) struct PanelSet[N] {
   defs : Array[PanelDef]
   fields : Map[String, @core.Value]
   components : Array[@component.Component]
-  intents : Map[String, Array[@component.IntentFn]]
+  intents : Map[String, Array[@core.IntentFn]]
   attach : (@app.App[N]) -> Unit
 }
 pub fn[N] PanelSet::none() -> Self[N]

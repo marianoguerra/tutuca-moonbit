@@ -301,7 +301,7 @@ fn comp_view_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("toggle", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("toggle"), args=[
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
@@ -485,7 +485,7 @@ fn comp_section_main_view_ir() -> @anode.View {
                 1,
                 @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
+                loop_with_val=@tutuca.Expr::name("getPageRange"),
                 from_render_each=true,
               ),
             ],
@@ -495,12 +495,12 @@ fn comp_section_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("toggle", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("toggle"), args=[
           @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("prevPage"))],
+      [@anode.on("click", @tutuca.Expr::name("nextPage"))],
     ],
   )
 }

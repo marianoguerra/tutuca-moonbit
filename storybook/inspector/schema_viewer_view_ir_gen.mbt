@@ -74,7 +74,7 @@ fn schema_viewer_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("toggleShowRaw", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("toggleShowRaw"))]],
   )
 }
 

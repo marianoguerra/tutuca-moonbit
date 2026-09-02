@@ -79,14 +79,9 @@ pub fn Value::method_at(self : Value, name : String, stack : &Stack) -> Value? {
 
 ///|
 /// The render-time twin of `method_at`: `@when`, `@enrich-with`, `@loop-with`.
-pub fn Value::callable_at(
-  self : Value,
-  name : String,
-  ns : HandlerNamespace,
-  stack : &Stack,
-) -> Value? {
+pub fn Value::trigger_at(self : Value, name : String, stack : &Stack) -> Value? {
   match self {
-    Obj(o) => o.obj_callable_at(name, ns, stack)
+    Obj(o) => o.trigger_at(name, stack)
     _ => self.field_opt(name)
   }
 }

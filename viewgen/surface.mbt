@@ -196,7 +196,7 @@ fn Collect::new() -> Collect {
 /// `walk_val`; only the bare `HandlerName` form is a bucket entry.
 fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
   match val {
-    Some(EHandlerName(name~, ns=Alter, ..)) => into.add(name)
+    Some(EName(name~, ..)) => into.add(name)
     _ => ()
   }
 }
@@ -665,7 +665,7 @@ fn walk_view(
         raise MethodInEventPosition(view=view_name, name~, site~)
       }
       match h.handler.handler {
-        EHandlerName(name~, ..) => {
+        EName(name~, ..) => {
           let value_kind = c.value_kinds.get(ev.id).unwrap_or(VString)
           let shape = h.handler.args.map(a => arg_type_of(a, value_kind))
           for a in h.handler.args {

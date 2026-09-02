@@ -325,7 +325,7 @@ pub fn intent_handlers(
       AFailed(v) => Failed(v)
       APass => Pass
     }
-    out[name] = [@component.IntentFn((_call, reply) => reply(answer))]
+    out[name] = [@tutuca.IntentFn((_call, reply) => reply(answer))]
   }
   out
 }

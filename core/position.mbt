@@ -42,6 +42,13 @@ pub(all) enum Position {
   /// An argument of an `@on` handler. The one position an `e.<path>` may
   /// stand in.
   PosEventArg
+  /// The HANDLER of an `@on`: the name of the thing a raised event runs.
+  PosEvent
+  /// The handler of a render-time directive — `@when`, `@enrich-with`,
+  /// `@loop-with`. A name here is answered by the render stack rather than
+  /// dispatched, which is the whole of what the retired `HandlerNamespace`
+  /// said.
+  PosTrigger
   /// A macro attribute: whatever a slot can hold, because the callee's own
   /// position decides what it means.
   PosMacroAttr
@@ -129,7 +136,7 @@ fn kind_of(val : Expr) -> Kind? {
     EMethod(..) => Some(KMethod)
     EDyn(..) => Some(KDyn)
     ETypeName(..) => Some(KType)
-    EName(..) | EHandlerName(..) => Some(KName)
+    EName(..) => Some(KName)
     EApp(..) | EChain(..) | EUnary(..) => Some(KApp)
     EEventPath(..) => Some(KEvent)
     EIf(..) | ERef(..) | EMacroVar(..) | EConfigVar(..) => None
@@ -149,6 +156,11 @@ fn in_position(kind : Kind, pos : Position) -> Bool {
     PosField => kind is (KField | KMethod | KConst | KSeq)
     PosEventArg =>
       kind is (KField | KMethod | KBind | KDyn | KName | KConst | KEvent)
+    // A handler position holds a NAME. `$name` is admitted by the grammar
+    // and refused separately in an `@on` — the sigil claims a distinction the
+    // dispatch does not have (`@anode.NodeEvent::method_in_event`) — while a
+    // trigger genuinely may be either.
+    PosEvent | PosTrigger => kind is (KName | KMethod)
     PosMacroAttr =>
       kind
       is (KField | KMethod | KBind | KDyn | KName | KConst | KStrTpl | KSeq)

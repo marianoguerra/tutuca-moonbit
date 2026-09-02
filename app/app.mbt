@@ -26,12 +26,8 @@ pub impl @transactor.Intents for ScopeIntents with fn intents_for(
 ) {
   guard self.comps.get_comp_for(leaf) is Some(comp) else { return [] }
   guard comp.scope is Some(scope) else { return [] }
-  scope
-  .lookup_intent(name)
-  .map(h => {
-    let IntentFn(f) = h
-    IntentHandler(f)
-  })
+  // No adapter: the two packages register the SAME struct now.
+  scope.lookup_intent(name)
 }
 
 ///|
@@ -176,7 +172,7 @@ fn run_handlers(
       None => ()
     }
     let name = match h.handler.handler {
-      EHandlerName(name~, ..) | EMethod(name~, ..) => name
+      EName(name~, ..) | EMethod(name~, ..) => name
       _ => continue
     }
     let args : Array[@tutuca.Value] = match h.binding {

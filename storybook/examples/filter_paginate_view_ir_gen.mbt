@@ -100,17 +100,17 @@ fn person_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setName"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setEmail", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setEmail"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", @tutuca.Expr::handler_name("setActive", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("setActive"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
@@ -258,7 +258,7 @@ fn naive_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      @tutuca.Expr::handler_name("pagerInfo", Alter),
+      @tutuca.Expr::name("pagerInfo"),
       @anode.h(
         "section",
         [
@@ -306,8 +306,8 @@ fn naive_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              when_val=@tutuca.Expr::handler_name("onlyMatches", Alter),
-              loop_with_val=@tutuca.Expr::handler_name("tablePage", Alter),
+              when_val=@tutuca.Expr::name("onlyMatches"),
+              loop_with_val=@tutuca.Expr::name("tablePage"),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -342,19 +342,17 @@ fn naive_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("search"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("prev"))],
+      [@anode.on("click", @tutuca.Expr::name("next"))],
     ],
   )
 }
@@ -469,7 +467,7 @@ fn shared_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      @tutuca.Expr::handler_name("pagerInfo", Alter),
+      @tutuca.Expr::name("pagerInfo"),
       @anode.h(
         "section",
         [
@@ -517,8 +515,8 @@ fn shared_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              when_val=@tutuca.Expr::handler_name("onlyMatches", Alter),
-              loop_with_val=@tutuca.Expr::handler_name("page", Alter),
+              when_val=@tutuca.Expr::name("onlyMatches"),
+              loop_with_val=@tutuca.Expr::name("page"),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -553,19 +551,17 @@ fn shared_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("search"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("prev"))],
+      [@anode.on("click", @tutuca.Expr::name("next"))],
     ],
   )
 }
@@ -584,7 +580,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      @tutuca.Expr::handler_name("pagerInfo", Alter),
+      @tutuca.Expr::name("pagerInfo"),
       @anode.h(
         "section",
         [
@@ -632,7 +628,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              loop_with_val=@tutuca.Expr::handler_name("forwardKeys", Alter),
+              loop_with_val=@tutuca.Expr::name("forwardKeys"),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -667,19 +663,17 @@ fn coupled_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+        @anode.on("input", @tutuca.Expr::name("search"), args=[
           @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
-          args=[@tutuca.Expr::bind("key")],
-        ),
+        @anode.on("click", @tutuca.Expr::name("removeInItemsAt"), args=[
+          @tutuca.Expr::bind("key"),
+        ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("prev"))],
+      [@anode.on("click", @tutuca.Expr::name("next"))],
     ],
   )
 }

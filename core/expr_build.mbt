@@ -144,16 +144,6 @@ pub fn Expr::type_name(name : String, span? : Span = no_span) -> Expr {
 }
 
 ///|
-/// A bare name in a handler position, with the namespace it is answered in.
-pub fn Expr::handler_name(
-  name : String,
-  ns : HandlerNamespace,
-  span? : Span = no_span,
-) -> Expr {
-  EHandlerName(name~, ns~, span~)
-}
-
-///|
 /// A name applied to arguments.
 pub fn Expr::app(
   name : String,

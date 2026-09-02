@@ -120,12 +120,17 @@ pub let control_iface : String = "tutuca:component/control@0.11.0"
 ///|
 /// The card compiler's two handler categories. The fixed WIT operations pick
 /// one directly; the compact internal dispatch chain uses these numbers.
-pub let bucket_receive : Int = 0
+///
+/// Read off `HandlerBucket::ordinal` rather than written down again: the
+/// numbering is the WIT variant's case order, and it was spelled here, in
+/// `dyncomp/host/guest.mbt` and in `guests/sdk.mbt` — three copies of a
+/// contract that no compiler holds to itself.
+pub let bucket_receive : Int = @tutuca.HandlerBucket::ordinal(Receive)
 
 ///|
 /// The routed bucket: a dispatch offered to each hop of a route until
 /// something answers.
-pub let bucket_intent : Int = 1
+pub let bucket_intent : Int = @tutuca.HandlerBucket::ordinal(Intent)
 
 ///|
 /// A route, as one small integer.

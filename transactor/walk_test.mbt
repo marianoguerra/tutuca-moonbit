@@ -449,7 +449,7 @@ test "forward in an intent body amends what the next position sees" {
 
 ///|
 struct Registry {
-  handlers : Array[@transactor.IntentHandler]
+  handlers : Array[@tutuca.IntentFn]
 }
 
 ///|
@@ -463,8 +463,8 @@ pub impl @transactor.Intents for Registry with fn intents_for(self, _leaf, name)
 
 ///|
 /// A handler that declines, counting that it was asked.
-fn passer(count : Ref[Int]) -> @transactor.IntentHandler {
-  IntentHandler((_call, answer) => {
+fn passer(count : Ref[Int]) -> @tutuca.IntentFn {
+  IntentFn((_call, answer) => {
     count.val = count.val + 1
     answer(Pass)
   })
@@ -475,7 +475,7 @@ test "a lex handler answers, and the answer reaches the sender" {
   let asked : Ref[Int] = { val: 0, }
   let reg = Registry::{
     handlers: [
-      IntentHandler((call, answer) => {
+      IntentFn((call, answer) => {
         asked.val = asked.val + 1
         answer(Ok(Str("lex:" + show_args(call.args))))
       }),
@@ -495,7 +495,7 @@ test "a declining lex handler hands the intent to the next one, and costs no tra
     handlers: [
       passer(passed),
       passer(passed),
-      IntentHandler((_call, answer) => answer(Ok(Str("third")))),
+      IntentFn((_call, answer) => answer(Ok(Str("third")))),
     ],
   }
   let tx = @transactor.Transactor::new(tree("none", "none"), intents=reg)
@@ -537,7 +537,7 @@ test "a lex handler may answer later, and the walk waits for it" {
   // allowed to assume a static handler answers synchronously.
   let later : Ref[((@tutuca.IntentAnswer) -> Unit)?] = { val: None, }
   let reg = Registry::{
-    handlers: [IntentHandler((_call, answer) => later.val = Some(answer))],
+    handlers: [IntentFn((_call, answer) => later.val = Some(answer))],
   }
   let tx = @transactor.Transactor::new(tree("none", "none"), intents=reg)
   let _ = tx.push_send(item_at(), "go-lex", [])
@@ -558,7 +558,7 @@ test "INTENT_DEPTH cuts a walk that will not end, and the sender is told" {
   // exhaustion path that has to run afterwards — a sender that asked for an
   // answer must learn something rather than wait forever.
   let passed : Ref[Int] = { val: 0, }
-  let handlers : Array[@transactor.IntentHandler] = []
+  let handlers : Array[@tutuca.IntentFn] = []
   for _ in 0..<(@transactor.INTENT_DEPTH + 10) {
     handlers.push(passer(passed))
   }

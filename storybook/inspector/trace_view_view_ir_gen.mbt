@@ -397,7 +397,7 @@ fn trace_row_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", @tutuca.Expr::handler_name("toggle", Receive))]],
+    [[@anode.on("click", @tutuca.Expr::name("toggle"))]],
   )
 }
 
@@ -1036,7 +1036,7 @@ fn trace_place_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("pickPlace", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("pickPlace"), args=[
           @tutuca.Expr::field("label"),
         ]),
       ],
@@ -1421,36 +1421,26 @@ fn recorder_bar_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("click", @tutuca.Expr::handler_name("stopRecording", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("openPicker", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("stopRecording"))],
+      [@anode.on("click", @tutuca.Expr::name("openPicker"))],
+      [@anode.on("click", @tutuca.Expr::name("clearRecording"))],
       [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("clearRecording", Receive),
-        ),
-      ],
-      [
-        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setScope"), args=[
           @anode.const_str("all"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setScope"), args=[
           @anode.const_str("section"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setScope"), args=[
           @anode.const_str("example"),
         ]),
       ],
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("startRecording", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("closePicker", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("startRecording"))],
+      [@anode.on("click", @tutuca.Expr::name("closePicker"))],
     ],
   )
 }
@@ -2162,31 +2152,26 @@ fn trace_panel_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("record"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("trace"),
         ]),
       ],
       [
-        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("setTab"), args=[
           @anode.const_str("replay"),
         ]),
       ],
-      [
-        @anode.on(
-          "click",
-          @tutuca.Expr::handler_name("toggleSelecting", Receive),
-        ),
-      ],
-      [@anode.on("click", @tutuca.Expr::handler_name("exportTrace", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("cutToPlace", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("replayStep", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("replayRun", Receive))],
-      [@anode.on("click", @tutuca.Expr::handler_name("replayReset", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("toggleSelecting"))],
+      [@anode.on("click", @tutuca.Expr::name("exportTrace"))],
+      [@anode.on("click", @tutuca.Expr::name("cutToPlace"))],
+      [@anode.on("click", @tutuca.Expr::name("replayStep"))],
+      [@anode.on("click", @tutuca.Expr::name("replayRun"))],
+      [@anode.on("click", @tutuca.Expr::name("replayReset"))],
       [
         @anode.on(
           "input",
@@ -2198,7 +2183,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
           ),
         ),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("importDraft", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("importDraft"))],
       [
         @anode.on(
           "input",
@@ -2210,7 +2195,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
           ),
         ),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("importDraft", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("importDraft"))],
     ],
   )
 }

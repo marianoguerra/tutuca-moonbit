@@ -87,11 +87,11 @@ fn nested_state_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", @tutuca.Expr::handler_name("toggleLabel", Receive), args=[
+        @anode.on("click", @tutuca.Expr::name("toggleLabel"), args=[
           @tutuca.Expr::bind("key"),
         ]),
       ],
-      [@anode.on("click", @tutuca.Expr::handler_name("bumpPriority", Receive))],
+      [@anode.on("click", @tutuca.Expr::name("bumpPriority"))],
     ],
   )
 }
