@@ -74,7 +74,8 @@ fn lower_bind(
       reason="cannot target loop-item state; bind a direct component field outside `@each`",
     )
   }
-  guard bind.target is Field(field_name) else {
+  guard bind.target
+    is ERead(place={ root: PState(field_name), steps: [], .. }, ..) else {
     raise InvalidBind(
       view~,
       reason="needs a direct state field such as `.name`",
@@ -197,8 +198,8 @@ fn bind_input_type(attrs : @anode.Attrs) -> BindAttrValue {
     DynAttrs(items) => {
       for item in items {
         match item {
-          Plain(name="type", val=Const(lit=LStr(s), ..))
-          | ConstA(name="type", val=Const(lit=LStr(s), ..)) =>
+          Plain(name="type", val=ELit(lit=LStr(s), ..))
+          | ConstA(name="type", val=ELit(lit=LStr(s), ..)) =>
             return StaticBindAttr(s.to_lower())
           Plain(name="type", ..) => return DynamicBindAttr
           _ => ()

@@ -33,7 +33,7 @@ pub(all) struct Refusal {
   reason : String
   /// 1-based in the FILE, so an editor can put it beside the line.
   line : Int
-  span : @tscript.Span
+  span : @tutuca.Span
 } derive(Debug, Eq)
 
 ///|

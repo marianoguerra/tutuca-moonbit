@@ -476,7 +476,7 @@ pub fn Component::view_handler_names(self : Component) -> Array[String] {
         for ne in px.events {
           for h in ne.handlers {
             match h.handler.handler {
-              HandlerName(name~, ns~) =>
+              EHandlerName(name~, ns~, ..) =>
                 if ns is Receive && !seen.contains(name) {
                   seen[name] = ()
                   out.push(name)

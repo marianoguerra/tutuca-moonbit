@@ -148,7 +148,7 @@ fn palette_row_main_view_ir() -> @anode.View {
       [
         @anode.if_attr(
           "class",
-          Field("selected"),
+          @tutuca.Expr::field("selected"),
           then_val=@anode.const_str(
             "palette-row row-selected flex flex-col gap-0.5 px-2 py-1 rounded cursor-pointer bg-base-300",
           ),
@@ -163,37 +163,37 @@ fn palette_row_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "font-mono text-sm row-name")],
-            [@anode.dyn_text(Field("name"))],
+            [@anode.dyn_text(@tutuca.Expr::field("name"))],
           ),
           @anode.text(" "),
           @anode.h(
             "span",
             [@anode.attr("class", "text-[0.65rem] opacity-50 row-module")],
-            [@anode.dyn_text(Field("module"))],
+            [@anode.dyn_text(@tutuca.Expr::field("module"))],
           ),
           @anode.text(" "),
           @anode.h(
             "span",
             [@anode.attr("class", "badge badge-xs badge-ghost row-category")],
-            [@anode.dyn_text(Field("category"))],
+            [@anode.dyn_text(@tutuca.Expr::field("category"))],
           ),
         ]),
         @anode.h(
           "div",
           [@anode.attr("class", "text-xs opacity-70 row-summary")],
-          [@anode.dyn_text(Field("summary"))],
+          [@anode.dyn_text(@tutuca.Expr::field("summary"))],
         ),
         @anode.h(
           "div",
           [@anode.attr("class", "text-[0.65rem] opacity-40 row-why")],
-          [@anode.dyn_text(Field("why"))],
+          [@anode.dyn_text(@tutuca.Expr::field("why"))],
         ),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="pick", ns=Receive), args=[
-          EventPath(["isCtrl"]),
+        @anode.on("click", @tutuca.Expr::handler_name("pick", Receive), args=[
+          @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
     ],
@@ -291,14 +291,14 @@ fn command_bar_main_view_ir() -> @anode.View {
                   "class", "input input-sm input-bordered command-input",
                 ),
                 @anode.attr("placeholder", "search components…"),
-                @anode.dyn_attr("value", Field("query")),
+                @anode.dyn_attr("value", @tutuca.Expr::field("query")),
                 @anode.eid(0),
               ],
               [],
             ),
             @anode.text(" "),
             @anode.show(
-              Field("configure"),
+              @tutuca.Expr::field("configure"),
               @anode.h(
                 "p",
                 [@anode.attr("class", "text-[0.65rem] opacity-50 command-hint")],
@@ -320,7 +320,7 @@ fn command_bar_main_view_ir() -> @anode.View {
               [
                 @anode.each(
                   1,
-                  Field("hits"),
+                  @tutuca.Expr::field("hits"),
                   @anode.render_it(0),
                   from_render_each=true,
                 ),
@@ -328,7 +328,7 @@ fn command_bar_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="empty?", args=[Field("hits")]),
+              @tutuca.Expr::app("empty?", [@tutuca.Expr::field("hits")]),
               @anode.h(
                 "p",
                 [
@@ -336,7 +336,7 @@ fn command_bar_main_view_ir() -> @anode.View {
                     "class", "text-xs opacity-50 italic command-empty",
                   ),
                 ],
-                [@anode.dyn_text(Field("emptyMessage"))],
+                [@anode.dyn_text(@tutuca.Expr::field("emptyMessage"))],
               ),
             ),
           ],
@@ -345,14 +345,14 @@ fn command_bar_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="nav", ns=Receive), args=[
-          EventPath(["key"]),
+        @anode.on("keydown", @tutuca.Expr::handler_name("nav", Receive), args=[
+          @tutuca.Expr::event_path(["key"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="close", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("close", Receive))],
     ],
   )
 }
@@ -430,11 +430,11 @@ fn schema_field_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "font-mono text-xs field-name")],
-            [@anode.dyn_text(Field("name"))],
+            [@anode.dyn_text(@tutuca.Expr::field("name"))],
           ),
           @anode.text(" "),
           @anode.show(
-            Field("required"),
+            @tutuca.Expr::field("required"),
             @anode.h(
               "span",
               [@anode.attr("class", "text-error text-xs field-required")],
@@ -445,27 +445,30 @@ fn schema_field_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "text-[0.65rem] opacity-40 field-hint")],
-            [@anode.dyn_text(Field("hint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("hint"))],
           ),
         ]),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("doc")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
           @anode.h(
             "span",
             [@anode.attr("class", "text-[0.65rem] opacity-60 field-doc")],
-            [@anode.dyn_text(Field("doc"))],
+            [@anode.dyn_text(@tutuca.Expr::field("doc"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("bool")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("bool"),
+          ]),
           @anode.h(
             "input",
             [
               @anode.attr("type", "checkbox"),
               @anode.attr("class", "checkbox checkbox-xs field-bool"),
-              @anode.dyn_attr("checked", Field("flag")),
+              @anode.dyn_attr("checked", @tutuca.Expr::field("flag")),
               @anode.eid(0),
             ],
             [],
@@ -473,13 +476,16 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("number")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("number"),
+          ]),
           @anode.h(
             "input",
             [
               @anode.attr("type", "number"),
               @anode.attr("class", "input input-xs input-bordered field-number"),
-              @anode.dyn_attr("value", Field("num")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("num")),
               @anode.eid(1),
             ],
             [],
@@ -487,13 +493,16 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("string")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("string"),
+          ]),
           @anode.h(
             "input",
             [
               @anode.attr("type", "text"),
               @anode.attr("class", "input input-xs input-bordered field-string"),
-              @anode.dyn_attr("value", Field("text")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("text")),
               @anode.eid(2),
             ],
             [],
@@ -501,23 +510,28 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("enum")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("enum"),
+          ]),
           @anode.h(
             "select",
             [
               @anode.attr(
                 "class", "select select-xs select-bordered field-enum",
               ),
-              @anode.dyn_attr("value", Field("text")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("text")),
               @anode.eid(3),
             ],
             [
               @anode.each(
                 0,
-                Field("choices"),
-                @anode.h("option", [@anode.dyn_attr("value", Bind("value"))], [
-                  @anode.dyn_text(Bind("value")),
-                ]),
+                @tutuca.Expr::field("choices"),
+                @anode.h(
+                  "option",
+                  [@anode.dyn_attr("value", @tutuca.Expr::bind("value"))],
+                  [@anode.dyn_text(@tutuca.Expr::bind("value"))],
+                ),
               ),
             ],
           ),
@@ -528,7 +542,10 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("json")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("json"),
+          ]),
           @anode.h(
             "textarea",
             [
@@ -536,7 +553,7 @@ fn schema_field_main_view_ir() -> @anode.View {
                 "class", "textarea textarea-xs textarea-bordered font-mono field-json",
               ),
               @anode.attr("rows", "2"),
-              @anode.dyn_attr("value", Field("text")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("text")),
               @anode.eid(4),
             ],
             [],
@@ -544,39 +561,39 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("error")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
           @anode.h(
             "span",
             [@anode.attr("class", "text-error text-[0.65rem] field-error")],
-            [@anode.dyn_text(Field("error"))],
+            [@anode.dyn_text(@tutuca.Expr::field("error"))],
           ),
         ),
       ],
     ),
     [
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -652,13 +669,13 @@ fn schema_form_main_view_ir() -> @anode.View {
       @anode.h(
         "div",
         [@anode.attr("class", "font-mono text-sm font-semibold form-title")],
-        [@anode.dyn_text(Field("title"))],
+        [@anode.dyn_text(@tutuca.Expr::field("title"))],
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("doc")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
         @anode.h("p", [@anode.attr("class", "text-xs opacity-70 form-doc")], [
-          @anode.dyn_text(Field("doc")),
+          @anode.dyn_text(@tutuca.Expr::field("doc")),
         ]),
       ),
       @anode.text(" "),
@@ -667,21 +684,21 @@ fn schema_form_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.hide(
-        App(name="empty?", args=[Field("inits")]),
+        @tutuca.Expr::app("empty?", [@tutuca.Expr::field("inits")]),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-1 flex-wrap form-inits")],
           [
             @anode.each(
               0,
-              Field("inits"),
+              @tutuca.Expr::field("inits"),
               @anode.h(
                 "button",
                 [
                   @anode.attr("class", "btn btn-xs btn-outline form-init"),
                   @anode.eid(0),
                 ],
-                [@anode.dyn_text(BindMember(name="value", prop="label"))],
+                [@anode.dyn_text(@tutuca.Expr::bind_member("value", "label"))],
               ),
             ),
           ],
@@ -690,15 +707,15 @@ fn schema_form_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.each(
         2,
-        Field("fields"),
+        @tutuca.Expr::field("fields"),
         @anode.render_it(1),
         from_render_each=true,
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("error")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
         @anode.h("p", [@anode.attr("class", "text-error text-xs form-error")], [
-          @anode.dyn_text(Field("error")),
+          @anode.dyn_text(@tutuca.Expr::field("error")),
         ]),
       ),
       @anode.text(" "),
@@ -709,7 +726,7 @@ fn schema_form_main_view_ir() -> @anode.View {
             @anode.attr("class", "btn btn-sm btn-primary form-create"),
             @anode.eid(1),
           ],
-          [@anode.dyn_text(Field("submitLabel"))],
+          [@anode.dyn_text(@tutuca.Expr::field("submitLabel"))],
         ),
         @anode.text(" "),
         @anode.h(
@@ -724,12 +741,12 @@ fn schema_form_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="useInit", ns=Receive), args=[
-          BindMember(name="value", prop="name"),
+        @anode.on("click", @tutuca.Expr::handler_name("useInit", Receive), args=[
+          @tutuca.Expr::bind_member("value", "name"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="create", ns=Receive))],
-      [@anode.on("click", HandlerName(name="cancel", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("create", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("cancel", Receive))],
     ],
   )
 }
@@ -811,7 +828,7 @@ fn config_panel_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "font-mono text-sm grow config-title")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
           @anode.text(" "),
           @anode.h(
@@ -827,7 +844,10 @@ fn config_panel_main_view_ir() -> @anode.View {
         ]),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("mode"), @anode.const_str("view")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("mode"),
+            @anode.const_str("view"),
+          ]),
           @anode.h(
             "p",
             [
@@ -843,12 +863,16 @@ fn config_panel_main_view_ir() -> @anode.View {
           ),
         ),
         @anode.text(" "),
-        @anode.render(0, Field("target"), view=@anode.const_str("config")),
+        @anode.render(
+          0,
+          @tutuca.Expr::field("target"),
+          view=@anode.const_str("config"),
+        ),
         @anode.text(" "),
-        @anode.render(1, Field("form")),
+        @anode.render(1, @tutuca.Expr::field("form")),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="close", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("close", Receive))]],
   )
 }
 
@@ -959,40 +983,40 @@ fn universal_app_main_view_ir() -> @anode.View {
                 @anode.attr("class", "btn btn-xs btn-ghost toggle-mode"),
                 @anode.eid(1),
               ],
-              [@anode.dyn_text(Method("modeLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("modeLabel"))],
             ),
             @anode.text(" "),
-            @anode.render(0, Field("devTools")),
+            @anode.render(0, @tutuca.Expr::field("devTools")),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "text-sm opacity-70 grow app-status")],
-              [@anode.dyn_text(Field("status"))],
+              [@anode.dyn_text(@tutuca.Expr::field("status"))],
             ),
           ],
         ),
         @anode.h("div", [@anode.attr("class", "flex grow min-h-0")], [
           @anode.push_view(
-            Field("mode"),
+            @tutuca.Expr::field("mode"),
             @anode.h(
               "div",
               [@anode.attr("class", "grow app-canvas overflow-auto p-4")],
-              [@anode.render(1, Field("root"))],
+              [@anode.render(1, @tutuca.Expr::field("root"))],
             ),
           ),
           @anode.text(" "),
-          @anode.render(2, Field("configPanel")),
+          @anode.render(2, @tutuca.Expr::field("configPanel")),
         ]),
         @anode.text(" "),
-        @anode.render(3, Field("commandBar")),
+        @anode.render(3, @tutuca.Expr::field("commandBar")),
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="openCommand", ns=Receive))],
-      [@anode.on("click", HandlerName(name="toggleMode", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("openCommand", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleMode", Receive))],
       [
-        @anode.on("drop", HandlerName(name="filesDropped", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("drop", @tutuca.Expr::handler_name("filesDropped", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],

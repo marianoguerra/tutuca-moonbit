@@ -59,19 +59,19 @@ fn nested_state_main_view_ir() -> @anode.View {
     "main",
     @anode.h("div", [@anode.attr("class", "card bg-base-200 p-4")], [
       @anode.h("h3", [@anode.attr("class", "card-title")], [
-        @anode.dyn_text(Field("title")),
+        @anode.dyn_text(@tutuca.Expr::field("title")),
       ]),
       @anode.h("ul", [@anode.attr("class", "menu")], [
         @anode.each(
           0,
-          Field("labels"),
+          @tutuca.Expr::field("labels"),
           @anode.h("li", [], [
             @anode.h(
               "button",
               [@anode.attr("class", "btn btn-xs"), @anode.eid(0)],
               [
                 @anode.h("span", [], [
-                  @anode.dyn_text(BindMember(name="value", prop="text")),
+                  @anode.dyn_text(@tutuca.Expr::bind_member("value", "text")),
                 ]),
               ],
             ),
@@ -87,11 +87,11 @@ fn nested_state_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="toggleLabel", ns=Receive), args=[
-          Bind("key"),
+        @anode.on("click", @tutuca.Expr::handler_name("toggleLabel", Receive), args=[
+          @tutuca.Expr::bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="bumpPriority", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("bumpPriority", Receive))],
     ],
   )
 }

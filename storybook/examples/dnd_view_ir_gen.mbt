@@ -42,7 +42,7 @@ fn dn_d_example_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "search"),
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("query")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("query")),
           @anode.eid(0),
           @anode.attr("placeholder", "Filter entries"),
         ],
@@ -52,7 +52,7 @@ fn dn_d_example_main_view_ir() -> @anode.View {
       @anode.h("div", [], [
         @anode.each(
           1,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h(
             "div",
             [
@@ -64,29 +64,31 @@ fn dn_d_example_main_view_ir() -> @anode.View {
             ],
             [
               @anode.h("span", [@anode.attr("class", "k")], [
-                @anode.dyn_text(Bind("key")),
+                @anode.dyn_text(@tutuca.Expr::bind("key")),
               ]),
               @anode.text(": "),
-              @anode.dyn_text(Bind("value"), id=0),
+              @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
             ],
           ),
-          when_val=HandlerName(name="filterItem", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
       [
-        @anode.on("drop", HandlerName(name="onDropOnItem", ns=Receive), args=[
-          Bind("key"),
-          EventPath(["dragInfo"]),
+        @anode.on("drop", @tutuca.Expr::handler_name("onDropOnItem", Receive), args=[
+          @tutuca.Expr::bind("key"),
+          @tutuca.Expr::event_path(["dragInfo"]),
         ]),
       ],
     ],

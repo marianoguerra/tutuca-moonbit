@@ -22,7 +22,7 @@ pub(all) struct Issue {
   message : String
   /// 1-based in the file.
   line : Int
-  span : @tscript.Span
+  span : @tutuca.Span
 } derive(Debug, Eq)
 
 ///|
@@ -136,7 +136,7 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     // than with the script block below — which is why the checker keeps the two
     // entry points apart.
     for f in @check.check_rules(def) {
-      let (line, span) : (Int, @tscript.Span) = match file.state_block {
+      let (line, span) : (Int, @tutuca.Span) = match file.state_block {
         Some(b) =>
           (
             b.line + line_of(b.text, f.span.start) - 1,
@@ -256,7 +256,7 @@ fn locate_view(
   source : String,
   views : @viewfile.ViewSet,
   view~ : String?,
-) -> (Int, @tscript.Span) {
+) -> (Int, @tutuca.Span) {
   let mut body = ""
   if view is Some(want) {
     for v in views.views {

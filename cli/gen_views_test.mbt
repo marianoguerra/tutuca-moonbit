@@ -151,7 +151,7 @@ test "the compiled tree is a second file, unless --no-ir" {
   assert_true(ir.contains("@anode.View::from_ir("))
   // The handler survives into the event table, args and all.
   assert_true(
-    ir.contains("HandlerName(name=\"go\", ns=Receive)") &&
+    ir.contains("@tutuca.Expr::handler_name(\"go\", Receive)") &&
     ir.contains("@anode.const_num(1.0)"),
   )
 }

@@ -65,16 +65,18 @@ fn rich_sample_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [@anode.eid(0)], [
-      @anode.h("span", [], [@anode.dyn_text(Field("title"))]),
+      @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::field("title"))]),
       @anode.text(" "),
       @anode.each(
         1,
-        Field("tags"),
-        @anode.h("span", [], [@anode.dyn_text(Bind("value"), id=0)]),
-        loop_with_val=HandlerName(name="rows", ns=Alter),
+        @tutuca.Expr::field("tags"),
+        @anode.h("span", [], [
+          @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
+        ]),
+        loop_with_val=@tutuca.Expr::handler_name("rows", Alter),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="inc", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))]],
   )
 }
 
@@ -84,11 +86,11 @@ fn rich_sample_compact_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "compact",
     @anode.h("span", [@anode.eid(0)], [
-      @anode.h("i", [], [@anode.dyn_text(Field("title"))]),
-      @anode.h("i", [], [@anode.dyn_text(Method("label"))]),
-      @anode.h("i", [], [@anode.dyn_text(Method("double"))]),
+      @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::field("title"))]),
+      @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("label"))]),
+      @anode.h("i", [], [@anode.dyn_text(@tutuca.Expr::method_("double"))]),
     ]),
-    [[@anode.on("click", HandlerName(name="reset", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("reset", Receive))]],
   )
 }
 
@@ -189,9 +191,9 @@ fn sample_card_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [@anode.attr("class", "card"), @anode.eid(0)], [
-      @anode.dyn_text(Method("label")),
+      @anode.dyn_text(@tutuca.Expr::method_("label")),
     ]),
-    [[@anode.on("click", HandlerName(name="bump", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("bump", Receive))]],
   )
 }
 

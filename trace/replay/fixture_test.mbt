@@ -49,13 +49,13 @@ fn row_views() -> Map[String, @anode.View] {
     "main": @anode.View::from_ir(
       "main",
       @anode.h("li", [@anode.attr("class", "row"), @anode.eid(0)], [
-        @anode.dyn_text(Field("label")),
+        @anode.dyn_text(@tutuca.Expr::field("label")),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "n")], [
-          @anode.dyn_text(Field("n")),
+          @anode.dyn_text(@tutuca.Expr::field("n")),
         ]),
       ]),
-      [[@anode.on("click", HandlerName(name="bump", ns=Receive))]],
+      [[@anode.on("click", @tutuca.Expr::handler_name("bump", Receive))]],
     ),
   }
 }
@@ -131,7 +131,7 @@ fn board_views() -> Map[String, @anode.View] {
     "main": @anode.View::from_ir(
       "main",
       @anode.h("div", [@anode.attr("class", "board")], [
-        @anode.h("h1", [], [@anode.dyn_text(Field("title"))]),
+        @anode.h("h1", [], [@anode.dyn_text(@tutuca.Expr::field("title"))]),
         // `<ul render-each=".rows">`: each row renders ITSELF, which is what
         // makes `rows[0]` a component boundary and therefore a place a
         // recording can be relocated onto.
@@ -142,7 +142,7 @@ fn board_views() -> Map[String, @anode.View] {
           // and a collision resolves a click on a row to the board.
           @anode.each(
             1,
-            Field("rows"),
+            @tutuca.Expr::field("rows"),
             @anode.render_it(0),
             from_render_each=true,
           ),

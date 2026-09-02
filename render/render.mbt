@@ -156,7 +156,7 @@ fn render_target(
     // A `*name` that resolved to a pathless value (a constant default, or a
     // position that could not be written down) reads fine but has nowhere to
     // resume, so it enters no frame.
-    Dyn(name) =>
+    EDyn(name~, ..) =>
       match stack.lookup_dynamic_located(name) {
         Some({ value, path: Some(path), }) =>
           (value, stack.render_path.push_frame(path), Some(path))
@@ -364,7 +364,7 @@ fn render_each(
   // A dynamic sequence carries the absolute path it lives at, so each item is
   // that path keyed — iterating it resumes there exactly as rendering one does.
   let located_seq : @tutuca.Path? = match d.iter_info.val {
-    Dyn(name) =>
+    EDyn(name~, ..) =>
       match stack.lookup_dynamic_located(name) {
         Some({ path: Some(p), .. }) => Some(p)
         _ => None
@@ -419,10 +419,10 @@ fn render_each(
       // seq-access iterated at a key is not an expressible Path), so the
       // position stays put and `publish_base` refuses to publish it.
       None =>
-        match d.iter_info.val {
-          Field(field) =>
+        match d.iter_info.val.as_field() {
+          Some(field) =>
             (stack.render_path.concat([SeqStep(field~, key=pk)]), false)
-          _ => (stack.render_path, false)
+          None => (stack.render_path, false)
         }
     }
     match

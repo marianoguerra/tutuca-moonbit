@@ -20,10 +20,13 @@ test "a hand-built tree is the parsed tree" {
   ).unwrap()
   let built = @anode.h(
     "div",
-    [@anode.attr("class", "card"), @anode.dyn_attr("title", Field("label"))],
+    [
+      @anode.attr("class", "card"),
+      @anode.dyn_attr("title", @tutuca.Expr::field("label")),
+    ],
     [
       @anode.h("b", [@anode.attr("class", "lbl")], [
-        @anode.dyn_text(Field("label"), id=0),
+        @anode.dyn_text(@tutuca.Expr::field("label"), id=0),
       ]),
       @anode.h("button", [@anode.attr("class", "go"), @anode.eid(0)], [
         @anode.text("go"),
@@ -37,10 +40,12 @@ test "a hand-built tree is the parsed tree" {
       Repr(
         @anode.events_of([
           [
-            @anode.on("click", HandlerName(name="add", ns=Receive), args=[
+            @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
               @anode.const_num(1),
             ]),
-            @anode.on("keydown", Method("inc"), modifiers=["send"]),
+            @anode.on("keydown", @tutuca.Expr::method_("inc"), modifiers=[
+              "send",
+            ]),
           ],
         ]),
       ),
@@ -61,13 +66,13 @@ test "wrappers, loops and conditional attributes build the same way" {
   // The ids are the registration order the parser walked in: the <x text> node
   // first, then the loop that wraps it.
   let built = @anode.show(
-    Field("items"),
+    @tutuca.Expr::field("items"),
     @anode.h(
       "ul",
       [
         @anode.if_attr(
           "class",
-          Field("open"),
+          @tutuca.Expr::field("open"),
           then_val=@anode.const_str("on"),
           else_val=@anode.const_str("off"),
         ),
@@ -75,8 +80,10 @@ test "wrappers, loops and conditional attributes build the same way" {
       [
         @anode.each(
           1,
-          Field("items"),
-          @anode.h("li", [], [@anode.dyn_text(Bind("value"), id=0)]),
+          @tutuca.Expr::field("items"),
+          @anode.h("li", [], [
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
+          ]),
         ),
       ],
     ),
@@ -100,12 +107,16 @@ test "the attribute list decides the representation, exactly as the parser" {
   // One dynamic value keeps the whole list.
   guard! @anode.h(
       "div",
-      [@anode.attr("class", "a"), @anode.dyn_attr("id", Field("id"))],
+      [
+        @anode.attr("class", "a"),
+        @anode.dyn_attr("id", @tutuca.Expr::field("id")),
+      ],
       [],
     )
     is Dom(d2)
   assert_true(d2.attrs is DynAttrs(_))
   // So does an @if, whose branches are not attribute values at all.
-  guard! @anode.h("div", [@anode.if_attr("class", Field("on"))], []) is Dom(d3)
+  guard! @anode.h("div", [@anode.if_attr("class", @tutuca.Expr::field("on"))], [])
+    is Dom(d3)
   assert_true(d3.attrs is DynAttrs(_))
 }

@@ -9,7 +9,7 @@
 //
 // Handler names come from px.events rather than a tree walk because the
 // parser has already resolved them into @core.HandlerParse values (bare name
-// -> HandlerName(ns=Receive), `$name` -> Method), so there is no attribute
+// -> EHandlerName(ns=Receive, ..), `$name` -> Method), so there is no attribute
 // syntax left to re-interpret here.
 
 ///|
@@ -196,7 +196,7 @@ fn Collect::new() -> Collect {
 /// `walk_val`; only the bare `HandlerName` form is a bucket entry.
 fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
   match val {
-    Some(HandlerName(name~, ns=Alter)) => into.add(name)
+    Some(EHandlerName(name~, ns=Alter, ..)) => into.add(name)
     _ => ()
   }
 }
@@ -205,22 +205,26 @@ fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
 /// Every `$name` a value reaches, and — when `root_scope` — every state field
 /// it reads.
 fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
+  if val.as_seq_access() is Some((seq, key)) {
+    if root_scope {
+      c.fields.add(seq)
+      c.fields.add(key)
+    }
+    return
+  }
   match val {
-    Method(name) => c.methods.add(name)
-    Field(name) => if root_scope { c.fields.add(name) }
-    SeqAccess(seq~, key~) =>
+    EMethod(name~, ..) => c.methods.add(name)
+    ERead(place={ root: PState(name), steps: [], .. }, ..) =>
       if root_scope {
-        c.fields.add(seq)
-        c.fields.add(key)
+        c.fields.add(name)
       }
-    StrTpl(parts) =>
+    ETpl(parts~, ..) =>
       for p in parts {
-        match p {
-          Some(v) => walk_val(v, c, root_scope)
-          None => ()
+        if p is TExpr(v) {
+          walk_val(v, c, root_scope)
         }
       }
-    App(name~, args~) => {
+    EApp(name~, args~, ..) => {
       // A name that still answers but is no longer the spelling. A HINT and
       // never an error: the row is still there on purpose — a compiled bundle
       // carries its markup as a string and the host parses it at load time —
@@ -278,7 +282,7 @@ fn walk_attrs(
       for item in items {
         match item {
           Plain(name~, val~) | ConstA(name~, val~) => {
-            if name == "id" && val is Const(lit=LStr(v), ..) {
+            if name == "id" && val is ELit(lit=LStr(v), ..) {
               id(v)
             }
             walk_val(val, c, root_scope)
@@ -403,7 +407,7 @@ fn static_attr(attrs : @anode.Attrs, name : String) -> String? {
       }
     DynAttrs(items) => {
       for it in items {
-        if it is ConstA(name=n, val=Const(lit=LStr(s), ..)) && n == name {
+        if it is ConstA(name=n, val=ELit(lit=LStr(s), ..)) && n == name {
           return Some(s)
         }
       }
@@ -423,7 +427,7 @@ fn eid_of(attrs : @anode.Attrs) -> Int? {
       }
     DynAttrs(items) => {
       for it in items {
-        if it is ConstA(name="data-eid", val=Const(lit=LNum(n), ..)) {
+        if it is ConstA(name="data-eid", val=ELit(lit=LNum(n), ..)) {
           return Some(n.to_int())
         }
       }
@@ -442,17 +446,17 @@ fn eid_of(attrs : @anode.Attrs) -> Int? {
 /// a checkbox, Value on a file input — see `value_arg_kind`).
 fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
   match val {
-    Const(lit=LNum(_), ..) => VDouble
-    Const(lit=LStr(_), ..) => VString
-    Const(lit=LBool(_), ..) => VBool
+    ELit(lit=LNum(_), ..) => VDouble
+    ELit(lit=LStr(_), ..) => VString
+    ELit(lit=LBool(_), ..) => VBool
     // A rooted one-segment path decodes through the accessor table, including
     // the `value_kind` the host element's static `type` attribute decided.
-    EventPath([one]) => accessor_type(one, value_kind)
+    EEventPath(segments=[one], ..) => accessor_type(one, value_kind)
     // A longer path is a layer-2 read, and nothing knows its type: the DOM
     // property table could answer for a rooted one, but not for a path through
     // `detail` or `dataset`, where the shape is the application's. `Value` is
     // the honest answer for all of them.
-    EventPath(_) => VValue
+    EEventPath(segments=_, ..) => VValue
     _ => VValue
   }
 }
@@ -498,7 +502,7 @@ fn check_event_arg(
   hints : Array[String],
 ) -> Unit raise GenError {
   match val {
-    EventPath(segments) => {
+    EEventPath(segments~, ..) => {
       let path = "e." + segments.join(".")
       // OFF-LIST STEP — a HINT, not an error. These views are the author's
       // own code: any path resolves at run time (the OPEN profile), and an
@@ -550,7 +554,7 @@ fn check_event_arg(
     // scope to look it up in and answers `Null`, the dispatch lands, and the
     // handler is handed a hole. Nothing reports it at run time, which is
     // exactly the failure a generator is for.
-    Name(name) => raise BareEventArg(view=view_name, name~, site~)
+    EName(name~, ..) => raise BareEventArg(view=view_name, name~, site~)
     _ => ()
   }
 }
@@ -661,7 +665,7 @@ fn walk_view(
         raise MethodInEventPosition(view=view_name, name~, site~)
       }
       match h.handler.handler {
-        HandlerName(name~, ..) => {
+        EHandlerName(name~, ..) => {
           let value_kind = c.value_kinds.get(ev.id).unwrap_or(VString)
           let shape = h.handler.args.map(a => arg_type_of(a, value_kind))
           for a in h.handler.args {

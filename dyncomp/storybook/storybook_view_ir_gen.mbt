@@ -110,7 +110,7 @@ fn story_nav_main_view_ir() -> @anode.View {
       [
         @anode.if_attr(
           "class",
-          Field("selected"),
+          @tutuca.Expr::field("selected"),
           then_val=@anode.const_str(
             "story-nav nav-selected flex items-baseline gap-2 px-2 py-1 rounded cursor-pointer bg-base-300",
           ),
@@ -124,23 +124,23 @@ fn story_nav_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [@anode.attr("class", "font-mono text-sm grow nav-name")],
-          [@anode.dyn_text(Field("name"))],
+          [@anode.dyn_text(@tutuca.Expr::field("name"))],
         ),
         @anode.text(" "),
         @anode.h(
           "span",
           [@anode.attr("class", "text-[0.65rem] opacity-50 nav-module")],
-          [@anode.dyn_text(Field("module"))],
+          [@anode.dyn_text(@tutuca.Expr::field("module"))],
         ),
         @anode.text(" "),
         @anode.h(
           "span",
           [@anode.attr("class", "badge badge-xs badge-ghost nav-count")],
-          [@anode.dyn_text(Field("count"))],
+          [@anode.dyn_text(@tutuca.Expr::field("count"))],
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="pick", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("pick", Receive))]],
   )
 }
 
@@ -232,22 +232,22 @@ fn story_card_main_view_ir() -> @anode.View {
                   "class", "font-mono text-sm font-semibold card-name",
                 ),
               ],
-              [@anode.dyn_text(Field("title"))],
+              [@anode.dyn_text(@tutuca.Expr::field("title"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("init")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("init")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-ghost card-init")],
-                [@anode.dyn_text(Field("init"))],
+                [@anode.dyn_text(@tutuca.Expr::field("init"))],
               ),
             ),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "text-[0.65rem] opacity-50 grow card-ref")],
-              [@anode.dyn_text(Method("refLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("refLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -262,25 +262,25 @@ fn story_card_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          App(name="truthy?", args=[Field("error")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
           @anode.h(
             "div",
             [@anode.attr("class", "p-3 grow bg-base-200 card-stage")],
-            [@anode.render(0, Field("target"))],
+            [@anode.render(0, @tutuca.Expr::field("target"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("error")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
           @anode.h(
             "p",
             [@anode.attr("class", "alert alert-error m-3 text-xs card-error")],
-            [@anode.dyn_text(Field("error"))],
+            [@anode.dyn_text(@tutuca.Expr::field("error"))],
           ),
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="rebuild", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("rebuild", Receive))]],
   )
 }
 
@@ -312,22 +312,22 @@ fn story_card_details_view_ir() -> @anode.View {
                   "class", "font-mono text-sm font-semibold card-name",
                 ),
               ],
-              [@anode.dyn_text(Field("title"))],
+              [@anode.dyn_text(@tutuca.Expr::field("title"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("init")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("init")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-ghost card-init")],
-                [@anode.dyn_text(Field("init"))],
+                [@anode.dyn_text(@tutuca.Expr::field("init"))],
               ),
             ),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "text-[0.65rem] opacity-50 grow card-ref")],
-              [@anode.dyn_text(Method("refLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("refLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -349,16 +349,16 @@ fn story_card_details_view_ir() -> @anode.View {
           ],
           [
             @anode.show(
-              App(name="truthy?", args=[Field("doc")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
               @anode.h(
                 "p",
                 [@anode.attr("class", "text-xs opacity-70 card-doc")],
-                [@anode.dyn_text(Field("doc"))],
+                [@anode.dyn_text(@tutuca.Expr::field("doc"))],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("args")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("args")]),
               @anode.h(
                 "pre",
                 [
@@ -366,32 +366,32 @@ fn story_card_details_view_ir() -> @anode.View {
                     "class", "text-[0.65rem] bg-base-200 rounded p-2 overflow-x-auto card-args",
                   ),
                 ],
-                [@anode.dyn_text(Field("args"))],
+                [@anode.dyn_text(@tutuca.Expr::field("args"))],
               ),
             ),
           ],
         ),
         @anode.text(" "),
         @anode.hide(
-          App(name="truthy?", args=[Field("error")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
           @anode.h(
             "div",
             [@anode.attr("class", "p-3 grow bg-base-200 card-stage")],
-            [@anode.render(0, Field("target"))],
+            [@anode.render(0, @tutuca.Expr::field("target"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("error")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
           @anode.h(
             "p",
             [@anode.attr("class", "alert alert-error m-3 text-xs card-error")],
-            [@anode.dyn_text(Field("error"))],
+            [@anode.dyn_text(@tutuca.Expr::field("error"))],
           ),
         ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="rebuild", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("rebuild", Receive))]],
   )
 }
 
@@ -514,7 +514,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
         @anode.attr(
           "class", "dyncomp-storybook min-h-screen flex flex-col bg-base-200 text-base-content",
         ),
-        @anode.dyn_attr("data-theme", Field("theme")),
+        @anode.dyn_attr("data-theme", @tutuca.Expr::field("theme")),
         @anode.attr("data-droptarget", "tutuca-host-drop"),
         @anode.eid(5),
       ],
@@ -537,7 +537,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                 @anode.attr("type", "search"),
                 @anode.attr("class", "input input-xs input-bordered sb-search"),
                 @anode.attr("placeholder", "filter stories…"),
-                @anode.dyn_attr("value", Field("query")),
+                @anode.dyn_attr("value", @tutuca.Expr::field("query")),
                 @anode.eid(0),
               ],
               [],
@@ -563,7 +563,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                     @anode.attr(
                       "class", "select select-xs select-bordered sb-theme",
                     ),
-                    @anode.dyn_attr("value", Field("theme")),
+                    @anode.dyn_attr("value", @tutuca.Expr::field("theme")),
                     @anode.eid(2),
                   ],
                   [
@@ -605,7 +605,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                 @anode.attr("class", "btn btn-xs btn-ghost sb-layout"),
                 @anode.eid(3),
               ],
-              [@anode.dyn_text(Method("layoutLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("layoutLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -614,15 +614,15 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                 @anode.attr("class", "btn btn-xs btn-ghost sb-details"),
                 @anode.eid(4),
               ],
-              [@anode.dyn_text(Method("detailsLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("detailsLabel"))],
             ),
             @anode.text(" "),
-            @anode.render(0, Field("devTools")),
+            @anode.render(0, @tutuca.Expr::field("devTools")),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "text-xs opacity-70 grow sb-status")],
-              [@anode.dyn_text(Field("status"))],
+              [@anode.dyn_text(@tutuca.Expr::field("status"))],
             ),
           ],
         ),
@@ -638,14 +638,14 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
               @anode.h("ul", [@anode.attr("class", "flex flex-col gap-0.5")], [
                 @anode.each(
                   2,
-                  Field("nav"),
+                  @tutuca.Expr::field("nav"),
                   @anode.render_it(1),
                   from_render_each=true,
                 ),
               ]),
               @anode.text(" "),
               @anode.show(
-                App(name="empty?", args=[Field("nav")]),
+                @tutuca.Expr::app("empty?", [@tutuca.Expr::field("nav")]),
                 @anode.h(
                   "p",
                   [
@@ -671,13 +671,13 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
             ],
             [
               @anode.push_view(
-                Field("mode"),
+                @tutuca.Expr::field("mode"),
                 @anode.h(
                   "div",
                   [
                     @anode.if_attr(
                       "class",
-                      Field("wide"),
+                      @tutuca.Expr::field("wide"),
                       then_val=@anode.const_str("sb-cards flex flex-col gap-4"),
                       else_val=@anode.const_str(
                         "sb-cards grid grid-cols-1 xl:grid-cols-2 gap-4 items-start",
@@ -687,9 +687,9 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
                   [
                     @anode.each(
                       4,
-                      Field("cards"),
+                      @tutuca.Expr::field("cards"),
                       @anode.render_it(3),
-                      when_val=HandlerName(name="matches", ns=Alter),
+                      when_val=@tutuca.Expr::handler_name("matches", Alter),
                       from_render_each=true,
                     ),
                   ],
@@ -697,11 +697,11 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
               ),
               @anode.text(" "),
               @anode.show(
-                Method("isEmpty"),
+                @tutuca.Expr::method_("isEmpty"),
                 @anode.h(
                   "p",
                   [@anode.attr("class", "text-sm opacity-60 italic sb-empty")],
-                  [@anode.dyn_text(Field("emptyMessage"))],
+                  [@anode.dyn_text(@tutuca.Expr::field("emptyMessage"))],
                 ),
               ),
             ],
@@ -711,21 +711,21 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="showAll", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("showAll", Receive))],
       [
-        @anode.on("input", HandlerName(name="chooseTheme", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("chooseTheme", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleWide", ns=Receive))],
-      [@anode.on("click", HandlerName(name="toggleDetails", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleWide", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleDetails", Receive))],
       [
-        @anode.on("drop", HandlerName(name="filesDropped", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("drop", @tutuca.Expr::handler_name("filesDropped", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],

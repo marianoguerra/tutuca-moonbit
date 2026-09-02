@@ -104,7 +104,7 @@ fn universal_main_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [@anode.attr("class", "tut-universal flex items-center justify-center")],
-      [@anode.render(0, Field("child"))],
+      [@anode.render(0, @tutuca.Expr::field("child"))],
     ),
     [],
   )
@@ -126,7 +126,7 @@ fn universal_edit_view_ir() -> @anode.View {
       ],
       [
         @anode.show(
-          App(name="null?", args=[Field("child")]),
+          @tutuca.Expr::app("null?", [@tutuca.Expr::field("child")]),
           @anode.h(
             "button",
             [
@@ -140,7 +140,7 @@ fn universal_edit_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          App(name="null?", args=[Field("child")]),
+          @tutuca.Expr::app("null?", [@tutuca.Expr::field("child")]),
           @anode.h(
             "span",
             [
@@ -149,12 +149,12 @@ fn universal_edit_view_ir() -> @anode.View {
               ),
               @anode.eid(1),
             ],
-            [@anode.dyn_text(Method("label"))],
+            [@anode.dyn_text(@tutuca.Expr::method_("label"))],
           ),
         ),
         @anode.text(" "),
         @anode.hide(
-          App(name="null?", args=[Field("child")]),
+          @tutuca.Expr::app("null?", [@tutuca.Expr::field("child")]),
           @anode.h(
             "button",
             [
@@ -167,20 +167,20 @@ fn universal_edit_view_ir() -> @anode.View {
           ),
         ),
         @anode.text(" "),
-        @anode.render(0, Field("child")),
+        @anode.render(0, @tutuca.Expr::field("child")),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="add", ns=Receive), args=[
-          EventPath(["isCtrl"]),
+        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
+          @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="pick", ns=Receive))],
-      [@anode.on("click", HandlerName(name="remove", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("pick", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("remove", Receive))],
       [
-        @anode.on("drop", HandlerName(name="dropped", ns=Receive), args=[
-          EventPath(["dragInfo"]),
+        @anode.on("drop", @tutuca.Expr::handler_name("dropped", Receive), args=[
+          @tutuca.Expr::event_path(["dragInfo"]),
         ]),
       ],
     ],
@@ -270,12 +270,12 @@ fn stack_main_view_ir() -> @anode.View {
       "div",
       [
         @anode.attr("class", "tut-stack w-full"),
-        @anode.dyn_attr("style", Method("style")),
+        @anode.dyn_attr("style", @tutuca.Expr::method_("style")),
       ],
       [
         @anode.each(
           1,
-          Field("children"),
+          @tutuca.Expr::field("children"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -294,12 +294,12 @@ fn stack_edit_view_ir() -> @anode.View {
       "div",
       [
         @anode.attr("class", "tut-stack w-full"),
-        @anode.dyn_attr("style", Method("style")),
+        @anode.dyn_attr("style", @tutuca.Expr::method_("style")),
       ],
       [
         @anode.each(
           1,
-          Field("children"),
+          @tutuca.Expr::field("children"),
           @anode.h("div", [@anode.attr("class", "tut-cell relative")], [
             @anode.h(
               "button",
@@ -309,7 +309,7 @@ fn stack_edit_view_ir() -> @anode.View {
                 ),
                 @anode.if_attr(
                   "style",
-                  Method("isRow"),
+                  @tutuca.Expr::method_("isRow"),
                   then_val=@anode.const_str(
                     "inset-block:0;inset-inline-start:-4px;inline-size:8px",
                   ),
@@ -334,7 +334,7 @@ fn stack_edit_view_ir() -> @anode.View {
             ),
             @anode.if_attr(
               "style",
-              Method("isRow"),
+              @tutuca.Expr::method_("isRow"),
               then_val=@anode.const_str("inline-size:8px;align-self:stretch"),
               else_val=@anode.const_str("block-size:8px"),
             ),
@@ -346,11 +346,11 @@ fn stack_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="insertAt", ns=Receive), args=[
-          Bind("key"),
+        @anode.on("click", @tutuca.Expr::handler_name("insertAt", Receive), args=[
+          @tutuca.Expr::bind("key"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="appendCell", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("appendCell", Receive))],
     ],
   )
 }
@@ -434,12 +434,12 @@ fn grid_main_view_ir() -> @anode.View {
       "div",
       [
         @anode.attr("class", "tut-grid w-full"),
-        @anode.dyn_attr("style", Method("style")),
+        @anode.dyn_attr("style", @tutuca.Expr::method_("style")),
       ],
       [
         @anode.each(
           1,
-          Field("children"),
+          @tutuca.Expr::field("children"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -458,12 +458,12 @@ fn grid_edit_view_ir() -> @anode.View {
       "div",
       [
         @anode.attr("class", "tut-grid w-full relative"),
-        @anode.dyn_attr("style", Method("style")),
+        @anode.dyn_attr("style", @tutuca.Expr::method_("style")),
       ],
       [
         @anode.each(
           1,
-          Field("children"),
+          @tutuca.Expr::field("children"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -526,10 +526,10 @@ fn grid_edit_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="addColBefore", ns=Receive))],
-      [@anode.on("click", HandlerName(name="addColAfter", ns=Receive))],
-      [@anode.on("click", HandlerName(name="addRowBefore", ns=Receive))],
-      [@anode.on("click", HandlerName(name="addRowAfter", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("addColBefore", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("addColAfter", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("addRowBefore", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("addRowAfter", Receive))],
     ],
   )
 }
@@ -608,7 +608,7 @@ fn tab_page_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [@anode.attr("class", "tut-tabpage w-full")], [
-      @anode.render(0, Field("body")),
+      @anode.render(0, @tutuca.Expr::field("body")),
     ]),
     [],
   )
@@ -624,23 +624,27 @@ fn tab_page_tabname_view_ir() -> @anode.View {
       [
         @anode.attr("class", "tab-rename input input-xs w-28"),
         @anode.attr_bool("autofocus", true),
-        @anode.dyn_attr("value", Field("label")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("label")),
         @anode.eid(0),
       ],
       [],
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="doneRename", ns=Receive), modifiers=[
-          "send",
-        ]),
-        @anode.on("keydown", HandlerName(name="cancelRename", ns=Receive), modifiers=[
-          "cancel",
-        ]),
-        @anode.on("focusout", HandlerName(name="doneRename", ns=Receive)),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("doneRename", Receive),
+          modifiers=["send"],
+        ),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("cancelRename", Receive),
+          modifiers=["cancel"],
+        ),
+        @anode.on("focusout", @tutuca.Expr::handler_name("doneRename", Receive)),
       ],
     ],
   )
@@ -720,39 +724,39 @@ fn tabs_main_view_ir() -> @anode.View {
           [
             @anode.each(
               0,
-              Field("tabs"),
+              @tutuca.Expr::field("tabs"),
               @anode.h(
                 "button",
                 [
                   @anode.attr("role", "tab"),
                   @anode.if_attr(
                     "class",
-                    Bind("active"),
+                    @tutuca.Expr::bind("active"),
                     then_val=@anode.const_str("tab-label tab tab-active"),
                     else_val=@anode.const_str("tab-label tab"),
                   ),
                   @anode.eid(0),
                 ],
-                [@anode.dyn_text(BindMember(name="value", prop="label"))],
+                [@anode.dyn_text(@tutuca.Expr::bind_member("value", "label"))],
               ),
-              enrich_with_val=HandlerName(name="markActive", ns=Alter),
+              enrich_with_val=@tutuca.Expr::handler_name("markActive", Alter),
             ),
           ],
         ),
         @anode.text(" "),
         @anode.each(
           2,
-          Field("tabs"),
+          @tutuca.Expr::field("tabs"),
           @anode.render_it(1),
-          when_val=HandlerName(name="isActivePage", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("isActivePage", Alter),
           from_render_each=true,
         ),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="activate", ns=Receive), args=[
-          Bind("key"),
+        @anode.on("click", @tutuca.Expr::handler_name("activate", Receive), args=[
+          @tutuca.Expr::bind("key"),
         ]),
       ],
     ],
@@ -777,33 +781,37 @@ fn tabs_edit_view_ir() -> @anode.View {
           [
             @anode.each(
               2,
-              Field("tabs"),
+              @tutuca.Expr::field("tabs"),
               @anode.h("span", [@anode.attr("class", "contents")], [
                 @anode.hide(
-                  Bind("editing"),
+                  @tutuca.Expr::bind("editing"),
                   @anode.h(
                     "button",
                     [
                       @anode.attr("role", "tab"),
                       @anode.if_attr(
                         "class",
-                        Bind("active"),
+                        @tutuca.Expr::bind("active"),
                         then_val=@anode.const_str("tab-label tab tab-active"),
                         else_val=@anode.const_str("tab-label tab"),
                       ),
                       @anode.eid(0),
                     ],
-                    [@anode.dyn_text(BindMember(name="value", prop="label"))],
+                    [
+                      @anode.dyn_text(
+                        @tutuca.Expr::bind_member("value", "label"),
+                      ),
+                    ],
                   ),
                 ),
                 @anode.text(" "),
                 @anode.show(
-                  Bind("editing"),
+                  @tutuca.Expr::bind("editing"),
                   @anode.render_it(0, view=@anode.const_str("tabname")),
                   id=1,
                 ),
               ]),
-              enrich_with_val=HandlerName(name="markActive", ns=Alter),
+              enrich_with_val=@tutuca.Expr::handler_name("markActive", Alter),
             ),
             @anode.text(" "),
             @anode.h(
@@ -813,7 +821,7 @@ fn tabs_edit_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.hide(
-              App(name="empty?", args=[Field("tabs")]),
+              @tutuca.Expr::app("empty?", [@tutuca.Expr::field("tabs")]),
               @anode.h(
                 "button",
                 [@anode.attr("class", "tab-close tab"), @anode.eid(2)],
@@ -825,22 +833,22 @@ fn tabs_edit_view_ir() -> @anode.View {
         @anode.text(" "),
         @anode.each(
           4,
-          Field("tabs"),
+          @tutuca.Expr::field("tabs"),
           @anode.render_it(3),
-          when_val=HandlerName(name="isActivePage", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("isActivePage", Alter),
           from_render_each=true,
         ),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="activate", ns=Receive), args=[
-          Bind("key"),
-          EventPath(["isCtrl"]),
+        @anode.on("click", @tutuca.Expr::handler_name("activate", Receive), args=[
+          @tutuca.Expr::bind("key"),
+          @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="addTab", ns=Receive))],
-      [@anode.on("click", HandlerName(name="closeActive", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("addTab", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("closeActive", Receive))],
     ],
   )
 }
@@ -943,9 +951,9 @@ fn text_main_view_ir() -> @anode.View {
       "span",
       [
         @anode.attr("class", "tut-text"),
-        @anode.dyn_attr("style", Method("style")),
+        @anode.dyn_attr("style", @tutuca.Expr::method_("style")),
       ],
-      [@anode.dyn_text(Field("text"))],
+      [@anode.dyn_text(@tutuca.Expr::field("text"))],
     ),
     [],
   )
@@ -1018,17 +1026,17 @@ fn textarea_main_view_ir() -> @anode.View {
         @anode.attr(
           "class", "tut-textarea textarea textarea-bordered w-full font-mono",
         ),
-        @anode.dyn_attr("rows", Field("rows")),
-        @anode.dyn_attr("placeholder", Field("placeholder")),
-        @anode.dyn_attr("value", Field("text")),
+        @anode.dyn_attr("rows", @tutuca.Expr::field("rows")),
+        @anode.dyn_attr("placeholder", @tutuca.Expr::field("placeholder")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("text")),
         @anode.eid(0),
       ],
       [],
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setText", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],

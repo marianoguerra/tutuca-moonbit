@@ -13,22 +13,22 @@
 
 ///|
 pub fn const_str(s : String) -> @tutuca.Val {
-  Const(lit=LStr(s), from_macro=false)
+  @tutuca.Expr::lit(LStr(s))
 }
 
 ///|
 pub fn const_num(n : Double) -> @tutuca.Val {
-  Const(lit=LNum(n), from_macro=false)
+  @tutuca.Expr::lit(LNum(n))
 }
 
 ///|
 pub fn const_bool(b : Bool) -> @tutuca.Val {
-  Const(lit=LBool(b), from_macro=false)
+  @tutuca.Expr::lit(LBool(b))
 }
 
 ///|
 pub fn const_null() -> @tutuca.Val {
-  Const(lit=LNull, from_macro=false)
+  @tutuca.Expr::lit(LNull)
 }
 
 // ---------------------------------------------------------------------------

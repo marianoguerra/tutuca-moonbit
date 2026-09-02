@@ -156,9 +156,11 @@ pub fn json_null_component(
 fn json_boolean_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("span", [@anode.dyn_attr("class", Method("cssClass"))], [
-      @anode.dyn_text(Method("text")),
-    ]),
+    @anode.h(
+      "span",
+      [@anode.dyn_attr("class", @tutuca.Expr::method_("cssClass"))],
+      [@anode.dyn_text(@tutuca.Expr::method_("text"))],
+    ),
     [],
   )
 }
@@ -248,7 +250,7 @@ fn json_number_main_view_ir() -> @anode.View {
           "class", "font-mono text-sm leading-tight text-info json-number",
         ),
       ],
-      [@anode.dyn_text(Method("text"))],
+      [@anode.dyn_text(@tutuca.Expr::method_("text"))],
     ),
     [],
   )
@@ -325,9 +327,9 @@ fn json_string_main_view_ir() -> @anode.View {
         @anode.attr(
           "class", "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string",
         ),
-        @anode.dyn_attr("title", Field("value")),
+        @anode.dyn_attr("title", @tutuca.Expr::field("value")),
       ],
-      [@anode.dyn_text(Method("text"))],
+      [@anode.dyn_text(@tutuca.Expr::method_("text"))],
     ),
     [],
   )
@@ -468,9 +470,9 @@ fn value_obj_main_view_ir() -> @anode.View {
         @anode.attr(
           "class", "font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj",
         ),
-        @anode.dyn_attr("title", Field("text")),
+        @anode.dyn_attr("title", @tutuca.Expr::field("text")),
       ],
-      [@anode.dyn_text(Field("text"))],
+      [@anode.dyn_text(@tutuca.Expr::field("text"))],
     ),
     [],
   )
@@ -542,29 +544,39 @@ fn json_array_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
-                @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
-                @anode.text(" "),
-                @anode.h("span", [@anode.attr("class", "json-array")], [
-                  @anode.dyn_text(Method("typeText")),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
                 ]),
                 @anode.text(" "),
-                @anode.h("span", [], [@anode.dyn_text(Method("countText"))]),
+                @anode.h("span", [@anode.attr("class", "json-array")], [
+                  @anode.dyn_text(@tutuca.Expr::method_("typeText")),
+                ]),
+                @anode.text(" "),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("countText")),
+                ]),
               ],
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -577,7 +589,7 @@ fn json_array_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -585,7 +597,10 @@ fn json_array_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -596,7 +611,7 @@ fn json_array_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -607,9 +622,9 @@ fn json_array_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 1,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -618,9 +633,14 @@ fn json_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -776,29 +796,39 @@ fn json_object_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
-                @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
-                @anode.text(" "),
-                @anode.h("span", [@anode.attr("class", "json-object")], [
-                  @anode.dyn_text(Method("typeText")),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
                 ]),
                 @anode.text(" "),
-                @anode.h("span", [], [@anode.dyn_text(Method("countText"))]),
+                @anode.h("span", [@anode.attr("class", "json-object")], [
+                  @anode.dyn_text(@tutuca.Expr::method_("typeText")),
+                ]),
+                @anode.text(" "),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("countText")),
+                ]),
               ],
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -811,7 +841,7 @@ fn json_object_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -819,7 +849,10 @@ fn json_object_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -830,7 +863,7 @@ fn json_object_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -841,9 +874,9 @@ fn json_object_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 1,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -852,9 +885,14 @@ fn json_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -1006,14 +1044,14 @@ fn json_property_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [@anode.attr("class", "text-base-content/60 font-mono text-sm")],
-          [@anode.dyn_text(Field("key"))],
+          [@anode.dyn_text(@tutuca.Expr::field("key"))],
         ),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "text-base-content/30")], [
           @anode.text(":"),
         ]),
         @anode.text(" "),
-        @anode.render(0, Field("child")),
+        @anode.render(0, @tutuca.Expr::field("child")),
       ],
     ),
     [],
@@ -1072,7 +1110,7 @@ fn data_inspector_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("span", [@anode.attr("class", "contents")], [
-      @anode.render(0, Field("value")),
+      @anode.render(0, @tutuca.Expr::field("value")),
     ]),
     [],
   )

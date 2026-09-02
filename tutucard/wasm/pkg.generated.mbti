@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/tutucard/wasm"
 
 import {
-  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/core",
   "moonbitlang/core/debug",
 }
 
@@ -54,7 +54,7 @@ pub(all) struct Issue {
   code : String
   message : String
   line : Int
-  span : @tscript.Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Refusal {
@@ -63,7 +63,7 @@ pub(all) struct Refusal {
   name : String
   reason : String
   line : Int
-  span : @tscript.Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 // Type aliases

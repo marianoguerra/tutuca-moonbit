@@ -52,7 +52,7 @@ fn C::say(
   self : C,
   code : String,
   message : String,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   self.out.push({ code, message, span, severity: SError, })
 }
@@ -64,7 +64,7 @@ fn C::warn(
   self : C,
   code : String,
   message : String,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   self.out.push({ code, message, span, severity: SWarning, })
 }
@@ -136,9 +136,9 @@ pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
 }
 
 ///|
-/// A `@statedef.Span` as a `@tscript.Span`. The two are the same half-open
+/// A `@statedef.Span` as a `@tutuca.Span`. The two are the same half-open
 /// character range and differ only in which package declares them.
-fn rebase(s : @statedef.Span) -> @tscript.Span {
+fn rebase(s : @statedef.Span) -> @tutuca.Span {
   { start: s.start, end_: s.end_, }
 }
 
@@ -152,7 +152,7 @@ fn C::parse_rule(
   self : C,
   source : String,
   at : @statedef.Span,
-) -> @tscript.Expr? {
+) -> @tutuca.Expr? {
   Some(@tscript.parse_expr_source(source)) catch {
     err => {
       let inner = err.span()
@@ -419,7 +419,7 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
           .iter()
           .find_first(p => p.name == d.name)
           .map(p => p.ty)
-        self.assignable(want, got, expr_span(e))
+        self.assignable(want, got, e.span())
       } else {
         self.expr(e) |> ignore
       }
@@ -487,7 +487,7 @@ fn C::format(self : C, d : @tscript.Decl) -> Unit {
       self.say(
         "FORMAT_TYPE",
         "a `format` is the sentence a reader is shown, and this one answers \{t.show_source()} — write a string, or a `$'…'` template that puts it in one",
-        expr_span(e),
+        e.span(),
       )
   }
 }
@@ -591,7 +591,7 @@ fn names_a_message(effect : String) -> Bool {
 /// addressed and its sender is not waiting. `forward` needs a message to pass
 /// on, so it is legal wherever one arrives: a `receive`, where it starts a
 /// walk, and an `intent`, where it amends the one already walking.
-fn C::effect_placement(self : C, effect : String, span : @tscript.Span) -> Unit {
+fn C::effect_placement(self : C, effect : String, span : @tutuca.Span) -> Unit {
   match effect {
     "reply" | "fail" =>
       if !(self.decl_kind is DIntent) {
@@ -816,7 +816,7 @@ fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
 
 ///|
 /// A condition, checked for being answerable as a boolean at all.
-fn C::condition(self : C, e : @tscript.Expr) -> Unit {
+fn C::condition(self : C, e : @tutuca.Expr) -> Unit {
   match definite(self.expr(e)) {
     Some(t) =>
       if !is_boolish(t) {
@@ -826,7 +826,7 @@ fn C::condition(self : C, e : @tscript.Expr) -> Unit {
         self.say(
           "ALWAYS_TRUE",
           "\{t.show_source()} is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it",
-          expr_span(e),
+          e.span(),
         )
       }
     None => ()
@@ -840,7 +840,7 @@ fn C::condition(self : C, e : @tscript.Expr) -> Unit {
 /// Resolve a place to the type it addresses, or None when opaque.
 fn C::place(
   self : C,
-  p : @tscript.Place,
+  p : @tutuca.Place,
   assigning~ : Bool,
 ) -> @statedef.StateTy? {
   let mut ty : @statedef.StateTy? = match p.root {
@@ -963,7 +963,7 @@ fn C::place(
 // Expressions
 
 ///|
-fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
+fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
   match e {
     ELit(lit~, ..) =>
       match lit {
@@ -976,7 +976,7 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
       for part in parts {
         match part {
           TExpr(inner) => self.expr(inner) |> ignore
-          TText(_) => ()
+          TText(..) => ()
         }
       }
       Some(TText)
@@ -1086,7 +1086,7 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
             self.say(
               "TYPE",
               "the two branches are \{x.show_source()} and \{y.show_source()}",
-              expr_span(else_),
+              else_.span(),
             )
             None
           }
@@ -1096,6 +1096,13 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
     // A place is not a value, and the parser has already confined it to
     // `sendAt`'s first argument. Reaching here means an AST built by hand.
     ERef(..) => None
+    // The three forms a SLOT produces and a block body cannot write: a bare
+    // Uppercase name is a component type, a handler name is answered by the
+    // render stack, and an `e.<path>` reads the event a view is handling.
+    // Opaque here rather than reported, by the rule at the head of this file —
+    // a body that somehow holds one has a type nobody declared, and unknown is
+    // not wrong.
+    ETypeName(..) | EHandlerName(..) | EEventPath(..) => None
   }
 }
 
@@ -1133,7 +1140,7 @@ fn C::render_only(
   self : C,
   name : String,
   sigil~ : String,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   let head = "`\{sigil}\{name}` is answered by the render stack, and a body runs after one, so it reads Null here"
   self.say(
@@ -1158,8 +1165,8 @@ fn C::render_only(
 fn C::name(
   self : C,
   name : String,
-  args : Array[@tscript.Expr],
-  span : @tscript.Span,
+  args : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> @statedef.StateTy? {
   for a in args {
     self.expr(a) |> ignore
@@ -1225,9 +1232,9 @@ fn C::name(
 /// A chain of operands joined by one family's operators.
 fn C::chain(
   self : C,
-  family : @tscript.OpFamily,
-  operands : Array[@tscript.Expr],
-  span : @tscript.Span,
+  family : @tutuca.OpFamily,
+  operands : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> @statedef.StateTy? {
   let types = operands.map(o => self.expr(o))
   match family {
@@ -1238,7 +1245,7 @@ fn C::chain(
             self.say(
               "ALWAYS_TRUE",
               "\{ty.show_source()} is always truthy, so this operand never decides anything",
-              expr_span(operands[i]),
+              operands[i].span(),
             )
           _ => ()
         }
@@ -1279,7 +1286,7 @@ fn C::chain(
             self.say(
               "TYPE",
               "arithmetic needs a number, but this is \{ty.show_source()}",
-              expr_span(operands[i]),
+              operands[i].span(),
             )
           _ => ()
         }
@@ -1381,7 +1388,7 @@ fn C::assignable(
   self : C,
   want : @statedef.StateTy?,
   got : @statedef.StateTy?,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   guard definite(want) is Some(w) && definite(got) is Some(g) else { return }
   if !assignment_types_fit(w, g) {
@@ -1399,7 +1406,7 @@ fn C::method_fits(
   self : C,
   call : String,
   t : @statedef.StateTy,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   guard definite(Some(t)) is Some(t) else { return }
   let ok = match call {
@@ -1423,26 +1430,6 @@ fn C::method_fits(
 ///|
 fn assign_word(op : @tscript.AssignOp) -> String {
   op.word()
-}
-
-///|
-/// Where an expression is, for a finding about it.
-fn expr_span(e : @tscript.Expr) -> @tscript.Span {
-  match e {
-    ELit(span~, ..)
-    | ETpl(span~, ..)
-    | ERead(span~, ..)
-    | EMethod(span~, ..)
-    | EDyn(span~, ..)
-    | EMacroVar(span~, ..)
-    | EConfigVar(span~, ..)
-    | EName(span~, ..)
-    | EApp(span~, ..)
-    | EChain(span~, ..)
-    | EUnary(span~, ..)
-    | EIf(span~, ..)
-    | ERef(span~, ..) => span
-  }
 }
 
 ///|
@@ -1483,7 +1470,7 @@ pub fn rule_decls(
     // Spec-block spans, which are positions in a DIFFERENT block from the one
     // every other span on a `Decl` comes from. They reach only a backend's
     // refusal hint, which reports by name; nothing rebases them onto a file.
-    let at : @tscript.Span = {
+    let at : @tutuca.Span = {
       start: r.source_span.start,
       end_: r.source_span.end_,
     }

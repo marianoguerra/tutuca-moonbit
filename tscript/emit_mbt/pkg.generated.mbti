@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/tscript/emit_mbt"
 
 import {
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/tscript/check",
@@ -35,7 +36,7 @@ pub(all) struct Emitted {
 pub(all) struct Refusal {
   name : String
   why : String
-  span : @tscript.Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Role {

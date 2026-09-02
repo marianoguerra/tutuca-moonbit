@@ -50,46 +50,6 @@ pub(all) enum HandlerNamespace {
 } derive(Debug, Eq)
 
 ///|
-/// Parsed value AST, one variant per original BaseVal subclass. `from_macro`
-/// is set when a `^name` macro var resolves to a constant,
-/// which makes an enclosing template non-literal. StrTpl parts alternate text
-/// constants and placeholder expressions; a `None` part is a placeholder whose
-/// inner expression failed to parse (kept as null there).
-pub(all) enum Val {
-  Const(lit~ : Lit, from_macro~ : Bool)
-  StrTpl(Array[Val?])
-  /// A name applied to arguments — `empty? .items`, `equals? .view 'detail'`.
-  /// The name is resolved at EVALUATION time (against `builtin`, and later
-  /// against the component's own declared predicates), which is what lets the
-  /// vocabulary grow without this enum growing a case.
-  App(name~ : String, args~ : Array[Val])
-  Name(String) // bare lowercase name
-  HandlerName(name~ : String, ns~ : HandlerNamespace)
-  TypeName(String) // bare Uppercase name
-  Bind(String) // @name
-  BindMember(name~ : String, prop~ : String) // @name.member (one level)
-  Dyn(String) // *name
-  Field(String) // .name
-  Method(String) // $name
-  SeqAccess(seq~ : String, key~ : String) // .seq[.key] (both plain fields)
-  /// `e.value`, `e.target.dataset.rowId` — a rooted path into the DOM event
-  /// that is being handled. The segments, without the `e`.
-  ///
-  /// v2's, and the one thing in this enum that names something OUTSIDE the
-  /// value language: every other case reads state, a binding or a literal, and
-  /// this one reads the event. That is why it is spelled with a root — `e` is
-  /// a NAMESPACE and never a value, so there is no `Val`
-  /// that means "the event" and nothing can accidentally pass one along.
-  ///
-  /// What a path may traverse under the SAFE profile is
-  /// `@eventpath`'s question, and what its leaf converts to is the DOM
-  /// property table's. Neither is asked here: this is the parsed FORM, and a
-  /// form that carried its own permission check would be a second place for
-  /// the rule to live.
-  EventPath(Array[String])
-} derive(Debug, Eq)
-
-///|
 /// A concrete sequence key: list index or map key (int|string)
 pub(all) enum PathKey {
   KInt(Int)

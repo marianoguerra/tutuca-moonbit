@@ -53,7 +53,7 @@ fn counter_main_view_ir() -> @anode.View {
             @anode.text("Count"),
           ]),
           @anode.h("div", [@anode.attr("class", "stat-value")], [
-            @anode.dyn_text(Field("count")),
+            @anode.dyn_text(@tutuca.Expr::field("count")),
           ]),
           @anode.h("div", [@anode.attr("class", "stat-desc")], [
             @anode.text("Current Count"),
@@ -68,8 +68,8 @@ fn counter_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("click", HandlerName(name="dec", ns=Receive))],
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
     ],
   )
 }

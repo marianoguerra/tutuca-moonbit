@@ -58,7 +58,7 @@ fn request_example_main_view_ir() -> @anode.View {
     "main",
     @anode.h("section", [@anode.attr("class", "flex flex-col gap-3")], [
       @anode.show(
-        Field("isLoading"),
+        @tutuca.Expr::field("isLoading"),
         @anode.h(
           "div",
           [@anode.attr("class", "alert alert-info alert-outline loading")],
@@ -67,14 +67,14 @@ fn request_example_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("isLoading"),
+        @tutuca.Expr::field("isLoading"),
         @anode.h("div", [@anode.attr("class", "flex justify-between")], [
           @anode.h(
             "input",
             [
               @anode.attr("type", "search"),
               @anode.attr("class", "input"),
-              @anode.dyn_attr("value", Field("query")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("query")),
               @anode.eid(0),
               @anode.attr("placeholder", "Filter entries"),
             ],
@@ -96,15 +96,15 @@ fn request_example_main_view_ir() -> @anode.View {
               @anode.attr("class", "btn bnt-sm btn-primary toggle-btn"),
               @anode.eid(2),
             ],
-            [@anode.dyn_text(Field("view"))],
+            [@anode.dyn_text(@tutuca.Expr::field("view"))],
           ),
         ]),
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("isLoading"),
+        @tutuca.Expr::field("isLoading"),
         @anode.push_view(
-          Field("view"),
+          @tutuca.Expr::field("view"),
           @anode.h(
             "div",
             [
@@ -115,9 +115,9 @@ fn request_example_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 1,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                when_val=HandlerName(name="filterItem", ns=Alter),
+                when_val=@tutuca.Expr::handler_name("filterItem", Alter),
                 from_render_each=true,
               ),
             ],
@@ -126,23 +126,30 @@ fn request_example_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("error")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("error")]),
         @anode.h("div", [@anode.attr("class", "error")], [
-          @anode.dyn_text(Field("error"), id=2),
+          @anode.dyn_text(@tutuca.Expr::field("error"), id=2),
         ]),
       ),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
-      [@anode.on("click", HandlerName(name="loadAnotherWay", ns=Receive))],
-      [@anode.on("click", HandlerName(name="toggleView", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("loadAnotherWay", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleView", Receive))],
     ],
   )
 }

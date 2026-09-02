@@ -48,7 +48,7 @@ test "@bind emits its exact coercion in the compiled event table" {
   let ir = @viewgen.emit_ir_module("Form", "form.html", file)
   assert_true(
     ir.contains(
-      "action=@anode.set_property_action(\"count\", EventPath([\"value\"]))",
+      "action=@anode.set_property_action(\"count\", @tutuca.Expr::event_path([\"value\"]))",
     ),
   )
   assert_true(ir.contains("binding=@anode.BindInt(width=32, signed=true)"))
@@ -144,8 +144,8 @@ test "a property action does not become a generated input message" {
   let ir = @viewgen.emit_ir_module("Form", "form.html", file)
   assert_true(
     ir.contains(
-      "action=@anode.set_property_action(\"name\", EventPath([\"value\"]))",
+      "action=@anode.set_property_action(\"name\", @tutuca.Expr::event_path([\"value\"]))",
     ),
   )
-  assert_false(ir.contains("HandlerName(name=\"setName\""))
+  assert_false(ir.contains("Expr::handler_name(\"setName\""))
 }

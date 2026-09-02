@@ -128,10 +128,10 @@ test "the generated counter tree" {
       #|    "main",
       #|    @anode.h("div", [@anode.attr("class", "counter")], [
       #|      @anode.h("h1", [], [
-      #|        @anode.dyn_text(Field("label"), id=0),
+      #|        @anode.dyn_text(@tutuca.Expr::field("label"), id=0),
       #|        @anode.text(": "),
       #|        @anode.h("span", [@anode.attr("id", "count")], [
-      #|          @anode.dyn_text(Field("count"), id=1),
+      #|          @anode.dyn_text(@tutuca.Expr::field("count"), id=1),
       #|        ]),
       #|      ]),
       #|      @anode.text(" "),
@@ -147,19 +147,19 @@ test "the generated counter tree" {
       #|        @anode.text("reset"),
       #|      ]),
       #|      @anode.text(" "),
-      #|      @anode.h("input", [@anode.attr("id", "label"), @anode.dyn_attr("value", Field("label")), @anode.eid(3)], []),
+      #|      @anode.h("input", [@anode.attr("id", "label"), @anode.dyn_attr("value", @tutuca.Expr::field("label")), @anode.eid(3)], []),
       #|      @anode.text(" "),
       #|      @anode.h("ul", [@anode.attr("id", "history")], [
-      #|        @anode.each(3, Field("history"), @anode.h("li", [], [
-      #|          @anode.dyn_text(Bind("value"), id=2),
+      #|        @anode.each(3, @tutuca.Expr::field("history"), @anode.h("li", [], [
+      #|          @anode.dyn_text(@tutuca.Expr::bind("value"), id=2),
       #|        ])),
       #|      ]),
       #|    ]),
       #|    [
-      #|      [@anode.on("click", HandlerName(name="add", ns=Receive), args=[@anode.const_num(1.0)])],
-      #|      [@anode.on("click", HandlerName(name="add", ns=Receive), args=[@anode.const_num(-1.0)])],
-      #|      [@anode.on("click", HandlerName(name="resetCount", ns=Receive))],
-      #|      [@anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[EventPath(["value"])]), @anode.on("keydown", HandlerName(name="setLabel", ns=Receive), args=[@anode.const_str("sent!")], modifiers=["send"])],
+      #|      [@anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[@anode.const_num(1.0)])],
+      #|      [@anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[@anode.const_num(-1.0)])],
+      #|      [@anode.on("click", @tutuca.Expr::handler_name("resetCount", Receive))],
+      #|      [@anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[@tutuca.Expr::event_path(["value"])]), @anode.on("keydown", @tutuca.Expr::handler_name("setLabel", Receive), args=[@anode.const_str("sent!")], modifiers=["send"])],
       #|    ],
       #|  )
       #|}
@@ -305,6 +305,6 @@ test "gen-views emits the safe markup directives" {
       name="Doc",
     ),
   )
-  assert_true(out.contains("set_inner_html(val=Field(\"body\"))"))
-  assert_true(out.contains("set_inner_svg(val=Field(\"chart\"))"))
+  assert_true(out.contains("set_inner_html(val=@tutuca.Expr::field(\"body\"))"))
+  assert_true(out.contains("set_inner_svg(val=@tutuca.Expr::field(\"chart\"))"))
 }

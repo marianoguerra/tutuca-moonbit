@@ -42,7 +42,7 @@ fn playlist_main_view_ir() -> @anode.View {
     @anode.h("ul", [@anode.attr("class", "flex flex-col gap-1")], [
       @anode.each(
         1,
-        Field("songs"),
+        @tutuca.Expr::field("songs"),
         @anode.h("li", [@anode.attr("class", "flex gap-2 items-center")], [
           @anode.render_it(0),
           @anode.text(" "),
@@ -56,8 +56,8 @@ fn playlist_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="removeSong", ns=Receive), args=[
-          Bind("key"),
+        @anode.on("click", @tutuca.Expr::handler_name("removeSong", Receive), args=[
+          @tutuca.Expr::bind("key"),
         ]),
       ],
     ],
@@ -130,7 +130,7 @@ fn song_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("span", [@anode.attr("class", "song")], [
-      @anode.dyn_text(Field("title")),
+      @anode.dyn_text(@tutuca.Expr::field("title")),
     ]),
     [],
   )

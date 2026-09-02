@@ -108,7 +108,7 @@ fn untrusted_sink_element(tag : String) -> Bool {
 /// pointed at another origin" are different things for an author to be told.
 fn css_refusal(attr : String, val : @tutuca.Val, policy : Policy) -> String? {
   let text = match val {
-    Const(lit=LStr(s), ..) => s
+    ELit(lit=LStr(s), ..) => s
     // A number or a boolean in a CSS attribute is not CSS. Refused with the
     // same message as an expression, since neither is a value this can read.
     _ =>
@@ -138,10 +138,13 @@ fn has_arbitrary_css(val : @tutuca.Val) -> Bool {
   }
 
   match val {
-    Const(lit=LStr(s), ..) => fragment_is_arbitrary(s)
-    StrTpl(parts) =>
+    ELit(lit=LStr(s), ..) => fragment_is_arbitrary(s)
+    ETpl(parts~, ..) =>
       parts.any(part => {
-        part is Some(Const(lit=LStr(s), ..)) && fragment_is_arbitrary(s)
+        match part {
+          TText(text~, ..) => fragment_is_arbitrary(text)
+          TExpr(inner) => has_arbitrary_css(inner)
+        }
       })
     _ => false
   }
@@ -236,7 +239,7 @@ fn check_untrusted_attrs(
         // A constant attribute IS a pinned value, which is the case the
         // external-URL rule is friendliest to; it reaches the same rule as
         // the dynamic one by wearing the shape the rule reads.
-        check_name(name, [Some(Const(lit~, from_macro=false))])
+        check_name(name, [Some(@tutuca.Expr::lit(lit))])
         if name.to_lower() == "class" && class_lit_has_arbitrary_css(lit) {
           out.push(
             refusal(
@@ -413,7 +416,7 @@ pub fn Policy::check_event_paths(
   for ev in events {
     for h in ev.handlers {
       for arg in h.handler.args {
-        guard arg is EventPath(segments) else { continue }
+        guard arg is EEventPath(segments~, ..) else { continue }
         guard @eventpath.EventPathProfile::allows(Safe, segments)
           is BadStep(step~, index~) else {
           continue

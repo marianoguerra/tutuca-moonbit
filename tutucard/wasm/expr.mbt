@@ -55,7 +55,7 @@ priv struct ECtx {
 fn ECtx::bail(
   self : ECtx,
   reason : String,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit raise Bail {
   self.g.refuse(self.kind, self.name, reason, span)
   raise Bail(reason)
@@ -63,7 +63,7 @@ fn ECtx::bail(
 
 ///|
 /// One expression, as an instruction leaving a cell pointer.
-fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
+fn ECtx::expr(self : ECtx, e : @tutuca.Expr) -> @abi.I raise Bail {
   match e {
     ELit(lit~, ..) =>
       match lit {
@@ -79,7 +79,8 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
       let mut acc = text_const(self.g.pool, "")
       for p in parts {
         acc = match p {
-          TText(t) => call("tc_tpl_concat", [acc, text_const(self.g.pool, t)])
+          TText(text=t, ..) =>
+            call("tc_tpl_concat", [acc, text_const(self.g.pool, t)])
           TExpr(sub) => call("tc_tpl_concat", [acc, self.expr(sub)])
         }
       }
@@ -170,12 +171,43 @@ fn ECtx::expr(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
       )
       call("tc_null", [])
     }
+    // The three forms only a VIEW SLOT produces: a component type, a handler
+    // name the render stack answers, and a read of the DOM event a view is
+    // handling. A block has none of the three, and the same sentence rule
+    // applies as above — refused where the code would be emitted.
+    ETypeName(name~, span~) => {
+      self.bail(
+        "`" +
+        name +
+        "` names a component type, and a block cannot build one — a card carries a child by declaring it and `new`ing it",
+        span,
+      )
+      call("tc_null", [])
+    }
+    EHandlerName(name~, span~, ..) => {
+      self.bail(
+        "`" +
+        name +
+        "` here is a handler name, which the render stack answers — a block calls a `compute` or a `pred` by name instead",
+        span,
+      )
+      call("tc_null", [])
+    }
+    EEventPath(segments~, span~) => {
+      self.bail(
+        "`e." +
+        segments.join(".") +
+        "` reads the DOM event a VIEW is handling — read it in the view and pass it in",
+        span,
+      )
+      call("tc_null", [])
+    }
   }
 }
 
 ///|
 /// The i32 condition an `if`, an `and` or a `requires` branches on.
-fn ECtx::truthy(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
+fn ECtx::truthy(self : ECtx, e : @tutuca.Expr) -> @abi.I raise Bail {
   ne(call("tc_truthy", [self.expr(e)]), i32c(0))
 }
 
@@ -183,8 +215,8 @@ fn ECtx::truthy(self : ECtx, e : @tscript.Expr) -> @abi.I raise Bail {
 /// Reading what is at a place.
 fn ECtx::read(
   self : ECtx,
-  place : @tscript.Place,
-  span : @tscript.Span,
+  place : @tutuca.Place,
+  span : @tutuca.Span,
 ) -> @abi.I raise Bail {
   match place.root {
     PState(name) =>
@@ -284,7 +316,7 @@ fn ECtx::read(
 fn ECtx::walk(
   self : ECtx,
   root : @abi.I,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
 ) -> @abi.I raise Bail {
   let mut acc = root
   for st in steps {
@@ -306,8 +338,8 @@ fn ECtx::walk(
 fn ECtx::apply(
   self : ECtx,
   name : String,
-  args : Array[@tscript.Expr],
-  span : @tscript.Span,
+  args : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> @abi.I raise Bail {
   match self.g.callables.get(name) {
     Some(_) => {
@@ -391,10 +423,10 @@ fn ECtx::apply(
 /// Two or more operands joined by operators of one family.
 fn ECtx::chain(
   self : ECtx,
-  family : @tscript.OpFamily,
+  family : @tutuca.OpFamily,
   ops : Array[String],
-  operands : Array[@tscript.Expr],
-  span : @tscript.Span,
+  operands : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> @abi.I raise Bail {
   match family {
     FCompare => {

@@ -61,7 +61,7 @@ fn person_main_view_ir() -> @anode.View {
           "input",
           [
             @anode.attr("class", "input input-sm grow name"),
-            @anode.dyn_attr("value", Field("name")),
+            @anode.dyn_attr("value", @tutuca.Expr::field("name")),
             @anode.eid(0),
             @anode.attr("placeholder", "name"),
           ],
@@ -72,7 +72,7 @@ fn person_main_view_ir() -> @anode.View {
           "input",
           [
             @anode.attr("class", "input input-sm grow email"),
-            @anode.dyn_attr("value", Field("email")),
+            @anode.dyn_attr("value", @tutuca.Expr::field("email")),
             @anode.eid(1),
             @anode.attr("placeholder", "email"),
           ],
@@ -88,7 +88,7 @@ fn person_main_view_ir() -> @anode.View {
               [
                 @anode.attr("type", "checkbox"),
                 @anode.attr("class", "checkbox checkbox-sm active"),
-                @anode.dyn_attr("checked", Field("active")),
+                @anode.dyn_attr("checked", @tutuca.Expr::field("active")),
                 @anode.eid(2),
               ],
               [],
@@ -100,18 +100,18 @@ fn person_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setEmail", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setEmail", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setActive", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setActive", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -184,13 +184,13 @@ fn strategies_main_view_ir() -> @anode.View {
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("1. Naive — two independent scans"),
         ]),
-        @anode.render(0, Field("naive")),
+        @anode.render(0, @tutuca.Expr::field("naive")),
       ]),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
           @anode.text("2. Shared — one count + one partial collect"),
         ]),
-        @anode.render(1, Field("shared")),
+        @anode.render(1, @tutuca.Expr::field("shared")),
       ]),
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.h("h3", [@anode.attr("class", "font-bold")], [
@@ -198,7 +198,7 @@ fn strategies_main_view_ir() -> @anode.View {
             "3. Coupled — one scan; loop-with forwards the enrich's keys",
           ),
         ]),
-        @anode.render(2, Field("coupled")),
+        @anode.render(2, @tutuca.Expr::field("coupled")),
       ]),
     ]),
     [],
@@ -258,7 +258,7 @@ fn naive_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      HandlerName(name="pagerInfo", ns=Alter),
+      @tutuca.Expr::handler_name("pagerInfo", Alter),
       @anode.h(
         "section",
         [
@@ -271,7 +271,7 @@ fn naive_people_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "search"),
               @anode.attr("class", "input q"),
-              @anode.dyn_attr("value", Field("query")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("query")),
               @anode.eid(0),
               @anode.attr("placeholder", "Filter by name or email"),
             ],
@@ -281,7 +281,7 @@ fn naive_people_main_view_ir() -> @anode.View {
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
               1,
-              Field("items"),
+              @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
                 [@anode.attr("class", "flex gap-2 items-center row")],
@@ -289,7 +289,7 @@ fn naive_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(Bind("key"))],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"))],
                   ),
                   @anode.text(" "),
                   @anode.render_it(0),
@@ -306,8 +306,8 @@ fn naive_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              when_val=HandlerName(name="onlyMatches", ns=Alter),
-              loop_with_val=HandlerName(name="tablePage", ns=Alter),
+              when_val=@tutuca.Expr::handler_name("onlyMatches", Alter),
+              loop_with_val=@tutuca.Expr::handler_name("tablePage", Alter),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -316,7 +316,7 @@ fn naive_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item prev"),
                 @anode.eid(2),
-                @anode.dyn_attr("disabled", Bind("isFirst")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isFirst")),
               ],
               [@anode.text("Prev")],
             ),
@@ -324,7 +324,7 @@ fn naive_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(Bind("pageLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::bind("pageLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -332,7 +332,7 @@ fn naive_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item next"),
                 @anode.eid(3),
-                @anode.dyn_attr("disabled", Bind("isLast")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isLast")),
               ],
               [@anode.text("Next")],
             ),
@@ -342,17 +342,19 @@ fn naive_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
-          Bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
+          args=[@tutuca.Expr::bind("key")],
+        ),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
-      [@anode.on("click", HandlerName(name="next", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
     ],
   )
 }
@@ -467,7 +469,7 @@ fn shared_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      HandlerName(name="pagerInfo", ns=Alter),
+      @tutuca.Expr::handler_name("pagerInfo", Alter),
       @anode.h(
         "section",
         [
@@ -480,7 +482,7 @@ fn shared_people_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "search"),
               @anode.attr("class", "input q"),
-              @anode.dyn_attr("value", Field("query")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("query")),
               @anode.eid(0),
               @anode.attr("placeholder", "Filter by name or email"),
             ],
@@ -490,7 +492,7 @@ fn shared_people_main_view_ir() -> @anode.View {
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
               1,
-              Field("items"),
+              @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
                 [@anode.attr("class", "flex gap-2 items-center row")],
@@ -498,7 +500,7 @@ fn shared_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(Bind("key"))],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"))],
                   ),
                   @anode.text(" "),
                   @anode.render_it(0),
@@ -515,8 +517,8 @@ fn shared_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              when_val=HandlerName(name="onlyMatches", ns=Alter),
-              loop_with_val=HandlerName(name="page", ns=Alter),
+              when_val=@tutuca.Expr::handler_name("onlyMatches", Alter),
+              loop_with_val=@tutuca.Expr::handler_name("page", Alter),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -525,7 +527,7 @@ fn shared_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item prev"),
                 @anode.eid(2),
-                @anode.dyn_attr("disabled", Bind("isFirst")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isFirst")),
               ],
               [@anode.text("Prev")],
             ),
@@ -533,7 +535,7 @@ fn shared_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(Bind("pageLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::bind("pageLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -541,7 +543,7 @@ fn shared_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item next"),
                 @anode.eid(3),
-                @anode.dyn_attr("disabled", Bind("isLast")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isLast")),
               ],
               [@anode.text("Next")],
             ),
@@ -551,17 +553,19 @@ fn shared_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
-          Bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
+          args=[@tutuca.Expr::bind("key")],
+        ),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
-      [@anode.on("click", HandlerName(name="next", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
     ],
   )
 }
@@ -580,7 +584,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
     "main",
     @anode.scope(
       2,
-      HandlerName(name="pagerInfo", ns=Alter),
+      @tutuca.Expr::handler_name("pagerInfo", Alter),
       @anode.h(
         "section",
         [
@@ -593,7 +597,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "search"),
               @anode.attr("class", "input q"),
-              @anode.dyn_attr("value", Field("query")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("query")),
               @anode.eid(0),
               @anode.attr("placeholder", "Filter by name or email"),
             ],
@@ -603,7 +607,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
           @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
             @anode.each(
               1,
-              Field("items"),
+              @tutuca.Expr::field("items"),
               @anode.h(
                 "li",
                 [@anode.attr("class", "flex gap-2 items-center row")],
@@ -611,7 +615,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
                   @anode.h(
                     "span",
                     [@anode.attr("class", "badge badge-neutral")],
-                    [@anode.dyn_text(Bind("key"))],
+                    [@anode.dyn_text(@tutuca.Expr::bind("key"))],
                   ),
                   @anode.text(" "),
                   @anode.render_it(0),
@@ -628,7 +632,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
                   ),
                 ],
               ),
-              loop_with_val=HandlerName(name="forwardKeys", ns=Alter),
+              loop_with_val=@tutuca.Expr::handler_name("forwardKeys", Alter),
             ),
           ]),
           @anode.h("div", [@anode.attr("class", "join")], [
@@ -637,7 +641,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item prev"),
                 @anode.eid(2),
-                @anode.dyn_attr("disabled", Bind("isFirst")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isFirst")),
               ],
               [@anode.text("Prev")],
             ),
@@ -645,7 +649,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
             @anode.h(
               "button",
               [@anode.attr("class", "btn join-item btn-disabled pglabel")],
-              [@anode.dyn_text(Bind("pageLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::bind("pageLabel"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -653,7 +657,7 @@ fn coupled_people_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "btn join-item next"),
                 @anode.eid(3),
-                @anode.dyn_attr("disabled", Bind("isLast")),
+                @anode.dyn_attr("disabled", @tutuca.Expr::bind("isLast")),
               ],
               [@anode.text("Next")],
             ),
@@ -663,17 +667,19 @@ fn coupled_people_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="search", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("search", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
-          Bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
+          args=[@tutuca.Expr::bind("key")],
+        ),
       ],
-      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
-      [@anode.on("click", HandlerName(name="next", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
     ],
   )
 }

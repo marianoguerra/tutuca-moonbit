@@ -14,7 +14,7 @@ pub(all) struct Refusal {
   name : String
   /// What cannot be compiled, and what to do instead.
   why : String
-  span : @tscript.Span
+  span : @tutuca.Span
 } derive(Debug, Eq)
 
 ///|

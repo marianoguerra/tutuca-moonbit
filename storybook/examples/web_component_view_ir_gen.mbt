@@ -44,7 +44,7 @@ fn emoji_picker_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          App(name="truthy?", args=[Field("current")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("current")]),
           @anode.h("p", [@anode.attr("class", "hint")], [
             @anode.text("\n    Select the "),
             @anode.h("em", [], [@anode.text("Toggle Picker")]),
@@ -55,16 +55,16 @@ fn emoji_picker_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("current")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("current")]),
           @anode.h("p", [@anode.attr("class", "label")], [
             @anode.text("Selected emoji:"),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("current")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("current")]),
           @anode.h("span", [@anode.attr("class", "current text-9xl")], [
-            @anode.dyn_text(Field("current")),
+            @anode.dyn_text(@tutuca.Expr::field("current")),
           ]),
         ),
         @anode.text(" "),
@@ -74,20 +74,25 @@ fn emoji_picker_main_view_ir() -> @anode.View {
           [@anode.text("\n    Toggle Picker\n  ")],
         ),
         @anode.text(" "),
-        @anode.show(Field("isPickerVisible"), @anode.h("emoji-picker", [], [])),
+        @anode.show(
+          @tutuca.Expr::field("isPickerVisible"),
+          @anode.h("emoji-picker", [], []),
+        ),
       ],
     ),
     [
       [
         @anode.on(
           "click",
-          HandlerName(name="toggleIsPickerVisible", ns=Receive),
+          @tutuca.Expr::handler_name("toggleIsPickerVisible", Receive),
         ),
       ],
       [
-        @anode.on("emoji-click", HandlerName(name="onEmojiClick", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "emoji-click",
+          @tutuca.Expr::handler_name("onEmojiClick", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
     ],
   )

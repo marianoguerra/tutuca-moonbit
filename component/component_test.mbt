@@ -403,10 +403,23 @@ test "compile parses provide/lookup and stamps view ids" {
   )
   scope.register_components([ws])
   scope.compile_all()
-  assert_true(ws.provide.get("active") is Some(p) && p.val is Field("sheet"))
+  assert_true(
+    ws.provide.get("active") is Some(p) &&
+    p.val is ERead(place={ root: PState("sheet"), steps: [], .. }, ..),
+  )
   assert_true(
     ws.provide.get("sel") is Some(p2) &&
-    p2.val is SeqAccess(seq="sheets", key="selId"),
+    p2.val
+    is ERead(
+      place={
+        root: PState("sheets"),
+        steps: [
+          PIndex(ERead(place={ root: PState("selId"), steps: [], .. }, ..)),
+        ],
+        ..
+      },
+      ..
+    ),
   )
   assert_true(ws.provide.get("bad") is None) // bad shape dropped
   // An uppercase key publishes a TYPE, and lands in the other map. `"self"` is
@@ -416,7 +429,8 @@ test "compile parses provide/lookup and stamps view ids" {
   assert_true(ws.provide_type.get("Nope") is None)
   assert_true(
     ws.lookup.get("active") is Some(lk) &&
-    lk.default_val is Some(Field("fallback")),
+    lk.default_val
+    is Some(ERead(place={ root: PState("fallback"), steps: [], .. }, ..)),
   )
   // A lookup with no default carries none, and is still declared.
   assert_true(ws.lookup.get("theme") is Some(lk2) && lk2.default_val is None)

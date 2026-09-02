@@ -63,31 +63,31 @@ fn file_picker_main_view_ir() -> @anode.View {
       ]),
       @anode.text(" "),
       @anode.show(
-        Field("hasFile"),
+        @tutuca.Expr::field("hasFile"),
         @anode.h("table", [@anode.attr("class", "table")], [
           @anode.h("tbody", [], [
             @anode.h("tr", [], [
               @anode.h("th", [], [@anode.text("Name")]),
               @anode.h("td", [@anode.attr("class", "fname")], [
-                @anode.dyn_text(Field("name")),
+                @anode.dyn_text(@tutuca.Expr::field("name")),
               ]),
             ]),
             @anode.h("tr", [], [
               @anode.h("th", [], [@anode.text("Size")]),
               @anode.h("td", [@anode.attr("class", "fsize")], [
-                @anode.dyn_text(Method("sizeLabel")),
+                @anode.dyn_text(@tutuca.Expr::method_("sizeLabel")),
               ]),
             ]),
             @anode.h("tr", [], [
               @anode.h("th", [], [@anode.text("Type")]),
               @anode.h("td", [@anode.attr("class", "ftype")], [
-                @anode.dyn_text(Method("typeLabel")),
+                @anode.dyn_text(@tutuca.Expr::method_("typeLabel")),
               ]),
             ]),
             @anode.h("tr", [], [
               @anode.h("th", [], [@anode.text("Last modified")]),
               @anode.h("td", [@anode.attr("class", "fmodified")], [
-                @anode.dyn_text(Method("lastModifiedLabel")),
+                @anode.dyn_text(@tutuca.Expr::method_("lastModifiedLabel")),
               ]),
             ]),
           ]),
@@ -95,7 +95,7 @@ fn file_picker_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("hasFile"),
+        @tutuca.Expr::field("hasFile"),
         @anode.h("p", [@anode.attr("class", "empty")], [
           @anode.text("No file selected yet — pick one above."),
         ]),
@@ -103,8 +103,8 @@ fn file_picker_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("change", HandlerName(name="onPickFile", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("change", @tutuca.Expr::handler_name("onPickFile", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],

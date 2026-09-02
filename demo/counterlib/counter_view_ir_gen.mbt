@@ -53,10 +53,10 @@ fn counter_main_view_ir() -> @anode.View {
     "main",
     @anode.h("div", [@anode.attr("class", "counter")], [
       @anode.h("h1", [], [
-        @anode.dyn_text(Field("label"), id=0),
+        @anode.dyn_text(@tutuca.Expr::field("label"), id=0),
         @anode.text(": "),
         @anode.h("span", [@anode.attr("id", "count")], [
-          @anode.dyn_text(Field("count"), id=1),
+          @anode.dyn_text(@tutuca.Expr::field("count"), id=1),
         ]),
       ]),
       @anode.text(" "),
@@ -76,7 +76,7 @@ fn counter_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("id", "label"),
-          @anode.dyn_attr("value", Field("label")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("label")),
           @anode.eid(3),
         ],
         [],
@@ -85,30 +85,32 @@ fn counter_main_view_ir() -> @anode.View {
       @anode.h("ul", [@anode.attr("id", "history")], [
         @anode.each(
           3,
-          Field("history"),
-          @anode.h("li", [], [@anode.dyn_text(Bind("value"), id=2)]),
+          @tutuca.Expr::field("history"),
+          @anode.h("li", [], [
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=2),
+          ]),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="add", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
           @anode.const_num(1.0),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="add", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("add", Receive), args=[
           @anode.const_num(-1.0),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="resetCount", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("resetCount", Receive))],
       [
-        @anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          HandlerName(name="setLabel", ns=Receive),
+          @tutuca.Expr::handler_name("setLabel", Receive),
           args=[@anode.const_str("sent!")],
           modifiers=["send"],
         ),

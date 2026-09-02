@@ -181,18 +181,92 @@ fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
 }
 
 ///|
+/// Reading what is AT a place.
+///
+/// The root read differs by whether there are steps below it, and that is not
+/// an accident: `.name` with nothing under it is a virtual MEMBER read, which a
+/// declared getter may answer by computing; `.seq[...]` reaches the STORAGE,
+/// because indexing into whatever a getter returned is not what was written.
+fn read_place(place : Place, stack : &Stack) -> Value {
+  // `.seq[.key]` is the one indexed shape a slot can spell, and it goes through
+  // the shared item lookup — which is what makes a custom collection readable
+  // here. Both halves read storage.
+  if ERead(place~, span=place.span).as_seq_access() is Some((seq, key)) {
+    return match stack.lookup_field_raw(key).as_key() {
+      Some(k) => stack.lookup_field_raw(seq).item(k)
+      None => Null
+    }
+  }
+  let mut cur = match place.root {
+    PState(name) =>
+      if place.steps.is_empty() {
+        stack.lookup_member(name)
+      } else {
+        stack.lookup_field_raw(name)
+      }
+    PBind(name) => stack.lookup_bind(name)
+    // A parameter is a body's, and a body runs after the render stack rather
+    // than on it. Nothing here has one to hand back.
+    PParam(_) => Null
+  }
+  for step in place.steps {
+    cur = match step {
+      // Bindings hold maps (`@value`), component instances (iterating a seq of
+      // components, e.g. `@text="@value.title"` on a seq of components), or
+      // whatever @enrich-with set. A member read off anything else is Null
+      // (get/property fallback).
+      PField(prop) =>
+        match cur {
+          Map(m) => m.get(prop).unwrap_or(Null)
+          Obj(o) => o.obj_field(prop).unwrap_or(Null)
+          _ => Null
+        }
+      PIndex(idx) =>
+        match idx.eval(stack).as_key() {
+          Some(k) => cur.item(k)
+          None => Null
+        }
+    }
+  }
+  cur
+}
+
+///|
+/// A chain folds LEFT into applications of the operator's own name.
+///
+/// The operator words ARE the builtin names (`and`, `is`, `<`, `implies`), so
+/// there is no second table to keep in step. Arithmetic has no builtin and
+/// therefore answers `Null` here, which is the same answer every unresolved
+/// name gives — the slot vocabulary is what evaluates, and `+` was never part
+/// of it (see `Rules::unlowerable`).
+fn eval_chain(
+  ops : Array[String],
+  operands : Array[Expr],
+  span : Span,
+  stack : &Stack,
+) -> Value {
+  guard operands.get(0) is Some(first) else { return Null }
+  let mut acc = first
+  for i, op in ops {
+    guard operands.get(i + 1) is Some(rhs) else { break }
+    acc = EApp(name=op, args=[acc, rhs], span~)
+  }
+  acc.eval(stack)
+}
+
+///|
 pub fn Val::eval(self : Val, stack : &Stack) -> Value {
   match self {
-    Const(lit~, ..) => lit_value(lit)
+    ELit(lit~, ..) => lit_value(lit)
     // The one case that reads something outside the value language. The stack
     // decides what a segment means; this only says which segments were written.
-    EventPath(segments) => stack.lookup_event_path(segments)
-    StrTpl(parts) => {
+    EEventPath(segments~, ..) => stack.lookup_event_path(segments)
+    ETpl(parts~, ..) => {
       let buf = StringBuilder()
       for part in parts {
         match part {
-          Some(v) => buf.write_string(tpl_piece(v.eval(stack)))
-          None => () // failed placeholder: joins as the empty string
+          TText(text~, ..) => buf.write_string(text)
+          TExpr(v) => buf.write_string(tpl_piece(v.eval(stack)))
         }
       }
       Str(buf.to_string())
@@ -203,22 +277,23 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
     // emits `&&` / `||`, which does. Answering them here is what keeps
     // `and (truthy? .items) ($firstLabel)` from calling the compute on an
     // empty list in one backend and not the other.
-    App(name="and", args~) if args.length() == 2 =>
+    EApp(name="and", args~, ..) if args.length() == 2 =>
       Bool(args[0].eval(stack).is_truthy() && args[1].eval(stack).is_truthy())
-    App(name="or", args~) if args.length() == 2 =>
+    EApp(name="or", args~, ..) if args.length() == 2 =>
       Bool(args[0].eval(stack).is_truthy() || args[1].eval(stack).is_truthy())
     // The parser only builds an `App` whose name resolves and whose argument
     // count matches, so the lookup here cannot fail on anything it produced.
     // It can still miss for an `App` built by hand or decoded from an IR
     // module written by an older generator, and `Null` is the honest answer
     // there — the same one an unresolved name gives everywhere else.
-    App(name~, args~) =>
+    EApp(name~, args~, ..) =>
       match builtin(name) {
-        Some(b) => (b.apply)(args.map(a => a.eval(stack)))
-        None => Null
+        Some(b) if b.arity == args.length() =>
+          (b.apply)(args.map(a => a.eval(stack)))
+        _ => Null
       }
-    Name(name) => stack.lookup_name(name)
-    HandlerName(name~, ns~) =>
+    EName(name~, ..) => stack.lookup_name(name)
+    EHandlerName(name~, ns~, ..) =>
       match stack.get_handler_for(name, ns) {
         Null => mk_404_handler(ns, name)
         handler => handler
@@ -226,31 +301,46 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
     // An Uppercase name parses (a handler arg may be written as one, and the
     // linter reads them) but resolves to nothing: a type is not a Value, so
     // there is nothing for a stack to hand back.
-    TypeName(_) => Null
-    Bind(name) => stack.lookup_bind(name)
-    BindMember(name~, prop~) =>
-      // Bindings hold maps (`@value`), component instances (iterating a seq of
-      // components, e.g. `@text="@value.title"` on a seq of components),
-      // or whatever @enrich-with set. A member read off anything else is Null
-      // (get/property fallback).
-      match stack.lookup_bind(name) {
-        Map(m) => m.get(prop).unwrap_or(Null)
-        Obj(o) => o.obj_field(prop).unwrap_or(Null)
-        _ => Null
-      }
-    Dyn(name) => stack.lookup_dynamic(name)
-    // `.name` is a virtual member read. A state field is the implicit private
-    // property case; a declared getter may compute instead.
-    Field(name) => stack.lookup_member(name)
+    ETypeName(..) => Null
+    EDyn(name~, ..) => stack.lookup_dynamic(name)
     // `$name` in a value slot: the stack invokes and returns the result.
-    Method(name) => stack.lookup_method(name)
-    // `.seq[.key]`. Through the shared item lookup, which is what makes a
-    // custom collection readable here.
-    SeqAccess(seq~, key~) =>
-      match stack.lookup_field_raw(key).as_key() {
-        Some(k) => stack.lookup_field_raw(seq).item(k)
-        None => Null
+    EMethod(name~, ..) => stack.lookup_method(name)
+    ERead(place~, ..) => read_place(place, stack)
+    EChain(ops~, operands~, span~, ..) => eval_chain(ops, operands, span, stack)
+    EUnary(op~, operand~, ..) =>
+      match op {
+        UNot => Bool(!operand.eval(stack).is_truthy())
+        // The one arithmetic the slot vocabulary can do, and only because it
+        // needs no builtin: negating a number is a fact about the number.
+        UNeg =>
+          match operand.eval(stack) {
+            Num(n) => Num(-n)
+            _ => Null
+          }
       }
+    EIf(cond~, then_~, else_~, ..) =>
+      if cond.eval(stack).is_truthy() {
+        then_.eval(stack)
+      } else {
+        else_.eval(stack)
+      }
+    // The three forms a VALUE position refuses at parse time (`Position`), and
+    // therefore three that can only be reached by an expression built by hand
+    // or decoded from an older IR. `Null` with a word, rather than a silent
+    // hole: a `^name` outside a macro frame and a `&place` outside `sendAt`
+    // are mistakes worth hearing about.
+    EMacroVar(name~, ..) => {
+      warn("`^\{name}` has no macro frame to resolve against here")
+      Null
+    }
+    EConfigVar(name~, ..) => {
+      warn("`$$\{name}` was not substituted before this was evaluated")
+      Null
+    }
+    ERef(place~, ..) => {
+      warn("`&\{place.to_source()}` names a position, and this is a value")
+      Null
+    }
   }
 }
 
@@ -259,28 +349,43 @@ pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
   match self {
     // Handler position hands back the raw function for the dispatch
     // machinery to call with event args.
-    Method(name) => stack.lookup_field_raw(name)
+    EMethod(name~, ..) => stack.lookup_field_raw(name)
     _ => self.eval(stack)
   }
 }
 
 ///|
 pub fn Val::to_path_item(self : Val) -> Step? {
-  match self {
-    Field(name) => Some(FieldStep(name))
-    SeqAccess(seq~, key~) => Some(SeqAccessStep(seq_field=seq, key_field=key))
-    _ => None
+  if self.as_field() is Some(name) {
+    return Some(FieldStep(name))
   }
+  if self.as_seq_access() is Some((seq, key)) {
+    return Some(SeqAccessStep(seq_field=seq, key_field=key))
+  }
+  None
 }
 
 ///|
 pub fn Val::is_literal(self : Val) -> Bool {
   match self {
-    Const(..) => true
+    ELit(..) => true
     // Every part a plain constant, none bound from a macro variable (the
     // macro placeholder is real in the body even when it resolved constant).
-    StrTpl(parts) =>
-      parts.iter().all(p => p is Some(Const(from_macro=false, ..)))
+    ETpl(parts~, ..) =>
+      parts
+      .iter()
+      .all(p => {
+        match p {
+          TText(from_macro~, ..) => !from_macro
+          // A null part is the hole a placeholder that did not parse leaves
+          // (`tscript/parse.mbt`), and a template with a hole in it is not a
+          // hand-written literal — which is what kept the old `None` part out
+          // of this answer.
+          TExpr(ELit(lit=LNull, ..)) => false
+          TExpr(ELit(from_macro~, ..)) => !from_macro
+          TExpr(_) => false
+        }
+      })
     _ => false
   }
 }

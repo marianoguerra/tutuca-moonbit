@@ -59,11 +59,11 @@ fn schema_property_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "text-base-content/60 schema-key")],
-            [@anode.dyn_text(Field("key"))],
+            [@anode.dyn_text(@tutuca.Expr::field("key"))],
           ),
           @anode.text(" "),
           @anode.show(
-            Field("required"),
+            @tutuca.Expr::field("required"),
             @anode.h(
               "span",
               [
@@ -80,7 +80,7 @@ fn schema_property_main_view_ir() -> @anode.View {
         ],
       ),
       @anode.text(" "),
-      @anode.render(0, Field("child")),
+      @anode.render(0, @tutuca.Expr::field("child")),
     ]),
     [],
   )
@@ -144,8 +144,8 @@ fn schema_branch_main_view_ir() -> @anode.View {
         [
           @anode.h(
             "span",
-            [@anode.dyn_attr("class", Method("labelCssClass"))],
-            [@anode.dyn_text(Field("label"))],
+            [@anode.dyn_attr("class", @tutuca.Expr::method_("labelCssClass"))],
+            [@anode.dyn_text(@tutuca.Expr::field("label"))],
           ),
           @anode.text(" "),
           @anode.h("span", [@anode.attr("class", "text-base-content/30")], [
@@ -154,7 +154,7 @@ fn schema_branch_main_view_ir() -> @anode.View {
         ],
       ),
       @anode.text(" "),
-      @anode.render(0, Field("child")),
+      @anode.render(0, @tutuca.Expr::field("child")),
     ]),
     [],
   )

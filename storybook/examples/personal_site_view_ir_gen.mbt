@@ -82,12 +82,12 @@ fn alt_url_main_view_ir() -> @anode.View {
         @anode.attr(
           "class", "badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url",
         ),
-        @anode.dyn_attr("href", Field("url")),
+        @anode.dyn_attr("href", @tutuca.Expr::field("url")),
         @anode.attr("target", "_blank"),
       ],
       [
         @anode.text("🔗 "),
-        @anode.h("span", [], [@anode.dyn_text(Field("label"))]),
+        @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::field("label"))]),
       ],
     ),
     [],
@@ -158,21 +158,21 @@ fn ps_entry_main_view_ir() -> @anode.View {
           [@anode.attr("class", "flex gap-1 sm:gap-2 flex-wrap items-center")],
           [
             @anode.show(
-              Field("featured"),
+              @tutuca.Expr::field("featured"),
               @anode.h("span", [@anode.attr("class", "star")], [
                 @anode.text("⭐"),
               ]),
             ),
             @anode.text(" "),
             @anode.show(
-              Method("isSpanish"),
+              @tutuca.Expr::method_("isSpanish"),
               @anode.h("span", [@anode.attr("class", "flag")], [
-                @anode.dyn_text(Method("langFlag")),
+                @anode.dyn_text(@tutuca.Expr::method_("langFlag")),
               ]),
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("startYear")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("startYear")]),
               @anode.h(
                 "span",
                 [
@@ -180,12 +180,12 @@ fn ps_entry_main_view_ir() -> @anode.View {
                     "class", "badge badge-ghost badge-sm border-0 font-bold years",
                   ),
                 ],
-                [@anode.dyn_text(Method("yearDisplay"))],
+                [@anode.dyn_text(@tutuca.Expr::method_("yearDisplay"))],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("role"),
+              @tutuca.Expr::field("role"),
               @anode.h(
                 "span",
                 [
@@ -193,7 +193,7 @@ fn ps_entry_main_view_ir() -> @anode.View {
                     "class", "badge badge-neutral badge-sm border-0 font-bold role",
                   ),
                 ],
-                [@anode.dyn_text(Field("role"))],
+                [@anode.dyn_text(@tutuca.Expr::field("role"))],
               ),
             ),
           ],
@@ -202,19 +202,19 @@ fn ps_entry_main_view_ir() -> @anode.View {
         @anode.h(
           "a",
           [
-            @anode.dyn_attr("href", Field("url")),
+            @anode.dyn_attr("href", @tutuca.Expr::field("url")),
             @anode.attr("target", "_blank"),
             @anode.attr("class", "link link-hover"),
           ],
           [
             @anode.h("h2", [@anode.attr("class", "font-bold title")], [
-              @anode.dyn_text(Field("title")),
+              @anode.dyn_text(@tutuca.Expr::field("title")),
             ]),
           ],
         ),
         @anode.text(" "),
         @anode.h("p", [@anode.attr("class", "text-sm opacity-70 desc")], [
-          @anode.dyn_text(Field("description")),
+          @anode.dyn_text(@tutuca.Expr::field("description")),
         ]),
         @anode.h(
           "div",
@@ -222,22 +222,27 @@ fn ps_entry_main_view_ir() -> @anode.View {
           [
             @anode.each(
               0,
-              Field("categories"),
-              @anode.h("span", [@anode.dyn_attr("class", Bind("badgeClass"))], [
-                @anode.dyn_text(Bind("value")),
-              ]),
-              enrich_with_val=HandlerName(name="enrichCategoryBadge", ns=Alter),
+              @tutuca.Expr::field("categories"),
+              @anode.h(
+                "span",
+                [@anode.dyn_attr("class", @tutuca.Expr::bind("badgeClass"))],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"))],
+              ),
+              enrich_with_val=@tutuca.Expr::handler_name(
+                "enrichCategoryBadge",
+                Alter,
+              ),
             ),
           ],
         ),
         @anode.text(" "),
         @anode.hide(
-          App(name="empty?", args=[Field("altUrls")]),
+          @tutuca.Expr::app("empty?", [@tutuca.Expr::field("altUrls")]),
           @anode.h("div", [@anode.attr("class", "alts")], [
             @anode.h("ul", [], [
               @anode.each(
                 2,
-                Field("altUrls"),
+                @tutuca.Expr::field("altUrls"),
                 @anode.h("li", [], [@anode.render_it(1)]),
               ),
             ]),
@@ -360,15 +365,18 @@ fn root_main_view_ir() -> @anode.View {
               [
                 @anode.each(
                   0,
-                  Field("allCategories"),
+                  @tutuca.Expr::field("allCategories"),
                   @anode.h(
                     "button",
-                    [@anode.dyn_attr("class", Bind("btnClass")), @anode.eid(0)],
-                    [@anode.dyn_text(Bind("value"))],
+                    [
+                      @anode.dyn_attr("class", @tutuca.Expr::bind("btnClass")),
+                      @anode.eid(0),
+                    ],
+                    [@anode.dyn_text(@tutuca.Expr::bind("value"))],
                   ),
-                  enrich_with_val=HandlerName(
-                    name="enrichCategoryBindings",
-                    ns=Alter,
+                  enrich_with_val=@tutuca.Expr::handler_name(
+                    "enrichCategoryBindings",
+                    Alter,
                   ),
                 ),
               ],
@@ -386,15 +394,18 @@ fn root_main_view_ir() -> @anode.View {
               [
                 @anode.each(
                   1,
-                  Field("allRoles"),
+                  @tutuca.Expr::field("allRoles"),
                   @anode.h(
                     "button",
-                    [@anode.dyn_attr("class", Bind("btnClass")), @anode.eid(1)],
-                    [@anode.dyn_text(Bind("value"))],
+                    [
+                      @anode.dyn_attr("class", @tutuca.Expr::bind("btnClass")),
+                      @anode.eid(1),
+                    ],
+                    [@anode.dyn_text(@tutuca.Expr::bind("value"))],
                   ),
-                  enrich_with_val=HandlerName(
-                    name="enrichRoleBindings",
-                    ns=Alter,
+                  enrich_with_val=@tutuca.Expr::handler_name(
+                    "enrichRoleBindings",
+                    Alter,
                   ),
                 ),
               ],
@@ -423,7 +434,10 @@ fn root_main_view_ir() -> @anode.View {
                       [
                         @anode.attr("type", "checkbox"),
                         @anode.attr("class", "sort-end"),
-                        @anode.dyn_attr("checked", Field("sortByEnd")),
+                        @anode.dyn_attr(
+                          "checked",
+                          @tutuca.Expr::field("sortByEnd"),
+                        ),
                         @anode.eid(2),
                       ],
                       [],
@@ -452,7 +466,10 @@ fn root_main_view_ir() -> @anode.View {
                       [
                         @anode.attr("type", "checkbox"),
                         @anode.attr("class", "sort-asc"),
-                        @anode.dyn_attr("checked", Field("sortAsc")),
+                        @anode.dyn_attr(
+                          "checked",
+                          @tutuca.Expr::field("sortAsc"),
+                        ),
                         @anode.eid(3),
                       ],
                       [],
@@ -481,7 +498,10 @@ fn root_main_view_ir() -> @anode.View {
                       [
                         @anode.attr("type", "checkbox"),
                         @anode.attr("class", "toggle toggle-sm feat-first"),
-                        @anode.dyn_attr("checked", Field("featuredFirst")),
+                        @anode.dyn_attr(
+                          "checked",
+                          @tutuca.Expr::field("featuredFirst"),
+                        ),
                         @anode.eid(4),
                       ],
                       [],
@@ -501,7 +521,7 @@ fn root_main_view_ir() -> @anode.View {
           [@anode.attr("class", "flex flex-wrap items-center gap-4 mt-4")],
           [
             @anode.show(
-              Method("hasActiveFilters"),
+              @tutuca.Expr::method_("hasActiveFilters"),
               @anode.h(
                 "button",
                 [
@@ -517,36 +537,48 @@ fn root_main_view_ir() -> @anode.View {
       @anode.h("div", [@anode.attr("class", "entries flex flex-col gap-3")], [
         @anode.each(
           3,
-          Field("allEntries"),
+          @tutuca.Expr::field("allEntries"),
           @anode.h("div", [@anode.attr("class", "entry-row")], [
             @anode.render_it(2),
           ]),
-          when_val=HandlerName(name="filterEntry", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("filterEntry", Alter),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="onCategoryToggle", ns=Receive), args=[
-          Bind("key"),
-          EventPath(["isAlt"]),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("onCategoryToggle", Receive),
+          args=[@tutuca.Expr::bind("key"), @tutuca.Expr::event_path(["isAlt"])],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="onRoleToggle", ns=Receive), args=[
-          Bind("key"),
-          EventPath(["isAlt"]),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("onRoleToggle", Receive),
+          args=[@tutuca.Expr::bind("key"), @tutuca.Expr::event_path(["isAlt"])],
+        ),
       ],
-      [@anode.on("change", HandlerName(name="onToggleSortByEnd", ns=Receive))],
-      [@anode.on("change", HandlerName(name="onToggleSortAsc", ns=Receive))],
       [
         @anode.on(
           "change",
-          HandlerName(name="onToggleFeaturedFirst", ns=Receive),
+          @tutuca.Expr::handler_name("onToggleSortByEnd", Receive),
         ),
       ],
-      [@anode.on("click", HandlerName(name="clearFilters", ns=Receive))],
+      [
+        @anode.on(
+          "change",
+          @tutuca.Expr::handler_name("onToggleSortAsc", Receive),
+        ),
+      ],
+      [
+        @anode.on(
+          "change",
+          @tutuca.Expr::handler_name("onToggleFeaturedFirst", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("clearFilters", Receive))],
     ],
   )
 }

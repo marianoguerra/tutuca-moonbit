@@ -147,40 +147,48 @@ fn Checker::ty_of(
   val : @tutuca.Val,
   sc : Scope,
 ) -> @statedef.StateTy? {
-  match val {
-    Field(name) =>
-      match sc.self_ty {
-        SState => self.def.member_ty(name)
-        STy(t) => self.def.field_of(t, name)
-        SComp(d) => d.member_ty(name)
-        SOpaque => None
-      }
-    // `@value` in a loop body. Other binds belong to @enrich-with, which
-    // computes them at runtime, so they stay opaque.
-    Bind("value") =>
-      match sc.item {
-        STy(t) => Some(t)
-        _ => None
-      }
-    Bind("key") => Some(TText)
-    Bind("index") => Some(TInt(width=32, signed=true))
-    BindMember(name~, prop~) =>
-      if name != "value" {
-        None
-      } else {
+  if val.as_field() is Some(name) {
+    return match sc.self_ty {
+      SState => self.def.member_ty(name)
+      STy(t) => self.def.field_of(t, name)
+      SComp(d) => d.member_ty(name)
+      SOpaque => None
+    }
+  }
+  // `@value` in a loop body. Other binds belong to @enrich-with, which
+  // computes them at runtime, so they stay opaque.
+  if val.as_bind() is Some(name) {
+    return match name {
+      "value" =>
         match sc.item {
-          STy(t) => self.def.field_of(t, prop)
-          SComp(d) => d.field(prop).map(f => f.ty)
+          STy(t) => Some(t)
           _ => None
         }
+      "key" => Some(TText)
+      "index" => Some(TInt(width=32, signed=true))
+      _ => None
+    }
+  }
+  if val.as_bind_member() is Some((name, prop)) {
+    return if name != "value" {
+      None
+    } else {
+      match sc.item {
+        STy(t) => self.def.field_of(t, prop)
+        SComp(d) => d.field(prop).map(f => f.ty)
+        _ => None
       }
-    SeqAccess(seq~, ..) =>
-      // `.seq[.key]` reads one entry out of the collection.
-      match self.ty_of(Field(seq), sc) {
-        Some(t) => t.elem()
-        None => None
-      }
-    Const(lit~, ..) =>
+    }
+  }
+  if val.as_seq_access() is Some((seq, _)) {
+    // `.seq[.key]` reads one entry out of the collection.
+    return match self.ty_of(@tutuca.Expr::field(seq), sc) {
+      Some(t) => t.elem()
+      None => None
+    }
+  }
+  match val {
+    ELit(lit~, ..) =>
       match lit {
         LStr(_) => Some(TText)
         LNum(_) => Some(TFloat)
@@ -196,13 +204,7 @@ fn Checker::ty_of(
 /// wrote it in.
 fn expr_src(val : @tutuca.Val) -> String {
   match val {
-    Field(n) => "." + n
-    Method(n) => "$" + n
-    Bind(n) => "@" + n
-    BindMember(name~, prop~) => "@" + name + "." + prop
-    Dyn(n) => "*" + n
-    SeqAccess(seq~, key~) => ".\{seq}[.\{key}]"
-    Name(n) => n
+    ERead(..) | EMethod(..) | EDyn(..) | EName(..) => val.to_source()
     _ => "the expression"
   }
 }
@@ -214,81 +216,98 @@ fn Checker::val(
   val : @tutuca.Val,
   sc : Scope,
 ) -> Unit raise GenError {
-  match val {
-    Field(name) =>
-      match sc.self_ty {
-        SState =>
-          if self.def.member_ty(name) is None {
-            let known = self.def.fields.map(f => f.name)
-            for p in self.def.properties {
-              if !known.contains(p.name) {
-                known.push(p.name)
-              }
+  if val.as_field() is Some(name) {
+    match sc.self_ty {
+      SState =>
+        if self.def.member_ty(name) is None {
+          let known = self.def.fields.map(f => f.name)
+          for p in self.def.properties {
+            if !known.contains(p.name) {
+              known.push(p.name)
             }
-            raise UnknownStateField(
-              view=self.view,
-              name~,
-              scope="the \{self.def.component} state",
-              suggestion=@statedef.nearest(name, known),
-            )
           }
+          raise UnknownStateField(
+            view=self.view,
+            name~,
+            scope="the \{self.def.component} state",
+            suggestion=@statedef.nearest(name, known),
+          )
+        }
+      STy(t) =>
+        if self.def.field_of(t, name) is None {
+          raise UnknownStateField(
+            view=self.view,
+            name~,
+            scope=t.show_source(),
+            suggestion=self.members_of(t)
+              |> fn(ns) { @statedef.nearest(name, ns) },
+          )
+        }
+      SComp(d) =>
+        if d.member_ty(name) is None {
+          raise UnknownStateField(
+            view=self.view,
+            name~,
+            scope="the \{d.component} state",
+            suggestion=@statedef.nearest(name, d.fields.map(f => f.name)),
+          )
+        }
+      SOpaque => ()
+    }
+    return
+  }
+  if val.as_bind_member() is Some((name, prop)) {
+    if name == "value" {
+      match sc.item {
         STy(t) =>
-          if self.def.field_of(t, name) is None {
+          if self.def.field_of(t, prop) is None {
             raise UnknownStateField(
               view=self.view,
-              name~,
-              scope=t.show_source(),
+              name=prop,
+              scope="the loop item (\{t.show_source()})",
               suggestion=self.members_of(t)
-                |> fn(ns) { @statedef.nearest(name, ns) },
+                |> fn(ns) { @statedef.nearest(prop, ns) },
             )
           }
         SComp(d) =>
-          if d.member_ty(name) is None {
+          if d.field(prop) is None {
             raise UnknownStateField(
               view=self.view,
-              name~,
-              scope="the \{d.component} state",
-              suggestion=@statedef.nearest(name, d.fields.map(f => f.name)),
+              name=prop,
+              scope="the loop item (the \{d.component} component)",
+              suggestion=@statedef.nearest(prop, d.fields.map(f => f.name)),
             )
           }
-        SOpaque => ()
+        _ => ()
       }
-    BindMember(name~, prop~) =>
-      if name == "value" {
-        match sc.item {
-          STy(t) =>
-            if self.def.field_of(t, prop) is None {
-              raise UnknownStateField(
-                view=self.view,
-                name=prop,
-                scope="the loop item (\{t.show_source()})",
-                suggestion=self.members_of(t)
-                  |> fn(ns) { @statedef.nearest(prop, ns) },
-              )
-            }
-          SComp(d) =>
-            if d.field(prop) is None {
-              raise UnknownStateField(
-                view=self.view,
-                name=prop,
-                scope="the loop item (the \{d.component} component)",
-                suggestion=@statedef.nearest(prop, d.fields.map(f => f.name)),
-              )
-            }
-          _ => ()
-        }
-      }
-    SeqAccess(seq~, ..) => self.val(Field(seq), sc)
-    StrTpl(parts) =>
+    }
+    return
+  }
+  if val.as_seq_access() is Some((seq, _)) {
+    self.val(@tutuca.Expr::field(seq), sc)
+    return
+  }
+  match val {
+    ETpl(parts~, ..) =>
       for p in parts {
-        if p is Some(v) {
+        if p is TExpr(v) {
           self.val(v, sc)
         }
       }
-    App(args~, ..) =>
+    EApp(args~, ..) =>
       for a in args {
         self.val(a, sc)
       }
+    EChain(operands~, ..) =>
+      for o in operands {
+        self.val(o, sc)
+      }
+    EUnary(operand~, ..) => self.val(operand, sc)
+    EIf(cond~, then_~, else_~, ..) => {
+      self.val(cond, sc)
+      self.val(then_, sc)
+      self.val(else_, sc)
+    }
     _ => ()
   }
 }
@@ -325,7 +344,7 @@ fn Checker::child_view(
   view_val : @tutuca.Val?,
 ) -> Unit {
   guard comp is Some(c) else { return }
-  guard view_val is Some(Const(lit=LStr(want), ..)) else { return }
+  guard view_val is Some(ELit(lit=LStr(want), ..)) else { return }
   guard self.prog.views.get(c) is Some(names) else { return }
   if names.contains(want) {
     return

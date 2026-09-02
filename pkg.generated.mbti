@@ -16,6 +16,8 @@ pub fn first_broken_domain(Array[@core.FieldDomain], Map[String, @core.Value]) -
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
 
+pub let no_span : @core.Span
+
 pub fn on_runtime_notice((@core.RuntimeNotice) -> Unit) -> () -> Unit
 
 pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
@@ -39,7 +41,11 @@ pub using @core {type DomainOp}
 
 pub using @core {type DomainOperand}
 
+pub using @core {type Expr}
+
 pub using @core {type FieldDomain}
+
+pub using @core {type HandlerNamespace}
 
 pub using @core {type IntentAnswer}
 
@@ -48,6 +54,16 @@ pub using @core {type IntentCall}
 pub using @core {type IntentOpts}
 
 pub using @core {type Leg}
+
+pub using @core {type Lit}
+
+pub using @core {type OpFamily}
+
+pub using @core {type PathStep}
+
+pub using @core {type Place}
+
+pub using @core {type PlaceRoot}
 
 pub using @core {type ProtocolIssueCode}
 
@@ -60,6 +76,12 @@ pub using @core {type RuntimeNotice}
 pub using @core {type RuntimeProtocolNotice}
 
 pub using @core {type RuntimeResolution}
+
+pub using @core {type Span}
+
+pub using @core {type TplPart}
+
+pub using @core {type UnOp}
 
 pub using @core {type Value}
 

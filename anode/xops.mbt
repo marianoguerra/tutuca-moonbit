@@ -97,9 +97,7 @@ fn parse_x_op_val(
 /// identifier (which parses as a NameVal outside the text grammar and so
 /// yields None) is a literal const view name.
 fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Val {
-  px
-  .pval(s, @tscript.parse_text)
-  .unwrap_or(Const(lit=LStr(s), from_macro=false))
+  px.pval(s, @tscript.parse_text).unwrap_or(@tutuca.Expr::lit(LStr(s)))
 }
 
 ///|

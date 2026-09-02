@@ -177,12 +177,12 @@ fn origin_of(url : String) -> String? {
 /// whole of what config vars buy (`config.mbt`).
 fn pinned_prefix(val : @tutuca.Val) -> String? {
   match val {
-    Const(lit=LStr(s), from_macro=false) => Some(s)
-    StrTpl(parts) => {
+    ELit(lit=LStr(s), from_macro=false, ..) => Some(s)
+    ETpl(parts~, ..) => {
       let buf = StringBuilder()
       for part in parts {
-        guard part is Some(Const(lit=LStr(s), from_macro=false)) else { break }
-        buf.write_string(s)
+        guard part is TText(text~, from_macro=false) else { break }
+        buf.write_string(text)
       }
       let head = buf.to_string()
       if head == "" {

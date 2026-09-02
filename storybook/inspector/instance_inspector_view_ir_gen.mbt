@@ -80,31 +80,41 @@ fn instance_fields_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
-                @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                ]),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "font-semibold instance-fields")],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
-                @anode.h("span", [], [@anode.dyn_text(Method("countText"))]),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("countText")),
+                ]),
               ],
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -117,7 +127,7 @@ fn instance_fields_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -125,7 +135,10 @@ fn instance_fields_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -136,7 +149,7 @@ fn instance_fields_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -147,9 +160,9 @@ fn instance_fields_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 1,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -158,9 +171,14 @@ fn instance_fields_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -302,7 +320,7 @@ fn instance_inspector_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("span", [@anode.attr("class", "contents")], [
-      @anode.render(0, Field("value")),
+      @anode.render(0, @tutuca.Expr::field("value")),
     ]),
     [],
   )
@@ -377,8 +395,8 @@ fn instance_explorer_main_view_ir() -> @anode.View {
                 @anode.attr("role", "tab"),
                 @anode.if_attr(
                   "class",
-                  App(name="is", args=[
-                    Field("activeTab"),
+                  @tutuca.Expr::app("is", [
+                    @tutuca.Expr::field("activeTab"),
                     @anode.const_str("instance"),
                   ]),
                   then_val=@anode.const_str("tab tab-active tab-instance"),
@@ -390,15 +408,15 @@ fn instance_explorer_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Field("hasComponent"),
+              @tutuca.Expr::field("hasComponent"),
               @anode.h(
                 "a",
                 [
                   @anode.attr("role", "tab"),
                   @anode.if_attr(
                     "class",
-                    App(name="is", args=[
-                      Field("activeTab"),
+                    @tutuca.Expr::app("is", [
+                      @tutuca.Expr::field("activeTab"),
                       @anode.const_str("component"),
                     ]),
                     then_val=@anode.const_str("tab tab-active tab-component"),
@@ -413,23 +431,30 @@ fn instance_explorer_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("activeTab"), @anode.const_str("instance")]),
-          @anode.h("div", [], [@anode.render(0, Field("instanceView"))]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("activeTab"),
+            @anode.const_str("instance"),
+          ]),
+          @anode.h("div", [], [
+            @anode.render(0, @tutuca.Expr::field("instanceView")),
+          ]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[
-            Field("activeTab"),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("activeTab"),
             @anode.const_str("component"),
           ]),
           @anode.h("div", [], [
             @anode.show(
-              Field("hasComponent"),
-              @anode.h("div", [], [@anode.render(1, Field("componentView"))]),
+              @tutuca.Expr::field("hasComponent"),
+              @anode.h("div", [], [
+                @anode.render(1, @tutuca.Expr::field("componentView")),
+              ]),
             ),
             @anode.text(" "),
             @anode.hide(
-              Field("hasComponent"),
+              @tutuca.Expr::field("hasComponent"),
               @anode.h(
                 "div",
                 [@anode.attr("class", "text-base-content/50 text-xs")],
@@ -446,14 +471,18 @@ fn instance_explorer_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="setActiveTab", ns=Receive), args=[
-          @anode.const_str("instance"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveTab", Receive),
+          args=[@anode.const_str("instance")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveTab", ns=Receive), args=[
-          @anode.const_str("component"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveTab", Receive),
+          args=[@anode.const_str("component")],
+        ),
       ],
     ],
   )

@@ -5,34 +5,33 @@
 // beside it define the contract.
 //
 //   source text --tokenize--> Array[Token]   (spans)
-//               --parse_*---> @tutuca.Val?   (the runtime AST, span-free)
+//               --parse_*---> @tutuca.Val?   (the runtime AST, spans and all)
 //
-// The two halves of that arrow are the whole design. The AST is `core`'s and
-// carries no positions, because it is embedded in `Step` (which derives Eq)
-// and emitted into the checked-in IR modules, where a source position would be
-// bytes nobody reads. Positions live on the TOKENS and on the diagnostics, and
-// they are what the parser reports with.
+// The AST is `core`'s and there is only one of it: a slot's value and a block's
+// expression are the same language, so the parse below produces the same type
+// `Step` embeds and the checked-in IR modules spell out. Each node carries the
+// span it was read at, which is what lets a diagnostic point at the operand
+// that was wrong rather than at the whole attribute — and spans count for
+// nothing in `Eq` or `Debug`, because a path rebuilt from a serialized frame
+// has to equal the one the renderer built.
+//
+// Which forms may stand WHERE is `@tutuca.Position`'s answer, asked here for
+// both a single token and a whole expression so the two cannot drift.
 
 ///|
 /// A half-open character range in the source that was parsed.
 ///
-/// Character indices, not bytes: they index `source.to_array()`, the same
-/// `Array[Char]` `viewfile` slices with and the WHATWG tokenizer counts in, so
-/// a span from a slot value and a span from the file agree for any input,
-/// astral characters included.
-///
-/// A span is relative to the string handed to the parser — one attribute's
-/// value, or one script block. Rebasing it onto the file is the caller's job,
-/// and `@viewfile.Block` carries the offset that does it.
-pub(all) struct Span {
-  start : Int
-  end_ : Int
-} derive(Debug, Eq)
+/// `core`'s, because the AST it decorates is `core`'s: a parser here builds an
+/// `@tutuca.Expr` and hands it the span it read. A span is relative to the
+/// string handed to the parser — one attribute's value, or one script block —
+/// and rebasing it onto the file is the caller's job, which `@viewfile.Block`
+/// carries the offset for.
+pub using @tutuca {type Span}
 
 ///|
 /// The empty span, for a diagnostic about a value with no source of its own —
 /// a `^macro` variable's expansion, or a value built by hand.
-pub let no_span : Span = { start: 0, end_: 0, }
+pub let no_span : Span = @tutuca.no_span
 
 ///|
 /// One lexical run, and where it came from.

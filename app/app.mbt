@@ -176,8 +176,7 @@ fn run_handlers(
       None => ()
     }
     let name = match h.handler.handler {
-      HandlerName(name~, ..) => name
-      Method(m) => m
+      EHandlerName(name~, ..) | EMethod(name~, ..) => name
       _ => continue
     }
     let args : Array[@tutuca.Value] = match h.binding {

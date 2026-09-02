@@ -29,11 +29,12 @@ fn add_classes(s : String, into : Set[String]) -> Unit {
 /// Const parts of a template string.
 fn add_val_classes(val : @tutuca.Val, into : Set[String]) -> Unit {
   match val {
-    Const(lit=LStr(s), ..) => add_classes(s, into)
-    StrTpl(parts) =>
+    ELit(lit=LStr(s), ..) => add_classes(s, into)
+    ETpl(parts~, ..) =>
       for part in parts {
-        if part is Some(Const(lit=LStr(s), ..)) {
-          add_classes(s, into)
+        match part {
+          TText(text~, ..) => add_classes(text, into)
+          TExpr(inner) => add_val_classes(inner, into)
         }
       }
     _ => ()

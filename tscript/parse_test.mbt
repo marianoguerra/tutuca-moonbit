@@ -7,10 +7,12 @@
 test "string template with interpolation" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("$'flex flex-col gap-3 {.foo}'", ctx)
-    is Some(StrTpl(parts))
+    is Some(ETpl(parts~, ..))
   assert_eq(parts.length(), 2)
-  assert_true(parts[0] is Some(Const(lit=LStr("flex flex-col gap-3 "), ..)))
-  assert_true(parts[1] is Some(Field("foo")))
+  assert_true(parts[0] is TText(text="flex flex-col gap-3 ", ..))
+  assert_true(
+    parts[1] is TExpr(ERead(place={ root: PState("foo"), steps: [], .. }, ..)),
+  )
 }
 
 ///|
@@ -20,7 +22,7 @@ test "constant-only template stays a StrTplVal" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("$'flex flex-col gap-3 {\\'hi\\'}'", ctx)
     is Some(r)
-  assert_true(r is StrTpl(_))
+  assert_true(r is ETpl(parts=_, ..))
   assert_true(r.is_literal())
   guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex flex-col gap-3 hi")
@@ -29,9 +31,12 @@ test "constant-only template stays a StrTplVal" {
 ///|
 test "text with field interpolation" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_text("$'flex gap-3 {.foo}'", ctx) is Some(StrTpl(parts))
-  assert_true(parts[0] is Some(Const(lit=LStr("flex gap-3 "), ..)))
-  assert_true(parts[1] is Some(Field("foo")))
+  guard! @tscript.parse_text("$'flex gap-3 {.foo}'", ctx)
+    is Some(ETpl(parts~, ..))
+  assert_true(parts[0] is TText(text="flex gap-3 ", ..))
+  assert_true(
+    parts[1] is TExpr(ERead(place={ root: PState("foo"), steps: [], .. }, ..)),
+  )
 }
 
 ///|
@@ -39,11 +44,16 @@ test "multiple interpolations" {
   // Empty Const bookends are trimmed by the template parse, so the
   // leading/trailing "" segments produced by the split don't appear in parts.
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_text("$'{.a} between {.b}'", ctx) is Some(StrTpl(parts))
+  guard! @tscript.parse_text("$'{.a} between {.b}'", ctx)
+    is Some(ETpl(parts~, ..))
   assert_eq(parts.length(), 3)
-  assert_true(parts[0] is Some(Field("a")))
-  assert_true(parts[1] is Some(Const(lit=LStr(" between "), ..)))
-  assert_true(parts[2] is Some(Field("b")))
+  assert_true(
+    parts[0] is TExpr(ERead(place={ root: PState("a"), steps: [], .. }, ..)),
+  )
+  assert_true(parts[1] is TText(text=" between ", ..))
+  assert_true(
+    parts[2] is TExpr(ERead(place={ root: PState("b"), steps: [], .. }, ..)),
+  )
 }
 
 ///|
@@ -51,26 +61,30 @@ test "only interpolation, no surrounding text" {
   // After trimming, a single-placeholder template collapses to one entry —
   // this is the shape the REDUNDANT_TEMPLATE_STRING lint rule keys off.
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_text("$'{.foo}'", ctx) is Some(StrTpl(parts))
+  guard! @tscript.parse_text("$'{.foo}'", ctx) is Some(ETpl(parts~, ..))
   assert_eq(parts.length(), 1)
-  assert_true(parts[0] is Some(Field("foo")))
+  assert_true(
+    parts[0] is TExpr(ERead(place={ root: PState("foo"), steps: [], .. }, ..)),
+  )
 }
 
 ///|
 test "whitespace bookends are preserved (non-empty Const)" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_text("$' {.foo} '", ctx) is Some(StrTpl(parts))
+  guard! @tscript.parse_text("$' {.foo} '", ctx) is Some(ETpl(parts~, ..))
   assert_eq(parts.length(), 3)
-  assert_true(parts[0] is Some(Const(lit=LStr(" "), ..)))
-  assert_true(parts[1] is Some(Field("foo")))
-  assert_true(parts[2] is Some(Const(lit=LStr(" "), ..)))
+  assert_true(parts[0] is TText(text=" ", ..))
+  assert_true(
+    parts[1] is TExpr(ERead(place={ root: PState("foo"), steps: [], .. }, ..)),
+  )
+  assert_true(parts[2] is TText(text=" ", ..))
 }
 
 ///|
 test "quoted constant inside braces" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("$'flex {\\'gap-3\\'}'", ctx) is Some(r)
-  assert_true(r is StrTpl(_))
+  assert_true(r is ETpl(parts=_, ..))
   assert_true(r.is_literal())
   guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex gap-3")
@@ -80,7 +94,7 @@ test "quoted constant inside braces" {
 test "numeric constant inside braces" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("$'width: {42}px'", ctx) is Some(r)
-  assert_true(r is StrTpl(_))
+  assert_true(r is ETpl(parts=_, ..))
   assert_true(r.is_literal())
   guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "width: 42px")
@@ -93,7 +107,7 @@ test "quoted constant string with spaces" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
     @tscript.parse_text("'flex gap-3'", ctx)
-    is Some(Const(lit=LStr("flex gap-3"), ..)),
+    is Some(ELit(lit=LStr("flex gap-3"), ..)),
   )
 }
 
@@ -101,7 +115,7 @@ test "quoted constant string with spaces" {
 test "quoted single word" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
-    @tscript.parse_text("'badge'", ctx) is Some(Const(lit=LStr("badge"), ..)),
+    @tscript.parse_text("'badge'", ctx) is Some(ELit(lit=LStr("badge"), ..)),
   )
 }
 
@@ -133,7 +147,7 @@ test "parse_bool accepts a quoted constant (single literal kind)" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
     @tscript.parse_bool("'flex gap-3'", ctx)
-    is Some(Const(lit=LStr("flex gap-3"), ..)),
+    is Some(ELit(lit=LStr("flex gap-3"), ..)),
   )
 }
 
@@ -141,7 +155,7 @@ test "parse_bool accepts a quoted constant (single literal kind)" {
 test "parse_bool accepts a placeholderless string template" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool("$'flex'", ctx) is Some(r)
-  assert_true(r is StrTpl(_))
+  assert_true(r is ETpl(parts=_, ..))
   guard! r.eval(@tutuca.NullStack::{ }) is Str(s)
   assert_eq(s, "flex")
 }
@@ -161,9 +175,12 @@ test "parse_component rejects string template" {
 ///|
 test "string template works in parse_macro_attr" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_macro_attr("$'flex {.foo}'", ctx) is Some(StrTpl(parts))
-  assert_true(parts[0] is Some(Const(lit=LStr("flex "), ..)))
-  assert_true(parts[1] is Some(Field("foo")))
+  guard! @tscript.parse_macro_attr("$'flex {.foo}'", ctx)
+    is Some(ETpl(parts~, ..))
+  assert_true(parts[0] is TText(text="flex ", ..))
+  assert_true(
+    parts[1] is TExpr(ERead(place={ root: PState("foo"), steps: [], .. }, ..)),
+  )
 }
 
 ///|
@@ -171,7 +188,7 @@ test "quoted constant works in parse_macro_attr" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
     @tscript.parse_macro_attr("'flex gap-3'", ctx)
-    is Some(Const(lit=LStr("flex gap-3"), ..)),
+    is Some(ELit(lit=LStr("flex gap-3"), ..)),
   )
 }
 
@@ -179,8 +196,8 @@ test "quoted constant works in parse_macro_attr" {
 test "single-token value is not an application" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool(".items", ctx) is Some(r)
-  assert_true(r is Field("items"))
-  assert_true(!(r is App(..)))
+  assert_true(r is ERead(place={ root: PState("items"), steps: [], .. }, ..))
+  assert_true(!(r is EApp(..)))
 }
 
 ///|
@@ -188,12 +205,14 @@ test "unary predicates parse to a one-argument application" {
   let ctx = @tscript.ParseCtx::new()
   for pred_name in ["empty?", "truthy?", "falsy?", "null?"] {
     guard! @tscript.parse_bool("\{pred_name} .items", ctx)
-      is Some(App(name~, args~))
+      is Some(EApp(name~, args~, ..))
     // The AST carries the NAME, not a constructor: that is what lets the
     // vocabulary grow without this enum growing a case.
     assert_eq(name, pred_name)
     assert_eq(args.length(), 1)
-    assert_true(args[0] is Field("items"))
+    assert_true(
+      args[0] is ERead(place={ root: PState("items"), steps: [], .. }, ..),
+    )
   }
 }
 
@@ -282,15 +301,17 @@ test "bad predicate arg returns None" {
 ///|
 test "predicate args accept bind values" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_bool("truthy? @flag", ctx) is Some(App(args~, ..))
-  assert_true(args[0] is Bind("flag"))
+  guard! @tscript.parse_bool("truthy? @flag", ctx) is Some(EApp(args~, ..))
+  assert_true(
+    args[0] is ERead(place={ root: PBind("flag"), steps: [], .. }, ..),
+  )
 }
 
 ///|
 test ". parses to a FieldVal" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text(".count", ctx) is Some(r)
-  assert_true(r is Field("count"))
+  assert_true(r is ERead(place={ root: PState("count"), steps: [], .. }, ..))
   assert_eq("\{r}", ".count")
 }
 
@@ -298,21 +319,27 @@ test ". parses to a FieldVal" {
 test "$ parses to a MethodVal" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("$fullName", ctx) is Some(r)
-  assert_true(r is Method("fullName"))
+  assert_true(r is EMethod(name="fullName", ..))
   assert_eq("\{r}", "$fullName")
 }
 
 ///|
 test "$' is a string template, not a method" {
   let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_text("$'hi {.name}'", ctx) is Some(StrTpl(_)))
-  assert_true(@tscript.parse_text("$name", ctx) is Some(Method("name")))
+  assert_true(
+    @tscript.parse_text("$'hi {.name}'", ctx) is Some(ETpl(parts=_, ..)),
+  )
+  assert_true(
+    @tscript.parse_text("$name", ctx) is Some(EMethod(name="name", ..)),
+  )
 }
 
 ///|
 test "$ works as a conditional-slot value" {
   let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_bool("$canSubmit", ctx) is Some(Method(_)))
+  assert_true(
+    @tscript.parse_bool("$canSubmit", ctx) is Some(EMethod(name=_, ..)),
+  )
 }
 
 ///|
@@ -322,16 +349,19 @@ test "$ is rejected in path-bearing slots (@each, <x render>)" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(@tscript.parse_sequence("$items", ctx) is None)
   assert_true(@tscript.parse_component("$child", ctx) is None)
-  assert_true(@tscript.parse_sequence(".items", ctx) is Some(Field(_)))
+  assert_true(
+    @tscript.parse_sequence(".items", ctx)
+    is Some(ERead(place={ root: PState(_), steps: [], .. }, ..)),
+  )
 }
 
 ///|
 test "$ is a method handler, a bare name is an input handler" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("$inc", ctx) is Some(h1)
-  assert_true(h1.handler is Method("inc"))
+  assert_true(h1.handler is EMethod(name="inc", ..))
   guard! @tscript.parse_input_handler("dec", ctx) is Some(h2)
-  assert_true(h2.handler is HandlerName(name="dec", ns=Receive))
+  assert_true(h2.handler is EHandlerName(name="dec", ns=Receive, ..))
 }
 
 ///|
@@ -339,7 +369,8 @@ test "input handler parses direct property actions before message handlers" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler(".name = e.value", ctx) is Some(set)
   assert_true(
-    set.action is Some(PropertySet(name="name", value=EventPath(["value"]))),
+    set.action
+    is Some(PropertySet(name="name", value=EEventPath(segments=["value"], ..))),
   )
   guard! @tscript.parse_input_handler(".name = default", ctx) is Some(reset)
   assert_true(reset.action is Some(PropertyReset("name")))
@@ -347,7 +378,11 @@ test "input handler parses direct property actions before message handlers" {
   assert_true(
     call.action
     is Some(
-      PropertyCall(name="items", operation="push", args=[EventPath(["value"])])
+      PropertyCall(
+        name="items",
+        operation="push",
+        args=[EEventPath(segments=["value"], ..)]
+      )
     ),
   )
   guard! @tscript.parse_input_handler("save e.value", ctx) is Some(message)
@@ -366,7 +401,7 @@ test "$ method handler keeps its args" {
   // from parse_input_handler, so the port targets it directly.
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("$setStr value", ctx) is Some(h)
-  assert_true(h.handler is Method("setStr"))
+  assert_true(h.handler is EMethod(name="setStr", ..))
   assert_eq(h.args.length(), 1)
 }
 
@@ -374,28 +409,30 @@ test "$ method handler keeps its args" {
 test "equals? parses to a two-argument application with a Const string arg" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool("equals? .view 'detail'", ctx)
-    is Some(App(name~, args~))
+    is Some(EApp(name~, args~, ..))
   assert_eq(name, "equals?")
   assert_eq(args.length(), 2)
-  assert_true(args[0] is Field("view"))
-  assert_true(args[1] is Const(lit=LStr("detail"), ..))
+  assert_true(
+    args[0] is ERead(place={ root: PState("view"), steps: [], .. }, ..),
+  )
+  assert_true(args[1] is ELit(lit=LStr("detail"), ..))
 }
 
 ///|
 test "string literal arg preserves interior spaces" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool("equals? .name 'John Doe'", ctx)
-    is Some(App(args~, ..))
+    is Some(EApp(args~, ..))
   assert_eq(args.length(), 2)
-  assert_true(args[1] is Const(lit=LStr("John Doe"), ..))
+  assert_true(args[1] is ELit(lit=LStr("John Doe"), ..))
 }
 
 ///|
 test "escaped quote in a string literal arg" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_bool("equals? .name 'it\\'s'", ctx)
-    is Some(App(args~, ..))
-  assert_true(args[1] is Const(lit=LStr("it's"), ..))
+    is Some(EApp(args~, ..))
+  assert_true(args[1] is ELit(lit=LStr("it's"), ..))
 }
 
 ///|
@@ -415,34 +452,37 @@ test "to_string round-trips a quoted literal" {
 test "bare string literal in parse_bool parses as a literal" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
-    @tscript.parse_bool("'detail'", ctx) is Some(Const(lit=LStr("detail"), ..)),
+    @tscript.parse_bool("'detail'", ctx) is Some(ELit(lit=LStr("detail"), ..)),
   )
 }
 
 ///|
 test "parse_field accepts a field reference" {
   let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_field(".color", ctx) is Some(Field(_)))
+  assert_true(
+    @tscript.parse_field(".color", ctx)
+    is Some(ERead(place={ root: PState(_), steps: [], .. }, ..)),
+  )
 }
 
 ///|
 test "parse_field accepts a method reference" {
   let ctx = @tscript.ParseCtx::new()
-  assert_true(@tscript.parse_field("$color", ctx) is Some(Method(_)))
+  assert_true(@tscript.parse_field("$color", ctx) is Some(EMethod(name=_, ..)))
 }
 
 ///|
 test "parse_field accepts a string-literal constant (dynamic alias default)" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
-    @tscript.parse_field("'gray'", ctx) is Some(Const(lit=LStr("gray"), ..)),
+    @tscript.parse_field("'gray'", ctx) is Some(ELit(lit=LStr("gray"), ..)),
   )
 }
 
 ///|
 test "parse_field accepts a numeric constant" {
   let ctx = @tscript.ParseCtx::new()
-  guard! @tscript.parse_field("42", ctx) is Some(Const(lit=LNum(n), ..))
+  guard! @tscript.parse_field("42", ctx) is Some(ELit(lit=LNum(n), ..))
   assert_eq(n, 42)
 }
 
@@ -451,7 +491,18 @@ test "parse_field accepts a .seq[.key] seq-access" {
   let ctx = @tscript.ParseCtx::new()
   assert_true(
     @tscript.parse_field(".sheets[.selId]", ctx)
-    is Some(SeqAccess(seq="sheets", key="selId")),
+    is Some(
+      ERead(
+        place={
+          root: PState("sheets"),
+          steps: [
+            PIndex(ERead(place={ root: PState("selId"), steps: [], .. }, ..)),
+          ],
+          ..
+        },
+        ..
+      )
+    ),
   )
 }
 
@@ -469,10 +520,15 @@ test "seq-access to_path_item yields a SeqAccessStep" {
 test "one-level member read parses where bindings are accepted" {
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_text("@value.title", ctx) is Some(r)
-  assert_true(r is BindMember(name="value", prop="title"))
+  assert_true(
+    r is ERead(place={ root: PBind("value"), steps: [PField("title")], .. }, ..),
+  )
   assert_eq("\{r}", "@value.title")
   // any binding name, not just `value`; predicate-style `?` members parse too
-  assert_true(@tscript.parse_bool("@item.done?", ctx) is Some(BindMember(..)))
+  assert_true(
+    @tscript.parse_bool("@item.done?", ctx)
+    is Some(ERead(place={ root: PBind(_), steps: [PField(_)], .. }, ..)),
+  )
 }
 
 ///|
@@ -504,9 +560,9 @@ test "handler arg accepts a quoted literal with spaces" {
   // parse_input_handler.
   let ctx = @tscript.ParseCtx::new()
   guard! @tscript.parse_input_handler("showView 'detail mode'", ctx) is Some(h)
-  assert_true(h.handler is HandlerName(name="showView", ns=Receive))
+  assert_true(h.handler is EHandlerName(name="showView", ns=Receive, ..))
   assert_eq(h.args.length(), 1)
-  assert_true(h.args[0] is Const(lit=LStr("detail mode"), ..))
+  assert_true(h.args[0] is ELit(lit=LStr("detail mode"), ..))
 }
 
 // -- positions --------------------------------------------------------------
@@ -533,7 +589,7 @@ test "a handler argument is blamed on the argument that failed" {
   // The argument still occupies its position — it becomes the null sentinel,
   // so the arguments after it do not shift — and the issue says where.
   assert_eq(h.args.length(), 2)
-  assert_true(h.args[1] is Const(lit=LNull, ..))
+  assert_true(h.args[1] is ELit(lit=LNull, ..))
   assert_eq(ctx.issues.length(), 1)
   assert_eq(ctx.issues[0].role, BadHandlerArg)
   assert_eq(ctx.issues[0].span, { start: 15, end_: 20, })
@@ -557,17 +613,19 @@ test "a $$name config variable is the host's literal, and it pins" {
     "mediaOrigin": "https://files.hachyderm.io/",
   })
   guard! @tscript.parse_text("$'{$$mediaOrigin}{.avatarPath}'", ctx)
-    is Some(StrTpl(parts))
+    is Some(ETpl(parts~, ..))
   // Three, not two: the split leaves an empty text part BETWEEN the two
   // placeholders, and only the bookends are trimmed. What matters is that
   // parts[0] is the host's literal, which is what `pinned_prefix` reads.
   assert_eq(parts.length(), 3)
   assert_true(
-    parts[0]
-    is Some(Const(lit=LStr("https://files.hachyderm.io/"), from_macro=false)),
+    parts[0] is TText(text="https://files.hachyderm.io/", from_macro=false),
   )
-  assert_true(parts[1] is Some(Const(lit=LStr(""), ..)))
-  assert_true(parts[2] is Some(Field("avatarPath")))
+  assert_true(parts[1] is TText(text="", ..))
+  assert_true(
+    parts[2]
+    is TExpr(ERead(place={ root: PState("avatarPath"), steps: [], .. }, ..)),
+  )
   assert_eq(ctx.issues.length(), 0)
 }
 
@@ -588,15 +646,17 @@ test "a config value is substituted, not re-parsed" {
   // expression is that expression's characters, not that expression.
   let ctx = @tscript.ParseCtx::new(config_vars={ "who": ".secret" })
   guard! @tscript.parse_text("$$who", ctx) is Some(v)
-  assert_true(v is Const(lit=LStr(".secret"), from_macro=false))
+  assert_true(v is ELit(lit=LStr(".secret"), from_macro=false, ..))
 }
 
 ///|
 test "$ and $$ stay apart" {
   let ctx = @tscript.ParseCtx::new(config_vars={ "total": "9" })
-  assert_true(@tscript.parse_text("$total", ctx) is Some(Method("total")))
+  assert_true(
+    @tscript.parse_text("$total", ctx) is Some(EMethod(name="total", ..)),
+  )
   guard! @tscript.parse_text("$$total", ctx) is Some(v)
-  assert_true(v is Const(lit=LStr("9"), ..))
+  assert_true(v is ELit(lit=LStr("9"), ..))
 }
 
 ///|
@@ -694,10 +754,11 @@ test "a slot and a block are one grammar, and refuse alike" {
 
 ///|
 test "a slot refuses what only a body can hold, and names the way out" {
-  // `Val` is span-free and flat because it rides inside `Step` and into the
-  // checked-in IR modules. The half of `Expr` it cannot hold stops at the
-  // lowering — with a sentence, never with silence, which is what the old
-  // `bad value 'not' in unknown predicate` failed to give.
+  // There is one AST, so nothing is "lowered" away any more — what stops a
+  // form is the POSITION it was written in (`@tutuca.Position`). A slot reads
+  // one level, has no arithmetic and no `if`, and each refusal carries a
+  // sentence naming what to write instead — never silence, which is what the
+  // old `bad value 'not' in unknown predicate` failed to give.
   fn says(src : String, needle : String) -> Unit raise {
     let why = slot_err(src)
     assert_true(why.contains(needle))
@@ -723,19 +784,19 @@ test "a substituted value is an operand, and keeps the mark that decides an orig
     "origin": "https://files.example/",
   })
   guard! @tscript.parse_bool("empty? ^label", ctx)
-    is Some(App(name="empty?", args~))
+    is Some(EApp(name="empty?", args~, ..))
   assert_eq(args.length(), 1)
-  assert_true(args[0] is Const(lit=LStr("x"), from_macro=true))
+  assert_true(args[0] is ELit(lit=LStr("x"), from_macro=true, ..))
   // The whole grammar, not just the shape 0.28.1 happened to accept.
   assert_true(
-    @tscript.parse_bool("not ^label", ctx) is Some(App(name="not", ..)),
+    @tscript.parse_bool("not ^label", ctx) is Some(EApp(name="not", ..)),
   )
   assert_true(
-    @tscript.parse_bool("^label is 'x'", ctx) is Some(App(name="is", ..)),
+    @tscript.parse_bool("^label is 'x'", ctx) is Some(EApp(name="is", ..)),
   )
   assert_true(
     @tscript.parse_bool("(empty? ^label) and (empty? $$origin)", ctx)
-    is Some(App(name="and", ..)),
+    is Some(EApp(name="and", ..)),
   )
   assert_eq(ctx.issues.length(), 0)
 }
@@ -749,9 +810,9 @@ test "a host's value nested under an operator is still the host's" {
     macro_vars={ "u": "'https://evil.example/'" },
     config_vars={ "origin": "https://files.example/" },
   )
-  guard! @tscript.parse_bool("$$origin is ^u", ctx) is Some(App(args~, ..))
-  assert_true(args[0] is Const(from_macro=false, ..))
-  assert_true(args[1] is Const(from_macro=true, ..))
+  guard! @tscript.parse_bool("$$origin is ^u", ctx) is Some(EApp(args~, ..))
+  assert_true(args[0] is ELit(from_macro=false, ..))
+  assert_true(args[1] is ELit(from_macro=true, ..))
 }
 
 ///|

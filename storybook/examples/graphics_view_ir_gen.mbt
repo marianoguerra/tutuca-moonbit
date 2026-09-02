@@ -63,7 +63,7 @@ fn swatch_picker_main_view_ir() -> @anode.View {
               @anode.attr("width", "340"),
               @anode.attr("height", "52"),
               @anode.attr("rx", "8"),
-              @anode.dyn_attr("fill", Field("color")),
+              @anode.dyn_attr("fill", @tutuca.Expr::field("color")),
             ],
             [],
             ns=Svg,
@@ -71,22 +71,22 @@ fn swatch_picker_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.each(
             0,
-            Field("palette"),
+            @tutuca.Expr::field("palette"),
             @anode.h(
               "circle",
               [
-                @anode.dyn_attr("cx", Bind("cx")),
+                @anode.dyn_attr("cx", @tutuca.Expr::bind("cx")),
                 @anode.attr("cy", "98"),
                 @anode.attr("r", "18"),
-                @anode.dyn_attr("fill", Bind("value")),
+                @anode.dyn_attr("fill", @tutuca.Expr::bind("value")),
                 @anode.attr("stroke-width", "3"),
-                @anode.dyn_attr("stroke", Bind("ring")),
+                @anode.dyn_attr("stroke", @tutuca.Expr::bind("ring")),
                 @anode.eid(0),
               ],
               [],
               ns=Svg,
             ),
-            enrich_with_val=HandlerName(name="swatch", ns=Alter),
+            enrich_with_val=@tutuca.Expr::handler_name("swatch", Alter),
           ),
         ],
         ns=Svg,
@@ -94,13 +94,13 @@ fn swatch_picker_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("p", [@anode.attr("class", "text-sm label")], [
         @anode.text("Selected: "),
-        @anode.dyn_text(Field("color"), id=1),
+        @anode.dyn_text(@tutuca.Expr::field("color"), id=1),
       ]),
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setColor", ns=Receive), args=[
-          Bind("value"),
+        @anode.on("click", @tutuca.Expr::handler_name("setColor", Receive), args=[
+          @tutuca.Expr::bind("value"),
         ]),
       ],
     ],
@@ -220,7 +220,7 @@ fn quadratic_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "number"),
               @anode.attr("class", "input input-sm w-16 in-a"),
-              @anode.dyn_attr("value", Field("a")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("a")),
               @anode.eid(0),
             ],
             [],
@@ -234,7 +234,7 @@ fn quadratic_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "number"),
               @anode.attr("class", "input input-sm w-16 in-b"),
-              @anode.dyn_attr("value", Field("b")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("b")),
               @anode.eid(1),
             ],
             [],
@@ -248,7 +248,7 @@ fn quadratic_main_view_ir() -> @anode.View {
             [
               @anode.attr("type", "number"),
               @anode.attr("class", "input input-sm w-16 in-c"),
-              @anode.dyn_attr("value", Field("c")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("c")),
               @anode.eid(2),
             ],
             [],
@@ -263,7 +263,7 @@ fn quadratic_main_view_ir() -> @anode.View {
           @anode.h(
             "mn",
             [@anode.attr("class", "m-a")],
-            [@anode.dyn_text(Field("a"))],
+            [@anode.dyn_text(@tutuca.Expr::field("a"))],
             ns=MathML,
           ),
           @anode.text(" "),
@@ -284,7 +284,7 @@ fn quadratic_main_view_ir() -> @anode.View {
           @anode.h(
             "mn",
             [@anode.attr("class", "m-b")],
-            [@anode.dyn_text(Field("b"))],
+            [@anode.dyn_text(@tutuca.Expr::field("b"))],
             ns=MathML,
           ),
           @anode.text(" "),
@@ -297,7 +297,7 @@ fn quadratic_main_view_ir() -> @anode.View {
           @anode.h(
             "mn",
             [@anode.attr("class", "m-c")],
-            [@anode.dyn_text(Field("c"))],
+            [@anode.dyn_text(@tutuca.Expr::field("c"))],
             ns=MathML,
           ),
           @anode.text(" "),
@@ -311,31 +311,31 @@ fn quadratic_main_view_ir() -> @anode.View {
       @anode.h("p", [@anode.attr("class", "text-sm")], [
         @anode.text("Discriminant: "),
         @anode.h("span", [@anode.attr("class", "disc")], [
-          @anode.dyn_text(Method("discriminant")),
+          @anode.dyn_text(@tutuca.Expr::method_("discriminant")),
         ]),
       ]),
       @anode.h("p", [@anode.attr("class", "text-sm")], [
         @anode.text("There are "),
         @anode.h("span", [@anode.attr("class", "classify")], [
-          @anode.dyn_text(Method("classify")),
+          @anode.dyn_text(@tutuca.Expr::method_("classify")),
         ]),
         @anode.text("."),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setA", ns=Receive), args=[
-          EventPath(["valueAsInt"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setA", Receive), args=[
+          @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setB", ns=Receive), args=[
-          EventPath(["valueAsInt"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setB", Receive), args=[
+          @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setC", ns=Receive), args=[
-          EventPath(["valueAsInt"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setC", Receive), args=[
+          @tutuca.Expr::event_path(["valueAsInt"]),
         ]),
       ],
     ],

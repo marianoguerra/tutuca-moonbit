@@ -50,7 +50,7 @@ fn render_with_scope_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("text")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("text")),
           @anode.eid(0),
         ],
         [],
@@ -58,24 +58,24 @@ fn render_with_scope_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.scope(
         0,
-        HandlerName(name="enrichScope", ns=Alter),
+        @tutuca.Expr::handler_name("enrichScope", Alter),
         @anode.h("div", [@anode.attr_num("data-nid", 0.0)], [
           @anode.h("p", [], [
             @anode.text("Text: "),
             @anode.h("span", [@anode.attr("class", "v-text")], [
-              @anode.dyn_text(Field("text")),
+              @anode.dyn_text(@tutuca.Expr::field("text")),
             ]),
           ]),
           @anode.h("p", [], [
             @anode.text("Len: "),
             @anode.h("span", [@anode.attr("class", "v-len")], [
-              @anode.dyn_text(Bind("len")),
+              @anode.dyn_text(@tutuca.Expr::bind("len")),
             ]),
           ]),
           @anode.h("p", [], [
             @anode.text("Upper: "),
             @anode.h("span", [@anode.attr("class", "v-upper")], [
-              @anode.dyn_text(Bind("upper")),
+              @anode.dyn_text(@tutuca.Expr::bind("upper")),
             ]),
           ]),
         ]),
@@ -83,8 +83,8 @@ fn render_with_scope_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setText", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -175,7 +175,7 @@ fn list_filter_enrich_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "search"),
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("query")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("query")),
           @anode.eid(0),
           @anode.attr("placeholder", "Filter entries"),
         ],
@@ -185,28 +185,30 @@ fn list_filter_enrich_main_view_ir() -> @anode.View {
       @anode.h("ul", [], [
         @anode.each(
           2,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h("li", [], [
-            @anode.h("span", [], [@anode.dyn_text(Bind("key"))]),
+            @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::bind("key"))]),
             @anode.text(": "),
-            @anode.dyn_text(Bind("value"), id=0),
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
             @anode.text(" ("),
-            @anode.dyn_text(Bind("count"), id=1),
+            @anode.dyn_text(@tutuca.Expr::bind("count"), id=1),
             @anode.text(" characters)\n    "),
           ]),
-          when_val=HandlerName(name="filterItem", ns=Alter),
-          enrich_with_val=HandlerName(name="enrichItem", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+          enrich_with_val=@tutuca.Expr::handler_name("enrichItem", Alter),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
     ],
   )
@@ -316,7 +318,7 @@ fn list_filter_enrich_with_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "search"),
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("query")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("query")),
           @anode.eid(0),
           @anode.attr("placeholder", "Filter entries"),
         ],
@@ -326,31 +328,33 @@ fn list_filter_enrich_with_main_view_ir() -> @anode.View {
       @anode.h("ul", [], [
         @anode.each(
           3,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h("li", [], [
-            @anode.h("span", [], [@anode.dyn_text(Bind("key"))]),
+            @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::bind("key"))]),
             @anode.text(": "),
-            @anode.dyn_text(Bind("value"), id=0),
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
             @anode.text(" ("),
-            @anode.dyn_text(Bind("count"), id=1),
+            @anode.dyn_text(@tutuca.Expr::bind("count"), id=1),
             @anode.text(" / "),
-            @anode.dyn_text(Bind("total"), id=2),
+            @anode.dyn_text(@tutuca.Expr::bind("total"), id=2),
             @anode.text(")\n    "),
           ]),
-          when_val=HandlerName(name="filterItem", ns=Alter),
-          loop_with_val=HandlerName(name="getIterData", ns=Alter),
-          enrich_with_val=HandlerName(name="enrichItem", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
+          loop_with_val=@tutuca.Expr::handler_name("getIterData", Alter),
+          enrich_with_val=@tutuca.Expr::handler_name("enrichItem", Alter),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
     ],
   )

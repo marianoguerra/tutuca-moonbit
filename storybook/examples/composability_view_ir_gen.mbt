@@ -58,8 +58,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-todo"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("todo"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -77,8 +77,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-json"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("json"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -96,8 +96,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-tree"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("tree"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -115,8 +115,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-personal-site"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("personalSite"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -134,8 +134,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-dnd"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("dnd"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -153,8 +153,8 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-visual-wasm"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[
-                  Field("activeSection"),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("activeSection"),
                   @anode.const_str("visualWasm"),
                 ]),
                 then_val=@anode.const_str("tab tab-active"),
@@ -168,83 +168,107 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("activeSection"), @anode.const_str("todo")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
+          @anode.const_str("todo"),
+        ]),
         @anode.h("div", [@anode.attr("class", "pane-todo")], [
-          @anode.render(0, Field("todo")),
+          @anode.render(0, @tutuca.Expr::field("todo")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("activeSection"), @anode.const_str("json")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
+          @anode.const_str("json"),
+        ]),
         @anode.h("div", [@anode.attr("class", "pane-json")], [
-          @anode.render(1, Field("json")),
+          @anode.render(1, @tutuca.Expr::field("json")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("activeSection"), @anode.const_str("tree")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
+          @anode.const_str("tree"),
+        ]),
         @anode.h("div", [@anode.attr("class", "pane-tree")], [
-          @anode.render(2, Field("tree")),
+          @anode.render(2, @tutuca.Expr::field("tree")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[
-          Field("activeSection"),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
           @anode.const_str("personalSite"),
         ]),
         @anode.h("div", [@anode.attr("class", "pane-personal-site")], [
-          @anode.render(3, Field("personalSite")),
+          @anode.render(3, @tutuca.Expr::field("personalSite")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("activeSection"), @anode.const_str("dnd")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
+          @anode.const_str("dnd"),
+        ]),
         @anode.h("div", [@anode.attr("class", "pane-dnd")], [
-          @anode.render(4, Field("dnd")),
+          @anode.render(4, @tutuca.Expr::field("dnd")),
         ]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[
-          Field("activeSection"),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("activeSection"),
           @anode.const_str("visualWasm"),
         ]),
         @anode.h("div", [@anode.attr("class", "pane-visual-wasm")], [
-          @anode.render(5, Field("visualWasm")),
+          @anode.render(5, @tutuca.Expr::field("visualWasm")),
         ]),
       ),
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("todo"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("todo")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("json"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("json")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("tree"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("tree")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("personalSite"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("personalSite")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("dnd"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("dnd")],
+        ),
       ],
       [
-        @anode.on("click", HandlerName(name="setActiveSection", ns=Receive), args=[
-          @anode.const_str("visualWasm"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("setActiveSection", Receive),
+          args=[@anode.const_str("visualWasm")],
+        ),
       ],
     ],
   )

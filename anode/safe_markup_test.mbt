@@ -25,10 +25,16 @@ test "the safe markup directives parse to their own items" {
     safe_parse("<article @setinnerhtml=\".body\"></article>"),
   )
   assert_eq(items.length(), 1)
-  guard! items[0] is SafeHtml(val=Some(Field("body")))
+  guard! items[0]
+    is SafeHtml(
+      val=Some(ERead(place={ root: PState("body"), steps: [], .. }, ..))
+    )
   let svg = items_of(safe_parse("<svg @setinnersvg=\".chart\"></svg>"))
   assert_eq(svg.length(), 1)
-  guard! svg[0] is SafeSvg(val=Some(Field("chart")))
+  guard! svg[0]
+    is SafeSvg(
+      val=Some(ERead(place={ root: PState("chart"), steps: [], .. }, ..))
+    )
 }
 
 ///|
@@ -64,10 +70,19 @@ test "the safe directives are not raw html" {
 /// The builders produce exactly what the parser produces, which is what lets
 /// `tutuca gen-views` emit a compiled view that behaves like a parsed one.
 test "the builders round-trip with the parser" {
-  guard! @anode.h("article", [@anode.set_inner_html(val=Field("body"))], [])
+  guard! @anode.h(
+      "article",
+      [@anode.set_inner_html(val=@tutuca.Expr::field("body"))],
+      [],
+    )
     is Dom(d)
   guard! d.attrs is DynAttrs(items)
-  assert_true(items[0] is SafeHtml(val=Some(Field("body"))))
+  assert_true(
+    items[0]
+    is SafeHtml(
+      val=Some(ERead(place={ root: PState("body"), steps: [], .. }, ..))
+    ),
+  )
   // The failed-parse sentinel has a spelling too.
   guard! @anode.h("svg", [@anode.set_inner_svg()], []) is Dom(d2)
   guard! d2.attrs is DynAttrs(items2)

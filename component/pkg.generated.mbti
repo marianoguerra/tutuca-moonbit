@@ -123,7 +123,7 @@ pub(all) struct LocatedValue {
 
 pub(all) struct LookupInfo {
   name : String
-  default_val : @core.Val?
+  default_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) struct LookupSpec {
@@ -162,7 +162,7 @@ pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
 
 pub(all) struct ProvideInfo {
   name : String
-  val : @core.Val
+  val : @core.Expr
 } derive(@debug.Debug)
 
 pub(all) enum ProvideKind {

@@ -48,7 +48,7 @@ pub let corpus_spec_source : String =
 fn corpus_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [], [@anode.dyn_text(Field("name"), id=0)]),
+    @anode.h("div", [], [@anode.dyn_text(@tutuca.Expr::field("name"), id=0)]),
     [],
   )
 }

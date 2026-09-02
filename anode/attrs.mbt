@@ -71,7 +71,7 @@ fn AttrParser::parse(
       } else {
         LStr(value)
       }
-      self.items.push(ConstA(name~, val=Const(lit~, from_macro=false)))
+      self.items.push(ConstA(name~, val=@tutuca.Expr::lit(lit)))
     }
   }
   let bind = if parse_all && self.bind_target is Some(_) {
@@ -100,7 +100,7 @@ pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs {
     .any(item => {
       match item {
         // A macro-var-sourced constant stays constant.
-        Plain(val~, ..) => !(val is Const(..))
+        Plain(val~, ..) => !(val is ELit(..))
         RawHtml(_) | RawMarkdown(_) | SafeHtml(_) | SafeSvg(_) | If(_) => true
         ConstA(_) => false
       }
@@ -120,7 +120,7 @@ fn const_attrs_from_items(items : Array[AttrItem]) -> Attrs {
   for item in items {
     match item {
       ConstA(name~, val~) | Plain(name~, val~) =>
-        if val is Const(lit~, ..) {
+        if val is ELit(lit~, ..) {
           m[name] = lit
         }
       _ => ()
@@ -277,16 +277,15 @@ fn AttrParser::finish_bind(self : AttrParser) -> BindData? {
   let event_name = if tag == "select" { "change" } else { "input" }
   self.items.push(Plain(name=property, val=target))
   let events = self.ensure_events()
-  let field = match target {
-    Field(name) => name
-    _ => "invalidBindTarget"
-  }
+  let field = target.as_field().unwrap_or("invalidBindTarget")
   let event : NodeEvent = {
     name: event_name,
     handler: {
-      handler: Const(lit=LNull, from_macro=false),
+      handler: @tutuca.Expr::lit(LNull),
       args: [],
-      action: Some(PropertySet(name=field, value=EventPath(["value"]))),
+      action: Some(
+        PropertySet(name=field, value=@tutuca.Expr::event_path(["value"])),
+      ),
     },
     modifiers: [],
     binding: Some(BindPending),
@@ -299,7 +298,7 @@ fn AttrParser::finish_bind(self : AttrParser) -> BindData? {
 fn AttrParser::static_attr(self : AttrParser, wanted : String) -> String? {
   for item in self.items {
     match item {
-      ConstA(name~, val=Const(lit=LStr(value), ..)) if name == wanted =>
+      ConstA(name~, val=ELit(lit=LStr(value), ..)) if name == wanted =>
         return Some(value.to_lower())
       _ => ()
     }
@@ -315,10 +314,7 @@ fn AttrParser::ensure_events(self : AttrParser) -> NodeEvents {
       let ev = self.px.register_events()
       self.events = Some(ev)
       self.items.push(
-        ConstA(
-          name="data-eid",
-          val=Const(lit=LNum(ev.id.to_double()), from_macro=false),
-        ),
+        ConstA(name="data-eid", val=@tutuca.Expr::lit(LNum(ev.id.to_double()))),
       )
       ev
     }
@@ -428,8 +424,7 @@ pub fn Attrs::is_constant(self : Attrs) -> Bool {
 fn Attrs::set_data_attr(self : Attrs, key : String, val : @tutuca.Lit) -> Unit {
   match self {
     ConstAttrs(m) => m[key] = val
-    DynAttrs(items) =>
-      items.push(ConstA(name=key, val=Const(lit=val, from_macro=false)))
+    DynAttrs(items) => items.push(ConstA(name=key, val=@tutuca.Expr::lit(val)))
   }
 }
 
@@ -439,7 +434,7 @@ fn Attrs::set_data_attr(self : Attrs, key : String, val : @tutuca.Lit) -> Unit {
 fn lit_plain_string(lit : @tutuca.Lit) -> String {
   match lit {
     LStr(s) => s
-    _ => "\{@tutuca.Val::Const(lit~, from_macro=false)}"
+    _ => "\{@tutuca.Expr::lit(lit)}"
   }
 }
 
@@ -451,7 +446,7 @@ fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
     // stringified first, so the result is always a quoted string literal.
     ConstAttrs(m) =>
       for name, lit in m {
-        r[name] = "\{@tutuca.Val::Const(lit=LStr(lit_plain_string(lit)), from_macro=false)}"
+        r[name] = "\{@tutuca.Expr::lit(LStr(lit_plain_string(lit)))}"
       }
     DynAttrs(items) =>
       for item in items {

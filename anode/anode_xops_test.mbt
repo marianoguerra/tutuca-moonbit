@@ -19,7 +19,7 @@ test "render-each: no when/loop-with by default" {
 test "render-each with when" {
   guard! xparse("<x render-each=\".items\" @when=\"$whenH\"></x>").0
     is Some(Each(e))
-  assert_true(e.iter_info.when_val is Some(Method("whenH")))
+  assert_true(e.iter_info.when_val is Some(EMethod(name="whenH", ..)))
   assert_true(e.iter_info.loop_with_val is None)
 }
 
@@ -29,14 +29,14 @@ test "render-each with when and loop-with" {
       "<x render-each=\".items\" @when=\"$whenH\" @loop-with=\"$lwith\"></x>",
     ).0
     is Some(Each(e))
-  assert_true(e.iter_info.when_val is Some(Method("whenH")))
-  assert_true(e.iter_info.loop_with_val is Some(Method("lwith")))
+  assert_true(e.iter_info.when_val is Some(EMethod(name="whenH", ..)))
+  assert_true(e.iter_info.loop_with_val is Some(EMethod(name="lwith", ..)))
 }
 
 ///|
 test "x text const" {
   guard! xparse("<x text=\"'hi'\"></x>").0 is Some(RenderText(t))
-  assert_true(t.val is Const(lit=LStr("hi"), ..))
+  assert_true(t.val is ELit(lit=LStr("hi"), ..))
   assert_true(t.node_id is Some(0))
 }
 
@@ -77,8 +77,8 @@ test "x render-each with show keeps when/loop-with" {
     is Some(Show(w))
   guard! w.node is Each(e)
   assert_true(e.node is RenderIt(_))
-  assert_true(e.iter_info.when_val is Some(Method("whenH")))
-  assert_true(e.iter_info.loop_with_val is Some(Method("lwith")))
+  assert_true(e.iter_info.when_val is Some(EMethod(name="whenH", ..)))
+  assert_true(e.iter_info.loop_with_val is Some(EMethod(name="lwith", ..)))
 }
 
 ///|
@@ -93,7 +93,7 @@ test "x render-it show then hide: first attr outermost" {
 test "@text puts a RenderText first child" {
   guard! xparse("<span @text=\"'hi'\"></span>").0 is Some(Dom(d))
   guard! d.childs[0] is RenderText(t)
-  assert_true(t.val is Const(lit=LStr("hi"), ..))
+  assert_true(t.val is ELit(lit=LStr("hi"), ..))
   // The @text child is unregistered (constructed with a null nodeId).
   assert_true(t.node_id is None)
 }
@@ -131,7 +131,7 @@ test "pseudo-x render-each inside select" {
   guard! select.childs[0] is Each(e)
   guard! e.node is RenderIt(r)
   // `as=` falls back to a literal const view name.
-  assert_true(r.view_val is Some(Const(lit=LStr("option"), ..)))
+  assert_true(r.view_val is Some(ELit(lit=LStr("option"), ..)))
 }
 
 ///|

@@ -70,7 +70,7 @@ fn push_view_main_view_ir() -> @anode.View {
           [
             @anode.attr("type", "search"),
             @anode.attr("class", "input"),
-            @anode.dyn_attr("value", Field("query")),
+            @anode.dyn_attr("value", @tutuca.Expr::field("query")),
             @anode.eid(0),
             @anode.attr("placeholder", "Filter entries"),
           ],
@@ -83,12 +83,12 @@ fn push_view_main_view_ir() -> @anode.View {
             @anode.attr("class", "btn bnt-sm btn-primary toggle-btn"),
             @anode.eid(1),
           ],
-          [@anode.dyn_text(Method("getToggleLabel"))],
+          [@anode.dyn_text(@tutuca.Expr::method_("getToggleLabel"))],
         ),
       ]),
       @anode.text(" "),
       @anode.push_view(
-        Field("view"),
+        @tutuca.Expr::field("view"),
         @anode.h(
           "div",
           [
@@ -99,9 +99,9 @@ fn push_view_main_view_ir() -> @anode.View {
           [
             @anode.each(
               1,
-              Field("items"),
+              @tutuca.Expr::field("items"),
               @anode.render_it(0),
-              when_val=HandlerName(name="filterItem", ns=Alter),
+              when_val=@tutuca.Expr::handler_name("filterItem", Alter),
               from_render_each=true,
             ),
           ],
@@ -110,14 +110,16 @@ fn push_view_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
-      [@anode.on("click", HandlerName(name="toggleView", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleView", Receive))],
     ],
   )
 }
@@ -276,45 +278,51 @@ fn seq_item_access_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "range"),
           @anode.attr("min", "0"),
-          @anode.dyn_attr("max", Method("getMaxIndex")),
-          @anode.dyn_attr("value", Field("currentIndex")),
+          @anode.dyn_attr("max", @tutuca.Expr::method_("getMaxIndex")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("currentIndex")),
           @anode.eid(0),
         ],
         [],
       ),
       @anode.text(" "),
-      @anode.render(0, SeqAccess(seq="byIndex", key="currentIndex")),
+      @anode.render(0, @tutuca.Expr::seq_access("byIndex", "currentIndex")),
       @anode.text(" "),
       @anode.h(
         "select",
         [
           @anode.attr("class", "select"),
-          @anode.dyn_attr("value", Field("currentKey")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("currentKey")),
           @anode.eid(1),
         ],
         [
           @anode.each(
             1,
-            Field("byKey"),
-            @anode.h("option", [@anode.dyn_attr("value", Bind("key"))], [
-              @anode.dyn_text(BindMember(name="value", prop="title")),
-            ]),
+            @tutuca.Expr::field("byKey"),
+            @anode.h(
+              "option",
+              [@anode.dyn_attr("value", @tutuca.Expr::bind("key"))],
+              [@anode.dyn_text(@tutuca.Expr::bind_member("value", "title"))],
+            ),
           ),
         ],
       ),
       @anode.text(" "),
-      @anode.render(2, SeqAccess(seq="byKey", key="currentKey")),
+      @anode.render(2, @tutuca.Expr::seq_access("byKey", "currentKey")),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setCurrentIndex", ns=Receive), args=[
-          EventPath(["valueAsInt"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setCurrentIndex", Receive),
+          args=[@tutuca.Expr::event_path(["valueAsInt"])],
+        ),
       ],
       [
-        @anode.on("input", HandlerName(name="setCurrentKey", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setCurrentKey", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
     ],
   )
@@ -406,7 +414,7 @@ fn pagination_main_view_ir() -> @anode.View {
           [
             @anode.attr("class", "btn join-item prev"),
             @anode.eid(0),
-            @anode.dyn_attr("disabled", Method("isFirstPage")),
+            @anode.dyn_attr("disabled", @tutuca.Expr::method_("isFirstPage")),
           ],
           [@anode.text("‹ Prev")],
         ),
@@ -414,7 +422,7 @@ fn pagination_main_view_ir() -> @anode.View {
         @anode.h(
           "button",
           [@anode.attr("class", "btn join-item btn-disabled label")],
-          [@anode.dyn_text(Method("pageLabel"))],
+          [@anode.dyn_text(@tutuca.Expr::method_("pageLabel"))],
         ),
         @anode.text(" "),
         @anode.h(
@@ -422,7 +430,7 @@ fn pagination_main_view_ir() -> @anode.View {
           [
             @anode.attr("class", "btn join-item next"),
             @anode.eid(1),
-            @anode.dyn_attr("disabled", Method("isLastPage")),
+            @anode.dyn_attr("disabled", @tutuca.Expr::method_("isLastPage")),
           ],
           [@anode.text("Next ›")],
         ),
@@ -430,21 +438,21 @@ fn pagination_main_view_ir() -> @anode.View {
       @anode.h("ul", [@anode.attr("class", "flex flex-col gap-1")], [
         @anode.each(
           1,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h("li", [@anode.attr("class", "flex gap-2 items-center")], [
             @anode.h("span", [@anode.attr("class", "badge badge-neutral")], [
-              @anode.dyn_text(Bind("key")),
+              @anode.dyn_text(@tutuca.Expr::bind("key")),
             ]),
             @anode.text(" "),
-            @anode.dyn_text(Bind("value"), id=0),
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
           ]),
-          loop_with_val=HandlerName(name="paginate", ns=Alter),
+          loop_with_val=@tutuca.Expr::handler_name("paginate", Alter),
         ),
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="prev", ns=Receive))],
-      [@anode.on("click", HandlerName(name="next", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("prev", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("next", Receive))],
     ],
   )
 }

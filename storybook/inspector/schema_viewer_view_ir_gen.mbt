@@ -58,15 +58,23 @@ fn schema_viewer_main_view_ir() -> @anode.View {
             @anode.attr("class", "btn btn-xs btn-ghost self-end raw-toggle"),
             @anode.eid(0),
           ],
-          [@anode.dyn_text(Method("toggleLabel"))],
+          [@anode.dyn_text(@tutuca.Expr::method_("toggleLabel"))],
         ),
         @anode.text(" "),
-        @anode.hide(Field("showRaw"), @anode.render(0, Field("value")), id=1),
+        @anode.hide(
+          @tutuca.Expr::field("showRaw"),
+          @anode.render(0, @tutuca.Expr::field("value")),
+          id=1,
+        ),
         @anode.text(" "),
-        @anode.show(Field("showRaw"), @anode.render(2, Field("raw")), id=3),
+        @anode.show(
+          @tutuca.Expr::field("showRaw"),
+          @anode.render(2, @tutuca.Expr::field("raw")),
+          id=3,
+        ),
       ],
     ),
-    [[@anode.on("click", HandlerName(name="toggleShowRaw", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("toggleShowRaw", Receive))]],
   )
 }
 

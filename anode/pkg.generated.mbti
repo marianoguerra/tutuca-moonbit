@@ -17,29 +17,29 @@ pub fn attr_bool(String, Bool) -> AttrItem
 
 pub fn attr_num(String, Double) -> AttrItem
 
-pub fn attr_val(String, @core.Val) -> AttrItem
+pub fn attr_val(String, @core.Expr) -> AttrItem
 
 pub fn attrs_of_items(Array[AttrItem]) -> Attrs
 
-pub fn call_property_action(String, String, Array[@core.Val]) -> @tscript.PropertyAction
+pub fn call_property_action(String, String, Array[@core.Expr]) -> @tscript.PropertyAction
 
 pub fn comment(String) -> ANode
 
 pub fn condense_childs_whites(Array[ANode]) -> Array[ANode]
 
-pub fn const_bool(Bool) -> @core.Val
+pub fn const_bool(Bool) -> @core.Expr
 
-pub fn const_null() -> @core.Val
+pub fn const_null() -> @core.Expr
 
-pub fn const_num(Double) -> @core.Val
+pub fn const_num(Double) -> @core.Expr
 
-pub fn const_str(String) -> @core.Val
+pub fn const_str(String) -> @core.Expr
 
-pub fn dyn_attr(String, @core.Val) -> AttrItem
+pub fn dyn_attr(String, @core.Expr) -> AttrItem
 
-pub fn dyn_text(@core.Val, id? : Int) -> ANode
+pub fn dyn_text(@core.Expr, id? : Int) -> ANode
 
-pub fn each(Int, @core.Val, ANode, when_val? : @core.Val, loop_with_val? : @core.Val, enrich_with_val? : @core.Val, from_render_each? : Bool) -> ANode
+pub fn each(Int, @core.Expr, ANode, when_val? : @core.Expr, loop_with_val? : @core.Expr, enrich_with_val? : @core.Expr, from_render_each? : Bool) -> ANode
 
 pub fn eid(Int) -> AttrItem
 
@@ -49,39 +49,39 @@ pub fn frag(Array[ANode]) -> ANode
 
 pub fn h(String, Array[AttrItem], Array[ANode], ns? : Ns) -> ANode
 
-pub fn hide(@core.Val, ANode, id? : Int) -> ANode
+pub fn hide(@core.Expr, ANode, id? : Int) -> ANode
 
-pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
+pub fn if_attr(String, @core.Expr, then_val? : @core.Expr, else_val? : @core.Expr) -> AttrItem
 
-pub fn method_in_event(Array[NodeEvents]) -> (String, String)?
+pub fn methods_in_events(Array[NodeEvents]) -> Array[(String, String)]
 
-pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String], binding? : BindCoercion, action? : @tscript.PropertyAction) -> NodeEvent
+pub fn on(String, @core.Expr, args? : Array[@core.Expr], modifiers? : Array[String], binding? : BindCoercion, action? : @tscript.PropertyAction) -> NodeEvent
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
 pub fn parse_fragment_svg(String) -> (@src.Document, Array[Int])
 
-pub fn push_view(@core.Val, ANode, id? : Int) -> ANode
+pub fn push_view(@core.Expr, ANode, id? : Int) -> ANode
 
-pub fn raw_html(val? : @core.Val) -> AttrItem
+pub fn raw_html(val? : @core.Expr) -> AttrItem
 
-pub fn render(Int, @core.Val, view? : @core.Val) -> ANode
+pub fn render(Int, @core.Expr, view? : @core.Expr) -> ANode
 
-pub fn render_it(Int, view? : @core.Val) -> ANode
+pub fn render_it(Int, view? : @core.Expr) -> ANode
 
 pub fn reset_property_action(String) -> @tscript.PropertyAction
 
-pub fn scope(Int, @core.Val, ANode) -> ANode
+pub fn scope(Int, @core.Expr, ANode) -> ANode
 
-pub fn set_inner_html(val? : @core.Val) -> AttrItem
+pub fn set_inner_html(val? : @core.Expr) -> AttrItem
 
-pub fn set_inner_md(val? : @core.Val) -> AttrItem
+pub fn set_inner_md(val? : @core.Expr) -> AttrItem
 
-pub fn set_inner_svg(val? : @core.Val) -> AttrItem
+pub fn set_inner_svg(val? : @core.Expr) -> AttrItem
 
-pub fn set_property_action(String, @core.Val) -> @tscript.PropertyAction
+pub fn set_property_action(String, @core.Expr) -> @tscript.PropertyAction
 
-pub fn show(@core.Val, ANode, id? : Int) -> ANode
+pub fn show(@core.Expr, ANode, id? : Int) -> ANode
 
 pub fn slot(String, ANode) -> ANode
 
@@ -117,19 +117,19 @@ pub fn ANode::is_whitespace(Self) -> Bool
 pub fn ANode::parse(String, ParseContext) -> Self?
 
 pub(all) enum AttrItem {
-  Plain(name~ : String, val~ : @core.Val)
-  ConstA(name~ : String, val~ : @core.Val)
-  RawHtml(val~ : @core.Val?)
-  RawMarkdown(val~ : @core.Val?)
-  SafeHtml(val~ : @core.Val?)
-  SafeSvg(val~ : @core.Val?)
+  Plain(name~ : String, val~ : @core.Expr)
+  ConstA(name~ : String, val~ : @core.Expr)
+  RawHtml(val~ : @core.Expr?)
+  RawMarkdown(val~ : @core.Expr?)
+  SafeHtml(val~ : @core.Expr?)
+  SafeSvg(val~ : @core.Expr?)
   If(IfAttr)
 } derive(@debug.Debug)
 
 pub(all) struct AttrParseResult {
   attrs : Attrs
   wrappers : Array[WrapperAttr]
-  text_child : @core.Val?
+  text_child : @core.Expr?
   bind : BindData?
 } derive(@debug.Debug)
 
@@ -156,7 +156,7 @@ pub(all) enum BindCoercion {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct BindData {
-  target : @core.Val
+  target : @core.Expr
   property : String
   event : NodeEvent
 } derive(@debug.Debug)
@@ -183,16 +183,16 @@ pub(all) struct FragmentData {
 
 pub(all) struct IfAttr {
   name : String
-  cond_val : @core.Val
-  mut then_val : @core.Val?
-  mut else_val : @core.Val?
+  cond_val : @core.Expr
+  mut then_val : @core.Expr?
+  mut else_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) struct IterInfo {
-  val : @core.Val
-  mut when_val : @core.Val?
-  mut loop_with_val : @core.Val?
-  mut enrich_with_val : @core.Val?
+  val : @core.Expr
+  mut when_val : @core.Expr?
+  mut loop_with_val : @core.Expr?
+  mut enrich_with_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) struct Macro {
@@ -261,18 +261,18 @@ pub(all) enum ParseIssue {
 
 pub(all) struct RenderData {
   node_id : Int
-  val : @core.Val
-  view_val : @core.Val?
+  val : @core.Expr
+  view_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) struct RenderItData {
   node_id : Int
-  view_val : @core.Val?
+  view_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) struct RenderTextData {
   node_id : Int?
-  val : @core.Val
+  val : @core.Expr
 } derive(@debug.Debug)
 
 pub(all) struct SlotData {
@@ -304,17 +304,17 @@ pub impl ParseHandler for WarnHandler
 
 pub(all) struct WrapData {
   node_id : Int?
-  val : @core.Val
+  val : @core.Expr
   mut node : ANode
 } derive(@debug.Debug)
 
 pub(all) struct WrapperAttr {
   kind : WrapperKind
   raw : String
-  val : @core.Val?
-  mut enrich_with_val : @core.Val?
-  mut when_val : @core.Val?
-  mut loop_with_val : @core.Val?
+  val : @core.Expr?
+  mut enrich_with_val : @core.Expr?
+  mut when_val : @core.Expr?
+  mut loop_with_val : @core.Expr?
 } derive(@debug.Debug)
 
 pub(all) enum WrapperKind {

@@ -33,30 +33,30 @@ pub fn value_prefix(String) -> String
 
 // Errors
 pub suberror DefError {
-  Syntax(msg~ : String, span~ : Span)
-  UnknownDecl(got~ : String, span~ : Span)
-  DuplicateComponent(name~ : String, span~ : Span)
-  MixedStateNames(span~ : Span)
-  NoState(span~ : Span)
-  UnsupportedType(ty~ : String, why~ : String, span~ : Span)
-  UnknownTypeRef(name~ : String, span~ : Span)
-  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : Span)
-  CyclicType(name~ : String, span~ : Span)
-  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String, span~ : Span)
-  BadComponentName(name~ : String, span~ : Span)
-  ReservedName(name~ : String, span~ : Span)
-  UnknownProtocol(local_name~ : String, span~ : Span)
-  ProtocolConflict(id~ : String, span~ : Span)
-  DuplicateRule(name~ : String, span~ : Span)
-  RuleOutsideState(name~ : String, span~ : Span)
-  WhereOutsideState(span~ : Span)
-  UnknownWhereSubject(name~ : String, hint~ : String, span~ : Span)
-  UnknownWhereTarget(name~ : String, hint~ : String, span~ : Span)
-  WhereTypeMismatch(subject~ : String, why~ : String, span~ : Span)
-  CyclicWhere(names~ : Array[String], span~ : Span)
+  Syntax(msg~ : String, span~ : @core.Span)
+  UnknownDecl(got~ : String, span~ : @core.Span)
+  DuplicateComponent(name~ : String, span~ : @core.Span)
+  MixedStateNames(span~ : @core.Span)
+  NoState(span~ : @core.Span)
+  UnsupportedType(ty~ : String, why~ : String, span~ : @core.Span)
+  UnknownTypeRef(name~ : String, span~ : @core.Span)
+  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : @core.Span)
+  CyclicType(name~ : String, span~ : @core.Span)
+  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String, span~ : @core.Span)
+  BadComponentName(name~ : String, span~ : @core.Span)
+  ReservedName(name~ : String, span~ : @core.Span)
+  UnknownProtocol(local_name~ : String, span~ : @core.Span)
+  ProtocolConflict(id~ : String, span~ : @core.Span)
+  DuplicateRule(name~ : String, span~ : @core.Span)
+  RuleOutsideState(name~ : String, span~ : @core.Span)
+  WhereOutsideState(span~ : @core.Span)
+  UnknownWhereSubject(name~ : String, hint~ : String, span~ : @core.Span)
+  UnknownWhereTarget(name~ : String, hint~ : String, span~ : @core.Span)
+  WhereTypeMismatch(subject~ : String, why~ : String, span~ : @core.Span)
+  CyclicWhere(names~ : Array[String], span~ : @core.Span)
 }
 pub fn DefError::message(Self) -> String
-pub fn DefError::span(Self) -> Span
+pub fn DefError::span(Self) -> @core.Span
 pub impl Show for DefError
 
 pub suberror InitError {
@@ -111,7 +111,7 @@ pub(all) struct InitState {
 pub(all) struct LookupDecl {
   name : String
   default : String?
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct MsgDef {
@@ -141,7 +141,7 @@ pub(all) struct ProtocolBinding {
   protocol_id : String
   member_name : String
   source : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ProtocolDef {
@@ -156,7 +156,7 @@ pub(all) struct ProtocolDef {
   provides : Array[PropertyDef]
   lookups : Array[PropertyDef]
   doc : String?
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ProtocolDiagnostic {
@@ -166,13 +166,13 @@ pub(all) struct ProtocolDiagnostic {
   member_name : String
   message : String
   error : Bool
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ProtocolRef {
   local_name : String
   id : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ProtocolValidation {
@@ -183,7 +183,7 @@ pub(all) struct ProtocolValidation {
 pub(all) struct ProvideDecl {
   name : String
   source : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Relation {
@@ -203,22 +203,17 @@ pub(all) struct RuleDecl {
   kind : RuleKind
   name : String
   source : String
-  source_span : Span
+  source_span : @core.Span
   format : String
-  format_span : Span
+  format_span : @core.Span
   doc : String?
-  span : Span
-  name_span : Span
+  span : @core.Span
+  name_span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum RuleKind {
   RPred
   RInvariant
-} derive(Eq, @debug.Debug)
-
-pub(all) struct Span {
-  start : Int
-  end_ : Int
 } derive(Eq, @debug.Debug)
 
 pub(all) struct StateDef {
@@ -305,13 +300,14 @@ pub(all) enum ValidationMode {
 
 pub(all) struct WhereDecl {
   subject : String
-  subject_span : Span
+  subject_span : @core.Span
   relation : Relation
-  ref_spans : Array[(String, Span)]
+  ref_spans : Array[(String, @core.Span)]
   doc : String?
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 // Type aliases
+pub using @core {type Span}
 
 // Traits

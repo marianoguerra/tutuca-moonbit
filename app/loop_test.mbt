@@ -79,7 +79,7 @@ test "checked @bind coercion skips invalid numeric edits" {
       "input",
       [
         @anode.attr("type", "number"),
-        @anode.dyn_attr("value", Field("count")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("count")),
         @anode.eid(0),
       ],
       [],
@@ -88,8 +88,8 @@ test "checked @bind coercion skips invalid numeric edits" {
       [
         @anode.on(
           "input",
-          HandlerName(name="setCount", ns=Receive),
-          args=[EventPath(["valueAsInt"])],
+          @tutuca.Expr::handler_name("setCount", Receive),
+          args=[@tutuca.Expr::event_path(["valueAsInt"])],
           binding=BindInt(width=32, signed=true),
         ),
       ],

@@ -452,7 +452,7 @@ declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 // emits, and what a hand-written view or test should use.
 
 ///|
-/// `Const(lit=LStr(s), from_macro=false)`, the constant a plain attribute
+/// `@tutuca.Expr::lit(LStr(s))`, the constant a plain attribute
 /// value or a literal handler argument parses to.
 declare pub fn const_str(s : String) -> @tutuca.Val
 

@@ -46,7 +46,7 @@ fn item_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "checkbox"),
           @anode.attr("class", "checkbox"),
-          @anode.dyn_attr("checked", Field("completed")),
+          @anode.dyn_attr("checked", @tutuca.Expr::field("completed")),
           @anode.eid(0),
         ],
         [],
@@ -56,22 +56,24 @@ fn item_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("text")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("text")),
           @anode.eid(1),
-          @anode.dyn_attr("disabled", Field("completed")),
+          @anode.dyn_attr("disabled", @tutuca.Expr::field("completed")),
         ],
         [],
       ),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setCompleted", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setCompleted", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
       [
-        @anode.on("input", HandlerName(name="setText", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setText", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -149,7 +151,7 @@ fn items_main_view_ir() -> @anode.View {
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-3 w-full")], [
         @anode.each(
           1,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h(
             "div",
             [
@@ -176,11 +178,13 @@ fn items_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="onAddItem", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("onAddItem", Receive))],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
-          Bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
+          args=[@tutuca.Expr::bind("key")],
+        ),
       ],
     ],
   )

@@ -135,7 +135,7 @@ fn Gen::refuse(
   kind : String,
   name : String,
   reason : String,
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Unit {
   self.refusals.push({
     comp: self.comp,

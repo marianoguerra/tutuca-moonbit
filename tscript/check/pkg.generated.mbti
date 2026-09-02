@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/tscript/check"
 
 import {
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
   "moonbitlang/core/debug",
@@ -23,7 +24,7 @@ pub(all) struct Finding {
   code : String
   message : String
   severity : Severity
-  span : @tscript.Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Severity {

@@ -94,7 +94,7 @@ fn comp_name_main_view_ir() -> @anode.View {
           "class", "font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name",
         ),
       ],
-      [@anode.dyn_text(Field("name"))],
+      [@anode.dyn_text(@tutuca.Expr::field("name"))],
     ),
     [],
   )
@@ -158,7 +158,7 @@ fn comp_field_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [@anode.attr("class", "text-base-content/70 font-mono text-sm")],
-          [@anode.dyn_text(Field("name"))],
+          [@anode.dyn_text(@tutuca.Expr::field("name"))],
         ),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "text-base-content/30")], [
@@ -168,14 +168,14 @@ fn comp_field_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [@anode.attr("class", "text-base-content/50 font-mono text-xs")],
-          [@anode.dyn_text(Field("typeName"))],
+          [@anode.dyn_text(@tutuca.Expr::field("typeName"))],
         ),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "text-base-content/30")], [
           @anode.text("="),
         ]),
         @anode.text(" "),
-        @anode.render(0, Field("child")),
+        @anode.render(0, @tutuca.Expr::field("child")),
       ],
     ),
     [],
@@ -247,21 +247,23 @@ fn comp_view_main_view_ir() -> @anode.View {
             @anode.eid(0),
           ],
           [
-            @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+            @anode.h("span", [], [
+              @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+            ]),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "font-mono text-sm comp-view-name")],
-              [@anode.dyn_text(Field("name"))],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
             ),
           ],
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h("div", [], [
             @anode.show(
-              App(name="truthy?", args=[Field("rawView")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("rawView")]),
               @anode.h(
                 "pre",
                 [
@@ -269,12 +271,16 @@ fn comp_view_main_view_ir() -> @anode.View {
                     "class", "text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap",
                   ),
                 ],
-                [@anode.h("code", [], [@anode.dyn_text(Field("rawView"))])],
+                [
+                  @anode.h("code", [], [
+                    @anode.dyn_text(@tutuca.Expr::field("rawView")),
+                  ]),
+                ],
               ),
             ),
             @anode.text(" "),
             @anode.hide(
-              App(name="truthy?", args=[Field("rawView")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("rawView")]),
               @anode.h(
                 "div",
                 [
@@ -295,8 +301,8 @@ fn comp_view_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="toggle", ns=Receive), args=[
-          EventPath(["isCtrl"]),
+        @anode.on("click", @tutuca.Expr::handler_name("toggle", Receive), args=[
+          @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
     ],
@@ -397,31 +403,41 @@ fn comp_section_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
-                @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                ]),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "font-semibold comp-section")],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
-                @anode.h("span", [], [@anode.dyn_text(Method("countText"))]),
+                @anode.h("span", [], [
+                  @anode.dyn_text(@tutuca.Expr::method_("countText")),
+                ]),
               ],
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -434,7 +450,7 @@ fn comp_section_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -442,7 +458,10 @@ fn comp_section_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -453,7 +472,7 @@ fn comp_section_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -464,9 +483,9 @@ fn comp_section_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 1,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(0),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -476,12 +495,12 @@ fn comp_section_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("click", HandlerName(name="toggle", ns=Receive), args=[
-          EventPath(["isCtrl"]),
+        @anode.on("click", @tutuca.Expr::handler_name("toggle", Receive), args=[
+          @tutuca.Expr::event_path(["isCtrl"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -637,20 +656,20 @@ fn component_inspector_main_view_ir() -> @anode.View {
             @anode.h(
               "span",
               [@anode.attr("class", "font-semibold comp-title")],
-              [@anode.dyn_text(Field("compName"))],
+              [@anode.dyn_text(@tutuca.Expr::field("compName"))],
             ),
             @anode.text(" "),
             @anode.h(
               "span",
               [@anode.attr("class", "text-base-content/40 text-xs")],
-              [@anode.dyn_text(Method("idText"))],
+              [@anode.dyn_text(@tutuca.Expr::method_("idText"))],
             ),
           ],
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("sections"),
+          @tutuca.Expr::field("sections"),
           @anode.render_it(0),
           from_render_each=true,
         ),

@@ -53,8 +53,8 @@ fn Gen::field_ty(self : Gen, name : String) -> @statedef.StateTy? {
 fn ECtx::refuse_into_child(
   self : ECtx,
   name : String,
-  steps : Array[@tscript.PathStep],
-  span : @tscript.Span,
+  steps : Array[@tutuca.PathStep],
+  span : @tutuca.Span,
 ) -> Unit raise Bail {
   guard self.g.field_ty(name) is Some(ty) else { return }
   let mut at = ty
@@ -186,10 +186,10 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
 fn ECtx::assign(
   self : ECtx,
   name : String,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
   op : @tscript.AssignOp,
-  value : @tscript.Expr,
-  _span : @tscript.Span,
+  value : @tutuca.Expr,
+  _span : @tutuca.Span,
 ) -> Array[@abi.I] raise Bail {
   self.refuse_into_child(name, steps, _span)
   let out : Array[@abi.I] = []
@@ -251,9 +251,9 @@ fn ECtx::assign(
 fn ECtx::assign_bind(
   self : ECtx,
   name : String,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
   op : @tscript.AssignOp,
-  value : @tscript.Expr,
+  value : @tutuca.Expr,
 ) -> Array[@abi.I] raise Bail {
   guard self.bind_local is Some(b) else { return [] }
   let out : Array[@abi.I] = []
@@ -324,9 +324,9 @@ let child_local : String = "cur_comp"
 /// `@cur = e`, and the same through a path.
 fn ECtx::assign_target(
   self : ECtx,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
   op : @tscript.AssignOp,
-  value : @tscript.Expr,
+  value : @tutuca.Expr,
 ) -> Array[@abi.I] raise Bail {
   let out : Array[@abi.I] = []
   let rs : Array[String] = [self.g.fresh("r")]
@@ -368,7 +368,7 @@ fn ECtx::assign_target(
 /// A field name and a subscript are the same thing here — a value the
 /// collection is asked to look up — because `tc_step` dispatches on what it is
 /// walking rather than on how the step was written.
-fn ECtx::step_key(self : ECtx, st : @tscript.PathStep) -> @abi.I raise Bail {
+fn ECtx::step_key(self : ECtx, st : @tutuca.PathStep) -> @abi.I raise Bail {
   match st {
     PField(f) => text_const_str(self.g.pool, f)
     PIndex(e) => self.expr(e)
@@ -377,7 +377,7 @@ fn ECtx::step_key(self : ECtx, st : @tscript.PathStep) -> @abi.I raise Bail {
 
 ///|
 /// Which reader a step uses. See the note in `ECtx::walk`.
-fn ECtx::step_fn(self : ECtx, st : @tscript.PathStep) -> String {
+fn ECtx::step_fn(self : ECtx, st : @tutuca.PathStep) -> String {
   ignore(self)
   match st {
     PField(_) => "tc_step_field"
@@ -389,7 +389,7 @@ fn ECtx::step_fn(self : ECtx, st : @tscript.PathStep) -> String {
 /// Which writer, on the way back up. The same split, and for the same reason:
 /// a `[k]` that is not there refuses the whole write, where a `.field` that is
 /// not there is simply created.
-fn ECtx::put_fn(self : ECtx, st : @tscript.PathStep) -> String {
+fn ECtx::put_fn(self : ECtx, st : @tutuca.PathStep) -> String {
   ignore(self)
   match st {
     PField(_) => "tc_step_put_field"
@@ -408,10 +408,10 @@ fn ECtx::put_fn(self : ECtx, st : @tscript.PathStep) -> String {
 /// not have.
 fn ECtx::mutate(
   self : ECtx,
-  place : @tscript.Place,
+  place : @tutuca.Place,
   name : String,
-  args : Array[@tscript.Expr],
-  span : @tscript.Span,
+  args : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> Array[@abi.I] raise Bail {
   let which = match name {
     "push" => 1
@@ -500,9 +500,9 @@ fn ECtx::mutate(
 /// A collection method on `@cur`, which is `mutate` with the other root.
 fn ECtx::mutate_target(
   self : ECtx,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
   which : Int,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
 ) -> Array[@abi.I] raise Bail {
   let a = if args.length() > 0 {
     self.expr(args[0])
@@ -602,9 +602,9 @@ fn effect_arity_why(name : String, min_args : Int) -> String {
 fn ECtx::effect(
   self : ECtx,
   name : String,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
   route : Array[@tutuca.Leg],
-  span : @tscript.Span,
+  span : @tutuca.Span,
 ) -> Array[@abi.I] raise Bail {
   // The vocabulary is `tscript`'s table and not a second copy of it: an effect
   // the parser accepts and this backend forgot would compile to nothing at all,
@@ -716,8 +716,8 @@ fn ECtx::effect(
 ///|
 fn ECtx::effect_message(
   self : ECtx,
-  expr : @tscript.Expr,
-  span : @tscript.Span,
+  expr : @tutuca.Expr,
+  span : @tutuca.Span,
 ) -> @abi.I raise Bail {
   match expr {
     ELit(lit=LStr(raw), ..) => text_const_str(self.g.pool, raw)
@@ -749,8 +749,8 @@ fn ECtx::effect_message(
 /// own, and the root's own name starts the walk.
 fn ECtx::send_at(
   self : ECtx,
-  args : Array[@tscript.Expr],
-  span : @tscript.Span,
+  args : Array[@tutuca.Expr],
+  span : @tutuca.Span,
 ) -> Array[@abi.I] raise Bail {
   guard args.get(0) is Some(ERef(place~, ..)) else {
     self.bail(

@@ -173,13 +173,18 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
                 @anode.hide(
-                  Method("isItemsEmpty"),
-                  @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                  @anode.h("span", [], [
+                    @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                  ]),
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -189,20 +194,20 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                       "class", "text-success schema-scalar font-semibold",
                     ),
                   ],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-base-content/50")],
-                  [@anode.dyn_text(Method("countText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("countText"))],
                 ),
               ],
             ),
             @anode.text(" "),
             @anode.each(
               1,
-              Field("badges"),
+              @tutuca.Expr::field("badges"),
               @anode.h(
                 "span",
                 [
@@ -210,12 +215,12 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono font-normal",
                   ),
                 ],
-                [@anode.dyn_text(Bind("value"), id=0)],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"), id=0)],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -224,14 +229,17 @@ fn schema_scalar_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -244,7 +252,7 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -252,7 +260,10 @@ fn schema_scalar_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -263,25 +274,25 @@ fn schema_scalar_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -293,9 +304,9 @@ fn schema_scalar_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 3,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -304,9 +315,14 @@ fn schema_scalar_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -462,13 +478,18 @@ fn schema_object_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
                 @anode.hide(
-                  Method("isItemsEmpty"),
-                  @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                  @anode.h("span", [], [
+                    @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                  ]),
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -478,20 +499,20 @@ fn schema_object_main_view_ir() -> @anode.View {
                       "class", "text-primary schema-object font-semibold",
                     ),
                   ],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-base-content/50")],
-                  [@anode.dyn_text(Method("countText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("countText"))],
                 ),
               ],
             ),
             @anode.text(" "),
             @anode.each(
               1,
-              Field("badges"),
+              @tutuca.Expr::field("badges"),
               @anode.h(
                 "span",
                 [
@@ -499,12 +520,12 @@ fn schema_object_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono font-normal",
                   ),
                 ],
-                [@anode.dyn_text(Bind("value"), id=0)],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"), id=0)],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -513,14 +534,17 @@ fn schema_object_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -533,7 +557,7 @@ fn schema_object_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -541,7 +565,10 @@ fn schema_object_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -552,25 +579,25 @@ fn schema_object_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -582,9 +609,9 @@ fn schema_object_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 3,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -593,9 +620,14 @@ fn schema_object_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -751,13 +783,18 @@ fn schema_array_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
                 @anode.hide(
-                  Method("isItemsEmpty"),
-                  @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                  @anode.h("span", [], [
+                    @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                  ]),
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -767,20 +804,20 @@ fn schema_array_main_view_ir() -> @anode.View {
                       "class", "text-primary schema-array font-semibold",
                     ),
                   ],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-base-content/50")],
-                  [@anode.dyn_text(Method("countText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("countText"))],
                 ),
               ],
             ),
             @anode.text(" "),
             @anode.each(
               1,
-              Field("badges"),
+              @tutuca.Expr::field("badges"),
               @anode.h(
                 "span",
                 [
@@ -788,12 +825,12 @@ fn schema_array_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono font-normal",
                   ),
                 ],
-                [@anode.dyn_text(Bind("value"), id=0)],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"), id=0)],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -802,14 +839,17 @@ fn schema_array_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -822,7 +862,7 @@ fn schema_array_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -830,7 +870,10 @@ fn schema_array_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -841,25 +884,25 @@ fn schema_array_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -871,9 +914,9 @@ fn schema_array_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 3,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -882,9 +925,14 @@ fn schema_array_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -1040,32 +1088,37 @@ fn schema_enum_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
                 @anode.hide(
-                  Method("isItemsEmpty"),
-                  @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                  @anode.h("span", [], [
+                    @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                  ]),
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-info schema-enum font-semibold")],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-base-content/50")],
-                  [@anode.dyn_text(Method("countText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("countText"))],
                 ),
               ],
             ),
             @anode.text(" "),
             @anode.each(
               1,
-              Field("badges"),
+              @tutuca.Expr::field("badges"),
               @anode.h(
                 "span",
                 [
@@ -1073,12 +1126,12 @@ fn schema_enum_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono font-normal",
                   ),
                 ],
-                [@anode.dyn_text(Bind("value"), id=0)],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"), id=0)],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -1087,14 +1140,17 @@ fn schema_enum_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -1107,7 +1163,7 @@ fn schema_enum_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -1115,7 +1171,10 @@ fn schema_enum_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -1126,25 +1185,25 @@ fn schema_enum_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -1155,9 +1214,9 @@ fn schema_enum_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 3,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -1166,9 +1225,14 @@ fn schema_enum_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -1324,13 +1388,18 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                 @anode.attr(
                   "class", "cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1",
                 ),
-                @anode.dyn_attr("disabled", Method("isItemsEmpty")),
+                @anode.dyn_attr(
+                  "disabled",
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                ),
                 @anode.eid(0),
               ],
               [
                 @anode.hide(
-                  Method("isItemsEmpty"),
-                  @anode.h("span", [], [@anode.dyn_text(Method("arrowText"))]),
+                  @tutuca.Expr::method_("isItemsEmpty"),
+                  @anode.h("span", [], [
+                    @anode.dyn_text(@tutuca.Expr::method_("arrowText")),
+                  ]),
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -1340,20 +1409,20 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                       "class", "text-accent schema-combinator font-semibold",
                     ),
                   ],
-                  [@anode.dyn_text(Method("typeText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("typeText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
                   "span",
                   [@anode.attr("class", "text-base-content/50")],
-                  [@anode.dyn_text(Method("countText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("countText"))],
                 ),
               ],
             ),
             @anode.text(" "),
             @anode.each(
               1,
-              Field("badges"),
+              @tutuca.Expr::field("badges"),
               @anode.h(
                 "span",
                 [
@@ -1361,12 +1430,12 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono font-normal",
                   ),
                 ],
-                [@anode.dyn_text(Bind("value"), id=0)],
+                [@anode.dyn_text(@tutuca.Expr::bind("value"), id=0)],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -1375,14 +1444,17 @@ fn schema_combinator_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Method("showPagination"),
+              @tutuca.Expr::method_("showPagination"),
               @anode.h("div", [@anode.attr("class", "join")], [
                 @anode.h(
                   "button",
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-prev"),
-                    @anode.dyn_attr("disabled", Method("cannotPrevPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotPrevPage"),
+                    ),
                     @anode.eid(1),
                   ],
                   [@anode.text("«")],
@@ -1395,7 +1467,7 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                       "class", "join-item badge font-mono text-xs pg-label",
                     ),
                   ],
-                  [@anode.dyn_text(Method("pageIndicatorText"))],
+                  [@anode.dyn_text(@tutuca.Expr::method_("pageIndicatorText"))],
                 ),
                 @anode.text(" "),
                 @anode.h(
@@ -1403,7 +1475,10 @@ fn schema_combinator_main_view_ir() -> @anode.View {
                   [
                     @anode.attr("type", "button"),
                     @anode.attr("class", "join-item btn btn-xs pg-next"),
-                    @anode.dyn_attr("disabled", Method("cannotNextPage")),
+                    @anode.dyn_attr(
+                      "disabled",
+                      @tutuca.Expr::method_("cannotNextPage"),
+                    ),
                     @anode.eid(2),
                   ],
                   [@anode.text("»")],
@@ -1414,25 +1489,25 @@ fn schema_combinator_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("isExpanded"),
+          @tutuca.Expr::field("isExpanded"),
           @anode.h(
             "div",
             [
@@ -1443,9 +1518,9 @@ fn schema_combinator_main_view_ir() -> @anode.View {
             [
               @anode.each(
                 3,
-                Field("items"),
+                @tutuca.Expr::field("items"),
                 @anode.render_it(2),
-                loop_with_val=HandlerName(name="getPageRange", ns=Alter),
+                loop_with_val=@tutuca.Expr::handler_name("getPageRange", Alter),
                 from_render_each=true,
               ),
             ],
@@ -1454,9 +1529,14 @@ fn schema_combinator_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", HandlerName(name="toggleIsExpanded", ns=Receive))],
-      [@anode.on("click", HandlerName(name="prevPage", ns=Receive))],
-      [@anode.on("click", HandlerName(name="nextPage", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsExpanded", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("prevPage", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("nextPage", Receive))],
     ],
   )
 }
@@ -1613,7 +1693,7 @@ fn schema_const_main_view_ir() -> @anode.View {
           @anode.text("="),
         ]),
         @anode.text(" "),
-        @anode.render(0, Field("value")),
+        @anode.render(0, @tutuca.Expr::field("value")),
       ],
     ),
     [],
@@ -1690,7 +1770,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Field("deprecated"),
+              @tutuca.Expr::field("deprecated"),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-warning")],
@@ -1701,20 +1781,20 @@ fn schema_conditional_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("title")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
-            [@anode.dyn_text(Field("title"))],
+            [@anode.dyn_text(@tutuca.Expr::field("title"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("description")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
-            [@anode.dyn_text(Field("description"))],
+            [@anode.dyn_text(@tutuca.Expr::field("description"))],
           ),
         ),
         @anode.text(" "),
@@ -1728,7 +1808,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
           ],
           [
             @anode.show(
-              App(name="truthy?", args=[Field("ifNode")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("ifNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",
@@ -1750,12 +1830,12 @@ fn schema_conditional_main_view_ir() -> @anode.View {
                   ],
                 ),
                 @anode.text(" "),
-                @anode.render(0, Field("ifNode")),
+                @anode.render(0, @tutuca.Expr::field("ifNode")),
               ]),
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("thenNode")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("thenNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",
@@ -1777,12 +1857,12 @@ fn schema_conditional_main_view_ir() -> @anode.View {
                   ],
                 ),
                 @anode.text(" "),
-                @anode.render(1, Field("thenNode")),
+                @anode.render(1, @tutuca.Expr::field("thenNode")),
               ]),
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("elseNode")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("elseNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",
@@ -1804,7 +1884,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
                   ],
                 ),
                 @anode.text(" "),
-                @anode.render(2, Field("elseNode")),
+                @anode.render(2, @tutuca.Expr::field("elseNode")),
               ]),
             ),
           ],
@@ -1882,7 +1962,7 @@ fn schema_not_main_view_ir() -> @anode.View {
           @anode.text(":"),
         ]),
         @anode.text(" "),
-        @anode.render(0, Field("child")),
+        @anode.render(0, @tutuca.Expr::field("child")),
       ],
     ),
     [],
@@ -1940,9 +2020,11 @@ pub fn schema_not_component(
 fn schema_boolean_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("span", [@anode.dyn_attr("class", Method("cssClass"))], [
-      @anode.dyn_text(Method("text")),
-    ]),
+    @anode.h(
+      "span",
+      [@anode.dyn_attr("class", @tutuca.Expr::method_("cssClass"))],
+      [@anode.dyn_text(@tutuca.Expr::method_("text"))],
+    ),
     [],
   )
 }
@@ -2034,7 +2116,7 @@ fn schema_ref_main_view_ir() -> @anode.View {
       ],
       [
         @anode.text("→ "),
-        @anode.h("span", [], [@anode.dyn_text(Field("target"))]),
+        @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::field("target"))]),
       ],
     ),
     [],

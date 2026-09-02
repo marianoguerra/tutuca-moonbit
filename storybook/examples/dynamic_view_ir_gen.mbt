@@ -67,7 +67,7 @@ fn selector_entry_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "input val"),
-          @anode.dyn_attr("value", Field("value")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("value")),
           @anode.eid(0),
         ],
         [],
@@ -77,7 +77,7 @@ fn selector_entry_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "input lbl"),
-          @anode.dyn_attr("value", Field("label")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("label")),
           @anode.eid(1),
         ],
         [],
@@ -85,13 +85,13 @@ fn selector_entry_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setValue", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setValue", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setLabel", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setLabel", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -167,26 +167,33 @@ fn selector_main_view_ir() -> @anode.View {
       "select",
       [
         @anode.attr("class", "select"),
-        @anode.dyn_attr("value", Field("selectedValue")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("selectedValue")),
         @anode.eid(0),
       ],
       [
         @anode.each(
           0,
-          Dyn("entries"),
+          @tutuca.Expr::dyn_("entries"),
           @anode.h(
             "option",
-            [@anode.dyn_attr("value", BindMember(name="value", prop="value"))],
-            [@anode.dyn_text(BindMember(name="value", prop="label"))],
+            [
+              @anode.dyn_attr(
+                "value",
+                @tutuca.Expr::bind_member("value", "value"),
+              ),
+            ],
+            [@anode.dyn_text(@tutuca.Expr::bind_member("value", "label"))],
           ),
         ),
       ],
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setSelectedValue", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setSelectedValue", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
     ],
   )
@@ -259,7 +266,7 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
     "main",
     @anode.h("div", [@anode.attr("class", "flex flex-col gap-3")], [
       @anode.h("div", [@anode.attr("class", "flex gap-3 justify-center")], [
-        @anode.render(0, Field("selector")),
+        @anode.render(0, @tutuca.Expr::field("selector")),
       ]),
       @anode.text(" "),
       @anode.h(
@@ -271,7 +278,7 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
       @anode.h("div", [@anode.attr("class", "flex flex-col gap-3 w-full")], [
         @anode.each(
           2,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h(
             "div",
             [
@@ -298,11 +305,13 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="onAddItem", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("onAddItem", Receive))],
       [
-        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Receive), args=[
-          Bind("key"),
-        ]),
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("removeInItemsAt", Receive),
+          args=[@tutuca.Expr::bind("key")],
+        ),
       ],
     ],
   )
@@ -385,7 +394,7 @@ fn sheet_main_view_ir() -> @anode.View {
           "input",
           [
             @anode.attr("class", "input input-bordered title"),
-            @anode.dyn_attr("value", Field("title")),
+            @anode.dyn_attr("value", @tutuca.Expr::field("title")),
             @anode.eid(0),
           ],
           [],
@@ -394,8 +403,8 @@ fn sheet_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setTitle", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setTitle", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -475,7 +484,7 @@ fn toolbar_main_view_ir() -> @anode.View {
           @anode.text("Toolbar (consumer)"),
         ]),
         @anode.text(" "),
-        @anode.render(0, Dyn("active")),
+        @anode.render(0, @tutuca.Expr::dyn_("active")),
       ],
     ),
     [],
@@ -545,7 +554,7 @@ fn panel_main_view_ir() -> @anode.View {
           @anode.text("Panel (intermediate)"),
         ]),
         @anode.text(" "),
-        @anode.render(0, Field("toolbar")),
+        @anode.render(0, @tutuca.Expr::field("toolbar")),
       ],
     ),
     [],
@@ -608,12 +617,12 @@ fn workspace_main_view_ir() -> @anode.View {
         @anode.h("span", [], [
           @anode.text("Workspace.sheet.title = "),
           @anode.h("b", [@anode.attr("class", "echo")], [
-            @anode.dyn_text(Method("sheetTitle")),
+            @anode.dyn_text(@tutuca.Expr::method_("sheetTitle")),
           ]),
         ]),
       ]),
       @anode.text(" "),
-      @anode.render(0, Field("panel")),
+      @anode.render(0, @tutuca.Expr::field("panel")),
     ]),
     [],
   )

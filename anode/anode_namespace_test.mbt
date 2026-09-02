@@ -50,7 +50,13 @@ test "dynamic :height on an svg rect" {
   guard! ns_parse("<svg><rect :height=\".h\"></rect></svg>") is Dom(svg)
   guard! svg.childs[0] is Dom(rect)
   guard! rect.attrs is DynAttrs(items)
-  assert_true(items[0] is Plain(name="height", val=Field("h")))
+  assert_true(
+    items[0]
+    is Plain(
+      name="height",
+      val=ERead(place={ root: PState("h"), steps: [], .. }, ..)
+    ),
+  )
 }
 
 ///|

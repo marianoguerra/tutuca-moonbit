@@ -102,7 +102,7 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
       @anode.text(" "),
       @anode.h("span", [@anode.attr("class", "count")], [
-        @anode.dyn_text(Field("count")),
+        @anode.dyn_text(@tutuca.Expr::field("count")),
       ]),
       @anode.text(" "),
       @anode.h("button", [@anode.attr("class", "inc"), @anode.eid(1)], [
@@ -110,8 +110,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="dec", ns=Receive))],
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
     ],
   )
 }
@@ -215,11 +215,14 @@ fn profile_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "who"),
-          @anode.dyn_attr("value", Field("name")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("name")),
           @anode.eid(0),
           @anode.dyn_attr(
             "title",
-            StrTpl([Some(@anode.const_str("Editing ")), Some(Field("name"))]),
+            @tutuca.Expr::tpl([
+              TText(text="Editing ", from_macro=false),
+              TExpr(@tutuca.Expr::field("name")),
+            ]),
           ),
         ],
         [],
@@ -231,21 +234,21 @@ fn profile_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("p", [@anode.attr("class", "out")], [
         @anode.dyn_text(
-          StrTpl([
-            Some(@anode.const_str("Hello, ")),
-            Some(Field("name")),
-            Some(@anode.const_str("!")),
+          @tutuca.Expr::tpl([
+            TText(text="Hello, ", from_macro=false),
+            TExpr(@tutuca.Expr::field("name")),
+            TText(text="!", from_macro=false),
           ]),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleWaving", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleWaving", Receive))],
     ],
   )
 }
@@ -316,30 +319,32 @@ fn search_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "q"),
-          @anode.dyn_attr("value", Field("draft")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("draft")),
           @anode.eid(0),
         ],
         [],
       ),
       @anode.text(" "),
       @anode.h("p", [@anode.attr("class", "sent")], [
-        @anode.dyn_text(Field("sent")),
+        @anode.dyn_text(@tutuca.Expr::field("sent")),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          HandlerName(name="setSent", ns=Receive),
-          args=[EventPath(["value"])],
+          @tutuca.Expr::handler_name("setSent", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
           modifiers=["send"],
         ),
-        @anode.on("keydown", HandlerName(name="resetDraft", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetDraft", Receive),
+          modifiers=["cancel"],
+        ),
       ],
     ],
   )
@@ -414,7 +419,7 @@ fn toggle_main_view_ir() -> @anode.View {
           @anode.eid(0),
           @anode.if_attr(
             "class",
-            Field("on"),
+            @tutuca.Expr::field("on"),
             then_val=@anode.const_str("flip is-on"),
             else_val=@anode.const_str("flip is-off"),
           ),
@@ -423,23 +428,23 @@ fn toggle_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Field("on"),
+        @tutuca.Expr::field("on"),
         @anode.h("p", [@anode.attr("class", "yes")], [@anode.text("it is ON")]),
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("on"),
+        @tutuca.Expr::field("on"),
         @anode.h("p", [@anode.attr("class", "no")], [@anode.text("it is OFF")]),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("message")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("message")]),
         @anode.h("p", [@anode.attr("class", "msg")], [
-          @anode.dyn_text(Field("message")),
+          @anode.dyn_text(@tutuca.Expr::field("message")),
         ]),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="toggleOn", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("toggleOn", Receive))]],
   )
 }
 
@@ -507,15 +512,15 @@ fn fruits_main_view_ir() -> @anode.View {
     @anode.h("ul", [], [
       @anode.each(
         1,
-        Field("items"),
+        @tutuca.Expr::field("items"),
         @anode.h("li", [], [
           @anode.h("span", [@anode.attr("class", "k")], [
-            @anode.dyn_text(Bind("key")),
+            @anode.dyn_text(@tutuca.Expr::bind("key")),
           ]),
           @anode.text(": "),
-          @anode.dyn_text(Bind("value"), id=0),
+          @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
         ]),
-        when_val=HandlerName(name="notTooLong", ns=Alter),
+        when_val=@tutuca.Expr::handler_name("notTooLong", Alter),
       ),
     ]),
     [],
@@ -591,7 +596,7 @@ fn greeting_main_view_ir() -> @anode.View {
     "main",
     @anode.h("p", [@anode.attr("class", "hello")], [
       @anode.text("Hello, "),
-      @anode.h("strong", [], [@anode.dyn_text(Field("name"))]),
+      @anode.h("strong", [], [@anode.dyn_text(@tutuca.Expr::field("name"))]),
       @anode.text("!"),
     ]),
     [],
@@ -605,7 +610,7 @@ fn greeting_shout_view_ir() -> @anode.View {
     "shout",
     @anode.h("p", [@anode.attr("class", "hello")], [
       @anode.text("HELLO, "),
-      @anode.h("strong", [], [@anode.dyn_text(Field("name"))]),
+      @anode.h("strong", [], [@anode.dyn_text(@tutuca.Expr::field("name"))]),
       @anode.text("!!!"),
     ]),
     [],
@@ -664,9 +669,13 @@ fn page_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [], [
-      @anode.render(0, Field("greeting")),
+      @anode.render(0, @tutuca.Expr::field("greeting")),
       @anode.text(" "),
-      @anode.render(1, Field("greeting"), view=@anode.const_str("shout")),
+      @anode.render(
+        1,
+        @tutuca.Expr::field("greeting"),
+        view=@anode.const_str("shout"),
+      ),
     ]),
     [],
   )
@@ -724,9 +733,9 @@ fn status_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      App(name="truthy?", args=[Field("message")]),
+      @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("message")]),
       @anode.h("p", [@anode.attr("class", "status")], [
-        @anode.dyn_text(Field("message")),
+        @anode.dyn_text(@tutuca.Expr::field("message")),
       ]),
     ),
     [],
@@ -785,13 +794,13 @@ fn chat_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [], [
-      @anode.render(0, Field("status")),
+      @anode.render(0, @tutuca.Expr::field("status")),
       @anode.text(" "),
       @anode.h(
         "input",
         [
           @anode.attr("class", "draft"),
-          @anode.dyn_attr("value", Field("draft")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("draft")),
           @anode.eid(0),
         ],
         [],
@@ -803,11 +812,11 @@ fn chat_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="submit", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("submit", Receive))],
     ],
   )
 }
@@ -875,7 +884,7 @@ fn quotes_main_view_ir() -> @anode.View {
     "main",
     @anode.h("section", [], [
       @anode.show(
-        Field("isLoading"),
+        @tutuca.Expr::field("isLoading"),
         @anode.h("p", [@anode.attr("class", "loading")], [
           @anode.text("Loading…"),
         ]),
@@ -884,8 +893,10 @@ fn quotes_main_view_ir() -> @anode.View {
       @anode.h("ul", [], [
         @anode.each(
           1,
-          Field("items"),
-          @anode.h("li", [], [@anode.dyn_text(Bind("value"), id=0)]),
+          @tutuca.Expr::field("items"),
+          @anode.h("li", [], [
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
+          ]),
         ),
       ]),
     ]),
@@ -948,19 +959,19 @@ fn features_main_view_ir() -> @anode.View {
       @anode.h("span", [], [@anode.text("Feature A")]),
       @anode.text(" "),
       @anode.h("span", [@anode.attr("class", "badge")], [
-        @anode.dyn_text(Const(lit=LStr("New"), from_macro=true)),
+        @anode.dyn_text(@tutuca.Expr::lit(LStr("New"), from_macro=true)),
       ]),
       @anode.text(" "),
       @anode.h("span", [], [@anode.text("Feature B")]),
       @anode.text(" "),
       @anode.h("span", [@anode.attr("class", "badge")], [
-        @anode.dyn_text(Const(lit=LStr("Beta"), from_macro=true)),
+        @anode.dyn_text(@tutuca.Expr::lit(LStr("Beta"), from_macro=true)),
       ]),
       @anode.text(" "),
       @anode.h("span", [], [@anode.text("Feature C")]),
       @anode.text(" "),
       @anode.h("span", [@anode.attr("class", "badge")], [
-        @anode.dyn_text(Field("status")),
+        @anode.dyn_text(@tutuca.Expr::field("status")),
       ]),
     ]),
     [],

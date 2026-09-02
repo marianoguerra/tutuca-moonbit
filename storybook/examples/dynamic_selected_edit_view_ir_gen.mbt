@@ -52,7 +52,7 @@ fn dse_root_main_view_ir() -> @anode.View {
         @anode.h("span", [], [
           @anode.text("Selected key = "),
           @anode.h("b", [@anode.attr("class", "selected-key")], [
-            @anode.dyn_text(Field("selectedKey")),
+            @anode.dyn_text(@tutuca.Expr::field("selectedKey")),
           ]),
         ]),
       ]),
@@ -63,7 +63,7 @@ fn dse_root_main_view_ir() -> @anode.View {
         @anode.text(" "),
         @anode.each(
           1,
-          Dyn("items"),
+          @tutuca.Expr::dyn_("items"),
           @anode.h(
             "div",
             [@anode.attr("class", "flex gap-3 items-center owner-row")],
@@ -83,12 +83,12 @@ fn dse_root_main_view_ir() -> @anode.View {
         ),
       ]),
       @anode.text(" "),
-      @anode.render(2, Field("editor")),
+      @anode.render(2, @tutuca.Expr::field("editor")),
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="selectItem", ns=Receive), args=[
-          Bind("key"),
+        @anode.on("click", @tutuca.Expr::handler_name("selectItem", Receive), args=[
+          @tutuca.Expr::bind("key"),
         ]),
       ],
     ],
@@ -171,7 +171,7 @@ fn dse_editor_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.each(
             1,
-            Dyn("items"),
+            @tutuca.Expr::dyn_("items"),
             @anode.h(
               "div",
               [@anode.attr("class", "flex gap-3 flex-wrap child-items")],
@@ -184,7 +184,11 @@ fn dse_editor_main_view_ir() -> @anode.View {
             @anode.text("Editing the *selected entry:"),
           ]),
           @anode.text(" "),
-          @anode.render(2, Dyn("selected"), view=@anode.const_str("edit")),
+          @anode.render(
+            2,
+            @tutuca.Expr::dyn_("selected"),
+            view=@anode.const_str("edit"),
+          ),
         ]),
       ],
     ),
@@ -244,7 +248,7 @@ fn dse_entry_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("span", [@anode.attr("class", "font-mono entry")], [
-      @anode.dyn_text(Field("name")),
+      @anode.dyn_text(@tutuca.Expr::field("name")),
     ]),
     [],
   )
@@ -259,7 +263,7 @@ fn dse_entry_edit_view_ir() -> @anode.View {
       "input",
       [
         @anode.attr("class", "input input-bordered w-full edit-name"),
-        @anode.dyn_attr("value", Field("name")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("name")),
         @anode.eid(0),
         @anode.attr("placeholder", "Entry name"),
       ],
@@ -267,8 +271,8 @@ fn dse_entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setName", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setName", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],

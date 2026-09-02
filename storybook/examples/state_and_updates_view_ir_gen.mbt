@@ -59,11 +59,14 @@ fn attribute_binding_main_view_ir() -> @anode.View {
         "input",
         [
           @anode.attr("class", "input s"),
-          @anode.dyn_attr("value", Field("str")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("str")),
           @anode.eid(0),
           @anode.dyn_attr(
             "title",
-            StrTpl([Some(@anode.const_str("Content is ")), Some(Field("str"))]),
+            @tutuca.Expr::tpl([
+              TText(text="Content is ", from_macro=false),
+              TExpr(@tutuca.Expr::field("str")),
+            ]),
           ),
         ],
         [],
@@ -74,7 +77,7 @@ fn attribute_binding_main_view_ir() -> @anode.View {
         [
           @anode.attr("class", "input n"),
           @anode.attr("type", "number"),
-          @anode.dyn_attr("value", Field("num")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("num")),
           @anode.eid(1),
         ],
         [],
@@ -85,7 +88,7 @@ fn attribute_binding_main_view_ir() -> @anode.View {
         [
           @anode.attr("class", "checkbox b"),
           @anode.attr("type", "checkbox"),
-          @anode.dyn_attr("checked", Field("bool")),
+          @anode.dyn_attr("checked", @tutuca.Expr::field("bool")),
           @anode.eid(2),
         ],
         [],
@@ -94,36 +97,38 @@ fn attribute_binding_main_view_ir() -> @anode.View {
       @anode.h("p", [], [
         @anode.text("String: "),
         @anode.h("span", [@anode.attr("class", "o-str")], [
-          @anode.dyn_text(Field("str")),
+          @anode.dyn_text(@tutuca.Expr::field("str")),
         ]),
       ]),
       @anode.h("p", [], [
         @anode.text("Number: "),
         @anode.h("span", [@anode.attr("class", "o-num")], [
-          @anode.dyn_text(Field("num")),
+          @anode.dyn_text(@tutuca.Expr::field("num")),
         ]),
       ]),
       @anode.h("p", [], [
         @anode.text("Boolean: "),
         @anode.h("span", [@anode.attr("class", "o-bool")], [
-          @anode.dyn_text(Field("bool")),
+          @anode.dyn_text(@tutuca.Expr::field("bool")),
         ]),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setStr", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setStr", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setRawNumber", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setRawNumber", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
       [
-        @anode.on("input", HandlerName(name="setBool", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setBool", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -201,13 +206,13 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         [
           @anode.if_attr(
             "class",
-            Field("isActive"),
+            @tutuca.Expr::field("isActive"),
             then_val=@anode.const_str("btn btn-success"),
             else_val=@anode.const_str("btn btn-ghost"),
           ),
           @anode.if_attr(
             "title",
-            Field("isActive"),
+            @tutuca.Expr::field("isActive"),
             then_val=@anode.const_str("Click to disable"),
             else_val=@anode.const_str("Click to enable"),
           ),
@@ -215,14 +220,14 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
         [
           @anode.show(
-            Field("isActive"),
+            @tutuca.Expr::field("isActive"),
             @anode.h("span", [@anode.attr("class", "on")], [
               @anode.text("Enabled"),
             ]),
           ),
           @anode.text(" "),
           @anode.hide(
-            Field("isActive"),
+            @tutuca.Expr::field("isActive"),
             @anode.h("span", [@anode.attr("class", "off")], [
               @anode.text("Disabled"),
             ]),
@@ -230,7 +235,14 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="toggleIsActive", ns=Receive))]],
+    [
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleIsActive", Receive),
+        ),
+      ],
+    ],
   )
 }
 
@@ -305,7 +317,7 @@ fn event_modifiers_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "search"),
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("query")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("query")),
           @anode.eid(0),
           @anode.attr(
             "placeholder", "Search Query (Enter to send, Esc to clear)",
@@ -315,11 +327,11 @@ fn event_modifiers_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("lastSentSearch")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("lastSentSearch")]),
         @anode.h("p", [@anode.attr("class", "sent")], [
           @anode.text("\n    Search: \""),
           @anode.h("span", [@anode.attr("class", "sent-q")], [
-            @anode.dyn_text(Field("lastSentSearch")),
+            @anode.dyn_text(@tutuca.Expr::field("lastSentSearch")),
           ]),
           @anode.text("\"\n  "),
         ]),
@@ -327,18 +339,20 @@ fn event_modifiers_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="onInput", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("onInput", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
         @anode.on(
           "keydown",
-          HandlerName(name="setLastSentSearch", ns=Receive),
-          args=[EventPath(["value"])],
+          @tutuca.Expr::handler_name("setLastSentSearch", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
           modifiers=["send"],
         ),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
     ],
   )
@@ -413,11 +427,11 @@ fn show_hide_main_view_ir() -> @anode.View {
       @anode.h(
         "button",
         [@anode.attr("class", "btn btn-primary toggle-btn"), @anode.eid(0)],
-        [@anode.dyn_text(Method("label"))],
+        [@anode.dyn_text(@tutuca.Expr::method_("label"))],
       ),
       @anode.text(" "),
       @anode.show(
-        Field("isOpen"),
+        @tutuca.Expr::field("isOpen"),
         @anode.h("div", [@anode.attr("class", "card p-3 border details")], [
           @anode.h("p", [], [
             @anode.text("Details panel — only visible when "),
@@ -433,14 +447,14 @@ fn show_hide_main_view_ir() -> @anode.View {
           @anode.text(" "),
           @anode.h("p", [], [
             @anode.text("Clicked "),
-            @anode.dyn_text(Field("count"), id=0),
+            @anode.dyn_text(@tutuca.Expr::field("count"), id=0),
             @anode.text(" times."),
           ]),
         ]),
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("isOpen"),
+        @tutuca.Expr::field("isOpen"),
         @anode.h("p", [@anode.attr("class", "text-sm opacity-60 hint")], [
           @anode.text("(details are hidden)"),
         ]),
@@ -449,15 +463,15 @@ fn show_hide_main_view_ir() -> @anode.View {
       @anode.h("p", [@anode.attr("class", "peek")], [
         @anode.text("Count, only when open: "),
         @anode.show(
-          Field("isOpen"),
-          @anode.dyn_text(Field("count"), id=1),
+          @tutuca.Expr::field("isOpen"),
+          @anode.dyn_text(@tutuca.Expr::field("count"), id=1),
           id=2,
         ),
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="toggleIsOpen", ns=Receive))],
-      [@anode.on("click", HandlerName(name="incCount", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("toggleIsOpen", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("incCount", Receive))],
     ],
   )
 }

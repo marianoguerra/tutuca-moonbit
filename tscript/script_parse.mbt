@@ -299,7 +299,7 @@ pub fn is_predicate(k : DeclKind) -> Bool {
 }
 
 ///|
-fn family_of(op : String) -> OpFamily {
+fn family_of(op : String) -> @tutuca.OpFamily {
   match op {
     "and" | "or" => FLogic
     "implies" => FImplies
@@ -310,7 +310,7 @@ fn family_of(op : String) -> OpFamily {
 }
 
 ///|
-fn family_name(f : OpFamily) -> String {
+fn family_name(f : @tutuca.OpFamily) -> String {
   match f {
     FLogic => "logical"
     FCompare => "comparison"
@@ -323,34 +323,12 @@ fn family_name(f : OpFamily) -> String {
 ///|
 /// A family whose operators take exactly two operands, so `a < b < c` and
 /// `a implies b implies c` are refused rather than silently associated.
-fn is_binary_only(f : OpFamily) -> Bool {
+fn is_binary_only(f : @tutuca.OpFamily) -> Bool {
   f is (FCompare | FImplies)
 }
 
 // ---------------------------------------------------------------------------
 // Declarations
-
-///|
-/// Where an expression is. Every case carries its own span; this is the one
-/// place that says so, for a caller holding an `Expr` rather than the token it
-/// came from.
-fn expr_span(e : Expr) -> Span {
-  match e {
-    ELit(span~, ..)
-    | ETpl(span~, ..)
-    | ERead(span~, ..)
-    | EMethod(span~, ..)
-    | EDyn(span~, ..)
-    | EMacroVar(span~, ..)
-    | EConfigVar(span~, ..)
-    | EName(span~, ..)
-    | EApp(span~, ..)
-    | EChain(span~, ..)
-    | EUnary(span~, ..)
-    | EIf(span~, ..)
-    | ERef(span~, ..) => span
-  }
-}
 
 ///|
 /// One expression, whole — the grammar above with no declaration around it.
@@ -364,7 +342,7 @@ fn expr_span(e : Expr) -> Span {
 /// The shape is `parse_tpl_parts`'s, which has always parsed an interpolation
 /// this way — a fresh cursor over a bare substring, and a demand that the
 /// whole of it was consumed.
-pub fn parse_expr_source(source : String) -> Expr raise ScriptError {
+pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
   let p : P = { toks: tokenize_script(source), at: 0, }
   let e = parse_expr(p)
   if !(p.peek() is TEof) {
@@ -488,10 +466,10 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
 fn parse_clauses(
   p : P,
   kind : DeclKind,
-) -> (Attach?, Attach?, Expr?) raise ScriptError {
+) -> (Attach?, Attach?, @tutuca.Expr?) raise ScriptError {
   let mut requires_ : Attach? = None
   let mut ensures_ : Attach? = None
-  let mut format : Expr? = None
+  let mut format : @tutuca.Expr? = None
   for ;; {
     // A clause may sit on its own line, which is what the multi-line spelling
     // of a rule with a sentence needs. Skipping here is safe because the only
@@ -631,7 +609,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   // An effect: a bare name the effect table knows.
   if p.peek() is TIdent(name) && effect_min_arity(name) is Some(min) {
     p.bump() |> ignore
-    let args : Array[Expr] = []
+    let args : Array[@tutuca.Expr] = []
     // The one new parse rule: read leg words while the next token is one, then
     // parse normally. It adds no ambiguity to juxtaposition, because an
     // `intent`'s name is always a string literal and `forward`'s arguments are
@@ -713,12 +691,12 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
           span=place.span,
         )
       }
-      let receiver : Place = {
+      let receiver : @tutuca.Place = {
         root: place.root,
         steps: place.steps[0:place.steps.length() - 1].to_owned(),
         span: place.span,
       }
-      let args : Array[Expr] = []
+      let args : Array[@tutuca.Expr] = []
       while starts_argument(p.peek()) {
         args.push(parse_atom(p))
       }
@@ -785,9 +763,9 @@ fn parse_ty_ref(p : P) -> TyRef raise ScriptError {
 /// field-then-key, so `&.a[0][1]` has no representation. A plain READ is not
 /// constrained, because the MoonBit backend rebuilds the struct and never
 /// builds a `Path` at all.
-fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
+fn parse_place(p : P, for_ref~ : Bool) -> @tutuca.Place raise ScriptError {
   let from = p.span()
-  let root : PlaceRoot = match p.peek() {
+  let root : @tutuca.PlaceRoot = match p.peek() {
     TIdent("state") => {
       p.bump() |> ignore
       p.expect(TDot, "`.` after the raw state root")
@@ -816,8 +794,11 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
 /// Shared by `.field` / `@bind` and by a parameter path, because a step means
 /// the same thing under all three — and because the ATTACHMENT rule that ends
 /// the loop has to be one rule rather than two that could drift.
-fn parse_steps(p : P, for_ref~ : Bool) -> Array[PathStep] raise ScriptError {
-  let steps : Array[PathStep] = []
+fn parse_steps(
+  p : P,
+  for_ref~ : Bool,
+) -> Array[@tutuca.PathStep] raise ScriptError {
+  let steps : Array[@tutuca.PathStep] = []
   let mut prev_was_index = false
   for ;; {
     match p.peek() {
@@ -899,14 +880,14 @@ fn starts_argument(t : STok) -> Bool {
 }
 
 ///|
-fn parse_expr(p : P) -> Expr raise ScriptError {
+fn parse_expr(p : P) -> @tutuca.Expr raise ScriptError {
   let from = p.span()
   let first = parse_operand(p)
   guard p.peek() is TOp(op0) && op0 != "not" else { return first }
   // The family is read from the PEEKED operator: `chain_op` consumes, and
   // consuming here would eat the first operator before the loop below could.
   let family = family_of(op0)
-  let operands : Array[Expr] = [first]
+  let operands : Array[@tutuca.Expr] = [first]
   let ops : Array[String] = []
   while p.peek() is TOp(_) && !(p.peek() is TOp("not")) {
     let op_span = p.span()
@@ -946,7 +927,7 @@ fn chain_op(p : P) -> String raise ScriptError {
 ///|
 /// An operand: anything that can stand where a value is expected, INCLUDING a
 /// juxtaposed application.
-fn parse_operand(p : P) -> Expr raise ScriptError {
+fn parse_operand(p : P) -> @tutuca.Expr raise ScriptError {
   parse_value(p, apply=true)
 }
 
@@ -958,12 +939,12 @@ fn parse_operand(p : P) -> Expr raise ScriptError {
 /// applied to `i v`. An argument that is itself an application takes
 /// parentheses — `contains (lower .name) 'x'` — which is the rule the design
 /// states and the same one that governs operators.
-fn parse_atom(p : P) -> Expr raise ScriptError {
+fn parse_atom(p : P) -> @tutuca.Expr raise ScriptError {
   parse_value(p, apply=false)
 }
 
 ///|
-fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
+fn parse_value(p : P, apply~ : Bool) -> @tutuca.Expr raise ScriptError {
   let from = p.span()
   match p.peek() {
     TOp("not") => {
@@ -984,11 +965,11 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
     }
     TNum(v) => {
       p.bump() |> ignore
-      ELit(lit=LNum(v), span=p.since(from))
+      ELit(lit=LNum(v), from_macro=false, span=p.since(from))
     }
     TStr(sv) => {
       p.bump() |> ignore
-      ELit(lit=LStr(sv), span=p.since(from))
+      ELit(lit=LStr(sv), from_macro=false, span=p.since(from))
     }
     TTpl(raw) => {
       p.bump() |> ignore
@@ -1025,15 +1006,15 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
     TAmp => raise MisplacedRef(span=from)
     TIdent("true") => {
       p.bump() |> ignore
-      ELit(lit=LBool(true), span=p.since(from))
+      ELit(lit=LBool(true), from_macro=false, span=p.since(from))
     }
     TIdent("false") => {
       p.bump() |> ignore
-      ELit(lit=LBool(false), span=p.since(from))
+      ELit(lit=LBool(false), from_macro=false, span=p.since(from))
     }
     TIdent("null") => {
       p.bump() |> ignore
-      ELit(lit=LNull, span=p.since(from))
+      ELit(lit=LNull, from_macro=false, span=p.since(from))
     }
     TIdent("if") if apply => {
       p.bump() |> ignore
@@ -1055,7 +1036,7 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
         guard steps is [PField(field), .. rest] else {
           p.fail("a state field after `state.`")
         }
-        let place : Place = {
+        let place : @tutuca.Place = {
           root: PState(field),
           steps: rest.to_owned(),
           span: p.since(from),
@@ -1067,10 +1048,14 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
       // path rather than to two things.
       if starts_attached_step(p) {
         let steps = parse_steps(p, for_ref=false)
-        let place : Place = { root: PParam(n), steps, span: p.since(from), }
+        let place : @tutuca.Place = {
+          root: PParam(n),
+          steps,
+          span: p.since(from),
+        }
         return ERead(place~, span=place.span)
       }
-      let args : Array[Expr] = []
+      let args : Array[@tutuca.Expr] = []
       if apply {
         while starts_argument(p.peek()) {
           args.push(parse_atom(p))
@@ -1087,7 +1072,7 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
 }
 
 ///|
-fn parse_value_block(p : P) -> Expr raise ScriptError {
+fn parse_value_block(p : P) -> @tutuca.Expr raise ScriptError {
   p.expect(TLBrace, "`{` opening the branch")
   p.skip_seps()
   let e = parse_expr(p)
@@ -1102,9 +1087,12 @@ fn parse_value_block(p : P) -> Expr raise ScriptError {
 /// The one interpolation grammar the language has, and the same one a slot
 /// template uses — `$'n={.count}'` means the same thing in both places, which
 /// is why a predicate lifts out of a `@show` into a `pred` unchanged.
-fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError {
+fn parse_tpl_parts(
+  raw : String,
+  at : Span,
+) -> Array[@tutuca.TplPart] raise ScriptError {
   let chars : Array[Char] = raw.iter().collect()
-  let out : Array[TplPart] = []
+  let out : Array[@tutuca.TplPart] = []
   let text = StringBuilder()
   let n = chars.length()
   let mut i = 0
@@ -1117,7 +1105,7 @@ fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError 
       if j < n && j > i + 1 {
         let s = text.to_string()
         if s != "" {
-          out.push(TText(s))
+          out.push(TText(text=s, from_macro=false))
         }
         text.reset()
         let inner = StringBuilder()
@@ -1146,7 +1134,7 @@ fn parse_tpl_parts(raw : String, at : Span) -> Array[TplPart] raise ScriptError 
   }
   let s = text.to_string()
   if s != "" {
-    out.push(TText(s))
+    out.push(TText(text=s, from_macro=false))
   }
   out
 }

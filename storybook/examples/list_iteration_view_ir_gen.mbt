@@ -39,13 +39,13 @@ fn list_iteration_main_view_ir() -> @anode.View {
       @anode.h("ul", [], [
         @anode.each(
           1,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h("li", [], [
             @anode.h("span", [@anode.attr("class", "k")], [
-              @anode.dyn_text(Bind("key")),
+              @anode.dyn_text(@tutuca.Expr::bind("key")),
             ]),
             @anode.text(": "),
-            @anode.dyn_text(Bind("value"), id=0),
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
           ]),
         ),
       ]),

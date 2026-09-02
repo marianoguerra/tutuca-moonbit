@@ -23,7 +23,7 @@ pub fn check_event_paths(events : Array[@anode.NodeEvents]) -> Array[Finding] {
     for h in ev.handlers {
       let site = "@on." + h.name
       for arg in h.handler.args {
-        guard arg is EventPath(segments) else { continue }
+        guard arg is EEventPath(segments~, ..) else { continue }
         guard @eventpath.EventPathProfile::allows(Safe, segments)
           is BadStep(step~, index~) else {
           continue

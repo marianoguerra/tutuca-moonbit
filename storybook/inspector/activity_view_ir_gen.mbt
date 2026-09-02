@@ -91,7 +91,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                 ),
                 @anode.attr("class", "badge badge-sm badge-neutral entry-kind"),
               ],
-              [@anode.dyn_text(Field("kind"))],
+              [@anode.dyn_text(@tutuca.Expr::field("kind"))],
             ),
             @anode.text(" "),
             @anode.h(
@@ -102,11 +102,11 @@ fn activity_entry_main_view_ir() -> @anode.View {
                 ),
                 @anode.attr("class", "font-mono font-semibold entry-name"),
               ],
-              [@anode.dyn_text(Field("name"))],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("handlerName")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("handlerName")]),
               @anode.h(
                 "span",
                 [
@@ -115,7 +115,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                   ),
                   @anode.attr("class", "text-xs opacity-60 font-mono"),
                 ],
-                [@anode.dyn_text(Field("handlerName"))],
+                [@anode.dyn_text(@tutuca.Expr::field("handlerName"))],
               ),
             ),
             @anode.text(" "),
@@ -125,11 +125,11 @@ fn activity_entry_main_view_ir() -> @anode.View {
                 @anode.attr("title", "Path to the target component"),
                 @anode.attr("class", "text-xs opacity-40 font-mono entry-path"),
               ],
-              [@anode.dyn_text(Field("pathLabel"))],
+              [@anode.dyn_text(@tutuca.Expr::field("pathLabel"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("matched")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("matched")]),
               @anode.h(
                 "span",
                 [
@@ -140,7 +140,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost entry-matched",
                   ),
                 ],
-                [@anode.dyn_text(Field("matched"))],
+                [@anode.dyn_text(@tutuca.Expr::field("matched"))],
               ),
             ),
             @anode.text(" "),
@@ -152,7 +152,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                   "class", "ml-auto text-xs opacity-40 font-mono tabular-nums entry-time",
                 ),
               ],
-              [@anode.dyn_text(Field("time"))],
+              [@anode.dyn_text(@tutuca.Expr::field("time"))],
             ),
           ],
         ),
@@ -170,11 +170,11 @@ fn activity_entry_main_view_ir() -> @anode.View {
                 [@anode.text("before")],
               ),
               @anode.text(" "),
-              @anode.render(0, Field("before")),
+              @anode.render(0, @tutuca.Expr::field("before")),
             ]),
             @anode.text(" "),
             @anode.show(
-              Field("hasAfter"),
+              @tutuca.Expr::field("hasAfter"),
               @anode.h("div", [@anode.attr("class", "flex-1 min-w-0")], [
                 @anode.h(
                   "div",
@@ -185,7 +185,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                   [@anode.text("after")],
                 ),
                 @anode.text(" "),
-                @anode.render(1, Field("after")),
+                @anode.render(1, @tutuca.Expr::field("after")),
               ]),
             ),
           ],
@@ -291,7 +291,7 @@ fn activity_log_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          Field("hasEvents"),
+          @tutuca.Expr::field("hasEvents"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-40 empty-hint")],
@@ -305,7 +305,7 @@ fn activity_log_main_view_ir() -> @anode.View {
         @anode.text(" "),
         @anode.each(
           1,
-          Field("events"),
+          @tutuca.Expr::field("events"),
           @anode.render_it(0),
           from_render_each=true,
         ),

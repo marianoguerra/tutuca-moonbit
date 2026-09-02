@@ -43,7 +43,7 @@ test "an application resolves its name and applies the builtin" {
   // cannot import it), and what this is about is evaluation anyway.
   let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") }, }
   fn app(name : String, field : String) -> @core.Val {
-    App(name~, args=[Field(field)])
+    Expr::app(name, [Expr::field(field)])
   }
 
   assert_true(app("empty?", "items").eval(stack) is Bool(true))
@@ -62,10 +62,10 @@ test "FieldVal.eval reads the raw field without invoking" {
   let stack : FieldStack = {
     fields: { "count": Num(7), "m": Fn(_args => Str("called")) },
   }
-  let count : @core.Val = Field("count")
+  let count : @core.Val = Expr::field("count")
   assert_true(count.eval(stack) is Num(7))
   // the function comes back raw, not invoked
-  let m : @core.Val = Field("m")
+  let m : @core.Val = Expr::field("m")
   guard! m.eval(stack) is Fn(f)
   assert_true(f([]) is Str("called"))
 }
@@ -73,7 +73,7 @@ test "FieldVal.eval reads the raw field without invoking" {
 ///|
 test "MethodVal.eval invokes the method" {
   let stack : MethodStack = { methods: { "fullName": Str("Ada L") }, }
-  let v : @core.Val = Method("fullName")
+  let v : @core.Val = Expr::method_("fullName")
   assert_true(v.eval(stack) is Str("Ada L"))
 }
 
@@ -82,7 +82,7 @@ test "MethodVal.eval_as_handler hands back the raw function" {
   let stack : FieldStack = {
     fields: { "inc": Fn(_args => Str("inc-marker")) },
   }
-  let v : @core.Val = Method("inc")
+  let v : @core.Val = Expr::method_("inc")
   guard! v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))
 }
@@ -91,10 +91,7 @@ test "MethodVal.eval_as_handler hands back the raw function" {
 test "equals? eval compares the field value against the literal" {
   let stack : FieldStack = { fields: { "view": Str("detail") }, }
   fn eq(lit : String) -> @core.Val {
-    App(name="equals?", args=[
-      Field("view"),
-      Const(lit=LStr(lit), from_macro=false),
-    ])
+    Expr::app("equals?", [Expr::field("view"), Expr::lit(LStr(lit))])
   }
 
   assert_true(eq("detail").eval(stack) is Bool(true))
@@ -106,18 +103,18 @@ test "bind member eval reads the member off the resolved binding" {
   // map-like binding value: member lookup with Null default (covers both
   // original paths — immutable `.get` and plain-object property access)
   let im : BindStack = { bind: Map({ "title": Str("alpha") }), }
-  let hit : @core.Val = BindMember(name="value", prop="title")
+  let hit : @core.Val = Expr::bind_member("value", "title")
   assert_true(hit.eval(im) is Str("alpha"))
-  let miss : @core.Val = BindMember(name="value", prop="missing")
+  let miss : @core.Val = Expr::bind_member("value", "missing")
   assert_true(miss.eval(im) is Null)
   let plain : BindStack = { bind: Map({ "color": Str("red") }), }
-  let color : @core.Val = BindMember(name="meta", prop="color")
+  let color : @core.Val = Expr::bind_member("meta", "color")
   assert_true(color.eval(plain) is Str("red"))
-  let missing : @core.Val = BindMember(name="meta", prop="missing")
+  let missing : @core.Val = Expr::bind_member("meta", "missing")
   assert_true(missing.eval(plain) is Null)
   // unresolved binding
   let unresolved : BindStack = { bind: Null, }
-  let nope : @core.Val = BindMember(name="nope", prop="x")
+  let nope : @core.Val = Expr::bind_member("nope", "x")
   assert_true(nope.eval(unresolved) is Null)
 }
 
@@ -179,30 +176,21 @@ test "the operators evaluate through the same table the shape predicates do" {
     },
   }
   fn f(n : String) -> @core.Val {
-    Field(n)
+    Expr::field(n)
   }
 
   fn op(name : String, args : Array[@core.Val]) -> @core.Value {
-    @core.Val::App(name~, args~).eval(stack)
+    Expr::app(name, args).eval(stack)
   }
 
   assert_true(op("not", [f("shut")]) is Bool(true))
   assert_true(op("not", [f("open")]) is Bool(false))
   assert_true(op("and", [f("open"), f("shut")]) is Bool(false))
   assert_true(op("or", [f("open"), f("shut")]) is Bool(true))
-  assert_true(
-    op("is", [f("kind"), Const(lit=LStr("a"), from_macro=false)]) is Bool(true),
-  )
-  assert_true(
-    op("is not", [f("kind"), Const(lit=LStr("b"), from_macro=false)])
-    is Bool(true),
-  )
-  assert_true(
-    op(">", [f("n"), Const(lit=LNum(2), from_macro=false)]) is Bool(true),
-  )
-  assert_true(
-    op("<=", [f("n"), Const(lit=LNum(3), from_macro=false)]) is Bool(true),
-  )
+  assert_true(op("is", [f("kind"), Expr::lit(LStr("a"))]) is Bool(true))
+  assert_true(op("is not", [f("kind"), Expr::lit(LStr("b"))]) is Bool(true))
+  assert_true(op(">", [f("n"), Expr::lit(LNum(2))]) is Bool(true))
+  assert_true(op("<=", [f("n"), Expr::lit(LNum(3))]) is Bool(true))
   assert_true(op("implies", [f("shut"), f("open")]) is Bool(true))
   assert_true(op("len", [f("items")]) is Num(0))
   // `and` / `or` coerce with `Value::is_truthy` and NOT `pred_truthy` — the
@@ -224,15 +212,119 @@ test "`and` and `or` stop early, so a slot can guard a compute" {
     fields: { "open": Bool(true), "shut": Bool(false) },
     asked: [],
   }
-  let guarded : @core.Val = App(name="and", args=[Field("shut"), Method("boom")])
+  let guarded : @core.Val = Expr::app("and", [
+    Expr::field("shut"),
+    Expr::method_("boom"),
+  ])
   assert_true(guarded.eval(stack) is Bool(false))
   assert_eq(stack.asked, [])
   // …and the other way, `or` stops once the left answers yes.
-  let short : @core.Val = App(name="or", args=[Field("open"), Method("boom")])
+  let short : @core.Val = Expr::app("or", [
+    Expr::field("open"),
+    Expr::method_("boom"),
+  ])
   assert_true(short.eval(stack) is Bool(true))
   assert_eq(stack.asked, [])
   // The control: when the left does NOT decide it, the right IS asked.
-  let both : @core.Val = App(name="and", args=[Field("open"), Method("fine")])
+  let both : @core.Val = Expr::app("and", [
+    Expr::field("open"),
+    Expr::method_("fine"),
+  ])
   assert_true(both.eval(stack) is Bool(true))
   assert_eq(stack.asked, ["fine"])
+}
+
+///|
+/// The forms a SLOT refuses and a body writes, evaluated.
+///
+/// They are reachable here because there is one AST: a `Step` can carry any of
+/// them, and an IR module written by hand can spell one. `eval` answers rather
+/// than falls through, and what it answers is what the compiled backend
+/// answers for the same expression — which is the property the conformance
+/// corpus exists to hold the two to.
+test "a chain, a unary and an `if` evaluate" {
+  let stack : FieldStack = {
+    fields: { "open": Bool(true), "shut": Bool(false), "n": Num(3.0) },
+  }
+  fn f(name : String) -> @core.Val {
+    @core.Expr::field(name)
+  }
+
+  fn chain(op : String, a : @core.Val, b : @core.Val) -> @core.Val {
+    EChain(family=FLogic, ops=[op], operands=[a, b], span=@core.no_span)
+  }
+
+  // A chain folds LEFT into applications of the operator's own name, which is
+  // the grouping `&&` gives it in the compiled backend.
+  assert_true(chain("and", f("open"), f("open")).eval(stack) is Bool(true))
+  assert_true(chain("and", f("shut"), f("open")).eval(stack) is Bool(false))
+  assert_true(chain("or", f("shut"), f("open")).eval(stack) is Bool(true))
+  // Three operands, one chain: `a and b and c`.
+  let three : @core.Val = EChain(
+    family=FLogic,
+    ops=["and", "and"],
+    operands=[f("open"), f("open"), f("shut")],
+    span=@core.no_span,
+  )
+  assert_true(three.eval(stack) is Bool(false))
+  // Arithmetic has no builtin, so it answers Null — the same answer every
+  // unresolved name gives. The slot vocabulary is what evaluates.
+  let sum : @core.Val = EChain(
+    family=FAdd,
+    ops=["+"],
+    operands=[f("n"), f("n")],
+    span=@core.no_span,
+  )
+  assert_true(sum.eval(stack) is Null)
+  // `not` is the vocabulary's; negation is a fact about the number.
+  let negated : @core.Val = EUnary(
+    op=UNot,
+    operand=f("shut"),
+    span=@core.no_span,
+  )
+  assert_true(negated.eval(stack) is Bool(true))
+  let minus : @core.Val = EUnary(op=UNeg, operand=f("n"), span=@core.no_span)
+  assert_eq(minus.eval(stack), Num(-3.0))
+  let bad : @core.Val = EUnary(op=UNeg, operand=f("open"), span=@core.no_span)
+  assert_true(bad.eval(stack) is Null)
+  // An `if` picks an arm and evaluates only that one.
+  let taken : @core.Val = EIf(
+    cond=f("open"),
+    then_=f("n"),
+    else_=f("shut"),
+    span=@core.no_span,
+  )
+  assert_eq(taken.eval(stack), Num(3.0))
+  let other : @core.Val = EIf(
+    cond=f("shut"),
+    then_=f("n"),
+    else_=f("open"),
+    span=@core.no_span,
+  )
+  assert_eq(other.eval(stack), Bool(true))
+}
+
+///|
+test "a place deeper than a slot can write still reads" {
+  // `.a.b` is refused in a slot (`Position`), which is a rule about what may
+  // be WRITTEN. The tree can hold one — a block body writes them — and the
+  // reader walks it rather than answering nothing.
+  let stack : FieldStack = {
+    fields: { "row": Map({ "title": Str("hi") }), "n": Num(1.0) },
+  }
+  let deep : @core.Val = ERead(
+    place={
+      root: PState("row"),
+      steps: [PField("title")],
+      span: @core.no_span,
+    },
+    span=@core.no_span,
+  )
+  assert_eq(deep.eval(stack), Str("hi"))
+  // A parameter has no answer on a render stack: a body runs after one.
+  let param : @core.Val = ERead(
+    place={ root: PParam("p"), steps: [], span: @core.no_span, },
+    span=@core.no_span,
+  )
+  assert_true(param.eval(stack) is Null)
 }

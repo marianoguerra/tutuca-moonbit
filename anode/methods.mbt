@@ -10,16 +10,35 @@
 /// through either is called exactly as a bare one is.
 fn add_val_methods(val : @tutuca.Val, into : Set[String]) -> Unit {
   match val {
-    Method(name) => into.add(name)
-    StrTpl(parts) =>
+    EMethod(name~, ..) => into.add(name)
+    ETpl(parts~, ..) =>
       for part in parts {
-        if part is Some(v) {
+        if part is TExpr(v) {
           add_val_methods(v, into)
         }
       }
-    App(args~, ..) =>
+    EApp(args~, ..) =>
       for arg in args {
         add_val_methods(arg, into)
+      }
+    // The forms a slot normalizes away, walked anyway: this answers what a
+    // template CALLS, and a tree built by hand or decoded from an older IR is
+    // still a tree.
+    EChain(operands~, ..) =>
+      for operand in operands {
+        add_val_methods(operand, into)
+      }
+    EUnary(operand~, ..) => add_val_methods(operand, into)
+    EIf(cond~, then_~, else_~, ..) => {
+      add_val_methods(cond, into)
+      add_val_methods(then_, into)
+      add_val_methods(else_, into)
+    }
+    ERead(place~, ..) | ERef(place~, ..) =>
+      for step in place.steps {
+        if step is PIndex(idx) {
+          add_val_methods(idx, into)
+        }
       }
     _ => ()
   }
@@ -116,7 +135,7 @@ pub fn View::collect_method_names(self : View, into : Set[String]) -> Unit {
 /// manifest — which the generator never sees.
 pub fn NodeEvent::method_in_event(self : NodeEvent) -> String? {
   match self.handler.handler {
-    Method(name) => Some(name)
+    EMethod(name~, ..) => Some(name)
     _ => None
   }
 }

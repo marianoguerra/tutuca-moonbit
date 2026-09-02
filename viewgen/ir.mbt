@@ -32,6 +32,13 @@
 let q : String = "@anode."
 
 ///|
+/// The qualifier the value layer's own constructors carry. A generated module
+/// stands in a package with no `moon.pkg` of its own (the playground's View
+/// tab), so a name that resolved by expected type here would not resolve
+/// there.
+let t : String = "@tutuca."
+
+///|
 /// Replace every expanded MacroCall with its expansion. Semantically a no-op
 /// — render(MacroCall) renders exactly `d.node` — and it leaves a tree with
 /// no node type the emitter cannot express.
@@ -139,7 +146,7 @@ fn lit_expr(lit : @tutuca.Lit) -> String {
 }
 
 ///|
-/// The constant builders: a plain `Const(lit=…, from_macro=false)`, which is
+/// The constant builders: a plain `ELit(lit=…, from_macro=false, ..)`, which is
 /// what every constant a view writes parses to.
 fn const_expr(lit : @tutuca.Lit) -> String {
   match lit {
@@ -151,45 +158,118 @@ fn const_expr(lit : @tutuca.Lit) -> String {
 }
 
 ///|
+/// A place, as the record literal that rebuilds it.
+///
+/// Spelled out rather than reached through a shape helper because a place is
+/// general: the four shapes a slot can write have helpers below, and this is
+/// what anything else falls back to.
+fn place_expr(p : @tutuca.Place) -> String {
+  let root = match p.root {
+    PState(n) => "PState(\{quote(n)})"
+    PBind(n) => "PBind(\{quote(n)})"
+    PParam(n) => "PParam(\{quote(n)})"
+  }
+  let steps = p.steps.map(st => {
+    match st {
+      PField(n) => "PField(\{quote(n)})"
+      PIndex(e) => "PIndex(\{val_expr(e)})"
+    }
+  })
+  "{ root: \{root}, steps: [" + steps.join(", ") + "], span: @tutuca.no_span }"
+}
+
+///|
+/// One template part.
+fn tpl_part_expr(part : @tutuca.TplPart) -> String {
+  match part {
+    TText(text~, from_macro~) =>
+      "TText(text=\{quote(text)}, from_macro=\{from_macro})"
+    TExpr(e) => "TExpr(\{val_expr(e)})"
+  }
+}
+
+///|
+/// An expression, as the MoonBit that rebuilds it.
+///
+/// SPAN-FREE, and that is a decision rather than an omission: a generated
+/// module is not source anybody points a diagnostic at, so every node it
+/// rebuilds carries `no_span`. Which is also why the shape constructors
+/// (`Expr::field`, `Expr::bind`, …) are what this emits — they default the
+/// span, and they are the same four shapes a slot can write.
 fn val_expr(val : @tutuca.Val) -> String {
+  // The four addressable shapes, by their own names. `as_bind_member` before
+  // `as_bind` for the reason the parser tries them in that order: `@a.b` is
+  // not a whole-binding read.
+  if val.as_field() is Some(n) {
+    return "\{t}Expr::field(\{quote(n)})"
+  }
+  if val.as_bind() is Some(n) {
+    return "\{t}Expr::bind(\{quote(n)})"
+  }
+  if val.as_bind_member() is Some((n, prop)) {
+    return "\{t}Expr::bind_member(\{quote(n)}, \{quote(prop)})"
+  }
+  if val.as_seq_access() is Some((seq, key)) {
+    return "\{t}Expr::seq_access(\{quote(seq)}, \{quote(key)})"
+  }
   match val {
-    Const(lit~, from_macro~) =>
+    ELit(lit~, from_macro~, ..) =>
       if from_macro {
-        "Const(lit=\{lit_expr(lit)}, from_macro=true)"
+        "\{t}Expr::lit(\{lit_expr(lit)}, from_macro=true)"
       } else {
         const_expr(lit)
       }
-    StrTpl(parts) => {
-      let items = parts.map(p => {
-        match p {
-          Some(v) => "Some(\{val_expr(v)})"
-          None => "None"
-        }
-      })
-      "StrTpl([" + items.join(", ") + "])"
-    }
+    ETpl(parts~, ..) =>
+      "\{t}Expr::tpl([" + parts.map(tpl_part_expr).join(", ") + "])"
     // The name rides as a string rather than a constructor: the vocabulary is
     // a table, so there is no enum for the generated module to name.
-    App(name~, args~) =>
-      "App(name=\{quote(name)}, args=[" + args.map(val_expr).join(", ") + "])"
-    EventPath(segments) =>
-      "EventPath([" + segments.map(seg => quote(seg)).join(", ") + "])"
-    Name(n) => "Name(\{quote(n)})"
-    HandlerName(name~, ns~) => {
+    EApp(name~, args~, ..) =>
+      "\{t}Expr::app(\{quote(name)}, [" + args.map(val_expr).join(", ") + "])"
+    EEventPath(segments~, ..) =>
+      "\{t}Expr::event_path([" +
+      segments.map(seg => quote(seg)).join(", ") +
+      "])"
+    EName(name~, ..) => "\{t}Expr::name(\{quote(name)})"
+    EHandlerName(name~, ns~, ..) => {
       let ns_name = match ns {
         Receive => "Receive"
         Alter => "Alter"
       }
-      "HandlerName(name=\{quote(name)}, ns=\{ns_name})"
+      "\{t}Expr::handler_name(\{quote(name)}, \{ns_name})"
     }
-    TypeName(n) => "TypeName(\{quote(n)})"
-    Bind(n) => "Bind(\{quote(n)})"
-    BindMember(name~, prop~) =>
-      "BindMember(name=\{quote(name)}, prop=\{quote(prop)})"
-    Dyn(n) => "Dyn(\{quote(n)})"
-    Field(n) => "Field(\{quote(n)})"
-    Method(n) => "Method(\{quote(n)})"
-    SeqAccess(seq~, key~) => "SeqAccess(seq=\{quote(seq)}, key=\{quote(key)})"
+    ETypeName(name~, ..) => "\{t}Expr::type_name(\{quote(name)})"
+    EDyn(name~, ..) => "\{t}Expr::dyn_(\{quote(name)})"
+    EMethod(name~, ..) => "\{t}Expr::method_(\{quote(name)})"
+    ERead(place~, ..) => "ERead(place=\{place_expr(place)}, span=\{t}no_span)"
+    // The forms a slot refuses and a BODY writes. A view file's IR never holds
+    // one; they are here because this function is total over the AST and a
+    // silent hole in a code generator is the worst kind.
+    ERef(place~, ..) => "ERef(place=\{place_expr(place)}, span=\{t}no_span)"
+    EMacroVar(name~, ..) => "EMacroVar(name=\{quote(name)}, span=\{t}no_span)"
+    EConfigVar(name~, ..) => "EConfigVar(name=\{quote(name)}, span=\{t}no_span)"
+    EUnary(op~, operand~, ..) => {
+      let word = match op {
+        UNot => "UNot"
+        UNeg => "UNeg"
+      }
+      "EUnary(op=\{word}, operand=\{val_expr(operand)}, span=\{t}no_span)"
+    }
+    EChain(family~, ops~, operands~, ..) => {
+      let fam = match family {
+        FLogic => "FLogic"
+        FCompare => "FCompare"
+        FImplies => "FImplies"
+        FAdd => "FAdd"
+        FMul => "FMul"
+      }
+      "EChain(family=\{fam}, ops=[" +
+      ops.map(quote).join(", ") +
+      "], operands=[" +
+      operands.map(val_expr).join(", ") +
+      "], span=\{t}no_span)"
+    }
+    EIf(cond~, then_~, else_~, ..) =>
+      "EIf(cond=\{val_expr(cond)}, then_=\{val_expr(then_)}, else_=\{val_expr(else_)}, span=\{t}no_span)"
   }
 }
 
@@ -238,7 +318,7 @@ fn attr_item_expr(item : @anode.AttrItem) -> String {
       match val {
         // A macro-var-sourced constant is still a ConstA, but from_macro
         // survives only through the general builder.
-        Const(lit~, from_macro=false) => const_attr_expr(name, lit)
+        ELit(lit~, from_macro=false, ..) => const_attr_expr(name, lit)
         _ => "\{q}attr_val(\{quote(name)}, \{val_expr(val)})"
       }
     Plain(name~, val~) => "\{q}dyn_attr(\{quote(name)}, \{val_expr(val)})"

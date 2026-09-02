@@ -106,11 +106,11 @@ priv struct E {
   /// The block's rules, name -> the one expression a `pred` or an `invariant`
   /// is. What a `requires` / `ensures` clause resolves to, and what an arm
   /// inlines at the two moments a contract is kept.
-  rules : Map[String, @tscript.Expr]
+  rules : Map[String, @tutuca.Expr]
   /// The rules that declare a `format`, name -> the sentence expression.
   /// Compiled INTO the refusal, beside the rule and at the same moment, so the
   /// values it names are the ones that made the rule false.
-  formats : Map[String, @tscript.Expr]
+  formats : Map[String, @tutuca.Expr]
   /// The `invariant` names, every one of them checked after every transition.
   /// Sorted, because WHICH rule broke is part of the answer and the
   /// interpreter — which reads them off a map and has no declaration order to
@@ -988,7 +988,7 @@ fn stmt_uses(s : @tscript.Stmt, name : String) -> Bool {
 }
 
 ///|
-fn place_uses(p : @tscript.Place, name : String) -> Bool {
+fn place_uses(p : @tutuca.Place, name : String) -> Bool {
   // A path ROOTED at a parameter reads it, which is what decides whether the
   // generated arm binds the argument or underscores it.
   if p.root is PParam(n) && n == name {
@@ -1003,7 +1003,7 @@ fn place_uses(p : @tscript.Place, name : String) -> Bool {
 }
 
 ///|
-fn expr_uses(e : @tscript.Expr, name : String) -> Bool {
+fn expr_uses(e : @tutuca.Expr, name : String) -> Bool {
   match e {
     EName(name=n, ..) => n == name
     ERead(place~, ..) | ERef(place~, ..) => place_uses(place, name)
@@ -1015,6 +1015,9 @@ fn expr_uses(e : @tscript.Expr, name : String) -> Bool {
     EApp(args~, ..) => args.iter().any(a => expr_uses(a, name))
     EIf(cond~, then_~, else_~, ..) =>
       expr_uses(cond, name) || expr_uses(then_, name) || expr_uses(else_, name)
+    // Three forms a SLOT produces and a block body never writes. They name
+    // nothing a body has a binder for, so they use no parameter.
+    ETypeName(..) | EHandlerName(..) | EEventPath(..) => false
   }
 }
 
@@ -1069,8 +1072,8 @@ fn decl_reads_name(d : @tscript.Decl, name : String) -> Bool {
 
 ///|
 /// Every expression in a declaration, against a question.
-fn decl_any(d : @tscript.Decl, ask : (@tscript.Expr) -> Bool) -> Bool {
-  fn walk(e : @tscript.Expr) -> Bool {
+fn decl_any(d : @tscript.Decl, ask : (@tutuca.Expr) -> Bool) -> Bool {
+  fn walk(e : @tutuca.Expr) -> Bool {
     if ask(e) {
       return true
     }
@@ -1324,7 +1327,7 @@ fn E::stmt_body(
 
 ///|
 /// Whether a place is rooted at the target `new` builds into.
-fn is_target(p : @tscript.Place) -> Bool {
+fn is_target(p : @tutuca.Place) -> Bool {
   p.root is PBind(n) && n == @tscript.target_bind
 }
 
@@ -1350,7 +1353,7 @@ fn E::target_update(
   self : E,
   src : String,
   ty : @statedef.StateTy,
-  steps : Array[@tscript.PathStep],
+  steps : Array[@tutuca.PathStep],
   i : Int,
   leaf : (@statedef.StateTy, String) -> String raise NoWay,
 ) -> String raise NoWay {
@@ -1378,7 +1381,7 @@ fn E::target_update(
 /// cannot rebuild.
 fn E::root_field(
   self : E,
-  p : @tscript.Place,
+  p : @tutuca.Place,
 ) -> (String, @statedef.StateTy) raise NoWay {
   guard p.root is PState(name) else {
     raise Cannot(
@@ -1401,7 +1404,7 @@ fn E::root_field(
 
 ///|
 /// Read the current value of a place, at its own type.
-fn E::read_field(self : E, p : @tscript.Place) -> String raise NoWay {
+fn E::read_field(self : E, p : @tutuca.Place) -> String raise NoWay {
   let (name, ty) = self.root_field(p)
   self.uses_state = true
   self.to_ty("s.\{binding_of(name)}", ty, TFloat)
@@ -1420,7 +1423,7 @@ fn E::collection_call(
   call : String,
   field : String,
   ty : @statedef.StateTy,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
 ) -> String raise NoWay {
   self.uses_state = true
   self.collection_call_at(call, "s.\{binding_of(field)}", ".\{field}", ty, args)
@@ -1436,7 +1439,7 @@ fn E::collection_call_at(
   recv : String,
   label : String,
   ty : @statedef.StateTy,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
 ) -> String raise NoWay {
   fn arity(n : Int) -> Unit raise NoWay {
     if args.length() != n {
@@ -1680,7 +1683,7 @@ fn E::needs_ctx(self : E, what : String) -> Unit raise NoWay {
 fn E::effect(
   self : E,
   name : String,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
   route : Array[@tutuca.Leg],
   pad : String,
 ) -> String raise NoWay {
@@ -1770,7 +1773,7 @@ fn E::effect(
 /// the checker's question, not the emitter's.
 fn E::at(
   self : E,
-  e : @tscript.Expr,
+  e : @tutuca.Expr,
   want : @statedef.StateTy,
 ) -> String raise NoWay {
   if e is ELit(lit=LNum(n), ..) &&
@@ -1856,12 +1859,12 @@ fn E::guarded(self : E, src : String, want : @statedef.StateTy) -> String {
 }
 
 ///|
-fn E::at_num(self : E, e : @tscript.Expr) -> String raise NoWay {
+fn E::at_num(self : E, e : @tutuca.Expr) -> String raise NoWay {
   self.at(e, TFloat)
 }
 
 ///|
-fn E::at_bool(self : E, e : @tscript.Expr) -> String raise NoWay {
+fn E::at_bool(self : E, e : @tutuca.Expr) -> String raise NoWay {
   let (src, got) = self.expr(e)
   match got {
     TBool => src
@@ -1879,7 +1882,7 @@ fn E::at_bool(self : E, e : @tscript.Expr) -> String raise NoWay {
 /// Anything that is not already text goes through `to_display_string`, the same
 /// conversion a `$'…'` template's interpolations take, so a number reads `3`
 /// rather than `3.0` and a card and a compiled component say the same thing.
-fn E::at_text(self : E, e : @tscript.Expr) -> String raise NoWay {
+fn E::at_text(self : E, e : @tutuca.Expr) -> String raise NoWay {
   let (src, got) = self.expr(e)
   match got {
     TText => src
@@ -1889,7 +1892,7 @@ fn E::at_text(self : E, e : @tscript.Expr) -> String raise NoWay {
 
 ///|
 /// Emit an expression as a `@tutuca.Value`, for a channel payload.
-fn E::as_value(self : E, e : @tscript.Expr) -> String raise NoWay {
+fn E::as_value(self : E, e : @tutuca.Expr) -> String raise NoWay {
   let (src, got) = self.expr(e)
   self.value_of(src, got)
 }
@@ -1954,7 +1957,7 @@ fn E::to_ty(
 /// Emit an expression, answering its source and its language type.
 fn E::expr(
   self : E,
-  e : @tscript.Expr,
+  e : @tutuca.Expr,
 ) -> (String, @statedef.StateTy) raise NoWay {
   match e {
     ELit(lit~, ..) =>
@@ -1976,7 +1979,7 @@ fn E::expr(
         }
         first = false
         match part {
-          TText(t) => b.write_string(quote(t))
+          TText(text=t, ..) => b.write_string(quote(t))
           // Through `to_display_string`, not MoonBit's `Show`: a template in a
           // slot renders JS-style (`3`, not `3.0`), and a card and a compiled
           // component have to agree about what the same template says.
@@ -2077,6 +2080,21 @@ fn E::expr(
         "`$$\{name}` is a value the host bound, and a block is compiled ahead of any host",
       )
     ERef(..) => raise Cannot("a place is not a value")
+    // The three forms only a SLOT produces. A block body cannot write one, so
+    // reaching here means an AST assembled elsewhere — refused by name for the
+    // reason the two above are, rather than emitted as something plausible.
+    ETypeName(name~, ..) =>
+      raise Cannot(
+        "`\{name}` names a component type, and a handler asks for one with `ctx.make`",
+      )
+    EHandlerName(name~, ..) =>
+      raise Cannot(
+        "`\{name}` here is a handler name, which the render stack answers and a handler runs after",
+      )
+    EEventPath(segments~, ..) =>
+      raise Cannot(
+        "`e.\{segments.join(".")}` reads the DOM event a VIEW is handling, and a handler is called with its arguments already read",
+      )
   }
 }
 
@@ -2085,7 +2103,7 @@ fn E::expr(
 /// indexed is a read this backend does not emit yet.
 fn E::read(
   self : E,
-  p : @tscript.Place,
+  p : @tutuca.Place,
 ) -> (String, @statedef.StateTy) raise NoWay {
   // The target reads like a state path and for the same reason: it is a local
   // whose type is known at every step, so a field of one is a field access.
@@ -2191,9 +2209,9 @@ fn E::read(
 ///|
 fn E::chain(
   self : E,
-  family : @tscript.OpFamily,
+  family : @tutuca.OpFamily,
   ops : Array[String],
-  operands : Array[@tscript.Expr],
+  operands : Array[@tutuca.Expr],
 ) -> (String, @statedef.StateTy) raise NoWay {
   match family {
     FLogic => {
@@ -2282,7 +2300,7 @@ fn E::chain(
 fn E::app(
   self : E,
   name : String,
-  args : Array[@tscript.Expr],
+  args : Array[@tutuca.Expr],
 ) -> (String, @statedef.StateTy) raise NoWay {
   match (name, args.length()) {
     ("len", 1) => {

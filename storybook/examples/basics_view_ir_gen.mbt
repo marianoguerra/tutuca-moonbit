@@ -171,30 +171,30 @@ fn text_directive_main_view_ir() -> @anode.View {
         @anode.h("span", [], [@anode.text("String:")]),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "v-str")], [
-          @anode.dyn_text(Field("str")),
+          @anode.dyn_text(@tutuca.Expr::field("str")),
         ]),
         @anode.text(" "),
         @anode.h("span", [], [@anode.text("Number:")]),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "v-num")], [
-          @anode.dyn_text(Field("num")),
+          @anode.dyn_text(@tutuca.Expr::field("num")),
           @anode.text(" <- text directive is prepended"),
         ]),
         @anode.text(" "),
         @anode.h("span", [], [@anode.text("Boolean:")]),
         @anode.text(" "),
-        @anode.dyn_text(Field("bool"), id=0),
+        @anode.dyn_text(@tutuca.Expr::field("bool"), id=0),
         @anode.text(" "),
         @anode.h("span", [], [@anode.text("notSet:")]),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "v-notset")], [
-          @anode.dyn_text(Field("notSet")),
+          @anode.dyn_text(@tutuca.Expr::field("notSet")),
         ]),
         @anode.text(" "),
         @anode.h("span", [], [@anode.text("Method Call:")]),
         @anode.text(" "),
         @anode.h("span", [@anode.attr("class", "v-method")], [
-          @anode.dyn_text(Method("getStrUpper")),
+          @anode.dyn_text(@tutuca.Expr::method_("getStrUpper")),
         ]),
       ],
     ),
@@ -270,7 +270,10 @@ fn danger_set_inner_html_main_view_ir() -> @anode.View {
     @anode.h("section", [], [
       @anode.h(
         "div",
-        [@anode.attr("class", "raw"), @anode.raw_html(val=Field("content"))],
+        [
+          @anode.attr("class", "raw"),
+          @anode.raw_html(val=@tutuca.Expr::field("content")),
+        ],
         [],
       ),
     ]),
@@ -332,7 +335,10 @@ fn set_inner_md_main_view_ir() -> @anode.View {
     @anode.h("section", [], [
       @anode.h(
         "div",
-        [@anode.attr("class", "md"), @anode.set_inner_md(val=Field("source"))],
+        [
+          @anode.attr("class", "md"),
+          @anode.set_inner_md(val=@tutuca.Expr::field("source")),
+        ],
         [],
       ),
     ]),

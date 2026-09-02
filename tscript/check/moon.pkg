@@ -14,6 +14,7 @@
 // which is why almost every rule below is written as "when BOTH sides are
 // known".
 import {
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/statedef",
 }

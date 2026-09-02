@@ -61,13 +61,13 @@ fn table_row_main_view_ir() -> @anode.View {
     "main",
     @anode.h("tr", [], [
       @anode.h("td", [@anode.attr("class", "name")], [
-        @anode.dyn_text(Field("name")),
+        @anode.dyn_text(@tutuca.Expr::field("name")),
       ]),
       @anode.h("td", [@anode.attr("class", "qty")], [
-        @anode.dyn_text(Field("qty")),
+        @anode.dyn_text(@tutuca.Expr::field("qty")),
       ]),
       @anode.h("td", [@anode.attr("class", "price")], [
-        @anode.dyn_text(Field("price")),
+        @anode.dyn_text(@tutuca.Expr::field("price")),
       ]),
     ]),
     [],
@@ -136,7 +136,7 @@ fn item_table_main_view_ir() -> @anode.View {
       @anode.h("tbody", [], [
         @anode.each(
           1,
-          Field("rows"),
+          @tutuca.Expr::field("rows"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -197,9 +197,11 @@ pub fn item_table_component(
 fn select_option_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("option", [@anode.dyn_attr("value", Field("value"))], [
-      @anode.dyn_text(Field("label")),
-    ]),
+    @anode.h(
+      "option",
+      [@anode.dyn_attr("value", @tutuca.Expr::field("value"))],
+      [@anode.dyn_text(@tutuca.Expr::field("label"))],
+    ),
     [],
   )
 }
@@ -259,13 +261,13 @@ fn item_select_main_view_ir() -> @anode.View {
       "select",
       [
         @anode.attr("class", "select"),
-        @anode.dyn_attr("value", Field("current")),
+        @anode.dyn_attr("value", @tutuca.Expr::field("current")),
         @anode.eid(0),
       ],
       [
         @anode.each(
           1,
-          Field("options"),
+          @tutuca.Expr::field("options"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -273,8 +275,8 @@ fn item_select_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setCurrent", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setCurrent", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -347,9 +349,9 @@ fn pseudo_x_demo_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [], [
-      @anode.render(0, Field("table")),
+      @anode.render(0, @tutuca.Expr::field("table")),
       @anode.text(" "),
-      @anode.render(1, Field("select")),
+      @anode.render(1, @tutuca.Expr::field("select")),
     ]),
     [],
   )

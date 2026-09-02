@@ -50,7 +50,7 @@ fn counter_main_view_ir() -> @anode.View {
             @anode.text("Count"),
           ]),
           @anode.h("div", [@anode.attr("class", "stat-value")], [
-            @anode.dyn_text(Field("count")),
+            @anode.dyn_text(@tutuca.Expr::field("count")),
           ]),
         ]),
       ]),
@@ -60,8 +60,8 @@ fn counter_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", HandlerName(name="dec", ns=Receive))],
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("dec", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
     ],
   )
 }
@@ -72,10 +72,10 @@ fn counter_compact_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "compact",
     @anode.h("button", [@anode.attr("class", "btn btn-sm"), @anode.eid(0)], [
-      @anode.dyn_text(Field("count")),
+      @anode.dyn_text(@tutuca.Expr::field("count")),
     ]),
     [
-      [@anode.on("click", HandlerName(name="inc", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("inc", Receive))],
     ],
   )
 }

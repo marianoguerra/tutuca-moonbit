@@ -95,15 +95,14 @@ fn ref_part(
       guard comps.node_for(cid, vid, each_nid) is Some(Each(ed)) else {
         return None
       }
-      match ed.iter_info.val {
-        Field(field) => item_part(Some(EachRenderItStep(field~, key~)), cid)
-        Dyn(_) => None
-        _ => None
+      match ed.iter_info.val.as_field() {
+        Some(field) => item_part(Some(EachRenderItStep(field~, key~)), cid)
+        None => None
       }
     }
     Render(d) =>
       match d.val {
-        Dyn(_) => None
+        EDyn(..) => None
         _ => item_part(base_step(d.val, refs[i].key), cid)
       }
     RenderText(d) => item_part(base_step(d.val, refs[i].key), cid)

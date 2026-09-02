@@ -50,7 +50,7 @@ pub let fp_greeting_spec_source : String =
 fn fp_greeting_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("p", [], [@anode.dyn_text(Field("name"))]),
+    @anode.h("p", [], [@anode.dyn_text(@tutuca.Expr::field("name"))]),
     [],
   )
 }
@@ -107,7 +107,7 @@ fn note_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("p", [@anode.attr("class", "note")], [
-      @anode.dyn_text(Field("text")),
+      @anode.dyn_text(@tutuca.Expr::field("text")),
     ]),
     [],
   )
@@ -164,7 +164,7 @@ pub fn note_component(
 fn mailbox_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("section", [], [@anode.render(0, Field("note"))]),
+    @anode.h("section", [], [@anode.render(0, @tutuca.Expr::field("note"))]),
     [],
   )
 }

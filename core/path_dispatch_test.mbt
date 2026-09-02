@@ -91,7 +91,7 @@ test "compact projects every frame independently" {
       plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
     ])
     .push_frame(@core.Path::new(steps=[FieldStep("x")]))
-    .concat([ScopeBindStep(val=Field("ignored")), FieldStep("child")])
+    .concat([ScopeBindStep(val=Expr::field("ignored")), FieldStep("child")])
     .compact()
   assert_true(
     p.frames

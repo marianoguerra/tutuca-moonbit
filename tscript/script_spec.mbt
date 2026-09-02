@@ -126,7 +126,7 @@ pub(all) struct Decl {
   /// both. The comment says what the rule IS, statically, and travels into the
   /// schema and into what an agent is told before it acts; the format says what
   /// went wrong THIS time, with the values that made it go wrong.
-  format : Expr?
+  format : @tutuca.Expr?
   body : Body
   /// The `///` comment above it, or "".
   doc : String
@@ -144,7 +144,7 @@ pub(all) enum Body {
   Stmts(Array[Stmt])
   /// One expression: `compute` / `pred` / `invariant`, and every body written
   /// in a slot.
-  Value(Expr)
+  Value(@tutuca.Expr)
 } derive(Debug, Eq)
 
 ///|
@@ -158,11 +158,21 @@ pub(all) enum AssignOp {
 /// A statement. Statements end at a newline or a `;`.
 pub(all) enum Stmt {
   /// `.count = 0`, `.count += d`, `@name = expr`.
-  SAssign(place~ : Place, op~ : AssignOp, value~ : Expr, span~ : Span)
+  SAssign(
+    place~ : @tutuca.Place,
+    op~ : AssignOp,
+    value~ : @tutuca.Expr,
+    span~ : Span
+  )
   /// A mutating collection method, receiver first: `.items.push v`. These
   /// mirror the runtime-generic mutators one for one, with the `In<Field>At`
   /// infix dropped because the receiver is written.
-  SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
+  SMethod(
+    place~ : @tutuca.Place,
+    call~ : String,
+    args~ : Array[@tutuca.Expr],
+    span~ : Span
+  )
   /// `send 'flash' .msg`, `stop`, `sendAt &.status 'flash' 'Saved'`,
   /// `intent dyn 'picked' @key`, `forward lex`.
   ///
@@ -174,12 +184,17 @@ pub(all) enum Stmt {
   /// default to live and a second place for it to drift.
   SEffect(
     name~ : String,
-    args~ : Array[Expr],
+    args~ : Array[@tutuca.Expr],
     route~ : Array[@tutuca.Leg],
     span~ : Span
   )
   /// `if cond { … } else { … }`.
-  SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
+  SIf(
+    cond~ : @tutuca.Expr,
+    then_~ : Array[Stmt],
+    else_~ : Array[Stmt],
+    span~ : Span
+  )
   /// `new Label`, `new Array[String]` — the zero of a declared type, and the
   /// ACTIVE TARGET the statements under it fill in.
   ///
@@ -212,143 +227,6 @@ pub(all) struct TyRef {
 /// checker refuses to let an `enrich` bind it, the interpreter refuses to let
 /// it escape into a view, and both are talking about the same name.
 pub let target_bind : String = "cur"
-
-///|
-/// What a place is rooted at.
-pub(all) enum PlaceRoot {
-  /// `.field` — a place in this component's state.
-  PState(String)
-  /// `@name` — a binding. Assignable in `enrich` / `enrich-scope` only;
-  /// readable anywhere the slot provides it.
-  PBind(String)
-  /// `name.field` — a path into a PARAMETER. Never assignable: an argument is
-  /// a value the caller handed over, not a position this component owns.
-  ///
-  /// The root is a bare name and the steps are the same ones every other place
-  /// takes, so the only thing that tells `f.name` from `f .name` is
-  /// ATTACHMENT — which is the rule already in force for `min .a .b` versus
-  /// `min .a.b` (`pre_space` in script_lex.mbt). No new ambiguity: a bare name
-  /// followed by an attached `.` or `[` could not mean anything else, since a
-  /// parameter is the one kind of name that can never be applied.
-  PParam(String)
-} derive(Debug, Eq)
-
-///|
-/// A step below the root.
-pub(all) enum PathStep {
-  /// `.field`
-  PField(String)
-  /// `[expr]`
-  PIndex(Expr)
-} derive(Debug, Eq)
-
-///|
-/// A PLACE: a position, not a value.
-///
-/// `.a.b` and `.a[k].b` are the two things a view slot cannot spell — nested
-/// reads and nested WRITES. A slot's name lookup stays one level because
-/// nothing checks it; a body is checked code and the generator knows every
-/// type along the path.
-pub(all) struct Place {
-  root : PlaceRoot
-  steps : Array[PathStep]
-  span : Span
-} derive(Debug, Eq)
-
-///|
-/// The four operator families. **Mixing families in one unparenthesized chain
-/// is a parse error**, and the message names the parentheses to add — so
-/// `a and b and c` and `a + b - c` chain freely, `a + b * c` is refused, and
-/// there is no precedence to get wrong.
-pub(all) enum OpFamily {
-  /// `and` `or` — associative, chains freely.
-  FLogic
-  /// `is` `is not` `<` `<=` `>` `>=` — exactly TWO operands, so `a < b < c`
-  /// is refused too.
-  FCompare
-  /// `implies` — `a implies b` is `(not a) or b`. Non-associative like
-  /// comparison, so the right-associativity trap never arises. It is the shape
-  /// most cross-field rules take.
-  FImplies
-  /// `+` `-`. `+` concatenates two strings and adds two numbers; the operands'
-  /// static types decide and a mixed pair is a type error, not a coercion.
-  FAdd
-  /// `*` `/` `mod`
-  FMul
-} derive(Debug, Eq)
-
-///|
-pub(all) enum UnOp {
-  UNot
-  UNeg
-} derive(Debug, Eq)
-
-///|
-/// One piece of a `$'…'` template: literal text, or an interpolated
-/// expression.
-pub(all) enum TplPart {
-  TText(String)
-  TExpr(Expr)
-} derive(Debug, Eq)
-
-///|
-/// An expression.
-pub(all) enum Expr {
-  ELit(lit~ : @tutuca.Lit, span~ : Span)
-  ETpl(parts~ : Array[TplPart], span~ : Span)
-  /// Reading what is AT a place.
-  ERead(place~ : Place, span~ : Span)
-  /// `$name` — a `compute` result. Its TYPE is opaque to the checker
-  /// ("unknown is not wrong", so nothing under it is judged), and written
-  /// inside a BODY it is additionally REPORTED: this sigil is answered by the
-  /// render stack, a body runs after one, so it reads Null. A body calls a
-  /// `compute` or a `pred` bare — `EName` with no arguments.
-  EMethod(name~ : String, span~ : Span)
-  /// `*name` — a dynamic binding. Opaque for the same reason, and reported in
-  /// a body for the same reason, with no bare spelling to fall back on.
-  EDyn(name~ : String, span~ : Span)
-  /// `^name` — a macro argument, substituted from the frame the CALLER opened.
-  ///
-  /// The grammar carries it because a conditional slot and a block body are
-  /// one language, and a slot DOES stand in a macro frame. A block does not:
-  /// `parse_script(source)` takes no context at all, so `^title` there would
-  /// resolve to nothing — `tscript/check` refuses it by name rather than
-  /// letting it read Null.
-  EMacroVar(name~ : String, span~ : Span)
-  /// `$$name` — a value the HOST bound, substituted as a literal and not
-  /// re-parsed. The mirror of `EMacroVar`, and the MARKING is the whole
-  /// difference between them: a `^name` constant is the caller's source and
-  /// carries `from_macro`, a `$$name` constant is the host's and does not.
-  /// That one bit is what decides whether a constant may pin a URL origin
-  /// (`dyncomp/policy/external_url.mbt`).
-  EConfigVar(name~ : String, span~ : Span)
-  /// A bare name. In a declaration body it is a parameter; in a handler slot
-  /// it is an event argument, resolved against the closed table in
-  /// `render/dom_event.mbt`. Never a value in a value slot.
-  EName(name~ : String, span~ : Span)
-  /// A name applied to arguments — `len .items`, `clamp .page 0 (.n - 1)`,
-  /// `unfinished @value`. Juxtaposition is unambiguous because every callable
-  /// has a known fixed arity and the vocabulary is closed.
-  EApp(name~ : String, args~ : Array[Expr], span~ : Span)
-  /// Two or more operands joined by operators of ONE family.
-  EChain(
-    family~ : OpFamily,
-    ops~ : Array[String],
-    operands~ : Array[Expr],
-    span~ : Span
-  )
-  EUnary(op~ : UnOp, operand~ : Expr, span~ : Span)
-  /// `if c { a } else { b }` in a value position. Both arms are required:
-  /// an expression has to have a value.
-  EIf(cond~ : Expr, then_~ : Expr, else_~ : Expr, span~ : Span)
-  /// `&.rows[k]` — a reference to a POSITION, legal in exactly one place: the
-  /// first argument of `sendAt`.
-  ///
-  /// `&.rows[k]` denotes the position; `.rows[k]` denotes what is there. That
-  /// distinction is the point — a position survives the root being rebuilt,
-  /// which is what makes an async response land on the row that asked for it.
-  ERef(place~ : Place, span~ : Span)
-} derive(Debug, Eq)
 
 ///|
 /// A syntax error, with the span to point at.
@@ -392,17 +270,15 @@ declare pub fn parse_script(source : String) -> Array[Decl] raise ScriptError
 /// Parse ONE expression, with no declaration around it — the entry a
 /// conditional slot parses through, so that a slot and a block body are the
 /// same language rather than two that resemble each other.
-declare pub fn parse_expr_source(source : String) -> Expr raise ScriptError
+declare pub fn parse_expr_source(
+  source : String,
+) -> @tutuca.Expr raise ScriptError
 
 ///|
 /// Print a declaration back as canonical source. Round-tripping through this
 /// is how the grammar is pinned: parse, print, parse again, and the two ASTs
 /// agree.
 declare pub fn Decl::to_source(self : Decl) -> String
-
-///|
-/// Print an expression back as canonical source.
-declare pub fn Expr::to_source(self : Expr) -> String
 
 ///|
 /// Whether a declaration is a TRANSITION — the four kinds that answer a

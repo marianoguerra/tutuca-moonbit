@@ -7,25 +7,23 @@
 // and a question mark. One lexer would have to be told which language it was
 // reading, which is two lexers with extra steps.
 //
-// It is also what keeps `statedef` free of `core`: sharing would mean
-// depending on `tscript`, and this package's whole shape is text in, typed
-// `StateDef` out, with three small dependencies and no `Value` anywhere.
+// It is also what keeps `statedef` off `tscript`: sharing would mean depending
+// on it, and this package's whole shape is text in, typed `StateDef` out, with
+// a handful of small dependencies and no `Value` anywhere. `core` it does
+// reach, for the `Ty`/`Domain`/`Span` vocabulary the schema is written in.
 
 ///|
 /// A half-open character range in the block.
 ///
-/// Character indices, not bytes — the same `Array[Char]` `viewfile` slices
-/// with, so a span from here and a span from the file agree for any input.
-/// State and script diagnostics both use character ranges, so a caller can
-/// rebase either block onto the containing view file exactly.
-pub(all) struct Span {
-  start : Int
-  end_ : Int
-} derive(Eq, @debug.Debug)
+/// `core`'s one `Span` (`core/span.mbt`). State and script diagnostics both use
+/// character ranges — the same `Array[Char]` `viewfile` slices with — so a
+/// caller can rebase either block onto the containing view file exactly, and
+/// two records with the same two fields would only have made that a conversion.
+pub using @tutuca {type Span}
 
 ///|
 /// The empty span, for a failure with no position of its own.
-let no_span : Span = { start: 0, end_: 0, }
+let no_span : Span = @tutuca.no_span
 
 ///|
 priv enum Tok {

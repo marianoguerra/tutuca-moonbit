@@ -50,7 +50,7 @@ fn greeting_main_view_ir() -> @anode.View {
     "main",
     @anode.h("p", [@anode.attr("class", "p-2 border rounded")], [
       @anode.text("\n  Hello, "),
-      @anode.h("strong", [], [@anode.dyn_text(Field("name"))]),
+      @anode.h("strong", [], [@anode.dyn_text(@tutuca.Expr::field("name"))]),
       @anode.text("!\n"),
     ]),
     [],
@@ -113,7 +113,7 @@ fn page_main_view_ir() -> @anode.View {
         @anode.text("Page header"),
       ]),
       @anode.text(" "),
-      @anode.render(0, Field("greeting")),
+      @anode.render(0, @tutuca.Expr::field("greeting")),
       @anode.text(" "),
       @anode.h("p", [@anode.attr("class", "opacity-60")], [
         @anode.text("— end of page —"),
@@ -177,9 +177,9 @@ fn entry_main_view_ir() -> @anode.View {
     @anode.h("div", [@anode.attr("class", "card bg-base-100 shadow-sm")], [
       @anode.h("div", [@anode.attr("class", "card-body")], [
         @anode.h("h2", [@anode.attr("class", "card-title")], [
-          @anode.dyn_text(Field("title")),
+          @anode.dyn_text(@tutuca.Expr::field("title")),
         ]),
-        @anode.h("p", [], [@anode.dyn_text(Field("description"))]),
+        @anode.h("p", [], [@anode.dyn_text(@tutuca.Expr::field("description"))]),
       ]),
     ]),
     [],
@@ -200,7 +200,7 @@ fn entry_edit_view_ir() -> @anode.View {
             "input",
             [
               @anode.attr("class", "input title"),
-              @anode.dyn_attr("value", Field("title")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("title")),
               @anode.eid(0),
             ],
             [],
@@ -210,7 +210,7 @@ fn entry_edit_view_ir() -> @anode.View {
             "input",
             [
               @anode.attr("class", "input desc"),
-              @anode.dyn_attr("value", Field("description")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("description")),
               @anode.eid(1),
             ],
             [],
@@ -220,14 +220,16 @@ fn entry_edit_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setTitle", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setTitle", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setDescription", ns=Receive), args=[
-          EventPath(["value"]),
-        ]),
+        @anode.on(
+          "input",
+          @tutuca.Expr::handler_name("setDescription", Receive),
+          args=[@tutuca.Expr::event_path(["value"])],
+        ),
       ],
     ],
   )
@@ -323,9 +325,13 @@ fn multiple_views_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [@anode.attr("class", "flex flex-col gap-3")], [
-      @anode.render(0, Field("value")),
+      @anode.render(0, @tutuca.Expr::field("value")),
       @anode.text(" "),
-      @anode.render(1, Field("value"), view=@anode.const_str("edit")),
+      @anode.render(
+        1,
+        @tutuca.Expr::field("value"),
+        view=@anode.const_str("edit"),
+      ),
     ]),
     [],
   )

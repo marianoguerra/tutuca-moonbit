@@ -29,31 +29,31 @@ pub fn kind_word(DeclKind) -> String
 
 pub fn leg_of_word(String) -> @core.Leg?
 
-pub let no_span : Span
+pub let no_span : @core.Span
 
-pub fn parse_alter_handler(String, ParseCtx) -> @core.Val?
+pub fn parse_alter_handler(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_bool(String, ParseCtx) -> @core.Val?
+pub fn parse_bool(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_component(String, ParseCtx) -> @core.Val?
+pub fn parse_component(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_expr_source(String) -> Expr raise ScriptError
+pub fn parse_expr_source(String) -> @core.Expr raise ScriptError
 
-pub fn parse_field(String, ParseCtx) -> @core.Val?
+pub fn parse_field(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_input_handler(String, ParseCtx) -> HandlerParse?
 
-pub fn parse_macro_attr(String, ParseCtx) -> @core.Val?
+pub fn parse_macro_attr(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_provide(String, ParseCtx) -> @core.Val?
+pub fn parse_provide(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_script(String) -> Array[Decl] raise ScriptError
 
-pub fn parse_sequence(String, ParseCtx) -> @core.Val?
+pub fn parse_sequence(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_text(String, ParseCtx) -> @core.Val?
+pub fn parse_text(String, ParseCtx) -> @core.Expr?
 
-pub fn parse_token(String, ParseCtx) -> @core.Val?
+pub fn parse_token(String, ParseCtx) -> @core.Expr?
 
 pub fn script_builtin(String) -> Int?
 
@@ -69,16 +69,16 @@ pub fn tokenize_script(String) -> Array[ScriptToken] raise ScriptError
 
 // Errors
 pub suberror ScriptError {
-  Unexpected(got~ : String, want~ : String, span~ : Span)
-  MixedFamilies(first~ : String, second~ : String, span~ : Span)
-  NonAssociative(op~ : String, span~ : Span)
-  MisplacedRef(span~ : Span)
-  BadPlace(why~ : String, span~ : Span)
-  UnknownKind(got~ : String, span~ : Span)
-  DuplicateDecl(name~ : String, span~ : Span)
+  Unexpected(got~ : String, want~ : String, span~ : @core.Span)
+  MixedFamilies(first~ : String, second~ : String, span~ : @core.Span)
+  NonAssociative(op~ : String, span~ : @core.Span)
+  MisplacedRef(span~ : @core.Span)
+  BadPlace(why~ : String, span~ : @core.Span)
+  UnknownKind(got~ : String, span~ : @core.Span)
+  DuplicateDecl(name~ : String, span~ : @core.Span)
 }
 pub fn ScriptError::message(Self) -> String
-pub fn ScriptError::span(Self) -> Span
+pub fn ScriptError::span(Self) -> @core.Span
 
 // Types and methods
 pub(all) enum AssignOp {
@@ -90,12 +90,12 @@ pub fn AssignOp::word(Self) -> String
 
 pub(all) struct Attach {
   name : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Body {
   Stmts(Array[Stmt])
-  Value(Expr)
+  Value(@core.Expr)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Decl {
@@ -104,11 +104,11 @@ pub(all) struct Decl {
   params : Array[Param]
   requires_ : Attach?
   ensures_ : Attach?
-  format : Expr?
+  format : @core.Expr?
   body : Body
   doc : String
-  span : Span
-  name_span : Span
+  span : @core.Span
+  name_span : @core.Span
 } derive(Eq, @debug.Debug)
 pub fn Decl::to_source(Self) -> String
 
@@ -124,26 +124,9 @@ pub(all) enum DeclKind {
   DEnrichScope
 } derive(Eq, @debug.Debug)
 
-pub(all) enum Expr {
-  ELit(lit~ : @core.Lit, span~ : Span)
-  ETpl(parts~ : Array[TplPart], span~ : Span)
-  ERead(place~ : Place, span~ : Span)
-  EMethod(name~ : String, span~ : Span)
-  EDyn(name~ : String, span~ : Span)
-  EMacroVar(name~ : String, span~ : Span)
-  EConfigVar(name~ : String, span~ : Span)
-  EName(name~ : String, span~ : Span)
-  EApp(name~ : String, args~ : Array[Expr], span~ : Span)
-  EChain(family~ : OpFamily, ops~ : Array[String], operands~ : Array[Expr], span~ : Span)
-  EUnary(op~ : UnOp, operand~ : Expr, span~ : Span)
-  EIf(cond~ : Expr, then_~ : Expr, else_~ : Expr, span~ : Span)
-  ERef(place~ : Place, span~ : Span)
-} derive(Eq, @debug.Debug)
-pub fn Expr::to_source(Self) -> String
-
 pub(all) struct HandlerParse {
-  handler : @core.Val
-  args : Array[@core.Val]
+  handler : @core.Expr
+  args : Array[@core.Expr]
   action : PropertyAction?
 } derive(Eq, @debug.Debug)
 
@@ -151,7 +134,7 @@ pub(all) struct Issue {
   kind : IssueKind
   role : IssueRole
   value : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum IssueKind {
@@ -169,17 +152,9 @@ pub(all) enum IssueRole {
   BadExpression(why~ : String)
 } derive(Eq, @debug.Debug)
 
-pub(all) enum OpFamily {
-  FLogic
-  FCompare
-  FImplies
-  FAdd
-  FMul
-} derive(Eq, @debug.Debug)
-
 pub(all) struct Param {
   name : String
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub struct ParseCtx {
@@ -189,27 +164,10 @@ pub struct ParseCtx {
 }
 pub fn ParseCtx::new(macro_vars? : Map[String, String], config_vars? : Map[String, String]) -> Self
 
-pub(all) enum PathStep {
-  PField(String)
-  PIndex(Expr)
-} derive(Eq, @debug.Debug)
-
-pub(all) struct Place {
-  root : PlaceRoot
-  steps : Array[PathStep]
-  span : Span
-} derive(Eq, @debug.Debug)
-
-pub(all) enum PlaceRoot {
-  PState(String)
-  PBind(String)
-  PParam(String)
-} derive(Eq, @debug.Debug)
-
 pub(all) enum PropertyAction {
-  PropertySet(name~ : String, value~ : @core.Val)
+  PropertySet(name~ : String, value~ : @core.Expr)
   PropertyReset(String)
-  PropertyCall(name~ : String, operation~ : String, args~ : Array[@core.Val])
+  PropertyCall(name~ : String, operation~ : String, args~ : Array[@core.Expr])
 } derive(Eq, @debug.Debug)
 
 pub(all) enum STok {
@@ -240,45 +198,31 @@ pub(all) enum STok {
 
 pub(all) struct ScriptToken {
   tok : STok
-  span : Span
+  span : @core.Span
   pre_space : Bool
 } derive(Eq, @debug.Debug)
 
-pub(all) struct Span {
-  start : Int
-  end_ : Int
-} derive(Eq, @debug.Debug)
-
 pub(all) enum Stmt {
-  SAssign(place~ : Place, op~ : AssignOp, value~ : Expr, span~ : Span)
-  SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
-  SEffect(name~ : String, args~ : Array[Expr], route~ : Array[@core.Leg], span~ : Span)
-  SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
-  SNew(ty~ : TyRef, span~ : Span)
+  SAssign(place~ : @core.Place, op~ : AssignOp, value~ : @core.Expr, span~ : @core.Span)
+  SMethod(place~ : @core.Place, call~ : String, args~ : Array[@core.Expr], span~ : @core.Span)
+  SEffect(name~ : String, args~ : Array[@core.Expr], route~ : Array[@core.Leg], span~ : @core.Span)
+  SIf(cond~ : @core.Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : @core.Span)
+  SNew(ty~ : TyRef, span~ : @core.Span)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Token {
   text : String
-  span : Span
-} derive(Eq, @debug.Debug)
-
-pub(all) enum TplPart {
-  TText(String)
-  TExpr(Expr)
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) struct TyRef {
   name : String
   args : Array[TyRef]
-  span : Span
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 pub fn TyRef::to_source(Self) -> String
 
-pub(all) enum UnOp {
-  UNot
-  UNeg
-} derive(Eq, @debug.Debug)
-
 // Type aliases
+pub using @core {type Span}
 
 // Traits

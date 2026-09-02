@@ -78,15 +78,15 @@ fn status_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      App(name="truthy?", args=[Field("message")]),
+      @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("message")]),
       @anode.h("div", [@anode.attr("class", "alert alert-info")], [
         @anode.h("span", [@anode.attr("class", "msg")], [
-          @anode.dyn_text(Field("message")),
+          @anode.dyn_text(@tutuca.Expr::field("message")),
         ]),
         @anode.text(" "),
         @anode.h("small", [], [
           @anode.text("(flashed "),
-          @anode.dyn_text(Field("count"), id=0),
+          @anode.dyn_text(@tutuca.Expr::field("count"), id=0),
           @anode.text(" times)"),
         ]),
       ]),
@@ -216,13 +216,13 @@ fn send_receive_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [@anode.attr("class", "flex flex-col gap-2")], [
-      @anode.render(0, Field("status")),
+      @anode.render(0, @tutuca.Expr::field("status")),
       @anode.text(" "),
       @anode.h(
         "input",
         [
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("draft")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("draft")),
           @anode.eid(0),
           @anode.attr("placeholder", "Type a message and press Enter"),
         ],
@@ -245,15 +245,15 @@ fn send_receive_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setDraft", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setDraft", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="submit", ns=Receive), modifiers=[
+        @anode.on("keydown", @tutuca.Expr::handler_name("submit", Receive), modifiers=[
           "send",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="submit", ns=Receive))],
-      [@anode.on("click", HandlerName(name="clearStatus", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("submit", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("clearStatus", Receive))],
     ],
   )
 }
@@ -359,30 +359,30 @@ fn tree_item_main_view_ir() -> @anode.View {
           @anode.attr("class", "head"),
           @anode.if_attr(
             "class",
-            Field("isOpen"),
-            then_val=StrTpl([
-              Some(@anode.const_str("head open type-")),
-              Some(Field("type")),
+            @tutuca.Expr::field("isOpen"),
+            then_val=@tutuca.Expr::tpl([
+              TText(text="head open type-", from_macro=false),
+              TExpr(@tutuca.Expr::field("type")),
             ]),
-            else_val=StrTpl([
-              Some(@anode.const_str("head closed type-")),
-              Some(Field("type")),
+            else_val=@tutuca.Expr::tpl([
+              TText(text="head closed type-", from_macro=false),
+              TExpr(@tutuca.Expr::field("type")),
             ]),
           ),
           @anode.eid(0),
         ],
-        [@anode.dyn_text(Field("label"))],
+        [@anode.dyn_text(@tutuca.Expr::field("label"))],
       ),
       @anode.text(" "),
       @anode.show(
-        Method("areChildsVisible"),
+        @tutuca.Expr::method_("areChildsVisible"),
         @anode.h(
           "div",
           [@anode.attr("class", "pl-3 pt-1 flex flex-col gap-2 kids")],
           [
             @anode.each(
               1,
-              Field("items"),
+              @tutuca.Expr::field("items"),
               @anode.render_it(0),
               from_render_each=true,
             ),
@@ -390,7 +390,7 @@ fn tree_item_main_view_ir() -> @anode.View {
         ),
       ),
     ]),
-    [[@anode.on("click", HandlerName(name="onItemClick", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("onItemClick", Receive))]],
     style="user-select: none;\n.head { cursor: pointer; }\n.head:before { content: \"⏺️\"; margin-right: 0.25rem; }\n.head.type-file:before { content: \"📄️\"; }\n.head.open.type-dir:before { content: \"📂️\"; }\n.head.closed.type-dir:before { content: \"📁️\"; }",
   )
 }
@@ -507,7 +507,7 @@ fn tree_root_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [@anode.attr("class", "flex flex-col gap-3")], [
-      @anode.render(0, Field("root")),
+      @anode.render(0, @tutuca.Expr::field("root")),
       @anode.text(" "),
       @anode.h(
         "ul",
@@ -519,8 +519,10 @@ fn tree_root_main_view_ir() -> @anode.View {
         [
           @anode.each(
             2,
-            Field("log"),
-            @anode.h("li", [], [@anode.dyn_text(Bind("value"), id=1)]),
+            @tutuca.Expr::field("log"),
+            @anode.h("li", [], [
+              @anode.dyn_text(@tutuca.Expr::bind("value"), id=1),
+            ]),
           ),
         ],
       ),

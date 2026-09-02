@@ -73,7 +73,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
               "class", "font-mono text-xs w-32 shrink-0 text-right opacity-70 row-name",
             ),
           ],
-          [@anode.dyn_text(Field("name"))],
+          [@anode.dyn_text(@tutuca.Expr::field("name"))],
         ),
         @anode.text(" "),
         @anode.h(
@@ -83,17 +83,20 @@ fn state_editor_row_main_view_ir() -> @anode.View {
               "class", "font-mono text-[0.65rem] w-24 shrink-0 opacity-40 row-type",
             ),
           ],
-          [@anode.dyn_text(Field("type"))],
+          [@anode.dyn_text(@tutuca.Expr::field("type"))],
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("bool")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("bool"),
+          ]),
           @anode.h(
             "input",
             [
               @anode.attr("type", "checkbox"),
               @anode.attr("class", "checkbox checkbox-xs row-bool"),
-              @anode.dyn_attr("checked", Field("flag")),
+              @anode.dyn_attr("checked", @tutuca.Expr::field("flag")),
               @anode.eid(0),
             ],
             [],
@@ -101,13 +104,16 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("num")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("num"),
+          ]),
           @anode.h(
             "input",
             [
               @anode.attr("type", "number"),
               @anode.attr("class", "input input-xs input-bordered w-40 row-num"),
-              @anode.dyn_attr("value", Field("num")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("num")),
               @anode.eid(1),
             ],
             [],
@@ -115,7 +121,10 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Field("kind"), @anode.const_str("text")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::field("kind"),
+            @anode.const_str("text"),
+          ]),
           @anode.h(
             "input",
             [
@@ -123,7 +132,7 @@ fn state_editor_row_main_view_ir() -> @anode.View {
               @anode.attr(
                 "class", "input input-xs input-bordered w-64 row-text",
               ),
-              @anode.dyn_attr("value", Field("text")),
+              @anode.dyn_attr("value", @tutuca.Expr::field("text")),
               @anode.eid(2),
             ],
             [],
@@ -131,29 +140,29 @@ fn state_editor_row_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Field("editable"),
+          @tutuca.Expr::field("editable"),
           @anode.h(
             "span",
             [@anode.attr("class", "font-mono text-xs opacity-50 row-readonly")],
-            [@anode.dyn_text(Field("readonly"))],
+            [@anode.dyn_text(@tutuca.Expr::field("readonly"))],
           ),
         ),
       ],
     ),
     [
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["valueAsFloat"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["valueAsFloat"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="edit", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("edit", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
     ],
@@ -261,12 +270,12 @@ fn state_editor_main_view_ir() -> @anode.View {
         @anode.h(
           "div",
           [@anode.attr("class", "font-mono text-sm font-semibold editor-name")],
-          [@anode.dyn_text(Field("name"))],
+          [@anode.dyn_text(@tutuca.Expr::field("name"))],
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("rows"),
+          @tutuca.Expr::field("rows"),
           @anode.render_it(0),
           from_render_each=true,
         ),

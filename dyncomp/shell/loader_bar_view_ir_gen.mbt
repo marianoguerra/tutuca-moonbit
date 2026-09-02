@@ -64,25 +64,25 @@ fn loader_bar_main_view_ir() -> @anode.View {
       [@anode.attr("class", "loader-bar flex items-center gap-2")],
       [
         @anode.hide(
-          App(name="empty?", args=[Field("samples")]),
+          @tutuca.Expr::app("empty?", [@tutuca.Expr::field("samples")]),
           @anode.h("span", [@anode.attr("class", "join")], [
             @anode.each(
               0,
-              Field("samples"),
+              @tutuca.Expr::field("samples"),
               @anode.h(
                 "button",
                 [
                   @anode.attr("class", "btn btn-xs join-item load-sample"),
                   @anode.eid(0),
                 ],
-                [@anode.dyn_text(BindMember(name="value", prop="label"))],
+                [@anode.dyn_text(@tutuca.Expr::bind_member("value", "label"))],
               ),
             ),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("showUrl"),
+          @tutuca.Expr::field("showUrl"),
           @anode.h("span", [@anode.attr("class", "join")], [
             @anode.h(
               "input",
@@ -91,7 +91,7 @@ fn loader_bar_main_view_ir() -> @anode.View {
                   "class", "input input-xs input-bordered join-item bar-url",
                 ),
                 @anode.attr("placeholder", "…/name.tutuca.tar.gz"),
-                @anode.dyn_attr("value", Field("url")),
+                @anode.dyn_attr("value", @tutuca.Expr::field("url")),
                 @anode.eid(1),
               ],
               [],
@@ -111,25 +111,25 @@ fn loader_bar_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [@anode.attr("class", "text-xs opacity-60 bar-status")],
-          [@anode.dyn_text(Field("status"))],
+          [@anode.dyn_text(@tutuca.Expr::field("status"))],
         ),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="loadSample", ns=Receive), args=[
-          BindMember(name="value", prop="url"),
+        @anode.on("click", @tutuca.Expr::handler_name("loadSample", Receive), args=[
+          @tutuca.Expr::bind_member("value", "url"),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="typeUrl", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("typeUrl", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="loadUrl", ns=Receive), modifiers=[
+        @anode.on("keydown", @tutuca.Expr::handler_name("loadUrl", Receive), modifiers=[
           "send",
         ]),
       ],
-      [@anode.on("click", HandlerName(name="loadUrl", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("loadUrl", Receive))],
     ],
   )
 }

@@ -50,8 +50,8 @@ pub(all) enum Bucket {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Rules {
-  preds : Map[String, @core.Val]
-  invariants : Map[String, @core.Val]
+  preds : Map[String, @core.Expr]
+  invariants : Map[String, @core.Expr]
   unlowerable : Array[(String, String)]
 }
 pub fn Rules::broken(Self, Map[String, @core.Value]) -> Array[String]

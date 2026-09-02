@@ -21,7 +21,7 @@ pub(all) struct Finding {
   severity : Severity
   /// Where, in the block's own coordinates. `@viewfile.Block` carries the
   /// offset that rebases it onto the file.
-  span : @tscript.Span
+  span : @tutuca.Span
 } derive(Debug, Eq)
 
 ///|

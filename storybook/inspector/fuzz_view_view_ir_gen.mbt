@@ -160,141 +160,150 @@ pub let fuzz_row_spec_source : String =
 fn fuzz_row_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [@anode.dyn_attr("class", Field("rowClass"))], [
-      @anode.h(
-        "div",
-        [
-          @anode.attr(
-            "class", "row-head flex items-center gap-2 flex-wrap cursor-pointer",
-          ),
-          @anode.eid(0),
-        ],
-        [
-          @anode.h(
-            "span",
-            [
-              @anode.attr(
-                "class", "badge badge-xs tabular-nums opacity-50 row-at",
-              ),
-            ],
-            [@anode.dyn_text(Field("at"))],
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [
-              @anode.attr("title", "A message or an intent"),
-              @anode.dyn_attr("class", Field("verbClass")),
-            ],
-            [@anode.dyn_text(Field("verb"))],
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [@anode.attr("class", "font-mono font-semibold row-name")],
-            [@anode.dyn_text(Field("name"))],
-          ),
-          @anode.text(" "),
-          @anode.show(
-            App(name="truthy?", args=[Field("args")]),
-            @anode.h(
-              "span",
-              [@anode.attr("class", "text-xs opacity-40 font-mono row-args")],
-              [@anode.dyn_text(Field("args"))],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.show(
-            Field("broke"),
-            @anode.h(
-              "span",
-              [
-                @anode.attr(
-                  "title", "A rule the block declares does not hold here, and nothing stopped it",
-                ),
-                @anode.attr("class", "badge badge-xs badge-error row-broke"),
-              ],
-              [@anode.dyn_text(Field("brokeRule"))],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.show(
-            Field("refused"),
-            @anode.h(
-              "span",
-              [
-                @anode.attr(
-                  "title", "The runtime declined this — a rule doing its job, not a failure",
-                ),
-                @anode.attr(
-                  "class", "badge badge-xs badge-warning badge-outline row-refused",
-                ),
-              ],
-              [@anode.dyn_text(Field("refusedRule"))],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.show(
-            Field("disagreed"),
-            @anode.h(
-              "span",
-              [
-                @anode.attr(
-                  "title", "The block's reading of the rule and the compiled one do not agree",
-                ),
-                @anode.attr(
-                  "class", "badge badge-xs badge-secondary row-disagreed",
-                ),
-              ],
-              [@anode.text("disagrees")],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [
-              @anode.attr("title", "Renders this dispatch caused"),
-              @anode.attr(
-                "class", "ml-auto text-xs opacity-40 tabular-nums row-renders",
-              ),
-            ],
-            [
-              @anode.dyn_text(Field("renders"), id=0),
-              @anode.dyn_text(@anode.const_str(" render"), id=1),
-            ],
-          ),
-        ],
-      ),
-      @anode.text(" "),
-      @anode.show(
-        Field("open"),
+    @anode.h(
+      "div",
+      [@anode.dyn_attr("class", @tutuca.Expr::field("rowClass"))],
+      [
         @anode.h(
           "div",
           [
             @anode.attr(
-              "class", "pl-6 flex flex-col gap-1 font-mono text-xs row-detail",
+              "class", "row-head flex items-center gap-2 flex-wrap cursor-pointer",
             ),
+            @anode.eid(0),
           ],
           [
+            @anode.h(
+              "span",
+              [
+                @anode.attr(
+                  "class", "badge badge-xs tabular-nums opacity-50 row-at",
+                ),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("at"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr("title", "A message or an intent"),
+                @anode.dyn_attr("class", @tutuca.Expr::field("verbClass")),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("verb"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [@anode.attr("class", "font-mono font-semibold row-name")],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
+            ),
+            @anode.text(" "),
             @anode.show(
-              Field("refused"),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("args")]),
               @anode.h(
-                "div",
-                [@anode.attr("class", "opacity-70 row-sentence")],
-                [@anode.dyn_text(Field("refusedSentence"), id=2)],
+                "span",
+                [@anode.attr("class", "text-xs opacity-40 font-mono row-args")],
+                [@anode.dyn_text(@tutuca.Expr::field("args"))],
               ),
             ),
             @anode.text(" "),
-            @anode.h("div", [@anode.attr("class", "opacity-50")], [
-              @anode.text("after"),
-            ]),
+            @anode.show(
+              @tutuca.Expr::field("broke"),
+              @anode.h(
+                "span",
+                [
+                  @anode.attr(
+                    "title", "A rule the block declares does not hold here, and nothing stopped it",
+                  ),
+                  @anode.attr("class", "badge badge-xs badge-error row-broke"),
+                ],
+                [@anode.dyn_text(@tutuca.Expr::field("brokeRule"))],
+              ),
+            ),
             @anode.text(" "),
-            @anode.render(3, Field("after")),
+            @anode.show(
+              @tutuca.Expr::field("refused"),
+              @anode.h(
+                "span",
+                [
+                  @anode.attr(
+                    "title", "The runtime declined this — a rule doing its job, not a failure",
+                  ),
+                  @anode.attr(
+                    "class", "badge badge-xs badge-warning badge-outline row-refused",
+                  ),
+                ],
+                [@anode.dyn_text(@tutuca.Expr::field("refusedRule"))],
+              ),
+            ),
+            @anode.text(" "),
+            @anode.show(
+              @tutuca.Expr::field("disagreed"),
+              @anode.h(
+                "span",
+                [
+                  @anode.attr(
+                    "title", "The block's reading of the rule and the compiled one do not agree",
+                  ),
+                  @anode.attr(
+                    "class", "badge badge-xs badge-secondary row-disagreed",
+                  ),
+                ],
+                [@anode.text("disagrees")],
+              ),
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr("title", "Renders this dispatch caused"),
+                @anode.attr(
+                  "class", "ml-auto text-xs opacity-40 tabular-nums row-renders",
+                ),
+              ],
+              [
+                @anode.dyn_text(@tutuca.Expr::field("renders"), id=0),
+                @anode.dyn_text(@anode.const_str(" render"), id=1),
+              ],
+            ),
           ],
         ),
-      ),
-    ]),
-    [[@anode.on("click", HandlerName(name="toggle", ns=Receive))]],
+        @anode.text(" "),
+        @anode.show(
+          @tutuca.Expr::field("open"),
+          @anode.h(
+            "div",
+            [
+              @anode.attr(
+                "class", "pl-6 flex flex-col gap-1 font-mono text-xs row-detail",
+              ),
+            ],
+            [
+              @anode.show(
+                @tutuca.Expr::field("refused"),
+                @anode.h(
+                  "div",
+                  [@anode.attr("class", "opacity-70 row-sentence")],
+                  [
+                    @anode.dyn_text(
+                      @tutuca.Expr::field("refusedSentence"),
+                      id=2,
+                    ),
+                  ],
+                ),
+              ),
+              @anode.text(" "),
+              @anode.h("div", [@anode.attr("class", "opacity-50")], [
+                @anode.text("after"),
+              ]),
+              @anode.text(" "),
+              @anode.render(3, @tutuca.Expr::field("after")),
+            ],
+          ),
+        ),
+      ],
+    ),
+    [[@anode.on("click", @tutuca.Expr::handler_name("toggle", Receive))]],
   )
 }
 
@@ -475,17 +484,17 @@ fn fuzz_log_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          Field("hasRows"),
+          @tutuca.Expr::field("hasRows"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-40 empty-hint")],
-            [@anode.dyn_text(Field("emptyHint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("emptyHint"))],
           ),
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("rows"),
+          @tutuca.Expr::field("rows"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -577,16 +586,16 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
       [@anode.attr("class", "fuzz-controls flex flex-col gap-2 p-2")],
       [
         @anode.hide(
-          Field("canRun"),
+          @tutuca.Expr::field("canRun"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 no-plan")],
-            [@anode.dyn_text(Field("noPlanHint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("noPlanHint"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("canRun"),
+          @tutuca.Expr::field("canRun"),
           @anode.h(
             "div",
             [@anode.attr("class", "flex items-center gap-2 flex-wrap")],
@@ -602,7 +611,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                     "class", "input input-xs input-bordered w-24 tabular-nums ctl-seed",
                   ),
                   @anode.attr("type", "number"),
-                  @anode.dyn_attr("value", Field("seed")),
+                  @anode.dyn_attr("value", @tutuca.Expr::field("seed")),
                   @anode.eid(0),
                 ],
                 [],
@@ -619,7 +628,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
                     "class", "input input-xs input-bordered w-20 tabular-nums ctl-steps",
                   ),
                   @anode.attr("type", "number"),
-                  @anode.dyn_attr("value", Field("steps")),
+                  @anode.dyn_attr("value", @tutuca.Expr::field("steps")),
                   @anode.eid(1),
                 ],
                 [],
@@ -629,24 +638,30 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("canRun"),
+          @tutuca.Expr::field("canRun"),
           @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("publicClass")), @anode.eid(2)],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("publicClass")),
+                @anode.eid(2),
+              ],
               [@anode.text("Public API")],
             ),
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("messagesClass")), @anode.eid(3)],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("messagesClass")),
+                @anode.eid(3),
+              ],
               [@anode.text("Messages")],
             ),
             @anode.text(" "),
             @anode.h(
               "button",
               [
-                @anode.dyn_attr("class", Field("propertiesClass")),
+                @anode.dyn_attr("class", @tutuca.Expr::field("propertiesClass")),
                 @anode.eid(4),
               ],
               [@anode.text("Properties")],
@@ -654,14 +669,17 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
             @anode.text(" "),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("internalClass")), @anode.eid(5)],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("internalClass")),
+                @anode.eid(5),
+              ],
               [@anode.text("Internal mutators")],
             ),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("canRun"),
+          @tutuca.Expr::field("canRun"),
           @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
             @anode.text(
               "\n    Public API is the default: declared messages and writable properties. Generated field\n    mutators are component internals and appear only in the explicit diagnostic mode. The\n    same seed always draws the same script.\n  ",
@@ -670,24 +688,24 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Field("canRun"),
+          @tutuca.Expr::field("canRun"),
           @anode.h("div", [], [
             @anode.hide(
-              Field("canDraw"),
+              @tutuca.Expr::field("canDraw"),
               @anode.h(
                 "div",
                 [@anode.attr("class", "text-xs opacity-50 no-draw")],
-                [@anode.dyn_text(Field("noDrawHint"))],
+                [@anode.dyn_text(@tutuca.Expr::field("noDrawHint"))],
               ),
             ),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          Field("canDraw"),
+          @tutuca.Expr::field("canDraw"),
           @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
             @anode.hide(
-              Field("playing"),
+              @tutuca.Expr::field("playing"),
               @anode.h(
                 "button",
                 [
@@ -699,7 +717,7 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Field("playing"),
+              @tutuca.Expr::field("playing"),
               @anode.h(
                 "button",
                 [
@@ -736,40 +754,40 @@ fn fuzz_controls_main_view_ir() -> @anode.View {
     ),
     [
       [
-        @anode.on("input", HandlerName(name="setSeed", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setSeed", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("input", HandlerName(name="setSteps", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setSteps", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
           @anode.const_str("public"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
           @anode.const_str("messages"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
           @anode.const_str("properties"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setSource", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setSource", Receive), args=[
           @anode.const_str("internal"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="play", ns=Receive))],
-      [@anode.on("click", HandlerName(name="stop", ns=Receive))],
-      [@anode.on("click", HandlerName(name="step", ns=Receive))],
-      [@anode.on("click", HandlerName(name="burst", ns=Receive))],
-      [@anode.on("click", HandlerName(name="reset", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("play", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("stop", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("step", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("burst", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("reset", Receive))],
     ],
   )
 }
@@ -1523,8 +1541,11 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      App(name="not", args=[
-        App(name="is", args=[Field("kind"), @anode.const_str("none")]),
+      @tutuca.Expr::app("not", [
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("kind"),
+          @anode.const_str("none"),
+        ]),
       ]),
       @anode.h(
         "div",
@@ -1536,18 +1557,18 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
             [
               @anode.h(
                 "span",
-                [@anode.dyn_attr("class", Field("badgeClass"))],
-                [@anode.dyn_text(Field("kind"))],
+                [@anode.dyn_attr("class", @tutuca.Expr::field("badgeClass"))],
+                [@anode.dyn_text(@tutuca.Expr::field("kind"))],
               ),
               @anode.text(" "),
               @anode.h(
                 "span",
                 [@anode.attr("class", "text-sm verdict-headline")],
-                [@anode.dyn_text(Field("headline"))],
+                [@anode.dyn_text(@tutuca.Expr::field("headline"))],
               ),
               @anode.text(" "),
               @anode.show(
-                App(name="truthy?", args=[Field("rule")]),
+                @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("rule")]),
                 @anode.h(
                   "span",
                   [
@@ -1555,35 +1576,35 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
                       "class", "text-xs opacity-40 font-mono verdict-rule",
                     ),
                   ],
-                  [@anode.dyn_text(Field("rule"), id=0)],
+                  [@anode.dyn_text(@tutuca.Expr::field("rule"), id=0)],
                 ),
               ),
             ],
           ),
           @anode.text(" "),
           @anode.show(
-            App(name="truthy?", args=[Field("sentence")]),
+            @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("sentence")]),
             @anode.h(
               "div",
               [@anode.attr("class", "text-sm opacity-80 verdict-sentence")],
-              [@anode.dyn_text(Field("sentence"))],
+              [@anode.dyn_text(@tutuca.Expr::field("sentence"))],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasUnchecked"),
+            @tutuca.Expr::field("hasUnchecked"),
             @anode.h(
               "div",
               [@anode.attr("class", "text-xs opacity-60 verdict-unchecked")],
               [
                 @anode.dyn_text(@anode.const_str("not checked: "), id=1),
-                @anode.dyn_text(Field("unchecked"), id=2),
+                @anode.dyn_text(@tutuca.Expr::field("unchecked"), id=2),
               ],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasReproducer"),
+            @tutuca.Expr::field("hasReproducer"),
             @anode.h("div", [@anode.attr("class", "flex flex-col gap-1")], [
               @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
                 @anode.text("the shortest script that still does it"),
@@ -1591,7 +1612,7 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
               @anode.text(" "),
               @anode.each(
                 4,
-                Field("reproducer"),
+                @tutuca.Expr::field("reproducer"),
                 @anode.render_it(3),
                 from_render_each=true,
               ),
@@ -1599,11 +1620,14 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
           ),
           @anode.text(" "),
           @anode.show(
-            App(name="not", args=[
-              App(name="is", args=[Field("kind"), @anode.const_str("held")]),
+            @tutuca.Expr::app("not", [
+              @tutuca.Expr::app("is", [
+                @tutuca.Expr::field("kind"),
+                @anode.const_str("held"),
+              ]),
             ]),
             @anode.hide(
-              Field("hasReproducer"),
+              @tutuca.Expr::field("hasReproducer"),
               @anode.h(
                 "button",
                 [
@@ -1617,7 +1641,7 @@ fn fuzz_verdict_main_view_ir() -> @anode.View {
         ],
       ),
     ),
-    [[@anode.on("click", HandlerName(name="shrink", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("shrink", Receive))]],
   )
 }
 
@@ -1856,7 +1880,7 @@ fn fuzz_panel_main_view_ir() -> @anode.View {
           ]),
           @anode.text(" "),
           @anode.show(
-            Field("hasRun"),
+            @tutuca.Expr::field("hasRun"),
             @anode.h(
               "span",
               [
@@ -1865,20 +1889,20 @@ fn fuzz_panel_main_view_ir() -> @anode.View {
                 ),
               ],
               [
-                @anode.dyn_text(Field("at"), id=0),
+                @anode.dyn_text(@tutuca.Expr::field("at"), id=0),
                 @anode.dyn_text(@anode.const_str(" / "), id=1),
-                @anode.dyn_text(Field("total"), id=2),
+                @anode.dyn_text(@tutuca.Expr::field("total"), id=2),
               ],
             ),
           ),
         ],
       ),
       @anode.text(" "),
-      @anode.render(3, Field("controls")),
+      @anode.render(3, @tutuca.Expr::field("controls")),
       @anode.text(" "),
-      @anode.render(4, Field("verdict")),
+      @anode.render(4, @tutuca.Expr::field("verdict")),
       @anode.text(" "),
-      @anode.render(5, Field("log")),
+      @anode.render(5, @tutuca.Expr::field("log")),
     ]),
     [],
   )

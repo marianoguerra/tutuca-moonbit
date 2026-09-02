@@ -61,27 +61,36 @@ fn traffic_light_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("p", [], [
         @anode.text("Light is: "),
-        @anode.h("code", [], [@anode.dyn_text(Method("light"))]),
+        @anode.h("code", [], [@anode.dyn_text(@tutuca.Expr::method_("light"))]),
       ]),
       @anode.h("p", [@anode.attr("class", "advice")], [
         @anode.text("\n    You must\n    "),
         @anode.show(
-          App(name="is", args=[Method("light"), @anode.const_str("red")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::method_("light"),
+            @anode.const_str("red"),
+          ]),
           @anode.h("span", [], [@anode.text("STOP")]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Method("light"), @anode.const_str("orange")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::method_("light"),
+            @anode.const_str("orange"),
+          ]),
           @anode.h("span", [], [@anode.text("SLOW DOWN")]),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="is", args=[Method("light"), @anode.const_str("green")]),
+          @tutuca.Expr::app("is", [
+            @tutuca.Expr::method_("light"),
+            @anode.const_str("green"),
+          ]),
           @anode.h("span", [], [@anode.text("GO")]),
         ),
       ]),
     ]),
-    [[@anode.on("click", HandlerName(name="nextLight", ns=Receive))]],
+    [[@anode.on("click", @tutuca.Expr::handler_name("nextLight", Receive))]],
   )
 }
 
@@ -229,7 +238,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-overview"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[Field("tab"), @anode.const_str("overview")]),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("tab"),
+                  @anode.const_str("overview"),
+                ]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -245,7 +257,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-features"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[Field("tab"), @anode.const_str("features")]),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("tab"),
+                  @anode.const_str("features"),
+                ]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -261,7 +276,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
               @anode.attr("id", "t-pricing"),
               @anode.if_attr(
                 "class",
-                App(name="is", args=[Field("tab"), @anode.const_str("pricing")]),
+                @tutuca.Expr::app("is", [
+                  @tutuca.Expr::field("tab"),
+                  @anode.const_str("pricing"),
+                ]),
                 then_val=@anode.const_str("tab tab-active"),
                 else_val=@anode.const_str("tab"),
               ),
@@ -273,7 +291,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("tab"), @anode.const_str("overview")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("tab"),
+          @anode.const_str("overview"),
+        ]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Overview")]),
           @anode.h("p", [], [
@@ -283,7 +304,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("tab"), @anode.const_str("features")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("tab"),
+          @anode.const_str("features"),
+        ]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Features")]),
           @anode.h("p", [], [
@@ -293,7 +317,10 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="is", args=[Field("tab"), @anode.const_str("pricing")]),
+        @tutuca.Expr::app("is", [
+          @tutuca.Expr::field("tab"),
+          @anode.const_str("pricing"),
+        ]),
         @anode.h("div", [@anode.attr("class", "card p-3 border panel")], [
           @anode.h("h4", [], [@anode.text("Pricing")]),
           @anode.h("p", [], [@anode.text("What it costs.")]),
@@ -302,17 +329,17 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("overview"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("features"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("pricing"),
         ]),
       ],
@@ -391,7 +418,7 @@ fn list_and_filter_main_view_ir() -> @anode.View {
         [
           @anode.attr("type", "search"),
           @anode.attr("class", "input"),
-          @anode.dyn_attr("value", Field("query")),
+          @anode.dyn_attr("value", @tutuca.Expr::field("query")),
           @anode.eid(0),
           @anode.attr("placeholder", "Filter entries"),
         ],
@@ -401,24 +428,26 @@ fn list_and_filter_main_view_ir() -> @anode.View {
       @anode.h("ul", [], [
         @anode.each(
           1,
-          Field("items"),
+          @tutuca.Expr::field("items"),
           @anode.h("li", [], [
-            @anode.h("span", [], [@anode.dyn_text(Bind("key"))]),
+            @anode.h("span", [], [@anode.dyn_text(@tutuca.Expr::bind("key"))]),
             @anode.text(": "),
-            @anode.dyn_text(Bind("value"), id=0),
+            @anode.dyn_text(@tutuca.Expr::bind("value"), id=0),
           ]),
-          when_val=HandlerName(name="filterItem", ns=Alter),
+          when_val=@tutuca.Expr::handler_name("filterItem", Alter),
         ),
       ]),
     ]),
     [
       [
-        @anode.on("input", HandlerName(name="setQuery", ns=Receive), args=[
-          EventPath(["value"]),
+        @anode.on("input", @tutuca.Expr::handler_name("setQuery", Receive), args=[
+          @tutuca.Expr::event_path(["value"]),
         ]),
-        @anode.on("keydown", HandlerName(name="resetQuery", ns=Receive), modifiers=[
-          "cancel",
-        ]),
+        @anode.on(
+          "keydown",
+          @tutuca.Expr::handler_name("resetQuery", Receive),
+          modifiers=["cancel"],
+        ),
       ],
     ],
   )

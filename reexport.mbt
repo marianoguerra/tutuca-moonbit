@@ -83,3 +83,32 @@ pub using @core {
   // through the facade a generated module imports — not only through `@core`.
   bad_payload,
 }
+
+// The expression AST, for the reason everything above it is here: a GENERATED
+// view module spells it. `viewgen/ir.mbt` writes `@tutuca.Expr::field("count")`
+// for every dynamic attribute and `@tutuca.no_span` for every node it rebuilds,
+// and in the playground `@tutuca` IS this facade — so without these an example
+// with a single `:value=".x"` would compile everywhere except the one place an
+// author writes one in a browser.
+//
+// The shape constructors are METHODS (`Expr::field`, `Expr::bind`, …), which is
+// what makes this work at all: an enum constructor does not resolve through a
+// `pub using` re-export, and those four shapes are the ones a view writes most.
+// The cases the generator does spell as constructors — `ERead`, `TText`,
+// `Receive` — are all written where the expected type already names them, which
+// is the same bargain the domain vocabulary above struck.
+
+///|
+pub using @core {
+  type Expr,
+  type Lit,
+  type Span,
+  type Place,
+  type PlaceRoot,
+  type PathStep,
+  type TplPart,
+  type OpFamily,
+  type UnOp,
+  type HandlerNamespace,
+  no_span,
+}

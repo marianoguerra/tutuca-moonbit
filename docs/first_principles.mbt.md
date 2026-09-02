@@ -96,35 +96,51 @@ The two non-JSON variants are the seams where the upper layers plug in:
 *component instance* live inside the tree without `core` knowing what a
 component is.
 
-## 2. The value language: `Val`, `Stack`, `eval`
+## 2. The value language: `Expr`, `Stack`, `eval`
 
 Attribute values in templates are a tiny expression language, one sigil per
-resolution rule. Parsing produces a `Val` AST — one variant per syntactic
-form:
+resolution rule — and it is the SAME language a `<script type="tutuca/script">`
+block is written in, which is why there is one AST rather than a slot's and a
+block's. `Val` is the older name for it and still reads everywhere:
 
 ```mbt nocheck
 ///|
-pub(all) enum Val {
-  Const(lit~ : Lit, from_macro~ : Bool) // 'text', 42, true
-  StrTpl(Array[Val?]) // $'a {.b} c'
-  App(name~ : String, args~ : Array[Val]) // truthy? .x / .a is .b
-  Name(String) // bare lowercase: input handler / event arg
-  HandlerName(name~ : String, ns~ : HandlerNamespace)
-  TypeName(String) // bare Uppercase
-  Bind(String) // @name
-  BindMember(name~ : String, prop~ : String) // @name.member (one level)
-  Dyn(String) // *name
-  Field(String) // .name
-  Method(String) // $name
-  SeqAccess(seq~ : String, key~ : String) // .seq[.key]
+pub(all) enum Expr {
+  ELit(lit~ : Lit, from_macro~ : Bool, span~ : Span) // 'text', 42, true
+  ETpl(parts~ : Array[TplPart], span~ : Span) // $'a {.b} c'
+  ERead(place~ : Place, span~ : Span) // .name, @name.member, .seq[.key]
+  EApp(name~ : String, args~ : Array[Expr], span~ : Span) // truthy? .x
+  EName(name~ : String, span~ : Span) // bare lowercase: a parameter, an event arg
+  EHandlerName(name~ : String, ns~ : HandlerNamespace, span~ : Span)
+  ETypeName(name~ : String, span~ : Span) // bare Uppercase
+  EDyn(name~ : String, span~ : Span) // *name
+  EMethod(name~ : String, span~ : Span) // $name
+  EMacroVar(name~ : String, span~ : Span) // ^name
+  EConfigVar(name~ : String, span~ : Span) // $$name
+  EChain(..) // a and b, x + y
+  EUnary(..) // not x, -n
+  EIf(..) // if c { a } else { b }
+  ERef(place~ : Place, span~ : Span) // &.rows[k] — a POSITION
+  EEventPath(segments~ : Array[String], span~ : Span) // e.value
 }
 ```
+
+Every read of a position is one case, `ERead`, over a `Place` — a root
+(`.field`, `@bind`, a parameter) and any number of steps. What a slot may
+write is a handful of the shapes a place can take, and `Expr::field` /
+`as_field` and their three siblings are how those are built and read.
+
+Which forms may stand WHERE is a separate question with a separate answer:
+`Position` and `Expr::admitted_in` (`core/position.mbt`), asked by the parser
+for both a single token and a whole expression, so the two cannot drift.
 
 Parsing lives one package up, in `tscript` — `core` never calls it, and the
 only production callers are `anode` (every directive) and `component`
 (`provide` / `lookup`). What `core` keeps is the parsed form, because
-`Step::ScopeBindStep` embeds a `Val` so a rebuilt render stack can replay its
-bindings.
+`Step::ScopeBindStep` embeds one so a rebuilt render stack can replay its
+bindings. Spans ride along for diagnostics and count for nothing: `Eq` and
+`Debug` both ignore them, because a path rebuilt from a serialized frame has
+to equal the one the renderer built.
 
 The parse functions (`parse_token`, `parse_text`, `parse_field`, …) differ
 only in which forms they allow per attribute role; a `ParseCtx` collects
@@ -132,18 +148,18 @@ issues (the linter reads them later) instead of failing:
 
 ```mbt check
 ///|
-test "parsing: one sigil, one Val variant" {
+test "parsing: one sigil, one form" {
   let px = @tscript.ParseCtx::new()
   debug_inspect(
     @tscript.parse_token(".count", px),
     content=(
-      #|Some(Field("count"))
+      #|Some(ERead(place={ root: PState("count"), steps: [] }))
     ),
   )
   debug_inspect(
     @tscript.parse_token("@key", px),
     content=(
-      #|Some(Bind("key"))
+      #|Some(ERead(place={ root: PBind("key"), steps: [] }))
     ),
   )
   // an application is only legal in a boolean slot (@show, @hide, @if,
@@ -153,18 +169,23 @@ test "parsing: one sigil, one Val variant" {
   debug_inspect(
     @tscript.parse_bool("truthy? .msg", px),
     content=(
-      #|Some(App(name="truthy?", args=[Field("msg")]))
+      #|Some(
+      #|  EApp(
+      #|    name="truthy?",
+      #|    args=[ERead(place={ root: PState("msg"), steps: [] })],
+      #|  ),
+      #|)
     ),
   )
   debug_inspect(
     @tscript.parse_text("$'hi {.name}!'", px),
     content=(
       #|Some(
-      #|  StrTpl(
-      #|    [
-      #|      Some(Const(lit=LStr("hi "), from_macro=false)),
-      #|      Some(Field("name")),
-      #|      Some(Const(lit=LStr("!"), from_macro=false)),
+      #|  ETpl(
+      #|    parts=[
+      #|      TText(text="hi ", from_macro=false),
+      #|      TExpr(ERead(place={ root: PState("name"), steps: [] })),
+      #|      TText(text="!", from_macro=false),
       #|    ],
       #|  ),
       #|)
@@ -347,7 +368,7 @@ test "templates: directives become structure, events are hoisted out" {
   debug_inspect(
     wrap.val,
     content=(
-      #|Field("visible")
+      #|ERead(place={ root: PState("visible"), steps: [] })
     ),
   )
   guard! wrap.node is Dom(dom)
@@ -360,7 +381,7 @@ test "templates: directives become structure, events are hoisted out" {
   debug_inspect(
     px.events[0].handlers[0].handler.handler,
     content=(
-      #|HandlerName(name="hello", ns=Receive)
+      #|EHandlerName(name="hello", ns=Receive)
     ),
   )
 }

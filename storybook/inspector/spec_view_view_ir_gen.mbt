@@ -114,11 +114,11 @@ fn spec_field_main_view_ir() -> @anode.View {
                   "class", "text-base-content/70 font-mono text-sm spec-field-name",
                 ),
               ],
-              [@anode.dyn_text(Field("name"))],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("typeName")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("typeName")]),
               @anode.h("span", [@anode.attr("class", "text-base-content/30")], [
                 @anode.text(":"),
               ]),
@@ -131,11 +131,11 @@ fn spec_field_main_view_ir() -> @anode.View {
                   "class", "text-base-content/50 font-mono text-xs spec-field-type",
                 ),
               ],
-              [@anode.dyn_text(Field("typeName"))],
+              [@anode.dyn_text(@tutuca.Expr::field("typeName"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("attrs")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("attrs")]),
               @anode.h(
                 "span",
                 [
@@ -143,18 +143,18 @@ fn spec_field_main_view_ir() -> @anode.View {
                     "class", "badge badge-xs badge-ghost font-mono spec-field-attrs",
                   ),
                 ],
-                [@anode.dyn_text(Field("attrs"))],
+                [@anode.dyn_text(@tutuca.Expr::field("attrs"))],
               ),
             ),
           ],
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("doc")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 pl-2 spec-doc")],
-            [@anode.dyn_text(Field("doc"))],
+            [@anode.dyn_text(@tutuca.Expr::field("doc"))],
           ),
         ),
       ],
@@ -225,11 +225,11 @@ fn spec_msg_main_view_ir() -> @anode.View {
             @anode.h(
               "span",
               [@anode.attr("class", "font-mono text-sm spec-msg-name")],
-              [@anode.dyn_text(Field("name"))],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("payload")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("payload")]),
               @anode.h(
                 "span",
                 [
@@ -237,18 +237,18 @@ fn spec_msg_main_view_ir() -> @anode.View {
                     "class", "text-base-content/50 font-mono text-xs spec-msg-payload",
                   ),
                 ],
-                [@anode.dyn_text(Field("payload"))],
+                [@anode.dyn_text(@tutuca.Expr::field("payload"))],
               ),
             ),
           ],
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("doc")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 pl-2 spec-doc")],
-            [@anode.dyn_text(Field("doc"))],
+            [@anode.dyn_text(@tutuca.Expr::field("doc"))],
           ),
         ),
       ],
@@ -316,9 +316,11 @@ fn spec_rule_main_view_ir() -> @anode.View {
           "div",
           [@anode.attr("class", "flex items-center gap-2 flex-wrap")],
           [
-            @anode.h("span", [@anode.dyn_attr("class", Field("kindClass"))], [
-              @anode.dyn_text(Field("kind")),
-            ]),
+            @anode.h(
+              "span",
+              [@anode.dyn_attr("class", @tutuca.Expr::field("kindClass"))],
+              [@anode.dyn_text(@tutuca.Expr::field("kind"))],
+            ),
             @anode.text(" "),
             @anode.h(
               "span",
@@ -327,7 +329,7 @@ fn spec_rule_main_view_ir() -> @anode.View {
                   "class", "font-mono text-sm font-semibold spec-rule-name",
                 ),
               ],
-              [@anode.dyn_text(Field("name"))],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
             ),
           ],
         ),
@@ -339,24 +341,24 @@ fn spec_rule_main_view_ir() -> @anode.View {
               "class", "text-xs font-mono opacity-70 pl-2 break-all spec-rule-source",
             ),
           ],
-          [@anode.dyn_text(Field("source"))],
+          [@anode.dyn_text(@tutuca.Expr::field("source"))],
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("format")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("format")]),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 pl-2 spec-rule-format")],
-            [@anode.dyn_text(Field("format"))],
+            [@anode.dyn_text(@tutuca.Expr::field("format"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("doc")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("doc")]),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 pl-2 spec-doc")],
-            [@anode.dyn_text(Field("doc"))],
+            [@anode.dyn_text(@tutuca.Expr::field("doc"))],
           ),
         ),
       ],
@@ -423,7 +425,7 @@ fn spec_doc_main_view_ir() -> @anode.View {
           "class", "text-xs opacity-60 italic whitespace-pre-wrap spec-doc-block",
         ),
       ],
-      [@anode.dyn_text(Field("text"))],
+      [@anode.dyn_text(@tutuca.Expr::field("text"))],
     ),
     [],
   )
@@ -489,26 +491,26 @@ fn spec_viewer_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          Field("hasSpec"),
+          @tutuca.Expr::field("hasSpec"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-50 spec-hint")],
-            [@anode.dyn_text(Field("hint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("hint"))],
           ),
         ),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("note")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("note")]),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-40 italic spec-note")],
-            [@anode.dyn_text(Field("note"))],
+            [@anode.dyn_text(@tutuca.Expr::field("note"))],
           ),
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("sections"),
+          @tutuca.Expr::field("sections"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -593,25 +595,25 @@ fn spec_source_main_view_ir() -> @anode.View {
     "main",
     @anode.h("div", [@anode.attr("class", "flex flex-col gap-1 spec-source")], [
       @anode.hide(
-        Field("hasSource"),
+        @tutuca.Expr::field("hasSource"),
         @anode.h(
           "div",
           [@anode.attr("class", "text-xs opacity-50 spec-source-hint")],
-          [@anode.dyn_text(Field("hint"))],
+          [@anode.dyn_text(@tutuca.Expr::field("hint"))],
         ),
       ),
       @anode.text(" "),
       @anode.show(
-        App(name="truthy?", args=[Field("note")]),
+        @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("note")]),
         @anode.h(
           "div",
           [@anode.attr("class", "text-xs opacity-40 italic spec-note")],
-          [@anode.dyn_text(Field("note"))],
+          [@anode.dyn_text(@tutuca.Expr::field("note"))],
         ),
       ),
       @anode.text(" "),
       @anode.show(
-        Field("hasSource"),
+        @tutuca.Expr::field("hasSource"),
         @anode.h(
           "pre",
           [
@@ -621,7 +623,7 @@ fn spec_source_main_view_ir() -> @anode.View {
           ],
           [
             @anode.h("code", [@anode.attr("class", "spec-source-text")], [
-              @anode.dyn_text(Field("source")),
+              @anode.dyn_text(@tutuca.Expr::field("source")),
             ]),
           ],
         ),

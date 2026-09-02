@@ -36,6 +36,8 @@ pub fn domains_of_json(Json) -> Array[FieldDomain]
 
 pub fn domains_to_json(Array[FieldDomain]) -> Json
 
+pub fn escape_of(Char) -> Char?
+
 pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomain?
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
@@ -46,7 +48,11 @@ pub let module_key : String
 
 pub fn mutator_name(String, String) -> String
 
+pub let no_span : Span
+
 pub fn on_runtime_notice((RuntimeNotice) -> Unit) -> () -> Unit
+
+pub fn operand_source(Expr) -> String
 
 pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
@@ -79,6 +85,12 @@ pub let warn_hook : @ref.Ref[(String) -> Unit]
 // Errors
 
 // Types and methods
+pub(all) enum Admission {
+  Admitted
+  NotHere
+  Refused(String)
+} derive(Eq, @debug.Debug)
+
 pub struct Builtin {
   name : String
   arity : Int
@@ -142,6 +154,54 @@ pub(all) enum DomainOperand {
   DLit(Double)
   DField(String)
 } derive(Eq, @debug.Debug)
+
+#alias(Val)
+pub(all) enum Expr {
+  ELit(lit~ : Lit, from_macro~ : Bool, span~ : Span)
+  ETpl(parts~ : Array[TplPart], span~ : Span)
+  ERead(place~ : Place, span~ : Span)
+  EMethod(name~ : String, span~ : Span)
+  EDyn(name~ : String, span~ : Span)
+  EMacroVar(name~ : String, span~ : Span)
+  EConfigVar(name~ : String, span~ : Span)
+  EName(name~ : String, span~ : Span)
+  EHandlerName(name~ : String, ns~ : HandlerNamespace, span~ : Span)
+  ETypeName(name~ : String, span~ : Span)
+  EApp(name~ : String, args~ : Array[Expr], span~ : Span)
+  EChain(family~ : OpFamily, ops~ : Array[String], operands~ : Array[Expr], span~ : Span)
+  EUnary(op~ : UnOp, operand~ : Expr, span~ : Span)
+  EIf(cond~ : Expr, then_~ : Expr, else_~ : Expr, span~ : Span)
+  ERef(place~ : Place, span~ : Span)
+  EEventPath(segments~ : Array[String], span~ : Span)
+}
+pub fn Expr::admitted_in(Self, Position) -> Admission
+pub fn Expr::app(String, Array[Self], span? : Span) -> Self
+pub fn Expr::as_bind(Self) -> String?
+pub fn Expr::as_bind_member(Self) -> (String, String)?
+pub fn Expr::as_field(Self) -> String?
+pub fn Expr::as_lit(Self) -> Lit?
+pub fn Expr::as_seq_access(Self) -> (String, String)?
+pub fn Expr::bind(String, span? : Span) -> Self
+pub fn Expr::bind_member(String, String, span? : Span) -> Self
+pub fn Expr::dyn_(String, span? : Span) -> Self
+pub fn Expr::eval(Self, &Stack) -> Value
+pub fn Expr::eval_as_handler(Self, &Stack) -> Value
+pub fn Expr::event_path(Array[String], span? : Span) -> Self
+pub fn Expr::field(String, span? : Span) -> Self
+pub fn Expr::handler_name(String, HandlerNamespace, span? : Span) -> Self
+pub fn Expr::is_literal(Self) -> Bool
+pub fn Expr::lit(Lit, from_macro? : Bool, span? : Span) -> Self
+pub fn Expr::method_(String, span? : Span) -> Self
+pub fn Expr::name(String, span? : Span) -> Self
+pub fn Expr::seq_access(String, String, span? : Span) -> Self
+pub fn Expr::span(Self) -> Span
+pub fn Expr::to_path_item(Self) -> Step?
+pub fn Expr::to_source(Self) -> String
+pub fn Expr::tpl(Array[TplPart], span? : Span) -> Self
+pub fn Expr::type_name(String, span? : Span) -> Self
+pub impl Eq for Expr
+pub impl Show for Expr
+pub impl @debug.Debug for Expr
 
 pub(all) struct FieldDomain {
   field : String
@@ -242,6 +302,14 @@ pub fn ObjId::next(Self) -> Self
 pub fn ObjId::of(String, Map[String, Value]) -> Self
 pub fn ObjId::to_hex(Self) -> String
 
+pub(all) enum OpFamily {
+  FLogic
+  FCompare
+  FImplies
+  FAdd
+  FMul
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Path {
   steps : Array[Step]
 } derive(Eq, @debug.Debug)
@@ -279,6 +347,40 @@ pub fn PathKey::from_json(Json) -> Self?
 pub fn PathKey::to_json(Self) -> Json
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
+
+pub(all) enum PathStep {
+  PField(String)
+  PIndex(Expr)
+}
+pub impl Eq for PathStep
+pub impl @debug.Debug for PathStep
+
+pub(all) struct Place {
+  root : PlaceRoot
+  steps : Array[PathStep]
+  span : Span
+}
+pub fn Place::to_source(Self) -> String
+pub impl Eq for Place
+pub impl @debug.Debug for Place
+
+pub(all) enum PlaceRoot {
+  PState(String)
+  PBind(String)
+  PParam(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Position {
+  PosCondition
+  PosText
+  PosComponent
+  PosSequence
+  PosProvide
+  PosField
+  PosEventArg
+  PosMacroAttr
+  PosBody
+} derive(Eq, @debug.Debug)
 
 pub(all) struct PropertyInfo {
   name : String
@@ -427,14 +529,19 @@ pub fn SchemaInfo::field_names(Self) -> Array[String]
 pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], properties? : Array[PropertyInfo], view_handlers? : Array[String], receives? : Array[String], intents? : Array[String], express_messages? : Array[String], express_intents? : Array[String], methods? : Array[String], invariants? : Array[String], domains? : Array[FieldDomain], ids? : Array[String], view_names? : Array[String], init_names? : Array[String], protocols? : Array[ProtocolInfo], implements? : Array[String], property_bindings? : Array[ProtocolBindingInfo], view_bindings? : Array[ProtocolBindingInfo], provide_bindings? : Array[ProtocolBindingInfo], lookup_bindings? : Array[ProtocolBindingInfo]) -> Self
 pub fn SchemaInfo::shape_fingerprint(Self) -> String
 
+pub(all) struct Span {
+  start : Int
+  end_ : Int
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Step {
   FieldStep(String)
   SeqStep(field~ : String, key~ : PathKey)
   SeqAccessStep(seq_field~ : String, key_field~ : String)
   EachRenderItStep(field~ : String, key~ : PathKey)
   BindStep(binds~ : Map[String, Value])
-  ScopeBindStep(val~ : Val)
-  EachBindStep(val~ : Val, when_val~ : Val?, enrich_with_val~ : Val?, loop_with_val~ : Val?, key~ : PathKey)
+  ScopeBindStep(val~ : Expr)
+  EachBindStep(val~ : Expr, when_val~ : Expr?, enrich_with_val~ : Expr?, loop_with_val~ : Expr?, key~ : PathKey)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct StepKey {
@@ -443,6 +550,13 @@ pub(all) struct StepKey {
 } derive(Eq, @debug.Debug)
 pub fn StepKey::from_json(Json) -> Self?
 pub fn StepKey::to_json(Self) -> Json
+
+pub(all) enum TplPart {
+  TText(text~ : String, from_macro~ : Bool)
+  TExpr(Expr)
+}
+pub impl Eq for TplPart
+pub impl @debug.Debug for TplPart
 
 pub(all) enum TyInfo {
   TyBool
@@ -471,26 +585,10 @@ pub fn TyInfo::show_source(Self) -> String
 pub fn TyInfo::slot(Self) -> String?
 pub fn TyInfo::zero(Self) -> Value
 
-pub(all) enum Val {
-  Const(lit~ : Lit, from_macro~ : Bool)
-  StrTpl(Array[Val?])
-  App(name~ : String, args~ : Array[Val])
-  Name(String)
-  HandlerName(name~ : String, ns~ : HandlerNamespace)
-  TypeName(String)
-  Bind(String)
-  BindMember(name~ : String, prop~ : String)
-  Dyn(String)
-  Field(String)
-  Method(String)
-  SeqAccess(seq~ : String, key~ : String)
-  EventPath(Array[String])
+pub(all) enum UnOp {
+  UNot
+  UNeg
 } derive(Eq, @debug.Debug)
-pub fn Val::eval(Self, &Stack) -> Value
-pub fn Val::eval_as_handler(Self, &Stack) -> Value
-pub fn Val::is_literal(Self) -> Bool
-pub fn Val::to_path_item(Self) -> Step?
-pub impl Show for Val
 
 pub(all) enum Value {
   Null

@@ -148,11 +148,19 @@ fn styles_example_root_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [@anode.attr("class", "flex flex-col gap-3")], [
-      @anode.render(0, Field("value")),
+      @anode.render(0, @tutuca.Expr::field("value")),
       @anode.text(" "),
-      @anode.render(1, Field("value"), view=@anode.const_str("one")),
+      @anode.render(
+        1,
+        @tutuca.Expr::field("value"),
+        view=@anode.const_str("one"),
+      ),
       @anode.text(" "),
-      @anode.render(2, Field("value"), view=@anode.const_str("two")),
+      @anode.render(
+        2,
+        @tutuca.Expr::field("value"),
+        view=@anode.const_str("two"),
+      ),
     ]),
     [],
   )

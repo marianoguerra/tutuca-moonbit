@@ -32,106 +32,14 @@ fn ParseCtx::issue(
 }
 
 ///|
-/// One kind per parsed value (the K_* bits).
-priv enum Kind {
-  KConst
-  KStrTpl
-  KField
-  KBind
-  KDyn
-  KName
-  /// A bare Uppercase name: a component TYPE.
-  ///
-  /// In NO group, which is the point. A type is not a value — it has no path,
-  /// nothing can be read off it, and it cannot be rendered — so it belongs to
-  /// no value position and a `@on.click="addItem JsonSelector"` is a parse
-  /// error rather than an argument that silently arrives as null. A handler
-  /// that needs one asks for it by name (`ctx.make`), with the name declared
-  /// in `lookup` where a checker can still see it and the scope it resolves
-  /// against.
-  ///
-  /// The kind stays so that such a token still PARSES far enough to be
-  /// reported as what it is.
-  KType
-  KSeq
-  KMethod
-  /// A name applied to arguments. Admitted in the CONDITION group only: a
-  /// condition slot asks a yes/no question, which is what an application
-  /// answers, and a value slot spells a call with `$`. Widening it further is
-  /// what the expression language does, not this table.
-  KApp
-  /// `e.<path>` — a read of the event being handled.
-  ///
-  /// Admitted in the EVENT ARGUMENT group and nowhere else, which is the whole
-  /// of what makes it safe to have. A `@text="e.value"` would be a render-time
-  /// read of an event that is not happening, and the group table below is
-  /// where that is refused rather than in a special case somewhere.
-  KEvent
-}
-
-///|
-/// One group per parsing context (the G_* masks).
-priv enum Group {
-  GBool
-  GText
-  GComponent
-  GSequence
-  GProvide
-  GField
-  /// What an `@on` handler ARGUMENT may be.
-  ///
-  /// It is the ONE group an event read belongs to: a `@text="e.value"` would
-  /// be a render-time read of an event that is not happening, and this table
-  /// is where that is refused — not a special case somewhere downstream.
-  GEventArg
-  GAll
-}
-
-///|
-fn kind_of(val : @tutuca.Val) -> Kind? {
-  match val {
-    Const(..) => Some(KConst)
-    // A placeholderless, non-macro template is a literal written the long
-    // way and takes the single literal kind; a real placeholder makes it a
-    // dynamic template confined to text/all contexts.
-    StrTpl(_) => if val.is_literal() { Some(KConst) } else { Some(KStrTpl) }
-    SeqAccess(..) => Some(KSeq)
-    Field(_) => Some(KField)
-    Method(_) => Some(KMethod)
-    Bind(_) | BindMember(..) => Some(KBind)
-    Dyn(_) => Some(KDyn)
-    TypeName(_) => Some(KType)
-    Name(_) | HandlerName(..) => Some(KName)
-    App(..) => Some(KApp)
-    EventPath(_) => Some(KEvent)
-  }
-}
-
-///|
-fn in_group(kind : Kind, group : Group) -> Bool {
-  match group {
-    GBool => kind is (KField | KMethod | KBind | KDyn | KConst | KApp)
-    GText => kind is (KField | KMethod | KBind | KDyn | KConst | KStrTpl)
-    // `$m` is in every value-read group but never in a path-bearing one: a
-    // method result has no addressable path.
-    GComponent => kind is (KField | KSeq | KDyn)
-    GSequence => kind is (KField | KDyn)
-    GProvide => kind is (KField | KSeq)
-    GField => kind is (KField | KMethod | KConst | KSeq)
-    GEventArg =>
-      kind is (KField | KMethod | KBind | KDyn | KName | KConst | KEvent)
-    GAll =>
-      kind
-      is (KField | KMethod | KBind | KDyn | KName | KConst | KStrTpl | KSeq)
-  }
-}
-
-///|
-fn val_in_group(val : @tutuca.Val, group : Group) -> Bool {
-  match kind_of(val) {
-    Some(k) => in_group(k, group)
-    None => false
-  }
+/// Whether this expression may stand in `pos`.
+///
+/// The table is `core`'s (`Position`, `Expr::admitted_in`) and this is the one
+/// call that reads it for the answer a slot's caller wants: a yes or a no, with
+/// the sentence — when there is one — reported as a bad-expression issue
+/// against the span the form covers.
+fn val_in_position(val : @tutuca.Val, pos : @tutuca.Position) -> Bool {
+  val.admitted_in(pos) is Admitted
 }
 
 ///|
@@ -177,8 +85,8 @@ fn is_float_literal(s : String) -> Bool {
 }
 
 ///|
-fn const_str(s : String) -> @tutuca.Val {
-  Const(lit=LStr(s), from_macro=false)
+fn const_str(s : String, span : Span) -> @tutuca.Val {
+  @tutuca.Expr::lit(LStr(s), span~)
 }
 
 ///|
@@ -192,12 +100,13 @@ pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// One token into the richest @tutuca.Val it can be, reporting against its span.
 fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
   let s = tok.text
+  let span = tok.span
   guard s.get_char(0) is Some(c0) else { return None }
   // Quoted tokens first: their brackets/braces are literal content.
   if c0 == '\'' {
     // '…' string literal
     return if s.length() >= 2 && s.get_char(s.length() - 1) is Some('\'') {
-      Some(const_str(unescape_str(s[1:s.length() - 1].to_owned())))
+      Some(const_str(unescape_str(s[1:s.length() - 1].to_owned()), span))
     } else {
       None
     }
@@ -205,7 +114,7 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
   if c0 == '$' && s.get_char(1) is Some('\'') {
     // $'…' string template
     return if s.length() >= 3 && s.get_char(s.length() - 1) is Some('\'') {
-      Some(parse_str_tpl(s[2:s.length() - 1].to_owned(), ctx))
+      Some(parse_str_tpl(s[2:s.length() - 1].to_owned(), ctx, span))
     } else {
       None
     }
@@ -213,7 +122,7 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
   // Sequence access `.seq[.key]` — before the prefix switch, the token
   // starts with the `.` of its left-hand field.
   if s.contains("[") || s.contains("]") {
-    return parse_seq_access(s, ctx)
+    return parse_seq_access(s, ctx, span)
   }
   // A bare `{…}` is not a template; use `$'…'`.
   if s.contains("{") || s.contains("}") {
@@ -225,33 +134,33 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
       if s.get_char(1) is Some('$') {
         resolve_config_var(s[2:].to_owned(), s, tok.span, ctx)
       } else {
-        mk_id(s[1:].to_owned(), n => Method(n))
+        mk_id(s[1:].to_owned(), n => @tutuca.Expr::method_(n, span~))
       }
     '@' => {
       // @name bind, or @name.member — one-level member read on a binding.
       let rest = s[1:].to_owned()
       match find_char(rest, '.') {
-        None => mk_id(rest, n => Bind(n))
+        None => mk_id(rest, n => @tutuca.Expr::bind(n, span~))
         Some(dot) => {
           let name = rest[0:dot].to_owned()
           let member_name = rest[dot + 1:].to_owned()
           if is_valid_val_id(name) && is_valid_val_id(member_name) {
-            Some(BindMember(name~, prop=member_name))
+            Some(@tutuca.Expr::bind_member(name, member_name, span~))
           } else {
             None
           }
         }
       }
     }
-    '*' => mk_id(s[1:].to_owned(), n => Dyn(n))
-    '.' => mk_id(s[1:].to_owned(), n => Field(n))
+    '*' => mk_id(s[1:].to_owned(), n => @tutuca.Expr::dyn_(n, span~))
+    '.' => mk_id(s[1:].to_owned(), n => @tutuca.Expr::field(n, span~))
     _ => {
       if is_float_literal(s) {
         let n : Double = @string.from_str(s) catch { _ => return None }
-        return Some(Const(lit=LNum(n), from_macro=false))
+        return Some(@tutuca.Expr::lit(LNum(n), span~))
       }
       if s == "true" || s == "false" {
-        return Some(Const(lit=LBool(s == "true"), from_macro=false))
+        return Some(@tutuca.Expr::lit(LBool(s == "true"), span~))
       }
       // `e.<path>` — a read of the event being handled. Recognized HERE, in
       // the bare-name arm, and only for the exact root `e.`: a field named
@@ -273,14 +182,14 @@ fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
         return if segments.is_empty() {
           None
         } else {
-          Some(EventPath(segments))
+          Some(@tutuca.Expr::event_path(segments, span~))
         }
       }
       if c0 is ('a'..='z') {
-        return mk_id(s, n => Name(n))
+        return mk_id(s, n => @tutuca.Expr::name(n, span~))
       }
       if c0 is ('A'..='Z') {
-        return mk_id(s, n => TypeName(n))
+        return mk_id(s, n => @tutuca.Expr::type_name(n, span~))
       }
       None
     }
@@ -311,7 +220,7 @@ fn find_char(s : String, c : Char) -> Int? {
 ///|
 /// `seq[key]`: exactly one `[`, a closing `]` as the last char, both sides
 /// plain fields. Anything else (nested/unbalanced brackets) is rejected.
-fn parse_seq_access(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+fn parse_seq_access(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val? {
   let chars : Array[Char] = s.iter().collect()
   let mut open = -1
   let mut second_open = -1
@@ -337,7 +246,12 @@ fn parse_seq_access(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   let left = parse_token(s[0:open].to_owned(), ctx)
   let right = parse_token(s[open + 1:close].to_owned(), ctx)
   match (left, right) {
-    (Some(Field(seq)), Some(Field(key))) => Some(SeqAccess(seq~, key~))
+    (Some(l), Some(r)) =>
+      match (l.as_field(), r.as_field()) {
+        (Some(seq), Some(key)) =>
+          Some(@tutuca.Expr::seq_access(seq, key, span~))
+        _ => None
+      }
     _ => None
   }
 }
@@ -347,13 +261,13 @@ fn parse_seq_access(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// between becomes constants, brace interiors parse via parse_text), then
 /// trim empty constant bookends — keeping macro-var-bound empties, which are
 /// real placeholders the linter must see.
-fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
+fn parse_str_tpl(s : String, ctx : ParseCtx, span : Span) -> @tutuca.Val {
   let interior = unescape_str(s)
   let chars : Array[Char] = interior.iter().collect()
-  let vals : Array[@tutuca.Val?] = []
+  let parts : Array[@tutuca.TplPart] = []
   let text = StringBuilder()
   fn flush_text() {
-    vals.push(Some(const_str(text.to_string())))
+    parts.push(TText(text=text.to_string(), from_macro=false))
     text.reset()
   }
 
@@ -371,7 +285,23 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
         for k in (i + 1)..<j {
           expr.write_char(chars[k])
         }
-        vals.push(parse_text(expr.to_string(), ctx))
+        // A placeholder that resolved to a STRING is text in the template that
+        // holds it — it prints as text and reads as text — so it joins the
+        // text case, carrying whose source it was.
+        //
+        // One that did not parse becomes an explicit NULL, which is the only
+        // safe shape for a hole. It evaluates to the empty string, which is
+        // what a hole always did; and it is not TEXT, which matters more —
+        // `pinned_prefix` (`dyncomp/policy/external_url.mbt`) concatenates the
+        // literal head of a template to decide whether it pins an origin, and
+        // a hole that vanished would let `$'https://{$$unbound}.evil/'` read as
+        // a literal `https://.evil/`. The parse issue was already recorded.
+        match parse_text(expr.to_string(), ctx) {
+          Some(ELit(lit=LStr(t), from_macro~, ..)) =>
+            parts.push(TText(text=t, from_macro~))
+          Some(v) => parts.push(TExpr(v))
+          None => parts.push(TExpr(@tutuca.Expr::lit(LNull, span~)))
+        }
         i = j + 1
         continue
       }
@@ -380,25 +310,27 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
     i = i + 1
   }
   flush_text()
-  // Trim empty Const bookends left by the split.
-  fn trimmable(v : @tutuca.Val?) -> Bool {
-    v is Some(Const(lit=LStr(""), from_macro=false))
+  // Trim empty text bookends left by the split — keeping macro-var-bound
+  // empties, which are real placeholders the linter must see.
+  fn trimmable(part : @tutuca.TplPart) -> Bool {
+    part is TText(text="", from_macro=false)
   }
 
   let mut lo = 0
-  let mut hi = vals.length()
-  while lo < hi && trimmable(vals[lo]) {
+  let mut hi = parts.length()
+  while lo < hi && trimmable(parts[lo]) {
     lo = lo + 1
   }
-  while hi > lo && trimmable(vals[hi - 1]) {
+  while hi > lo && trimmable(parts[hi - 1]) {
     hi = hi - 1
   }
-  StrTpl(
-    if lo == 0 && hi == vals.length() {
-      vals
+  @tutuca.Expr::tpl(
+    if lo == 0 && hi == parts.length() {
+      parts
     } else {
-      vals[lo:hi].to_owned()
+      parts[lo:hi].to_owned()
     },
+    span~,
   )
 }
 
@@ -431,7 +363,8 @@ fn resolve_macro_var(
       // index the macro's source, which is a different file position than the
       // one the reader is looking at.
       match parse_tok({ text: tokens[0].text, span: at, }, ctx) {
-        Some(Const(lit~, ..)) => Some(Const(lit~, from_macro=true))
+        Some(ELit(lit~, span~, ..)) =>
+          Some(@tutuca.Expr::lit(lit, from_macro=true, span~))
         other => other
       }
     }
@@ -463,7 +396,7 @@ fn resolve_config_var(
 ) -> @tutuca.Val? {
   guard is_valid_val_id(name) else { return None }
   match ctx.config_vars.get(name) {
-    Some(v) => Some(Const(lit=LStr(v), from_macro=false))
+    Some(v) => Some(@tutuca.Expr::lit(LStr(v)))
     None => {
       ctx.issue(BadConfigVar, said, at)
       None
@@ -473,7 +406,11 @@ fn resolve_config_var(
 
 ///|
 /// Parse `s` as a single value and accept it only if its kind is in `group`.
-fn parse_single(s : String, ctx : ParseCtx, group : Group) -> @tutuca.Val? {
+fn parse_single(
+  s : String,
+  ctx : ParseCtx,
+  pos : @tutuca.Position,
+) -> @tutuca.Val? {
   // Not `s.trim()` first: the tokenizer already skips whitespace, and
   // trimming would shift every span off the string the caller handed in.
   let tokens = tokenize(s)
@@ -481,7 +418,7 @@ fn parse_single(s : String, ctx : ParseCtx, group : Group) -> @tutuca.Val? {
     return None
   }
   match parse_tok(tokens[0], ctx) {
-    Some(val) => if val_in_group(val, group) { Some(val) } else { None }
+    Some(val) => if val_in_position(val, pos) { Some(val) } else { None }
     None => None
   }
 }
@@ -503,7 +440,12 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
     return parse_expression(s, ctx)
   }
   match parse_tok(tokens[0], ctx) {
-    Some(val) => if val_in_group(val, GBool) { Some(val) } else { None }
+    Some(val) =>
+      if val_in_position(val, PosCondition) {
+        Some(val)
+      } else {
+        None
+      }
     None => None
   }
 }
@@ -516,7 +458,7 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
 /// looking at and nothing is rebased.
 fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   // `^name` and `$$name` reach here as ORDINARY OPERANDS, and the grammar has
-  // a leaf for each. They are resolved by substitution during `lower_expr`,
+  // a leaf for each. They are resolved by substitution during `resolve_expr`,
   // through the same two functions the single-token path calls, which is what
   // keeps one meaning per sigil rather than two that resemble each other.
   //
@@ -535,7 +477,7 @@ fn parse_expression(s : String, ctx : ParseCtx) -> @tutuca.Val? {
       return None
     }
   }
-  lower_expr(e, ctx, s)
+  resolve_expr(e, ctx, s, PosCondition)
 }
 
 ///|
@@ -557,127 +499,91 @@ fn slice_span(src : String, span : Span) -> String {
 }
 
 ///|
-/// `@tscript.Expr` down to `@tutuca.Val`.
+/// An expression, resolved for the SLOT position it was written in.
 ///
-/// Total, and the refusals are the point. `Val` is span-free and flat because
-/// it is embedded in `Step` and emitted into checked-in IR modules, so the
-/// half of `Expr` that a body can hold and a slot cannot — a nested place, an
-/// `if`, a bare parameter name — stops HERE, with a sentence naming what to
-/// write instead. Everything else lowers, and the operators lower to `App`:
-/// the AST already resolves an application's name at eval time, so an operator
-/// is a row in the vocabulary rather than a case in the enum, and every walker
-/// that already recurses through `App(args~, ..)` keeps working unchanged.
-fn lower_expr(e : Expr, ctx : ParseCtx, src : String) -> @tutuca.Val? {
+/// Nothing is converted: a slot's value and a block's expression are the same
+/// tree (`@tutuca.Expr`), and what used to be a lowering is now three things
+/// that stayed.
+///
+///   - SUBSTITUTION. `^name` and `$$name` are replaced by what the caller and
+///     the host bound, through the same two resolvers the single-token path
+///     calls, so a `^name` in `empty? ^name` means exactly what a `^name`
+///     alone means.
+///   - ADMISSION. Whether a form may stand in a slot at all is `Position`'s
+///     answer (`core/position.mbt`), and the sentence it carries names what to
+///     write instead.
+///   - NORMALIZATION. An operator chain and a `not` become applications of the
+///     operator's own name. That is not a change of language — the vocabulary
+///     is where an application's name resolves — and it is what keeps
+///     `a and b and c` grouped the way `&&` groups it in the compiled backend.
+fn resolve_expr(
+  e : @tutuca.Expr,
+  ctx : ParseCtx,
+  src : String,
+  pos : @tutuca.Position,
+) -> @tutuca.Val? {
   fn refuse(why : String, span : Span) -> @tutuca.Val? {
     ctx.issue(BadExpression(why~), slice_span(src, span), span)
     None
   }
 
+  // Substituted before it is judged: what a `^name` resolves to is what has to
+  // stand here, and the leaf itself stands nowhere.
   match e {
-    ELit(lit~, ..) => Some(Const(lit~, from_macro=false))
-    ERead(place~, span~) =>
-      match (place.root, place.steps.length()) {
-        (PState(f), 0) => Some(Field(f))
-        (PBind(b), 0) => Some(Bind(b))
-        (PBind(b), 1) =>
-          match place.steps[0] {
-            PField(m) => Some(BindMember(name=b, prop=m))
-            PIndex(_) =>
-              refuse(
-                "a slot reads a binding's member by name, not by index", span,
-              )
-          }
-        // `.seq[.key]` is the one indexed read a slot has, and only with a
-        // plain field for the key — the pinned form `SeqAccess` can hold.
-        (PState(seq), 1) =>
-          match place.steps[0] {
-            PIndex(ERead(place=k, ..)) if k.steps.is_empty() &&
-              k.root is PState(key) => Some(SeqAccess(seq~, key~))
-            PIndex(_) =>
-              refuse(
-                "a slot indexes by a plain field — write `.\{seq}[.key]`",
-                span,
-              )
-            PField(m) =>
-              refuse(
-                "a slot reads one level, so `.\{seq}.\{m}` has nothing to look in — render the child as a component, or name the read with a `compute`",
-                span,
-              )
-          }
-        (PState(f), _) =>
-          refuse(
-            "a slot reads one level, so `.\{f}` cannot be walked into — render the child as a component, or name the read with a `compute`",
-            span,
-          )
-        (PParam(n), _) =>
-          refuse("`\{n}` is a parameter, and a slot has none", span)
-        (PBind(b), _) =>
-          refuse("a slot reads one member of `@\{b}`, not a path", span)
-      }
-    EMethod(name~, ..) => Some(Method(name))
-    EDyn(name~, ..) => Some(Dyn(name))
-    // Substituted, not evaluated — the same two resolvers `parse_tok` calls,
-    // so a `^name` in `empty? ^name` means exactly what a `^name` alone means.
-    EMacroVar(name~, span~) => resolve_macro_var(name, "^" + name, span, ctx)
-    EConfigVar(name~, span~) => resolve_config_var(name, "$$" + name, span, ctx)
-    EApp(name~, args~, span~) => lower_app(name, args, span, ctx, src)
+    EMacroVar(name~, span~) =>
+      return resolve_macro_var(name, "^" + name, span, ctx)
+    EConfigVar(name~, span~) =>
+      return resolve_config_var(name, "$$" + name, span, ctx)
+    _ => ()
+  }
+  if e.admitted_in(pos) is Refused(why) {
+    return refuse(why, e.span())
+  }
+  match e {
+    EApp(name~, args~, span~) => resolve_app(name, args, span, ctx, src, pos)
     EUnary(op=UNot, operand~, span~) =>
-      lower_app("not", [operand], span, ctx, src)
-    EUnary(op=UNeg, span~, ..) =>
-      refuse(
-        "a slot has no arithmetic — name the value with a `compute`", span,
-      )
+      resolve_app("not", [operand], span, ctx, src, pos)
     // A chain is left-associative nested application. `a and b and c` is
     // `and (and a b) c`, which is the grouping `&&` gives it in the compiled
     // backend, so the two answer alike.
     EChain(ops~, operands~, span~, ..) => {
-      let mut acc = match lower_expr(operands[0], ctx, src) {
+      let mut acc = match resolve_expr(operands[0], ctx, src, pos) {
         Some(v) => v
         None => return None
       }
       for i, op in ops {
-        guard lower_expr(operands[i + 1], ctx, src) is Some(rhs) else {
+        guard resolve_expr(operands[i + 1], ctx, src, pos) is Some(rhs) else {
           return None
         }
-        guard @tutuca.builtin(op) is Some(_) else {
-          return refuse("`\{op}` is not a slot operator", span)
-        }
-        acc = App(name=op, args=[acc, rhs])
+        acc = @tutuca.Expr::app(op, [acc, rhs], span~)
       }
       Some(acc)
     }
-    EIf(span~, ..) =>
-      refuse(
-        "a slot has no `if` — `@show` / `@hide` ARE the choice, and a value that picks between two needs `@if.<attr>` with `@then` / `@else`",
-        span,
-      )
-    ETpl(span~, ..) =>
-      refuse("a template is text, and a condition is not text", span)
-    // Lowered rather than refused here. A bare name is in NO group a
-    // condition admits, so letting it through means the group check blames the
-    // ARGUMENT it sits in — which is the position the reader is looking at,
-    // and the diagnostic this parser exists to give.
+    // The block grammar has ONE bare-name leaf; a slot has two, because an
+    // Uppercase name is a component type there and a type is in no value
+    // position. Kept rather than refused here: letting it through means the
+    // group check blames the ARGUMENT it sits in, which is the position the
+    // reader is looking at.
     EName(name~, span~) =>
       match name.get_char(0) {
-        Some('A'..='Z') => Some(TypeName(name))
-        Some('a'..='z') => Some(Name(name))
+        Some('A'..='Z') => Some(@tutuca.Expr::type_name(name, span~))
+        Some('a'..='z') => Some(e)
         _ => refuse("`\{name}` is not a name", span)
       }
-    ERef(span~, ..) =>
-      refuse("`&` names a position, and a slot reads values", span)
+    _ => Some(e)
   }
 }
 
 ///|
 /// An application, with its name checked against the one vocabulary and its
-/// arity against that name's row — the checks `parse_application` made, kept
-/// where they were so the diagnostics do not change.
-fn lower_app(
+/// arity against that name's row.
+fn resolve_app(
   name : String,
-  args : Array[Expr],
+  args : Array[@tutuca.Expr],
   span : Span,
   ctx : ParseCtx,
   src : String,
+  pos : @tutuca.Position,
 ) -> @tutuca.Val? {
   // The HEAD is what is unknown, so that is what the span covers — the name
   // sits at the start of the application, which is what makes this exact.
@@ -697,48 +603,47 @@ fn lower_app(
   }
   let out : Array[@tutuca.Val] = []
   for a in args {
-    guard lower_expr(a, ctx, src) is Some(v) else { return None }
-    // The same group the old flat form asked of each argument: a condition
-    // reads a field, a method, a binding, a dynamic, a constant or another
-    // application, and nothing else.
-    guard val_in_group(v, GBool) else {
-      let at = expr_span(a)
+    guard resolve_expr(a, ctx, src, pos) is Some(v) else { return None }
+    // An argument of an application is itself a condition: it reads a field, a
+    // method, a binding, a dynamic, a constant or another application.
+    guard val_in_position(v, PosCondition) else {
+      let at = a.span()
       ctx.issue(BadPredicateArg, slice_span(src, at), at)
       return None
     }
     out.push(v)
   }
-  Some(App(name~, args=out))
+  Some(@tutuca.Expr::app(name, out, span~))
 }
 
 ///|
 pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GText)
+  parse_single(s, ctx, PosText)
 }
 
 ///|
 pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GComponent)
+  parse_single(s, ctx, PosComponent)
 }
 
 ///|
 pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GSequence)
+  parse_single(s, ctx, PosSequence)
 }
 
 ///|
 pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GField)
+  parse_single(s, ctx, PosField)
 }
 
 ///|
 pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GProvide)
+  parse_single(s, ctx, PosProvide)
 }
 
 ///|
 pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val? {
-  parse_single(s, ctx, GAll)
+  parse_single(s, ctx, PosMacroAttr)
 }
 
 ///|
@@ -746,7 +651,7 @@ pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse? {
   match parse_property_action(s, ctx) {
     Some(action) =>
       Some({
-        handler: Const(lit=LNull, from_macro=false),
+        handler: @tutuca.Expr::lit(LNull),
         args: [],
         action: Some(action),
       })
@@ -772,13 +677,13 @@ fn parse_property_action(s : String, ctx : ParseCtx) -> PropertyAction? {
       if op is ASet && value is EName(name="default", ..) {
         return Some(PropertyReset(name))
       }
-      guard lower_action_expr(value, ctx, wrapped) is Some(rhs) else {
+      guard resolve_action_expr(value, ctx, wrapped) is Some(rhs) else {
         return None
       }
       let assigned = match op {
         ASet => rhs
-        AAdd => App(name="+", args=[Field(name), rhs])
-        ASub => App(name="-", args=[Field(name), rhs])
+        AAdd => @tutuca.Expr::app("+", [@tutuca.Expr::field(name), rhs])
+        ASub => @tutuca.Expr::app("-", [@tutuca.Expr::field(name), rhs])
       }
       Some(PropertySet(name~, value=assigned))
     }
@@ -786,7 +691,7 @@ fn parse_property_action(s : String, ctx : ParseCtx) -> PropertyAction? {
       place.steps.is_empty() => {
       let lowered : Array[@tutuca.Val] = []
       for arg in args {
-        guard lower_action_expr(arg, ctx, wrapped) is Some(v) else {
+        guard resolve_action_expr(arg, ctx, wrapped) is Some(v) else {
           return None
         }
         lowered.push(v)
@@ -800,8 +705,8 @@ fn parse_property_action(s : String, ctx : ParseCtx) -> PropertyAction? {
 ///|
 /// Lower an event action operand. The block language sees `e.value` as a
 /// parameter path; in an attribute it is instead the event value source.
-fn lower_action_expr(
-  expr : Expr,
+fn resolve_action_expr(
+  expr : @tutuca.Expr,
   ctx : ParseCtx,
   source : String,
 ) -> @tutuca.Val? {
@@ -815,10 +720,10 @@ fn lower_action_expr(
       if path.is_empty() {
         None
       } else {
-        Some(EventPath(path))
+        Some(@tutuca.Expr::event_path(path))
       }
     }
-    _ => lower_expr(expr, ctx, source)
+    _ => resolve_expr(expr, ctx, source, PosEventArg)
   }
 }
 
@@ -850,8 +755,8 @@ fn parse_handler(
     parse_tok(head_tok, ctx)
   }
   let handler : @tutuca.Val = match head {
-    Some(Method(_) as m) => m
-    Some(Name(name)) => HandlerName(name~, ns~)
+    Some(EMethod(..) as m) => m
+    Some(EName(name~, span~)) => @tutuca.Expr::handler_name(name, ns, span~)
     _ => {
       if report {
         ctx.issue(BadHandlerName, head_tok.text, head_tok.span)
@@ -870,13 +775,13 @@ fn parse_handler(
   for i in 1..<tokens.length() {
     let tok = tokens[i]
     match parse_tok(tok, ctx) {
-      Some(val) if val_in_group(val, GEventArg) => args.push(val)
+      Some(val) if val_in_position(val, PosEventArg) => args.push(val)
       _ => {
         if report {
           ctx.issue(BadHandlerArg, tok.text, tok.span)
         }
         // The shared null-const sentinel.
-        args.push(Const(lit=LNull, from_macro=false))
+        args.push(@tutuca.Expr::lit(LNull))
       }
     }
   }

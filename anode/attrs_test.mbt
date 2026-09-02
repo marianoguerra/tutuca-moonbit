@@ -25,12 +25,12 @@ test "@enrich-with without @each wraps in a registered Scope" {
   let (root, px) = aparse("<div @enrich-with=\"$x\">hi</div>")
   guard! root is Scope(s)
   @debug.assert_eq(s.node_id, Some(0))
-  assert_true(s.val is Method("x"))
+  assert_true(s.val is EMethod(name="x", ..))
   assert_eq(px.nodes.length(), 1)
   // Bare handler-name form resolves through the alter namespace.
   let (root2, _) = aparse("<div @enrich-with=\"enrich\">hi</div>")
   guard! root2 is Scope(s2)
-  assert_true(s2.val is HandlerName(name="enrich", ns=Alter))
+  assert_true(s2.val is EHandlerName(name="enrich", ns=Alter, ..))
 }
 
 ///|
@@ -39,9 +39,9 @@ test "@each with @when/@enrich-with/@loop-with fills iter_info" {
     "<li @each=\".items\" @when=\"$w\" @enrich-with=\"$e\" @loop-with=\"$l\">x</li>",
   )
   guard! root is Each(e)
-  assert_true(e.iter_info.when_val is Some(Method("w")))
-  assert_true(e.iter_info.enrich_with_val is Some(Method("e")))
-  assert_true(e.iter_info.loop_with_val is Some(Method("l")))
+  assert_true(e.iter_info.when_val is Some(EMethod(name="w", ..)))
+  assert_true(e.iter_info.enrich_with_val is Some(EMethod(name="e", ..)))
+  assert_true(e.iter_info.loop_with_val is Some(EMethod(name="l", ..)))
   assert_true(!e.from_render_each)
   assert_eq(px.nodes.length(), 1)
 }
@@ -80,9 +80,11 @@ test "@if.attr with @then/@else evaluates per render" {
   guard! d.attrs is DynAttrs(items)
   guard! items[0] is If(ia)
   assert_eq(ia.name, "class")
-  assert_true(ia.cond_val is Field("cond"))
-  assert_true(ia.then_val is Some(Const(lit=LStr("a"), ..)))
-  assert_true(ia.else_val is Some(Const(lit=LStr("d"), ..)))
+  assert_true(
+    ia.cond_val is ERead(place={ root: PState("cond"), steps: [], .. }, ..),
+  )
+  assert_true(ia.then_val is Some(ELit(lit=LStr("a"), ..)))
+  assert_true(ia.else_val is Some(ELit(lit=LStr("d"), ..)))
 }
 
 ///|
@@ -111,14 +113,20 @@ test "events register data-eid and handler args" {
   assert_eq(ev.handlers.length(), 1)
   let h = ev.handlers[0]
   assert_eq(h.name, "click")
-  assert_true(h.handler.handler is HandlerName(name="myHandler", ns=Receive))
+  assert_true(
+    h.handler.handler is EHandlerName(name="myHandler", ns=Receive, ..),
+  )
   assert_eq(h.handler.args.length(), 6)
-  assert_true(h.handler.args[0] is Bind("v"))
-  assert_true(h.handler.args[1] is Field("f"))
-  assert_true(h.handler.args[2] is Const(lit=LBool(true), ..))
-  assert_true(h.handler.args[3] is Const(lit=LNum(42), ..))
-  assert_true(h.handler.args[4] is Const(lit=LNum(12.5), ..))
-  assert_true(h.handler.args[5] is EventPath(["value"]))
+  assert_true(
+    h.handler.args[0] is ERead(place={ root: PBind("v"), steps: [], .. }, ..),
+  )
+  assert_true(
+    h.handler.args[1] is ERead(place={ root: PState("f"), steps: [], .. }, ..),
+  )
+  assert_true(h.handler.args[2] is ELit(lit=LBool(true), ..))
+  assert_true(h.handler.args[3] is ELit(lit=LNum(42), ..))
+  assert_true(h.handler.args[4] is ELit(lit=LNum(12.5), ..))
+  assert_true(h.handler.args[5] is EEventPath(segments=["value"], ..))
 }
 
 ///|
@@ -142,20 +150,28 @@ test "@bind parses to a mirrored property and a pending setter event" {
   let (root, px) = aparse("<input type=\"checkbox\" @bind=\".done\" />")
   guard! root is Dom(d)
   guard! d.bind is Some(bind)
-  assert_true(bind.target is Field("done"))
+  assert_true(
+    bind.target is ERead(place={ root: PState("done"), steps: [], .. }, ..),
+  )
   assert_eq(bind.property, "checked")
   guard! d.attrs is DynAttrs(items)
   assert_true(
-    items.any(item => item is Plain(name="checked", val=Field("done"))),
+    items.any(item => {
+      item
+      is Plain(
+        name="checked",
+        val=ERead(place={ root: PState("done"), steps: [], .. }, ..)
+      )
+    }),
   )
   assert_eq(px.events.length(), 1)
   assert_eq(px.events[0].handlers.length(), 1)
   let h = px.events[0].handlers[0]
   assert_eq(h.name, "input")
-  assert_true(h.handler.handler is Const(lit=LNull, ..))
+  assert_true(h.handler.handler is ELit(lit=LNull, ..))
   assert_true(
     h.handler.action
-    is Some(PropertySet(name="done", value=EventPath(["value"]))),
+    is Some(PropertySet(name="done", value=EEventPath(segments=["value"], ..))),
   )
   assert_true(h.handler.args.is_empty())
   assert_true(h.binding is Some(BindPending))

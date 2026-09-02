@@ -260,140 +260,144 @@ pub let trace_row_spec_source : String =
 fn trace_row_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [@anode.dyn_attr("class", Field("rowClass"))], [
-      @anode.h(
-        "div",
-        [
-          @anode.attr(
-            "class", "row-head flex items-center gap-2 flex-wrap cursor-pointer",
-          ),
-          @anode.eid(0),
-        ],
-        [
-          @anode.h(
-            "span",
-            [
-              @anode.attr(
-                "class", "badge badge-xs tabular-nums opacity-50 row-seq",
-              ),
-            ],
-            [@anode.dyn_text(Field("seq"))],
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [
-              @anode.attr(
-                "title", "What this was: a message, an intent, an offer to the host, the host's answer, or a refusal",
-              ),
-              @anode.dyn_attr("class", Field("verbClass")),
-            ],
-            [@anode.dyn_text(Field("verb"))],
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [@anode.attr("class", "font-mono font-semibold row-name")],
-            [@anode.dyn_text(Field("name"))],
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [
-              @anode.attr("title", "Where it landed"),
-              @anode.attr("class", "text-xs opacity-40 font-mono row-place"),
-            ],
-            [@anode.dyn_text(Field("place"))],
-          ),
-          @anode.text(" "),
-          @anode.show(
-            Field("input"),
-            @anode.h(
-              "span",
-              [
-                @anode.attr(
-                  "title", "A rerun feeds this one; everything else it produces for itself",
-                ),
-                @anode.attr(
-                  "class", "badge badge-xs badge-primary badge-outline row-input",
-                ),
-              ],
-              [@anode.text("input")],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.show(
-            Field("hasWalk"),
-            @anode.h(
-              "span",
-              [
-                @anode.attr("title", "Every hop of one intent shares this"),
-                @anode.attr("class", "badge badge-xs badge-ghost row-walk"),
-              ],
-              [
-                @anode.dyn_text(@anode.const_str("walk "), id=0),
-                @anode.dyn_text(Field("walk"), id=1),
-              ],
-            ),
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "span",
-            [
-              @anode.attr(
-                "class", "ml-auto text-xs opacity-40 tabular-nums row-turn",
-              ),
-            ],
-            [
-              @anode.dyn_text(@anode.const_str("turn "), id=2),
-              @anode.dyn_text(Field("turn"), id=3),
-            ],
-          ),
-        ],
-      ),
-      @anode.text(" "),
-      @anode.show(
-        Field("open"),
+    @anode.h(
+      "div",
+      [@anode.dyn_attr("class", @tutuca.Expr::field("rowClass"))],
+      [
         @anode.h(
           "div",
           [
             @anode.attr(
-              "class", "pl-6 flex flex-col gap-1 font-mono text-xs row-detail",
+              "class", "row-head flex items-center gap-2 flex-wrap cursor-pointer",
             ),
+            @anode.eid(0),
           ],
           [
-            @anode.show(
-              App(name="truthy?", args=[Field("args")]),
-              @anode.h("div", [@anode.attr("class", "opacity-60 row-args")], [
-                @anode.dyn_text(@anode.const_str("args "), id=4),
-                @anode.dyn_text(Field("args"), id=5),
-              ]),
+            @anode.h(
+              "span",
+              [
+                @anode.attr(
+                  "class", "badge badge-xs tabular-nums opacity-50 row-seq",
+                ),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("seq"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr(
+                  "title", "What this was: a message, an intent, an offer to the host, the host's answer, or a refusal",
+                ),
+                @anode.dyn_attr("class", @tutuca.Expr::field("verbClass")),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("verb"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [@anode.attr("class", "font-mono font-semibold row-name")],
+              [@anode.dyn_text(@tutuca.Expr::field("name"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr("title", "Where it landed"),
+                @anode.attr("class", "text-xs opacity-40 font-mono row-place"),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("place"))],
             ),
             @anode.text(" "),
             @anode.show(
-              Field("hasAfter"),
-              @anode.h("div", [], [
-                @anode.h("div", [@anode.attr("class", "opacity-50")], [
-                  @anode.text("after"),
-                ]),
-                @anode.text(" "),
-                @anode.render(6, Field("after")),
-              ]),
-            ),
-            @anode.text(" "),
-            @anode.hide(
-              Field("hasAfter"),
+              @tutuca.Expr::field("input"),
               @anode.h(
-                "div",
-                [@anode.attr("class", "opacity-40 row-noafter")],
-                [@anode.text("no state was kept for this one")],
+                "span",
+                [
+                  @anode.attr(
+                    "title", "A rerun feeds this one; everything else it produces for itself",
+                  ),
+                  @anode.attr(
+                    "class", "badge badge-xs badge-primary badge-outline row-input",
+                  ),
+                ],
+                [@anode.text("input")],
               ),
+            ),
+            @anode.text(" "),
+            @anode.show(
+              @tutuca.Expr::field("hasWalk"),
+              @anode.h(
+                "span",
+                [
+                  @anode.attr("title", "Every hop of one intent shares this"),
+                  @anode.attr("class", "badge badge-xs badge-ghost row-walk"),
+                ],
+                [
+                  @anode.dyn_text(@anode.const_str("walk "), id=0),
+                  @anode.dyn_text(@tutuca.Expr::field("walk"), id=1),
+                ],
+              ),
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "span",
+              [
+                @anode.attr(
+                  "class", "ml-auto text-xs opacity-40 tabular-nums row-turn",
+                ),
+              ],
+              [
+                @anode.dyn_text(@anode.const_str("turn "), id=2),
+                @anode.dyn_text(@tutuca.Expr::field("turn"), id=3),
+              ],
             ),
           ],
         ),
-      ),
-    ]),
-    [[@anode.on("click", HandlerName(name="toggle", ns=Receive))]],
+        @anode.text(" "),
+        @anode.show(
+          @tutuca.Expr::field("open"),
+          @anode.h(
+            "div",
+            [
+              @anode.attr(
+                "class", "pl-6 flex flex-col gap-1 font-mono text-xs row-detail",
+              ),
+            ],
+            [
+              @anode.show(
+                @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("args")]),
+                @anode.h("div", [@anode.attr("class", "opacity-60 row-args")], [
+                  @anode.dyn_text(@anode.const_str("args "), id=4),
+                  @anode.dyn_text(@tutuca.Expr::field("args"), id=5),
+                ]),
+              ),
+              @anode.text(" "),
+              @anode.show(
+                @tutuca.Expr::field("hasAfter"),
+                @anode.h("div", [], [
+                  @anode.h("div", [@anode.attr("class", "opacity-50")], [
+                    @anode.text("after"),
+                  ]),
+                  @anode.text(" "),
+                  @anode.render(6, @tutuca.Expr::field("after")),
+                ]),
+              ),
+              @anode.text(" "),
+              @anode.hide(
+                @tutuca.Expr::field("hasAfter"),
+                @anode.h(
+                  "div",
+                  [@anode.attr("class", "opacity-40 row-noafter")],
+                  [@anode.text("no state was kept for this one")],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+    [[@anode.on("click", @tutuca.Expr::handler_name("toggle", Receive))]],
   )
 }
 
@@ -573,17 +577,17 @@ fn trace_log_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          Field("hasRows"),
+          @tutuca.Expr::field("hasRows"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-40 empty-hint")],
-            [@anode.dyn_text(Field("emptyHint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("emptyHint"))],
           ),
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("rows"),
+          @tutuca.Expr::field("rows"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -781,11 +785,11 @@ fn trace_header_main_view_ir() -> @anode.View {
                   "class", "badge badge-sm badge-primary header-component",
                 ),
               ],
-              [@anode.dyn_text(Field("component"))],
+              [@anode.dyn_text(@tutuca.Expr::field("component"))],
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("module")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("module")]),
               @anode.h(
                 "span",
                 [
@@ -793,21 +797,21 @@ fn trace_header_main_view_ir() -> @anode.View {
                     "class", "text-xs opacity-50 font-mono header-module",
                   ),
                 ],
-                [@anode.dyn_text(Field("module"))],
+                [@anode.dyn_text(@tutuca.Expr::field("module"))],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("example")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("example")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "text-xs opacity-50 header-example")],
-                [@anode.dyn_text(Field("example"))],
+                [@anode.dyn_text(@tutuca.Expr::field("example"))],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("isRelocated"),
+              @tutuca.Expr::field("isRelocated"),
               @anode.h(
                 "span",
                 [
@@ -820,13 +824,13 @@ fn trace_header_main_view_ir() -> @anode.View {
                 ],
                 [
                   @anode.dyn_text(@anode.const_str("relocated from "), id=0),
-                  @anode.dyn_text(Field("relocatedFrom"), id=1),
+                  @anode.dyn_text(@tutuca.Expr::field("relocatedFrom"), id=1),
                 ],
               ),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("compacted"),
+              @tutuca.Expr::field("compacted"),
               @anode.h(
                 "span",
                 [
@@ -847,26 +851,26 @@ fn trace_header_main_view_ir() -> @anode.View {
           [@anode.attr("class", "flex gap-3 text-xs opacity-60 tabular-nums")],
           [
             @anode.h("span", [@anode.attr("class", "header-events")], [
-              @anode.dyn_text(Field("events"), id=2),
+              @anode.dyn_text(@tutuca.Expr::field("events"), id=2),
               @anode.dyn_text(@anode.const_str(" events"), id=3),
             ]),
             @anode.text(" "),
             @anode.h("span", [@anode.attr("class", "header-inputs")], [
-              @anode.dyn_text(Field("inputs"), id=4),
+              @anode.dyn_text(@tutuca.Expr::field("inputs"), id=4),
               @anode.dyn_text(@anode.const_str(" fed on a rerun"), id=5),
             ]),
             @anode.text(" "),
             @anode.h("span", [@anode.attr("class", "header-turns")], [
-              @anode.dyn_text(Field("turns"), id=6),
+              @anode.dyn_text(@tutuca.Expr::field("turns"), id=6),
               @anode.dyn_text(@anode.const_str(" turns"), id=7),
             ]),
             @anode.text(" "),
             @anode.show(
-              App(name="truthy?", args=[Field("fingerprint")]),
+              @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("fingerprint")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "opacity-40 font-mono header-fp")],
-                [@anode.dyn_text(Field("fingerprint"))],
+                [@anode.dyn_text(@tutuca.Expr::field("fingerprint"))],
               ),
             ),
           ],
@@ -982,23 +986,23 @@ fn trace_place_main_view_ir() -> @anode.View {
     "main",
     @anode.h(
       "button",
-      [@anode.dyn_attr("class", Field("rowClass")), @anode.eid(0)],
+      [@anode.dyn_attr("class", @tutuca.Expr::field("rowClass")), @anode.eid(0)],
       [
         @anode.h("span", [@anode.attr("class", "font-mono place-label")], [
-          @anode.dyn_text(Field("display")),
+          @anode.dyn_text(@tutuca.Expr::field("display")),
         ]),
         @anode.text(" "),
         @anode.show(
-          App(name="truthy?", args=[Field("component")]),
+          @tutuca.Expr::app("truthy?", [@tutuca.Expr::field("component")]),
           @anode.h(
             "span",
             [@anode.attr("class", "badge badge-xs badge-ghost place-component")],
-            [@anode.dyn_text(Field("component"))],
+            [@anode.dyn_text(@tutuca.Expr::field("component"))],
           ),
         ),
         @anode.text(" "),
         @anode.hide(
-          Field("mountable"),
+          @tutuca.Expr::field("mountable"),
           @anode.h(
             "span",
             [
@@ -1020,14 +1024,14 @@ fn trace_place_main_view_ir() -> @anode.View {
               "class", "ml-auto text-xs opacity-40 tabular-nums place-count",
             ),
           ],
-          [@anode.dyn_text(Field("events"))],
+          [@anode.dyn_text(@tutuca.Expr::field("events"))],
         ),
       ],
     ),
     [
       [
-        @anode.on("click", HandlerName(name="pickPlace", ns=Receive), args=[
-          Field("label"),
+        @anode.on("click", @tutuca.Expr::handler_name("pickPlace", Receive), args=[
+          @tutuca.Expr::field("label"),
         ]),
       ],
     ],
@@ -1166,21 +1170,21 @@ fn trace_places_main_view_ir() -> @anode.View {
         @anode.h(
           "div",
           [@anode.attr("class", "text-xs opacity-50 places-heading")],
-          [@anode.dyn_text(Field("heading"))],
+          [@anode.dyn_text(@tutuca.Expr::field("heading"))],
         ),
         @anode.text(" "),
         @anode.hide(
-          Field("hasPlaces"),
+          @tutuca.Expr::field("hasPlaces"),
           @anode.h(
             "div",
             [@anode.attr("class", "text-xs opacity-40 empty-hint")],
-            [@anode.dyn_text(Field("emptyHint"))],
+            [@anode.dyn_text(@tutuca.Expr::field("emptyHint"))],
           ),
         ),
         @anode.text(" "),
         @anode.each(
           1,
-          Field("places"),
+          @tutuca.Expr::field("places"),
           @anode.render_it(0),
           from_render_each=true,
         ),
@@ -1277,7 +1281,7 @@ fn recorder_bar_main_view_ir() -> @anode.View {
         ],
         [
           @anode.show(
-            Field("recording"),
+            @tutuca.Expr::field("recording"),
             @anode.h(
               "button",
               [
@@ -1289,7 +1293,7 @@ fn recorder_bar_main_view_ir() -> @anode.View {
           ),
           @anode.text(" "),
           @anode.hide(
-            Field("recording"),
+            @tutuca.Expr::field("recording"),
             @anode.h(
               "button",
               [
@@ -1303,11 +1307,11 @@ fn recorder_bar_main_view_ir() -> @anode.View {
           @anode.h(
             "span",
             [@anode.attr("class", "badge badge-sm badge-ghost rec-scope")],
-            [@anode.dyn_text(Field("scopeLabel"))],
+            [@anode.dyn_text(@tutuca.Expr::field("scopeLabel"))],
           ),
           @anode.text(" "),
           @anode.show(
-            Field("recording"),
+            @tutuca.Expr::field("recording"),
             @anode.h(
               "span",
               [
@@ -1316,18 +1320,18 @@ fn recorder_bar_main_view_ir() -> @anode.View {
                 ),
               ],
               [
-                @anode.dyn_text(Field("events"), id=0),
+                @anode.dyn_text(@tutuca.Expr::field("events"), id=0),
                 @anode.dyn_text(@anode.const_str(" events · "), id=1),
-                @anode.dyn_text(Field("turns"), id=2),
+                @anode.dyn_text(@tutuca.Expr::field("turns"), id=2),
                 @anode.dyn_text(@anode.const_str(" turns"), id=3),
               ],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasTrace"),
+            @tutuca.Expr::field("hasTrace"),
             @anode.hide(
-              Field("recording"),
+              @tutuca.Expr::field("recording"),
               @anode.h(
                 "button",
                 [
@@ -1346,7 +1350,7 @@ fn recorder_bar_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Field("picking"),
+        @tutuca.Expr::field("picking"),
         @anode.h(
           "div",
           [@anode.attr("class", "recorder-picker flex flex-col gap-2 p-2")],
@@ -1357,19 +1361,28 @@ fn recorder_bar_main_view_ir() -> @anode.View {
             @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
               @anode.h(
                 "button",
-                [@anode.dyn_attr("class", Field("allClass")), @anode.eid(3)],
+                [
+                  @anode.dyn_attr("class", @tutuca.Expr::field("allClass")),
+                  @anode.eid(3),
+                ],
                 [@anode.text("The whole storybook")],
               ),
               @anode.text(" "),
               @anode.h(
                 "button",
-                [@anode.dyn_attr("class", Field("sectionClass")), @anode.eid(4)],
+                [
+                  @anode.dyn_attr("class", @tutuca.Expr::field("sectionClass")),
+                  @anode.eid(4),
+                ],
                 [@anode.text("The active section")],
               ),
               @anode.text(" "),
               @anode.h(
                 "button",
-                [@anode.dyn_attr("class", Field("exampleClass")), @anode.eid(5)],
+                [
+                  @anode.dyn_attr("class", @tutuca.Expr::field("exampleClass")),
+                  @anode.eid(5),
+                ],
                 [@anode.text("This example only")],
               ),
             ]),
@@ -1402,26 +1415,36 @@ fn recorder_bar_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("click", HandlerName(name="stopRecording", ns=Receive))],
-      [@anode.on("click", HandlerName(name="openPicker", ns=Receive))],
-      [@anode.on("click", HandlerName(name="clearRecording", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("stopRecording", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("openPicker", Receive))],
       [
-        @anode.on("click", HandlerName(name="setScope", ns=Receive), args=[
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("clearRecording", Receive),
+        ),
+      ],
+      [
+        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
           @anode.const_str("all"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setScope", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
           @anode.const_str("section"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setScope", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setScope", Receive), args=[
           @anode.const_str("example"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="startRecording", ns=Receive))],
-      [@anode.on("click", HandlerName(name="closePicker", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("startRecording", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("closePicker", Receive))],
     ],
   )
 }
@@ -1848,39 +1871,51 @@ fn trace_panel_main_view_ir() -> @anode.View {
         [
           @anode.h(
             "button",
-            [@anode.dyn_attr("class", Field("recordTabClass")), @anode.eid(0)],
+            [
+              @anode.dyn_attr("class", @tutuca.Expr::field("recordTabClass")),
+              @anode.eid(0),
+            ],
             [@anode.text("Record")],
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasTrace"),
+            @tutuca.Expr::field("hasTrace"),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("traceTabClass")), @anode.eid(1)],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("traceTabClass")),
+                @anode.eid(1),
+              ],
               [@anode.text("Trace")],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasTrace"),
+            @tutuca.Expr::field("hasTrace"),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("replayTabClass")), @anode.eid(2)],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("replayTabClass")),
+                @anode.eid(2),
+              ],
               [@anode.text("Replay")],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasTrace"),
+            @tutuca.Expr::field("hasTrace"),
             @anode.h(
               "button",
-              [@anode.dyn_attr("class", Field("selectTabClass")), @anode.eid(3)],
-              [@anode.dyn_text(Field("selectLabel"))],
+              [
+                @anode.dyn_attr("class", @tutuca.Expr::field("selectTabClass")),
+                @anode.eid(3),
+              ],
+              [@anode.dyn_text(@tutuca.Expr::field("selectLabel"))],
             ),
           ),
           @anode.text(" "),
           @anode.show(
-            Field("hasTrace"),
+            @tutuca.Expr::field("hasTrace"),
             @anode.h(
               "span",
               [
@@ -1889,9 +1924,9 @@ fn trace_panel_main_view_ir() -> @anode.View {
                 ),
               ],
               [
-                @anode.dyn_text(Field("at"), id=0),
+                @anode.dyn_text(@tutuca.Expr::field("at"), id=0),
                 @anode.dyn_text(@anode.const_str(" / "), id=1),
-                @anode.dyn_text(Field("total"), id=2),
+                @anode.dyn_text(@tutuca.Expr::field("total"), id=2),
               ],
             ),
           ),
@@ -1903,7 +1938,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Field("hasNotice"),
+        @tutuca.Expr::field("hasNotice"),
         @anode.h(
           "div",
           [
@@ -1911,14 +1946,14 @@ fn trace_panel_main_view_ir() -> @anode.View {
               "class", "trace-notice alert alert-warning text-xs mx-2 py-1",
             ),
           ],
-          [@anode.dyn_text(Field("notice"))],
+          [@anode.dyn_text(@tutuca.Expr::field("notice"))],
         ),
       ),
       @anode.text(" "),
-      @anode.render(3, Field("bar")),
+      @anode.render(3, @tutuca.Expr::field("bar")),
       @anode.text(" "),
       @anode.show(
-        Field("showTrace"),
+        @tutuca.Expr::field("showTrace"),
         @anode.h(
           "div",
           [@anode.attr("class", "panel-trace flex flex-col gap-2")],
@@ -1951,11 +1986,11 @@ fn trace_panel_main_view_ir() -> @anode.View {
               ],
             ),
             @anode.text(" "),
-            @anode.render(4, Field("header")),
+            @anode.render(4, @tutuca.Expr::field("header")),
             @anode.text(" "),
-            @anode.render(5, Field("places")),
+            @anode.render(5, @tutuca.Expr::field("places")),
             @anode.text(" "),
-            @anode.render(6, Field("log")),
+            @anode.render(6, @tutuca.Expr::field("log")),
           ],
         ),
       ),
@@ -1965,13 +2000,13 @@ fn trace_panel_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Field("showReplay"),
+        @tutuca.Expr::field("showReplay"),
         @anode.h(
           "div",
           [@anode.attr("class", "panel-replay flex flex-col gap-2 p-2")],
           [
             @anode.show(
-              Field("canReplay"),
+              @tutuca.Expr::field("canReplay"),
               @anode.h("div", [@anode.attr("class", "flex gap-2 flex-wrap")], [
                 @anode.h(
                   "button",
@@ -2005,16 +2040,16 @@ fn trace_panel_main_view_ir() -> @anode.View {
                     ),
                   ],
                   [
-                    @anode.dyn_text(Field("at"), id=7),
+                    @anode.dyn_text(@tutuca.Expr::field("at"), id=7),
                     @anode.dyn_text(@anode.const_str(" of "), id=8),
-                    @anode.dyn_text(Field("total"), id=9),
+                    @anode.dyn_text(@tutuca.Expr::field("total"), id=9),
                   ],
                 ),
               ]),
             ),
             @anode.text(" "),
             @anode.show(
-              Field("canReplay"),
+              @tutuca.Expr::field("canReplay"),
               @anode.h("div", [@anode.attr("class", "text-xs opacity-50")], [
                 @anode.text(
                   "\n      The story above is the one being driven. A step feeds one whole turn —\n      what the recording drained together — so the app is never left\n      mid-cascade in a state it was never in.\n    ",
@@ -2030,7 +2065,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Field("showImport"),
+        @tutuca.Expr::field("showImport"),
         @anode.h(
           "div",
           [@anode.attr("class", "panel-import flex flex-col gap-2 p-2")],
@@ -2044,7 +2079,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "textarea textarea-sm trace-draft"),
                 @anode.attr("rows", "3"),
-                @anode.dyn_attr("value", Field("draft")),
+                @anode.dyn_attr("value", @tutuca.Expr::field("draft")),
                 @anode.eid(9),
               ],
               [],
@@ -2065,7 +2100,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.hide(
-        Field("hasTrace"),
+        @tutuca.Expr::field("hasTrace"),
         @anode.h(
           "div",
           [@anode.attr("class", "panel-empty flex flex-col gap-2 px-2 pb-2")],
@@ -2081,7 +2116,7 @@ fn trace_panel_main_view_ir() -> @anode.View {
               [
                 @anode.attr("class", "textarea textarea-sm trace-draft-empty"),
                 @anode.attr("rows", "3"),
-                @anode.dyn_attr("value", Field("draft")),
+                @anode.dyn_attr("value", @tutuca.Expr::field("draft")),
                 @anode.eid(11),
               ],
               [],
@@ -2103,44 +2138,55 @@ fn trace_panel_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("record"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("trace"),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="setTab", ns=Receive), args=[
+        @anode.on("click", @tutuca.Expr::handler_name("setTab", Receive), args=[
           @anode.const_str("replay"),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="toggleSelecting", ns=Receive))],
-      [@anode.on("click", HandlerName(name="exportTrace", ns=Receive))],
-      [@anode.on("click", HandlerName(name="cutToPlace", ns=Receive))],
-      [@anode.on("click", HandlerName(name="replayStep", ns=Receive))],
-      [@anode.on("click", HandlerName(name="replayRun", ns=Receive))],
-      [@anode.on("click", HandlerName(name="replayReset", ns=Receive))],
+      [
+        @anode.on(
+          "click",
+          @tutuca.Expr::handler_name("toggleSelecting", Receive),
+        ),
+      ],
+      [@anode.on("click", @tutuca.Expr::handler_name("exportTrace", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("cutToPlace", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("replayStep", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("replayRun", Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("replayReset", Receive))],
       [
         @anode.on(
           "input",
           @anode.const_null(),
           binding=@anode.BindString,
-          action=@anode.set_property_action("draft", EventPath(["value"])),
+          action=@anode.set_property_action(
+            "draft",
+            @tutuca.Expr::event_path(["value"]),
+          ),
         ),
       ],
-      [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("importDraft", Receive))],
       [
         @anode.on(
           "input",
           @anode.const_null(),
           binding=@anode.BindString,
-          action=@anode.set_property_action("draft", EventPath(["value"])),
+          action=@anode.set_property_action(
+            "draft",
+            @tutuca.Expr::event_path(["value"]),
+          ),
         ),
       ],
-      [@anode.on("click", HandlerName(name="importDraft", ns=Receive))],
+      [@anode.on("click", @tutuca.Expr::handler_name("importDraft", Receive))],
     ],
   )
 }

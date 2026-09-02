@@ -39,9 +39,17 @@ test "expand simple macro" {
   )
   guard! n is Dom(d)
   guard! d.attrs is DynAttrs(items)
-  assert_true(items[0] is Plain(name="value", val=Field("text")))
+  assert_true(
+    items[0]
+    is Plain(
+      name="value",
+      val=ERead(place={ root: PState("text"), steps: [], .. }, ..)
+    ),
+  )
   assert_eq(px.events.length(), 1)
-  assert_true(px.events[0].handlers[0].handler.handler is Method("setText"))
+  assert_true(
+    px.events[0].handlers[0].handler.handler is EMethod(name="setText", ..),
+  )
   // Same macro expanded with other vars picks them up.
   let px2 = @anode.ParseContext::new()
   let n2 = m.expand(
@@ -49,8 +57,16 @@ test "expand simple macro" {
   )
   guard! n2 is Dom(d2)
   guard! d2.attrs is DynAttrs(items2)
-  assert_true(items2[0] is Plain(name="value", val=Field("foo")))
-  assert_true(px2.events[0].handlers[0].handler.handler is Method("setFoo"))
+  assert_true(
+    items2[0]
+    is Plain(
+      name="value",
+      val=ERead(place={ root: PState("foo"), steps: [], .. }, ..)
+    ),
+  )
+  assert_true(
+    px2.events[0].handlers[0].handler.handler is EMethod(name="setFoo", ..),
+  )
 }
 
 ///|
@@ -70,15 +86,35 @@ test "expand nested macro" {
   guard! px.macro_nodes[0] is MacroCall(m)
   guard! m.node is Some(Dom(outer_div))
   guard! outer_div.attrs is DynAttrs(outer_attrs)
-  assert_true(outer_attrs[0] is Plain(name="title", val=Field("bar")))
+  assert_true(
+    outer_attrs[0]
+    is Plain(
+      name="title",
+      val=ERead(place={ root: PState("bar"), steps: [], .. }, ..)
+    ),
+  )
   guard! outer_div.childs[1] is Dom(p)
   guard! p.attrs is DynAttrs(p_attrs)
-  assert_true(p_attrs[0] is Plain(name="title", val=Field("bar")))
+  assert_true(
+    p_attrs[0]
+    is Plain(
+      name="title",
+      val=ERead(place={ root: PState("bar"), steps: [], .. }, ..)
+    ),
+  )
   guard! outer_div.childs[0] is MacroCall(inner)
   guard! inner.node is Some(Dom(input_el))
   guard! input_el.attrs is DynAttrs(input_attrs)
-  assert_true(input_attrs[0] is Plain(name="value", val=Field("foo")))
-  assert_true(px.events[0].handlers[0].handler.handler is Method("setFoo"))
+  assert_true(
+    input_attrs[0]
+    is Plain(
+      name="value",
+      val=ERead(place={ root: PState("foo"), steps: [], .. }, ..)
+    ),
+  )
+  assert_true(
+    px.events[0].handlers[0].handler.handler is EMethod(name="setFoo", ..),
+  )
 }
 
 ///|
@@ -222,7 +258,9 @@ test "wrapper macro attrs wrap the macro call" {
       "<x:m class=\"foo\" :name=\"foo\" @show=\".loading\"></x:m>", px,
     )
     is Some(Show(w))
-  assert_true(w.val is Field("loading"))
+  assert_true(
+    w.val is ERead(place={ root: PState("loading"), steps: [], .. }, ..),
+  )
   guard! w.node is MacroCall(m)
   @debug.assert_eq(m.attrs, { "class": "'foo'", "name": "foo" })
 }
