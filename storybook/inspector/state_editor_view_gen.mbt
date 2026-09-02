@@ -244,7 +244,10 @@ impl @component.Fields for StateEditorRowState with fn schema() {
     methods=["editableTracksKind"],
     invariants=["editableTracksKind"],
     domains=[
-      { field: "kind", domain: DOneOf(["text", "num", "bool", "readonly"]), },
+      {
+        field: "kind",
+        domain: DOneOf([Str("text"), Str("num"), Str("bool"), Str("readonly")]),
+      },
       { field: "name", domain: DNonEmpty, },
       { field: "type", domain: DNonEmpty, },
     ],

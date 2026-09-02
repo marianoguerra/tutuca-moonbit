@@ -80,13 +80,6 @@ pub(all) enum AttrValue {
   AFlag
 } derive(Eq, @debug.Debug)
 
-pub(all) enum CmpOp {
-  CGe
-  CGt
-  CLe
-  CLt
-} derive(Eq, @debug.Debug)
-
 pub(all) struct FieldDef {
   name : String
   binding : String
@@ -94,6 +87,9 @@ pub(all) struct FieldDef {
   doc : String?
   attrs : Array[(String, AttrValue)]
 } derive(Eq, @debug.Debug)
+pub fn FieldDef::attr_default(Self) -> @core.Value?
+pub fn FieldDef::attr_domains(Self) -> Array[@core.Domain]
+pub fn FieldDef::attr_required(Self) -> Bool
 
 pub(all) struct InitState {
   name : String
@@ -120,11 +116,6 @@ pub(all) struct MsgDef {
   variant : String
   payload : Array[@core.Ty]
   doc : String?
-} derive(Eq, @debug.Debug)
-
-pub(all) enum Operand {
-  OLit(Double)
-  OField(String)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PropertyDef {
@@ -186,19 +177,6 @@ pub(all) struct ProvideDecl {
   span : @core.Span
 } derive(Eq, @debug.Debug)
 
-pub(all) enum Relation {
-  RIndexOf(field~ : String, allow_none~ : Bool)
-  RKeyOf(field~ : String)
-  RMemberOf(field~ : String)
-  RCompare(op~ : CmpOp, rhs~ : Operand)
-  RBetween(lo~ : Operand, hi~ : Operand)
-  ROneOf(Array[String])
-  RElementOf(field~ : String)
-  RLen(Relation)
-  RNonEmpty
-  RSubsetOf(field~ : String)
-} derive(Eq, @debug.Debug)
-
 pub(all) struct RuleDecl {
   kind : RuleKind
   name : String
@@ -240,8 +218,8 @@ pub(all) struct StateDef {
   doc : String?
 } derive(Eq, @debug.Debug)
 pub fn StateDef::component_name(Self, String) -> String
-pub fn StateDef::domains_src(Self) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
+pub fn StateDef::field_domains(Self) -> Array[@core.FieldDomain]
 pub fn StateDef::field_of(Self, @core.Ty, String) -> @core.Ty?
 pub fn StateDef::invariants(Self) -> Array[String]
 pub fn StateDef::member_ty(Self, String) -> @core.Ty?
@@ -275,7 +253,7 @@ pub(all) enum ValidationMode {
 pub(all) struct WhereDecl {
   subject : String
   subject_span : @core.Span
-  relation : Relation
+  relation : @core.Domain
   ref_spans : Array[(String, @core.Span)]
   doc : String?
   span : @core.Span

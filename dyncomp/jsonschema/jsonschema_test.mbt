@@ -178,22 +178,20 @@ test "a constraint supplies the half a type cannot state" {
     "email": {
       doc: "Where to write.",
       required: true,
-      constraint: Some({
-        ..Constraint::none(),
-        max_len: Some(254),
-        format: "email",
-        default: Some(Str("a@b.c")),
-      }),
+      default: Some(Str("a@b.c")),
+      domains: [DLen(DCompare(op=DLe, rhs=DLit(254))), DFormat("email")],
     },
     "count": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10), }),
+      default: None,
+      domains: [DCompare(op=DGe, rhs=DLit(0)), DCompare(op=DLe, rhs=DLit(10))],
     },
     "tags": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), max_len: Some(3), }),
+      default: None,
+      domains: [DLen(DCompare(op=DLe, rhs=DLit(3)))],
     },
   }
   let js = of_schema(s, docs~)
@@ -229,7 +227,7 @@ test "a constraint supplies the half a type cannot state" {
 test "an optional type is never required, whatever the manifest claimed" {
   let s = schema_of([@tutuca.FieldInfo::new("note", TyOption(TyText))])
   let docs : Map[String, FieldDoc] = {
-    "note": { doc: "", required: true, constraint: None, },
+    "note": { doc: "", required: true, default: None, domains: [], },
   }
   let js = of_schema(s, docs~)
   // the option unwraps: the field's schema is its element's
@@ -311,7 +309,7 @@ test "a required field that is missing is named" {
     @tutuca.FieldInfo::new("note", TyText),
   ])
   let docs : Map[String, FieldDoc] = {
-    "email": { doc: "", required: true, constraint: None, },
+    "email": { doc: "", required: true, default: None, domains: [], },
   }
   guard! coerce(s, @json.parse("{}"), docs~) is Err(errors)
   debug_inspect(
@@ -337,20 +335,20 @@ test "a constraint is checked on the way in, not only advertised" {
     "count": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min: Some(0), max: Some(10), }),
+      default: None,
+      domains: [DCompare(op=DGe, rhs=DLit(0)), DCompare(op=DLe, rhs=DLit(10))],
     },
     "name": {
       doc: "",
       required: false,
-      constraint: Some({ ..Constraint::none(), min_len: Some(2), }),
+      default: None,
+      domains: [DLen(DCompare(op=DGe, rhs=DLit(2)))],
     },
     "mode": {
       doc: "",
       required: false,
-      constraint: Some({
-        ..Constraint::none(),
-        enum_values: Some([Str("on"), Str("off")]),
-      }),
+      default: None,
+      domains: [DOneOf([Str("on"), Str("off")])],
     },
   }
   let j = @json.parse(
@@ -421,8 +419,8 @@ test "what the emitted schema advertises is what coerce accepts" {
     @tutuca.FieldInfo::new("note", TyOption(TyText)),
   ])
   let docs : Map[String, FieldDoc] = {
-    "email": { doc: "", required: true, constraint: None, },
-    "note": { doc: "", required: true, constraint: None, },
+    "email": { doc: "", required: true, default: None, domains: [], },
+    "note": { doc: "", required: true, default: None, domains: [], },
   }
   let js = of_schema(s, docs~)
   // the schema requires exactly `email` — `note` is optional by type
@@ -641,25 +639,24 @@ test "a bound the type cannot carry never reaches the schema" {
     @tutuca.FieldInfo::new("on", TyBool),
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
   ])
-  let zeros = {
-    ..Constraint::none(),
-    min: Some(0),
-    max: Some(0),
-    max_len: Some(0),
-  }
+  // Three zeros a guest that filled its record in would state: a magnitude
+  // floor, a magnitude ceiling and a length ceiling.
+  let zeros : Array[@tutuca.Domain] = [
+    DCompare(op=DGe, rhs=DLit(0)),
+    DCompare(op=DLe, rhs=DLit(0)),
+    DLen(DCompare(op=DLe, rhs=DLit(0))),
+  ]
+  let magnitudes = zeros[0:2].to_owned()
   let docs : Map[String, FieldDoc] = {
     "createdAt": {
       doc: "",
       required: false,
-      constraint: Some({ ..zeros, format: "date-time", max_len: None, }),
+      default: None,
+      domains: [..magnitudes, DFormat("date-time")],
     },
-    "count": {
-      doc: "",
-      required: false,
-      constraint: Some({ ..zeros, max_len: None, }),
-    },
-    "on": { doc: "", required: false, constraint: Some(zeros), },
-    "tags": { doc: "", required: false, constraint: Some(zeros), },
+    "count": { doc: "", required: false, default: None, domains: magnitudes, },
+    "on": { doc: "", required: false, default: None, domains: zeros, },
+    "tags": { doc: "", required: false, default: None, domains: zeros, },
   }
   let props = at(of_schema(s, docs~), "properties").unwrap()
   // a numeric bound says nothing about text, so it is dropped rather than

@@ -846,7 +846,7 @@ fn E::arm(
 /// sentence is composed rather than authored, which is why a `where` needs no
 /// `format` and why nothing here looks one up.
 fn E::domain_guard(self : E, pad : String, handler : String) -> String {
-  let domains = self.def.domains_src()
+  let domains = @tutuca.field_domains_to_mbt_source(self.def.field_domains())
   if domains == "[]" {
     return ""
   }

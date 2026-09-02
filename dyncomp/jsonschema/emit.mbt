@@ -165,94 +165,83 @@ fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
 }
 
 ///|
-/// Whether a numeric bound (`min` / `max`) says anything about this type.
+/// Apply the half a type cannot state.
 ///
-/// An `option<f64>` on a text field is not a bound that is merely unused — it is
-/// a keyword JSON Schema will not read on a `"type": "string"`, and a reader
-/// that does not know that (an agent generating arguments, most of all) is being
-/// told something false. `TyAny` keeps it: a value that could be a number could
-/// be bounded.
-fn bounds_numeric(ty : @tutuca.TyInfo) -> Bool {
-  match ty {
-    TyInt(width=32, signed=true) | TyFloat | TyAny => true
-    TyOption(inner) => bounds_numeric(inner)
-    _ => false
-  }
-}
-
-///|
-/// Whether a length bound says anything about this type. A length is characters
-/// on text and elements on a collection; a bool has neither.
-fn bounds_length(ty : @tutuca.TyInfo) -> Bool {
-  match ty {
-    TyBool
-    | TyInt(width=32, signed=true)
-    | TyFloat
-    | TyComp(_)
-    | TyCompProtocols(_)
-    | TyTable => false
-    TyOption(inner) => bounds_length(inner)
-    _ => true
-  }
-}
-
-///|
-/// Apply the half a type cannot state. Which keyword a bound becomes depends on
-/// what it is bounding: `min`/`max` are numeric, `min_len`/`max_len` are a
-/// length, and a length means characters on a string and elements on an array.
+/// Which keyword a domain becomes depends on what it is bounding: a magnitude
+/// is `minimum`/`maximum`, a length is `minLength`/`maxLength` on text and
+/// `minItems`/`maxItems` on a collection, and a set of admitted values is
+/// `enum`.
 ///
-/// A bound the type cannot carry is DROPPED rather than emitted. The manifest
-/// record spells "unstated" as `None` for these four and `""` for the strings
-/// beside them, so a guest that writes the record out in full states four zeros
-/// it did not mean — and the schema is read by things that cannot ask what was
-/// intended. `register_bundle` says so as a diagnostic; this is the half that
-/// keeps it out of what an agent reads. (A bound the type CAN carry is emitted
-/// as given, zero included: a stated zero is a real bound and this is not the
-/// place to second-guess one.)
-fn apply_constraint(schema : Json, ty : @tutuca.TyInfo, c : Constraint) -> Json {
-  let mut out = schema
-  if bounds_numeric(ty) {
-    if c.min is Some(n) {
-      out = with_key(out, "minimum", Json::number(n))
-    }
-    if c.max is Some(n) {
-      out = with_key(out, "maximum", Json::number(n))
-    }
-  }
-  let (min_kw, max_kw) = match ty {
+/// A domain the type cannot carry is DROPPED rather than emitted, and
+/// `Domain::applies_to` is the one place that decides — `register_bundle` says
+/// so as a diagnostic from the same answer. A bound the type CAN carry is
+/// emitted as given, zero included: a stated zero is a real bound and this is
+/// not the place to second-guess one.
+fn apply_domains(
+  schema : Json,
+  ty : @tutuca.Ty,
+  domains : Array[@tutuca.Domain],
+) -> Json {
+  let (min_len_kw, max_len_kw) = match ty {
     TyList(_) | TyTuple(_) | TyFlags(_, _) | TySet => ("minItems", "maxItems")
     TyOMap(_) => ("minProperties", "maxProperties")
     _ => ("minLength", "maxLength")
   }
-  if bounds_length(ty) {
-    if c.min_len is Some(n) {
-      out = with_key(out, min_kw, Json::number(n.to_double()))
+  let mut out = schema
+  fn bound(
+    kw : String,
+    op : @tutuca.DomainOp,
+    n : Double,
+    lo : String,
+    hi : String,
+  ) -> Unit {
+    ignore(kw)
+    out = match op {
+      DGe | DGt => with_key(out, lo, Json::number(n))
+      DLe | DLt => with_key(out, hi, Json::number(n))
     }
-    if c.max_len is Some(n) {
-      out = with_key(out, max_kw, Json::number(n.to_double()))
+  }
+
+  for d in domains {
+    if !d.applies_to(ty) {
+      continue
     }
-  }
-  if c.pattern != "" {
-    out = with_key(out, "pattern", Json::string(c.pattern))
-  }
-  if c.format != "" {
-    out = with_key(out, "format", Json::string(c.format))
-  }
-  if c.enum_values is Some(vs) {
-    out = with_key(out, "enum", Json::array(vs.map(v => v.to_json())))
-  }
-  if c.default is Some(v) {
-    out = with_key(out, "default", v.to_json())
+    match d {
+      DCompare(op~, rhs=DLit(n)) => bound("", op, n, "minimum", "maximum")
+      DBetween(lo=DLit(a), hi=DLit(b)) => {
+        out = with_key(out, "minimum", Json::number(a))
+        out = with_key(out, "maximum", Json::number(b))
+      }
+      DLen(DCompare(op~, rhs=DLit(n))) =>
+        bound("", op, n, min_len_kw, max_len_kw)
+      DLen(DBetween(lo=DLit(a), hi=DLit(b))) => {
+        out = with_key(out, min_len_kw, Json::number(a))
+        out = with_key(out, max_len_kw, Json::number(b))
+      }
+      DNonEmpty => out = with_key(out, min_len_kw, Json::number(1))
+      DPattern(re) => out = with_key(out, "pattern", Json::string(re))
+      DFormat(f) => out = with_key(out, "format", Json::string(f))
+      DOneOf(vs) =>
+        out = with_key(out, "enum", Json::array(vs.map(v => v.to_json())))
+      // A bound whose right-hand side is another FIELD, and the relational
+      // domains. JSON Schema has no vocabulary for "no larger than the value
+      // of a sibling key", so these are carried and checked at the door
+      // (`domain_holds`) rather than described to a reader who could only
+      // misread them.
+      _ => ()
+    }
   }
   out
 }
 
 ///|
-/// One field's schema: its type, the constraint over it, and its sentence.
+/// One field's schema: its type, the domains over it, its default and its
+/// sentence.
 fn field_schema(f : @tutuca.FieldInfo, fd : FieldDoc, defs : Defs) -> Json {
   let mut s = ty_schema(f.ty, defs)
-  if fd.constraint is Some(c) {
-    s = apply_constraint(s, f.ty, c)
+  s = apply_domains(s, f.ty, fd.domains)
+  if fd.default is Some(v) {
+    s = with_key(s, "default", v.to_json())
   }
   if fd.doc != "" {
     s = with_key(s, "description", Json::string(fd.doc))

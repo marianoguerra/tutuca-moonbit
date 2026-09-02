@@ -43,11 +43,11 @@ test "the three clauses the fuzzer asked for" {
   assert_eq(def.wheres.length(), 3)
   assert_eq(def.wheres[0].subject, "currentIndex")
   assert_true(
-    def.wheres[0].relation is RIndexOf(field="items", allow_none=false),
+    def.wheres[0].relation is DIndexOf(field="items", allow_none=false),
   )
   assert_eq(def.wheres[1].subject, "currentKey")
-  assert_true(def.wheres[1].relation is RKeyOf(field="entries"))
-  assert_true(def.wheres[2].relation is RCompare(op=CGe, rhs=OLit(0.0)))
+  assert_true(def.wheres[1].relation is DKeyOf(field="entries"))
+  assert_true(def.wheres[2].relation is DCompare(op=DGe, rhs=DLit(0.0)))
   // The fields are untouched: reading a clause did not consume one.
   assert_eq(def.fields.length(), 5)
 }
@@ -85,21 +85,21 @@ test "the rest of the vocabulary" {
     ),
   )
   let r = def.wheres
-  assert_true(r[0].relation is RIndexOf(field="items", allow_none=true))
-  assert_true(r[1].relation is RMemberOf(field="tags"))
-  assert_true(r[2].relation is RSubsetOf(field="allTags"))
-  assert_true(r[3].relation is RNonEmpty)
-  assert_true(r[4].relation is RLen(RCompare(op=CLe, rhs=OLit(100.0))))
-  assert_true(r[5].relation is RLen(RBetween(lo=OLit(1.0), hi=OLit(10.0))))
-  assert_true(r[6].relation is ROneOf(["debug", "info"]))
+  assert_true(r[0].relation is DIndexOf(field="items", allow_none=true))
+  assert_true(r[1].relation is DMemberOf(field="tags"))
+  assert_true(r[2].relation is DSubsetOf(field="allTags"))
+  assert_true(r[3].relation is DNonEmpty)
+  assert_true(r[4].relation is DLen(DCompare(op=DLe, rhs=DLit(100.0))))
+  assert_true(r[5].relation is DLen(DBetween(lo=DLit(1.0), hi=DLit(10.0))))
+  assert_true(r[6].relation is DOneOf([Str("debug"), Str("info")]))
   // The list spelling of the same relation: the members are what a sibling
   // ARRAY holds, which is what a select field's options are.
-  assert_true(r[7].relation is RElementOf(field="labels"))
+  assert_true(r[7].relation is DElementOf(field="labels"))
   // The enum spelling is expanded to its members, which the PARSER could not
   // do — a `where` may be written above the `enum` it names.
-  assert_true(r[8].relation is ROneOf(["Low", "High"]))
-  assert_true(r[9].relation is RCompare(op=CGe, rhs=OField("lo")))
-  assert_true(r[10].relation is RBetween(lo=OLit(0.0), hi=OLit(99.0)))
+  assert_true(r[8].relation is DOneOf([Str("Low"), Str("High")]))
+  assert_true(r[9].relation is DCompare(op=DGe, rhs=DField("lo")))
+  assert_true(r[10].relation is DBetween(lo=DLit(0.0), hi=DLit(99.0)))
 }
 
 ///|
@@ -299,4 +299,37 @@ test "the vocabulary is closed, and says what it admits" {
       ),
     ).contains("For a closed range of numbers, write `between a and b`"),
   )
+}
+
+///|
+test "a `where` cannot declare a domain that only reads forwards" {
+  // `Domain` carries two arms a `where` may not state: a regular expression
+  // and a named format. They exist because a manifest and a JSON Schema
+  // describe a field to a reader OUTSIDE, which is what a domain is for — and
+  // they cannot be read backwards, so a generator asked to produce a value for
+  // one answers nothing and draws from the type instead.
+  //
+  // The `where` vocabulary stays closed and invertible, and this is the line:
+  // the grammar has no word for either, so a block that tries reads as the
+  // syntax error it is.
+  assert_true(w_err("state C { s: String where s matches '^a' }") != "")
+  assert_true(w_err("state C { s: String where s is email }") != "")
+  // What an author writes instead is an ATTRIBUTE, which is a description
+  // rather than a domain the runtime enforces at the door.
+  let def = w_one(
+    (
+      #|state C {
+      #|  #[pattern = "^a", format = email]
+      #|  s : String
+      #|}
+    ),
+  )
+  debug_inspect(
+    def.fields[0].attr_domains(),
+    content=(
+      #|[DPattern("^a"), DFormat("email")]
+    ),
+  )
+  // …and it contributes no `where`, so nothing about the generator changes.
+  assert_eq(def.wheres.length(), 0)
 }

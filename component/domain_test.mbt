@@ -267,8 +267,12 @@ test "the rest of the vocabulary, over values" {
       fields,
     ),
   )
-  assert_true(@tutuca.domain_holds(DOneOf(["a", "b"]), Str("a"), fields))
-  assert_false(@tutuca.domain_holds(DOneOf(["a", "b"]), Str("c"), fields))
+  assert_true(
+    @tutuca.domain_holds(DOneOf([Str("a"), Str("b")]), Str("a"), fields),
+  )
+  assert_false(
+    @tutuca.domain_holds(DOneOf([Str("a"), Str("b")]), Str("c"), fields),
+  )
   assert_true(
     @tutuca.domain_holds(DBetween(lo=DLit(0), hi=DLit(10)), Num(10), fields),
   )

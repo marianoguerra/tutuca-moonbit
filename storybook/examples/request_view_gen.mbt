@@ -293,7 +293,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
     receives=["init", "loadDataOk", "loadDataError", "loadDataUnhandled"],
     methods=["notFailedWhileLoading"],
     invariants=["notFailedWhileLoading"],
-    domains=[{ field: "view", domain: DOneOf(["main", "edit"]), }],
+    domains=[{ field: "view", domain: DOneOf([Str("main"), Str("edit")]), }],
     view_names=["main"],
   )
 }

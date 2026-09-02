@@ -35,7 +35,11 @@ pub(all) struct DynFieldDef {
   /// can supply, and what a search index ranks on.
   doc : String
   required : Bool
-  constraint : @jsonschema.Constraint?
+  /// The bounds on this field, conjoined. Empty is unconstrained.
+  domains : Array[@tutuca.Domain]
+  /// What a form pre-fills and a schema advertises — not a bound, and not the
+  /// type's zero.
+  default : @tutuca.Value?
 } derive(Debug, Eq)
 
 ///|
@@ -344,22 +348,56 @@ fn opt_json_value(m : Map[String, Json], name : String) -> @tutuca.Value? {
 }
 
 ///|
-fn parse_constraint(m : Map[String, Json]) -> @jsonschema.Constraint? {
-  guard m.get("constraint") is Some(Object(c)) else { return None }
-  let enum_values = match opt_json_value(c, "enumJson") {
-    Some(List(items)) => Some(items)
-    _ => None
+/// A field's bounds, in either wire form.
+///
+/// `"domains"` is the form: an array of `@tutuca.Domain`, the same vocabulary
+/// the runtime checks a write against and a `where` clause parses into.
+///
+/// `"constraint"` is the OLD one, kept for one release: a record of eight
+/// optional members that said seven of the same things in a second vocabulary,
+/// with a `default` that was never a bound at all. It is read into domains
+/// here so nothing downstream has to know there were ever two.
+fn parse_field_domains(m : Map[String, Json]) -> Array[@tutuca.Domain] {
+  if m.get("domains") is Some(d) {
+    return @tutuca.domains_of_json(d).map(fd => fd.domain)
   }
-  Some({
-    min: opt_num(c, "min"),
-    max: opt_num(c, "max"),
-    min_len: opt_int(c, "minLen"),
-    max_len: opt_int(c, "maxLen"),
-    pattern: opt_str(c, "pattern"),
-    format: opt_str(c, "format"),
-    enum_values,
-    default: opt_json_value(c, "defaultJson"),
-  })
+  guard m.get("constraint") is Some(Object(c)) else { return [] }
+  let out : Array[@tutuca.Domain] = []
+  if opt_num(c, "min") is Some(n) {
+    out.push(DCompare(op=DGe, rhs=DLit(n)))
+  }
+  if opt_num(c, "max") is Some(n) {
+    out.push(DCompare(op=DLe, rhs=DLit(n)))
+  }
+  if opt_int(c, "minLen") is Some(n) {
+    out.push(DLen(DCompare(op=DGe, rhs=DLit(n.to_double()))))
+  }
+  if opt_int(c, "maxLen") is Some(n) {
+    out.push(DLen(DCompare(op=DLe, rhs=DLit(n.to_double()))))
+  }
+  let pattern = opt_str(c, "pattern")
+  if pattern != "" {
+    out.push(DPattern(pattern))
+  }
+  let format = opt_str(c, "format")
+  if format != "" {
+    out.push(DFormat(format))
+  }
+  if opt_json_value(c, "enumJson") is Some(List(items)) {
+    out.push(DOneOf(items))
+  }
+  out
+}
+
+///|
+/// What a form pre-fills, in either wire form: a field-level `"default"`, or
+/// the old `constraint.defaultJson` for one release.
+fn parse_field_default(m : Map[String, Json]) -> @tutuca.Value? {
+  if opt_json_value(m, "default") is Some(v) {
+    return Some(v)
+  }
+  guard m.get("constraint") is Some(Object(c)) else { return None }
+  opt_json_value(c, "defaultJson")
 }
 
 ///|
@@ -818,7 +856,8 @@ pub fn DynManifest::from_json_string(
             ty: parse_member_ty(f, types),
             doc: opt_str(f, "doc"),
             required: bool_field(f, "required"),
-            constraint: parse_constraint(f),
+            domains: parse_field_domains(f),
+            default: parse_field_default(f),
           })
         }
       _ => ()

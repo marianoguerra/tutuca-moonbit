@@ -155,7 +155,7 @@ fn push_view_inline_update(
       let domain_fields = @component.Fields::encode(s)
       match
         @tutuca.first_broken_domain(
-          [{ field: "view", domain: DOneOf(["main", "edit"]), }],
+          [{ field: "view", domain: DOneOf([Str("main"), Str("edit")]), }],
           domain_fields,
         ) {
         Some(domain_broke) => {

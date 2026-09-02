@@ -38,6 +38,8 @@ pub fn domains_to_json(Array[FieldDomain]) -> Json
 
 pub fn escape_of(Char) -> Char?
 
+pub fn field_domains_to_mbt_source(Array[FieldDomain]) -> String
+
 pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomain?
 
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
@@ -138,12 +140,16 @@ pub(all) enum Domain {
   DMemberOf(field~ : String)
   DCompare(op~ : DomainOp, rhs~ : DomainOperand)
   DBetween(lo~ : DomainOperand, hi~ : DomainOperand)
-  DOneOf(Array[String])
+  DOneOf(Array[Value])
   DElementOf(field~ : String)
   DLen(Domain)
   DNonEmpty
   DSubsetOf(field~ : String)
+  DPattern(String)
+  DFormat(String)
 } derive(Eq, @debug.Debug)
+pub fn Domain::applies_to(Self, Ty) -> Bool
+pub fn Domain::to_mbt_source(Self) -> String
 
 pub(all) enum DomainOp {
   DGe

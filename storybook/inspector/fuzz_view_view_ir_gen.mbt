@@ -352,7 +352,12 @@ fn fuzz_row_inline_update(
           [
             {
               field: "verb",
-              domain: DOneOf(["send", "intent", "set", "internal"]),
+              domain: DOneOf([
+                Str("send"),
+                Str("intent"),
+                Str("set"),
+                Str("internal"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -868,7 +873,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -946,7 +956,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1024,7 +1039,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1096,7 +1116,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1168,7 +1193,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1240,7 +1270,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1312,7 +1347,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1384,7 +1424,12 @@ fn fuzz_controls_inline_update(
           [
             {
               field: "source",
-              domain: DOneOf(["public", "messages", "properties", "internal"]),
+              domain: DOneOf([
+                Str("public"),
+                Str("messages"),
+                Str("properties"),
+                Str("internal"),
+              ]),
             },
           ],
           domain_fields,
@@ -1712,7 +1757,13 @@ fn fuzz_verdict_inline_update(
           [
             {
               field: "kind",
-              domain: DOneOf(["none", "held", "broke", "disagreed", "stuck"]),
+              domain: DOneOf([
+                Str("none"),
+                Str("held"),
+                Str("broke"),
+                Str("disagreed"),
+                Str("stuck"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(-1)), },
           ],

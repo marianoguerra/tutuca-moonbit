@@ -445,7 +445,13 @@ fn trace_row_inline_update(
           [
             {
               field: "verb",
-              domain: DOneOf(["send", "intent", "offered", "answer", "refused"]),
+              domain: DOneOf([
+                Str("send"),
+                Str("intent"),
+                Str("offered"),
+                Str("answer"),
+                Str("refused"),
+              ]),
             },
             { field: "seq", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -1524,7 +1530,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1561,7 +1570,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1598,7 +1610,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1643,7 +1658,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1690,7 +1708,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -1737,7 +1758,10 @@ fn recorder_bar_inline_update(
       match
         @tutuca.first_broken_domain(
           [
-            { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+            {
+              field: "scope",
+              domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+            },
             { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
           ],
@@ -2286,7 +2310,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2387,7 +2416,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2486,7 +2520,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2585,7 +2624,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2684,7 +2728,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2783,7 +2832,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2882,7 +2936,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -2981,7 +3040,12 @@ fn trace_panel_inline_update(
           [
             {
               field: "tab",
-              domain: DOneOf(["record", "trace", "pick", "replay"]),
+              domain: DOneOf([
+                Str("record"),
+                Str("trace"),
+                Str("pick"),
+                Str("replay"),
+              ]),
             },
             { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
             { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },

@@ -430,67 +430,47 @@ fn diagnostic_line(
 ///|
 /// A declared bound the field's TYPE cannot carry.
 ///
-/// The manifest's constraint record spells "unstated" two ways — `null` (or an
-/// absent key) for the four bounds, `""` for the strings beside them — and four
-/// of the six keys are safe to write blank. So the habit of writing the record
-/// out in full, which every sample guest's manifest teaches, quietly states four
-/// zeros. Each one fails differently and none of them fail loudly:
+/// A magnitude on text is dropped when validating and dropped from the
+/// generated schema, so it does nothing at all except mislead whoever reads
+/// the manifest; a length on a number, likewise. `Domain::applies_to` is the
+/// ONE answer to which bound applies to which type — the emitter drops what it
+/// says does not apply, and this says so — where there used to be two gates
+/// that mirrored each other and disagreed about `TyCompProtocols`.
 ///
-///   - `minLen` / `maxLen: 0` on text or a collection is a REAL bound that
-///     forbids every value. Nothing here can tell that apart from one somebody
-///     meant, so it is not what this screens for — it is why the screen exists.
-///   - `min` / `max` on anything but a number is dropped when validating
-///     (`v is Num` guards it) and dropped from the generated schema, so it does
-///     nothing at all except mislead whoever reads the manifest.
-///   - `minLen` / `maxLen` on a number or a bool, likewise.
-///
-/// The second and third are what this names, because they are the ones that are
-/// unambiguously a mistake: a bound that cannot apply was not a decision. A hint
-/// rather than a warning — nothing is broken — and the value of saying it is
-/// that an author learns the spelling before writing the one that IS broken.
+/// A hint rather than a warning: nothing is broken. What it buys is that an
+/// author learns the spelling before writing the bound that IS broken — a
+/// `maxLen: 0` on text is a real bound that forbids every value, and nothing
+/// here can tell that apart from one somebody meant.
 fn screen_constraints(into : Array[String], def : DynComponentDef) -> Unit {
   for f in def.field_infos() {
     guard def.fields.filter(d => d.name == f.name) is [decl, ..] else {
       continue
     }
-    guard decl.constraint is Some(c) else { continue }
-    if !numeric_bound_applies(f.ty) {
-      if c.min is Some(_) {
-        constraint_hint(into, def, f.name, "min", f.ty)
-      }
-      if c.max is Some(_) {
-        constraint_hint(into, def, f.name, "max", f.ty)
-      }
-    }
-    if !length_bound_applies(f.ty) {
-      if c.min_len is Some(_) {
-        constraint_hint(into, def, f.name, "minLen", f.ty)
-      }
-      if c.max_len is Some(_) {
-        constraint_hint(into, def, f.name, "maxLen", f.ty)
+    for d in decl.domains {
+      if !d.applies_to(f.ty) {
+        constraint_hint(into, def, f.name, domain_key(d), f.ty)
       }
     }
   }
 }
 
 ///|
-/// Mirrors `@jsonschema`'s emission gate: the two have to agree, because one
-/// decides what is dropped and the other is what says so.
-fn numeric_bound_applies(ty : @tutuca.TyInfo) -> Bool {
-  match ty {
-    TyInt(width=32, signed=true) | TyFloat | TyAny => true
-    TyOption(inner) => numeric_bound_applies(inner)
-    _ => false
-  }
-}
-
-///|
-fn length_bound_applies(ty : @tutuca.TyInfo) -> Bool {
-  match ty {
-    TyBool | TyInt(width=32, signed=true) | TyFloat | TyComp(_) | TyTable =>
-      false
-    TyOption(inner) => length_bound_applies(inner)
-    _ => true
+/// The manifest key a domain was written as, for the hint's sentence.
+///
+/// The OLD spelling, deliberately: what an author has to go and change is the
+/// key they typed, and the domain form is what it became on the way in.
+fn domain_key(d : @tutuca.Domain) -> String {
+  match d {
+    DCompare(op=DGe | DGt, ..) => "min"
+    DCompare(op=DLe | DLt, ..) => "max"
+    DBetween(..) => "min/max"
+    DLen(DCompare(op=DGe | DGt, ..)) => "minLen"
+    DLen(DCompare(op=DLe | DLt, ..)) => "maxLen"
+    DLen(_) | DNonEmpty => "len"
+    DPattern(_) => "pattern"
+    DFormat(_) => "format"
+    DOneOf(_) => "enum"
+    _ => "where"
   }
 }
 

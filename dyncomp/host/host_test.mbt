@@ -501,7 +501,7 @@ impl Guest for FakeGuest with fn drop_instance(self, handle) {
 /// BEHAVES, and spelling three blanks per field there would bury it; the
 /// documented and constrained shapes are exercised in the parsing tests below.
 fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
-  { name, ty, doc: "", required: false, constraint: None, }
+  { name, ty, doc: "", required: false, default: None, domains: [], }
 }
 
 ///|
@@ -1396,7 +1396,7 @@ test "manifest parses a type written as the type it is" {
   )
   // A closed set carries its membership, which is the one thing about it only
   // the schema knows.
-  guard m.components[0].fields[2].ty is TyOption(inner)
+  guard! m.components[0].fields[2].ty is TyOption(inner)
   debug_inspect(inner.members(), content="[\"On\", \"Off\"]")
 }
 
@@ -1632,19 +1632,21 @@ test "catalog metadata parses: docs and constraints" {
   let f = c.fields[0]
   inspect(f.doc, content="Where to write.")
   assert_true(f.required)
-  guard! f.constraint is Some(k)
-  debug_inspect(k.max_len, content="Some(254)")
-  inspect(k.format, content="email")
-  // "" is the contract's spelling for "not stated", so an empty enumeration is
-  // None rather than an empty array — the two mean different things to a form
-  assert_true(k.enum_values is None)
+  // The old `constraint` record, read into domains: seven of its eight members
+  // said what a `Domain` already says, and `default` — which was never a bound
+  // — is a field of its own now.
   debug_inspect(
-    k.default,
+    f.domains,
+    content=(
+      #|[DLen(DCompare(op=DLe, rhs=DLit(254))), DFormat("email")]
+    ),
+  )
+  debug_inspect(
+    f.default,
     content=(
       #|Some(RStr("a@b.c"))
     ),
   )
-  assert_true(k.min is None)
 }
 
 ///|
@@ -2029,9 +2031,6 @@ test "child_json encodes a nested guest instance at any depth" {
 /// type was not a decision.
 test "a bound the type cannot carry is a load-time hint" {
   let h = @harness.mount(shell_module(), "Shell")
-  let bounded = (c : @jsonschema.Constraint) => {
-    (Some(c) : @jsonschema.Constraint?)
-  }
   let manifest : DynManifest = {
     ..counter_manifest(),
     components: [
@@ -2045,11 +2044,11 @@ test "a bound the type cannot carry is a load-time hint" {
             ty: TyText,
             doc: "",
             required: false,
-            constraint: bounded({
-              ..@jsonschema.Constraint::none(),
-              min: Some(0),
-              max: Some(0),
-            }),
+            default: None,
+            domains: [
+              DCompare(op=DGe, rhs=DLit(0)),
+              DCompare(op=DLe, rhs=DLit(0)),
+            ],
           },
           // a length on a number, likewise
           {
@@ -2057,10 +2056,8 @@ test "a bound the type cannot carry is a load-time hint" {
             ty: TyFloat,
             doc: "",
             required: false,
-            constraint: bounded({
-              ..@jsonschema.Constraint::none(),
-              max_len: Some(0),
-            }),
+            default: None,
+            domains: [DLen(DCompare(op=DLe, rhs=DLit(0)))],
           },
         ],
       },
@@ -2094,10 +2091,8 @@ test "a bound the type cannot carry is a load-time hint" {
             ty: TyText,
             doc: "",
             required: false,
-            constraint: bounded({
-              ..@jsonschema.Constraint::none(),
-              max_len: Some(0),
-            }),
+            default: None,
+            domains: [DLen(DCompare(op=DLe, rhs=DLit(0)))],
           },
         ],
       },

@@ -581,7 +581,12 @@ impl @component.Fields for InstanceExplorerState with fn schema() {
     view_handlers=["setActiveTab"],
     methods=["componentTabNeedsAComponent"],
     invariants=["componentTabNeedsAComponent"],
-    domains=[{ field: "activeTab", domain: DOneOf(["instance", "component"]), }],
+    domains=[
+      {
+        field: "activeTab",
+        domain: DOneOf([Str("instance"), Str("component")]),
+      },
+    ],
     view_names=["main"],
   )
 }

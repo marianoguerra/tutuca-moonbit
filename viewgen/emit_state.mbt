@@ -412,7 +412,9 @@ fn emit_schema(
   // carried as data because the runtime evaluates it directly rather than
   // calling a compiled method.
   if !def.wheres.is_empty() {
-    out.write_string("    domains=\{def.domains_src()},\n")
+    out.write_string(
+      "    domains=\{@tutuca.field_domains_to_mbt_source(def.field_domains())},\n",
+    )
   }
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))

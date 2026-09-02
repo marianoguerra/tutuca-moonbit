@@ -100,14 +100,25 @@ fn component_json(
 ) -> Json {
   let fields : Array[Json] = []
   for f in g.fields {
-    fields.push(
-      Json::object({
-        "name": Json::string(f.name),
-        "ty": f.ty.to_json(),
-        "doc": Json::string(f.doc.unwrap_or("")),
-        "required": Json::boolean(false),
-      }),
-    )
+    // A field's `#[…]` attributes resolve to domains — the same vocabulary a
+    // `where` clause states and the runtime checks, rather than a second one
+    // spelled only for a manifest.
+    let entry : Map[String, Json] = {
+      "name": Json::string(f.name),
+      "ty": f.ty.to_json(),
+      "doc": Json::string(f.doc.unwrap_or("")),
+      "required": Json::boolean(f.attr_required()),
+    }
+    let domains = f.attr_domains()
+    if !domains.is_empty() {
+      entry["domains"] = @tutuca.domains_to_json(
+        domains.map(d => ({ field: f.name, domain: d, } : @tutuca.FieldDomain)),
+      )
+    }
+    if f.attr_default() is Some(v) {
+      entry["default"] = v.to_json()
+    }
+    fields.push(Json::object(entry))
   }
   let properties : Array[Json] = []
   for p in g.def.properties {

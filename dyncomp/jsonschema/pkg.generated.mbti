@@ -18,22 +18,11 @@ pub let table_def : String
 // Errors
 
 // Types and methods
-pub(all) struct Constraint {
-  min : Double?
-  max : Double?
-  min_len : Int?
-  max_len : Int?
-  pattern : String
-  format : String
-  enum_values : Array[@core.Value]?
-  default : @core.Value?
-} derive(Eq, @debug.Debug)
-pub fn Constraint::none() -> Self
-
 pub(all) struct FieldDoc {
   doc : String
   required : Bool
-  constraint : Constraint?
+  default : @core.Value?
+  domains : Array[@core.Domain]
 } derive(Eq, @debug.Debug)
 pub fn FieldDoc::none() -> Self
 

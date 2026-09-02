@@ -4,7 +4,6 @@ package "marianoguerra/tutuca/dyncomp/host"
 import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
-  "marianoguerra/tutuca/dyncomp/jsonschema",
   "marianoguerra/tutuca/dyncomp/persist",
   "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/transactor",
@@ -130,7 +129,8 @@ pub(all) struct DynFieldDef {
   ty : @core.Ty
   doc : String
   required : Bool
-  constraint : @jsonschema.Constraint?
+  domains : Array[@core.Domain]
+  default : @core.Value?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynInitDef {

@@ -78,7 +78,7 @@ fn plain(
   ty_ : @tutuca.Ty,
   doc? : String = "",
 ) -> @dyncomp.DynFieldDef {
-  { name, ty: ty_, doc, required: false, constraint: None, }
+  { name, ty: ty_, doc, required: false, default: None, domains: [], }
 }
 
 ///|

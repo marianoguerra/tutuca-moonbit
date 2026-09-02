@@ -9,7 +9,6 @@ import {
   // A field's `constraint` is part of the DESCRIPTION rather than of the
   // runtime, so it lives with the thing that projects descriptions. The parser
   // fills one in; the registry and both layers read it.
-  "marianoguerra/tutuca/dyncomp/jsonschema",
   // What this host will ACCEPT from a bundle. The decisions live there and the
   // mechanics live here, so "what can a dropped bundle do" has one answer.
   "marianoguerra/tutuca/dyncomp/policy",

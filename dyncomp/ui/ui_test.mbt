@@ -188,18 +188,19 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             ty: TyFloat,
             doc: "The current value.",
             required: false,
-            constraint: Some({
-              ..@jsonschema.Constraint::none(),
-              min: Some(0),
-              max: Some(10),
-            }),
+            default: None,
+            domains: [
+              DCompare(op=DGe, rhs=DLit(0)),
+              DCompare(op=DLe, rhs=DLit(10)),
+            ],
           },
           {
             name: "label",
             ty: TyText,
             doc: "What to call it.",
             required: true,
-            constraint: None,
+            default: None,
+            domains: [],
           },
           // A COMPOUND, so the generated form has a JSON control. It is here
           // for the reconfigure path: a `json` field pre-filled with anything
@@ -210,7 +211,8 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             ty: TyList(TyFloat),
             doc: "Every value it has held.",
             required: false,
-            constraint: None,
+            default: None,
+            domains: [],
           },
         ],
         properties: [],

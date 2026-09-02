@@ -280,94 +280,16 @@ fn edit_distance(a : String, b : String) -> Int {
 }
 
 ///|
-/// The MoonBit source of the `@tutuca.TyInfo` expression describing this type.
+/// The `where` clauses as the field-domain list a schema carries.
 ///
-/// Text and not a `TyInfo` value: statedef stays a pure text-in/text-out
-/// package, and importing core here would drag `@tutuca.Value` in for the sake
-/// of one enum.
-///
-/// The constructors are written UNQUALIFIED, and have to be: an enum
-/// constructor does not resolve through the `pub using` re-export that keeps
-/// `@component.TyInfo` spelling correct, nor through the module-root facade
-/// the playground compiles examples against. Bare works in both, because the
-/// only position the generator writes one into — a `FieldInfo::new` argument —
-/// already knows the type.
-///
-/// A closed set's members are INLINED rather than named: `TyInfo` is read at
-/// runtime, where the declaration they would refer to does not exist.
-/// The `where` clauses as a `FieldDomain` array literal, for the generated
-/// `SchemaInfo`.
-///
-/// The twin of `ty_info_src` and written beside it for the same reason: the
-/// generator emits SOURCE and the card runtime builds VALUES, so the two
-/// projections of one declaration sit where a change to either is visible
-/// from the other. `@info.domains_of` is the value half.
-///
-/// Bare constructors, exactly as `ty_info_src` writes them, and for the same
-/// reason — an enum constructor does not resolve through a `pub using`
-/// re-export, and the only position this is written into already knows the
-/// type.
-pub fn StateDef::domains_src(self : StateDef) -> String {
-  if self.wheres.is_empty() {
-    return "[]"
-  }
-  let out : Array[String] = []
-  for w in self.wheres {
-    out.push(
-      "{ field: " +
-      quoted(w.subject) +
-      ", domain: " +
-      domain_src(w.relation) +
-      " }",
-    )
-  }
-  "[" + out.join(", ") + "]"
-}
-
-///|
-fn domain_src(rel : Relation) -> String {
-  let operand = (o : Operand) => {
-    match o {
-      OLit(n) => "DLit(" + n.to_string() + ")"
-      OField(f) => "DField(" + quoted(f) + ")"
-    }
-  }
-  match rel {
-    RIndexOf(field~, allow_none~) =>
-      "DIndexOf(field=" +
-      quoted(field) +
-      ", allow_none=" +
-      allow_none.to_string() +
-      ")"
-    RKeyOf(field~) => "DKeyOf(field=" + quoted(field) + ")"
-    RMemberOf(field~) => "DMemberOf(field=" + quoted(field) + ")"
-    RElementOf(field~) => "DElementOf(field=" + quoted(field) + ")"
-    RSubsetOf(field~) => "DSubsetOf(field=" + quoted(field) + ")"
-    RNonEmpty => "DNonEmpty"
-    RLen(inner) => "DLen(" + domain_src(inner) + ")"
-    ROneOf(ms) => "DOneOf([" + ms.map(m => quoted(m)).join(", ") + "])"
-    RCompare(op~, rhs~) =>
-      "DCompare(op=" + cmp_src(op) + ", rhs=" + operand(rhs) + ")"
-    RBetween(lo~, hi~) =>
-      "DBetween(lo=" + operand(lo) + ", hi=" + operand(hi) + ")"
-  }
-}
-
-///|
-fn cmp_src(op : CmpOp) -> String {
-  match op {
-    CGe => "DGe"
-    CGt => "DGt"
-    CLe => "DLe"
-    CLt => "DLt"
-  }
-}
-
-///|
-/// A MoonBit string literal. Schema identifiers contain no quotes, so there is
-/// nothing to escape beyond the quotes themselves.
-fn quoted(s : String) -> String {
-  "\"" + s + "\""
+/// A rename rather than a projection: a `where` parses straight into
+/// `@tutuca.Domain`, so this pairs each clause with its subject and stops.
+/// It used to be two functions — one building the value, one writing the
+/// source — and they described the same domains in two languages.
+pub fn StateDef::field_domains(self : StateDef) -> Array[@tutuca.FieldDomain] {
+  self.wheres.map(w => {
+    ({ field: w.subject, domain: w.relation, } : @tutuca.FieldDomain)
+  })
 }
 
 ///|

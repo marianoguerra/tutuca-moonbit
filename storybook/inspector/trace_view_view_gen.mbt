@@ -323,7 +323,13 @@ impl @component.Fields for TraceRowState with fn schema() {
     domains=[
       {
         field: "verb",
-        domain: DOneOf(["send", "intent", "offered", "answer", "refused"]),
+        domain: DOneOf([
+          Str("send"),
+          Str("intent"),
+          Str("offered"),
+          Str("answer"),
+          Str("refused"),
+        ]),
       },
       { field: "seq", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "turn", domain: DCompare(op=DGe, rhs=DLit(0)), },
@@ -1313,7 +1319,10 @@ impl @component.Fields for RecorderBarState with fn schema() {
     methods=["turnsAreEvents"],
     invariants=["turnsAreEvents"],
     domains=[
-      { field: "scope", domain: DOneOf(["all", "section", "example"]), },
+      {
+        field: "scope",
+        domain: DOneOf([Str("all"), Str("section"), Str("example")]),
+      },
       { field: "events", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "turns", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
@@ -1766,7 +1775,10 @@ impl @component.Fields for TracePanelState with fn schema() {
       "showReplayNeedsATrace", "showTraceNeedsATrace",
     ],
     domains=[
-      { field: "tab", domain: DOneOf(["record", "trace", "pick", "replay"]), },
+      {
+        field: "tab",
+        domain: DOneOf([Str("record"), Str("trace"), Str("pick"), Str("replay")]),
+      },
       { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "total", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],

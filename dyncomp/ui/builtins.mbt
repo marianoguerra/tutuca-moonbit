@@ -97,23 +97,23 @@ fn without(
 }
 
 ///|
-/// A field doc with a constraint, spelled once instead of eight times.
+/// A field doc with a default and its bounds, spelled once instead of four
+/// times.
 fn fd(
   doc : String,
-  c? : @jsonschema.Constraint = @jsonschema.Constraint::none(),
+  default? : @tutuca.Value = Null,
+  domains? : Array[@tutuca.Domain] = [],
 ) -> @jsonschema.FieldDoc {
-  { doc, required: false, constraint: Some(c), }
+  { doc, required: false, default: Some(default), domains, }
 }
 
 ///|
 /// A whole number between `lo` and `hi`, starting at `d`.
 fn ranged(doc : String, lo : Int, hi : Int, d : Int) -> @jsonschema.FieldDoc {
-  fd(doc, c={
-    ..@jsonschema.Constraint::none(),
-    min: Some(lo.to_double()),
-    max: Some(hi.to_double()),
-    default: Some(Num(d.to_double())),
-  })
+  fd(doc, default=Num(d.to_double()), domains=[
+    DCompare(op=DGe, rhs=DLit(lo.to_double())),
+    DCompare(op=DLe, rhs=DLit(hi.to_double())),
+  ])
 }
 
 ///|
@@ -125,17 +125,15 @@ fn choices(
   of~ : Array[String],
   d~ : String,
 ) -> @jsonschema.FieldDoc {
-  fd(doc, c={
-    ..@jsonschema.Constraint::none(),
-    enum_values: Some(of.map(v => (Str(v) : @tutuca.Value))),
-    default: Some(Str(d)),
-  })
+  fd(doc, default=Str(d), domains=[
+    DOneOf(of.map(v => (Str(v) : @tutuca.Value))),
+  ])
 }
 
 ///|
 /// A short line of text, starting at `d`.
 fn text_field(doc : String, d? : String = "") -> @jsonschema.FieldDoc {
-  fd(doc, c={ ..@jsonschema.Constraint::none(), default: Some(Str(d)), })
+  fd(doc, default=Str(d))
 }
 
 ///|
@@ -209,7 +207,7 @@ pub fn builtin_descriptors(
       "padding": ranged("Pixels inside the edge.", 0, 64, 0),
       "wrap": fd(
         "Let the children run onto another line when they do not fit.",
-        c={ ..@jsonschema.Constraint::none(), default: Some(Bool(false)), },
+        default=Bool(false),
       ),
     },
     [

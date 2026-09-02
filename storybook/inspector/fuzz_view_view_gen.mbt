@@ -318,7 +318,10 @@ impl @component.Fields for FuzzRowState with fn schema() {
     methods=["breakNamesARule", "refusalNamesSomething"],
     invariants=["breakNamesARule", "refusalNamesSomething"],
     domains=[
-      { field: "verb", domain: DOneOf(["send", "intent", "set", "internal"]), },
+      {
+        field: "verb",
+        domain: DOneOf([Str("send"), Str("intent"), Str("set"), Str("internal")]),
+      },
       { field: "at", domain: DCompare(op=DGe, rhs=DLit(0)), },
       { field: "renders", domain: DCompare(op=DGe, rhs=DLit(0)), },
     ],
@@ -755,7 +758,12 @@ impl @component.Fields for FuzzControlsState with fn schema() {
     domains=[
       {
         field: "source",
-        domain: DOneOf(["public", "messages", "properties", "internal"]),
+        domain: DOneOf([
+          Str("public"),
+          Str("messages"),
+          Str("properties"),
+          Str("internal"),
+        ]),
       },
     ],
     view_names=["main"],
@@ -1031,7 +1039,13 @@ impl @component.Fields for FuzzVerdictState with fn schema() {
     domains=[
       {
         field: "kind",
-        domain: DOneOf(["none", "held", "broke", "disagreed", "stuck"]),
+        domain: DOneOf([
+          Str("none"),
+          Str("held"),
+          Str("broke"),
+          Str("disagreed"),
+          Str("stuck"),
+        ]),
       },
       { field: "at", domain: DCompare(op=DGe, rhs=DLit(-1)), },
     ],

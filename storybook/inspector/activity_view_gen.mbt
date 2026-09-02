@@ -145,7 +145,7 @@ impl @component.Fields for ActivityEntryState with fn schema() {
     methods=["hasAfterTracksAfter"],
     invariants=["hasAfterTracksAfter"],
     domains=[
-      { field: "matched", domain: DOneOf(["exact", "none"]), },
+      { field: "matched", domain: DOneOf([Str("exact"), Str("none")]), },
       { field: "name", domain: DNonEmpty, },
     ],
     view_names=["main"],

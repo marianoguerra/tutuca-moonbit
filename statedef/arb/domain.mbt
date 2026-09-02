@@ -111,7 +111,7 @@ pub fn value_in_domain(
       if members.is_empty() {
         return None
       }
-      Some(@gen.one_of_array(members.map(m => (Str(m) : @tutuca.Value))))
+      Some(@gen.one_of_array(members))
     }
     // The list the value has to come from, drawn from. An empty one bounds
     // nothing a draw can satisfy — the same answer `DKeyOf` gives for an empty
@@ -145,6 +145,13 @@ pub fn value_in_domain(
       }
       Some(num_between(a, b))
     }
+    // The two arms that cannot be read backwards. A regular expression and a
+    // format DESCRIBE a value to a reader outside — a JSON Schema, a form
+    // control — and inverting one is a generator nobody should write. `None`
+    // means "draw from the type", which is the honest fallback: a `where`
+    // block cannot declare either of these (`wheres.mbt` refuses them), so the
+    // vocabulary an author writes stays closed and invertible.
+    @tutuca.DPattern(_) | @tutuca.DFormat(_) => None
   }
 }
 
@@ -308,7 +315,10 @@ pub fn domain_deps(domain : @tutuca.Domain) -> Array[String] {
     @tutuca.DCompare(rhs~, ..) => operand_dep(rhs)
     @tutuca.DBetween(lo~, hi~) => operand_dep(lo) + operand_dep(hi)
     @tutuca.DLen(inner) => domain_deps(inner)
-    @tutuca.DOneOf(_) | @tutuca.DNonEmpty => []
+    @tutuca.DOneOf(_)
+    | @tutuca.DNonEmpty
+    | @tutuca.DPattern(_)
+    | @tutuca.DFormat(_) => []
   }
 }
 

@@ -584,7 +584,15 @@ impl @component.Fields for VwPickerState with fn schema() {
     domains=[
       {
         field: "currentSection",
-        domain: DOneOf(["all", "i32", "i64", "f32", "f64", "control", "vars"]),
+        domain: DOneOf([
+          Str("all"),
+          Str("i32"),
+          Str("i64"),
+          Str("f32"),
+          Str("f64"),
+          Str("control"),
+          Str("vars"),
+        ]),
       },
     ],
   )

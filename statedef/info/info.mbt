@@ -1,8 +1,8 @@
 // A parsed schema as runtime description.
 //
 // Every function here is the VALUE twin of a `statedef` function that returns
-// SOURCE. `zero_value` mirrors `StateDef::zero_expr`, `domains_of` mirrors
-// `StateDef::domains_src`, and `schema_info` mirrors what `viewgen`'s
+// SOURCE. `zero_value` mirrors `StateDef::zero_expr`, and `schema_info`
+// mirrors what `viewgen`'s
 // `emit_schema` writes out. The twins have to agree, so the suite beside this
 // file asserts it the only way that cannot rot: it renders the value back into
 // the source spelling and compares that against the emitter's own.
@@ -13,9 +13,9 @@
 // anywhere in the payload, so it needs the projection as a function. Neither
 // can serve the other's caller.
 //
-// The TYPE twin is gone, and that is what one `Ty` bought: `ty_info` and
-// `ty_info_src` described the same shape in two languages, and now the schema
-// parses into the runtime's own type and `Ty::to_mbt_source` prints it.
+// The TYPE and DOMAIN twins are gone, and that is what one `Ty` and one
+// `Domain` bought: each pair described one shape in two languages, and now the
+// schema parses into the runtime's own type and `to_mbt_source` prints it.
 
 ///|
 /// The state a component starts at, as the fields map the render and path
@@ -179,45 +179,11 @@ pub fn schema_info(
 ///|
 /// The `where` clauses as runtime domains.
 ///
-/// The value twin of `@statedef.StateDef::domains_src`, and the same
-/// relationship every function in this package has with its emitting sibling:
-/// a card is compiled in a browser with no MoonBit toolchain, so what the
-/// generator writes as source has to be BUILDABLE here as well.
+/// No longer a projection: a `where` parses straight into `@tutuca.Domain`, so
+/// this is the list the declaration already holds, paired with its subject.
+/// `domain_of` was the value twin of `domain_src`, and both went the way
+/// `ty_info`/`ty_info_src` did — there is one `Domain`, and
+/// `Domain::to_mbt_source` prints it.
 pub fn domains_of(def : @statedef.StateDef) -> Array[@tutuca.FieldDomain] {
-  let out : Array[@tutuca.FieldDomain] = []
-  for w in def.wheres {
-    out.push({ field: w.subject, domain: domain_of(w.relation), })
-  }
-  out
-}
-
-///|
-fn domain_of(rel : @statedef.Relation) -> @tutuca.Domain {
-  let operand = (o : @statedef.Operand) => {
-    match o {
-      OLit(n) => (DLit(n) : @tutuca.DomainOperand)
-      OField(f) => DField(f)
-    }
-  }
-  match rel {
-    RIndexOf(field~, allow_none~) => DIndexOf(field~, allow_none~)
-    RKeyOf(field~) => DKeyOf(field~)
-    RMemberOf(field~) => DMemberOf(field~)
-    RSubsetOf(field~) => DSubsetOf(field~)
-    RElementOf(field~) => DElementOf(field~)
-    RNonEmpty => DNonEmpty
-    RLen(inner) => DLen(domain_of(inner))
-    ROneOf(ms) => DOneOf(ms)
-    RCompare(op~, rhs~) =>
-      DCompare(
-        op=match op {
-          CGe => DGe
-          CGt => DGt
-          CLe => DLe
-          CLt => DLt
-        },
-        rhs=operand(rhs),
-      )
-    RBetween(lo~, hi~) => DBetween(lo=operand(lo), hi=operand(hi))
-  }
+  def.field_domains()
 }

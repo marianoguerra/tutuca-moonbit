@@ -166,46 +166,90 @@ fn coerce_ty(
 /// "is this the right shape" and "is this an acceptable one" — and only the
 /// first has a fallback. A value that is the right shape and out of range is
 /// returned unchanged, with the complaint recorded.
-fn check_constraint(
+///
+/// The bounds are DOMAINS, and `domain_holds` is what says whether one holds.
+/// What this adds is the sentence: the runtime's own refusal names the field
+/// and the state it was written into, and a schema error names a JSON pointer
+/// and what the caller should have sent.
+fn check_domains(
   v : @tutuca.Value,
-  ty : @tutuca.TyInfo,
-  c : Constraint,
+  ty : @tutuca.Ty,
+  domains : Array[@tutuca.Domain],
   pointer : String,
   errors : Array[SchemaError],
 ) -> Unit {
-  if v is Num(n) {
-    if c.min is Some(lo) && n < lo {
-      errors.push(err(pointer, "must be at least \{lo}, got \{n}"))
-    }
-    if c.max is Some(hi) && n > hi {
-      errors.push(err(pointer, "must be at most \{hi}, got \{n}"))
-    }
-  }
   // A "length" is characters on text and elements on a collection; the type
   // decides which, so the message can say which.
-  let len = match v {
-    Str(s) => Some((s.char_length(), "characters"))
-    List(items) => Some((items.length(), "items"))
-    Map(m) => Some((m.length(), "entries"))
-    _ => None
+  let unit = match v {
+    Str(_) => "characters"
+    List(_) => "items"
+    Map(_) => "entries"
+    _ => ""
   }
-  if len is Some((n, unit)) {
-    if c.min_len is Some(lo) && n < lo {
-      errors.push(err(pointer, "must have at least \{lo} \{unit}, got \{n}"))
+  for d in domains {
+    if !d.applies_to(ty) {
+      continue
     }
-    if c.max_len is Some(hi) && n > hi {
-      errors.push(err(pointer, "must have at most \{hi} \{unit}, got \{n}"))
+    // Against an EMPTY field map: a schema check has one value in hand and no
+    // state around it, so a domain that reads a sibling field cannot be
+    // answered here — and `domain_holds` answers `true` for one it cannot
+    // read, which is the same "unknown is not wrong" the runtime follows.
+    if @tutuca.domain_holds(d, v, Map([])) {
+      continue
+    }
+    errors.push(err(pointer, domain_complaint(d, v, unit)))
+  }
+}
+
+///|
+/// How long a value is, in the unit its shape implies.
+fn length_of(v : @tutuca.Value) -> Int {
+  match v {
+    Str(s) => s.char_length()
+    List(items) => items.length()
+    Map(m) => m.length()
+    _ => 0
+  }
+}
+
+///|
+/// What to tell the sender about a domain their value broke.
+fn domain_complaint(
+  d : @tutuca.Domain,
+  v : @tutuca.Value,
+  unit : String,
+) -> String {
+  let got = v.to_display_string()
+  fn side(op : @tutuca.DomainOp, n : Double) -> String {
+    match op {
+      DGe => "at least \{n}"
+      DGt => "greater than \{n}"
+      DLe => "at most \{n}"
+      DLt => "less than \{n}"
     }
   }
-  if c.enum_values is Some(allowed) && !allowed.contains(v) {
-    let shown = allowed.map(a => a.to_display_string()).join(", ")
-    errors.push(err(pointer, "must be one of \{shown}"))
+
+  match d {
+    DCompare(op~, rhs=DLit(n)) => "must be \{side(op, n)}, got \{got}"
+    DBetween(lo=DLit(a), hi=DLit(b)) =>
+      "must be between \{a} and \{b}, got \{got}"
+    DLen(DCompare(op~, rhs=DLit(n))) =>
+      "must have \{side(op, n)} \{unit}, got \{length_of(v)}"
+    DLen(DBetween(lo=DLit(a), hi=DLit(b))) =>
+      "must have between \{a} and \{b} \{unit}, got \{length_of(v)}"
+    DNonEmpty => "must not be empty"
+    DOneOf(allowed) => {
+      let shown = allowed.map(a => a.to_display_string()).join(", ")
+      "must be one of \{shown}"
+    }
+    // Everything else keeps the runtime's own sentence, which names the fields
+    // it read — there is one place that composes those and this is not a
+    // second one.
+    _ =>
+      @tutuca.broken_domain_sentence({ field: "value", domain: d, }, {
+        "value": v,
+      })
   }
-  // `pattern` and `format` are carried into the emitted schema and NOT checked
-  // here: this package has no regex engine, and a check that silently passed
-  // everything would be worse than an absent one. A caller that needs them
-  // enforced validates against the emitted schema with a real validator.
-  ignore(ty)
 }
 
 ///|
@@ -238,9 +282,7 @@ pub fn coerce(
       Some(fj) => {
         let pointer = join("", f.name)
         let v = coerce_ty(fj, f.ty, pointer, errors)
-        if fd.constraint is Some(c) {
-          check_constraint(v, f.ty, c, pointer, errors)
-        }
+        check_domains(v, f.ty, fd.domains, pointer, errors)
         out[f.name] = v
       }
       None =>

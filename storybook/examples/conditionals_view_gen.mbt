@@ -393,7 +393,10 @@ impl @component.Fields for TabbedUIState with fn schema() {
     fields=[@component.FieldInfo::new("tab", TyText)],
     view_handlers=["setTab"],
     domains=[
-      { field: "tab", domain: DOneOf(["overview", "features", "pricing"]), },
+      {
+        field: "tab",
+        domain: DOneOf([Str("overview"), Str("features"), Str("pricing")]),
+      },
     ],
     ids=["t-features", "t-overview", "t-pricing"],
     view_names=["main"],

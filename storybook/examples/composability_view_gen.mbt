@@ -239,7 +239,12 @@ impl @component.Fields for ComposabilityState with fn schema() {
       {
         field: "activeSection",
         domain: DOneOf([
-          "todo", "json", "tree", "personalSite", "dnd", "visualWasm",
+          Str("todo"),
+          Str("json"),
+          Str("tree"),
+          Str("personalSite"),
+          Str("dnd"),
+          Str("visualWasm"),
         ]),
       },
     ],

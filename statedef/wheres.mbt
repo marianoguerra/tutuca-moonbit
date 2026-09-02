@@ -85,10 +85,10 @@ fn check_relation(
   ty_of : Map[String, StateTy],
   types : Array[UserTy],
   subject : String,
-) -> Relation raise DefError {
+) -> @tutuca.Domain raise DefError {
   let bad = (why : String) => WhereTypeMismatch(subject~, why~, span=w.span)
   match w.relation {
-    RIndexOf(field~, allow_none~) => {
+    DIndexOf(field~, allow_none~) => {
       if !is_index_like(subject_ty) {
         raise bad(
           "an index is a whole number, and `\{subject}` is \{show_ty(subject_ty)}",
@@ -100,9 +100,9 @@ fn check_relation(
           "`index of` needs something with positions, and `.\{field}` is \{show_ty(target)}. A map is keyed rather than positioned — say `key of` instead",
         )
       }
-      RIndexOf(field~, allow_none~)
+      DIndexOf(field~, allow_none~)
     }
-    RKeyOf(field~) => {
+    DKeyOf(field~) => {
       if !is_text_like(subject_ty) {
         raise bad(
           "a map key is text, and `\{subject}` is \{show_ty(subject_ty)}",
@@ -113,9 +113,9 @@ fn check_relation(
           "`key of` needs a map, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
       }
-      RKeyOf(field~)
+      DKeyOf(field~)
     }
-    RMemberOf(field~) => {
+    DMemberOf(field~) => {
       if !is_text_like(subject_ty) {
         raise bad(
           "a set member is text, and `\{subject}` is \{show_ty(subject_ty)}",
@@ -126,13 +126,13 @@ fn check_relation(
           "`member of` needs a set, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
       }
-      RMemberOf(field~)
+      DMemberOf(field~)
     }
     // `is one of .options` — the value is an element of a sibling list. The
     // element type has to be able to HOLD the subject: a list of strings
     // bounds a string, a list of numbers bounds a number, and `Any` bounds
     // anything, which is what a list of components is from here.
-    RElementOf(field~) => {
+    DElementOf(field~) => {
       guard ty_of.get(field) is Some(at) && at is (TyList(_) | TyAny) else {
         raise bad(
           "`one of .\{field}` needs a list, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
@@ -149,9 +149,9 @@ fn check_relation(
           "`\{subject}` is \{show_ty(subject_ty)} and `.\{field}` holds \{show_ty(elem_ty)}, so no element of it could ever be one",
         )
       }
-      RElementOf(field~)
+      DElementOf(field~)
     }
-    RSubsetOf(field~) => {
+    DSubsetOf(field~) => {
       guard subject_ty is (TySet | TyFlags(_, _) | TyAny) else {
         raise bad(
           "a subset is a set, and `\{subject}` is \{show_ty(subject_ty)}",
@@ -162,32 +162,32 @@ fn check_relation(
           "`subset of` needs a set, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
       }
-      RSubsetOf(field~)
+      DSubsetOf(field~)
     }
-    RNonEmpty => {
+    DNonEmpty => {
       if !is_sized(subject_ty) {
         raise bad(
           "`nonempty` is about a length, and `\{subject}` is \{show_ty(subject_ty)}",
         )
       }
-      RNonEmpty
+      DNonEmpty
     }
     // The length is a number whatever the collection is, so the inner
     // relation is checked against a number rather than against the subject.
-    RLen(inner) => {
+    DLen(inner) => {
       if !is_sized(subject_ty) {
         raise bad(
           "`len` is about a length, and `\{subject}` is \{show_ty(subject_ty)}",
         )
       }
-      RLen(check_numeric(w, inner, ty_of, subject, "a length"))
+      DLen(check_numeric(w, inner, ty_of, subject, "a length"))
     }
     // A closed set of literals. Its own arm and not part of the ordering
     // check below, because `one of` is the one relation that is about
     // MEMBERSHIP rather than about magnitude — it is what a text field
     // reaches for, and routing it through a numeric gate would refuse
     // exactly the case it exists for.
-    ROneOf(_) => {
+    DOneOf(_) => {
       // The members are written quoted, so they are text and so must the
       // field be. A closed set of NUMBERS is `between`, which already exists
       // and which a generator can draw from without listing every value.
@@ -213,15 +213,15 @@ fn check_relation(
 /// A comparison's operands, when the left-hand side is known to be a number.
 fn check_numeric(
   w : WhereDecl,
-  rel : Relation,
+  rel : @tutuca.Domain,
   ty_of : Map[String, StateTy],
   subject : String,
   what : String,
-) -> Relation raise DefError {
-  let check = (o : Operand) => {
+) -> @tutuca.Domain raise DefError {
+  let check = (o : @tutuca.DomainOperand) => {
     match o {
-      OLit(_) => ()
-      OField(f) =>
+      DLit(_) => ()
+      DField(f) =>
         if !is_numeric(ty_of.get(f).unwrap_or(TyAny)) {
           raise WhereTypeMismatch(
             subject~,
@@ -232,13 +232,13 @@ fn check_numeric(
     }
   }
   match rel {
-    RCompare(rhs~, ..) => check(rhs)
-    RBetween(lo~, hi~) => {
+    DCompare(rhs~, ..) => check(rhs)
+    DBetween(lo~, hi~) => {
       check(lo)
       check(hi)
       // Written the wrong way round: the clause admits nothing, which is
       // never what an author meant and is silent at every later stage.
-      if lo is OLit(a) && hi is OLit(b) && a > b {
+      if lo is DLit(a) && hi is DLit(b) && a > b {
         raise WhereTypeMismatch(
           subject~,
           why="`between \{a} and \{b}` admits nothing; the low bound comes first",
@@ -259,12 +259,12 @@ fn check_numeric(
 /// user types are resolved, so the members are simply there to be read.
 fn resolve_one_of(
   w : WhereDecl,
-  rel : Relation,
+  rel : @tutuca.Domain,
   types : Array[UserTy],
   subject : String,
-) -> Relation raise DefError {
-  guard rel is ROneOf(members) else { return rel }
-  guard members is [one, ..] && one.has_prefix(ENUM_MEMBERS_OF) else {
+) -> @tutuca.Domain raise DefError {
+  guard rel is DOneOf(members) else { return rel }
+  guard members is [Str(one), ..] && one.has_prefix(ENUM_MEMBERS_OF) else {
     return rel
   }
   let name = one[ENUM_MEMBERS_OF.length():].to_owned()
@@ -279,7 +279,7 @@ fn resolve_one_of(
         span=w.span,
       )
     }
-    return ROneOf(cases.map(c => c.1))
+    return DOneOf(cases.map(c => (Str(c.1) : @tutuca.Value)))
   }
   raise WhereTypeMismatch(
     subject~,

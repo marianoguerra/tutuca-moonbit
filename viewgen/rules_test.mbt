@@ -212,7 +212,9 @@ test "a `where` is woven into the arm, beside the invariants" {
   // evaluates at the door this guard stands in front of, and a second reading
   // of `one of` could only disagree with the first.
   assert_true(
-    out.contains("[{ field: \"view\", domain: DOneOf([\"main\", \"edit\"]) }]"),
+    out.contains(
+      "[{ field: \"view\", domain: DOneOf([Str(\"main\"), Str(\"edit\")]) }]",
+    ),
   )
   // BEFORE the flush. The queue exists so that a transition is whole or does
   // not happen, and a check after it would be a refusal with the messages

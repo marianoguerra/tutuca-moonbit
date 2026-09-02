@@ -55,7 +55,7 @@ pub(all) struct Descriptor {
   /// The declared shape — the same `SchemaInfo` the runtime uses, so nothing
   /// here can describe a component differently from how it behaves.
   schema : @tutuca.SchemaInfo
-  /// Per-field docs and constraints, keyed by field name. Separate from
+  /// Per-field docs, defaults and domains, keyed by field name. Separate from
   /// `schema` because a HOST component has the schema and not these, and every
   /// generic seam has to keep working for it.
   field_docs : Map[String, @jsonschema.FieldDoc]
@@ -179,7 +179,8 @@ pub fn describe(bundle : @dyncomp.Bundle, component : String) -> Descriptor? {
     field_docs[f.name] = {
       doc: f.doc,
       required: f.required,
-      constraint: f.constraint,
+      default: f.default,
+      domains: f.domains,
     }
   }
   let messages : Array[MessageInfo] = []

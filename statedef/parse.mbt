@@ -689,7 +689,7 @@ fn parse_relation(
   p : P,
   subject : String,
   refs : Array[(String, Span)],
-) -> Relation raise DefError {
+) -> @tutuca.Domain raise DefError {
   match p.peek() {
     TIdent("is") => {
       p.bump() |> ignore
@@ -701,7 +701,7 @@ fn parse_relation(
     // about the field.
     TIdent("len") => {
       p.bump() |> ignore
-      RLen(parse_ordering(p, subject, "`len`", refs))
+      DLen(parse_ordering(p, subject, "`len`", refs))
     }
     _ => parse_ordering(p, subject, "`\{subject}`", refs)
   }
@@ -713,12 +713,12 @@ fn parse_is_relation(
   p : P,
   subject : String,
   refs : Array[(String, Span)],
-) -> Relation raise DefError {
+) -> @tutuca.Domain raise DefError {
   let (word, span) = p.ident(
     "what `\{subject}` is — `index of`, `key of`, `member of`, `subset of`, `one of`, or `nonempty`",
   )
   match word {
-    "nonempty" => RNonEmpty
+    "nonempty" => DNonEmpty
     "index" => {
       expect_of(p, "index")
       let field = parse_field_ref(p, "the list `\{subject}` indexes", refs)
@@ -739,21 +739,21 @@ fn parse_is_relation(
       } else {
         false
       }
-      RIndexOf(field~, allow_none~)
+      DIndexOf(field~, allow_none~)
     }
     "key" => {
       expect_of(p, "key")
-      RKeyOf(field=parse_field_ref(p, "the map `\{subject}` keys", refs))
+      DKeyOf(field=parse_field_ref(p, "the map `\{subject}` keys", refs))
     }
     "member" => {
       expect_of(p, "member")
-      RMemberOf(
+      DMemberOf(
         field=parse_field_ref(p, "the set `\{subject}` is a member of", refs),
       )
     }
     "subset" => {
       expect_of(p, "subset")
-      RSubsetOf(
+      DSubsetOf(
         field=parse_field_ref(p, "the set `\{subject}` is a subset of", refs),
       )
     }
@@ -792,13 +792,13 @@ fn parse_one_of(
   p : P,
   subject : String,
   refs : Array[(String, Span)],
-) -> Relation raise DefError {
+) -> @tutuca.Domain raise DefError {
   match p.peek() {
     // `.options` — the members are whatever a sibling list holds, which is
     // what a select field's options are: ordered, so an `Array`, and the
     // value stored is the option itself.
     TDot =>
-      RElementOf(
+      DElementOf(
         field=parse_field_ref(p, "the list `\{subject}` is one of", refs),
       )
     TLBracket => {
@@ -825,20 +825,20 @@ fn parse_one_of(
           span=p.span(),
         )
       }
-      ROneOf(out)
+      DOneOf(out.map(m => (Str(m) : @tutuca.Value)))
     }
     // A bare name: an enum whose cases are the members. Kept as a one-element
     // list and resolved in pass two — see `resolve_wheres`.
     TIdent(_) => {
       let (n, _) = p.ident("an enum name")
-      ROneOf([ENUM_MEMBERS_OF + n])
+      DOneOf([Str(ENUM_MEMBERS_OF + n)])
     }
     _ => p.fail("a `[…]` list, a `.field`, or an enum name after `one of`")
   }
 }
 
 ///|
-/// The marker that says a `ROneOf` still holds an ENUM NAME rather than its
+/// The marker that says a `DOneOf` still holds an ENUM NAME rather than its
 /// members.
 ///
 /// A prefix and not a second constructor, because the distinction lives for
@@ -856,7 +856,7 @@ fn parse_ordering(
   subject : String,
   what : String,
   refs : Array[(String, Span)],
-) -> Relation raise DefError {
+) -> @tutuca.Domain raise DefError {
   match p.peek() {
     TIdent("between") => {
       p.bump() |> ignore
@@ -870,16 +870,16 @@ fn parse_ordering(
         )
       }
       let hi = parse_operand(p, "the high bound", refs)
-      RBetween(lo~, hi~)
+      DBetween(lo~, hi~)
     }
     TGte | TGt | TLte | TLt => {
-      let op : CmpOp = match p.bump().tok {
-        TGte => CGe
-        TGt => CGt
-        TLte => CLe
-        _ => CLt
+      let op : @tutuca.DomainOp = match p.bump().tok {
+        TGte => DGe
+        TGt => DGt
+        TLte => DLe
+        _ => DLt
       }
-      RCompare(
+      DCompare(
         op~,
         rhs=parse_operand(p, "what \{what} is compared against", refs),
       )
@@ -897,13 +897,13 @@ fn parse_operand(
   p : P,
   want : String,
   refs : Array[(String, Span)],
-) -> Operand raise DefError {
+) -> @tutuca.DomainOperand raise DefError {
   match p.peek() {
     TNum(v) => {
       p.bump() |> ignore
-      OLit(v)
+      DLit(v)
     }
-    TDot => OField(parse_field_ref(p, want, refs))
+    TDot => DField(parse_field_ref(p, want, refs))
     _ => p.fail("\{want} — a number, or `.field`")
   }
 }

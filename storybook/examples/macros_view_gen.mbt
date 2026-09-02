@@ -108,7 +108,9 @@ impl @component.Fields for MacroParamsState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="863f668d33521257",
     fields=[@component.FieldInfo::new("status", TyText)],
-    domains=[{ field: "status", domain: DOneOf(["active", "archived"]), }],
+    domains=[
+      { field: "status", domain: DOneOf([Str("active"), Str("archived")]), },
+    ],
   )
 }
 

@@ -283,7 +283,7 @@ impl @component.Fields for PsEntryState with fn schema() {
     ],
     methods=["isSpanish", "langFlag", "yearDisplay"],
     domains=[
-      { field: "lang", domain: DOneOf(["en", "es"]), },
+      { field: "lang", domain: DOneOf([Str("en"), Str("es")]), },
       { field: "title", domain: DNonEmpty, },
       { field: "url", domain: DNonEmpty, },
     ],

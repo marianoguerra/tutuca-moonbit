@@ -243,7 +243,7 @@ test "the spec block's `where` clauses reach the manifest" {
   ])
   @debug.assert_eq(read[0].domain, DIndexOf(field="items", allow_none=false))
   @debug.assert_eq(read[1].domain, DKeyOf(field="entries"))
-  @debug.assert_eq(read[2].domain, DOneOf(["main", "edit"]))
+  @debug.assert_eq(read[2].domain, DOneOf([Str("main"), Str("edit")]))
   @debug.assert_eq(read[3].domain, DBetween(lo=DLit(0), hi=DLit(10)))
   @debug.assert_eq(read[4].domain, DNonEmpty)
 }

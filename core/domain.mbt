@@ -47,7 +47,10 @@ pub(all) enum Domain {
   DCompare(op~ : DomainOp, rhs~ : DomainOperand)
   /// Inclusive at both ends.
   DBetween(lo~ : DomainOperand, hi~ : DomainOperand)
-  DOneOf(Array[String])
+  /// `v` is one of these. The members are VALUES rather than strings: a
+  /// declared enumeration is as often numeric as textual, and a member that
+  /// had to be spelled as text would have to be un-spelled at every check.
+  DOneOf(Array[Value])
   /// `v` is one of the elements of a sibling LIST field.
   ///
   /// The relation `DOneOf` states over a literal set, stated over a list the
@@ -61,6 +64,22 @@ pub(all) enum Domain {
   DLen(Domain)
   DNonEmpty
   DSubsetOf(field~ : String)
+  /// `v` matches this regular expression.
+  ///
+  /// The one arm that cannot be read backwards, and it is here rather than in
+  /// a `pred` because the two callers that need it — a JSON Schema's `pattern`
+  /// and a generated form's `pattern=` — are describing the field to something
+  /// outside, which is what a domain is FOR. A generator asked to produce a
+  /// value for one answers `None` and draws from the type instead
+  /// (`statedef/arb/domain.mbt`), and `wheres.mbt` refuses to let a spec block
+  /// declare one, so the `where` vocabulary stays closed and invertible.
+  DPattern(String)
+  /// A JSON Schema `format` — `email`, `uri`, `date-time`, `color`.
+  ///
+  /// Named rather than inlined as a pattern, and not invertible for the same
+  /// reason: what a format MEANS is the reader's, and a host that knows one
+  /// checks it better than a regex copied out of a spec.
+  DFormat(String)
 } derive(Eq, Debug)
 
 ///|
@@ -132,10 +151,9 @@ pub fn domain_holds(
       }
       true
     }
-    DOneOf(members) => {
-      guard v is Str(s) else { return true }
-      members.contains(s)
-    }
+    // By VALUE: a declared enumeration bounds whatever it holds, and a
+    // member that had to be spelled as text would have to be un-spelled here.
+    DOneOf(members) => members.contains(v)
     // By VALUE, not by string: a list of numbers bounds a number the same way
     // a list of strings bounds a string, and the elements are whatever the
     // list holds.
@@ -176,6 +194,13 @@ pub fn domain_holds(
       }
       n >= a && n <= b
     }
+    // Neither is checked HERE, and that is the same "unknown is not wrong"
+    // this whole function is written under. `core` has no regular expression
+    // engine and no opinion about what `email` means; both arms exist so the
+    // description can carry them to the readers that do — a JSON Schema
+    // validator, a generated form's `pattern=`/`type=` — and a domain nobody
+    // could evaluate has rejected nothing.
+    DPattern(_) | DFormat(_) => true
   }
 }
 
@@ -324,10 +349,12 @@ pub fn domain_sentence(
       "`\{field}` is \{got}, which is not a member of `\{set}`"
     DSubsetOf(field=set) => "`\{field}` holds a member `\{set}` does not"
     DOneOf(members) =>
-      "`\{field}` is \{got}, and it is one of \{members.map(m => "`" + m + "`").join(", ")}"
+      "`\{field}` is \{got}, and it is one of \{members.map(m => "`" + m.to_display_string() + "`").join(", ")}"
     DElementOf(field=list) =>
       "`\{field}` is \{got}, which `\{list}` does not hold"
     DNonEmpty => "`\{field}` is empty"
+    DPattern(p) => "`\{field}` is \{got}, which does not match `\{p}`"
+    DFormat(f) => "`\{field}` is \{got}, which is not a valid \{f}"
     DLen(inner) =>
       "the length of `\{field}` is \{len_of(field)}, and " +
       bound_words(inner, fields)
@@ -424,8 +451,12 @@ fn domain_to_json(d : Domain) -> Json {
     DOneOf(members) =>
       Json::object({
         "rel": Json::string("oneOf"),
-        "members": Json::array(members.map(m => Json::string(m))),
+        "members": Json::array(members.map(m => m.to_json())),
       })
+    DPattern(p) =>
+      Json::object({ "rel": Json::string("pattern"), "re": Json::string(p) })
+    DFormat(f) =>
+      Json::object({ "rel": Json::string("format"), "name": Json::string(f) })
     DCompare(op~, rhs~) =>
       Json::object({
         "rel": Json::string(
@@ -527,13 +558,18 @@ fn domain_of_json(j : Json) -> Domain? {
       }
     "oneOf" => {
       guard m.get("members") is Some(Array(ms)) else { return None }
-      let members : Array[String] = []
-      for x in ms {
-        guard x is String(s) else { continue }
-        members.push(s)
-      }
-      Some(DOneOf(members))
+      Some(DOneOf(ms.map(Value::from_json)))
     }
+    "pattern" =>
+      match m.get("re") {
+        Some(String(re)) => Some(DPattern(re))
+        _ => None
+      }
+    "format" =>
+      match m.get("name") {
+        Some(String(f)) => Some(DFormat(f))
+        _ => None
+      }
     "between" => {
       guard m.get("lo") is Some(lo) && m.get("hi") is Some(hi) else {
         return None
@@ -567,5 +603,163 @@ fn operand_of_json(j : Json) -> DomainOperand? {
     (Some(Number(n, ..)), _) => Some(DLit(n))
     (_, Some(String(f))) => Some(DField(f))
     _ => None
+  }
+}
+
+///|
+/// A literal value as MoonBit source, for the constructors below.
+///
+/// Only the scalar shapes a declared domain can hold. A container is not a
+/// domain member — `is one of` bounds a value against a list of values, and a
+/// list of lists is a shape the `where` grammar cannot write.
+fn value_src(v : Value) -> String {
+  match v {
+    Null => "Null"
+    Bool(b) => "Bool(\{b})"
+    Num(n) => "Num(\{n})"
+    Str(s) => "Str(\"\{s}\")"
+    // Unreachable from a parsed `where`; a hole here would be a generated file
+    // that does not compile, which is worse than a null nobody can write.
+    List(_) | Map(_) | Fn(_) | Obj(_) => "Null"
+  }
+}
+
+///|
+/// The MoonBit source of the expression that rebuilds this domain.
+///
+/// What `gen-views` splices into a generated `SchemaInfo`, and the twin of
+/// `Domain::to_json` for the reader that has a compiler rather than a parser.
+/// It is a method on the domain rather than a table in the generator, for the
+/// reason `Ty::to_mbt_source` is one: the source form and the value form
+/// cannot describe different domains if one of them IS the domain.
+///
+/// The constructors are written UNQUALIFIED, and have to be: an enum
+/// constructor does not resolve through the `pub using` re-export that keeps
+/// `@component.Domain` spelling correct, nor through the module-root facade the
+/// playground compiles examples against. Bare works in both, because the only
+/// position the generator writes one into already knows the type.
+pub fn Domain::to_mbt_source(self : Domain) -> String {
+  fn quoted(s : String) -> String {
+    "\"" + s + "\""
+  }
+
+  fn operand(o : DomainOperand) -> String {
+    match o {
+      DLit(n) => "DLit(" + n.to_string() + ")"
+      DField(f) => "DField(" + quoted(f) + ")"
+    }
+  }
+
+  match self {
+    DIndexOf(field~, allow_none~) =>
+      "DIndexOf(field=" +
+      quoted(field) +
+      ", allow_none=" +
+      allow_none.to_string() +
+      ")"
+    DKeyOf(field~) => "DKeyOf(field=" + quoted(field) + ")"
+    DMemberOf(field~) => "DMemberOf(field=" + quoted(field) + ")"
+    DElementOf(field~) => "DElementOf(field=" + quoted(field) + ")"
+    DSubsetOf(field~) => "DSubsetOf(field=" + quoted(field) + ")"
+    DNonEmpty => "DNonEmpty"
+    DLen(inner) => "DLen(" + inner.to_mbt_source() + ")"
+    DOneOf(ms) => "DOneOf([" + ms.map(value_src).join(", ") + "])"
+    DCompare(op~, rhs~) =>
+      "DCompare(op=" +
+      (match op {
+        DGe => "DGe"
+        DGt => "DGt"
+        DLe => "DLe"
+        DLt => "DLt"
+      }) +
+      ", rhs=" +
+      operand(rhs) +
+      ")"
+    DBetween(lo~, hi~) =>
+      "DBetween(lo=" + operand(lo) + ", hi=" + operand(hi) + ")"
+    DPattern(re) => "DPattern(" + quoted(re) + ")"
+    DFormat(f) => "DFormat(" + quoted(f) + ")"
+  }
+}
+
+///|
+/// A field-domain list as MoonBit source: what a generated `SchemaInfo` carries
+/// under `domains~`.
+pub fn field_domains_to_mbt_source(all : Array[FieldDomain]) -> String {
+  if all.is_empty() {
+    return "[]"
+  }
+  "[" +
+  all
+  .map(d => "{ field: \"\{d.field}\", domain: \{d.domain.to_mbt_source()} }")
+  .join(", ") +
+  "]"
+}
+
+///|
+/// Whether this domain says anything about a value of type `ty`.
+///
+/// ONE gate, where there were two that mirrored each other: the JSON Schema
+/// emitter decided what to DROP and the bundle loader decided what to say was
+/// dropped, and a rule stated twice is a rule that disagrees — those two
+/// already differed over `TyCompProtocols`.
+///
+/// A bound the type cannot carry is not merely unused. `minimum` on a
+/// `"type": "string"` is a keyword a JSON Schema reader will not apply, and a
+/// reader that does not know that — an agent generating arguments, most of all
+/// — is being told something false. So the emitter drops it and the loader
+/// says so, from this one answer.
+///
+/// The RELATIONAL domains — an index, a key, a member, a subset, an element —
+/// are not gated: what they read is another field, and whether that reading
+/// makes sense is a fact about the pair rather than about this type.
+pub fn Domain::applies_to(self : Domain, ty : Ty) -> Bool {
+  match self {
+    // A magnitude is about a number.
+    DCompare(..) | DBetween(..) => ty.is_numeric()
+    // A length is characters on text and elements on a collection.
+    DLen(_) | DNonEmpty => ty.has_length()
+    // A regular expression and a named format are about TEXT.
+    DPattern(_) | DFormat(_) => ty.is_textual()
+    // An enumeration of values bounds whatever it holds.
+    DOneOf(_) => true
+    DIndexOf(..)
+    | DKeyOf(..)
+    | DMemberOf(..)
+    | DSubsetOf(..)
+    | DElementOf(..) => true
+  }
+}
+
+///|
+/// Whether a magnitude can be read off a value of this type. `TyAny` keeps it:
+/// a value that could be a number could be bounded.
+fn Ty::is_numeric(self : Ty) -> Bool {
+  match self {
+    TyInt(..) | TyFloat | TyAny => true
+    TyOption(inner) => inner.is_numeric()
+    _ => false
+  }
+}
+
+///|
+/// Whether a value of this type has a length. A boolean, a number, a child
+/// slot and a table have none.
+fn Ty::has_length(self : Ty) -> Bool {
+  match self {
+    TyBool | TyInt(..) | TyFloat | TyComp(_) | TyCompProtocols(_) | TyTable =>
+      false
+    TyOption(inner) => inner.has_length()
+    _ => true
+  }
+}
+
+///|
+/// Whether a value of this type is text a pattern or a format could describe.
+fn Ty::is_textual(self : Ty) -> Bool {
+  match self {
+    TyText | TyAny => true
+    TyOption(inner) => inner.is_textual()
+    _ => false
   }
 }

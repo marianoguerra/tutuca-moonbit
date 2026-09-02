@@ -268,7 +268,7 @@ JavaScript at page authority and a warning was not an isolation boundary.
 | — | how messages are routed — that is the transactor's |
 | `methods`, `whens`, enrichers, and scope enrichers | a generic render-method switch — the ABI gives each category its fixed operation |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
-| what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is its module, version and the config it was registered with (`Bundle::key`) |
+| what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc`, `default` and domains | anything that resolves — the metadata is advisory, and a bundle's identity is its module, version and the config it was registered with (`Bundle::key`) |
 | — | which external origins its views may reference — the host's policy alone allows those (`allowing_external_urls`, or `with_config` binding an origin), and the manifest has nothing to say about it |
 | the `config` variables it reads, with a type, a default and a reason | what they are bound to — a default reaches the guest, and only a host's binding reaches a view |
 | a SCOPED style, or none | any global CSS — there is no field for it, deliberately |

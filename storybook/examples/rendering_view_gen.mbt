@@ -253,7 +253,7 @@ impl @component.Fields for PushViewState with fn schema() {
     ],
     view_handlers=["resetQuery", "setQuery", "toggleView"],
     methods=["getToggleLabel"],
-    domains=[{ field: "view", domain: DOneOf(["main", "edit"]), }],
+    domains=[{ field: "view", domain: DOneOf([Str("main"), Str("edit")]), }],
     view_names=["main"],
   )
 }

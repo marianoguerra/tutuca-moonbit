@@ -24,7 +24,7 @@ fn all_domains() -> Array[@core.FieldDomain] {
     { field: "b", domain: DCompare(op=DLt, rhs=DField("a")), },
     { field: "p", domain: DBetween(lo=DLit(0), hi=DLit(100)), },
     { field: "q", domain: DBetween(lo=DField("lo"), hi=DField("hi")), },
-    { field: "level", domain: DOneOf(["debug", "info"]), },
+    { field: "level", domain: DOneOf([Str("debug"), Str("info")]), },
     { field: "choice", domain: DElementOf(field="options"), },
     { field: "items", domain: DNonEmpty, },
     { field: "tags", domain: DLen(DCompare(op=DLe, rhs=DLit(10))), },
@@ -114,7 +114,7 @@ test "a malformed entry is dropped rather than half-read" {
 test "the whole-state question answers the first break, in source order" {
   let all : Array[@core.FieldDomain] = [
     { field: "n", domain: DCompare(op=DGe, rhs=DLit(0)), },
-    { field: "level", domain: DOneOf(["debug", "info"]), },
+    { field: "level", domain: DOneOf([Str("debug"), Str("info")]), },
   ]
   let fields : Map[String, @core.Value] = {
     "n": Num(-1),

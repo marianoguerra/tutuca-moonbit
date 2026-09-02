@@ -273,7 +273,7 @@ impl @component.Fields for SpecRuleState with fn schema() {
       @component.FieldInfo::new("doc", TyText),
     ],
     domains=[
-      { field: "kind", domain: DOneOf(["pred", "invariant"]), },
+      { field: "kind", domain: DOneOf([Str("pred"), Str("invariant")]), },
       { field: "name", domain: DNonEmpty, },
       { field: "source", domain: DNonEmpty, },
     ],

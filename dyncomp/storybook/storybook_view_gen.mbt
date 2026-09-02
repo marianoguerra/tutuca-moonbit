@@ -1093,11 +1093,17 @@ impl @component.Fields for DyncompStorybookState with fn schema() {
     intents=["catalogChanged"],
     methods=["detailsLabel", "isEmpty", "layoutLabel"],
     domains=[
-      { field: "mode", domain: DOneOf(["main", "details"]), },
+      { field: "mode", domain: DOneOf([Str("main"), Str("details")]), },
       {
         field: "theme",
         domain: DOneOf([
-          "light", "dark", "corporate", "dracula", "nord", "retro", "winter",
+          Str("light"),
+          Str("dark"),
+          Str("corporate"),
+          Str("dracula"),
+          Str("nord"),
+          Str("retro"),
+          Str("winter"),
         ]),
       },
     ],

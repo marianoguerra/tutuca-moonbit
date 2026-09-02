@@ -282,78 +282,6 @@ pub(all) struct RuleDecl {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// How a `where` clause compares.
-///
-/// Four and not six: `is` and `is not` are equality, and equality on a field
-/// is what a `pred` is for. What a domain states is an ORDERING, because an
-/// ordering is the half that can be inverted into a range to draw from.
-pub(all) enum CmpOp {
-  CGe
-  CGt
-  CLe
-  CLt
-} derive(Eq, @debug.Debug)
-
-///|
-/// The right-hand side of a comparison: a literal, or another field.
-///
-/// A field and not an expression. `where max >= .min` is a relation between
-/// two declared things, which a generator can order and draw in sequence;
-/// `where max >= (.min + 1)` is arithmetic, and arithmetic is what an
-/// `invariant` is for.
-pub(all) enum Operand {
-  OLit(Double)
-  OField(String)
-} derive(Eq, @debug.Debug)
-
-///|
-/// What a `where` clause says about one field.
-///
-/// A CLOSED vocabulary, and that is the whole design rather than a first cut.
-/// Every arm here can be read in two directions: forwards to check a value,
-/// and BACKWARDS to produce one. An arbitrary boolean can only ever be read
-/// forwards — which is exactly what `invariant` already offers, and exactly
-/// why an invariant cannot help a generator: rejection sampling for
-/// `0 <= i < len(items)` essentially never hits.
-///
-/// So a relation that cannot be inverted does not belong here. It belongs in
-/// a `pred` or an `invariant`, beside the other things the component merely
-/// checks.
-pub(all) enum Relation {
-  /// `is index of .items` — `0 <= v < len(items)`.
-  ///
-  /// `allow_none` is the sentinel spelling (`… or none`): a selection field
-  /// that is also allowed to hold the type's zero when nothing is selected.
-  /// Common enough that leaving it out would push authors back to a bare
-  /// `Int`, which is the state this whole clause exists to prevent.
-  RIndexOf(field~ : String, allow_none~ : Bool)
-  /// `is key of .entries` — the value is a key the map holds.
-  RKeyOf(field~ : String)
-  /// `is member of .tags` — the value is a member of the set.
-  RMemberOf(field~ : String)
-  /// `>= 0`, `< .max`, …
-  RCompare(op~ : CmpOp, rhs~ : Operand)
-  /// `between 0 and 100`, INCLUSIVE at both ends.
-  RBetween(lo~ : Operand, hi~ : Operand)
-  /// `is one of ["a", "b"]`, or `is one of Priority` for an enum's cases.
-  ROneOf(Array[String])
-  /// `is one of .options` — the value is an element of a sibling LIST.
-  ///
-  /// The same relation `ROneOf` states over a literal set, stated over a list
-  /// the component holds. A select's options are ORDERED, so they are an
-  /// `Array` and not a `Set`, and what is stored is the option rather than its
-  /// position — which is the half `RIndexOf` does not cover.
-  RElementOf(field~ : String)
-  /// `len <= 100` / `len between 1 and 10` — the inner relation applies to
-  /// the subject's LENGTH rather than to the subject.
-  RLen(Relation)
-  /// `is nonempty` — sugar for `len >= 1`, spelled the way it is meant.
-  RNonEmpty
-  /// `is subset of .allTags` — every member is a member of the other set.
-  RSubsetOf(field~ : String)
-} derive(Eq, @debug.Debug)
-
-///|
 /// One `where` clause: a field, and the domain its values are drawn from.
 ///
 /// It sits beside `pred` and `invariant` rather than inside the field's type
@@ -369,7 +297,7 @@ pub(all) enum Relation {
 pub(all) struct WhereDecl {
   subject : String
   subject_span : Span
-  relation : Relation
+  relation : @tutuca.Domain
   /// Where each `.field` in the relation was written.
   ///
   /// Carried beside the relation rather than inside it for the reason

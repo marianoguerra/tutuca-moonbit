@@ -584,7 +584,7 @@ impl @component.Fields for TreeItemState with fn schema() {
     view_handlers=["onItemClick"],
     methods=["areChildsVisible", "filesAreLeaves"],
     invariants=["filesAreLeaves"],
-    domains=[{ field: "type", domain: DOneOf(["file", "dir"]), }],
+    domains=[{ field: "type", domain: DOneOf([Str("file"), Str("dir")]), }],
     view_names=["main"],
   )
 }
