@@ -50,31 +50,10 @@
           "src": "views/Todo.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "todo-item",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "draft",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The task being typed, not yet added.",
           "required": false,
           "constraint": {
@@ -83,7 +62,7 @@
         },
         {
           "name": "items",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "record", "name": "todo-item"}},
           "doc": "The tasks, in the order they were added.",
           "required": false
         }

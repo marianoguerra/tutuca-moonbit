@@ -44,7 +44,7 @@ priv struct C {
 /// mistake to report, and the second is the usual opacity to stay quiet about.
 priv enum Target {
   TUnset
-  TSet(@statedef.StateTy?)
+  TySet(@statedef.StateTy?)
 }
 
 ///|
@@ -121,7 +121,7 @@ pub fn check_rules(def : @statedef.StateDef) -> Array[Finding] {
     if r.format != "" {
       if c.parse_rule(r.format, r.format_span) is Some(e) {
         match definite(c.expr(e)) {
-          Some(TText) | None => ()
+          Some(TyText) | None => ()
           Some(t) =>
             c.say(
               "FORMAT_TYPE",
@@ -482,7 +482,7 @@ fn C::contract(
 fn C::format(self : C, d : @tscript.Decl) -> Unit {
   guard d.format is Some(e) else { return }
   match definite(self.expr(e)) {
-    Some(TText) | None => ()
+    Some(TyText) | None => ()
     Some(t) =>
       self.say(
         "FORMAT_TYPE",
@@ -637,7 +637,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
           span,
         )
       }
-      self.target = TSet(got)
+      self.target = TySet(got)
     }
     SAssign(place~, op~, value~, span~) => {
       let target = self.place(place, assigning=true)
@@ -748,7 +748,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
           span,
         )
       }
-      self.target = TSet(self.ty_ref(ty))
+      self.target = TySet(self.ty_ref(ty))
     }
     SIf(cond~, then_~, else_~, ..) => {
       self.condition(cond)
@@ -762,7 +762,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       // leaves no target at all — which is the answer that makes a `@cur`
       // after the branch report rather than pass.
       self.target = match (after_then, self.target) {
-        (TSet(a), TSet(b)) => if a == b { TSet(a) } else { TSet(None) }
+        (TySet(a), TySet(b)) => if a == b { TySet(a) } else { TySet(None) }
         (TUnset, _) | (_, TUnset) => TUnset
       }
     }
@@ -791,7 +791,7 @@ fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
   match resolve_ty_ref(self.def, t) {
     Some(r) => Some(r)
     // A SIBLING component: `new TodoItem` beside `state TodoItem`. Opaque
-    // rather than unknown — `TSet(None)` is what the target already means for
+    // rather than unknown — `TySet(None)` is what the target already means for
     // "a target whose type nothing here knows", and every read through it is
     // already refused on that basis. What is lost is "TodoItem has no field
     // `txet`", and getting it back means handing this checker every sibling's
@@ -864,7 +864,7 @@ fn C::place(
     // binding whose type is known here.
     PBind(name) if name == @tscript.target_bind =>
       match self.target {
-        TSet(t) => t
+        TySet(t) => t
         TUnset => {
           self.say(
             "NO_TARGET",
@@ -940,7 +940,7 @@ fn C::place(
         self.expr(key) |> ignore
         ty = match ty {
           Some(t) =>
-            match t.elem() {
+            match t.iterable_elem() {
               Some(inner) => Some(inner)
               None => {
                 self.say(
@@ -968,9 +968,9 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
     ELit(lit~, ..) =>
       match lit {
         LNull => None
-        LBool(_) => Some(TBool)
-        LNum(_) => Some(TFloat)
-        LStr(_) => Some(TText)
+        LBool(_) => Some(TyBool)
+        LNum(_) => Some(TyFloat)
+        LStr(_) => Some(TyText)
       }
     ETpl(parts~, ..) => {
       for part in parts {
@@ -979,7 +979,7 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
           TText(..) => ()
         }
       }
-      Some(TText)
+      Some(TyText)
     }
     ERead(place~, ..) => self.place(place, assigning=false)
     // Opaque, and REPORTED — the two are not the same thing.
@@ -1054,7 +1054,7 @@ fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
       match op {
         UNot => {
           self.condition(operand)
-          Some(TBool)
+          Some(TyBool)
         }
         UNeg => {
           let t = self.expr(operand)
@@ -1250,7 +1250,7 @@ fn C::chain(
           _ => ()
         }
       }
-      Some(TBool)
+      Some(TyBool)
     }
     FCompare => {
       // Both sides known and different: comparing them can only ever answer
@@ -1270,15 +1270,15 @@ fn C::chain(
           }
         _ => ()
       }
-      Some(TBool)
+      Some(TyBool)
     }
     FAdd | FMul => {
       // `+` concatenates two strings and adds two numbers; the operands'
       // static types decide, and a mixed pair is an error rather than a
       // coercion. Everything else is arithmetic only.
-      let all_text = types.iter().all(t => t is Some(TText))
+      let all_text = types.iter().all(t => t is Some(TyText))
       if family is FAdd && all_text && !types.is_empty() {
-        return Some(TText)
+        return Some(TyText)
       }
       for i, t in types {
         match definite(t) {
@@ -1291,7 +1291,7 @@ fn C::chain(
           _ => ()
         }
       }
-      Some(TFloat)
+      Some(TyFloat)
     }
   }
 }
@@ -1306,10 +1306,10 @@ fn C::chain(
 fn builtin_result(name : String) -> @statedef.StateTy? {
   match name {
     "empty?" | "truthy?" | "falsy?" | "null?" | "has" | "contains" =>
-      Some(TBool)
-    "len" | "int" => Some(TInt(width=32, signed=true))
-    "num" => Some(TFloat)
-    "str" | "lower" | "upper" | "trim" => Some(TText)
+      Some(TyBool)
+    "len" | "int" => Some(TyInt(width=32, signed=true))
+    "num" => Some(TyFloat)
+    "str" | "lower" | "upper" | "trim" => Some(TyText)
     _ => None
   }
 }
@@ -1323,14 +1323,14 @@ fn builtin_result(name : String) -> @statedef.StateTy? {
 /// in each rule is what stops one of them from forgetting.
 fn definite(t : @statedef.StateTy?) -> @statedef.StateTy? {
   match t {
-    Some(TAny) => None
+    Some(TyAny) => None
     other => other
   }
 }
 
 ///|
 fn is_numeric(t : @statedef.StateTy) -> Bool {
-  t is (TInt(..) | TFloat)
+  t is (TyInt(..) | TyFloat)
 }
 
 ///|
@@ -1359,7 +1359,7 @@ fn comparable(a : @statedef.StateTy, b : @statedef.StateTy) -> Bool {
   }
   // An `any` field holds whatever it was given, and an enum is a string at
   // runtime, so both compare against anything the author means them to.
-  a is (TAny | TEnum(_)) || b is (TAny | TEnum(_))
+  a is (TyAny | TyEnum(_)) || b is (TyAny | TyEnum(_))
 }
 
 ///|
@@ -1371,13 +1371,13 @@ fn assignment_types_fit(
   match (want, got) {
     // A present value fills an optional slot; `null` has no definite type and
     // is accepted by the caller before reaching this helper.
-    (TOption(inner), _) => assignment_types_fit(inner, got)
+    (TyOption(inner), _) => assignment_types_fit(inner, got)
     // One numeric surface: assigning into an `s32` truncates and range-checks
     // against the same bounds the generated decode already applies, and fails
     // — no change — outside them. That is a runtime answer, not a type error.
-    (TInt(..) | TFloat, TInt(..) | TFloat) => true
+    (TyInt(..) | TyFloat, TyInt(..) | TyFloat) => true
     // An enum is a string at runtime, so a computed string can name a case.
-    (TEnum(_), TText) => true
+    (TyEnum(_), TyText) => true
     _ => want == got
   }
 }
@@ -1411,11 +1411,11 @@ fn C::method_fits(
   guard definite(Some(t)) is Some(t) else { return }
   let ok = match call {
     // The set operations, over open and closed membership alike.
-    "add" | "remove" | "toggle" => t is (TSet | TFlags(_))
+    "add" | "remove" | "toggle" => t is (TySet | TyFlags(_, _))
     // The sequence operations. A map is keyed rather than ordered, so it takes
     // the keyed half and not `push`.
-    "push" | "insertAt" => t is TList(_)
-    "setAt" | "deleteAt" => t is (TList(_) | TOMap(_))
+    "push" | "insertAt" => t is TyList(_)
+    "setAt" | "deleteAt" => t is (TyList(_) | TyOMap(_))
     _ => true
   }
   if !ok {

@@ -283,7 +283,7 @@ impl @component.Fields for StoryNavState with fn schema() {
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("selected", TyBool),
     ],
     view_handlers=["pick"],

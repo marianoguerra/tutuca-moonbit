@@ -44,8 +44,8 @@ impl @component.Fields for DrawerState with fn schema() {
     name="Drawer",
     fingerprint="fuzz-example-drawer",
     fields=[
-      @component.FieldInfo::new("held", TyInt),
-      @component.FieldInfo::new("owed", TyInt),
+      @component.FieldInfo::new("held", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("owed", TyInt(width=32, signed=true)),
     ],
     // Declared, and nothing implements it — which is the whole fixture.
     invariants=["covered"],

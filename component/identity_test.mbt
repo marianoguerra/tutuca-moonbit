@@ -314,7 +314,7 @@ impl @component.Fields for IdState with fn decode(f) {
 impl @component.Fields for IdState with fn schema() {
   @component.SchemaInfo::new(fingerprint="id_state", fields=[
     @component.FieldInfo::new("title", TyText),
-    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @component.FieldInfo::new("items", TyList(TyAny)),
     @component.FieldInfo::new("tags", TyOMap(TyAny)),
   ])

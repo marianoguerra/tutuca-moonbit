@@ -606,7 +606,7 @@ impl @component.Fields for CommandBarState with fn schema() {
     fields=[
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("hits", TyList(TyComp(Some("PaletteRow")))),
-      @component.FieldInfo::new("cursor", TyInt),
+      @component.FieldInfo::new("cursor", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("configure", TyBool),
       @component.FieldInfo::new("emptyMessage", TyText),
     ],

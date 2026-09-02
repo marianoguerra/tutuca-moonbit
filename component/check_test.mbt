@@ -12,7 +12,7 @@ priv struct ChkState {
 ///|
 impl @tutuca.Fields for ChkState with fn schema() {
   @tutuca.SchemaInfo::new(fingerprint="chk_state", fields=[
-    @tutuca.FieldInfo::new("n", TyInt),
+    @tutuca.FieldInfo::new("n", TyInt(width=32, signed=true)),
   ])
 }
 

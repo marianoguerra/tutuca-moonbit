@@ -201,7 +201,7 @@ impl @component.Fields for CounterState with fn schema() {
     name="Counter",
     fingerprint="f1e7380216f156aa",
     fields=[
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     ],
     view_handlers=["dec", "inc"],
     receives=["inc", "dec"],

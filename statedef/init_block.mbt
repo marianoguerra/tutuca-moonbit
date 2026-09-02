@@ -282,16 +282,16 @@ fn lit_of(
     InitError::BadValue(state~, field~, want=ty.show_source(), got~)
   }
   match (ty, v) {
-    (TBool, True) => "true"
-    (TBool, False) => "false"
-    (TText, String(s)) => json_quote(s)
-    (TFloat, Number(n, ..)) =>
+    (TyBool, True) => "true"
+    (TyBool, False) => "false"
+    (TyText, String(s)) => json_quote(s)
+    (TyFloat, Number(n, ..)) =>
       if n == n.to_int().to_double() {
         "\{n.to_int()}.0"
       } else {
         n.to_string()
       }
-    (TInt(..), Number(n, ..)) =>
+    (TyInt(..), Number(n, ..)) =>
       // Checked here rather than truncated: a fixture that writes 2.5 into an
       // s32 field has said something it did not mean.
       if n == n.to_int().to_double() {
@@ -299,11 +299,11 @@ fn lit_of(
       } else {
         raise bad("\{n}, which is not a whole number")
       }
-    (TOption(_), Null) => "None"
-    (TOption(inner), _) => "Some(" + lit_of(def, inner, v, state, field) + ")"
-    (TList(e), Array(items)) =>
+    (TyOption(_), Null) => "None"
+    (TyOption(inner), _) => "Some(" + lit_of(def, inner, v, state, field) + ")"
+    (TyList(e), Array(items)) =>
       "[" + items.map(x => lit_of(def, e, x, state, field)).join(", ") + "]"
-    (TSet, Array(items)) | (TFlags(_), Array(items)) => {
+    (TySet, Array(items)) | (TyFlags(_, _), Array(items)) => {
       // A set arrives as its member list and is stored Map-backed, which is
       // how the runtime holds every set.
       let entries = items.map(x => {
@@ -314,14 +314,14 @@ fn lit_of(
       })
       "Map([" + entries.filter(e => e != "").join(", ") + "])"
     }
-    (TOMap(inner), Object(o)) => {
+    (TyOMap(inner), Object(o)) => {
       let entries : Array[String] = []
       for k, x in o {
         entries.push(json_quote(k) + ": " + lit_of(def, inner, x, state, field))
       }
       "Map([" + entries.join(", ") + "])"
     }
-    (TRecord(n), Object(o)) =>
+    (TyRecord(n), Object(o)) =>
       match def.user_ty(n) {
         Some({ name, kind: URecord(fs), .. }) => {
           let parts : Array[String] = []
@@ -338,7 +338,7 @@ fn lit_of(
         }
         _ => raise bad("an object")
       }
-    (TEnum(n), String(s)) =>
+    (TyEnum(n), String(s)) =>
       match def.user_ty(n) {
         Some({ name, kind: UEnum(cs), .. }) => {
           for c in cs {
@@ -351,7 +351,7 @@ fn lit_of(
         _ => raise bad("\"\{s}\"")
       }
     // The dynamic escape hatch takes whatever it is given, as a Value.
-    (TAny, _) | (TComp(_), _) => "@tutuca.Value::from_json(\{json_src(v)})"
+    (TyAny, _) | (TyComp(_), _) => "@tutuca.Value::from_json(\{json_src(v)})"
     (_, Null) => def.zero_expr(ty)
     _ => raise bad(json_shape(v))
   }

@@ -259,8 +259,8 @@ impl @component.Fields for CounterState with fn schema() {
     fingerprint="3196c310109dcd32",
     fields=[
       @component.FieldInfo::new("label", TyText),
-      @component.FieldInfo::new("count", TyInt),
-      @component.FieldInfo::new("history", TyList(TyInt)),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("history", TyList(TyInt(width=32, signed=true))),
     ],
     view_handlers=["add", "resetCount", "setLabel"],
     receives=["resetTo"],

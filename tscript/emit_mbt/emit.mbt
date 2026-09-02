@@ -747,11 +747,11 @@ fn E::arm(
     // assignment of a `Value` into a typed field — a generated module that did
     // not compile.
     let (pat, ty) = match declared {
-      Some(TInt(..)) | Some(TFloat) => ("Num(\{binder})", declared)
-      Some(TText) => ("Str(\{binder})", declared)
-      Some(TBool) => ("Bool(\{binder})", declared)
-      Some(TList(TAny)) => ("List(\{binder})", declared)
-      Some(TOMap(TAny)) => ("Map(\{binder})", declared)
+      Some(TyInt(..)) | Some(TyFloat) => ("Num(\{binder})", declared)
+      Some(TyText) => ("Str(\{binder})", declared)
+      Some(TyBool) => ("Bool(\{binder})", declared)
+      Some(TyList(TyAny)) => ("List(\{binder})", declared)
+      Some(TyOMap(TyAny)) => ("Map(\{binder})", declared)
       // A list of COMPONENTS is `Array[@tutuca.Value]` at runtime, exactly as
       // `Array[Any]` is — a component instance travels as a `Value` and there
       // is nothing to decode. So the element type costs nothing here, which is
@@ -762,10 +762,10 @@ fn E::arm(
       //
       // A list of a declared RECORD is not this case: that field holds decoded
       // structs, and the decode loop is what this backend does not write.
-      Some(TList(TComp(_))) | Some(TList(TCompProtocols(_))) =>
+      Some(TyList(TyComp(_))) | Some(TyList(TyCompProtocols(_))) =>
         ("List(\{binder})", declared)
       // `Any` is already a `Value`, so the raw binding is the right one.
-      Some(TAny) | None => (binder, declared)
+      Some(TyAny) | None => (binder, declared)
       _ => (binder, None)
     }
     self.params[p.name] = ty
@@ -1271,7 +1271,7 @@ fn E::stmt_body(
           let sign = if op is AAdd { "+" } else { "-" }
           let cur = self.read_field(place)
           let inc = self.at_num(value)
-          self.to_ty("(\{cur} \{sign} \{inc})", TFloat, ty)
+          self.to_ty("(\{cur} \{sign} \{inc})", TyFloat, ty)
         }
       }
       // Copy-on-write, exactly as a hand-written arm spells it. Rebinding `s`
@@ -1363,7 +1363,7 @@ fn E::target_update(
       "writing through an index into `@\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
     )
   }
-  guard ty is TRecord(_) else {
+  guard ty is TyRecord(_) else {
     raise Cannot(
       "`\{ty.show_source()}` is not a record, so `\{name}` is not a field to write",
     )
@@ -1407,7 +1407,7 @@ fn E::root_field(
 fn E::read_field(self : E, p : @tutuca.Place) -> String raise NoWay {
   let (name, ty) = self.root_field(p)
   self.uses_state = true
-  self.to_ty("s.\{binding_of(name)}", ty, TFloat)
+  self.to_ty("s.\{binding_of(name)}", ty, TyFloat)
 }
 
 ///|
@@ -1451,19 +1451,19 @@ fn E::collection_call_at(
   // key the generated `addIn<X>` mutator writes, so a card and a compiled
   // component put a member in the same place.
   fn set_write(value : String) -> String raise NoWay {
-    let k = self.at(args[0], TText)
+    let k = self.at(args[0], TyText)
     "{ let m = \{recv}.copy(); m[\{k}] = \{value}; m }"
   }
 
   match (call, ty) {
     // -- lists --------------------------------------------------------------
-    ("push", TList(elem)) => {
+    ("push", TyList(elem)) => {
       arity(1)
       "(\{recv} + [\{self.at(args[0], elem)}])"
     }
-    ("insertAt", TList(elem)) => {
+    ("insertAt", TyList(elem)) => {
       arity(2)
-      let i = self.at(args[0], TInt(width=32, signed=true))
+      let i = self.at(args[0], TyInt(width=32, signed=true))
       let v = self.at(args[1], elem)
       // `<=` because inserting AT the length appends, which is a real answer.
       let at = self.hoist("at", i)
@@ -1473,9 +1473,9 @@ fn E::collection_call_at(
       )
       "(\{recv}[0:\{at}].to_owned() + [\{v}] + \{recv}[\{at}:].to_owned())"
     }
-    ("removeAt", TList(_)) | ("deleteAt", TList(_)) => {
+    ("removeAt", TyList(_)) | ("deleteAt", TyList(_)) => {
       arity(1)
-      let i = self.at(args[0], TInt(width=32, signed=true))
+      let i = self.at(args[0], TyInt(width=32, signed=true))
       let at = self.hoist("at", i)
       let out = self.leave_token("`removeAt`")
       self.prelude.push(
@@ -1483,9 +1483,9 @@ fn E::collection_call_at(
       )
       "(\{recv}[0:\{at}].to_owned() + \{recv}[\{at} + 1:].to_owned())"
     }
-    ("setAt", TList(elem)) => {
+    ("setAt", TyList(elem)) => {
       arity(2)
-      let i = self.at(args[0], TInt(width=32, signed=true))
+      let i = self.at(args[0], TyInt(width=32, signed=true))
       let v = self.at(args[1], elem)
       let at = self.hoist("at", i)
       let out = self.leave_token("`setAt`")
@@ -1494,26 +1494,26 @@ fn E::collection_call_at(
       )
       "{ let a = \{recv}.copy(); a[\{at}] = \{v}; a }"
     }
-    ("clear", TList(elem)) => {
+    ("clear", TyList(elem)) => {
       arity(0)
       "([] : Array[\{elem_ty_name(elem)}])"
     }
     // -- sets ---------------------------------------------------------------
-    ("add", TSet) | ("add", TFlags(_)) => {
+    ("add", TySet) | ("add", TyFlags(_, _)) => {
       arity(1)
       set_write("true")
     }
-    ("remove", TSet)
-    | ("remove", TFlags(_))
-    | ("delete", TSet)
-    | ("delete", TFlags(_)) => {
+    ("remove", TySet)
+    | ("remove", TyFlags(_, _))
+    | ("delete", TySet)
+    | ("delete", TyFlags(_, _)) => {
       arity(1)
-      let k = self.at(args[0], TText)
+      let k = self.at(args[0], TyText)
       "{ let m = \{recv}.copy(); m.remove(\{k}); m }"
     }
-    ("toggle", TSet) | ("toggle", TFlags(_)) => {
+    ("toggle", TySet) | ("toggle", TyFlags(_, _)) => {
       arity(1)
-      let k = self.at(args[0], TText)
+      let k = self.at(args[0], TyText)
       "{ let m = \{recv}.copy(); let k = \{k}; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m }"
     }
     // -- ordered maps -------------------------------------------------------
@@ -1523,18 +1523,18 @@ fn E::collection_call_at(
     // dropped. The checker (`method_fits`) and the card interpreter both spell
     // a map that way, so emitting only `set` / `remove` here made one backend
     // refuse what the other ran.
-    ("set", TOMap(v)) | ("setAt", TOMap(v)) => {
+    ("set", TyOMap(v)) | ("setAt", TyOMap(v)) => {
       arity(2)
-      let k = self.at(args[0], TText)
+      let k = self.at(args[0], TyText)
       let value = self.at(args[1], v)
       "{ let m = \{recv}.copy(); m[\{k}] = \{value}; m }"
     }
-    ("remove", TOMap(_))
-    | ("delete", TOMap(_))
-    | ("deleteAt", TOMap(_))
-    | ("removeAt", TOMap(_)) => {
+    ("remove", TyOMap(_))
+    | ("delete", TyOMap(_))
+    | ("deleteAt", TyOMap(_))
+    | ("removeAt", TyOMap(_)) => {
       arity(1)
-      let k = self.at(args[0], TText)
+      let k = self.at(args[0], TyText)
       "{ let m = \{recv}.copy(); m.remove(\{k}); m }"
     }
     _ =>
@@ -1580,11 +1580,11 @@ fn is_simple(e : String) -> Bool {
 /// literal has to be annotated.
 fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
   match t {
-    TBool => "Bool"
-    TInt(width=32, signed=true) => "Int"
-    TFloat => "Double"
-    TText => "String"
-    TAny => "@tutuca.Value"
+    TyBool => "Bool"
+    TyInt(width=32, signed=true) => "Int"
+    TyFloat => "Double"
+    TyText => "String"
+    TyAny => "@tutuca.Value"
     _ =>
       raise Cannot(
         "clearing a list of \{t.show_source()} needs a type annotation this backend does not spell yet — assign `[]` to the whole field instead",
@@ -1777,7 +1777,7 @@ fn E::at(
   want : @statedef.StateTy,
 ) -> String raise NoWay {
   if e is ELit(lit=LNum(n), ..) &&
-    want is TInt(..) &&
+    want is TyInt(..) &&
     n == n.to_int().to_double() {
     return n.to_int().to_string()
   }
@@ -1792,7 +1792,7 @@ fn E::at(
   // The recursion is also what keeps the widening honest — `Some(...)` is
   // written only around a conversion that was already legal, so `Any` into a
   // `String?` stays refused rather than becoming a `Some` around a guess.
-  if want is TOption(inner) {
+  if want is TyOption(inner) {
     if e is ELit(lit=LNull, ..) {
       return "None"
     }
@@ -1806,9 +1806,9 @@ fn E::at(
   // text makes the body answer nothing in both backends rather than being
   // coerced in one of them. In a transition `fail` is empty and it is still
   // refused, because there the answer to "not that shape" is already written.
-  if got is TAny && self.fail != "" {
+  if got is TyAny && self.fail != "" {
     match want {
-      TText | TFloat | TInt(..) => return self.guarded(src, want)
+      TyText | TyFloat | TyInt(..) => return self.guarded(src, want)
       _ => ()
     }
   }
@@ -1846,12 +1846,12 @@ fn E::guarded(self : E, src : String, want : @statedef.StateTy) -> String {
   self.tmp = self.tmp + 1
   let v = "v\{self.tmp}"
   let pat = match want {
-    TText => "Str(\{v})"
+    TyText => "Str(\{v})"
     _ => "Num(\{v})"
   }
   self.prelude.push("guard \{src} is \{pat} else { return \{self.fail} }")
   let bound = match want {
-    TInt(..) => "\{v}.to_int()"
+    TyInt(..) => "\{v}.to_int()"
     _ => v
   }
   self.guards[key] = bound
@@ -1860,14 +1860,14 @@ fn E::guarded(self : E, src : String, want : @statedef.StateTy) -> String {
 
 ///|
 fn E::at_num(self : E, e : @tutuca.Expr) -> String raise NoWay {
-  self.at(e, TFloat)
+  self.at(e, TyFloat)
 }
 
 ///|
 fn E::at_bool(self : E, e : @tutuca.Expr) -> String raise NoWay {
   let (src, got) = self.expr(e)
   match got {
-    TBool => src
+    TyBool => src
     // Everything else answers a yes/no question by tutuca's own truthiness,
     // which is `Value::is_truthy` — so the conversion is through a Value
     // rather than a MoonBit `!= 0`, or the two backends would disagree about
@@ -1885,7 +1885,7 @@ fn E::at_bool(self : E, e : @tutuca.Expr) -> String raise NoWay {
 fn E::at_text(self : E, e : @tutuca.Expr) -> String raise NoWay {
   let (src, got) = self.expr(e)
   match got {
-    TText => src
+    TyText => src
     _ => "\{self.value_of(src, got)}.to_display_string()"
   }
 }
@@ -1905,7 +1905,7 @@ fn E::value_of(self : E, src : String, ty : @statedef.StateTy) -> String {
   // Annotated for the scalars, whose constructors are ambiguous in an
   // argument position; the compound forms carry their own annotation.
   match ty {
-    TBool | TText | TInt(..) | TFloat => "(\{e} : @tutuca.Value)"
+    TyBool | TyText | TyInt(..) | TyFloat => "(\{e} : @tutuca.Value)"
     _ => e
   }
 }
@@ -1927,22 +1927,22 @@ fn E::to_ty(
     // codec already writes it. The other direction is refused where a raw
     // parameter is read: a Value could be anything, and picking one is the
     // guess this backend does not make.
-    (_, TAny) => self.value_of(src, from)
+    (_, TyAny) => self.value_of(src, from)
     // The one numeric surface, made explicit. Truncating into an integer field
     // is what the generated codec's decode does with the same value.
-    (TInt(..), TFloat) => "\{src}.to_double()"
+    (TyInt(..), TyFloat) => "\{src}.to_double()"
     // A bare integer read that goes straight back into an integer place: the
     // normalization and its undoing cancel, and `s.count.to_double().to_int()`
     // is the same number spelled twice. Only the suffix WE wrote is peeled —
     // an arithmetic expression ends in `)`, so it never matches.
-    (TFloat, TInt(..)) if src.has_suffix(".to_double()") =>
+    (TyFloat, TyInt(..)) if src.has_suffix(".to_double()") =>
       src[0:src.length() - ".to_double()".length()].to_owned()
-    (TFloat, TInt(..)) => "\{src}.to_int()"
-    (TInt(..), TInt(..)) => src
+    (TyFloat, TyInt(..)) => "\{src}.to_int()"
+    (TyInt(..), TyInt(..)) => src
     // An enum is a string at runtime, so a computed string can name a case —
     // but naming which case needs the generated enum's constructor, which this
     // does not build.
-    (TText, TEnum(n)) =>
+    (TyText, TyEnum(n)) =>
       raise Cannot(
         "assigning a computed string into the `\{n}` enum is not compiled yet",
       )
@@ -1962,11 +1962,11 @@ fn E::expr(
   match e {
     ELit(lit~, ..) =>
       match lit {
-        LBool(b) => (if b { "true" } else { "false" }, TBool)
-        LStr(s) => (quote(s), TText)
+        LBool(b) => (if b { "true" } else { "false" }, TyBool)
+        LStr(s) => (quote(s), TyText)
         // Every literal number is a Double, because every arithmetic
         // expression is. The conversion happens where it meets a field.
-        LNum(n) => (double_lit(n), TFloat)
+        LNum(n) => (double_lit(n), TyFloat)
         LNull => raise Cannot("`null` has no typed spelling here")
       }
     ETpl(parts~, ..) => {
@@ -1990,7 +1990,7 @@ fn E::expr(
         }
       }
       b.write_string(")")
-      (b.to_string(), TText)
+      (b.to_string(), TyText)
     }
     ERead(place~, ..) => self.read(place)
     EName(name~, ..) => {
@@ -1998,7 +1998,7 @@ fn E::expr(
       // spelling a body uses, since `$name` belongs to the render stack. The
       // answer is a `@tutuca.Value`, which is what a method returns.
       if !self.params.contains(name) && self.callables.get(name) is Some(f) {
-        return ("\{f}(s, [], \{self.stack_arg()})", TAny)
+        return ("\{f}(s, [], \{self.stack_arg()})", TyAny)
       }
       guard self.params.get(name) is Some(ty) else {
         raise Cannot(
@@ -2017,7 +2017,7 @@ fn E::expr(
         // A transition still refuses, because there the argument's shape is
         // what decides whether the transition happens at all.
         if self.fail != "" {
-          return (local_of(name), TAny)
+          return (local_of(name), TyAny)
         }
         raise Cannot(
           "`\{name}`'s type is not known from the call sites, so it arrives as a raw value — annotate it by calling the handler consistently, or write the handler in MoonBit",
@@ -2026,7 +2026,7 @@ fn E::expr(
       // A parameter arrives as the type its pattern bound: a number is a
       // Double, which is the arithmetic surface.
       match t {
-        TInt(..) => (local_of(name), TFloat)
+        TyInt(..) => (local_of(name), TyFloat)
         _ => (local_of(name), t)
       }
     }
@@ -2035,8 +2035,8 @@ fn E::expr(
         // `!expr`, not `not(expr)`: moonc deprecates the second, so a block
         // with a `not` in it made every generated module warn — and a strict
         // build (--deny-warn) reject a file whose author wrote nothing wrong.
-        UNot => ("(!\{self.at_bool(operand)})", TBool)
-        UNeg => ("(-\{self.at_num(operand)})", TFloat)
+        UNot => ("(!\{self.at_bool(operand)})", TyBool)
+        UNeg => ("(-\{self.at_num(operand)})", TyFloat)
       }
     EChain(family~, ops~, operands~, ..) => self.chain(family, ops, operands)
     EIf(cond~, then_~, else_~, ..) => {
@@ -2052,7 +2052,7 @@ fn E::expr(
       )
     // The handler-side twin of a view's `*name`: the same question, walked
     // along the same default route, answered from this handler's position.
-    // Opaque (`TAny`) because a dynamic binding is not in the schema and its
+    // Opaque (`TyAny`) because a dynamic binding is not in the schema and its
     // type is nobody's to state — which puts it on the same footing as an
     // event argument, and through the same guard when a type is wanted.
     EDyn(name~, ..) =>
@@ -2063,10 +2063,10 @@ fn E::expr(
         // (`core/value_eval.mbt`), so the two backends answer one question one
         // way rather than by a table kept in sync.
         self.uses_stack = true
-        ("stack.lookup_dynamic(\{quote(name)})", TAny)
+        ("stack.lookup_dynamic(\{quote(name)})", TyAny)
       } else {
         self.uses_ctx = true
-        ("ctx.lookup(\{quote(name)}, @tutuca.LookupOpts::new())", TAny)
+        ("ctx.lookup(\{quote(name)}, @tutuca.LookupOpts::new())", TyAny)
       }
     // Unreachable behind the checker, which refuses both by name — kept
     // because an emitter that would otherwise emit nothing is the wrong place
@@ -2153,7 +2153,7 @@ fn E::read(
       }
       src = "\{src}.field_opt(\{quote(sub)}).unwrap_or(Null)"
     }
-    return (src, TAny)
+    return (src, TyAny)
   }
   guard p.root is PState(name) else {
     guard p.root is PBind(bind) else {
@@ -2176,7 +2176,7 @@ fn E::read(
     guard p.steps.is_empty() else {
       raise Cannot("reading a path into `@\{bind}` is not compiled yet")
     }
-    return (src, TAny)
+    return (src, TyAny)
   }
   guard self.def.field(name) is Some(f) else {
     raise Cannot("`.\{name}` is not a field of the state")
@@ -2201,7 +2201,7 @@ fn E::read(
   }
   // An integer field is read at the arithmetic surface, like everything else.
   match ty {
-    TInt(..) => (src + ".to_double()", TFloat)
+    TyInt(..) => (src + ".to_double()", TyFloat)
     _ => (src, ty)
   }
 }
@@ -2222,12 +2222,12 @@ fn E::chain(
         b.write_string(self.at_bool(operands[i + 1]))
       }
       b.write_string(")")
-      (b.to_string(), TBool)
+      (b.to_string(), TyBool)
     }
     FImplies => {
       let a = self.at_bool(operands[0])
       let c = self.at_bool(operands[1])
-      ("((!\{a}) || \{c})", TBool)
+      ("((!\{a}) || \{c})", TyBool)
     }
     FCompare => {
       let (a, ta) = self.expr(operands[0])
@@ -2239,12 +2239,12 @@ fn E::chain(
           let (bsrc, tb) = self.expr(operands[1])
           let cmp = "(\{self.value_of(a, ta)} == \{self.value_of(bsrc, tb)})"
           // `!(a == b)` rather than `not(a == b)`, for the reason above.
-          (if ops[0] == "is" { cmp } else { "(!\{cmp})" }, TBool)
+          (if ops[0] == "is" { cmp } else { "(!\{cmp})" }, TyBool)
         }
         op => {
-          let x = self.to_ty(a, ta, TFloat)
+          let x = self.to_ty(a, ta, TyFloat)
           let y = self.at_num(operands[1])
-          ("(\{x} \{op} \{y})", TBool)
+          ("(\{x} \{op} \{y})", TyBool)
         }
       }
     }
@@ -2252,20 +2252,20 @@ fn E::chain(
       // Two strings concatenate; everything else is arithmetic. The operands'
       // static types decide, exactly as the checker says.
       let (first, tf) = self.expr(operands[0])
-      if family is FAdd && tf is TText {
+      if family is FAdd && tf is TyText {
         let b = StringBuilder()
         b.write_string("(\{first}")
         for i, _op in ops {
-          b.write_string(" + \{self.at(operands[i + 1], TText)}")
+          b.write_string(" + \{self.at(operands[i + 1], TyText)}")
         }
         b.write_string(")")
-        return (b.to_string(), TText)
+        return (b.to_string(), TyText)
       }
       // Folded rather than appended, because `mod` WRAPS what came before it
       // instead of extending it: `a mod b` is a round trip through Int, and
       // the accumulated left-hand side has to be inside that trip. Growing one
       // string left to right cannot express an operator that reaches backwards.
-      let mut acc = self.to_ty(first, tf, TFloat)
+      let mut acc = self.to_ty(first, tf, TyFloat)
       for i, op in ops {
         // A zero divisor is "no change", which is what the interpreter
         // answers. MoonBit's Double division answers Infinity instead, and
@@ -2290,7 +2290,7 @@ fn E::chain(
           _ => "(\{acc} \{op} \{rhs})"
         }
       }
-      (acc, TFloat)
+      (acc, TyFloat)
     }
   }
 }
@@ -2305,16 +2305,16 @@ fn E::app(
   match (name, args.length()) {
     ("len", 1) => {
       let (src, ty) = self.expr(args[0])
-      guard ty is (TList(_) | TText | TSet | TFlags(_) | TOMap(_)) else {
+      guard ty is (TyList(_) | TyText | TySet | TyFlags(_, _) | TyOMap(_)) else {
         raise Cannot("`len` needs a sized value, not `\{ty.show_source()}`")
       }
-      ("\{src}.length().to_double()", TFloat)
+      ("\{src}.length().to_double()", TyFloat)
     }
     ("min", 2) | ("max", 2) => {
       let a = self.at_num(args[0])
       let b = self.at_num(args[1])
       let cmp = if name == "min" { "<" } else { ">" }
-      ("(if \{a} \{cmp} \{b} { \{a} } else { \{b} })", TFloat)
+      ("(if \{a} \{cmp} \{b} { \{a} } else { \{b} })", TyFloat)
     }
     ("clamp", 3) => {
       let v = self.at_num(args[0])
@@ -2324,26 +2324,26 @@ fn E::app(
       // list makes `hi` -1 and a negative index is not an honest result.
       (
         "(if \{hi} < \{lo} { \{lo} } else if \{v} < \{lo} { \{lo} } else if \{v} > \{hi} { \{hi} } else { \{v} })",
-        TFloat,
+        TyFloat,
       )
     }
-    ("int", 1) => ("\{self.at_num(args[0])}.to_int().to_double()", TFloat)
-    ("num", 1) => (self.at_num(args[0]), TFloat)
+    ("int", 1) => ("\{self.at_num(args[0])}.to_int().to_double()", TyFloat)
+    ("num", 1) => (self.at_num(args[0]), TyFloat)
     ("str", 1) => {
       let (src, ty) = self.expr(args[0])
-      ("\{self.value_of(src, ty)}.to_display_string()", TText)
+      ("\{self.value_of(src, ty)}.to_display_string()", TyText)
     }
-    ("lower", 1) => ("\{self.at(args[0], TText)}.to_lower()", TText)
-    ("upper", 1) => ("\{self.at(args[0], TText)}.to_upper()", TText)
+    ("lower", 1) => ("\{self.at(args[0], TyText)}.to_lower()", TyText)
+    ("upper", 1) => ("\{self.at(args[0], TyText)}.to_upper()", TyText)
     ("trim", 1) =>
       (
-        "\{self.at(args[0], TText)}.trim(chars=\" \\t\\n\\r\").to_owned()",
-        TText,
+        "\{self.at(args[0], TyText)}.trim(chars=\" \\t\\n\\r\").to_owned()",
+        TyText,
       )
     ("contains", 2) => {
-      let hay = self.at(args[0], TText)
-      let needle = self.at(args[1], TText)
-      ("\{hay}.contains(\{needle})", TBool)
+      let hay = self.at(args[0], TyText)
+      let needle = self.at(args[1], TyText)
+      ("\{hay}.contains(\{needle})", TyBool)
     }
     // `has` — a key in a set or a map, or a value in a list. Both, because the
     // interpreter answers both, and the two are one question asked of the two
@@ -2358,18 +2358,18 @@ fn E::app(
     ("has", 2) => {
       let (hay, hay_ty) = self.expr(args[0])
       match hay_ty {
-        TSet | TFlags(_) | TOMap(_) => {
+        TySet | TyFlags(_, _) | TyOMap(_) => {
           let (needle, needle_ty) = self.expr(args[1])
           (
             "\{hay}.contains(\{self.value_of(needle, needle_ty)}.to_display_string())",
-            TBool,
+            TyBool,
           )
         }
         // A list is searched by EQUALITY, at the element's own type. Every
         // type the state emitter writes derives `Eq` — the scalars, the
         // records, the enums, and `Value` itself — so there is no shape this
         // has to turn down.
-        TList(elem) => ("\{hay}.contains(\{self.at(args[1], elem)})", TBool)
+        TyList(elem) => ("\{hay}.contains(\{self.at(args[1], elem)})", TyBool)
         _ =>
           raise Cannot(
             "`has` asks a set, a map or a list, not `\{hay_ty.show_source()}`",
@@ -2380,7 +2380,7 @@ fn E::app(
       let (src, ty) = self.expr(args[0])
       (
         "(\{self.value_of(src, ty)} is Null || @tutuca.size_of(\{self.value_of(src, ty)}) is Some(0))",
-        TBool,
+        TyBool,
       )
     }
     ("truthy?", 1) | ("falsy?", 1) | ("null?", 1) => {
@@ -2389,7 +2389,7 @@ fn E::app(
       // Through `core`'s own table, so the four mean in a compiled handler
       // exactly what they mean in a `@show`. One table, one meaning.
       let call = "(match @tutuca.builtin(\{quote(name)}) { Some(b) => (b.apply)([\{v}]).is_truthy(); None => false })"
-      (call, TBool)
+      (call, TyBool)
     }
     _ => {
       // A sibling callable, applied. Its parameters bind raw, so the arguments
@@ -2399,7 +2399,7 @@ fn E::app(
         for a in args {
           vals.push(self.as_value(a))
         }
-        return ("\{f}(s, [\{vals.join(", ")}], \{self.stack_arg()})", TAny)
+        return ("\{f}(s, [\{vals.join(", ")}], \{self.stack_arg()})", TyAny)
       }
       raise Cannot(
         "`\{name}` applied to \{args.length()} argument(s) is not compiled yet — write the handler in MoonBit",

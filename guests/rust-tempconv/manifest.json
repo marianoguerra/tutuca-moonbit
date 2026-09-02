@@ -61,18 +61,10 @@
           "src": "views/TempConv.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-float",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "celsius",
-          "ty": 0,
+          "ty": {"k": "float"},
           "doc": "The temperature, in degrees Celsius.",
           "required": false,
           "constraint": {

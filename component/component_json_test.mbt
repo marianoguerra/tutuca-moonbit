@@ -19,7 +19,7 @@ priv struct JLeaf {
 impl @component.Fields for JLeaf with fn schema() {
   @component.SchemaInfo::new(fingerprint="jleaf", fields=[
     @component.FieldInfo::new("text", TyText),
-    @component.FieldInfo::new("n", TyInt),
+    @component.FieldInfo::new("n", TyInt(width=32, signed=true)),
   ])
 }
 

@@ -112,23 +112,27 @@ pub fn StateDef::operation_name(
 ///
 /// Here rather than inline in `named`, because `StateDef::resolve_ty` answers
 /// the same question for a `new` in a block and the two must not drift: a
-/// second copy of `"Int" => TInt(width=32, signed=true)` is how `new Int16`
+/// second copy of `"Int" => TyInt(width=32, signed=true)` is how `new Int16`
 /// and `count : Int16` would come to mean different things.
 fn scalar_ty(name : String) -> StateTy? {
   match name {
-    "Bool" => Some(TBool)
+    "Bool" => Some(TyBool)
     // Width and signedness survive so decode can range-check, even though
     // every one of them emits a MoonBit `Int`. `Int` is the one an author
     // reaches for; the rest are there when a bound is meant.
-    "Int" => Some(TInt(width=32, signed=true))
-    "Int8" => Some(TInt(width=8, signed=true))
-    "Int16" => Some(TInt(width=16, signed=true))
-    "UInt" => Some(TInt(width=32, signed=false))
-    "UInt8" => Some(TInt(width=8, signed=false))
-    "UInt16" => Some(TInt(width=16, signed=false))
-    "Double" => Some(TFloat)
-    "String" => Some(TText)
-    "Any" => Some(TAny)
+    "Int" => Some(TyInt(width=32, signed=true))
+    "Int8" => Some(TyInt(width=8, signed=true))
+    "Int16" => Some(TyInt(width=16, signed=true))
+    "UInt" => Some(TyInt(width=32, signed=false))
+    "UInt8" => Some(TyInt(width=8, signed=false))
+    "UInt16" => Some(TyInt(width=16, signed=false))
+    "Double" => Some(TyFloat)
+    "String" => Some(TyText)
+    // Tabular data: typed columns of equal width. The one named shape the
+    // schema can describe fully, which is why it is a type here rather than a
+    // record nobody can validate.
+    "Table" => Some(TyTable)
+    "Any" => Some(TyAny)
     _ => None
   }
 }
@@ -154,37 +158,24 @@ pub fn StateDef::resolve_ty(
     return if args.is_empty() { Some(t) } else { None }
   }
   match (name, args) {
-    ("Array", [e]) => Some(TList(e))
+    ("Array", [e]) => Some(TyList(e))
     // `Set[String]` is open membership; `Set[E]` over a declared enum is
     // closed. The container decides the zero, which is empty either way.
-    ("Set", [TText]) => Some(TSet)
-    ("Set", [TEnum(n)]) => Some(TFlags(n))
+    ("Set", [TyText]) => Some(TySet)
+    ("Set", [TyEnum(n)]) =>
+      match self.user_ty(n) {
+        Some({ kind: UEnum(cs), .. }) => Some(TyFlags(n, cs.map(c => c.1)))
+        _ => None
+      }
     // Ordered, and keyed by String because a JSON object's key is.
-    ("Map", [TText, v]) => Some(TOMap(v))
+    ("Map", [TyText, v]) => Some(TyOMap(v))
     (_, []) =>
       match self.user_ty(name) {
-        Some({ kind: URecord(_), .. }) => Some(TRecord(name))
-        Some({ kind: UEnum(_), .. }) => Some(TEnum(name))
-        Some({ kind: UVariant(_), .. }) => Some(TVariant(name))
+        Some({ kind: URecord(_), .. }) => Some(TyRecord(name))
+        Some({ kind: UEnum(_), .. }) => Some(TyEnum(name))
+        Some({ kind: UVariant(_), .. }) => Some(TyVariant(name))
         None => None
       }
-    _ => None
-  }
-}
-
-///|
-pub fn StateTy::elem(self : StateTy) -> StateTy? {
-  match self {
-    TList(e) => Some(e)
-    TOMap(v) => Some(v)
-    // A set iterates its members, which are text either way: `flags` has
-    // closed membership, `text-set` open.
-    TSet | TFlags(_) => Some(TText)
-    TTuple(_) => Some(TAny)
-    // A component instance iterates through its own seq_entries, and a
-    // dynamic value may be a list at runtime — neither is knowable here, so
-    // both stay permissive rather than becoming a false error.
-    TAny | TComp(_) | TCompProtocols(_) => Some(TAny)
     _ => None
   }
 }
@@ -196,7 +187,7 @@ pub fn StateDef::field_of(
   name : String,
 ) -> StateTy? {
   match ty {
-    TRecord(n) =>
+    TyRecord(n) =>
       match self.user_ty(n) {
         Some({ kind: URecord(fs), .. }) => {
           for f in fs {
@@ -208,100 +199,11 @@ pub fn StateDef::field_of(
         }
         _ => None
       }
-    TOMap(v) => Some(v)
+    TyOMap(v) => Some(v)
     // Opaque at generation time: a child component's fields belong to its
     // own schema, and a dynamic value has no schema at all.
-    TAny | TComp(_) | TCompProtocols(_) => Some(TAny)
+    TyAny | TyComp(_) | TyCompProtocols(_) => Some(TyAny)
     _ => None
-  }
-}
-
-///|
-/// True when this field lives in the state STRUCT — which is every field.
-///
-/// A slot is a `@tutuca.Value` field like any other, seeded with `Null` and
-/// filled at make time.
-pub fn StateTy::in_struct(_self : StateTy) -> Bool {
-  true
-}
-
-///|
-pub fn StateTy::is_boolish(self : StateTy) -> Bool {
-  // Everything has a truthiness at runtime; this asks whether writing it in
-  // a boolean position can ever decide anything. `Value::is_truthy` answers
-  // `true` for List, Map and Obj unconditionally, so a container in an
-  // `@show` is a test that cannot fail — almost
-  // always a forgotten `.length` or field read.
-  //
-  // A string, a number and an enum are NOT in that set even though they are
-  // not booleans: `@show=".role"` beside `@text=".role"` is the idiomatic way
-  // to hide an empty badge, and `@show=".count"` hides a zero. Flagging those
-  // would cost more in false failures than the real ones are worth — the rule
-  // stated at the head of viewgen/check_state.mbt.
-  match self {
-    TList(_)
-    | TTuple(_)
-    | TRecord(_)
-    | TVariant(_)
-    | TFlags(_)
-    | TSet
-    | TOMap(_) => false
-    _ => true
-  }
-}
-
-///|
-/// The component this type names, when it names one. `option<greeting>` is a
-/// slot like `greeting` is — `is_renderable` already unwraps it, so the
-/// question "which component" has to unwrap it the same way or the two
-/// disagree about the same field.
-pub fn StateTy::component_named(self : StateTy) -> String? {
-  match self {
-    TComp(c) => c
-    TCompProtocols(_) => None
-    TOption(inner) => inner.component_named()
-    _ => None
-  }
-}
-
-///|
-pub fn StateTy::is_renderable(self : StateTy) -> Bool {
-  match self {
-    TComp(_) | TCompProtocols(_) | TAny => true
-    TOption(inner) => inner.is_renderable()
-    _ => false
-  }
-}
-
-///|
-/// How to write this type in a diagnostic, using the state-language spelling
-/// the author wrote and will edit.
-pub fn StateTy::show_source(self : StateTy) -> String {
-  match self {
-    TBool => "Bool"
-    TInt(width~, signed~) =>
-      match (width, signed) {
-        (32, true) => "Int"
-        (8, true) => "Int8"
-        (16, true) => "Int16"
-        (32, false) => "UInt"
-        (8, false) => "UInt8"
-        _ => "UInt16"
-      }
-    TFloat => "Double"
-    TText => "String"
-    TList(e) => "Array[" + e.show_source() + "]"
-    TTuple(ts) => "(" + ts.map(t => t.show_source()).join(", ") + ")"
-    TOption(e) => e.show_source() + "?"
-    TRecord(n) | TEnum(n) | TVariant(n) => n
-    // A closed set names its enum, which is where the membership is written.
-    TFlags(n) => "Set[" + n + "]"
-    TSet => "Set[String]"
-    TOMap(v) => "Map[String, " + v.show_source() + "]"
-    TComp(Some(c)) => "Component[" + c + "]"
-    TComp(None) => "Component"
-    TCompProtocols(ids) => "Component[protocol " + ids.join(" & ") + "]"
-    TAny => "Any"
   }
 }
 
@@ -462,41 +364,6 @@ fn cmp_src(op : CmpOp) -> String {
 }
 
 ///|
-pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
-  match ty {
-    TBool => "TyBool"
-    TInt(..) => "TyInt"
-    TFloat => "TyFloat"
-    TText => "TyText"
-    TList(e) => "TyList(" + self.ty_info_src(e) + ")"
-    TTuple(ts) =>
-      "TyTuple([" + ts.map(t => self.ty_info_src(t)).join(", ") + "])"
-    TOption(e) => "TyOption(" + self.ty_info_src(e) + ")"
-    TOMap(v) => "TyOMap(" + self.ty_info_src(v) + ")"
-    TRecord(n) => "TyRecord(" + quoted(n) + ")"
-    TEnum(n) => "TyEnum(" + quoted(n) + ")"
-    TVariant(n) => "TyVariant(" + quoted(n) + ")"
-    TFlags(n) => {
-      let members = match self.user_ty(n) {
-        // A closed set names an ENUM now, so its membership is the enum's
-        // cases — declared once, in the place the idea belongs.
-        Some({ kind: UEnum(ms), .. }) => ms.map(m => quoted(m.1)).join(", ")
-        _ => ""
-      }
-      "TyFlags(" + quoted(n) + ", [" + members + "])"
-    }
-    TSet => "TySet"
-    TComp(Some(c)) => "TyComp(Some(" + quoted(c) + "))"
-    TComp(None) => "TyComp(None)"
-    // Protocol-constrained slots retain their constraint in SchemaInfo; the
-    // runtime uses it when a dynamic instance is installed.
-    TCompProtocols(ids) =>
-      "TyCompProtocols([" + ids.map(quoted).join(", ") + "])"
-    TAny => "TyAny"
-  }
-}
-
-///|
 /// A MoonBit string literal. Schema identifiers contain no quotes, so there is
 /// nothing to escape beyond the quotes themselves.
 fn quoted(s : String) -> String {
@@ -506,53 +373,57 @@ fn quoted(s : String) -> String {
 ///|
 pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String {
   match ty {
-    TBool => "Bool"
+    TyBool => "Bool"
     // Every width emits Int; the width survives in the decode range check,
     // not in the type.
-    TInt(..) => "Int"
-    TFloat => "Double"
-    TText => "String"
-    TList(e) => "Array[" + self.moonbit_ty(e) + "]"
-    TOption(e) => self.moonbit_ty(e) + "?"
-    TTuple(ts) => "(" + ts.map(t => self.moonbit_ty(t)).join(", ") + ")"
-    TRecord(n) | TEnum(n) | TVariant(n) =>
+    TyInt(..) => "Int"
+    TyFloat => "Double"
+    TyText => "String"
+    TyList(e) => "Array[" + self.moonbit_ty(e) + "]"
+    TyOption(e) => self.moonbit_ty(e) + "?"
+    TyTuple(ts) => "(" + ts.map(t => self.moonbit_ty(t)).join(", ") + ")"
+    TyRecord(n) | TyEnum(n) | TyVariant(n) =>
       match self.user_ty(n) {
         Some(t) => t.name
         None => "@tutuca.Value"
       }
     // A set and an ordered map are Map-backed at runtime, and their MoonBit
     // shape follows: the mutators the component generates key by string.
-    TFlags(_) | TSet => "Map[String, Bool]"
-    TOMap(v) => "Map[String, " + self.moonbit_ty(v) + "]"
-    // A child instance is an Obj behind the Value escape hatch.
-    TComp(_) | TCompProtocols(_) | TAny => "@tutuca.Value"
+    TyFlags(_, _) | TySet => "Map[String, Bool]"
+    TyOMap(v) => "Map[String, " + self.moonbit_ty(v) + "]"
+    // A child instance is an Obj behind the Value escape hatch, and a table
+    // is a Map with a known shape that no MoonBit type names.
+    TyComp(_) | TyCompProtocols(_) | TyTable | TyAny => "@tutuca.Value"
   }
 }
 
 ///|
 pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
   match ty {
-    TBool => "false"
-    TInt(..) => "0"
-    TFloat => "0.0"
-    TText => "\"\""
-    TList(_) => "[]"
-    TOption(_) => "None"
-    TTuple(ts) => "(" + ts.map(t => self.zero_expr(t)).join(", ") + ")"
-    TFlags(_) | TSet | TOMap(_) => "Map([])"
+    TyBool => "false"
+    TyInt(..) => "0"
+    TyFloat => "0.0"
+    TyText => "\"\""
+    TyList(_) => "[]"
+    TyOption(_) => "None"
+    TyTuple(ts) => "(" + ts.map(t => self.zero_expr(t)).join(", ") + ")"
+    TyFlags(_, _) | TySet | TyOMap(_) => "Map([])"
+    // No columns and therefore no rows. Spelled out rather than left as an
+    // empty Map because `{"columns": []}` is a VALID table and `{}` is not.
+    TyTable => "Map({ \"columns\": List([]) })"
     // Every zero lands in a position whose type is already known — a field of
     // the generated state struct, or a field of another zero — so none of
     // these names itself. MoonBit resolves a constructor against the expected
     // type, so two enums in one module both declaring `low` stay unambiguous,
     // and naming them anyway is the `unnecessary_annotation` `check` turns on.
-    TEnum(n) =>
+    TyEnum(n) =>
       match self.user_ty(n) {
         // The first case is the zero, and an enum with no cases cannot be
         // declared.
         Some({ kind: UEnum(cs), .. }) if !cs.is_empty() => cs[0].1
         _ => "Null"
       }
-    TRecord(n) =>
+    TyRecord(n) =>
       match self.user_ty(n) {
         // An empty record declares no MoonBit type (emit_user_types skips it
         // as a transparent alias), so there is nothing to build; a bare `{}`
@@ -567,7 +438,7 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
           }
         _ => "Null"
       }
-    TVariant(n) =>
+    TyVariant(n) =>
       match self.user_ty(n) {
         Some({ kind: UVariant(cs), .. }) if !cs.is_empty() => {
           let c = cs[0]
@@ -582,7 +453,7 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
         }
         _ => "Null"
       }
-    TComp(_) | TCompProtocols(_) | TAny => "Null"
+    TyComp(_) | TyCompProtocols(_) | TyAny => "Null"
   }
 }
 

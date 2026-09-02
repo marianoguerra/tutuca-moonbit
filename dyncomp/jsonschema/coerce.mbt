@@ -68,7 +68,7 @@ fn coerce_ty(
     (TyBool, True) => Bool(true)
     (TyBool, False) => Bool(false)
     (TyFloat, Number(n, ..)) => Num(n)
-    (TyInt, Number(n, ..)) =>
+    (TyInt(width=32, signed=true), Number(n, ..)) =>
       if n != n.trunc() {
         errors.push(err(pointer, "expected an integer, got \{n}"))
         Num(n.trunc())

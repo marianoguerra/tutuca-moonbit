@@ -25,7 +25,7 @@ pub fn install_gc(@transactor.Transactor) -> Unit
 
 pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest, policy? : @policy.Policy) -> Bundle raise ManifestError
 
-pub fn slot_owner(@core.TyInfo, @core.Value?, declared_here~ : (String) -> Bool) -> SlotOwner
+pub fn slot_owner(@core.Ty, @core.Value?, declared_here~ : (String) -> Bool) -> SlotOwner
 
 pub fn superseded_count() -> Int
 
@@ -127,7 +127,7 @@ pub(all) struct DynConfigDef {
 
 pub(all) struct DynFieldDef {
   name : String
-  ty : Int
+  ty : @core.Ty
   doc : String
   required : Bool
   constraint : @jsonschema.Constraint?
@@ -183,7 +183,7 @@ pub impl @core.Obj for DynObj
 
 pub(all) struct DynPropertyDef {
   name : String
-  ty : Int
+  ty : @core.Ty
   public_ : Bool
   writable : Bool
   doc : String

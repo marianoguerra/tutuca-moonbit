@@ -82,10 +82,10 @@ this, instead of building rows inline from `@dhw.loaded_components()`.
 
 ### `dyncomp/jsonschema` — one projection, two consumers
 
-The linchpin. `SchemaInfo` / `TyInfo` / `FieldInfo` plus the v3 `constraint`
+The linchpin. `SchemaInfo` / `Ty` / `FieldInfo` plus the v3 `constraint`
 project to JSON Schema (draft 2020-12) with a `$defs` table:
 
-| `TyInfo` | JSON Schema |
+| `Ty` | JSON Schema |
 |---|---|
 | `TyBool` / `TyInt` / `TyFloat` / `TyText` | `boolean` / `integer` / `number` / `string` |
 | `TyList(e)` | `array` + `items` |

@@ -73,7 +73,11 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 }
 
 ///|
-fn plain(name : String, ty_ : Int, doc? : String = "") -> @dyncomp.DynFieldDef {
+fn plain(
+  name : String,
+  ty_ : @tutuca.Ty,
+  doc? : String = "",
+) -> @dyncomp.DynFieldDef {
   { name, ty: ty_, doc, required: false, constraint: None, }
 }
 
@@ -106,7 +110,7 @@ fn counter_bundle() -> @dyncomp.DynManifest {
           },
         ],
         types: [ty("ty-float")],
-        fields: [plain("count", 0, doc="The current value.")],
+        fields: [plain("count", TyFloat, doc="The current value.")],
         properties: [],
         domains: [],
         receives: [],
@@ -172,8 +176,8 @@ fn todo_bundle() -> @dyncomp.DynManifest {
         ],
         types: [ty("ty-text"), ty("ty-record")],
         fields: [
-          plain("draft", 0, doc="The task being typed."),
-          plain("items", 1),
+          plain("draft", TyText, doc="The task being typed."),
+          plain("items", TyRecord("")),
         ],
         properties: [],
         domains: [],

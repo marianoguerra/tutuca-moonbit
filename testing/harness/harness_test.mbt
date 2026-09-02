@@ -124,7 +124,7 @@ impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="harness-counter",
     fields=[
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("label", TyText),
     ],
     view_handlers=["dec", "inc", "setLabel"],

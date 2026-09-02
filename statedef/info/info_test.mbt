@@ -1,11 +1,16 @@
 // The twins have to agree.
 //
-// `ty_info` returns a value and `StateDef::ty_info_src` returns the SOURCE
-// that builds the same value; `zero_of` returns a value and `zero_expr` the
-// source. Two implementations of one projection is exactly the shape that
-// rots, so these tests do not assert either side in isolation — they render
-// the value back into the source spelling and compare it against the emitter's
-// own output, for every case in the lattice.
+// `zero_of` returns a value and `zero_expr` the source that builds it; the
+// same for `domains_of` and `domains_src`. Two implementations of one
+// projection is exactly the shape that rots, so these tests do not assert
+// either side in isolation — they render the value back into the source
+// spelling and compare it against the emitter's own output, for every case in
+// the lattice.
+//
+// The TYPE pair is no longer a pair: there is one `Ty`, the schema parses into
+// it, and `Ty::to_mbt_source` prints it. What is left of that test is a
+// SNAPSHOT of the printing, which is a table to read rather than a twin to
+// keep in step.
 //
 // A case the emitter grows and this file does not will fail here rather than
 // in a browser six weeks later.
@@ -18,91 +23,92 @@ fn one(src : String) -> @statedef.StateDef raise {
 }
 
 ///|
-/// Render a `TyInfo` in the spelling `ty_info_src` emits.
-fn show_ty(t : @tutuca.TyInfo) -> String {
-  match t {
-    TyBool => "TyBool"
-    TyInt => "TyInt"
-    TyFloat => "TyFloat"
-    TyText => "TyText"
-    TyList(e) => "TyList(" + show_ty(e) + ")"
-    TyTuple(ts) => "TyTuple([" + ts.map(show_ty).join(", ") + "])"
-    TyOption(e) => "TyOption(" + show_ty(e) + ")"
-    TyOMap(v) => "TyOMap(" + show_ty(v) + ")"
-    TyRecord(n) => "TyRecord(\"\{n}\")"
-    TyEnum(n) => "TyEnum(\"\{n}\")"
-    TyVariant(n) => "TyVariant(\"\{n}\")"
-    TyFlags(n, ms) =>
-      "TyFlags(\"\{n}\", [" + ms.map(m => "\"\{m}\"").join(", ") + "])"
-    TySet => "TySet"
-    TyComp(Some(c)) => "TyComp(Some(\"\{c}\"))"
-    TyComp(None) => "TyComp(None)"
-    TyCompProtocols(ids) => "TyCompProtocols([" + ids.join(", ") + "])"
-    TyTable => "TyTable"
-    TyAny => "TyAny"
-  }
-}
-
-///|
-/// Every field of every component in a block, checked both ways at once.
-fn agree(src : String) -> Unit raise {
+/// Every field of every component in a block, as `name : source`.
+fn shown(src : String) -> String raise {
+  let out : Array[String] = []
   for def in @statedef.parse_state(src) {
-    agree_def(def)
+    for f in def.fields {
+      out.push(f.name + " : " + f.ty.to_mbt_source())
+    }
   }
+  out.join("\n")
 }
 
 ///|
-fn agree_def(def : @statedef.StateDef) -> Unit raise {
-  for f in def.fields {
-    assert_eq(show_ty(@info.ty_info(def, f.ty)), def.ty_info_src(f.ty))
-  }
-}
-
-///|
-test "the type projection agrees with the emitter over the whole lattice" {
-  agree(
-    (
-      #|state Counter {
-      #|  label   : String
-      #|  count   : Int
-      #|  small   : UInt8
-      #|  ratio   : Double
-      #|  ok      : Bool
-      #|  history : Array[Int]
-      #|  pick    : String?
-      #|  pair    : (String, Int)
-      #|  tags    : Set[String]
-      #|  counts  : Map[String, String]
-      #|  blob    : Any
-      #|}
+test "golden: the source form of every type in the lattice" {
+  inspect(
+    shown(
+      (
+        #|state Counter {
+        #|  label   : String
+        #|  count   : Int
+        #|  small   : UInt8
+        #|  ratio   : Double
+        #|  ok      : Bool
+        #|  history : Array[Int]
+        #|  pick    : String?
+        #|  pair    : (String, Int)
+        #|  tags    : Set[String]
+        #|  counts  : Map[String, String]
+        #|  blob    : Any
+        #|}
+      ),
+    ),
+    content=(
+      #|label : TyText
+      #|count : TyInt(width=32, signed=true)
+      #|small : TyInt(width=8, signed=false)
+      #|ratio : TyFloat
+      #|ok : TyBool
+      #|history : TyList(TyInt(width=32, signed=true))
+      #|pick : TyOption(TyText)
+      #|pair : TyTuple([TyText, TyInt(width=32, signed=true)])
+      #|tags : TySet
+      #|counts : TyOMap(TyText)
+      #|blob : TyAny
     ),
   )
 }
 
 ///|
 test "…including the named types, where the members are inlined" {
-  agree(
-    (
-      #|enum Priority { Low, High }
-      #|enum Visibility { Done, Active }
-      #|struct Label { text: String, done: Bool }
-      #|enum Due { Unscheduled, OnDay(Int) }
-      #|state Post {
-      #|  pri  : Priority
-      #|  vis  : Set[Visibility]
-      #|  tag  : Label
-      #|  due  : Due
-      #|}
+  inspect(
+    shown(
+      (
+        #|enum Priority { Low, High }
+        #|enum Visibility { Done, Active }
+        #|struct Label { text: String, done: Bool }
+        #|enum Due { Unscheduled, OnDay(Int) }
+        #|state Post {
+        #|  pri  : Priority
+        #|  vis  : Set[Visibility]
+        #|  tag  : Label
+        #|  due  : Due
+        #|}
+      ),
+    ),
+    content=(
+      #|pri : TyEnum("Priority")
+      #|vis : TyFlags("Visibility", ["Done", "Active"])
+      #|tag : TyRecord("Label")
+      #|due : TyVariant("Due")
     ),
   )
 }
 
 ///|
 test "…and the child-component slots, named and bare" {
-  agree(
-    (
-      #|state Board { editor: Sheet, preview: Component }
-      #|state Sheet { text: String }
+  inspect(
+    shown(
+      (
+        #|state Board { editor: Sheet, preview: Component }
+        #|state Sheet { text: String }
+      ),
+    ),
+    content=(
+      #|editor : TyComp(Some("Sheet"))
+      #|preview : TyComp(None)
+      #|text : TyText
     ),
   )
 }
@@ -136,9 +142,9 @@ test "the zero state is what a generated zero() would build" {
 }
 
 ///|
-test "a record's zero opens it, which its TyInfo alone cannot" {
+test "a record's zero opens it, which its Ty alone cannot" {
   // `TyRecord` keeps only a name — a record's fields are the instance's to
-  // answer — so `TyInfo::zero` gives an empty map. With the DECLARATION in
+  // answer — so `Ty::zero` gives an empty map. With the DECLARATION in
   // hand the zero is the fields' zeros, matching what `zero_expr` writes.
   let def = one(
     (

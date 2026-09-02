@@ -157,11 +157,13 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
   // the nesting is declared, so a host can see the shape without loading it
   const ty = (comp, field) => {
     const c = manifest.components.find((x) => x.name === comp);
-    return c.types[c.fields.find((f) => f.name === field).ty];
+    return c.fields.find((f) => f.name === field).ty;
   };
   assert.equal(ty('Message', 'body').name, 'RichText');
   assert.equal(ty('Thread', 'root').name, 'Message');
-  assert.equal(ty('ChannelHistory', 'threads').kind, 'ty-list');
+  assert.equal(ty('ChannelHistory', 'threads').k, 'list');
+  // …and a list says what it is a list OF, which the flat table could not
+  assert.equal(ty('ChannelHistory', 'threads').of.name, 'Thread');
   // the two surfaces that disclose their own coverage hang the same component
   assert.equal(ty('ChannelHistory', 'scope').name, 'Scope');
   assert.equal(ty('FileList', 'scope').name, 'Scope');
@@ -191,7 +193,7 @@ test('the static manifest declares eight nesting components', { skip: !built }, 
   // column of messages is the thing that can arrive too long to draw
   for (const name of ['Thread', 'FileList', 'ChannelHistory']) {
     const c = manifest.components.find((x) => x.name === name);
-    assert.equal(ty(name, 'pageSize').kind, 'ty-int', name);
+    assert.equal(ty(name, 'pageSize').k, 'int', name);
     assert.deepEqual(c.fields.find((f) => f.name === 'pageSize').constraint, { min: 1, max: 500 }, name);
   }
   // `intents` is the routed-bucket HANDLER surface, the way `receives` is:

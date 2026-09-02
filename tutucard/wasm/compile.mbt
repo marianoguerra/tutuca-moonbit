@@ -1407,13 +1407,13 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
 ///|
 /// Can a value of this type be a vector or a map?
 ///
-/// The question the `values` arena import turns on. `TAny` counts because it is
-/// the type that promises nothing, and `TOption` counts when what it wraps
+/// The question the `values` arena import turns on. `TyAny` counts because it is
+/// the type that promises nothing, and `TyOption` counts when what it wraps
 /// does.
 fn compound_ty(ty : @statedef.StateTy) -> Bool {
   match ty {
-    TBool | TInt(..) | TFloat | TText | TEnum(_) | TComp(_) => false
-    TOption(inner) => compound_ty(inner)
+    TyBool | TyInt(..) | TyFloat | TyText | TyEnum(_) | TyComp(_) => false
+    TyOption(inner) => compound_ty(inner)
     _ => true
   }
 }
@@ -1427,7 +1427,7 @@ fn compound_ty(ty : @statedef.StateTy) -> Bool {
 /// representation for all of them, so the mapping is total and there is
 /// nothing left here to refuse.
 ///
-/// `TInt` and `TFloat` are BOTH `jv_type_f64`, and that is not a shortcut:
+/// `TyInt` and `TyFloat` are BOTH `jv_type_f64`, and that is not a shortcut:
 /// tutuca has exactly one number (`Value::Num(Double)`), so a schema that told
 /// them apart would be inventing a distinction the language does not have.
 /// What an Int field does get is a truncation at its assignment sites —
@@ -1439,11 +1439,11 @@ fn jv_type_of(g : Gen, f : @statedef.FieldDef) -> @abi.I? {
 ///|
 fn jv_type_expr(g : Gen, ty : @statedef.StateTy) -> @abi.I {
   match ty {
-    TBool => call("jv_type_bool", [])
-    TInt(..) | TFloat => call("jv_type_f64", [])
-    TText | TEnum(_) => call("jv_type_string", [])
-    TList(inner) => call("jv_type_vector", [jv_type_expr(g, inner)])
-    TOMap(inner) => call("jv_type_ordered_map", [jv_type_expr(g, inner)])
+    TyBool => call("jv_type_bool", [])
+    TyInt(..) | TyFloat => call("jv_type_f64", [])
+    TyText | TyEnum(_) => call("jv_type_string", [])
+    TyList(inner) => call("jv_type_vector", [jv_type_expr(g, inner)])
+    TyOMap(inner) => call("jv_type_ordered_map", [jv_type_expr(g, inner)])
     // A set is a Map keyed by the member's display string, and a record and a
     // tuple are Maps too — tutuca's own representations, not a widening chosen
     // here. The VALUE type is unconstrained because none of the three carries
@@ -1452,13 +1452,14 @@ fn jv_type_expr(g : Gen, ty : @statedef.StateTy) -> @abi.I {
     // ORDERED, like every map this compiler builds: tutuca's `Value::Map` is
     // MoonBit's `Map`, which is insertion ordered, and `@each` over a map field
     // renders in that order.
-    TSet | TFlags(_) | TRecord(_) | TTuple(_) =>
+    TySet | TyFlags(_, _) | TyRecord(_) | TyTuple(_) | TyTable =>
       call("jv_type_ordered_map", [call("jv_type_any", [])])
-    TOption(inner) => call("jv_type_optional", [jv_type_expr(g, inner)])
+    TyOption(inner) => call("jv_type_optional", [jv_type_expr(g, inner)])
     // A variant is a Map or a Null depending on the case, a component slot is
-    // a host-side thing a guest never holds, and `TAny` is the whole point of
+    // a host-side thing a guest never holds, and `TyAny` is the whole point of
     // being unconstrained.
-    TVariant(_) | TComp(_) | TCompProtocols(_) | TAny => call("jv_type_any", [])
+    TyVariant(_) | TyComp(_) | TyCompProtocols(_) | TyAny =>
+      call("jv_type_any", [])
   }
 }
 
@@ -1504,7 +1505,7 @@ fn const_value(g : Gen, v : @tutuca.Value) -> @abi.I {
       acc
     }
     // A function and a component instance are host-side, and a zero is never
-    // either: `TyInfo::zero` answers Null for `TComp` and `TAny`.
+    // either: `TyInfo::zero` answers Null for `TyComp` and `TyAny`.
     _ => call("tc_null", [])
   }
 }

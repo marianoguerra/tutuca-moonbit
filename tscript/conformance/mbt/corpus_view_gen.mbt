@@ -426,13 +426,13 @@ impl @component.Fields for CorpusState with fn schema() {
     fingerprint="a796e15bdbd4635f",
     fields=[
       @component.FieldInfo::new("name", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("ratio", TyFloat),
       @component.FieldInfo::new("ok", TyBool),
       @component.FieldInfo::new("items", TyList(TyText)),
       @component.FieldInfo::new("labels", TyList(TyRecord("Label"))),
       @component.FieldInfo::new("tags", TySet),
-      @component.FieldInfo::new("page", TyInt),
+      @component.FieldInfo::new("page", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("note", TyOption(TyText)),
     ],
     receives=[

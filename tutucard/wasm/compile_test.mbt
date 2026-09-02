@@ -271,10 +271,10 @@ test "a card with no `where` carries an empty domain list" {
 /// declaration wrote down.
 ///
 /// Names alone would be a lossy spelling of something the host has a use for:
-/// `DynProtocolDef` carries a property-def per member and resolves its `ty`
-/// through the component's type table to build a `PropertyInfo`. They were
-/// names once, and `dyncomp/host` refused every bundle that had one — the
-/// parser wanted the shape the declaration could have given it all along.
+/// `DynProtocolDef` carries a property-def per member and reads its `ty` to
+/// build a `PropertyInfo`. They were names once, and `dyncomp/host` refused
+/// every bundle that had one — the parser wanted the shape the declaration
+/// could have given it all along.
 test "a protocol's properties reach the manifest with their types" {
   let out = @wasm.compile(
     (
@@ -304,10 +304,9 @@ test "a protocol's properties reach the manifest with their types" {
   guard! props.get(0) is Some(Object(filled))
   @debug.assert_eq(filled.get("name"), Some(Json::string("filled")))
   @debug.assert_eq(filled.get("public"), Some(Json::boolean(true)))
-  // The type is an INDEX into the component's own table, and the entry it
-  // points at is the type the protocol declared.
-  guard! filled.get("ty") is Some(Number(at, ..))
-  guard! hole.get("types") is Some(Array(types))
-  guard! types.get(at.to_int()) is Some(Object(ty))
-  @debug.assert_eq(ty.get("kind"), Some(Json::string("ty-bool")))
+  // The type is the TYPE, written where it is used. It was an index into a
+  // per-component table, which is how a list's element type came to be
+  // omitted from every manifest ever written.
+  guard! filled.get("ty") is Some(ty)
+  @debug.assert_eq(@tutuca.Ty::of_json(ty), TyBool)
 }

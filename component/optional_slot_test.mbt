@@ -54,7 +54,7 @@ priv struct KidState {
 ///|
 impl @component.Fields for KidState with fn schema() {
   @component.SchemaInfo::new(fingerprint="kid_state", fields=[
-    @component.FieldInfo::new("n", TyInt),
+    @component.FieldInfo::new("n", TyInt(width=32, signed=true)),
   ])
 }
 

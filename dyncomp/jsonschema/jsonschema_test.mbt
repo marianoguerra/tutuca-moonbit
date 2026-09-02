@@ -29,7 +29,7 @@ fn at(j : Json, key : String) -> Json? {
 test "scalars project to their JSON Schema types" {
   let s = schema_of([
     @tutuca.FieldInfo::new("flag", TyBool),
-    @tutuca.FieldInfo::new("n", TyInt),
+    @tutuca.FieldInfo::new("n", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("x", TyFloat),
     @tutuca.FieldInfo::new("name", TyText),
   ])
@@ -50,7 +50,10 @@ test "collections carry their element type" {
   let s = schema_of([
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
     @tutuca.FieldInfo::new("scores", TyOMap(TyFloat)),
-    @tutuca.FieldInfo::new("pair", TyTuple([TyText, TyInt])),
+    @tutuca.FieldInfo::new(
+      "pair",
+      TyTuple([TyText, TyInt(width=32, signed=true)]),
+    ),
     @tutuca.FieldInfo::new("open", TySet),
     @tutuca.FieldInfo::new("closed", TyFlags("size", ["s", "m", "l"])),
   ])
@@ -168,7 +171,7 @@ test "`any` projects to JSON Schema's `true`, which permits anything" {
 test "a constraint supplies the half a type cannot state" {
   let s = schema_of([
     @tutuca.FieldInfo::new("email", TyText),
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
   ])
   let docs : Map[String, FieldDoc] = {
@@ -245,7 +248,7 @@ test "an optional type is never required, whatever the manifest claimed" {
 test "well-typed JSON becomes constructor arguments" {
   let s = schema_of([
     @tutuca.FieldInfo::new("name", TyText),
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
     @tutuca.FieldInfo::new("flag", TyBool),
   ])
@@ -276,7 +279,7 @@ test "well-typed JSON becomes constructor arguments" {
 test "errors are collected, and each points at where it happened" {
   let s = schema_of([
     @tutuca.FieldInfo::new("name", TyText),
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
   ])
   let j = @json.parse(
@@ -326,7 +329,7 @@ test "a required field that is missing is named" {
 ///|
 test "a constraint is checked on the way in, not only advertised" {
   let s = schema_of([
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("name", TyText),
     @tutuca.FieldInfo::new("mode", TyText),
   ])
@@ -634,7 +637,7 @@ test "a table that is not an object fails at the table, not inside it" {
 test "a bound the type cannot carry never reaches the schema" {
   let s = schema_of([
     @tutuca.FieldInfo::new("createdAt", TyText),
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @tutuca.FieldInfo::new("on", TyBool),
     @tutuca.FieldInfo::new("tags", TyList(TyText)),
   ])

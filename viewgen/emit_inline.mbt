@@ -88,9 +88,9 @@ fn inline_surface(surface : Surface) -> @check.Surface {
 /// One inferred argument type, as the schema would spell it.
 fn arg_state_ty(t : ArgType) -> @statedef.StateTy? {
   match t {
-    VDouble => Some(TFloat)
-    VString => Some(TText)
-    VBool => Some(TBool)
+    VDouble => Some(TyFloat)
+    VString => Some(TyText)
+    VBool => Some(TyBool)
     // `@value`, a bind, a `$method`, a disagreement between two call sites:
     // unknown, which is not wrong. The parameter binds raw.
     VValue => None

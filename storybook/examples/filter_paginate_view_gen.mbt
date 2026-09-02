@@ -558,8 +558,8 @@ impl @component.Fields for NaivePeopleState with fn schema() {
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("Person")))),
       @component.FieldInfo::new("query", TyText),
-      @component.FieldInfo::new("page", TyInt),
-      @component.FieldInfo::new("pageSize", TyInt),
+      @component.FieldInfo::new("page", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("pageSize", TyInt(width=32, signed=true)),
     ],
     view_handlers=["next", "prev", "removeInItemsAt", "search"],
     domains=[

@@ -318,7 +318,7 @@ fn emit_schema(
       // set's members are all questions the type answers, so writing them
       // out separately only created five chances to disagree with it.
       out.write_string(
-        "      @component.FieldInfo::new(\{quote(f.name)}, \{def.ty_info_src(f.ty)}),\n",
+        "      @component.FieldInfo::new(\{quote(f.name)}, \{f.ty.to_mbt_source()}),\n",
       )
     }
     out.write_string("    ],\n")
@@ -330,7 +330,7 @@ fn emit_schema(
         "      @tutuca.PropertyInfo::{name: " +
         quote(p.name) +
         ", ty: " +
-        def.ty_info_src(p.ty) +
+        p.ty.to_mbt_source() +
         ", public_: " +
         p.public_.to_string() +
         ", writable: " +
@@ -357,7 +357,7 @@ fn emit_schema(
     for p in def.protocols {
       let typed = (xs : Array[@statedef.PropertyDef]) => {
         xs
-        .map(x => "(" + quote(x.name) + ", " + def.ty_info_src(x.ty) + ")")
+        .map(x => "(" + quote(x.name) + ", " + x.ty.to_mbt_source() + ")")
         .join(", ")
       }
       out.write_string(
@@ -378,7 +378,7 @@ fn emit_schema(
           "@tutuca.PropertyInfo::{name: " +
           quote(x.name) +
           ", ty: " +
-          def.ty_info_src(x.ty) +
+          x.ty.to_mbt_source() +
           ", public_: true" +
           ", writable: " +
           x.writable.to_string() +

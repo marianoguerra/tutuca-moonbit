@@ -132,7 +132,7 @@ test('the manifest declares one ty-table field', { skip: !built }, () => {
   assert.equal(c.name, 'Table');
   assert.deepEqual(c.fields.map((f) => f.name), ['data', 'pageSize']);
   // the kind that makes the host project a real schema instead of a stub
-  assert.equal(c.types[c.fields[0].ty].kind, 'ty-table');
+  assert.equal(c.fields[0].ty.k, 'table');
   assert.equal(c.fields[0].required, true);
   // the init fixture is the documented JSON shape, so it has to parse
   const fixture = JSON.parse(c.inits[0].argsJson);

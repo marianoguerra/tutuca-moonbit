@@ -35,40 +35,43 @@ pub fn value_of(
   depth? : Int = MAX_DEPTH,
 ) -> @gen.Gen[@tutuca.Value] {
   match ty {
-    TBool =>
+    TyBool =>
       @gen.one_of_array([true, false]).fmap(b => (Bool(b) : @tutuca.Value))
-    TInt(width~, signed~) => int_value(width, signed)
-    TFloat => float_value()
-    TText => text_value()
-    TList(e) => items_of(def, e, depth).fmap(xs => (List(xs) : @tutuca.Value))
+    TyInt(width~, signed~) => int_value(width, signed)
+    TyFloat => float_value()
+    TyText => text_value()
+    TyList(e) => items_of(def, e, depth).fmap(xs => (List(xs) : @tutuca.Value))
     // A tuple is a fixed-width list, so its length is not drawn — every
     // element is, at the declared type of that position.
-    TTuple(ts) =>
+    TyTuple(ts) =>
       @gen.flatten_array(ts.map(t => value_of(def, t, depth=depth - 1))).fmap(xs => {
         (List(xs) : @tutuca.Value)
       })
     // The one type whose absence is a value. Null often, because a `T?` that
     // is never empty is a `T` nobody noticed.
-    TOption(e) =>
+    TyOption(e) =>
       @gen.frequency([
         (1, @gen.pure((Null : @tutuca.Value))),
         (2, value_of(def, e, depth=depth - 1)),
       ])
-    TOMap(v) => omap_value(def, v, depth)
-    TRecord(n) => record_value(def, n, depth)
-    TEnum(n) => enum_value(def, n)
-    TVariant(n) => variant_value(def, n, depth)
-    TFlags(n) => flags_value(def, n)
-    TSet => set_value()
+    TyOMap(v) => omap_value(def, v, depth)
+    TyRecord(n) => record_value(def, n, depth)
+    TyEnum(n) => enum_value(def, n)
+    TyVariant(n) => variant_value(def, n, depth)
+    TyFlags(n, _) => flags_value(def, n)
+    TySet => set_value()
     // A slot holds an instance the host makes, and there is nothing here to
     // make one from. `zero_of` answers Null and so does this — the difference
     // between them is that a caller who wants children fills the slot itself.
-    TComp(_) | TCompProtocols(_) => @gen.pure(@info.zero_of(def, ty))
+    TyComp(_) | TyCompProtocols(_) => @gen.pure(@info.zero_of(def, ty))
+    // A table's zero is a table with no columns, which is the only shape this
+    // can draw without inventing a column vocabulary the schema does not have.
+    TyTable => @gen.pure(@info.zero_of(def, ty))
     // `Any` is the position that most needs the tag, so it draws from every
     // scalar shape rather than settling on one. Not from containers: a value
     // no schema describes is one a codec has to read structurally, and the
     // scalars are where that goes wrong.
-    TAny => any_value()
+    TyAny => any_value()
   }
 }
 
@@ -206,13 +209,13 @@ fn field_gen(
   // A length bound reaches the CONTAINER's generator rather than a value's,
   // since a collection of a given size is built rather than picked.
   if size_in_domain(mine, drawn) is Some(size) &&
-    f.ty.elem() is Some(e) &&
-    f.ty is (TList(_) | TOMap(_)) {
+    f.ty.iterable_elem() is Some(e) &&
+    f.ty is (TyList(_) | TyOMap(_)) {
     let elems = size.bind(n => {
       value_of(def, e, depth=depth - 1).array_with_size(n)
     })
     return match f.ty {
-      TOMap(_) =>
+      TyOMap(_) =>
         elems.fmap(vs => {
           let m : Map[String, @tutuca.Value] = Map([])
           for i, x in vs {
@@ -236,10 +239,10 @@ fn field_gen(
   // empty of a `T?` is a different thing: the type already states it, and it
   // belongs to every relation at once rather than to the one that asked.
   //
-  // Same 1:2 as the unconstrained `TOption` draw, so adding a `where` to a
+  // Same 1:2 as the unconstrained `TyOption` draw, so adding a `where` to a
   // nullable field does not quietly change how often it is empty.
   let with_empty = fn(g : @gen.Gen[@tutuca.Value]) {
-    if f.ty is TOption(_) {
+    if f.ty is TyOption(_) {
       @gen.frequency([(1, @gen.pure((Null : @tutuca.Value))), (2, g)])
     } else {
       g
@@ -419,10 +422,10 @@ fn record_value(
   depth : Int,
 ) -> @gen.Gen[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: URecord(fs), .. }) else {
-    return @gen.pure(@info.zero_of(def, TRecord(n)))
+    return @gen.pure(@info.zero_of(def, TyRecord(n)))
   }
   if depth <= 0 {
-    return @gen.pure(@info.zero_of(def, TRecord(n)))
+    return @gen.pure(@info.zero_of(def, TyRecord(n)))
   }
   let names = fs.map(f => f.name)
   @gen.flatten_array(fs.map(f => value_of(def, f.ty, depth=depth - 1))).fmap(vs => {
@@ -440,7 +443,7 @@ fn record_value(
 /// not have.
 fn enum_value(def : @statedef.StateDef, n : String) -> @gen.Gen[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: UEnum(cs), .. }) && !cs.is_empty() else {
-    return @gen.pure(@info.zero_of(def, TEnum(n)))
+    return @gen.pure(@info.zero_of(def, TyEnum(n)))
   }
   @gen.one_of_array(cs.map(c => (Str(c.1) : @tutuca.Value)))
 }
@@ -457,7 +460,7 @@ fn variant_value(
   depth : Int,
 ) -> @gen.Gen[@tutuca.Value] {
   guard def.user_ty(n) is Some({ kind: UVariant(cs), .. }) && !cs.is_empty() else {
-    return @gen.pure(@info.zero_of(def, TVariant(n)))
+    return @gen.pure(@info.zero_of(def, TyVariant(n)))
   }
   @gen.one_of_array(cs).bind(c => {
     if c.payload.is_empty() || depth <= 0 {

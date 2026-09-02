@@ -54,25 +54,10 @@
           "src": "views/Counter.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-float",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "count",
-          "ty": 0,
+          "ty": {"k": "float"},
           "doc": "The current value.",
           "required": false,
           "constraint": {
@@ -82,7 +67,7 @@
         },
         {
           "name": "history",
-          "ty": 1,
+          "ty": {"k": "list", "of": {"k": "float"}},
           "doc": "Every value the count has held, oldest first.",
           "required": false
         }
@@ -120,7 +105,7 @@
       "properties": [
         {
           "name": "count",
-          "ty": 0,
+          "ty": {"k": "float"},
           "writable": true,
           "public": true,
           "doc": "The public current value."
@@ -156,24 +141,16 @@
           "src": "views/Pair.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Counter",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "left",
-          "ty": 0,
+          "ty": {"k": "comp", "name": "Counter"},
           "doc": "The counter on the left.",
           "required": true
         },
         {
           "name": "right",
-          "ty": 0,
+          "ty": {"k": "comp", "name": "Counter"},
           "doc": "The counter on the right.",
           "required": true
         }

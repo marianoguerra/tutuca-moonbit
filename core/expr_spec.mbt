@@ -362,7 +362,7 @@ pub impl Debug for PathStep with fn to_repr(self) {
 pub impl Debug for TplPart with fn to_repr(self) {
   match self {
     TText(text~, from_macro~) =>
-      Repr::ctor("TText", [
+      Repr::ctor("TyText", [
         (Some("text"), Repr(text)),
         (Some("from_macro"), Repr(from_macro)),
       ])

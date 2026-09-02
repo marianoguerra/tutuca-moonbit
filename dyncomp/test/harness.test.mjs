@@ -107,9 +107,12 @@ test('manifest declares the component, its views and its state', () => {
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
-  // the declared schema: fields over a flat type table (WIT has no recursion),
-  // each field carrying the half a type cannot state
-  assert.deepEqual(comp.fields.map((f) => [f.name, f.ty]), [['count', 0], ['history', 1]]);
+  // the declared schema: each field carries its TYPE, nested where it nests,
+  // plus the half a type cannot state
+  assert.deepEqual(comp.fields.map((f) => [f.name, f.ty]), [
+    ['count', { k: 'float' }],
+    ['history', { k: 'list', of: { k: 'float' } }],
+  ]);
   assert.equal(comp.fields[0].doc, 'The current value.');
   assert.equal(comp.fields[0].required, false);
   assert.equal(comp.fields[0].constraint.min, -1000);
@@ -121,9 +124,6 @@ test('manifest declares the component, its views and its state', () => {
   assert.equal(comp.fields[0].constraint.format, undefined);
   assert.equal(comp.fields[0].constraint.pattern, undefined);
   assert.equal(comp.fields[1].constraint, undefined);
-  assert.equal(comp.types[0].kind, 'ty-float');
-  assert.equal(comp.types[1].kind, 'ty-list');
-  assert.equal(comp.types[1].elem, 0);
   assert.equal(comp.handlers, undefined);
   // `doubled` and `triple` are ANSWERS, and an answer is an ordinary message:
   // it arrives in `receives` beside the ones a parent sends.

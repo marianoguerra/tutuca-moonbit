@@ -107,7 +107,7 @@ fn Checker::property_action(
   }
   guard self.def.field(name) is Some(field) else { return }
   let allowed = match field.ty {
-    TList(_) =>
+    TyList(_) =>
       operation
       is ("push"
       | "insertAt"
@@ -118,7 +118,7 @@ fn Checker::property_action(
       | "delete"
       | "remove"
       | "clear")
-    TOMap(_) =>
+    TyOMap(_) =>
       operation
       is ("setAt"
       | "set"
@@ -127,7 +127,7 @@ fn Checker::property_action(
       | "delete"
       | "remove"
       | "clear")
-    TSet | TFlags(_) =>
+    TySet | TyFlags(_, _) =>
       operation is ("add" | "toggle" | "delete" | "remove" | "clear")
     _ => false
   }
@@ -164,8 +164,8 @@ fn Checker::ty_of(
           STy(t) => Some(t)
           _ => None
         }
-      "key" => Some(TText)
-      "index" => Some(TInt(width=32, signed=true))
+      "key" => Some(TyText)
+      "index" => Some(TyInt(width=32, signed=true))
       _ => None
     }
   }
@@ -183,16 +183,16 @@ fn Checker::ty_of(
   if val.as_seq_access() is Some((seq, _)) {
     // `.seq[.key]` reads one entry out of the collection.
     return match self.ty_of(@tutuca.Expr::field(seq), sc) {
-      Some(t) => t.elem()
+      Some(t) => t.iterable_elem()
       None => None
     }
   }
   match val {
     ELit(lit~, ..) =>
       match lit {
-        LStr(_) => Some(TText)
-        LNum(_) => Some(TFloat)
-        LBool(_) => Some(TBool)
+        LStr(_) => Some(TyText)
+        LNum(_) => Some(TyFloat)
+        LBool(_) => Some(TyBool)
         _ => None
       }
     _ => None
@@ -316,7 +316,7 @@ fn Checker::val(
 /// The field names a type offers, for the "did you mean" tail.
 fn Checker::members_of(self : Checker, t : @statedef.StateTy) -> Array[String] {
   match t {
-    TRecord(n) =>
+    TyRecord(n) =>
       match self.def.user_ty(n) {
         Some({ kind: URecord(fs), .. }) => fs.map(f => f.name)
         _ => []
@@ -456,7 +456,7 @@ fn Checker::node(
             )
           }
           // `option<comp>` is renderable through its inner type, so ask the
-          // type which component it names rather than matching TComp here.
+          // type which component it names rather than matching TyComp here.
           self.child_view(t.component_named(), d.view_val)
         }
         None => ()
@@ -499,21 +499,21 @@ fn Checker::node(
       // The body's scope is the ELEMENT type — the thing view_surface could
       // never look at.
       //
-      // `elem()` answers TAny for a collection of child components, because a
+      // `elem()` answers TyAny for a collection of child components, because a
       // StateTy cannot spell "that component's state record". The name is in
-      // the type though (`TComp(Some("Todo"))`), so ask the program for the
+      // the type though (`TyComp(Some("Todo"))`), so ask the program for the
       // sibling's schema and check the body against it. Absent from the
       // table — an untyped `component` slot, a component this job cannot see —
       // and it stays opaque.
       let item = match self.ty_of(it.val, sc) {
         Some(t) =>
-          match t.elem() {
-            Some(TComp(Some(c))) =>
+          match t.iterable_elem() {
+            Some(TyComp(Some(c))) =>
               match self.prog.defs.get(c) {
                 Some(d) => SComp(d)
                 None => SOpaque
               }
-            Some(TAny) | Some(TComp(None)) => SOpaque
+            Some(TyAny) | Some(TyComp(None)) => SOpaque
             Some(e) => STy(e)
             None =>
               raise NotIterable(

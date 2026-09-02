@@ -13,7 +13,7 @@ priv struct CounterState {
 ///|
 impl @tutuca.Fields for CounterState with fn schema() {
   @tutuca.SchemaInfo::new(fingerprint="counter_state", fields=[
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
   ])
 }
 

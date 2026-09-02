@@ -697,7 +697,7 @@ components in one, 19 in the other. Every one of them was silent.
   it reads — but a domain-derived draw only produces the shape it inverted, so
   `sel : String?` under `where sel is key of .byKey` was never generated empty:
   the one state the `?` exists for. Fixed once in `field_gen` rather than per
-  relation, at the same 1:2 ratio as the unconstrained `TOption` draw, so
+  relation, at the same 1:2 ratio as the unconstrained `TyOption` draw, so
   adding a `where` does not quietly change how often a field is empty.
 
   `or none` is not the fix and was never about optionality: it admits SENTINEL

@@ -183,9 +183,9 @@ test "parsing: one sigil, one form" {
       #|Some(
       #|  ETpl(
       #|    parts=[
-      #|      TText(text="hi ", from_macro=false),
+      #|      TyText(text="hi ", from_macro=false),
       #|      TExpr(ERead(place={ root: PState("name"), steps: [] })),
-      #|      TText(text="!", from_macro=false),
+      #|      TyText(text="!", from_macro=false),
       #|    ],
       #|  ),
       #|)

@@ -231,7 +231,7 @@ pub fn register_bundle(
         express_intents: p.express_intents,
         properties: p.properties.map(prop => @tutuca.PropertyInfo::{
           name: prop.name,
-          ty: ty_info_at(def.types, prop.ty),
+          ty: prop.ty,
           public_: true,
           writable: prop.writable,
         }),
@@ -478,7 +478,7 @@ fn screen_constraints(into : Array[String], def : DynComponentDef) -> Unit {
 /// decides what is dropped and the other is what says so.
 fn numeric_bound_applies(ty : @tutuca.TyInfo) -> Bool {
   match ty {
-    TyInt | TyFloat | TyAny => true
+    TyInt(width=32, signed=true) | TyFloat | TyAny => true
     TyOption(inner) => numeric_bound_applies(inner)
     _ => false
   }
@@ -487,7 +487,8 @@ fn numeric_bound_applies(ty : @tutuca.TyInfo) -> Bool {
 ///|
 fn length_bound_applies(ty : @tutuca.TyInfo) -> Bool {
   match ty {
-    TyBool | TyInt | TyFloat | TyComp(_) | TyTable => false
+    TyBool | TyInt(width=32, signed=true) | TyFloat | TyComp(_) | TyTable =>
+      false
     TyOption(inner) => length_bound_applies(inner)
     _ => true
   }

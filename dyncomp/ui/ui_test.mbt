@@ -185,7 +185,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         fields: [
           {
             name: "count",
-            ty: 0,
+            ty: TyFloat,
             doc: "The current value.",
             required: false,
             constraint: Some({
@@ -196,7 +196,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
           },
           {
             name: "label",
-            ty: 1,
+            ty: TyText,
             doc: "What to call it.",
             required: true,
             constraint: None,
@@ -207,7 +207,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
           // field they never touched.
           {
             name: "history",
-            ty: 2,
+            ty: TyList(TyFloat),
             doc: "Every value it has held.",
             required: false,
             constraint: None,

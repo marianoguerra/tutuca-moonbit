@@ -41,31 +41,10 @@
           "src": "views/TicTacToe.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "square",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "squares",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "record", "name": "square"}},
           "doc": "The nine squares, left to right and top to bottom: each a mark (\"X\", \"O\" or blank) and whether it is part of the winning line.",
           "required": false,
           "constraint": {

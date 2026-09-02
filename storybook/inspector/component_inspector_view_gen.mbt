@@ -636,8 +636,8 @@ impl @component.Fields for CompSectionState with fn schema() {
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
-      @component.FieldInfo::new("itemsPerPage", TyInt),
-      @component.FieldInfo::new("currentPage", TyInt),
+      @component.FieldInfo::new("itemsPerPage", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("currentPage", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("label", TyText),
     ],
     view_handlers=["nextPage", "prevPage", "toggle"],
@@ -821,7 +821,7 @@ impl @component.Fields for ComponentInspectorState with fn schema() {
     fingerprint="c12de55a2abbc742",
     fields=[
       @component.FieldInfo::new("compName", TyText),
-      @component.FieldInfo::new("compId", TyInt),
+      @component.FieldInfo::new("compId", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("sections", TyList(TyComp(Some("CompSection")))),
     ],
     intents=["toggleAllSections", "toggleAllViews"],

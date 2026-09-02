@@ -74,7 +74,7 @@ impl @component.Fields for TableRowState with fn schema() {
     fingerprint="ebda895245a140e9",
     fields=[
       @component.FieldInfo::new("name", TyText),
-      @component.FieldInfo::new("qty", TyInt),
+      @component.FieldInfo::new("qty", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("price", TyFloat),
     ],
     domains=[

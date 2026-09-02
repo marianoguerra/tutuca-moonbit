@@ -212,11 +212,11 @@ pub(all) struct FieldDomain {
 
 pub(all) struct FieldInfo {
   name : String
-  ty : TyInfo
+  ty : Ty
 }
 pub fn FieldInfo::default(Self) -> Value
 pub fn FieldInfo::kind(Self) -> FieldKind
-pub fn FieldInfo::new(String, TyInfo) -> Self
+pub fn FieldInfo::new(String, Ty) -> Self
 
 pub(all) enum FieldKind {
   FBool
@@ -391,7 +391,7 @@ pub(all) enum Position {
 
 pub(all) struct PropertyInfo {
   name : String
-  ty : TyInfo
+  ty : Ty
   public_ : Bool
   writable : Bool
 } derive(Eq, @debug.Debug)
@@ -423,8 +423,8 @@ pub(all) struct ProtocolInfo {
   express_intents : Array[String]
   properties : Array[PropertyInfo]
   views : Array[String]
-  provides : Array[(String, TyInfo)]
-  lookups : Array[(String, TyInfo)]
+  provides : Array[(String, Ty)]
+  lookups : Array[(String, Ty)]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum ProtocolIssueCode {
@@ -562,32 +562,41 @@ pub(all) enum TplPart {
 pub impl Eq for TplPart
 pub impl @debug.Debug for TplPart
 
-pub(all) enum TyInfo {
+#alias(TyInfo)
+pub(all) enum Ty {
   TyBool
-  TyInt
+  TyInt(width~ : Int, signed~ : Bool)
   TyFloat
   TyText
-  TyList(TyInfo)
-  TyTuple(Array[TyInfo])
-  TyOption(TyInfo)
+  TyList(Ty)
+  TyTuple(Array[Ty])
+  TyOption(Ty)
   TyRecord(String)
   TyEnum(String)
   TyVariant(String)
   TyFlags(String, Array[String])
   TySet
-  TyOMap(TyInfo)
+  TyOMap(Ty)
   TyComp(String?)
   TyCompProtocols(Array[String])
   TyTable
   TyAny
 } derive(Eq, @debug.Debug)
-pub fn TyInfo::accepts(Self, Value) -> Bool
-pub fn TyInfo::elem(Self) -> Self?
-pub fn TyInfo::kind(Self) -> FieldKind
-pub fn TyInfo::members(Self) -> Array[String]
-pub fn TyInfo::show_source(Self) -> String
-pub fn TyInfo::slot(Self) -> String?
-pub fn TyInfo::zero(Self) -> Value
+pub fn Ty::accepts(Self, Value) -> Bool
+pub fn Ty::component_named(Self) -> String?
+pub fn Ty::elem(Self) -> Self?
+pub fn Ty::in_struct(Self) -> Bool
+pub fn Ty::is_boolish(Self) -> Bool
+pub fn Ty::is_renderable(Self) -> Bool
+pub fn Ty::iterable_elem(Self) -> Self?
+pub fn Ty::kind(Self) -> FieldKind
+pub fn Ty::members(Self) -> Array[String]
+pub fn Ty::of_json(Json) -> Self
+pub fn Ty::show_source(Self) -> String
+pub fn Ty::slot(Self) -> String?
+pub fn Ty::to_json(Self) -> Json
+pub fn Ty::to_mbt_source(Self) -> String
+pub fn Ty::zero(Self) -> Value
 
 pub(all) enum UnOp {
   UNot

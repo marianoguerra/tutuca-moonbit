@@ -443,7 +443,7 @@ test "an on handler's argument types come from the views' call sites" {
   // With the call site saying `@on.click="add 1"`, the parameter is a number
   // and writing it into a string field is caught.
   let surface : @check.Surface = {
-    inputs: { "add": [Some(TFloat)] },
+    inputs: { "add": [Some(TyFloat)] },
     knows_views: true,
     open_senders: false,
     comps: [],
@@ -458,7 +458,7 @@ test "an on handler's argument types come from the views' call sites" {
 test "a parameter list that disagrees with the call sites" {
   let decls = @tscript.parse_script("receive add(d, e) { .count = d }")
   let surface : @check.Surface = {
-    inputs: { "add": [Some(TFloat)] },
+    inputs: { "add": [Some(TyFloat)] },
     knows_views: true,
     open_senders: false,
     comps: [],

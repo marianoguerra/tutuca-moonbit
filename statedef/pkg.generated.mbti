@@ -90,7 +90,7 @@ pub(all) enum CmpOp {
 pub(all) struct FieldDef {
   name : String
   binding : String
-  ty : StateTy
+  ty : @core.Ty
   doc : String?
   attrs : Array[(String, AttrValue)]
 } derive(Eq, @debug.Debug)
@@ -118,7 +118,7 @@ pub(all) struct MsgDef {
   source_name : String
   name : String
   variant : String
-  payload : Array[StateTy]
+  payload : Array[@core.Ty]
   doc : String?
 } derive(Eq, @debug.Debug)
 
@@ -129,7 +129,7 @@ pub(all) enum Operand {
 
 pub(all) struct PropertyDef {
   name : String
-  ty : StateTy
+  ty : @core.Ty
   public_ : Bool
   writable : Bool
   getter : String?
@@ -242,43 +242,17 @@ pub(all) struct StateDef {
 pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::domains_src(Self) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
-pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
+pub fn StateDef::field_of(Self, @core.Ty, String) -> @core.Ty?
 pub fn StateDef::invariants(Self) -> Array[String]
-pub fn StateDef::member_ty(Self, String) -> StateTy?
-pub fn StateDef::moonbit_ty(Self, StateTy) -> String
+pub fn StateDef::member_ty(Self, String) -> @core.Ty?
+pub fn StateDef::moonbit_ty(Self, @core.Ty) -> String
 pub fn StateDef::operation_name(Self, String) -> String?
 pub fn StateDef::property(Self, String) -> PropertyDef?
-pub fn StateDef::resolve_ty(Self, String, Array[StateTy]) -> StateTy?
+pub fn StateDef::resolve_ty(Self, String, Array[@core.Ty]) -> @core.Ty?
 pub fn StateDef::rule(Self, String) -> RuleDecl?
-pub fn StateDef::to_value_src(Self, StateTy, String) -> String
-pub fn StateDef::ty_info_src(Self, StateTy) -> String
+pub fn StateDef::to_value_src(Self, @core.Ty, String) -> String
 pub fn StateDef::user_ty(Self, String) -> UserTy?
-pub fn StateDef::zero_expr(Self, StateTy) -> String
-
-pub(all) enum StateTy {
-  TBool
-  TInt(width~ : Int, signed~ : Bool)
-  TFloat
-  TText
-  TList(StateTy)
-  TTuple(Array[StateTy])
-  TOption(StateTy)
-  TRecord(String)
-  TEnum(String)
-  TVariant(String)
-  TFlags(String)
-  TSet
-  TOMap(StateTy)
-  TComp(String?)
-  TCompProtocols(Array[String])
-  TAny
-} derive(Eq, @debug.Debug)
-pub fn StateTy::component_named(Self) -> String?
-pub fn StateTy::elem(Self) -> Self?
-pub fn StateTy::in_struct(Self) -> Bool
-pub fn StateTy::is_boolish(Self) -> Bool
-pub fn StateTy::is_renderable(Self) -> Bool
-pub fn StateTy::show_source(Self) -> String
+pub fn StateDef::zero_expr(Self, @core.Ty) -> String
 
 pub(all) struct UserTy {
   source_name : String
@@ -309,5 +283,7 @@ pub(all) struct WhereDecl {
 
 // Type aliases
 pub using @core {type Span}
+
+pub using @core {type Ty as StateTy}
 
 // Traits

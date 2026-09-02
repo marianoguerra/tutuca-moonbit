@@ -201,7 +201,9 @@ impl @component.Fields for TrafficLightState with fn schema() {
   @component.SchemaInfo::new(
     name="TrafficLight",
     fingerprint="d35ce90bf3d27383",
-    fields=[@component.FieldInfo::new("lightIndex", TyInt)],
+    fields=[
+      @component.FieldInfo::new("lightIndex", TyInt(width=32, signed=true)),
+    ],
     view_handlers=["nextLight"],
     receives=["nextLight"],
     methods=["light"],

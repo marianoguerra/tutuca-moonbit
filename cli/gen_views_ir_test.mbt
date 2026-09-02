@@ -283,8 +283,8 @@ impl @component.Fields for BadgeState with fn decode(f) {
 impl @component.Fields for IrState with fn schema() {
   @component.SchemaInfo::new(fingerprint="ir_state", fields=[
     @component.FieldInfo::new("label", TyText),
-    @component.FieldInfo::new("count", TyInt),
-    @component.FieldInfo::new("history", TyList(TyInt)),
+    @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
+    @component.FieldInfo::new("history", TyList(TyInt(width=32, signed=true))),
   ])
 }
 

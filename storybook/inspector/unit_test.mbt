@@ -582,7 +582,7 @@ impl @component.Fields for RichState with fn schema() {
     fingerprint="rich_state",
     fields=[
       @component.FieldInfo::new("title", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("tags", TyList(TyAny)),
       @component.FieldInfo::new("open", TyBool),
     ],
@@ -633,7 +633,7 @@ impl @component.Fields for DescribedState with fn schema() {
     fingerprint="deadbeefcafe0001",
     fields=[
       @component.FieldInfo::new("title", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("tags", TyList(TyText)),
     ],
     view_handlers=["inc", "reset"],

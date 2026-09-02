@@ -328,7 +328,7 @@ impl @component.Fields for RichSampleState with fn schema() {
     fingerprint="401c6cac8081bbaf",
     fields=[
       @component.FieldInfo::new("title", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("tags", TyList(TyText)),
       @component.FieldInfo::new("open", TyBool),
     ],
@@ -552,7 +552,7 @@ impl @component.Fields for SampleCardState with fn schema() {
     fingerprint="98481062f338a147",
     fields=[
       @component.FieldInfo::new("title", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("tags", TyList(TyText)),
       @component.FieldInfo::new("open", TyBool),
     ],

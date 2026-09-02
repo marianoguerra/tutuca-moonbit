@@ -351,7 +351,7 @@ impl @component.Fields for ChattyState with fn decode(f) {
 impl @component.Fields for EditorState with fn schema() {
   @component.SchemaInfo::new(fingerprint="editor_state", fields=[
     @component.FieldInfo::new("text", TyText),
-    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
   ])
 }
 
@@ -366,6 +366,6 @@ impl @component.Fields for PickerState with fn schema() {
 ///|
 impl @component.Fields for ChattyState with fn schema() {
   @component.SchemaInfo::new(fingerprint="chatty_state", fields=[
-    @component.FieldInfo::new("n", TyInt),
+    @component.FieldInfo::new("n", TyInt(width=32, signed=true)),
   ])
 }

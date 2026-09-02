@@ -951,7 +951,7 @@ impl @component.Fields for TodoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="todo_state", fields=[
     @component.FieldInfo::new("title", TyText),
     @component.FieldInfo::new("done", TyBool),
-    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     @component.FieldInfo::new("items", TyList(TyAny)),
     @component.FieldInfo::new("tags", TyOMap(TyAny)),
   ])
@@ -1044,7 +1044,7 @@ impl @component.Fields for SetInState with fn schema() {
 ///|
 impl @component.Fields for CountOnly with fn schema() {
   @component.SchemaInfo::new(fingerprint="count_only", fields=[
-    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
   ])
 }
 
@@ -1265,7 +1265,7 @@ test "a @when is handed the stack too, through the alter seam" {
 /// not have — or missing one it does.
 test "the generated table separates what writes from what only reads" {
   let schema = @component.SchemaInfo::new(fingerprint="writers", fields=[
-    @component.FieldInfo::new("items", TyList(TyInt)),
+    @component.FieldInfo::new("items", TyList(TyInt(width=32, signed=true))),
     @component.FieldInfo::new("tags", TySet),
     @component.FieldInfo::new("done", TyBool),
   ])

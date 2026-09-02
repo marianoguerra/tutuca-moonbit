@@ -101,7 +101,7 @@ state List {
 }
 ```
 
-The constraint survives in `TyInfo`. Installing a dynamic component checks its
+The constraint survives in the declared `Ty`. Installing a dynamic component checks its
 runtime schema and explicit protocol claims. A mismatch rejects that value,
 keeps the previous/default slot value, and emits `PROTOCOL_TARGET_MISMATCH`.
 

@@ -231,7 +231,7 @@ fn escape_prelude(g : Gen) -> Array[@abi.Field] {
     )
     // Arithmetic is the common case and `tc_num_of(get_x(s))` is the common
     // line, so a number field gets the shorter one too.
-    if f.ty is (TInt(..) | TFloat) {
+    if f.ty is (TyInt(..) | TyFloat) {
       fs.push(
         func(g.sym("num_", f.name), params=[("s", rec_)], results=[f64_], body=[
           call("tc_num_of", [call("tc_get", [get("s"), key])]),

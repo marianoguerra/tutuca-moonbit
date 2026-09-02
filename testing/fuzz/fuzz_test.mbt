@@ -118,8 +118,8 @@ impl @component.Fields for TillState with fn schema() {
     name="Till",
     fingerprint="fuzz-till",
     fields=[
-      @component.FieldInfo::new("till", TyInt),
-      @component.FieldInfo::new("float_", TyInt),
+      @component.FieldInfo::new("till", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("float_", TyInt(width=32, signed=true)),
     ],
     receives=["draw"],
     methods=["canDraw", "floatCovered"],
@@ -525,7 +525,7 @@ impl @component.Fields for AlbumState with fn schema() {
     fingerprint="fuzz-album",
     fields=[
       @component.FieldInfo::new("photos", TyList(TyText)),
-      @component.FieldInfo::new("cursor", TyInt),
+      @component.FieldInfo::new("cursor", TyInt(width=32, signed=true)),
     ],
     domains=[
       { field: "cursor", domain: DIndexOf(field="photos", allow_none=false), },

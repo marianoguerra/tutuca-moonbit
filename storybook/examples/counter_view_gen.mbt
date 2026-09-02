@@ -197,17 +197,17 @@ impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
     fingerprint="4de0b2e7e5e16c55",
-    fields=[@component.FieldInfo::new("count", TyInt)],
+    fields=[@component.FieldInfo::new("count", TyInt(width=32, signed=true))],
     properties=[
       @tutuca.PropertyInfo::{
         name: "count",
-        ty: TyInt,
+        ty: TyInt(width=32, signed=true),
         public_: true,
         writable: true,
       },
       @tutuca.PropertyInfo::{
         name: "magnitude",
-        ty: TyInt,
+        ty: TyInt(width=32, signed=true),
         public_: true,
         writable: true,
       },

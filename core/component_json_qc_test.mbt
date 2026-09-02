@@ -56,7 +56,10 @@ fn gen_scalar_ty() -> @gen.Gen[(@core.TyInfo, @core.Value)] {
       ((TyBool : @core.TyInfo), (Bool(b) : @core.Value))
     }),
     @gen.int_range(-50, 50).fmap(n => {
-      ((TyInt : @core.TyInfo), (Num(n.to_double()) : @core.Value))
+      (
+        (TyInt(width=32, signed=true) : @core.TyInfo),
+        (Num(n.to_double()) : @core.Value),
+      )
     }),
     @gen.one_of_array(["", "x", "a/b", "c~d", "hello"]).fmap(s => {
       ((TyText : @core.TyInfo), (Str(s) : @core.Value))

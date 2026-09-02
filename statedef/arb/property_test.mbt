@@ -143,11 +143,10 @@ fn well_typed(
     // (`statedef/info/info.mbt`). A GENERATOR has the declaration in hand and
     // so names the case — which is the one place `arb` knows more than `info`
     // — but the zero it is being compared against does not.
-    if @info.ty_info(def, f.ty)
-      is (TyComp(_) | TyCompProtocols(_) | TyVariant(_)) {
+    if f.ty is (TyComp(_) | TyCompProtocols(_) | TyVariant(_)) {
       continue
     }
-    guard @info.ty_info(def, f.ty).accepts(v) else { return false }
+    guard f.ty.accepts(v) else { return false }
   }
   true
 }
@@ -348,7 +347,7 @@ test "property: a generated dispatch is one the component declares" {
         }
         guard args.length() == m.payload.length() else { return false }
         for i, ty in m.payload {
-          guard @info.ty_info(def, ty).accepts(args[i]) else { return false }
+          guard ty.accepts(args[i]) else { return false }
         }
         return true
       }

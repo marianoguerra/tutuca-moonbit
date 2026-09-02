@@ -41,10 +41,16 @@ test "a state block emits the struct, its zero and its declared field kinds" {
   // exactly one home now, and it is the one an inspector holding a bare
   // `@tutuca.Value` can read.
   assert_false(src.contains("enum CounterField"))
-  assert_true(src.contains("FieldInfo::new(\"count\", TyInt)"))
+  assert_true(
+    src.contains("FieldInfo::new(\"count\", TyInt(width=32, signed=true))"),
+  )
   assert_true(src.contains("FieldInfo::new(\"label\", TyText)"))
   // Structural, not two strings: a reader can descend into the list.
-  assert_true(src.contains("FieldInfo::new(\"history\", TyList(TyInt))"))
+  assert_true(
+    src.contains(
+      "FieldInfo::new(\"history\", TyList(TyInt(width=32, signed=true)))",
+    ),
+  )
 }
 
 ///|

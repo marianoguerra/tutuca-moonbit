@@ -267,8 +267,14 @@ impl @component.Fields for PsEntryState with fn schema() {
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
       @component.FieldInfo::new("lang", TyText),
-      @component.FieldInfo::new("startYear", TyOption(TyInt)),
-      @component.FieldInfo::new("endYear", TyOption(TyInt)),
+      @component.FieldInfo::new(
+        "startYear",
+        TyOption(TyInt(width=32, signed=true)),
+      ),
+      @component.FieldInfo::new(
+        "endYear",
+        TyOption(TyInt(width=32, signed=true)),
+      ),
       @component.FieldInfo::new("role", TyOption(TyText)),
       @component.FieldInfo::new("featured", TyBool),
       @component.FieldInfo::new("url", TyText),

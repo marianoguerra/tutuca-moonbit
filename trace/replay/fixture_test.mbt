@@ -24,7 +24,7 @@ impl @component.Fields for RowState with fn schema() {
     fingerprint="row-v1",
     fields=[
       @component.FieldInfo::new("label", TyText),
-      @component.FieldInfo::new("n", TyInt),
+      @component.FieldInfo::new("n", TyInt(width=32, signed=true)),
     ],
     view_names=["main"],
     receives=["bump", "reset", "save", "saved"],

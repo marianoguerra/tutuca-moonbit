@@ -152,14 +152,14 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         fields: [
           {
             name: "count",
-            ty: 0,
+            ty: TyFloat,
             doc: "The current value.",
             required: false,
             constraint: None,
           },
           {
             name: "label",
-            ty: 1,
+            ty: TyText,
             doc: "What to call it.",
             required: false,
             constraint: None,
@@ -224,7 +224,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         fields: [
           {
             name: "label",
-            ty: 0,
+            ty: TyText,
             doc: "What it says.",
             required: false,
             constraint: None,

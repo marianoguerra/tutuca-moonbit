@@ -59,7 +59,7 @@ impl @component.Fields for IconGalleryState with fn decode(f) {
 impl @component.Fields for IconGalleryState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="1147465e1ad9f573",
-    fields=[@component.FieldInfo::new("size", TyInt)],
+    fields=[@component.FieldInfo::new("size", TyInt(width=32, signed=true))],
     domains=[{ field: "size", domain: DBetween(lo=DLit(16), hi=DLit(80)), }],
   )
 }
@@ -295,7 +295,9 @@ impl @component.Fields for BarChartState with fn schema() {
   @component.SchemaInfo::new(
     name="BarChart",
     fingerprint="b116f9f5d1dcbeb9",
-    fields=[@component.FieldInfo::new("values", TyList(TyInt))],
+    fields=[
+      @component.FieldInfo::new("values", TyList(TyInt(width=32, signed=true))),
+    ],
     view_handlers=["addBar", "randomize", "removeBar"],
     receives=["addBar", "removeBar", "randomize"],
     methods=["hasRoom", "hasSpare", "neverEmpty"],

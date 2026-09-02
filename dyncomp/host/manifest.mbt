@@ -11,8 +11,14 @@ pub(all) struct DynViewDef {
 } derive(Debug, Eq)
 
 ///|
-/// One entry of a component's flat type table. WIT has no recursive types, so
-/// a compound points at its parts by index; `to_ty_info` rebuilds the nesting.
+/// One entry of a component's flat type table.
+///
+/// The OLD wire form, kept for one release. A type crossed as an index into a
+/// per-component table, and a compound pointed at its parts by index because
+/// WIT has no recursive types — but the writer never filled `elem`, so every
+/// list, option and map in every manifest read back as "of anything". A type
+/// is written as the tree it is now (`@tutuca.Ty::to_json`); this is what a
+/// bundle published before that still decodes through.
 pub(all) struct DynTyDef {
   kind : String
   elem : Int?
@@ -24,7 +30,7 @@ pub(all) struct DynTyDef {
 ///|
 pub(all) struct DynFieldDef {
   name : String
-  ty : Int
+  ty : @tutuca.Ty
   /// What the field is FOR. The one fact neither the type table nor the views
   /// can supply, and what a search index ranks on.
   doc : String
@@ -35,7 +41,7 @@ pub(all) struct DynFieldDef {
 ///|
 pub(all) struct DynPropertyDef {
   name : String
-  ty : Int
+  ty : @tutuca.Ty
   public_ : Bool
   writable : Bool
   doc : String
@@ -536,7 +542,7 @@ fn ty_info_at(
   }
   match t.kind {
     "ty-bool" => TyBool
-    "ty-int" => TyInt
+    "ty-int" => TyInt(width=32, signed=true)
     "ty-float" => TyFloat
     "ty-text" => TyText
     "ty-list" => TyList(inner())
@@ -567,14 +573,32 @@ fn ty_info_at(
 pub fn DynComponentDef::field_infos(
   self : DynComponentDef,
 ) -> Array[@tutuca.FieldInfo] {
-  self.fields.map(f => {
-    @tutuca.FieldInfo::new(f.name, ty_info_at(self.types, f.ty))
-  })
+  self.fields.map(f => @tutuca.FieldInfo::new(f.name, f.ty))
+}
+
+///|
+/// The declared type of one member, in either wire form.
+///
+/// An OBJECT is the type itself (`@tutuca.Ty::of_json`). A NUMBER is an index
+/// into the component's old flat table, and the shim that reads one is here for
+/// one release — `examples/dyncomp-dice` ships a manifest written that way.
+/// Anything else is `TyAny`, which is the same "cannot say" both forms answer
+/// for a kind the host does not recognize.
+fn parse_member_ty(
+  m : Map[String, Json],
+  types : Array[DynTyDef],
+) -> @tutuca.Ty {
+  match m.get("ty") {
+    Some(Object(_) as j) => @tutuca.Ty::of_json(j)
+    Some(Number(n, ..)) => ty_info_at(types, n.to_int())
+    _ => TyAny
+  }
 }
 
 ///|
 fn parse_properties(
   c : Map[String, Json],
+  types : Array[DynTyDef],
 ) -> Array[DynPropertyDef] raise ManifestError {
   guard c.get("properties") is Some(Array(items)) else {
     raise ManifestError("manifest: missing properties array")
@@ -586,7 +610,7 @@ fn parse_properties(
     }
     out.push({
       name: str_field(p, "name"),
-      ty: int_field(p, "ty"),
+      ty: parse_member_ty(p, types),
       public_: bool_field(p, "public"),
       writable: bool_field(p, "writable"),
       doc: opt_str(p, "doc"),
@@ -602,7 +626,8 @@ fn parse_properties(
 /// The extra spelling is not a convenience. A protocol is an INTERFACE, and a
 /// manifest written by hand — or by a compiler that had only the member list —
 /// can name what it requires without claiming a type for it; such a member
-/// reads back as `TyAny` (`ty` = -1, which `ty_info_at` answers that way).
+/// reads back as `TyAny`, which is what "cannot say" is spelled everywhere
+/// else here.
 /// Refusing it would take a whole bundle down over a member list that named
 /// its members correctly.
 ///
@@ -610,17 +635,20 @@ fn parse_properties(
 /// stance `parse_protocols` already takes one level up: a protocol nobody can
 /// read is a protocol the host does not offer, and the components around it
 /// still register.
-fn parse_protocol_properties(c : Map[String, Json]) -> Array[DynPropertyDef] {
+fn parse_protocol_properties(
+  c : Map[String, Json],
+  types : Array[DynTyDef],
+) -> Array[DynPropertyDef] {
   let out : Array[DynPropertyDef] = []
   guard c.get("properties") is Some(Array(items)) else { return out }
   for item in items {
     match item {
       String(name) =>
-        out.push({ name, ty: -1, public_: true, writable: false, doc: "", })
+        out.push({ name, ty: TyAny, public_: true, writable: false, doc: "", })
       Object(p) =>
         out.push({
           name: opt_str(p, "name"),
-          ty: opt_int(p, "ty").unwrap_or(-1),
+          ty: parse_member_ty(p, types),
           // A protocol member is public by definition — it is what the
           // protocol PROMISES — so a projection that omits the flag is not
           // saying "private".
@@ -643,7 +671,7 @@ pub fn DynComponentDef::property_infos(
 ) -> Array[@tutuca.PropertyInfo] {
   self.properties.map(p => @tutuca.PropertyInfo::{
     name: p.name,
-    ty: ty_info_at(self.types, p.ty),
+    ty: p.ty,
     public_: p.public_,
     writable: p.writable,
   })
@@ -696,6 +724,7 @@ fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise ManifestError {
 /// with JSON.stringify over the jco-lifted record (camelCase keys).
 fn parse_protocols(
   c : Map[String, Json],
+  types : Array[DynTyDef],
 ) -> Array[DynProtocolDef] raise ManifestError {
   let out : Array[DynProtocolDef] = []
   guard c.get("protocols") is Some(Array(items)) else { return out }
@@ -707,7 +736,7 @@ fn parse_protocols(
       handle_intents: str_array(p, "handleIntents"),
       express_messages: str_array(p, "expressMessages"),
       express_intents: str_array(p, "expressIntents"),
-      properties: parse_protocol_properties(p),
+      properties: parse_protocol_properties(p, types),
       views: str_array(p, "views"),
       provides: str_array(p, "provides"),
       lookups: str_array(p, "lookups"),
@@ -777,6 +806,7 @@ pub fn DynManifest::from_json_string(
       views.push({ name: str_field(v, "name"), html: str_field(v, "html"), })
     }
     let fields : Array[DynFieldDef] = []
+    let types = parse_types(c)
     match c.get("fields") {
       Some(Array(fs)) =>
         for fj in fs {
@@ -785,7 +815,7 @@ pub fn DynManifest::from_json_string(
           }
           fields.push({
             name: str_field(f, "name"),
-            ty: int_field(f, "ty"),
+            ty: parse_member_ty(f, types),
             doc: opt_str(f, "doc"),
             required: bool_field(f, "required"),
             constraint: parse_constraint(f),
@@ -800,9 +830,9 @@ pub fn DynManifest::from_json_string(
       category: opt_str(c, "category"),
       message_docs: parse_message_docs(c),
       views,
-      types: parse_types(c),
+      types,
       fields,
-      properties: parse_properties(c),
+      properties: parse_properties(c, types),
       domains: match c.get("domains") {
         Some(d) => @tutuca.domains_of_json(d)
         None => []
@@ -812,7 +842,7 @@ pub fn DynManifest::from_json_string(
       express_messages: str_array(c, "expressMessages"),
       express_intents: str_array(c, "expressIntents"),
       implements: str_array(c, "implements"),
-      protocols: parse_protocols(c),
+      protocols: parse_protocols(c, types),
       property_bindings: parse_protocol_bindings(c, "propertyBindings"),
       view_bindings: parse_protocol_bindings(c, "viewBindings"),
       provide_bindings: parse_protocol_bindings(c, "provideBindings"),

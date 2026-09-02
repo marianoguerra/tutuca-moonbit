@@ -98,32 +98,12 @@ fn component_json(
   views : @viewfile.ViewSet,
   inits : Array[@statedef.InitState],
 ) -> Json {
-  let types : Array[Json] = []
-  let ty_index : Map[String, Int] = Map([])
-  // One type table per component, and one way into it. A declared type is
-  // written down once and referred to by INDEX everywhere after, which is what
-  // lets a field, a property and a protocol member that share a type share an
-  // entry rather than three copies of it.
-  fn intern(t : @statedef.StateTy) -> Int {
-    let key = t.show_source()
-    match ty_index.get(key) {
-      Some(i) => i
-      None => {
-        let i = types.length()
-        types.push(ty_entry(t))
-        ty_index[key] = i
-        i
-      }
-    }
-  }
-
   let fields : Array[Json] = []
   for f in g.fields {
-    let at = intern(f.ty)
     fields.push(
       Json::object({
         "name": Json::string(f.name),
-        "ty": Json::number(at.to_double()),
+        "ty": f.ty.to_json(),
         "doc": Json::string(f.doc.unwrap_or("")),
         "required": Json::boolean(false),
       }),
@@ -131,11 +111,10 @@ fn component_json(
   }
   let properties : Array[Json] = []
   for p in g.def.properties {
-    let at = intern(p.ty)
     properties.push(
       Json::object({
         "name": Json::string(p.name),
-        "ty": Json::number(at.to_double()),
+        "ty": p.ty.to_json(),
         "public": Json::boolean(p.public_),
         "writable": Json::boolean(p.writable),
         "doc": Json::string(p.doc.unwrap_or("")),
@@ -144,7 +123,7 @@ fn component_json(
   }
   // Built BEFORE the object literal below, because a protocol member's type is
   // interned into `types` and the literal writes that array out.
-  let protocol_defs = g.def.protocols.map(p => protocol_json(p, intern))
+  let protocol_defs = g.def.protocols.map(protocol_json)
   // Every name this card answers, of one kind — the ones it compiled and the
   // ones its escape block answered. A host routes by this list, so a name
   // answered in Wax has to be in it for the same reason a refused one has to be
@@ -188,7 +167,6 @@ fn component_json(
     "category": Json::string(""),
     "messageDocs": Json::array(docs),
     "views": Json::array(view_defs),
-    "types": Json::array(types),
     "fields": Json::array(fields),
     "properties": Json::array(properties),
     // The `where` clauses, as the host's own vocabulary rather than as the
@@ -297,10 +275,7 @@ fn component_json(
 ///
 /// The other member lists ARE names, because that is all they have: a message
 /// or a view is named by a protocol and described by whoever implements it.
-fn protocol_json(
-  p : @statedef.ProtocolDef,
-  intern : (@statedef.StateTy) -> Int,
-) -> Json {
+fn protocol_json(p : @statedef.ProtocolDef) -> Json {
   Json::object({
     "id": Json::string(p.id),
     "handleMessages": strings(p.handle_message.map(m => m.name)),
@@ -311,7 +286,7 @@ fn protocol_json(
       p.properties.map(x => {
         Json::object({
           "name": Json::string(x.name),
-          "ty": Json::number(intern(x.ty).to_double()),
+          "ty": x.ty.to_json(),
           // A protocol member is public by definition: it is what the protocol
           // promises, and a private one would promise nothing.
           "public": Json::boolean(true),
@@ -361,33 +336,4 @@ fn is_compiled(g : Gen, d : @tscript.Decl) -> Bool {
 ///|
 fn strings(xs : Array[String]) -> Json {
   Json::array(xs.map(x => Json::string(x)))
-}
-
-///|
-/// The flat type-table entry a declared type projects to.
-fn ty_entry(ty : @statedef.StateTy) -> Json {
-  let (kind, name, members) = match ty {
-    TBool => ("ty-bool", "", [])
-    TInt(..) => ("ty-int", "", [])
-    TFloat => ("ty-float", "", [])
-    TText => ("ty-text", "", [])
-    TList(_) => ("ty-list", "", [])
-    TTuple(_) => ("ty-tuple", "", [])
-    TOption(_) => ("ty-option", "", [])
-    TOMap(_) => ("ty-omap", "", [])
-    TSet => ("ty-set", "", [])
-    TRecord(n) => ("ty-record", n, [])
-    TEnum(n) => ("ty-enum", n, [])
-    TVariant(n) => ("ty-variant", n, [])
-    TFlags(n) => ("ty-flags", n, [])
-    TComp(n) => ("ty-comp", n.unwrap_or(""), [])
-    TCompProtocols(ids) => ("ty-comp-protocols", "", ids)
-    TAny => ("ty-any", "", [])
-  }
-  Json::object({
-    "kind": Json::string(kind),
-    "items": Json::array([]),
-    "name": Json::string(name),
-    "members": strings(members),
-  })
 }

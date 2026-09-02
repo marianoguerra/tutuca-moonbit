@@ -44,49 +44,28 @@
           "src": "views/Scope.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "truncated",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "A cap stopped this before the data ran out. The field that matters most: it is the difference between \"there is no more\" and \"I stopped looking\".",
           "required": false
         },
         {
           "name": "truncatedBy",
-          "ty": 1,
+          "ty": {"k": "text"},
           "doc": "What stopped it, in the caller's own words — `limit`, `depth`.",
           "required": false
         },
         {
           "name": "more",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "There is another page, and nobody asked for it.",
           "required": false
         },
         {
           "name": "notes",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "text"}},
           "doc": "What this answer does not cover, one sentence each. Free text because the reasons are not a closed set: an index that only holds recent public posts and a filter the service applied are both true and neither is a boolean.",
           "required": false
         }
@@ -197,99 +176,28 @@
           "src": "views/Post.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "facet",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "image",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 3,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "external",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "quote",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "video",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "uri",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The record's at:// uri (at://<did>/app.bsky.feed.post/<rkey>), which the permalink is derived from.",
           "required": false
         },
         {
           "name": "displayName",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The author's display name; the handle stands in when it is empty.",
           "required": false
         },
         {
           "name": "handle",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The author's handle, without the leading @.",
           "required": false
         },
         {
           "name": "text",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "What the message says.",
           "required": false,
           "constraint": {
@@ -298,7 +206,7 @@
         },
         {
           "name": "createdAt",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "When it was written, as an ISO 8601 stamp.",
           "required": false,
           "constraint": {
@@ -308,115 +216,115 @@
         },
         {
           "name": "avatar",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The author's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app — the origin the view names — and the initials show through when it is not.",
           "required": false
         },
         {
           "name": "facets",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "record", "name": "facet"}},
           "doc": "Rich-text ranges: { byteStart, byteEnd, kind: link|mention|tag, value }. The offsets are UTF-8 byte offsets, as on the wire.",
           "required": false
         },
         {
           "name": "images",
-          "ty": 4,
+          "ty": {"k": "list", "of": {"k": "record", "name": "image"}},
           "doc": "Attached images as { alt, thumb }. The thumbnail is drawn when it is on cdn.bsky.app; an image without one is its alt text on a chip, which is what every image was before this bundle could load any.",
           "required": false
         },
         {
           "name": "replyCount",
-          "ty": 5,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many replies the record came with.",
           "required": false
         },
         {
           "name": "repostCount",
-          "ty": 5,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many reposts the record came with.",
           "required": false
         },
         {
           "name": "likeCount",
-          "ty": 5,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many likes the record came with.",
           "required": false
         },
         {
           "name": "liked",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "doc": "Whether this reader has liked it, counted on top of likeCount.",
           "required": false
         },
         {
           "name": "reposted",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "doc": "Whether this reader has reposted it, counted on top of repostCount.",
           "required": false
         },
         {
           "name": "depth",
-          "ty": 5,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "required": false,
           "doc": "How deep in a reply tree this message sits; 0 stands on its own. Drawn as that many rails, since an untrusted view has no style attribute to indent with."
         },
         {
           "name": "focus",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "required": false,
           "doc": "Whether this is the message its thread is about; marks the card."
         },
         {
           "name": "foldable",
-          "ty": 5,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "required": false,
           "doc": "How many replies sit under this one in the thread that built it. 0 hides the fold button."
         },
         {
           "name": "folded",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "required": false,
           "doc": "Whether this reader folded those replies away."
         },
         {
           "name": "owned",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "required": false,
           "doc": "Whether this message is a row inside a larger surface — a thread, a feed — rather than standing on its own. A row draws smaller. It keeps its own like / repost / fold either way."
         },
         {
           "name": "repostedBy",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The handle of the account that reposted this message into the feed it arrived in; empty when nobody did. Drawn as a line ABOVE the card — the author is never rewritten, because the message is still the message.",
           "required": false
         },
         {
           "name": "pinned",
-          "ty": 6,
+          "ty": {"k": "bool"},
           "doc": "Whether the feed this arrived in had it pinned to the top.",
           "required": false
         },
         {
           "name": "labels",
-          "ty": 7,
+          "ty": {"k": "list", "of": {"k": "text"}},
           "doc": "Moderation label values on the record (`porn`, `graphic-media`, `!warn`, …), as the labellers set them. Named, never acted on: which labels mean \"hide this\" depends on the reader's own preferences and on which labellers they subscribe to, and neither is in this bundle's reach.",
           "required": false
         },
         {
           "name": "external",
-          "ty": 8,
+          "ty": {"k": "record", "name": "external"},
           "doc": "An unfurled link, as `{ uri, title, description, thumb }`. The uri is a target and never a link — the poster chose that origin, so no view can name it — while the thumbnail is re-hosted by the AppView and is drawn when it is on cdn.bsky.app.",
           "required": false
         },
         {
           "name": "quote",
-          "ty": 9,
+          "ty": {"k": "record", "name": "quote"},
           "doc": "The quoted message, as `{ uri, displayName, handle, avatar, text, createdAt }`. Flat and plain: a quote's own rich text would need a loop inside a loop, which a static view cannot do, so its permalink is under it for whoever wants the real thing.",
           "required": false
         },
         {
           "name": "video",
-          "ty": 10,
+          "ty": {"k": "record", "name": "video"},
           "doc": "An attached video, as `{ thumb, alt }`. There is no player — a playlist is a fetch this bundle cannot make — so a video is its poster frame on the CDN and its alt text.",
           "required": false
         }
@@ -555,61 +463,28 @@
           "src": "views/Feed.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "message",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Scope",
-          "members": []
-        },
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "title",
-          "ty": 3,
+          "ty": {"k": "text"},
           "doc": "What this list IS — \"@bsky.app — posts and replies\", `search: \"wasm\"`. A feed is the one surface here that cannot say what it is from its own contents: three flat messages are three flat messages whether they came from a timeline, an author or a search, so whoever asked for them is the one who says. Empty leaves the summary line standing on its own.",
           "required": false
         },
         {
           "name": "posts",
-          "ty": 1,
+          "ty": {"k": "list", "of": {"k": "record", "name": "message"}},
           "doc": "The messages, in the order the service returned them. Same record shape a Thread's posts take, minus the reply structure: every row is at depth 0 because a feed is a list, and `repostedBy` / `pinned` say why each one is here.",
           "required": false
         },
         {
           "name": "scope",
-          "ty": 2,
+          "ty": {"k": "comp", "name": "Scope"},
           "doc": "What this page does not cover. Written as a plain record — the keys are the Scope component's own field names — and drawn only when there is something to disclose.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 4,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many messages a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {
@@ -742,61 +617,28 @@
           "src": "views/Thread.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "message",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Scope",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "posts",
-          "ty": 1,
+          "ty": {"k": "list", "of": {"k": "record", "name": "message"}},
           "doc": "The conversation in reading order, each message { uri, displayName, handle, avatar, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } — depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
           "name": "focus",
-          "ty": 2,
+          "ty": {"k": "text"},
           "doc": "The uri of the message the thread is about; that row is marked. Empty for none. Writing it rebuilds the rows.",
           "required": false
         },
         {
           "name": "scope",
-          "ty": 3,
+          "ty": {"k": "comp", "name": "Scope"},
           "doc": "What this conversation does not show — the depth the caller asked for and the one the service applied. Written as a plain record whose keys are the Scope component's own field names.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 4,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many messages a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {
@@ -948,55 +790,22 @@
           "src": "views/Profile.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "message",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 3,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "displayName",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The account's display name; the handle stands in when it is empty.",
           "required": false
         },
         {
           "name": "handle",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The account's handle, without the leading @.",
           "required": false
         },
         {
           "name": "description",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The account's own description of itself.",
           "required": false,
           "constraint": {
@@ -1005,49 +814,49 @@
         },
         {
           "name": "avatar",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The account's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app; the initials show through when it is not.",
           "required": false
         },
         {
           "name": "banner",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The strip behind the picture, as the full url the record carries. Same rule as the avatar, and a flat band of base-200 when there is none.",
           "required": false
         },
         {
           "name": "followersCount",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many accounts follow it.",
           "required": false
         },
         {
           "name": "followsCount",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many accounts it follows.",
           "required": false
         },
         {
           "name": "postsCount",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many messages it has written.",
           "required": false
         },
         {
           "name": "following",
-          "ty": 2,
+          "ty": {"k": "bool"},
           "doc": "Whether this reader follows it, counted on top of followersCount.",
           "required": false
         },
         {
           "name": "posts",
-          "ty": 4,
+          "ty": {"k": "list", "of": {"k": "record", "name": "message"}},
           "doc": "Its recent messages, in the same shape a Thread's posts take; each becomes a Post of its own, standing on its own (no depth, nothing to fold).",
           "required": false
         },
         {
           "name": "createdAt",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "When the account was created, as an ISO 8601 stamp. Drawn as a date and not a duration: \"3 years ago\" needs a clock, and this bundle has none.",
           "required": false,
           "constraint": {
@@ -1057,13 +866,13 @@
         },
         {
           "name": "pinnedPost",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The at:// uri of the message this account pinned to its profile. The uri and not the message: `getProfiles` answers with a strong ref, so the content is one more request away and this bundle makes none — what a card can honestly offer is the link.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many messages a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {

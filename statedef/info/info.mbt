@@ -1,55 +1,21 @@
 // A parsed schema as runtime description.
 //
 // Every function here is the VALUE twin of a `statedef` function that returns
-// SOURCE. `ty_info` mirrors `StateDef::ty_info_src`, `zero_value` mirrors
-// `StateDef::zero_expr`, and `schema_info` mirrors what `viewgen`'s
+// SOURCE. `zero_value` mirrors `StateDef::zero_expr`, `domains_of` mirrors
+// `StateDef::domains_src`, and `schema_info` mirrors what `viewgen`'s
 // `emit_schema` writes out. The twins have to agree, so the suite beside this
 // file asserts it the only way that cannot rot: it renders the value back into
 // the source spelling and compares that against the emitter's own.
 //
 // Why twins at all rather than one of them. The generated path has a compiler
-// behind it — `viewgen` writes `TyInfo` constructor source and `moonc` builds
-// the value. A card is mounted in a browser with no generator and no compiler
+// behind it — `viewgen` writes constructor source and `moonc` builds the
+// value. A card is mounted in a browser with no generator and no compiler
 // anywhere in the payload, so it needs the projection as a function. Neither
 // can serve the other's caller.
-
-///|
-/// The runtime type a declared type projects to.
-///
-/// The exact twin of `StateDef::ty_info_src`. A closed set's members are
-/// INLINED for the same reason the emitter inlines them: `TyInfo` is read at
-/// runtime, where the declaration they would refer to does not exist.
-pub fn ty_info(
-  def : @statedef.StateDef,
-  ty : @statedef.StateTy,
-) -> @tutuca.TyInfo {
-  match ty {
-    TBool => TyBool
-    TInt(..) => TyInt
-    TFloat => TyFloat
-    TText => TyText
-    TList(e) => TyList(ty_info(def, e))
-    TTuple(ts) => TyTuple(ts.map(t => ty_info(def, t)))
-    TOption(e) => TyOption(ty_info(def, e))
-    TOMap(v) => TyOMap(ty_info(def, v))
-    TRecord(n) => TyRecord(n)
-    TEnum(n) => TyEnum(n)
-    TVariant(n) => TyVariant(n)
-    TFlags(n) => {
-      // A closed set names an ENUM now, so its membership is the enum's
-      // cases — declared once, where the idea belongs.
-      let members : Array[String] = match def.user_ty(n) {
-        Some({ kind: UEnum(ms), .. }) => ms.map(m => m.1)
-        _ => []
-      }
-      TyFlags(n, members)
-    }
-    TSet => TySet
-    TComp(c) => TyComp(c)
-    TCompProtocols(ids) => TyCompProtocols(ids)
-    TAny => TyAny
-  }
-}
+//
+// The TYPE twin is gone, and that is what one `Ty` bought: `ty_info` and
+// `ty_info_src` described the same shape in two languages, and now the schema
+// parses into the runtime's own type and `Ty::to_mbt_source` prints it.
 
 ///|
 /// The state a component starts at, as the fields map the render and path
@@ -57,7 +23,7 @@ pub fn ty_info(
 ///
 /// Type-directed, exactly as `zero_expr` is, so a card's initial state and a
 /// generated `State::zero()` cannot disagree about what "empty" means. The one
-/// case a type cannot answer alone is `TVariant`: its zero is its first case,
+/// case a type cannot answer alone is `TyVariant`: its zero is its first case,
 /// and a variant is not a struct, so the honest answer is the same `Null` the
 /// generated code falls back to when it cannot name one either.
 pub fn zero_value(def : @statedef.StateDef) -> Map[String, @tutuca.Value] {
@@ -78,7 +44,7 @@ pub fn zero_of(
     // A record's zero is its fields' zeros, which `TyInfo::zero` cannot build
     // because `TyRecord` keeps only a name — the fields are the instance's to
     // answer. Here the declaration IS in hand, so it answers.
-    TRecord(n) =>
+    TyRecord(n) =>
       match def.user_ty(n) {
         Some({ kind: URecord(fs), .. }) => {
           let m : Map[String, @tutuca.Value] = Map([])
@@ -90,16 +56,16 @@ pub fn zero_of(
         _ => Map(Map([]))
       }
     // A tuple's zero is its elements' zeros, for the same reason.
-    TTuple(ts) => List(ts.map(t => zero_of(def, t)))
+    TyTuple(ts) => List(ts.map(t => zero_of(def, t)))
     // An enum's zero is its first case, and an enum with no cases cannot be
     // declared. `TyInfo::zero` answers `Str("")`
     // because it holds only the name.
-    TEnum(n) =>
+    TyEnum(n) =>
       match def.user_ty(n) {
         Some({ kind: UEnum(cs), .. }) if !cs.is_empty() => Str(cs[0].1)
         _ => Str("")
       }
-    _ => ty_info(def, ty).zero()
+    _ => ty.zero()
   }
 }
 
@@ -152,9 +118,7 @@ pub fn schema_info(
   view_names? : Array[String] = [],
   init_names? : Array[String] = [],
 ) -> @tutuca.SchemaInfo {
-  let fields = def.fields.map(f => {
-    @tutuca.FieldInfo::new(f.name, ty_info(def, f.ty))
-  })
+  let fields = def.fields.map(f => @tutuca.FieldInfo::new(f.name, f.ty))
   // The same one-element fingerprint the emitter writes, so a card and a
   // generated component of the same schema land in the same render-cache
   // bucket rather than looking like two unrelated shapes.
@@ -167,13 +131,13 @@ pub fn schema_info(
     express_intents: p.express_intent.map(m => m.name),
     properties: p.properties.map(x => @tutuca.PropertyInfo::{
       name: x.name,
-      ty: ty_info(def, x.ty),
+      ty: x.ty,
       public_: true,
       writable: x.writable,
     }),
     views: p.views,
-    provides: p.provides.map(x => (x.name, ty_info(def, x.ty))),
-    lookups: p.lookups.map(x => (x.name, ty_info(def, x.ty))),
+    provides: p.provides.map(x => (x.name, x.ty)),
+    lookups: p.lookups.map(x => (x.name, x.ty)),
   })
   let binding_info = (xs : Array[@statedef.ProtocolBinding]) => {
     xs.map(b => @tutuca.ProtocolBindingInfo::{
@@ -188,7 +152,7 @@ pub fn schema_info(
     fields~,
     properties=def.properties.map(p => @tutuca.PropertyInfo::{
       name: p.name,
-      ty: ty_info(def, p.ty),
+      ty: p.ty,
       public_: p.public_,
       writable: p.writable,
     }),

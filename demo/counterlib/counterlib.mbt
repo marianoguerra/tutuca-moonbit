@@ -84,17 +84,17 @@ test "the component takes its kinds from the schema, not the seed value" {
   // Matched rather than compared: FieldKind carries a Map[String, Value] in its
   // FComp arm, and Value holds Fn and &Obj, so it cannot derive Eq.
   guard! si.field("count") is Some(fi)
-  assert_eq(fi.ty, TyInt)
+  assert_eq(fi.ty, TyInt(width=32, signed=true))
   assert_true(fi.kind() is FInt)
   guard! si.field("label") is Some(lf)
   assert_true(lf.kind() is FText)
   // ...and an element type, which a runtime spec has no room for. Structural,
   // so a reader can descend rather than receive the string "Int" and stop.
   guard! si.field("history") is Some(hf)
-  assert_eq(hf.ty, TyList(TyInt))
+  assert_eq(hf.ty, TyList(TyInt(width=32, signed=true)))
   assert_eq(hf.ty.show_source(), "Array[Int]")
   assert_true(hf.kind() is FList)
-  assert_eq(hf.ty.elem(), Some(TyInt))
+  assert_eq(hf.ty.elem(), Some(TyInt(width=32, signed=true)))
   // ...and the default the inspector shows is the type's zero, reachable
   // without a component registry.
   assert_eq(fi.default(), Num(0.0))

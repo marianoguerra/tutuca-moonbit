@@ -116,7 +116,7 @@ fn Defs::component_ref(self : Defs, comp : String?) -> Json {
 fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
   match ty {
     TyBool => obj([("type", Json::string("boolean"))])
-    TyInt => obj([("type", Json::string("integer"))])
+    TyInt(..) => obj([("type", Json::string("integer"))])
     TyFloat => obj([("type", Json::string("number"))])
     TyText => obj([("type", Json::string("string"))])
     TyList(e) =>
@@ -174,7 +174,7 @@ fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
 /// be bounded.
 fn bounds_numeric(ty : @tutuca.TyInfo) -> Bool {
   match ty {
-    TyInt | TyFloat | TyAny => true
+    TyInt(width=32, signed=true) | TyFloat | TyAny => true
     TyOption(inner) => bounds_numeric(inner)
     _ => false
   }
@@ -185,7 +185,12 @@ fn bounds_numeric(ty : @tutuca.TyInfo) -> Bool {
 /// on text and elements on a collection; a bool has neither.
 fn bounds_length(ty : @tutuca.TyInfo) -> Bool {
   match ty {
-    TyBool | TyInt | TyFloat | TyComp(_) | TyCompProtocols(_) | TyTable => false
+    TyBool
+    | TyInt(width=32, signed=true)
+    | TyFloat
+    | TyComp(_)
+    | TyCompProtocols(_)
+    | TyTable => false
     TyOption(inner) => bounds_length(inner)
     _ => true
   }

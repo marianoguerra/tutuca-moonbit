@@ -500,7 +500,7 @@ impl Guest for FakeGuest with fn drop_instance(self, handle) {
 /// A field with no v3 metadata. Most of this fixture is about how the contract
 /// BEHAVES, and spelling three blanks per field there would bury it; the
 /// documented and constrained shapes are exercised in the parsing tests below.
-fn plain_field(name : String, ty : Int) -> DynFieldDef {
+fn plain_field(name : String, ty : @tutuca.Ty) -> DynFieldDef {
   { name, ty, doc: "", required: false, constraint: None, }
 }
 
@@ -576,20 +576,23 @@ fn counter_manifest() -> DynManifest {
           num_ty,
           { kind: "ty-list", elem: Some(0), items: [], name: "", members: [], },
         ],
-        fields: [plain_field("count", 0), plain_field("history", 1)],
+        fields: [
+          plain_field("count", TyFloat),
+          plain_field("history", TyList(TyFloat)),
+        ],
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
         properties: [
           {
             name: "count",
-            ty: 0,
+            ty: TyFloat,
             public_: true,
             writable: true,
             doc: "The public count.",
           },
           {
             name: "secret",
-            ty: 0,
+            ty: TyFloat,
             public_: false,
             writable: false,
             doc: "A private derived view member.",
@@ -650,7 +653,10 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         types: [counter_ty],
-        fields: [plain_field("left", 0), plain_field("right", 0)],
+        fields: [
+          plain_field("left", TyComp(Some("Counter"))),
+          plain_field("right", TyComp(Some("Counter"))),
+        ],
         // NOTE for the placeholder tests below: `left`/`right` name `Counter`,
         // which is a component of THIS bundle, so they are the guest's own
         // nested children and the host must not fill them. `Framed` is the
@@ -712,7 +718,10 @@ fn counter_manifest() -> DynManifest {
             members: [],
           },
         ],
-        fields: [plain_field("title", 0), plain_field("body", 1)],
+        fields: [
+          plain_field("title", TyText),
+          plain_field("body", TyComp(Some("Filler"))),
+        ],
         properties: [],
         domains: [],
         receives: [],
@@ -762,7 +771,10 @@ fn counter_manifest() -> DynManifest {
           { kind: "ty-comp", elem: None, items: [], name: "", members: [], },
           { kind: "ty-list", elem: Some(0), items: [], name: "", members: [], },
         ],
-        fields: [plain_field("holds", 0), plain_field("cells", 1)],
+        fields: [
+          plain_field("holds", TyComp(None)),
+          plain_field("cells", TyList(TyComp(None))),
+        ],
         properties: [],
         domains: [],
         receives: ["bumpHeld"],
@@ -1356,6 +1368,46 @@ test "a guest property is public, synchronous, and copy-on-write" {
 }
 
 ///|
+test "manifest parses a type written as the type it is" {
+  // The wire form: a member's `ty` IS the type, nested where it nests. A list
+  // says what it is a list OF, which the flat table had a field for and the
+  // writer never filled.
+  let json =
+    #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
+    #|  {"name": "Counter",
+    #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
+    #|   "fields": [{"name": "count", "ty": {"k": "int", "width": 8, "signed": false}},
+    #|              {"name": "history", "ty": {"k": "list", "of": {"k": "text"}}},
+    #|              {"name": "pick", "ty": {"k": "option", "of": {"k": "flags", "name": "Vis", "members": ["On", "Off"]}}},
+    #|              {"name": "mystery", "ty": {"k": "no-such-kind"}}],
+    #|   "properties": [{"name": "count", "ty": {"k": "float"}, "writable": true, "public": true}],
+    #|   "receives": [], "intents": [], "methods": [], "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  debug_inspect(
+    m.components[0].field_infos().map(f => "\{f.name}:\{f.ty.show_source()}"),
+    content=(
+      #|[
+      #|  "count:UInt8",
+      #|  "history:Array[String]",
+      #|  "pick:Set[Vis]?",
+      #|  "mystery:Any",
+      #|]
+    ),
+  )
+  // A closed set carries its membership, which is the one thing about it only
+  // the schema knows.
+  guard m.components[0].fields[2].ty is TyOption(inner)
+  debug_inspect(inner.members(), content="[\"On\", \"Off\"]")
+}
+
+///|
+/// The OLD wire form, kept for one release.
+///
+/// A type crossed as an index into a per-component table. `examples/dyncomp-dice`
+/// ships a manifest written that way, so the shim is what keeps a published
+/// bundle loading across the change — and `history` reading as `Array[Int]`
+/// here is the shim doing better than the writer ever did, because this
+/// hand-written table fills the `elem` the compiler left out.
 test "manifest parses from the bridge's JSON projection" {
   let json =
     #|{"manifestVersion": 3, "apiVersion": 10, "moduleName": "counterlib", "components": [
@@ -1800,7 +1852,7 @@ test "a `$method` the manifest never declared is reported at load" {
           },
         ],
         types: [float_ty],
-        fields: [plain_field("count", 0)],
+        fields: [plain_field("count", TyFloat)],
         properties: [],
         domains: [],
         receives: [],
@@ -1990,7 +2042,7 @@ test "a bound the type cannot carry is a load-time hint" {
           // dropped from the schema, so it does nothing but mislead a reader
           {
             name: "label",
-            ty: 1,
+            ty: TyText,
             doc: "",
             required: false,
             constraint: bounded({
@@ -2002,7 +2054,7 @@ test "a bound the type cannot carry is a load-time hint" {
           // a length on a number, likewise
           {
             name: "count",
-            ty: 0,
+            ty: TyFloat,
             doc: "",
             required: false,
             constraint: bounded({
@@ -2039,7 +2091,7 @@ test "a bound the type cannot carry is a load-time hint" {
         fields: [
           {
             name: "label",
-            ty: 1,
+            ty: TyText,
             doc: "",
             required: false,
             constraint: bounded({

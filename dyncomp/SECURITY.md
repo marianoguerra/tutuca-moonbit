@@ -49,9 +49,11 @@ properties follow from the contract's shape rather than from the wasm engine:
 - **`make-instance` is same-bundle only**, in the host-assigned token space.
 - **Arena handles die at the call boundary**, so nothing a guest captured stays
   reachable after it returns.
-- **The static manifest's type table is depth-guarded** at 16 (`host/manifest.mbt`,
-  `ty_info_at`), because a manifest that crossed a trust boundary cannot be
-  trusted to be acyclic.
+- **A declared type read from a manifest is depth-guarded**: the OLD flat table
+  at 16 (`host/manifest.mbt`, `ty_info_at`), because a table that crossed a
+  trust boundary cannot be trusted to be acyclic. The form that replaced it —
+  a type written as the tree it is (`@tutuca.Ty::of_json`) — needs no guard,
+  because JSON is already finite and a cycle cannot be written down.
 - **No clock means no measurement.** A guest cannot read time at all, which
   removes the primitive most timing side channels are built from.
 

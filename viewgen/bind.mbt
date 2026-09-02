@@ -114,7 +114,7 @@ fn lower_bind(
     )
   }
   let kind : @anode.BindCoercion = match member_ty {
-    TText =>
+    TyText =>
       if dom.tag == "textarea" {
         BindString
       } else if dom.tag == "select" {
@@ -133,7 +133,7 @@ fn lower_bind(
           reason="cannot bind String to `<\{dom.tag}>`" + input_suffix(typ),
         )
       }
-    TBool =>
+    TyBool =>
       if dom.tag == "input" && typ == "checkbox" {
         BindBool
       } else {
@@ -142,7 +142,7 @@ fn lower_bind(
           reason="can bind Bool only to `<input type=\"checkbox\">`",
         )
       }
-    TInt(width~, signed~) =>
+    TyInt(width~, signed~) =>
       if dom.tag == "input" && (typ == "number" || typ == "range") {
         BindInt(width~, signed~)
       } else {
@@ -151,7 +151,7 @@ fn lower_bind(
           reason="can bind integer fields only to `<input type=\"number\">` or `<input type=\"range\">`",
         )
       }
-    TFloat =>
+    TyFloat =>
       if dom.tag == "input" && (typ == "number" || typ == "range") {
         BindDouble
       } else {

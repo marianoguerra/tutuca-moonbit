@@ -76,7 +76,7 @@ fn did_you_mean(name : String, names : Array[String]) -> String {
 /// and — for `one of` — what its members actually are.
 ///
 /// The check is deliberately shallow. It refuses what CANNOT work rather than
-/// insisting on what usually does: `TAny` passes everywhere, because a field
+/// insisting on what usually does: `TyAny` passes everywhere, because a field
 /// declared `Any` is one whose shape is decided at runtime and a static no
 /// would be a false one.
 fn check_relation(
@@ -108,7 +108,7 @@ fn check_relation(
           "a map key is text, and `\{subject}` is \{show_ty(subject_ty)}",
         )
       }
-      guard ty_of.get(field) is Some(TOMap(_) | TAny) else {
+      guard ty_of.get(field) is Some(TyOMap(_) | TyAny) else {
         raise bad(
           "`key of` needs a map, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
@@ -121,7 +121,7 @@ fn check_relation(
           "a set member is text, and `\{subject}` is \{show_ty(subject_ty)}",
         )
       }
-      guard ty_of.get(field) is Some(TSet | TFlags(_) | TAny) else {
+      guard ty_of.get(field) is Some(TySet | TyFlags(_, _) | TyAny) else {
         raise bad(
           "`member of` needs a set, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
@@ -133,17 +133,17 @@ fn check_relation(
     // bounds a string, a list of numbers bounds a number, and `Any` bounds
     // anything, which is what a list of components is from here.
     RElementOf(field~) => {
-      guard ty_of.get(field) is Some(at) && at is (TList(_) | TAny) else {
+      guard ty_of.get(field) is Some(at) && at is (TyList(_) | TyAny) else {
         raise bad(
           "`one of .\{field}` needs a list, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
       }
       let elem_ty = match at {
-        TList(e) => e
-        _ => TAny
+        TyList(e) => e
+        _ => TyAny
       }
-      if !(elem_ty is TAny) &&
-        !(subject_ty is TAny) &&
+      if !(elem_ty is TyAny) &&
+        !(subject_ty is TyAny) &&
         show_ty(elem_ty) != show_ty(subject_ty) {
         raise bad(
           "`\{subject}` is \{show_ty(subject_ty)} and `.\{field}` holds \{show_ty(elem_ty)}, so no element of it could ever be one",
@@ -152,12 +152,12 @@ fn check_relation(
       RElementOf(field~)
     }
     RSubsetOf(field~) => {
-      guard subject_ty is (TSet | TFlags(_) | TAny) else {
+      guard subject_ty is (TySet | TyFlags(_, _) | TyAny) else {
         raise bad(
           "a subset is a set, and `\{subject}` is \{show_ty(subject_ty)}",
         )
       }
-      guard ty_of.get(field) is Some(TSet | TFlags(_) | TAny) else {
+      guard ty_of.get(field) is Some(TySet | TyFlags(_, _) | TyAny) else {
         raise bad(
           "`subset of` needs a set, and `.\{field}` is \{show_ty(ty_of.get(field).unwrap())}",
         )
@@ -222,7 +222,7 @@ fn check_numeric(
     match o {
       OLit(_) => ()
       OField(f) =>
-        if !is_numeric(ty_of.get(f).unwrap_or(TAny)) {
+        if !is_numeric(ty_of.get(f).unwrap_or(TyAny)) {
           raise WhereTypeMismatch(
             subject~,
             why="\{what} is compared against `.\{f}`, which is \{show_ty(ty_of.get(f).unwrap())} rather than a number",
@@ -353,8 +353,8 @@ fn check_where_cycles(
 /// Whether a type can hold a position into a sequence.
 fn is_index_like(ty : StateTy) -> Bool {
   match ty {
-    TInt(..) | TAny => true
-    TOption(inner) => is_index_like(inner)
+    TyInt(..) | TyAny => true
+    TyOption(inner) => is_index_like(inner)
     _ => false
   }
 }
@@ -362,8 +362,8 @@ fn is_index_like(ty : StateTy) -> Bool {
 ///|
 fn is_text_like(ty : StateTy) -> Bool {
   match ty {
-    TText | TEnum(_) | TAny => true
-    TOption(inner) => is_text_like(inner)
+    TyText | TyEnum(_) | TyAny => true
+    TyOption(inner) => is_text_like(inner)
     _ => false
   }
 }
@@ -372,7 +372,7 @@ fn is_text_like(ty : StateTy) -> Bool {
 /// Whether a type has positions — which a MAP does not, however sized it is.
 fn is_ordered_seq(ty : StateTy) -> Bool {
   match ty {
-    TList(_) | TTuple(_) | TAny => true
+    TyList(_) | TyTuple(_) | TyAny => true
     _ => false
   }
 }
@@ -380,8 +380,8 @@ fn is_ordered_seq(ty : StateTy) -> Bool {
 ///|
 fn is_numeric(ty : StateTy) -> Bool {
   match ty {
-    TInt(..) | TFloat | TAny => true
-    TOption(inner) => is_numeric(inner)
+    TyInt(..) | TyFloat | TyAny => true
+    TyOption(inner) => is_numeric(inner)
     _ => false
   }
 }
@@ -390,8 +390,14 @@ fn is_numeric(ty : StateTy) -> Bool {
 /// Whether asking for a length is meaningful.
 fn is_sized(ty : StateTy) -> Bool {
   match ty {
-    TList(_) | TTuple(_) | TOMap(_) | TSet | TFlags(_) | TText | TAny => true
-    TOption(inner) => is_sized(inner)
+    TyList(_)
+    | TyTuple(_)
+    | TyOMap(_)
+    | TySet
+    | TyFlags(_, _)
+    | TyText
+    | TyAny => true
+    TyOption(inner) => is_sized(inner)
     _ => false
   }
 }

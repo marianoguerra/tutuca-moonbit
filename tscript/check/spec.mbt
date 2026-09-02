@@ -82,7 +82,7 @@ pub(all) struct Surface {
   /// Names only. What a sibling's fields are is a thing the checker could be
   /// told and is not: a pending child's fields are its own, and checking them
   /// here would mean carrying every sibling's schema through a surface that
-  /// exists to describe THIS one. `TSet(None)` — opaque — is the honest answer
+  /// exists to describe THIS one. `TySet(None)` — opaque — is the honest answer
   /// until that is worth paying for.
   comps : Array[String]
 } derive(Debug, Eq)

@@ -117,10 +117,10 @@ fn check_payload(m : @statedef.MsgDef, sig : InputSig) -> Unit raise GenError {
 fn arg_fits(t : ArgType, declared : @statedef.StateTy) -> Bool {
   match (t, declared) {
     (VValue, _) => true
-    (VDouble, TInt(..) | TFloat) => true
-    (VString, TText) => true
-    (VBool, TBool) => true
-    (_, TInt(..) | TFloat | TText | TBool) => false
+    (VDouble, TyInt(..) | TyFloat) => true
+    (VString, TyText) => true
+    (VBool, TyBool) => true
+    (_, TyInt(..) | TyFloat | TyText | TyBool) => false
     _ => true
   }
 }
@@ -154,10 +154,10 @@ fn msg_of_sig(sig : InputSig) -> @statedef.MsgDef {
     name: sig.name,
     variant: capped,
     // `arg_state_ty` answers None for a shape the inference could not read,
-    // and `TAny` is what that declares as: the payload rides as a raw
+    // and `TyAny` is what that declares as: the payload rides as a raw
     // `@tutuca.Value` either way (`msg_payload_ty`), so the two agree.
     payload: match sig.args {
-      Some(types) => types.map(t => arg_state_ty(t).unwrap_or(TAny))
+      Some(types) => types.map(t => arg_state_ty(t).unwrap_or(TyAny))
       None => []
     },
     doc: None,
@@ -340,7 +340,7 @@ fn emit_decode_arm(
   for i, p in m.payload {
     let a = "a\{i}"
     match p {
-      TInt(width~, signed~) => {
+      TyInt(width~, signed~) => {
         pats.push("Num(\{a})")
         binds.push("\{a}.to_int()")
         // Integrality first, then range: a Double is the only numeric shape
@@ -350,15 +350,15 @@ fn emit_decode_arm(
         guards.push("\{a} >= \{lo}.0")
         guards.push("\{a} <= \{hi}.0")
       }
-      TFloat => {
+      TyFloat => {
         pats.push("Num(\{a})")
         binds.push(a)
       }
-      TText => {
+      TyText => {
         pats.push("Str(\{a})")
         binds.push(a)
       }
-      TBool => {
+      TyBool => {
         pats.push("Bool(\{a})")
         binds.push(a)
       }
@@ -546,8 +546,13 @@ fn msg_payload_ty(def : @statedef.StateDef, ty : @statedef.StateTy) -> String {
 /// and a case carrying one gets a decoder function of its own.
 fn payload_is_patternable(ty : @statedef.StateTy) -> Bool {
   match ty {
-    TInt(..) | TFloat | TText | TBool | TAny | TComp(_) | TCompProtocols(_) =>
-      true
+    TyInt(..)
+    | TyFloat
+    | TyText
+    | TyBool
+    | TyAny
+    | TyComp(_)
+    | TyCompProtocols(_) => true
     _ => false
   }
 }

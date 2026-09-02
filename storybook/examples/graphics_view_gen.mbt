@@ -448,9 +448,9 @@ impl @component.Fields for QuadraticState with fn schema() {
     name="Quadratic",
     fingerprint="e14623730b989e81",
     fields=[
-      @component.FieldInfo::new("a", TyInt),
-      @component.FieldInfo::new("b", TyInt),
-      @component.FieldInfo::new("c", TyInt),
+      @component.FieldInfo::new("a", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("b", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("c", TyInt(width=32, signed=true)),
     ],
     view_handlers=["setA", "setB", "setC"],
     methods=["classify", "discriminant"],

@@ -26,7 +26,7 @@ impl @tutuca.Obj for Counter with fn obj_field(self, name) {
 impl @tutuca.Obj for Counter with fn obj_schema(_self) {
   Some(
     @tutuca.SchemaInfo::new(name="Counter", fingerprint="cafe", fields=[
-      @tutuca.FieldInfo::new("n", TyInt),
+      @tutuca.FieldInfo::new("n", TyInt(width=32, signed=true)),
     ]),
   )
 }

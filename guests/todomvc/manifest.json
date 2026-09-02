@@ -80,37 +80,16 @@
           "src": "views/TodoMvc.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "todo-item",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "items",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "record", "name": "todo-item"}},
           "doc": "The tasks, in the order they were typed.",
           "required": false
         },
         {
           "name": "filter",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "Which tasks are shown: all, active, or completed.",
           "required": false,
           "constraint": {

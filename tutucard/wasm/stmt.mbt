@@ -59,7 +59,7 @@ fn ECtx::refuse_into_child(
   guard self.g.field_ty(name) is Some(ty) else { return }
   let mut at = ty
   for i, st in steps {
-    if at is TComp(_) {
+    if at is TyComp(_) {
       self.bail(
         "`." +
         name +
@@ -70,9 +70,9 @@ fn ECtx::refuse_into_child(
     }
     ignore(i)
     match (at, st) {
-      (TList(e), PIndex(_)) => at = e
-      (TOMap(v), PIndex(_)) => at = v
-      (TOption(inner), _) => {
+      (TyList(e), PIndex(_)) => at = e
+      (TyOMap(v), PIndex(_)) => at = v
+      (TyOption(inner), _) => {
         at = inner
         continue
       }
@@ -93,7 +93,7 @@ fn ECtx::refuse_into_child(
 /// truncation at the sites where it knows.
 fn Gen::coerce(self : Gen, name : String, v : @abi.I) -> @abi.I {
   match self.field_ty(name) {
-    Some(TInt(..)) => call("tc_trunc", [v])
+    Some(TyInt(..)) => call("tc_trunc", [v])
     _ => v
   }
 }

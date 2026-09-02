@@ -85,10 +85,11 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
   // self in, self out: the predecessor is untouched
   assert.deepEqual(a.getField('celsius'), { tag: 'number', val: 20 });
 
-  // the same declared schema every guest ships: fields over a flat type table,
+  // the same declared schema every guest ships: each field carrying its type,
   // and the same metadata — written by hand in Rust, with no tutuca code
-  assert.deepEqual(m.components[0].fields.map((f) => [f.name, f.ty]), [['celsius', 0]]);
-  assert.equal(m.components[0].types[0].kind, 'ty-float');
+  assert.deepEqual(m.components[0].fields.map((f) => [f.name, f.ty]), [
+    ['celsius', { k: 'float' }],
+  ]);
   // absolute zero is a floor the physics gives us
   assert.equal(m.components[0].fields[0].constraint.min, -273.15);
   assert.ok(m.components[0].keywords.includes('rust'));

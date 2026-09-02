@@ -30,7 +30,7 @@ fn schemas() -> Map[String, @core.SchemaInfo] {
     sc in [
       @core.SchemaInfo::new(name="Leaf", fingerprint="fp-leaf", fields=[
         @core.FieldInfo::new("text", TyText),
-        @core.FieldInfo::new("n", TyInt),
+        @core.FieldInfo::new("n", TyInt(width=32, signed=true)),
       ]),
       @core.SchemaInfo::new(name="Holder", fingerprint="fp-holder", fields=[
         @core.FieldInfo::new("named", TyComp(Some("Leaf"))),

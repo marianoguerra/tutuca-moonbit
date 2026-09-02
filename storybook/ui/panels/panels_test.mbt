@@ -14,7 +14,7 @@ priv struct CountState {
 ///|
 impl @tutuca.Fields for CountState with fn schema() {
   @tutuca.SchemaInfo::new(fingerprint="count_state", fields=[
-    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("count", TyInt(width=32, signed=true)),
   ])
 }
 

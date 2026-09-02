@@ -16,39 +16,12 @@
 
 ///|
 /// A state field's type after parsing and name resolution.
-pub(all) enum StateTy {
-  TBool
-  /// `s8`..`s32` / `u8`..`u32`. Width and signedness survive so decode can
-  /// range-check even though every one of them emits a MoonBit `Int`.
-  TInt(width~ : Int, signed~ : Bool)
-  TFloat
-  TText
-  TList(StateTy)
-  TTuple(Array[StateTy])
-  TOption(StateTy)
-  /// A named `record` declared alongside the state.
-  TRecord(String)
-  /// A named payload-free `enum`.
-  TEnum(String)
-  /// A named sum with at least one payload-bearing case.
-  TVariant(String)
-  /// A set whose membership is closed by a named enum.
-  TFlags(String)
-  /// A string set with open membership.
-  TSet
-  /// A string-keyed ordered map.
-  TOMap(StateTy)
-  /// A child-component slot; None for an untyped `Component`.
-  TComp(String?)
-  /// A child slot constrained by one or more canonical protocol ids.
-  ///
-  /// This is deliberately distinct from `TComp`: a component name is a
-  /// construction hint, while protocols are capabilities checked when an
-  /// instance is installed in the slot.
-  TCompProtocols(Array[String])
-  /// An arbitrary `@tutuca.Value`.
-  TAny
-} derive(Eq, @debug.Debug)
+///
+/// `core`'s one `Ty` (`core/ty.mbt`). It used to be a second enum with the same
+/// sixteen shapes, converted into the runtime's by a hand-maintained table with
+/// a hand-maintained twin — so a type added to the schema had to be added in
+/// four places. `StateTy` is the older name and still reads.
+pub using @tutuca {type Ty as StateTy}
 
 ///|
 /// A value written in an attribute: `#[min = 0]`, `#[format = "email"]`,
@@ -586,11 +559,6 @@ declare pub fn StateDef::operation_name(
 ) -> String?
 
 ///|
-/// The element type an `@each` over this type binds, or None when the type
-/// is not iterable — the check behind the `@each` diagnostic.
-declare pub fn StateTy::elem(self : StateTy) -> StateTy?
-
-///|
 /// The type reached by reading `name` off `ty`, or None when `ty` has no
 /// such field — the check behind the unknown-`.field` diagnostic.
 declare pub fn StateDef::field_of(
@@ -600,45 +568,9 @@ declare pub fn StateDef::field_of(
 ) -> StateTy?
 
 ///|
-/// How to write this type in a diagnostic, using the state-language spelling
-/// the author wrote and will edit.
-declare pub fn StateTy::show_source(self : StateTy) -> String
-
-///|
 /// The name in `names` closest to `name`, when one is close enough to be
 /// worth suggesting — the "did you mean" behind a misspelt field read.
 declare pub fn nearest(name : String, names : Array[String]) -> String?
-
-///|
-/// True when a field of this type lives in the state struct. A child-
-/// component slot does not — the runtime makes it from the `specs~` entry.
-declare pub fn StateTy::in_struct(self : StateTy) -> Bool
-
-///|
-/// True when a value of this type can decide anything in a boolean position
-/// (`@show`, `@hide`, a predicate). False only for the container kinds, which
-/// `Value::is_truthy` answers `true` for unconditionally — a test over one of
-/// those cannot fail.
-declare pub fn StateTy::is_boolish(self : StateTy) -> Bool
-
-///|
-/// True when `<x render>` can address a value of this type.
-declare pub fn StateTy::is_renderable(self : StateTy) -> Bool
-
-///|
-/// The component this type names, unwrapping an `option` the same way
-/// `is_renderable` does. None for the untyped `component` marker and for
-/// everything that is not a slot.
-declare pub fn StateTy::component_named(self : StateTy) -> String?
-
-///|
-/// The MoonBit source of the `@tutuca.TyInfo` expression describing this type.
-///
-/// Text and not a `TyInfo` value: statedef stays a pure text-in/text-out
-/// package like viewgen, and importing core here would drag `@tutuca.Value`
-/// in for the sake of one enum. Takes the `StateDef` because a closed set's
-/// members are inlined, and only the declaration knows them.
-declare pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String
 
 ///|
 /// The MoonBit type expression for a state field of this type, with named

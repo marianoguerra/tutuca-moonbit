@@ -109,7 +109,7 @@ impl @component.Fields for VwImmState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwImmState with fn schema() {
   @component.SchemaInfo::new(fingerprint="38990f2ccde77a07", fields=[
-    @component.FieldInfo::new("value", TyInt),
+    @component.FieldInfo::new("value", TyInt(width=32, signed=true)),
     @component.FieldInfo::new("rawValue", TyText),
   ])
 }
@@ -425,7 +425,7 @@ impl @component.Fields for VwSectionState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="c2b767da50368b9c",
     fields=[
-      @component.FieldInfo::new("id", TyInt),
+      @component.FieldInfo::new("id", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("expanded", TyBool),
@@ -494,8 +494,8 @@ impl @component.Fields for VwMemoryState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="122f4a56de474a40",
     fields=[
-      @component.FieldInfo::new("n", TyInt),
-      @component.FieldInfo::new("m", TyInt),
+      @component.FieldInfo::new("n", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("m", TyInt(width=32, signed=true)),
     ],
     domains=[
       { field: "n", domain: DBetween(lo=DLit(0), hi=DLit(65536)), },

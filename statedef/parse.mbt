@@ -1747,13 +1747,13 @@ fn is_builtin_ty(name : String) -> Bool {
 ///|
 fn resolve(t : RawTy, env : Env) -> StateTy raise DefError {
   match t {
-    ROpt(inner, _) => TOption(resolve(inner, env))
+    ROpt(inner, _) => TyOption(resolve(inner, env))
     RTuple(parts, _) => {
       let out : Array[StateTy] = []
       for x in parts {
         out.push(resolve(x, env))
       }
-      TTuple(out)
+      TyTuple(out)
     }
     RNamed(name~, args~, span~) => named(name, args, span, env)
     RProtocolSet(refs, _) => {
@@ -1764,7 +1764,7 @@ fn resolve(t : RawTy, env : Env) -> StateTy raise DefError {
         }
         ids.push(id)
       }
-      TCompProtocols(ids)
+      TyCompProtocols(ids)
     }
   }
 }
@@ -1797,7 +1797,7 @@ fn named(
   match name {
     "Array" => {
       arity(name, args, 1, span)
-      TList(resolve(args[0], env))
+      TyList(resolve(args[0], env))
     }
     "Set" => {
       arity(name, args, 1, span)
@@ -1807,9 +1807,14 @@ fn named(
       match args[0] {
         RNamed(name=inner, args=[], span=ispan) =>
           if inner == "String" {
-            TSet
+            TySet
           } else if env.decls.get(inner) is Some(d) && d.kind is REnum {
-            TFlags(inner)
+            // The members ride INLINE, because the runtime that reads this
+            // type has no declaration to resolve them against — the encoded
+            // value of a set is just a Map. They are the enum's cases in the
+            // variant spelling, which is the spelling every other projection
+            // of an enum case uses.
+            TyFlags(inner, d.cases.map(c => upper_name(c.name)))
           } else {
             raise UnsupportedType(
               ty="Set[\{inner}]",
@@ -1830,7 +1835,7 @@ fn named(
       // Ordered, which is the refinement the runtime actually keeps. The key
       // is String because a JSON object's key is.
       match args[0] {
-        RNamed(name="String", args=[], ..) => TOMap(resolve(args[1], env))
+        RNamed(name="String", args=[], ..) => TyOMap(resolve(args[1], env))
         other =>
           raise UnsupportedType(
             ty="Map[…]",
@@ -1841,7 +1846,7 @@ fn named(
     }
     "Component" =>
       if args.is_empty() {
-        TComp(None)
+        TyComp(None)
       } else {
         arity(name, args, 1, span)
         match args[0] {
@@ -1853,12 +1858,12 @@ fn named(
               }
               ids.push(id)
             }
-            TCompProtocols(ids)
+            TyCompProtocols(ids)
           }
           // `Component["Legend"]` names a component from another module. A
           // string rather than a bare name because it resolves through the
           // registration scope at make time and this file cannot see it.
-          RNamed(name=n, args=[], ..) => TComp(Some(upper_name(n)))
+          RNamed(name=n, args=[], ..) => TyComp(Some(upper_name(n)))
           other =>
             raise UnsupportedType(
               ty="Component[…]",
@@ -1882,13 +1887,13 @@ fn named(
       // for the same reason builtins are reserved: a slot's type is the more
       // surprising thing to have shadowed.
       if env.comps.get(name) is Some(comp) {
-        return TComp(Some(comp))
+        return TyComp(Some(comp))
       }
       guard env.decls.get(name) is Some(d) else {
         raise UnknownTypeRef(name~, span~)
       }
       match d.kind {
-        RStruct => TRecord(name)
+        RStruct => TyRecord(name)
         _ => {
           let mut has_payload = false
           for c in d.cases {
@@ -1897,9 +1902,9 @@ fn named(
             }
           }
           if has_payload {
-            TVariant(name)
+            TyVariant(name)
           } else {
-            TEnum(name)
+            TyEnum(name)
           }
         }
       }
@@ -1974,20 +1979,21 @@ fn walk_inline(
 ) -> Unit raise DefError {
   match ty {
     // Heap indirection: the recursion is finite and the zero terminates.
-    TList(_) | TOption(_) | TOMap(_) => ()
-    TTuple(ts) =>
+    TyList(_) | TyOption(_) | TyOMap(_) => ()
+    TyTuple(ts) =>
       for t in ts {
         walk_inline(t, by_name, on_path, done, span)
       }
-    TRecord(n) | TVariant(n) | TEnum(n) | TFlags(n) =>
+    TyRecord(n) | TyVariant(n) | TyEnum(n) | TyFlags(n, _) =>
       walk_named(n, by_name, on_path, done, span)
-    TBool
-    | TInt(..)
-    | TFloat
-    | TText
-    | TSet
-    | TComp(_)
-    | TCompProtocols(_)
-    | TAny => ()
+    TyBool
+    | TyInt(..)
+    | TyFloat
+    | TyText
+    | TySet
+    | TyTable
+    | TyComp(_)
+    | TyCompProtocols(_)
+    | TyAny => ()
   }
 }

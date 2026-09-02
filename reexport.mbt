@@ -94,7 +94,7 @@ pub using @core {
 // The shape constructors are METHODS (`Expr::field`, `Expr::bind`, …), which is
 // what makes this work at all: an enum constructor does not resolve through a
 // `pub using` re-export, and those four shapes are the ones a view writes most.
-// The cases the generator does spell as constructors — `ERead`, `TText`,
+// The cases the generator does spell as constructors — `ERead`, `TyText`,
 // `Receive` — are all written where the expected type already names them, which
 // is the same bargain the domain vocabulary above struck.
 

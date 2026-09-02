@@ -40,9 +40,9 @@ impl @component.Fields for LedgerState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="ledger_state",
     fields=[
-      @component.FieldInfo::new("here", TyInt),
-      @component.FieldInfo::new("there", TyInt),
-      @component.FieldInfo::new("total", TyInt),
+      @component.FieldInfo::new("here", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("there", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("total", TyInt(width=32, signed=true)),
     ],
     methods=["conserved"],
     // The role, and the whole of what the spec block contributes here: the

@@ -221,7 +221,7 @@ impl @component.Fields for AttributeBindingState with fn schema() {
     fingerprint="1e94422931fa608c",
     fields=[
       @component.FieldInfo::new("str", TyText),
-      @component.FieldInfo::new("num", TyInt),
+      @component.FieldInfo::new("num", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("bool", TyBool),
       @component.FieldInfo::new("notSet", TyAny),
     ],
@@ -838,7 +838,7 @@ impl @component.Fields for ShowHideState with fn schema() {
     fingerprint="330b85e924a25a8e",
     fields=[
       @component.FieldInfo::new("isOpen", TyBool),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     ],
     view_handlers=["incCount", "toggleIsOpen"],
     methods=["label"],

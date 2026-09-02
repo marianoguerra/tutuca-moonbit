@@ -262,7 +262,7 @@ JavaScript at page authority and a warning was not an isolation boundary.
 | It declares | It does NOT declare |
 |---|---|
 | its views (tutuca template source) | which `@on` names those views raise — the host reads them off the compiled views |
-| its fields, over a flat type table | how to project them to JSON, or how to compare two instances — the host does both from the schema |
+| its fields, each with its type | how to project them to JSON, or how to compare two instances — the host does both from the schema |
 | public properties, their type, and whether each is writable | which fields or logic implement them |
 | `receives` / `intents` | the names a guest answers: `event-result` distinguishes a guest handler from a host mutator dynamically |
 | — | how messages are routed — that is the transactor's |

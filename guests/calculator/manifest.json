@@ -61,18 +61,10 @@
           "src": "views/Calculator.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "display",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "What the screen says.",
           "required": false,
           "constraint": {

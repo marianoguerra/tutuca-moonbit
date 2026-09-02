@@ -168,7 +168,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string("    _ => None\n  }\n}\n\n")
       }
       // A `flags` set is Map-backed at runtime like any other set, so it
-      // needs no converter of its own — the structural TSet/TFlags arms
+      // needs no converter of its own — the structural TySet/TyFlags arms
       // below carry it.
     }
   }
@@ -198,7 +198,7 @@ fn emit_codec(
   // `option` is the one shape whose ABSENCE is the encoding: None omits the
   // key rather than writing null, so a state carrying one cannot be a map
   // literal and is built by insertion instead.
-  let has_optional = carried.iter().any(f => f.ty is TOption(_))
+  let has_optional = carried.iter().any(f => f.ty is TyOption(_))
   out.write_string(
     "///|\n" +
     "/// The state as the fields map the render and path layers read, built\n" +
@@ -216,7 +216,7 @@ fn emit_codec(
     out.write_string("  let out : Map[String, @tutuca.Value] = Map([])\n")
     for f in carried {
       match f.ty {
-        TOption(inner) =>
+        TyOption(inner) =>
           out.write_string(
             "  match s.\{f.binding} {\n" +
             "    Some(x) => out[\{quote(f.name)}] = \{enc_expr(def, inner, "x")}\n" +
@@ -318,10 +318,10 @@ fn dec_stmts(
   let tmp = "t\{depth}_\{base}"
   match ty {
     // Absent reads as Null, which is what an unset `any` field holds anyway.
-    TAny | TComp(_) => "\{pad}let \{name} = \{src}.unwrap_or(Null)\n"
+    TyAny | TyComp(_) => "\{pad}let \{name} = \{src}.unwrap_or(Null)\n"
     // The absent key IS None — the encoder omits it rather than writing null,
     // and a nested Null means the same thing.
-    TOption(inner) =>
+    TyOption(inner) =>
       "\{pad}let \{name} : \{def.moonbit_ty(ty)} = match \{src} {\n" +
       "\{pad}  None | Some(Null) => None\n" +
       "\{pad}  Some(\{tmp}) => {\n" +
@@ -331,10 +331,10 @@ fn dec_stmts(
       "\{pad}}\n"
     // A scalar's pattern nests inside the `Some`, so it reads (and unwraps) in
     // one guard rather than two.
-    TBool => "\{pad}guard \{src} is Some(Bool(\{name})) else { return None }\n"
-    TFloat => "\{pad}guard \{src} is Some(Num(\{name})) else { return None }\n"
-    TText => "\{pad}guard \{src} is Some(Str(\{name})) else { return None }\n"
-    TInt(..) =>
+    TyBool => "\{pad}guard \{src} is Some(Bool(\{name})) else { return None }\n"
+    TyFloat => "\{pad}guard \{src} is Some(Num(\{name})) else { return None }\n"
+    TyText => "\{pad}guard \{src} is Some(Str(\{name})) else { return None }\n"
+    TyInt(..) =>
       "\{pad}guard \{src} is Some(Num(\{tmp})) else { return None }\n" +
       "\{pad}let \{name} = \{tmp}.to_int()\n"
     _ =>
@@ -364,14 +364,17 @@ fn dec_val(
   let pad = "  ".repeat(depth)
   let tmp = "u\{depth}_\{base}"
   match ty {
-    TAny | TComp(_) | TCompProtocols(_) => "\{pad}let \{name} = \{src}\n"
-    TBool => "\{pad}guard \{src} is Bool(\{name}) else { return None }\n"
-    TFloat => "\{pad}guard \{src} is Num(\{name}) else { return None }\n"
-    TText => "\{pad}guard \{src} is Str(\{name}) else { return None }\n"
-    TInt(..) =>
+    // A table is a `Value` with a known shape and no MoonBit type, so it
+    // decodes the way `Any` does: it is already what it will be stored as.
+    TyAny | TyComp(_) | TyCompProtocols(_) | TyTable =>
+      "\{pad}let \{name} = \{src}\n"
+    TyBool => "\{pad}guard \{src} is Bool(\{name}) else { return None }\n"
+    TyFloat => "\{pad}guard \{src} is Num(\{name}) else { return None }\n"
+    TyText => "\{pad}guard \{src} is Str(\{name}) else { return None }\n"
+    TyInt(..) =>
       "\{pad}guard \{src} is Num(\{tmp}) else { return None }\n" +
       "\{pad}let \{name} = \{tmp}.to_int()\n"
-    TList(inner) =>
+    TyList(inner) =>
       "\{pad}guard \{src} is List(\{tmp}) else { return None }\n" +
       "\{pad}let \{name} : \{def.moonbit_ty(ty)} = []\n" +
       "\{pad}for e\{depth}_\{base} in \{tmp} {\n" +
@@ -385,13 +388,13 @@ fn dec_val(
       ) +
       "\{pad}  \{name}.push(x\{depth}_\{base})\n" +
       "\{pad}}\n"
-    TSet | TFlags(_) =>
+    TySet | TyFlags(_, _) =>
       "\{pad}guard \{src} is Map(\{tmp}) else { return None }\n" +
       "\{pad}let \{name} : Map[String, Bool] = Map([])\n" +
       "\{pad}for k, x in \{tmp} {\n" +
       "\{pad}  \{name}[k] = x is Bool(true)\n" +
       "\{pad}}\n"
-    TOMap(inner) =>
+    TyOMap(inner) =>
       "\{pad}guard \{src} is Map(\{tmp}) else { return None }\n" +
       "\{pad}let \{name} : \{def.moonbit_ty(ty)} = Map([])\n" +
       "\{pad}for k, e\{depth}_\{base} in \{tmp} {\n" +
@@ -407,7 +410,7 @@ fn dec_val(
       "\{pad}}\n"
     // Nested (inside a list, a map, a record): Null is the only spelling of
     // absence available, since there is no key to leave out.
-    TOption(inner) =>
+    TyOption(inner) =>
       "\{pad}let \{name} : \{def.moonbit_ty(ty)} = match \{src} {\n" +
       "\{pad}  Null => None\n" +
       "\{pad}  \{tmp} => {\n" +
@@ -415,7 +418,7 @@ fn dec_val(
       "\{pad}    Some(x\{depth}_\{base})\n" +
       "\{pad}  }\n" +
       "\{pad}}\n"
-    TTuple(ts) => {
+    TyTuple(ts) => {
       let sb = StringBuilder()
       sb.write_string(
         "\{pad}guard \{src} is List(\{tmp}) else { return None }\n" +
@@ -437,7 +440,7 @@ fn dec_val(
       sb.write_string("\{pad}let \{name} = (\{parts})\n")
       sb.to_string()
     }
-    TRecord(n) | TEnum(n) | TVariant(n) =>
+    TyRecord(n) | TyEnum(n) | TyVariant(n) =>
       match def.user_ty(n) {
         Some({ kind: URecord(fs), .. }) if fs.is_empty() =>
           "\{pad}let \{name} = \{src}\n"

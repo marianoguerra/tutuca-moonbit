@@ -57,30 +57,16 @@
           "src": "views/Table.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-table",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "data",
-          "ty": 0,
+          "ty": {"k": "table"},
           "doc": "The table to show: one entry per column, each with a stable id, a label, a type (i32, f64, str or bool) and its values in row order. Every column must have the same number of values; use null for a missing one.",
           "required": true
         },
         {
           "name": "pageSize",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many rows to show at once.",
           "required": false,
           "constraint": {

@@ -46,10 +46,10 @@ fn schema() -> String {
 fn views() -> @check.Surface {
   {
     inputs: {
-      "tag": [Some(TText)],
-      "flip": [Some(TText)],
-      "dropAt": [Some(TInt(width=32, signed=true))],
-      "show": [Some(TText)],
+      "tag": [Some(TyText)],
+      "flip": [Some(TyText)],
+      "dropAt": [Some(TyInt(width=32, signed=true))],
+      "show": [Some(TyText)],
     },
     knows_views: true,
     open_senders: false,

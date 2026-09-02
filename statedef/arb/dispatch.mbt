@@ -249,7 +249,7 @@ pub fn mutator_args(
     out[@tutuca.mutator_name("set", f.name)] = one
     out[@tutuca.mutator_name("reset", f.name)] = none
     out[f.name + "Len"] = none
-    match @info.ty_info(def, f.ty).kind() {
+    match f.ty.kind() {
       FBool => out[@tutuca.mutator_name("toggle", f.name)] = none
       FSet => {
         // A member, as the string the set is keyed by. Drawn from the declared
@@ -261,12 +261,12 @@ pub fn mutator_args(
         }
       }
       FList | FMap | FOMap => {
-        let elem = f.ty.elem().unwrap_or(TAny)
+        let elem = f.ty.iterable_elem().unwrap_or(TyAny)
         // A list is keyed by position and a map by name, which is the same
         // split `mutator_key` makes: `Num` becomes an index, `Str` a key. Both
         // draw OUT of range as well as in — a delete at 99 is the case that
         // decides whether a copy-on-write path answers the original.
-        let key = if @info.ty_info(def, f.ty).kind() is FList {
+        let key = if f.ty.kind() is FList {
           @gen.int_range(-1, 5).fmap(n => (Num(n.to_double()) : @tutuca.Value))
         } else {
           @gen.one_of_array(["k0", "k1", "absent"]).fmap(s => {
@@ -295,7 +295,7 @@ fn member_of(
   ty : @statedef.StateTy,
 ) -> @gen.Gen[@tutuca.Value] {
   let members : Array[String] = match ty {
-    TFlags(n) =>
+    TyFlags(n, _) =>
       match def.user_ty(n) {
         Some({ kind: UEnum(ms), .. }) => ms.map(m => m.1)
         _ => []

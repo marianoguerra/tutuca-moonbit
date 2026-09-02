@@ -12,9 +12,7 @@ pub fn domains_of(@statedef.StateDef) -> Array[@core.FieldDomain]
 
 pub fn schema_info(@statedef.StateDef, name? : String, fingerprint? : String, view_handlers? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> @core.SchemaInfo
 
-pub fn ty_info(@statedef.StateDef, @statedef.StateTy) -> @core.TyInfo
-
-pub fn zero_of(@statedef.StateDef, @statedef.StateTy) -> @core.Value
+pub fn zero_of(@statedef.StateDef, @core.Ty) -> @core.Value
 
 pub fn zero_of_ref(@statedef.StateDef, @tscript.TyRef) -> @core.Value?
 

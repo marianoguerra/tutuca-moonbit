@@ -40,72 +40,58 @@
           "src": "views/Segment.margauiClasses.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "text",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The literal text of the run.",
           "required": false
         },
         {
           "name": "bold",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "Render bold.",
           "required": false
         },
         {
           "name": "italic",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "Render italic.",
           "required": false
         },
         {
           "name": "strike",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "Render struck through.",
           "required": false
         },
         {
           "name": "code",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "Render as inline code.",
           "required": false
         },
         {
           "name": "mention",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "This run names a person.",
           "required": false
         },
         {
           "name": "channel",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "This run names a channel.",
           "required": false
         },
         {
           "name": "link",
-          "ty": 1,
+          "ty": {"k": "bool"},
           "doc": "This run is a link; clicking it emits openLink.",
           "required": false
         },
         {
           "name": "url",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "Where the link points. Reported, never followed.",
           "required": false
         }
@@ -227,66 +213,46 @@
           "src": "views/Scope.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "publicChannels",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "Public channels were in the set.",
           "required": false
         },
         {
           "name": "privateChannels",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "The private channels this token was invited to were in the set.",
           "required": false
         },
         {
           "name": "dms",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "DMs and group DMs were in the set. False by default, and that is a statement about the tools rather than about the token: `conversations.list` is asked for public and private channels, so an `im` is never in the set whatever the token could have seen.",
           "required": false
         },
         {
           "name": "channelsScanned",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many conversations were actually read. Absent means nobody counted, which is not the same as zero.",
           "required": false
         },
         {
           "name": "truncated",
-          "ty": 0,
+          "ty": {"k": "bool"},
           "doc": "A cap stopped the scan before the data ran out. The field that matters most: the difference between \"there is no more\" and \"I stopped looking\".",
           "required": false
         },
         {
           "name": "truncatedBy",
-          "ty": 2,
+          "ty": {"k": "text"},
           "doc": "What stopped it, in the caller's own words — `limit`, `max_search_channels`.",
           "required": false
         },
         {
           "name": "note",
-          "ty": 2,
+          "ty": {"k": "text"},
           "doc": "Anything else worth saying, in one sentence.",
           "required": false
         }
@@ -346,25 +312,10 @@
           "src": "views/RichText.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Segment",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "segments",
-          "ty": 1,
+          "ty": {"k": "list", "of": {"k": "comp", "name": "Segment"}},
           "doc": "The runs that make up this body, in order.",
           "required": false
         }
@@ -424,36 +375,16 @@
           "src": "views/Reaction.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "emoji",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The emoji.",
           "required": false
         },
         {
           "name": "count",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many people reacted.",
           "required": false,
           "constraint": {
@@ -463,7 +394,7 @@
         },
         {
           "name": "reacted",
-          "ty": 2,
+          "ty": {"k": "bool"},
           "doc": "Whether you are one of them.",
           "required": false
         }
@@ -568,67 +499,34 @@
           "src": "views/Message.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "RichText",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Reaction",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 2,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "id",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "Stable id of the message.",
           "required": false
         },
         {
           "name": "author",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "Who wrote it.",
           "required": false
         },
         {
           "name": "avatar",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The author's picture, as the full url a Slack profile carries. Drawn when it is on one of the three origins the view names; the initials show through when it is not, and when there is none.",
           "required": false
         },
         {
           "name": "channelName",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The channel it was posted in.",
           "required": false
         },
         {
           "name": "createdAt",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "ISO 8601 timestamp, as it arrived. No clock is read.",
           "required": false,
           "constraint": {
@@ -637,37 +535,37 @@
         },
         {
           "name": "body",
-          "ty": 1,
+          "ty": {"k": "comp", "name": "RichText"},
           "doc": "The rich-text body. Accepts a RichText object or a bare segment list.",
           "required": false
         },
         {
           "name": "reactions",
-          "ty": 3,
+          "ty": {"k": "list", "of": {"k": "comp", "name": "Reaction"}},
           "doc": "The reactions on this message.",
           "required": false
         },
         {
           "name": "compact",
-          "ty": 4,
+          "ty": {"k": "bool"},
           "doc": "Reply styling: tighter, and no channel badge.",
           "required": false
         },
         {
           "name": "edited",
-          "ty": 4,
+          "ty": {"k": "bool"},
           "doc": "Show the (edited) marker.",
           "required": false
         },
         {
           "name": "pinned",
-          "ty": 4,
+          "ty": {"k": "bool"},
           "doc": "Show the pinned badge.",
           "required": false
         },
         {
           "name": "permalink",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The workspace archive link for this message. Shown and clickable, and still not an `href`: a permalink is `https://<team>.slack.com/archives/...` and the subdomain is the workspace's, so there is no origin a view can write as a literal. Clicking it emits `openLink`, exactly as a link segment does.",
           "required": false
         }
@@ -818,79 +716,46 @@
           "src": "views/Thread.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Message",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 0,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "root",
-          "ty": 0,
+          "ty": {"k": "comp", "name": "Message"},
           "doc": "The message the thread hangs off.",
           "required": true
         },
         {
           "name": "replies",
-          "ty": 1,
+          "ty": {"k": "list", "of": {"k": "comp", "name": "Message"}},
           "doc": "The replies, oldest first. Each is forced compact.",
           "required": false
         },
         {
           "name": "expanded",
-          "ty": 2,
+          "ty": {"k": "bool"},
           "doc": "Whether the replies are showing.",
           "required": false
         },
         {
           "name": "replyCount",
-          "ty": 3,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many replies EXIST, which is not how many arrived. `conversations.history` answers with roots carrying a count and never with the replies themselves, so a card built from one has a number and nothing behind it. Absent, it is taken from the replies that did arrive — which for a thread read whole is the same number.",
           "required": false
         },
         {
           "name": "channelName",
-          "ty": 4,
+          "ty": {"k": "text"},
           "doc": "Which conversation the root is in, so a thread whose replies were not fetched can say the argument that would fetch them. Defaults to the root message's own `channelName`.",
           "required": false
         },
         {
           "name": "rootTs",
-          "ty": 4,
+          "ty": {"k": "text"},
           "doc": "The root's timestamp, for the same reason. Defaults to the root message's own `id`.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 3,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many replies a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {
@@ -1030,61 +895,28 @@
           "src": "views/FileList.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-record",
-          "items": [],
-          "name": "file",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 1,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Scope",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "filter",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "What was being listed — a channel name, a person — for the header. Empty for whatever the token can see.",
           "required": false
         },
         {
           "name": "files",
-          "ty": 2,
+          "ty": {"k": "list", "of": {"k": "record", "name": "file"}},
           "doc": "The files, each `{ id, name, title, mimetype, size, author, createdAt, permalink }`. A row's label is the title if there is one, the filename if there is not, and the id if there is neither.",
           "required": false
         },
         {
           "name": "scope",
-          "ty": 3,
+          "ty": {"k": "comp", "name": "Scope"},
           "doc": "What this listing covers. Same record shape a ChannelHistory's scope takes.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 4,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many files a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {
@@ -1239,61 +1071,22 @@
           "src": "views/ChannelHistory.main.html"
         }
       ],
-      "types": [
-        {
-          "kind": "ty-text",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-int",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Thread",
-          "members": []
-        },
-        {
-          "kind": "ty-list",
-          "elem": 2,
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-bool",
-          "items": [],
-          "name": "",
-          "members": []
-        },
-        {
-          "kind": "ty-comp",
-          "items": [],
-          "name": "Scope",
-          "members": []
-        }
-      ],
       "fields": [
         {
           "name": "channel",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The channel name, without the #.",
           "required": false
         },
         {
           "name": "topic",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The channel topic.",
           "required": false
         },
         {
           "name": "memberCount",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many people are in it.",
           "required": false,
           "constraint": {
@@ -1303,49 +1096,49 @@
         },
         {
           "name": "threads",
-          "ty": 3,
+          "ty": {"k": "list", "of": {"k": "comp", "name": "Thread"}},
           "doc": "The conversations currently shown — filtered and ordered.",
           "required": false
         },
         {
           "name": "query",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The filter text. Empty shows everything.",
           "required": false
         },
         {
           "name": "newestFirst",
-          "ty": 4,
+          "ty": {"k": "bool"},
           "doc": "Order by root timestamp, newest first.",
           "required": false
         },
         {
           "name": "loading",
-          "ty": 4,
+          "ty": {"k": "bool"},
           "doc": "Show the loading banner.",
           "required": false
         },
         {
           "name": "error",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "Show this as an error banner. Empty shows none.",
           "required": false
         },
         {
           "name": "lastAction",
-          "ty": 0,
+          "ty": {"k": "text"},
           "doc": "The last thing a child reported, shown in the footer.",
           "required": false
         },
         {
           "name": "scope",
-          "ty": 5,
+          "ty": {"k": "comp", "name": "Scope"},
           "doc": "What this answer covers and what it never looked at. Written as a plain record whose keys are the Scope component's own field names; drawn only when there is something to disclose.",
           "required": false
         },
         {
           "name": "pageSize",
-          "ty": 1,
+          "ty": {"k": "int", "width": 32, "signed": true},
           "doc": "How many conversations a page holds. A card breaks a list into pages only once it is longer than a hundred rows, because a pager over forty of them costs a reader a click and buys nothing; asking for a size here asks for the window whatever the length, and starts at the first page.",
           "required": false,
           "constraint": {

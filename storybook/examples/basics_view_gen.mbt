@@ -216,7 +216,7 @@ impl @component.Fields for TextDirectiveState with fn schema() {
     fingerprint="ee16bc73dceecdbf",
     fields=[
       @component.FieldInfo::new("str", TyText),
-      @component.FieldInfo::new("num", TyInt),
+      @component.FieldInfo::new("num", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("bool", TyBool),
       @component.FieldInfo::new("notSet", TyAny),
     ],

@@ -139,7 +139,7 @@ impl @component.Fields for StatusState with fn schema() {
     fingerprint="3fc6f4594bd11c05",
     fields=[
       @component.FieldInfo::new("message", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
     ],
     receives=["flash", "clear"],
     domains=[{ field: "count", domain: DCompare(op=DGe, rhs=DLit(0)), }],

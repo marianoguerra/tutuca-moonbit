@@ -54,9 +54,9 @@ impl @component.Fields for GalleryState with fn schema() {
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("entries", TyOMap(TyAny)),
-      @component.FieldInfo::new("currentIndex", TyInt),
+      @component.FieldInfo::new("currentIndex", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("currentKey", TyText),
-      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("count", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("choice", TyText),
     ],
     // What `where currentIndex is index of .items` and friends become. Data

@@ -288,8 +288,8 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
-      @component.FieldInfo::new("itemsPerPage", TyInt),
-      @component.FieldInfo::new("currentPage", TyInt),
+      @component.FieldInfo::new("itemsPerPage", TyInt(width=32, signed=true)),
+      @component.FieldInfo::new("currentPage", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("typeName", TyText),
     ],
     view_handlers=["nextPage", "prevPage", "toggleIsExpanded"],

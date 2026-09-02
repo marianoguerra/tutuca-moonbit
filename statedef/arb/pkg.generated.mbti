@@ -38,7 +38,7 @@ pub fn state_of(@statedef.StateDef, depth? : Int) -> @gen.Gen[Map[String, @core.
 
 pub fn value_in_domain(@core.Domain, Map[String, @core.Value]) -> @gen.Gen[@core.Value]?
 
-pub fn value_of(@statedef.StateDef, @statedef.StateTy, depth? : Int) -> @gen.Gen[@core.Value]
+pub fn value_of(@statedef.StateDef, @core.Ty, depth? : Int) -> @gen.Gen[@core.Value]
 
 // Errors
 

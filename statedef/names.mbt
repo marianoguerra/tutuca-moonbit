@@ -255,28 +255,28 @@ pub fn StateDef::to_value_src(
   e : String,
 ) -> String {
   match ty {
-    TBool => "Bool(\{e})"
-    TInt(..) => "Num(\{e}.to_double())"
-    TFloat => "Num(\{e})"
-    TText => "Str(\{e})"
-    TAny | TComp(_) | TCompProtocols(_) => e
-    TList(inner) =>
+    TyBool => "Bool(\{e})"
+    TyInt(..) => "Num(\{e}.to_double())"
+    TyFloat => "Num(\{e})"
+    TyText => "Str(\{e})"
+    TyAny | TyComp(_) | TyCompProtocols(_) | TyTable => e
+    TyList(inner) =>
       "(List(\{e}.map(x => \{self.to_value_src(inner, "x")})) : @tutuca.Value)"
-    TSet | TFlags(_) =>
+    TySet | TyFlags(_, _) =>
       "{ let m : Map[String, @tutuca.Value] = Map([]); for k, b in \{e} { m[k] = Bool(b) }; (Map(m) : @tutuca.Value) }"
-    TOMap(inner) =>
+    TyOMap(inner) =>
       "{ let m : Map[String, @tutuca.Value] = Map([]); for k, x in \{e} { m[k] = \{self.to_value_src(inner, "x")} }; (Map(m) : @tutuca.Value) }"
     // Nested (inside a list, a map, a record): there is no key to omit here,
     // so None becomes Null. The key-omitting form is at the state level.
-    TOption(inner) =>
+    TyOption(inner) =>
       "(match \{e} { Some(x) => \{self.to_value_src(inner, "x")}; None => Null })"
-    TTuple(ts) => {
+    TyTuple(ts) => {
       let parts = ts
         .mapi((i, t) => self.to_value_src(t, "\{e}.\{i}"))
         .join(", ")
       "(List([\{parts}]) : @tutuca.Value)"
     }
-    TRecord(n) | TEnum(n) | TVariant(n) =>
+    TyRecord(n) | TyEnum(n) | TyVariant(n) =>
       match self.user_ty(n) {
         Some({ kind: URecord(fs), .. }) if fs.is_empty() => e
         Some(ut) => "\{value_prefix(ut.name)}_to_value(\{e})"

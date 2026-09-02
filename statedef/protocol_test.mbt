@@ -100,7 +100,7 @@ test "protocol-qualified component slots retain every constraint id" {
     )[0]
   assert_true(
     def.fields[0].ty
-    is TList(TCompProtocols(["example/ListItem@1", "example/Editable@2"])),
+    is TyList(TyCompProtocols(["example/ListItem@1", "example/Editable@2"])),
   )
 }
 
