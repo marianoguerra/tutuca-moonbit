@@ -575,6 +575,30 @@ fn route_code(route : Array[@tutuca.Leg]) -> Int {
 }
 
 ///|
+/// The effect vocabulary as an English list, for the sentence that reports a
+/// name that is not in it.
+fn effect_list() -> String {
+  let words = @tscript.effect_names().map(w => "`" + w + "`")
+  match words {
+    [] => ""
+    [one] => one
+    [.. init, last] => init.join(", ") + " and " + last
+  }
+}
+
+///|
+/// Why an effect with too few arguments is refused, in the terms the effect
+/// itself is written in.
+fn effect_arity_why(name : String, min_args : Int) -> String {
+  match name {
+    "reply" | "fail" => "`" + name + "` needs the value it answers with"
+    "send" | "sendReply" | "intent" => "`" + name + "` needs a message name"
+    _ =>
+      "`" + name + "` needs at least " + min_args.to_string() + " argument(s)"
+  }
+}
+
+///|
 fn ECtx::effect(
   self : ECtx,
   name : String,
@@ -582,6 +606,21 @@ fn ECtx::effect(
   route : Array[@tutuca.Leg],
   span : @tscript.Span,
 ) -> Array[@abi.I] raise Bail {
+  // The vocabulary is `tscript`'s table and not a second copy of it: an effect
+  // the parser accepts and this backend forgot would compile to nothing at all,
+  // and the corpus that holds the two backends together cannot see a name
+  // neither of them names.
+  guard @tscript.effect_min_arity(name) is Some(min_args) else {
+    self.bail(
+      "`" +
+      name +
+      "` is not an effect this language has — " +
+      effect_list() +
+      " are the ones it does",
+      span,
+    )
+    return []
+  }
   if name == "stop" {
     self.g.uses_control = true
     // Buffered, like the other two. A `stop` before a failing statement is a
@@ -591,17 +630,19 @@ fn ECtx::effect(
     ]
   }
   if name == "sendAt" {
+    // Before the arity guard below: `send_at` says which of its two arguments
+    // is missing, and that is the more useful sentence.
     return self.send_at(args, span)
+  }
+  guard args.length() >= min_args else {
+    self.bail(effect_arity_why(name, min_args), span)
+    return []
   }
   // The three v2 effects that carry no message name. `forward` re-dispatches
   // the one that arrived; `reply` and `fail` are addressed by the walk. Each
   // buffers like the rest, because a `reply` before a failing statement is a
   // `reply` that did not happen.
   if name is ("reply" | "fail") {
-    guard args.length() >= 1 else {
-      self.bail("`" + name + "` needs the value it answers with", span)
-      return []
-    }
     self.g.uses_control = true
     self.g.uses_routed_effects = true
     let pl = self.g.fresh("pl")
@@ -632,21 +673,8 @@ fn ECtx::effect(
       ]),
     ]
   }
-  guard name is ("send" | "sendReply" | "intent") else {
-    self.bail(
-      "`" +
-      name +
-      "` is not an effect this language has — `send`, `sendReply`, `sendAt`, `intent`, `forward`, `reply`, `fail` and `stop` are the ones it does",
-      span,
-    )
-    return []
-  }
-  guard args.length() >= 1 else {
-    self.bail("`" + name + "` needs a message name", span)
-    return []
-  }
   self.g.uses_control = true
-  if name == "intent" {
+  if @tscript.takes_route(name) {
     self.g.uses_routed_effects = true
   }
   let msg = self.g.fresh("msg")
@@ -665,7 +693,7 @@ fn ECtx::effect(
     // BUFFERED, not sent. The host cannot un-hear a `send`, and the
     // interpreter drops the effects of a transition that is abandoned — so
     // these are held until the contracts have held and flushed then.
-    if name == "intent" {
+    if @tscript.takes_route(name) {
       call("tc_effect_push_routed", [
         i32c(6),
         get(msg),

@@ -438,26 +438,20 @@ pub fn Component::compile(self : Component) -> Unit raise {
       self.schema = { ..self.schema, view_handlers: names, }
     }
   }
-  // The name rule splits the two keyspaces: an uppercase key publishes a TYPE,
-  // and `"self"` is the only legal value for one — which is what keeps a
-  // published type a component by construction, so the `dyn` leg never has to
-  // trust an arbitrary expression. Anything else is a value, and must be
-  // ADDRESSABLE (`.field` / `.seq[.key]`) because a provide doubles as the
-  // resume target for `<x render="*name">`.
+  // `provide_kind` is the one reader of the keyspace rule (`spec.mbt`).
   //
   // Both bad shapes are dropped here rather than raised: what is wrong with a
   // declaration is a finding, with a name and a place to point at, and
   // `ComponentStack::check_names` is where they are said.
   for pname, src in self.raw_provide {
-    if @tutuca.is_type_name(pname) {
-      if src == "self" {
-        self.provide_type[pname] = self.id
-      }
-      continue
-    }
-    match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
-      Some(val) => self.provide[pname] = { name: pname, val, }
-      None => ()
+    match provide_kind(pname, src~) {
+      ProvideSelfType => self.provide_type[pname] = self.id
+      ProvideBadType => ()
+      ProvideValue =>
+        match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
+          Some(val) => self.provide[pname] = { name: pname, val, }
+          None => ()
+        }
     }
   }
   for spec in self.raw_lookup {

@@ -248,29 +248,9 @@ let builtin_table : Map[String, Builtin] = {
 }
 
 ///|
-/// The names that still parse but are no longer the spelling, each with the
-/// one that is.
-///
-/// One table rather than a sentence at each of the four sites that report an
-/// unknown name — the slot generator, the block checker, and the two block
-/// backends — because a retirement the four word differently is a retirement
-/// an author has to learn four times.
-let retired_table : Map[String, String] = {
-  "equals?": "`is` says this — write `a is b`",
-  "falsy?": "`not` says this — write `not (truthy? x)`",
-}
-
-///|
 /// The builtin a name denotes, or None when nothing does.
 pub fn builtin(name : String) -> Builtin? {
   builtin_table.get(name)
-}
-
-///|
-/// For a name that still answers but is no longer the spelling, what to write
-/// instead. `None` for every name in current use.
-pub fn retired(name : String) -> String? {
-  retired_table.get(name)
 }
 
 ///|
@@ -286,7 +266,7 @@ pub fn retired(name : String) -> String? {
 pub fn builtin_names() -> Array[String] {
   let out : Array[String] = []
   for name, _ in builtin_table {
-    if !retired_table.contains(name) {
+    if !retired_builtins.contains(name) {
       out.push(name)
     }
   }

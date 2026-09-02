@@ -41,6 +41,12 @@ pub(all) enum LintCode {
   ProvideTypeBadShape
   LookupNoProvider
   UnknownComponentName
+  /// A `$name` in an `@on` position. The same refusal the generator raises as
+  /// `METHOD_IN_EVENT`, said for a view that arrives at RUNTIME — a runtime
+  /// macro expansion, or a guest's manifest — where no generator ran. Raised
+  /// by `component`'s `ComponentStack::check_names` for the same reason the
+  /// four above are.
+  MethodInEventPosition
   /// An `e.<path>` handler argument traverses a step off the event-path
   /// allowlist (`e.target.form.action`). A HINT for an author's own views —
   /// the path resolves under the open profile — because the same step is

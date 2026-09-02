@@ -97,3 +97,44 @@ pub fn View::collect_method_names(self : View, into : Set[String]) -> Unit {
     }
   }
 }
+
+///|
+/// The `$name` a handler puts in an `@on` position, when it does.
+///
+/// A `$name` here is REFUSED, and the rule belongs with the tree rather than
+/// with either checker: `app/app.mbt` collapses `HandlerName` and `Method` into
+/// one string and pushes both as the same `Receive`, so the two spellings are
+/// the same dispatch — including for the generated mutators, which answer to
+/// either. The sigil therefore claims a distinction that does not exist, and
+/// readers reasonably infer one. `$` keeps its meaning where it has one: a
+/// value position, where there is no event and no ctx and an input handler
+/// cannot go.
+///
+/// Two callers, and that is why it is here: the generator refuses it while
+/// compiling a view file, and `ComponentStack::check_names` refuses it for a
+/// view that arrives at RUNTIME — a runtime macro expansion, or a guest's
+/// manifest — which the generator never sees.
+pub fn NodeEvent::method_in_event(self : NodeEvent) -> String? {
+  match self.handler.handler {
+    Method(name) => Some(name)
+    _ => None
+  }
+}
+
+///|
+/// Every `$name` in an `@on` position across a compiled view's events, each
+/// with the site that carries it (`@on.click`).
+///
+/// A LIST rather than the first, because the caller that reads it reports
+/// rather than raises: a bundle with three of these should say three things.
+pub fn methods_in_events(events : Array[NodeEvents]) -> Array[(String, String)] {
+  let out : Array[(String, String)] = []
+  for ev in events {
+    for h in ev.handlers {
+      if h.method_in_event() is Some(name) {
+        out.push((name, "@on." + h.name))
+      }
+    }
+  }
+  out
+}

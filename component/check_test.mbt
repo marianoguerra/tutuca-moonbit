@@ -32,9 +32,10 @@ fn chk_comp(
   name : String,
   provide? : Map[String, String] = Map([]),
   lookup? : Array[@component.LookupSpec] = [],
+  view? : String = "<div></div>",
 ) -> @component.Component {
   @component.component(
-    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view=view) },
     name~,
     init=ChkState::{ n: 0, },
     provide~,
@@ -139,4 +140,25 @@ test "an uppercase lookup naming no registered component is reported" {
   ])
   assert_true(fs.contains(("UNKNOWN_COMPONENT_NAME", "error", "Celll")))
   assert_false(fs.iter().any(f => f.2 == "Cell"))
+}
+
+///|
+test "a `$name` in an event position is refused for a view compiled at runtime" {
+  // The generator refuses this while compiling a view FILE
+  // (`METHOD_IN_EVENT`). A view that arrives at runtime — a macro this stack
+  // expanded, a guest's manifest — never meets the generator, and the rule is
+  // one rule: `@anode.NodeEvent::method_in_event`, read by both checkers.
+  //
+  // Refused because a handler name and a `$name` are the SAME dispatch: both
+  // are pushed as a `Receive` of that string, so the sigil claims a
+  // distinction that does not exist.
+  let fs = chk_findings([
+    chk_comp("Solo", view="<button @on.click=\"$inc\">go</button>"),
+  ])
+  assert_true(fs.contains(("METHOD_IN_EVENT", "error", "inc")))
+  // A bare name in the same position is the spelling that works.
+  let ok = chk_findings([
+    chk_comp("Solo", view="<button @on.click=\"inc\">go</button>"),
+  ])
+  assert_false(ok.iter().any(f => f.0 == "METHOD_IN_EVENT"))
 }

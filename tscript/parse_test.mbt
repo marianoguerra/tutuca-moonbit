@@ -225,9 +225,9 @@ test "a retired name still answers, and says what to write instead" {
   guard! @tutuca.builtin("equals?") is Some(eq)
   assert_eq(eq.arity, 2)
   assert_true(@tutuca.builtin("falsy?") is Some(_))
-  assert_true(@tutuca.retired("equals?") is Some(_))
-  assert_true(@tutuca.retired("falsy?") is Some(_))
-  assert_true(@tutuca.retired("empty?") is None)
+  assert_true(@tutuca.retired(BuiltinName, "equals?") is Some(_))
+  assert_true(@tutuca.retired(BuiltinName, "falsy?") is Some(_))
+  assert_true(@tutuca.retired(BuiltinName, "empty?") is None)
   // …and neither is in the vocabulary a "did you mean" ranges over.
   assert_false(@tutuca.builtin_names().contains("equals?"))
   assert_false(@tutuca.builtin_names().contains("falsy?"))

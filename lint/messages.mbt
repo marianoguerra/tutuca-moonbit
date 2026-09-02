@@ -26,6 +26,7 @@ pub fn lint_code_name(code : LintCode) -> String {
     ProvideTypeBadShape => "PROVIDE_TYPE_BAD_SHAPE"
     LookupNoProvider => "LOOKUP_NO_PROVIDER"
     UnknownComponentName => "UNKNOWN_COMPONENT_NAME"
+    MethodInEventPosition => "METHOD_IN_EVENT"
     EventPathUnsafeStep => "EVENT_PATH_UNSAFE_STEP"
     InertConstraint => "INERT_CONSTRAINT"
     HtmlTagNameHasUppercase => "HTML_TAG_NAME_HAS_UPPERCASE"
@@ -213,6 +214,11 @@ pub fn finding_message(f : Finding) -> String {
       } else {
         head + ", and it declares no default, so `*\{name}` is always nothing"
       }
+    }
+    MethodInEventPosition => {
+      let comp = info_or(info, "comp", "?")
+      let site = info_or(info, "site", "@on")
+      "'\{comp}' writes `\{site}=\"$\{name}\"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `\{name}` bare"
     }
     UnknownComponentName => {
       let comp = info_or(info, "comp", "?")

@@ -102,6 +102,43 @@ pub(all) struct ProvideInfo {
 } derive(Debug)
 
 ///|
+/// Which keyspace a `provide` entry falls in, and whether it is well formed.
+///
+/// The name rule splits the two keyspaces (`@tutuca.is_type_name`): an
+/// uppercase key publishes a TYPE, and `"self"` is the only legal value for
+/// one — which is what keeps a published type a component by construction, so
+/// the `dyn` leg never has to trust an arbitrary expression. Anything else is a
+/// value, and must be ADDRESSABLE (`.field` / `.seq[.key]`) because a provide
+/// doubles as the resume target for `<x render="*name">`.
+pub(all) enum ProvideKind {
+  /// A lowercase key: an addressable value.
+  ProvideValue
+  /// An uppercase key reading `"self"`: this component, published as a type.
+  ProvideSelfType
+  /// An uppercase key reading anything else. Refused.
+  ProvideBadType
+} derive(Debug, Eq)
+
+///|
+/// Read a `provide` entry's keyspace and shape.
+///
+/// ONE reader for the rule, because it is asked in three places that must
+/// agree: `compile` (which drops what is malformed), `check_names` (which
+/// reports it), and `register_paths` (which only asks which keyspace). A caller
+/// that has no source to offer — a registered PATH is not written as a
+/// `provide` value — leaves `src` alone and is answered about the keyspace
+/// alone.
+pub fn provide_kind(name : String, src? : String = "self") -> ProvideKind {
+  if !@tutuca.is_type_name(name) {
+    ProvideValue
+  } else if src == "self" {
+    ProvideSelfType
+  } else {
+    ProvideBadType
+  }
+}
+
+///|
 /// Raw `lookup:` entry. A name, and a `default` only when there is one.
 ///
 /// A LIST of these rather than a map, because a lookup no longer names a

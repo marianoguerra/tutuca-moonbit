@@ -154,6 +154,17 @@ pub fn collection_method(name : String) -> Int? {
 }
 
 ///|
+/// Every effect name, in the order the diagnostics list them.
+///
+/// The ONE enumeration of the vocabulary. `effect_min_arity` answers for each
+/// of these and for nothing else, and the two backends read this rather than
+/// restating it — an effect only one of them knows about is a language with
+/// two semantics.
+pub fn effect_names() -> Array[String] {
+  ["send", "sendReply", "sendAt", "intent", "forward", "reply", "fail", "stop"]
+}
+
+///|
 /// The effects, and the fewest arguments each takes.
 pub fn effect_min_arity(name : String) -> Int? {
   match name {
@@ -217,7 +228,39 @@ pub fn kind_word(k : DeclKind) -> String {
 }
 
 ///|
-fn kind_of_word(w : String) -> DeclKind? {
+/// Every declaration kind, in the order the diagnostics list them.
+///
+/// The ONE place the vocabulary is enumerated. Two sentences below and the
+/// card compiler's role scan all read it, so a kind added to `DeclKind` and to
+/// `kind_word` is a kind those three already know about.
+pub fn all_decl_kinds() -> Array[DeclKind] {
+  [
+    DReceive,
+    DIntent,
+    DCompute,
+    DGet,
+    DSet,
+    DPred,
+    DInvariant,
+    DEnrich,
+    DEnrichScope,
+  ]
+}
+
+///|
+/// The kinds as an English list — `a, b, c or z`.
+fn decl_kind_list() -> String {
+  let words = all_decl_kinds().map(kind_word)
+  match words {
+    [] => ""
+    [one] => one
+    [.. init, last] => init.join(", ") + " or " + last
+  }
+}
+
+///|
+/// The kind a word names, or nothing.
+pub fn kind_of_word(w : String) -> DeclKind? {
   match w {
     "receive" => Some(DReceive)
     "intent" => Some(DIntent)
@@ -376,10 +419,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
       let t = p.bump()
       (w, t.span)
     }
-    _ =>
-      p.fail(
-        "a declaration: receive, intent, compute, get, set, pred, invariant, enrich or enrichScope",
-      )
+    _ => p.fail("a declaration: " + decl_kind_list())
   }
   guard kind_of_word(word) is Some(kind) else {
     raise UnknownKind(got=word, span=word_span)
@@ -1126,7 +1166,7 @@ pub fn ScriptError::message(self : ScriptError) -> String {
       "`&` names a POSITION and is legal in exactly one place: the first argument of `sendAt`"
     BadPlace(why~, ..) => why
     UnknownKind(got~, ..) =>
-      "`\{got}` is not a declaration kind — expected receive, intent, compute, pred, invariant, enrich or enrichScope"
+      "`\{got}` is not a declaration kind — expected " + decl_kind_list()
     DuplicateDecl(name~, ..) =>
       "`\{name}` is declared twice in this bucket; a name is answered once, by exact match, with nothing behind it"
   }

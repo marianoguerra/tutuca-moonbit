@@ -88,7 +88,7 @@ fn value_issue_message(role : @tscript.IssueRole) -> String {
 fn value_issue_sentence(role : @tscript.IssueRole, value : String) -> String? {
   match role {
     UnknownPredicate => {
-      let tail = match @tutuca.retired(value) {
+      let tail = match @tutuca.retired(BuiltinName, value) {
         // A name on its way out: say the one that stays rather than offering
         // the vocabulary, since the author already knows what they meant.
         Some(instead) => instead
@@ -230,7 +230,7 @@ fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
       // Once per name per view, not once per use. The migration is a
       // find-and-replace over a spelling; ninety-four copies of one sentence
       // would bury every other hint in the run.
-      if @tutuca.retired(name) is Some(instead) {
+      if @tutuca.retired(BuiltinName, name) is Some(instead) {
         let said = "view \{c.view}: `\{name}` is retired — \{instead}"
         if !c.hints.contains(said) {
           c.hints.push(said)
@@ -654,16 +654,13 @@ fn walk_view(
           }
         Some(PropertyReset(_)) | None => ()
       }
+      // A `$name` here is REFUSED, and `@anode.NodeEvent::method_in_event` is
+      // where the rule lives — the same one `ComponentStack::check_names` runs
+      // over a view that arrives at runtime, which this generator never sees.
+      if h.method_in_event() is Some(name) {
+        raise MethodInEventPosition(view=view_name, name~, site~)
+      }
       match h.handler.handler {
-        // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
-        // Method into one string and pushes both as the same `Receive`, so the
-        // two spellings are the same dispatch — including for the generated
-        // mutators, which answer to either. The sigil therefore claims a
-        // distinction that does not exist, and readers reasonably infer one.
-        // `$` keeps its meaning where it has one: a value position, where
-        // there is no event and no ctx and an input handler cannot go.
-        Method(name) =>
-          raise MethodInEventPosition(view=view_name, name~, site~)
         HandlerName(name~, ..) => {
           let value_kind = c.value_kinds.get(ev.id).unwrap_or(VString)
           let shape = h.handler.args.map(a => arg_type_of(a, value_kind))

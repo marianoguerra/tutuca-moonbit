@@ -117,7 +117,7 @@ test "`when` is not a declaration kind" {
   // `when` could. The kind list is nine rather than ten.
   assert_eq(
     script_err("when unfinished { not @value.completed }"),
-    "`when` is not a declaration kind — expected receive, intent, compute, pred, invariant, enrich or enrichScope",
+    "`when` is not a declaration kind — expected receive, intent, compute, get, set, pred, invariant, enrich or enrichScope",
   )
 }
 
@@ -821,4 +821,21 @@ test "a leg word is only a leg word before an argument list" {
   guard route_of("receive go(lex) { forward lex }") is [Lex] else {
     fail("the leg position reads a leg")
   }
+}
+
+///|
+test "the two vocabulary tables answer for exactly their own names" {
+  // `effect_names` is what the sentences and the card backend enumerate;
+  // `effect_min_arity` is what the parser asks. A name in one and not the
+  // other is an effect one half of the language does not have.
+  for name in @tscript.effect_names() {
+    assert_true(@tscript.effect_min_arity(name) is Some(_))
+  }
+  assert_true(@tscript.effect_min_arity("bubble") is None)
+  // Same pair for the declaration kinds: every kind has a word, and every word
+  // reads back as the kind it spells.
+  for kind in @tscript.all_decl_kinds() {
+    assert_eq(@tscript.kind_of_word(@tscript.kind_word(kind)), Some(kind))
+  }
+  assert_true(@tscript.kind_of_word("when") is None)
 }

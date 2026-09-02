@@ -7,9 +7,13 @@ import {
 }
 
 // Values
+pub fn all_decl_kinds() -> Array[DeclKind]
+
 pub fn collection_method(String) -> Int?
 
 pub fn effect_min_arity(String) -> Int?
+
+pub fn effect_names() -> Array[String]
 
 pub fn escape_of(Char) -> Char?
 
@@ -18,6 +22,8 @@ pub fn escaped_char(Char) -> Char?
 pub fn is_predicate(DeclKind) -> Bool
 
 pub fn is_transition(DeclKind) -> Bool
+
+pub fn kind_of_word(String) -> DeclKind?
 
 pub fn kind_word(DeclKind) -> String
 

@@ -1814,7 +1814,10 @@ test "a `$method` the manifest never declared is reported at load" {
         provide_bindings: [],
         lookup_bindings: [],
         // `$setCount` is absent on purpose: it is the mutator the `count` field
-        // implies, so the host answers it and it must NOT be reported
+        // implies, so the host answers it and it must NOT be reported as an
+        // undeclared method. Both `@on` sites are separately refused as
+        // METHOD_IN_EVENT — a `$name` there is the same dispatch a bare name
+        // is, so the sigil is turned away wherever a view arrives from.
         methods: ["boxStyle"],
         whens: [],
         enriches: [],
@@ -1840,6 +1843,8 @@ test "a `$method` the manifest never declared is reported at load" {
       #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
       #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
       #|UNDECLARED_METHOD (warning) Stat/main: '$valueClass' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
+      #|METHOD_IN_EVENT (error) bundle statlib: 'Stat' writes `@on.click="$setCount"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `setCount` bare
+      #|METHOD_IN_EVENT (error) bundle statlib: 'Stat' writes `@on.click="$bumpIt"`: a `$name` in an event position is refused. A handler name and a `$name` are the same dispatch, so the sigil claims a distinction that does not exist — write `bumpIt` bare
     ),
   )
 }

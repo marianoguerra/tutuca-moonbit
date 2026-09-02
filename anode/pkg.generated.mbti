@@ -53,6 +53,8 @@ pub fn hide(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
 
+pub fn method_in_event(Array[NodeEvents]) -> (String, String)?
+
 pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String], binding? : BindCoercion, action? : @tscript.PropertyAction) -> NodeEvent
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
@@ -221,6 +223,7 @@ pub(all) struct NodeEvent {
   modifiers : Array[String]
   mut binding : BindCoercion?
 } derive(@debug.Debug)
+pub fn NodeEvent::method_in_event(Self) -> String?
 
 pub(all) struct NodeEvents {
   id : Int

@@ -60,7 +60,10 @@ fn escape_role(fn_name : String, comp? : String = "") -> (String, String)? {
   if comp != "" && rest.has_prefix(comp + "_") {
     rest = rest[comp.length() + 1:].to_owned()
   }
-  for word in ["receive", "intent", "compute", "pred", "invariant"] {
+  // The role words come off `tscript`'s own kind table rather than being
+  // restated here: a kind this scan does not know is an escape that silently
+  // becomes a helper.
+  for word in escape_kinds() {
     if rest.has_prefix(word + "_") {
       let name = rest[word.length() + 1:].to_owned()
       if name != "" {
@@ -72,10 +75,29 @@ fn escape_role(fn_name : String, comp? : String = "") -> (String, String)? {
 }
 
 ///|
+/// The kinds an escape may answer for, as their source words.
+///
+/// A declaration whose body produces a value or a transition: the two
+/// transitions, the two predicates, and `compute`. `get` / `set` name a
+/// property's halves and `enrich` binds a scope — neither is reached as
+/// `cm_<name>`, so a `card_get_x` is a helper the escapes may call and not a
+/// declaration this answers.
+fn escape_kinds() -> Array[String] {
+  @tscript.all_decl_kinds()
+  .filter(k => {
+    @tscript.is_transition(k) || @tscript.is_predicate(k) || k is DCompute
+  })
+  .map(@tscript.kind_word)
+}
+
+///|
 /// Whether a kind word names a transition — which decides what the function
 /// answers and where the dispatch arm goes.
 fn escape_is_transition(kind : String) -> Bool {
-  kind is ("receive" | "intent")
+  match @tscript.kind_of_word(kind) {
+    Some(k) => @tscript.is_transition(k)
+    None => false
+  }
 }
 
 ///|

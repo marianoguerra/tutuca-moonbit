@@ -116,7 +116,10 @@ pub fn ComponentStack::register_paths(
   paths : Map[String, @tutuca.Path],
 ) -> Unit {
   for name, path in paths {
-    if !@tutuca.is_type_name(name) {
+    // A registered path is a VALUE position; the type keyspace is published as
+    // a component id and never as an address. `provide_kind` is asked with no
+    // source, since there is none to read here.
+    if provide_kind(name) is ProvideValue {
       self.paths[name] = path
     }
   }

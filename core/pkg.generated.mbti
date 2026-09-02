@@ -58,7 +58,7 @@ pub fn refuse(Refusal) -> Unit
 
 pub fn refusing() -> Bool
 
-pub fn retired(String) -> String?
+pub fn retired(RetiredKind, String) -> String?
 
 pub fn route_label(Array[Leg]) -> String
 
@@ -359,6 +359,12 @@ pub(all) enum RefusalCode {
   BadPayload
 } derive(Eq, @debug.Debug)
 pub fn RefusalCode::word(Self) -> String
+
+pub(all) enum RetiredKind {
+  BuiltinName
+  KeywordName
+  AnswerName
+} derive(Eq, @debug.Debug)
 
 pub(all) enum RuntimeNotice {
   Refused(Refusal)

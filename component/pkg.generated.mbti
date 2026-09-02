@@ -17,6 +17,8 @@ pub fn lookup_name(String) -> LookupSpec
 
 pub fn lookup_or(String, String) -> LookupSpec
 
+pub fn provide_kind(String, src? : String) -> ProvideKind
+
 pub fn schema_mutators(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
 
 pub fn schema_writers(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
@@ -162,6 +164,12 @@ pub(all) struct ProvideInfo {
   name : String
   val : @core.Val
 } derive(@debug.Debug)
+
+pub(all) enum ProvideKind {
+  ProvideValue
+  ProvideSelfType
+  ProvideBadType
+} derive(Eq, @debug.Debug)
 
 pub(all) enum Update[S] {
   Unhandled

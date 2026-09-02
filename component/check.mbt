@@ -32,6 +32,7 @@ pub fn ComponentStack::check_names(
   for _, comp in self.by_name {
     comp.check_provides(out)
     comp.check_lookups(out)
+    comp.check_event_handlers(out)
     match comp.scope {
       Some(inner) => out.append(inner.check_names())
       None => ()
@@ -48,10 +49,13 @@ fn Component::check_provides(
   out : Array[@lint.Finding],
 ) -> Unit {
   for pname, src in self.raw_provide {
-    if @tutuca.is_type_name(pname) {
-      // `"self"` is the only value an uppercase key can take, which is what
-      // makes a published type a component by construction.
-      if src != "self" {
+    // `"self"` is the only value an uppercase key can take, which is what
+    // makes a published type a component by construction. `provide_kind`
+    // (`spec.mbt`) is where that rule lives; `compile` drops what it calls
+    // malformed and this is where the same reading is said out loud.
+    match provide_kind(pname, src~) {
+      ProvideSelfType => continue
+      ProvideBadType => {
         out.push(
           name_finding(ProvideTypeBadShape, Error, [
             ("comp", self.name),
@@ -59,8 +63,9 @@ fn Component::check_provides(
             ("value", src),
           ]),
         )
+        continue
       }
-      continue
+      ProvideValue => ()
     }
     // Present in what was written and absent from what compiled means the
     // value did not parse as an addressable path.
@@ -70,6 +75,35 @@ fn Component::check_provides(
           ("comp", self.name),
           ("name", pname),
           ("value", src),
+        ]),
+      )
+    }
+  }
+}
+
+///|
+/// What this component's COMPILED views put in an `@on` position.
+///
+/// The generator refuses a `$name` there while compiling a view file
+/// (`METHOD_IN_EVENT`). A view that arrives at RUNTIME never meets it — a
+/// macro expanded by `ComponentStack`, a guest's manifest — so the same rule
+/// runs here, over the tree the expander actually produced, and reports rather
+/// than raises for the reason this file's header gives.
+///
+/// The rule itself is `@anode.NodeEvent::method_in_event`: one expander, one
+/// refusal, read by both checkers.
+fn Component::check_event_handlers(
+  self : Component,
+  out : Array[@lint.Finding],
+) -> Unit {
+  for _, view in self.views {
+    guard view.ctx is Some(ctx) else { continue }
+    for hit in @anode.methods_in_events(ctx.events) {
+      out.push(
+        name_finding(MethodInEventPosition, Error, [
+          ("comp", self.name),
+          ("name", hit.0),
+          ("site", hit.1),
         ]),
       )
     }

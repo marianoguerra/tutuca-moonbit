@@ -52,6 +52,7 @@ pub(all) enum LintCode {
   ProvideTypeBadShape
   LookupNoProvider
   UnknownComponentName
+  MethodInEventPosition
   EventPathUnsafeStep
   InertConstraint
   HtmlTagNameHasUppercase
