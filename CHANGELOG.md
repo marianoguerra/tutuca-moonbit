@@ -210,9 +210,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     and `supported_manifest_version` is 3.
 
   The generated per-field mutator names (`setCount`, `pushInItems`, …) survive
-  only as an implementation table under `Obj::obj_set_member` /
-  `obj_mutate_member` and `Transactor::set_member` / `mutate_member`; source,
-  manifests and the host interface never spell them again. `obj_member_at` is
+  only as an implementation table under `Obj::set_member` /
+  `mutate_member` and `Transactor::set_member` / `mutate_member`; source,
+  manifests and the host interface never spell them again. `member_at` is
   the private-capable read, `Stack::lookup_member` its value-position half, and
   `StateDef::property` / `member_ty` are how a generator asks what `.name` means
   here.
@@ -1242,8 +1242,8 @@ components in one, 19 in the other. Every one of them was silent.
   `control.lookup` reads those and nothing else. It now resolves them for the
   RENDER position too, from `stack.lookup_dynamic` — which is what a `*name` in
   the card's own view reads, so a `*name` in its `pred` answers the same thing.
-  `DynObj` implements `obj_method_at` / `obj_callable_at` to get the stack the
-  call is being made under; `obj_field` / `obj_callable` still pass a
+  `DynObj` implements `method_at` / `obj_callable_at` to get the stack the
+  call is being made under; `member` / `obj_callable` still pass a
   `NullStack`, which is the honest answer for a `$compute` read off a bare
   `Value` outside a render.
 
@@ -1380,7 +1380,7 @@ components in one, 19 in the other. Every one of them was silent.
 
   `Value::Fn` carries `(Array[Value]) -> Value` and nothing else, so the stack
   could not ride in on the existing convention: `@tutuca.Obj` gains
-  `obj_method_at` and `obj_callable_at`, both DEFAULTED to the stackless answer,
+  `method_at` and `obj_callable_at`, both DEFAULTED to the stackless answer,
   so every hand-written `Obj` keeps working untouched.
   (`core/spec.mbt`, `core/ctx_stack.mbt`, `core/value_dyn.mbt`,
   `render/stack.mbt`, `component/instance.mbt`, `tscript/emit_mbt/emit.mbt`.)
@@ -1914,7 +1914,7 @@ cost of this release.
   declarations before this release; the error messages that still offered them
   now agree with the parser.
 
-- **The dyncomp v1 bridge.** `DynObj::obj_handler` translated between the host's
+- **The dyncomp v1 bridge.** `DynObj::handler` translated between the host's
   two buckets and the wire's five — an intent going out as `bubble`, an answer
   disambiguated by `is_answer`, an unclaimed `Receive` retried as `input`. All
   of it is gone; the bucket goes out as it came in. With it went `GuestBucket`,
@@ -4357,8 +4357,8 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   **`dyncomp/persist/wasm`** is `localStorage`, four calls wide, swallowing
   what a browser throws in private mode or at a full quota.
 
-- **`Obj::obj_persist_id`** — what an instance is CALLED across sessions, which
-  `obj_identity` deliberately is not (that one is a handle and a revision, both
+- **`Obj::persist_id`** — what an instance is CALLED across sessions, which
+  `identity` deliberately is not (that one is a handle and a revision, both
   facts about this run). None means "do not store me" rather than "store me
   under something invented". `Bundle::make_instance` mints one when the caller
   has no better name, and `with_persist_id` takes the better name when there is
@@ -4421,7 +4421,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 - **A guest can offer a hole for a person to fill.** A component declaring a
   field whose type names a component from ANOTHER module (`resource universal;
   body: universal`) gets it built and answered by the HOST, and never sees it —
-  `DynObj` holds it, `obj_field` answers it without crossing the bridge, and a
+  `DynObj` holds it, `member` answers it without crossing the bridge, and a
   successor carries it. No contract change: `ty-comp` already carried the name.
   It has to work this way round because the boundary allows nothing else — a WIT
   `value` has no case that can carry a host component. A same-bundle `ty-comp`
@@ -4618,12 +4618,12 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 - **An update that changed only what a schema does not name was thrown away.**
   `reuse_equal` — the check that keeps a rebuilt-but-equal field from
   propagating a new object to the root — compared two INSTANCES structurally,
-  and `obj_eq` ranges over the declared fields. So a successor that changed
+  and `eq` ranges over the declared fields. So a successor that changed
   something its schema does not name (an opaque guest's draft, a cursor, a
   parser's arena) looked exactly like its predecessor, the parent kept the
   predecessor, and the edit vanished — silently, with the successor's handle
   already queued for collection, which is where the bridge's `no live
-  instance` warnings came from. Instances are compared by `obj_identity` now:
+  instance` warnings came from. Instances are compared by `identity` now:
   same origin and same revision, or not the same instance. Writing the SAME
   instance back still collapses, so a no-op interaction stays free.
 
@@ -5437,7 +5437,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   fields rather than a walk of the subtree under it. `Bundle.comps` carries the
   manifest fingerprint hashed once at registration for the same reason.
 
-  The id is absent from `obj_field`, `obj_eq`, `obj_debug`, the schema and the
+  The id is absent from `member`, `eq`, `debug`, the schema and the
   JSON projection: a bucket is not state, and every DOM snapshot, inspector row
   and `gen-views` output is unchanged by this.
 
@@ -5575,7 +5575,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   each pane; the Instance pane renders the inspector's explorer over that
   story's own instance, with the Component tab beside its fields. It stays live
   because `i<N>` is rebuilt in the same successor that writes `s<N>` — a story
-  dispatch rebuilds the spine through the shell's `obj_with_field`, so the
+  dispatch rebuilds the spine through the shell's `with_member`, so the
   explorer tracks the story rather than showing the state as of the moment the
   tab was opened. Built when the tab is opened and dropped when it is closed:
   a gallery has ~50 stories and an explorer is a whole component tree.
@@ -5604,7 +5604,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   like the js one.
 
 - **A component instance can describe itself.** `@tutuca.Obj` gains
-  `obj_schema()`, and with it the whole generic-access layer in `@tutuca`:
+  `schema()`, and with it the whole generic-access layer in `@tutuca`:
   `Value::field_opt` / `item` / `index` / `key` / `entries` / `size` /
   `field_names` / `field_info` / `snapshot` / `call` / `call_field`, the `_opt`
   coercers, total copy-on-write `with_field` / `with_item`, and the
@@ -5620,10 +5620,10 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
   rendering and said so in a comment.
 
   Concretely: the inspector opens a component instance into its fields instead
-  of one line of `obj_debug` text; `Value::to_json` projects a described
+  of one line of `debug` text; `Value::to_json` projects a described
   instance instead of flattening it to null; `size_of` answers for a custom
-  collection; `obj_eq` and `obj_debug` come off the schema rather than being
-  hand-written per implementor (`DynObj` had never implemented `obj_eq` at
+  collection; `eq` and `debug` come off the schema rather than being
+  hand-written per implementor (`DynObj` had never implemented `eq` at
   all, so two guest instances never compared equal).
 
 ### Fixed
@@ -5642,7 +5642,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 
 - **A nested instance rendered as `Object`.** Only the inspector's ROOT row
   read the name off `v.schema()`; every level below it went through
-  `classify`, which matched on `obj_schema()` for the fields and dropped the
+  `classify`, which matched on `schema()` for the fields and dropped the
   name, so a component holding child components opened into `Object {1}`
   instead of `JsonBoolean {1}`.
 
@@ -5660,7 +5660,7 @@ wants to USE v2's routing needs the 0.8.0 WIT and regenerated bindings
 
 - **`FieldKind`, `FieldInfo` and `SchemaInfo` moved to `@tutuca`.** They
   mention only `Value`, and living in `component/` put them out of reach of
-  everything that has only a `Value` — which is what `obj_schema` needed. They
+  everything that has only a `Value` — which is what `schema` needed. They
   are re-exported, so `@component.SchemaInfo` still resolves; an enum
   CONSTRUCTOR does not travel through a re-export, so `@component.FBool`
   becomes `@tutuca.FBool` or bare `FBool` (the generator writes it bare).

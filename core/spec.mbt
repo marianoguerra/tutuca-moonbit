@@ -8,10 +8,10 @@
 // instead of splitting into value/ and path/ subpackages: their core types
 // form a single dependency
 // cycle that MoonBit packages cannot express across an import edge —
-// Obj::obj_handler returns Handler (path side), Handler carries &Ctx and
+// Obj::handler returns Handler (path side), Handler carries &Ctx and
 // returns a Value, Ctx returns DispatchPath (whose Steps carry Val), and
 // Value::Obj(&Obj) closes the loop. Breaking the cycle would mean removing
-// obj_handler from Obj, which needs a trait-object downcast MoonBit doesn't
+// handler from Obj, which needs a trait-object downcast MoonBit doesn't
 // have. The value_/path_ file prefixes are the intended organization.
 
 ///|
@@ -137,46 +137,41 @@ declare pub fn ObjId::to_hex(self : ObjId) -> String
 /// the Value-backed Instance (component package) and user-defined typed
 /// structs. Instances live INSIDE Value so they flow through every
 /// Value-typed seam (binds, handler args, dynamic lookups, iterated seqs).
-/// Fns returned by obj_field / trigger and the Handler returned
-/// by obj_handler are SELF-PRE-BOUND (they close over the concrete Self —
+/// Fns returned by member / trigger and the Handler returned
+/// by handler are SELF-PRE-BOUND (they close over the concrete Self —
 /// the no-downcast analogue of late-bound `this`) and ignore args element 0.
 /// Every method defaults to an empty/None answer.
 pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
-  fn obj_field(Self, name : String) -> Value? = _ // fields; methods surface as pre-bound Fn
-  fn obj_with_field(Self, name : String, v : Value) -> Value? = _ // COW -> Some(Obj(new_self))
+  fn field(Self, name : String) -> Value? = _ // fields; methods surface as pre-bound Fn
+  fn with_field(Self, name : String, v : Value) -> Value? = _ // COW -> Some(Obj(new_self))
   /// Read a declared public abstract property. This is distinct from
-  /// `obj_field`: fields are representation; properties are interface.
-  fn obj_property(Self, name : String) -> Value? = _
+  /// `member`: fields are representation; properties are interface.
+  fn property(Self, name : String) -> Value? = _
   /// Apply one synchronous, pure property transition.
-  fn obj_set_property(Self, name : String, v : Value) -> PropertyWrite = _
+  fn set_property(Self, name : String, v : Value) -> PropertyWrite = _
   /// Read a virtual member for the component's own view. Unlike
-  /// `obj_property`, this includes private properties. The stack-bearing form
+  /// `property`, this includes private properties. The stack-bearing form
   /// leaves room for computed members that resolve dynamic render bindings.
-  fn obj_member_at(Self, name : String, stack : &Stack) -> Value? = _
+  fn member_at(Self, name : String, stack : &Stack) -> Value? = _
   /// Apply a property transition from the component's own view. This is the
-  /// private-capable counterpart of `obj_set_property`.
-  fn obj_set_member(Self, name : String, v : Value) -> PropertyWrite = _
+  /// private-capable counterpart of `set_property`.
+  fn set_member(Self, name : String, v : Value) -> PropertyWrite = _
   /// Apply a collection/scalar operation to a private-or-public member from
   /// the component's own view. Operation names are source-level verbs such as
   /// `push`, `removeAt`, and `toggle`; generated handler spellings never cross
   /// this boundary.
-  fn obj_mutate_member(
-    Self,
-    name : String,
-    operation : String,
-    args : Array[Value],
-  ) -> PropertyWrite = _
-  fn obj_item(Self, key : PathKey) -> Value? = _
-  fn obj_with_item(Self, key : PathKey, v : Value) -> Value? = _
+  fn mutate_member(Self, name : String, operation : String, args : Array[Value]) -> PropertyWrite = _
+  fn item(Self, key : PathKey) -> Value? = _
+  fn with_item(Self, key : PathKey, v : Value) -> Value? = _
   // Custom-sequence hook (the analogue of SEQ_INFO): ordered (key, value)
   // entries so `@each` can iterate a non-List/Map Obj. None = not a sequence
   // (the default iteration falls back to empty). Keyed entries use KStr keys ("sk" breadcrumbs),
-  // indexed ones KInt ("si"); obj_item resolves the same keys for path lookup.
-  fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
+  // indexed ones KInt ("si"); item resolves the same keys for path lookup.
+  fn seq_entries(Self) -> Array[(PathKey, Value)]? = _
   // The TRIGGER this name answers: the render-time buckets (@when /
   // @enrich-with / @loop-with), then whatever answers a bare name. Distinct
-  // from obj_handler, which resolves a leaf-UPDATING handler in a dispatch
+  // from handler, which resolves a leaf-UPDATING handler in a dispatch
   // bucket — different question, different answer.
   //
   // It used to take a NAMESPACE, `Receive` or `Alter`, and the `Receive` half
@@ -189,14 +184,14 @@ pub(open) trait Obj {
   // body that reads `*name` — a `compute`, a `pred`, a `@when`, an `enrich` —
   // has no way to ask its environment anything. These are the one seam that
   // hands it one, and they exist as a PAIR because the two questions already
-  // are one: `obj_field` surfaces a `$compute` as a pre-bound Fn and
+  // are one: `member` surfaces a `$compute` as a pre-bound Fn and
   // `trigger` does the same for the render-time buckets.
   //
   // Defaulted to the stackless answer, so an `Obj` with nothing to do with a
   // stack — every hand-written one — implements neither and keeps working.
-  fn obj_method_at(Self, name : String, stack : &Stack) -> Value? = _
+  fn method_at(Self, name : String, stack : &Stack) -> Value? = _
   fn trigger_at(Self, name : String, stack : &Stack) -> Value? = _
-  fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
+  fn handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
   // What this instance DECLARES: the one method that makes the nine above
   // describable. Without it a holder of a bare `Value` can ask for a NAMED
   // field and nothing else — not which names exist, not what they hold — and
@@ -212,16 +207,16 @@ pub(open) trait Obj {
   // Keeping state the schema does not name is legal and ordinary — an opaque
   // guest's draft, a cursor, a parser's arena — and costs exactly one thing:
   // two instances that differ only there compare EQUAL. Nothing that detects
-  // change may lean on that, which is why identity (`obj_identity`) rather
+  // change may lean on that, which is why identity (`identity`) rather
   // than equality is what decides whether a successor replaces its
   // predecessor.
   //
   // MUST return a STORED value, never build one: the defaults read it in loops.
-  fn obj_schema(Self) -> SchemaInfo? = _
-  // The sized half of the obj_seq_entries hook, so `size_of` stops answering
+  fn schema(Self) -> SchemaInfo? = _
+  // The sized half of the seq_entries hook, so `size_of` stops answering
   // None for a custom collection. The default counts the entries; override
   // when the length is known without materializing them.
-  fn obj_size(Self) -> Int? = _
+  fn size(Self) -> Int? = _
   // This instance's render-cache bucket (see ObjId). None is the honest answer
   // for an ad-hoc Obj that does not track its own generations, and it is what
   // makes the cache DECLINE at that render site rather than build a key and
@@ -229,10 +224,10 @@ pub(open) trait Obj {
   //
   // MUST return a STORED value, never compute one: it is read once per render
   // site per pass.
-  fn obj_identity(Self) -> ObjId? = _
-  fn obj_eq(Self, other : &Obj) -> Bool = _ // structural over the schema; false when there is none
-  fn obj_debug(Self) -> String = _
-  // What this instance is CALLED across sessions, if anything. `obj_identity`
+  fn identity(Self) -> ObjId? = _
+  fn eq(Self, other : &Obj) -> Bool = _ // structural over the schema; false when there is none
+  fn debug(Self) -> String = _
+  // What this instance is CALLED across sessions, if anything. `identity`
   // is the render cache's bucket and is deliberately not this: it is a handle
   // and a revision, both of which are facts about this run of the program.
   // A persist id is the other kind of name — the one a store keys on, so that
@@ -241,7 +236,7 @@ pub(open) trait Obj {
   // None is the honest answer for an instance nobody named, and it means "do
   // not store me" rather than "store me somewhere arbitrary": a key invented
   // at save time would not be found at load time.
-  fn obj_persist_id(Self) -> String? = _
+  fn persist_id(Self) -> String? = _
 }
 
 ///|
@@ -250,55 +245,55 @@ impl Obj with fn component_id(_self) {
 }
 
 ///|
-impl Obj with fn obj_field(_self, _name) {
+impl Obj with fn field(_self, _name) {
   None
 }
 
 ///|
-impl Obj with fn obj_with_field(_self, _name, _v) {
+impl Obj with fn with_field(_self, _name, _v) {
   None
 }
 
 ///|
-impl Obj with fn obj_property(_self, _name) {
+impl Obj with fn property(_self, _name) {
   None
 }
 
 ///|
-impl Obj with fn obj_set_property(_self, _name, _v) {
+impl Obj with fn set_property(_self, _name, _v) {
   PMissing
 }
 
 ///|
-impl Obj with fn obj_member_at(self, name, _stack) {
-  match self.obj_property(name) {
+impl Obj with fn member_at(self, name, _stack) {
+  match self.property(name) {
     Some(v) => Some(v)
-    None => self.obj_field(name)
+    None => self.field(name)
   }
 }
 
 ///|
-impl Obj with fn obj_set_member(self, name, v) {
-  self.obj_set_property(name, v)
+impl Obj with fn set_member(self, name, v) {
+  self.set_property(name, v)
 }
 
 ///|
-impl Obj with fn obj_mutate_member(_self, _name, _operation, _args) {
+impl Obj with fn mutate_member(_self, _name, _operation, _args) {
   PMissing
 }
 
 ///|
-impl Obj with fn obj_item(_self, _key) {
+impl Obj with fn item(_self, _key) {
   None
 }
 
 ///|
-impl Obj with fn obj_with_item(_self, _key, _v) {
+impl Obj with fn with_item(_self, _key, _v) {
   None
 }
 
 ///|
-impl Obj with fn obj_seq_entries(_self) {
+impl Obj with fn seq_entries(_self) {
   None
 }
 
@@ -310,8 +305,8 @@ impl Obj with fn trigger(_self, _name) {
 ///|
 /// The stack is what an implementer may WANT; not wanting it is the common
 /// case, so the default is the question asked without it.
-impl Obj with fn obj_method_at(self, name, _stack) {
-  self.obj_field(name)
+impl Obj with fn method_at(self, name, _stack) {
+  self.field(name)
 }
 
 ///|
@@ -320,30 +315,30 @@ impl Obj with fn trigger_at(self, name, _stack) {
 }
 
 ///|
-impl Obj with fn obj_handler(_self, _bucket, _name) {
+impl Obj with fn handler(_self, _bucket, _name) {
   None
 }
 
 ///|
-impl Obj with fn obj_schema(_self) {
+impl Obj with fn schema(_self) {
   None
 }
 
 ///|
-impl Obj with fn obj_size(self) {
-  match self.obj_seq_entries() {
+impl Obj with fn size(self) {
+  match self.seq_entries() {
     Some(entries) => Some(entries.length())
     None => None
   }
 }
 
 ///|
-impl Obj with fn obj_identity(_self) {
+impl Obj with fn identity(_self) {
   None
 }
 
 ///|
-impl Obj with fn obj_persist_id(_self) {
+impl Obj with fn persist_id(_self) {
   None
 }
 
@@ -355,13 +350,13 @@ impl Obj with fn obj_persist_id(_self) {
 /// Still `false` without a schema: an Obj that declares nothing has not said
 /// what equality would even range over, and answering `true` for two opaque
 /// values is the worse mistake.
-impl Obj with fn obj_eq(self, other) {
-  guard self.obj_schema() is Some(schema) else { return false }
+impl Obj with fn eq(self, other) {
+  guard self.schema() is Some(schema) else { return false }
   if self.component_id() != other.component_id() {
     return false
   }
   for f in schema.fields {
-    if self.obj_field(f.name) != other.obj_field(f.name) {
+    if self.field(f.name) != other.field(f.name) {
       return false
     }
   }
@@ -370,8 +365,8 @@ impl Obj with fn obj_eq(self, other) {
 
 ///|
 /// `Name{field: value, …}` from the schema; `<obj>` without one.
-impl Obj with fn obj_debug(self) {
-  guard self.obj_schema() is Some(schema) else { return "<obj>" }
+impl Obj with fn debug(self) {
+  guard self.schema() is Some(schema) else { return "<obj>" }
   let sb = StringBuilder()
   sb.write_string(schema.name)
   sb.write_string("{")
@@ -384,7 +379,7 @@ impl Obj with fn obj_debug(self) {
     sb.write_string(f.name)
     sb.write_string(": ")
     sb.write_string(
-      match self.obj_field(f.name) {
+      match self.field(f.name) {
         Some(v) => v.to_repr().to_string()
         None => "_"
       },
@@ -408,7 +403,7 @@ declare pub impl Debug for Value
 /// lookup_method returns the RESULT of the no-arg call — the stack invokes.
 /// lookup_trigger returns Null when no render-time handler answers the name.
 pub(open) trait Stack {
-  fn lookup_name(Self, String) -> Value = _
+  fn lookup_bare(Self, String) -> Value = _
   /// Resolve `e.<segments>` against the event being handled.
   ///
   /// Separate from `lookup_name` because it asks a different question of a
@@ -423,7 +418,7 @@ pub(open) trait Stack {
   fn lookup_event_path(Self, Array[String]) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
-  fn lookup_field_raw(Self, String) -> Value = _
+  fn lookup_storage(Self, String) -> Value = _
   /// `.name` in a value position: a private-or-public virtual property first,
   /// then the raw field fallback for record-like values.
   fn lookup_member(Self, String) -> Value = _
@@ -434,7 +429,7 @@ pub(open) trait Stack {
 }
 
 ///|
-impl Stack with fn lookup_name(_self, _name) {
+impl Stack with fn lookup_bare(_self, _name) {
   Null
 }
 
@@ -454,13 +449,13 @@ impl Stack with fn lookup_dynamic(_self, _name) {
 }
 
 ///|
-impl Stack with fn lookup_field_raw(_self, _name) {
+impl Stack with fn lookup_storage(_self, _name) {
   Null
 }
 
 ///|
 impl Stack with fn lookup_member(self, name) {
-  self.lookup_field_raw(name)
+  self.lookup_storage(name)
 }
 
 ///|
@@ -486,7 +481,7 @@ declare pub fn Val::eval(self : Val, stack : &Stack) -> Value
 
 ///|
 /// Value in handler position: Method hands back the raw function
-/// (lookup_field_raw) instead of invoking; everything else is eval.
+/// (lookup_storage) instead of invoking; everything else is eval.
 declare pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value
 
 ///|

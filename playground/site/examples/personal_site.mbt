@@ -365,7 +365,7 @@ fn root_comp() -> @component.Component {
           for e in entries {
             match e {
               Obj(o) => {
-                match o.obj_field("categories") {
+                match o.field("categories") {
                   Some(List(cs)) =>
                     for c in cs {
                       if c is Str(cstr) {
@@ -374,7 +374,7 @@ fn root_comp() -> @component.Component {
                     }
                   _ => ()
                 }
-                match o.obj_field("role") {
+                match o.field("role") {
                   Some(Str(r)) => role_set[r] = ()
                   _ => ()
                 }
@@ -419,7 +419,7 @@ fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
   }
   let entry_cats = match entry {
     Obj(o) =>
-      match o.obj_field("categories") {
+      match o.field("categories") {
         Some(List(a)) => a
         _ => []
       }

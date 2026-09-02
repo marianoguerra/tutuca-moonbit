@@ -1,7 +1,7 @@
 // A form over any component's state, generated from its schema.
 //
 // No per-component code: the editor is handed an instance, asks it what fields
-// it has (`obj_schema`), picks a control per declared kind, and writes an edit
+// it has (`schema`), picks a control per declared kind, and writes an edit
 // back through the mutator every field already gets (`setTitle`, `setCount`,
 // …) — reached by name through the Obj trait, because there is no downcast to
 // the concrete state type and none is needed.
@@ -31,7 +31,7 @@ fn control_for(kind : @component.FieldKind) -> String {
 ///|
 /// `title` -> `setTitle`: the generated per-field mutator, by name.
 ///
-/// The instance surfaces it through `obj_field` as a self-pre-bound `Fn`, so
+/// The instance surfaces it through `member` as a self-pre-bound `Fn`, so
 /// calling it needs no downcast and no registry — just the field name the
 /// schema already gave us.
 fn setter_name(field : String) -> String {

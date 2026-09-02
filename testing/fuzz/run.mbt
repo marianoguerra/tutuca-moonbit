@@ -105,7 +105,7 @@ pub(all) struct Reader(() -> @tutuca.Value)
 ///
 /// A driven component answers `drive_value` with the root Value, which is an
 /// `Obj` for a typed component and a `Map` for a value-level one. Both reach a
-/// rule as the same fields map, and going through `obj_schema` rather than
+/// rule as the same fields map, and going through `schema` rather than
 /// guessing is what makes the second case honest: the fields are the ones the
 /// component DECLARES, in its own order, with an absent one as `Null` rather
 /// than missing.
@@ -121,9 +121,9 @@ pub fn[N] settled(
     Map(m) => m
     Obj(o) => {
       let out : Map[String, @tutuca.Value] = Map([])
-      guard o.obj_schema() is Some(sc) else { return out }
+      guard o.schema() is Some(sc) else { return out }
       for f in sc.fields {
-        out[f.name] = o.obj_field(f.name).unwrap_or(Null)
+        out[f.name] = o.field(f.name).unwrap_or(Null)
       }
       out
     }

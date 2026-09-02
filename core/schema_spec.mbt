@@ -5,7 +5,7 @@
 // everything that only has a `Value` — the inspector needed a `Components`
 // registry to name an instance's own fields, `Value::to_json` had nothing to
 // walk, and a dyncomp guest was described as `fields: []`. They mention only
-// `Value`, so living here costs nothing and is what lets `Obj::obj_schema`
+// `Value`, so living here costs nothing and is what lets `Obj::schema`
 // exist at all. The component package re-exports them (`pub using`) so
 // `@component.SchemaInfo` keeps resolving.
 //
@@ -99,7 +99,7 @@ pub(all) enum ProtocolConformance {
 /// could only ever report THAT an update exists. The generator knows them.
 pub(all) struct SchemaInfo {
   /// The component's declared name. Here rather than only on `Component`
-  /// because the schema-derived `obj_debug` and the JSON projection label
+  /// because the schema-derived `debug` and the JSON projection label
   /// themselves with it, and those run off a `Value` with no registry in hand.
   /// Empty means "not stated here" — `component()` stamps its own `name~` in
   /// when it builds the Component, so an instance always has one.

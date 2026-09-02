@@ -89,9 +89,9 @@ fn settled(h : @harness.Harness[@memdom.MemNode]) -> Map[String, @tutuca.Value] 
     Map(m) => m
     Obj(o) => {
       let out : Map[String, @tutuca.Value] = Map([])
-      guard o.obj_schema() is Some(sc) else { return out }
+      guard o.schema() is Some(sc) else { return out }
       for f in sc.fields {
-        out[f.name] = o.obj_field(f.name).unwrap_or(Null)
+        out[f.name] = o.field(f.name).unwrap_or(Null)
       }
       out
     }
@@ -115,7 +115,7 @@ test "the component carries the block it was declared in" {
   // The generated schema lists the same invariant by name — two projections of
   // one declaration, which is the sync this file is really about.
   let h = @harness.mount_example(svg_bar_chart_module(), "Default")
-  guard h.drive_value() is Obj(o) && o.obj_schema() is Some(schema) else {
+  guard h.drive_value() is Obj(o) && o.schema() is Some(schema) else {
     fail("a mounted BarChart answers its own schema")
   }
   assert_eq(p.def.invariants(), schema.invariants)

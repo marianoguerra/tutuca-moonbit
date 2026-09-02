@@ -27,4 +27,4 @@ auto-bound on host-element loops; under `render-each` / `render-it` each
 item is rendered as its own component (no `@value`). Use `render-each` for
 lists of components (instance `Value`s built with `comp.make({...})`),
 `@each` for plain values. `List` iterates by index, `Map` by key in insertion order; a custom
-`Obj` iterates its `obj_seq_entries` (see [iteration.md](../iteration.md)).
+`Obj` iterates its `seq_entries` (see [iteration.md](../iteration.md)).

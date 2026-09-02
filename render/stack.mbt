@@ -187,7 +187,7 @@ fn RenderStack::lookup_bind_chain(
 
 ///|
 /// A bare name resolves against the BIND chain and nothing else.
-pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
+pub impl @tutuca.Stack for RenderStack with fn lookup_bare(self, name) {
   self.lookup_bind_chain(name)
 }
 
@@ -215,7 +215,7 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_bind(self, name) {
 }
 
 ///|
-pub impl @tutuca.Stack for RenderStack with fn lookup_field_raw(self, name) {
+pub impl @tutuca.Stack for RenderStack with fn lookup_storage(self, name) {
   self.it.field(name)
 }
 

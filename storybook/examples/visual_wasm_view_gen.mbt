@@ -50,7 +50,7 @@ impl @component.Fields for VwEmptyState with fn decode(_f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwEmptyState with fn schema() {
   @component.SchemaInfo::new(fingerprint="57d449ae33f2ab7b")
@@ -105,7 +105,7 @@ impl @component.Fields for VwImmState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwImmState with fn schema() {
   @component.SchemaInfo::new(fingerprint="38990f2ccde77a07", fields=[
@@ -166,7 +166,7 @@ impl @component.Fields for VwTypesState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwTypesState with fn schema() {
   @component.SchemaInfo::new(fingerprint="479948944eeca962", fields=[
@@ -234,7 +234,7 @@ impl @component.Fields for VwContainerState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwContainerState with fn schema() {
   @component.SchemaInfo::new(fingerprint="800b682e34030cdd", fields=[
@@ -333,7 +333,7 @@ impl @component.Fields for VwIfState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwIfState with fn schema() {
   @component.SchemaInfo::new(fingerprint="9c6f1afed177b339", fields=[
@@ -419,7 +419,7 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
   @component.SchemaInfo::new(
@@ -488,7 +488,7 @@ impl @component.Fields for VwMemoryState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwMemoryState with fn schema() {
   @component.SchemaInfo::new(
@@ -571,7 +571,7 @@ impl @component.Fields for VwPickerState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwPickerState with fn schema() {
   @component.SchemaInfo::new(

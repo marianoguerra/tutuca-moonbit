@@ -61,7 +61,7 @@ pub let greeting_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for GreetingState with fn schema() {
   @component.SchemaInfo::new(
@@ -126,7 +126,7 @@ pub let page_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
@@ -316,7 +316,7 @@ pub fn EntryMsg::from_dispatch(d : @component.Dispatch) -> EntryMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for EntryState with fn schema() {
   @component.SchemaInfo::new(
@@ -386,7 +386,7 @@ pub let multiple_views_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MultipleViewsState with fn schema() {
   @component.SchemaInfo::new(

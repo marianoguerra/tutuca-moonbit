@@ -719,34 +719,34 @@ pub(open) trait Fields {
 
 pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
-  fn obj_field(Self, String) -> Value? = _
-  fn obj_with_field(Self, String, Value) -> Value? = _
-  fn obj_property(Self, String) -> Value? = _
-  fn obj_set_property(Self, String, Value) -> PropertyWrite = _
-  fn obj_member_at(Self, String, &Stack) -> Value? = _
-  fn obj_set_member(Self, String, Value) -> PropertyWrite = _
-  fn obj_mutate_member(Self, String, String, Array[Value]) -> PropertyWrite = _
-  fn obj_item(Self, PathKey) -> Value? = _
-  fn obj_with_item(Self, PathKey, Value) -> Value? = _
-  fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
+  fn field(Self, String) -> Value? = _
+  fn with_field(Self, String, Value) -> Value? = _
+  fn property(Self, String) -> Value? = _
+  fn set_property(Self, String, Value) -> PropertyWrite = _
+  fn member_at(Self, String, &Stack) -> Value? = _
+  fn set_member(Self, String, Value) -> PropertyWrite = _
+  fn mutate_member(Self, String, String, Array[Value]) -> PropertyWrite = _
+  fn item(Self, PathKey) -> Value? = _
+  fn with_item(Self, PathKey, Value) -> Value? = _
+  fn seq_entries(Self) -> Array[(PathKey, Value)]? = _
   fn trigger(Self, String) -> Value? = _
-  fn obj_method_at(Self, String, &Stack) -> Value? = _
+  fn method_at(Self, String, &Stack) -> Value? = _
   fn trigger_at(Self, String, &Stack) -> Value? = _
-  fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
-  fn obj_schema(Self) -> SchemaInfo? = _
-  fn obj_size(Self) -> Int? = _
-  fn obj_identity(Self) -> ObjId? = _
-  fn obj_eq(Self, &Obj) -> Bool = _
-  fn obj_debug(Self) -> String = _
-  fn obj_persist_id(Self) -> String? = _
+  fn handler(Self, HandlerBucket, String) -> Handler? = _
+  fn schema(Self) -> SchemaInfo? = _
+  fn size(Self) -> Int? = _
+  fn identity(Self) -> ObjId? = _
+  fn eq(Self, &Obj) -> Bool = _
+  fn debug(Self) -> String = _
+  fn persist_id(Self) -> String? = _
 }
 
 pub(open) trait Stack {
-  fn lookup_name(Self, String) -> Value = _
+  fn lookup_bare(Self, String) -> Value = _
   fn lookup_event_path(Self, Array[String]) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
-  fn lookup_field_raw(Self, String) -> Value = _
+  fn lookup_storage(Self, String) -> Value = _
   fn lookup_member(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
   fn lookup_trigger(Self, String) -> Value = _

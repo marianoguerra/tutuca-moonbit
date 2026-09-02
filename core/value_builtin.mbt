@@ -148,7 +148,7 @@ let builtin_table : Map[String, Builtin] = {
         Obj(o) =>
           Bool(
             o
-            .obj_seq_entries()
+            .seq_entries()
             .unwrap_or([])
             .iter()
             .any(e => {

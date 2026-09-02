@@ -15,7 +15,7 @@ fn counter(n : Int) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for Counter with fn obj_field(self, name) {
+impl @tutuca.Obj for Counter with fn field(self, name) {
   match name {
     "n" => Some(Num(self.n.to_double()))
     _ => None
@@ -23,7 +23,7 @@ impl @tutuca.Obj for Counter with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for Counter with fn obj_schema(_self) {
+impl @tutuca.Obj for Counter with fn schema(_self) {
   Some(
     @tutuca.SchemaInfo::new(name="Counter", fingerprint="cafe", fields=[
       @tutuca.FieldInfo::new("n", TyInt(width=32, signed=true)),
@@ -32,7 +32,7 @@ impl @tutuca.Obj for Counter with fn obj_schema(_self) {
 }
 
 ///|
-impl @tutuca.Obj for Counter with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for Counter with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "inc") => Some(Handler((_a, _c) => Some(counter(self.n + 1))))
     (Receive, "inc-twice") =>
@@ -376,7 +376,7 @@ priv struct Pair {
 }
 
 ///|
-impl @tutuca.Obj for Pair with fn obj_field(self, name) {
+impl @tutuca.Obj for Pair with fn field(self, name) {
   match name {
     "a" => Some(self.a)
     "b" => Some(self.b)
@@ -385,7 +385,7 @@ impl @tutuca.Obj for Pair with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for Pair with fn obj_with_field(self, name, v) {
+impl @tutuca.Obj for Pair with fn with_field(self, name, v) {
   match name {
     "a" => Some(Obj(Pair::{ a: v, b: self.b, }))
     "b" => Some(Obj(Pair::{ a: self.a, b: v, }))
@@ -394,7 +394,7 @@ impl @tutuca.Obj for Pair with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @tutuca.Obj for Pair with fn obj_schema(_self) {
+impl @tutuca.Obj for Pair with fn schema(_self) {
   Some(
     @tutuca.SchemaInfo::new(name="Pair", fingerprint="pair", fields=[
       @tutuca.FieldInfo::new("a", TyComp(Some("Counter"))),
@@ -404,7 +404,7 @@ impl @tutuca.Obj for Pair with fn obj_schema(_self) {
 }
 
 ///|
-impl @tutuca.Obj for Pair with fn obj_handler(_self, bucket, name) {
+impl @tutuca.Obj for Pair with fn handler(_self, bucket, name) {
   match (bucket, name) {
     // The cross-branch event: touching one side pokes the OTHER. After a cut
     // to `b` this is the message that has to survive as an input, because

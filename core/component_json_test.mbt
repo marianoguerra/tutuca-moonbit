@@ -13,12 +13,12 @@ priv struct Node {
 }
 
 ///|
-impl @core.Obj for Node with fn obj_schema(self) {
+impl @core.Obj for Node with fn schema(self) {
   Some(self.sc)
 }
 
 ///|
-impl @core.Obj for Node with fn obj_field(self, name) {
+impl @core.Obj for Node with fn field(self, name) {
   self.fields.get(name)
 }
 
@@ -285,7 +285,7 @@ test "a Fn and a schema-less Obj both project to null" {
 priv struct Bare {}
 
 ///|
-impl @core.Obj for Bare with fn obj_debug(_self) {
+impl @core.Obj for Bare with fn debug(_self) {
   "bare"
 }
 

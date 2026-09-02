@@ -495,7 +495,7 @@ fn constraint_hint(
 /// What a component's views CALL with `$name`, against what its manifest says
 /// it answers.
 ///
-/// `$name` resolves through `DynObj::obj_field`, which mints a callable for a
+/// `$name` resolves through `DynObj::member`, which mints a callable for a
 /// name the manifest listed in `methods` — or for one of the mutators the
 /// declared fields imply — and for nothing else. Any other name falls through
 /// to `get-field`, comes back `Null`, and `Null` in an attribute means "omit
@@ -516,7 +516,7 @@ fn screen_method_names(
   let answered : Set[String] = Set::from_array(def.methods)
   // The generated mutators (`setCount`, `pushInItems`, …) are answered by the
   // host off the declared fields, so a view calling one is right to expect it
-  // even though the manifest never lists it (see `DynObj::obj_field`).
+  // even though the manifest never lists it (see `DynObj::member`).
   for name, _ in @component.schema_mutators(comp.schema) {
     answered.add(name)
   }
@@ -816,10 +816,10 @@ pub fn Bundle::migrate_instance(
   component : String,
 ) -> DynObj? {
   guard old is Obj(o) else { return None }
-  guard o.obj_schema() is Some(schema) else { return None }
+  guard o.schema() is Some(schema) else { return None }
   let args : Map[String, @tutuca.Value] = Map([])
   for f in schema.fields {
-    match o.obj_field(f.name) {
+    match o.field(f.name) {
       Some(v) => args[f.name] = v
       None => ()
     }
@@ -844,13 +844,13 @@ pub fn Bundle::drop_instance(self : Bundle, handle : Int) -> Unit {
 /// Takes a `Value` rather than a `DynObj` because that is what a host holds —
 /// a field of a component, an entry in a map — and everything it needs is on
 /// the `Obj` seam: the component name from the schema, the guest handle from
-/// the protocol field, the identity from `obj_persist_id`. None for a value
+/// the protocol field, the identity from `persist_id`. None for a value
 /// that is not an instance of THIS bundle.
 pub fn Bundle::snapshot(self : Bundle, v : @tutuca.Value) -> @persist.Snapshot? {
   guard v is Obj(o) else { return None }
-  guard o.obj_schema() is Some(schema) else { return None }
+  guard o.schema() is Some(schema) else { return None }
   guard self.comps.get(schema.name) is Some(_) else { return None }
-  let state = match o.obj_field(handle_field) {
+  let state = match o.field(handle_field) {
     Some(Num(h)) => self.guest.persist(h.to_int())
     _ => b""
   }
@@ -869,7 +869,7 @@ pub fn Bundle::snapshot(self : Bundle, v : @tutuca.Value) -> @persist.Snapshot? 
   Some({
     module_: self.manifest.module_name,
     component: schema.name,
-    id: o.obj_persist_id().unwrap_or(""),
+    id: o.persist_id().unwrap_or(""),
     state,
     fields,
   })

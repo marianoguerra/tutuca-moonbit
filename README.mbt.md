@@ -113,7 +113,7 @@ Then `CounterState` itself is generated — a plain struct with no derives, a
 contract as static metadata: every field with the kind the schema DECLARES
 rather than one guessed from the seed value, plus the handler names, the view
 names, the element ids and the fixture names. That descriptor is what an
-instance answers `obj_schema()` with, so the inspector and the state editor
+instance answers `schema()` with, so the inspector and the state editor
 build themselves from it with no component registry in hand. And every
 `.field` a view reads is checked against it, inside an `@each` body as well as
 at the root. A misspelt field is a

@@ -38,7 +38,7 @@ fn VwReg::get(self : VwReg, name : String) -> @component.Component? {
 fn vw_with_editing(v : @tutuca.Value) -> @tutuca.Value {
   match v {
     Obj(o) =>
-      match o.obj_with_field("editing", Bool(true)) {
+      match o.with_field("editing", Bool(true)) {
         Some(nv) => nv
         None => v
       }

@@ -66,7 +66,7 @@ pub let table_row_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TableRowState with fn schema() {
   @component.SchemaInfo::new(
@@ -145,7 +145,7 @@ pub let item_table_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ItemTableState with fn schema() {
   @component.SchemaInfo::new(
@@ -212,7 +212,7 @@ pub let select_option_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SelectOptionState with fn schema() {
   @component.SchemaInfo::new(
@@ -409,7 +409,7 @@ pub fn ItemSelectMsg::from_dispatch(d : @component.Dispatch) -> ItemSelectMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ItemSelectState with fn schema() {
   @component.SchemaInfo::new(
@@ -480,7 +480,7 @@ pub let pseudo_x_demo_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for PseudoXDemoState with fn schema() {
   @component.SchemaInfo::new(

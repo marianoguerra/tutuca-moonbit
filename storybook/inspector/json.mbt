@@ -12,7 +12,7 @@
 //   Value::Map                        -> JsonObject
 //   Value::Fn                         -> ValueFn
 //   Value::Obj                        -> ValueObj (leaf
-//     via `obj_debug`; an Obj exposing `obj_seq_entries` renders as
+//     via `debug`; an Obj exposing `seq_entries` renders as
 //     JsonObject rows instead)
 
 // ---------------------------------------------------------------------------
@@ -296,7 +296,7 @@ fn value_fn_comp() -> @component.Component {
 }
 
 ///|
-/// Leaf for an opaque `Value::Obj` (no `obj_seq_entries`): its `obj_debug`
+/// Leaf for an opaque `Value::Obj` (no `seq_entries`): its `debug`
 /// text, truncated.
 fn value_obj_comp() -> @component.Component {
   value_obj_component()
@@ -428,26 +428,26 @@ pub fn Inspector::classify(
     // says neither falls back to the one opaque line of debug text.
     Obj(o) => {
       let rows : Array[@tutuca.Value] = []
-      match o.obj_seq_entries() {
+      match o.seq_entries() {
         Some(entries) =>
           for entry in entries {
             let (k, item) = entry
             rows.push(self.property(fmt_path_key(k), self.classify(item)))
           }
         None =>
-          match o.obj_schema() {
+          match o.schema() {
             Some(schema) =>
               for f in schema.fields {
                 rows.push(self.property(f.name, self.classify(v.field(f.name))))
               }
             None =>
-              return self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
+              return self.make_("ValueObj", args={ "text": Str(o.debug()) })
           }
       }
       // ...under the name it CALLS itself (`instance_snapshot` reads the same
       // name off the same schema). `InstanceFields` is JsonObject's twin plus
       // the `typeName` this needs.
-      let name = match o.obj_schema() {
+      let name = match o.schema() {
         Some(s) => s.name
         None => ""
       }

@@ -71,7 +71,7 @@ fn mix_value(h : UInt64, v : Value) -> UInt64 {
     // is a shared bucket and nothing worse.
     Fn(_) => mix_byte(h, 6)
     Obj(o) =>
-      match o.obj_identity() {
+      match o.identity() {
         Some(id) => mix_u64(mix_byte(h, 7), id.origin)
         None => mix_byte(h, 8)
       }

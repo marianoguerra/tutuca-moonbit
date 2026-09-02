@@ -213,7 +213,7 @@ pub fn AttributeBindingMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for AttributeBindingState with fn schema() {
   @component.SchemaInfo::new(
@@ -408,7 +408,7 @@ pub fn ConditionalAttributesMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ConditionalAttributesState with fn schema() {
   @component.SchemaInfo::new(
@@ -616,7 +616,7 @@ pub fn EventModifiersMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for EventModifiersState with fn schema() {
   @component.SchemaInfo::new(
@@ -830,7 +830,7 @@ pub fn ShowHideMethod::name(self : ShowHideMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ShowHideState with fn schema() {
   @component.SchemaInfo::new(

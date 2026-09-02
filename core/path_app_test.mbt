@@ -14,7 +14,7 @@ fn sheet(title : String) -> @core.Value {
 }
 
 ///|
-impl @core.Obj for Sheet with fn obj_field(self, name) {
+impl @core.Obj for Sheet with fn field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     _ => None
@@ -22,7 +22,7 @@ impl @core.Obj for Sheet with fn obj_field(self, name) {
 }
 
 ///|
-impl @core.Obj for Sheet with fn obj_with_field(_self, name, v) {
+impl @core.Obj for Sheet with fn with_field(_self, name, v) {
   match (name, v) {
     ("title", Str(s)) => Some(sheet(s))
     _ => None
@@ -30,7 +30,7 @@ impl @core.Obj for Sheet with fn obj_with_field(_self, name, v) {
 }
 
 ///|
-impl @core.Obj for Sheet with fn obj_handler(_self, bucket, name) {
+impl @core.Obj for Sheet with fn handler(_self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(

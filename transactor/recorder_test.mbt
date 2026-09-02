@@ -18,7 +18,7 @@ fn box(n : Int) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for Box with fn obj_field(self, name) {
+impl @tutuca.Obj for Box with fn field(self, name) {
   match name {
     "n" => Some(Num(self.n.to_double()))
     _ => None
@@ -26,7 +26,7 @@ impl @tutuca.Obj for Box with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for Box with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for Box with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "bump") => Some(Handler((_a, _c) => Some(box(self.n + 1))))
     // Pushes a second dispatch: the one that must come back DERIVED.

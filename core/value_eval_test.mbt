@@ -10,7 +10,7 @@ priv struct FieldStack {
 }
 
 ///|
-impl @core.Stack for FieldStack with fn lookup_field_raw(self, name) {
+impl @core.Stack for FieldStack with fn lookup_storage(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 
@@ -154,7 +154,7 @@ priv struct CountingStack {
 }
 
 ///|
-impl @core.Stack for CountingStack with fn lookup_field_raw(self, name) {
+impl @core.Stack for CountingStack with fn lookup_storage(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 

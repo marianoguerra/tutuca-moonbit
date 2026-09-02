@@ -50,7 +50,7 @@ impl @component.Fields for MacrosNoState with fn decode(_f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacrosNoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="7ad637f7010ee33d")
@@ -102,7 +102,7 @@ impl @component.Fields for MacroParamsState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroParamsState with fn schema() {
   @component.SchemaInfo::new(
@@ -161,7 +161,7 @@ impl @component.Fields for MacroSlotsState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroSlotsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="3287e13083889431", fields=[
@@ -216,7 +216,7 @@ impl @component.Fields for MacroNamedSlotsState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroNamedSlotsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="c269b64554a12da4", fields=[

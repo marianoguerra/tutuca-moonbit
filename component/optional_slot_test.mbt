@@ -106,13 +106,13 @@ test "a write to an optional slot reaches the state struct" {
   let parent = parent_comp().make({ "kid": kid })
   // the derived read sees the child it was made with
   guard parent is Obj(p0) else { fail("not obj") }
-  guard p0.obj_field("kidN") is Some(Fn(f0)) else { fail("no compute") }
+  guard p0.field("kidN") is Some(Fn(f0)) else { fail("no compute") }
   assert_eq(f0([parent]), Num(1))
   // …and the successor, once the child is replaced through the ordinary
   // field write the runtime performs when a child transitions
   let next = parent.with_field("kid", kid_comp().make({ "n": Num(7) }))
   guard next is Obj(p1) else { fail("not obj") }
-  guard p1.obj_field("kidN") is Some(Fn(f1)) else { fail("no compute") }
+  guard p1.field("kidN") is Some(Fn(f1)) else { fail("no compute") }
   assert_eq(f1([next]), Num(7))
 }
 
@@ -122,12 +122,12 @@ test "an optional slot seeded None takes its first child" {
   scope.register_components([kid_comp(), parent_comp()])
   let parent = parent_comp().make(Map([]))
   guard parent is Obj(p0) else { fail("not obj") }
-  guard p0.obj_field("kidN") is Some(Fn(f0)) else { fail("no compute") }
+  guard p0.field("kidN") is Some(Fn(f0)) else { fail("no compute") }
   // absent, and it stays absent — an option-typed slot is not built for you,
   // which is the difference from `Component[Kid]` and the reason to spell it
   assert_eq(f0([parent]), Str("none"))
   let next = parent.with_field("kid", kid_comp().make({ "n": Num(3) }))
   guard next is Obj(p1) else { fail("not obj") }
-  guard p1.obj_field("kidN") is Some(Fn(f1)) else { fail("no compute") }
+  guard p1.field("kidN") is Some(Fn(f1)) else { fail("no compute") }
   assert_eq(f1([next]), Num(3))
 }

@@ -7,35 +7,30 @@
 // dragInfo arg.
 
 ///|
-/// The `dragInfo` handler argument:
-/// type / value / lookupBind(name).
-priv struct DragInfoObj {
-  drag_type : String
-  val : @tutuca.Value
-  stack : @render.RenderStack
-}
-
-///|
-impl @tutuca.Obj for DragInfoObj with fn obj_field(self, name) {
-  match name {
-    "type" => Some(Str(self.drag_type))
-    "value" => Some(self.val)
-    "lookupBind" =>
-      Some(
-        Fn(args => {
-          match args {
-            [_, Str(n), ..] => @tutuca.Stack::lookup_bind(self.stack, n)
-            _ => Null
-          }
-        }),
-      )
-    _ => None
-  }
-}
-
-///|
-impl @tutuca.Obj for DragInfoObj with fn obj_debug(self) {
-  "DragInfo(\{self.drag_type})"
+/// The `dragInfo` handler argument: `type`, `value`, and `lookupBind(name)`.
+///
+/// A plain `Map`, where it was an `Obj` with two methods. `Obj` is the seam a
+/// COMPONENT INSTANCE crosses — an identity, a schema, a dispatch bucket, a
+/// successor — and this has none of those: it is three entries a handler reads
+/// once, and one of them is a function, which a `Value::Fn` already is.
+/// Implementing a nine-method trait to answer `field` was the trait being used
+/// as a record.
+fn drag_info(
+  drag_type : String,
+  value : @tutuca.Value,
+  stack : @render.RenderStack,
+) -> @tutuca.Value {
+  Map({
+    "type": Str(drag_type),
+    "value": value,
+    "lookupBind": Fn(args => {
+      match args {
+        // The Fn convention: element 0 is the this-slot.
+        [_, Str(n), ..] => @tutuca.Stack::lookup_bind(stack, n)
+        _ => Null
+      }
+    }),
+  })
 }
 
 ///|
@@ -103,12 +98,8 @@ fn[N : @vdom.DomWalk] App::handle_drag(
           self.clean_drag_over()
           // JS: draggingover carries the drag's type, "_external" when the
           // drag came from outside the app
-          let t = match self.drag_info_value() {
-            Obj(o) =>
-              match o.obj_field("type") {
-                Some(Str(s)) => s
-                _ => "_external"
-              }
+          let t = match self.drag_info_value().field("type") {
+            Str(s) => s
             _ => "_external"
           }
           @vdom.DomNode::set_attribute(dt, "data-draggingover", t)
@@ -130,10 +121,7 @@ fn[N : @vdom.DomWalk] App::handle_drag(
       // strip them.
       let stack0 = @render.RenderStack::new(root_val, comps=self.scope.comps)
       let stack = @render.build_dispatch_stack(path, stack0).unwrap_or(stack0)
-      self.drag = Some({
-        node,
-        info: Obj(DragInfoObj::{ drag_type, val: value, stack, }),
-      })
+      self.drag = Some({ node, info: drag_info(drag_type, value, stack), })
     }
     "drop" => self.clean_drag_over()
     _ => {

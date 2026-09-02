@@ -80,7 +80,7 @@ impl @component.Fields for LintDemoState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for LintDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="cdce524d53b54854", fields=[
@@ -139,7 +139,7 @@ impl @component.Fields for HtmlLintDemoState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for HtmlLintDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="13676d40cf04a90b", fields=[
@@ -194,7 +194,7 @@ impl @component.Fields for ScopedStyleDemoState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ScopedStyleDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="dd4388e1ada8a9c8", fields=[

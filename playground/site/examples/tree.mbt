@@ -51,7 +51,7 @@ fn tree_root_comp() -> @component.Component {
       Intent("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
-            match o.obj_field("label") {
+            match o.field("label") {
               Some(Str(l)) => l
               _ => "?"
             }

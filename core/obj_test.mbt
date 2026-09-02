@@ -19,7 +19,7 @@ impl @core.Obj for Card with fn component_id(_self) {
 }
 
 ///|
-impl @core.Obj for Card with fn obj_field(self, name) {
+impl @core.Obj for Card with fn field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     "tags" => Some(List(self.tags))
@@ -30,7 +30,7 @@ impl @core.Obj for Card with fn obj_field(self, name) {
 }
 
 ///|
-impl @core.Obj for Card with fn obj_with_field(self, name, v) {
+impl @core.Obj for Card with fn with_field(self, name, v) {
   match (name, v) {
     ("title", Str(s)) => Some(card(s, tags=self.tags))
     ("tags", List(a)) => Some(card(self.title, tags=a))
@@ -39,7 +39,7 @@ impl @core.Obj for Card with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @core.Obj for Card with fn obj_handler(self, bucket, name) {
+impl @core.Obj for Card with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
@@ -55,14 +55,14 @@ impl @core.Obj for Card with fn obj_handler(self, bucket, name) {
 }
 
 ///|
-impl @core.Obj for Card with fn obj_eq(self, other) {
+impl @core.Obj for Card with fn eq(self, other) {
   other.component_id() == Some(77) &&
-  other.obj_field("title") == Some(Str(self.title)) &&
-  other.obj_field("tags") == Some(List(self.tags))
+  other.field("title") == Some(Str(self.title)) &&
+  other.field("tags") == Some(List(self.tags))
 }
 
 ///|
-impl @core.Obj for Card with fn obj_debug(self) {
+impl @core.Obj for Card with fn debug(self) {
   "Card{\{self.title}}"
 }
 
@@ -129,6 +129,6 @@ test "Obj equality, debug and method fields" {
   guard c is Obj(o) else { fail("not an obj") }
   debug_inspect(c, content="RObj(\"Card{hey}\")")
   // pre-bound method Fn ignores the this-slot
-  guard o.obj_field("shout") is Some(Fn(f)) else { fail("no method") }
+  guard o.field("shout") is Some(Fn(f)) else { fail("no method") }
   assert_true(f([Null]) == Str("hey!"))
 }

@@ -65,7 +65,7 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
 That third principle is what makes the contract small. Everything generic over
 a schema works on a guest without the guest implementing it: structural
-equality (`Obj::obj_eq`), the JSON projection (`Value::to_json`), debug output,
+equality (`Obj::eq`), the JSON projection (`Value::to_json`), debug output,
 hot-swap migration, inspector forms, and the catalog entry a search ranks and
 a language model reads. State fields are implicit private read/write
 properties. The old generated per-field names (`setCount`, `toggleDone`,
@@ -84,12 +84,12 @@ mounted from anywhere. Neither property is useful alone.
 |---|---|
 | Component = views + a declared schema | `Component::for_type(name~, views~, schema~)` |
 | Opaque state uniform to the host | one host struct `DynObj` implementing `&Obj` (`core/spec.mbt`) wraps every guest instance |
-| What the instance IS | `Obj::obj_schema` — built from static bundle data in `register_bundle` |
+| What the instance IS | `Obj::schema` — built from static bundle data in `register_bundle` |
 | Handlers take self, return self | `Handler((Array[Value], &Ctx) -> Value?)` is already self-pre-bound; the guest's new handle wraps into a fresh `DynObj` |
 | Change detection / re-render | a fresh `DynObj` is a new physical identity — the COW model everything keys on — carrying the predecessor's `ObjId` at the next revision, so the render cache still hits |
-| Render reads | `Obj::obj_member_at` resolves private/public properties before raw fields; only members the views evaluate cross the boundary |
-| Public property reads/writes | `Obj::obj_property` / `obj_set_property`; the latter returns missing, unchanged, refused, or a complete successor |
-| View property writes/operations | `Obj::obj_set_member` / `obj_mutate_member`; assignments and collection verbs reach an internal `FieldBox` operation without synthesizing a message name |
+| Render reads | `Obj::member_at` resolves private/public properties before raw fields; only members the views evaluate cross the boundary |
+| Public property reads/writes | `Obj::property` / `set_property`; the latter returns missing, unchanged, refused, or a complete successor |
+| View property writes/operations | `Obj::set_member` / `mutate_member`; assignments and collection verbs reach an internal `FieldBox` operation without synthesizing a message name |
 | Mounting a foreign bundle | a child scope of the app scope (per-bundle name isolation, shared id registry), resolution by component id |
 | A bundle's own services | request handlers registered in that child scope, so `lookup_request` finds them before the host's |
 
@@ -202,11 +202,11 @@ pair. The repository carries no v0.10 adapters.
   reaches the corresponding fixed render operation, evaluates to `Null`, and a `Null` attribute is simply
   omitted, so the whole failure is an element quietly missing its `class`.
 - **`DynObj`** implements `&Obj`: `component_id` → the synthesized component
-  (stock view resolution); `obj_field` → `get-field` (arena-decoded; `instance`
+  (stock view resolution); `member` → `get-field` (arena-decoded; `instance`
   payloads wrap as nested `DynObj`s), falling back to the schema's mutators;
-  `obj_schema` → what the bundle declared; `obj_property` / `obj_set_property`
+  `schema` → what the bundle declared; `property` / `set_property`
   → the public property operations; `obj_callable` → the fixed compute/when/
-  enrich operation appropriate to its namespace; `obj_handler` → a `Handler`
+  enrich operation appropriate to its namespace; `handler` → a `Handler`
   that forwards to `handle-message` or `handle-intent`, drains buffered
   `control` calls, and falls back to a generated mutator through `with-field`
   only on `unhandled` from component/view/diagnostic provenance. Host-origin

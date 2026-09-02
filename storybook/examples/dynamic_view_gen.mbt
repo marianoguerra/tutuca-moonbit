@@ -193,7 +193,7 @@ pub fn SelectorEntryMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SelectorEntryState with fn schema() {
   @component.SchemaInfo::new(
@@ -391,7 +391,7 @@ pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SelectorState with fn schema() {
   @component.SchemaInfo::new(
@@ -605,7 +605,7 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
   @component.SchemaInfo::new(
@@ -787,7 +787,7 @@ pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SheetState with fn schema() {
   @component.SchemaInfo::new(
@@ -850,7 +850,7 @@ pub let toolbar_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ToolbarState with fn schema() {
   @component.SchemaInfo::new(name="Toolbar", fingerprint="56c198ae948445be", view_names=[
@@ -912,7 +912,7 @@ pub let panel_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(
@@ -992,7 +992,7 @@ pub fn WorkspaceMethod::name(self : WorkspaceMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for WorkspaceState with fn schema() {
   @component.SchemaInfo::new(

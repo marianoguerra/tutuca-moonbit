@@ -19,9 +19,9 @@ fn build() -> @component.ModuleDef {
     },
     update=(s, msg, _ctx) => match DnDExampleMsg::from_dispatch(msg) {
       // args: [@key (the TARGET row's key), dragInfo]
-      Some(OnDropOnItem(Num(t), Obj(di))) => {
+      Some(OnDropOnItem(Num(t), Map(di))) => {
         let target = t.to_int()
-        let source = match di.obj_field("lookupBind") {
+        let source = match di.get("lookupBind") {
           Some(Fn(lookup)) =>
             match lookup([Null, Str("key")]) {
               Num(n) => n.to_int()

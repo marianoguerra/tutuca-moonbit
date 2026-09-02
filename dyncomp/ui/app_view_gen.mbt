@@ -320,7 +320,7 @@ pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for PaletteRowState with fn schema() {
   @component.SchemaInfo::new(
@@ -597,7 +597,7 @@ pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for CommandBarState with fn schema() {
   @component.SchemaInfo::new(
@@ -952,7 +952,7 @@ pub fn SchemaFieldMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaFieldState with fn schema() {
   @component.SchemaInfo::new(
@@ -1299,7 +1299,7 @@ pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaFormState with fn schema() {
   @component.SchemaInfo::new(
@@ -1617,7 +1617,7 @@ pub fn ConfigPanelMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
@@ -1934,7 +1934,7 @@ pub fn UniversalAppMethod::name(self : UniversalAppMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for UniversalAppState with fn schema() {
   @component.SchemaInfo::new(

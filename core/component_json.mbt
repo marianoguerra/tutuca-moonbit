@@ -45,7 +45,7 @@
 //     name, and the name is the whole instruction.)
 //  3. Anything the schema does not name — the `FAny` extras a component keeps
 //     beside its declared fields, and whatever a hand-written instance holds
-//     privately. `Obj::obj_schema` already says this is the deal.
+//     privately. `Obj::schema` already says this is the deal.
 //  4. A guest's private bytes. The contract says the host does not know their
 //     shape; they ride in a side channel its owner threads through `claim~`.
 //  5. `TyRecord` / `TyVariant` / `TyEnum` / `TyTable` payloads are DATA. An
@@ -196,11 +196,11 @@ fn encode_instance(
     return j
   }
   guard v is Obj(o) else { return Json::null() }
-  guard o.obj_schema() is Some(sc) else { return Json::null() }
+  guard o.schema() is Some(sc) else { return Json::null() }
   let out : Map[String, Json] = Map([])
   out[component_key] = Json::string(sc.name)
   for f in sc.fields {
-    let fv = o.obj_field(f.name).unwrap_or(Null)
+    let fv = o.field(f.name).unwrap_or(Null)
     out[f.name] = encode_field(fv, f.ty, ptr(at, f.name), claim)
   }
   Json::object(out)
@@ -282,7 +282,7 @@ fn encode_any(
 ) -> Json {
   match v {
     Obj(o) =>
-      if o.obj_schema() is Some(_) {
+      if o.schema() is Some(_) {
         encode_instance(v, at, claim)
       } else {
         Json::null()

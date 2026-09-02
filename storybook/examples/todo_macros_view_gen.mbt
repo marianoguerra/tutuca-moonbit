@@ -55,7 +55,7 @@ impl @component.Fields for TmItemState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemState with fn schema() {
   @component.SchemaInfo::new(fingerprint="897279eca641af90", fields=[
@@ -116,7 +116,7 @@ impl @component.Fields for TmItemsState with fn decode(f) {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="773891999b454843", fields=[

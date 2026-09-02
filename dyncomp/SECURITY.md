@@ -41,7 +41,7 @@ properties follow from the contract's shape rather than from the wasm engine:
 
 - **Control calls are buffered, not performed.** Everything in `control` except
   `log` is collected during `handle-message` / `handle-intent` and applied by the HOST afterwards,
-  through the dispatching `&Ctx` (`host/dynobj.mbt`, `obj_handler`). The guest
+  through the dispatching `&Ctx` (`host/dynobj.mbt`, `handler`). The guest
   does not act; it asks, and the host chooses.
 - **Paths are relative only.** `send-at` / `intent-at` address the dispatching
   instance's own subtree. Absolute paths are deliberately absent from the WIT,
@@ -636,7 +636,7 @@ registers `double` / `listComponents` / `makeComponent` for anyone who asks.
 `lookup` is the one function on `control` that answers rather than acting, and
 what makes it safe is that it does not reach anything while it runs.
 
-`dynobj.mbt`'s `obj_handler` resolves this component's DECLARED lookups —
+`dynobj.mbt`'s `handler` resolves this component's DECLARED lookups —
 `DynComponentDef.lookup`, which came from the manifest — through the
 dispatching `&Ctx` BEFORE the guest is entered, and passes the answers in as
 `Guest::dispatch`'s `bindings`. `control.lookup(name)` reads that map. So:
@@ -663,7 +663,7 @@ an internal field name grants nothing. Only `public: true` admits host access.
 The host checks all four before calling a setter.
 It also validates the value returned by the successor's getter and evaluates
 the successor against the manifest's field domains before adopting it
-(`host/dynobj.mbt`, `obj_property` / `obj_set_property`). A refusal or malformed
+(`host/dynobj.mbt`, `property` / `set_property`). A refusal or malformed
 successor is dropped and the old root remains intact.
 
 The transition is synchronous, which is what lets a parent replace a nested

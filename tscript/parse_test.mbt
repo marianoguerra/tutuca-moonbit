@@ -668,7 +668,7 @@ priv struct AvatarStack {
 }
 
 ///|
-impl @tutuca.Stack for AvatarStack with fn lookup_field_raw(self, name) {
+impl @tutuca.Stack for AvatarStack with fn lookup_storage(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 

@@ -1092,7 +1092,7 @@ pub fn make_instance_at(
 /// came from.
 pub fn snapshot(v : @tutuca.Value) -> @persist.Snapshot? {
   guard v is Obj(o) else { return None }
-  guard o.obj_schema() is Some(schema) else { return None }
+  guard o.schema() is Some(schema) else { return None }
   for _, bundle in bundles {
     if bundle.def_of(schema.name) is Some(_) {
       return bundle.snapshot(v)

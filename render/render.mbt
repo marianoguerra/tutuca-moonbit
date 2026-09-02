@@ -475,7 +475,7 @@ fn render_each(
         // custom seq: iterate the Obj's ordered entries,
         // honoring the @loop-with [start, end) slice and preserving each key.
         Obj(o) =>
-          match o.obj_seq_entries() {
+          match o.seq_entries() {
             Some(entries) => {
               let (s, e) = normalize_range(
                 plan.start,

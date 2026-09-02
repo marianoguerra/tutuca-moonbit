@@ -129,8 +129,8 @@ fn json_dropped_items(
     _ => return None
   }
   let source = match args {
-    [_, Obj(di), ..] =>
-      match di.obj_field("lookupBind") {
+    [_, Map(di), ..] =>
+      match di.get("lookupBind") {
         Some(Fn(lookup)) =>
           match lookup([Null, Str("key")]) {
             Num(sv) => sv.to_int()

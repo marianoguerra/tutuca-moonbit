@@ -6,7 +6,7 @@
 // every component in the tree, is an instance — and `Value::to_json` flattened
 // an instance to `null`. A record therefore serialized as a name, a path, and
 // two nulls: everything except the state change it exists to describe. With
-// `Obj::obj_schema` an instance projects to its declared fields, so this is
+// `Obj::schema` an instance projects to its declared fields, so this is
 // the whole record.
 //
 // It writes the ADDRESS twice, and both are load-bearing. `path` is the label a

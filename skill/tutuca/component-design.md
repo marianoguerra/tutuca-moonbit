@@ -32,7 +32,7 @@ This ladder is about *acting across* a component boundary — reaching up,
 messaging a target, doing async work, or mutating state someone else owns. It is
 **not** about merely *reading* a child's state: an ancestor already holds its
 children as immutable field values and can read them directly in any handler
-(a `@tutuca.Value` field plus `v.field(...)` / `obj_field` / `obj_item`) — no
+(a `@tutuca.Value` field plus `v.field(...)` / `member` / `item`) — no
 channel needed. See [core.md](./core.md) "The value tree".
 
 Reach for the *narrowest* channel that does the job, and only move further down

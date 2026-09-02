@@ -279,7 +279,7 @@ pub fn InstanceFieldsLoopWith::name(self : InstanceFieldsLoopWith) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for InstanceFieldsState with fn schema() {
   @component.SchemaInfo::new(
@@ -360,7 +360,7 @@ pub let instance_inspector_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for InstanceInspectorState with fn schema() {
   @component.SchemaInfo::new(
@@ -566,7 +566,7 @@ pub fn InstanceExplorerMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for InstanceExplorerState with fn schema() {
   @component.SchemaInfo::new(

@@ -263,7 +263,7 @@ Because children are just immutable values held in fields, **handlers
 have full read access to nested child state** — a parent that holds
 child instances in a `@tutuca.Value` (or `Array[@tutuca.Value]`) field
 reads them with the value coercers (`v.field("name")`, `v.list()`) or
-`Obj::obj_field`. Reading *down* the tree is direct and needs no
+`Obj::member`. Reading *down* the tree is direct and needs no
 channel: an ancestor that owns a list already holds every child's state
 and can read it for an aggregate decision. The single-level `.field`
 restriction (no `.foo.bar`) is a **view-template** rule, not a MoonBit
@@ -1177,7 +1177,7 @@ pub(all) enum Value {
   `Set[String]` or `Set[Enum]` in the schema; ordered maps are plain `Map`s,
   declared `Map[String, V]`. See [schema.md](./schema.md#field-types).
 - Custom collections implement the `@tutuca.Obj` trait (notably
-  `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
+  `seq_entries` for `@each`) — see [iteration.md](./iteration.md)
   *Custom collections*.
 
 ## The ModuleDef convention

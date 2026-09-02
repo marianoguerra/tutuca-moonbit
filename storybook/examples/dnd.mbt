@@ -57,10 +57,10 @@ fn dnd_comp() -> @component.Component {
         // returning None falls through to them.
         Some(ResetQuery | SetQuery(_)) => Unhandled
         // args: [@key (the TARGET row's key), dragInfo]
-        Some(OnDropOnItem(Num(t), Obj(di))) => {
+        Some(OnDropOnItem(Num(t), Map(di))) => {
           let target = t.to_int()
           // the SOURCE row's key, read off the drag's captured stack
-          let source = match di.obj_field("lookupBind") {
+          let source = match di.get("lookupBind") {
             Some(Fn(lookup)) =>
               match lookup([Null, Str("key")]) {
                 Num(n) => n.to_int()

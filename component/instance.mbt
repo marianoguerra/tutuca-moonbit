@@ -132,7 +132,7 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
   match (a, b) {
     // Two INSTANCES are the same instance or they are not, and a structural
     // compare cannot tell: an instance's identity is its state under
-    // copy-on-write, and `obj_eq` ranges over the DECLARED fields — which is
+    // copy-on-write, and `eq` ranges over the DECLARED fields — which is
     // the right answer to "are these two alike" and the wrong one to "may I
     // keep the old one". A guest whose schema does not name everything it
     // holds (a draft, a cursor, a parser's arena) hands back a successor that
@@ -144,7 +144,7 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
     // revision. An instance that tracks no identity answers false, which the
     // contract above says is always safe.
     (Obj(x), Obj(y)) =>
-      match (x.obj_identity(), y.obj_identity()) {
+      match (x.identity(), y.identity()) {
         (Some(ix), Some(iy)) => ix == iy
         _ => false
       }
@@ -329,7 +329,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
 ///|
 /// A `$`-callable by name: a `compute` first, then a `generated` one.
 ///
-/// Both `obj_field` and `trigger` end in exactly this lookup.
+/// Both `member` and `trigger` end in exactly this lookup.
 fn[S] TypedInstance::callable_of(
   self : TypedInstance[S],
   name : String,
@@ -346,7 +346,7 @@ fn[S] TypedInstance::callable_of(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn field(self, name) {
   match self.fields.get(name) {
     Some(v) => Some(v)
     // $-callables surface as self-pre-bound Fns;
@@ -355,14 +355,14 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
     // `NullStack` because this caller has none: a `$compute` read off a bare
     // `Value` — the JSON projection, a path lookup, the inspector — is not
     // being asked from a render position, so a `*name` inside it has no
-    // ancestry to walk and answers Null. `obj_method_at` below is the seam for
+    // ancestry to walk and answers Null. `method_at` below is the seam for
     // the caller that DOES have one.
     None => self.callable_of(name, @tutuca.NullStack::{ })
   }
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn with_field(self, name, v) {
   guard self.spec.comp is Some(comp) else { return None }
   if comp.specs.contains(name) {
     Some(self.set(name, v).to_value())
@@ -372,7 +372,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_property(self, name) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn property(self, name) {
   guard self.spec.comp is Some(comp) else { return None }
   guard comp.schema.properties.iter().any(p => p.name == name && p.public_) else {
     return None
@@ -383,11 +383,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_property(self, name) {
 ///|
 /// The owning view's virtual-member read. Declared getters win; state fields
 /// are implicit private properties and therefore form the fallback.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_member_at(
-  self,
-  name,
-  _stack,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn member_at(self, name, _stack) {
   match self.spec.get_property.get(name) {
     Some(f) => Some(f(self.state))
     None => self.fields.get(name)
@@ -398,11 +394,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_member_at(
 /// Public property writes never enter the message dispatcher. The setter is a
 /// typed, synchronous state transition, and the same invariant/domain commit
 /// gate used by handlers decides whether its successor may stand.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_property(
-  self,
-  name,
-  value,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn set_property(self, name, value) {
   guard self.spec.comp is Some(comp) else { return PMissing }
   guard comp.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
@@ -415,11 +407,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_property(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_member(
-  self,
-  name,
-  value,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn set_member(self, name, value) {
   guard self.spec.comp is Some(comp) else { return PMissing }
   guard comp.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
@@ -447,7 +435,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_set_member(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_mutate_member(
+impl[S] @tutuca.Obj for TypedInstance[S] with fn mutate_member(
   self,
   name,
   operation,
@@ -536,11 +524,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn trigger(self, name) {
 
 ///|
 /// The `$compute` half, with the stack the caller is asking from.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_method_at(
-  self,
-  name,
-  stack,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn method_at(self, name, stack) {
   match self.fields.get(name) {
     Some(v) => Some(v)
     None => self.callable_of(name, stack)
@@ -704,7 +688,7 @@ fn[S] TypedInstance::broken_rule(
   // state in question — and a domain is cross-field, so every field has to
   // come from the same one.
   //
-  // Field by field through `Obj::obj_field` rather than `Value::map`: an
+  // Field by field through `Obj::member` rather than `Value::map`: an
   // instance is an `Obj` and not a `Map`, so `map()` would answer empty and
   // every relation would silently read `Null`.
   let after : Map[String, @tutuca.Value] = Map([])
@@ -801,7 +785,7 @@ fn[S] TypedInstance::refuse_broken(
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn handler(self, bucket, name) {
   let has_update = self.spec.update is Some(_)
   let input_fallback = answers_at_home(bucket) &&
     (self.spec.swap.contains(name) || self.spec.generated.contains(name))
@@ -909,13 +893,13 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
 
 ///|
 /// The declared description, as the component was built with it — STORED, not
-/// rebuilt: `obj_eq`, `obj_debug` and the JSON projection all read it, in
+/// rebuilt: `eq`, `debug` and the JSON projection all read it, in
 /// loops.
 ///
 /// This one line is what an instance owes the generic-access layer. Everything
 /// downstream of it — naming the fields, reading one by kind, structural
 /// equality, the debug rendering, the JSON form — is a default in `@tutuca`.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn schema(self) {
   match self.spec.comp {
     Some(c) => Some(c.schema)
     None => None
@@ -926,11 +910,11 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
 /// The render cache's bucket for this instance — stored, like the schema
 /// above, because it is read once per render site per pass.
 ///
-/// It is deliberately absent from `obj_field`, `obj_eq`, `obj_debug` and the
+/// It is deliberately absent from `member`, `eq`, `debug` and the
 /// JSON projection: a bucket is not state, and an instance that reported one
 /// as a field would put a hash into every DOM snapshot and every inspector
 /// row.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_identity(self) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn identity(self) {
   Some(self.id)
 }
 
@@ -957,19 +941,19 @@ fn[S] TypedInstance::seq_field(self : TypedInstance[S]) -> String? {
 ///
 /// The host's own instances can be asked the same question off the same
 /// schema.
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_seq_entries(self) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn seq_entries(self) {
   guard self.seq_field() is Some(name) else { return None }
   Some(self.get(name).entries())
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_item(self, key) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn item(self, key) {
   guard self.seq_field() is Some(name) else { return None }
   self.get(name).item_opt(key)
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_item(self, key, v) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn with_item(self, key, v) {
   guard self.seq_field() is Some(name) else { return None }
   Some(self.set(name, self.get(name).with_item(key, v)).to_value())
 }

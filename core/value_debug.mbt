@@ -30,7 +30,7 @@ fn value_repr(v : Value) -> ValueRepr {
       RMap(out)
     }
     Fn(_) => RFn
-    Obj(o) => RObj(o.obj_debug())
+    Obj(o) => RObj(o.debug())
   }
 }
 

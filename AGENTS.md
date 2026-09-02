@@ -389,7 +389,7 @@ plain `moon test "..." { ... }` blocks:
   `tutucard/build/run-tests.mjs` are the two callers. `gen-views` ignores the
   block, exactly as it ignores `tutuca/wax`.
 - A card's `refused` is usually EMPTY, and that is the contract rather than a
-  gap: `dyncomp/host/dynobj.mbt`'s `obj_handler` never gates a `Receive`, so a
+  gap: `dyncomp/host/dynobj.mbt`'s `handler` never gates a `Receive`, so a
   guest answers `unhandled` and the host has nothing to refuse. What a compiled
   card says instead is `control.log` — a `requires` / `ensures` / `invariant`
   that did not hold, carrying the rule's own `format` sentence — which

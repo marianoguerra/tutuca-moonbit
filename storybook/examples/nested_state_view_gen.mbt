@@ -341,7 +341,7 @@ pub fn NestedStateMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for NestedStateState with fn schema() {
   @component.SchemaInfo::new(

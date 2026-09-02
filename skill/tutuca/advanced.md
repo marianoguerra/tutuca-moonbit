@@ -36,8 +36,8 @@ update=(s : DndState, msg, _ctx) => match msg {
 ```
 
 `data-dragtype` on the source and `data-droptarget` on the target pair a
-draggable with where it may drop. `dragstart` captures a `DragInfo` from
-the **source** render — its `value`, its `type`, and `lookupBind(name)`
+draggable with where it may drop. `dragstart` captures the drag from the
+**source** render — a `Map` of `value`, `type`, and `lookupBind(name)`
 over the source's `@each` binds — and every dispatch while the drag is
 active can ask it for something, even though `drop` fires on the target
 row.
@@ -54,9 +54,9 @@ since reading one off it means applying a function:
 ```moonbit nocheck
 // nocheck: one bucket argument, not a whole component
 update=(s : DndState, msg, _ctx) => match msg {
-  Receive("onDrop", [_, Obj(di), ..]) =>
+  Receive("onDrop", [_, Map(di), ..]) =>
     // Fn convention: element 0 is the this-slot
-    match di.obj_field("lookupBind") {
+    match di.get("lookupBind") {
       Some(Fn(lookup)) =>
         match lookup([Null, Str("row")]) {
           Str(row) => Some({ items: [Str(row)] })
@@ -228,7 +228,7 @@ provider. Register lowercase names as absolute paths from the app state root:
 )
 ```
 
-Descendants may declare `lookup_name("session")` / `lookup_name("theme")` and
+Descendants may declare `lookup_bare("session")` / `lookup_bare("theme")` and
 read or render `*session` / `*theme`. The mounted root component does not have
 to publish them, and no artificial `App` component is needed solely to push
 ambient values. Register on a nested `ComponentStack` to scope a path more
@@ -332,7 +332,7 @@ Notes:
 
 The JS `SEQ_INFO` prototype walker does not exist in this port — a
 custom collection is any struct implementing the `@tutuca.Obj` trait,
-chiefly `obj_seq_entries` (what `@each` iterates, keyed) and `obj_item`
+chiefly `seq_entries` (what `@each` iterates, keyed) and `item`
 (seq-access reads). Full treatment with the worked `KeyedList` example
 in [iteration.md](./iteration.md) *Custom collections — the `Obj`
 trait*.

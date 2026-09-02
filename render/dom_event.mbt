@@ -125,10 +125,7 @@ fn bind_number(value : @tutuca.Value) -> Double? {
 /// A field of the active `DragInfo` (`app/drag.mbt` builds the Obj), or Null
 /// when no drag is in flight.
 fn drag_field(info : @tutuca.Value, name : String) -> @tutuca.Value {
-  match info {
-    Obj(o) => o.obj_field(name).unwrap_or(Null)
-    _ => Null
-  }
+  info.field(name)
 }
 
 ///|

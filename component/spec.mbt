@@ -11,7 +11,7 @@
 
 ///|
 /// The declared-description types live in `@tutuca` now, so that a holder of a
-/// bare `Value` can reach them (`Obj::obj_schema`). Re-exported here because
+/// bare `Value` can reach them (`Obj::schema`). Re-exported here because
 /// `@component.SchemaInfo` is what 143 generated modules and every
 /// hand-written descriptor already say.
 ///
@@ -55,7 +55,7 @@ declare fn FieldSpec::coerce_or_default(
 /// It exists so `setX` / `toggleX` / `pushInX` / … are written once for every
 /// kind of instance rather than once per implementation. A `TypedInstance`
 /// supplies it over its encoded fields; the dynamic-component host supplies it
-/// over `Obj::obj_field` / `Obj::obj_with_field`, which is what gives a wasm
+/// over `Obj::member` / `Obj::with_member`, which is what gives a wasm
 /// guest that declares `count: s32` a working `setCount` with no guest code —
 /// the same mutators, over the same declared schema, through a different seam.
 pub(all) struct FieldBox {

@@ -115,7 +115,7 @@ test "static e2e: register -> render -> click -> dispatch -> re-render" {
   assert_true(item_label(tx) == Str("gold"))
   // the old root is untouched (COW instances)
   assert_true(
-    root.field("item") is Obj(o) && o.obj_field("label") == Some(Str("plain")),
+    root.field("item") is Obj(o) && o.field("label") == Some(Str("plain")),
   )
   // re-render from the new root shows the change
   let container2 = mount(scope.comps, tx.root)

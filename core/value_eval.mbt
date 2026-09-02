@@ -45,7 +45,7 @@ pub impl Eq for Value with fn equal(self, other) {
       true
     }
     (Fn(a), Fn(b)) => physical_equal(a, b)
-    (Obj(a), Obj(b)) => a.obj_eq(b)
+    (Obj(a), Obj(b)) => a.eq(b)
     _ => false
   }
 }
@@ -53,7 +53,7 @@ pub impl Eq for Value with fn equal(self, other) {
 ///|
 /// size_of: `.size` (immutable collections) or `.length` (string/array).
 ///
-/// A custom collection answers too, through `obj_size`. An
+/// A custom collection answers too, through `size`. An
 /// instance that is NOT a sequence still answers None, which is the honest
 /// reading: a component has fields, not a size.
 pub fn size_of(v : Value) -> Int? {
@@ -61,7 +61,7 @@ pub fn size_of(v : Value) -> Int? {
     Str(s) => Some(s.length())
     List(a) => Some(a.length())
     Map(m) => Some(m.length())
-    Obj(o) => o.obj_size()
+    Obj(o) => o.size()
     _ => None
   }
 }
@@ -111,7 +111,7 @@ pub fn Value::to_display_string(self : Value) -> String {
     List(items) => items.map(i => tpl_piece(i)).join(",")
     Map(_) => "[object]"
     Fn(_) => "[function]"
-    Obj(o) => o.obj_debug()
+    Obj(o) => o.debug()
   }
 }
 
@@ -192,8 +192,8 @@ fn read_place(place : Place, stack : &Stack) -> Value {
   // the shared item lookup — which is what makes a custom collection readable
   // here. Both halves read storage.
   if ERead(place~, span=place.span).as_seq_access() is Some((seq, key)) {
-    return match stack.lookup_field_raw(key).as_key() {
-      Some(k) => stack.lookup_field_raw(seq).item(k)
+    return match stack.lookup_storage(key).as_key() {
+      Some(k) => stack.lookup_storage(seq).item(k)
       None => Null
     }
   }
@@ -202,7 +202,7 @@ fn read_place(place : Place, stack : &Stack) -> Value {
       if place.steps.is_empty() {
         stack.lookup_member(name)
       } else {
-        stack.lookup_field_raw(name)
+        stack.lookup_storage(name)
       }
     PBind(name) => stack.lookup_bind(name)
     // A parameter is a body's, and a body runs after the render stack rather
@@ -218,7 +218,7 @@ fn read_place(place : Place, stack : &Stack) -> Value {
       PField(prop) =>
         match cur {
           Map(m) => m.get(prop).unwrap_or(Null)
-          Obj(o) => o.obj_field(prop).unwrap_or(Null)
+          Obj(o) => o.field(prop).unwrap_or(Null)
           _ => Null
         }
       PIndex(idx) =>
@@ -292,7 +292,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
           (b.apply)(args.map(a => a.eval(stack)))
         _ => Null
       }
-    EName(name~, ..) => stack.lookup_name(name)
+    EName(name~, ..) => stack.lookup_bare(name)
     // An Uppercase name parses (a handler arg may be written as one, and the
     // linter reads them) but resolves to nothing: a type is not a Value, so
     // there is nothing for a stack to hand back.
@@ -350,7 +350,7 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
 pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
   match self {
     // The raw function, for the dispatch machinery to call with event args.
-    EMethod(name~, ..) => stack.lookup_field_raw(name)
+    EMethod(name~, ..) => stack.lookup_storage(name)
     EName(name~, ..) =>
       match stack.lookup_trigger(name) {
         Null => mk_404_handler(name)

@@ -1,12 +1,12 @@
 // Unit tests over the from-data builders. Built instances are read back
 // through the Obj
-// trait (`obj_field`), and methods are called through the same trait (they
+// trait (`member`), and methods are called through the same trait (they
 // surface as self-pre-bound Fns; element 0 is the this-slot).
 
 ///|
 fn oget(v : @tutuca.Value, name : String) -> @tutuca.Value {
   match v {
-    Obj(o) => o.obj_field(name).unwrap_or(Null)
+    Obj(o) => o.field(name).unwrap_or(Null)
     _ => Null
   }
 }
@@ -29,7 +29,7 @@ fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
   guard v is Obj(o) else { return Null }
   // `Receive`, because that is what a view raises now. This helper stands in
   // for a click, and a click is an addressed message.
-  guard o.obj_handler(Receive, name) is Some(Handler(f)) else { return Null }
+  guard o.handler(Receive, name) is Some(Handler(f)) else { return Null }
   match f([], @tutuca.NullCtx::{ }) {
     Some(node) => node
     None => v
@@ -102,7 +102,7 @@ test "classify: composites build keyed rows and count them" {
 priv struct Undescribed {}
 
 ///|
-impl @tutuca.Obj for Undescribed with fn obj_debug(_self) {
+impl @tutuca.Obj for Undescribed with fn debug(_self) {
   "Undescribed{}"
 }
 
@@ -699,7 +699,7 @@ test "state editor: the form wraps the target it edits" {
 }
 
 ///|
-/// The state editor reaches a generated mutator BY NAME through `Obj::obj_field`
+/// The state editor reaches a generated mutator BY NAME through `Obj::member`
 /// — it holds a bare `Value`, so it has no other way in. That means two places
 /// have to agree on how a field name becomes a mutator name, and neither can
 /// see the other: `component()` builds `setTitle`, the editor asks for it.
@@ -712,9 +712,9 @@ test "the editor's setter name is the one the component generated" {
   let setter = @tutuca.mutator_name("set", "title")
   assert_eq(setter, "setTitle")
   // ...is a mutator the instance actually answers to.
-  guard! o.obj_field(setter) is Some(Fn(set))
+  guard! o.field(setter) is Some(Fn(set))
   guard! set([Null, Str("Bye")]) is Obj(o2)
-  assert_eq(o2.obj_field("title"), Some(Str("Bye")))
+  assert_eq(o2.field("title"), Some(Str("Bye")))
   // An empty field name has no mutator to build, and must not produce a bare
   // verb that collides with something else.
   assert_eq(@tutuca.mutator_name("set", ""), "set")

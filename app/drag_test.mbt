@@ -31,13 +31,13 @@ fn board_comp() -> @component.Component {
     init=BoardState::{ cards: Map([]), received: "", from: "", kind: "", },
     update=(s : BoardState, msg, _ctx) => {
       match msg {
-        Receive("dropped", [Obj(info)]) => {
+        Receive("dropped", [Map(info)]) => {
           // a plain @each li contributes only a frame-only step, so the
           // resumed dragInfo.value is the COMPONENT instance (JS
           // semantics); the dragged item comes from the source render's
           // binds through the kept frame steps
           let bind = (name : String) => {
-            match info.obj_field("lookupBind") {
+            match info.get("lookupBind") {
               Some(Fn(f)) =>
                 match f([Null, Str(name)]) {
                   Str(v) => v
@@ -46,11 +46,11 @@ fn board_comp() -> @component.Component {
               _ => "?"
             }
           }
-          let kind = match info.obj_field("type") {
+          let kind = match info.get("type") {
             Some(Str(k)) => k
             _ => "?"
           }
-          let dragged_is_board = match info.obj_field("value") {
+          let dragged_is_board = match info.get("value") {
             Some(Obj(_)) => "yes"
             _ => "no"
           }

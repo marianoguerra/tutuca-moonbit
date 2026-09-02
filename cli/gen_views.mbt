@@ -221,7 +221,7 @@ let gen_views_help : String =
   #|  its zero, its codec, and one SchemaInfo carrying the whole declaration:
   #|  the fields with their declared kinds, the handler channels, the view
   #|  names, the element ids and the fixture names. That descriptor is what an
-  #|  instance answers obj_schema() with, so an inspector holding a bare Value
+  #|  instance answers schema() with, so an inspector holding a bare Value
   #|  can read it with no component registry.
   #|
   #|  --name  the component name, for a file whose templates do not name one

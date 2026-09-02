@@ -2,7 +2,7 @@
 //
 // The example suite next door covers each `TyInfo` case by hand; this covers
 // the composition of them, which is where a codec written as two mirrored
-// tables actually goes wrong. `Value`'s Eq on an `Obj` is `obj_eq` —
+// tables actually goes wrong. `Value`'s Eq on an `Obj` is `eq` —
 // structural over the schema — so the equality asserted here is definitionally
 // the fidelity claim the file header makes.
 //
@@ -106,12 +106,12 @@ priv struct QcNode {
 }
 
 ///|
-impl @core.Obj for QcNode with fn obj_schema(self) {
+impl @core.Obj for QcNode with fn schema(self) {
   Some(self.sc)
 }
 
 ///|
-impl @core.Obj for QcNode with fn obj_field(self, name) {
+impl @core.Obj for QcNode with fn field(self, name) {
   self.fields.get(name)
 }
 
@@ -143,11 +143,11 @@ fn qc_source() -> @core.FnSource {
 ///|
 /// Structural equality that ignores the declared TYPES, because the source
 /// above cannot recover them — only the names, the order and the values, which
-/// is what `obj_eq` compares anyway.
+/// is what `eq` compares anyway.
 fn same(a : @core.Value, b : @core.Value) -> Bool {
   match (a, b) {
     (Obj(x), Obj(y)) => {
-      guard x.obj_schema() is Some(sx) && y.obj_schema() is Some(sy) else {
+      guard x.schema() is Some(sx) && y.schema() is Some(sy) else {
         return false
       }
       guard sx.name == sy.name && sx.fields.length() == sy.fields.length() else {
@@ -156,8 +156,8 @@ fn same(a : @core.Value, b : @core.Value) -> Bool {
       for i, f in sx.fields {
         guard sy.fields[i].name == f.name else { return false }
         guard same(
-          x.obj_field(f.name).unwrap_or(Null),
-          y.obj_field(f.name).unwrap_or(Null),
+          x.field(f.name).unwrap_or(Null),
+          y.field(f.name).unwrap_or(Null),
         ) else {
           return false
         }

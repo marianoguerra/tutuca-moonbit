@@ -201,17 +201,17 @@ per sigil:
 ```mbt nocheck
 ///|
 pub(open) trait Stack {
-  fn lookup_name(Self, String) -> Value = _
+  fn lookup_bare(Self, String) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
   fn lookup_dynamic(Self, String) -> Value = _
-  fn lookup_field_raw(Self, String) -> Value = _
+  fn lookup_storage(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
 ```
 
 `Val::eval(&Stack) -> Value` is a direct dispatch: `Field(name)` calls
-`lookup_field_raw`, `Bind(name)` calls `lookup_bind`, and so on (see
+`lookup_storage`, `Bind(name)` calls `lookup_bind`, and so on (see
 `core/value_eval.mbt`). Every default returns `Null` — a stack implements
 only the lookups it can answer. That means *anything* can be a stack;
 components come much later:
@@ -224,7 +224,7 @@ struct FieldMap {
 }
 
 ///|
-impl @tutuca.Stack for FieldMap with fn lookup_field_raw(self, name) {
+impl @tutuca.Stack for FieldMap with fn lookup_storage(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 
@@ -427,7 +427,7 @@ test "render: template + value → vdom → HTML" {
 }
 ```
 
-`RenderStack::lookup_field_raw` reads `.name` out of the current value —
+`RenderStack::lookup_storage` reads `.name` out of the current value —
 exactly what our toy `FieldMap` did, plus frames, bindings and component
 lookups. `@each` renders by entering a child stack frame per item;
 `<x render>` swaps `it` to the child value and resolves its view.
@@ -454,7 +454,7 @@ test "instances are copy-on-write values, visible through Obj" {
   // writes go through the Obj trait (or generated mutators from views):
   // they return a NEW instance value
   guard! a is Obj(ao)
-  guard! ao.obj_with_field("name", Str("reader")) is Some(b)
+  guard! ao.with_field("name", Str("reader")) is Some(b)
   debug_inspect(
     a.field("name"),
     content=(
@@ -476,8 +476,8 @@ test "instances are copy-on-write values, visible through Obj" {
 Here is the architectural knot: the state tree lives in `core` (`Value`),
 but component instances are defined in `component`, which depends on `core`.
 How can a `Value` *contain* an instance? Through the **`Obj` trait** —
-`core` defines the protocol (`obj_field`, `obj_with_field`, `obj_handler`,
-`obj_eq`, …) and `Value::Obj(&Obj)` stores any implementor. The typed-state
+`core` defines the protocol (`member`, `with_member`, `handler`,
+`eq`, …) and `Value::Obj(&Obj)` stores any implementor. The typed-state
 instance implements it (encoding the struct to a fields map for the render
 and path seams, decoding it back for the handlers), and so does `dyncomp`'s
 host object for WebAssembly guest components — the value tree cannot tell
@@ -533,7 +533,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
   // the new tree has the new text…
   guard! new_root.field("note") is Obj(o)
   debug_inspect(
-    o.obj_field("text"),
+    o.field("text"),
     content=(
       #|Some(RStr("dear reader"))
     ),
@@ -541,7 +541,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
   // …and the original tree is untouched (copy-on-write, not mutation)
   guard! root.field("note") is Obj(old)
   debug_inspect(
-    old.obj_field("text"),
+    old.field("text"),
     content=(
       #|Some(RStr(""))
     ),
@@ -599,7 +599,7 @@ test "transactor: messages queue, settle produces one new root" {
   inspect(changes, content="1")
   guard! txr.root.field("note") is Obj(o)
   debug_inspect(
-    o.obj_field("text"),
+    o.field("text"),
     content=(
       #|Some(RStr("hello"))
     ),
@@ -671,7 +671,7 @@ Value language and path/dispatch system share the `core` package because
 their types form a single unbreakable cycle:
 
 ```
-Obj::obj_handler returns Handler
+Obj::handler returns Handler
   → Handler carries &Ctx and returns Value?
     → Ctx::path() returns DispatchPath
       → DispatchPath steps carry Val (dynamic/frame segments)

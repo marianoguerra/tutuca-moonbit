@@ -5,10 +5,10 @@
 // These are FREE FUNCTIONS over the `Obj` primitives, not trait methods. A
 // trait method has to be implemented once per type; a function over the
 // primitives is written once and every implementor gets it — which is what
-// keeps the implementation side at "answer `obj_field`, and `obj_schema` if
+// keeps the implementation side at "answer `member`, and `schema` if
 // you have one".
 //
-// The container triple — `(List, KInt) | (Map, KStr) | (Obj, obj_item)` —
+// The container triple — `(List, KInt) | (Map, KStr) | (Obj, item)` —
 // lives here, written once.
 //
 // EVERY accessor comes in two forms, and the `_opt` one is the primitive: the
@@ -23,7 +23,7 @@
 pub fn Value::field_opt(self : Value, name : String) -> Value? {
   match self {
     Map(m) => m.get(name)
-    Obj(o) => o.obj_field(name)
+    Obj(o) => o.field(name)
     _ => None
   }
 }
@@ -41,7 +41,7 @@ pub fn Value::field(self : Value, name : String) -> Value {
 /// ordinary record lookup.
 pub fn Value::property_opt(self : Value, name : String) -> Value? {
   match self {
-    Obj(o) => o.obj_property(name)
+    Obj(o) => o.property(name)
     _ => None
   }
 }
@@ -57,7 +57,7 @@ pub fn Value::property(self : Value, name : String) -> Value {
 /// and ordinary fields remain the fallback.
 pub fn Value::member_at(self : Value, name : String, stack : &Stack) -> Value? {
   match self {
-    Obj(o) => o.obj_member_at(name, stack)
+    Obj(o) => o.member_at(name, stack)
     _ => self.field_opt(name)
   }
 }
@@ -72,7 +72,7 @@ pub fn Value::member_at(self : Value, name : String, stack : &Stack) -> Value? {
 /// body to run.
 pub fn Value::method_at(self : Value, name : String, stack : &Stack) -> Value? {
   match self {
-    Obj(o) => o.obj_method_at(name, stack)
+    Obj(o) => o.method_at(name, stack)
     _ => self.field_opt(name)
   }
 }
@@ -88,7 +88,7 @@ pub fn Value::trigger_at(self : Value, name : String, stack : &Stack) -> Value? 
 
 ///|
 /// An item by key: a list index, a map key, or whatever a custom collection
-/// resolves through `obj_item`. None when there is no such item.
+/// resolves through `item`. None when there is no such item.
 pub fn Value::item_opt(self : Value, key : PathKey) -> Value? {
   match (self, key) {
     (List(a), KInt(i)) =>
@@ -98,7 +98,7 @@ pub fn Value::item_opt(self : Value, key : PathKey) -> Value? {
         None
       }
     (Map(m), KStr(s)) => m.get(s)
-    (Obj(o), k) => o.obj_item(k)
+    (Obj(o), k) => o.item(k)
     _ => None
   }
 }
@@ -264,7 +264,7 @@ pub fn Value::with_field_opt(self : Value, name : String, v : Value) -> Value? {
       out[name] = v
       Some(Map(out))
     }
-    Obj(o) => o.obj_with_field(name, v)
+    Obj(o) => o.with_field(name, v)
     _ => None
   }
 }
@@ -284,7 +284,7 @@ pub fn Value::set_property(
   v : Value,
 ) -> PropertyWrite {
   match self {
-    Obj(o) => o.obj_set_property(name, v)
+    Obj(o) => o.set_property(name, v)
     _ => PMissing
   }
 }
@@ -298,7 +298,7 @@ pub fn Value::set_member(
   v : Value,
 ) -> PropertyWrite {
   match self {
-    Obj(o) => o.obj_set_member(name, v)
+    Obj(o) => o.set_member(name, v)
     _ => PMissing
   }
 }
@@ -312,7 +312,7 @@ pub fn Value::mutate_member(
   args : Array[Value],
 ) -> PropertyWrite {
   match self {
-    Obj(o) => o.obj_mutate_member(name, operation, args)
+    Obj(o) => o.mutate_member(name, operation, args)
     _ => PMissing
   }
 }
@@ -371,7 +371,7 @@ pub fn Value::with_item_opt(self : Value, key : PathKey, v : Value) -> Value? {
       out[s] = v
       Some(Map(out))
     }
-    (Obj(o), k) => o.obj_with_item(k, v)
+    (Obj(o), k) => o.with_item(k, v)
     _ => None
   }
 }
@@ -394,7 +394,7 @@ pub fn Value::size(self : Value, default? : Int = 0) -> Int {
 
 ///|
 /// The ordered (key, value) entries of any container: a list keyed by index, a
-/// map by name, a custom collection by whatever `obj_seq_entries` says. Empty
+/// map by name, a custom collection by whatever `seq_entries` says. Empty
 /// for anything that is not one (iteration yields no entries then).
 ///
 /// TOOLING and one-off use: this materializes. The renderer's `@each` keeps
@@ -416,7 +416,7 @@ pub fn Value::entries(self : Value) -> Array[(PathKey, Value)] {
       }
       out
     }
-    Obj(o) => o.obj_seq_entries().unwrap_or([])
+    Obj(o) => o.seq_entries().unwrap_or([])
     _ => []
   }
 }
@@ -467,7 +467,7 @@ pub fn Value::call_field(
 /// What this value DECLARES, when it is a component instance that says.
 pub fn Value::schema(self : Value) -> SchemaInfo? {
   match self {
-    Obj(o) => o.obj_schema()
+    Obj(o) => o.schema()
     _ => None
   }
 }
@@ -552,7 +552,7 @@ fn protocol_property_notice(
 /// would only build a key and miss.
 pub fn Value::identity(self : Value) -> ObjId? {
   match self {
-    Obj(o) => o.obj_identity()
+    Obj(o) => o.identity()
     _ => None
   }
 }
@@ -574,7 +574,7 @@ pub fn Value::field_info(self : Value, name : String) -> FieldInfo? {
 pub fn Value::field_names(self : Value) -> Array[String] {
   match self {
     Obj(o) =>
-      match o.obj_schema() {
+      match o.schema() {
         Some(s) => s.field_names()
         None => []
       }

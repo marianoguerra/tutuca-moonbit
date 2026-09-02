@@ -2,7 +2,7 @@
 // round trip.
 //
 // The codec itself is in `@tutuca` (core/component_json.mbt), because once
-// resolution is a trait it needs nothing but `Obj::obj_schema` and `TyInfo`.
+// resolution is a trait it needs nothing but `Obj::schema` and `TyInfo`.
 // What is here is the one implementation everything in this repo actually
 // uses: a lexical `ComponentStack`, which is the same namespace a view resolves
 // a child component through — so a document names a component exactly the way

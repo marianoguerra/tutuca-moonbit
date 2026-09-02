@@ -16,7 +16,7 @@ fn note(text : String) -> @core.Value {
 }
 
 ///|
-impl @core.Obj for Note with fn obj_field(self, name) {
+impl @core.Obj for Note with fn field(self, name) {
   match name {
     "text" => Some(Str(self.text))
     _ => None
@@ -24,7 +24,7 @@ impl @core.Obj for Note with fn obj_field(self, name) {
 }
 
 ///|
-impl @core.Obj for Note with fn obj_with_field(_self, name, v) {
+impl @core.Obj for Note with fn with_field(_self, name, v) {
   match (name, v) {
     ("text", Str(s)) => Some(note(s))
     _ => None
@@ -32,7 +32,7 @@ impl @core.Obj for Note with fn obj_with_field(_self, name, v) {
 }
 
 ///|
-impl @core.Obj for Note with fn obj_handler(_self, bucket, name) {
+impl @core.Obj for Note with fn handler(_self, bucket, name) {
   match (bucket, name) {
     (Receive, "retitle") =>
       Some(
@@ -172,7 +172,7 @@ test "one dispatch produces at most one record" {
 priv struct Twice {}
 
 ///|
-impl @core.Obj for Twice with fn obj_handler(_self, _bucket, _name) {
+impl @core.Obj for Twice with fn handler(_self, _bucket, _name) {
   Some(
     Handler((_args, _ctx) => {
       @core.precondition_failed(handler="twice", pred="first")

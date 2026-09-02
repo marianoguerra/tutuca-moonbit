@@ -195,7 +195,7 @@ pub fn TrafficLightMethod::name(self : TrafficLightMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TrafficLightState with fn schema() {
   @component.SchemaInfo::new(
@@ -384,7 +384,7 @@ pub fn TabbedUIMsg::from_dispatch(d : @component.Dispatch) -> TabbedUIMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TabbedUIState with fn schema() {
   @component.SchemaInfo::new(
@@ -611,7 +611,7 @@ pub fn ListAndFilterWhen::name(self : ListAndFilterWhen) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ListAndFilterState with fn schema() {
   @component.SchemaInfo::new(

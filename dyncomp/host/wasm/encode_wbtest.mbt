@@ -13,7 +13,7 @@ priv struct FakeChild {
 }
 
 ///|
-impl @tutuca.Obj for FakeChild with fn obj_field(self, name) {
+impl @tutuca.Obj for FakeChild with fn field(self, name) {
   if name == @dyncomp.handle_field {
     Some(Num(self.handle.to_double()))
   } else {

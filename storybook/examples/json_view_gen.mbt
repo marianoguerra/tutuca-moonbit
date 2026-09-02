@@ -228,7 +228,7 @@ pub fn JsonSelectorMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonSelectorState with fn schema() {
   @component.SchemaInfo::new(
@@ -292,7 +292,7 @@ pub let json_null_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonNullState with fn schema() {
   @component.SchemaInfo::new(name="JsonNull", fingerprint="83efae9bb2c436be", view_names=[
@@ -472,7 +472,7 @@ pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonBoolState with fn schema() {
   @component.SchemaInfo::new(
@@ -656,7 +656,7 @@ pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonStringState with fn schema() {
   @component.SchemaInfo::new(
@@ -842,7 +842,7 @@ pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonNumberState with fn schema() {
   @component.SchemaInfo::new(
@@ -1055,7 +1055,7 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
@@ -1243,7 +1243,7 @@ pub fn JsonObjectKeyValMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonObjectKeyValState with fn schema() {
   @component.SchemaInfo::new(
@@ -1456,7 +1456,7 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(

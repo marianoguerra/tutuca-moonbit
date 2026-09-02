@@ -62,11 +62,11 @@ pub fn Value::to_json(self : Value) -> Json {
       Json::object(obj)
     }
     Obj(o) =>
-      match o.obj_schema() {
+      match o.schema() {
         Some(schema) => {
           let obj : Map[String, Json] = Map([])
           for f in schema.fields {
-            obj[f.name] = match o.obj_field(f.name) {
+            obj[f.name] = match o.field(f.name) {
               Some(v) => v.to_json()
               None => Json::null()
             }

@@ -263,7 +263,7 @@ impl @tutuca.Obj for ShellInst with fn component_id(self) {
 }
 
 ///|
-impl @tutuca.Obj for ShellInst with fn obj_field(self, name) {
+impl @tutuca.Obj for ShellInst with fn field(self, name) {
   self.fields.get(name)
 }
 
@@ -279,7 +279,7 @@ impl @tutuca.Obj for ShellInst with fn obj_field(self, name) {
 /// ~50 stories, and an explorer nobody is looking at is pure cost.
 ///
 /// One instance out, so no extra transaction and no chance of a rebuild loop.
-impl @tutuca.Obj for ShellInst with fn obj_with_field(self, name, v) {
+impl @tutuca.Obj for ShellInst with fn with_field(self, name, v) {
   guard self.fields.contains(name) else { return None }
   let next = self.set(name, v)
   guard story_index(name) is Some(idx) else { return Some(next.to_value()) }
@@ -309,9 +309,9 @@ fn story_index(name : String) -> Int? {
 ///|
 /// The descriptor built alongside the view — STORED on the Component, so this
 /// is a read and not a rebuild. It carries every `sN`/`vN`/`cK`/`gvK` name the
-/// shell computed, which is what lets `obj_eq` and `obj_debug` come from
+/// shell computed, which is what lets `eq` and `debug` come from
 /// `@tutuca`'s schema-ranged defaults instead of being written here.
-impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
+impl @tutuca.Obj for ShellInst with fn schema(self) {
   match self.spec.comp {
     Some(c) => Some(c.schema)
     None => None
@@ -320,7 +320,7 @@ impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
 
 ///|
 /// Every event/message handler of the gallery, dispatched by (bucket, name).
-impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for ShellInst with fn handler(self, bucket, name) {
   self.handler_for(bucket, name)
 }
 

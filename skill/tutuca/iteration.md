@@ -161,7 +161,7 @@ struct-function fields with parens):
 For each render of an element with `@each=".items"`:
 
 1. **Resolve sequence** — evaluate `.items`. `List`s, `Map`s, and any
-   `Obj` implementing `obj_seq_entries` are recognized (see *Custom
+   `Obj` implementing `seq_entries` are recognized (see *Custom
    collections* below).
 2. **`@loop-with`** (once per render) — the handler is called with
    `(state, seq, loop_ctx)`; its `iter_data` becomes the shared per-loop
@@ -221,10 +221,10 @@ enrich_scope={
 To make `@each` iterate your own collection type, implement the
 `@tutuca.Obj` trait — the MoonBit analogue of the JS `SEQ_INFO` walker:
 
-- **`obj_seq_entries(self) -> Array[(PathKey, Value)]?`** — the entries
+- **`seq_entries(self) -> Array[(PathKey, Value)]?`** — the entries
   `@each` visits, in order, each keyed (`KStr` / `KInt`) so event paths
   resolve back to entries (`@key` in handlers).
-- **`obj_item(self, key : PathKey) -> Value?`** — resolves the same keys
+- **`item(self, key : PathKey) -> Value?`** — resolves the same keys
   for seq-access reads (`.songs[.currentKey]`).
 
 ```moonbit
@@ -233,11 +233,11 @@ priv struct KeyedList {
   items : Map[String, @tutuca.Value]
 }
 
-impl @tutuca.Obj for KeyedList with fn obj_seq_entries(self) {
+impl @tutuca.Obj for KeyedList with fn seq_entries(self) {
   Some(self.order.map(k => (KStr(k), self.items.get(k).unwrap_or(Null))))
 }
 
-impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
+impl @tutuca.Obj for KeyedList with fn item(self, key) {
   match key {
     KStr(s) => self.items.get(s)
     _ => None
@@ -249,7 +249,7 @@ Store it in a `@tutuca.Value` state field as `Obj(KeyedList::{ ... })`.
 Operations must return **new** instances so state transactions see a
 change. One trait-object caveat: a handler sees the field as `&Obj` and
 there is no downcast back to the concrete struct — rebuild the
-collection from `obj_seq_entries()` when mutating (the port's
+collection from `seq_entries()` when mutating (the port's
 trait-object rule).
 
 ## Filter-then-paginate strategies

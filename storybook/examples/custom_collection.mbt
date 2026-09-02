@@ -1,7 +1,7 @@
 // Teaches: making `@each` iterate a CUSTOM collection: implement
-// `@tutuca.Obj::obj_seq_entries` — the renderer iterates the entries it
+// `@tutuca.Obj::seq_entries` — the renderer iterates the entries it
 // returns, keyed (`sk` breadcrumbs) so event paths resolve back to entries.
-// `obj_item` resolves the same keys for seq-access reads.
+// `item` resolves the same keys for seq-access reads.
 
 ///|
 /// A minimal immutable keyed list: values in a map, explicit key order in an
@@ -20,12 +20,12 @@ fn KeyedList::set(self : KeyedList, k : String, v : @tutuca.Value) -> KeyedList 
 }
 
 ///|
-impl @tutuca.Obj for KeyedList with fn obj_seq_entries(self) {
+impl @tutuca.Obj for KeyedList with fn seq_entries(self) {
   Some(self.order.map(k => (KStr(k), self.items.get(k).unwrap_or(Null))))
 }
 
 ///|
-impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
+impl @tutuca.Obj for KeyedList with fn item(self, key) {
   match key {
     KStr(s) => self.items.get(s)
     _ => None
@@ -42,14 +42,14 @@ fn playlist_comp() -> @component.Component {
   playlist_component(
     init={ songs: Obj(KeyedList::{ order: [], items: Map([]), }), },
     // The state only sees `&Obj`, so the removal REBUILDS the keyed list from
-    // obj_seq_entries minus the key (there is no downcast back to KeyedList —
+    // seq_entries minus the key (there is no downcast back to KeyedList —
     // the port's trait-object rule).
     update=(s, msg, _ctx) => {
       match PlaylistMsg::from_dispatch(msg) {
         Some(RemoveSong(key_v)) => {
           guard key_v is Str(key) else { return Unchanged }
           guard s.songs is Obj(o) else { return Unchanged }
-          guard o.obj_seq_entries() is Some(entries) else { return Unchanged }
+          guard o.seq_entries() is Some(entries) else { return Unchanged }
           let mut next = KeyedList::{ order: [], items: Map([]), }
           for entry in entries {
             let (pk, v) = entry

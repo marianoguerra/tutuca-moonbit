@@ -146,8 +146,8 @@ test "browser: real drag events run the drag lifecycle" {
     init=DropBoardState::{ landed_kind: "", },
     update=(_s : DropBoardState, msg, _ctx) => {
       match msg {
-        Receive("landed", [Obj(info), ..]) =>
-          match info.obj_field("type") {
+        Receive("landed", [Map(info), ..]) =>
+          match info.get("type") {
             Some(Str(kind)) => Next({ landed_kind: kind, })
             _ => Unhandled
           }

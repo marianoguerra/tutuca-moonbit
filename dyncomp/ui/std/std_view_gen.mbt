@@ -336,7 +336,7 @@ pub fn UniversalMethod::name(self : UniversalMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for UniversalState with fn schema() {
   @component.SchemaInfo::new(
@@ -588,7 +588,7 @@ pub fn StackMethod::name(self : StackMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for StackState with fn schema() {
   @component.SchemaInfo::new(
@@ -855,7 +855,7 @@ pub fn GridMethod::name(self : GridMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for GridState with fn schema() {
   @component.SchemaInfo::new(
@@ -1144,7 +1144,7 @@ pub fn TabPageMsg::from_dispatch(d : @component.Dispatch) -> TabPageMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
@@ -1404,7 +1404,7 @@ pub fn TabsEnrich::name(self : TabsEnrich) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TabsState with fn schema() {
   @component.SchemaInfo::new(
@@ -1490,7 +1490,7 @@ pub fn TextMethod::name(self : TextMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TextState with fn schema() {
   @component.SchemaInfo::new(
@@ -1686,7 +1686,7 @@ pub fn TextareaMsg::from_dispatch(d : @component.Dispatch) -> TextareaMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TextareaState with fn schema() {
   @component.SchemaInfo::new(

@@ -101,7 +101,7 @@ fn resolve_ref(
 
 ///|
 /// What a component's schema declares, as the runtime description an
-/// instance answers `obj_schema()` with.
+/// instance answers `schema()` with.
 ///
 /// The channels come from the declaration; everything else is what the VIEWS
 /// contribute, so it arrives from the caller — `view_handlers` are the `@on` names,

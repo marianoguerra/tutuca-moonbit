@@ -292,7 +292,7 @@ pub fn TraceRowMsg::from_dispatch(d : @component.Dispatch) -> TraceRowMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TraceRowState with fn schema() {
   @component.SchemaInfo::new(
@@ -497,7 +497,7 @@ pub let trace_log_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TraceLogState with fn schema() {
   @component.SchemaInfo::new(
@@ -628,7 +628,7 @@ pub let trace_header_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TraceHeaderState with fn schema() {
   @component.SchemaInfo::new(
@@ -876,7 +876,7 @@ pub fn TracePlaceMsg::from_dispatch(d : @component.Dispatch) -> TracePlaceMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TracePlaceState with fn schema() {
   @component.SchemaInfo::new(
@@ -986,7 +986,7 @@ pub let trace_places_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TracePlacesState with fn schema() {
   @component.SchemaInfo::new(
@@ -1290,7 +1290,7 @@ pub fn RecorderBarMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for RecorderBarState with fn schema() {
   @component.SchemaInfo::new(
@@ -1728,7 +1728,7 @@ pub fn TracePanelMsg::from_dispatch(d : @component.Dispatch) -> TracePanelMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TracePanelState with fn schema() {
   @component.SchemaInfo::new(

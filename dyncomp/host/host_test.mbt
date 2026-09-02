@@ -87,7 +87,7 @@ fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int) -> @tutuca.Value {
 fn child_handle(v : @tutuca.Value) -> Int? {
   match v {
     Obj(o) =>
-      match o.obj_field(handle_field) {
+      match o.field(handle_field) {
         Some(Num(n)) => Some(n.to_int())
         _ => None
       }
@@ -1071,7 +1071,7 @@ test "a snapshot restores through the guest's own bytes" {
   guard! bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
   let a = a.with_persist_id("notes/1")
   // one update later: the successor keeps the id and gains a history entry
-  guard! a.obj_with_field("count", Num(8)) is Some(bumped)
+  guard! a.with_field("count", Num(8)) is Some(bumped)
   guard! bundle.snapshot(bumped) is Some(snap)
   assert_eq(snap.module_, "counterlib")
   assert_eq(snap.component, "Counter")
@@ -1083,7 +1083,7 @@ test "a snapshot restores through the guest's own bytes" {
   @debug.assert_eq(fake.histories.get(back.handle()).unwrap(), [7.0])
   // and it comes back under the same name, so saving it again lands on the
   // same key rather than accumulating one instance per reload
-  assert_eq(back.obj_persist_id().unwrap(), "notes/1")
+  assert_eq(back.persist_id().unwrap(), "notes/1")
 }
 
 ///|
@@ -1191,15 +1191,15 @@ test "a guest's declared schema describes, compares and projects it" {
   guard! b.to_value() is Obj(ob)
   guard! c.to_value() is Obj(oc)
   // structural equality over the DECLARED fields — the guest implements none
-  assert_true(oa.obj_eq(ob))
-  assert_false(oa.obj_eq(oc))
+  assert_true(oa.eq(ob))
+  assert_false(oa.eq(oc))
   // the JSON projection walks the same fields (no guest `to-json`)
   inspect(
     a.to_value().to_json().stringify(),
     content="{\"count\":7,\"history\":[]}",
   )
   // ...and so does the debug rendering
-  inspect(oa.obj_debug(), content="Counter{count: RNum(7), history: RList([])}")
+  inspect(oa.debug(), content="Counter{count: RNum(7), history: RList([])}")
 }
 
 ///|
@@ -2504,16 +2504,16 @@ test "a guest value body reads a declared lookup" {
     name: "theme",
     value: Str("dark"),
   }
-  guard! o.obj_method_at("themeLabel", stack) is Some(Fn(f))
+  guard! o.method_at("themeLabel", stack) is Some(Fn(f))
   assert_true(f([Null]) is Str("dark"))
   // A name the manifest declares no lookup for is not resolved and not sent,
   // so the guest sees it absent rather than null — the same distinction the
   // handler half draws.
-  guard! o.obj_method_at("undeclaredLabel", stack) is Some(Fn(g))
+  guard! o.method_at("undeclaredLabel", stack) is Some(Fn(g))
   assert_true(g([Null]) is Str("(absent)"))
   // And asked with no render position at all — a `$compute` read off a bare
   // Value, outside any render — the binding is absent rather than guessed.
-  guard! o.obj_field("themeLabel") is Some(Fn(bare))
+  guard! o.field("themeLabel") is Some(Fn(bare))
   assert_true(bare([Null]) is Null)
 }
 
@@ -2609,7 +2609,7 @@ test "a guest's declared domain is enforced at both of the host's doors" {
   inspect(h.text(".count"), content="10")
 
   // THE FIRST DOOR: the field write itself. `setCount 0` is a generated
-  // mutator the host answers over `obj_with_field`, and the guest is never
+  // mutator the host answers over `with_member`, and the guest is never
   // asked — so if this door did not exist there would be nothing between the
   // click and a state the declaration forbids.
   h.click(".zero")

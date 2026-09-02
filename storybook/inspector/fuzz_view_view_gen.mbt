@@ -290,7 +290,7 @@ pub fn FuzzRowMsg::from_dispatch(d : @component.Dispatch) -> FuzzRowMsg? {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for FuzzRowState with fn schema() {
   @component.SchemaInfo::new(
@@ -397,7 +397,7 @@ pub let fuzz_log_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for FuzzLogState with fn schema() {
   @component.SchemaInfo::new(
@@ -724,7 +724,7 @@ pub fn FuzzControlsMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for FuzzControlsState with fn schema() {
   @component.SchemaInfo::new(
@@ -1011,7 +1011,7 @@ pub fn FuzzVerdictMsg::from_dispatch(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for FuzzVerdictState with fn schema() {
   @component.SchemaInfo::new(
@@ -1134,7 +1134,7 @@ pub let fuzz_panel_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for FuzzPanelState with fn schema() {
   @component.SchemaInfo::new(

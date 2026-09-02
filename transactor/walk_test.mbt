@@ -21,7 +21,7 @@ fn witem(seen : String) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for WItem with fn obj_field(self, name) {
+impl @tutuca.Obj for WItem with fn field(self, name) {
   match name {
     "seen" => Some(Str(self.seen))
     _ => None
@@ -29,7 +29,7 @@ impl @tutuca.Obj for WItem with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for WItem with fn obj_handler(_self, bucket, name) {
+impl @tutuca.Obj for WItem with fn handler(_self, bucket, name) {
   match (bucket, name) {
     // The senders. Each spells one route.
     (Receive, "go") =>
@@ -131,7 +131,7 @@ fn wpanel(item : @tutuca.Value, role : String, seen : String) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for WPanel with fn obj_field(self, name) {
+impl @tutuca.Obj for WPanel with fn field(self, name) {
   match name {
     "item" => Some(self.item)
     "seen" => Some(Str(self.seen))
@@ -140,7 +140,7 @@ impl @tutuca.Obj for WPanel with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for WPanel with fn obj_with_field(self, name, v) {
+impl @tutuca.Obj for WPanel with fn with_field(self, name, v) {
   match name {
     "item" => Some(wpanel(v, self.role, self.seen))
     _ => None
@@ -148,7 +148,7 @@ impl @tutuca.Obj for WPanel with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @tutuca.Obj for WPanel with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for WPanel with fn handler(self, bucket, name) {
   guard (bucket, name) is (Intent, "saveDraft") else { return None }
   match self.role {
     // Runs, changes state, does not answer. The design's one rule: a handler
@@ -206,7 +206,7 @@ fn wroot(panel : @tutuca.Value, role : String, seen : String) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for WRoot with fn obj_field(self, name) {
+impl @tutuca.Obj for WRoot with fn field(self, name) {
   match name {
     "panel" => Some(self.panel)
     "seen" => Some(Str(self.seen))
@@ -215,7 +215,7 @@ impl @tutuca.Obj for WRoot with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for WRoot with fn obj_with_field(self, name, v) {
+impl @tutuca.Obj for WRoot with fn with_field(self, name, v) {
   match name {
     "panel" => Some(wroot(v, self.role, self.seen))
     _ => None
@@ -223,7 +223,7 @@ impl @tutuca.Obj for WRoot with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @tutuca.Obj for WRoot with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for WRoot with fn handler(self, bucket, name) {
   guard (bucket, name) is (Intent, "saveDraft") else { return None }
   match self.role {
     "reply" =>

@@ -13,7 +13,7 @@ fn osheet(title : String) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for OSheet with fn obj_field(self, name) {
+impl @tutuca.Obj for OSheet with fn field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     _ => None
@@ -21,7 +21,7 @@ impl @tutuca.Obj for OSheet with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for OSheet with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for OSheet with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
@@ -52,7 +52,7 @@ priv struct ORoot {
 }
 
 ///|
-impl @tutuca.Obj for ORoot with fn obj_field(self, name) {
+impl @tutuca.Obj for ORoot with fn field(self, name) {
   match name {
     "selId" => {
       let v : @tutuca.Value = Str(self.sel_id)
@@ -64,7 +64,7 @@ impl @tutuca.Obj for ORoot with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for ORoot with fn obj_with_field(self, name, v) {
+impl @tutuca.Obj for ORoot with fn with_field(self, name, v) {
   match name {
     "sheets" => Some(Obj(ORoot::{ sheets: v, sel_id: self.sel_id, }))
     _ => None
@@ -77,7 +77,7 @@ priv struct OSheets {
 }
 
 ///|
-impl @tutuca.Obj for OSheets with fn obj_item(self, key) {
+impl @tutuca.Obj for OSheets with fn item(self, key) {
   match key {
     KStr(k) => self.items.get(k)
     KInt(_) => None
@@ -85,7 +85,7 @@ impl @tutuca.Obj for OSheets with fn obj_item(self, key) {
 }
 
 ///|
-impl @tutuca.Obj for OSheets with fn obj_with_item(self, key, v) {
+impl @tutuca.Obj for OSheets with fn with_item(self, key, v) {
   match key {
     KStr(k) => {
       let items = self.items.copy()
@@ -176,7 +176,7 @@ fn dsheet(title : String) -> @tutuca.Value {
 }
 
 ///|
-impl @tutuca.Obj for DSheet with fn obj_schema(_self) {
+impl @tutuca.Obj for DSheet with fn schema(_self) {
   @tutuca.SchemaInfo::new(name="DSheet", fingerprint="dsheet", fields=[
     @tutuca.FieldInfo::new("title", TyText),
   ])
@@ -184,7 +184,7 @@ impl @tutuca.Obj for DSheet with fn obj_schema(_self) {
 }
 
 ///|
-impl @tutuca.Obj for DSheet with fn obj_field(self, name) {
+impl @tutuca.Obj for DSheet with fn field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     _ => None
@@ -192,7 +192,7 @@ impl @tutuca.Obj for DSheet with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for DSheet with fn obj_handler(_self, bucket, name) {
+impl @tutuca.Obj for DSheet with fn handler(_self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(

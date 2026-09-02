@@ -22,7 +22,7 @@ fn[V] map_keys(m : Map[String, V]) -> Array[String] {
 
 ///|
 /// The mutator-name convention, from the one place that states it. The state
-/// editor calls these by name through `Obj::obj_field`, so the two sides have
+/// editor calls these by name through `Obj::member`, so the two sides have
 /// to agree and neither can see the other.
 fn mut_name(verb : String, field : String) -> String {
   @tutuca.mutator_name(verb, field)
@@ -78,7 +78,7 @@ fn new_component(
   // A hand-written descriptor is already being passed to a `name~` that says
   // the same thing, so `SchemaInfo::new` lets it go unstated and this fills it
   // in. It matters because the schema, not the Component, is what an instance
-  // can reach: `obj_debug` and the JSON projection label themselves from it
+  // can reach: `debug` and the JSON projection label themselves from it
   // with no registry in hand.
   let schema = if schema.name == "" { { ..schema, name, } } else { schema }
   {
@@ -556,7 +556,7 @@ fn field_specs(
 ///|
 /// The mutators a declared schema implies, for a holder that is not a
 /// `TypedInstance` — the dynamic-component host, whose guest instances answer
-/// `obj_field` / `obj_with_field` and get the same `setX` / `toggleX` /
+/// `member` / `with_member` and get the same `setX` / `toggleX` /
 /// `pushInX` set from the same generator.
 pub fn schema_mutators(
   schema : SchemaInfo,

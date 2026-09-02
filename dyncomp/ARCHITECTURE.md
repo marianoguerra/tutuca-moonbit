@@ -233,7 +233,7 @@ the whole viewport is the app, and the bar keeps only what a host has to supply
   the last on a `Stack`, one per edge on a `Grid`.
 
 What is still missing: an inspector pane reusing `inspector/` over
-`Obj::obj_schema`, and richer form controls (repeatable rows for lists,
+`Obj::schema`, and richer form controls (repeatable rows for lists,
 key/value rows for maps, a picker for `TyComp`).
 
 The proof it holds together is the notepad reproduced by composition — tabs, a
@@ -287,7 +287,7 @@ The core packages are **done**: `jsonschema`, `registry` and `policy`, with
 
 What is left, in order:
 
-1. **The rest of Layer 1**: an inspector pane over `Obj::obj_schema`, richer
+1. **The rest of Layer 1**: an inspector pane over `Obj::schema`, richer
    form controls (lists, maps, a picker for `TyComp`), a settings panel for a
    container's own properties beyond what the generated form gives, and
    import/export of a page as JSON. The DOCUMENT for that is built — the page is

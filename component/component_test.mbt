@@ -57,36 +57,32 @@ test "generated mutators: set/toggle/push/setAt/delete/len/reset" {
   let comp = todo_comp()
   let t0 = comp.make(Map([]))
   guard t0 is Obj(o) else { fail("not obj") }
-  guard o.obj_field("setTitle") is Some(Fn(set_title)) else {
-    fail("no setTitle")
-  }
+  guard o.field("setTitle") is Some(Fn(set_title)) else { fail("no setTitle") }
   let t1 = set_title([Null, Str("x")])
   assert_true(t1.field("title") == Str("x"))
   assert_true(t0.field("title") == Str("untitled")) // COW
   guard t1 is Obj(o1) else { fail("not obj") }
-  guard o1.obj_field("toggleDone") is Some(Fn(toggle)) else {
+  guard o1.field("toggleDone") is Some(Fn(toggle)) else {
     fail("no toggleDone")
   }
   guard toggle([Null]) is Obj(o2) else { fail("toggle did not return obj") }
-  assert_true(o2.obj_field("done") == Some(Bool(true)))
-  guard o1.obj_field("pushInItems") is Some(Fn(push)) else { fail("no push") }
+  assert_true(o2.field("done") == Some(Bool(true)))
+  guard o1.field("pushInItems") is Some(Fn(push)) else { fail("no push") }
   guard push([Null, Str("a")]) is Obj(o4) else { fail("push failed") }
-  assert_true(o4.obj_field("items") == Some(List([Str("a")])))
-  guard o4.obj_field("setInItemsAt") is Some(Fn(set_at)) else {
-    fail("no setAt")
-  }
+  assert_true(o4.field("items") == Some(List([Str("a")])))
+  guard o4.field("setInItemsAt") is Some(Fn(set_at)) else { fail("no setAt") }
   guard set_at([Null, Num(0), Str("b")]) is Obj(o5) else {
     fail("setAt failed")
   }
-  assert_true(o5.obj_field("items") == Some(List([Str("b")])))
-  guard o5.obj_field("deleteInItemsAt") is Some(Fn(del)) else { fail("no del") }
+  assert_true(o5.field("items") == Some(List([Str("b")])))
+  guard o5.field("deleteInItemsAt") is Some(Fn(del)) else { fail("no del") }
   guard del([Null, Num(0)]) is Obj(o6) else { fail("del failed") }
-  assert_true(o6.obj_field("items") == Some(List([])))
-  guard o4.obj_field("itemsLen") is Some(Fn(len)) else { fail("no len") }
+  assert_true(o6.field("items") == Some(List([])))
+  guard o4.field("itemsLen") is Some(Fn(len)) else { fail("no len") }
   assert_true(len([Null]) == Num(1))
-  guard o1.obj_field("resetTitle") is Some(Fn(reset)) else { fail("no reset") }
+  guard o1.field("resetTitle") is Some(Fn(reset)) else { fail("no reset") }
   guard reset([Null]) is Obj(o7) else { fail("reset failed") }
-  assert_true(o7.obj_field("title") == Some(Str("untitled")))
+  assert_true(o7.field("title") == Some(Str("untitled")))
 }
 
 ///|
@@ -143,36 +139,36 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   assert_true(t2.field("sel") == Map({ "x": Bool(true), "y": Bool(true) }))
   guard! t is Obj(o)
   // hasIn
-  guard! o.obj_field("hasInSel") is Some(Fn(has))
+  guard! o.field("hasInSel") is Some(Fn(has))
   assert_true(has([Null, Str("a")]) == Bool(true))
   assert_true(has([Null, Str("z")]) == Bool(false))
   // addIn
-  guard! o.obj_field("addInSel") is Some(Fn(add))
+  guard! o.field("addInSel") is Some(Fn(add))
   // Adding an existing member is a no-op all the way through core's COW map.
   assert_true(physical_equal(add([Null, Str("a")]), t))
   guard! add([Null, Str("c")]) is Obj(o2)
-  assert_true(o2.obj_field("hasInSel").unwrap() is Fn(_))
+  assert_true(o2.field("hasInSel").unwrap() is Fn(_))
   assert_true(
-    o2.obj_field("sel").unwrap() ==
+    o2.field("sel").unwrap() ==
     Map({ "a": Bool(true), "b": Bool(true), "c": Bool(true) }),
   )
   // toggleIn removes an existing member, adds a missing one
-  guard! o.obj_field("toggleInSel") is Some(Fn(toggle))
+  guard! o.field("toggleInSel") is Some(Fn(toggle))
   guard! toggle([Null, Str("a")]) is Obj(o3)
-  assert_true(o3.obj_field("sel").unwrap() == Map({ "b": Bool(true) }))
+  assert_true(o3.field("sel").unwrap() == Map({ "b": Bool(true) }))
   guard! toggle([Null, Str("q")]) is Obj(o4)
   assert_true(
-    o4.obj_field("sel").unwrap() ==
+    o4.field("sel").unwrap() ==
     Map({ "a": Bool(true), "b": Bool(true), "q": Bool(true) }),
   )
   // deleteIn / removeIn alias
-  guard! o.obj_field("deleteInSel") is Some(Fn(del))
+  guard! o.field("deleteInSel") is Some(Fn(del))
   assert_true(physical_equal(del([Null, Str("missing")]), t))
   guard! del([Null, Str("b")]) is Obj(o5)
-  assert_true(o5.obj_field("sel").unwrap() == Map({ "a": Bool(true) }))
-  assert_true(o.obj_field("removeInSel").unwrap() is Fn(_))
+  assert_true(o5.field("sel").unwrap() == Map({ "a": Bool(true) }))
+  assert_true(o.field("removeInSel").unwrap() is Fn(_))
   // len is the generic sized mutator
-  guard! o.obj_field("selLen") is Some(Fn(len))
+  guard! o.field("selLen") is Some(Fn(len))
   assert_true(len([Null]) == Num(2))
 }
 
@@ -192,10 +188,10 @@ test "a declared set keeps the typed default and gets set mutators" {
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
   guard! t is Obj(o)
   // set-kind mutators exist because the SCHEMA declares `sel` a set
-  guard! o.obj_field("addInSel") is Some(Fn(add))
+  guard! o.field("addInSel") is Some(Fn(add))
   guard! add([Null, Str("b")]) is Obj(o2)
   assert_true(
-    o2.obj_field("sel").unwrap() == Map({ "a": Bool(true), "b": Bool(true) }),
+    o2.field("sel").unwrap() == Map({ "a": Bool(true), "b": Bool(true) }),
   )
 }
 
@@ -213,16 +209,16 @@ test "omap slot field: keyed mutators over an ordered Map" {
   // wrong-shape arg falls back to default
   assert_true(comp.make({ "m": Str("no") }).field("m") == Map({ "x": Num(1) }))
   guard! t is Obj(o)
-  guard! o.obj_field("setInMAt") is Some(Fn(set_at))
+  guard! o.field("setInMAt") is Some(Fn(set_at))
   guard! set_at([Null, Str("y"), Num(2)]) is Obj(o2)
-  assert_true(o2.obj_field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
-  guard! o.obj_field("deleteInMAt") is Some(Fn(del))
+  assert_true(o2.field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
+  guard! o.field("deleteInMAt") is Some(Fn(del))
   // A key that is not there is a no-op that hands back the SAME object, not an
   // equal one: the transactor reads `physical_equal` as "nothing happened" and
   // skips the spine rebuild, so identity is the contract rather than equality.
   assert_true(physical_equal(del([Null, Str("missing")]), t))
   guard! del([Null, Str("x")]) is Obj(o3)
-  assert_true(o3.obj_field("m").unwrap() == Map(Map([])))
+  assert_true(o3.field("m").unwrap() == Map(Map([])))
 }
 
 ///|
@@ -301,10 +297,10 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
   // A `compute` entry is reachable in a VALUE position — that is what the
   // bucket is for, and why an update arm cannot replace it: there is no
   // event and no ctx there.
-  guard! o.obj_field("label") is Some(Fn(label))
+  guard! o.field("label") is Some(Fn(label))
   assert_true(label([Null]) == Str("n=1"))
   // An `update` arm is NOT: it answers a dispatch, not a field read.
-  assert_true(o.obj_field("inc") is None)
+  assert_true(o.field("inc") is None)
   // ...and it does answer through Input dispatch (event position).
   let root : @tutuca.Value = Map({ "c": t })
   let node : @tutuca.Value = root
@@ -493,7 +489,7 @@ test "FComp slot fields default through the registration scope" {
   scope.register_components([child, parent])
   let p = parent.make(Map([]))
   guard p.field("kid") is Obj(o) else { fail("kid not made") }
-  assert_true(o.obj_field("label") == Some(Str("hi")))
+  assert_true(o.field("label") == Some(Str("hi")))
 }
 
 ///|
@@ -524,7 +520,7 @@ test "slots~ names a slot the schema declared as bare `component`" {
   scope.register_components([child, parent])
   let p = parent.make(Map([]))
   guard p.field("kid") is Obj(o) else { fail("kid not made through slots~") }
-  assert_true(o.obj_field("label") == Some(Str("named through slots")))
+  assert_true(o.field("label") == Some(Str("named through slots")))
   // the descriptor carries the resolved name, so the inspector and structural
   // equality see the same slot the runtime built
   guard parent.schema.field("kid") is Some(fi) else {
@@ -564,7 +560,7 @@ test "slots~ does not override a slot the schema already names" {
   scope.register_components([child, other, parent])
   let p = parent.make(Map([]))
   guard p.field("kid") is Obj(o) else { fail("kid not made") }
-  assert_true(o.obj_field("label") == Some(Str("declared")))
+  assert_true(o.field("label") == Some(Str("declared")))
 }
 
 ///|
@@ -607,7 +603,7 @@ test "Value fields in S carry Obj instances losslessly through updates" {
   }
   // the child instance survived the typed-state round-trip as the SAME Obj
   guard items[0] is Obj(o) else { fail("child lost in round-trip") }
-  assert_true(o.obj_field("label") == Some(Str("leaf")))
+  assert_true(o.field("label") == Some(Str("leaf")))
 }
 
 ///|
@@ -624,7 +620,7 @@ impl @tutuca.Obj for Badge with fn component_id(self) {
 }
 
 ///|
-impl @tutuca.Obj for Badge with fn obj_field(self, name) {
+impl @tutuca.Obj for Badge with fn field(self, name) {
   match name {
     "label" => Some(Str(self.label))
     _ => None
@@ -632,7 +628,7 @@ impl @tutuca.Obj for Badge with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for Badge with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for Badge with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "relabel") =>
       Some(
@@ -1207,7 +1203,7 @@ test "a compute is handed the stack it is asked from" {
   // `ctx.lookup(...)` inside a function with no `ctx` — because `ctx` is a
   // DISPATCH context and a value body is called while the view is being
   // rendered. What a value body needs is the render stack, and `Value::Fn`
-  // carries arguments and nothing else — so `obj_method_at` is the seam that
+  // carries arguments and nothing else — so `method_at` is the seam that
   // hands one over.
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
@@ -1223,12 +1219,12 @@ test "a compute is handed the stack it is asked from" {
     name: "theme",
     value: Str("dark"),
   }
-  guard! o.obj_method_at("theme", stack) is Some(Fn(f))
+  guard! o.method_at("theme", stack) is Some(Fn(f))
   assert_true(f([Null]) == Str("dark"))
   // Asked WITHOUT one — a `$compute` read off a bare Value, outside any
   // render — it answers Null rather than guessing. That is the honest answer,
   // not a hole: there is no ancestry to walk from there.
-  guard! o.obj_field("theme") is Some(Fn(g))
+  guard! o.field("theme") is Some(Fn(g))
   assert_true(g([Null]) == Null)
 }
 

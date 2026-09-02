@@ -84,12 +84,12 @@ impl @core.Obj for Row with fn component_id(_self) {
 }
 
 ///|
-impl @core.Obj for Row with fn obj_schema(_self) {
+impl @core.Obj for Row with fn schema(_self) {
   Some(row_schema())
 }
 
 ///|
-impl @core.Obj for Row with fn obj_field(self, name) {
+impl @core.Obj for Row with fn field(self, name) {
   match name {
     "title" => Some(Str(self.title))
     "tags" => Some(List(self.tags))
@@ -100,7 +100,7 @@ impl @core.Obj for Row with fn obj_field(self, name) {
 }
 
 ///|
-impl @core.Obj for Row with fn obj_with_field(self, name, v) {
+impl @core.Obj for Row with fn with_field(self, name, v) {
   match (name, v) {
     ("title", Str(s)) => Some(row(s, tags=self.tags))
     _ => None
@@ -108,7 +108,7 @@ impl @core.Obj for Row with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @core.Obj for Row with fn obj_property(self, name) {
+impl @core.Obj for Row with fn property(self, name) {
   match name {
     "label" => Some(Str(self.title))
     _ => None
@@ -117,7 +117,7 @@ impl @core.Obj for Row with fn obj_property(self, name) {
 
 ///|
 /// The tags, keyed by position — a custom sequence in the SEQ_INFO sense.
-impl @core.Obj for Row with fn obj_seq_entries(self) {
+impl @core.Obj for Row with fn seq_entries(self) {
   let out : Array[(@core.PathKey, @core.Value)] = []
   for i, t in self.tags {
     out.push((KInt(i), t))
@@ -126,7 +126,7 @@ impl @core.Obj for Row with fn obj_seq_entries(self) {
 }
 
 ///|
-impl @core.Obj for Row with fn obj_item(self, key) {
+impl @core.Obj for Row with fn item(self, key) {
   match key {
     KInt(i) => self.tags.get(i)
     KStr(_) => None
@@ -337,7 +337,7 @@ priv struct DynFieldStack {
 }
 
 ///|
-impl @core.Stack for DynFieldStack with fn lookup_field_raw(self, name) {
+impl @core.Stack for DynFieldStack with fn lookup_storage(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 

@@ -244,8 +244,8 @@ test "RenderStack lookups: binds chain, it fields, view names" {
   assert_true(@tutuca.Stack::lookup_bind(framed, "key") is Null)
   // fields read the CURRENT item, per frame (this.it[name]): a scalar it
   // has no fields; the root frame's map does
-  assert_true(@tutuca.Stack::lookup_field_raw(grand, "title") is Null)
-  assert_true(@tutuca.Stack::lookup_field_raw(root, "title") is Str("hello"))
+  assert_true(@tutuca.Stack::lookup_storage(grand, "title") is Null)
+  assert_true(@tutuca.Stack::lookup_storage(root, "title") is Str("hello"))
   // dynamic/type lookups stay at the Null default (component territory)
   assert_true(@tutuca.Stack::lookup_dynamic(grand, "x") is Null)
   let pushed = grand.push_view_name("detail")
@@ -347,20 +347,20 @@ test "@each renders per item with key/value binds" {
 }
 
 ///|
-// A custom collection: iterated by @each through obj_seq_entries,
-// keyed by insertion order; obj_item resolves the same keys.
+// A custom collection: iterated by @each through seq_entries,
+// keyed by insertion order; item resolves the same keys.
 priv struct KeyedList {
   order : Array[String]
   items : Map[String, @tutuca.Value]
 }
 
 ///|
-impl @tutuca.Obj for KeyedList with fn obj_seq_entries(self) {
+impl @tutuca.Obj for KeyedList with fn seq_entries(self) {
   Some(self.order.map(k => (KStr(k), self.items.get(k).unwrap_or(Null))))
 }
 
 ///|
-impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
+impl @tutuca.Obj for KeyedList with fn item(self, key) {
   match key {
     KStr(s) => self.items.get(s)
     _ => None
@@ -368,7 +368,7 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 }
 
 ///|
-test "@each iterates a custom collection via obj_seq_entries (SEQ_INFO)" {
+test "@each iterates a custom collection via seq_entries (SEQ_INFO)" {
   let songs = KeyedList::{
     order: ["a", "b"],
     items: { "a": Str("x"), "b": Str("y") },

@@ -262,7 +262,7 @@ pub fn Value::handler(
   name : String,
 ) -> Handler? {
   match self {
-    Obj(o) => o.obj_handler(bucket, name)
+    Obj(o) => o.handler(bucket, name)
     _ => None
   }
 }

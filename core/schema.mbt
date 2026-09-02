@@ -236,7 +236,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
 /// The convention lives HERE, in one function, because two places have to agree
 /// on it and neither can see the other. `component()` builds the mutators by
 /// concatenating it, and the state editor — which holds a bare `Value` and calls
-/// them by name through `Obj::obj_field` — reconstructed the same string from
+/// them by name through `Obj::member` — reconstructed the same string from
 /// its own copy. Two spellings of one convention, either of which could have
 /// been changed alone.
 pub fn mutator_name(verb : String, field : String) -> String {

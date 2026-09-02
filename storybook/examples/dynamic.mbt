@@ -109,7 +109,7 @@ fn workspace_comp() -> @component.Component {
       SheetTitle =>
         Some((s, _args, _stack) => {
           match s.sheet {
-            Obj(o) => o.obj_field("title").unwrap_or(Str(""))
+            Obj(o) => o.field("title").unwrap_or(Str(""))
             _ => Str("")
           }
         })

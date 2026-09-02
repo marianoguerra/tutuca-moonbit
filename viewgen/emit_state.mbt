@@ -300,7 +300,7 @@ fn emit_schema(
     "///\n" +
     "/// This is the only thing consulted for a field's KIND — there is no\n" +
     "/// inference off the init value behind it — and it is what an instance\n" +
-    "/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`\n" +
+    "/// answers `schema()` with, so a holder of a bare `@tutuca.Value`\n" +
     "/// can name these fields without a component registry.\n" +
     "impl @component.Fields for \{t}State with fn schema() {\n" +
     "  @component.SchemaInfo::new(\n" +

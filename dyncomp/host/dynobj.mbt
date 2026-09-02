@@ -12,17 +12,17 @@ pub struct DynObj {
   handle : Int
   /// What the guest DECLARED about this component (see `register_bundle`).
   /// Carried on the instance because that is where the generic layers ask for
-  /// it: `obj_schema` is what gives a guest structural equality, a debug
+  /// it: `schema` is what gives a guest structural equality, a debug
   /// rendering and a JSON projection without the guest implementing any.
   schema : @tutuca.SchemaInfo
   /// The mutators the schema implies (`setCount`, `pushInItems`, …), built
   /// once per component and shared by every instance of it. They write through
-  /// `obj_with_field`, so a guest gets them by declaring its fields.
+  /// `with_member`, so a guest gets them by declaring its fields.
   mutators : Map[
     String,
     (@component.FieldBox, Array[@tutuca.Value]) -> @tutuca.Value,
   ]
-  /// What this instance is CALLED across sessions (`obj_persist_id`), or ""
+  /// What this instance is CALLED across sessions (`persist_id`), or ""
   /// for one nobody named. Assigned when the instance is created and carried
   /// by every successor, because a successor is the same logical instance one
   /// update later — persisting one under a new key per keystroke would fill a
@@ -75,7 +75,7 @@ pub let handle_field : String = "__dyncomp_handle"
 pub fn child_json(v : @tutuca.Value) -> Json {
   match v {
     Obj(o) =>
-      match o.obj_field(handle_field) {
+      match o.field(handle_field) {
         Some(Num(h)) =>
           Json::object({ "$dyn": Json::object({ "handle": Json::number(h) }) })
         // An object that is not a guest instance — a host component, say.
@@ -200,7 +200,7 @@ pub fn slot_owner(
 /// behaviour. So the host keeps what the guest could not have held, and leaves
 /// the rest where it is.
 fn uncrossable(v : @tutuca.Value) -> Bool {
-  v is Obj(o) && o.obj_field(handle_field) is None
+  v is Obj(o) && o.field(handle_field) is None
 }
 
 ///|
@@ -285,7 +285,7 @@ fn drop_this(args : Array[@tutuca.Value]) -> Array[@tutuca.Value] {
 ///|
 /// What this component's declared lookups mean AT THIS RENDER POSITION.
 ///
-/// The render-time twin of the map `obj_handler` builds from `ctx.lookup`, and
+/// The render-time twin of the map `handler` builds from `ctx.lookup`, and
 /// it asks the same question of the other environment: `stack.lookup_dynamic`
 /// is what a `*name` in this card's own VIEW reads, so a `*name` in its `pred`
 /// reads the same thing. Empty for a component that declares no lookup, which
@@ -314,15 +314,15 @@ fn DynObj::method_fn(
 
 ///|
 /// This instance as the generated mutators see it (see `@component.FieldBox`):
-/// a field read is `obj_field`, a field write is `write_field` — the guest's
+/// a field read is `member`, a field write is `write_field` — the guest's
 /// own COW successor, held to the declared domains on the way through — and the
 /// no-op answer is the instance itself, which is also what a refused write
 /// answers.
 fn DynObj::field_box(self : DynObj) -> @component.FieldBox {
   {
-    get: name => self.obj_field(name).unwrap_or(Null),
+    get: name => self.field(name).unwrap_or(Null),
     // The write every generated mutator makes, and where BOTH doors stand for
-    // it. Not `obj_with_field`, which is also how the RENDERER rebuilds a
+    // it. Not `with_member`, which is also how the RENDERER rebuilds a
     // spine: refusing there would turn a re-render into a refusal.
     set: (name, v) => self.write_field(name, v),
     value: () => Obj(self),
@@ -333,7 +333,7 @@ fn DynObj::field_box(self : DynObj) -> @component.FieldBox {
 /// A generated mutator's write, held to the component's declared domains.
 ///
 /// Both doors, here rather than one here and one at the dispatch that called
-/// it, because of who owns the HANDLE. `obj_with_field` supersedes the handle
+/// it, because of who owns the HANDLE. `with_member` supersedes the handle
 /// it wrote from the moment it mints a successor — the old one is unreachable
 /// and the sweep drops it — so a check that ran after it and then kept the old
 /// instance would be keeping an instance whose handle is queued for collection.
@@ -351,9 +351,9 @@ fn DynObj::write_field(
     return Obj(self)
   }
   // A placeholder never reaches the guest and mints no handle, so there is
-  // nothing to own and `obj_with_field` is the whole of it.
+  // nothing to own and `with_member` is the whole of it.
   if self.owned.contains(name) {
-    return @tutuca.Obj::obj_with_field(self, name, v).unwrap_or(Obj(self))
+    return @tutuca.Obj::with_field(self, name, v).unwrap_or(Obj(self))
   }
   guard self.guest.with_field(self.handle, name, v) is Some(h) else {
     return Obj(self)
@@ -491,12 +491,12 @@ pub impl @tutuca.Obj for DynObj with fn component_id(self) {
 /// The render cache's bucket — stored, never computed here: it is read once
 /// per render site per pass, and every read that crossed the guest bridge
 /// would cost more than the cache saves.
-pub impl @tutuca.Obj for DynObj with fn obj_identity(self) {
+pub impl @tutuca.Obj for DynObj with fn identity(self) {
   Some(self.id)
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
+pub impl @tutuca.Obj for DynObj with fn field(self, name) {
   // No stack in hand: a `$compute` read off a bare `Value` — the JSON
   // projection, a path lookup, the inspector — is not being asked from a
   // render position, so a `*name` inside it has no ancestry to walk.
@@ -504,7 +504,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_method_at(self, name, stack) {
+pub impl @tutuca.Obj for DynObj with fn method_at(self, name, stack) {
   self.field_at(name, stack)
 }
 
@@ -538,7 +538,7 @@ fn DynObj::field_at(
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
+pub impl @tutuca.Obj for DynObj with fn with_field(self, name, v) {
   // A write to a placeholder never reaches the guest, so it mints no successor
   // handle and supersedes nothing: the guest's state did not change. The map
   // is rebuilt rather than mutated, because two successors of one instance
@@ -562,7 +562,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_property(self, name) {
+pub impl @tutuca.Obj for DynObj with fn property(self, name) {
   guard self.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
     return None
@@ -581,7 +581,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_property(self, name) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_member_at(self, name, _stack) {
+pub impl @tutuca.Obj for DynObj with fn member_at(self, name, _stack) {
   guard self.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
     return self.field_at(name, _stack)
@@ -597,7 +597,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_member_at(self, name, _stack) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_set_property(self, name, value) {
+pub impl @tutuca.Obj for DynObj with fn set_property(self, name, value) {
   guard self.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
     return PMissing
@@ -609,7 +609,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_set_property(self, name, value) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_set_member(self, name, value) {
+pub impl @tutuca.Obj for DynObj with fn set_member(self, name, value) {
   guard self.schema.properties.iter().find_first(p => p.name == name)
     is Some(property) else {
     match self.mutators.get(@tutuca.mutator_name("set", name)) {
@@ -630,7 +630,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_set_member(self, name, value) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_mutate_member(
+pub impl @tutuca.Obj for DynObj with fn mutate_member(
   self,
   name,
   operation,
@@ -817,7 +817,7 @@ fn DynObj::callable_at(
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
+pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
   // `Receive` is not gated on the manifest: a message's name is discovered
   // dynamically, the guest answers `Unhandled` for one it does not know, and
   // the field-derived mutator then gets its chance. `def.receives` therefore
@@ -925,9 +925,9 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
 
 ///|
 /// What the guest declared. Everything generic over a schema — structural
-/// equality, `obj_debug`, `Value::to_json`, the inspector's form — reads this
+/// equality, `debug`, `Value::to_json`, the inspector's form — reads this
 /// one method, which is why the contract needs no `eq` and no `to-json`.
-pub impl @tutuca.Obj for DynObj with fn obj_schema(self) {
+pub impl @tutuca.Obj for DynObj with fn schema(self) {
   Some(self.schema)
 }
 
@@ -935,7 +935,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_schema(self) {
 /// What a store keys this instance on. None when nothing named it, which the
 /// persistence layer reads as "do not store me" rather than inventing a key
 /// that would not be found again.
-pub impl @tutuca.Obj for DynObj with fn obj_persist_id(self) {
+pub impl @tutuca.Obj for DynObj with fn persist_id(self) {
   if self.pid == "" {
     None
   } else {

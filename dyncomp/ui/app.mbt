@@ -100,7 +100,7 @@ fn UniversalUi::build(
 ///|
 /// A component's descriptor, found from a live instance.
 ///
-/// By declared NAME, because that is all an instance carries — `obj_schema`
+/// By declared NAME, because that is all an instance carries — `schema`
 /// says what it declared and not which module it came from. Two modules
 /// declaring the same name would make this ambiguous; the first match wins,
 /// and the catalog's own order puts the standard components first.

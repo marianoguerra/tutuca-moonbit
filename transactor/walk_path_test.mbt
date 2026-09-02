@@ -8,7 +8,7 @@ priv struct CompNode {
 }
 
 ///|
-impl @tutuca.Obj for CompNode with fn obj_field(self, name) {
+impl @tutuca.Obj for CompNode with fn field(self, name) {
   match name {
     "child" =>
       match self.child {
@@ -20,7 +20,7 @@ impl @tutuca.Obj for CompNode with fn obj_field(self, name) {
 }
 
 ///|
-impl @tutuca.Obj for CompNode with fn obj_handler(self, bucket, name) {
+impl @tutuca.Obj for CompNode with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "walk") =>
       Some(

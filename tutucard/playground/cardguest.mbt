@@ -613,7 +613,7 @@ fn install_sweep(
 fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
   match v {
     Obj(o) => {
-      match o.obj_field(@dyncomp.handle_field) {
+      match o.field(@dyncomp.handle_field) {
         Some(Num(h)) => {
           let handle = h.to_int()
           // A cycle cannot happen — a child is made before its parent holds it
@@ -627,10 +627,10 @@ fn live_handles(v : @tutuca.Value, out : Array[Int]) -> Unit {
         _ => ()
       }
       // Into its DECLARED fields, which is the only list of them there is.
-      match o.obj_schema() {
+      match o.schema() {
         Some(sc) =>
           for f in sc.fields {
-            match o.obj_field(f.name) {
+            match o.field(f.name) {
               Some(fv) => live_handles(fv, out)
               None => ()
             }

@@ -305,7 +305,7 @@ pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaScalarState with fn schema() {
   @component.SchemaInfo::new(
@@ -634,7 +634,7 @@ pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaObjectState with fn schema() {
   @component.SchemaInfo::new(
@@ -963,7 +963,7 @@ pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaArrayState with fn schema() {
   @component.SchemaInfo::new(
@@ -1290,7 +1290,7 @@ pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaEnumState with fn schema() {
   @component.SchemaInfo::new(
@@ -1621,7 +1621,7 @@ pub fn SchemaCombinatorLoopWith::name(
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaCombinatorState with fn schema() {
   @component.SchemaInfo::new(
@@ -1706,7 +1706,7 @@ pub let schema_const_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaConstState with fn schema() {
   @component.SchemaInfo::new(
@@ -1802,7 +1802,7 @@ pub let schema_conditional_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaConditionalState with fn schema() {
   @component.SchemaInfo::new(
@@ -1874,7 +1874,7 @@ pub let schema_not_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaNotState with fn schema() {
   @component.SchemaInfo::new(
@@ -1954,7 +1954,7 @@ pub fn SchemaBooleanMethod::name(self : SchemaBooleanMethod) -> String {
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaBooleanState with fn schema() {
   @component.SchemaInfo::new(
@@ -2020,7 +2020,7 @@ pub let schema_ref_global_style : String = ""
 ///
 /// This is the only thing consulted for a field's KIND — there is no
 /// inference off the init value behind it — and it is what an instance
-/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for SchemaRefState with fn schema() {
   @component.SchemaInfo::new(

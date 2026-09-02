@@ -174,7 +174,7 @@ priv struct RuleStack {
 }
 
 ///|
-impl @tutuca.Stack for RuleStack with fn lookup_field_raw(self, name) {
+impl @tutuca.Stack for RuleStack with fn lookup_storage(self, name) {
   self.state.get(name).unwrap_or(Null)
 }
 
@@ -198,7 +198,7 @@ impl @tutuca.Stack for RuleStack with fn lookup_method(self, name) {
 /// `pred canMove { canPush and (not .busy) }` writes the operand WITHOUT the
 /// sigil — inside a rule body a bare name is another rule, not a binding — and
 /// the lowering keeps it as `Name`. Same resolution as `$name`, one meaning.
-impl @tutuca.Stack for RuleStack with fn lookup_name(self, name) {
+impl @tutuca.Stack for RuleStack with fn lookup_bare(self, name) {
   match self.rules.lookup(name) {
     Some(val) => val.eval(self)
     None => Null
