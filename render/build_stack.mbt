@@ -3,13 +3,17 @@
 // the binds (`@key`, `@value`, @enrich-with scopes) its element saw. The
 // frame shapes MUST mirror render()'s enter calls exactly:
 //
-//   render context            renderer                       rebuild step
+//   render context            renderer                       rebuild
 //   component boundary        enter(value, {})               FieldStep / SeqAccessStep
 //   keyed component           enter(value, {key})            SeqStep
 //   iterated render target    item scope + enter(value, {})  EachRenderItStep
-//   @each item (no comp)      enter(value, binds, false)     EachBindStep
-//   loop-less @enrich-with    enter(it, binds, false)        ScopeBindStep
-//   generic scope             enter(it, binds, false)        BindStep
+//   @each item (no comp)      enter(value, binds, false)     FrameBind::Each
+//   loop-less @enrich-with    enter(it, binds, false)        FrameBind::Scope
+//
+// The first three ADDRESS something and are steps; the last two do not and are
+// binds carried beside the frame's items, each knowing how many items came
+// before it. `build_dispatch_stack` interleaves the two in that order, which is
+// the order the renderer entered them.
 
 ///|
 /// Rebuild the per-item binds for `key`, mirroring render_each: seed
@@ -66,24 +70,36 @@ fn step_enter_frame(
         render_path~,
       )
       .enter(next, Map([]), render_path~)
-    BindStep(binds~) =>
-      stack.enter(next, binds.copy(), is_frame=false, render_path~)
-    ScopeBindStep(val~) => {
-      // re-evaluate the @enrich-with handler against the rebuilt stack so
-      // its custom binds are present
+  }
+}
+
+///|
+/// Enter the scope one `FrameBind` opened.
+///
+/// It addresses nothing, so `it` is unchanged and the frame is not a component
+/// boundary — what it contributes is BINDS, computed here rather than carried,
+/// so a rebuild sees the state as it is now.
+fn bind_enter_frame(
+  bind : @tutuca.FrameBind,
+  stack : RenderStack,
+  render_path : @tutuca.DispatchPath,
+) -> RenderStack {
+  match bind {
+    // re-evaluate the @enrich-with handler against the rebuilt stack so
+    // its custom binds are present
+    Scope(val~) => {
       let handler = val.eval_as_handler(stack)
       let binds : Map[String, @tutuca.Value] = match
         call_handler(handler, stack.it, []) {
         Map(m) => m
         _ => Map([])
       }
-      stack.enter(next, binds, is_frame=false, render_path~)
+      stack.enter(stack.it, binds, is_frame=false, render_path~)
     }
-    // `next` is the pass-through component value: binds carry the item,
-    // `it` stays the component
-    EachBindStep(val~, when_val~, enrich_with_val~, loop_with_val~, key~) =>
+    // The binds carry the item; `it` stays the component.
+    Each(val~, when_val~, enrich_with_val~, loop_with_val~, key~) =>
       stack.enter(
-        next,
+        stack.it,
         each_binds(stack, val, when_val, enrich_with_val, loop_with_val, key),
         is_frame=false,
         render_path~,
@@ -120,12 +136,37 @@ pub fn build_dispatch_stack(
       }
       st = st.enter(base_value, Map([]), render_path~, pending_frame=false)
     }
-    for item in frame.items {
+    // Items and binds, interleaved in the order the renderer entered them: a
+    // bind carries the number of items that preceded it, so the ones due
+    // before item `i` are exactly those indexed `i`.
+    fn enter_binds_at(
+      st : RenderStack,
+      render_path : @tutuca.DispatchPath,
+      at : Int,
+    ) -> (RenderStack, @tutuca.DispatchPath) {
+      let mut st = st
+      let mut render_path = render_path
+      for pair in frame.binds {
+        if pair.0 == at {
+          render_path = render_path.push_bind(pair.1)
+          st = bind_enter_frame(pair.1, st, render_path)
+        }
+      }
+      (st, render_path)
+    }
+
+    for i, item in frame.items {
+      let (st2, rp2) = enter_binds_at(st, render_path, i)
+      st = st2
+      render_path = rp2
       let Plain(step~, ..) = item
       guard @tutuca.step_get(st.it, step) is Some(next) else { return None }
       render_path = render_path.push_item(item)
       st = step_enter_frame(step, st, next, render_path)
     }
+    let (st3, rp3) = enter_binds_at(st, render_path, frame.items.length())
+    st = st3
+    render_path = rp3
   }
   Some(st)
 }

@@ -87,11 +87,10 @@ test "a resumed path addresses the located data end to end" {
 ///|
 test "compact projects every frame independently" {
   let p = @core.DispatchPath::new(items=[
-      plain(BindStep(binds=Map([]))),
       plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
     ])
     .push_frame(@core.Path::new(steps=[FieldStep("x")]))
-    .concat([ScopeBindStep(val=Expr::field("ignored")), FieldStep("child")])
+    .concat([FieldStep("child")])
     .compact()
   assert_true(
     p.frames
@@ -99,12 +98,33 @@ test "compact projects every frame independently" {
       {
         base: { steps: [], },
         items: [Plain(step=SeqStep(field="items", key=KInt(0)), origin=Some(1))],
+        binds: [],
       },
       {
         base: { steps: [FieldStep("x")], },
         items: [Plain(step=FieldStep("child"), origin=None)],
+        binds: [],
       },
     ],
+  )
+}
+
+///|
+test "a bind keeps its place among the items, and goes with the one it followed" {
+  // A bind is placed by how many items came before it, which is the whole of
+  // what it needs to be replayed in order — and what tells `pop_step` that a
+  // bind entered after the item it just removed has nothing left to scope.
+  let p = @core.DispatchPath::new(items=[plain(FieldStep("rows"))])
+    .push_bind(Scope(val=@core.Expr::field("enrich")))
+    .push_item(plain(FieldStep("cell")))
+    .push_bind(Scope(val=@core.Expr::field("inner")))
+  assert_eq(p.frames[0].binds.map(b => b.0), [1, 2])
+  let popped = p.pop_step()
+  assert_eq(popped.frames[0].items.length(), 1)
+  assert_eq(popped.frames[0].binds.map(b => b.0), [1])
+  // Addressing never saw either of them.
+  assert_true(
+    p.to_transaction_path().steps is [FieldStep("rows"), FieldStep("cell")],
   )
 }
 

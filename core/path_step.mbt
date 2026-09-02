@@ -20,7 +20,6 @@ pub fn step_get(node : Value, step : Step) -> Value? {
         Some(key) => node.field(seq_field).item_opt(key)
         None => None
       }
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => Some(node) // frame-only: addresses nothing
   }
 }
 
@@ -54,7 +53,6 @@ fn step_put(node : Value, step : Step, child : Value) -> Value? {
         Some(key) => put_seq(node, seq_field, key, child)
         None => None
       }
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => Some(child) // frame-only: the new value passes through
   }
 }
 
@@ -74,14 +72,15 @@ fn step_pin(step : Step, node : Value) -> Step {
 }
 
 ///|
-/// The compact/dispatch projection of one step:
-/// EachRenderItStep abstracts to a plain SeqStep; None drops the step — no
-/// current variant is dropped, the hook exists for future frame-only steps.
-fn step_to_abstract(step : Step) -> Step? {
+/// The compact/dispatch projection of one step: `EachRenderItStep` abstracts to
+/// a plain `SeqStep`, everything else is already what it addresses.
+///
+/// Total, where it used to answer `Step?` so a frame-only step could be
+/// dropped. There are none: a bind is a `FrameBind` beside the items now.
+fn step_to_abstract(step : Step) -> Step {
   match step {
-    EachRenderItStep(field~, key~) => Some(SeqStep(field~, key~))
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => None // frame-only steps are dropped from the dispatch path
-    _ => Some(step)
+    EachRenderItStep(field~, key~) => SeqStep(field~, key~)
+    _ => step
   }
 }
 
@@ -89,14 +88,15 @@ fn step_to_abstract(step : Step) -> Step? {
 /// Generic {field, key?} descriptor. SeqAccessStep reports
 /// its seq field with no key — the key is live and unknown without a value;
 /// dropping the step instead would shift the indices of later keys.
-fn step_to_key(step : Step) -> StepKey? {
+///
+/// Total, where it used to answer `StepKey?` for the frame-only steps that had
+/// no field to report. Every step has one now.
+fn step_to_key(step : Step) -> StepKey {
   match step {
-    FieldStep(name) => Some({ field: name, key: None, })
+    FieldStep(name) => { field: name, key: None, }
     SeqStep(field~, key~) | EachRenderItStep(field~, key~) =>
-      Some({ field, key: Some(key), })
-    SeqAccessStep(seq_field~, key_field=_) =>
-      Some({ field: seq_field, key: None, })
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => None // frame-only: no field to report
+      { field, key: Some(key), }
+    SeqAccessStep(seq_field~, key_field=_) => { field: seq_field, key: None, }
   }
 }
 

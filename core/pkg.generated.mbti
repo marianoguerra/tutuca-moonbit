@@ -103,6 +103,7 @@ pub impl Stack for CtxStack
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
+  binds : Array[(Int, FrameBind)]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DispatchPath {
@@ -115,6 +116,7 @@ pub fn DispatchPath::is_root(Self) -> Bool
 pub fn DispatchPath::new(items? : Array[DispatchStep]) -> Self
 pub fn DispatchPath::of_steps(Array[Step]) -> Self
 pub fn DispatchPath::pop_step(Self) -> Self
+pub fn DispatchPath::push_bind(Self, FrameBind) -> Self
 pub fn DispatchPath::push_frame(Self, Path) -> Self
 pub fn DispatchPath::push_item(Self, DispatchStep) -> Self
 pub fn DispatchPath::to_transaction_path(Self) -> Path
@@ -234,6 +236,11 @@ pub struct FnSource {
 }
 pub fn FnSource::new((String?, String, Map[String, Value], String) -> Value?, describe? : (String?, String) -> SchemaInfo?) -> Self
 pub impl ComponentSource for FnSource
+
+pub(all) enum FrameBind {
+  Scope(val~ : Expr)
+  Each(val~ : Expr, when_val~ : Expr?, enrich_with_val~ : Expr?, loop_with_val~ : Expr?, key~ : PathKey)
+} derive(Eq, @debug.Debug)
 
 pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
@@ -539,9 +546,6 @@ pub(all) enum Step {
   SeqStep(field~ : String, key~ : PathKey)
   SeqAccessStep(seq_field~ : String, key_field~ : String)
   EachRenderItStep(field~ : String, key~ : PathKey)
-  BindStep(binds~ : Map[String, Value])
-  ScopeBindStep(val~ : Expr)
-  EachBindStep(val~ : Expr, when_val~ : Expr?, enrich_with_val~ : Expr?, loop_with_val~ : Expr?, key~ : PathKey)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct StepKey {

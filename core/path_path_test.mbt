@@ -54,19 +54,17 @@ test "empty path resolves to the root and set_value replaces it" {
 }
 
 ///|
-test "compact drops frame-only steps; addressing is unaffected by them" {
-  let root : @core.Value = vmap({ "a": vmap({ "b": num(42) }) })
-  let p = @core.Path::new(steps=[
-    BindStep(binds=Map([])),
-    FieldStep("a"),
-    BindStep(binds={ "key": str("x") }),
-    FieldStep("b"),
-  ])
-  assert_true(compacted(p).steps is [FieldStep("a"), FieldStep("b")])
+test "compact projects an iterated render target onto what it addresses" {
+  // Compaction has one job left: `EachRenderItStep` is the RENDER form of a
+  // keyed item, and what it addresses is the item. Nothing is dropped any
+  // more — a path holds only steps that address something (`FrameBind` is
+  // where a scope's bindings live).
+  let root : @core.Value = vmap({ "a": List([num(41), num(42)]) })
+  let p = @core.Path::new(steps=[EachRenderItStep(field="a", key=KInt(1))])
+  assert_true(compacted(p).steps is [SeqStep(field="a", key=KInt(1))])
   assert_true(resolved(p, root) == num(42))
   assert_true(resolved(p, p.set_value(root, num(1))) == num(1))
-  // frame-only steps report no key
-  assert_eq(p.to_keys().length(), 2)
+  assert_eq(p.to_keys().length(), 1)
 }
 
 ///|

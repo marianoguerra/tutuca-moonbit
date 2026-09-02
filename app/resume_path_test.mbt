@@ -172,8 +172,9 @@ test "dyn render: caller frame is saved and active frame addresses the value" {
           Plain(step=FieldStep("panel"), ..),
           Plain(step=FieldStep("toolbar"), ..),
         ],
+        ..
       },
-      { base: { steps: [FieldStep("sheet")], }, items: [], },
+      { base: { steps: [FieldStep("sheet")], }, items: [], .. },
     ],
   )
   // The active transaction path is the resumed provider data.

@@ -476,12 +476,44 @@ pub(all) enum DispatchStep {
 } derive(Debug, Eq)
 
 ///|
+/// A binding a render frame introduced, replayed when the frame is rebuilt.
+///
+/// Not a step, because it addresses nothing: it says what the rebuilt stack
+/// should have IN SCOPE at a point along the path, which is a different
+/// question from where a value lives. Both cases are computed LAZILY at
+/// rebuild time — they carry the expressions the renderer evaluated rather
+/// than the values it got, so a rebuild sees the state as it is now and the
+/// renderer's own answer is never stale.
+pub(all) enum FrameBind {
+  /// A loop-less `@enrich-with` scope: `val` is re-evaluated as a handler
+  /// against the rebuilt stack and whatever map it answers becomes the binds.
+  Scope(val~ : Val)
+  /// One `@each` item: the renderer's `{key, value}` seed plus any
+  /// `@enrich-with` binds, for the item addressed by `key`. The iteration
+  /// expressions ride along (`IterInfo`) so the binds are recomputed the way
+  /// the renderer computed them.
+  Each(
+    val~ : Val,
+    when_val~ : Val?,
+    enrich_with_val~ : Val?,
+    loop_with_val~ : Val?,
+    key~ : PathKey
+  )
+} derive(Debug, Eq)
+
+///|
 /// One frame of a render path. `base` is the absolute transaction path where
 /// rendering resumed; `items` are the ordinary visual descendants rendered
 /// from there.
+///
+/// `binds` is what the frame put in SCOPE, each paired with the number of
+/// `items` that came before it — so a rebuild interleaves the two in the order
+/// the renderer entered them, without the binds having to pretend to be steps
+/// to keep their place.
 pub(all) struct DispatchFrame {
   base : Path
   items : Array[DispatchStep]
+  binds : Array[(Int, FrameBind)]
 } derive(Debug, Eq)
 
 ///|
@@ -511,6 +543,14 @@ declare pub fn DispatchPath::concat(
 declare pub fn DispatchPath::push_item(
   self : DispatchPath,
   item : DispatchStep,
+) -> DispatchPath
+
+///|
+/// Record a binding the active frame introduced, here — after every item
+/// pushed so far and before every item pushed next.
+declare pub fn DispatchPath::push_bind(
+  self : DispatchPath,
+  bind : FrameBind,
 ) -> DispatchPath
 
 ///|

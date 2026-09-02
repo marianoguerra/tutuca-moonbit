@@ -14,6 +14,9 @@ priv struct NodeRef {
 priv enum PathPart {
   Item(@tutuca.DispatchStep)
   Frame(@tutuca.Path)
+  /// A scope the render position stood in. Not a step: it addresses nothing
+  /// and only says what the rebuilt stack should have in scope there.
+  Bind(@tutuca.FrameBind)
 }
 
 ///|
@@ -107,13 +110,13 @@ fn ref_part(
       }
     RenderText(d) => item_part(base_step(d.val, refs[i].key), cid)
     Show(w) | Hide(w) => item_part(base_step(w.val, refs[i].key), cid)
-    Scope(w) => item_part(Some(ScopeBindStep(val=w.val)), cid)
+    Scope(w) => Some(Bind(Scope(val=w.val)))
     Each(ed) =>
       match refs[i].key {
         Some(key) =>
-          item_part(
-            Some(
-              EachBindStep(
+          Some(
+            Bind(
+              Each(
                 val=ed.iter_info.val,
                 when_val=ed.iter_info.when_val,
                 enrich_with_val=ed.iter_info.enrich_with_val,
@@ -121,7 +124,6 @@ fn ref_part(
                 key~,
               ),
             ),
-            cid,
           )
         None => None
       }
@@ -152,6 +154,7 @@ fn path_of_parts(parts : Array[PathPart]) -> @tutuca.DispatchPath {
     path = match part {
       Item(item) => path.push_item(item)
       Frame(base) => path.push_frame(base)
+      Bind(bind) => path.push_bind(bind)
     }
   }
   path

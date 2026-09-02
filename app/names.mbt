@@ -31,10 +31,12 @@ pub fn ScopeNames::new(comps : @component.Components) -> ScopeNames {
 ///|
 /// The render stack at `at`, rebuilt from `root`.
 ///
-/// Known limit, and the same one the JS has: the path is COMPACTED, so
-/// per-item bindings (`@each`, `@enrich-with`) are not replayed. Provides are
-/// pushed on every component frame either way, so the one case this cannot
-/// reproduce faithfully is a provide whose expression reads a loop binding.
+/// It replays the per-item bindings (`@each`, `@enrich-with`) too, which is
+/// new and falls out of the re-cut rather than being added: a binding is a
+/// `FrameBind` beside a frame's items now, so COMPACTING a path — which
+/// projects each step onto what it addresses — no longer throws the bindings
+/// away. The JS original's limit was a consequence of binds pretending to be
+/// steps, and it went with them.
 fn ScopeNames::stack_at(
   self : ScopeNames,
   root : @tutuca.Value,

@@ -13,7 +13,10 @@ fn rebuilt(
     fail("no event info")
   }
   let stack = RenderStack::new(state)
-  guard build_stack(ed.path.to_transaction_path(), stack) is Some(st) else {
+  // Through the DISPATCH path, not its transaction projection: a scope's
+  // bindings are `FrameBind`s beside the frame's items, so the projection —
+  // which is addressing only — cannot carry them and never should have.
+  guard build_dispatch_stack(ed.path, stack) is Some(st) else {
     fail("stack rebuild failed")
   }
   st
@@ -33,10 +36,10 @@ test "@each binds are visible to a handler in the SAME component" {
     fail("no second button")
   }
   let st = rebuilt(reg, state, container, btn)
-  // the EachBindStep scope replays the renderer's {key, value} binds
+  // the `Each` bind replays the renderer's {key, value} binds
   assert_true(@tutuca.Stack::lookup_bind(st, "key") is Str("b"))
   assert_true(@tutuca.Stack::lookup_bind(st, "value") is Str("second"))
-  // frame-only: `it` stays the component value (EachBindStep pass-through)
+  // a bind addresses nothing: `it` stays the component value
   assert_true(st.it == state)
 }
 
@@ -64,7 +67,7 @@ test "frame boundary: @key/@value do NOT leak into a rendered child component" {
 }
 
 ///|
-test "@enrich-with scope binds are replayed by ScopeBindStep" {
+test "@enrich-with scope binds are replayed by a `Scope` frame bind" {
   let reg = ViewRegistry::new()
   reg.add(
     "main", "<div @enrich-with=\"info\"><button @on.click=\"go\">x</button></div>",

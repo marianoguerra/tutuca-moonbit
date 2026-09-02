@@ -129,14 +129,7 @@ pub fn Path::pin_keys(self : Path, root : Value) -> Path {
 
 ///|
 pub fn Path::to_keys(self : Path) -> Array[StepKey] {
-  let out : Array[StepKey] = []
-  for step in self.steps {
-    match step_to_key(step) {
-      Some(k) => out.push(k)
-      None => ()
-    }
-  }
-  out
+  self.steps.map(step_to_key)
 }
 
 ///|

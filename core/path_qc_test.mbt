@@ -97,10 +97,6 @@ fn derive_path(root : @core.Value, rng : Lcg) -> Array[@core.Step] {
   let mut cur = root
   for _hop in 0..<6 {
     guard cur is Map(m) && !m.is_empty() else { break }
-    // frame-only steps may appear anywhere and must not affect addressing
-    if rng.below(4) == 0 {
-      steps.push(BindStep(binds=Map([])))
-    }
     let keys = map_keys(m)
     let k = keys[rng.below(keys.length())]
     guard m.get(k) is Some(child) else { break }
@@ -159,9 +155,6 @@ fn invalidate(steps : Array[@core.Step], rng : Lcg) -> Array[@core.Step] {
     EachRenderItStep(field~, ..) => EachRenderItStep(field~, key=KInt(9999))
     SeqAccessStep(seq_field~, ..) =>
       SeqAccessStep(seq_field~, key_field="zz-missing")
-    // a frame-only step can't miss; make the position an addressing miss
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) =>
-      FieldStep("zz-missing")
   }
   out
 }
@@ -353,6 +346,5 @@ fn step_field(step : @core.Step) -> String? {
     SeqStep(field~, ..) => Some(field)
     EachRenderItStep(field~, ..) => Some(field)
     SeqAccessStep(seq_field~, ..) => Some(seq_field)
-    BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => None
   }
 }

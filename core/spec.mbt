@@ -57,34 +57,26 @@ pub(all) enum PathKey {
 } derive(Debug, Eq)
 
 ///|
-/// Path steps. FieldStep/SeqAccessStep are what values address
-/// (Val::to_path_item); SeqStep is a field + concrete key (also the pinned form
-/// of SeqAccessStep); EachRenderItStep is an iterated render target that
-/// compacts to a SeqStep; Bind/ScopeBind/EachBind are frame-only (stack
-/// rebuild). Dynamic-var markers live on DispatchStep in the path package.
+/// Path steps: the ways one value addresses another.
+///
+/// `FieldStep` / `SeqAccessStep` are what an expression addresses
+/// (`Val::to_path_item`); `SeqStep` is a field plus a concrete key, and also
+/// the pinned form of a `SeqAccessStep`; `EachRenderItStep` is an iterated
+/// render target that compacts to a `SeqStep`. Dynamic-var markers live on
+/// `DispatchStep` in the path package.
+///
+/// EVERY step addresses something. The three that did not — a scope's binds, an
+/// `@each` item's binds, a generic bind frame — are not steps and never were:
+/// they said what a rebuilt render stack should have IN SCOPE, which is a
+/// different question from where a value lives, and answering it here meant
+/// every walk over a path carried a pass-through arm and every reader had to
+/// know which steps were real. They are `FrameBind`s now, carried beside a
+/// `DispatchFrame`'s items (`path_spec.mbt`).
 pub(all) enum Step {
   FieldStep(String)
   SeqStep(field~ : String, key~ : PathKey)
   SeqAccessStep(seq_field~ : String, key_field~ : String)
   EachRenderItStep(field~ : String, key~ : PathKey)
-  // Frame-only: addresses no field (lookup/set pass through), exists so a
-  // rebuilt stack can replay the scope bindings a render frame introduced.
-  BindStep(binds~ : Map[String, Value])
-  // Frame-only: replays a loop-less @enrich-with scope by re-evaluating
-  // `val` as a handler against the rebuilt stack (binds computed lazily at
-  // rebuild time, matching the renderer).
-  ScopeBindStep(val~ : Val)
-  // Frame-only: replays the renderer's per-item binds ({key, value} plus any
-  // @enrich-with binds) for the @each item addressed by `key`. Carries the
-  // iteration Vals (IterInfo) so binds are computed lazily at rebuild
-  // time; loop-with is deferred with the renderer's @loop-with support.
-  EachBindStep(
-    val~ : Val,
-    when_val~ : Val?,
-    enrich_with_val~ : Val?,
-    loop_with_val~ : Val?,
-    key~ : PathKey
-  )
 } derive(Debug, Eq)
 
 ///|

@@ -34,14 +34,17 @@ test "render path text preserves fields, keys, and live-key access" {
     SeqAccessStep(seq_field="themes", key_field="selected"),
   ])
   assert_eq(render_path_text(path).bind(parse_render_path_text), Some(path))
-  // A frame-only step has no wire form, and the answer is "no path" rather
-  // than the empty path — which would name the root.
-  assert_true(
-    render_path_text(
-      @tutuca.Path::new(steps=[FieldStep("rows"), BindStep(binds=Map([]))]),
-    )
-    is None,
+  // An iterated render target rides as what it addresses: the wire form is a
+  // keyed item, which is what it compacts to.
+  let iterated = @tutuca.Path::new(steps=[
+    EachRenderItStep(field="rows", key=KInt(1)),
+  ])
+  assert_eq(
+    render_path_text(iterated).bind(parse_render_path_text),
+    Some(@tutuca.Path::new(steps=[SeqStep(field="rows", key=KInt(1))])),
   )
+  // Text that is not a path at all is still refused.
+  assert_true(parse_render_path_text("not json") is None)
 }
 
 ///|

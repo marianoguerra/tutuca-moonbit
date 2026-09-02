@@ -80,7 +80,14 @@ fn Meta::to_comment(self : Meta) -> @vdom.Vdom {
 }
 
 ///|
-fn step_to_render_json(step : @tutuca.Step) -> Json? {
+/// Addressing only, which is now the whole of what a step is.
+///
+/// It used to answer `None` for the three frame-only steps, and the caller
+/// answered "no path" for the whole path when one appeared. There are none:
+/// a scope's bindings are a `FrameBind` and never travel on the wire, because
+/// what a rebuilt stack should have in scope is recomputed from the render
+/// tree rather than carried through the DOM.
+fn step_to_render_json(step : @tutuca.Step) -> Json {
   let out : Map[String, Json] = Map([])
   match step {
     FieldStep(field) => out["f"] = Json::string(field)
@@ -92,9 +99,8 @@ fn step_to_render_json(step : @tutuca.Step) -> Json? {
       out["f"] = Json::string(seq_field)
       out["a"] = Json::string(key_field)
     }
-    _ => return None
   }
-  Some(Json::object(out))
+  Json::object(out)
 }
 
 ///|
@@ -115,18 +121,12 @@ fn render_json_to_step(j : Json) -> @tutuca.Step? {
 }
 
 ///|
-/// None, not `"[]"`: an empty path addresses the ROOT, so encoding a path that
-/// could not be written down as one would silently resume the whole app there.
-/// Only addressing steps have a wire form, which is all a base can be made of.
+/// Every step has a wire form, so this always answers one. It used to be
+/// `String?` because a frame-only step had none, and encoding the path without
+/// it would have silently resumed somewhere else; the option is kept because
+/// the parse side still refuses text it cannot read.
 fn render_path_text(path : @tutuca.Path) -> String? {
-  let items : Array[Json] = []
-  for step in path.steps {
-    match step_to_render_json(step) {
-      Some(j) => items.push(j)
-      None => return None
-    }
-  }
-  Some(Json::array(items).stringify())
+  Some(Json::array(path.steps.map(step_to_render_json)).stringify())
 }
 
 ///|

@@ -58,7 +58,7 @@ test "click on the root component: empty path, handlers found" {
   }
   assert_eq(ed.handlers.length(), 1)
   assert_eq(ed.handlers[0].name, "click")
-  assert_true(ed.path.frames is [{ base: { steps: [], }, items: [], }])
+  assert_true(ed.path.frames is [{ base: { steps: [], }, items: [], .. }])
   assert_true(resolve_leaf(ed, state) == state)
 }
 
@@ -102,6 +102,7 @@ test "click inside a rendered child component: one FieldStep per boundary" {
       {
         base: { steps: [], },
         items: [Plain(step=FieldStep("child"), origin=Some(0))],
+        ..
       },
     ],
   )
@@ -164,7 +165,7 @@ test "an @each over a list resolves the indexed item" {
 }
 
 ///|
-test "a scope boundary contributes a frame-only ScopeBindStep" {
+test "a scope boundary contributes a frame bind, not a step" {
   let reg = ViewRegistry::new()
   reg.add(
     "main", "<div @enrich-with=\"info\"><button @on.click=\"go\">x</button></div>",
@@ -178,9 +179,10 @@ test "a scope boundary contributes a frame-only ScopeBindStep" {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
-  assert_true(
-    ed.path.frames[0].items is [Plain(step=ScopeBindStep(val=_), origin=_)],
-  )
-  // frame-only: the transaction path still resolves to the root value
+  // The scope contributed no ITEM — it addresses nothing — and one bind,
+  // placed before the (zero) items that follow it.
+  assert_true(ed.path.frames[0].items is [])
+  assert_true(ed.path.frames[0].binds is [(0, Scope(val=_))])
+  // Addressing never saw it: the transaction path is still the root value.
   assert_true(resolve_leaf(ed, state) == state)
 }
