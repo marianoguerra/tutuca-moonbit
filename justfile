@@ -55,18 +55,16 @@ ci:
 
 # ── use ────────────────────────────────────────────────────────────────────
 
-# run the tutuca CLI: just cli help | just cli gen-views <file.html>
+# run the tutuca CLI: just cli help | just cli gen <file.html>
 cli *ARGS:
     {{cli}} {{ARGS}}
 
 # regenerate every checked-in *_view_gen.mbt, then drift-check them
 #
-# The same job `cmd/dev -- gen-views` does, because the name has to mean one
-# thing: this used to run the CLI over ONE file while `just dev gen-views`
-# regenerated the repo. For a single file, use the passthrough above:
-#   just cli gen-views path/to/counter.html --name Counter
-gen-views:
-    {{dev}} gen-views
+# The whole repo. For a single file, use the CLI passthrough above:
+#   just cli gen path/to/counter.html --name Counter
+gen:
+    {{dev}} gen
 
 # compile a project's view classes into CSS (stock Tailwind)
 gen-tailwind-css *ARGS:

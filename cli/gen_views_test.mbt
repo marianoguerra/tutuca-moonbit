@@ -246,19 +246,6 @@ test "gen is in the command registry, so help and agent-context see it" {
 }
 
 ///|
-/// `gen` still runs, and is not in the registry.
-///
-/// The registry is what `help` and `agent-context` enumerate, so a retired
-/// name in it would be advertised — and a "did you mean" that suggests the
-/// name on its way out is advice pointing backwards. It is an alias in
-/// `dispatch` and nowhere else.
-test "the retired gen-views spelling still dispatches" {
-  assert_true(@cli.find_command("gen-views") is None)
-  assert_false(@cli.command_names().contains("gen-views"))
-  assert_true(@cli.plan(["gen-views", "counter.html"]) is GenViews(_))
-}
-
-///|
 test "view-only lint rules report at generation time" {
   // Nothing about these depends on a live component — only on the view text
   // the generator is already parsing, which is why they can be build errors.

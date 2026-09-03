@@ -2,8 +2,8 @@
 .DS_Store
 
 # MoonBit build output and fetched dependencies
-# `target/` is the Rust guest's (guests/rust-tempconv); the directory form is
-# deliberate — a bare `target` would also ignore any FILE with that name.
+# The directory form of `target/` is deliberate — a bare `target` would also
+# ignore any FILE with that name.
 _build/
 target/
 .mooncakes/
@@ -29,15 +29,10 @@ playground/vendor/moonc-web.cjs
 # Throwaway scaffold used by scripts/check-playground-examples.mjs
 playground/_examples_check/
 
-# The only .wit in the tree is the hand-written dyncomp boundary contract.
-# `gen-views` no longer emits any: nothing consumed the documents it wrote.
+# There is no .wit in the tree: the component format is core wasm plus GC, and
+# `gen` emits no interface documents — nothing consumed the ones it used to
+# write.
 *.wit
-!dyncomp/wit/*.wit
-# ...and the copy `tutuca new-guest` writes into a scaffolded guest, which is a
-# source file there rather than generated output: without this, a guest under
-# examples/ builds here and nowhere else, because a fresh clone would have no
-# contract to embed.
-!examples/**/wit/*.wit
 
 # The stamp beside the compiler blob: what worker it is, written by
 # playground/build/fetch-compiler.mjs. Gitignored with the blob it describes.

@@ -6,7 +6,7 @@
 /// It tracks the CLI's surface, NOT the module's — those were the same number
 /// once and have not been for a long time. `MODULE_VERSION` below is the
 /// module's, and is the one that has to move with `moon.mod`.
-pub const VERSION : String = "0.12.2"
+pub const VERSION : String = "0.13.0"
 
 ///|
 /// The module version this binary was built from — what `new-storybook` pins
@@ -15,4 +15,4 @@ pub const VERSION : String = "0.12.2"
 ///
 /// Keep in sync with `version` in moon.mod; `scripts/check-module-version.mjs`
 /// does it for you in `ci`.
-pub const MODULE_VERSION : String = "0.48.0"
+pub const MODULE_VERSION : String = "0.49.0"

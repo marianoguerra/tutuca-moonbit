@@ -27,12 +27,11 @@ pub fn plan(argv : Array[String]) -> Outcome {
     "install-skill" => return run_install_skill(command_args, opts)
     "new-storybook" => return run_new_storybook(command_args, opts)
     "storybook" => return run_storybook(command_args, opts)
-    // `gen` is the retired name. It has not only generated views since
+    // Named `gen` and not `gen-views`: it has not only generated views since
     // the schema landed — it writes the state struct, the codec, the
     // `SchemaInfo` and the message enums — and a command named for one of the
-    // five is a command whose name has to be explained. Both spellings work
-    // this release; `gen` is the one `help` lists.
-    "gen" | "gen-views" => return run_gen_views(command_args, opts)
+    // five is a command whose name has to be explained.
+    "gen" => return run_gen_views(command_args, opts)
     "gen-tailwind-css" => return run_gen_css(command_args, opts, margaui=false)
     "gen-margaui-css" => return run_gen_css(command_args, opts, margaui=true)
     "watch" => return run_watch(command_args, opts)

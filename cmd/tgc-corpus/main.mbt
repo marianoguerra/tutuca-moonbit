@@ -7,7 +7,8 @@ fn main raise {
   let mut rejected = 0
   for i, c in @conformance.cases() {
     let card = card_of(c.schema, c.script)
-    let row : Json = match (try? @emit.compile(card, name="case\{i}")) {
+    let row : Json = match
+      ((@emit.compile(card, name="case\{i}") |> Ok(_)) catch { e => Err(e) }) {
       Ok(out) => {
         @fs.write_bytes_to_file("\{outdir}/case\{i}.wasm", out.wasm)
         @fs.write_string_to_file("\{outdir}/case\{i}.wax", out.wax)
@@ -72,7 +73,8 @@ fn main raise {
   let vrows : Array[Json] = []
   for i, c in @conformance.value_cases() {
     let card = card_of(c.schema, c.script)
-    let row : Json = match (try? @emit.compile(card, name="value\{i}")) {
+    let row : Json = match
+      ((@emit.compile(card, name="value\{i}") |> Ok(_)) catch { e => Err(e) }) {
       Ok(out) => {
         @fs.write_bytes_to_file("\{outdir}/value\{i}.wasm", out.wasm)
         {

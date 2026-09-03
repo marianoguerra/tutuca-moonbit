@@ -6,6 +6,129 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-09-04
+
+The component format release. A dynamic component is **one core wasm
+module** using the GC proposal and nothing else, and components written by
+strangers compose at runtime because wasm GC canonicalizes a type group
+*structurally* — carrying the same text is the whole of the agreement.
+
+This replaces `tutuca:component@0.12.0` and the WebAssembly Component Model
+underneath it. Compatibility is not a goal, and the parts that existed to
+work around constraints this format does not have are gone rather than
+deprecated.
+
+### The format — `tgc/`
+
+[`tgc/SPEC.md`](tgc/SPEC.md) is the format; [`tgc/SECURITY.md`](tgc/SECURITY.md)
+is what a loaded module can and cannot do, tested rather than asserted;
+[`docs/dynamic-components.md`](docs/dynamic-components.md) is the practical
+route into both.
+
+- **A component can hold another component.** An instance is an ordinary GC
+  struct, so a module keeps one in its own state, puts it in a list, passes it
+  on, and reads a field through it with one `call_ref` — no host hop, no token
+  table, no arena. The format this replaces refused `.rows[0].text` at compile
+  time, because "a guest holds bridge handles, not pointers".
+- **Type identity is structural.** Every module carries a verbatim copy of the
+  frozen rec group `tgc/1` in its own type section. Two modules that carry it
+  interoperate whether or not they have ever heard of each other: no registry,
+  no linker, no version handshake. `tgc/test/compose.test.mjs` builds a tree out
+  of modules from three different production routes — hand-written WAT, Wax
+  through the compiler, and WAT whose preamble is spelled differently on purpose
+  — and walks it.
+- **The rec group is frozen forever.** A group's identity depends on the whole
+  group, so adding a type, reordering, or changing a field breaks identity for
+  *every* type in it, retroactively, in every module ever built. Extension goes
+  through the `tg_ext` arm and an `i32` op space. A module with one extra type
+  inside the group is refused at link, naming the import, rather than by a cast
+  that traps three calls later.
+- **One file, self-describing.** A module exports `tgc.abi`, `tgc.describe`,
+  `tgc.make` and `tgc.serve`; the manifest comes out of `tgc.describe` rather
+  than out of a file beside it. There is no archive, no `tutuca.json`, no
+  packer, and no way for a component to arrive with half of itself.
+- **No memory and no table**, so a module's import section is its *complete*
+  authority list — and `tgc/emit` writes the body first and imports what the
+  body turned out to call, so a card that performs no effect imports none of the
+  effect vocabulary. Legible before running a line.
+- **State opacity is the engine's.** State is `ref null eq`; a module casts it
+  back to its own type, and a module that tries to read someone else's traps.
+- **`Int`, `Bin` and `Instant` are values the format carries**, and `core.Value`
+  grew the arms to match rather than the format shrinking to fit it. CBOR is the
+  faithful encoding (standard tags where one exists) and `$`-tagged JSON the
+  lossy interchange one, with a `{"$":"map"}` escape so the tagging cannot be
+  ambiguous.
+
+Two properties are **weaker** than the contract this replaces, and
+`SECURITY.md` says so rather than leaving them to be found. An instance a host
+hands over is DURABLE — bounded by its own two-slot vtable, but not revocable,
+where the old arena took every handle back at the call boundary. And
+re-entrancy is possible, because core wasm has no rule against it.
+
+Writing that section turned up something better than the claim it was about to
+make: **copy on write makes a reference cycle unreachable by ordinary means.**
+Writing into A answers a NEW A and B still holds the old one, so the write that
+would close the ring is the write that leaves it open. The exception is a
+mutable array a host hands IN and then keeps — the one ordinary way to build a
+cycle, and the engine's stack ends it with a trap. Both are tested.
+
+### The card compiler — `tgc/emit`
+
+Cards compile to this format now, held to `tscript/conformance` — 47 of 47,
+both tables. Running the card corpus against it is what a replacement has to
+survive, and it found four real gaps, each now closed: spec-block `pred` /
+`invariant` rules were not compiled at all; a `pred` was missing from the
+manifest's `methods`, so `@show="$positive"` read nothing; a field-backed
+property (`pub count: Int { get .count set .count }`) had no accessor; and
+`*name` in a handler was refused although the host already resolves and passes
+the bindings. A fifth, found while fixing the fourth: a call to a card's own
+callable passed the caller's arguments.
+
+### Removed
+
+- **The Component Model path.** `dyncomp/`, the WIT world, the
+  jco/wasm-tools pipeline, the `.tutuca.tar.gz` packer, the value arena, the
+  instance table, `abi.mjs`, the eleven sample guests, the guest SDK, the
+  universal host and its storybook, and `tutuca new-guest`.
+- **What survives moved.** `dyncomp/host`, `dyncomp/policy` and
+  `dyncomp/persist` were already backend-agnostic — `&Guest` is the seam and
+  tests implement it with an in-process fake — so they are `tgc/host`,
+  `tgc/policy` and `tgc/persist`. `Bundle` is `Module`: a bundle was a tar of
+  files and a module is one file.
+- **The flat type table** a manifest carried, and the numeric wire form that
+  read it. It was not an optimization that went wrong — it was a shape that
+  could not say what it meant, because WIT has no recursive types, so its `elem`
+  was never filled and every list crossed as "of anything". A type is a tree now
+  and there is nowhere to leave the element out.
+- **`<script type="tutuca/wax">`**, the escape hatch, with the backend that was
+  its only reader.
+
+### Retired spellings stop parsing
+
+0.48.0 said they would, and this is the release it named. `stop`, `sendReply`,
+`enrichScope`, the `intent` DECLARATION and the `intent` EFFECT, a `forward` in
+a `receive` body, `@cur`, `$$name`, `<script type="tutuca/state">`,
+`<script type="tutuca/init">`, `Component` as a field type, `on_error_name`, and
+the `equals?` / `falsy?` builtins are gone, along with `core/retired.mbt`, the
+parser's retirement side channel, the `RETIRED_KEYWORD` finding, and
+`tutuca migrate` — which cannot survive its input, since it worked by asking
+the parser where the old words were.
+
+Two inconsistencies the sweep turned up, both fixed. A view slot read `$$name`
+where a script block read `host.name` — the same question in two spellings, and
+the view half had simply not been done; `host.name` works in a slot now. And
+`is` PRINTED prefix, so `.tab is 'a'` read back as `is .tab 'a'`, a form nothing
+parses any more; the compare family prints infix.
+
+### Also
+
+- `moon check --deny-warn` is clean, which it was not before. `StateTy` was an
+  alias kept reading through deprecated syntax; it is `@tutuca.Ty` everywhere.
+- The CLI's own version moves to 0.13.0: `new-guest` and `migrate` leave the
+  command set, the `gen-views` alias for `gen` goes with the other retired
+  spellings, and `agent-context`'s schema version is 8. `just gen-views` was
+  calling a task renamed in 0.48.0 and is `just gen`.
+
 ## [0.48.0] - 2026-09-03
 
 The vocabulary release. Twenty-eight places where one name covered several

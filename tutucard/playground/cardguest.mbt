@@ -582,7 +582,7 @@ fn install_sweep(
     let keep : Array[Int] = []
     for set in sets {
       for handle in set.val {
-        if not(keep.contains(handle)) {
+        if !keep.contains(handle) {
           keep.push(handle)
         }
       }
