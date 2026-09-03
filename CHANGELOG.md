@@ -124,6 +124,11 @@ parses any more; the compare family prints infix.
 
 - `moon check --deny-warn` is clean, which it was not before. `StateTy` was an
   alias kept reading through deprecated syntax; it is `@tutuca.Ty` everywhere.
+- The tarball no longer carries `tutucard/web` and `tutucard/build`. They were
+  shipping through the `playground` exclusion matching only the top-level one:
+  this repo's page and the steps that assemble it, half of which needs
+  `tutucard/playground` (excluded) to mean anything. `tutucard/drive`, the
+  headless card driver, is the part that IS a library, and it ships.
 - The CLI's own version moves to 0.13.0: `new-guest` and `migrate` leave the
   command set, the `gen-views` alias for `gen` goes with the other retired
   spellings, and `agent-context`'s schema version is 8. `just gen-views` was

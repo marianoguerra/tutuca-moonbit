@@ -80,7 +80,14 @@ options(
   exclude: [
     "benchmarks",
     "examples",
+    // Both playgrounds: the top-level one and `tutucard/playground`. They are
+    // this repo's PAGES — a `publish` extern that installs a global, assembled
+    // by `cmd/dev` and deployed to Pages — rather than a library a consumer
+    // links. `tutucard/drive`, the headless card driver, is the part that IS
+    // one, and it ships.
     "playground",
+    "tutucard/build",
+    "tutucard/web",
     "demo",
     "skill",
     "scripts",
