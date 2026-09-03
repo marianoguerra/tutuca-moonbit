@@ -59,7 +59,7 @@ priv struct Answered {
   methods : Array[String]
   whens : Array[String]
   enriches : Array[String]
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   property_get : Array[String]
   property_set : Array[String]
 }
@@ -72,7 +72,7 @@ fn Answered::none() -> Answered {
     methods: [],
     whens: [],
     enriches: [],
-    enrich_scopes: [],
+    bind_withs: [],
     property_get: [],
     property_set: [],
   }
@@ -88,7 +88,7 @@ fn Answered::of(e : @emit_mbt.Emitted?) -> Answered {
     methods: e.answers_methods,
     whens: e.answers_whens,
     enriches: e.answers_enriches,
-    enrich_scopes: e.answers_enrich_scopes,
+    bind_withs: e.answers_bind_withs,
     property_get: e.answers_property_get,
     property_set: e.answers_property_set,
   }
@@ -533,8 +533,8 @@ fn emit_component(
   emit_alter_bucket(
     out,
     t,
-    surface.enrich_scopes,
-    answered.enrich_scopes,
+    surface.bind_withs,
+    answered.bind_withs,
     "EnrichScope",
     "Every `@enrich-with` handler named with no `@each` around it.",
     derives,
@@ -716,7 +716,7 @@ fn emit_module_compiled(
             (
               e.answers_whens.contains(r.name) ||
               e.answers_enriches.contains(r.name) ||
-              e.answers_enrich_scopes.contains(r.name)
+              e.answers_bind_withs.contains(r.name)
             ) {
             continue
           }
@@ -782,7 +782,7 @@ fn emit_state_only(
     ids: [],
     whens: [],
     enriches: [],
-    enrich_scopes: [],
+    bind_withs: [],
     loop_withs: [],
     hints: [],
   }

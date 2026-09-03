@@ -40,7 +40,7 @@ elsewhere on the state is what `has` answers — the same key the generated
 element.
 
 Without an `@each` on the same element, `@enrich-with` enriches the whole
-scope instead — that is `enrichScope`, which sees only the state (see
+scope instead — that is `bindWith`, which sees only the state (see
 [bind-text-and-attributes.md](bind-text-and-attributes.md)).
 
 `@cur` is reserved: an enricher's bindings become a view's scope, and the

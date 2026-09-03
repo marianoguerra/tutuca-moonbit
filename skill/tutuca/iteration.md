@@ -189,7 +189,7 @@ whatever you wrote into `binds`).
 
 `@when` / `@enrich-with` / `@loop-with` name bare identifiers resolved
 in the matching typed bucket: `@when="filterItem"` → the `when` entry,
-`@enrich-with` → `enrich` (or `enrich_scope` without `@each`),
+`@enrich-with` → `enrich` (or `bind_with` without `@each`),
 `@loop-with` → `loop_with`. When no typed-bucket entry matches, the name
 falls back to a `compute`/generated entry (works, not
 idiomatic — the typed buckets keep iteration helpers grouped and give
@@ -198,14 +198,15 @@ them the right signature).
 ## Scope Enrichment
 
 Without an `@each` on the same element, `@enrich-with` resolves in the
-**`enrich_scope`** bucket instead: the handler takes only the state, and
+**`bind_with`** bucket instead: the handler takes only the state, and
 its **returned** `Map[String, Value]`'s keys become `@`-prefixed
-bindings for descendants.
+bindings for descendants. The block-language keyword is `bindWith`
+(retired spelling: `enrichScope`).
 
 ```moonbit nocheck
 // nocheck: a bucket argument, not a top-level item
-enrich_scope={
-  "enrichScope": (s : TextState) => {
+bind_with={
+  "info": (s : TextState) => {
     "len": Num(s.text.length().to_double()),
     "upper": Str(s.text.to_upper()),
   },
@@ -213,7 +214,7 @@ enrich_scope={
 ```
 
 ```html
-<div @enrich-with="enrichScope">Length: <x text="@len"></x></div>
+<div @enrich-with="info">Length: <x text="@len"></x></div>
 ```
 
 ## Custom collections — the `Obj` trait
@@ -266,7 +267,7 @@ with `(ctx.filter)(...)`, builds the full matching index list, clamps
 the page, and returns that page's slice as `keys`.
 
 **2. Shared — one count + one partial collect** (the recipe's default).
-A scope `@enrich-with` (`enrich_scope`) on an ancestor does **one**
+A scope `@enrich-with` (`bind_with`) on an ancestor does **one**
 counting scan and publishes the clamped page + pager labels (which the
 page controls, sitting outside the loop, read as `@`-bindings); the
 `loop_with` handler reads the clamped page via
@@ -281,7 +282,7 @@ but the two handlers are welded together — name them so it shows:
 ```moonbit nocheck
 // nocheck: a bucket argument, not a top-level item
 // the only scan: count + labels + keys, stashed under "__keys__"
-enrich_scope=e => match e {
+bind_with=e => match e {
   PagerInfo =>
     Some(s => {
       "__keys__": List(page_keys(s)), // consumed ONLY by the loop-with below

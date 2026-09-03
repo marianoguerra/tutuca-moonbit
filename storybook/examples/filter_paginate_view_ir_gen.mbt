@@ -399,10 +399,10 @@ pub fn naive_people_component(
     @tutuca.Value,
     &@tutuca.Stack,
   ) -> Bool)?,
-  enrich_scope? : (NaivePeopleEnrichScope) -> ((
-    NaivePeopleState,
-    &@tutuca.Stack,
-  ) -> Map[String, @tutuca.Value])?,
+  bind_with? : (NaivePeopleEnrichScope) -> ((NaivePeopleState, &@tutuca.Stack) -> Map[
+    String,
+    @tutuca.Value,
+  ])?,
   loop_with? : (NaivePeopleLoopWith) -> ((
     NaivePeopleState,
     @tutuca.Value,
@@ -429,7 +429,7 @@ pub fn naive_people_component(
         )
       None => Map([])
     },
-    enrich_scope=match enrich_scope {
+    bind_with=match bind_with {
       Some(f) =>
         @component.build_bucket(
           ([PagerInfo] : Array[NaivePeopleEnrichScope]),

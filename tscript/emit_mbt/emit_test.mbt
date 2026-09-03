@@ -77,7 +77,7 @@ fn out_values(
   methods? : Array[String] = [],
   whens? : Array[String] = [],
   enriches? : Array[String] = [],
-  enrich_scopes? : Array[String] = [],
+  bind_withs? : Array[String] = [],
 ) -> @emit_mbt.Emitted raise {
   @emit_mbt.emit(
     @tscript.parse_script(block),
@@ -85,7 +85,7 @@ fn out_values(
     state_ty="CounterState",
     fn_name="counter_inline_update",
     prefix="counter",
-    roles={ methods, whens, enriches, enrich_scopes, },
+    roles={ methods, whens, enriches, bind_withs, },
     surface=views(),
   )
 }
@@ -207,13 +207,13 @@ test "an enricher writes bindings, and may read one it wrote" {
 
 ///|
 test "a scope enricher answers the map, since it is handed none" {
-  let e = out_values("enrichScope info { @len = len .label }", enrich_scopes=[
+  let e = out_values("enrichScope info { @len = len .label }", bind_withs=[
     "info",
   ])
-  assert_eq(e.answers_enrich_scopes, ["info"])
+  assert_eq(e.answers_bind_withs, ["info"])
   assert_true(
     e.source.contains(
-      "fn counter_enrich_scope_info(s : CounterState, _stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
+      "fn counter_bind_with_info(s : CounterState, _stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
     ),
   )
   assert_true(e.source.contains("  binds\n"))
@@ -1002,8 +1002,8 @@ test "an enricher takes the stack too, in both its shapes" {
     ),
   )
   assert_true(
-    out_values("enrichScope info { @t = *theme }", enrich_scopes=["info"]).source.contains(
-      "fn counter_enrich_scope_info(_s : CounterState, stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
+    out_values("enrichScope info { @t = *theme }", bind_withs=["info"]).source.contains(
+      "fn counter_bind_with_info(_s : CounterState, stack : &@tutuca.Stack) -> Map[String, @tutuca.Value]",
     ),
   )
 }

@@ -105,7 +105,7 @@ pub(all) struct DynComponentDef {
   methods : Array[String]
   whens : Array[String]
   enriches : Array[String]
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   serves : Array[String]
   provide : Array[(String, String)]
   lookup : Array[(String, String)]
@@ -249,7 +249,7 @@ pub(open) trait Guest {
   fn compute(Self, Int, String, Array[@core.Value], Map[String, @core.Value]) -> @core.Value = _
   fn when(Self, Int, String, Array[@core.Value], Map[String, @core.Value]) -> Bool = _
   fn enrich(Self, Int, String, Array[@core.Value], Map[String, @core.Value]) -> @core.Value = _
-  fn enrich_scope(Self, Int, String, Map[String, @core.Value]) -> @core.Value = _
+  fn bind_with(Self, Int, String, Map[String, @core.Value]) -> @core.Value = _
   fn get_property(Self, Int, String) -> @core.Value? = _
   fn set_property(Self, Int, String, @core.Value) -> GuestPropertyResult = _
   fn with_field(Self, Int, String, @core.Value) -> Int?

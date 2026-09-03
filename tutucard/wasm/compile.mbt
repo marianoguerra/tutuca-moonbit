@@ -391,7 +391,7 @@ pub fn compile(
     // this block declares" — so a card that tried would be rejected before a
     // single instruction was built.
     for d in decls {
-      if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
+      if d.kind is (DCompute | DPred | DInvariant | DEnrich | DBindWith) {
         g.callables[d.name] = d
       }
     }
@@ -1137,7 +1137,7 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
   fs.push(compute_fn(comps))
   fs.push(when_fn(comps))
   fs.push(enrich_fn(comps))
-  fs.push(enrich_scope_fn(comps))
+  fs.push(bind_with_fn(comps))
   fs.push(get_property_fn(comps))
   fs.push(set_property_fn(comps))
   // Every body has now compiled, so what the CARD uses is finally knowable.

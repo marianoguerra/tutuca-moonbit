@@ -840,15 +840,11 @@ fn DynObj::callable_at(
   }
   // The scope form is handed no row and its answer IS the map, so there is
   // nothing to write back.
-  if self.def.enrich_scopes.contains(name) {
+  if self.def.bind_withs.contains(name) {
     return Some(
       Fn(_args => {
         match
-          self.guest.enrich_scope(
-            self.handle,
-            name,
-            self.render_bindings(stack),
-          ) {
+          self.guest.bind_with(self.handle, name, self.render_bindings(stack)) {
           Map(_) as m => m
           _ => Map(Map([]))
         }

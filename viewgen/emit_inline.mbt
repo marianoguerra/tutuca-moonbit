@@ -57,7 +57,7 @@ fn inline_emit(
         methods: declared_methods(surface),
         whens: surface.whens,
         enriches: surface.enriches,
-        enrich_scopes: surface.enrich_scopes,
+        bind_withs: surface.bind_withs,
       },
       surface=inline_surface(surface),
     ),

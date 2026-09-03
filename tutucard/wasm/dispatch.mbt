@@ -58,11 +58,11 @@ fn callable_fields(g : Gen, decls : Array[@tscript.Decl]) -> Array[@abi.Field] {
     let survived : Map[String, @tscript.Decl] = Map([])
     let before = g.callables.length()
     for d in decls {
-      guard d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) else {
+      guard d.kind is (DCompute | DPred | DInvariant | DEnrich | DBindWith) else {
         continue
       }
       guard g.callables.get(d.name) is Some(_) else { continue }
-      let enriching = d.kind is (DEnrich | DEnrichScope)
+      let enriching = d.kind is (DEnrich | DBindWith)
       let ctx : ECtx = {
         g,
         state: "s",
@@ -809,8 +809,8 @@ fn enrich_fn(comps : Array[Comp]) -> @abi.Field {
 
 ///|
 /// Scope enrichment has no argument list in the public ABI.
-fn enrich_scope_fn(comps : Array[Comp]) -> @abi.Field {
-  value_call_fn(comps, [DEnrichScope], "enrich_scope", "enrich-scope", false)
+fn bind_with_fn(comps : Array[Comp]) -> @abi.Field {
+  value_call_fn(comps, [DBindWith], "bind_with", "enrich-scope", false)
 }
 
 ///|

@@ -1181,7 +1181,7 @@ export const EXAMPLES = [
 
   /// A scope enricher: handed no row, it answers the bindings the subtree
   /// below reads as \`@len\` and \`@upper\`.
-  enrichScope info {
+  bindWith info {
     @len = len .text
     @upper = upper .text
   }

@@ -35,7 +35,7 @@ when=w => match w {
   // the @when predicate: (s, key, value, iterData) -> Bool
   OnlyMatches => Some((s, _key, person, _iter, _stack) => matches(person, s.query)),
 },
-enrich_scope=e => match e {
+bind_with=e => match e {
   // scope enrich (state only): the COUNT scan — clamp the page, publish
   // the pager bindings the controls outside the loop read
   PagerInfo =>
@@ -84,7 +84,7 @@ Returning **`keys`** (ordered *original* keys) is what makes this work: the
 renderer visits exactly those and does **not** re-apply `@when`, and because
 `@key` stays the original index, deleting row `@key` on page 2 of a filtered
 view hits the right item. The page controls live *outside* the loop, so they
-can't read its `iter_data`; instead a scope `@enrich-with` (`enrich_scope`)
+can't read its `iter_data`; instead a scope `@enrich-with` (`bind_with`)
 does the one counting scan and publishes the clamped page + labels as
 `@`-bindings. The `LoopCtx` lets the `loop_with` handler avoid repeating
 that work: `(ctx.lookup)` reads the clamped page the enrich already

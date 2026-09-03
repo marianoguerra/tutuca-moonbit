@@ -37,6 +37,7 @@ let retired_builtins : Map[String, String] = {
 let retired_keywords : Map[String, String] = {
   "stop": "`drop` says this — the walk ends and the answer is dropped, which is what `stop` never said out loud",
   "sendReply": "`reply` says this — one word answers whoever asked, and the bucket decides who that is",
+  "enrichScope": "`bindWith` says this — it BINDS names a subtree reads, and `enrich` was the same word a per-item directive already had",
 }
 
 ///|

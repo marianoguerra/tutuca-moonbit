@@ -64,7 +64,7 @@ pub(all) enum DeclKind {
   DInvariant
   /// `@enrich-with` binds. Statements assigning `@name`.
   DEnrich
-  DEnrichScope
+  DBindWith
 } derive(Debug, Eq)
 
 ///|

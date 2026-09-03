@@ -304,7 +304,7 @@ pub fn emit(
     answers_methods: values.methods,
     answers_whens: values.whens,
     answers_enriches: values.enriches,
-    answers_enrich_scopes: values.enrich_scopes,
+    answers_bind_withs: values.bind_withs,
     answers_property_get: values.property_get,
     answers_property_set: setters.names,
     refusals,
@@ -313,7 +313,7 @@ pub fn emit(
 
 ///|
 pub fn Roles::none() -> Roles {
-  { methods: [], whens: [], enriches: [], enrich_scopes: [], }
+  { methods: [], whens: [], enriches: [], bind_withs: [], }
 }
 
 ///|
@@ -322,7 +322,7 @@ pub fn value_fn_name(prefix : String, role : Role, name : String) -> String {
     RMethod => "compute"
     RWhen => "when"
     REnrich => "enrich"
-    REnrichScope => "enrich_scope"
+    RBindWith => "bind_with"
   }
   "\{prefix}_\{infix}_\{name}"
 }
@@ -339,7 +339,7 @@ priv struct Values {
   methods : Array[String]
   whens : Array[String]
   enriches : Array[String]
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   property_get : Array[String]
 }
 
@@ -361,7 +361,7 @@ fn E::value_bodies(
     methods: [],
     whens: [],
     enriches: [],
-    enrich_scopes: [],
+    bind_withs: [],
     property_get: [],
   }
   if prefix == "" {
@@ -410,8 +410,7 @@ fn E::value_bodies(
       }
       DGet => take(d, RMethod, [d.name], out.property_get)
       DEnrich => take(d, REnrich, roles.enriches, out.enriches)
-      DEnrichScope =>
-        take(d, REnrichScope, roles.enrich_scopes, out.enrich_scopes)
+      DBindWith => take(d, RBindWith, roles.bind_withs, out.bind_withs)
       _ => ()
     }
   }
@@ -512,7 +511,7 @@ fn E::value_body(
     // every write when a body cannot finish. Leaving early would keep the ones
     // already made, so nothing here guards: an opaque value used at a type is
     // refused instead, and the refusal names the enricher.
-    REnrich | REnrichScope => ""
+    REnrich | RBindWith => ""
   }
   // The same three answers, read as the door a runtime guard walks out
   // through — including the transition's `Unchanged`, which `fail` leaves
@@ -521,7 +520,7 @@ fn E::value_body(
   self.leave = match role {
     RMethod => "Null"
     RWhen => "false"
-    REnrich | REnrichScope => ""
+    REnrich | RBindWith => ""
   }
   let name = value_fn_name(prefix, role, d.name)
   // A body that calls a sibling passes `s` to it, so it reads the state even
@@ -580,7 +579,7 @@ fn E::value_body(
       params.push("\{ip} : @tutuca.Value")
       body.write_string(self.enrich_stmts(d, "  "))
     }
-    REnrichScope => {
+    RBindWith => {
       self.binds_map = "binds"
       body.write_string("  let binds : Map[String, @tutuca.Value] = Map([])\n")
       body.write_string(self.enrich_stmts(d, "  "))
@@ -597,7 +596,7 @@ fn E::value_body(
     RMethod => "@tutuca.Value"
     RWhen => "Bool"
     REnrich => "Unit"
-    REnrichScope => "Map[String, @tutuca.Value]"
+    RBindWith => "Map[String, @tutuca.Value]"
   }
   let b = StringBuilder()
   b.write_string("///|\n")

@@ -360,7 +360,7 @@ pub struct Component {
 /// match; `compute` answers `$name` in a value position. Render-time
 /// directives get their own
 /// typed buckets: `when` (@when filters), `enrich` (@enrich-with inside a
-/// loop — mutate the binds map), `enrich_scope` (@enrich-with without @each —
+/// loop — mutate the binds map), `bind_with` (@enrich-with without @each —
 /// return the binds), `loop_with` (@loop-with — slice/order the iteration).
 /// Generated per-field mutators (setX/updateX/...) stay; user entries win.
 /// `specs` declares Value-level slots (FieldSpec::comp children) and
@@ -398,7 +398,7 @@ declare pub fn[S : @tutuca.Fields] component(
       &@tutuca.Stack,
     ) -> Unit,
   ],
-  enrich_scope? : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]],
+  bind_with? : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]],
   loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith],
   slots? : Map[String, String],
   slot_args? : Map[String, Map[String, @tutuca.Value]],

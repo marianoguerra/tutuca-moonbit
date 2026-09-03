@@ -118,7 +118,7 @@ fn person_comp() -> @component.Component {
 }
 
 ///|
-/// A scope enrich (`enrich_scope`) shared by all three: count, clamp, publish
+/// A scope enrich (`bind_with`) shared by all three: count, clamp, publish
 /// the pager bindings the controls read. SharedPeople also reads `currentPage`
 /// from it; CoupledPeople stashes `__keys__` in it (added in that component's
 /// variant).
@@ -146,7 +146,7 @@ fn naive_people_comp() -> @component.Component {
           Some((s, _key, person, _iter, _stack) => fp_matches(person, s.query))
       }
     },
-    enrich_scope=e => {
+    bind_with=e => {
       match e {
         PagerInfo => Some((s, _stack) => fp_pager_info(s))
       }
@@ -181,7 +181,7 @@ fn shared_people_comp() -> @component.Component {
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
     when=fp_only_matches(),
-    enrich_scope={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
+    bind_with={ "pagerInfo": (s, _stack) => fp_pager_info(s) },
     loop_with={
       "page": (s : NaivePeopleState, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {
@@ -218,7 +218,7 @@ fn coupled_people_comp() -> @component.Component {
     name="CoupledPeople",
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5, },
     update=fp_update(),
-    enrich_scope={
+    bind_with={
       "pagerInfo": (s : NaivePeopleState, _stack) => {
         let all : Array[Int] = []
         for i, p in s.items {

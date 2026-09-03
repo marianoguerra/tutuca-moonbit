@@ -122,7 +122,7 @@ pub fn render_with_scope_component(
   update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     RenderWithScopeState,
   ],
-  enrich_scope? : (RenderWithScopeEnrichScope) -> ((
+  bind_with? : (RenderWithScopeEnrichScope) -> ((
     RenderWithScopeState,
     &@tutuca.Stack,
   ) -> Map[String, @tutuca.Value])?,
@@ -138,7 +138,7 @@ pub fn render_with_scope_component(
     common_style~,
     global_style~,
     update?,
-    enrich_scope=match enrich_scope {
+    bind_with=match bind_with {
       Some(f) =>
         @component.build_bucket(
           ([EnrichScope] : Array[RenderWithScopeEnrichScope]),

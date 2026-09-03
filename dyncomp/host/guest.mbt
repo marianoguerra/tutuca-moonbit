@@ -126,7 +126,7 @@ pub(open) trait Guest {
     args : Array[@tutuca.Value],
     bindings : Map[String, @tutuca.Value],
   ) -> @tutuca.Value = _
-  fn enrich_scope(
+  fn bind_with(
     Self,
     handle : Int,
     name : String,
@@ -189,6 +189,9 @@ impl Guest with fn enrich(self, handle, name, args, bindings) {
 }
 
 ///|
-impl Guest with fn enrich_scope(self, handle, name, bindings) {
+impl Guest with fn bind_with(self, handle, name, bindings) {
+  // The WIT method's name, which is not the block language's. `bind-with` is
+  // what a card DECLARES; `enrich-scope` is what the host CALLS on a guest,
+  // and the world version is what would move that.
   self.render_call(handle, "enrichScope", name, [], bindings)
 }

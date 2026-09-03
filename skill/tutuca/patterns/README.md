@@ -6,7 +6,7 @@ one pitfall worth knowing. Each recipe is self-contained and brief.
 **Write it in the view file first.** A component's data goes in the
 `<script type="tutuca/spec">` schema and its behaviour in the
 `<script type="tutuca/script">` block beside it — `receive`, `intent`,
-`compute`, `pred`, `invariant`, `enrich`, `enrichScope`, plus the `send` /
+`compute`, `pred`, `invariant`, `enrich`, `bindWith`, plus the `send` /
 `sendAt` / `intent` / `forward` effects. MoonBit is for what that language
 cannot spell, and every recipe here that shows a MoonBit half says which of
 the two reasons it is:
@@ -65,7 +65,7 @@ task.
 
 ## Data & events
 
-- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, `compute` and `enrichScope`.
+- [Bind text and attributes](bind-text-and-attributes.md) — `@text`, `:attr`, `$'…'` templates, `compute` and `bindWith`.
 - [Handle events](handle-events.md) — `@on.<event>`, `receive` handlers, args, modifiers, custom events.
 - [Read a picked file](file-input.md) — `@on.change="… e.value"` and the file-metadata `Map`.
 

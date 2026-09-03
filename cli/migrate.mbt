@@ -61,13 +61,23 @@ pub fn migrate_one(path : String, source : String) -> MigrateFile {
 
 ///|
 /// Every file, as one plan.
-pub fn migrate_all(inputs : Array[(String, String)]) -> MigratePlan {
+pub fn migrate_all(
+  inputs : Array[(String, String)],
+  explicit? : Map[String, Bool] = Map([]),
+) -> MigratePlan {
   let files : Array[MigrateFile] = []
   let mut changed = 0
   let mut refused = 0
   for pair in inputs {
     let f = migrate_one(pair.0, pair.1)
     if f.problem is Some(_) {
+      // A file the caller NAMED and that does not split is reported: they said
+      // it was a view file and it is not. One found by walking a directory is
+      // skipped in silence — nobody claimed it was one, and a tree of pages
+      // beside a tree of views is the ordinary shape of a project.
+      if !explicit.contains(f.path) {
+        continue
+      }
       refused = refused + 1
     } else if !f.lines.is_empty() {
       changed = changed + 1

@@ -10,14 +10,14 @@
 //   when         (s, key, value, iterData) -> Bool           true keeps the item
 //   enrich       (s, binds, key, value, iterData) -> Unit    MUTATE binds; return ignored
 //   loop_with    (s, seq, loopCtx) -> LoopWith               iter_data? / start? / end? / keys?
-//   enrich_scope (s) -> Map[String, Value]                   RETURN the binds (no @each)
+//   bind_with (s) -> Map[String, Value]                   RETURN the binds (no @each)
 
 ///|
 /// `@enrich-with` on an element with no `@each` is the *scope* form: the
-/// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
+/// `bind_with` handler returns a map whose keys become `@`-bindings for the
 /// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
-  render_with_scope_component(init={ text: "Hello", }, enrich_scope=e => {
+  render_with_scope_component(init={ text: "Hello", }, bind_with=e => {
     match e {
       EnrichScope =>
         Some((s, _stack) => {

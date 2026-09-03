@@ -18,7 +18,7 @@ string from several values.
 
   /// Derived values for a SUBTREE, with no `@each` in sight: a scope
   /// enricher sees the state and writes bindings.
-  enrichScope enrichScope { @len = len .str }
+  bindWith bindWith { @len = len .str }
 </script>
 
 <template id="Label">
@@ -33,7 +33,7 @@ string from several values.
     <button :class="$'btn btn-{.kind}'">x</button>
 
     <!-- derive values for a subtree without putting them on the component -->
-    <div @enrich-with="enrichScope">Len: <x text="@len"></x></div>
+    <div @enrich-with="bindWith">Len: <x text="@len"></x></div>
   </div>
 </template>
 ```

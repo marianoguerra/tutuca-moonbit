@@ -316,7 +316,7 @@ dispatch APIs and [semantics.md](./semantics.md) for the path/transaction
 model and key pinning.
 
 **Why the render buckets are separate.** The `when` / `enrich` /
-`enrich_scope` / `loop_with` buckets are pure, evaluated on every
+`bind_with` / `loop_with` buckets are pure, evaluated on every
 render, and produce filter decisions and binds (no state change) — like
 `compute` entries. `update` is transactional and produces a new state.
 Same name-resolution mechanism from the template, different contracts —
@@ -331,7 +331,7 @@ value slot — conditions (`@show`, `@if`), iteration (`@each`,
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
 `update` / `compute` and the render buckets (`when` /
-`enrich` / `enrich_scope` / `loop_with`) and is referenced by name; the
+`enrich` / `bind_with` / `loop_with`) and is referenced by name; the
 template itself only routes data and events.
 
 The one exception is **conditional slots** (`@show`, `@hide`,
@@ -487,7 +487,7 @@ my_comp_component(
   when=w => match w { // @when filters: (s, key, value, iterData, stack) => Bool
     FilterItem => Some((s, _key, value, _iter, _stack) => value.str() != "")
   },
-  // enrich= / enrich_scope= / loop_with= — see iteration.md
+  // enrich= / bind_with= / loop_with= — see iteration.md
   // `Replace(v)` in an update arm — supersede this node with another
   // instance; see Replacing a node with a different component
   slot_args={ // the ONE thing no type can state: a child's ctor arguments
@@ -809,7 +809,7 @@ condition says hide — they do not merely toggle CSS visibility.
 
 Auto-bound names inside a loop are `@key` and `@value`. Iteration
 (`@each` / `render-each`), filtering (`@when` → the `when` bucket),
-item and scope enrichment (`@enrich-with` → `enrich` / `enrich_scope`),
+item and scope enrichment (`@enrich-with` → `enrich` / `bind_with`),
 pagination and the `@loop-with` → `loop_with` return shape, and the
 `@each` lifecycle: see [iteration.md](./iteration.md).
 
@@ -890,7 +890,7 @@ by the first applicable layer:
 1. a **property action** — `.x = value`, `.x = default`, or a collection
    operation such as `.items.push value`. No message name is generated.
 2. a **declaration in one of the two blocks** — `receive`, `intent`,
-   `compute`, `enrich`, `enrichScope` and the `send` / `sendAt` / `intent` /
+   `compute`, `enrich`, `bindWith` and the `send` / `sendAt` / `intent` /
    `forward` effects in `<script type="tutuca/script">`; `pred` and `invariant`
    in `<script type="tutuca/spec">`, beside the state they are about. A name a
    block answers is dropped from the generated enum, so the two halves can
@@ -908,10 +908,10 @@ by the first applicable layer:
 | `compute` | `(S, Array[Value], &Stack) -> Value` | a `$name` in a **value** position — pure, no ctx |
 | `when` | `(S, key, value, iterData, &Stack) -> Bool` | `@when` iteration filters |
 | `enrich` | `(S, binds, key, value, iterData, &Stack) -> Unit` | `@enrich-with` per-item binds |
-| `enrich_scope` | `(S, &Stack) -> Map[String, Value]` | scope-level derived binds |
+| `bind_with` | `(S, &Stack) -> Map[String, Value]` | scope-level derived binds |
 | `loop_with` | `(S, seq, LoopCtx) -> LoopWith` | `@loop-with` slicing / filtering / key lists |
 
-The four render-time buckets — `compute`, `when`, `enrich`, `enrich_scope` —
+The four render-time buckets — `compute`, `when`, `enrich`, `bind_with` —
 take a trailing `&@tutuca.Stack`: the render position the body is being asked
 from. `stack.lookup_dynamic(name)` is what answers a `*name` inside one, and it
 is the same lookup the card runtime performs for a `*name` in a slot beside it, so a
@@ -1028,7 +1028,7 @@ Stack*).
 
 ### The render buckets
 
-`when` / `enrich` / `enrich_scope` / `loop_with` aren't event-triggered — the
+`when` / `enrich` / `bind_with` / `loop_with` aren't event-triggered — the
 renderer invokes them to filter iterations and produce binds, not state changes
 (see *Mental model*, and *Scope Enrichment* in
 [iteration.md](./iteration.md)).

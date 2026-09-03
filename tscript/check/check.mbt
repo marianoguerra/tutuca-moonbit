@@ -25,7 +25,7 @@ priv struct C {
   callable : Map[String, Int]
   /// The callables a `requires` / `ensures` may name, by name and arity.
   predicate : Map[String, Int]
-  /// True inside `enrich` / `enrich_scope`, the only kinds that may assign a
+  /// True inside `enrich` / `bind_with`, the only kinds that may assign a
   /// binding.
   mut binds_assignable : Bool
   /// The kind of the declaration being checked. `reply`, `fail` and `forward`
@@ -349,7 +349,7 @@ fn C::addresses_a_field(self : C, name : String) -> Bool {
 fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   self.params = Map([])
   self.decl_name = d.name
-  self.binds_assignable = d.kind is (DEnrich | DEnrichScope)
+  self.binds_assignable = d.kind is (DEnrich | DBindWith)
   self.decl_kind = d.kind
   // A target belongs to the body that built it and to nothing else — the same
   // rule the interpreter enforces by refusing to hand `@cur` back.

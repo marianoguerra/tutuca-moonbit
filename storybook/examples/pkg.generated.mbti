@@ -388,7 +388,7 @@ pub fn multiple_views_views() -> Map[String, @anode.View]
 
 pub let naive_people_common_style : String
 
-pub fn naive_people_component(name? : String, views? : Map[String, @anode.View], init? : NaivePeopleState, common_style? : String, global_style? : String, update? : (NaivePeopleState, @core.Dispatch, &@core.Ctx) -> @component.Update[NaivePeopleState], when? : (NaivePeopleWhen) -> ((NaivePeopleState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, enrich_scope? : (NaivePeopleEnrichScope) -> ((NaivePeopleState, &@core.Stack) -> Map[String, @core.Value])?, loop_with? : (NaivePeopleLoopWith) -> ((NaivePeopleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn naive_people_component(name? : String, views? : Map[String, @anode.View], init? : NaivePeopleState, common_style? : String, global_style? : String, update? : (NaivePeopleState, @core.Dispatch, &@core.Ctx) -> @component.Update[NaivePeopleState], when? : (NaivePeopleWhen) -> ((NaivePeopleState, @core.Value, @core.Value, @core.Value, &@core.Stack) -> Bool)?, bind_with? : (NaivePeopleEnrichScope) -> ((NaivePeopleState, &@core.Stack) -> Map[String, @core.Value])?, loop_with? : (NaivePeopleLoopWith) -> ((NaivePeopleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let naive_people_global_style : String
 
@@ -496,7 +496,7 @@ pub fn render_child_module() -> @component.ModuleDef
 
 pub let render_with_scope_common_style : String
 
-pub fn render_with_scope_component(name? : String, views? : Map[String, @anode.View], init? : RenderWithScopeState, common_style? : String, global_style? : String, update? : (RenderWithScopeState, @core.Dispatch, &@core.Ctx) -> @component.Update[RenderWithScopeState], enrich_scope? : (RenderWithScopeEnrichScope) -> ((RenderWithScopeState, &@core.Stack) -> Map[String, @core.Value])?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
+pub fn render_with_scope_component(name? : String, views? : Map[String, @anode.View], init? : RenderWithScopeState, common_style? : String, global_style? : String, update? : (RenderWithScopeState, @core.Dispatch, &@core.Ctx) -> @component.Update[RenderWithScopeState], bind_with? : (RenderWithScopeEnrichScope) -> ((RenderWithScopeState, &@core.Stack) -> Map[String, @core.Value])?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Array[@component.LookupSpec]) -> @component.Component
 
 pub let render_with_scope_global_style : String
 

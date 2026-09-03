@@ -80,8 +80,13 @@ test "the seven declaration kinds" {
     "enrich rowInfo {\n  @cls = 'row'\n}",
   )
   assert_eq(
+    trip("bindWith header { @title = .name }"),
+    "bindWith header {\n  @title = .name\n}",
+  )
+  // The retired spelling still parses, and comes back as the current one.
+  assert_eq(
     trip("enrichScope header { @title = .name }"),
-    "enrichScope header {\n  @title = .name\n}",
+    "bindWith header {\n  @title = .name\n}",
   )
 }
 
@@ -117,7 +122,7 @@ test "`when` is not a declaration kind" {
   // `when` could. The kind list is nine rather than ten.
   assert_eq(
     script_err("when unfinished { not @value.completed }"),
-    "`when` is not a declaration kind — expected receive, intent, compute, get, set, pred, invariant, enrich or enrichScope",
+    "`when` is not a declaration kind — expected receive, intent, compute, get, set, pred, invariant, enrich or bindWith",
   )
 }
 

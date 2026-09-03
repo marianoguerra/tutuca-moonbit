@@ -170,7 +170,7 @@ pub(all) struct DynComponentDef {
   enriches : Array[String]
   /// The scope form: called about no row at all, and answering the bindings a
   /// whole subtree is rendered with.
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   /// Intents this BUNDLE serves; registered into its own scope on the `lex`
   /// leg, so its components find them before the host's.
   serves : Array[String]
@@ -889,7 +889,17 @@ pub fn DynManifest::from_json_string(
       methods: str_array(c, "methods"),
       whens: str_array(c, "whens"),
       enriches: str_array(c, "enriches"),
-      enrich_scopes: str_array(c, "enrichScopes"),
+      // Both keys for one release. `bindWiths` is what a card compiled by this
+      // version writes; `enrichScopes` is what every bundle before it wrote,
+      // and one of those is `examples/dyncomp-dice`.
+      bind_withs: {
+        let now = str_array(c, "bindWiths")
+        if now.is_empty() {
+          str_array(c, "enrichScopes")
+        } else {
+          now
+        }
+      },
       serves: str_array(c, "serves"),
       provide: parse_wiring(c, "provide"),
       lookup: parse_wiring(c, "lookup"),

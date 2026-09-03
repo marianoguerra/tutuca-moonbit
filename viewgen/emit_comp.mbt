@@ -270,7 +270,7 @@ fn bucket_role(
     "compute" => Some((RMethod, answered.methods))
     "when" => Some((RWhen, answered.whens))
     "enrich" => Some((REnrich, answered.enriches))
-    "enrich_scope" => Some((REnrichScope, answered.enrich_scopes))
+    "bind_with" => Some((RBindWith, answered.bind_withs))
     _ => None
   }
 }
@@ -401,12 +401,12 @@ fn wrapper_buckets(
       all: cases("enrich", surface.enriches),
     })
   }
-  if !surface.enrich_scopes.is_empty() {
+  if !surface.bind_withs.is_empty() {
     out.push({
-      param: "enrich_scope",
+      param: "bind_with",
       enum_: "\{t}EnrichScope",
       handler: "(\{s}, &@tutuca.Stack) -> Map[String, @tutuca.Value]",
-      all: cases("enrich_scope", surface.enrich_scopes),
+      all: cases("bind_with", surface.bind_withs),
     })
   }
   if !surface.loop_withs.is_empty() {

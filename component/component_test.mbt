@@ -693,7 +693,7 @@ priv struct FilterState {
 }
 
 ///|
-test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
+test "typed render-time buckets: when/enrich/bind_with/loop_with" {
   let comp = @component.component(
     views={
       "main": @anode.View::new(
@@ -713,7 +713,7 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
         binds["len"] = Num(value.str().length().to_double())
       },
     },
-    enrich_scope={
+    bind_with={
       "derived": (s : FilterState, _stack) => {
         "upper": Str(s.query.to_upper()),
       },

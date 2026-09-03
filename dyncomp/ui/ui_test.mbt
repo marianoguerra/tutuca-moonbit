@@ -230,7 +230,7 @@ fn stub_manifest() -> @dyncomp.DynManifest {
         methods: [],
         whens: [],
         enriches: [],
-        enrich_scopes: [],
+        bind_withs: [],
         serves: [],
         provide: [],
         lookup: [],

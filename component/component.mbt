@@ -111,7 +111,7 @@ fn new_component(
 ///   (Receive/Intent), returning the new state (None = no
 ///   change).
 /// - compute: $-callable value reads ($label in value positions).
-/// - when / enrich / enrich_scope / loop_with: the render-time directive
+/// - when / enrich / bind_with / loop_with: the render-time directive
 ///   buckets, each with its own typed signature (@when filter -> Bool;
 ///   @enrich-with mutates the binds map; the scope form returns binds;
 ///   @loop-with returns a LoopWith slice/order plan).
@@ -147,7 +147,7 @@ pub fn[S : @tutuca.Fields] component(
       &@tutuca.Stack,
     ) -> Unit,
   ] = Map([]),
-  enrich_scope? : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]] = Map([],
+  bind_with? : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]] = Map([],
   ),
   loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith] = Map([]),
   slots? : Map[String, String] = Map([]),
@@ -262,7 +262,7 @@ pub fn[S : @tutuca.Fields] component(
     compute,
     when,
     enrich,
-    enrich_scope,
+    bind_with,
     loop_with,
     generated: Map([]),
     encode,
@@ -293,7 +293,7 @@ pub fn[S : @tutuca.Fields] component(
     all_specs,
     alter_names=map_keys(when) +
       map_keys(enrich) +
-      map_keys(enrich_scope) +
+      map_keys(bind_with) +
       map_keys(loop_with),
     schema~,
     spec~,

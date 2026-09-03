@@ -155,7 +155,7 @@ priv struct Collect {
   loop_ids : @set.Set[String]
   whens : @set.Set[String]
   enriches : @set.Set[String]
-  enrich_scopes : @set.Set[String]
+  bind_withs : @set.Set[String]
   loop_withs : @set.Set[String]
   /// What the `value` handler arg decodes to, per event id (`data-eid`), for
   /// the elements where the glue does NOT deliver the input's text: a
@@ -181,7 +181,7 @@ fn Collect::new() -> Collect {
     loop_ids: Set([], capacity=2),
     whens: Set([], capacity=4),
     enriches: Set([], capacity=4),
-    enrich_scopes: Set([], capacity=4),
+    bind_withs: Set([], capacity=4),
     loop_withs: Set([], capacity=4),
     value_kinds: Map([]),
     hints: [],
@@ -348,9 +348,9 @@ fn walk_node(
     }
     // A Scope node IS an `@enrich-with` with no `@each` around it: its handler
     // returns the binds rather than mutating a map, which is the whole reason
-    // `enrich` and `enrich_scope` are two buckets.
+    // `enrich` and `bind_with` are two buckets.
     Scope(d) => {
-      walk_alter(Some(d.val), c.enrich_scopes)
+      walk_alter(Some(d.val), c.bind_withs)
       walk_val(d.val, c, root_scope)
       walk_node(d.node, c, false, in_loop)
     }
@@ -704,7 +704,7 @@ fn finish_surface(c : Collect, inputs : Map[String, InputSig]) -> Surface {
     ids: sorted(c.ids),
     whens: sorted(c.whens),
     enriches: sorted(c.enriches),
-    enrich_scopes: sorted(c.enrich_scopes),
+    bind_withs: sorted(c.bind_withs),
     loop_withs: sorted(c.loop_withs),
     // NOT sorted: a hint reads best in the order the views were walked, which
     // is the order an author reads the file.

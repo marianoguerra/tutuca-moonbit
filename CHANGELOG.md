@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`enrichScope` is `bindWith`.** It BINDS names a subtree reads as `*name`,
+  and "enrich" was a word `enrich` already had — one directive per item, one
+  per scope, and the same verb on both, so which one a block declared was read
+  off the suffix rather than off the word.
+
+  Four spellings move together: the block keyword, the `DeclKind` constructor
+  (`DBindWith`), the runtime bucket and the generated wrapper's parameter
+  (`component(bind_with=…)`), and the bundle manifest key (`bindWiths`). The
+  host reads `enrichScopes` too, for one release — `examples/dyncomp-dice` is a
+  bundle written with it.
+
+  The WIT method is still `enrich-scope`: it names the call the HOST makes on a
+  guest, not the declaration a card writes, and moving it is a world-version
+  change rather than a language one. Same boundary `send-reply` sits on.
+
 - **`stop` is `drop`, and `sendReply` is `reply`.** The first of the keyword
   families, and the two are different kinds of rename.
 

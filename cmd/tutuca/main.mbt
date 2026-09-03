@@ -374,19 +374,24 @@ async fn run_migrate(
   roots : Array[String],
   write : Bool,
 ) -> Unit noraise {
-  let paths = collect_view_files(roots)
+  let paths = collect_view_files(roots, managed_only=false)
   if paths.is_empty() {
     emit_and_exit(
       @cli.error_emit(
         opts,
         @cli.err(
           @cli.CODE_USAGE_MISSING_ARGUMENT,
-          "no view files under \{roots.join(", ")}",
-          hint="a directory contributes the .html files that already have a generated sibling; pass the .html path directly otherwise",
+          "no .html files under \{roots.join(", ")}",
         ),
       ),
     )
     return
+  }
+  let explicit : Map[String, Bool] = Map([])
+  for r in roots {
+    if @cli.is_view_path(r) {
+      explicit[r] = true
+    }
   }
   let inputs : Array[(String, String)] = []
   for path in paths {
@@ -403,7 +408,7 @@ async fn run_migrate(
     }
     inputs.push((path, source))
   }
-  let plan = @cli.migrate_all(inputs)
+  let plan = @cli.migrate_all(inputs, explicit~)
   if write {
     for i in 0..<plan.files.length() {
       let f = plan.files[i]
@@ -689,7 +694,10 @@ async fn refresh_watch_css(
 /// tells a view file from a page — watching a project root should not try to
 /// compile index.html — and it means adding a view to a watched tree takes
 /// one `tutuca gen-views` before watch picks it up.
-async fn collect_view_files(paths : Array[String]) -> Array[String] noraise {
+async fn collect_view_files(
+  paths : Array[String],
+  managed_only? : Bool = true,
+) -> Array[String] noraise {
   let found : Array[String] = []
   let seen : Map[String, Bool] = Map([])
   for p in paths {
@@ -699,7 +707,7 @@ async fn collect_view_files(paths : Array[String]) -> Array[String] noraise {
         found.push(p)
       }
     } else {
-      scan_dir(p, found, seen)
+      scan_dir(p, found, seen, managed_only)
     }
   }
   found
@@ -714,10 +722,19 @@ fn skip_dir(name : String) -> Bool {
 }
 
 ///|
+/// `managed_only` is the difference between the two questions a directory can
+/// be asked. `gen-views` and the CSS commands want the files this project
+/// GENERATES from, and a generated sibling is what says so — otherwise
+/// `index.html` is compiled as a view. `migrate` wants every file written in
+/// the language, generated sibling or not: a starter card has none and is
+/// exactly the file a rename must reach. What keeps that honest is that a file
+/// found this way and refused by the splitter is skipped in silence, because
+/// nobody claimed it was a view.
 async fn scan_dir(
   dir : String,
   found : Array[String],
   seen : Map[String, Bool],
+  managed_only : Bool,
 ) -> Unit noraise {
   let names = @fs.readdir(dir) catch { _ => return }
   for n in names {
@@ -727,9 +744,15 @@ async fn scan_dir(
     let full = if dir.has_suffix("/") { dir + n } else { dir + "/" + n }
     let kind = @fs.kind(full) catch { _ => continue }
     if kind is Directory {
-      scan_dir(full, found, seen)
+      scan_dir(full, found, seen, managed_only)
     } else if @cli.is_view_path(full) && !seen.contains(full) {
-      let managed = @fs.exists(@cli.watch_sibling(full)) catch { _ => false }
+      let managed = if managed_only {
+        @fs.exists(@cli.watch_sibling(full)) catch {
+          _ => false
+        }
+      } else {
+        true
+      }
       if managed {
         seen[full] = true
         found.push(full)

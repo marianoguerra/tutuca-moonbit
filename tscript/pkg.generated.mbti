@@ -127,7 +127,7 @@ pub(all) enum DeclKind {
   DPred
   DInvariant
   DEnrich
-  DEnrichScope
+  DBindWith
 } derive(Eq, @debug.Debug)
 
 pub(all) struct HandlerParse {

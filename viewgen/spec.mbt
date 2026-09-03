@@ -60,7 +60,7 @@ pub(all) struct Surface {
   /// `@enrich-with` names INSIDE an `@each`: they mutate the binds map.
   enriches : Array[String]
   /// `@enrich-with` names with no `@each` around them: they RETURN the binds.
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   /// `@loop-with` names, sorted. They return a slice/order plan.
   loop_withs : Array[String]
 } derive(Eq, @debug.Debug)

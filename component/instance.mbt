@@ -34,7 +34,7 @@ priv struct TypedSpec[S] {
       &@tutuca.Stack,
     ) -> Unit,
   ]
-  enrich_scope : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]]
+  bind_with : Map[String, (S, &@tutuca.Stack) -> Map[String, @tutuca.Value]]
   loop_with : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith]
   generated : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
   /// Direct state <-> fields conversion, field by field.
@@ -599,7 +599,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn trigger_at(self, name, stack) {
         )
       None => ()
     }
-    match self.spec.enrich_scope.get(name) {
+    match self.spec.bind_with.get(name) {
       Some(f) => return Some(Fn(_args => Map(f(self.state, stack))))
       None => ()
     }

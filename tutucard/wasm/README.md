@@ -129,7 +129,7 @@ refused for being unrecognized: "this backend does not know" and "you may not"
 are different answers.
 
 **Declarations.** `receive`, `intent`, `compute`, `pred`,
-`invariant`, `enrich`, `enrichScope`, property `get` / `set`, and the `requires` / `ensures` clauses
+`invariant`, `enrich`, `bindWith`, property `get` / `set`, and the `requires` / `ensures` clauses
 that attach to a transition.
 
 The last two were the worst gap this backend had, and the only one that was
@@ -150,7 +150,7 @@ differ by shape, which is what `bind_index` is for:
 |---|---|---|
 | `pred` through `@when` | `(key, value, iter)` | a yes or a no |
 | `enrich` | `(binds, key, value, iter)` | the whole binding map |
-| `enrichScope` | `()` | the whole binding map |
+| `bindWith` | `()` | the whole binding map |
 
 An enricher answers the map rather than writing into one, and that is the one
 place the compiled shape had to differ from the interpreted one. The renderer
@@ -270,7 +270,7 @@ component answers something it does not.
 | | why |
 |---|---|
 | `sendAt` **with a key read from live state** | `&.panes[.sel]` means "re-read `.sel` on every dispatch", which is what makes it follow a moving selection — `tscript/conformance` reifies it as a `SeqAccessStep` for exactly that. `control.path-step` has no case that says so, so there is nothing to lower it AS. Freezing the key would be a different path that looks like this one, so it is refused rather than approximated. A literal or a parameter key compiles |
-| `@binding` **in a transition** | a handler is handed no row, so there is nothing for `@value` to mean there. In a `pred`, an `enrich` or an `enrichScope` it now compiles — see above. `@cur` is the other exception, and the only binding a handler owns |
+| `@binding` **in a transition** | a handler is handed no row, so there is nothing for `@value` to mean there. In a `pred`, an `enrich` or an `bindWith` it now compiles — see above. `@cur` is the other exception, and the only binding a handler owns |
 | `$method`, `*dyn` | answered by the render stack, and a compiled handler runs after one |
 
 Also `clear`, `delete`, `set` and `removeAt`: `tscript` parses them as
@@ -445,7 +445,7 @@ made fixing it necessary.
 And `corpus.mbt`'s OTHER table — `value_cases()`, seventeen rows about what a
 block SAID rather than what the state became — is now driven too. It was not
 before, and that is where this backend's worst gap lived: `enrich` and
-`enrichScope` were absent from the generator entirely, which no table was asking
+`bindWith` were absent from the generator entirely, which no table was asking
 about. **17 pass, 0 fail.**
 
 The first run of it found a family of real divergences, all the same mistake:

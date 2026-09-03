@@ -250,7 +250,7 @@ pub fn kind_word(k : DeclKind) -> String {
     DPred => "pred"
     DInvariant => "invariant"
     DEnrich => "enrich"
-    DEnrichScope => "enrichScope"
+    DBindWith => "bindWith"
   }
 }
 
@@ -270,7 +270,7 @@ pub fn all_decl_kinds() -> Array[DeclKind] {
     DPred,
     DInvariant,
     DEnrich,
-    DEnrichScope,
+    DBindWith,
   ]
 }
 
@@ -297,7 +297,11 @@ pub fn kind_of_word(w : String) -> DeclKind? {
     "pred" => Some(DPred)
     "invariant" => Some(DInvariant)
     "enrich" => Some(DEnrich)
-    "enrichScope" => Some(DEnrichScope)
+    "bindWith" => Some(DBindWith)
+    // The retired spelling, still parsing for one release. It is recorded on
+    // the parser's side channel where it is READ, so that this table stays a
+    // table: what to write instead lives in `@tutuca.retired`.
+    "enrichScope" => Some(DBindWith)
     _ => None
   }
 }
@@ -464,6 +468,19 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
   }
   guard kind_of_word(word) is Some(kind) else {
     raise UnknownKind(got=word, span=word_span)
+  }
+  // A declaration kind can be retired too, and it is recorded the same way an
+  // effect is: the AST below carries only `kind`, so nothing under the parser
+  // knows there was another spelling.
+  if kind_word(kind) != word {
+    p.retired.push({
+      word,
+      replacement: kind_word(kind),
+      advice: @tutuca.retired(KeywordName, word).unwrap_or(
+        "write `\{kind_word(kind)}`",
+      ),
+      span: word_span,
+    })
   }
   let (name, name_span) = p.ident("the name this declaration answers")
   let params : Array[Param] = []

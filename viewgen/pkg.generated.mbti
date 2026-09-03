@@ -92,7 +92,7 @@ pub(all) struct Surface {
   ids : Array[String]
   whens : Array[String]
   enriches : Array[String]
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
   loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
 

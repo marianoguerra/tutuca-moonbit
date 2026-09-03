@@ -27,7 +27,7 @@ pub(all) struct Emitted {
   answers_methods : Array[String]
   answers_whens : Array[String]
   answers_enriches : Array[String]
-  answers_enrich_scopes : Array[String]
+  answers_bind_withs : Array[String]
   answers_property_get : Array[String]
   answers_property_set : Array[String]
   refusals : Array[Refusal]
@@ -43,14 +43,14 @@ pub(all) enum Role {
   RMethod
   RWhen
   REnrich
-  REnrichScope
+  RBindWith
 } derive(Compare, Eq, Hash, @debug.Debug)
 
 pub(all) struct Roles {
   methods : Array[String]
   whens : Array[String]
   enriches : Array[String]
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
 } derive(Eq, @debug.Debug)
 pub fn Roles::none() -> Self
 

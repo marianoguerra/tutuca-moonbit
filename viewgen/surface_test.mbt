@@ -180,7 +180,7 @@ test "the alter handler names, by bucket" {
   // inside an @each: mutates the binds map
   assert_eq(s.enriches, ["enrichItem"])
   // no @each around it: returns the binds
-  assert_eq(s.enrich_scopes, ["pagerInfo"])
+  assert_eq(s.bind_withs, ["pagerInfo"])
   // none of them is a `$name`, so none lands in `methods`
   assert_eq(s.methods, [])
 }

@@ -62,7 +62,7 @@
   receive checkout requires hasItem {
     intent dyn 'lineReady' .item (.qty * .price)
     .sent = true
-    stop
+    drop
   }
 
   /// Remember the quantity.

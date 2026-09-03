@@ -78,7 +78,7 @@ Their handler language covers:
 
 - field and nested collection updates;
 - simple field-backed properties and fixed-signature complex property getters/setters;
-- `receive`, `compute`, `enrich`, and `enrichScope` in the script block, and
+- `receive`, `compute`, `enrich`, and `bindWith` in the script block, and
   `pred` / `invariant` in the spec block beside the state they are about;
 - `requires` and `ensures` clauses attaching one of those rules to a
   transition, with user-facing `format` text on the rule;

@@ -97,7 +97,7 @@ pub fn iso8601_utc(UInt64) -> String
 
 pub fn lex_compare(String, String) -> Int
 
-pub fn migrate_all(Array[(String, String)]) -> MigratePlan
+pub fn migrate_all(Array[(String, String)], explicit? : Map[String, Bool]) -> MigratePlan
 
 pub fn migrate_emit(GlobalOpts, MigratePlan, Bool) -> Emit
 

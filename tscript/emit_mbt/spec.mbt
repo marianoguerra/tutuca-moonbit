@@ -37,7 +37,7 @@ pub(all) struct Roles {
   /// `@enrich-with="name"` inside a loop.
   enriches : Array[String]
   /// `@enrich-with="name"` on a scope.
-  enrich_scopes : Array[String]
+  bind_withs : Array[String]
 } derive(Debug, Eq)
 
 ///|
@@ -51,7 +51,7 @@ pub(all) enum Role {
   RMethod
   RWhen
   REnrich
-  REnrichScope
+  RBindWith
 } derive(Debug, Eq, Hash, Compare)
 
 ///|
@@ -97,7 +97,7 @@ pub(all) struct Emitted {
   answers_methods : Array[String]
   answers_whens : Array[String]
   answers_enriches : Array[String]
-  answers_enrich_scopes : Array[String]
+  answers_bind_withs : Array[String]
   /// Complex property bodies that compiled. The wrapper routes these through
   /// the synchronous property maps, never through a dispatch bucket.
   answers_property_get : Array[String]

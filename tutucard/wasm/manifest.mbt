@@ -210,7 +210,7 @@ fn component_json(
     // The two the manifest had no key for: a host cannot route to a name it
     // was never told about.
     "enriches": strings(compiled(DEnrich)),
-    "enrichScopes": strings(compiled(DEnrichScope)),
+    "bindWiths": strings(compiled(DBindWith)),
     // A card serves no intent yet: the guest ABI's `serve-intent` is a stub
     // for one, so there is nothing a name here could reach. The KEY is the one
     // the host reads (`serves`) rather than a second spelling of it, so the
@@ -333,7 +333,7 @@ fn bindings_json(xs : Array[@statedef.ProtocolBinding]) -> Json {
 /// to it and get `unhandled` back, having skipped the field mutator that would
 /// have worked.
 fn is_compiled(g : Gen, d : @tscript.Decl) -> Bool {
-  if d.kind is (DCompute | DPred | DInvariant | DEnrich | DEnrichScope) {
+  if d.kind is (DCompute | DPred | DInvariant | DEnrich | DBindWith) {
     return g.callables.get(d.name) is Some(_)
   }
   for r in g.refusals {
