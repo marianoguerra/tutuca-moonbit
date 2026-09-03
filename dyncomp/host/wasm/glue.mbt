@@ -437,6 +437,17 @@ pub impl @dyncomp.Guest for WasmGuest with fn handle_dispatch(
           Some(String("sendReply")) => msgs.push(SendReply(name, args))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
+          Some(String("setAt")) =>
+            msgs.push(
+              SetAt(
+                path_steps(m.get("path")),
+                name,
+                match m.get("value") {
+                  Some(j) => @tutuca.Value::from_json(j)
+                  None => Null
+                },
+              ),
+            )
           Some(String("intent")) =>
             msgs.push(Intent(name, args, intent_opts(m.get("opts"))))
           Some(String("intentAt")) =>

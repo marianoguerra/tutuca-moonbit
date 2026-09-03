@@ -421,6 +421,9 @@ export function createTcompImports(getExports) {
     sendAt: (path, name, args) => bufferControl("send-at", {
       kind: "sendAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
     }),
+    setAt: (path, name, value) => bufferControl("set-at", {
+      kind: "setAt", path: path.map(stepToJson), name, value: guestToJson(value),
+    }),
     intent: (name, args, opts) => bufferControl("intent", {
       kind: "intent", name, args: args.map(guestToJson), opts: optsToJson(opts),
     }),

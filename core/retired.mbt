@@ -37,6 +37,8 @@ let retired_builtins : Map[String, String] = {
 let retired_keywords : Map[String, String] = {
   "stop": "`drop` says this — the walk ends and the answer is dropped, which is what `stop` never said out loud",
   "sendReply": "`reply` says this — one word answers whoever asked, and the bucket decides who that is",
+  "@cur": "`cur` says this — it is not a binding, and writing it as one was the whole of what the sigil got wrong: a binding is what an `enrich` produces and a view reads",
+  "$$": "`host.` says this — `$name` and `$$name` were two questions of two different things, one character apart",
   "intent": "`ask` says this — an intent is the CHANNEL, and `ask` is what you do on it; the declaration that answers one is `answer`",
   "forward": "`ask` says this here — a `forward` in a `receive` body starts a walk from the message that arrived, which is asking with the question already in hand. In an `answer` body `forward` still hands on the walk that is running",
   "enrichScope": "`bindWith` says this — it BINDS names a subtree reads, and `enrich` was the same word a per-item directive already had",

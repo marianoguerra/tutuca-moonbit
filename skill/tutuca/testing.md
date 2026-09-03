@@ -388,13 +388,13 @@ block that path skips.
 </template>
 ```
 
-One object of **named scenes**, the same shape `tutuca/init` has. Each
+One object of **named scenes**, the same shape `tutuca/fixtures` has. Each
 scene is `{ "steps": [ … ] }` plus four optional keys:
 
 | key | means |
 | --- | --- |
 | `"component": "TodoItem"` | which component to mount. Optional for a card with one; required for a card with several |
-| `"init": "fresh"` | start from a `tutuca/init` fixture |
+| `"init": "fresh"` | start from a `tutuca/fixtures` fixture |
 | `"args": { "count": 3 }` | start from these field values (written over the fixture, if there is one) |
 | `"intents": { … }` | answer the intents this card raises — see below |
 | `"raw": true` | keep the renderer's `data-cid` / `§…§` bookkeeping in the reported HTML |
@@ -639,26 +639,31 @@ boundary: a scene reads an empty one as `null`, and a filled one is the
 child, not a number.
 
 A handler **builds** one with `new <Component>` naming a sibling — the
-same `new` / `@cur` shape a declared `record` uses:
+same `new` / `cur` shape a declared `record` uses:
 
 ```
 receive add requires typed {
   new Todo
-  @cur.text = .draft
-  @cur.done = false
-  .items.push @cur
+  cur.text = .draft
+  cur.done = false
+  .items.push cur
   .draft = ''
 }
 ```
 
 Nothing is built at the `new`: it opens an argument map for the sibling,
-`@cur.text` fills it in, and the child is made when `@cur` is READ — the
+`cur.text` fills it in, and the child is made when `cur` is READ — the
 push. Reading it twice does not make two.
 
-> **A card cannot read or write THROUGH a child.** `.items[0].text` is
-> refused when the card compiles: the instance belongs to the host and the
-> card holds a token. Send it a message instead — which is what clicking
-> the row does.
+> **A card cannot READ through a child.** `.items[0].text` is refused when the
+> card compiles: the instance belongs to the host and the card holds a token.
+> Send it a message instead — which is what clicking the row does.
+>
+> Writing ONE member of a child it holds directly is different, and allowed:
+> `.child.body = 'x'` is addressed at the child's position rather than read
+> through, and it goes through the PUBLIC door — what a child lets a holder
+> write is what its `property { … }` declares writable. A field with no
+> property beside it is private, and stays private however it is held.
 
 ### Running them
 

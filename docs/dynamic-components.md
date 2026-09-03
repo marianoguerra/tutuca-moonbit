@@ -309,10 +309,10 @@ It declares a **config var** and its views spend it, and the host binds it:
 ```
 
 ```html
-<img :src="$'{$$mediaOrigin}{.avatarPath}'">
+<img :src="$'{host.mediaOrigin}{.avatarPath}'">
 ```
 
-`$$name` resolves at parse time to the string the host bound, so the same rule
+`host.name` resolves at parse time to the string the host bound, so the same rule
 checks it and the origin is still settled at registration — it is just written
 by the host rather than by the bundle. Binding an origin IS allowing it, which
 is one decision in one call; `SECURITY.md` §3a is the whole argument.

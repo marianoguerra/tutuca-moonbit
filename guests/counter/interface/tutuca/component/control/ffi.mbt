@@ -124,4 +124,15 @@ fn wasmImportSendAt(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int, p5 : Int) 
 fn wasmImportSendReply(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.12.0" "send-reply"
 
 ///|
+fn wasmImportSetAt(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+  p5 : Int64,
+  p6 : Int,
+) = "tutuca:component/control@0.12.0" "set-at"
+
+///|
 fn wasmImportStopPropagation() = "tutuca:component/control@0.12.0" "stop-propagation"

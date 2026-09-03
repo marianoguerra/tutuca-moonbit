@@ -49,7 +49,21 @@ const LEGACY_SPEC_TYPE = "tutuca/state"
 /// has no defaults, and smuggling them into it through a comment convention
 /// would make the schema mean two things. Keeping them apart is also what
 /// lets several fixtures share one state type.
-const INIT_TYPE = "tutuca/init"
+const FIXTURES_TYPE = "tutuca/fixtures"
+
+///|
+/// What the fixtures block used to be called.
+///
+/// Kept parsing for the same reason `tutuca/state` is: a view file is a
+/// FORMAT, and a card is one file someone else's page loads. `init` was also
+/// the wrong word twice over — the block holds SEVERAL named states, and
+/// `receive init` is an unrelated convention a host dispatches.
+const LEGACY_INIT_TYPE = "tutuca/init"
+
+///|
+fn is_fixtures_type(ty : String?) -> Bool {
+  ty is Some(FIXTURES_TYPE | LEGACY_INIT_TYPE)
+}
 
 ///|
 /// The `type=` that marks a `<script>` as the file's handlers.
@@ -108,7 +122,7 @@ priv enum StyleKind {
   SView // inside a template (or the whole file when there are none)
   SCommon // top-level <style data-common>
   SGlobal // top-level <style data-global>
-  // A `tutuca/spec`, `tutuca/init` or `tutuca/script` block. Not a style at
+  // A `tutuca/spec`, `tutuca/fixtures` or `tutuca/script` block. Not a style at
   // all — it rides
   // in this list because the list IS the set of spans lifted out of view
   // source, and a file with no templates is otherwise its own main view,
@@ -373,7 +387,7 @@ pub fn split_file(
             state_src = Some((text, content_at))
             styles.push({ start: before, end_, text: "", kind: SLifted, })
           }
-          "script" if attr_of(attrs, "type") is Some(INIT_TYPE) => {
+          "script" if is_fixtures_type(attr_of(attrs, "type")) => {
             let content_at = after
             let (text, end_) = read_raw(tok, "script")
             init_src = Some((text, content_at))

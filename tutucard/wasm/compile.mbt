@@ -69,6 +69,11 @@ priv struct Gen {
   /// Set when a body compiles `sendAt`, which is the only effect that carries a
   /// path — and the only one that needs the reifying half of the runtime.
   mut uses_send_at : Bool
+  /// Whether any body writes `.child.x = v`, so the module imports
+  /// `control.set-at` and the flush grows an arm for it. Per MODULE, like
+  /// every other `uses_*`: an import a card never reaches is still an import a
+  /// host has to satisfy.
+  mut uses_set_at : Bool
   /// Whether any of the four ROUTED effects compiled — `intent`, `forward`,
   /// `reply` or `fail`. One flag rather than four, because a host that
   /// provides one provides all four, and a card that reaches for none should
@@ -361,6 +366,7 @@ pub fn compile(
       uses_values: false,
       uses_num: false,
       uses_send_at: false,
+      uses_set_at: false,
       uses_routed_effects: false,
       uses_contract_log: false,
       uses_children: false,
@@ -577,6 +583,9 @@ fn union_uses(comps : Array[Comp]) -> Unit {
     if c.g.uses_num {
       g.uses_num = true
     }
+    if c.g.uses_set_at {
+      g.uses_set_at = true
+    }
     if c.g.uses_send_at {
       g.uses_send_at = true
     }
@@ -781,6 +790,25 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
       ),
     )
   }
+  if g.uses_set_at {
+    fs.push(
+      @build.import_func(
+        @abi.control_iface,
+        "set-at",
+        as_=Some("ctl_set_at"),
+        params=[
+          (Some("sp"), i32_),
+          (Some("sl"), i32_),
+          (Some("np"), i32_),
+          (Some("nl"), i32_),
+          // ONE value, not a list: a write has one right-hand side where a
+          // send has a payload. Read out of the buffered args list's first
+          // cell at flush time, the way `reply` and `fail` read theirs.
+          ..value_params(),
+        ],
+      ),
+    )
+  }
   fs.push(memory_field(2))
   fs.push(data_field("pool", @abi.pool_base, g.pool.to_bytes()))
   fs.push(global_i32("heap", g.pool.heap_base()))
@@ -792,7 +820,11 @@ fn emit_module(comps : Array[Comp]) -> @ast.LocModule raise GenError {
   let runtime = @waxsrc.runtime_wax_fields(
     g.uses_values,
     uses_num=g.uses_num,
-    uses_send_at=g.uses_send_at,
+    // The path helpers, which BOTH path-addressed effects need. The flag
+    // names the source file rather than the effect: a `sendAt` and a
+    // `.child.x = v` reify a place the same way, and only the IMPORT they
+    // reach for afterwards differs.
+    uses_send_at=g.uses_send_at || g.uses_set_at,
     uses_contract_log=g.uses_contract_log,
     uses_children=g.uses_children,
     uses_escape=comps
@@ -1147,7 +1179,7 @@ fn card_fields(comps : Array[Comp]) -> Array[@abi.Field] {
     if g.uses_routed_effects {
       fs.push(route_out_fn())
     }
-    fs.push(flush_fn(g.uses_send_at, g.uses_routed_effects))
+    fs.push(flush_fn(g.uses_send_at, g.uses_routed_effects, g.uses_set_at))
   }
 
   // `#[start]`, assembled now that NOTHING else will intern a constant: one
@@ -1281,7 +1313,11 @@ fn route_out_fn() -> @abi.Field {
 /// The buffer is the runtime's; the switch is here because only the generated
 /// half knows which of `ctl_send`, `ctl_emit`, `ctl_stop`, `ctl_request` and
 /// `ctl_send_at` this module imported.
-fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
+fn flush_fn(
+  uses_send_at : Bool,
+  uses_v2 : Bool,
+  uses_set_at : Bool,
+) -> @abi.Field {
   // A FLAT chain rather than a nest. It was nested while there were four
   // kinds and it read as one; nine kinds nested five deep reads as nothing,
   // and every arm here is the same shape — compare the kind, make one call.
@@ -1313,6 +1349,30 @@ fn flush_fn(uses_send_at : Bool, uses_v2 : Bool) -> @abi.Field {
             get("ap"),
             get("al"),
           ]),
+        ],
+        [],
+      ),
+    )
+  }
+  if uses_set_at {
+    // Path and value both lowered HERE, for the same reason a `sendAt`'s path
+    // is: what they lower to is linear memory the host reads during this call
+    // and nothing owns afterwards. One value, read out of the buffered args
+    // list's first cell the way `reply` reads its.
+    arms.push(
+      if_(
+        eq(get("k"), i32c(11)),
+        [
+          call(
+            "ctl_set_at",
+            [
+              call("tc_effect_steps_ptr", [get("i")]),
+              call("tc_effect_steps_len", [get("i")]),
+              get("np"),
+              get("nl"),
+              ..value_args(get("ap")),
+            ],
+          ),
         ],
         [],
       ),

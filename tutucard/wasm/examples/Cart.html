@@ -73,9 +73,9 @@
   /// Write the line onto the receipt, as a record built here.
   receive receipt {
     new Line
-    @cur.what = .item
-    @cur.qty = .qty
-    .receipt.push @cur
+    cur.what = .item
+    cur.qty = .qty
+    .receipt.push cur
   }
 
   /// How many quantities have been remembered.

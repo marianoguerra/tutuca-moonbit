@@ -59,7 +59,7 @@ A card keeps its concerns in one file:
 - `tutuca/script` declares receives, derived values, enrichment, intents,
   effects, collection updates, and the `requires` / `ensures` clauses that
   attach a spec-block rule to one transition.
-- `tutuca/init` contains named fixtures. A fixture may provide a value, drive
+- `tutuca/fixtures` contains named fixtures. A fixture may provide a value, drive
   steps, documentation, and a default marker.
 - `tutuca/test` contains named interaction scenes. It is optional but should
   accompany behavior that can regress.
@@ -86,7 +86,7 @@ Their handler language covers:
   `drop`;
 - conditionals, arithmetic, comparisons, string templates, and the closed
   reading vocabulary documented in [schema.md](./schema.md#the-reading-vocabulary);
-- `new` plus `@cur` for declared records and sibling component instances.
+- `new` plus `cur` for declared records and sibling component instances.
 
 This is compiled behavior, not an interpreter fallback. The browser compiles
 the checked card to a core wasm component and the Tutuca host mounts it.
@@ -102,7 +102,7 @@ handler compiled.
 Current language boundaries that matter when authoring are:
 
 - a transition has no render row or render stack, so `@binding`, `$method`,
-  and `*dynamic` reads are refused there; `@cur` is the transition-owned
+  and `*dynamic` reads are refused there; `cur` is the transition-owned
   exception;
 - `sendAt` accepts literal and parameter keys, but a path whose key is reread
   from live state cannot be represented by the guest ABI and is refused;
@@ -177,20 +177,20 @@ script block, and qualify template ids:
 The root is the first declared component unless a template has `data-root`.
 Scenes may choose another component with their `component` key.
 
-A handler builds a sibling with the same `new` and `@cur` vocabulary used for
+A handler builds a sibling with the same `new` and `cur` vocabulary used for
 records:
 
 ```tutuca
 receive add {
   new Todo
-  @cur.text = .draft
-  @cur.done = false
-  .items.push @cur
+  cur.text = .draft
+  cur.done = false
+  .items.push cur
 }
 ```
 
-`new Todo` opens the sibling's argument map; writes to `@cur` fill it; the
-first read of `@cur` materializes one child instance. A card carries only the
+`new Todo` opens the sibling's argument map; writes to `cur` fill it; the
+first read of `cur` materializes one child instance. A card carries only the
 child token. It cannot read or write through that child, such as
 `.items[0].text`; dispatch a message to the child instead.
 
@@ -199,7 +199,7 @@ child token. It cannot read or write through that child, such as
 A card starts from the selected schema or fixture value. `receive init` is not
 a lifecycle hook: the host, fixture drive, or scene must send `init`.
 
-Use `tutuca/init` for named, inspectable states and repeatable demonstrations.
+Use `tutuca/fixtures` for named, inspectable states and repeatable demonstrations.
 Use its drive form when the important state should be reached through real
 interactions rather than copied as an opaque value. Use `tutuca/test` for
 assertions; fixtures and tests serve different purposes even though both may

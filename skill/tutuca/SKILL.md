@@ -74,8 +74,8 @@ references needed for the task.
 ### Views, state, and behavior
 
 - [schema.md](./schema.md) — state types, properties and visibility, records,
-  enums, flags, slots, property actions, `tutuca/init`, the script language,
-  `new` and `@cur`, contracts, and script refusals.
+  enums, flags, slots, property actions, `tutuca/fixtures`, the script language,
+  `new` and `cur`, contracts, and script refusals.
 - [events.md](./events.md) — event payloads, generated message types,
   modifiers, safe event paths, files, and custom events.
 - [iteration.md](./iteration.md) — `@each`, filtering, enrichment,

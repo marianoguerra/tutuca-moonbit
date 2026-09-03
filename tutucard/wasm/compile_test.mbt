@@ -310,3 +310,39 @@ test "a protocol's properties reach the manifest with their types" {
   guard! filled.get("ty") is Some(ty)
   @debug.assert_eq(@tutuca.Ty::of_json(ty), TyBool)
 }
+
+///|
+/// `.child.x = v` compiles to a `control.set-at`, and only then.
+///
+/// A write into a CHILD is not a spine rebuild and never was: the instance
+/// belongs to the host and a card holds a token. Before this a card could not
+/// write a child's member at all — the `sendAt 'setX'` workaround went away
+/// with the generated mutators — and `refuse_into_child` said so.
+///
+/// The PUBLIC door, which is the point: a card holding a child is not its
+/// owner, and what a child lets a holder write is what it declares writable.
+/// An import section is a statement about the module, so a card that writes no
+/// child imports nothing for it.
+test "a write into a child imports control.set-at, and nothing else does" {
+  let holder =
+    #|<script type="tutuca/spec">
+    #|  state Hole { child: Component, kept: String }
+    #|</script>
+    #|<script type="tutuca/script" for="Hole">
+    #|  receive rename(to) { .child.body = to }
+    #|</script>
+    #|<template id="Hole:main"><div><x render=".child"></x></div></template>
+  let out = @wasm.compile(holder, name="Card")
+  @debug.assert_eq(out.refusals.map(r => r.name), [])
+  assert_true(out.wax.contains("fn ctl_set_at("))
+  // …and a card that writes its own field imports none of it.
+  let plain =
+    #|<script type="tutuca/spec">
+    #|  state Hole { child: Component, kept: String }
+    #|</script>
+    #|<script type="tutuca/script" for="Hole">
+    #|  receive mark { .kept = 'x' }
+    #|</script>
+    #|<template id="Hole:main"><div><x render=".child"></x></div></template>
+  assert_false(@wasm.compile(plain, name="Card").wax.contains("fn ctl_set_at("))
+}

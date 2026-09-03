@@ -351,6 +351,15 @@ pub(open) trait Ctx {
   /// where it is written, and this is the same door for a caller holding a ctx
   /// — a host, a test harness — rather than a view.
   fn set_member_at_path(Self, path : DispatchPath, name : String, v : Value) -> Unit = _
+  /// Write a PUBLIC property at `path` — the door a holder gets.
+  ///
+  /// The difference from `set_member_at_path` is visibility, and it is the
+  /// whole reason there are two: a component writing its own `.field = v` owns
+  /// what it is writing, and a component writing `.child.x = v` does not. A
+  /// child is a separate instance, often from a different bundle, and what it
+  /// lets a holder write is what it DECLARES writable. A state field that
+  /// declares no property is private, and stays private through this.
+  fn set_property_at_path(Self, path : DispatchPath, name : String, v : Value) -> Unit = _
   /// Dispatch an intent along `opts.route`. The `dyn` leg starts at this
   /// ctx's PARENT, so a component never re-enters its own handler.
   fn intent(Self, name : String, args : Array[Value], opts : IntentOpts) -> Unit = _
@@ -441,6 +450,11 @@ impl Ctx with fn send(self, name, args) {
 
 ///|
 impl Ctx with fn set_member_at_path(_self, _path, _name, _v) {
+
+}
+
+///|
+impl Ctx with fn set_property_at_path(_self, _path, _name, _v) {
 
 }
 

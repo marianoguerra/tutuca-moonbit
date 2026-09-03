@@ -168,6 +168,7 @@ fn place_expr(p : @tutuca.Place) -> String {
     PState(n) => "PState(\{quote(n)})"
     PBind(n) => "PBind(\{quote(n)})"
     PParam(n) => "PParam(\{quote(n)})"
+    PTarget => "PTarget"
   }
   let steps = p.steps.map(st => {
     match st {

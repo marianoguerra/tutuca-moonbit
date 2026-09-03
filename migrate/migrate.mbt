@@ -13,7 +13,7 @@
 /// Every rule, in the order they are declared. The order does not matter to
 /// the result — see above — and is kept stable so `--diff` output is stable.
 fn rules() -> Array[(String) -> Array[Edit]] {
-  [retired_spec_block]
+  [retired_spec_block, retired_fixtures_block]
 }
 
 ///|
@@ -82,6 +82,17 @@ pub fn migrate_file(
 /// had moved off.
 fn retired_spec_block(source : String) -> Array[Edit] {
   literal_edits(source, "tutuca/state", "tutuca/spec", "tutuca/state")
+}
+
+///|
+/// `<script type="tutuca/init">` is `<script type="tutuca/fixtures">`.
+///
+/// `init` was the wrong word twice over: the block holds SEVERAL named states
+/// rather than one initial one, and `receive init` is an unrelated convention
+/// a host dispatches after mounting — two things one word, in a file that
+/// often has both.
+fn retired_fixtures_block(source : String) -> Array[Edit] {
+  literal_edits(source, "tutuca/init", "tutuca/fixtures", "tutuca/init")
 }
 
 ///|

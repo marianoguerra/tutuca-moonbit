@@ -533,7 +533,7 @@ side-effect-only work like persisting state:
 
 The payload is plain arguments. There is no record literal to pass one as
 a single value — a record payload is built with `new <Type>` and handed
-over as `@cur` (see [schema.md](./schema.md#building-a-value-new-type--cur)).
+over as `cur` (see [schema.md](./schema.md#building-a-value-new-type--cur)).
 
 Fire several in one body when needed — effects come out in the order
 written, after the transition succeeds.

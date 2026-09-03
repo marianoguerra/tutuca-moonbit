@@ -379,7 +379,7 @@ plain `moon test "..." { ... }` blocks:
 - A **card** — the `.html` the browser compiles to a wasm module with no MoonBit
   toolchain — has no `moon test` to run and no MoonBit to write a test in, so it
   declares its tests as a fifth block: `<script type="tutuca/test">`, JSON, in
-  the shape `tutuca/init` already has. `scenedef/` parses it (target-agnostic,
+  the shape `tutuca/fixtures` already has. `scenedef/` parses it (target-agnostic,
   so its error messages are `moon test`-able), `viewfile` lifts and validates it
   at split time so a mistake lands on the line of the `.html`, and
   `tutucard/drive/` mounts the card on memdom and runs the steps through
@@ -412,8 +412,8 @@ plain `moon test "..." { ... }` blocks:
   the `{"$dyn": {handle, comp}}` marker `loader.mjs` already used, and
   `CardGuest::json_to_value` wraps it through the bundle.
 - A card BUILDS one with `new <Component>` naming a sibling: the target holds an
-  argument map and the marker `cur_comp`, `@cur.f = v` accumulates into it, and
-  the child is made at the first READ of `@cur` through `control.make-instance`
+  argument map and the marker `cur_comp`, `cur.f = v` accumulates into it, and
+  the child is made at the first READ of `cur` through `control.make-instance`
   — which only such a card imports, and which carries the optional
   `runtime/make_child.wax`. Reading or writing THROUGH a child slot is refused
   at compile time (`refuse_into_child`), because the instance is the host's and

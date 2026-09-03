@@ -174,6 +174,13 @@ pub fn collection_method(name : String) -> Int? {
 /// of these and for nothing else, and the two backends read this rather than
 /// restating it — an effect only one of them knows about is a language with
 /// two semantics.
+/// The reserved root a host binding is read under.
+///
+/// One place, because three things ask: the parser, the checker refusing a
+/// parameter that would shadow it, and the printer.
+pub let config_root : String = "host"
+
+///|
 pub fn effect_names() -> Array[String] {
   ["send", "sendAt", "ask", "notify", "forward", "reply", "fail", "drop"]
 }
@@ -795,6 +802,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
   if !(p.peek() is (TDot | TAt)) &&
+    !(p.peek() is TIdent(w) && w == @tutuca.target_bind) &&
     !(p.peek() is TIdent("state") && p.peek_at(1) is TDot) {
     // `f.name = 'x'` parses as far as the path and then stops here. Saying
     // what a path into an argument IS beats listing what a statement may be:
@@ -924,12 +932,32 @@ fn parse_place(p : P, for_ref~ : Bool) -> @tutuca.Place raise ScriptError {
       let (n, _) = p.ident("a state field after `.`")
       PState(n)
     }
-    TAt => {
+    // `cur` — what a `new` in this body is building. A reserved root, and a
+    // bare one: it is not a binding, which is the whole of what `@cur` got
+    // wrong. A binding is something an `enrich` produces and a view reads.
+    TIdent(w) if w == @tutuca.target_bind => {
       p.bump() |> ignore
-      let (n, _) = p.ident("a binding name after `@`")
-      PBind(n)
+      PTarget
     }
-    _ => p.fail("a place: `.field` or `@binding`")
+    TAt => {
+      let at = p.span()
+      p.bump() |> ignore
+      let (n, span) = p.ident("a binding name after `@`")
+      if n == @tutuca.target_bind {
+        p.retired.push({
+          word: "@" + n,
+          replacement: n,
+          advice: @tutuca.retired(KeywordName, "@" + n).unwrap_or(
+            "write `\{n}`",
+          ),
+          span: { start: at.start, end_: span.end_, },
+        })
+        PTarget
+      } else {
+        PBind(n)
+      }
+    }
+    _ => p.fail("a place: `.field`, `@binding` or `\{@tutuca.target_bind}`")
   }
   let steps = parse_steps(p, for_ref~)
   { root, steps, span: p.since(from), }
@@ -1126,14 +1154,31 @@ fn parse_value(p : P, apply~ : Bool) -> @tutuca.Expr raise ScriptError {
       let place = parse_place(p, for_ref=false)
       ERead(place~, span=place.span)
     }
-    // `$name` and `$$name` are different questions of different things, and
-    // one peek separates them: a `compute` this component answers, or a value
-    // the host bound before any of this was parsed.
+    // `cur` — the target, read as a whole or walked into. A reserved word, so
+    // it is taken here before the application loop below could read it as a
+    // name being applied to what follows.
+    TIdent(w) if w == @tutuca.target_bind => {
+      let place = parse_place(p, for_ref=false)
+      ERead(place~, span=place.span)
+    }
+    // `$name` is a `compute` this component answers. `$$name` was a value the
+    // host bound, and is retired: two sigils that differ by one character for
+    // two questions of two different things is a distinction a reader has to
+    // count to see. It is `host.name` now, read above.
     TDollar =>
       if p.peek_at(1) is TDollar {
+        let word_span = p.span()
         p.bump() |> ignore
         p.bump() |> ignore
         let (n, _) = p.ident("a config variable name after `$$`")
+        p.retired.push({
+          word: "$$",
+          replacement: config_root + ".",
+          advice: @tutuca.retired(KeywordName, "$$").unwrap_or(
+            "write `\{config_root}.\{n}`",
+          ),
+          span: word_span,
+        })
         EConfigVar(name=n, span=p.since(from))
       } else {
         p.bump() |> ignore
@@ -1178,6 +1223,19 @@ fn parse_value(p : P, apply~ : Bool) -> @tutuca.Expr raise ScriptError {
     }
     TIdent(n) => {
       p.bump() |> ignore
+      // `host.name` — a value the HOST bound, before any of this was parsed.
+      // A reserved root like `state`, and read here for the same reason: the
+      // step that follows is a name in somebody else's namespace, not a field
+      // of anything this component owns.
+      if n == config_root && starts_attached_step(p) {
+        let steps = parse_steps(p, for_ref=false)
+        guard steps is [PField(cfg)] else {
+          p.fail(
+            "one config variable name after `\{config_root}.` — a host binding is a flat name, so there is nothing under it to reach",
+          )
+        }
+        return EConfigVar(name=cfg, span=p.since(from))
+      }
       if n == "state" && starts_attached_step(p) {
         let steps = parse_steps(p, for_ref=false)
         guard steps is [PField(field), .. rest] else {

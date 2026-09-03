@@ -154,7 +154,7 @@ pub(all) struct SchemaInfo {
   /// Constant element ids — the selectors a test addresses.
   ids : Array[String]
   view_names : Array[String]
-  /// Named fixtures from the `tutuca/init` block.
+  /// Named fixtures from the `tutuca/fixtures` block.
   init_names : Array[String]
   protocols : Array[ProtocolInfo]
   implements : Array[String]

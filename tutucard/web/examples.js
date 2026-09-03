@@ -42,11 +42,11 @@
 // built at runtime with `new`, and a row that asks the list to drop it with
 // `ask dyn` rather than being handed a callback. `nested-state` is the
 // other half of what `new` is for — a list of plain RECORDS, where `new Label`
-// puts the type's zero at `@cur` and the statements under it fill it in.
+// puts the type's zero at `cur` and the statements under it fill it in.
 //
 // Every card fills the sections its structured view can edit WHERE THEY MEAN
 // SOMETHING: a `<script type="tutuca/test">` block drives the Tests pane, a
-// `<script type="tutuca/init">` block feeds the Examples pane. Two rules keep
+// `<script type="tutuca/fixtures">` block feeds the Examples pane. Two rules keep
 // those blocks honest. A card whose init handler overwrites a field reaches a
 // different value of it by DRIVING (`drive`) rather than by seeding, because
 // mounting seeds the fixture's value first and dispatches init second; and a
@@ -75,7 +75,7 @@ export const EXAMPLES = [
   compute summary { $'{.label}: {.count}' }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "fresh": {
     "doc": "A counter nobody has pressed yet — what a visitor meets.",
@@ -202,16 +202,16 @@ export const EXAMPLES = [
   /// Add the draft, unless it is only whitespace.
   ///
   /// \`new TodoItem\` names the SIBLING component and opens an argument map for
-  /// it; \`@cur.…\` fills that in, and the child is made at the moment \`@cur\`
+  /// it; \`cur.…\` fills that in, and the child is made at the moment \`cur\`
   /// is read — which is the \`setAt\`. The key is spelled twice rather than
-  /// read back off \`@cur\`, because reading it is what would build the child.
+  /// read back off \`cur\`, because reading it is what would build the child.
   receive addItem {
     if (trim .draft) is not '' {
       .nextId += 1
       new TodoItem
-      @cur.id = $'row-{.nextId}'
-      @cur.text = (trim .draft)
-      .items.setAt $'row-{.nextId}' @cur
+      cur.id = $'row-{.nextId}'
+      cur.text = (trim .draft)
+      .items.setAt $'row-{.nextId}' cur
       .draft = ''
     }
   }
@@ -261,7 +261,7 @@ export const EXAMPLES = [
   compute label { if .done { $'{.text} (done)' } else { .text } }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "empty": {
     "doc": "A list nobody has used yet — what a visitor meets.",
@@ -414,7 +414,7 @@ export const EXAMPLES = [
   compute caption { $'{(len .names)} name(s)' }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "the whole list": {
     "doc": "An empty query keeps every row — the init handler fills the names, and the fixture only has to say what the box holds.",
@@ -497,7 +497,7 @@ export const EXAMPLES = [
   receive five { send 'bump' 5 }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "quiet start": {
     "doc": "No headline and an empty tally — what the schema's zero looks like.",
@@ -652,7 +652,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "fresh": {
     "doc": "Nothing asked yet. The page answers rows LATE, so the preview shows its own asking state for half a beat before the rows land.",
@@ -768,7 +768,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "fresh": {
     "doc": "Red, where every cycle starts.",
@@ -835,7 +835,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "overview open": {
     "doc": "The schema's zero is the empty string, under which NO panel shows — a fixture is how a card starts somewhere a visitor can read.",
@@ -915,7 +915,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "closed": {
     "doc": "The panel absent and the button making its offer.",
@@ -980,7 +980,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "blank": {
     "doc": "Every field at its zero — the inputs and the readouts agree, because both are the same state.",
@@ -1041,7 +1041,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "blank": {
     "doc": "Nothing typed and nothing sent.",
@@ -1137,7 +1137,7 @@ export const EXAMPLES = [
   compute sizeLabel { $'{(int .size)} bytes' }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "nothing yet": {
     "doc": "The empty state the card is honest about.",
@@ -1192,7 +1192,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "fresh": {
     "doc": "Hello, as the init handler spells it — and the two bindings its enricher derives.",
@@ -1265,11 +1265,11 @@ export const EXAMPLES = [
   receive init {
     .theme = 'rose'
     new Swatch
-    @cur.label = 'first'
-    .swatches.push @cur
+    cur.label = 'first'
+    .swatches.push cur
     new Swatch
-    @cur.label = 'second'
-    .swatches.push @cur
+    cur.label = 'second'
+    .swatches.push cur
   }
 
   receive setDraft(t) { .draft = t }
@@ -1278,15 +1278,15 @@ export const EXAMPLES = [
 
   receive add requires typed {
     new Swatch
-    @cur.label = .draft
-    .swatches.push @cur
+    cur.label = .draft
+    .swatches.push cur
     .draft = ''
   }
 
   pred typed format $'nothing to add' { not (empty? .draft) }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "two swatches": {
     "doc": "A theme the rows read, and two rows reading it.",
@@ -1367,7 +1367,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "all four": {
     "doc": "The init handler fills the list; the empty query keeps every row.",
@@ -1478,7 +1478,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "starter document": {
     "doc": "What the init handler types, already rendered on the right.",
@@ -1616,7 +1616,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "disabled": {
     "doc": "The ghost half of both conditional attributes.",
@@ -1676,7 +1676,7 @@ export const EXAMPLES = [
   compute label { if .loud { 'quieten it' } else { 'make it loud' } }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "quiet": {
     "doc": "The scoped rule alone.",
@@ -1773,7 +1773,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "five swatches": {
     "doc": "Red selected, as the init handler leaves it.",
@@ -1854,7 +1854,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "two distinct real roots": {
     "doc": "What the init handler seeds: 1, −3, 2 — discriminant 1.",
@@ -1934,27 +1934,27 @@ export const EXAMPLES = [
 </script>
 
 <script type="tutuca/script">
-  /// \`new\` builds the zero of a declared type and puts it at \`@cur\`; the
+  /// \`new\` builds the zero of a declared type and puts it at \`cur\`; the
   /// statements under it fill it in, and \`push\` takes it from there. This is
   /// what a card could not do until the language had a way to NAME a value
-  /// being built — there is no record literal, and \`@cur\` is why none is
+  /// being built — there is no record literal, and \`cur\` is why none is
   /// needed.
   receive init {
     .title = 'Nested state'
     new Label
-    @cur.text = 'read the schema'
-    .labels.push @cur
+    cur.text = 'read the schema'
+    .labels.push cur
     new Label
-    @cur.text = 'write a handler'
-    @cur.done = true
-    .labels.push @cur
+    cur.text = 'write a handler'
+    cur.done = true
+    .labels.push cur
   }
 
   receive addLabel {
     if (trim .draft) is not '' {
       new Label
-      @cur.text = (trim .draft)
-      .labels.push @cur
+      cur.text = (trim .draft)
+      .labels.push cur
       .draft = ''
     }
   }
@@ -1966,7 +1966,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "seeded by init": {
     "doc": "Two labels, as the init handler builds them with new.",
@@ -2109,7 +2109,7 @@ export const EXAMPLES = [
   receive overbook { .taken = (.capacity + 1) }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "early doors": {
     "doc": "Two seated, three waiting — what the init handler seeds.",
@@ -2245,7 +2245,7 @@ export const EXAMPLES = [
   receive inc { .count += 1 }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "fresh": {
     "doc": "Count at zero and the Live badge reading the status the init handler set.",
@@ -2380,7 +2380,7 @@ export const EXAMPLES = [
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "five rows": {
     "doc": "What the init handler pushes, in order.",

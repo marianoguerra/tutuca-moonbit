@@ -421,6 +421,19 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
         self.params[p.name] = None
       }
   }
+  // A parameter that shadows the reserved root would make `host.themeColor`
+  // mean a path into an argument — silently, and only in the one body that
+  // named it. Refused where the name is bound, which is where the author can
+  // do something about it.
+  for p in d.params {
+    if p.name == @tscript.config_root {
+      self.say(
+        "RESERVED_PARAM",
+        "`\{@tscript.config_root}` is the root a host binding is read under (`\{@tscript.config_root}.themeColor`), so a parameter cannot be called that — rename it",
+        p.span,
+      )
+    }
+  }
   self.contract(d, d.requires_, "requires")
   self.contract(d, d.ensures_, "ensures")
   self.format(d)
@@ -749,17 +762,16 @@ fn C::stmts(self : C, ss : Array[@tscript.Stmt]) -> Unit {
 ///|
 fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
   match s {
-    // `@cur = expr` names the WHOLE target, so it does not read one — it makes
+    // `cur = expr` names the WHOLE target, so it does not read one — it makes
     // one, out of a value that is already built. Taking a copy of a row to
     // edit and push back is what it is for.
-    SAssign(place~, op=ASet, value~, span~) if place.root is PBind(n) &&
-      n == @tscript.target_bind &&
+    SAssign(place~, op=ASet, value~, span~) if place.root is PTarget &&
       place.steps.is_empty() => {
       let got = self.expr(value)
       if self.binds_assignable {
         self.say(
           "RESERVED_BIND",
-          "`@\{n}` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
+          "`\{@tscript.target_bind}` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
           span,
         )
       }
@@ -1003,15 +1015,15 @@ fn C::place(
           return None
         }
       }
-    // The target: the one binding this block makes for itself, so the one
-    // binding whose type is known here.
-    PBind(name) if name == @tscript.target_bind =>
+    // The target: the one position this body owns that is not state, so the
+    // one whose type is known here.
+    PTarget =>
       match self.target {
         TySet(t) => t
         TUnset => {
           self.say(
             "NO_TARGET",
-            "`@\{name}` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
+            "`\{@tscript.target_bind}` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
             p.span,
           )
           return None
@@ -1021,7 +1033,7 @@ fn C::place(
       if assigning && !self.binds_assignable {
         self.say(
           "BIND_ASSIGN",
-          "`@\{name}` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state, and `new` builds a value in `@\{@tscript.target_bind}`",
+          "`@\{name}` is a binding, and only `enrich` and `bindWith` produce bindings — a handler assigns state, and `new` builds a value in `\{@tscript.target_bind}`",
           p.span,
         )
       }

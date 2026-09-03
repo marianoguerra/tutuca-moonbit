@@ -368,8 +368,8 @@ nested read (`.a.b` — render the child as a component, or name it with a
 that picks between two is `@if.<attr>` with `@then`/`@else`), arithmetic, and a
 bare parameter.
 
-`^macro` and `$$config` are ordinary operands here: `@hide="empty? ^label"`,
-`@show="not ^collapsed"`, `@show="$$origin is 'x'"`. They are substituted as
+`^macro` and `host.config` are ordinary operands here: `@hide="empty? ^label"`,
+`@show="not ^collapsed"`, `@show="host.origin is 'x'"`. They are substituted as
 the value is read, so a `^name` still has to expand to a single token. Going
 the other way, a `<script type="tutuca/script">` block cannot write either one
 — a block is parsed once for the component, with no macro call site and no host
@@ -509,7 +509,7 @@ impl. Note the consequence — a schema belongs to a TYPE, so two components
 sharing a state struct share its description.
 
 `init` defaults to `MyCompState::zero()` — omit it when the zero state is what
-you want, and pass a `tutuca/init` fixture (`MyCompState::fresh()`) or a
+you want, and pass a `tutuca/fixtures` fixture (`MyCompState::fresh()`) or a
 literal otherwise.
 
 Call `@component.component(...)` directly only when there is no wrapper —
@@ -1234,10 +1234,10 @@ its examples never reach the storybook or a harness test.
 
 - [schema.md](./schema.md) — the `<script type="tutuca/spec">` language: field
   spellings, the mutators each kind generates, slots, message buckets,
-  `tutuca/init` fixtures, and the `pred` / `invariant` rules a component keeps
+  `tutuca/fixtures` fixtures, and the `pred` / `invariant` rules a component keeps
   with the `format` each says when it fails — plus what the
   `<script type="tutuca/script">` block beside it declares: `$`-callables,
-  `new` / `@cur` value building, the `requires` / `ensures` clauses that attach
+  `new` / `cur` value building, the `requires` / `ensures` clauses that attach
   a rule to a transition, and the refusal channel that carries a failure.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.

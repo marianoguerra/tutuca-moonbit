@@ -117,7 +117,7 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
         // field is: down through the steps into locals, back up through the
         // putters. The only difference is where the root comes from and where
         // it goes back to.
-        PBind(b) if b == @tscript.target_bind => {
+        PTarget => {
           self.uses_target = true
           self.assign_target(place.steps, op, value)
         }
@@ -183,6 +183,59 @@ fn ECtx::stmt(self : ECtx, s : @tscript.Stmt) -> Array[@abi.I] raise Bail {
 /// `tc_step_put` — a read down and a rebuild up, spelled as
 /// a chain of temporaries so that a key expression is evaluated once rather
 /// than once per level.
+/// `.child.x` — the member to write, for a field the schema declares to hold a
+/// component.
+///
+/// One step only. The member's type belongs to the child's schema, which this
+/// card does not have, so the value crosses opaque and nothing deeper is
+/// addressable.
+fn ECtx::child_write(
+  self : ECtx,
+  name : String,
+  steps : Array[@tutuca.PathStep],
+) -> String? {
+  guard steps is [PField(what)] else { return None }
+  guard self.g.field_ty(name) is Some(TyComp(_)) else { return None }
+  Some(what)
+}
+
+///|
+/// Buffer a public property write at a child's position.
+///
+/// Buffered like every other effect, so a write beside a transition that did
+/// not happen does not happen either — which is also why it cannot be a plain
+/// store: the value crosses to the HOST, and the host applies it after the
+/// contracts have held.
+fn ECtx::set_at(
+  self : ECtx,
+  field : String,
+  what : String,
+  value : @tutuca.Expr,
+  span : @tutuca.Span,
+) -> Array[@abi.I] raise Bail {
+  ignore(span)
+  self.g.uses_control = true
+  self.g.uses_set_at = true
+  let sp = self.g.fresh("path")
+  let pl = self.g.fresh("pl")
+  [
+    // One step: the field that holds the child. `arg_list` is the same
+    // `pv_push` fold `sendAt` builds its path with.
+    let_(
+      sp,
+      arg_list([call("tc_path_field", [text_const_str(self.g.pool, field)])]),
+    ),
+    let_(pl, arg_list([self.expr(value)])),
+    call("tc_effect_push_at", [
+      i32c(11),
+      text_const_str(self.g.pool, what),
+      get(pl),
+      get(sp),
+    ]),
+  ]
+}
+
+///|
 fn ECtx::assign(
   self : ECtx,
   name : String,
@@ -191,6 +244,13 @@ fn ECtx::assign(
   value : @tutuca.Expr,
   _span : @tutuca.Span,
 ) -> Array[@abi.I] raise Bail {
+  // `.child.x = v` — a write into a CHILD, which is not a spine rebuild and
+  // never was: the instance belongs to the host and a guest holds a token.
+  // Addressed at the child's position instead, through the PUBLIC door,
+  // because this card HOLDS the child and does not own it.
+  if op is ASet && self.child_write(name, steps) is Some(what) {
+    return self.set_at(name, what, value, _span)
+  }
   self.refuse_into_child(name, steps, _span)
   let out : Array[@abi.I] = []
   let field = text_const_str(self.g.pool, name)
@@ -435,7 +495,7 @@ fn ECtx::mutate(
   // `@cur.push 'p'` — a `new Array[String]` being filled before it is
   // assigned. Routed through the target's own read-modify-write rather than
   // the state's.
-  if place.root is PBind(bind) && bind == @tscript.target_bind {
+  if place.root is PTarget {
     self.uses_target = true
     self.g.uses_values = true
     return self.mutate_target(place.steps, which, args)

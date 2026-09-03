@@ -510,7 +510,7 @@ declare pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String
 declare pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String
 
 ///|
-/// Parse and validate a `<script type="tutuca/init">` block against a
+/// Parse and validate a `<script type="tutuca/fixtures">` block against a
 /// component's schema. Named initial states live in a block of their own so
 /// the state declaration remains a type rather than a default-value format.
 declare pub fn parse_init(

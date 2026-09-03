@@ -304,6 +304,17 @@ impl @dyncomp.Guest for CardGuest with fn handle_dispatch(
           Some(String("sendReply")) => msgs.push(SendReply(name, args))
           Some(String("sendAt")) =>
             msgs.push(SendAt(path_steps(m.get("path")), name, args))
+          Some(String("setAt")) =>
+            msgs.push(
+              SetAt(
+                path_steps(m.get("path")),
+                name,
+                match m.get("value") {
+                  Some(j) => @tutuca.Value::from_json(j)
+                  None => Null
+                },
+              ),
+            )
           Some(String("intent")) =>
             msgs.push(Intent(name, args, intent_opts(m.get("opts"))))
           _ => ()
@@ -712,7 +723,7 @@ fn mount_failed(msg : String) -> String {
 /// which is what `App::new` taking a value makes possible. There is nothing for
 /// a wrapper to do here: the card is the whole of what this pane shows.
 ///
-/// `init` names one of the component's `tutuca/init` fixtures, and "" means
+/// `init` names one of the component's `tutuca/fixtures` fixtures, and "" means
 /// "whatever the card would show a visitor" — which is the fixture marked
 /// `default` when there is one, and the schema's zero otherwise. A fixture is
 /// the whole envelope rather than its field map: `value` seeds the instance,
@@ -777,7 +788,7 @@ pub fn mount_compiled(
       None => {
         let names = bundle.init_names(component)
         return mount_failed(
-          "no `tutuca/init` fixture called `" +
+          "no `tutuca/fixtures` fixture called `" +
           want +
           "` on `" +
           component +

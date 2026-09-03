@@ -684,6 +684,20 @@ impl @tutuca.Ctx for EventContext with fn set_member_at_path(
 }
 
 ///|
+impl @tutuca.Ctx for EventContext with fn set_property_at_path(
+  self,
+  path,
+  name,
+  v,
+) {
+  // The PUBLIC door. A component writing `.child.x = v` is a holder, not the
+  // owner: the child is a separate instance, often from a different bundle,
+  // and what it lets a holder write is what it declares writable. A state
+  // field that declares no property is private, and stays private here.
+  ignore(self.txn.transactor.set_property(path, name, v))
+}
+
+///|
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
   let _ = self.txn.transactor.push_send(
     path,

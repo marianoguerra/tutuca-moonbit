@@ -221,12 +221,12 @@ pub(all) struct TyRef {
 } derive(Debug, Eq)
 
 ///|
-/// The binding name `new` writes and the statements under it read: `@cur`.
+/// The name `new` writes and the statements under it read: `cur`.
 ///
-/// Reserved, and named here rather than spelled in five packages, because the
-/// checker refuses to let an `enrich` bind it, the interpreter refuses to let
-/// it escape into a view, and both are talking about the same name.
-pub let target_bind : String = "cur"
+/// `@tutuca.target_bind`, re-exported so the five packages that spell it keep
+/// one name. It lives in core because `PTarget`'s printer needs it, and a
+/// printer of the AST cannot import the parser.
+pub let target_bind : String = @tutuca.target_bind
 
 ///|
 /// A syntax error, with the span to point at.

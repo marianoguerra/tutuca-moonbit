@@ -93,3 +93,18 @@ pub fn PathChanges::intent(
 pub fn PathChanges::set(self : PathChanges, name : String, v : Value) -> Unit {
   self.ctx.set_member_at_path(self.build_path(), name, v)
 }
+
+///|
+/// Write a PUBLIC property at the built path — the door a HOLDER gets.
+///
+/// `set` above is the private-capable one, for a caller writing something it
+/// owns. This is for writing into a CHILD: a separate instance, often from a
+/// different bundle, whose private fields are not a holder's to touch. What it
+/// declares writable is what a holder may write.
+pub fn PathChanges::set_property(
+  self : PathChanges,
+  name : String,
+  v : Value,
+) -> Unit {
+  self.ctx.set_property_at_path(self.build_path(), name, v)
+}

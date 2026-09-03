@@ -277,7 +277,7 @@ fn start_args(
         }
         if !found {
           raise MountError(
-            "no `tutuca/init` fixture called `" +
+            "no `tutuca/fixtures` fixture called `" +
             scene.init +
             "` on `" +
             comp +

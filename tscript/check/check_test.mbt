@@ -36,6 +36,7 @@ fn schema() -> String {
     #|  pri    : Priority
     #|  blob   : Any
     #|  maybe  : String?
+    #|  row    : Component
     #|  provide { count = .count }
     #|  lookup { theme, color = 'gray' }
     #|}
@@ -325,7 +326,7 @@ test "a binding is assignable only where bindings are produced" {
   assert_eq(codes("enrich rowInfo { @cls = 'row' }"), [])
   assert_eq(codes("enrichScope header { @title = .name }"), [])
   assert_eq(messages("receive x { @cls = 'row' }"), [
-    "`@cls` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state, and `new` builds a value in `@cur`",
+    "`@cls` is a binding, and only `enrich` and `bindWith` produce bindings — a handler assigns state, and `new` builds a value in `cur`",
   ])
 }
 
@@ -516,7 +517,7 @@ test "a new gives the target a type, so a field of it is checked" {
 ///|
 test "the target does not exist until a new makes one" {
   assert_eq(messages("receive x { .labels.push @cur }"), [
-    "`@cur` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
+    "`cur` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
   ])
   // And the report is once, not once per step below it.
   assert_eq(codes("receive x { @cur.text = 'a' }"), ["NO_TARGET"])
@@ -578,7 +579,7 @@ test "the target is not a binding an enrich can publish" {
   // It never reaches a view — the interpreter withholds it — so an enricher
   // that assigned it would be writing into a workbench and calling it output.
   assert_eq(messages("enrich row { @cur = 'x' }"), [
-    "`@cur` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
+    "`cur` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
   ])
   // Building one and publishing something else is fine.
   assert_eq(
@@ -1041,4 +1042,21 @@ test "an answer arm for a notified name never fires, and is reported" {
     ),
     [],
   )
+}
+
+///|
+/// `.child.x = v` writes a member of a CHILD, and the checker lets it.
+///
+/// It is not a spine rebuild: a child is a separate instance, and the write is
+/// addressed at its position the way a view's `.x = v` is addressed at its
+/// own. This is the door M6 left open when the `sendAt 'setX'` workaround went
+/// away with the generated mutators — after that a card could not write a
+/// child's member at all.
+///
+/// One step only. The member's type belongs to the child's schema, which this
+/// component does not have, so the value crosses opaque and nothing deeper is
+/// addressable.
+test "a write into a child is a path this component may address" {
+  assert_eq(codes("receive focusIt { .row.text = 'x' }"), [])
+  assert_eq(codes("receive focusIt { .row.n = .count }"), [])
 }

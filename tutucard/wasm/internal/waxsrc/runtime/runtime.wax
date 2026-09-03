@@ -1020,6 +1020,14 @@ const tc_e_forward: i32 = 7;
 const tc_e_reply: i32 = 8;
 const tc_e_fail: i32 = 9;
 
+// A `reply` in a `receive` body — the replier names it, so it carries a name
+// where the routed `reply` above carries a value.
+const tc_e_send_reply: i32 = 10;
+
+// `.child.x = v` — a PUBLIC property write at a path. Carries a path like a
+// `sendAt` and one value where a send carries a payload.
+const tc_e_set_at: i32 = 11;
+
 // `steps` is null for every effect but a `sendAt`, which is the only one that
 // addresses somewhere other than here. It is a list of `tc_pstep`, built by
 // `send_at.wax` — the field is here rather than there because the buffer is,

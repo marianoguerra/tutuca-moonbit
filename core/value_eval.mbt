@@ -205,9 +205,10 @@ fn read_place(place : Place, stack : &Stack) -> Value {
         stack.lookup_storage(name)
       }
     PBind(name) => stack.lookup_bind(name)
-    // A parameter is a body's, and a body runs after the render stack rather
-    // than on it. Nothing here has one to hand back.
-    PParam(_) => Null
+    // Neither of these is on the render stack. A parameter is a body's, and a
+    // body runs after the stack rather than on it; a target is a statement's,
+    // and there are no statements here.
+    PParam(_) | PTarget => Null
   }
   for step in place.steps {
     cur = match step {

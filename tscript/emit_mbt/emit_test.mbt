@@ -33,6 +33,7 @@ fn schema() -> String {
     #|  blob    : Any
     #|  note    : String?
     #|  year    : Int?
+    #|  row     : Component
     #|}
     #|handle Counter { message { resetTo(Int), rename(String, Int) } }
   )
@@ -778,7 +779,7 @@ test "the target a branch built does not outlive the branch" {
       ),
     ),
     [
-      "`@cur` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
+      "`cur` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
     ],
   )
 }
@@ -793,7 +794,7 @@ test "a new of a type the state does not declare says so" {
 ///|
 test "an index into the target is refused, as one into the state is" {
   assert_eq(rows_whys("receive init {\n  new Label\n  @cur.tags[0] = 'x'\n}"), [
-    "writing through an index into `@cur` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+    "writing through an index into `cur` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
   ])
 }
 
@@ -1047,5 +1048,27 @@ test "a sibling call carries the stack, and a transition builds one from its ctx
       ),
       methods=["dark"],
     ).source.contains("counter_compute_dark(s, [], @tutuca.CtxStack(ctx))"),
+  )
+}
+
+///|
+/// `.child.x = v` compiles to a write ADDRESSED at the child's position.
+///
+/// Not a spine rebuild, which is what `root_field` refuses and rightly: a
+/// child is a separate instance and its members are not in this component's
+/// state struct. The write goes through the same door a view's `.x = v` goes
+/// through, at a path one step down — and it is queued like every other
+/// effect, so a contract that does not hold takes it with the transition.
+test "a write into a child is addressed, not rebuilt" {
+  inspect(
+    body("receive focusIt { .row.text = 'x' }"),
+    content=(
+      #|let effects : Array[() -> Unit] = []
+      #|effects.push(() => ctx.at().field("row").set_property("text", (Str("x") : @tutuca.Value)))
+      #|for f in effects {
+      #|f()
+      #|}
+      #|Next(s)
+    ),
   )
 }

@@ -45,8 +45,8 @@
   /// Add a row, if there is anything to add.
   receive add requires typed {
     new Row
-    @cur.label = .draft
-    .items.push @cur
+    cur.label = .draft
+    .items.push cur
     .draft = ''
   }
 
@@ -87,7 +87,7 @@
   }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "themed": {
     "doc": "Two rows under a theme, arrived at by using the board.",

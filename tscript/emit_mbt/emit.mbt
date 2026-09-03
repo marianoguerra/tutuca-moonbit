@@ -1265,9 +1265,22 @@ fn E::stmt_body(
     SMethod(place~, call~, args~, ..) if is_target(place) => {
       let (name, ty) = self.target_root()
       let rhs = self.target_update(name, ty, place.steps, 0, (t, recv) => {
-        self.collection_call_at(call, recv, "@" + @tscript.target_bind, t, args)
+        self.collection_call_at(call, recv, @tscript.target_bind, t, args)
       })
       "\{pad}let \{name} = \{rhs}\n"
+    }
+    // `.child.x = v` — a write into a CHILD, which is not a spine rebuild. A
+    // child is a separate instance: the field holds it, and the write is
+    // addressed at its position the way a view's `.x = v` is addressed at its
+    // own — through the PUBLIC door, because this component is the child's
+    // holder and not its owner: what a child lets a holder write is what it
+    // declares writable. That is the door M6 left open when the
+    // `sendAt 'setX'` workaround went away with the generated mutators.
+    SAssign(place~, op=ASet, value~, ..) if self.child_write(place)
+      is Some((field, what)) => {
+      let v = self.as_value(value)
+      self.uses_ctx = true
+      "\{pad}effects.push(() => ctx.at().field(\{quote(field)}).set_property(\{quote(what)}, \{v}))\n"
     }
     SAssign(place~, op~, value~, ..) => {
       let (field, ty) = self.root_field(place)
@@ -1336,7 +1349,7 @@ fn E::stmt_body(
 ///|
 /// Whether a place is rooted at the target `new` builds into.
 fn is_target(p : @tutuca.Place) -> Bool {
-  p.root is PBind(n) && n == @tscript.target_bind
+  p.root is PTarget
 }
 
 ///|
@@ -1344,7 +1357,7 @@ fn is_target(p : @tutuca.Place) -> Bool {
 fn E::target_root(self : E) -> (String, @statedef.StateTy) raise NoWay {
   guard self.target is Some(t) else {
     raise Cannot(
-      "`@\{@tscript.target_bind}` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
+      "`\{@tscript.target_bind}` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
     )
   }
   t
@@ -1368,7 +1381,7 @@ fn E::target_update(
   guard steps.get(i) is Some(st) else { return leaf(ty, src) }
   guard st is PField(name) else {
     raise Cannot(
-      "writing through an index into `@\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+      "writing through an index into `\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
     )
   }
   guard ty is TyRecord(_) else {
@@ -1387,6 +1400,21 @@ fn E::target_update(
 ///|
 /// The state field a place is rooted at, refusing everything this backend
 /// cannot rebuild.
+/// `.child.member` — the field that holds a child, and the member to write.
+///
+/// `None` for every other shape, which is what makes this a branch above
+/// `root_field` rather than a change to it: one step, into a field the schema
+/// declares as a component, is the only path a card can address through and
+/// the only one whose meaning is not a spine rebuild.
+fn E::child_write(self : E, p : @tutuca.Place) -> (String, String)? {
+  guard p.root is PState(name) else { return None }
+  guard p.steps is [PField(what)] else { return None }
+  guard self.def.field(name) is Some(f) else { return None }
+  guard f.ty is TyComp(_) else { return None }
+  Some((name, what))
+}
+
+///|
 fn E::root_field(
   self : E,
   p : @tutuca.Place,
@@ -2147,7 +2175,7 @@ fn E::read(
     for st in p.steps {
       guard st is PField(sub) else {
         raise Cannot(
-          "reading through an index into `@\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+          "reading through an index into `\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
         )
       }
       guard self.def.field_of(at, sub) is Some(inner) else {

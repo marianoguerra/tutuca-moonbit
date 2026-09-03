@@ -104,11 +104,11 @@ children something else created names nothing on that interface, and the import
 section is what a host reads to know which it has.
 
 Nothing is built at the `new`. It opens an argument map for the component and
-remembers which one; `@cur.text = .draft` accumulates into it, unchanged from
+remembers which one; `cur.text = .draft` accumulates into it, unchanged from
 the read-modify-write it already was; and the child is made at the first READ of
-`@cur` — the last moment the arguments can still change and the first moment
+`cur` — the last moment the arguments can still change and the first moment
 they are all in. Materializing rebinds the target to the token, so pushing
-`@cur` twice pushes one child rather than making two. A `new` of a declared
+`cur` twice pushes one child rather than making two. A `new` of a declared
 record clears the marker, so a record can never materialize as a component.
 
 The token is reserved during the guest call and the instance constructed after
@@ -123,6 +123,12 @@ receive peek { .note = .rows[0].text }
 // read or write through one — the instance belongs to the host and a guest
 // holds only a token. Send it a message instead
 ```
+
+Writing one member of a child the card HOLDS is the exception, and it is not a
+walk through anything: `.child.body = 'x'` compiles to a `control.set-at` at
+the child's position, buffered like every other effect. The PUBLIC door — what
+a child lets a holder write is what it declares writable — because a card
+holding a child is not its owner.
 
 The walk stops at the first type it cannot follow, so a `record` member is not
 refused for being unrecognized: "this backend does not know" and "you may not"
@@ -200,21 +206,21 @@ at all. It is not correctly rounded — see the deviations below.
 ```
 receive receipt {
   new Line
-  @cur.what = .item
-  @cur.qty  = .qty
-  .receipt.push @cur
+  cur.what = .item
+  cur.qty  = .qty
+  .receipt.push cur
 }
 ```
 
 The zero is resolved and **built at compile time** — it is a property of the
 declared type, and the type is written in the source — so a `new` naming a type
 the card does not declare is rejected when it compiles rather than abandoned
-when it runs. `@cur` is a single function-level local of type `&?jv_value`, so
+when it runs. `cur` is a single function-level local of type `&?jv_value`, so
 "no `new` has run yet" is the null it starts at, and reading it before one has
 fails the transition the way `read_place` says it must. A second `new` starts
 over.
 
-**A quirk, and why it needs no fix.** `@cur` is a function-level local, so a
+**A quirk, and why it needs no fix.** `cur` is a function-level local, so a
 `new` inside an `if` branch survives the branch. That is not this backend being
 loose: the INTERPRETER does the same, because `exec` hands both arms the same
 `Env` and `SNew` writes `env.binds` (`tscript/conformance`). Both agree,
@@ -223,16 +229,16 @@ which is what the corpus is for.
 It is also not observable, because the checker will not let you look. `C::stmts`
 merges the target across an `if` and keeps only what both arms agree on
 (`tscript/check/check.mbt`): a `new` in one arm leaves it `TUnset`, and reading
-`@cur` after that is `NO_TARGET`.
+`cur` after that is `NO_TARGET`.
 
 ```
 receive leak {
   if .n > 0 { new L }
-  .xs.push @cur          // rejected: NO_TARGET
+  .xs.push cur          // rejected: NO_TARGET
 }
 receive both {
   if .n > 0 { new L } else { new L }
-  .xs.push @cur          // fine, and both arms built the same type
+  .xs.push cur          // fine, and both arms built the same type
 }
 ```
 
@@ -270,7 +276,7 @@ component answers something it does not.
 | | why |
 |---|---|
 | `sendAt` **with a key read from live state** | `&.panes[.sel]` means "re-read `.sel` on every dispatch", which is what makes it follow a moving selection — `tscript/conformance` reifies it as a `SeqAccessStep` for exactly that. `control.path-step` has no case that says so, so there is nothing to lower it AS. Freezing the key would be a different path that looks like this one, so it is refused rather than approximated. A literal or a parameter key compiles |
-| `@binding` **in a transition** | a handler is handed no row, so there is nothing for `@value` to mean there. In a `pred`, an `enrich` or an `bindWith` it now compiles — see above. `@cur` is the other exception, and the only binding a handler owns |
+| `@binding` **in a transition** | a handler is handed no row, so there is nothing for `@value` to mean there. In a `pred`, an `enrich` or an `bindWith` it now compiles — see above. `cur` is the other exception, and the only binding a handler owns |
 | `$method`, `*dyn` | answered by the render stack, and a compiled handler runs after one |
 
 Also `clear`, `delete`, `set` and `removeAt`: `tscript` parses them as
@@ -459,7 +465,7 @@ here:
 is not.
 
 The three rejected are cards that do not check — a name that resolves to
-nothing, arithmetic on a String, and `@cur` read before any `new`. Nothing is
+nothing, arithmetic on a String, and `cur` read before any `new`. Nothing is
 refused any more, and the adapter asserts that: the refusal count used to be a
 number allowed only to shrink, and a number with nothing left in it is better
 spelled as the empty list.
@@ -502,7 +508,7 @@ again, and a card without an arena still carries no code that mentions one.
   `log` is the simplest thing on `control`. A card that
   declares a rule therefore imports `control.log`, which is a true statement
   about the card.
-- **`tutuca/init` fixtures are dropped** from the manifest. Their field values
+- **`tutuca/fixtures` fixtures are dropped** from the manifest. Their field values
   are MoonBit source and a manifest wants JSON.
 - **utf8, not utf16.** The shipped MoonBit guests are built `--encoding utf16`;
   these declare `utf8`, which `abi.mjs` implements just as well.

@@ -813,6 +813,103 @@ pub fn send_at(
 }
 
 ///|
+/// Write a PUBLIC property of a component in this one's own subtree
+/// (`ctx.set-property-at-path`), e.g. `[field("row")]` for the child a `row`
+/// field holds.
+///
+/// The PUBLIC door, and the distinction is the point of having it. A guest
+/// writing its own field does that inside itself and the host never sees it;
+/// this crosses, and what it crosses to is a separate instance the guest
+/// merely HOLDS — often from another bundle. What a child lets a holder
+/// write is what it declares writable, and a state field that declares no
+/// property is private and stays private through this.
+///
+/// Buffered and applied by the host like every other `control` call, so a
+/// write beside a transition that did not happen does not happen either.
+pub fn set_at(
+  path : Array[PathStep],
+  name : String,
+  value : @values.Value,
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let address = mbt_ffi_malloc(path.length() * 20)
+  for index = 0; index < path.length(); index = index + 1 {
+    let iter_elem : PathStep = path[index]
+    let iter_base = address + index * 20
+
+    match iter_elem {
+      Field(payload) => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        let ptr = mbt_ffi_str2ptr(payload)
+        mbt_ffi_store32(iter_base + 8, payload.length())
+        mbt_ffi_store32(iter_base + 4, ptr)
+        cleanup_list.push(ptr)
+
+        ()
+      }
+      Item(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+
+        let ptr1 = mbt_ffi_str2ptr(payload0.field)
+        mbt_ffi_store32(iter_base + 8, payload0.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr1)
+
+        let ptr2 = mbt_ffi_str2ptr(payload0.key)
+        mbt_ffi_store32(iter_base + 16, payload0.key.length())
+        mbt_ffi_store32(iter_base + 12, ptr2)
+        cleanup_list.push(ptr1)
+        cleanup_list.push(ptr2)
+
+        ()
+      }
+      At(payload3) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+
+        let ptr4 = mbt_ffi_str2ptr(payload3.field)
+        mbt_ffi_store32(iter_base + 8, payload3.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr4)
+        mbt_ffi_store32(iter_base + 12, payload3.index.reinterpret_as_int())
+        cleanup_list.push(ptr4)
+
+        ()
+      }
+    }
+  }
+
+  let ptr5 = mbt_ffi_str2ptr(name)
+
+  let (lowered, lowered14, lowered15) = match value {
+    Nil => (0, 0L, 0)
+    Boolean(payload7) => (1, Int::to_int64(if payload7 { 1 } else { 0 }), 0)
+    Number(payload8) => (2, payload8.reinterpret_as_int64(), 0)
+    Text(payload9) => {
+      let ptr10 = mbt_ffi_str2ptr(payload9)
+      cleanup_list.push(ptr10)
+
+      (3, Int::to_int64(ptr10), payload9.length())
+    }
+    List(payload11) => (4, payload11.reinterpret_as_int64(), 0)
+    Map(payload12) => (5, payload12.reinterpret_as_int64(), 0)
+    Instance(payload13) => (6, payload13.reinterpret_as_int64(), 0)
+  }
+  wasmImportSetAt(
+    address,
+    path.length(),
+    ptr5,
+    name.length(),
+    lowered,
+    lowered14,
+    lowered15,
+  )
+  mbt_ffi_free(address)
+  mbt_ffi_free(ptr5)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
 /// Answer whoever sent the message being handled, under a name this handler
 /// picks.
 ///

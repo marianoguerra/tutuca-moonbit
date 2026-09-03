@@ -182,6 +182,10 @@ fn place_refusal(place : Place) -> String? {
     (PBind(_), [PIndex(_)]) =>
       Some("a slot reads a binding's member by name, not by index")
     (PBind(b), _) => Some("a slot reads one member of `@\{b}`, not a path")
+    // A slot never has one: `new` is a statement, and a slot holds one
+    // expression with no statement to have opened a target.
+    (PTarget, _) =>
+      Some("`cur` is what a `new` builds into, and a slot has no `new`")
     // `.seq[.key]` is the one indexed read a slot has, and only with a plain
     // field for the key.
     (PState(seq), [PIndex(idx)]) =>

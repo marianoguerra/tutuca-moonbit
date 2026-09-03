@@ -580,12 +580,12 @@ inserting at the end is a real answer.
 > semantic meaning beyond the property operation; mark a property `pub` only
 > when an external caller should be allowed to read or synchronously set it.
 
-## Building a value (`new <Type>` / `@cur`)
+## Building a value (`new <Type>` / `cur`)
 
 The block language has **no literal for an aggregate** — no list, no map, no
 record — because a value there is built by *mutating* it, which is what every
 other statement already does. `new <Type>` puts that type's **zero** at the
-**active target**, and the statements under it fill it in through `@cur`:
+**active target**, and the statements under it fill it in through `cur`:
 
 ```html
 <script type="tutuca/spec">
@@ -604,18 +604,18 @@ other statement already does. `new <Type>` puts that type's **zero** at the
 <script type="tutuca/script" for="Playlist">
   receive init {
     new Song
-    @cur.title = 'Ramble On'
-    @cur.plays = 0
-    @cur.moods.push 'rock'
-    .songs.push @cur
+    cur.title = 'Ramble On'
+    cur.plays = 0
+    cur.moods.push 'rock'
+    .songs.push cur
   }
 
   /// A collection is built the same way and assigned whole.
   receive reset {
     new Array[String]
-    @cur.push 'p'
-    @cur.push 'q'
-    .tags = @cur
+    cur.push 'p'
+    cur.push 'q'
+    .tags = cur
   }
 </script>
 ```
@@ -626,22 +626,22 @@ other statement already does. `new <Type>` puts that type's **zero** at the
   table with the state parser, so `new Int16` and `count : Int16` cannot come
   to mean different things.
 - A field the build never touches keeps the **type's zero**, so `new Song`
-  followed straight by `.songs.push @cur` appends an empty one.
+  followed straight by `.songs.push cur` appends an empty one.
 - A `new` **resets** the target. Two records is two `new`s, and the first is
   not disturbed once it has been pushed somewhere.
-- A **path into** the target works, so `new Song` then `@cur.moods.push 'rock'`
+- A **path into** the target works, so `new Song` then `cur.moods.push 'rock'`
   fills a list *inside* the record. That is what makes one target enough:
   values are built outside-in.
-- `@cur` is a **workbench, never output**. It belongs to the handler that built
+- `cur` is a **workbench, never output**. It belongs to the handler that built
   it, is gone when that handler ends, and never reaches a view — a template
-  reading `@cur` reads nothing. An `enrich` may not bind the name either
+  reading `cur` reads nothing. An `enrich` may not bind the name either
   (`RESERVED_BIND`): an enricher's bindings *become* a view's scope, and the
   target is not something a component may publish.
 - It is **checked**: the target's type comes from the `new`, and a path into it
-  is walked with the same machinery a state path uses, so `@cur.dnoe` reports
-  `Song has no field dnoe` and a `@cur` with no `new` above it is `NO_TARGET`.
+  is walked with the same machinery a state path uses, so `cur.dnoe` reports
+  `Song has no field dnoe` and a `cur` with no `new` above it is `NO_TARGET`.
 
-`@cur = expr` with **no path** re-points the target at a value that is already
+`cur = expr` with **no path** re-points the target at a value that is already
 built, which is how you copy a row out, edit it and put it back. Note the
 backend limits below before reaching for it.
 
@@ -655,9 +655,9 @@ from what the block answers, and leaves it in your `update` match to write in
 MoonBit. Nothing breaks silently, but a card that runs is not proof the same
 block emits to MoonBit.
 
-Around `new` / `@cur`: a `new` inside an `if` does not outlive the branch, and
-`@cur = expr` needs a `new` in scope above it. Writing or reading **through an
-index** — `.songs[i]`, `@cur.moods[0]` — needs a bounds check the backend does
+Around `new` / `cur`: a `new` inside an `if` does not outlive the branch, and
+`cur = expr` needs a `new` in scope above it. Writing or reading **through an
+index** — `.songs[i]`, `cur.moods[0]` — needs a bounds check the backend does
 not emit, wherever the place is rooted; the named collection methods
 (`setAt` / `deleteAt`) carry their own and are the way to say it.
 
@@ -942,7 +942,7 @@ Four things to know about the clauses themselves:
   callables are, and a parameterised rule in the spec block is refused by name.
 
 - **The declared initial states are checked at build time.** Every
-  `tutuca/init` fixture is asserted against every invariant by a test
+  `tutuca/fixtures` fixture is asserted against every invariant by a test
   `gen-views` writes into the generated module — a rule that does not hold in
   the state the component starts in is broken before anything happens. The
   schema's zero is deliberately not checked: a wrapper is normally called with
@@ -1043,7 +1043,7 @@ Named initial states go in a block of their own, because a default is a value
 and not a type:
 
 ```html
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 { "fresh": { "value": { "label": "Counter" } },
   "with-history": { "value": { "count": 3, "history": [1, 2, 3] },
                     "doc": "What it looks like once it has been used." } }
@@ -1064,7 +1064,7 @@ public `counter_init_args("fresh")` for a ModuleDef example.
 is seeded. It is the honest way to write a state a component ARRIVES at:
 
 ```html
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 { "three rows": {
     "value": {},
     "doc": "A list that has been used, arrived at by using it.",

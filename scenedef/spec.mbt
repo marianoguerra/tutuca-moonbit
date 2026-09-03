@@ -17,7 +17,7 @@ pub(all) struct Scene {
   /// The component to mount. Empty means the card's root, which is the only
   /// answer a single-component card has.
   component : String
-  /// A `tutuca/init` fixture to start from. Empty means none.
+  /// A `tutuca/fixtures` fixture to start from. Empty means none.
   init : String
   /// Field values to start from, merged over the fixture (or over the
   /// schema's zero when there is no fixture). The inline form of `init`.

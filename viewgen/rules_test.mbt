@@ -21,7 +21,7 @@ let ledger_html : String =
   #|  }
   #|</script>
   #|
-  #|<script type="tutuca/init">
+  #|<script type="tutuca/fixtures">
   #|{ "eight": { "value": { "here": 8, "total": 8 } } }
   #|</script>
   #|

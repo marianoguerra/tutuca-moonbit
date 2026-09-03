@@ -240,20 +240,20 @@ fn ECtx::read(
           call("tc_null", [])
         }
       }
-    // `@cur` is the ONE binding a compiled handler owns: `new` writes it and
+    // `cur` is the ONE position a compiled handler owns besides its state: `new` writes it and
     // nothing else can. Reading it before a `new` has made one fails the
     // transition rather than reading null, which is `read_place`'s rule and
     // the reason the local is nullable.
-    PBind(name) if name == @tscript.target_bind => {
+    PTarget => {
       self.uses_target = true
       // A PENDING child is materialized HERE, at the first read, because that
       // is the last moment its arguments can still be added to and the first
       // moment they are all in. `new` builds nothing; it puts an empty
       // ordered map in the target and remembers which component the map is
-      // arguments FOR, and `@cur.text = .draft` accumulates into it.
+      // arguments FOR, and `cur.text = .draft` accumulates into it.
       //
       // Materializing rebinds the target to the TOKEN and clears the marker,
-      // so pushing `@cur` twice pushes one child rather than making two.
+      // so pushing `cur` twice pushes one child rather than making two.
       //
       // A card that writes no `new <Component>` emits none of this: the
       // marker local does not exist, and neither does the branch.

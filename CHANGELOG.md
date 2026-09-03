@@ -8,6 +8,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`.child.x = v` — a card and a component can write a member of a child they
+  hold.** M6 removed the generated mutators, and with them the `sendAt 'setX'`
+  workaround that was the only way to do this; after it there was no way at
+  all.
+
+  It is not a spine rebuild, which is what the refusal used to call it: a child
+  is a separate instance, so the write is ADDRESSED at its position the way a
+  view's own `.x = v` is addressed at its own. Buffered like every other effect,
+  so a write beside a transition that did not happen does not happen either.
+
+  Through the **public** door. A component holding a child is not its owner:
+  what a child lets a holder write is what its `property { … }` declares
+  writable, and a state field with no property beside it is private and stays
+  private however it is held. `Ctx::set_property_at_path` and
+  `PathChanges::set_property` are that door; `set` / `set_member_at_path` remain
+  the private-capable one, for a caller writing what it owns.
+
+  The guest world gains `control.set-at` for it — one value, not a payload,
+  because a write has one right-hand side.
+
+- **`$$name` is `host.name`.** `$name` and `$$name` were two questions of two
+  different things, one character apart: a `compute` this component answers,
+  and a value the host bound before any of this was parsed. `host` is a
+  reserved root like `state`, and a parameter that would shadow it is refused
+  (`RESERVED_PARAM`) where it is bound.
+
+- **`@cur` is `cur`.** It was never a binding — a binding is what an `enrich`
+  produces and a view reads — so the sigil put it in a namespace it was
+  reserved OUT of. It has its own place root now (`PTarget`), which says what
+  it is: the one position a body owns that is not state.
+
+- **`<script type="tutuca/init">` is `<script type="tutuca/fixtures">`.** The
+  block holds SEVERAL named states rather than one initial one, and `receive
+  init` is an unrelated convention a host dispatches after mounting — two
+  things one word, in a file that often has both. The card playground's region
+  for it is `fixtures` too.
+
 - **The `intent` declaration is `answer`, the `intent` effect is `ask`, and a
   `forward` in a `receive` body is a bare `ask`.** An intent is the CHANNEL;
   `ask` is what you do on it and `answer` is the handler that answers one, so

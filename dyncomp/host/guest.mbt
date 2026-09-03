@@ -32,6 +32,14 @@ pub(all) enum ControlMsg {
   /// picked. An ordinary message, so it buffers like `Send` and the host
   /// applies it the same way.
   SendReply(String, Array[@tutuca.Value])
+  /// Write a PUBLIC property of a component in the guest's own subtree.
+  ///
+  /// The public door, deliberately: what crosses here is a write into a
+  /// separate instance the guest HOLDS, often from another bundle, and what a
+  /// child lets a holder write is what it declares writable. A guest writing
+  /// its own field never reaches this — that happens inside the guest and the
+  /// host does not see it.
+  SetAt(Array[@tutuca.Step], String, @tutuca.Value)
   StopPropagation
 } derive(Debug, Eq)
 

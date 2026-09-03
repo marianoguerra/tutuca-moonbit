@@ -500,7 +500,7 @@ const exampleId = (name) =>
   `example-${name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "x"}`;
 
 /**
- * Mount the card once per `tutuca/init` fixture, each in its own box.
+ * Mount the card once per `tutuca/fixtures` fixture, each in its own box.
  *
  * The preview beside this shows ONE state — the card's `default` fixture, or
  * its schema's zero. A component is usually interesting at several, and a card
@@ -534,7 +534,7 @@ async function drawExamples(report) {
   // what every mount site on this page means by taking the head of the list.
   const inits = report.build.manifest.components?.[0]?.inits ?? [];
   if (inits.length === 0) {
-    els.examplesNote.textContent = 'no <script type="tutuca/init"> fixtures';
+    els.examplesNote.textContent = 'no <script type="tutuca/fixtures"> fixtures';
     return;
   }
   const shown = inits.slice(0, EXAMPLE_CAP);
@@ -714,7 +714,7 @@ function currentRegion() {
   if (ui.part === "state") return p.spec;
   if (ui.part === "script") return p.script;
   if (ui.part === "tests") return p.tests;
-  if (ui.part === "examples") return p.init;
+  if (ui.part === "examples") return p.fixtures;
   const list = listOf(p);
   return list.items[Math.min(list.index, list.items.length - 1)] ?? null;
 }
@@ -729,7 +729,7 @@ const MISSING = {
   tests:
     'no <script type="tutuca/test"> block yet — add one in the raw view, and the Tests pane will drive it',
   examples:
-    'no <script type="tutuca/init"> block yet — add one in the raw view, and the Examples pane will show each fixture',
+    'no <script type="tutuca/fixtures"> block yet — add one in the raw view, and the Examples pane will show each fixture',
 };
 
 /** Put the current part in the pane. */

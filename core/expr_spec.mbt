@@ -82,6 +82,13 @@ pub(all) enum PlaceRoot {
   /// `@name` — a binding. Assignable in `enrich` / `enrich-scope` only;
   /// readable anywhere the slot provides it.
   PBind(String)
+  /// `cur` — what a `new` in this body is building.
+  ///
+  /// Not a binding, which is what `@cur` used to call it: a binding is
+  /// something an `enrich` produces and a view reads, and this is neither. It
+  /// is the one position a body owns that is not state, alive from the `new`
+  /// that opened it to the statement that hands it over.
+  PTarget
   /// `name.field` — a path into a PARAMETER. Never assignable: an argument is
   /// a value the caller handed over, not a position this component owns.
   ///
@@ -93,6 +100,14 @@ pub(all) enum PlaceRoot {
   /// parameter is the one kind of name that can never be applied.
   PParam(String)
 } derive(Debug, Eq)
+
+///|
+/// The name `new` writes and the statements under it read: `cur`.
+///
+/// Reserved, and named once rather than spelled in five packages, because the
+/// checker refuses to let an `enrich` bind it, the interpreter refuses to let
+/// it escape into a view, and both are talking about the same name.
+pub let target_bind : String = "cur"
 
 ///|
 /// A step below the root.

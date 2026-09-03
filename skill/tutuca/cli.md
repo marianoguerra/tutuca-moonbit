@@ -171,7 +171,7 @@ to declare the schema.
 A view file may declare its component's data contract in a small language,
 alongside the templates that read it. That language — every field spelling, the
 mutators each kind generates, message buckets, slots, declared `$`-callables,
-schema-only files and `tutuca/init` fixtures — is
+schema-only files and `tutuca/fixtures` fixtures — is
 [schema.md](./schema.md).
 
 `gen-views` checks every `.field` read in every view against it, loop bodies and

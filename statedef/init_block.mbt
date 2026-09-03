@@ -3,7 +3,7 @@
 // A default is a value rather than a type, so it must not be smuggled into the
 // schema through a comment convention. It gets a block of its own:
 //
-//   <script type="tutuca/init">
+//   <script type="tutuca/fixtures">
 //   { "fresh":        { "value": {} },
 //     "with-history": { "value": { "count": 3, "history": [1, 2, 3] },
 //                       "doc": "What it looks like once it has been used." } }

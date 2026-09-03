@@ -116,7 +116,7 @@ pub(all) enum Expr {
   EDyn(name~ : String, span~ : Span) // *name
   EMethod(name~ : String, span~ : Span) // $name
   EMacroVar(name~ : String, span~ : Span) // ^name
-  EConfigVar(name~ : String, span~ : Span) // $$name
+  EConfigVar(name~ : String, span~ : Span) // host.name
   EChain(..) // a and b, x + y
   EUnary(..) // not x, -n
   EIf(..) // if c { a } else { b }

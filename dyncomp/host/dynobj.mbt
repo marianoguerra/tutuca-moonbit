@@ -939,6 +939,8 @@ pub impl @tutuca.Obj for DynObj with fn handler(self, bucket, name) {
           // relative: the guest addresses its own subtree (see ControlMsg)
           SendAt(steps, name, args) =>
             ctx.send_at_path(ctx.path().concat(steps), name, args)
+          SetAt(steps, name, v) =>
+            ctx.set_property_at_path(ctx.path().concat(steps), name, v)
           StopPropagation => ctx.stop_propagation()
         }
       }

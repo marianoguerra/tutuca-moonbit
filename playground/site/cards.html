@@ -89,7 +89,7 @@
 &lt;template&gt;                     the views</code></pre>
         <p>
           A file may carry three more, and no example here does:
-          <code>tutuca/init</code> (named starting states, each one a fixture a
+          <code>tutuca/fixtures</code> (named starting states, each one a fixture a
           host can mount), <code>tutuca/test</code> (scenes that drive the card
           and assert against the DOM), and <code>tutuca/wax</code> (the escape
           hatch: a handler written in the language the module is built out of).
@@ -250,7 +250,7 @@
           literal to write one with. <code>new &lt;Type&gt;</code>
           builds a value at its type's zero and makes it the
           <strong>active target</strong>. The statements under it fill the
-          value in through <code>@cur</code>. Then it is pushed like anything
+          value in through <code>cur</code>. Then it is pushed like anything
           else. This card's <code>songs</code> is an <code>Array[String]</code>
           and needs none of this. But suppose the schema declared
           <code>struct Song { title : String, plays : Int }</code> and
@@ -258,9 +258,9 @@
         </p>
         <pre><code>receive init {
   new Song
-  @cur.title = 'Ramble On'
-  @cur.plays = 0
-  .songs.push @cur
+  cur.title = 'Ramble On'
+  cur.plays = 0
+  .songs.push cur
 }</code></pre>
         <p>
           Write the type the way the state block spells it:
@@ -268,10 +268,10 @@
           <code>new Map[String, Int]</code>. The type must be one that the
           block declares. A <code>new</code> resets the target. So building two
           rows takes two <code>new</code>s. A path into the target works too.
-          So <code>new Song</code> followed by <code>@cur.tags.push 'rock'</code>
-          fills a list <em>inside</em> the record. <code>@cur</code> belongs to
+          So <code>new Song</code> followed by <code>cur.tags.push 'rock'</code>
+          fills a list <em>inside</em> the record. <code>cur</code> belongs to
           the handler that built it. It is gone when the handler ends, and it
-          never reaches a view. So a template that reads <code>@cur</code>
+          never reaches a view. So a template that reads <code>cur</code>
           reads nothing.
         </p>
         <p>
@@ -592,15 +592,15 @@
         <h4>Statements</h4>
         <pre><code>.count = 0                  assign
 .count += d   .count -= d   add, subtract
-new Label                   build one, at @cur
-@cur.text = 'hi'            …and fill it in
+new Label                   build one, at cur
+cur.text = 'hi'            …and fill it in
 @tag = $'{@value}'          bind (in an enrich)
 .items.push v               a collection method,
 .items.deleteAt i           receiver first
 .byId.setAt k v
 new Label                   build a value at its zero,
-@cur.text = 'hi'            fill it in through `@cur`,
-.labels.push @cur           then put it somewhere
+cur.text = 'hi'            fill it in through `cur`,
+.labels.push cur           then put it somewhere
 send 'flash' .msg           an effect
 sendAt &amp;.rows[k] 'done' 1
 intent dyn 'picked' @key    …routed rather than addressed
@@ -669,8 +669,8 @@ str x       lower s     upper s     trim s</code></pre>
             <strong>No record literal, but a record.</strong> There is no
             syntax for one, because the language has no way to name a value it
             is not building. <code>new Label</code> puts the type's zero at
-            <code>@cur</code>, and the statements under it fill it in. So
-            <code>.labels.push @cur</code> is how a list of records grows.
+            <code>cur</code>, and the statements under it fill it in. So
+            <code>.labels.push cur</code> is how a list of records grows.
           </li>
           <li>
             <strong>Several components, but no reading into one.</strong> A

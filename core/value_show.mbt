@@ -42,6 +42,9 @@ pub fn Place::to_source(self : Place) -> String {
       b.write_char('@')
       b.write_string(n)
     }
+    // No sigil either: `cur` is not a binding, and writing it as one was the
+    // whole of what `@cur` got wrong.
+    PTarget => b.write_string(target_bind)
     // No sigil: a parameter is written the way it was declared, and the steps
     // below it print attached, which is the only spelling that reads back.
     PParam(n) => b.write_string(n)
@@ -124,7 +127,7 @@ fn val_source(val : Expr) -> String {
     EDyn(name~, ..) => "*" + name
     EMethod(name~, ..) => "$" + name
     EMacroVar(name~, ..) => "^" + name
-    EConfigVar(name~, ..) => "$$" + name
+    EConfigVar(name~, ..) => "host." + name
     ERead(place~, ..) => place.to_source()
     ERef(place~, ..) => "&" + place.to_source()
     EUnary(op~, operand~, ..) => op_word(op) + operand_source(operand)

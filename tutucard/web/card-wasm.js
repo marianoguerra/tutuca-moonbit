@@ -509,7 +509,7 @@ export const b64ToBytes = (b64) =>
  * `build` is the compile report, for the panels that show the WAT, the WAX and
  * the download — so a caller that wants those does not compile a second time.
  *
- * `init` names one of the card's `tutuca/init` fixtures. "" is not "no fixture"
+ * `init` names one of the card's `tutuca/fixtures` fixtures. "" is not "no fixture"
  * — it is "nothing was named", and a card that marked one `default` has already
  * said what to show then. So the ordinary mount shows the card the way its
  * author meant it to be met.

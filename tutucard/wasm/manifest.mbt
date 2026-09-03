@@ -2,7 +2,7 @@
 //
 // A card already IS a manifest: the state block names the fields and their
 // types, the `<template>`s are the views, the script names the messages and
-// the methods, and a `tutuca/init` block is a named example. So this is a
+// the methods, and a `tutuca/fixtures` block is a named example. So this is a
 // projection rather than a second thing to author — which is the answer to the
 // "manifest authoring" open question in
 // `docs/generative-dyncomps-in-the-browser-design.md`, at least for a card.
@@ -236,7 +236,7 @@ fn component_json(
         })
       }),
     ),
-    // The card's `<script type="tutuca/init">` fixtures.
+    // The card's `<script type="tutuca/fixtures">` fixtures.
     //
     // `InitState` keeps the values, so there is nothing to project.
     //

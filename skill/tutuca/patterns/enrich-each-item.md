@@ -43,5 +43,5 @@ Without an `@each` on the same element, `@enrich-with` enriches the whole
 scope instead — that is `bindWith`, which sees only the state (see
 [bind-text-and-attributes.md](bind-text-and-attributes.md)).
 
-`@cur` is reserved: an enricher's bindings become a view's scope, and the
+`cur` is reserved: an enricher's bindings become a view's scope, and the
 `new` target is not something a component may publish.

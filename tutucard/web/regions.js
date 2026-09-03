@@ -36,7 +36,7 @@
  * card declares none — which is most cards, and which the pane shows as empty
  * rather than hiding, for the reason the script pane does.
  *
- * `init` is the `<script type="tutuca/init">` block: the card's named example
+ * `fixtures` is the `<script type="tutuca/fixtures">` block: the card's named example
  * states. One per file, and the same null-rather-than-hidden treatment. It is
  * the one block whose PANE has a second pane beside it — the Examples panel
  * mounts what this names — which is why it is worth editing here rather than
@@ -46,7 +46,7 @@
  *   spec: Region | null,
  *   script: Region | null,
  *   tests: Region | null,
- *   init: Region | null,
+ *   fixtures: Region | null,
  *   views: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
  *   macros: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
  * }} Parts
@@ -89,9 +89,11 @@ export function parts(source) {
     /<script\s+type="tutuca\/test"\s*>/g,
     "</script>",
   );
-  const init = element(
+  // Both spellings, the way the spec block takes both: `tutuca/fixtures` is
+  // what a card writes now and `tutuca/init` still parses for one release.
+  const fixtures = element(
     source,
-    /<script\s+type="tutuca\/init"\s*>/g,
+    /<script\s+type="tutuca\/(?:fixtures|init)"\s*>/g,
     "</script>",
   );
   const views = [];
@@ -147,7 +149,7 @@ export function parts(source) {
     spec: spec && strip(spec),
     script: script && strip(script),
     tests: tests && strip(tests),
-    init: init && strip(init),
+    fixtures: fixtures && strip(fixtures),
     views,
     macros,
   };
@@ -291,7 +293,7 @@ export function renameView(source, p, i, name) {
 }
 
 /**
- * The source with an empty `tutuca/init` block appended.
+ * The source with an empty `tutuca/fixtures` block appended.
  *
  * The body is one fixture rather than `{}`, because the envelope is the thing
  * an author most needs shown: a fixture is `{ "value": { …fields… } }` with
@@ -304,7 +306,7 @@ export function renameView(source, p, i, name) {
 export function addInit(source) {
   const sep = source.endsWith("\n") ? "" : "\n";
   return (
-    `${source}${sep}\n<script type="tutuca/init">\n` +
+    `${source}${sep}\n<script type="tutuca/fixtures">\n` +
     `{\n  "fresh": {\n    "doc": "",\n    "value": {}\n  }\n}\n</script>\n`
   );
 }

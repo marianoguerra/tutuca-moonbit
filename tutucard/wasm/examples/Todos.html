@@ -40,9 +40,9 @@
   /// still change.
   receive add requires typed {
     new Todo
-    @cur.text = .draft
-    @cur.done = false
-    .items.push @cur
+    cur.text = .draft
+    cur.done = false
+    .items.push cur
     .draft = ''
   }
 
@@ -69,7 +69,7 @@
   get caption { if .done { $'{.text} (done)' } else { .text } }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 {
   "three rows": {
     "doc": "A list that has been used, arrived at by using it.",

@@ -72,6 +72,7 @@ pub(all) enum ControlMsg {
   Reply(@core.Value)
   Fail(@core.Value)
   SendReply(String, Array[@core.Value])
+  SetAt(Array[@core.Step], String, @core.Value)
   StopPropagation
 } derive(Eq, @debug.Debug)
 

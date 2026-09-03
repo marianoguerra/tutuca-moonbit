@@ -10,7 +10,7 @@ shows, and the active tab button is highlighted.
   state Tabs { currentView: String }
 </script>
 
-<script type="tutuca/init">
+<script type="tutuca/fixtures">
 { "fresh": { "value": { "currentView": "overview" } } }
 </script>
 

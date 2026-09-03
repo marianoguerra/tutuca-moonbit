@@ -144,6 +144,13 @@ export const IMPORTS = {
       result: null,
     },
     "send-reply": { impl: "sendReply", params: [STRING, list(VALUE)], result: null },
+    // The PUBLIC property door at a path. One value, not a list: a write has
+    // one right-hand side, where a message has a payload.
+    "set-at": {
+      impl: "setAt",
+      params: [list(PATH_STEP), STRING, VALUE],
+      result: null,
+    },
     // The first import that answers with a compound. `lowerImport` already
     // handles it: a `value` flattens to more core values than a result may
     // carry, so the guest appends a return pointer and the host stores into it.

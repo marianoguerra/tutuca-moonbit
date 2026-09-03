@@ -33,7 +33,7 @@ const CARD = [
   "  receive bump { .n += 1 }",
   "</script>",
   "",
-  '<script type="tutuca/init">',
+  '<script type="tutuca/fixtures">',
   '  { "fresh": { "value": { "n": 0 } } }',
   "</script>",
   "",
@@ -51,13 +51,13 @@ check("the spec block is sliced exactly", p.spec.text, "\n  state Counter { n: I
 check("the script block is sliced exactly", p.script.text, "\n  receive bump { .n += 1 }\n");
 // The examples tab edits this one, and the Examples pane mounts what it names.
 check(
-  "the init block is sliced exactly",
-  p.init.text,
+  "the fixtures block is sliced exactly",
+  p.fixtures.text,
   '\n  { "fresh": { "value": { "n": 0 } } }\n',
 );
 // …and a card without one says so rather than throwing, which is what the tab's
 // empty state is drawn from.
-check("a card with no init block has none", R.parts("<template><p>x</p></template>").init, null);
+check("a card with no fixtures block has none", R.parts("<template><p>x</p></template>").fixtures, null);
 // A new block is the ENVELOPE, not a bare field map: the format has no
 // shorthand, and the thing an author opens is the thing they should copy.
 check(

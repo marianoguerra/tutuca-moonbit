@@ -359,6 +359,21 @@ interface control {
   /// `[field("left")]` for the child a `left` field holds.
   send-at: func(path: list<path-step>, name: string, args: list<value>);
 
+  /// Write a PUBLIC property of a component in this one's own subtree
+  /// (`ctx.set-property-at-path`), e.g. `[field("row")]` for the child a `row`
+  /// field holds.
+  ///
+  /// The PUBLIC door, and the distinction is the point of having it. A guest
+  /// writing its own field does that inside itself and the host never sees it;
+  /// this crosses, and what it crosses to is a separate instance the guest
+  /// merely HOLDS — often from another bundle. What a child lets a holder
+  /// write is what it declares writable, and a state field that declares no
+  /// property is private and stays private through this.
+  ///
+  /// Buffered and applied by the host like every other `control` call, so a
+  /// write beside a transition that did not happen does not happen either.
+  set-at: func(path: list<path-step>, name: string, value: value);
+
   /// Answer whoever sent the message being handled, under a name this handler
   /// picks.
   ///
