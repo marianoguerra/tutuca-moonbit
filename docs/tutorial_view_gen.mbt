@@ -566,7 +566,7 @@ pub let page_global_style : String = ""
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
-    fingerprint="e7a1401b9ddf0bfa",
+    fingerprint="3dce5c9f988f1a60",
     fields=[@component.FieldInfo::new("greeting", TyComp(Some("Greeting")))],
     view_names=["main"],
   )
@@ -827,7 +827,7 @@ pub let chat_global_style : String = ""
 impl @component.Fields for ChatState with fn schema() {
   @component.SchemaInfo::new(
     name="Chat",
-    fingerprint="22135b8f3501dbd2",
+    fingerprint="141e976ca19adb16",
     fields=[
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),

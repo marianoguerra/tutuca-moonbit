@@ -169,7 +169,7 @@ impl @component.Fields for VwTypesState with fn decode(f) {
 /// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwTypesState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="479948944eeca962", fields=[
+  @component.SchemaInfo::new(fingerprint="5c7faf813a100350", fields=[
     @component.FieldInfo::new("items", TyList(TyComp(None))),
   ])
 }
@@ -237,7 +237,7 @@ impl @component.Fields for VwContainerState with fn decode(f) {
 /// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwContainerState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="800b682e34030cdd", fields=[
+  @component.SchemaInfo::new(fingerprint="c9ca31b72dca9b53", fields=[
     @component.FieldInfo::new("items", TyList(TyComp(None))),
     @component.FieldInfo::new("expanded", TyBool),
     @component.FieldInfo::new("editing", TyBool),
@@ -336,7 +336,7 @@ impl @component.Fields for VwIfState with fn decode(f) {
 /// answers `schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwIfState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="9c6f1afed177b339", fields=[
+  @component.SchemaInfo::new(fingerprint="73bcbf364995e7a1", fields=[
     @component.FieldInfo::new("thn", TyList(TyComp(None))),
     @component.FieldInfo::new("else", TyList(TyComp(None))),
     @component.FieldInfo::new("expanded", TyBool),
@@ -423,7 +423,7 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
   @component.SchemaInfo::new(
-    fingerprint="c2b767da50368b9c",
+    fingerprint="88cf16a87ec9a59e",
     fields=[
       @component.FieldInfo::new("id", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("name", TyText),

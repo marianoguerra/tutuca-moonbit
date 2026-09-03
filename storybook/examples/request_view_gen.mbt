@@ -209,7 +209,7 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="e4b522f3e26809ee",
+    fingerprint="a01f3d0145575af0",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("query", TyText),

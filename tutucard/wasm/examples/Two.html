@@ -9,7 +9,7 @@
     tally: Int
     /// A child slot: the row this board is looking at.
     ///
-    /// `Row` is the sibling declared below, so this is `Component[Row]` without
+    /// `Row` is the sibling declared below, so this is `Instance[Row]` without
     /// having to say so. A card cannot BUILD one — `new` makes a declared
     /// record, not an instance — but it can hold one a host put here, and that
     /// is what makes a child token something worth being able to carry.

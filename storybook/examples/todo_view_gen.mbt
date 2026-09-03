@@ -205,7 +205,7 @@ pub let items_global_style : String = ""
 impl @component.Fields for ItemsState with fn schema() {
   @component.SchemaInfo::new(
     name="Items",
-    fingerprint="d37eb3e9af8860d3",
+    fingerprint="bba812c0e1bd5245",
     fields=[@component.FieldInfo::new("items", TyList(TyComp(Some("Item"))))],
     view_handlers=["onAddItem"],
     view_names=["main"],

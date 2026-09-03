@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let universal_spec_source : String =
   #|  state Universal {
-  #|    child : Component
+  #|    child : Instance
   #|  }
   #|
   #|  handle Universal {
@@ -67,7 +67,7 @@ pub let universal_spec_source : String =
   #|
   #|  state TabPage {
   #|    label : String
-  #|    body : Component
+  #|    body : Instance
   #|  }
   #|
   #|  handle TabPage {

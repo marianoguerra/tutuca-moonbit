@@ -484,7 +484,7 @@ pub let command_bar_global_style : String = ""
 impl @component.Fields for CommandBarState with fn schema() {
   @component.SchemaInfo::new(
     name="CommandBar",
-    fingerprint="338dc1bbfe27922e",
+    fingerprint="7f72dfeda93e2258",
     fields=[
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("hits", TyList(TyComp(Some("PaletteRow")))),
@@ -1068,7 +1068,7 @@ pub let schema_form_global_style : String = ""
 impl @component.Fields for SchemaFormState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaForm",
-    fingerprint="dde839eed33ecac5",
+    fingerprint="649060bc6c9c1631",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -1333,7 +1333,7 @@ pub let config_panel_global_style : String = ""
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="ConfigPanel",
-    fingerprint="d7a35a48ea8dcbe4",
+    fingerprint="5f41db20a0c52b6c",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("mode", TyText),
@@ -1374,7 +1374,7 @@ pub(all) struct UniversalAppInitChoice {
 pub(all) struct UniversalAppState {
   /// The universal component, from `dyncomp/ui/std`. Named rather than
   /// declared, because it lives in another module and this file cannot see
-  /// it — `Component[X]` resolves through the registration scope at make
+  /// it — `Instance[X]` resolves through the registration scope at make
   /// time, which is the only place the name means anything.
   root : @tutuca.Value
   /// "edit" | "main"
@@ -1588,7 +1588,7 @@ pub fn UniversalAppCompute::name(self : UniversalAppCompute) -> String {
 impl @component.Fields for UniversalAppState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalApp",
-    fingerprint="54b837f5ce52f780",
+    fingerprint="a0ea05f10024f5b8",
     fields=[
       @component.FieldInfo::new("root", TyComp(Some("Universal"))),
       @component.FieldInfo::new("mode", TyText),

@@ -143,7 +143,7 @@ pub let strategies_global_style : String = ""
 impl @component.Fields for StrategiesState with fn schema() {
   @component.SchemaInfo::new(
     name="Strategies",
-    fingerprint="3cd441eb8f318f41",
+    fingerprint="35f9933ea85a0717",
     fields=[
       @component.FieldInfo::new("naive", TyComp(Some("NaivePeople"))),
       @component.FieldInfo::new("shared", TyComp(Some("SharedPeople"))),
@@ -345,7 +345,7 @@ pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
 impl @component.Fields for NaivePeopleState with fn schema() {
   @component.SchemaInfo::new(
     name="NaivePeople",
-    fingerprint="06f7fefd211d5064",
+    fingerprint="0c80a94e22b42c16",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("Person")))),
       @component.FieldInfo::new("query", TyText),

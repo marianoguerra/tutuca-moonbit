@@ -147,7 +147,7 @@ pub let selector_global_style : String = ""
 impl @component.Fields for SelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="Selector",
-    fingerprint="57d7e12924180b89",
+    fingerprint="54a5a2d4b21ffc8d",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selectedValue", TyAny),
@@ -296,7 +296,7 @@ pub let entry_editor_and_selector_global_style : String = ""
 impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="EntryEditorAndSelector",
-    fingerprint="baa0c9031d4d79c8",
+    fingerprint="a6f2c8e60e896dd2",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("SelectorEntry")))),
       @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
@@ -489,7 +489,7 @@ pub let panel_global_style : String = ""
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(
     name="Panel",
-    fingerprint="8f521bd049a9ee1d",
+    fingerprint="680dffab2ee9b9d1",
     fields=[@component.FieldInfo::new("toolbar", TyComp(Some("Toolbar")))],
     view_names=["main"],
   )
@@ -569,7 +569,7 @@ pub fn WorkspaceCompute::name(self : WorkspaceCompute) -> String {
 impl @component.Fields for WorkspaceState with fn schema() {
   @component.SchemaInfo::new(
     name="Workspace",
-    fingerprint="780031bd15062164",
+    fingerprint="d6427306bdda990a",
     fields=[
       @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
       @component.FieldInfo::new("panel", TyComp(Some("Panel"))),

@@ -28,12 +28,12 @@
 pub let composability_spec_source : String =
   #|  state {
   #|    activeSection : String
-  #|    todo : Component[Items]
-  #|    json : Component[JsonArray]
-  #|    tree : Component[TreeRoot]
-  #|    personalSite : Component[Root]
-  #|    visualWasm : Component[Module]
-  #|    dnd : Component
+  #|    todo : Instance[Items]
+  #|    json : Instance[JsonArray]
+  #|    tree : Instance[TreeRoot]
+  #|    personalSite : Instance[Root]
+  #|    visualWasm : Instance[Module]
+  #|    dnd : Instance
   #|
   #|    where activeSection is one of ["todo", "json", "tree", "personalSite", "dnd", "visualWasm"]
   #|  }

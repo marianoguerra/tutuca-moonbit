@@ -131,7 +131,7 @@ pub let page_global_style : String = ""
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
-    fingerprint="e7a1401b9ddf0bfa",
+    fingerprint="3dce5c9f988f1a60",
     fields=[@component.FieldInfo::new("greeting", TyComp(Some("Greeting")))],
     view_names=["main"],
   )
@@ -267,7 +267,7 @@ pub let multiple_views_global_style : String = ""
 impl @component.Fields for MultipleViewsState with fn schema() {
   @component.SchemaInfo::new(
     name="MultipleViews",
-    fingerprint="236b214364a233e8",
+    fingerprint="14d9ad16b20af334",
     fields=[@component.FieldInfo::new("value", TyComp(Some("Entry")))],
     view_names=["main"],
   )

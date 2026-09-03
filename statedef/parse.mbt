@@ -234,7 +234,7 @@ priv enum RawTy {
   ROpt(RawTy, Span)
   /// `(A, B)`
   RTuple(Array[RawTy], Span)
-  /// `protocol P & Q` inside `Component[…]`.
+  /// `protocol P & Q` inside `Instance[…]`.
   RProtocolSet(Array[(String, Span)], Span)
 }
 
@@ -1276,7 +1276,7 @@ fn parse_ty(p : P) -> RawTy raise DefError {
       let args : Array[RawTy] = []
       if p.peek() is TLBracket {
         p.bump() |> ignore
-        if name == "Component" && p.peek() is TIdent("protocol") {
+        if name is ("Instance" | "Component") && p.peek() is TIdent("protocol") {
           p.bump() |> ignore
           let refs : Array[(String, Span)] = []
           for ;; {
@@ -1305,7 +1305,7 @@ fn parse_ty(p : P) -> RawTy raise DefError {
         end_: p.toks[p.at - 1].span.end_,
       })
     }
-    // `Component["Legend"]` is the only place a string is a type argument, and
+    // `Instance["Legend"]` is the only place a string is a type argument, and
     // it arrives through the branch above.
     _ => p.fail("a type")
   }
@@ -1744,6 +1744,7 @@ fn is_builtin_ty(name : String) -> Bool {
   | "Set"
   | "Map"
   | "Any"
+  | "Instance"
   | "Component")
 }
 
@@ -1847,7 +1848,10 @@ fn named(
           )
       }
     }
-    "Component" =>
+    // `Component` is the retired spelling. A field holds an INSTANCE of a
+    // component, not the component — the same word named the definition and
+    // the thing made from it.
+    "Instance" | "Component" =>
       if args.is_empty() {
         TyComp(None)
       } else {
@@ -1863,13 +1867,13 @@ fn named(
             }
             TyCompProtocols(ids)
           }
-          // `Component["Legend"]` names a component from another module. A
+          // `Instance["Legend"]` names a component from another module. A
           // string rather than a bare name because it resolves through the
           // registration scope at make time and this file cannot see it.
           RNamed(name=n, args=[], ..) => TyComp(Some(upper_name(n)))
           other =>
             raise UnsupportedType(
-              ty="Component[…]",
+              ty="Instance[…]",
               why="a component slot names one component",
               span=other.span(),
             )

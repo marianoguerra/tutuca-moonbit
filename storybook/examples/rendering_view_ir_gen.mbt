@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let push_view_spec_source : String =
   #|  state PushView {
-  #|    items : Array[Component[Entry]]
+  #|    items : Array[Instance[Entry]]
   #|    query : String
   #|    view : String
   #|
@@ -35,8 +35,8 @@ pub let push_view_spec_source : String =
   #|  }
   #|
   #|  state SeqItemAccess {
-  #|    byKey : Map[String, Component[Entry]]
-  #|    byIndex : Array[Component[Entry]]
+  #|    byKey : Map[String, Instance[Entry]]
+  #|    byIndex : Array[Instance[Entry]]
   #|    currentKey : Any
   #|    currentIndex : Int
   #|

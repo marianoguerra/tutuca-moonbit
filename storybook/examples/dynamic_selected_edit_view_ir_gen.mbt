@@ -37,7 +37,7 @@ pub let dse_root_spec_source : String =
   #|  state DseRoot {
   #|    items : Map[String, DseEntry]
   #|    selectedKey : String
-  #|    editor : Component[Editor]
+  #|    editor : Instance[Editor]
   #|
   #|    where selectedKey is key of .items
   #|  }

@@ -43,13 +43,13 @@ pub let instance_fields_spec_source : String =
   #|  }
   #|
   #|  state InstanceInspector {
-  #|    value : Component
+  #|    value : Instance
   #|  }
   #|
   #|  state InstanceExplorer {
   #|    activeTab : String
-  #|    instanceView : Component
-  #|    componentView : Component
+  #|    instanceView : Instance
+  #|    componentView : Instance
   #|    hasComponent : Bool
   #|
   #|    where activeTab is one of ["instance", "component"]

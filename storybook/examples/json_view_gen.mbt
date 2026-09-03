@@ -620,7 +620,7 @@ pub let json_array_global_style : String = ""
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
-    fingerprint="3cb4710a9dffd22d",
+    fingerprint="15964fe430d8e311",
     fields=[@component.FieldInfo::new("items", TyList(TyComp(None)))],
     view_handlers=["addItem", "onDropOnItem"],
     view_names=["main"],
@@ -831,7 +831,7 @@ pub let json_object_global_style : String = ""
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
-    fingerprint="0bd8cbf0734aba72",
+    fingerprint="2b94e17ce55b532e",
     fields=[
       @component.FieldInfo::new(
         "items",

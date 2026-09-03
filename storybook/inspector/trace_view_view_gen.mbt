@@ -244,7 +244,7 @@ pub let trace_row_global_style : String = ""
 impl @component.Fields for TraceRowState with fn schema() {
   @component.SchemaInfo::new(
     name="TraceRow",
-    fingerprint="73d9e9d3f845d99f",
+    fingerprint="7127dda607085b6b",
     fields=[
       @component.FieldInfo::new("seq", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("turn", TyInt(width=32, signed=true)),
@@ -446,7 +446,7 @@ pub let trace_log_global_style : String = ""
 impl @component.Fields for TraceLogState with fn schema() {
   @component.SchemaInfo::new(
     name="TraceLog",
-    fingerprint="ab779104e1ec3c16",
+    fingerprint="599b2de3f01f84e4",
     fields=[
       @component.FieldInfo::new("rows", TyList(TyComp(Some("TraceRow")))),
       @component.FieldInfo::new("hasRows", TyBool),
@@ -882,7 +882,7 @@ pub let trace_places_global_style : String = ""
 impl @component.Fields for TracePlacesState with fn schema() {
   @component.SchemaInfo::new(
     name="TracePlaces",
-    fingerprint="ba590b6564d637b9",
+    fingerprint="7bb1c43b2fc35855",
     fields=[
       @component.FieldInfo::new("places", TyList(TyComp(Some("TracePlace")))),
       @component.FieldInfo::new("hasPlaces", TyBool),
@@ -1446,7 +1446,7 @@ pub let trace_panel_global_style : String = ""
 impl @component.Fields for TracePanelState with fn schema() {
   @component.SchemaInfo::new(
     name="TracePanel",
-    fingerprint="5c59ef6fe48d16c0",
+    fingerprint="5a21fc8ea7a50bee",
     fields=[
       @component.FieldInfo::new("bar", TyComp(Some("RecorderBar"))),
       @component.FieldInfo::new("header", TyComp(Some("TraceHeader"))),

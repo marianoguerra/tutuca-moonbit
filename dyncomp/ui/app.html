@@ -127,8 +127,8 @@
     /// The live instance, when it renders its own config view. It is MOVED
     /// here rather than copied: an instance rendered in two places has one
     /// of them holding a dead handle after the first interaction.
-    target : Component
-    form : Component
+    target : Instance
+    form : Instance
   }
 
   handle ConfigPanel {
@@ -151,13 +151,13 @@
   state UniversalApp {
     /// The universal component, from `dyncomp/ui/std`. Named rather than
     /// declared, because it lives in another module and this file cannot see
-    /// it — `Component[X]` resolves through the registration scope at make
+    /// it — `Instance[X]` resolves through the registration scope at make
     /// time, which is the only place the name means anything.
-    root : Component[Universal]
+    root : Instance[Universal]
     /// "edit" | "main"
     mode : String
-    commandBar : Component
-    configPanel : Component
+    commandBar : Instance
+    configPanel : Instance
     status : String
     /// Whatever the HOST wants in the bar — loading bundles, in the wasm
     /// shell's case. Null in every test and in any host that needs none.
@@ -166,7 +166,7 @@
     /// backend-agnostic and the things a host offers are exactly the things
     /// it cannot be: fetching an archive, reading a dropped file. The app
     /// gives it a place to stand and forwards what lands on the page.
-    devTools : Component
+    devTools : Instance
   }
 
   handle UniversalApp {

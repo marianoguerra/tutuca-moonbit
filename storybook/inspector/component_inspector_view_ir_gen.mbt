@@ -35,7 +35,7 @@ pub let comp_name_spec_source : String =
   #|  state CompField {
   #|    name : String
   #|    typeName : String
-  #|    child : Component
+  #|    child : Instance
   #|
   #|    where name is nonempty
   #|    where typeName is nonempty

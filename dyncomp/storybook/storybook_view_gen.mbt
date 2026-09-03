@@ -514,7 +514,7 @@ pub fn StoryCardCompute::name(self : StoryCardCompute) -> String {
 impl @component.Fields for StoryCardState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryCard",
-    fingerprint="7c6680522acde99f",
+    fingerprint="b45458ac099a7cb9",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("doc", TyText),
@@ -886,7 +886,7 @@ pub fn DyncompStorybookWhen::name(self : DyncompStorybookWhen) -> String {
 impl @component.Fields for DyncompStorybookState with fn schema() {
   @component.SchemaInfo::new(
     name="DyncompStorybook",
-    fingerprint="8eb9bcecd50afc5a",
+    fingerprint="827316769ee62fca",
     fields=[
       @component.FieldInfo::new("cards", TyList(TyComp(Some("StoryCard")))),
       @component.FieldInfo::new("nav", TyList(TyComp(Some("StoryNav")))),

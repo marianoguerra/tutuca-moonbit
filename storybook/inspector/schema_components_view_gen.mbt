@@ -248,7 +248,7 @@ pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
 impl @component.Fields for SchemaScalarState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaScalar",
-    fingerprint="fd44507a558877c6",
+    fingerprint="ba09b1a8b39e94fa",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -515,7 +515,7 @@ pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
 impl @component.Fields for SchemaObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaObject",
-    fingerprint="10112fb1b287887f",
+    fingerprint="2669c469a06201b1",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -779,7 +779,7 @@ pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
 impl @component.Fields for SchemaArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaArray",
-    fingerprint="70e44a9b30dcecfb",
+    fingerprint="2b650a5df53d7b3d",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -1041,7 +1041,7 @@ pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
 impl @component.Fields for SchemaEnumState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaEnum",
-    fingerprint="bade4b6925eae749",
+    fingerprint="7c96c1f9e31d3e23",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -1310,7 +1310,7 @@ pub fn SchemaCombinatorLoopWith::name(
 impl @component.Fields for SchemaCombinatorState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaCombinator",
-    fingerprint="626d4461aa6f6398",
+    fingerprint="5ba7618ef33c9eec",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),

@@ -31,6 +31,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   .send(ctx)` precisely because the block answers `bump`. The doc comment says
   which cases can never reach an `update` arm instead.
 
+- **`Component[X]` is `Instance[X]`.** A field holds an INSTANCE of a
+  component, not the component — one word named the definition and the thing
+  made from it, in the one place a reader is trying to tell them apart. A bare
+  `Component` is `Instance`.
+
+  `Component[X]` still parses for one release. It changes every schema
+  FINGERPRINT that names one, which is the point of the fingerprint — it
+  notices that a stored state can no longer be read back — so the golden
+  digest for the `component` row moved deliberately and nothing else in the
+  corpus did. Manifests and `dyncomp/persist` carry no fingerprint, so nothing
+  stored crosses it.
+
+  There is no `migrate` rule for it yet: the spec block has no retirement
+  channel, because `statedef`'s lexer is private and a literal scan would
+  rewrite the word in prose. It lands with the rest of the spec-block family.
+
 - **`<C>Method` is `<C>Compute`**, named for the bucket it keys.
 
 - **`init~` is `initial~`**, on the generated wrapper and on `component()`

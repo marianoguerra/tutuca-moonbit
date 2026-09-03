@@ -44,8 +44,8 @@ pub let person_spec_source : String =
   #|
   #|  state Strategies {
   #|    naive : NaivePeople
-  #|    shared : Component[SharedPeople]
-  #|    coupled : Component[CoupledPeople]
+  #|    shared : Instance[SharedPeople]
+  #|    coupled : Instance[CoupledPeople]
   #|  }
 
 ///|

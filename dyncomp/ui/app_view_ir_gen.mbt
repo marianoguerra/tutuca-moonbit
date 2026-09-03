@@ -110,8 +110,8 @@ pub let palette_row_spec_source : String =
   #|  state ConfigPanel {
   #|    title : String
   #|    mode : String
-  #|    target : Component
-  #|    form : Component
+  #|    target : Instance
+  #|    form : Instance
   #|  }
   #|
   #|  handle ConfigPanel {
@@ -122,12 +122,12 @@ pub let palette_row_spec_source : String =
   #|  }
   #|
   #|  state UniversalApp {
-  #|    root : Component[Universal]
+  #|    root : Instance[Universal]
   #|    mode : String
-  #|    commandBar : Component
-  #|    configPanel : Component
+  #|    commandBar : Instance
+  #|    configPanel : Instance
   #|    status : String
-  #|    devTools : Component
+  #|    devTools : Instance
   #|  }
   #|
   #|  handle UniversalApp {

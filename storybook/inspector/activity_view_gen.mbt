@@ -135,7 +135,7 @@ pub let activity_entry_global_style : String = ""
 impl @component.Fields for ActivityEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityEntry",
-    fingerprint="d245eba97ac9dbb6",
+    fingerprint="ce2be86694d67128",
     fields=[
       @component.FieldInfo::new("kind", TyText),
       @component.FieldInfo::new("origin", TyText),
@@ -303,7 +303,7 @@ pub let activity_log_global_style : String = ""
 impl @component.Fields for ActivityLogState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityLog",
-    fingerprint="89a474ef1fab02dd",
+    fingerprint="a88251d5d8341683",
     fields=[
       @component.FieldInfo::new("events", TyList(TyComp(Some("ActivityEntry")))),
       @component.FieldInfo::new("hasEvents", TyBool),

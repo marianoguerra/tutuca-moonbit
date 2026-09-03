@@ -222,7 +222,7 @@ pub fn InstanceFieldsLoopWith::name(self : InstanceFieldsLoopWith) -> String {
 impl @component.Fields for InstanceFieldsState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceFields",
-    fingerprint="ba73b280c25f2f1f",
+    fingerprint="cecf9aa76dee0b71",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -303,7 +303,7 @@ pub let instance_inspector_global_style : String = ""
 impl @component.Fields for InstanceInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceInspector",
-    fingerprint="363e7b592cf809d2",
+    fingerprint="658ac5fbc228d006",
     fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )
@@ -389,7 +389,7 @@ pub let instance_explorer_global_style : String = ""
 impl @component.Fields for InstanceExplorerState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceExplorer",
-    fingerprint="44ad70e869788180",
+    fingerprint="43270333b2da7578",
     fields=[
       @component.FieldInfo::new("activeTab", TyText),
       @component.FieldInfo::new("instanceView", TyComp(None)),

@@ -16,6 +16,11 @@ fn rules() -> Array[(String) -> Array[Edit]] {
   [retired_spec_block, retired_fixtures_block]
 }
 
+// A `Instance[X]` → `Instance[X]` rule belongs here and is not written yet:
+// the spec block has no retirement channel, because `statedef`'s lexer is
+// private and a literal scan would rewrite the word in prose. It goes in with
+// the rest of the spec-block family.
+
 ///|
 /// The rules that need a BLOCK, run per block with its offset.
 ///

@@ -146,7 +146,7 @@ fn scalar_ty(name : String) -> StateTy? {
 /// shares `scalar_ty` with the state block's own resolver so a name cannot
 /// mean two things.
 ///
-/// `Component[…]` is deliberately absent: a child instance is MADE through the
+/// `Instance[…]` is deliberately absent: a child instance is MADE through the
 /// registration scope, and a zeroed one would be a `Null` wearing a slot's
 /// name.
 pub fn StateDef::resolve_ty(

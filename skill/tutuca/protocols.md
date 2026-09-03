@@ -56,7 +56,7 @@ ask Lifecycle::wantsAttention 'editor'
 ```
 
 Use protocols as component constraints with
-`Component[protocol ListItem & Selectable]`.
+`Instance[protocol ListItem & Selectable]`.
 
 Whole-batch validation reports **strict** when everything is proved and
 **gradual** when dynamic loading leaves facts deferred. Runtime mismatches do

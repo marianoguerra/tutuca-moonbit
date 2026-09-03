@@ -93,9 +93,9 @@ pub fn Ty::show_source(self : Ty) -> String {
     TyFlags(n, _) => "Set[" + n + "]"
     TySet => "Set[String]"
     TyOMap(v) => "Map[String, " + v.show_source() + "]"
-    TyComp(Some(c)) => "Component[" + c + "]"
-    TyComp(None) => "Component"
-    TyCompProtocols(ids) => "Component[protocol " + ids.join(" & ") + "]"
+    TyComp(Some(c)) => "Instance[" + c + "]"
+    TyComp(None) => "Instance"
+    TyCompProtocols(ids) => "Instance[protocol " + ids.join(" & ") + "]"
     TyTable => "Table"
     TyAny => "Any"
   }

@@ -150,7 +150,7 @@ pub let item_table_global_style : String = ""
 impl @component.Fields for ItemTableState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemTable",
-    fingerprint="d376eac7534a0d7a",
+    fingerprint="b8245fc5ac5f5b0c",
     fields=[@component.FieldInfo::new("rows", TyList(TyComp(Some("TableRow"))))],
     view_names=["main"],
   )
@@ -296,7 +296,7 @@ pub let item_select_global_style : String = ""
 impl @component.Fields for ItemSelectState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemSelect",
-    fingerprint="6eee37822fa72521",
+    fingerprint="93978975b22e1815",
     fields=[
       @component.FieldInfo::new("options", TyList(TyComp(Some("SelectOption")))),
       @component.FieldInfo::new("current", TyText),
@@ -366,7 +366,7 @@ pub let pseudo_x_demo_global_style : String = ""
 impl @component.Fields for PseudoXDemoState with fn schema() {
   @component.SchemaInfo::new(
     name="PseudoXDemo",
-    fingerprint="81f8f7ee7af22e30",
+    fingerprint="b3b19ad494034e8a",
     fields=[
       @component.FieldInfo::new("table", TyComp(Some("ItemTable"))),
       @component.FieldInfo::new("select", TyComp(Some("ItemSelect"))),

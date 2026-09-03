@@ -625,7 +625,7 @@ pub fn JsonArrayLoopWith::name(self : JsonArrayLoopWith) -> String {
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
-    fingerprint="b9e0d7b31d50edd3",
+    fingerprint="c2957ad0a2258187",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -842,7 +842,7 @@ pub fn JsonObjectLoopWith::name(self : JsonObjectLoopWith) -> String {
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
-    fingerprint="086af2b08b6883ea",
+    fingerprint="7b4fb174b3d8f8ae",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("JsonProperty")))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -924,7 +924,7 @@ pub let json_property_global_style : String = ""
 impl @component.Fields for JsonPropertyState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonProperty",
-    fingerprint="99e14734917f75fd",
+    fingerprint="8607f94eaf0170c7",
     fields=[
       @component.FieldInfo::new("key", TyText),
       @component.FieldInfo::new("child", TyComp(None)),
@@ -992,7 +992,7 @@ pub let data_inspector_global_style : String = ""
 impl @component.Fields for DataInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="DataInspector",
-    fingerprint="a1b8c17a6a5496b5",
+    fingerprint="3b4e7089042c78af",
     fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )

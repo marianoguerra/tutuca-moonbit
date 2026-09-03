@@ -127,7 +127,7 @@ test "golden: the digest of every type spelling" {
     ("flags", "enum Mode { Live, Draft }\nstate C { m: Set[Mode] }"),
     ("record", "struct Pt { x: Int, y: Int }\nstate C { p: Pt }"),
     ("variant", "enum Shape { Dot, Line(Int, Int) }\nstate C { s: Shape }"),
-    ("component", "state Child {  }\nstate C { c: Component[Child] }"),
+    ("component", "state Child {  }\nstate C { c: Instance[Child] }"),
     ("property", "state C { n: Int property { pub v: Int { get .n set .n } } }"),
     (
       "messages", "state C { n: Int }\nhandle C { message { tick, bump(Int) } intent { picked(String) } }",
@@ -154,7 +154,7 @@ test "golden: the digest of every type spelling" {
       #|flags: ed0c72dfce55ed86
       #|record: ed67bd65559f9f39
       #|variant: 2154a4aaf8a0be58
-      #|component: 18985c1b5779392d
+      #|component: 66ab7f42c7d253f3
       #|property: bda6a573b7a2a7a9
       #|messages: fa2c696a38c4de69
       #|

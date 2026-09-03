@@ -104,7 +104,7 @@ pub let composability_global_style : String = ""
 impl @component.Fields for ComposabilityState with fn schema() {
   @component.SchemaInfo::new(
     name="Composability",
-    fingerprint="ce4ce45de4683aea",
+    fingerprint="39cb8b8dd5ed4c98",
     fields=[
       @component.FieldInfo::new("activeSection", TyText),
       @component.FieldInfo::new("todo", TyComp(Some("Items"))),

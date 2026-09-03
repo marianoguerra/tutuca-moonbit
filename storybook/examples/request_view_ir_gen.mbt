@@ -27,7 +27,7 @@
 /// payload. Re-parsing this recovers both — see `testing/fuzz`.
 pub let request_example_spec_source : String =
   #|  state {
-  #|    items : Array[Component[Entry]]
+  #|    items : Array[Instance[Entry]]
   #|    query : String
   #|    view : String
   #|    isLoading : Bool

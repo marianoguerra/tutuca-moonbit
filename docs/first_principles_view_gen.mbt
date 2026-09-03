@@ -260,7 +260,7 @@ pub let mailbox_global_style : String = ""
 impl @component.Fields for MailboxState with fn schema() {
   @component.SchemaInfo::new(
     name="Mailbox",
-    fingerprint="a9312015ab024d47",
+    fingerprint="8817bbe981513a25",
     fields=[@component.FieldInfo::new("note", TyComp(Some("Note")))],
     view_names=["main"],
   )

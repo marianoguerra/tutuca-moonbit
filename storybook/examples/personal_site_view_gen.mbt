@@ -262,7 +262,7 @@ pub fn PsEntryEnrich::name(self : PsEntryEnrich) -> String {
 impl @component.Fields for PsEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="PsEntry",
-    fingerprint="9f39c7308a53ff0d",
+    fingerprint="30ec38056825e41f",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
@@ -592,7 +592,7 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
 impl @component.Fields for RootState with fn schema() {
   @component.SchemaInfo::new(
     name="Root",
-    fingerprint="68599a5a806e780b",
+    fingerprint="3f4cfc43e4c45847",
     fields=[
       @component.FieldInfo::new("allEntries", TyList(TyComp(Some("PsEntry")))),
       @component.FieldInfo::new("allCategories", TyList(TyText)),

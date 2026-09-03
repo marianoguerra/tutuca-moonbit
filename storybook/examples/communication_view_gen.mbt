@@ -285,7 +285,7 @@ pub let send_receive_global_style : String = ""
 impl @component.Fields for SendReceiveState with fn schema() {
   @component.SchemaInfo::new(
     name="SendReceive",
-    fingerprint="4d41ff781c54dcb7",
+    fingerprint="17c29dcb5c1bc0ed",
     fields=[
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
@@ -454,7 +454,7 @@ pub fn TreeItemCompute::name(self : TreeItemCompute) -> String {
 impl @component.Fields for TreeItemState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeItem",
-    fingerprint="9bc820eb0e355113",
+    fingerprint="4bd4664043615cd9",
     fields=[
       @component.FieldInfo::new("type", TyText),
       @component.FieldInfo::new("label", TyText),
@@ -536,7 +536,7 @@ pub let tree_root_global_style : String = ""
 impl @component.Fields for TreeRootState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeRoot",
-    fingerprint="9e543e5dcf7e78cd",
+    fingerprint="cd551a77c2f6c529",
     fields=[
       @component.FieldInfo::new("log", TyList(TyText)),
       @component.FieldInfo::new("root", TyComp(Some("TreeItem"))),

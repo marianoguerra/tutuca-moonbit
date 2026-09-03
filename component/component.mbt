@@ -219,7 +219,7 @@ pub fn[S : @tutuca.Fields] component(
   // From the SCHEMA, because it is a question about the type and not about one
   // value of it. Reading it off `encode(init)` was wrong for every field an
   // encoder may omit: a generated `encode` leaves an `option` out when it is
-  // None, so `kid : Component[Child]?` seeded `None` produced no `kid` key, no
+  // None, so `kid : Instance[Child]?` seeded `None` produced no `kid` key, no
   // `kid` in this list, and every later write to `.kid` updated the fields map
   // while the struct kept the value it was born with. The child's own view
   // re-rendered (it renders from the map) and everything reading `s.kid` — a

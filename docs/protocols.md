@@ -97,7 +97,7 @@ Protocols are component types:
 
 ```text
 state List {
-  rows: Array[Component[protocol ListItem & Selectable]]
+  rows: Array[Instance[protocol ListItem & Selectable]]
 }
 ```
 

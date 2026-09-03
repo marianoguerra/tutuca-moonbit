@@ -279,7 +279,7 @@ pub let state_editor_global_style : String = ""
 impl @component.Fields for StateEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="StateEditor",
-    fingerprint="c309ede10e666779",
+    fingerprint="a392b4282a861a83",
     fields=[
       @component.FieldInfo::new("target", TyComp(None)),
       @component.FieldInfo::new("rows", TyList(TyComp(Some("StateEditorRow")))),

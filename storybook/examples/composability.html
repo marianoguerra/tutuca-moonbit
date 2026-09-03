@@ -1,12 +1,12 @@
 <script type="tutuca/spec">
   state {
     activeSection : String
-    todo : Component[Items]
-    json : Component[JsonArray]
-    tree : Component[TreeRoot]
-    personalSite : Component[Root]
-    visualWasm : Component[Module]
-    dnd : Component
+    todo : Instance[Items]
+    json : Instance[JsonArray]
+    tree : Instance[TreeRoot]
+    personalSite : Instance[Root]
+    visualWasm : Instance[Module]
+    dnd : Instance
 
     /// Six tabs, six panes, and a seventh name would render a page with
     /// nothing on it — `setActiveSection` is generated, so this is the only

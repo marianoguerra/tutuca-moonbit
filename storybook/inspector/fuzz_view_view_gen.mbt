@@ -249,7 +249,7 @@ pub let fuzz_row_global_style : String = ""
 impl @component.Fields for FuzzRowState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzRow",
-    fingerprint="60b6dab9cb72fbd6",
+    fingerprint="82b038fd1c3b4bb2",
     fields=[
       @component.FieldInfo::new("at", TyInt(width=32, signed=true)),
       @component.FieldInfo::new("name", TyText),
@@ -356,7 +356,7 @@ pub let fuzz_log_global_style : String = ""
 impl @component.Fields for FuzzLogState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzLog",
-    fingerprint="7d8bc3f2183527ff",
+    fingerprint="2b3603a6792cc401",
     fields=[
       @component.FieldInfo::new("rows", TyList(TyComp(Some("FuzzRow")))),
       @component.FieldInfo::new("hasRows", TyBool),
@@ -852,7 +852,7 @@ pub let fuzz_verdict_global_style : String = ""
 impl @component.Fields for FuzzVerdictState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzVerdict",
-    fingerprint="fd4740889b293efa",
+    fingerprint="2cc6356cb865012e",
     fields=[
       @component.FieldInfo::new("kind", TyText),
       @component.FieldInfo::new("badgeClass", TyText),
@@ -975,7 +975,7 @@ pub let fuzz_panel_global_style : String = ""
 impl @component.Fields for FuzzPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="FuzzPanel",
-    fingerprint="cb7e7ca841d844f8",
+    fingerprint="0be6c3bd7c2a37dc",
     fields=[
       @component.FieldInfo::new("controls", TyComp(Some("FuzzControls"))),
       @component.FieldInfo::new("verdict", TyComp(Some("FuzzVerdict"))),

@@ -49,7 +49,7 @@ pub let story_nav_spec_source : String =
   #|    name : String
   #|    init : String
   #|    args : String
-  #|    target : Component
+  #|    target : Instance
   #|    error : String
   #|
   #|    where name is nonempty
@@ -78,7 +78,7 @@ pub let story_nav_spec_source : String =
   #|    mode : String
   #|    status : String
   #|    emptyMessage : String
-  #|    devTools : Component
+  #|    devTools : Instance
   #|
   #|    where mode is one of ["main", "details"]
   #|

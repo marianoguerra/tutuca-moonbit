@@ -508,7 +508,7 @@ pub let spec_viewer_global_style : String = ""
 impl @component.Fields for SpecViewerState with fn schema() {
   @component.SchemaInfo::new(
     name="SpecViewer",
-    fingerprint="38fa3e45899d8109",
+    fingerprint="c567153c22cae97d",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("sections", TyList(TyComp(None))),

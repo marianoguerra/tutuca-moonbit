@@ -270,7 +270,7 @@ pub fn UniversalCompute::name(self : UniversalCompute) -> String {
 impl @component.Fields for UniversalState with fn schema() {
   @component.SchemaInfo::new(
     name="Universal",
-    fingerprint="b53b58aba7326121",
+    fingerprint="4d3132a9cc5e84b5",
     fields=[@component.FieldInfo::new("child", TyComp(None))],
     view_handlers=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
@@ -466,7 +466,7 @@ pub fn StackCompute::name(self : StackCompute) -> String {
 impl @component.Fields for StackState with fn schema() {
   @component.SchemaInfo::new(
     name="Stack",
-    fingerprint="1913375690d59d60",
+    fingerprint="eba33bd626e63ecc",
     fields=[
       @component.FieldInfo::new("children", TyList(TyComp(Some("Universal")))),
       @component.FieldInfo::new("direction", TyText),
@@ -665,7 +665,7 @@ pub fn GridCompute::name(self : GridCompute) -> String {
 impl @component.Fields for GridState with fn schema() {
   @component.SchemaInfo::new(
     name="Grid",
-    fingerprint="3a3446f760b0dfd7",
+    fingerprint="fff5d914aca162fb",
     fields=[
       @component.FieldInfo::new("children", TyList(TyComp(Some("Universal")))),
       @component.FieldInfo::new("cols", TyInt(width=32, signed=true)),
@@ -892,7 +892,7 @@ pub let tab_page_global_style : String = ""
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
     name="TabPage",
-    fingerprint="80a9ecf642f91df1",
+    fingerprint="4c4fe700bbe59197",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),
@@ -1089,7 +1089,7 @@ pub fn TabsEnrich::name(self : TabsEnrich) -> String {
 impl @component.Fields for TabsState with fn schema() {
   @component.SchemaInfo::new(
     name="Tabs",
-    fingerprint="b0027faee7abc281",
+    fingerprint="c643649cf28145a3",
     fields=[
       @component.FieldInfo::new("tabs", TyList(TyComp(Some("TabPage")))),
       @component.FieldInfo::new("active", TyInt(width=32, signed=true)),

@@ -92,7 +92,7 @@ It is carried as `jv_i64`, and that is free rather than clever: this runtime
 builds `jv_f64` and nothing else, because tutuca has exactly one number, so an
 i64 inside a card's value tree can only be a child token. It is a SCALAR on the
 wire rather than a handle into the value arena, so a card holding children and
-no collections still imports no arena. A declared `Component[Row]` slot — or a
+no collections still imports no arena. A declared `Instance[Row]` slot — or a
 bare sibling name, which `statedef` resolves to one — holds it, `with-field`
 puts one there, `get-field` reads it back, and a successor keeps it because
 `jv_record_set` shares every part it did not change.

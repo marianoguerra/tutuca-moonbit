@@ -17,7 +17,7 @@
   /// node, and a guest — which cannot grow the field — could never join in.
   state Universal {
     /// What this holds, or null, which is what draws the `+`.
-    child : Component
+    child : Instance
   }
 
   handle Universal {
@@ -82,7 +82,7 @@
   /// text areas, composed rather than written.
   state TabPage {
     label : String
-    body : Component
+    body : Instance
   }
 
   handle TabPage {

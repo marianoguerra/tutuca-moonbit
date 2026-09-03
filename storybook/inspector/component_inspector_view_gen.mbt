@@ -136,7 +136,7 @@ pub let comp_field_global_style : String = ""
 impl @component.Fields for CompFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="CompField",
-    fingerprint="432d4369d9e7f91c",
+    fingerprint="7756eaa477467220",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("typeName", TyText),
@@ -514,7 +514,7 @@ pub fn CompSectionLoopWith::name(self : CompSectionLoopWith) -> String {
 impl @component.Fields for CompSectionState with fn schema() {
   @component.SchemaInfo::new(
     name="CompSection",
-    fingerprint="8c149e16eb837bd6",
+    fingerprint="e70110e2c3c2913c",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(None))),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -700,7 +700,7 @@ pub fn ComponentInspectorCompute::name(
 impl @component.Fields for ComponentInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentInspector",
-    fingerprint="c12de55a2abbc742",
+    fingerprint="999e084406024c9c",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("compId", TyInt(width=32, signed=true)),

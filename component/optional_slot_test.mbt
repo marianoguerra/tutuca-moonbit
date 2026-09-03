@@ -124,7 +124,7 @@ test "an optional slot seeded None takes its first child" {
   guard parent is Obj(p0) else { fail("not obj") }
   guard p0.field("kidN") is Some(Fn(f0)) else { fail("no compute") }
   // absent, and it stays absent — an option-typed slot is not built for you,
-  // which is the difference from `Component[Kid]` and the reason to spell it
+  // which is the difference from `Instance[Kid]` and the reason to spell it
   assert_eq(f0([parent]), Str("none"))
   let next = parent.with_field("kid", kid_comp().make({ "n": Num(3) }))
   guard next is Obj(p1) else { fail("not obj") }

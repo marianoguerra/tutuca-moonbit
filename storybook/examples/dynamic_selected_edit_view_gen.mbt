@@ -151,7 +151,7 @@ pub let dse_root_global_style : String = ""
 impl @component.Fields for DseRootState with fn schema() {
   @component.SchemaInfo::new(
     name="DseRoot",
-    fingerprint="03406d62f8349aca",
+    fingerprint="5e149f25da22c33a",
     fields=[
       @component.FieldInfo::new("items", TyOMap(TyComp(Some("DseEntry")))),
       @component.FieldInfo::new("selectedKey", TyText),

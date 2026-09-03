@@ -80,11 +80,11 @@ pub let json_null_spec_source : String =
   #|
   #|  state JsonProperty {
   #|    key : String
-  #|    child : Component
+  #|    child : Instance
   #|  }
   #|
   #|  state DataInspector {
-  #|    value : Component
+  #|    value : Instance
   #|  }
 
 ///|

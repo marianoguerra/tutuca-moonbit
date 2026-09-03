@@ -10,7 +10,7 @@
   state DseRoot {
     items : Map[String, DseEntry]
     selectedKey : String
-    editor : Component[Editor]
+    editor : Instance[Editor]
 
     /// The whole point of this example, as a relation. `*selected` resolves
     /// `.items[.selectedKey]`, so a key the map does not hold is an editor

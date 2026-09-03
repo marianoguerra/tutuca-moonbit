@@ -82,7 +82,7 @@ inside a template would be read as an `<Int>` element.
 | set, closed members | `Set[E]`, where `E` is an `enum` |
 | set, open members | `Set[String]` |
 | ordered map | `Map[String, V]` |
-| a child component | a sibling `state`'s name, `Component`, `Component[Name]`, or `Component[protocol P & Q]` |
+| a child component | a sibling `state`'s name, `Component`, `Instance[Name]`, or `Instance[protocol P & Q]` |
 | anything at all | `Any`, `Array[Any]` |
 
 The builtin names are **reserved** — a user type called `Any` would silently
@@ -109,7 +109,7 @@ pairing is in [patterns/todo-list.md](./patterns/todo-list.md)). `Array[Item]`
 and `Array[Any]` generate the SAME field — `items : Array[@tutuca.Value]` —
 so the element type costs nothing at runtime and buys the check: the `@each`
 body is read against `Item`'s schema, and `@value.txet` is caught. A component
-from another file is `Array[Component[Item]]`; a list of components whose
+from another file is `Array[Instance[Item]]`; a list of components whose
 shapes genuinely differ is `Array[Component]`.
 
 `Array[Any]` is the last resort, for a list whose elements are not even all
@@ -266,14 +266,14 @@ work by name (`component/component_test.mbt:418`):
     title   : String
     editor  : Sheet             // a sibling state in this file
     preview : Component         // a slot, resolved by `slots~`
-    remote  : Component[Legend] // a component from another module
+    remote  : Instance[Legend] // a component from another module
   }
 
   state Sheet { text: String }
 </script>
 ```
 
-`Component[Legend]` names a component this file does **not** declare — one from
+`Instance[Legend]` names a component this file does **not** declare — one from
 another module, resolved through the registration scope at make time. A sibling
 `state` is the better answer when there is one.
 

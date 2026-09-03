@@ -176,7 +176,7 @@ pub fn PushViewWhen::name(self : PushViewWhen) -> String {
 impl @component.Fields for PushViewState with fn schema() {
   @component.SchemaInfo::new(
     name="PushView",
-    fingerprint="5907771e77308ed8",
+    fingerprint="203ec999264bd044",
     fields=[
       @component.FieldInfo::new("items", TyList(TyComp(Some("Entry")))),
       @component.FieldInfo::new("query", TyText),
@@ -296,7 +296,7 @@ pub fn SeqItemAccessCompute::name(self : SeqItemAccessCompute) -> String {
 impl @component.Fields for SeqItemAccessState with fn schema() {
   @component.SchemaInfo::new(
     name="SeqItemAccess",
-    fingerprint="5028d75eea4ab82e",
+    fingerprint="3f06129043a68e76",
     fields=[
       @component.FieldInfo::new("byKey", TyOMap(TyComp(Some("Entry")))),
       @component.FieldInfo::new("byIndex", TyList(TyComp(Some("Entry")))),

@@ -95,7 +95,7 @@ test "protocol-qualified component slots retain every constraint id" {
       (
         #|import protocol "example/ListItem@1" as ListItem
         #|import protocol "example/Editable@2" as Editable
-        #|state List { rows: Array[Component[protocol ListItem & Editable]] }
+        #|state List { rows: Array[Instance[protocol ListItem & Editable]] }
       ),
     )[0]
   assert_true(
