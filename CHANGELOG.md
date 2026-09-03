@@ -6,6 +6,88 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-09-03
+
+The vocabulary release. Twenty-eight places where one name covered several
+concepts, or several names covered one, are re-cut — and the whole point of
+doing them together is that a rename costs a reader once rather than once per
+release.
+
+### Migrating
+
+`tutuca migrate src/` says what would change; `tutuca migrate src/ --write`
+applies it. Every retired spelling below still parses in THIS release and is
+reported as a `RETIRED_KEYWORD` warning naming its replacement. They stop
+parsing in the next one.
+
+| was | is | what changed |
+| --- | --- | --- |
+| `<script type="tutuca/state">` | `<script type="tutuca/spec">` | the block declares more than state |
+| `<script type="tutuca/init">` | `<script type="tutuca/fixtures">` | several named states, not one initial one |
+| `stop` | `drop` | it ends the walk ANSWERING NOTHING |
+| `sendReply 'n' …` | `reply 'n' …` | one word answers whoever asked |
+| `enrichScope` | `bindWith` | it BINDS names a subtree reads |
+| `intent <n>(…) { … }` | `answer <n>(…) { … }` | the declaration ANSWERS an intent |
+| `intent 'n' …` | `ask 'n' …` | the effect ASKS on that channel |
+| `forward` in a `receive` | `ask` (bare) | it STARTS a walk; `forward` continues one |
+| `$$name` | `host.name` | two questions one character apart |
+| `@cur` | `cur` | never a binding |
+| `Component[X]`, `Component` | `Instance[X]`, `Instance` | a field holds an instance |
+| `<n>Error` | `<n>Failed` | the outcome, not a thing |
+| `tutuca gen-views` | `tutuca gen` | it writes six things, not one |
+
+`notify 'n' …` is new: an `ask` with no answer channel, for a walk you want
+nothing back from. An answer arm for a name only ever notified is reported
+(`ANSWERS_A_NOTIFY`).
+
+### Not migratable
+
+These are MoonBit identifiers rather than spellings a parser reads, so there is
+no alias and `tutuca migrate` cannot reach them — they live in `.mbt`. An
+in-repo consumer is fixed by regenerating; yours is fixed by hand, and the
+compiler names every site.
+
+| was | is |
+| --- | --- |
+| `<C>Receive` | `<C>Msg` (the union; the old `<C>Msg` is gone) |
+| `<C>Input` | deleted — it keyed `swap`, which is also gone |
+| `<C>Method` | `<C>Compute` |
+| `init~` | `initial~`, on the wrapper and on `component()` |
+| `swap~` bucket | an `update` arm answering `Replace(v)` |
+| a generated mutator (`setX`, `toggleX`, `resetX`, `removeInXAt`) | a property action in the view: `.x = v`, `.x = not .x`, `.x = default`, `.x.removeAt @key` |
+
+### Removed in the next release
+
+Every shim listed here exists to make THIS release migratable and goes in the
+one after it. Nothing new should be written against them.
+
+- the retired keywords above, and `@tutuca.retired`'s tables for them
+- `TyInfo` / `StateTy` as aliases for `Ty`
+- `PropertyWrite` as an alias for `Outcome`
+- `IntentOpts::new(on_error_name=)`, and a script block's `receive <n>Error`
+  arm being wired to the failure
+- the bundle manifest's `ty : Int` decoder and its `constraint` object, read
+  beside the current `Ty`-as-JSON and field-level `domains`
+- the manifest key `enrichScopes`, read beside `bindWiths`
+- `tutuca gen-views` as an alias for `tutuca gen`
+
+### Guest ABI
+
+The world is `tutuca:component@0.12.0`. `intent-opts.on-error` is `on-failed`,
+and `control.set-at` is new — a public property write at a path, which is what
+`.child.x = v` compiles to. Manifest `apiVersion` stays at **10**: the shim
+that reads the old `ty : Int` form is what keeps an older bundle's manifest
+readable, and bumping the gate beside it would make that shim unreachable.
+
+### Still to come
+
+`provide` → `expose`, `view {}` → `role {}` and `pred x(q)` → `filter` in the
+spec block, and `<x:slot>` → `<x:outlet>` / `@x` → `x-op` in templates, are not
+in this release. The spec block has no retirement channel yet — `statedef`'s
+lexer is private, so `tutuca migrate` cannot reach inside one — and shipping a
+rename the migration tool cannot carry is the one thing this plan was built to
+avoid.
+
 ### Changed
 
 - **One `<C>Msg` where there were three enums over one bucket.** `gen-views`
