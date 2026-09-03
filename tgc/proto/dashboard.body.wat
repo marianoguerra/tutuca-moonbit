@@ -47,6 +47,8 @@
   (global $n.peerLabels (ref $tg.bytes) (array.new_fixed $tg.bytes 10 (i32.const 112) (i32.const 101) (i32.const 101) (i32.const 114) (i32.const 76) (i32.const 97) (i32.const 98) (i32.const 101) (i32.const 108) (i32.const 115)))
   (global $n.peerLabel (ref $tg.bytes) (array.new_fixed $tg.bytes 9 (i32.const 112) (i32.const 101) (i32.const 101) (i32.const 114) (i32.const 76) (i32.const 97) (i32.const 98) (i32.const 101) (i32.const 108)))
 
+  (global $n.deep (ref $tg.bytes) (array.new_fixed $tg.bytes 4 (i32.const 100) (i32.const 101) (i32.const 101) (i32.const 112)))
+
   (elem declare func $get $call)
   (global $vt (ref $tg.vt) (struct.new $tg.vt (ref.func $get) (ref.func $call)))
   (global $next_id (mut i64) (i64.const 1))
@@ -78,6 +80,11 @@
     ;; into it is active"); core wasm has no such rule and needs none.
     (if (call $str_eq (local.get $name) (global.get $n.peerLabels))
       (then (return (call $through (local.get $st) (global.get $n.peerLabel)))))
+    ;; The UNBOUNDED case, and it is here to be caught rather than used: `deep`
+    ;; reads `deep` through every child, so two of these holding each other
+    ;; recurse until something stops them. `tgc/SECURITY.md` §4 says what does.
+    (if (call $str_eq (local.get $name) (global.get $n.deep))
+      (then (return (call $through (local.get $st) (global.get $n.deep)))))
     ;; So that a child asking THIS one for a label has something to hear.
     (if (call $str_eq (local.get $name) (global.get $n.label))
       (then (return (struct.new $tg.str (i32.const 4) (global.get $n.compname)))))
@@ -93,6 +100,22 @@
     (if (i32.eq (local.get $op) (i32.const 11))
       (then (return (struct.new $tg.bool (i32.const 1)
         (call $str_eq (local.get $name) (global.get $n.holder))))))
+    ;; OpWithField — the copy-on-write write-through a host path writes
+    ;; through, and the only way to give this one a child AFTER it was built. A
+    ;; cycle needs that: two dashboards cannot both be constructed holding the
+    ;; other.
+    (if (i32.eq (local.get $op) (i32.const 1))
+      (then
+        (if (call $str_eq (local.get $name) (global.get $n.slots))
+          (then
+            (if (ref.test (ref $tg.list) (local.get $v))
+              (then
+                (return
+                  (struct.new $tg.comp (i32.const 10)
+                    (call $instance
+                      (struct.get $tg.list $items
+                        (ref.cast (ref $tg.list) (local.get $v)))
+                      (struct.get $tg.inst $desc (local.get $self)))))))))))
     ;; OpHandleMessage
     (if (i32.eq (local.get $op) (i32.const 2))
       (then

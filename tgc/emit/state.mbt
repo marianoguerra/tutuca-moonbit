@@ -230,29 +230,6 @@ fn emit_shell(src : Src, comps : Array[Comp], manifest : @tutuca.Value) -> Unit 
 const ID_COUNTER : String = "tgc_next_id"
 
 ///|
-/// The names a component actually answers for a kind — refusals excluded,
-/// because a manifest that named a refused handler would tell a host the
-/// component answers something it does not.
-fn answered(c : Comp, kind : @tscript.DeclKind) -> Array[String] {
-  let out = []
-  for d in c.decls {
-    if d.kind == kind && !c.refusals.iter().any(r => r.name == d.name) {
-      out.push(d.name)
-    }
-  }
-  out
-}
-
-///|
-fn str_list(items : Array[String]) -> String {
-  if items.length() == 0 {
-    return "tg_list([tg_vals| null; 0])"
-  }
-  let parts = items.map(s => "tg_str(\{wax_str(s)})")
-  "tg_list([tg_vals| " + parts.join(", ") + "])"
-}
-
-///|
 /// The manifest's components, by name — so an instance's descriptor is a slice
 /// of the module's rather than a second copy of the same facts.
 fn component_descriptors(

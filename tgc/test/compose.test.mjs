@@ -208,3 +208,45 @@ test("every value the host reads has a tag the ABI defines", () => {
     [TAG.INT, TAG.BIN, TAG.INSTANT, TAG.LIST].sort((a, b) => a - b),
   );
 });
+
+test("copy on write makes a reference cycle unreachable by ordinary means", () => {
+  // Core wasm has no re-entrance rule and this format does not add one, which
+  // is what lets a component hold and traverse another. The hazard that comes
+  // with it is a cycle — and copy on write turns out to prevent one on its own.
+  //
+  // Writing into A answers a NEW A. B still holds the old one, so A-holds-B and
+  // B-holds-A cannot both be true: the write that would close the ring is the
+  // write that leaves it open. `deep` reads `deep` through every child and this
+  // chain is finite, however it is built.
+  const inner = dashboardOf();
+  const outer = dashboardOf(inner);
+  const successor = host.successor(
+    host.call(inner, OP.WITH_FIELD, "slots", [], host.list([host.comp(outer)])),
+  );
+  assert.ok(successor, "the write did not answer a successor");
+  // `outer` holds `inner`, not the successor — which is the point.
+  // Four levels and then the empty list `inner` started as: the chain is
+  // finite, which is the whole claim.
+  assert.deepEqual(host.get(dashboardOf(successor), "deep"), [[[[]]]]);
+});
+
+test("a mutable array handed IN is a channel that stays open", () => {
+  // The exception, and it is the host's rather than the format's. A module
+  // stores the `tg_vals` it was given, and a `tg_vals` is a mutable array — so
+  // a host that keeps the array it constructed with keeps a way to change that
+  // module's state after the fact, with no call and no successor.
+  //
+  // Here it is spent on building the cycle copy on write prevents, which is the
+  // sharpest way to show it: the recursion is unbounded and the engine's stack
+  // is what ends it. That is an answer rather than a hang, and it is still not
+  // a budget — see `tgc/SECURITY.md` §3 and §4.
+  const slots = rt.vals_new(1);
+  const inner = cat.get("Dashboard").make(rt.mk_list(slots));
+  const outer = dashboardOf(inner);
+  // The array `inner` is holding is the array built above.
+  rt.vals_set(slots, 0, host.comp(outer));
+  assert.throws(
+    () => host.get(inner, "deep"),
+    (e) => e instanceof WebAssembly.RuntimeError || /stack|recursion/i.test(e.message),
+  );
+});
