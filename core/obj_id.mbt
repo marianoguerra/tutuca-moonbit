@@ -58,6 +58,22 @@ fn mix_value(h : UInt64, v : Value) -> UInt64 {
     Bool(b) => mix_byte(mix_byte(h, 1), if b { 1 } else { 0 })
     Num(n) => mix_u64(mix_byte(h, 2), n.reinterpret_as_uint64())
     Str(s) => mix_str(mix_byte(h, 3), s)
+    // Tags 7, 8 and 9 rather than reusing a number's: `Int(1)` and `Num(1.0)`
+    // are equal values and would otherwise be indistinguishable here, which is
+    // the one thing this function exists to prevent.
+    Int(i) => mix_u64(mix_byte(h, 7), i.reinterpret_as_uint64())
+    Bin(b) => {
+      let mut h = mix_byte(h, 8)
+      for i in 0..<b.length() {
+        h = mix_byte(h, b[i].to_int())
+      }
+      h
+    }
+    Instant(secs~, nanos~) =>
+      mix_u64(
+        mix_u64(mix_byte(h, 9), secs.reinterpret_as_uint64()),
+        nanos.to_int64().reinterpret_as_uint64(),
+      )
     List(a) => {
       let mut h = mix_byte(h, 4)
       for x in a {

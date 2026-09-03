@@ -1,23 +1,19 @@
-// The canonical `tgc` value, host side, and its two encodings.
+// CBOR for `core.Value`.
 //
-// `TVal` mirrors the frozen rec group in `tgc/abi` arm for arm: this is what a
-// host holds when it is looking at a value it did not build, and what the codecs
-// read and write. It is deliberately NOT `core.Value` yet — phase 4 folds the
-// two together rather than keeping a mirror forever, and until then a mirror is
-// what lets the format be checked without moving the framework under it.
+// One codec, not two. JSON lives in `core` — `Value::to_json` and
+// `Value::from_json` are the `$`-tagged spelling — because a value's JSON is
+// something the whole framework writes and reads, not something a wasm format
+// invented. CBOR is here because it is the FORMAT's encoding: the faithful one,
+// where every arm survives and a value that cannot be encoded is an error
+// rather than a silent null.
 //
-// Two encodings, two jobs. CBOR is FAITHFUL: every arm survives, and one that
-// cannot be encoded is an error rather than a silent null. JSON is
-// INTERCHANGE: it is what an agent writes by hand and what a browser parses, so
-// it is `$`-tagged and it loses the Int/Num distinction on the way back in. Both
-// facts are stated rather than hidden.
+// The split is the two jobs. JSON is what an agent writes by hand and a browser
+// parses without a library, and it is lossy on the way back in (a plain number
+// is a double). CBOR is what a value crosses a process boundary as, and it is
+// not.
 import {
-  "marianoguerra/tutuca/tgc/abi",
-  "moonbitlang/x/codec/base64",
+  "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/x/encoding",
-  "moonbitlang/x/time",
-  "moonbitlang/core/debug",
-  "moonbitlang/core/json",
   "moonbitlang/core/set",
-  "moonbitlang/core/string",
+  "moonbitlang/core/debug",
 }

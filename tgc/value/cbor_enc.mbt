@@ -34,101 +34,98 @@ const TAG_COMP : Int = 40001
 const TAG_EXT : Int = 40002
 
 ///|
-pub fn to_cbor(v : TVal) -> Bytes raise CodecError {
+pub fn to_cbor(v : @tutuca.Value) -> Bytes raise CodecError {
   let out = []
   enc(out, v, "")
   Bytes::from_array(out)
 }
 
 ///|
-fn enc(out : Array[Byte], v : TVal, at : String) -> Unit raise CodecError {
+fn enc(
+  out : Array[Byte],
+  v : @tutuca.Value,
+  at : String,
+) -> Unit raise CodecError {
   match v {
-    TNull => out.push(0xf6)
-    TBool(false) => out.push(0xf4)
-    TBool(true) => out.push(0xf5)
+    Null => out.push(0xf6)
+    Bool(false) => out.push(0xf4)
+    Bool(true) => out.push(0xf5)
     // Major 7 / 27: a double, always. Not narrowed to a float: tutuca's number
     // IS a double, and an encoder that sometimes narrows makes the byte length
     // depend on the value, which is a difference two encoders can disagree on.
-    TNum(n) => {
+    Num(n) => {
       out.push(0xfb)
       be64(out, n.reinterpret_as_int64())
     }
-    TInt(i) =>
+    Int(i) =>
       if i >= 0L {
         head(out, 0, i.reinterpret_as_uint64())
       } else {
         // Major 1 encodes -1-n, so the argument is the magnitude minus one.
         head(out, 1, (-1L - i).reinterpret_as_uint64())
       }
-    TStr(s) => {
+    Str(s) => {
       let bytes = utf8(s)
       head(out, 3, bytes.length().to_int64().reinterpret_as_uint64())
       for b in bytes {
         out.push(b)
       }
     }
-    TBin(b) => {
+    Bin(b) => {
       head(out, 2, b.length().to_int64().reinterpret_as_uint64())
       for i in 0..<b.length() {
         out.push(b[i])
       }
     }
-    TInstant(secs~, nanos~) => {
+    Instant(secs~, nanos~) => {
       head(out, 6, TAG_EPOCH.to_int64().reinterpret_as_uint64())
       if nanos == 0 {
-        enc(out, TInt(secs), at)
+        enc(out, Int(secs), at)
       } else {
         // tag(4) [ -9, secs*1e9 + nanos ]. Exact: an integer of nanoseconds
         // rather than a double of seconds, which past 2^53 nanoseconds — about
         // fourteen weeks — would start losing the low digits.
         head(out, 6, TAG_DECIMAL.to_int64().reinterpret_as_uint64())
         head(out, 4, 2UL)
-        enc(out, TInt(-9L), at)
-        enc(out, TInt(secs * 1_000_000_000L + nanos.to_int64()), at)
+        enc(out, Int(-9L), at)
+        enc(out, Int(secs * 1_000_000_000L + nanos.to_int64()), at)
       }
     }
-    TList(items) => {
+    List(items) => {
       head(out, 4, items.length().to_int64().reinterpret_as_uint64())
       for i, item in items {
         enc(out, item, "\{at}/\{i}")
       }
     }
-    TMap(entries) => {
-      let seen = @set.Set([])
-      for e in entries {
-        let (k, _) = e
-        if seen.contains(k) {
-          raise DuplicateKey(key=k, at~)
-        }
-        seen.add(k)
-      }
-      head(out, 5, entries.length().to_int64().reinterpret_as_uint64())
-      for e in entries {
-        let (k, val) = e
-        enc(out, TStr(k), at)
+    // A MoonBit `Map` cannot hold one key twice, so the duplicate check that
+    // belongs on the DECODE side has nothing to do here.
+    Map(m) => {
+      head(out, 5, m.length().to_int64().reinterpret_as_uint64())
+      for k, val in m {
+        enc(out, Str(k), at)
         enc(out, val, "\{at}/\{k}")
       }
     }
-    TFunc =>
+    Fn(_) =>
       raise NotEncodable(
         kind="function",
         why="a function is code in one module's address space; " +
           "there is nothing to write down that another process could call",
         at~,
       )
-    TComp(c) => {
-      head(out, 6, TAG_COMP.to_int64().reinterpret_as_uint64())
-      head(out, 4, 3UL)
-      enc(out, TStr(c.module_), at)
-      enc(out, TStr(c.component), at)
-      enc(out, TBin(c.state), at)
-    }
-    TExt(ext_tag~, payload~) => {
-      head(out, 6, TAG_EXT.to_int64().reinterpret_as_uint64())
-      head(out, 4, 2UL)
-      enc(out, TInt(ext_tag.to_int64()), at)
-      enc(out, payload, "\{at}/ext")
-    }
+    // The wire HAS a case for an instance by value (tag 40001, carrying
+    // `[module, component, state]`). What it needs is the module that made it
+    // and the bytes it persists, which is a registry's answer rather than a
+    // codec's — so this refuses rather than writing a null a reader would take
+    // for "there was nothing there".
+    Obj(_) =>
+      raise NotEncodable(
+        kind="component instance",
+        why="an instance by value needs the module that made it and the bytes " +
+          "it persists; a value codec has neither. Project it through the host " +
+          "first (dyncomp/persist writes exactly those three things)",
+        at~,
+      )
   }
 }
 

@@ -407,6 +407,12 @@ pub fn Inspector::classify(
     Bool(b) => self.make_("JsonBoolean", args={ "value": Bool(b) })
     Num(n) => self.make_("JsonNumber", args={ "value": Num(n) })
     Str(s) => self.make_("JsonString", args={ "value": Str(s) })
+    // The inspector has no component for the three newer arms yet, so each is
+    // shown as the string it displays as rather than as a shape that would
+    // claim to be a JSON number or a JSON string. Reading "2025-09-03T16:00:00Z"
+    // in a JsonString cell is less wrong than reading it as text somebody typed.
+    Int(_) | Bin(_) | Instant(..) =>
+      self.make_("JsonString", args={ "value": Str(v.to_display_string()) })
     Fn(_) => self.make_("ValueFn")
     List(items) => {
       let rows : Array[@tutuca.Value] = []

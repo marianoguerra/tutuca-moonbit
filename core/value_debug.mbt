@@ -12,6 +12,9 @@ priv enum ValueRepr {
   RMap(Map[String, ValueRepr])
   RFn
   RObj(String)
+  RInt(Int64)
+  RBin(Bytes)
+  RInstant(Int64, Int)
 } derive(Debug)
 
 ///|
@@ -21,6 +24,9 @@ fn value_repr(v : Value) -> ValueRepr {
     Bool(b) => RBool(b)
     Num(n) => RNum(n)
     Str(s) => RStr(s)
+    Int(i) => RInt(i)
+    Bin(b) => RBin(b)
+    Instant(secs~, nanos~) => RInstant(secs, nanos)
     List(a) => RList(a.map(value_repr))
     Map(m) => {
       let out : Map[String, ValueRepr] = Map([])

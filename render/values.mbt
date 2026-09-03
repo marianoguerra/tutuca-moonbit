@@ -11,6 +11,14 @@ fn value_to_attr(v : @tutuca.Value) -> @vdom.AttrValue? {
     Bool(true) => Some(Bool(true))
     Num(n) => Some(Num(n))
     Str(s) => Some(Str(s))
+    // An attribute is text in the DOM whatever it was here, so these take the
+    // display spelling rather than a structured one: `Num` would lose an
+    // integer past 2^53, and there is no attribute shape for bytes.
+    Int(_) | Instant(..) => Some(Str(v.to_display_string()))
+    // Bytes are dropped rather than spelled. A `Bin` in an attribute position
+    // is a mistake with several plausible readings — base64? hex? text? — and
+    // the view should say which by converting it.
+    Bin(_) => None
     // Structured values ride through as Data: on a registered custom
     // element the vdom assigns the real object as a property (the JS
     // `:items=".products"` web-component case); on plain elements it

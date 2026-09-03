@@ -1,0 +1,15 @@
+// The runtime module's SOURCE, embedded.
+//
+// A page that hosts `tgc` components needs `tutuca-rt.wasm`, and fetching it
+// out of this repository's `_build` is exactly what a consumer cannot do. So
+// the Wax source travels as a string and `tgc/emit`'s `compile_runtime`
+// compiles it — the same route a card takes, through the same compiler, with
+// the same preamble prepended.
+//
+// `rt_src_gen.mbt` is GENERATED from `rt.wax` by `node tgc/rt/embed.mjs` and
+// checked in. Do not hand-edit it: change `rt.wax`, rerun the script, commit
+// both halves. `rt.wax` stays authoritative — `cmd/tgc` compiles it directly,
+// and the drift between the two is what the embed check catches.
+import {
+  "moonbitlang/core/debug",
+}

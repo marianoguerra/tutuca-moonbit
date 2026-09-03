@@ -11,7 +11,7 @@
 // is cheaper than the bug that follows from not saying so.
 
 ///|
-pub fn of_cbor(b : Bytes) -> TVal raise CodecError {
+pub fn of_cbor(b : Bytes) -> @tutuca.Value raise CodecError {
   let st = { bytes: b, pos: 0, }
   let v = dec(st, "")
   if st.pos != b.length() {
@@ -37,32 +37,32 @@ fn Cursor::byte(self : Cursor, want : String) -> Int raise CodecError {
 }
 
 ///|
-fn dec(st : Cursor, at : String) -> TVal raise CodecError {
+fn dec(st : Cursor, at : String) -> @tutuca.Value raise CodecError {
   let start = st.pos
   let initial = st.byte("a value")
   let major = initial / 32
   let minor = initial % 32
   match major {
-    0 => TInt(arg_as_int64(st, minor, start))
-    1 => TInt(-1L - arg_as_int64(st, minor, start))
-    2 => TBin(read_bytes(st, minor, start))
-    3 => TStr(read_text(st, minor, start))
+    0 => Int(arg_as_int64(st, minor, start))
+    1 => Int(-1L - arg_as_int64(st, minor, start))
+    2 => Bin(read_bytes(st, minor, start))
+    3 => Str(read_text(st, minor, start))
     4 => {
       let n = arg_len(st, minor, start)
       let items = []
       for i in 0..<n {
         items.push(dec(st, "\{at}/\{i}"))
       }
-      TList(items)
+      List(items)
     }
     5 => {
       let n = arg_len(st, minor, start)
-      let entries = []
+      let entries : Map[String, @tutuca.Value] = Map([])
       let seen = @set.Set([])
       for _ in 0..<n {
         let kpos = st.pos
         let k = match dec(st, at) {
-          TStr(s) => s
+          Str(s) => s
           other =>
             // A non-string key is legal CBOR and has no place in this format:
             // tutuca's maps are keyed by name, and a reader that met an integer
@@ -76,16 +76,16 @@ fn dec(st : Cursor, at : String) -> TVal raise CodecError {
           raise DuplicateKey(key=k, at="byte \{kpos}")
         }
         seen.add(k)
-        entries.push((k, dec(st, "\{at}/\{k}")))
+        entries[k] = dec(st, "\{at}/\{k}")
       }
-      TMap(entries)
+      Map(entries)
     }
     6 => dec_tagged(st, arg_as_int64(st, minor, start), start, at)
     7 =>
       match minor {
-        20 => TBool(false)
-        21 => TBool(true)
-        22 => TNull
+        20 => Bool(false)
+        21 => Bool(true)
+        22 => Null
         // 23 is `undefined`. It is not null and this format has no third
         // absence, so it is refused rather than folded into one.
         23 =>
@@ -103,7 +103,7 @@ fn dec(st : Cursor, at : String) -> TVal raise CodecError {
             why="a single-precision float; this format's number is a double",
             at=start,
           )
-        27 => TNum(read_be64(st, start).reinterpret_as_double())
+        27 => Num(read_be64(st, start).reinterpret_as_double())
         _ => raise BadCbor(why="simple value \{minor}", at=start)
       }
     _ => raise BadCbor(why="major type \{major}", at=start)
@@ -116,14 +116,13 @@ fn dec_tagged(
   tag : Int64,
   start : Int,
   at : String,
-) -> TVal raise CodecError {
+) -> @tutuca.Value raise CodecError {
   if tag == TAG_EPOCH.to_int64() {
     let inner_at = st.pos
     return match dec(st, at) {
-      TInt(secs) => TInstant(secs~, nanos=0)
-      TExt(ext_tag~, payload~) if ext_tag == TAG_DECIMAL =>
-        // The decimal-fraction pair, already unpacked by the tag-4 arm below.
-        decimal_instant(payload, inner_at)
+      Int(secs) => Instant(secs~, nanos=0)
+      // The decimal-fraction pair, already landed by the tag-4 arm below.
+      Map(m) if is_decimal(m) => decimal_instant(m.get("v").unwrap(), inner_at)
       other =>
         raise BadCbor(
           why="tag 1 must wrap an integer or a decimal fraction, not a \{kind_word(other)}",
@@ -136,13 +135,13 @@ fn dec_tagged(
     // that a bare tag 4 outside a timestamp still round-trips rather than being
     // dropped.
     let inner = dec(st, at)
-    return TExt(ext_tag=TAG_DECIMAL, payload=inner)
+    return ext_map(TAG_DECIMAL, inner)
   }
   if tag == TAG_COMP.to_int64() {
     let inner_at = st.pos
     return match dec(st, at) {
-      TList([TStr(module_), TStr(component), TBin(state)]) =>
-        TComp({ module_, component, state, })
+      List([Str(module_), Str(component), Bin(state)]) =>
+        comp_map(module_, component, state)
       _ =>
         raise BadCbor(
           why="tag \{TAG_COMP} must wrap [module, component, state]",
@@ -153,8 +152,7 @@ fn dec_tagged(
   if tag == TAG_EXT.to_int64() {
     let inner_at = st.pos
     return match dec(st, at) {
-      TList([TInt(ext_tag), payload]) =>
-        TExt(ext_tag=ext_tag.to_int(), payload~)
+      List([Int(ext_tag), payload]) => ext_map(ext_tag.to_int(), payload)
       _ =>
         raise BadCbor(
           why="tag \{TAG_EXT} must wrap [tag, payload]",
@@ -171,8 +169,11 @@ fn dec_tagged(
 ///|
 /// `[-9, n]` — nanoseconds since the epoch as one exact integer, split back into
 /// the `secs` / `nanos` pair with `nanos` always non-negative.
-fn decimal_instant(payload : TVal, at : Int) -> TVal raise CodecError {
-  guard payload is TList([TInt(exponent), TInt(mantissa)]) && exponent == -9L else {
+fn decimal_instant(
+  payload : @tutuca.Value,
+  at : Int,
+) -> @tutuca.Value raise CodecError {
+  guard payload is List([Int(exponent), Int(mantissa)]) && exponent == -9L else {
     raise BadCbor(
       why="a timestamp's decimal fraction is [-9, nanoseconds]",
       at~,
@@ -187,7 +188,7 @@ fn decimal_instant(payload : TVal, at : Int) -> TVal raise CodecError {
     secs = secs - 1L
     nanos = nanos + billion
   }
-  TInstant(secs~, nanos=nanos.to_int())
+  Instant(secs~, nanos=nanos.to_int())
 }
 
 ///|
@@ -265,19 +266,58 @@ fn read_be64(st : Cursor, start : Int) -> Int64 raise CodecError {
 
 ///|
 /// What a value IS, for a message about what it should have been.
-fn kind_word(v : TVal) -> String {
+fn kind_word(v : @tutuca.Value) -> String {
   match v {
-    TNull => "null"
-    TBool(_) => "boolean"
-    TNum(_) => "number"
-    TInt(_) => "integer"
-    TStr(_) => "text"
-    TBin(_) => "byte string"
-    TInstant(..) => "timestamp"
-    TList(_) => "list"
-    TMap(_) => "map"
-    TFunc => "function"
-    TComp(_) => "component"
-    TExt(..) => "extension value"
+    Null => "null"
+    Bool(_) => "boolean"
+    Num(_) => "number"
+    Int(_) => "integer"
+    Str(_) => "text"
+    Bin(_) => "byte string"
+    Instant(..) => "timestamp"
+    List(_) => "list"
+    Map(_) => "map"
+    Fn(_) => "function"
+    Obj(_) => "component"
   }
+}
+
+///|
+/// A component instance decoded by VALUE.
+///
+/// `core.Value` has no arm for a foreign instance, so it lands as a map under
+/// three reserved keys rather than as a null. A reader that has the module can
+/// rebuild it; one that does not still knows what it was looking at, which is
+/// more than a null would have said.
+/// Whether a landed map is the tag-4 decimal fraction a timestamp wraps.
+fn is_decimal(m : Map[String, @tutuca.Value]) -> Bool {
+  m.get(ext_tag_key) is Some(Int(t)) &&
+  t == TAG_DECIMAL.to_int64() &&
+  m.get("v") is Some(_)
+}
+
+///|
+fn comp_map(
+  module_ : String,
+  component : String,
+  state : Bytes,
+) -> @tutuca.Value {
+  let out : Map[String, @tutuca.Value] = Map([])
+  out[comp_module_key] = Str(module_)
+  out[comp_component_key] = Str(component)
+  out[comp_state_key] = Bin(state)
+  Map(out)
+}
+
+///|
+/// An extension value, carried rather than understood.
+///
+/// `tg_ext` is the format's one extension point and the whole point of having
+/// one is that a reader who does not know the tag still carries the value
+/// intact. A host has nothing else to do with it.
+fn ext_map(tag : Int, payload : @tutuca.Value) -> @tutuca.Value {
+  let out : Map[String, @tutuca.Value] = Map([])
+  out[ext_tag_key] = Int(tag.to_int64())
+  out["v"] = payload
+  Map(out)
 }

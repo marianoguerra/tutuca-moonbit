@@ -70,11 +70,47 @@ pub(all) enum Step {
 
 ///|
 /// Dynamic runtime value: what eval(stack) reads and returns.
+///
+/// Aligned with the `tgc/1` value, arm for arm, because a format that carries
+/// something the host cannot hold is a lossy boundary in the one place there
+/// must not be one. `tgc/abi`'s frozen rec group is the other half of this
+/// declaration and the two are meant to be read together.
+///
+/// Three arms are newer than the rest, and each earns its place:
+///
+///   - `Int` because CBOR and the wasm-GC types both have a 64-bit integer
+///     natively, and the contract this replaces conceded what its absence cost
+///     ("a 64-bit id is a `str`"). It does NOT make the value language
+///     two-numbered: `tscript` still has exactly one number and every
+///     arithmetic operation still answers a `Num`. `Int` is for a value that
+///     arrived from somewhere with integers — CBOR, a foreign module — and is
+///     read back out the same way it came in.
+///   - `Bin` because a component that holds bytes should not have to spell them
+///     as base64 inside a `Str` and hope every reader agrees which encoding it
+///     was.
+///   - `Instant` because "when" is the one fact a sandboxed component cannot
+///     compute for itself and therefore always receives from somewhere else. A
+///     wire type it can be received AS is the difference between one
+///     representation and one per host.
+///
+/// A reader that only knows the older arms is not wrong about them; it is
+/// incomplete, and `num` / `str` / `to_display_string` answer for all three so
+/// that "incomplete" mostly means "less precise" rather than "broken".
 pub(all) enum Value {
   Null
   Bool(Bool)
   Num(Double)
+  /// A 64-bit integer, exact past 2^53 where `Num` is not.
+  Int(Int64)
   Str(String)
+  /// Bytes. Not text that happens to be bytes: `to_display_string` does not
+  /// invent an encoding for one.
+  Bin(Bytes)
+  /// Nanoseconds since the Unix epoch, split so that neither half rounds.
+  /// `nanos` is always in `0 ..< 1_000_000_000`, so an instant before 1970 has
+  /// a NEGATIVE `secs` and a positive `nanos` — the way `timespec` does it, and
+  /// the reason two instants can be compared as a pair.
+  Instant(secs~ : Int64, nanos~ : Int)
   List(Array[Value])
   Map(Map[String, Value])
   Fn((Array[Value]) -> Value) // handler / raw-function values

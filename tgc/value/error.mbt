@@ -11,11 +11,6 @@ pub fn CodecError::message(self : CodecError) -> String {
     Trailing(at~) =>
       "a complete value ended at byte \{at} and the input did not; " +
       "a decoder that stops early has read a different message from the one that was sent"
-    UnknownTagged(got~, at~) =>
-      "no such tagged type \{got}\{where_(at)}; the tag is the one thing a reader cannot guess"
-    BadTagged(want~, at~) => "expected \{want}\{where_(at)}"
-    BadBase64(why~, at~) => "not base64\{where_(at)}: \{why}"
-    BadInstant(text~, at~) => "not an RFC 3339 timestamp\{where_(at)}: \{text}"
     DuplicateKey(key~, at~) =>
       "the key \{key} appears twice\{where_(at)}; " +
       "which one was meant is a guess, so neither is taken"

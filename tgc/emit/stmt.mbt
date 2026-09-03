@@ -114,7 +114,7 @@ fn truncated(
   src : Src,
   place : @tutuca.Place,
   value : String,
-) -> String raise Refused {
+) -> String {
   guard place.root is PState(name) else { return value }
   // Only a whole field is known to be an Int; a step into one lands somewhere
   // the declared type of the FIELD does not describe.

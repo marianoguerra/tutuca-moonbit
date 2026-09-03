@@ -42,6 +42,10 @@ pub fn field_domains_to_mbt_source(Array[FieldDomain]) -> String
 
 pub fn first_broken_domain(Array[FieldDomain], Map[String, Value]) -> FieldDomain?
 
+pub fn instant_of_rfc3339(String) -> (Int64, Int) raise BadInstant
+
+pub fn instant_to_rfc3339(Int64, Int) -> String
+
 pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
 pub fn is_type_name(String) -> Bool
@@ -87,6 +91,10 @@ pub fn warn(String) -> Unit
 pub let warn_hook : @ref.Ref[(String) -> Unit]
 
 // Errors
+pub suberror BadInstant {
+  BadInstant(String)
+}
+pub impl Show for BadInstant
 
 // Types and methods
 pub(all) enum Admission {
@@ -627,7 +635,10 @@ pub(all) enum Value {
   Null
   Bool(Bool)
   Num(Double)
+  Int(Int64)
   Str(String)
+  Bin(Bytes)
+  Instant(secs~ : Int64, nanos~ : Int)
   List(Array[Value])
   Map(Map[String, Value])
   Fn((Array[Value]) -> Value)

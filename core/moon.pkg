@@ -1,6 +1,13 @@
+// `x/time` and `x/codec/base64` are here for ONE arm each of `Value`:
+// `Instant` needs a calendar to print an RFC 3339 timestamp, and `Bin` needs
+// base64 to survive JSON. Both are pure, both are already module dependencies,
+// and the alternative is a second hand-kept spelling of each — which is two
+// answers to a question that has one.
 import {
   "moonbitlang/core/string",
   "moonbitlang/core/json",
+  "moonbitlang/x/time",
+  "moonbitlang/x/codec/base64",
 }
 
 import {

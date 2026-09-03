@@ -2,26 +2,21 @@
 package "marianoguerra/tutuca/tgc/value"
 
 import {
-  "marianoguerra/tutuca/tgc/abi",
-  "moonbitlang/core/debug",
+  "marianoguerra/tutuca/core",
 }
 
 // Values
-pub fn instant_of_rfc3339(String) -> (Int64, Int) raise CodecError
+pub let comp_component_key : String
 
-pub fn instant_to_rfc3339(Int64, Int) -> String
+pub let comp_module_key : String
 
-pub fn of_cbor(Bytes) -> TVal raise CodecError
+pub let comp_state_key : String
 
-pub fn of_json(Json) -> TVal raise CodecError
+pub let ext_tag_key : String
 
-pub let tag_key : String
+pub fn of_cbor(Bytes) -> @core.Value raise CodecError
 
-pub fn to_cbor(TVal) -> Bytes raise CodecError
-
-pub fn to_json(TVal) -> Json raise CodecError
-
-pub let value_key : String
+pub fn to_cbor(@core.Value) -> Bytes raise CodecError
 
 // Errors
 pub suberror CodecError {
@@ -29,39 +24,12 @@ pub suberror CodecError {
   Truncated(want~ : String, at~ : Int)
   BadCbor(why~ : String, at~ : Int)
   Trailing(at~ : Int)
-  UnknownTagged(got~ : String, at~ : String)
-  BadTagged(want~ : String, at~ : String)
-  BadBase64(why~ : String, at~ : String)
-  BadInstant(text~ : String, at~ : String)
   DuplicateKey(key~ : String, at~ : String)
 }
 pub fn CodecError::message(Self) -> String
 pub impl Show for CodecError
 
 // Types and methods
-pub(all) struct CompRef {
-  module_ : String
-  component : String
-  state : Bytes
-} derive(Eq, @debug.Debug)
-pub impl Show for CompRef
-
-pub(all) enum TVal {
-  TNull
-  TBool(Bool)
-  TNum(Double)
-  TInt(Int64)
-  TStr(String)
-  TBin(Bytes)
-  TInstant(secs~ : Int64, nanos~ : Int)
-  TList(Array[TVal])
-  TMap(Array[(String, TVal)])
-  TFunc
-  TComp(CompRef)
-  TExt(ext_tag~ : Int, payload~ : TVal)
-} derive(Eq, @debug.Debug)
-pub fn TVal::tag(Self) -> @abi.Tag
-pub impl Show for TVal
 
 // Type aliases
 

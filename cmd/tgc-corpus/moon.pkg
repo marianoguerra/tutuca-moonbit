@@ -12,7 +12,6 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/tscript/conformance",
   "marianoguerra/tutuca/tgc/emit",
-  "marianoguerra/tutuca/tgc/value",
   "moonbitlang/x/fs",
   "moonbitlang/core/env",
   "moonbitlang/core/json",

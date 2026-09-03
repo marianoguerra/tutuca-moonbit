@@ -618,9 +618,12 @@ fn value_src(v : Value) -> String {
     Bool(b) => "Bool(\{b})"
     Num(n) => "Num(\{n})"
     Str(s) => "Str(\"\{s}\")"
+    Int(i) => "Int(\{i})"
     // Unreachable from a parsed `where`; a hole here would be a generated file
     // that does not compile, which is worse than a null nobody can write.
-    List(_) | Map(_) | Fn(_) | Obj(_) => "Null"
+    // `Bin` and `Instant` join the list for the same reason the containers are
+    // on it: the `where` grammar has no spelling for one.
+    Bin(_) | Instant(..) | List(_) | Map(_) | Fn(_) | Obj(_) => "Null"
   }
 }
 

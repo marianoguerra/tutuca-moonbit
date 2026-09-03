@@ -16,8 +16,8 @@ test "instant spellings round-trip" {
   ]
   for row in rows {
     let (secs, nanos, want) = row
-    assert_eq(@value.instant_to_rfc3339(secs, nanos), want)
-    let (s2, n2) = @value.instant_of_rfc3339(want)
+    assert_eq(@core.instant_to_rfc3339(secs, nanos), want)
+    let (s2, n2) = @core.instant_of_rfc3339(want)
     assert_eq(s2, secs)
     assert_eq(n2, nanos)
   }
@@ -27,9 +27,9 @@ test "instant spellings round-trip" {
 /// An offset is APPLIED, not kept: what comes back is an instant, and an
 /// instant has no zone.
 test "a numeric offset resolves to the same instant as Z" {
-  let (a, _) = @value.instant_of_rfc3339("2025-09-03T16:00:00Z")
-  let (b, _) = @value.instant_of_rfc3339("2025-09-03T18:00:00+02:00")
-  let (c, _) = @value.instant_of_rfc3339("2025-09-03T13:00:00-03:00")
+  let (a, _) = @core.instant_of_rfc3339("2025-09-03T16:00:00Z")
+  let (b, _) = @core.instant_of_rfc3339("2025-09-03T18:00:00+02:00")
+  let (c, _) = @core.instant_of_rfc3339("2025-09-03T13:00:00-03:00")
   assert_eq(a, b)
   assert_eq(a, c)
 }
@@ -42,10 +42,10 @@ test "malformed timestamps are refused" {
       "", "2025-09-03", "2025-09-03T16:00:00", "2025-13-03T16:00:00Z", "2025-09-03T16:00:00+2:00",
     ] {
     let got = try {
-      let _ = @value.instant_of_rfc3339(bad)
+      let _ = @core.instant_of_rfc3339(bad)
       "accepted"
     } catch {
-      BadInstant(..) => "refused"
+      BadInstant(_) => "refused"
       e => "wrong error: \{e}"
     }
     assert_eq(got, "refused", msg="for \{bad}")

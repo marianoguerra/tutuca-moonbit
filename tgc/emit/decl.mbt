@@ -10,7 +10,7 @@
 /// whatever the declared field implies, exactly as it would for a handler
 /// nobody wrote.
 fn emit_decls(src : Src, c : Comp) -> Unit {
-  let callable = Map::new()
+  let callable : Map[String, @tscript.DeclKind] = Map([])
   for d in c.decls {
     callable[d.name] = d.kind
   }
@@ -26,14 +26,14 @@ fn emit_decls(src : Src, c : Comp) -> Unit {
     let body = Src::new()
     body.depth = 1
     let head = decl_head(c, d)
-    match (try? emit_decl(ctx, body, d)) {
-      Ok(_) => {
-        src.line(head)
-        src.buf.write_string(body.text())
-        src.line("}")
-        src.blank()
-      }
-      Err(Refused(why)) =>
+    try {
+      emit_decl(ctx, body, d)
+      src.line(head)
+      src.buf.write_string(body.text())
+      src.line("}")
+      src.blank()
+    } catch {
+      Refused(why) =>
         c.refusals.push({
           comp: c.name,
           kind: @tscript.kind_word(d.kind),
@@ -58,7 +58,7 @@ fn binds_var(d : @tscript.Decl) -> String? {
 
 ///|
 fn params_of(d : @tscript.Decl) -> Map[String, Int] {
-  let out = Map::new()
+  let out : Map[String, Int] = Map([])
   for i, p in d.params {
     out[p.name] = i
   }
@@ -135,7 +135,7 @@ fn emit_decl(ctx : Ctx, src : Src, d : @tscript.Decl) -> Unit raise Refused {
       src.line("f")
     }
     Value(e) => {
-      guard not(transition) else {
+      guard !transition else {
         raise Refused(
           "a \{@tscript.kind_word(d.kind)} is a transition and this one is a single value",
         )

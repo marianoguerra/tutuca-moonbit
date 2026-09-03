@@ -170,35 +170,11 @@ fn component_of(schema : String) -> String {
 ///|
 /// A `core.Value` as the format's `$`-tagged JSON.
 ///
-/// Through `tgc/value` rather than `Value::to_json`, because the corpus and the
-/// module have to agree about a value and the format's encoding is what they
-/// agree THROUGH. A `Fn` or an `Obj` cannot appear in a corpus row, and if one
-/// ever does this raises rather than writing a null a reader would take for a
-/// value.
+/// One line, since `core.Value` and the `tgc/1` value are the same value: the
+/// bridge this used to need was a mirror of one onto the other, and there is no
+/// longer anything to mirror.
 fn json_of(v : @tutuca.Value) -> Json {
-  match (try? @value.to_json(tval_of(v))) {
-    Ok(j) => j
-    Err(e) => Json::string("<unencodable: \{e}>")
-  }
-}
-
-///|
-fn tval_of(v : @tutuca.Value) -> @value.TVal {
-  match v {
-    Null => TNull
-    Bool(b) => TBool(b)
-    Num(n) => TNum(n)
-    Str(s) => TStr(s)
-    List(items) => TList(items.map(tval_of))
-    Map(m) => {
-      let out = []
-      for k, item in m {
-        out.push((k, tval_of(item)))
-      }
-      TMap(out)
-    }
-    _ => TFunc
-  }
+  v.to_json()
 }
 
 ///|

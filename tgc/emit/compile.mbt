@@ -172,9 +172,9 @@ fn build(comps : Array[Comp], name : String) -> Compiled raise GenError {
 fn emit_imports(src : Src, comps : Array[Comp]) -> Unit {
   src.open("import \{wax_str(@abi.import_namespace)} {")
   for entry in runtime_imports {
-    let (local, exported, sig) = entry
+    let (fname, exported, sig) = entry
     src.line("#[import = \{wax_str(exported)}]")
-    src.line("fn \{local}\{sig};")
+    src.line("fn \{fname}\{sig};")
   }
   src.close("}")
   src.blank()

@@ -59,7 +59,7 @@ fn value_expr(v : @tutuca.Value) -> String {
       "tg_list([tg_vals| " + parts.join(", ") + "])"
     }
     Map(m) => {
-      if m.size() == 0 {
+      if m.length() == 0 {
         return "tg_map([tg_entries| null; 0])"
       }
       let parts = []

@@ -21,6 +21,16 @@ pub impl Eq for Value with fn equal(self, other) {
     (Bool(a), Bool(b)) => a == b
     (Num(a), Num(b)) => a == b || (a != a && b != b)
     (Str(a), Str(b)) => a == b
+    (Int(a), Int(b)) => a == b
+    // `Int(1)` and `Num(1.0)` ARE equal. The language has one number and a
+    // card comparing a count to a literal must not care which arm carried it —
+    // the two arms are a representation choice, not a semantic one. Past 2^53
+    // the comparison is done in `Int` so that neither side is rounded to reach
+    // the other.
+    (Int(a), Num(b)) | (Num(b), Int(a)) => int_eq_num(a, b)
+    (Bin(a), Bin(b)) => a == b
+    (Instant(secs=s1, nanos=n1), Instant(secs=s2, nanos=n2)) =>
+      s1 == s2 && n1 == n2
     (List(a), List(b)) => {
       if a.length() != b.length() {
         return false
@@ -48,6 +58,21 @@ pub impl Eq for Value with fn equal(self, other) {
     (Obj(a), Obj(b)) => a.eq(b)
     _ => false
   }
+}
+
+///|
+/// Whether a 64-bit integer and a double name the same number.
+///
+/// Through the double only when the integer fits one exactly; otherwise through
+/// the integer, so `Int(9007199254740993)` is NOT equal to the double that
+/// would round to it. Rounding one side to meet the other is how two values
+/// that differ come to compare equal.
+fn int_eq_num(a : Int64, b : Double) -> Bool {
+  if b != b {
+    return false
+  }
+  let rounded = b.to_int64()
+  rounded == a && rounded.to_double() == b
 }
 
 ///|
@@ -93,7 +118,11 @@ pub fn Value::is_truthy(self : Value) -> Bool {
     Bool(b) => b
     Num(n) => n != 0.0 && n == n // 0 and NaN are falsy
     Str(s) => s != ""
-    List(_) | Map(_) | Fn(_) | Obj(_) => true
+    Int(i) => i != 0L
+    // Bytes are a collection and plain truthiness does not empty-check a
+    // collection — `truthy?` is the predicate that does, and it differs here on
+    // purpose. An instant is a point in time; the epoch is not "false".
+    Bin(_) | Instant(..) | List(_) | Map(_) | Fn(_) | Obj(_) => true
   }
 }
 
@@ -109,6 +138,11 @@ pub fn Value::to_display_string(self : Value) -> String {
     Str(s) => s
     // Join semantics: null elements become "", the rest String()-coerce.
     List(items) => items.map(i => tpl_piece(i)).join(",")
+    Int(i) => i.to_string()
+    // No encoding is invented for bytes. A reader that wanted text out of them
+    // knows which encoding it meant, and this does not.
+    Bin(b) => "[\{b.length()} bytes]"
+    Instant(secs~, nanos~) => instant_text(secs, nanos)
     Map(_) => "[object]"
     Fn(_) => "[function]"
     Obj(o) => o.debug()
