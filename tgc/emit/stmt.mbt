@@ -82,7 +82,7 @@ fn emit_new(ctx : Ctx, src : Src, ty : @tscript.TyRef) -> Unit raise Refused {
         "tg_map([tg_entries| " + parts.join(", ") + "])"
       }
       src.line("cur = \{body};")
-      ctx.cur = CurRecord(name)
+      ctx.cur = CurRecord
     }
     // A sibling starts EMPTY rather than at its zero: `<Sib>_make_fields` fills
     // each slot from the argument map or the declared zero, so filling them
@@ -123,7 +123,7 @@ fn emit_assign(
 ) -> Unit raise Refused {
   // Writing into `cur`: what a `new` opened, one member at a time.
   if place.root is PTarget {
-    guard place.steps is [PField(member)] else {
+    guard place.steps is [PField(field)] else {
       raise Refused("`cur` is written one member at a time: `cur.<name> = …`")
     }
     guard !(ctx.cur is CurNone) else {
@@ -132,13 +132,13 @@ fn emit_assign(
       )
     }
     guard op is ASet else {
-      raise Refused("`cur.\{member}` is written, not accumulated into")
+      raise Refused("`cur.\{field}` is written, not accumulated into")
     }
     let rv = emit_expr(ctx, src, value)
     let t = ctx.temp()
     src.line("let \{t} = \{rv};")
     src.line("if \{t} == null { return null; }")
-    src.line("cur = with_member(cur, \{wax_str(member)}, \{t});")
+    src.line("cur = with_member(cur, \{wax_str(field)}, \{t});")
     src.line("if cur == null { return null; }")
     return
   }

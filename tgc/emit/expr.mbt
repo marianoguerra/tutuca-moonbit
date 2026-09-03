@@ -61,7 +61,10 @@ priv struct Ctx {
 /// Neither is true here.
 priv enum CurKind {
   CurNone
-  CurRecord(String)
+  /// No name, because nothing needs one: a record needs no materialization —
+  /// the accumulated map IS the value — so nothing lowers differently per
+  /// record type. A component's name is used, which is why that one carries it.
+  CurRecord
   CurComp(String)
 }
 
@@ -361,7 +364,7 @@ fn emit_root(
           raise Refused(
             "`cur` has no `new` before it, so there is nothing for it to name",
           )
-        CurRecord(_) => "cur"
+        CurRecord => "cur"
         CurComp(name) => {
           src.line("if cur == null { return null; }")
           src.open("if kind_of(cur!) != 10 {")
