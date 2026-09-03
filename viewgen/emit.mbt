@@ -158,73 +158,6 @@ fn emit_name_enum(
 }
 
 ///|
-fn arg_type_name(t : ArgType) -> String {
-  match t {
-    VDouble => "Double"
-    VString => "String"
-    VBool => "Bool"
-    VValue => "@tutuca.Value"
-  }
-}
-
-///|
-/// The @core.Value pattern that binds a payload of this type.
-fn arg_pattern(t : ArgType, binder : String) -> String {
-  match t {
-    VDouble => "Num(\{binder})"
-    VString => "Str(\{binder})"
-    VBool => "Bool(\{binder})"
-    VValue => binder
-  }
-}
-
-///|
-/// The `Msg` variant payload for one input, and the match arm that decodes
-/// it. `args: None` means the call sites disagreed on arity, so the variant
-/// carries the raw argument list instead.
-fn emit_msg_variant(
-  out : StringBuilder,
-  sig : InputSig,
-  variant : String,
-) -> Unit {
-  let sites = sig.sites.join(", ")
-  out.write_string("  /// `\{sites}=\"\{sig.name} …\"`\n")
-  match sig.args {
-    None => out.write_string("  \{variant}(Array[@tutuca.Value])\n")
-    Some(types) =>
-      if types.is_empty() {
-        out.write_string("  \{variant}\n")
-      } else {
-        out.write_string(
-          "  \{variant}(" + types.map(arg_type_name).join(", ") + ")\n",
-        )
-      }
-  }
-}
-
-///|
-fn emit_msg_arm(out : StringBuilder, sig : InputSig, variant : String) -> Unit {
-  match sig.args {
-    None =>
-      out.write_string("    (\{quote(sig.name)}, _) => \{variant}(args)\n")
-    Some(types) =>
-      if types.is_empty() {
-        out.write_string("    (\{quote(sig.name)}, []) => \{variant}\n")
-      } else {
-        let binders = types.mapi((i, _) => "a\{i}")
-        let pats = types.mapi((i, t) => arg_pattern(t, binders[i]))
-        out.write_string(
-          "    (\{quote(sig.name)}, [" +
-          pats.join(", ") +
-          "]) => \{variant}(" +
-          binders.join(", ") +
-          ")\n",
-        )
-      }
-  }
-}
-
-///|
 /// Every `$`-callable this component answers: the ones its views call, and the
 /// ones its script block declares. Sorted and de-duplicated, so a method that
 /// is both called and declared is one enum case.
@@ -313,17 +246,6 @@ fn line_of(text : String, offset : Int) -> Int {
 }
 
 ///|
-/// The MoonBit variant for a source name, from the pairs `variants_for` built.
-fn variant_of(pairs : Array[(String, String)], name : String) -> String {
-  for p in pairs {
-    if p.0 == name {
-      return p.1
-    }
-  }
-  name
-}
-
-///|
 /// One render-time directive bucket: the enum naming its handlers.
 ///
 /// Nothing is emitted when the views name no handler for it, on the same rule
@@ -367,7 +289,6 @@ fn emit_alter_bucket(
 /// One component's section of the generated types module.
 fn emit_component(
   name : String,
-  source_file : String,
   views : @viewfile.ViewSet,
   surface : Surface,
   state : @statedef.StateDef?,
@@ -686,7 +607,7 @@ fn emit_module_compiled(
       }
     }
     emit_component(
-      cname, source_file, comp, surface, state, inits, debug_derive, answered, out,
+      cname, comp, surface, state, inits, debug_derive, answered, out,
     )
   }
   out.to_string()
