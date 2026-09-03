@@ -15,15 +15,6 @@
 // every diagnostic.
 
 ///|
-/// A state field's type after parsing and name resolution.
-///
-/// `core`'s one `Ty` (`core/ty.mbt`). It used to be a second enum with the same
-/// sixteen shapes, converted into the runtime's by a hand-maintained table with
-/// a hand-maintained twin — so a type added to the schema had to be added in
-/// four places. `StateTy` is the older name and still reads.
-pub using @tutuca {type Ty as StateTy}
-
-///|
 /// A value written in an attribute: `#[min = 0]`, `#[format = "email"]`,
 /// `#[required]`.
 pub(all) enum AttrValue {
@@ -40,7 +31,7 @@ pub(all) struct FieldDef {
   name : String
   /// The MoonBit struct field name: `name`, escaped if it is a keyword.
   binding : String
-  ty : StateTy
+  ty : @tutuca.Ty
   doc : String?
   /// `#[…]` attributes, in source order, unresolved.
   ///
@@ -60,7 +51,7 @@ pub(all) struct MsgDef {
   name : String
   /// The MoonBit enum variant name.
   variant : String
-  payload : Array[StateTy]
+  payload : Array[@tutuca.Ty]
   /// Any number of arguments, of shapes nothing here can name.
   ///
   /// Not something the schema language can DECLARE — a `message { … }` case
@@ -88,7 +79,7 @@ pub(all) struct ProtocolRef {
 /// implementation may bind it to a field or to a getter body.
 pub(all) struct PropertyDef {
   name : String
-  ty : StateTy
+  ty : @tutuca.Ty
   /// Whether this property is part of the component's direct host/parent
   /// interface. Properties are private virtual fields unless the declaration
   /// carries `pub`; protocol members are public by definition.
@@ -478,7 +469,10 @@ declare pub fn StateDef::property(
 ///|
 /// The type read by `.name`: a declared property first, then the implicit
 /// private property supplied by a state field.
-declare pub fn StateDef::member_ty(self : StateDef, name : String) -> StateTy?
+declare pub fn StateDef::member_ty(
+  self : StateDef,
+  name : String,
+) -> @tutuca.Ty?
 
 ///|
 /// The named type with this source name, or None.
@@ -500,9 +494,9 @@ declare pub fn StateDef::operation_name(
 /// such field — the check behind the unknown-`.field` diagnostic.
 declare pub fn StateDef::field_of(
   self : StateDef,
-  ty : StateTy,
+  ty : @tutuca.Ty,
   name : String,
-) -> StateTy?
+) -> @tutuca.Ty?
 
 ///|
 /// The name in `names` closest to `name`, when one is close enough to be
@@ -512,11 +506,11 @@ declare pub fn nearest(name : String, names : Array[String]) -> String?
 ///|
 /// The MoonBit type expression for a state field of this type, with named
 /// types resolved through `def`.
-declare pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String
+declare pub fn StateDef::moonbit_ty(self : StateDef, ty : @tutuca.Ty) -> String
 
 ///|
 /// The MoonBit expression for this type's zero value.
-declare pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String
+declare pub fn StateDef::zero_expr(self : StateDef, ty : @tutuca.Ty) -> String
 
 ///|
 /// Parse and validate a `<script type="tutuca/fixtures">` block against a

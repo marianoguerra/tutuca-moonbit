@@ -73,7 +73,7 @@ fn messages_with_views(
   block : String,
   views : Array[String],
 ) -> Array[String] raise {
-  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
   for v in views {
     inputs[v] = [None]
   }
@@ -751,7 +751,7 @@ fn codes_with_views(
   block : String,
   views : Array[String],
 ) -> Array[String] raise {
-  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
   for v in views {
     // One opaque argument: enough for a one-parameter handler to bind, and
     // opaque is what a real join of disagreeing call sites gives anyway.
@@ -857,7 +857,7 @@ test "a view name the block neither answers nor forwards is a warning" {
 
 ///|
 test "NO_VIEW_HANDLER names both fixes, and is not fatal" {
-  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
   inputs["saveDraft"] = [None]
   let found = @check.check(
     @tscript.parse_script("receive resetTo(n) { .count = n }"),

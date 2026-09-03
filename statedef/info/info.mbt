@@ -36,10 +36,7 @@ pub fn zero_value(def : @statedef.StateDef) -> Map[String, @tutuca.Value] {
 
 ///|
 /// The zero of one declared type.
-pub fn zero_of(
-  def : @statedef.StateDef,
-  ty : @statedef.StateTy,
-) -> @tutuca.Value {
+pub fn zero_of(def : @statedef.StateDef, ty : @tutuca.Ty) -> @tutuca.Value {
   match ty {
     // A record's zero is its fields' zeros, which `TyInfo::zero` cannot build
     // because `TyRecord` keeps only a name — the fields are the instance's to
@@ -87,11 +84,8 @@ pub fn zero_of_ref(
 
 ///|
 /// The type a reference names, or None when it names none.
-fn resolve_ref(
-  def : @statedef.StateDef,
-  t : @tscript.TyRef,
-) -> @statedef.StateTy? {
-  let args : Array[@statedef.StateTy] = []
+fn resolve_ref(def : @statedef.StateDef, t : @tscript.TyRef) -> @tutuca.Ty? {
+  let args : Array[@tutuca.Ty] = []
   for a in t.args {
     guard resolve_ref(def, a) is Some(r) else { return None }
     args.push(r)

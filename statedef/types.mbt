@@ -35,7 +35,7 @@ pub fn StateDef::property(self : StateDef, name : String) -> PropertyDef? {
 }
 
 ///|
-pub fn StateDef::member_ty(self : StateDef, name : String) -> StateTy? {
+pub fn StateDef::member_ty(self : StateDef, name : String) -> @tutuca.Ty? {
   match self.property(name) {
     Some(p) => Some(p.ty)
     None => self.field(name).map(f => f.ty)
@@ -114,7 +114,7 @@ pub fn StateDef::operation_name(
 /// the same question for a `new` in a block and the two must not drift: a
 /// second copy of `"Int" => TyInt(width=32, signed=true)` is how `new Int16`
 /// and `count : Int16` would come to mean different things.
-fn scalar_ty(name : String) -> StateTy? {
+fn scalar_ty(name : String) -> @tutuca.Ty? {
   match name {
     "Bool" => Some(TyBool)
     // Width and signedness survive so decode can range-check, even though
@@ -152,8 +152,8 @@ fn scalar_ty(name : String) -> StateTy? {
 pub fn StateDef::resolve_ty(
   self : StateDef,
   name : String,
-  args : Array[StateTy],
-) -> StateTy? {
+  args : Array[@tutuca.Ty],
+) -> @tutuca.Ty? {
   if scalar_ty(name) is Some(t) {
     return if args.is_empty() { Some(t) } else { None }
   }
@@ -183,9 +183,9 @@ pub fn StateDef::resolve_ty(
 ///|
 pub fn StateDef::field_of(
   self : StateDef,
-  ty : StateTy,
+  ty : @tutuca.Ty,
   name : String,
-) -> StateTy? {
+) -> @tutuca.Ty? {
   match ty {
     TyRecord(n) =>
       match self.user_ty(n) {
@@ -293,7 +293,7 @@ pub fn StateDef::field_domains(self : StateDef) -> Array[@tutuca.FieldDomain] {
 }
 
 ///|
-pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String {
+pub fn StateDef::moonbit_ty(self : StateDef, ty : @tutuca.Ty) -> String {
   match ty {
     TyBool => "Bool"
     // Every width emits Int; the width survives in the decode range check,
@@ -320,7 +320,7 @@ pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String {
 }
 
 ///|
-pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
+pub fn StateDef::zero_expr(self : StateDef, ty : @tutuca.Ty) -> String {
   match ty {
     TyBool => "false"
     TyInt(..) => "0"

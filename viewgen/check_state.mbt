@@ -25,7 +25,7 @@ priv enum SelfTy {
   /// The component's own state record.
   SState
   /// A known type — a loop item, or the target of a push-view.
-  STy(@statedef.StateTy)
+  STy(@tutuca.Ty)
   /// ANOTHER component's state record, reached by iterating a collection whose
   /// element type names a sibling interface. `.field` and `@value.member` down
   /// there address that component's fields, not this one's — which is what the
@@ -142,11 +142,7 @@ fn Checker::property_action(
 ///|
 /// The type a value has in this scope, or None when it is not statically
 /// known. None means "do not check", never "wrong".
-fn Checker::ty_of(
-  self : Checker,
-  val : @tutuca.Val,
-  sc : Scope,
-) -> @statedef.StateTy? {
+fn Checker::ty_of(self : Checker, val : @tutuca.Val, sc : Scope) -> @tutuca.Ty? {
   if val.as_field() is Some(name) {
     return match sc.self_ty {
       SState => self.def.member_ty(name)
@@ -314,7 +310,7 @@ fn Checker::val(
 
 ///|
 /// The field names a type offers, for the "did you mean" tail.
-fn Checker::members_of(self : Checker, t : @statedef.StateTy) -> Array[String] {
+fn Checker::members_of(self : Checker, t : @tutuca.Ty) -> Array[String] {
   match t {
     TyRecord(n) =>
       match self.def.user_ty(n) {
@@ -500,7 +496,7 @@ fn Checker::node(
       // never look at.
       //
       // `elem()` answers TyAny for a collection of child components, because a
-      // StateTy cannot spell "that component's state record". The name is in
+      // @tutuca.Ty cannot spell "that component's state record". The name is in
       // the type though (`TyComp(Some("Todo"))`), so ask the program for the
       // sibling's schema and check the body against it. Absent from the
       // table — an untyped `component` slot, a component this job cannot see —

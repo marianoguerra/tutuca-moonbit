@@ -1,6 +1,6 @@
 // The init block's type rules.
 //
-// `parse_init` is the typed-literal checker over `StateTy`: JSON in, MoonBit
+// `parse_init` is the typed-literal checker over `@tutuca.Ty`: JSON in, MoonBit
 // source out, with the schema deciding what fits. It had no test anywhere, and
 // it is the closest existing analogue to the checker a real expression
 // language needs — the same job, one language smaller. So what is pinned here

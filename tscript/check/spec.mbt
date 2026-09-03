@@ -45,7 +45,7 @@ pub(all) enum Severity {
 /// error: a name can be raised from MoonBit, and the block is allowed to
 /// answer one the templates never mention.
 pub(all) struct Surface {
-  inputs : Map[String, Array[@statedef.StateTy?]]
+  inputs : Map[String, Array[@tutuca.Ty?]]
   /// Whether the caller HAS the views, or merely has none to show.
   ///
   /// An empty `inputs` means two different things and the checker has to tell
@@ -104,7 +104,7 @@ declare pub fn Surface::empty() -> Surface
 declare pub fn resolve_ty_ref(
   def : @statedef.StateDef,
   t : @tscript.TyRef,
-) -> @statedef.StateTy?
+) -> @tutuca.Ty?
 
 ///|
 /// Check a block against a schema.

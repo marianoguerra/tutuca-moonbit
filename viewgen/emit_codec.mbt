@@ -7,7 +7,7 @@
 // sends it through one.
 //
 // Emitted for EVERY schema-backed component. The shapes below cover the
-// whole `StateTy` lattice, `record` / `enum` / `variant` / `option` / `tuple`
+// whole `@tutuca.Ty` lattice, `record` / `enum` / `variant` / `option` / `tuple`
 // included.
 //
 // The state struct derives nothing, so these ARE the shapes — what a view
@@ -285,11 +285,7 @@ fn emit_codec(
 /// the same conversion wherever a typed expression meets a builtin or a
 /// channel payload, and two implementations would disagree about a set or a
 /// nested record long before anyone noticed.
-fn enc_expr(
-  def : @statedef.StateDef,
-  ty : @statedef.StateTy,
-  e : String,
-) -> String {
+fn enc_expr(def : @statedef.StateDef, ty : @tutuca.Ty, e : String) -> String {
   def.to_value_src(ty, e)
 }
 
@@ -308,7 +304,7 @@ fn enc_expr(
 /// `guard Some(x) is Some(y)`.
 fn dec_stmts(
   def : @statedef.StateDef,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   src : String,
   name : String,
   base : String,
@@ -355,7 +351,7 @@ fn dec_stmts(
 /// names: a nested list's element binding cannot collide with its parent's.
 fn dec_val(
   def : @statedef.StateDef,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   src : String,
   name : String,
   base : String,

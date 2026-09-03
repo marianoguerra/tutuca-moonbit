@@ -112,7 +112,7 @@ declare pub fn[N : @vdom.DomWalk] seed(
 ///|
 /// One component's named fixture, by name. None when neither is declared.
 declare pub fn fixture_of(
-  module : @host.Module,
+  loaded : @host.Module,
   comp : String,
   name : String,
 ) -> @host.DynInitDef?

@@ -74,7 +74,7 @@ fn inline_emit(
 /// type the emitter can decode a parameter at; the other two arrive as None,
 /// which is exactly "bind it raw and refuse a typed use".
 fn inline_surface(surface : Surface) -> @check.Surface {
-  let inputs : Map[String, Array[@statedef.StateTy?]] = Map([])
+  let inputs : Map[String, Array[@tutuca.Ty?]] = Map([])
   for sig in surface.inputs {
     inputs[sig.name] = match sig.args {
       Some(ts) => ts.map(arg_state_ty)
@@ -86,7 +86,7 @@ fn inline_surface(surface : Surface) -> @check.Surface {
 
 ///|
 /// One inferred argument type, as the schema would spell it.
-fn arg_state_ty(t : ArgType) -> @statedef.StateTy? {
+fn arg_state_ty(t : ArgType) -> @tutuca.Ty? {
   match t {
     VDouble => Some(TyFloat)
     VString => Some(TyText)

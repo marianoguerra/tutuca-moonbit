@@ -51,7 +51,7 @@ fn spec_attrs_of(attrs : Array[(String, @statedef.AttrValue)]) -> String {
 
 ///|
 /// A message's payload in parens, or "" when it carries none.
-fn spec_payload_of(payload : Array[@statedef.StateTy]) -> String {
+fn spec_payload_of(payload : Array[@tutuca.Ty]) -> String {
   guard !payload.is_empty() else { return "" }
   "(" + payload.map(t => t.show_source()).join(", ") + ")"
 }

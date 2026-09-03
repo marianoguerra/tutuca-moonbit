@@ -22,7 +22,7 @@ priv struct FakeGuest {
   /// answers reads through `wrap_instance`, exactly as the wasm bridge does.
   racks : Map[Int, Array[Int]]
   next : Ref[Int]
-  module : Ref[Module?]
+  loaded : Ref[Module?]
   /// requests the module served, in order (the guest-served request test)
   served : Array[String]
 }
@@ -36,7 +36,7 @@ fn FakeGuest::new() -> FakeGuest {
     titles: Map([]),
     racks: Map([]),
     next: { val: 0, },
-    module: { val: None, },
+    loaded: { val: None, },
     served: [],
   }
 }
@@ -74,13 +74,13 @@ fn FakeGuest::alloc_pair(self : FakeGuest, left : Int, right : Int) -> Int {
 ///|
 fn FakeGuest::wrap_child(self : FakeGuest, handle : Int) -> @tutuca.Value {
   // mirrors the wasm bridge: resolve through the registered module
-  self.module.val.unwrap().wrap_instance("Counter", handle).unwrap()
+  self.loaded.val.unwrap().wrap_instance("Counter", handle).unwrap()
 }
 
 ///|
 /// The same, for a `Rack` in another `Rack`'s cells.
 fn FakeGuest::wrap_rack(self : FakeGuest, handle : Int) -> @tutuca.Value {
-  self.module.val.unwrap().wrap_instance("Rack", handle).unwrap()
+  self.loaded.val.unwrap().wrap_instance("Rack", handle).unwrap()
 }
 
 ///|
@@ -877,23 +877,23 @@ fn mount_with_bundle(fake : FakeGuest) -> (@harness.MemHarness, Module) raise {
   // what a host does after mounting: sweep superseded guest handles at the end
   // of every drained cascade (see install_gc)
   install_gc(h.app.transactor)
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     fake,
     counter_manifest(),
     policy=vouched(),
   )
-  fake.module.val = Some(module)
-  (h, module)
+  fake.loaded.val = Some(loaded)
+  (h, loaded)
 }
 
 ///|
 test "module mounts into a live app and dispatches through stock machinery" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   inspect(h.find_all(".counter").length(), content="0")
-  guard! module.make_instance("Counter", args={ "count": Num(10) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
 
   // seeding the instance is a plain state change
@@ -930,9 +930,9 @@ test "a guest successor keeps its origin and moves its revision" {
   // like a brand-new component to the render cache and never hit.
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
-  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
   // Two live guest instances of one component are two handles, so they spread
   // across buckets even though their state is identical.
   guard! a.to_value().identity() is Some(id_a)
@@ -952,7 +952,7 @@ test "a guest successor keeps its origin and moves its revision" {
 test "a guest `request` round-trips through a host IntentFn" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   h.app.scope.register_intent_handlers({
     "double": [
       IntentFn((call, answer) => {
@@ -963,7 +963,7 @@ test "a guest `request` round-trips through a host IntentFn" {
       }),
     ],
   })
-  guard! module.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  guard! loaded.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="21")
   // the guest's `request` becomes an `intent lex` at the host, and the answer
@@ -977,8 +977,8 @@ test "a guest `request` round-trips through a host IntentFn" {
 test "nested guest children render and dispatch through two DynObj levels" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Pair") is Some(pair)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
 
   // both children render with their own counts
@@ -998,8 +998,8 @@ test "nested guest children render and dispatch through two DynObj levels" {
 test "event modifiers in guest views dispatch through stock parsing" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="5")
   // @on.keydown+cancel="reset" — the modifier gates on Escape (host-side
@@ -1014,13 +1014,13 @@ test "event modifiers in guest views dispatch through stock parsing" {
 test "migrate_instance rebuilds state from the JSON projection" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
-  guard! module.migrate_instance(a.to_value(), "Counter") is Some(b)
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! loaded.migrate_instance(a.to_value(), "Counter") is Some(b)
   assert_true(a.handle() != b.handle())
   assert_true(fake.counters.get(b.handle()) is Some(10.0))
   // non-guest values don't migrate
-  assert_true(module.migrate_instance(Str("nope"), "Counter") is None)
+  assert_true(loaded.migrate_instance(Str("nope"), "Counter") is None)
 }
 
 ///|
@@ -1032,17 +1032,17 @@ test "migrate_instance rebuilds state from the JSON projection" {
 test "a snapshot restores through the guest's own bytes" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
   let a = a.with_persist_id("notes/1")
   // one update later: the successor keeps the id and gains a history entry
   guard! a.with_field("count", Num(8)) is Some(bumped)
-  guard! module.snapshot(bumped) is Some(snap)
+  guard! loaded.snapshot(bumped) is Some(snap)
   assert_eq(snap.module_, "counterlib")
   assert_eq(snap.component, "Counter")
   assert_eq(snap.id, "notes/1")
   assert_true(snap.has_state())
-  guard! module.restore(snap) is Some(back)
+  guard! loaded.restore(snap) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 8.0)
   // the history is the proof: it rode in the guest's bytes
   @debug.assert_eq(fake.histories.get(back.handle()).unwrap(), [7.0])
@@ -1059,14 +1059,14 @@ test "a snapshot restores through the guest's own bytes" {
 test "a component that does not persist restores from its declared fields" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Pair") is Some(p)
-  guard! module.snapshot(p.to_value()) is Some(snap)
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Pair") is Some(p)
+  guard! loaded.snapshot(p.to_value()) is Some(snap)
   assert_false(snap.has_state())
   // minted rather than blank: every instance has a name, and it says what it
   // is an instance of
   assert_true(snap.id.has_prefix("counterlib/Pair#"))
-  guard! module.restore(snap) is Some(back)
+  guard! loaded.restore(snap) is Some(back)
   assert_true(back.handle() != p.handle())
   assert_true(fake.pairs.get(back.handle()) is Some(_))
 }
@@ -1078,11 +1078,11 @@ test "a component that does not persist restores from its declared fields" {
 test "a guest refusing its own bytes falls back to the fields" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
-  guard! module.snapshot(a.to_value()) is Some(snap)
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
+  guard! loaded.snapshot(a.to_value()) is Some(snap)
   let stale = { ..snap, state: @utf8.encode("from a format ago"), }
-  guard! module.restore(stale) is Some(back)
+  guard! loaded.restore(stale) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 3.0)
 }
 
@@ -1091,16 +1091,16 @@ test "a guest refusing its own bytes falls back to the fields" {
 test "a snapshot survives a store round trip" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
+  let (_h, loaded) = mount_with_bundle(fake)
   let store = @persist.MemStore::new()
-  guard! module.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
+  guard! loaded.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
   let a = a.with_persist_id("counter/main")
-  guard! module.snapshot(a.to_value()) is Some(snap)
+  guard! loaded.snapshot(a.to_value()) is Some(snap)
   assert_true(@persist.save(store, snap))
   @debug.assert_eq(@persist.saved_ids(store), ["counter/main"])
   guard! @persist.load(store, "counter/main") is Some(read_back)
   assert_eq(read_back, snap)
-  guard! module.restore(read_back) is Some(back)
+  guard! loaded.restore(read_back) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 41.0)
   @persist.forget(store, "counter/main")
   assert_true(@persist.load(store, "counter/main") is None)
@@ -1148,10 +1148,10 @@ test "event_names reflects a module registered after boot" {
 ///|
 test "a guest's declared schema describes, compares and projects it" {
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
-  guard! module.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
-  guard! module.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  guard! loaded.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
+  guard! loaded.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
   guard! a.to_value() is Obj(oa)
   guard! b.to_value() is Obj(ob)
   guard! c.to_value() is Obj(oc)
@@ -1170,8 +1170,8 @@ test "a guest's declared schema describes, compares and projects it" {
 ///|
 test "a guest's view can write one of its own properties" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="10")
   // `@on.click=".count = 0"` in the GUEST's view: no name crosses to the
@@ -1182,8 +1182,8 @@ test "a guest's view can write one of its own properties" {
 
 ///|
 test "inputs are read off the compiled views, not declared" {
-  let (_h, module) = mount_with_bundle(FakeGuest::new())
-  guard! module.schema_of("Counter") is Some(schema)
+  let (_h, loaded) = mount_with_bundle(FakeGuest::new())
+  guard! loaded.schema_of("Counter") is Some(schema)
   // every @on handler the view names, and nothing else: the zero button
   // writes `count` outright, so it raises no name to read off
   debug_inspect(
@@ -1207,8 +1207,8 @@ test "inputs are read off the compiled views, not declared" {
 ///|
 test "a guest child's bubble reaches a guest PARENT, which can stop it" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Pair") is Some(pair)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
   // the left child emits "counted"; the Pair declares that bubble and hears it
@@ -1222,8 +1222,8 @@ test "a guest child's bubble reaches a guest PARENT, which can stop it" {
 ///|
 test "a bubble no guest stops still reaches the host" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // no Pair in between: the same emit walks all the way up to the shell
   h.click(".announce")
@@ -1233,8 +1233,8 @@ test "a bubble no guest stops still reaches the host" {
 ///|
 test "a guest addresses its own subtree by relative path" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Pair") is Some(pair)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
   // `send-at [field("left")] "setTo" [0]`: the left CHILD's receive handler runs
@@ -1245,7 +1245,7 @@ test "a guest addresses its own subtree by relative path" {
 ///|
 test "request opts route the response to the name the guest asked for" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   h.app.scope.register_intent_handlers({
     "double": [
       IntentFn((call, answer) => {
@@ -1256,7 +1256,7 @@ test "request opts route the response to the name the guest asked for" {
       }),
     ],
   })
-  guard! module.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  guard! loaded.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // the guest requested with on_ok_name="doubled", so the response dispatches
   // "doubled" with just the value — not "double" with [result, error]
@@ -1267,7 +1267,7 @@ test "request opts route the response to the name the guest asked for" {
 ///|
 test "a module serves its own requests, ahead of the host's" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   // a host handler of the SAME name, which the guest's must win over
   h.app.scope.register_intent_handlers({
     "triple": [
@@ -1279,7 +1279,7 @@ test "a module serves its own requests, ahead of the host's" {
       }),
     ],
   })
-  guard! module.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  guard! loaded.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   h.click(".triple")
   // 5 * 3 (the module's own handler), not 5 * 100 (the host's)
@@ -1290,8 +1290,8 @@ test "a module serves its own requests, ahead of the host's" {
 ///|
 test "a guest answers a view's @when filter" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // history is empty
   debug_inspect(h.texts("li.h"), content="[]")
@@ -1305,9 +1305,9 @@ test "a guest answers a view's @when filter" {
 
 ///|
 test "component_names lists the manifest's components in order" {
-  let (_, module) = mount_with_bundle(FakeGuest::new())
+  let (_, loaded) = mount_with_bundle(FakeGuest::new())
   debug_inspect(
-    module.component_names(),
+    loaded.component_names(),
     content="[\"Counter\", \"Pair\", \"Framed\", \"Rack\"]",
   )
 }
@@ -1315,8 +1315,8 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "a guest property is public, synchronous, and copy-on-write" {
   let fake = FakeGuest::new()
-  let (_, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(4) }) is Some(c)
+  let (_, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(4) }) is Some(c)
   let before = c.to_value()
   assert_eq(before.property("count"), Num(4))
   guard! before.set_property("count", Num(9)) is Changed(after)
@@ -1756,13 +1756,13 @@ test "a module's views are linted at load" {
     ],
   }
   let h = @harness.mount(shell_module(), "Shell")
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     FakeGuest::new(),
     bad,
     policy=vouched(),
   )
-  let lines = module.diagnostics()
+  let lines = loaded.diagnostics()
   assert_true(lines.length() > 0)
   // every line names the component and view it is about
   for line in lines {
@@ -1838,14 +1838,14 @@ test "a `$method` the manifest never declared is reported at load" {
     ],
   }
   let h = @harness.mount(shell_module(), "Shell")
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     FakeGuest::new(),
     sloppy,
     policy=vouched(),
   )
   inspect(
-    module.diagnostics().join("\n"),
+    loaded.diagnostics().join("\n"),
     content=(
       #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
       #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
@@ -1859,16 +1859,16 @@ test "a `$method` the manifest never declared is reported at load" {
 ///|
 test "a component's named initial states are offered by name" {
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  debug_inspect(module.init_names("Counter"), content="[\"with-history\"]")
-  debug_inspect(module.init_names("Pair"), content="[]")
-  guard! module.make_init("Counter", "with-history") is Some(c)
+  let (_h, loaded) = mount_with_bundle(fake)
+  debug_inspect(loaded.init_names("Counter"), content="[\"with-history\"]")
+  debug_inspect(loaded.init_names("Pair"), content="[]")
+  guard! loaded.make_init("Counter", "with-history") is Some(c)
   assert_true(fake.counters.get(c.handle()) is Some(3.0))
   // the schema carries them too, so a descriptor reader sees them
-  guard! module.schema_of("Counter") is Some(schema)
+  guard! loaded.schema_of("Counter") is Some(schema)
   debug_inspect(schema.init_names, content="[\"with-history\"]")
   // an unknown fixture is not a bare instance: the caller decides
-  assert_true(module.make_init("Counter", "nope") is None)
+  assert_true(loaded.make_init("Counter", "nope") is None)
 }
 
 ///|
@@ -1883,8 +1883,8 @@ test "a component's named initial states are offered by name" {
 /// renders it, and the host does the rest.
 test "a foreign placeholder is filled by the host and never reaches the guest" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Framed", args={ "title": Str("panel") })
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
   h.send_at_root("setSlot", args=[framed.to_value()])
   // The guest's own field, answered by the guest.
@@ -1900,8 +1900,8 @@ test "a foreign placeholder is filled by the host and never reaches the guest" {
 ///|
 test "what a person puts in a placeholder survives the guest around it changing" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Framed", args={ "title": Str("panel") })
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
   h.send_at_root("setSlot", args=[framed.to_value()])
   // Use what is in the hole.
@@ -1920,13 +1920,13 @@ test "what a person puts in a placeholder survives the guest around it changing"
 ///|
 test "a same-module child is the guest's own, and the host does not fill it" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   // `Pair { left: Counter, right: Counter }` names components of its OWN
   // module. Those are nested children the guest made and owns — filling them
   // here would shadow the guest's values with host-built ones, and the two
   // cases are told apart by exactly that: same-module is the guest's, foreign
   // is a hole.
-  guard! module.make_instance("Pair") is Some(pair)
+  guard! loaded.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   // The guest's own children, with the guest's own values.
   assert_eq(h.texts(".count"), ["1", "100"])
@@ -1945,9 +1945,9 @@ test "a same-module child is the guest's own, and the host does not fill it" {
 /// instance in it.
 test "child_json encodes a nested guest instance at any depth" {
   let fake = FakeGuest::new()
-  let (_, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(a)
-  guard! module.make_instance("Counter", args={ "count": Num(2) }) is Some(b)
+  let (_, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(a)
+  guard! loaded.make_instance("Counter", args={ "count": Num(2) }) is Some(b)
   let marker = (h : Int) => "{\"$dyn\":{\"handle\":\{h}}}"
 
   // the case that always worked: a scalar `comp` field
@@ -2016,13 +2016,13 @@ test "a bound the type cannot carry is a load-time hint" {
       },
     ],
   }
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     FakeGuest::new(),
     manifest,
     policy=vouched(),
   )
-  let said = module.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT"))
+  let said = loaded.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT"))
   assert_eq(said.length(), 3)
   assert_true(said[0].contains("Counter.label") && said[0].contains("'min'"))
   assert_true(said[1].contains("Counter.label") && said[1].contains("'max'"))
@@ -2313,8 +2313,8 @@ test "a bound name the module does not declare is a diagnostic" {
 test "a guest reads a value a host ancestor provides" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   h.send_at_root("setSlot", args=[inst.to_value()])
   // Shell's `note` starts empty, so the binding is there and holds "".
   inspect(h.text(".theme"), content="")
@@ -2336,14 +2336,14 @@ test "a guest with no provider above it reads its declared default" {
   let h = @harness.mount(no_provide_shell(), "Bare")
   install_gc(h.app.transactor)
   let fake = FakeGuest::new()
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     fake,
     counter_manifest(),
     policy=vouched(),
   )
-  fake.module.val = Some(module)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  fake.loaded.val = Some(loaded)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   h.send_at_root("setSlot", args=[inst.to_value()])
   inspect(h.text(".theme"), content="unthemed")
 }
@@ -2380,12 +2380,12 @@ fn no_provide_shell() -> @component.ModuleDef {
 test "a guest component published as a type can be built" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   // Through the BUNDLE's own scope, which is where a module's components live:
   // `register_module` enters a child scope, so the app's scope cannot see them
   // and a host component reaches one only along the `dyn` leg, from inside the
   // guest's subtree, exactly as the publish intends.
-  guard! module.scope.lookup_component("Counter") is Some(comp)
+  guard! loaded.scope.lookup_component("Counter") is Some(comp)
   let inst = comp.make({ "count": Num(7) })
   // A real guest instance, not the `Null` a `for_type` component used to yield.
   assert_true(inst is Obj(_))
@@ -2408,8 +2408,8 @@ test "a guest component published as a type can be built" {
 test "a guest handler reads a declared lookup" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   h.send_at_root("setSlot", args=[inst.to_value()])
   // Shell's `note` — which is what it provides as `theme` — starts empty.
   h.click(".notify")
@@ -2450,8 +2450,8 @@ impl @tutuca.Stack for OneBinding with fn lookup_dynamic(self, name) {
 test "a guest value body reads a declared lookup" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  let (_, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   guard! inst.to_value() is Obj(o)
   let stack : &@tutuca.Stack = OneBinding::{
     name: "theme",
@@ -2479,8 +2479,8 @@ test "a guest value body reads a declared lookup" {
 test "a guest handler reads nothing for an undeclared name" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   h.send_at_root("setSlot", args=[inst.to_value()])
   h.click(".undeclared")
   inspect(h.text(".note"), content="absent")
@@ -2491,8 +2491,8 @@ test "a guest handler reads nothing for an undeclared name" {
 test "a guest replies to whoever sent it a message" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) }) is Some(inst)
   h.send_at_root("setSlot", args=[inst.to_value()])
   // Shell sends, the guest replies, and the reply lands in Shell's `receive`
   // bucket like any other message.
@@ -2529,14 +2529,14 @@ fn mount_with_domains(
 ) -> (@harness.MemHarness, Module) raise {
   let h = @harness.mount(shell_module(), "Shell")
   install_gc(h.app.transactor)
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     fake,
     bounded_counter_manifest(domains),
     policy=vouched(),
   )
-  fake.module.val = Some(module)
-  (h, module)
+  fake.loaded.val = Some(loaded)
+  (h, loaded)
 }
 
 ///|
@@ -2553,10 +2553,10 @@ fn mount_with_domains(
 test "a guest's declared domain is enforced at both of the host's doors" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_domains(fake, [
+  let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
   ])
-  guard! module.make_instance("Counter", args={ "count": Num(10) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
   h.send_at_root("setSlot", args=[inst0.to_value()])
   inspect(h.text(".count"), content="10")
@@ -2587,10 +2587,10 @@ test "a guest's declared domain is enforced at both of the host's doors" {
 test "a refused guest write reaches the refusal channel" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_domains(fake, [
+  let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
   ])
-  guard! module.make_instance("Counter", args={ "count": Num(10) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
   h.send_at_root("setSlot", args=[inst0.to_value()])
   let refused = @harness.refusals_while(() => h.click(".zero"))
@@ -2618,8 +2618,8 @@ test "a refused guest write reaches the refusal channel" {
 test "a component with no readable domain is unconstrained" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_domains(fake, [])
-  guard! module.make_instance("Counter", args={ "count": Num(10) })
+  let (h, loaded) = mount_with_domains(fake, [])
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
   h.send_at_root("setSlot", args=[inst0.to_value()])
   h.click(".zero")
@@ -2639,10 +2639,10 @@ test "a component with no readable domain is unconstrained" {
 test "a refused transition frees the successor and keeps the live handle" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_domains(fake, [
+  let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
   ])
-  guard! module.make_instance("Counter", args={ "count": Num(12) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(12) })
     is Some(inst0)
   h.send_at_root("setSlot", args=[inst0.to_value()])
   inspect(h.text(".count"), content="12")
@@ -2665,10 +2665,10 @@ test "a refused transition frees the successor and keeps the live handle" {
 test "a refused mutator frees the successor and keeps the live handle" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_domains(fake, [
+  let (h, loaded) = mount_with_domains(fake, [
     { field: "count", domain: DBetween(lo=DLit(5), hi=DLit(12)), },
   ])
-  guard! module.make_instance("Counter", args={ "count": Num(10) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
   h.send_at_root("setSlot", args=[inst0.to_value()])
   // `setCount 0` is turned down at the FIRST door, before the guest is
@@ -2689,20 +2689,20 @@ test "a refused mutator frees the successor and keeps the live handle" {
 test "what a person put in a placeholder survives a snapshot" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Framed", args={
+  guard! loaded.make_instance("Framed", args={
       "title": Str("panel"),
       "body": filler.make({ "note": Str("mine") }),
     })
     is Some(framed)
   assert_eq(framed.to_value().field("body").field("note"), Str("mine"))
-  guard! module.snapshot(framed.to_value()) is Some(snap)
+  guard! loaded.snapshot(framed.to_value()) is Some(snap)
   // The guest kept its own state, and the hole is not part of it.
   assert_true(snap.has_state())
   // Restored through the scope the placeholder's component is registered in —
   // the same one `make_instance` fills a fresh placeholder from.
-  guard! module.restore(snap, src=h.app.scope) is Some(back)
+  guard! loaded.restore(snap, src=h.app.scope) is Some(back)
   assert_eq(back.to_value().field("title"), Str("panel"))
   assert_eq(back.to_value().field("body").field("note"), Str("mine"))
 }
@@ -2714,15 +2714,15 @@ test "what a person put in a placeholder survives a snapshot" {
 test "a restore with nothing to resolve the hole fills it fresh" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Framed", args={
+  guard! loaded.make_instance("Framed", args={
       "title": Str("panel"),
       "body": filler.make({ "note": Str("mine") }),
     })
     is Some(framed)
-  guard! module.snapshot(framed.to_value()) is Some(snap)
-  guard! module.restore(snap) is Some(back)
+  guard! loaded.snapshot(framed.to_value()) is Some(snap)
+  guard! loaded.restore(snap) is Some(back)
   assert_eq(back.to_value().field("body").field("note"), Str("fresh"))
 }
 
@@ -2734,11 +2734,11 @@ test "a restore with nothing to resolve the hole fills it fresh" {
 test "a restore leaves a same-module child to the guest" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Pair") is Some(pair)
-  guard! module.snapshot(pair.to_value()) is Some(snap)
+  let (h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Pair") is Some(pair)
+  guard! loaded.snapshot(pair.to_value()) is Some(snap)
   let before = fake.counters.length()
-  guard! module.restore(snap, src=h.app.scope) is Some(back)
+  guard! loaded.restore(snap, src=h.app.scope) is Some(back)
   // Two, and only two: the pair the guest built for itself.
   assert_eq(fake.counters.length(), before + 2)
   assert_eq(back.to_value().field("left").field("count"), Num(1))
@@ -2782,13 +2782,13 @@ test "a protocol's properties parse as objects or as bare names" {
   // host the member's TYPE. A name alone says what it is called and nothing
   // more, which is `any`.
   let h = @harness.mount(shell_module(), "Shell")
-  let module = register_module(
+  let loaded = register_module(
     h.app.scope,
     FakeGuest::new(),
     m,
     policy=vouched(),
   )
-  guard! module.schema_of("Hole") is Some(schema)
+  guard! loaded.schema_of("Hole") is Some(schema)
   @debug.assert_eq(
     schema.protocols.map(p => {
       p.properties.map(x => "\{x.name}:\{x.ty.show_source()}")
@@ -2809,9 +2809,9 @@ test "a protocol's properties parse as objects or as bare names" {
 /// the host keeps it and answers reads itself.
 test "a bare component field holds what the host puts in it" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Rack", args={
+  guard! loaded.make_instance("Rack", args={
       "holds": filler.make({ "note": Str("mine") }),
     })
     is Some(rack)
@@ -2827,9 +2827,9 @@ test "a bare component field holds what the host puts in it" {
 /// container the host owns.
 test "a list of bare component fields holds what the host puts in it" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Rack", args={
+  guard! loaded.make_instance("Rack", args={
       "cells": List([
         filler.make({ "note": Str("one") }),
         filler.make({ "note": Str("two") }),
@@ -2858,9 +2858,9 @@ test "a list of bare component fields holds what the host puts in it" {
 test "a same-module instance in a bare component field stays the guest's" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
-  guard! module.make_instance("Counter", args={ "count": Num(4) }) is Some(mine)
-  guard! module.make_instance("Rack", args={ "holds": mine.to_value() })
+  let (_h, loaded) = mount_with_bundle(fake)
+  guard! loaded.make_instance("Counter", args={ "count": Num(4) }) is Some(mine)
+  guard! loaded.make_instance("Rack", args={ "holds": mine.to_value() })
     is Some(rack)
   assert_eq(rack.to_value().field("holds"), Null)
 }
@@ -2879,9 +2879,9 @@ test "a same-module instance in a bare component field stays the guest's" {
 /// state is refused by the card compiler for unrelated reasons.
 test "a guest can address a message into a hole it does not own" {
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Rack", args={
+  guard! loaded.make_instance("Rack", args={
       "holds": filler.make({ "note": Str("x") }),
     })
     is Some(rack)
@@ -2914,9 +2914,9 @@ test "a guest can address a message into a hole it does not own" {
 test "a holder nested in a container loses what the host put in it" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (_h, module) = mount_with_bundle(fake)
+  let (_h, loaded) = mount_with_bundle(fake)
   guard! _h.app.scope.lookup_component("Filler") is Some(filler)
-  guard! module.make_instance("Rack", args={
+  guard! loaded.make_instance("Rack", args={
       "holds": filler.make({ "note": Str("deep") }),
     })
     is Some(inner)
@@ -2924,7 +2924,7 @@ test "a holder nested in a container loses what the host put in it" {
   assert_eq(inner.to_value().field("holds").field("note"), Str("deep"))
   // Now put that holder in a container of the SAME module, which means it
   // crosses as a token and comes back through `wrap_instance`.
-  guard! module.make_instance("Rack", args={ "cells": List([inner.to_value()]) })
+  guard! loaded.make_instance("Rack", args={ "cells": List([inner.to_value()]) })
     is Some(outer)
   guard! outer.to_value().field("cells") is List(cells)
   assert_eq(cells.length(), 1)
@@ -2963,10 +2963,10 @@ test "a holder nested in a container loses what the host put in it" {
 test "who keeps a slot, for every spelling and every value" {
   collect_superseded()
   let fake = FakeGuest::new()
-  let (h, module) = mount_with_bundle(fake)
+  let (h, loaded) = mount_with_bundle(fake)
   guard! h.app.scope.lookup_component("Filler") is Some(filler)
   let host_value = filler.make({ "note": Str("host") })
-  guard! module.make_instance("Counter", args={ "count": Num(1) })
+  guard! loaded.make_instance("Counter", args={ "count": Num(1) })
     is Some(guest_obj)
   let guest_value = guest_obj.to_value()
   let spellings : Array[(String, @tutuca.TyInfo)] = [
@@ -2990,7 +2990,7 @@ test "who keeps a slot, for every spelling and every value" {
     for given in givens {
       let answer = match
         slot_owner(spelling.1, given.1, declared_here=n => {
-          module.def_of(n) is Some(_)
+          loaded.def_of(n) is Some(_)
         }) {
         Guest => "guest"
         HostHolds(_) => "HOST holds"

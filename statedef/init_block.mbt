@@ -273,7 +273,7 @@ fn literal(
 ///|
 fn lit_of(
   def : StateDef,
-  ty : StateTy,
+  ty : @tutuca.Ty,
   v : Json,
   state : String,
   field : String,

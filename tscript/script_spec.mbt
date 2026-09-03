@@ -333,7 +333,7 @@ declare pub fn is_predicate(k : DeclKind) -> Bool
 ///|
 /// Print a type reference back as canonical source: `Map[String, Int]`.
 ///
-/// The spelling matches `@statedef.StateTy::show_source`, so a finding about a
+/// The spelling matches `@tutuca.Ty::show_source`, so a finding about a
 /// `new` and a finding about a field can name the same type the same way.
 declare pub fn TyRef::to_source(self : TyRef) -> String
 

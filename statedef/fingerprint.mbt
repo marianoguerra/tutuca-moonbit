@@ -8,7 +8,7 @@
 // A DECLARED name is hashed normalized, because its spelling is not part of
 // the shape: `Nudge` and `nudge` declare one message with one runtime name and
 // one variant (`names.mbt`), so a schema that only restyled its case names must
-// hash the same. A name a field REFERS to is not — a `StateTy` carries the
+// hash the same. A name a field REFERS to is not — a `@tutuca.Ty` carries the
 // spelling the reference was written in, and recasing a type renames something
 // the state itself mentions.
 //

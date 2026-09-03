@@ -182,8 +182,8 @@ fn CardGuest::json_to_value(self : CardGuest, j : Json) -> @tutuca.Value {
             _ => return Null
           }
           match self.registered.val {
-            Some(module) =>
-              match module.wrap_instance(comp, handle) {
+            Some(loaded) =>
+              match loaded.wrap_instance(comp, handle) {
                 Some(v) => v
                 None => Null
               }
@@ -744,7 +744,7 @@ pub fn mount_compiled(
   // guest, and the guest needs the module to wrap a child token. Nothing can
   // call the guest in between.
   let guest = CardGuest::{ key: id, registered: Ref(None), }
-  let module = try {
+  let loaded = try {
     let manifest = @host.DynManifest::from_json_string(manifest_json)
     @host.register_module(scope, guest, manifest, policy~)
   } catch {
@@ -754,24 +754,24 @@ pub fn mount_compiled(
     // sentence about mounting.
     e => return mount_failed(e.message())
   }
-  guest.registered.val = Some(module)
-  guard module.component_names() is [component, ..] else {
+  guest.registered.val = Some(loaded)
+  guard loaded.component_names() is [component, ..] else {
     return mount_failed("the manifest declares no component to mount")
   }
   // "" is not "no fixture": it is "nothing was named", and a card that marked
   // one has already said what to show then.
-  let want = if init == "" { module.default_init(component) } else { init }
+  let want = if init == "" { loaded.default_init(component) } else { init }
   let fixture = if want == "" {
     None
   } else {
-    match @drive.fixture_of(module, component, want) {
+    match @drive.fixture_of(loaded, component, want) {
       Some(f) => Some(f)
       // Named and missing, which is a different thing from unnamed. The
       // sentence is `tutucard/drive`'s, because a page and a scene reporting
       // the same miss two different ways is how a reader learns to distrust
       // one of them.
       None => {
-        let names = module.init_names(component)
+        let names = loaded.init_names(component)
         return mount_failed(
           "no `tutuca/fixtures` fixture called `" +
           want +
@@ -806,8 +806,8 @@ pub fn mount_compiled(
   // then to these.
   scope.register_intent_handlers(playground_intents(slot, slot.gen))
   let made = match fixture {
-    Some(f) => module.make_instance(component, args=f.args)
-    None => module.make_instance(component)
+    Some(f) => loaded.make_instance(component, args=f.args)
+    None => loaded.make_instance(component)
   }
   guard made is Some(inst) else {
     return mount_failed("the guest would not create a '\{component}'")
@@ -877,10 +877,10 @@ pub fn mount_compiled(
   Json::object({
     "ok": Json::boolean(true),
     "component": Json::string(component),
-    "module": Json::string(module.module_name()),
+    "module": Json::string(loaded.module_name()),
     // A guest's views went through no build step, so these findings are the
     // only feedback its author gets.
-    "diagnostics": Json::array(module.diagnostics().map(Json::string)),
+    "diagnostics": Json::array(loaded.diagnostics().map(Json::string)),
   }).stringify()
 }
 

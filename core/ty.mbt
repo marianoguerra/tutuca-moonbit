@@ -1,7 +1,7 @@
 // A declared field's TYPE.
 //
 // ONE type lattice. There were two — this one, `TyInfo`, which the runtime
-// walks, and `@statedef.StateTy`, which the schema parses into and the
+// walks, and `@tutuca.Ty`, which the schema parses into and the
 // generators emit from — described as a "projection" of each other. They were
 // not: they had the same sixteen shapes, and the projection between them was a
 // hand-maintained table in `statedef/types.mbt` with a hand-maintained twin in

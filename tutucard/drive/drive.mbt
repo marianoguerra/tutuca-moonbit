@@ -44,7 +44,7 @@ fn run_one(
     error: why,
   }
   let scope = @component.ComponentStack::new()
-  let module = @host.register_module(
+  let loaded = @host.register_module(
     scope,
     guest,
     manifest,
@@ -55,11 +55,11 @@ fn run_one(
   // A guest that has to know which module it was registered as is told here.
   // A scene registers its OWN, so a guest still holding the previous scene's
   // would wrap this scene's child tokens through a module left behind.
-  on_bundle(module)
+  on_bundle(loaded)
   // The component: the scene's own, then the caller's root, then the first the
   // manifest declares — which is the first `<template>` in the file, and the
   // only answer a card with one component has.
-  let names = module.component_names()
+  let names = loaded.component_names()
   let comp = if scene.component != "" {
     scene.component
   } else if root != "" {
@@ -81,14 +81,14 @@ fn run_one(
       names.map(n => "`" + n + "`").join(", "),
     )
   }
-  let args = start_args(module, comp, scene) catch {
+  let args = start_args(loaded, comp, scene) catch {
     e => return failed(e.message())
   }
   // A fixture may carry its own steps and its own intent answers. The scene's
   // win where both name one: the scene is the more specific statement, and a
   // fixture is a starting point rather than a script the scene is inside.
   let (pre, fixture_intents) = match
-    (if scene.init == "" { None } else { fixture_of(module, comp, scene.init) }) {
+    (if scene.init == "" { None } else { fixture_of(loaded, comp, scene.init) }) {
     Some(f) => fixture_drive(f)
     None => ([], Map([]))
   }
@@ -100,7 +100,7 @@ fn run_one(
     answers[name] = a
   }
   scope.register_intent_handlers(intent_handlers(answers))
-  guard module.make_instance(comp, args~) is Some(inst) else {
+  guard loaded.make_instance(comp, args~) is Some(inst) else {
     return failed("the guest would not create a `" + comp + "`")
   }
   let (doc, container) = @harness.new_mount()
@@ -211,11 +211,11 @@ pub fn drive_scene(
 /// reach a guest's constructor, and a card's `init` handler runs against
 /// whatever it was built with.
 pub fn fixture_of(
-  module : @host.Module,
+  loaded : @host.Module,
   comp : String,
   name : String,
 ) -> @host.DynInitDef? {
-  for def in module.manifest().components {
+  for def in loaded.manifest().components {
     if def.name == comp {
       for i in def.inits {
         if i.name == name {
@@ -258,14 +258,14 @@ pub fn fixture_drive(
 
 ///|
 fn start_args(
-  module : @host.Module,
+  loaded : @host.Module,
   comp : String,
   scene : @scenedef.Scene,
 ) -> Map[String, @tutuca.Value] raise MountError {
   let args : Map[String, @tutuca.Value] = Map([])
   if scene.init != "" {
     let mut found = false
-    for def in module.manifest().components {
+    for def in loaded.manifest().components {
       if def.name == comp {
         for i in def.inits {
           if i.name == scene.init {

@@ -373,7 +373,7 @@ plain `moon test "..." { ... }` blocks:
   MoonBit type.** `derive(Arbitrary)` has nothing to derive over here — a
   component's shape is a `<script type="tutuca/spec">` block, not a type — so
   `statedef/arb` is the randomized twin of `statedef/info`: `value_of` walks a
-  `StateTy` where `zero_of` walks it, `state_of` mirrors `zero_value`,
+  `@tutuca.Ty` where `zero_of` walks it, `state_of` mirrors `zero_value`,
   `dispatch_of` reads `MsgDef.payload`, and `mutator_dispatch_of` takes its
   names from `@component.schema_writers` so it cannot drift from the table the
   runtime installs — the WRITING half of it, because `xLen` and `hasInX` are

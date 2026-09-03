@@ -24,7 +24,7 @@ priv struct E {
   /// literal that carries no `..s` to infer from.
   state_ty : String
   /// Parameter name -> its language type, or None for a raw `@tutuca.Value`.
-  mut params : Map[String, @statedef.StateTy?]
+  mut params : Map[String, @tutuca.Ty?]
   /// Statements the current one needs FIRST — a bounds check, a divisor
   /// test. They answer `Unchanged`, which is what "the arm claimed the name
   /// and there was nothing to do" means, and it is the answer the interpreter
@@ -128,7 +128,7 @@ priv struct E {
   /// and writes here. None until a `new` runs, and again after a branch whose
   /// arm bound one, because a `let` inside the branch expression does not
   /// outlive it.
-  mut target : (String, @statedef.StateTy)?
+  mut target : (String, @tutuca.Ty)?
   /// A counter for those temporaries, so two `new`s in one body do not shadow.
   mut target_n : Int
 }
@@ -645,7 +645,7 @@ fn E::bind_params(self : E, d : @tscript.Decl) -> (String, String, String) {
 fn E::value_of_body(
   self : E,
   d : @tscript.Decl,
-) -> (String, @statedef.StateTy) raise NoWay {
+) -> (String, @tutuca.Ty) raise NoWay {
   guard d.body is Value(e) else {
     raise Cannot("a `compute` and a `pred` are one expression, not statements")
   }
@@ -1171,7 +1171,7 @@ fn E::param_types(
   self : E,
   d : @tscript.Decl,
   surface : @check.Surface,
-) -> Array[@statedef.StateTy?] {
+) -> Array[@tutuca.Ty?] {
   match d.kind {
     DReceive | DAnswer => {
       if self.declared_msg(d) is Some(m) {
@@ -1354,7 +1354,7 @@ fn is_target(p : @tutuca.Place) -> Bool {
 
 ///|
 /// The temporary the active `new` bound, refused when there is none.
-fn E::target_root(self : E) -> (String, @statedef.StateTy) raise NoWay {
+fn E::target_root(self : E) -> (String, @tutuca.Ty) raise NoWay {
   guard self.target is Some(t) else {
     raise Cannot(
       "`\{@tscript.target_bind}` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
@@ -1373,10 +1373,10 @@ fn E::target_root(self : E) -> (String, @statedef.StateTy) raise NoWay {
 fn E::target_update(
   self : E,
   src : String,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   steps : Array[@tutuca.PathStep],
   i : Int,
-  leaf : (@statedef.StateTy, String) -> String raise NoWay,
+  leaf : (@tutuca.Ty, String) -> String raise NoWay,
 ) -> String raise NoWay {
   guard steps.get(i) is Some(st) else { return leaf(ty, src) }
   guard st is PField(name) else {
@@ -1418,7 +1418,7 @@ fn E::child_write(self : E, p : @tutuca.Place) -> (String, String)? {
 fn E::root_field(
   self : E,
   p : @tutuca.Place,
-) -> (String, @statedef.StateTy) raise NoWay {
+) -> (String, @tutuca.Ty) raise NoWay {
   guard p.root is PState(name) else {
     raise Cannot(
       "a binding is written by `enrich` / `enrichScope`, which this backend does not compile yet — write the handler in MoonBit",
@@ -1458,7 +1458,7 @@ fn E::collection_call(
   self : E,
   call : String,
   field : String,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   args : Array[@tutuca.Expr],
 ) -> String raise NoWay {
   self.uses_state = true
@@ -1474,7 +1474,7 @@ fn E::collection_call_at(
   call : String,
   recv : String,
   label : String,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   args : Array[@tutuca.Expr],
 ) -> String raise NoWay {
   fn arity(n : Int) -> Unit raise NoWay {
@@ -1614,7 +1614,7 @@ fn is_simple(e : String) -> Bool {
 ///|
 /// The MoonBit spelling of a list's element type, for the one place an empty
 /// literal has to be annotated.
-fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
+fn elem_ty_name(t : @tutuca.Ty) -> String raise NoWay {
   match t {
     TyBool => "Bool"
     TyInt(width=32, signed=true) => "Int"
@@ -1836,11 +1836,7 @@ fn E::effect(
 /// `.count = .ratio` quietly truncated, which is two rules for one idea.
 /// Whether a fractional literal in an integer place deserves a DIAGNOSTIC is
 /// the checker's question, not the emitter's.
-fn E::at(
-  self : E,
-  e : @tutuca.Expr,
-  want : @statedef.StateTy,
-) -> String raise NoWay {
+fn E::at(self : E, e : @tutuca.Expr, want : @tutuca.Ty) -> String raise NoWay {
   if e is ELit(lit=LNum(n), ..) &&
     want is TyInt(..) &&
     n == n.to_int().to_double() {
@@ -1903,7 +1899,7 @@ fn E::leave_token(self : E, what : String) -> String raise NoWay {
 
 ///|
 /// Bind an opaque value at the wanted type, or leave the body.
-fn E::guarded(self : E, src : String, want : @statedef.StateTy) -> String {
+fn E::guarded(self : E, src : String, want : @tutuca.Ty) -> String {
   let key = "\{src}|\{want.show_source()}"
   if self.guards.get(key) is Some(bound) {
     return bound
@@ -1963,7 +1959,7 @@ fn E::as_value(self : E, e : @tutuca.Expr) -> String raise NoWay {
 }
 
 ///|
-fn E::value_of(self : E, src : String, ty : @statedef.StateTy) -> String {
+fn E::value_of(self : E, src : String, ty : @tutuca.Ty) -> String {
   // The schema's own projection, which the generated codec is written from
   // too. A set, a list of records and a tuple all need real conversion.
   let e = self.def.to_value_src(ty, src)
@@ -1980,8 +1976,8 @@ fn E::value_of(self : E, src : String, ty : @statedef.StateTy) -> String {
 fn E::to_ty(
   self : E,
   src : String,
-  from : @statedef.StateTy,
-  to : @statedef.StateTy,
+  from : @tutuca.Ty,
+  to : @tutuca.Ty,
 ) -> String raise NoWay {
   if from == to {
     return src
@@ -2020,10 +2016,7 @@ fn E::to_ty(
 
 ///|
 /// Emit an expression, answering its source and its language type.
-fn E::expr(
-  self : E,
-  e : @tutuca.Expr,
-) -> (String, @statedef.StateTy) raise NoWay {
+fn E::expr(self : E, e : @tutuca.Expr) -> (String, @tutuca.Ty) raise NoWay {
   match e {
     ELit(lit~, ..) =>
       match lit {
@@ -2162,10 +2155,7 @@ fn E::expr(
 ///|
 /// Read a place. Top-level fields and one level of record field; anything
 /// indexed is a read this backend does not emit yet.
-fn E::read(
-  self : E,
-  p : @tutuca.Place,
-) -> (String, @statedef.StateTy) raise NoWay {
+fn E::read(self : E, p : @tutuca.Place) -> (String, @tutuca.Ty) raise NoWay {
   // The target reads like a state path and for the same reason: it is a local
   // whose type is known at every step, so a field of one is a field access.
   if is_target(p) {
@@ -2273,7 +2263,7 @@ fn E::chain(
   family : @tutuca.OpFamily,
   ops : Array[String],
   operands : Array[@tutuca.Expr],
-) -> (String, @statedef.StateTy) raise NoWay {
+) -> (String, @tutuca.Ty) raise NoWay {
   match family {
     FLogic => {
       let b = StringBuilder()
@@ -2362,7 +2352,7 @@ fn E::app(
   self : E,
   name : String,
   args : Array[@tutuca.Expr],
-) -> (String, @statedef.StateTy) raise NoWay {
+) -> (String, @tutuca.Ty) raise NoWay {
   match (name, args.length()) {
     ("len", 1) => {
       let (src, ty) = self.expr(args[0])

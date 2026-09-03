@@ -2,7 +2,7 @@
 //
 // The other half of what a spec block says. `state` gives the values a
 // component holds and `handle` gives the ones it answers — and a `MsgDef`
-// carries `payload : Array[StateTy]`, which is the same declared-type
+// carries `payload : Array[@tutuca.Ty]`, which is the same declared-type
 // vocabulary `value_of` already walks. So a well-typed dispatch costs nothing
 // beyond naming the bucket.
 //
@@ -284,7 +284,7 @@ pub fn mutator_args(
 /// A member of a set field, as the string the set is keyed by.
 fn member_of(
   def : @statedef.StateDef,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
 ) -> @gen.Gen[@tutuca.Value] {
   let members : Array[String] = match ty {
     TyFlags(n, _) =>

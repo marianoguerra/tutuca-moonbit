@@ -121,7 +121,7 @@ fn check_payload(m : @statedef.MsgDef, sig : InputSig) -> Unit raise GenError {
 /// not a scalar takes anything for the same reason — the payload rides as a
 /// raw `@tutuca.Value` there (`msg_payload_ty`), so there is nothing to
 /// disagree with.
-fn arg_fits(t : ArgType, declared : @statedef.StateTy) -> Bool {
+fn arg_fits(t : ArgType, declared : @tutuca.Ty) -> Bool {
   match (t, declared) {
     (VValue, _) => true
     (VDouble, TyInt(..) | TyFloat) => true
@@ -630,7 +630,7 @@ fn emit_sender(
 /// disagree about a set or a nested record — the same reason `enc_expr` itself
 /// defers to `statedef`.
 fn to_value_expr(
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   binder : String,
   def : @statedef.StateDef,
 ) -> String {
@@ -656,7 +656,7 @@ fn to_value_expr(
 ///
 /// `Any` and a component slot stay `@tutuca.Value`, because that IS their
 /// declared type — nothing was erased and nothing is decoded.
-fn msg_payload_ty(def : @statedef.StateDef, ty : @statedef.StateTy) -> String {
+fn msg_payload_ty(def : @statedef.StateDef, ty : @tutuca.Ty) -> String {
   def.moonbit_ty(ty)
 }
 
@@ -667,7 +667,7 @@ fn msg_payload_ty(def : @statedef.StateDef, ty : @statedef.StateTy) -> String {
 /// a pattern cannot state — and `Any` and a slot can, trivially, because the
 /// pattern binds the Value they already are. Everything else needs the codec,
 /// and a case carrying one gets a decoder function of its own.
-fn payload_is_patternable(ty : @statedef.StateTy) -> Bool {
+fn payload_is_patternable(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyInt(..)
     | TyFloat

@@ -2,7 +2,7 @@
 //
 // One walk per declaration, carrying an environment of what a name means here:
 // the schema for `.field`, the parameters for a bare name, the block's own
-// declarations for an application. Types are `@statedef.StateTy?` throughout,
+// declarations for an application. Types are `@tutuca.Ty?` throughout,
 // where `None` is OPAQUE and never "wrong" — the rule `check_state.mbt` states
 // and this file inherits without amendment.
 //
@@ -17,7 +17,7 @@ priv struct C {
   surface : Surface
   out : Array[Finding]
   /// The parameters of the declaration being checked.
-  mut params : Map[String, @statedef.StateTy?]
+  mut params : Map[String, @tutuca.Ty?]
   /// The declaration being checked, for a message about one of its arguments.
   mut decl_name : String
   /// Which declarations the block itself makes, by name: predicates and
@@ -53,7 +53,7 @@ priv struct C {
 /// mistake to report, and the second is the usual opacity to stay quiet about.
 priv enum Target {
   TUnset
-  TySet(@statedef.StateTy?)
+  TySet(@tutuca.Ty?)
 }
 
 ///|
@@ -928,8 +928,8 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
 pub fn resolve_ty_ref(
   def : @statedef.StateDef,
   t : @tscript.TyRef,
-) -> @statedef.StateTy? {
-  let args : Array[@statedef.StateTy] = []
+) -> @tutuca.Ty? {
+  let args : Array[@tutuca.Ty] = []
   for a in t.args {
     // An argument that does not resolve leaves the whole reference with
     // nothing to be: `Array[Frobnicator]` is not a list of anything.
@@ -942,7 +942,7 @@ pub fn resolve_ty_ref(
 ///|
 /// Resolve the type a `new` names, reporting a name that resolves to nothing
 /// so that nothing below it reports again.
-fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
+fn C::ty_ref(self : C, t : @tscript.TyRef) -> @tutuca.Ty? {
   match resolve_ty_ref(self.def, t) {
     Some(r) => Some(r)
     // A SIBLING component: `new TodoItem` beside `state TodoItem`. Opaque
@@ -993,12 +993,8 @@ fn C::condition(self : C, e : @tutuca.Expr) -> Unit {
 
 ///|
 /// Resolve a place to the type it addresses, or None when opaque.
-fn C::place(
-  self : C,
-  p : @tutuca.Place,
-  assigning~ : Bool,
-) -> @statedef.StateTy? {
-  let mut ty : @statedef.StateTy? = match p.root {
+fn C::place(self : C, p : @tutuca.Place, assigning~ : Bool) -> @tutuca.Ty? {
+  let mut ty : @tutuca.Ty? = match p.root {
     PState(name) =>
       match self.def.field(name) {
         Some(f) => Some(f.ty)
@@ -1118,7 +1114,7 @@ fn C::place(
 // Expressions
 
 ///|
-fn C::expr(self : C, e : @tutuca.Expr) -> @statedef.StateTy? {
+fn C::expr(self : C, e : @tutuca.Expr) -> @tutuca.Ty? {
   match e {
     ELit(lit~, ..) =>
       match lit {
@@ -1322,7 +1318,7 @@ fn C::name(
   name : String,
   args : Array[@tutuca.Expr],
   span : @tutuca.Span,
-) -> @statedef.StateTy? {
+) -> @tutuca.Ty? {
   for a in args {
     self.expr(a) |> ignore
   }
@@ -1390,7 +1386,7 @@ fn C::chain(
   family : @tutuca.OpFamily,
   operands : Array[@tutuca.Expr],
   span : @tutuca.Span,
-) -> @statedef.StateTy? {
+) -> @tutuca.Ty? {
   let types = operands.map(o => self.expr(o))
   match family {
     FLogic | FImplies => {
@@ -1458,7 +1454,7 @@ fn C::chain(
 /// The result of a reading builtin. `None` where the vocabulary genuinely
 /// cannot say — `min`/`max`/`clamp` answer whatever they were given, and
 /// pretending they answer `f64` would make `int .n` look like a widening.
-fn builtin_result(name : String) -> @statedef.StateTy? {
+fn builtin_result(name : String) -> @tutuca.Ty? {
   match name {
     "empty?" | "truthy?" | "falsy?" | "null?" | "has" | "contains" =>
       Some(TyBool)
@@ -1476,7 +1472,7 @@ fn builtin_result(name : String) -> @statedef.StateTy? {
 /// dynamic escape hatch inside a typed struct — so every rule below has to
 /// treat it the way it treats a `$method` result. Doing that here rather than
 /// in each rule is what stops one of them from forgetting.
-fn definite(t : @statedef.StateTy?) -> @statedef.StateTy? {
+fn definite(t : @tutuca.Ty?) -> @tutuca.Ty? {
   match t {
     Some(TyAny) => None
     other => other
@@ -1484,18 +1480,18 @@ fn definite(t : @statedef.StateTy?) -> @statedef.StateTy? {
 }
 
 ///|
-fn is_numeric(t : @statedef.StateTy) -> Bool {
+fn is_numeric(t : @tutuca.Ty) -> Bool {
   t is (TyInt(..) | TyFloat)
 }
 
 ///|
 /// Whether a value of this type can answer a yes/no question usefully.
 ///
-/// The same rule `StateTy::is_boolish` states, and reached through it so the
+/// The same rule `@tutuca.Ty::is_boolish` states, and reached through it so the
 /// two cannot drift: a List, a Map and an Obj are truthy unconditionally, so a
 /// condition over one never decides anything. Strings and numbers stay
 /// boolish on purpose — `@show=".role"` beside `@text=".role"` is idiomatic.
-fn is_boolish(t : @statedef.StateTy) -> Bool {
+fn is_boolish(t : @tutuca.Ty) -> Bool {
   t.is_boolish()
 }
 
@@ -1505,7 +1501,7 @@ fn is_boolish(t : @statedef.StateTy) -> Bool {
 /// The integer/float pair is deliberately comparable: `Value` has one
 /// `Num(Double)`, so an `s32` and an `f64` are the same runtime shape and
 /// `.count is 2` must not be a type error.
-fn comparable(a : @statedef.StateTy, b : @statedef.StateTy) -> Bool {
+fn comparable(a : @tutuca.Ty, b : @tutuca.Ty) -> Bool {
   if a == b {
     return true
   }
@@ -1519,10 +1515,7 @@ fn comparable(a : @statedef.StateTy, b : @statedef.StateTy) -> Bool {
 
 ///|
 /// Whether a known value type fits a known assignment target.
-fn assignment_types_fit(
-  want : @statedef.StateTy,
-  got : @statedef.StateTy,
-) -> Bool {
+fn assignment_types_fit(want : @tutuca.Ty, got : @tutuca.Ty) -> Bool {
   match (want, got) {
     // A present value fills an optional slot; `null` has no definite type and
     // is accepted by the caller before reaching this helper.
@@ -1541,8 +1534,8 @@ fn assignment_types_fit(
 /// Whether `got` may be written where `want` is expected.
 fn C::assignable(
   self : C,
-  want : @statedef.StateTy?,
-  got : @statedef.StateTy?,
+  want : @tutuca.Ty?,
+  got : @tutuca.Ty?,
   span : @tutuca.Span,
 ) -> Unit {
   guard definite(want) is Some(w) && definite(got) is Some(g) else { return }
@@ -1560,7 +1553,7 @@ fn C::assignable(
 fn C::method_fits(
   self : C,
   call : String,
-  t : @statedef.StateTy,
+  t : @tutuca.Ty,
   span : @tutuca.Span,
 ) -> Unit {
   guard definite(Some(t)) is Some(t) else { return }

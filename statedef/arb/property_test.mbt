@@ -183,7 +183,7 @@ test "property: a generated state carries exactly the declared fields" {
 ///
 /// Not a property over draws — there is one zero — but it belongs here, beside
 /// the table it is checked against. `@info.zero_value` and `state_of` walk the
-/// same `StateTy` tree, so a type either package gets wrong shows up as the
+/// same `@tutuca.Ty` tree, so a type either package gets wrong shows up as the
 /// zero failing the check every draw passes.
 test "the zero state is well-typed by the same table the generator is" {
   for def in fixtures() {

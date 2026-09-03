@@ -26,7 +26,7 @@ fn resolve_wheres(
 ) -> Array[WhereDecl] raise DefError {
   guard !raw.is_empty() else { return [] }
   let names = fields.map(f => f.name)
-  let ty_of : Map[String, StateTy] = Map([])
+  let ty_of : Map[String, @tutuca.Ty] = Map([])
   for f in fields {
     ty_of[f.name] = f.ty
   }
@@ -81,8 +81,8 @@ fn did_you_mean(name : String, names : Array[String]) -> String {
 /// would be a false one.
 fn check_relation(
   w : WhereDecl,
-  subject_ty : StateTy,
-  ty_of : Map[String, StateTy],
+  subject_ty : @tutuca.Ty,
+  ty_of : Map[String, @tutuca.Ty],
   types : Array[UserTy],
   subject : String,
 ) -> @tutuca.Domain raise DefError {
@@ -214,7 +214,7 @@ fn check_relation(
 fn check_numeric(
   w : WhereDecl,
   rel : @tutuca.Domain,
-  ty_of : Map[String, StateTy],
+  ty_of : Map[String, @tutuca.Ty],
   subject : String,
   what : String,
 ) -> @tutuca.Domain raise DefError {
@@ -351,7 +351,7 @@ fn check_where_cycles(
 
 ///|
 /// Whether a type can hold a position into a sequence.
-fn is_index_like(ty : StateTy) -> Bool {
+fn is_index_like(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyInt(..) | TyAny => true
     TyOption(inner) => is_index_like(inner)
@@ -360,7 +360,7 @@ fn is_index_like(ty : StateTy) -> Bool {
 }
 
 ///|
-fn is_text_like(ty : StateTy) -> Bool {
+fn is_text_like(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyText | TyEnum(_) | TyAny => true
     TyOption(inner) => is_text_like(inner)
@@ -370,7 +370,7 @@ fn is_text_like(ty : StateTy) -> Bool {
 
 ///|
 /// Whether a type has positions — which a MAP does not, however sized it is.
-fn is_ordered_seq(ty : StateTy) -> Bool {
+fn is_ordered_seq(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyList(_) | TyTuple(_) | TyAny => true
     _ => false
@@ -378,7 +378,7 @@ fn is_ordered_seq(ty : StateTy) -> Bool {
 }
 
 ///|
-fn is_numeric(ty : StateTy) -> Bool {
+fn is_numeric(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyInt(..) | TyFloat | TyAny => true
     TyOption(inner) => is_numeric(inner)
@@ -388,7 +388,7 @@ fn is_numeric(ty : StateTy) -> Bool {
 
 ///|
 /// Whether asking for a length is meaningful.
-fn is_sized(ty : StateTy) -> Bool {
+fn is_sized(ty : @tutuca.Ty) -> Bool {
   match ty {
     TyList(_)
     | TyTuple(_)
@@ -405,6 +405,6 @@ fn is_sized(ty : StateTy) -> Bool {
 ///|
 /// A type as an article plus its source spelling, for a message that reads as
 /// a sentence: "`count` is a `String`".
-fn show_ty(ty : StateTy) -> String {
+fn show_ty(ty : @tutuca.Ty) -> String {
   "a `" + ty.show_source() + "`"
 }

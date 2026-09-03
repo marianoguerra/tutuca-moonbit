@@ -263,6 +263,4 @@ pub(all) struct WhereDecl {
 // Type aliases
 pub using @core {type Span}
 
-pub using @core {type Ty as StateTy}
-
 // Traits

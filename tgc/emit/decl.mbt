@@ -464,7 +464,7 @@ fn emit_call(src : Src, c : Comp) -> Unit {
     for prop in c.def.properties {
       guard pick(prop) is Some(src_) else { continue }
       guard src_.has_prefix(".") else { continue }
-      out.push((prop.name, src_[1:].to_string()))
+      out.push((prop.name, src_[1:].to_owned()))
     }
     out
   }

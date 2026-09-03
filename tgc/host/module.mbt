@@ -394,7 +394,7 @@ pub fn register_module(
   for f in child.check_names() {
     diagnostic_line(diagnostics, "module \{manifest.module_name}", f)
   }
-  let module : Module = {
+  let loaded : Module = {
     guest,
     manifest,
     comps,
@@ -404,8 +404,8 @@ pub fn register_module(
     config,
     key: module_key(manifest, config),
   }
-  self_ref.val = Some(module)
-  module
+  self_ref.val = Some(loaded)
+  loaded
 }
 
 ///|
@@ -912,7 +912,7 @@ fn says_something(fields : Json) -> Bool {
 /// Refusing means the field is OMITTED, which leaves the guest's constructor
 /// to fill it — what a restore did before there was a source at all.
 priv struct ForeignOnly {
-  module : Module
+  loaded : Module
   src : &@tutuca.ComponentSource
 }
 
@@ -933,7 +933,7 @@ impl @tutuca.ComponentSource for ForeignOnly with fn build(
   args,
   at~,
 ) {
-  guard !self.module.comps.contains(name) else { return None }
+  guard !self.loaded.comps.contains(name) else { return None }
   @tutuca.ComponentSource::build(self.src, module_, name, args, at~)
 }
 
@@ -964,7 +964,7 @@ pub fn Module::restore(
   }
   let pid = if snap.id == "" { self.mint_pid(snap.component) } else { snap.id }
   let args = match src {
-    Some(s) => snap.field_args(src=ForeignOnly::{ module: self, src: s, })
+    Some(s) => snap.field_args(src=ForeignOnly::{ loaded: self, src: s, })
     None => snap.field_args()
   }
   if snap.has_state() {

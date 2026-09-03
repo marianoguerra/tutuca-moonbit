@@ -1670,7 +1670,7 @@ fn msgs_of(raw : Array[RawCase], env : Env) -> Array[MsgDef] raise DefError {
   let variants = mapped(variant_names, "message", x => x, first)
   let out : Array[MsgDef] = []
   for i, c in raw {
-    let payload : Array[StateTy] = []
+    let payload : Array[@tutuca.Ty] = []
     for t in c.payload {
       payload.push(resolve(t, env))
     }
@@ -1749,11 +1749,11 @@ fn is_builtin_ty(name : String) -> Bool {
 }
 
 ///|
-fn resolve(t : RawTy, env : Env) -> StateTy raise DefError {
+fn resolve(t : RawTy, env : Env) -> @tutuca.Ty raise DefError {
   match t {
     ROpt(inner, _) => TyOption(resolve(inner, env))
     RTuple(parts, _) => {
-      let out : Array[StateTy] = []
+      let out : Array[@tutuca.Ty] = []
       for x in parts {
         out.push(resolve(x, env))
       }
@@ -1791,7 +1791,7 @@ fn named(
   args : Array[RawTy],
   span : Span,
   env : Env,
-) -> StateTy raise DefError {
+) -> @tutuca.Ty raise DefError {
   // The argument-free spellings, from the table `StateDef::resolve_ty` reads
   // too — one name, one meaning, in a schema and in a block's `new` alike.
   if scalar_ty(name) is Some(t) {
@@ -1934,7 +1934,7 @@ fn check_acyclic(
   state_fields : Array[FieldDef],
   span : Span,
 ) -> Unit raise DefError {
-  let by_name : Map[String, Array[StateTy]] = Map([])
+  let by_name : Map[String, Array[@tutuca.Ty]] = Map([])
   for t in types {
     by_name[t.source_name] = match t.kind {
       URecord(fs) => fs.map(f => f.ty)
@@ -1953,7 +1953,7 @@ fn check_acyclic(
 ///|
 fn walk_named(
   name : String,
-  by_name : Map[String, Array[StateTy]],
+  by_name : Map[String, Array[@tutuca.Ty]],
   on_path : Map[String, Bool],
   done : Map[String, Bool],
   span : Span,
@@ -1978,8 +1978,8 @@ fn walk_named(
 
 ///|
 fn walk_inline(
-  ty : StateTy,
-  by_name : Map[String, Array[StateTy]],
+  ty : @tutuca.Ty,
+  by_name : Map[String, Array[@tutuca.Ty]],
   on_path : Map[String, Bool],
   done : Map[String, Bool],
   span : Span,

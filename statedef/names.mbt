@@ -251,7 +251,7 @@ fn lower_char(c : Char) -> Char {
 /// which is the case the JSON path could never do at all.
 pub fn StateDef::to_value_src(
   self : StateDef,
-  ty : StateTy,
+  ty : @tutuca.Ty,
   e : String,
 ) -> String {
   match ty {

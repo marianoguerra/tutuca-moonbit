@@ -54,7 +54,7 @@ test "the fingerprint reads a name, not its spelling" {
   )
   assert_eq(@statedef.fingerprint(written), @statedef.fingerprint(used))
   // A named type's cases answer the same way. Its NAME is a separate matter:
-  // a `StateTy` carries the spelling a field referred to it by, so `m: Mode`
+  // a `@tutuca.Ty` carries the spelling a field referred to it by, so `m: Mode`
   // and `m: mode` still hash apart — recasing a type is a rename of something
   // the state itself mentions, not a restyle of a case list.
   assert_eq(

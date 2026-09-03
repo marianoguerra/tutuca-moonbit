@@ -64,7 +64,7 @@ fn emit_wrapper(
       routers[b.param] = fn_name
     }
   }
-  // One branch, because `has_direct_codec` answers true for the whole StateTy
+  // One branch, because `has_direct_codec` answers true for the whole @tutuca.Ty
   // lattice.
   let filled = "/// states filled in — its name, its compiled views and its styles. The\n" +
     "/// schema and the codec are not passed at all: `\{s}` states them\n" +

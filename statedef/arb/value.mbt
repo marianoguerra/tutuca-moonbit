@@ -1,6 +1,6 @@
 // A declared type as a generator of values that inhabit it.
 //
-// The twin of `@info.zero_of`, walking the same `StateTy` tree with the same
+// The twin of `@info.zero_of`, walking the same `@tutuca.Ty` tree with the same
 // resolution of user types — so a value from here and the zero from there are
 // two draws from one description rather than two opinions about it.
 
@@ -24,14 +24,14 @@ const MAX_ITEMS : Int = 3
 ///|
 /// A value of one declared type.
 ///
-/// The randomized sibling of `@info.zero_of`, and total over `StateTy` for the
+/// The randomized sibling of `@info.zero_of`, and total over `@tutuca.Ty` for the
 /// same reason: every arm answers, so a schema that parses can always be
 /// generated for. Two arms answer with the zero rather than a draw and both
 /// are deliberate — a component slot holds an instance this package cannot
 /// build, and neither can `zero_of`.
 pub fn value_of(
   def : @statedef.StateDef,
-  ty : @statedef.StateTy,
+  ty : @tutuca.Ty,
   depth? : Int = MAX_DEPTH,
 ) -> @gen.Gen[@tutuca.Value] {
   match ty {
@@ -383,7 +383,7 @@ fn any_value() -> @gen.Gen[@tutuca.Value] {
 /// The elements of a container, at the element type.
 fn items_of(
   def : @statedef.StateDef,
-  e : @statedef.StateTy,
+  e : @tutuca.Ty,
   depth : Int,
 ) -> @gen.Gen[Array[@tutuca.Value]] {
   if depth <= 0 {
@@ -400,7 +400,7 @@ fn items_of(
 /// is the case a merge or a diff gets wrong.
 fn omap_value(
   def : @statedef.StateDef,
-  v : @statedef.StateTy,
+  v : @tutuca.Ty,
   depth : Int,
 ) -> @gen.Gen[@tutuca.Value] {
   items_of(def, v, depth).fmap(vs => {
