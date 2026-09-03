@@ -766,16 +766,37 @@ fn codes_with_views(
 }
 
 ///|
-test "reply and fail answer a sender, and only an intent has one" {
+/// `reply` answers whoever asked, in either bucket, and the bucket decides
+/// where the name comes from.
+///
+/// This is what the `sendReply` retirement bought: there was a second word for
+/// the same operation, and the only thing it said that this one does not is
+/// which bucket you were in — which the block already says, three lines up.
+test "reply answers whoever asked, in either bucket" {
+  // An intent's raiser declared arms, so the walk names the answer and the one
+  // argument is the value.
   assert_eq(codes("intent rowPicked(k) { reply .count }"), [])
-  assert_eq(codes("intent rowPicked(k) { fail 'no' }"), [])
+  // A message's sender declared none, so the replier names it: the first
+  // argument is a message name, and a value there is reported as one.
+  assert_eq(codes("receive resetTo(n) { reply 'wasReset' .count }"), [])
   assert_eq(messages("receive resetTo(n) { reply .count }"), [
-    "`reply` answers the sender of an intent, and `receive resetTo` has none — a message is addressed, so nobody is waiting for an answer",
+    "`reply` needs a raw quoted name or a declared protocol operation",
   ])
-  assert_eq(messages("receive click { fail 'no' }"), [
-    "`fail` answers the sender of an intent, and `receive click` has none — a message is addressed, so nobody is waiting for an answer",
-  ])
+  // A body that was asked nothing can answer nobody.
   assert_eq(codes("enrich row { reply 1 }"), ["NOT_A_HANDLER"])
+}
+
+///|
+/// `fail` ends a WALK, and only an intent is on one.
+///
+/// It did not merge with anything: a message has no walk to end, and turning a
+/// message down is a `reply` that says so — which the sender reads as an
+/// ordinary message, because that is what it is.
+test "fail ends the walk an intent is on, and a message is not on one" {
+  assert_eq(codes("intent rowPicked(k) { fail 'no' }"), [])
+  assert_eq(messages("receive click { fail 'no' }"), [
+    "`fail` ends the walk an intent is on, and `receive click` is not on one — to turn a message down, answer the sender with a `reply` that says so",
+  ])
 }
 
 ///|

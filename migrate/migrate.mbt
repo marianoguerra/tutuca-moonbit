@@ -17,6 +17,17 @@ fn rules() -> Array[(String) -> Array[Edit]] {
 }
 
 ///|
+/// The rules that need a BLOCK, run per block with its offset.
+///
+/// Separate from `rules()` because their spans come back in the block's own
+/// coordinates and have to be rebased onto the file. That rebasing is the one
+/// thing all of them share and the one thing every one of them could get
+/// wrong, so it happens once, here.
+fn block_rules() -> Array[(String) -> Array[Edit]] {
+  [retired_script_keywords]
+}
+
+///|
 pub fn migrate_file(
   source : String,
   name? : String = "",
@@ -31,13 +42,20 @@ pub fn migrate_file(
   // unnamed answers for the component the FILE is named after, and without it
   // a `handle Counter` beside it reads as naming a state block that is not
   // there.
-  let _ = @viewfile.split_file(source, name~) catch {
+  let file = @viewfile.split_file(source, name~) catch {
     e => raise Unsplittable(e.message())
   }
   let edits : Array[Edit] = []
   for rule in rules() {
     for e in rule(source) {
       edits.push(e)
+    }
+  }
+  for sb in file.scripts {
+    for rule in block_rules() {
+      for e in rule(sb.block.text) {
+        edits.push(rebase(e, sb.block.offset))
+      }
     }
   }
   { out: apply(source, edits), edits, }
@@ -66,9 +84,31 @@ fn retired_spec_block(source : String) -> Array[Edit] {
   literal_edits(source, "tutuca/state", "tutuca/spec", "tutuca/state")
 }
 
+///|
+/// The retired words of the block language, from the parser that knows where
+/// one can appear.
+///
+/// Not a text scan: `stop` is a retired effect at the head of a statement and
+/// an ordinary field name three characters later. Only something that has
+/// parsed as far as the statement can tell the two apart, so this asks the
+/// parser — the same call the checker makes to warn about them.
+fn retired_script_keywords(block : String) -> Array[Edit] {
+  let out : Array[Edit] = []
+  for r in @tscript.retired_spellings(block) {
+    out.push({ span: r.span, from: r.word, to: r.replacement, rule: r.word, })
+  }
+  out
+}
+
 // ---------------------------------------------------------------------------
 // Rule helpers
 // ---------------------------------------------------------------------------
+
+///|
+/// A block-relative edit, moved onto the file.
+fn rebase(e : Edit, offset : Int) -> Edit {
+  { ..e, span: { start: e.span.start + offset, end_: e.span.end_ + offset, }, }
+}
 
 ///|
 /// Every occurrence of a literal, as edits.

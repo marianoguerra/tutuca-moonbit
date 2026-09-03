@@ -107,13 +107,13 @@
 
   /// case 15: a reply to a message names itself
   receive case15 {
-    sendReply 'pong' .name
+    reply 'pong' .name
   }
 
   /// case 16: a reply is an effect like the rest, and buffers with them
   receive case16 {
     .count += 1
-    sendReply 'pong' .count
+    reply 'pong' .count
     send 'flash' .name
   }
 
@@ -122,7 +122,7 @@
     intent lex 'loadRows'
     .ok = true
     send 'flash' .name
-    stop
+    drop
   }
 
   /// case 18: an intent answered where it arrives
@@ -153,10 +153,10 @@
     reply 2
   }
 
-  /// case 23: stop ends the walk before any reply, and answers nothing
+  /// case 23: drop ends the walk before any reply, and answers nothing
   intent case23(text) {
     .count += 1
-    stop
+    drop
   }
 
   pred hasSome { .count > 0 }

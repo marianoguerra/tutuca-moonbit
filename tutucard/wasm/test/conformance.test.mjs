@@ -196,13 +196,15 @@ async function build(c, i, source) {
         // interpreter's adapter quiets its `warn_hook` for the same reason.
         log: () => {},
         send: (name, args) => effects.push({ kind: "send", name, args }),
-        sendReply: (name, args) => effects.push({ kind: "sendReply", name, args }),
+        // The WIT name is `send-reply`; the corpus records both replies under
+        // the one word the block writes, and the arguments say which fired.
+        sendReply: (name, args) => effects.push({ kind: "reply", name, args }),
         // Bound and answering nothing: a corpus case has no ancestor, so a
         // `*name` in one would read the default it declares — which is a case
         // the corpus has no slot for. The import is here so a card that reads
         // one still instantiates.
         lookup: () => ({ tag: "nil" }),
-        stopPropagation: () => effects.push({ kind: "stop", name: "", args: [] }),
+        stopPropagation: () => effects.push({ kind: "drop", name: "", args: [] }),
         // The routed four. `intent` and `forward` carry `intent-opts`, of
         // which a card only ever writes the route; `reply` and `fail` carry
         // ONE value and no name, because the walk addresses them.

@@ -26,6 +26,7 @@
 // over — the playground's generator and the card runtime both carry it — so
 // it takes no dependency `core` does not already have.
 import {
+  "moonbitlang/core/debug",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/string",
 }

@@ -277,7 +277,7 @@ fn with_script(
     }
   }
   if file.script_for(comp) is Some(block) {
-    let decls = @tscript.parse_script(block.text) catch {
+    let (decls, _) = @tscript.parse_script_retiring(block.text) catch {
       e =>
         raise BadScriptBlock(
           comp~,

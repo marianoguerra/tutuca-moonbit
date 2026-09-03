@@ -11,6 +11,8 @@ pub fn all_decl_kinds() -> Array[DeclKind]
 
 pub fn collection_method(String) -> Int?
 
+pub fn current_effect(String) -> String
+
 pub fn effect_min_arity(String) -> Int?
 
 pub fn effect_names() -> Array[String]
@@ -49,11 +51,15 @@ pub fn parse_provide(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_script(String) -> Array[Decl] raise ScriptError
 
+pub fn parse_script_retiring(String) -> (Array[Decl], Array[Retirement]) raise ScriptError
+
 pub fn parse_sequence(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_text(String, ParseCtx) -> @core.Expr?
 
 pub fn parse_token(String, ParseCtx) -> @core.Expr?
+
+pub fn retired_spellings(String) -> Array[Retirement]
 
 pub fn script_builtin(String) -> Int?
 
@@ -168,6 +174,13 @@ pub(all) enum PropertyAction {
   PropertySet(name~ : String, value~ : @core.Expr)
   PropertyReset(String)
   PropertyCall(name~ : String, operation~ : String, args~ : Array[@core.Expr])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Retirement {
+  word : String
+  replacement : String
+  advice : String
+  span : @core.Span
 } derive(Eq, @debug.Debug)
 
 pub(all) enum STok {

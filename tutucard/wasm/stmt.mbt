@@ -589,10 +589,20 @@ fn effect_list() -> String {
 ///|
 /// Why an effect with too few arguments is refused, in the terms the effect
 /// itself is written in.
-fn effect_arity_why(name : String, min_args : Int) -> String {
+fn effect_arity_why(name : String, min_args : Int, kind : String) -> String {
   match name {
-    "reply" | "fail" => "`" + name + "` needs the value it answers with"
-    "send" | "sendReply" | "intent" => "`" + name + "` needs a message name"
+    "fail" => "`fail` needs the value it answers with"
+    // `reply` is on both lines, because which one it is depends on where it is
+    // written: in an `intent` body the walk names it and the argument is the
+    // value; in a `receive` body the replier names it and the argument is the
+    // name. The caller passes the kind so this can say which.
+    "reply" =>
+      if kind == "intent" {
+        "`reply` needs the value it answers with"
+      } else {
+        "`reply` needs a message name"
+      }
+    "send" | "intent" => "`" + name + "` needs a message name"
     _ =>
       "`" + name + "` needs at least " + min_args.to_string() + " argument(s)"
   }
@@ -621,10 +631,10 @@ fn ECtx::effect(
     )
     return []
   }
-  if name == "stop" {
+  if name == "drop" {
     self.g.uses_control = true
-    // Buffered, like the other two. A `stop` before a failing statement is a
-    // `stop` that did not happen.
+    // Buffered, like the other two. A `drop` before a failing statement is a
+    // `drop` that did not happen.
     return [
       call("tc_effect_push", [i32c(3), call("tc_empty_str", []), nullref()]),
     ]
@@ -635,14 +645,14 @@ fn ECtx::effect(
     return self.send_at(args, span)
   }
   guard args.length() >= min_args else {
-    self.bail(effect_arity_why(name, min_args), span)
+    self.bail(effect_arity_why(name, min_args, self.kind), span)
     return []
   }
   // The three v2 effects that carry no message name. `forward` re-dispatches
   // the one that arrived; `reply` and `fail` are addressed by the walk. Each
   // buffers like the rest, because a `reply` before a failing statement is a
   // `reply` that did not happen.
-  if name is ("reply" | "fail") {
+  if name == "fail" || (name == "reply" && self.kind == "intent") {
     self.g.uses_control = true
     self.g.uses_routed_effects = true
     let pl = self.g.fresh("pl")
@@ -705,7 +715,10 @@ fn ECtx::effect(
       // with a different kind — the difference is who it reaches, and that is
       // the host's to work out.
       call("tc_effect_push", [
-        i32c(if name == "sendReply" { 10 } else { 1 }),
+        // `reply` here is the `receive`-body one — the intent-body `reply` was
+        // taken above — so it is a send with a different kind: the name is
+        // written the same way, and who it reaches is the host's to work out.
+        i32c(if name == "reply" { 10 } else { 1 }),
         get(msg),
         get(pl),
       ])

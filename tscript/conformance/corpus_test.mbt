@@ -35,7 +35,7 @@ test "the v2 corpus still holds every case it was written with" {
       #|a handler that does not reply is an observer
       #|an intent handler may run and then continue the walk
       #|a body may queue two replies, and both come out of it
-      #|stop ends the walk before any reply, and answers nothing
+      #|drop ends the walk before any reply, and answers nothing
       #|a requires that does not hold takes the reply with it
       #|an ensures that does not hold takes the reply with it
       #|an answer arrives as an ordinary message
@@ -76,10 +76,8 @@ test "the v2 effects use the vocabulary the design gives them" {
   }
 
   inspect(
-    tally(seen, [
-      "fail", "forward", "intent", "reply", "send", "sendReply", "stop",
-    ]),
-    content="fail=1 forward=7 intent=5 reply=3 send=2 sendReply=2 stop=2",
+    tally(seen, ["drop", "fail", "forward", "intent", "reply", "send"]),
+    content="drop=2 fail=1 forward=7 intent=5 reply=5 send=2",
   )
   inspect(
     tally(routes, ["dyn", "dyn lex", "lex", "lex dyn"]),
@@ -117,8 +115,8 @@ test "a routed effect prints its route between the verb and the name" {
     content="forward dyn lex RStr(\"ada\")",
   )
   inspect(
-    printed("stop ends the walk before any reply, and answers nothing"),
-    content="stop",
+    printed("drop ends the walk before any reply, and answers nothing"),
+    content="drop",
   )
   inspect(
     printed("an intent answered where it arrives"),

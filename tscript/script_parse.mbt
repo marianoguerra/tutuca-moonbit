@@ -23,6 +23,13 @@
 priv struct P {
   toks : Array[ScriptToken]
   mut at : Int
+  /// Retired spellings met on the way, in source order.
+  ///
+  /// A side channel rather than a field on the statement, because the AST is
+  /// the CURRENT vocabulary and nothing below the parser should have to know
+  /// there was another one. Two consumers read this: the checker, which warns,
+  /// and `tutuca migrate`, which rewrites.
+  retired : Array[Retirement]
 }
 
 ///|
@@ -161,27 +168,47 @@ pub fn collection_method(name : String) -> Int? {
 /// restating it — an effect only one of them knows about is a language with
 /// two semantics.
 pub fn effect_names() -> Array[String] {
-  ["send", "sendReply", "sendAt", "intent", "forward", "reply", "fail", "stop"]
+  ["send", "sendAt", "intent", "forward", "reply", "fail", "drop"]
+}
+
+///|
+/// The current spelling of an effect name.
+///
+/// A retired spelling still parses for one release, and this is where it stops
+/// being one: the parser normalises before it builds the statement, so every
+/// backend below sees ONE vocabulary and no `match` on an effect has to carry
+/// two arms for a word. `@tutuca.retired(KeywordName, …)` is what says so to
+/// the author, once, in the checker.
+pub fn current_effect(name : String) -> String {
+  match name {
+    "stop" => "drop"
+    "sendReply" => "reply"
+    _ => name
+  }
 }
 
 ///|
 /// The effects, and the fewest arguments each takes.
 pub fn effect_min_arity(name : String) -> Int? {
+  // The retired spellings answer here too, so a block written in them still
+  // parses. They are normalised away by `current_effect` before the statement
+  // is built.
   match name {
-    "stop" => Some(0)
+    "drop" | "stop" => Some(0)
     // A name plus whatever the message carries.
     "send" => Some(1)
-    // The replier names the reply, so this takes a name too — which is the
-    // whole difference from `reply`, whose name the runtime derives because
-    // its raiser declared arms for one.
     "sendReply" => Some(1)
     // A place, then a name, then the payload.
     "sendAt" => Some(2)
     // `intent` takes a name after its leg words; `forward` takes none, because
-    // it re-dispatches the one that arrived. `reply` and `fail` each take the
-    // one value they answer with.
+    // it re-dispatches the one that arrived.
     "intent" => Some(1)
     "forward" => Some(0)
+    // `fail` takes the one value it answers with. So does `reply` in an
+    // `intent` body — and in a `receive` body its first argument is the NAME,
+    // because a message's sender declared no arms for the runtime to derive
+    // one from. One word, one meaning ("answer whoever asked"), and the bucket
+    // decides where the name comes from.
     "reply" | "fail" => Some(1)
     _ => None
   }
@@ -343,7 +370,7 @@ fn is_binary_only(f : @tutuca.OpFamily) -> Bool {
 /// this way — a fresh cursor over a bare substring, and a demand that the
 /// whole of it was consumed.
 pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0, }
+  let p : P = { toks: tokenize_script(source), at: 0, retired: [], }
   let e = parse_expr(p)
   if !(p.peek() is TEof) {
     raise Unexpected(
@@ -357,7 +384,22 @@ pub fn parse_expr_source(source : String) -> @tutuca.Expr raise ScriptError {
 
 ///|
 pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0, }
+  parse_script_retiring(source).0
+}
+
+///|
+/// Parse a block, and say which retired spellings it was written with.
+///
+/// The parse is the ONE thing that knows where a keyword can appear: `stop` is
+/// a retired effect at the head of a statement and an ordinary field name
+/// everywhere else, and only something that has parsed as far as the statement
+/// can tell the two apart. So both consumers of a retirement — the checker's
+/// warning and `tutuca migrate`'s edit — come from here rather than from a
+/// scan over the text.
+pub fn parse_script_retiring(
+  source : String,
+) -> (Array[Decl], Array[Retirement]) raise ScriptError {
+  let p : P = { toks: tokenize_script(source), at: 0, retired: [], }
   let out : Array[Decl] = []
   // One name per bucket: a name answered twice is refused rather than ordered,
   // in the spirit of `Path::update`'s "one lookup, by exact name, with no
@@ -376,7 +418,28 @@ pub fn parse_script(source : String) -> Array[Decl] raise ScriptError {
     seen[key] = ()
     out.push(d)
   }
-  out
+  (out, p.retired)
+}
+
+///|
+/// The retired spellings a block is written with, for a block that need not
+/// parse.
+///
+/// `migrate` calls this: a file mid-rename is a file somebody is about to fix,
+/// and refusing to rewrite the part that lexed because a later declaration has
+/// a typo in it would make the tool useless exactly when it is wanted. What
+/// was found before the failure is still true about the text before it.
+pub fn retired_spellings(source : String) -> Array[Retirement] {
+  let toks = tokenize_script(source) catch { _ => return [] }
+  let p : P = { toks, at: 0, retired: [], }
+  for ;; {
+    p.skip_seps()
+    if p.peek() is TEof {
+      break
+    }
+    let _ = parse_decl(p) catch { _ => break }
+  }
+  p.retired
 }
 
 ///|
@@ -608,7 +671,19 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   }
   // An effect: a bare name the effect table knows.
   if p.peek() is TIdent(name) && effect_min_arity(name) is Some(min) {
+    let word_span = p.span()
     p.bump() |> ignore
+    // Normalised here and nowhere else: below this point the statement carries
+    // the current spelling, so no backend has two arms for one operation.
+    let cur = current_effect(name)
+    if cur != name {
+      p.retired.push({
+        word: name,
+        replacement: cur,
+        advice: @tutuca.retired(KeywordName, name).unwrap_or("write `\{cur}`"),
+        span: word_span,
+      })
+    }
     let args : Array[@tutuca.Expr] = []
     // The one new parse rule: read leg words while the next token is one, then
     // parse normally. It adds no ambiguity to juxtaposition, because an
@@ -644,7 +719,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
         span=p.since(from),
       )
     }
-    return SEffect(name~, args~, route~, span=p.since(from))
+    return SEffect(name=cur, args~, route~, span=p.since(from))
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
   if !(p.peek() is (TDot | TAt)) &&
@@ -1115,7 +1190,11 @@ fn parse_tpl_parts(
         // The interior is its own little expression. Its spans index the
         // interior, so they are rebased onto the template token — a column
         // inside an interpolation is not worth a second offset discipline.
-        let ip : P = { toks: tokenize_script(inner.to_string()), at: 0, }
+        let ip : P = {
+          toks: tokenize_script(inner.to_string()),
+          at: 0,
+          retired: [],
+        }
         let e = parse_expr(ip)
         if !(ip.peek() is TEof) {
           raise Unexpected(

@@ -59,6 +59,13 @@ priv struct E {
   /// Not derivable from `fail` or `leave`: `fail` is "" for the enrich roles
   /// AND for a transition, so it says something else.
   mut in_value_body : Bool
+  /// Which declaration's body is being written.
+  ///
+  /// Read by exactly one effect, and it is the one word that means two things
+  /// by position: `reply` in an `intent` body is answered by the walk, which
+  /// names it, and `reply` in a `receive` body is named by the replier. Same
+  /// operation, and the bucket is what says where the name comes from.
+  mut decl_kind : @tscript.DeclKind
   /// `@name` -> the MoonBit expression that reads it, for the bodies that have
   /// bindings at all. A `@when` gets the loop's three; an `enrich` gets those
   /// plus whatever it has written into the binds map.
@@ -174,6 +181,7 @@ pub fn emit(
     uses_stack: false,
     uses_state: false,
     in_value_body: false,
+    decl_kind: DReceive,
     binds: Map([]),
     binds_map: "",
     fail: "",
@@ -707,6 +715,7 @@ fn E::arm(
   // `&@tutuca.Ctx`. Stated rather than inherited: leaving it implicit is what
   // let a value body emit `ctx.lookup` into a signature that had no `ctx`.
   self.in_value_body = false
+  self.decl_kind = d.kind
   let b = StringBuilder()
   // `_args` when the declaration takes none: a generated file must not be the
   // thing that warns.
@@ -1698,17 +1707,25 @@ fn E::effect(
   pad : String,
 ) -> String raise NoWay {
   self.needs_ctx(name)
-  if name == "stop" {
+  if name == "drop" {
     return "\{pad}effects.push(() => ctx.stop_propagation())\n"
   }
   // The three effects that name no message. `forward` re-dispatches the one
   // that arrived, and `reply` / `fail` are addressed by the walk, so the
   // literal-name guard below is not theirs to satisfy.
   match name {
-    "reply" | "fail" => {
+    // `reply` in an INTENT body: the walk addresses it and names it, so the
+    // one argument is the value. In a `receive` body the same word means the
+    // same thing — answer whoever asked — but nobody declared arms for it, so
+    // the first argument is the name and it falls through to the naming
+    // effects below.
+    "reply" if self.decl_kind is DIntent => {
       let v = self.as_value(args[0])
-      let verb = if name == "reply" { "reply" } else { "fail" }
-      return "\{pad}effects.push(() => ctx.\{verb}(\{v}))\n"
+      return "\{pad}effects.push(() => ctx.reply(\{v}))\n"
+    }
+    "fail" => {
+      let v = self.as_value(args[0])
+      return "\{pad}effects.push(() => ctx.fail(\{v}))\n"
     }
     "forward" => {
       // Amended arguments, or the ones that arrived. A route the forwarder
@@ -1749,10 +1766,10 @@ fn E::effect(
   let payload = "[" + rest.join(", ") + "]"
   match name {
     "send" => "\{pad}effects.push(() => ctx.send(\{quote(msg)}, \{payload}))\n"
-    // The replier names the reply, which is the whole difference from `reply`:
-    // an intent's raiser declared arms for an answer and a message's sender
-    // did not, so the name has to come from here.
-    "sendReply" =>
+    // `reply` outside an intent body. The replier names it, because an
+    // intent's raiser declared arms for an answer and a message's sender did
+    // not — so the name has to come from here.
+    "reply" =>
       "\{pad}effects.push(() => ctx.send_reply(\{quote(msg)}, \{payload}))\n"
     "intent" =>
       "\{pad}effects.push(() => ctx.intent(\{quote(msg)}, \{payload}, \{intent_opts(route, Some(self.outcomes(msg)))}))\n"

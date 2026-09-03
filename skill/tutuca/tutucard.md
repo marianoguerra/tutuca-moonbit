@@ -83,7 +83,7 @@ Their handler language covers:
 - `requires` and `ensures` clauses attaching one of those rules to a
   transition, with user-facing `format` text on the rule;
 - `send`, addressed `sendAt`, `intent`, `forward`, `reply`, `fail`, and
-  `stop`;
+  `drop`;
 - conditionals, arithmetic, comparisons, string templates, and the closed
   reading vocabulary documented in [schema.md](./schema.md#the-reading-vocabulary);
 - `new` plus `@cur` for declared records and sibling component instances.

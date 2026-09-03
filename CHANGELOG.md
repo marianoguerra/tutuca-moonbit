@@ -6,6 +6,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **`stop` is `drop`, and `sendReply` is `reply`.** The first of the keyword
+  families, and the two are different kinds of rename.
+
+  `stop` never said what it did. It ends the walk **answering nothing** — the
+  question is dropped — where "stop" reads like halting something, and it sat
+  one letter from the `+stop` event modifier, which is a different operation
+  entirely.
+
+  `sendReply` was a second word for an operation `reply` already had. Both
+  answer whoever asked; the only thing the longer name said that the shorter
+  one does not is which bucket you are in, which the three lines above it
+  already say. So there is one word now, and the bucket decides where the
+  answer's NAME comes from: an intent's raiser declared arms, so the runtime
+  derives one and the argument is the value; a message's sender declared none,
+  so the replier writes the name as the first argument.
+
+  `fail` did not merge with anything, and the checker says why: it ends a
+  **walk**, and a message is not on one. Turning a message down is a `reply`
+  that says so.
+
+  Both old spellings still parse in this release and are reported as
+  `RETIRED_KEYWORD` warnings naming the replacement; `tutuca migrate --write`
+  rewrites them, and they stop parsing in the next release. The parser
+  normalises before it builds the statement, so every backend below it sees one
+  vocabulary and no `match` on an effect carries two arms for one operation.
+
 ### Added
 
 - **`tutuca migrate` — rewriting a tree from one spelling of the language to

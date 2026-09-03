@@ -269,7 +269,7 @@ test "the effects" {
         #|  send 'flash' .msg
         #|  intent dyn 'rowPicked' @key
         #|  intent lex 'loadData'
-        #|  stop
+        #|  drop
         #|}
       ),
     ),
@@ -278,7 +278,7 @@ test "the effects" {
       #|  send 'flash' .msg
       #|  intent dyn 'rowPicked' @key
       #|  intent lex 'loadData'
-      #|  stop
+      #|  drop
       #|}
     ),
   )
@@ -708,13 +708,16 @@ test "the intent declaration round-trips" {
 }
 
 ///|
-test "reply, fail and stop are one-word answers" {
+test "reply, fail and drop are one-word answers" {
   assert_eq(trip("intent go { reply 1 }"), "intent go {\n  reply 1\n}")
   assert_eq(
     trip("intent go { fail 'disk full' }"),
     "intent go {\n  fail 'disk full'\n}",
   )
-  assert_eq(trip("intent go { stop }"), "intent go {\n  stop\n}")
+  assert_eq(trip("intent go { drop }"), "intent go {\n  drop\n}")
+  // The retired spelling still parses, and comes back as the current one:
+  // the AST holds one vocabulary, so a round trip is also a migration.
+  assert_eq(trip("intent go { stop }"), "intent go {\n  drop\n}")
 }
 
 ///|

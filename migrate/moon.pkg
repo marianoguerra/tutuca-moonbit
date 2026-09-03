@@ -18,6 +18,7 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/viewfile",
+  "marianoguerra/tutuca/tscript",
   "moonbitlang/core/debug",
 }
 

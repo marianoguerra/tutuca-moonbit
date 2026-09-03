@@ -172,7 +172,27 @@ pub fn check(
   decls : Array[@tscript.Decl],
   def : @statedef.StateDef,
   surface? : Surface = Surface::empty(),
+  retired? : Array[@tscript.Retirement] = [],
 ) -> Array[Finding] {
+  // The retired spellings the block was written with, as warnings. They come
+  // from the PARSE — `stop` is a retired effect at the head of a statement and
+  // an ordinary field name everywhere else, and only something that has parsed
+  // as far as the statement can tell the two apart — and a caller that did not
+  // keep them passes none, which is the same block with one fewer thing said
+  // about it rather than a different verdict.
+  //
+  // A warning and never an error: the old spelling still means what it meant,
+  // and this is the release in which both work. It stops parsing in the next
+  // one, which is what `tutuca migrate` is for.
+  let out_retired : Array[Finding] = []
+  for r in retired {
+    out_retired.push({
+      code: "RETIRED_KEYWORD",
+      message: "`\{r.word}` is now `\{r.replacement}` — \{r.advice}. The old spelling still parses in this release; `tutuca migrate --write` rewrites it",
+      severity: SWarning,
+      span: r.span,
+    })
+  }
   // Collected first, because a body may apply a predicate declared BELOW it.
   // Declaration order is only a termination proof for predicates calling
   // predicates, which is a rule for a later pass; nothing here needs order.
@@ -249,7 +269,10 @@ pub fn check(
     c.decl(d)
   }
   c.view_names(decls)
-  c.out
+  // Retirements first: they are about the WORDS the block is written with, and
+  // a reader fixing a spelling wants to see that before a finding about what
+  // the spelling means.
+  out_retired + c.out
 }
 
 ///|
@@ -579,25 +602,44 @@ fn C::msg_params(self : C, d : @tscript.Decl) -> Unit {
 ///
 /// The list is short and worth being explicit about, because the answer used
 /// to be "everything except `stop`" and v2 makes that wrong three ways over.
-fn names_a_message(effect : String) -> Bool {
+fn names_a_message(effect : String, kind : @tscript.DeclKind) -> Bool {
+  // `reply` is the one that depends on where it is written. In a `receive`
+  // body the replier names the reply, so its first argument is a message name
+  // like `send`'s; in an `intent` body the walk addresses and names it, and
+  // the argument is the value being answered with.
+  if effect == "reply" {
+    return kind is DReceive
+  }
   effect is ("send" | "sendAt" | "bubble" | "request" | "intent")
 }
 
 ///|
-/// `NOT_A_HANDLER`: the two effects that answer, and the one that continues,
-/// are legal only in a body that has something to answer or continue.
+/// `NOT_A_HANDLER`: the effects that answer, and the one that continues, are
+/// legal only in a body that has something to answer or continue.
 ///
-/// `reply` and `fail` need a sender, and only an intent has one — a message is
-/// addressed and its sender is not waiting. `forward` needs a message to pass
-/// on, so it is legal wherever one arrives: a `receive`, where it starts a
-/// walk, and an `intent`, where it amends the one already walking.
+/// `fail` needs an intent: it ends a WALK, and a message has no walk to end.
+/// `reply` is legal in both buckets and means the same thing in each — answer
+/// whoever asked — with the bucket deciding where the name comes from: an
+/// intent's raiser declared arms, so the runtime derives one; a message's
+/// sender declared none, so the replier writes one as the first argument.
+/// `forward` needs a message to pass on, so it is legal wherever one arrives:
+/// a `receive`, where it starts a walk, and an `intent`, where it amends the
+/// one already walking.
 fn C::effect_placement(self : C, effect : String, span : @tutuca.Span) -> Unit {
   match effect {
-    "reply" | "fail" =>
+    "fail" =>
       if !(self.decl_kind is DIntent) {
         self.say(
           "NOT_A_HANDLER",
-          "`\{effect}` answers the sender of an intent, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` has none — a message is addressed, so nobody is waiting for an answer",
+          "`fail` ends the walk an intent is on, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` is not on one — to turn a message down, answer the sender with a `reply` that says so",
+          span,
+        )
+      }
+    "reply" =>
+      if !(self.decl_kind is (DReceive | DIntent)) {
+        self.say(
+          "NOT_A_HANDLER",
+          "`reply` answers whoever asked, and `\{@tscript.kind_word(self.decl_kind)} \{self.decl_name}` was not asked anything",
           span,
         )
       }
@@ -675,7 +717,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
           span,
         )
       }
-      let message_arg = if names_a_message(name) {
+      let message_arg = if names_a_message(name, self.decl_kind) {
         Some(if name == "sendAt" { 1 } else { 0 })
       } else {
         None
@@ -703,7 +745,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
       // `forward` re-dispatches the one that arrived, and `reply` and `fail`
       // are addressed by the walk. Asking them would report `reply 1` as a
       // dynamic message name.
-      if names_a_message(name) {
+      if names_a_message(name, self.decl_kind) {
         let name_at = message_arg.unwrap()
         if args.get(name_at) is Some(a0) {
           match a0 {

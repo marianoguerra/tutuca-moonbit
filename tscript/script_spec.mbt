@@ -267,6 +267,32 @@ declare pub fn ScriptError::span(self : ScriptError) -> Span
 declare pub fn parse_script(source : String) -> Array[Decl] raise ScriptError
 
 ///|
+/// One retired spelling, where it was written, and what to write instead.
+pub(all) struct Retirement {
+  word : String
+  replacement : String
+  advice : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+///|
+/// Parse a block, and say which retired spellings it was written with.
+declare pub fn parse_script_retiring(
+  source : String,
+) -> (Array[Decl], Array[Retirement]) raise ScriptError
+
+///|
+/// The retired spellings a block is written with, for a block that need not
+/// parse. What was found before a failure is still true about the text before
+/// it, which is what a migration over a half-edited file needs.
+declare pub fn retired_spellings(source : String) -> Array[Retirement]
+
+///|
+/// The current spelling of an effect name — the identity for every name that
+/// has not been renamed.
+declare pub fn current_effect(name : String) -> String
+
+///|
 /// Parse ONE expression, with no declaration around it — the entry a
 /// conditional slot parses through, so that a slot and a block body are the
 /// same language rather than two that resemble each other.

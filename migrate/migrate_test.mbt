@@ -185,3 +185,86 @@ test "the diff names the rule, not just the change" {
   assert_true(lines[0].contains("tutuca/state -> tutuca/spec"))
   assert_true(lines[0].has_prefix("card.html:"))
 }
+
+// ---------------------------------------------------------------------------
+// The block language
+// ---------------------------------------------------------------------------
+
+///|
+/// A card written in the retired effect spellings, with the traps beside them.
+///
+/// `stop` and `sendReply` are also perfectly good FIELD names, a string
+/// literal's contents and words in a comment. A text scan would rewrite all
+/// four; only something that has parsed as far as the statement can tell which
+/// one is the effect.
+fn retired_effects_card() -> String {
+  (
+    #|<script type="tutuca/spec">
+    #|  state Player {
+    #|    stop : Bool
+    #|    note : String
+    #|  }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  /// The word `stop` in a doc comment, and `sendReply` beside it.
+    #|  receive halt {
+    #|    .stop = true
+    #|    .note = 'stop'
+    #|    stop
+    #|  }
+    #|
+    #|  receive ping {
+    #|    sendReply 'pong' .note
+    #|  }
+    #|</script>
+    #|
+    #|<template><button @on.click="halt">stop</button></template>
+    #|
+  )
+}
+
+///|
+test "a retired effect is rewritten, and the field spelled the same is not" {
+  let m = @migrate.migrate_file(retired_effects_card(), name="Player")
+  @debug.assert_eq(m.edits.map(e => e.rule), ["stop", "sendReply"])
+  // The statement moved.
+  assert_true(m.out.contains("    drop\n"))
+  assert_true(m.out.contains("reply 'pong' .note"))
+  // The field, the assignment, the literal, the comment and the button label
+  // did not. Four ways to write the same six letters, and a text scan would
+  // have taken all of them.
+  assert_true(m.out.contains("    stop : Bool"))
+  assert_true(m.out.contains(".stop = true"))
+  assert_true(m.out.contains(".note = 'stop'"))
+  assert_true(m.out.contains("`stop` in a doc comment"))
+  assert_true(m.out.contains(">stop</button>"))
+}
+
+///|
+test "the block rules are idempotent too" {
+  let once = @migrate.migrate_file(retired_effects_card(), name="Player")
+  let twice = @migrate.migrate_file(once.out, name="Player")
+  assert_eq(twice.edits.length(), 0)
+  assert_eq(twice.out, once.out)
+}
+
+///|
+/// A block whose spans are the BLOCK's, rebased onto the file.
+///
+/// The one arithmetic error a block rule can make, and the one that would
+/// write a keyword into the middle of the template above it. `apply`'s `from`
+/// check is what turns it into a refusal rather than damage, and this pins
+/// that the offset is right in the first place.
+test "a block edit lands at the file offset, not the block one" {
+  let src = retired_effects_card()
+  let m = @migrate.migrate_file(src, name="Player")
+  let chars = src.to_array()
+  for e in m.edits {
+    let got = StringBuilder()
+    for i in e.span.start..<e.span.end_ {
+      got.write_char(chars[i])
+    }
+    assert_eq(got.to_string(), e.from)
+  }
+}

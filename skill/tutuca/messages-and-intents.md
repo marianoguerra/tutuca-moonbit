@@ -5,7 +5,7 @@ The two dispatch channels beyond a component's own `@on` handlers:
 component) and **intents** (`intent` → a walk along a *route* until
 something answers). Read this file when writing `receive` / `intent`
 handlers, calling `send` / `sendAt` / `intent` / `forward` / `reply` /
-`fail` / `stop` from a script block or `ctx.*` from MoonBit, or
+`fail` / `drop` from a script block or `ctx.*` from MoonBit, or
 registering `IntentFn` handlers on a scope. General authoring lives in
 [core.md](./core.md); testing these handlers is in
 [testing.md](./testing.md).
@@ -98,17 +98,18 @@ ctx.send("loadData", [])                             // self
 `ctx.send_at_path(path, name, args)` with a `DispatchPath` built by hand,
 e.g. `ctx.path().concat([FieldStep("x")])`.)
 
-### Replying to a message — `sendReply`
+### Replying to a message — `reply`
 
-An intent's raiser asked a question and declared arms for the answer, so the
-runtime names it (`<name>Ok`). A message carries no such expectation and its
-sender declares no arms, so the **replier names the reply**.
-
-From a script block:
+`reply` answers whoever asked, and where it is written decides where the name
+comes from. An intent's raiser asked a question and declared arms for the
+answer, so the runtime names it (`<name>Ok`) and the one argument is the value.
+A message carries no such expectation and its sender declares no arms, so in a
+`receive` body the **replier names the reply** and the first argument is that
+name.
 
 ```
 receive ping {
-  sendReply 'pong' .label
+  reply 'pong' .label
 }
 ```
 
@@ -177,9 +178,14 @@ A component answers an intent with an `intent <name>` handler. Inside it:
 - `reply <value>` — answer with a result. **Ends the walk.**
 - `fail <value>` — answer with an error. **Ends the walk.**
 - `forward` — hand the intent on to the next hop (see below).
-- `stop` — end the walk **answering nothing**.
+- `drop` — end the walk **answering nothing**: the question is dropped.
 - ...or none of the above: the body runs, changes state, and the walk
   goes on. A handler that does not reply is an **observer**.
+
+> **Retired spellings.** `stop` is now `drop`, and `sendReply` is now `reply`.
+> Both old words still parse in this release and are reported as
+> `RETIRED_KEYWORD` warnings; `tutuca migrate --write` rewrites them. They stop
+> parsing in the next release.
 
 ```html
 <script type="tutuca/spec">

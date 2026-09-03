@@ -14,12 +14,20 @@
 /// is the corpus's own vocabulary and not one implementation's. The printed
 /// form is still available, derived rather than stored — see `printed`.
 pub(all) struct CaseEffect {
-  /// One of `send`, `sendReply`, `sendAt`, `intent`, `forward`, `reply`,
-  /// `fail`, or `stop`.
+  /// One of `send`, `sendAt`, `intent`, `forward`, `reply`, `fail` or `drop` —
+  /// the words the BLOCK is written in, so `printed` reconstructs the line
+  /// that produced this.
+  ///
+  /// `reply` is one word over two runtime calls, and that is the point of it:
+  /// in an `intent` body it is the walk's answer and carries a value, in a
+  /// `receive` body it is the sender's and carries a name first. A recorder
+  /// maps whichever call fired to this one word; the arguments say which it
+  /// was, exactly as the source does.
   kind : String
-  /// The message name. Empty for `stop`, and for `forward`, `reply` and
-  /// `fail`, which carry none — a `forward` re-dispatches the name that
-  /// arrived, and an answer is addressed by the walk rather than by a name.
+  /// The message name. Empty for `drop`, and for `forward` and `fail`, which
+  /// carry none — a `forward` re-dispatches the name that arrived, and a
+  /// failure is addressed by the walk rather than by a name. Empty for an
+  /// intent-body `reply` too, for the same reason.
   name : String
   args : Array[@tutuca.Value]
   /// The route, for the two effects that have one: `intent` and `forward`.
@@ -35,8 +43,8 @@ pub(all) struct CaseEffect {
 /// compare against it, because what they have in hand is a line their own
 /// recorder wrote.
 pub fn CaseEffect::printed(self : CaseEffect) -> String {
-  if self.kind == "stop" {
-    return "stop"
+  if self.kind == "drop" {
+    return "drop"
   }
   let mut head = self.kind
   if !self.route.is_empty() {
@@ -697,33 +705,33 @@ pub fn cases() -> Array[Case] {
     ),
     recv_case(
       "a reply to a message names itself",
-      "receive ping {\n  sendReply 'pong' .name\n}",
+      "receive ping {\n  reply 'pong' .name\n}",
       "ping",
       // The transition HAPPENED and changed nothing, which is not the same as
       // not happening: `after: None` is a refusal, and a handler that only
       // answers is still a handler that ran.
       after=Some(with_fields({})),
-      effects=[effect("sendReply", name="pong", args=[Str("ada")])],
+      effects=[effect("reply", name="pong", args=[Str("ada")])],
     ),
     recv_case(
       "a reply is an effect like the rest, and buffers with them",
-      "receive ping {\n  .count += 1\n  sendReply 'pong' .count\n  send 'flash' .name\n}",
+      "receive ping {\n  .count += 1\n  reply 'pong' .count\n  send 'flash' .name\n}",
       "ping",
       after=Some(with_fields({ "count": Num(1) })),
       effects=[
-        effect("sendReply", name="pong", args=[Num(1)]),
+        effect("reply", name="pong", args=[Num(1)]),
         effect("send", name="flash", args=[Str("ada")]),
       ],
     ),
     recv_case(
       "effects come out in order, with the state",
-      "receive go {\n  intent lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  stop\n}",
+      "receive go {\n  intent lex 'loadRows'\n  .ok = true\n  send 'flash' .name\n  drop\n}",
       "go",
       after=Some(with_fields({ "ok": Bool(true) })),
       effects=[
         effect("intent", name="loadRows", route="lex"),
         effect("send", name="flash", args=[Str("ada")]),
-        effect("stop"),
+        effect("drop"),
       ],
     ),
     // -- answering an intent ------------------------------------------------
@@ -774,12 +782,12 @@ pub fn cases() -> Array[Case] {
       effects=[effect("reply", args=[Num(1)]), effect("reply", args=[Num(2)])],
     ),
     intent_case(
-      "stop ends the walk before any reply, and answers nothing",
-      "intent saveDraft(text) {\n  .count += 1\n  stop\n}",
+      "drop ends the walk before any reply, and answers nothing",
+      "intent saveDraft(text) {\n  .count += 1\n  drop\n}",
       "saveDraft",
       args=[Str("hi")],
       after=Some(with_fields({ "count": Num(1) })),
-      effects=[effect("stop")],
+      effects=[effect("drop")],
     ),
     // The transition does not happen, so the queue is dropped, so the reply
     // never leaves. The walk continuing past this position is the transactor's

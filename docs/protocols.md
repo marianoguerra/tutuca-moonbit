@@ -76,7 +76,7 @@ Qualified `provide` and `lookup` keys are stored as
 ## Sending and expressing
 
 An expressed message is an outbound capability, not a destination. `send`,
-`sendAt`, and `sendReply` choose where an addressed message goes; `intent`
+`sendAt`, and `reply` choose where an addressed message goes; `intent`
 chooses a route. The `express` declaration says which operations this
 component may initiate.
 

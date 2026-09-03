@@ -2,7 +2,8 @@
 //
 // Every method of the trait has a default, so recording needs only the ones an
 // effect can reach: the absolute forms (`send` and `intent` are each spelled in
-// terms of one), `forward`, `reply`, `fail` and `stop_propagation`. Printed in
+// terms of one), `forward`, `reply` (both of them), `fail` and
+// `stop_propagation`. Printed in
 // the corpus's own form, so what is compared is a string both backends produce
 // independently rather than one backend's type.
 
@@ -29,7 +30,7 @@ pub impl @tutuca.Ctx for Recorder with fn send_at_path(self, path, name, args) {
 
 ///|
 pub impl @tutuca.Ctx for Recorder with fn stop_propagation(self) {
-  self.seen.push("stop")
+  self.seen.push("drop")
 }
 
 // The v2 four. `intent` and `forward` carry a route, and the corpus records it
@@ -73,11 +74,12 @@ pub impl @tutuca.Ctx for Recorder with fn forward(self, args, opts) {
 }
 
 ///|
-/// The replier names the reply, so it records like a `send` and not like a
-/// `reply`: what the walk addresses is the difference, and a corpus case is
+/// The replier names the reply, so it records with a NAME where the intent
+/// body's `reply` records a value. One word either way — the source has one
+/// too — and the arguments say which call fired, which is what a corpus case is
 /// about what the block SAID.
 pub impl @tutuca.Ctx for Recorder with fn send_reply(self, name, args) {
-  self.seen.push(@conformance.show_effect("sendReply " + name, args))
+  self.seen.push(@conformance.show_effect("reply " + name, args))
 }
 
 ///|

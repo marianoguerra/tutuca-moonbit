@@ -79,9 +79,10 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
   for views in file.components {
     let comp = views.component_name(name)
     let block = script_for(file, comp)
+    let mut retired : Array[@tscript.Retirement] = []
     let decls : Array[@tscript.Decl] = match block {
-      Some(b) =>
-        @tscript.parse_script(b.text) catch {
+      Some(b) => {
+        let (ds, rs) = @tscript.parse_script_retiring(b.text) catch {
           e =>
             raise BadCard(
               "line " +
@@ -90,6 +91,9 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
               e.message(),
             )
         }
+        retired = rs
+        ds
+      }
       None => []
     }
     // No schema: nothing to check against, and checking against a guess would
@@ -160,7 +164,7 @@ pub fn check_card(source : String, name~ : String) -> Checked raise GenError {
     // block, which the rebasing below then turned into a line number in this
     // one. `compile` passes the block's own decls here for the same reason;
     // the lifted list it builds is for the EMITTER, which does need the bodies.
-    for f in @check.check(decls, def, surface~) {
+    for f in @check.check(decls, def, surface~, retired~) {
       // The checker's warnings are listed here rather than dropped — this is
       // the reporting face, and a warning is worth showing. `compile.mbt` is
       // the one that decides what stops a build, and it skips them.
